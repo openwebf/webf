@@ -43,38 +43,38 @@ describe('DOM Element API', () => {
     expect(div.hasAttribute('foo')).toBeFalse();
   });
 
-    it('should work', () => {
-      const div = document.createElement('div');
+  it('should work with scroll', () => {
+    const div = document.createElement('div');
 
-      div.style.width = div.style.height = '200px';
-      div.style.padding = '10px';
-      div.style.margin = '20px';
-      div.style.backgroundColor = 'grey';
-      div.style.overflow = 'scroll';
-      document.body.appendChild(div);
+    div.style.width = div.style.height = '200px';
+    div.style.padding = '10px';
+    div.style.margin = '20px';
+    div.style.backgroundColor = 'grey';
+    div.style.overflow = 'scroll';
+    document.body.appendChild(div);
 
-      const scrollDiv = document.createElement('div');
-      scrollDiv.style.width =  '100px';
-      scrollDiv.style.height ='1000px';
-      div.appendChild(scrollDiv)
+    const scrollDiv = document.createElement('div');
+    scrollDiv.style.width = '100px';
+    scrollDiv.style.height = '1000px';
+    div.appendChild(scrollDiv)
 
-      const childDiv = document.createElement('div');
-      childDiv.style.width = childDiv.style.height = '30px';
-      childDiv.style.marginTop = '150px';
-      childDiv.style.backgroundColor = 'yellow';
-      scrollDiv.appendChild(childDiv);
+    const childDiv = document.createElement('div');
+    childDiv.style.width = childDiv.style.height = '30px';
+    childDiv.style.marginTop = '150px';
+    childDiv.style.backgroundColor = 'yellow';
+    scrollDiv.appendChild(childDiv);
 
-      expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
-        bottom: 210, height: 30, left: 30, right: 60, top: 180, width: 30, x: 30, y: 180
-      } as any);
+    expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
+      bottom: 210, height: 30, left: 30, right: 60, top: 180, width: 30, x: 30, y: 180
+    } as any);
 
-      div.scrollBy(0, 10);
+    div.scrollBy(0, 10);
 
-      expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
-        bottom: 200, height: 30, left: 30, right: 60, top: 180, width: 30, x: 30, y: 180
-      } as any);
+    expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
+      bottom: 200, height: 30, left: 30, right: 60, top: 180, width: 30, x: 30, y: 180
+    } as any);
 
-    });
+  });
 
   it('children should only contain elements', () => {
     let container = document.createElement('div');
