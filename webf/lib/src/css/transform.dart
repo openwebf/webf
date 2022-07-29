@@ -100,8 +100,8 @@ mixin CSSTransformMixin on RenderStyle {
   Offset? get effectiveTransformOffset {
     // Make sure it is used after renderBoxModel been created.
     assert(renderBoxModel != null);
-    Offset? offset = MatrixUtils.getAsTranslation(effectiveTransformMatrix);
-    return offset;
+    Vector3 translation = effectiveTransformMatrix.getTranslation();
+    return Offset(translation[0],translation[1]);
   }
 
   Offset get transformOffset => _transformOffset;

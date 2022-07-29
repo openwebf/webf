@@ -643,6 +643,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     // placeholder of positioned element).
     _layoutFlexItems(_flexItemChildren);
 
+    // init overflowLayout size
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+
+    // calculate all flexItem child overflow size
+    addOverflowLayoutFromChildren(_flexItemChildren);
+
     // Every placeholder of positioned element should be layouted in a separated layer in flex layout
     // which is different from the placeholder in flow layout which layout in the same flow as
     // other elements in normal flow.
@@ -655,6 +661,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       CSSPositionedLayout.applyPositionedChildOffset(this, child);
       // Position of positioned element affect the scroll size of container.
       extendMaxScrollableSize(child);
+      addOverflowLayoutFromChild(child);
     }
 
     // Set offset of sticky element on each layout.
@@ -722,6 +729,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Set children offset based on flex alignment properties.
     _setChildrenOffset(_runMetrics);
   }
+
 
   // Layout children in normal flow order to calculate metrics of flex lines according to its constraints
   // and flex-wrap property.

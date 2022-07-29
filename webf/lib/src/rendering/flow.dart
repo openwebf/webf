@@ -191,11 +191,19 @@ class RenderFlowLayout extends RenderLayoutBox {
     // placeholder of positioned element).
     _layoutChildren(_nonPositionedChildren);
 
+    // init overflowLayout size
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+
+    // calculate all flexItem child overflow size
+    addOverflowLayoutFromChildren(_nonPositionedChildren);
+
+
     // Set offset of positioned element after flex box size is set.
     for (RenderBoxModel child in _positionedChildren) {
       CSSPositionedLayout.applyPositionedChildOffset(this, child);
       // Position of positioned element affect the scroll size of container.
       extendMaxScrollableSize(child);
+      addOverflowLayoutFromChild(child);
     }
 
     // Set offset of sticky element on each layout.
