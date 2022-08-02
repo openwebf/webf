@@ -1,12 +1,11 @@
 #import <FlutterMacOS/FlutterMacOS.h>
-#import "Kraken.h"
-#import "KrakenPlugin.h"
+#import "WebfPlugin.h"
 
 typedef void(^MethodHandler)(FlutterMethodCall* _Nonnull , FlutterResult _Nonnull);
 
-@interface Kraken : NSObject
+@interface WebF : NSObject
 
-+ (Kraken* _Nonnull) instanceByBinaryMessenger: (NSObject<FlutterBinaryMessenger>* _Nonnull) messenger;
++ (WebF* _Nonnull) instanceByBinaryMessenger: (NSObject<FlutterBinaryMessenger>* _Nonnull) messenger;
 
 @property NSString* _Nullable bundleUrl;
 @property FlutterEngine* _Nonnull flutterEngine;

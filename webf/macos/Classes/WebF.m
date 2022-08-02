@@ -1,13 +1,13 @@
 #import <Foundation/Foundation.h>
-#import "Kraken.h"
-#import "KrakenPlugin.h"
+#import "WebF.h"
+#import "WebfPlugin.h"
 
 static NSMutableArray *engineList = nil;
-static NSMutableArray<Kraken*> *instanceList = nil;
+static NSMutableArray<WebF*> *instanceList = nil;
 
-@implementation Kraken
+@implementation WebF
 
-+ (Kraken*) instanceByBinaryMessenger: (NSObject<FlutterBinaryMessenger>*) messenger {
++ (WebF*) instanceByBinaryMessenger: (NSObject<FlutterBinaryMessenger>*) messenger {
   // Return last instance, multi instance not supported yet.
   if (instanceList != nil && instanceList.count > 0) {
     return [instanceList objectAtIndex: instanceList.count - 1];
@@ -18,7 +18,7 @@ static NSMutableArray<Kraken*> *instanceList = nil;
 - (instancetype)initWithFlutterEngine: (FlutterEngine*) engine {
   self.flutterEngine = engine;
 
-  FlutterMethodChannel *channel = [KrakenPlugin getMethodChannel];
+  FlutterMethodChannel *channel = [WebfPlugin getMethodChannel];
 
   if (channel == nil) {
     NSException* exception = [NSException
