@@ -3,8 +3,8 @@
  */
 
 import 'package:flutter/rendering.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/src/gesture/gesture_dispatcher.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/src/gesture/gesture_dispatcher.dart';
 
 typedef HandleGetEventTarget = EventTarget Function();
 

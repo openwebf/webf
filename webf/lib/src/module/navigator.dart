@@ -4,8 +4,8 @@
 import 'dart:io' show Platform;
 import 'dart:ui';
 
-import 'package:kraken/bridge.dart';
-import 'package:kraken/src/module/module_manager.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/src/module/module_manager.dart';
 
 String? _customUserAgent;
 

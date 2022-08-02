@@ -4,7 +4,7 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:kraken/bridge.dart';
+import 'package:webf/bridge.dart';
 
 class BoundingClientRect {
   static const BoundingClientRect zero = BoundingClientRect(0, 0, 0, 0, 0, 0, 0, 0);

@@ -6,8 +6,8 @@ import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
 import 'package:flutter/rendering.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/kraken.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/kraken.dart';
 
 typedef ConnectedCallback = void Function();
 

@@ -8,10 +8,10 @@ import 'dart:ui';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/painting.dart';
-import 'package:kraken/bridge.dart';
-import 'package:kraken/foundation.dart';
-import 'package:kraken/css.dart';
-import 'package:kraken/dom.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 import 'canvas_context.dart';

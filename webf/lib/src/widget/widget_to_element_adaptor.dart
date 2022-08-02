@@ -5,8 +5,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:kraken/kraken.dart';
-import 'package:kraken/dom.dart' as dom;
+import 'package:webf/kraken.dart';
+import 'package:webf/dom.dart' as dom;
 
 class KrakenRenderObjectToWidgetAdapter<T extends RenderObject> extends RenderObjectWidget {
   /// Creates a bridge from a [RenderObject] to an [Element] tree.

@@ -21,13 +21,13 @@
     "pretest": "npm install && ENABLE_ASAN=true node scripts/build_darwin_dylib",
     "posttest": "npm run lint",
     "benchmark": "npm install && ENABLE_PROFILE=true KRAKEN_BUILD=Release node scripts/run_benchmark.js",
-    "start": "cd kraken/example && flutter run",
+    "start": "cd webf/example && flutter run",
     "test": "node scripts/run_test.js",
     "plugin_test": "node scripts/run_plugin_test.js",
-    "lint": "cd kraken && flutter pub get && flutter analyze",
-    "format": "cd kraken && flutter format . --line-length=120",
+    "lint": "cd webf && flutter pub get && flutter analyze",
+    "format": "cd webf && flutter format . --line-length=120",
     "ci": "npm install && npm run lint",
-    "test:unit:report": "lcov-summary kraken/coverage/lcov.info"
+    "test:unit:report": "lcov-summary webf/coverage/lcov.info"
   },
   "devDependencies": {
     "ali-oss": "^6.13.2",

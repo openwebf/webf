@@ -7,8 +7,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:kraken/devtools.dart';
-import 'package:kraken/foundation.dart';
+import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
 
 class InspectNetworkModule extends UIInspectorModule implements HttpClientInterceptor {
   InspectNetworkModule(ChromeDevToolsService devtoolsService) : super(devtoolsService) {

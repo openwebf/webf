@@ -8,9 +8,9 @@ import 'dart:math';
 
 import 'package:flutter/animation.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:kraken/css.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/rendering.dart';
+import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart';
 
 // https://drafts.csswg.org/web-animations/#enumdef-animationplaystate
 enum AnimationPlayState { idle, running, paused, finished }

@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 2021-present The Kraken authors. All rights reserved.
  */
-import 'package:kraken/dom.dart';
-import 'package:kraken/foundation.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
 

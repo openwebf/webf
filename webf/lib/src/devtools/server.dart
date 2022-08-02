@@ -8,8 +8,8 @@ import 'dart:isolate';
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:kraken/kraken.dart';
-import 'package:kraken/devtools.dart';
+import 'package:webf/kraken.dart';
+import 'package:webf/devtools.dart';
 import 'package:ffi/ffi.dart';
 
 const String CONTENT_TYPE = 'Content-Type';

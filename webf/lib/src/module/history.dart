@@ -5,8 +5,8 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:async';
 
-import 'package:kraken/dom.dart';
-import 'package:kraken/kraken.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/kraken.dart';
 
 class HistoryItem {
   HistoryItem(this.bundle, this.state, this.needJump);

@@ -18,7 +18,7 @@ abstract class KrakenDynamicLibrary {
   }
 
   // The kraken library name.
-  static String libName = 'libkraken';
+  static String libName = 'libwebf';
 
   static String get _nativeDynamicLibraryName {
     if (Platform.isMacOS) {

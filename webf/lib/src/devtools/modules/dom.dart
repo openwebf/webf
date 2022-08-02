@@ -3,9 +3,9 @@
  */
 import 'dart:ui' as ui;
 
-import 'package:kraken/devtools.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/rendering.dart';
+import 'package:webf/devtools.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart';
 import 'package:flutter/rendering.dart';
 
 const int DOCUMENT_NODE_ID = 0;

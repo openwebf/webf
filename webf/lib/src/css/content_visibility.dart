@@ -2,7 +2,7 @@
  * Copyright (C) 2019-present The Kraken authors. All rights reserved.
  */
 
-import 'package:kraken/css.dart';
+import 'package:webf/css.dart';
 
 // CSS Content Visibility: https://www.w3.org/TR/css-contain-2/#content-visibility
 

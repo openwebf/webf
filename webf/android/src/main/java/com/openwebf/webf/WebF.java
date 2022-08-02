@@ -2,14 +2,13 @@ package com.openwebf.webf;
 
 import android.os.Handler;
 import android.os.Looper;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class WebF {
 
@@ -18,9 +17,9 @@ public class WebF {
   private FlutterEngine flutterEngine;
 
   private MethodChannel.MethodCallHandler handler;
-  private static Map<FlutterEngine, Kraken> sdkMap = new HashMap<>();
+  private static Map<FlutterEngine, WebF> sdkMap = new HashMap<>();
 
-  public Kraken(FlutterEngine flutterEngine) {
+  public WebF(FlutterEngine flutterEngine) {
     if (flutterEngine != null) {
       this.flutterEngine = flutterEngine;
       sdkMap.put(flutterEngine, this);
@@ -29,15 +28,17 @@ public class WebF {
     }
   }
 
-  public static Kraken get(FlutterEngine engine) {
+  public static WebF get(FlutterEngine engine) {
     return sdkMap.get(engine);
   }
 
   public void registerMethodCallHandler(MethodChannel.MethodCallHandler handler) {
     this.handler = handler;
   }
+
   /**
    * Load url.
+   *
    * @param url
    */
   public void loadUrl(String url) {
@@ -46,6 +47,7 @@ public class WebF {
 
   /**
    * Set the dynamic library path.
+   *
    * @param value
    */
   public void setDynamicLibraryPath(String value) {
@@ -74,7 +76,7 @@ public class WebF {
       public void run() {
         if (flutterEngine != null) {
           PluginRegistry pluginRegistry = flutterEngine.getPlugins();
-          KrakenPlugin krakenSDKPlugin = (KrakenPlugin) pluginRegistry.get(KrakenPlugin.class);
+          WebfPlugin krakenSDKPlugin = (WebfPlugin) pluginRegistry.get(WebfPlugin.class);
           if (krakenSDKPlugin != null && krakenSDKPlugin.channel != null) {
             krakenSDKPlugin.channel.invokeMethod(method, arguments);
           }
@@ -86,7 +88,7 @@ public class WebF {
   public void reload() {
     if (flutterEngine != null) {
       PluginRegistry pluginRegistry = flutterEngine.getPlugins();
-      KrakenPlugin krakenSDKPlugin = (KrakenPlugin) pluginRegistry.get(KrakenPlugin.class);
+      WebfPlugin krakenSDKPlugin = (WebfPlugin) pluginRegistry.get(WebfPlugin.class);
       if (krakenSDKPlugin != null) {
         krakenSDKPlugin.reload();
       }

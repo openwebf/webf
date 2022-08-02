@@ -9,9 +9,9 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
-import 'package:kraken/bridge.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/foundation.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
 const String AnonymousFunctionCallPreFix = '_anonymous_fn_';

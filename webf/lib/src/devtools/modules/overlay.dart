@@ -2,8 +2,8 @@
  * Copyright (C) 2020-present The Kraken authors. All rights reserved.
  */
 
-import 'package:kraken/dom.dart';
-import 'package:kraken/devtools.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/devtools.dart';
 
 class InspectOverlayModule extends UIInspectorModule {
   @override

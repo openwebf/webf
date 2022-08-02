@@ -17,15 +17,15 @@ environment:
   sdk: '>=2.12.0 <3.0.0'
 
 dependency_overrides:
-  kraken:
-    path: ../kraken
+  webf:
+    path: ../webf
 
 dependencies:
   ffi: ^1.0.0
   colorize: ^3.0.0
   flutter:
     sdk: flutter
-  kraken: 0.8.0-dev.1
+  webf: ^0.0.1
   image: ^3.0.2
   kraken_video_player: ^2.4.0
   kraken_websocket: ^2.0.0

@@ -10,7 +10,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import 'package:kraken/foundation.dart';
+import 'package:webf/foundation.dart';
 
 class CachedNetworkImageKey {
   const CachedNetworkImageKey({

@@ -2,9 +2,9 @@
  * Copyright (C) 2021-present The Kraken authors. All rights reserved.
  */
 
-import 'package:kraken/css.dart';
-import 'package:kraken/devtools.dart';
-import 'package:kraken/dom.dart';
+import 'package:webf/css.dart';
+import 'package:webf/devtools.dart';
+import 'package:webf/dom.dart';
 
 const int INLINED_STYLESHEET_ID = 1;
 const String ZERO_PX = '0px';

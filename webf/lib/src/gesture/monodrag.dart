@@ -8,7 +8,7 @@
 import 'package:flutter/gestures.dart';
 
 import 'package:flutter/rendering.dart';
-import 'package:kraken/dom.dart';
+import 'package:webf/dom.dart';
 
 typedef IsAcceptedDragCallback = bool Function(AxisDirection direction);
 

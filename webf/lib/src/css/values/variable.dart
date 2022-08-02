@@ -2,7 +2,7 @@
  * Copyright (C) 2021-present The Kraken authors. All rights reserved.
  */
 
-import 'package:kraken/css.dart';
+import 'package:webf/css.dart';
 
 const int _HYPHEN_CODE = 45; // -
 

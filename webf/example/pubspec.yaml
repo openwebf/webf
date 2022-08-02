@@ -11,8 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webf: ^0.10.0
-  kraken_websocket: ^2.0.0
+  webf: ^0.0.1
+#  kraken_websocket: ^2.0.0
 
 # When depending on this package from a real application,
 # you should remove the following overrides.

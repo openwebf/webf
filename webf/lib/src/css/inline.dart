@@ -5,7 +5,7 @@
 
 // https://www.w3.org/TR/css-inline-3/
 
-import 'package:kraken/css.dart';
+import 'package:webf/css.dart';
 
 /// Sets vertical alignment of an inline, inline-block
 enum VerticalAlign {

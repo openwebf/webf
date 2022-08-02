@@ -3,11 +3,11 @@
  */
 import 'dart:ui';
 
-import 'package:kraken/bridge.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/foundation.dart';
-import 'package:kraken/rendering.dart';
-import 'package:kraken/module.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
+import 'package:webf/module.dart';
 
 const String WINDOW = 'WINDOW';
 

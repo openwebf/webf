@@ -1,5 +1,5 @@
-import 'package:kraken/css.dart';
 import 'package:test/test.dart';
+import 'package:webf/css.dart';
 
 void main() {
   group('CSSStyleRuleParser', () {

@@ -5,7 +5,7 @@
 
 import 'dart:async';
 
-import 'package:kraken/src/module/module_manager.dart';
+import 'package:webf/src/module/module_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AsyncStorageModule extends BaseModule {

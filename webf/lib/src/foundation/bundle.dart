@@ -8,9 +8,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:kraken/foundation.dart';
-import 'package:kraken/launcher.dart';
-import 'package:kraken/module.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
+import 'package:webf/module.dart';
 
 const String DEFAULT_URL = 'about:blank';
 const String UTF_8 = 'utf-8';

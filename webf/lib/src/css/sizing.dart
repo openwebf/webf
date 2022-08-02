@@ -2,8 +2,8 @@
  * Copyright (C) 2019-present The Kraken authors. All rights reserved.
  */
 
-import 'package:kraken/css.dart';
-import 'package:kraken/rendering.dart';
+import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 
 // CSS Box Sizing: https://drafts.csswg.org/css-sizing-3/
 

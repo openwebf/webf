@@ -17,13 +17,13 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
     show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
-import 'package:kraken/bridge.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/foundation.dart';
-import 'package:kraken/gesture.dart';
-import 'package:kraken/module.dart';
-import 'package:kraken/rendering.dart';
-import 'package:kraken/widget.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/gesture.dart';
+import 'package:webf/module.dart';
+import 'package:webf/rendering.dart';
+import 'package:webf/widget.dart';
 
 const int WINDOW_ID = -1;
 const int DOCUMENT_ID = -2;

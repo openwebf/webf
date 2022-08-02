@@ -7,7 +7,7 @@ import 'dart:math';
 import 'package:quiver/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
-import 'package:kraken/css.dart';
+import 'package:webf/css.dart';
 
 /// Only support Basic color keywords and Extended color keywords,
 /// for CSS system colors is not recommended for use after CSS3

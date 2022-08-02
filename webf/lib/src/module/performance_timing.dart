@@ -5,7 +5,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:kraken/bridge.dart';
+import 'package:webf/bridge.dart';
 
 final String PERF_CONTROLLER_INIT_START = 'controller_init_start';
 final String PERF_CONTROLLER_INIT_END = 'controller_init_end';

@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2019-present The Kraken authors. All rights reserved.
  */
-import 'package:kraken/css.dart';
+import 'package:webf/css.dart';
 
 enum Visibility {
   visible,

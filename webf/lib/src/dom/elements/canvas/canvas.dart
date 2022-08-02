@@ -4,10 +4,10 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:kraken/css.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/rendering.dart';
-import 'package:kraken/foundation.dart';
+import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 
 const String CANVAS = 'CANVAS';
 const int _ELEMENT_DEFAULT_WIDTH_IN_PIXEL = 300;

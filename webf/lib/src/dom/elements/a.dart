@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 2019-present The Kraken authors. All rights reserved.
  */
-import 'package:kraken/dom.dart';
-import 'package:kraken/kraken.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/kraken.dart';
 
 const String ANCHOR = 'A';
 const String _TARGET_SELF = 'self';

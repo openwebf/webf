@@ -7,8 +7,8 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/devtools.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/devtools.dart';
 
 
 String enumKey(String key) {

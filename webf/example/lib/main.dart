@@ -2,12 +2,12 @@
  * Copyright (C) 2022-present The Kraken authors. All rights reserved.
  */
 import 'package:flutter/material.dart';
-import 'package:kraken/kraken.dart';
-import 'package:kraken/devtools.dart';
-import 'package:kraken_websocket/kraken_websocket.dart';
+import 'package:webf/kraken.dart';
+import 'package:webf/devtools.dart';
+// import 'package:kraken_websocket/kraken_websocket.dart';
 
 void main() {
-  KrakenWebsocket.initialize();
+  // KrakenWebsocket.initialize();
   runApp(MyApp());
 }
 

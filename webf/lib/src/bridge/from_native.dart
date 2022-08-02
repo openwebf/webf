@@ -9,10 +9,10 @@ import 'dart:ui';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
-import 'package:kraken/bridge.dart';
-import 'package:kraken/launcher.dart';
-import 'package:kraken/module.dart';
-import 'package:kraken/src/module/performance_timing.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/launcher.dart';
+import 'package:webf/module.dart';
+import 'package:webf/src/module/performance_timing.dart';
 
 // An native struct can be directly convert to javaScript String without any conversion cost.
 class NativeString extends Struct {

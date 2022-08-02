@@ -6,8 +6,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:kraken/foundation.dart';
-import 'package:kraken/module.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/module.dart';
 
 String EMPTY_STRING = '';
 

@@ -1,5 +1,5 @@
 import 'dart:io' show Platform;
-import 'package:kraken/src/gesture/scroll_physics.dart';
+import 'package:webf/src/gesture/scroll_physics.dart';
 import 'package:test/test.dart';
 
 // Only for test.

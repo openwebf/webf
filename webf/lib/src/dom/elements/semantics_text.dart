@@ -2,10 +2,10 @@
  * Copyright (C) 2019-present The Kraken authors. All rights reserved.
  */
 import 'package:flutter/rendering.dart';
-import 'package:kraken/css.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/rendering.dart';
-import 'package:kraken/foundation.dart';
+import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element#inline_text_semantics
 const String SPAN = 'SPAN';

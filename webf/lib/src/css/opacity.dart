@@ -4,8 +4,8 @@
 
 import 'dart:ui' as ui;
 
-import 'package:kraken/css.dart';
-import 'package:kraken/rendering.dart';
+import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 
 mixin CSSOpacityMixin on RenderStyle {
 

@@ -4,7 +4,7 @@
 import 'dart:core';
 
 import 'package:flutter/rendering.dart';
-import 'package:kraken/css.dart';
+import 'package:webf/css.dart';
 
 final RegExp _splitRegExp = RegExp(r'\s+');
 

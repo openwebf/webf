@@ -4,7 +4,7 @@
  */
 import 'dart:ui';
 
-import 'package:kraken/foundation.dart';
+import 'package:webf/foundation.dart';
 
 // As its name suggests, the Screen interface represents information about the screen of the output device.
 // https://drafts.csswg.org/cssom-view/#the-screen-interface

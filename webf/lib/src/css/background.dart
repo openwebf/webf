@@ -6,10 +6,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
-import 'package:kraken/painting.dart';
-import 'package:kraken/css.dart';
-import 'package:kraken/launcher.dart';
-import 'package:kraken/rendering.dart';
+import 'package:webf/painting.dart';
+import 'package:webf/css.dart';
+import 'package:webf/launcher.dart';
+import 'package:webf/rendering.dart';
 
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
