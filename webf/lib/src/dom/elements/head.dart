@@ -170,7 +170,8 @@ class LinkElement extends Element {
   }
 
   void _addCSSStyleSheet(String css) {
-    ownerDocument.addStyleSheet(CSSStyleSheet(css));
+    final sheet = CSSParser(css).parse();
+    ownerDocument.addStyleSheet(sheet);
   }
 
   @override
@@ -246,7 +247,8 @@ class StyleElement extends Element {
         _styleSheet!.replaceSync(text);
         ownerDocument.recalculateDocumentStyle();
       } else {
-        ownerDocument.addStyleSheet(_styleSheet = CSSStyleSheet(text));
+        final sheet = CSSParser(text).parse();
+        ownerDocument.addStyleSheet(_styleSheet = sheet);
       }
     }
   }

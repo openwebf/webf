@@ -46,7 +46,8 @@ List<String> _propertyOrders = [
 
 RegExp _kebabCaseReg = RegExp(r'[A-Z]');
 
-final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = LinkedLruHashMap(maximumSize: 500);
+final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand =
+    LinkedLruHashMap(maximumSize: 500);
 
 // CSS Object Model: https://drafts.csswg.org/cssom/#the-cssstyledeclaration-interface
 
@@ -70,7 +71,8 @@ class CSSStyleDeclaration {
 
   CSSStyleDeclaration();
   // ignore: prefer_initializing_formals
-  CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged);
+  CSSStyleDeclaration.computedStyle(
+      this.target, this.defaultStyle, this.onStyleChanged);
 
   /// An empty style declaration.
   static CSSStyleDeclaration empty = CSSStyleDeclaration();
@@ -92,6 +94,10 @@ class CSSStyleDeclaration {
       if (css.isNotEmpty) css += ' ';
       css += '${_kebabize(property)}: $value;';
     });
+    _sheetStyle.forEach((property, value) {
+      if (css.isNotEmpty) css += ' ';
+      css += '${_kebabize(property)}: $value;';
+    });
     return css;
   }
 
@@ -110,7 +116,9 @@ class CSSStyleDeclaration {
   /// If not set, returns the empty string.
   String getPropertyValue(String propertyName) {
     // Get the latest pending value first.
-    return _pendingProperties[propertyName] ?? _properties[propertyName] ?? EMPTY_STRING;
+    return _pendingProperties[propertyName] ??
+        _properties[propertyName] ??
+        EMPTY_STRING;
   }
 
   /// Removes a property from the CSS declaration.
@@ -123,7 +131,8 @@ class CSSStyleDeclaration {
       case BACKGROUND:
         return CSSStyleProperty.removeShorthandBackground(this, isImportant);
       case BACKGROUND_POSITION:
-        return CSSStyleProperty.removeShorthandBackgroundPosition(this, isImportant);
+        return CSSStyleProperty.removeShorthandBackgroundPosition(
+            this, isImportant);
       case BORDER_RADIUS:
         return CSSStyleProperty.removeShorthandBorderRadius(this, isImportant);
       case OVERFLOW:
@@ -142,11 +151,13 @@ class CSSStyleDeclaration {
       case BORDER_COLOR:
       case BORDER_STYLE:
       case BORDER_WIDTH:
-        return CSSStyleProperty.removeShorthandBorder(this, propertyName, isImportant);
+        return CSSStyleProperty.removeShorthandBorder(
+            this, propertyName, isImportant);
       case TRANSITION:
         return CSSStyleProperty.removeShorthandTransition(this, isImportant);
       case TEXT_DECORATION:
-        return CSSStyleProperty.removeShorthandTextDecoration(this, isImportant);
+        return CSSStyleProperty.removeShorthandTextDecoration(
+            this, isImportant);
     }
 
     String present = EMPTY_STRING;
@@ -162,7 +173,9 @@ class CSSStyleDeclaration {
     }
 
     // Fallback to default style.
-    if (isNullOrEmptyValue(present) && defaultStyle != null && defaultStyle!.containsKey(propertyName)) {
+    if (isNullOrEmptyValue(present) &&
+        defaultStyle != null &&
+        defaultStyle!.containsKey(propertyName)) {
       present = defaultStyle![propertyName];
     }
 
@@ -170,7 +183,8 @@ class CSSStyleDeclaration {
     _pendingProperties[propertyName] = present;
   }
 
-  void _expandShorthand(String propertyName, String normalizedValue, bool? isImportant) {
+  void _expandShorthand(
+      String propertyName, String normalizedValue, bool? isImportant) {
     Map<String, String?> longhandProperties;
     String cacheKey = '$propertyName:$normalizedValue';
     if (_cachedExpandedShorthand.containsKey(cacheKey)) {
@@ -180,31 +194,40 @@ class CSSStyleDeclaration {
 
       switch (propertyName) {
         case PADDING:
-          CSSStyleProperty.setShorthandPadding(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandPadding(
+              longhandProperties, normalizedValue);
           break;
         case MARGIN:
-          CSSStyleProperty.setShorthandMargin(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandMargin(
+              longhandProperties, normalizedValue);
           break;
         case BACKGROUND:
-          CSSStyleProperty.setShorthandBackground(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandBackground(
+              longhandProperties, normalizedValue);
           break;
         case BACKGROUND_POSITION:
-          CSSStyleProperty.setShorthandBackgroundPosition(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandBackgroundPosition(
+              longhandProperties, normalizedValue);
           break;
         case BORDER_RADIUS:
-          CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandBorderRadius(
+              longhandProperties, normalizedValue);
           break;
         case OVERFLOW:
-          CSSStyleProperty.setShorthandOverflow(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandOverflow(
+              longhandProperties, normalizedValue);
           break;
         case FONT:
-          CSSStyleProperty.setShorthandFont(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandFont(
+              longhandProperties, normalizedValue);
           break;
         case FLEX:
-          CSSStyleProperty.setShorthandFlex(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandFlex(
+              longhandProperties, normalizedValue);
           break;
         case FLEX_FLOW:
-          CSSStyleProperty.setShorthandFlexFlow(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandFlexFlow(
+              longhandProperties, normalizedValue);
           break;
         case BORDER:
         case BORDER_TOP:
@@ -214,13 +237,16 @@ class CSSStyleDeclaration {
         case BORDER_COLOR:
         case BORDER_STYLE:
         case BORDER_WIDTH:
-          CSSStyleProperty.setShorthandBorder(longhandProperties, propertyName, normalizedValue);
+          CSSStyleProperty.setShorthandBorder(
+              longhandProperties, propertyName, normalizedValue);
           break;
         case TRANSITION:
-          CSSStyleProperty.setShorthandTransition(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandTransition(
+              longhandProperties, normalizedValue);
           break;
         case TEXT_DECORATION:
-          CSSStyleProperty.setShorthandTextDecoration(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandTextDecoration(
+              longhandProperties, normalizedValue);
           break;
       }
       _cachedExpandedShorthand[cacheKey] = longhandProperties;
@@ -233,7 +259,9 @@ class CSSStyleDeclaration {
     }
   }
 
-  String _replacePattern(String string, String lowerCase, String startString, String endString, [int start = 0]) {
+  String _replacePattern(
+      String string, String lowerCase, String startString, String endString,
+      [int start = 0]) {
     int startIndex = lowerCase.indexOf(startString, start);
     if (startIndex >= 0) {
       int? endIndex;
@@ -246,7 +274,8 @@ class CSSStyleDeclaration {
         var replacement = string.substring(startIndex, endIndex);
         lowerCase = lowerCase.replaceRange(startIndex, endIndex, replacement);
         if (endIndex < string.length - 1) {
-          lowerCase = _replacePattern(string, lowerCase, startString, endString, endIndex);
+          lowerCase = _replacePattern(
+              string, lowerCase, startString, endString, endIndex);
         }
       }
     }
@@ -337,10 +366,12 @@ class CSSStyleDeclaration {
         if (!CSSColor.isColor(normalizedValue)) return false;
         break;
       case BACKGROUND_IMAGE:
-        if (!CSSBackground.isValidBackgroundImageValue(normalizedValue)) return false;
+        if (!CSSBackground.isValidBackgroundImageValue(normalizedValue))
+          return false;
         break;
       case BACKGROUND_REPEAT:
-        if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
+        if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue))
+          return false;
         break;
     }
     return true;
@@ -373,7 +404,6 @@ class CSSStyleDeclaration {
       return;
     }
 
-    // Current only from inline style will mark the property as important.
     if (isImportant == true) {
       _importants[propertyName] = true;
     }
@@ -436,6 +466,49 @@ class CSSStyleDeclaration {
     }
   }
 
+  void merge(CSSStyleDeclaration declaration) {
+    Map<String, String> properties = {}
+      ..addAll(_properties)
+      ..addAll(_pendingProperties);
+
+    for (String propertyName in properties.keys) {
+      bool isImportant = _importants[propertyName] ?? false;
+      String? currentValue = properties[propertyName];
+      String? otherValue = declaration._pendingProperties[propertyName];
+
+      if (isNullOrEmptyValue(otherValue) && isNullOrEmptyValue(currentValue)) {
+        continue;
+      } else if (!isNullOrEmptyValue(currentValue) &&
+          isNullOrEmptyValue(otherValue)) {
+        // Remove property.
+        _pendingProperties.remove(propertyName);
+      } else if (!isImportant &&
+          otherValue != null &&
+          currentValue != otherValue) {
+        // Update property.
+        _pendingProperties[propertyName] = otherValue;
+        bool otherIsImportant = declaration._importants[propertyName] ?? false;
+        if (otherIsImportant) {
+          _importants[propertyName] = true;
+        }
+      }
+    }
+
+    for (String propertyName in declaration._pendingProperties.keys) {
+      bool isImportant = _importants[propertyName] ?? false;
+      String? currentValue = properties[propertyName];
+      String? otherValue = declaration._pendingProperties[propertyName];
+      if (!isImportant && isNullOrEmptyValue(currentValue) && !isNullOrEmptyValue(otherValue)) {
+        // Add property.
+        _pendingProperties[propertyName] = otherValue!;
+        bool otherIsImportant = declaration._importants[propertyName] ?? false;
+        if (otherIsImportant) {
+          _importants[propertyName] = true;
+        }
+      }
+    }
+  }
+
   Map<String, String?> diff(CSSStyleDeclaration other) {
     Map<String, String?> diffs = {};
 
@@ -449,7 +522,8 @@ class CSSStyleDeclaration {
 
       if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
         continue;
-      } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
+      } else if (!isNullOrEmptyValue(prevValue) &&
+          isNullOrEmptyValue(currentValue)) {
         // Remove property.
         diffs[propertyName] = null;
       } else if (prevValue != currentValue) {
@@ -524,5 +598,6 @@ class CSSStyleDeclaration {
 
 // aB to a-b
 String _kebabize(String str) {
-  return str.replaceAllMapped(_kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
+  return str.replaceAllMapped(
+      _kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
 }

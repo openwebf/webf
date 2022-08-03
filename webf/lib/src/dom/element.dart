@@ -80,6 +80,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
+  String? get id => getAttribute('id');
+
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
   final bool _isReplacedElement;
@@ -1413,22 +1415,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void _applySheetStyle(CSSStyleDeclaration style) {
-    if (classList.isNotEmpty) {
-      const String classSelectorPrefix = '.';
-      for (String className in classList) {
-        for (CSSStyleSheet sheet in ownerDocument.styleSheets) {
-          List<CSSRule> rules = sheet.cssRules;
-          for (int i = 0; i < rules.length; i++) {
-            CSSRule rule = rules[i];
-            if (rule is CSSStyleRule && rule.selectorText == (classSelectorPrefix + className)) {
-              var sheetStyle = rule.style;
-              for (String propertyName in sheetStyle.keys) {
-                style.setProperty(propertyName, sheetStyle[propertyName], false);
-              }
-            }
-          }
-        }
-      }
+    for (CSSStyleSheet sheet in ownerDocument.styleSheets) {
+      RuleSet ruleSet = sheet.ruleSet;
+      CSSStyleDeclaration? matchRule = ElementRuleCollector().collectionFromRuleSet(ruleSet, this);
+      style.merge(matchRule);
     }
   }
 

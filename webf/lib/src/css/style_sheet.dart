@@ -2,7 +2,6 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-
 import 'package:webf/css.dart';
 
 abstract class StyleSheet {}
@@ -19,31 +18,29 @@ class CSSStyleSheet implements StyleSheet {
   /// A string containing the baseURL used to resolve relative URLs in the stylesheet.
   String? herf;
 
-  List<CSSRule> cssRules = [];
+  final RuleSet ruleSet;
 
-  CSSStyleSheet(String text, {this.disabled = false, this.herf}) {
-    List<CSSRule> rules = CSSParser.parseRules(text, parentStyleSheet: this);
-    cssRules.addAll(rules);
-  }
+  CSSStyleSheet(this.ruleSet, {this.disabled = false, this.herf});
 
   insertRule(String text, int index) {
-    CSSRule? rule = CSSParser.parseRule(text);
-    if (rule != null) {
-      cssRules.insert(index, rule);
-    } else {
-      // TODO: throw error
+    List<CSSRule> rules = CSSParser(text).parseRules();
+    for (CSSRule rule in rules) {
+      ruleSet.addRule(rule);
     }
   }
 
   /// Removes a rule from the stylesheet object.
   deleteRule(int index) {
-    cssRules.removeAt(index);
+    ruleSet.deleteRule(index);
   }
 
   /// Synchronously replaces the content of the stylesheet with the content passed into it.
   replaceSync(String text) {
-    cssRules.clear();
-    cssRules.addAll(CSSParser.parseRules(text));
+    ruleSet.reset();
+    List<CSSRule> rules = CSSParser(text).parseRules();
+    for (CSSRule rule in rules) {
+      ruleSet.addRule(rule);
+    }
   }
 
   replace(String text) {
