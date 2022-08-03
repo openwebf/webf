@@ -26,8 +26,7 @@ export 'src/css/style_rule.dart';
 export 'src/css/style_declaration.dart';
 export 'src/css/style_property.dart';
 export 'src/css/style_sheet.dart';
-export 'src/css/parser/style_rule_parser.dart';
-export 'src/css/parser/style_sheet_parser.dart';
+export 'src/css/rule_set.dart';
 export 'src/css/parser/parser.dart';
 export 'src/css/text.dart';
 export 'src/css/origin.dart';
@@ -43,6 +42,8 @@ export 'src/css/sliver.dart';
 export 'src/css/value.dart';
 export 'src/css/variable.dart';
 export 'src/css/keywords.dart';
+
+export 'src/css/element_rule_collector.dart';
 
 // CSS Values
 // ignore: directives_ordering

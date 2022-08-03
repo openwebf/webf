@@ -100,6 +100,20 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return null;
   }
 
+  Element? get previousElementSibling {
+    if (previousSibling != null && previousSibling!.nodeType == NodeType.ELEMENT_NODE) {
+      return previousSibling as Element;
+    }
+    return null;
+  }
+
+  Element? get nextElementSibling {
+    if (nextSibling != null && nextSibling!.nodeType == NodeType.ELEMENT_NODE) {
+      return nextSibling as Element;
+    }
+    return null;
+  }
+
   Node(this.nodeType, [BindingContext? context]) : super(context);
 
   // If node is on the tree, the root parent is body.
