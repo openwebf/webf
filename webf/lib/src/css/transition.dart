@@ -11,27 +11,6 @@ import 'package:webf/dom.dart';
 // CSS Transitions: https://drafts.csswg.org/css-transitions/
 const String _0s = '0s';
 
-String _toCamelCase(String s) {
-  var sb = StringBuffer();
-  var shouldUpperCase = false;
-  for (int rune in s.runes) {
-    // '-' char code is 45
-    if (rune == 45) {
-      shouldUpperCase = true;
-    } else {
-      var char = String.fromCharCode(rune);
-      if (shouldUpperCase) {
-        sb.write(char.toUpperCase());
-        shouldUpperCase = false;
-      } else {
-        sb.write(char);
-      }
-    }
-  }
-
-  return sb.toString();
-}
-
 Color? _parseColor(String color, RenderStyle renderStyle, String propertyName) {
   return CSSColor.resolveColor(color, renderStyle, propertyName);
 }
@@ -279,7 +258,7 @@ mixin CSSTransitionMixin on RenderStyle {
     Map<String, List> transitions = {};
 
     for (int i = 0; i < transitionProperty.length; i++) {
-      String property = _toCamelCase(transitionProperty[i]);
+      String property = camelize(transitionProperty[i]);
       String duration = transitionDuration.length == 1 ? transitionDuration[0] : transitionDuration[i];
       String function =
           transitionTimingFunction.length == 1 ? transitionTimingFunction[0] : transitionTimingFunction[i];

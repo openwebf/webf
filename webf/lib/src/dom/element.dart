@@ -1452,8 +1452,14 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
-      style.merge(newStyle);
-      style.flushPendingProperties();
+      Map<String, String?> diffs = style.diff(newStyle);
+      if (diffs.isNotEmpty) {
+        // Update render style.
+        diffs.forEach((String propertyName, String? value) {
+          style.setProperty(propertyName, value);
+        });
+        style.flushPendingProperties();
+      }
     }
   }
 

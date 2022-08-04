@@ -451,14 +451,9 @@ class CSSStyleDeclaration {
       String? currentValue = properties[propertyName];
       String? otherValue = declaration._pendingProperties[propertyName];
 
-      if (isNullOrEmptyValue(otherValue) && isNullOrEmptyValue(currentValue)) {
-        continue;
-      } else if (!isNullOrEmptyValue(currentValue) && isNullOrEmptyValue(otherValue)) {
-        // Remove property.
-        _pendingProperties.remove(propertyName);
-      } else if (!isImportant && otherValue != null && currentValue != otherValue) {
+      if (!isImportant && !isNullOrEmptyValue(otherValue) && currentValue != otherValue) {
         // Update property.
-        _pendingProperties[propertyName] = otherValue;
+        _pendingProperties[propertyName] = otherValue!;
         bool otherIsImportant = declaration._importants[propertyName] ?? false;
         if (otherIsImportant) {
           _importants[propertyName] = true;

@@ -30,10 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 part of 'parser.dart';
 
-/////////////////////////////////////////////////////////////////////////
-// CSS specific types:
-/////////////////////////////////////////////////////////////////////////
-
 /// The base type for all nodes in a CSS abstract syntax tree.
 abstract class TreeNode {
   TreeNode clone();
@@ -79,29 +75,4 @@ class Negation extends TreeNode {
   Negation clone() => Negation();
 
   String get name => 'not';
-}
-
-class NoOp extends TreeNode {
-  NoOp() : super();
-
-  @override
-  NoOp clone() => NoOp();
-}
-
-/// The base type for expressions.
-abstract class Expression extends TreeNode {
-  @override
-  Expression clone();
-}
-
-class OperatorSlash extends Expression {
-  OperatorSlash() : super();
-  @override
-  OperatorSlash clone() => OperatorSlash();
-}
-
-class OperatorComma extends Expression {
-  OperatorComma() : super();
-  @override
-  OperatorComma clone() => OperatorComma();
 }

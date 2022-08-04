@@ -863,7 +863,7 @@ class CSSParser {
   void processDeclaration(CSSStyleDeclaration style) {
     // IDENT ':' expr '!important'?
     if (TokenKind.isIdentifier(_peekToken.kind)) {
-      var propertyIdent = identifier().name;
+      var propertyIdent = camelize(identifier().name);
 
       var resetProperty = false;
       var keepGoing = true;
