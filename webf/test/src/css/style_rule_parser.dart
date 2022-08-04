@@ -135,5 +135,11 @@ void main() {
       CSSStyleRule styleRule = rule as CSSStyleRule;
       expect(styleRule.lastSimpleSelector?.name, 'foo');
     });
+
+  test('16', () {
+    CSSRule? rule = parseSingleRule(' .foo { margin: 64px 0 32px; text-align: center;}');
+    CSSStyleRule styleRule = rule as CSSStyleRule;
+    expect(styleRule.lastSimpleSelector?.name, 'foo');
+  });
   });
 }
