@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
@@ -8,15 +7,13 @@ import 'package:webf/dom.dart';
 import 'package:webf/src/css/selector_evaluator.dart';
 
 class ElementRuleCollector {
-
   CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
-
     List<CSSRule> matchedRules = [];
 
     // #id
     String? id = element.id;
     if (id != null) {
-       matchedRules.addAll(_collectMatchingRulesForList(ruleSet.idRules[id], element));
+      matchedRules.addAll(_collectMatchingRulesForList(ruleSet.idRules[id], element));
     }
 
     // .class
@@ -35,6 +32,7 @@ class ElementRuleCollector {
     // universal
     matchedRules.addAll(_collectMatchingRulesForList(ruleSet.universalRules, element));
 
+    // sort selector
     matchedRules.sort((leftRule, rightRule) {
       if (leftRule is! CSSStyleRule || rightRule is! CSSStyleRule) {
         return 0;
@@ -42,6 +40,7 @@ class ElementRuleCollector {
       return leftRule.selectorGroup.specificity.compareTo(rightRule.selectorGroup.specificity);
     });
 
+    // Merge all the rules
     CSSStyleDeclaration declaration = CSSStyleDeclaration();
     for (CSSRule rule in matchedRules.reversed) {
       if (rule is CSSStyleRule) {

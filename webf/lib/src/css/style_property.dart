@@ -5,6 +5,8 @@
 
 import 'package:webf/css.dart';
 
+// a-b to aB
+final RegExp _camelCaseReg = RegExp(r'-(\w)');
 final RegExp _spaceRegExp = RegExp(r'\s+(?![^(]*\))');
 final RegExp _commaRegExp = RegExp(r',(?![^\(]*\))');
 final RegExp _slashRegExp = RegExp(r'\/(?![^(]*\))');
@@ -14,6 +16,14 @@ const String _0s = '0s';
 const String _0 = '0';
 const String _1 = '1';
 const String _0Percent = '0%';
+
+// a-b -> aB
+String camelize(String str) {
+  return str.replaceAllMapped(RegExp(r'-(\w)'), (match) {
+    String subStr = match[0]!.substring(1);
+    return subStr.isNotEmpty ? subStr.toUpperCase() : '';
+  });
+}
 
 // Origin version: https://github.com/jedmao/css-list-helpers/blob/master/src/index.ts
 List<String> _splitBySpace(String value) {
