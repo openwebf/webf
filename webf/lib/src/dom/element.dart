@@ -1448,19 +1448,12 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void recalculateStyle() {
-    // TODO: current only support class selector in stylesheet
-    if (renderBoxModel != null && classList.isNotEmpty) {
+    if (renderBoxModel != null) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
-      Map<String, String?> diffs = style.diff(newStyle);
-      if (diffs.isNotEmpty) {
-        // Update render style.
-        diffs.forEach((String propertyName, String? value) {
-          style.setProperty(propertyName, value);
-        });
-        style.flushPendingProperties();
-      }
+      style.merge(newStyle);
+      style.flushPendingProperties();
     }
   }
 

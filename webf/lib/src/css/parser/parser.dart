@@ -561,7 +561,10 @@ class CSSParser {
             ThisOperator(),
           )
         : simpleSelector();
-    if (simpleSel == null && (combinatorType == TokenKind.COMBINATOR_PLUS || combinatorType == TokenKind.COMBINATOR_GREATER || combinatorType == TokenKind.COMBINATOR_TILDE)) {
+    if (simpleSel == null &&
+        (combinatorType == TokenKind.COMBINATOR_PLUS ||
+            combinatorType == TokenKind.COMBINATOR_GREATER ||
+            combinatorType == TokenKind.COMBINATOR_TILDE)) {
       // For "+ &", "~ &" or "> &" a selector sequence with no name is needed
       // so that the & will have a combinator too.  This is needed to
       // disambiguate selector expressions:
@@ -703,7 +706,8 @@ class CSSParser {
 
         _eat(TokenKind.RPAREN);
         return NegationSelector(negArg);
-      } else if (!pseudoElement && (name == 'host' || name == 'host-context' || name == 'global-context' || name == '-acx-global-context')) {
+      } else if (!pseudoElement &&
+          (name == 'host' || name == 'host-context' || name == 'global-context' || name == '-acx-global-context')) {
         _eat(TokenKind.LPAREN);
         var selector = processCompoundSelector();
         if (selector == null) {
@@ -729,13 +733,17 @@ class CSSParser {
         // Used during selector look-a-head if not a SelectorExpression is
         // bad.
         _eat(TokenKind.RPAREN);
-        return (pseudoElement) ? PseudoElementFunctionSelector(pseudoName, expr) : PseudoClassFunctionSelector(pseudoName, expr);
+        return (pseudoElement)
+            ? PseudoElementFunctionSelector(pseudoName, expr)
+            : PseudoClassFunctionSelector(pseudoName, expr);
       }
     }
 
     // Treat CSS2.1 pseudo-elements defined with pseudo class syntax as pseudo-
     // elements for backwards compatibility.
-    return pseudoElement || _legacyPseudoElements.contains(name) ? PseudoElementSelector(pseudoName, isLegacy: !pseudoElement) : PseudoClassSelector(pseudoName);
+    return pseudoElement || _legacyPseudoElements.contains(name)
+        ? PseudoElementSelector(pseudoName, isLegacy: !pseudoElement)
+        : PseudoClassSelector(pseudoName);
   }
 
   /// In CSS3, the expressions are identifiers, strings, or of the form "an+b".
@@ -880,7 +888,7 @@ class CSSParser {
         }
       }
 
-      var expr = processExpr().join(' ');
+      var expr = processExpr();
 
       // Handle !important (prio)
       var importantPriority = _maybeEat(TokenKind.IMPORTANT);
@@ -899,139 +907,16 @@ class CSSParser {
   //  expression:   term [ operator? term]*
   //
   //  operator:     '/' | ','
-  //  term:         (see processTerm)
-  List<String> processExpr([bool ieFilter = false]) {
+  String processExpr([bool ieFilter = false]) {
     var start = _peekToken.span;
-
-    var keepGoing = true;
-    List<String> result = [];
-    String? expr;
-    while (keepGoing && (expr = processTerm()) != null) {
-      Expression? op;
-
-      var opStart = _peekToken.span;
-
-      switch (_peek()) {
-        case TokenKind.SLASH:
-          op = OperatorSlash();
-          break;
-        case TokenKind.COMMA:
-          op = OperatorComma();
-          break;
-        case TokenKind.BACKSLASH:
-          _next();
-          if (_peekKind(TokenKind.INTEGER)) {
-            _next();
-            if (isChecked) {
-              _warning('\$value is not valid in an expression', _makeSpan(start));
-            }
-          }
-          break;
-      }
-
-      if (expr != null) {
-        result.add(expr);
-      } else {
-        keepGoing = false;
-      }
-
-      if (op != null) {
-        result.add(_makeSpan(opStart).text);
-        _next();
-      }
+    FileSpan? end;
+    while (_peek() != TokenKind.SEMICOLON) {
+      end = _next().span;
     }
-    return result;
-  }
-
-  String? processTerm() {
-    var start = _peekToken.span;
-    Token? t; // token for term's value
-    dynamic value; // value of term (numeric values)
-
-    var unary = '';
-    switch (_peek()) {
-      case TokenKind.HASH:
-        _eat(TokenKind.HASH);
-        if (!_anyWhiteSpaceBeforePeekToken(TokenKind.HASH)) {
-          String? hexText;
-          if (_peekKind(TokenKind.INTEGER)) {
-            var hexText1 = _peekToken.text;
-            _next();
-            // Append identifier only if there's no delimiting whitespace.
-            if (_peekIdentifier() && _previousToken!.end == _peekToken.start) {
-              hexText = '$hexText1${identifier().name}';
-            } else {
-              hexText = hexText1;
-            }
-          } else if (_peekIdentifier()) {
-            hexText = identifier().name;
-          }
-          return '#$hexText';
-        }
-
-        if (isChecked) {
-          _warning('Expected hex number', _makeSpan(start));
-        }
-        // Construct the bad hex value with a #<space>number.
-        return start.text;
-      case TokenKind.INTEGER:
-      case TokenKind.DOUBLE:
-        t = _next();
-        return '$unary${t.text}';
-      case TokenKind.SINGLE_QUOTE:
-        value = processQuotedString(false);
-        value = "'${_escapeString(value as String, single: true)}'";
-        return value;
-      case TokenKind.DOUBLE_QUOTE:
-        value = processQuotedString(false);
-        value = '"${_escapeString(value as String)}"';
-        return value;
-      case TokenKind.LPAREN:
-        _next();
-        return null;
-      case TokenKind.LBRACK:
-        _next();
-        return null;
-      case TokenKind.IDENTIFIER:
-        var nameValue = identifier(); // Snarf up the ident we'll remap, maybe.
-
-        if (_maybeEat(TokenKind.LPAREN)) {
-          return processFunction(nameValue);
-        }
-        return nameValue.name;
-      case TokenKind.UNICODE_RANGE:
-        String? first;
-        String? second;
-        int firstNumber;
-        int secondNumber;
-        _eat(TokenKind.UNICODE_RANGE, unicodeRange: true);
-        if (_maybeEat(TokenKind.HEX_INTEGER, unicodeRange: true)) {
-          first = _previousToken!.text;
-          firstNumber = int.parse('0x$first');
-          if (firstNumber > MAX_UNICODE) {
-            _error('unicode range must be less than 10FFFF', _makeSpan(start));
-          }
-          if (_maybeEat(TokenKind.MINUS, unicodeRange: true)) {
-            if (_maybeEat(TokenKind.HEX_INTEGER, unicodeRange: true)) {
-              second = _previousToken!.text;
-              secondNumber = int.parse('0x$second');
-              if (secondNumber > MAX_UNICODE) {
-                _error('unicode range must be less than 10FFFF', _makeSpan(start));
-              }
-              if (firstNumber > secondNumber) {
-                _error('unicode first range can not be greater than last', _makeSpan(start));
-              }
-            }
-          }
-        } else if (_maybeEat(TokenKind.HEX_RANGE, unicodeRange: true)) {
-          first = _previousToken!.text;
-        }
-        return 'U+$first-$second';
-      case TokenKind.AT:
-        break;
+    if (end != null) {
+      return start.expand(end).text;
     }
-
-    return null;
+    return '';
   }
 
   static const int MAX_UNICODE = 0x10FFFF;
@@ -1141,7 +1026,7 @@ class CSSParser {
         if (!_maybeEat(TokenKind.RPAREN)) {
           _error('problem parsing function expected ), ', _peekToken.span);
         }
-        return 'rgb(${expr.join()})';
+        return 'rgb($expr)';
       case 'url':
         // URI term sucks up everything inside of quotes(' or ") or between
         // parens.
@@ -1176,7 +1061,7 @@ class CSSParser {
         if (!_maybeEat(TokenKind.RPAREN)) {
           _error('problem parsing function expected ), ', _peekToken.span);
         }
-        return expr.join();
+        return expr;
     }
   }
 

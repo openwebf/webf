@@ -1,5 +1,5 @@
 /*
-Copyright 2013, the Dart project authors. 
+Copyright 2013, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -137,35 +137,6 @@ class TokenKind {
   static const int SUBSTRING_MATCH = 534; // '*='
   static const int NO_MATCH = 535; // No operator.
 
-  // Unit types:
-  static const int UNIT_EM = 600;
-  static const int UNIT_EX = 601;
-  static const int UNIT_LENGTH_PX = 602;
-  static const int UNIT_LENGTH_CM = 603;
-  static const int UNIT_LENGTH_MM = 604;
-  static const int UNIT_LENGTH_IN = 605;
-  static const int UNIT_LENGTH_PT = 606;
-  static const int UNIT_LENGTH_PC = 607;
-  static const int UNIT_ANGLE_DEG = 608;
-  static const int UNIT_ANGLE_RAD = 609;
-  static const int UNIT_ANGLE_GRAD = 610;
-  static const int UNIT_ANGLE_TURN = 611;
-  static const int UNIT_TIME_MS = 612;
-  static const int UNIT_TIME_S = 613;
-  static const int UNIT_FREQ_HZ = 614;
-  static const int UNIT_FREQ_KHZ = 615;
-  static const int UNIT_PERCENT = 616;
-  static const int UNIT_FRACTION = 617;
-  static const int UNIT_RESOLUTION_DPI = 618;
-  static const int UNIT_RESOLUTION_DPCM = 619;
-  static const int UNIT_RESOLUTION_DPPX = 620;
-  static const int UNIT_CH = 621; // Measure of "0" U+0030 glyph.
-  static const int UNIT_REM = 622; // computed value ‘font-size’ on root elem.
-  static const int UNIT_VIEWPORT_VW = 623;
-  static const int UNIT_VIEWPORT_VH = 624;
-  static const int UNIT_VIEWPORT_VMIN = 625;
-  static const int UNIT_VIEWPORT_VMAX = 626;
-
   // Directives (@nnnn)
   static const int DIRECTIVE_NONE = 640;
   static const int DIRECTIVE_IMPORT = 641;
@@ -271,57 +242,9 @@ class TokenKind {
     {'type': TokenKind.MARGIN_DIRECTIVE_RIGHTBOTTOM, 'value': 'right-bottom'},
   ];
 
-  static const List<Map<String, dynamic>> _UNITS = [
-    {'unit': TokenKind.UNIT_EM, 'value': 'em'},
-    {'unit': TokenKind.UNIT_EX, 'value': 'ex'},
-    {'unit': TokenKind.UNIT_LENGTH_PX, 'value': 'px'},
-    {'unit': TokenKind.UNIT_LENGTH_CM, 'value': 'cm'},
-    {'unit': TokenKind.UNIT_LENGTH_MM, 'value': 'mm'},
-    {'unit': TokenKind.UNIT_LENGTH_IN, 'value': 'in'},
-    {'unit': TokenKind.UNIT_LENGTH_PT, 'value': 'pt'},
-    {'unit': TokenKind.UNIT_LENGTH_PC, 'value': 'pc'},
-    {'unit': TokenKind.UNIT_ANGLE_DEG, 'value': 'deg'},
-    {'unit': TokenKind.UNIT_ANGLE_RAD, 'value': 'rad'},
-    {'unit': TokenKind.UNIT_ANGLE_GRAD, 'value': 'grad'},
-    {'unit': TokenKind.UNIT_ANGLE_TURN, 'value': 'turn'},
-    {'unit': TokenKind.UNIT_TIME_MS, 'value': 'ms'},
-    {'unit': TokenKind.UNIT_TIME_S, 'value': 's'},
-    {'unit': TokenKind.UNIT_FREQ_HZ, 'value': 'hz'},
-    {'unit': TokenKind.UNIT_FREQ_KHZ, 'value': 'khz'},
-    {'unit': TokenKind.UNIT_FRACTION, 'value': 'fr'},
-    {'unit': TokenKind.UNIT_RESOLUTION_DPI, 'value': 'dpi'},
-    {'unit': TokenKind.UNIT_RESOLUTION_DPCM, 'value': 'dpcm'},
-    {'unit': TokenKind.UNIT_RESOLUTION_DPPX, 'value': 'dppx'},
-    {'unit': TokenKind.UNIT_CH, 'value': 'ch'},
-    {'unit': TokenKind.UNIT_REM, 'value': 'rem'},
-    {'unit': TokenKind.UNIT_VIEWPORT_VW, 'value': 'vw'},
-    {'unit': TokenKind.UNIT_VIEWPORT_VH, 'value': 'vh'},
-    {'unit': TokenKind.UNIT_VIEWPORT_VMIN, 'value': 'vmin'},
-    {'unit': TokenKind.UNIT_VIEWPORT_VMAX, 'value': 'vmax'},
-  ];
-
   // Some more constants:
   static const int ASCII_UPPER_A = 65; // ASCII value for uppercase A
   static const int ASCII_UPPER_Z = 90; // ASCII value for uppercase Z
-
-  // TODO(terry): Should used Dart mirroring for parameter values and types
-  //              especially for enumeration (e.g., counter's second parameter
-  //              is list-style-type which is an enumerated list for ordering
-  //              of a list 'circle', 'decimal', 'lower-roman', 'square', etc.
-  //              see http://www.w3schools.com/cssref/pr_list-style-type.asp
-  //              for list of possible values.
-
-  /// Check if name is a pre-defined CSS name.  Used by error handler to report
-  /// if name is unknown or used improperly.
-  static bool isPredefinedName(String name) {
-    var nameLen = name.length;
-    // TODO(terry): Add more pre-defined names (hidden, bolder, inherit, etc.).
-    if (matchUnits(name, 0, nameLen) == -1 || matchDirectives(name, 0, nameLen) == -1 || matchMarginDirectives(name, 0, nameLen) == -1) {
-      return false;
-    }
-
-    return true;
-  }
 
   /// Return the token that matches the unit ident found.
   static int matchList(Iterable<Map<String, dynamic>> identList, String tokenField, String text, int offset, int length) {
@@ -351,11 +274,6 @@ class TokenKind {
     return -1; // Not a unit token.
   }
 
-  /// Return the token that matches the unit ident found.
-  static int matchUnits(String text, int offset, int length) {
-    return matchList(_UNITS, 'unit', text, offset, length);
-  }
-
   /// Return the token that matches the directive name found.
   static int matchDirectives(String text, int offset, int length) {
     return matchList(_DIRECTIVES, 'type', text, offset, length);
@@ -380,22 +298,6 @@ class TokenKind {
     }
 
     return null;
-  }
-
-  /// Return the unit token as its pretty name.
-  static String? unitToString(int unitTokenToFind) {
-    if (unitTokenToFind == TokenKind.PERCENT) {
-      return '%';
-    } else {
-      for (final entry in _UNITS) {
-        final unit = entry['unit'] as int;
-        if (unit == unitTokenToFind) {
-          return entry['value'] as String?;
-        }
-      }
-    }
-
-    return '<BAD UNIT>'; // Not a unit token.
   }
 
   /// Return RGB value as [int] from a color entry in _EXTENDED_COLOR_NAMES.
@@ -525,22 +427,6 @@ class TokenKind {
       case TokenKind.DIRECTIVE_MIXIN:
       case TokenKind.DIRECTIVE_INCLUDE:
       case TokenKind.DIRECTIVE_CONTENT:
-      case TokenKind.UNIT_EM:
-      case TokenKind.UNIT_EX:
-      case TokenKind.UNIT_LENGTH_PX:
-      case TokenKind.UNIT_LENGTH_CM:
-      case TokenKind.UNIT_LENGTH_MM:
-      case TokenKind.UNIT_LENGTH_IN:
-      case TokenKind.UNIT_LENGTH_PT:
-      case TokenKind.UNIT_LENGTH_PC:
-      case TokenKind.UNIT_ANGLE_DEG:
-      case TokenKind.UNIT_ANGLE_RAD:
-      case TokenKind.UNIT_ANGLE_GRAD:
-      case TokenKind.UNIT_TIME_MS:
-      case TokenKind.UNIT_TIME_S:
-      case TokenKind.UNIT_FREQ_HZ:
-      case TokenKind.UNIT_FREQ_KHZ:
-      case TokenKind.UNIT_FRACTION:
         return true;
       default:
         return false;

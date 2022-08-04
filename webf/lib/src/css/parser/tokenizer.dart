@@ -1,5 +1,5 @@
 /*
-Copyright 2013, the Dart project authors. 
+Copyright 2013, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -264,10 +264,6 @@ class Tokenizer extends TokenizerBase {
     // Is the identifier a unit type?
     var tokId = -1;
 
-    // Don't match units in selectors or selector expressions.
-    if (!inSelectorExpression && !inSelector) {
-      tokId = TokenKind.matchUnits(_text, _startIndex, _index - _startIndex);
-    }
     if (tokId == -1) {
       tokId = (_text.substring(_startIndex, _index) == '!important') ? TokenKind.IMPORTANT : -1;
     }

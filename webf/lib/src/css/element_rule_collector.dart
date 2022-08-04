@@ -5,7 +5,7 @@
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/src/css/selector_checker.dart';
+import 'package:webf/src/css/selector_evaluator.dart';
 
 class ElementRuleCollector {
 
