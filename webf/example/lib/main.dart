@@ -6,9 +6,10 @@
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf_websocket/webf_websocket.dart';
 
 void main() {
-  // KrakenWebsocket.initialize();
+  WebFWebSocket.initialize();
   runApp(MyApp());
 }
 

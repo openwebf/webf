@@ -1,6 +1,6 @@
-# kraken_example
+# webf_example
 
-Demonstrates how to use the kraken plugin.
+Demonstrates how to use the webf plugin.
 
 ## Getting Started
 
