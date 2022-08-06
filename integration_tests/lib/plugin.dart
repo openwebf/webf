@@ -1,34 +1,30 @@
 /*
- * Copyright (C) 2022-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:kraken/bridge.dart';
-import 'package:kraken/css.dart';
-import 'package:kraken/dom.dart';
-import 'package:kraken/foundation.dart';
-import 'package:kraken/widget.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/widget.dart';
 import 'package:ansicolor/ansicolor.dart';
 import 'package:path/path.dart' as path;
-import 'package:kraken_websocket/kraken_websocket.dart';
-import 'package:kraken_video_player/kraken_video_player.dart';
-import 'package:kraken_webview/kraken_webview.dart';
+import 'package:webf_websocket/webf_websocket.dart';
 
 import 'bridge/from_native.dart';
 import 'bridge/to_native.dart';
-import 'custom/custom_object_element.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
 
 final String __dirname = path.dirname(Platform.script.path);
-final String testDirectory =
-    Platform.environment['KRAKEN_TEST_DIR'] ?? __dirname;
+final String testDirectory = Platform.environment['KRAKEN_TEST_DIR'] ?? __dirname;
 
 const int KRAKEN_NUM = 1;
-Map<int, Kraken> krakenMap = Map();
+Map<int, WebF> krakenMap = Map();
 
 // Test for UriParser.
 class IntegrationTestUriParser extends UriParser {
@@ -45,12 +41,9 @@ class IntegrationTestUriParser extends UriParser {
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
   // Overrides library name.
-  KrakenDynamicLibrary.libName = 'libkraken_test';
+  WebFDynamicLibrary.libName = 'libkraken_test';
 
-  KrakenWebsocket.initialize();
-  KrakenVideoPlayer.initialize();
-  KrakenWebView.initialize();
-  setObjectElementFactory(customObjectElementFactory);
+  WebFWebSocket.initialize();
 
   // FIXME: This is a workaround for testcase
   ParagraphElement.defaultStyle = {
@@ -63,19 +56,15 @@ void main() async {
   File specs = File(path.join(testDirectory, '.specs/plugin.build.js'));
 
   List<Map<String, String>> allSpecsPayload = [
-    {
-      'filename': path.basename(specs.path),
-      'filepath': specs.path,
-      'code': specs.readAsStringSync()
-    }
+    {'filename': path.basename(specs.path), 'filepath': specs.path, 'code': specs.readAsStringSync()}
   ];
   List<Widget> widgets = [];
 
   for (int i = 0; i < KRAKEN_NUM; i++) {
-    var kraken = krakenMap[i] = Kraken(
+    var kraken = krakenMap[i] = WebF(
       viewportWidth: 360,
       viewportHeight: 640,
-      bundle: KrakenBundle.fromContent('console.log("Starting Plugin tests...")'),
+      bundle: WebFBundle.fromContent('console.log("Starting Plugin tests...")'),
       disableViewportWidthAssertion: true,
       disableViewportHeightAssertion: true,
       uriParser: IntegrationTestUriParser(),
@@ -94,7 +83,9 @@ void main() async {
     ),
   ));
 
-  WidgetsBinding.instance!.addPostFrameCallback((_) async {
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    registerDartTestMethodsToCpp();
+
     List<Future<String>> testResults = [];
 
     for (int i = 0; i < widgets.length; i++) {
@@ -103,7 +94,6 @@ void main() async {
       addJSErrorListener(contextId, (String err) {
         print(err);
       });
-      registerDartTestMethodsToCpp(contextId);
 
       Map<String, String> payload = allSpecsPayload[i];
 
