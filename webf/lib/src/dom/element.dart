@@ -971,12 +971,12 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
+    internalSetAttribute(qualifiedName, value);
     if (_STYLE_PROPERTY == qualifiedName) {
       // @TODO: Parse inline style css text.
     } else if (_CLASS_NAME == qualifiedName) {
       className = value;
     }
-    internalSetAttribute(qualifiedName, value);
   }
 
   void internalSetAttribute(String qualifiedName, String value) {

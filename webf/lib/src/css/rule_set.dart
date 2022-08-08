@@ -84,12 +84,12 @@ class RuleSet {
     }
 
     if (attributeName != null && attributeName.isNotEmpty == true) {
-      insertRule(attributeName, rule, attributeRules);
+      insertRule(attributeName.toUpperCase(), rule, attributeRules);
       return;
     }
 
     if (tagName != null && tagName.isNotEmpty == true) {
-      insertRule(tagName, rule, tagRules);
+      insertRule(tagName.toUpperCase(), rule, tagRules);
       return;
     }
     universalRules.add(rule);

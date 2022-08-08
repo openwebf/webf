@@ -23,7 +23,7 @@ class ElementRuleCollector {
 
     // attribute selector
     for (String attribute in element.attributes.keys) {
-      matchedRules.addAll(_collectMatchingRulesForList(ruleSet.attributeRules[attribute], element));
+      matchedRules.addAll(_collectMatchingRulesForList(ruleSet.attributeRules[attribute.toUpperCase()], element));
     }
 
     // tag
