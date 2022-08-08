@@ -634,4 +634,4 @@ Rendering: %.*fms
 
 #endif
 
-}  // namespace webf
+}  // namespace kraken

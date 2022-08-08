@@ -23,7 +23,8 @@ using ConsoleMessageHandler = std::function<void(void* ctx, const std::string& m
 /// WebFPage is class which manage all js objects create by <WebF> flutter widget.
 /// Every <WebF> flutter widgets have a corresponding WebFPage, and all objects created by JavaScript are stored here,
 /// and there is no data sharing between objects between different WebFPages.
-/// It's safe to allocate many WebFPages at the same times on one thread, but not safe for multi-threads, only one thread can enter to WebFPage at the same time.
+/// It's safe to allocate many WebFPages at the same times on one thread, but not safe for multi-threads, only one
+/// thread can enter to WebFPage at the same time.
 class WebFPage final {
  public:
   static webf::WebFPage** pageContextPool;

@@ -8,9 +8,9 @@
 /// Functions implements at dart side, including timer, Rendering and module API.
 /// Communicate via Dart FFI.
 
-#include "webf_bridge.h"
 #include <memory>
 #include <thread>
+#include "webf_bridge.h"
 
 #include "foundation/native_string.h"
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
@@ -93,6 +93,6 @@ struct DartMethodPointer {
 #endif
 };
 
-}  // namespace webf
+}  // namespace kraken
 
 #endif
