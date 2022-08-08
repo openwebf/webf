@@ -13,7 +13,7 @@ const { generateJSONTemplate } = require('../dist/json/generator');
 
 program
   .version(packageJSON.version)
-  .description('Kraken code generator.')
+  .description('WebF code generator.')
   .requiredOption('-s, --source <path>', 'source directory.')
   .requiredOption('-d, --dist <path>', 'destionation directory.')
 

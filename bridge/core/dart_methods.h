@@ -2,16 +2,18 @@
  * Copyright (C) 2019-present The Kraken authors. All rights reserved.
  */
 
-#ifndef KRAKEN_DART_METHODS_H_
-#define KRAKEN_DART_METHODS_H_
+#ifndef WEBF_DART_METHODS_H_
+#define WEBF_DART_METHODS_H_
 
 /// Functions implements at dart side, including timer, Rendering and module API.
 /// Communicate via Dart FFI.
 
+#include "webf_bridge.h"
 #include <memory>
 #include <thread>
 
 #include "foundation/native_string.h"
+#define WEBF_EXPORT __attribute__((__visibility__("default")))
 
 namespace kraken {
 
@@ -91,6 +93,6 @@ struct DartMethodPointer {
 #endif
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif

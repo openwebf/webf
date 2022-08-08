@@ -1,21 +1,22 @@
 /*
- * Copyright (C) 2021-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "core/dom/legacy/bounding_client_rect.h"
 #include "gtest/gtest.h"
-#include "kraken_test_env.h"
+#include "webf_test_env.h"
 using namespace kraken;
 
 TEST(Element, setAttribute) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "1234");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -32,12 +33,12 @@ TEST(Element, setAttribute) {
 TEST(Element, getAttribute) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "helloworld");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -60,12 +61,12 @@ TEST(Element, getAttribute) {
 TEST(Element, setAttributeWithHTML) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "100%");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -81,12 +82,12 @@ TEST(Element, setAttributeWithHTML) {
 TEST(Element, style) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true false");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -98,12 +99,12 @@ TEST(Element, style) {
 TEST(Element, instanceofNode) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -119,12 +120,12 @@ TEST(Element, instanceofNode) {
 TEST(Element, instanceofEventTarget) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -138,17 +139,17 @@ TEST(Element, instanceofEventTarget) {
 }
 
 TEST(Element, stringifyBoundingClientRect) {
-  using namespace kraken;
+  using namespace webf;
 
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(),
                  "{\"x\":10,\"y\":20,\"width\":30,\"height\":40,\"top\":10,\"right\":20,\"bottom\":30,\"left\":40}");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();

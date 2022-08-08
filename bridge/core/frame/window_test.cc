@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2021-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "window.h"
@@ -30,12 +31,12 @@ TEST(Window, windowIsGlobalThis) {
 TEST(Window, instanceofEventTarget) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -70,7 +71,7 @@ requestAnimationFrame(() => {
 TEST(Window, cancelAnimationFrame) {
   auto bridge = TEST_init();
 
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { abort(); };
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { abort(); };
 
   std::string code = R"(
  let id = requestAnimationFrame(() => {
@@ -87,7 +88,7 @@ TEST(Window, postMessage) {
   {
     auto bridge = TEST_init();
     static bool logCalled = false;
-    kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
       logCalled = true;
       EXPECT_STREQ(message.c_str(), "{\"data\":1234} *");
     };
@@ -110,7 +111,7 @@ TEST(Window, postMessage) {
 TEST(Window, location) {
   auto bridge = TEST_init();
   static bool logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true true");
   };

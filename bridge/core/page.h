@@ -1,9 +1,10 @@
 /*
- * Copyright (C) 2021-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKEN_JS_QJS_BRIDGE_H_
-#define KRAKEN_JS_QJS_BRIDGE_H_
+#ifndef WEBF_JS_QJS_BRIDGE_H_
+#define WEBF_JS_QJS_BRIDGE_H_
 
 #include <quickjs/quickjs.h>
 #include <atomic>
@@ -14,24 +15,25 @@
 #include "core/executing_context.h"
 #include "foundation/native_string.h"
 
-namespace kraken {
+namespace webf {
 
-class KrakenPage;
 using JSBridgeDisposeCallback = void (*)(KrakenPage* bridge);
 using ConsoleMessageHandler = std::function<void(void* ctx, const std::string& message, int logLevel)>;
 
-/// KrakenPage is class which manage all js objects Create by <Kraken> flutter widget.
-/// Every <Kraken> flutter widgets have a corresponding KrakenPage, and all objects created by JavaScript are stored
-/// here, and there is no data sharing between objects between different KrakenPages. It's safe to Allocate many
-/// KrakenPages at the same times on one thread, but not safe for multi-threads, only one thread can enter to KrakenPage
-/// at the same time.
-class KrakenPage final {
+/// WebFPage is class which manage all js objects create by <WebF> flutter widget.
+/// Every <WebF> flutter widgets have a corresponding WebFPage, and all objects created by JavaScript are stored here,
+/// and there is no data sharing between objects between different WebFPages.
+/// It's safe to allocate many WebFPages at the same times on one thread, but not safe for multi-threads, only one thread can enter to WebFPage at the same time.
+class WebFPage final {
  public:
-  static kraken::KrakenPage** pageContextPool;
+  static webf::WebFPage** pageContextPool;
   static ConsoleMessageHandler consoleMessageHandler;
-  KrakenPage() = delete;
-  KrakenPage(int32_t jsContext, const JSExceptionHandler& handler);
-  ~KrakenPage();
+  WebFPage() = delete;
+  WebFPage(int32_t jsContext, const JSExceptionHandler& handler);
+  ~WebFPage();
+
+  // Bytecodes which registered by webf plugins.
+  static std::unordered_map<std::string, NativeByteCode> pluginByteCode;
 
   // evaluate JavaScript source codes in standard mode.
   void evaluateScript(const NativeString* script, const char* url, int startLine);
@@ -41,6 +43,7 @@ class KrakenPage final {
   uint8_t* dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength);
   void evaluateByteCode(uint8_t* bytes, size_t byteLength);
 
+  [[nodiscard]] webf::binding::qjs::ExecutionContext* getContext() const { return m_context; }
   void registerDartMethods(uint64_t* methodBytes, int32_t length);
   std::thread::id currentThread() const;
 
@@ -64,6 +67,6 @@ class KrakenPage final {
   JSExceptionHandler handler_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
-#endif  // KRAKEN_JS_QJS_BRIDGE_H_
+#endif  // WEBF_JS_QJS_BRIDGE_H_

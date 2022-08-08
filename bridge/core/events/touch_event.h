@@ -1,9 +1,10 @@
 /*
- * Copyright (C) 2021-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_TOUCH_EVENT_H
-#define KRAKENBRIDGE_TOUCH_EVENT_H
+#ifndef BRIDGE_TOUCH_EVENT_H
+#define BRIDGE_TOUCH_EVENT_H
 
 #include "bindings/qjs/dom/element.h"
 
@@ -114,4 +115,4 @@ class TouchEventInstance : public EventInstance {
 
 }  // namespace kraken
 
-#endif  // KRAKENBRIDGE_TOUCH_EVENTT_H
+#endif  // BRIDGE_TOUCH_EVENTT_H

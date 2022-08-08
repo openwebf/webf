@@ -1,16 +1,17 @@
 /*
- * Copyright (C) 2021-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "gtest/gtest.h"
-#include "kraken_test_env.h"
-
-using namespace kraken;
+#include "webf_bridge.h"
+#include "webf_test_env.h"
+using namespace webf;
 
 TEST(Timer, setTimeout) {
   auto bridge = TEST_init();
 
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     static int logIdx = 0;
     switch (logIdx) {
       case 0:
@@ -43,7 +44,7 @@ TEST(Timer, clearTimeout) {
   auto bridge = TEST_init();
   static bool log_called = false;
 
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     log_called = true;
   };
 

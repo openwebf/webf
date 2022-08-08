@@ -1,11 +1,12 @@
 /*
- * Copyright (C) 2021-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "rejected_promises.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 RejectedPromises::Message::Message(ExecutingContext* context, JSValue promise, JSValue reason)
     : m_runtime(ScriptState::runtime()),
@@ -65,4 +66,4 @@ void RejectedPromises::Process(ExecutingContext* context) {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

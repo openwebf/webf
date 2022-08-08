@@ -58,7 +58,7 @@ class JasmineTracker {
   specDone(result) {
     clearAllTimer();
     resetDocumentElement();
-    kraken.methodChannel.clearMethodCallHandler();
+    webf.methodChannel.clearMethodCallHandler();
   }
   specStarted(result) {
   }
@@ -67,7 +67,7 @@ class JasmineTracker {
 const consoleReporter = new ConsoleReporter();
 const jasmineTracker = new JasmineTracker();
 
-// @NOTE: Hack for kraken js engine have no stdout.
+// @NOTE: Hack for webf js engine have no stdout.
 function createPrinter(logger) {
   let stdoutMessage = '';
   return function printToStdout(msg) {
@@ -124,14 +124,14 @@ global.simulatePointer = function simulatePointer(list, pointer) {
         if (typeof value[2] != 'number') throw new Error(`list[${i}][2] should be an number`);
       });
 
-      __kraken_simulate_pointer__(list, pointer);
+      __webf_simulate_pointer__(list, pointer);
 
       resolve();
     });
   });
 }
 
-global.simulateInputText = __kraken_simulate_inputtext__;
+global.simulateInputText = __webf_simulate_inputtext__;
 
 function resetDocumentElement() {
   window.scrollTo(0, 0);
@@ -160,13 +160,13 @@ function traverseNode(node, handle) {
   }
 }
 
-__kraken_execute_test__((done) => {
+__webf_execute_test__((done) => {
   jasmineTracker.onJasmineDone = (result) => {
     done(result.overallStatus);
   };
 
   // Trigger global js exception to test window.onerror.
-  __kraken_trigger_global_error__();
+  __webf_trigger_global_error__();
 
   env.execute();
 });

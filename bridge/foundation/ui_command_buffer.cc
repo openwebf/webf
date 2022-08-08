@@ -6,6 +6,7 @@
 #include "core/dart_methods.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
+#include "include/webf_bridge.h"
 
 namespace kraken {
 

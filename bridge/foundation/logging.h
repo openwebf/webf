@@ -2,8 +2,8 @@
  * Copyright (C) 2022-present The Kraken authors. All rights reserved.
  */
 
-#ifndef KRAKEN_FOUNDATION_LOGGING_H_
-#define KRAKEN_FOUNDATION_LOGGING_H_
+#ifndef FOUNDATION_LOGGING_H_
+#define FOUNDATION_LOGGING_H_
 
 #include <sstream>
 #include <string>
@@ -66,4 +66,4 @@ void printLog(ExecutingContext* context, std::stringstream& stream, std::string 
 
 }  // namespace kraken
 
-#endif  // KRAKEN_FOUNDATION_LOGGING_H_
+#endif  // FOUNDATION_LOGGING_H_

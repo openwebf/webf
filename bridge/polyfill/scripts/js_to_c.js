@@ -27,16 +27,16 @@ function strEncodeUTF8(str) {
 }
 
 const getPolyFillHeader = (outputName) => `/*
- * Copyright (C) 2022-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKEN_${outputName.toUpperCase()}_H
-#define KRAKEN_${outputName.toUpperCase()}_H
+#ifndef ${outputName.toUpperCase()}_H
+#define ${outputName.toUpperCase()}_H
 
 #include "core/executing_context.h"
 
-void initKraken${outputName}(kraken::ExecutingContext *context);
+void initWebF${outputName}(webf::ExecutingContext *context);
 
-#endif // KRAKEN_${outputName.toUpperCase()}_H
+#endif // ${outputName.toUpperCase()}_H
 `;
 
 const getPolyFillJavaScriptSource = (source) => {
@@ -53,14 +53,15 @@ const getPolyfillEvalCall = () => {
 }
 
 const getPolyFillSource = (source, outputName) => `/*
- * Copyright (C) 2022-present The Kraken authors. All rights reserved.
- */
+* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 
 #include "${outputName.toLowerCase()}.h"
 
 ${getPolyFillJavaScriptSource(source)}
 
-void initKraken${outputName}(kraken::ExecutingContext *context) {
+void initWebF${outputName}(webf::ExecutingContext *context) {
   ${getPolyfillEvalCall()}
 }
   `;

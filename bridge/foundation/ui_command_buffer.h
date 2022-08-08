@@ -2,8 +2,8 @@
  * Copyright (C) 2020-present The Kraken authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_FOUNDATION_UI_COMMAND_BUFFER_H_
-#define KRAKENBRIDGE_FOUNDATION_UI_COMMAND_BUFFER_H_
+#ifndef BRIDGE_FOUNDATION_UI_COMMAND_BUFFER_H_
+#define BRIDGE_FOUNDATION_UI_COMMAND_BUFFER_H_
 
 #include <cinttypes>
 #include <vector>
@@ -80,4 +80,4 @@ class UICommandBuffer {
 
 }  // namespace kraken
 
-#endif  // KRAKENBRIDGE_FOUNDATION_UI_COMMAND_BUFFER_H_
+#endif  // BRIDGE_FOUNDATION_UI_COMMAND_BUFFER_H_
