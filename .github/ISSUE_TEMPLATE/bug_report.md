@@ -5,7 +5,7 @@ labels: bug
 
 ---
 
-### What version of kraken are you using
+### What version of webf are you using
 <!-- Version: main/0.12 etc. -->
 
 
