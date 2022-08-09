@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2022-present The Kraken authors. All rights reserved.
- */
+* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 
 #ifndef FOUNDATION_LOGGING_H_
 #define FOUNDATION_LOGGING_H_

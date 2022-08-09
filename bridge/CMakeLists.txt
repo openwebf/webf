@@ -72,7 +72,6 @@ endif()
 list(APPEND BRIDGE_SOURCE
   webf_bridge.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_foundation.h
   foundation/logging.cc
   foundation/logging.h
   foundation/colors.h
@@ -222,7 +221,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/script_promise.cc
     bindings/qjs/script_promise.h
     bindings/qjs/to_quickjs.h
-    bindings/qjs/qjs_interface_bridge.cc
     bindings/qjs/qjs_interface_bridge.h
     bindings/qjs/script_promise_resolver.cc
     bindings/qjs/script_promise_resolver.h

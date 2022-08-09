@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2019-present The Kraken authors. All rights reserved.
- */
+* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 
 #ifndef WEBF_BRIDGE_EXPORT_H
 #define WEBF_BRIDGE_EXPORT_H
@@ -8,7 +9,7 @@
 #include <thread>
 
 #define WEBF_EXPORT_C extern "C" __attribute__((visibility("default"))) __attribute__((used))
-#define WEBF_EXPORT_C __attribute__((__visibility__("default")))
+#define WEBF_EXPORT __attribute__((__visibility__("default")))
 
 WEBF_EXPORT_C
 std::thread::id getUIThreadId();
@@ -56,7 +57,7 @@ void invokeModuleEvent(int32_t contextId,
 WEBF_EXPORT_C
 void registerDartMethods(int32_t contextId, uint64_t* methodBytes, int32_t length);
 WEBF_EXPORT_C
-KrakenInfo* getKrakenInfo();
+WebFInfo* getWebFInfo();
 WEBF_EXPORT_C
 void dispatchUITask(int32_t contextId, void* context, void* callback);
 WEBF_EXPORT_C

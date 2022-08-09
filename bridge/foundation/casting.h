@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2019 Alibaba Inc. All rights reserved.
- * Author: Kraken Team.
- */
+* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 
 #ifndef KRAKENBRIDGE_FOUNDATION_CASTING_H_
 #define KRAKENBRIDGE_FOUNDATION_CASTING_H_

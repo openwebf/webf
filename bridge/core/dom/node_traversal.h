@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2021-present The Kraken authors. All rights reserved.
- */
+* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 
 #ifndef KRAKENBRIDGE_CORE_DOM_NODE_TRAVERSAL_H_
 #define KRAKENBRIDGE_CORE_DOM_NODE_TRAVERSAL_H_

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2020-present Alibaba Inc. All rights reserved.
- * Author: Kraken Team.
- */
+* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 
 #include "native_string_utils.h"
 #include "bindings/qjs/qjs_engine_patch.h"

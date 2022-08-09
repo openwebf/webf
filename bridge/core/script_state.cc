@@ -1,8 +1,7 @@
 /*
- * Copyright (C) 2021 Alibaba Inc. All rights reserved.
- * Author: Kraken Team.
- */
-
+* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 #include "script_state.h"
 #include "binding_call_methods.h"
 #include "built_in_string.h"
