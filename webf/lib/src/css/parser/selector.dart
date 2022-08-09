@@ -148,6 +148,8 @@ abstract class SimpleSelector extends TreeNode {
   // ignore: avoid_dynamic_calls
   String get name => _name.name as String;
 
+  bool get isWildcard => _name is Wildcard;
+
   bool get isThis => _name is ThisOperator;
 
   @override

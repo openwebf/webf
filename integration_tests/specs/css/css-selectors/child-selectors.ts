@@ -41,7 +41,15 @@ describe("css child selector", () => {
         await snapshot();
     });
 
-    fit("006", async () => {
+    it("006", async () => {
+        const style = <style>{`div:fiRsT-cHiLd { color: green; }`}</style>;
+        const div = <div>Filler Text</div>;
+        document.body.appendChild(div);
+        document.head.appendChild(style);
+        await snapshot();
+    });
+
+    it("007", async () => {
         const style = <style>{`html { color: red; } :root:first-child { color: green; }`}</style>;
         document.body = <body><p>This text should be green.</p></body>;
         document.head.appendChild(style);

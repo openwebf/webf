@@ -203,7 +203,7 @@ class SelectorEvaluator extends SelectorVisitor {
   }
 
   @override
-  bool visitElementSelector(ElementSelector node) => _element!.tagName == node.name.toUpperCase();
+  bool visitElementSelector(ElementSelector node) => node.isWildcard || _element!.tagName == node.name.toUpperCase();
 
   @override
   bool visitIdSelector(IdSelector node) => _element!.id == node.name;

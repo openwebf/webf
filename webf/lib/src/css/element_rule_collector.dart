@@ -60,8 +60,12 @@ class ElementRuleCollector {
       if (rule is! CSSStyleRule) {
         continue;
       }
-      if (evaluator.matchSelector(rule.selectorGroup, element)) {
-        matchedRules.add(rule);
+      try {
+        if (evaluator.matchSelector(rule.selectorGroup, element)) {
+          matchedRules.add(rule);
+        }
+      } catch(error) {
+        print('selector evaluator error: $error');
       }
     }
     return matchedRules;

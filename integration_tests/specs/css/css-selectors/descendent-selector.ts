@@ -47,7 +47,6 @@ describe('css descendent selector', () => {
         await snapshot();
     });
 
-    // error
     it('007', async () => {
         const style = <style>{`div * em { color: red; }`}</style>;
         const div = <div><span><em>007 Filler Text</em></span></div >;

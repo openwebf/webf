@@ -1,4 +1,4 @@
-fdescribe("css id selector", () => {
+describe("css id selector", () => {
   it("001", async () => {
     const style = <style>{`#div1 { color: green; }`}</style>;
     const div = <div id="div1"> 001 green Filler Text</div>;
@@ -7,7 +7,7 @@ fdescribe("css id selector", () => {
     await snapshot();
   });
 
-  xit("002", async () => {
+  it("002", async () => {
     const style = <style>{`# div1 { color: green; }`}</style>;
     const div = <div id="div1"> 002 black Filler Text</div>;
     document.head.appendChild(style);

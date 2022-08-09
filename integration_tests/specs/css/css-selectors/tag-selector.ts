@@ -15,7 +15,7 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  fit("002", async () => {
+  it("002", async () => {
     const style = <style>{`div, blockquote { color: green; }`}</style>;
     const p = <p>Test passes if the "Filler Text" below is green.</p>;
     const blockquote = <blockquote>Filler Text</blockquote>;
@@ -27,11 +27,37 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  fit("003", async () => {
+  it("003", async () => {
     const style = <style>{`DIV { color: green; }`}</style>;
     const div = <div>Filler Text</div>;
     document.head.appendChild(style);
     document.body.appendChild(div);
+    await snapshot();
+  });
+
+  fit("004", async () => {
+    const style = <style>{`body * {
+        margin: 1em 0;
+        font: inherit;
+        display: block;
+        color: white;
+        background: green;
+      }`}</style>;
+     const e1 = <p>This text should be green. (element)</p>;
+     const e2 =<div>This text should be green. (class)</div>
+     const e3 =<div>This text should be green. (id)</div>
+     const e4 =<div>This text should be green. (child)</div>
+     const e5 =<div>This text should be green. (descendant)</div>
+     const e6 =<blockquote>This text should be green. (sibling)</blockquote>
+     const e7 =<div>This text should be green. (attribute)</div>
+    document.head.appendChild(style);
+    document.body.appendChild(e1);
+    document.body.appendChild(e2);
+    document.body.appendChild(e3);
+    document.body.appendChild(e4);
+    document.body.appendChild(e5);
+    document.body.appendChild(e6);
+    document.body.appendChild(e7);
     await snapshot();
   });
 });
