@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_EXCEPTION_STATE_H
-#define KRAKENBRIDGE_EXCEPTION_STATE_H
+#ifndef BRIDGE_EXCEPTION_STATE_H
+#define BRIDGE_EXCEPTION_STATE_H
 
 #include <quickjs/quickjs.h>
 #include <string>
@@ -18,7 +18,7 @@ enum ErrorType { TypeError, InternalError, RangeError, ReferenceError, SyntaxErr
 // ExceptionState is a scope-like class and provides a way to store an exception.
 class ExceptionState {
   // ExceptionState should only allocate at stack.
-  KRAKEN_DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   void ThrowException(JSContext* ctx, ErrorType type, const std::string& message);
@@ -35,4 +35,4 @@ class ExceptionState {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_EXCEPTION_STATE_H
+#endif  // BRIDGE_EXCEPTION_STATE_H

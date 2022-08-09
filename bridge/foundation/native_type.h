@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_FOUNDATION_NATIVE_TYPE_H_
-#define KRAKENBRIDGE_FOUNDATION_NATIVE_TYPE_H_
+#ifndef BRIDGE_FOUNDATION_NATIVE_TYPE_H_
+#define BRIDGE_FOUNDATION_NATIVE_TYPE_H_
 
 #include <type_traits>
 #include "bindings/qjs/qjs_function.h"
@@ -51,4 +51,4 @@ struct NativeTypeAsyncFunction final : public NativeTypeBaseHelper<std::shared_p
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_FOUNDATION_NATIVE_TYPE_H_
+#endif  // BRIDGE_FOUNDATION_NATIVE_TYPE_H_

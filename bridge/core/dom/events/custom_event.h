@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_CUSTOM_EVENT_H
-#define KRAKENBRIDGE_CUSTOM_EVENT_H
+#ifndef BRIDGE_CUSTOM_EVENT_H
+#define BRIDGE_CUSTOM_EVENT_H
 
 #include "event.h"
 
@@ -74,4 +74,4 @@ const WrapperTypeInfo customEventTypeInfo = {"CustomEvent", &eventTypeInfo, cust
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CUSTOM_EVENT_H
+#endif  // BRIDGE_CUSTOM_EVENT_H

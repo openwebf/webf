@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_WRAPPER_TYPE_INFO_H
-#define KRAKENBRIDGE_WRAPPER_TYPE_INFO_H
+#ifndef BRIDGE_WRAPPER_TYPE_INFO_H
+#define BRIDGE_WRAPPER_TYPE_INFO_H
 
 #include <quickjs/quickjs.h>
 #include <cassert>
@@ -93,4 +93,4 @@ class WrapperTypeInfo final {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_WRAPPER_TYPE_INFO_H
+#endif  // BRIDGE_WRAPPER_TYPE_INFO_H

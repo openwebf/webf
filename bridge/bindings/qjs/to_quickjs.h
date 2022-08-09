@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_TO_QUICKJS_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_TO_QUICKJS_H_
+#ifndef BRIDGE_BINDINGS_QJS_TO_QUICKJS_H_
+#define BRIDGE_BINDINGS_QJS_TO_QUICKJS_H_
 
 #include <quickjs/quickjs.h>
 #include <string>
@@ -52,4 +52,4 @@ inline JSValue toQuickJS(JSContext* ctx, ArrayBufferData data) {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_TO_QUICKJS_H_
+#endif  // BRIDGE_BINDINGS_QJS_TO_QUICKJS_H_

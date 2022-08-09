@@ -8,11 +8,11 @@
 #include "bindings/qjs/native_string_utils.h"
 #include "webf_test_context.h"
 
-std::unordered_map<int, webf::KrakenTestContext*> testContextPool = std::unordered_map<int, webf::KrakenTestContext*>();
+std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();
 
 void initTestFramework(int32_t contextId) {
-  auto* page = static_cast<webf::KrakenPage*>(getPage(contextId));
-  auto testContext = new webf::KrakenTestContext(page->GetExecutingContext());
+  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
+  auto testContext = new webf::WebFTestContext(page->GetExecutingContext());
   testContextPool[contextId] = testContext;
 }
 

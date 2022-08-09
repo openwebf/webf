@@ -13,7 +13,7 @@ class Node;
 
 template <class Iterator>
 class TraversalRange {
-  KRAKEN_STATIC_ONLY(TraversalRange);
+  WEBF_STATIC_ONLY(TraversalRange);
 
  public:
   using StartNodeType = typename Iterator::StartNodeType;
@@ -27,7 +27,7 @@ class TraversalRange {
 
 template <class Traversal>
 class TraversalIteratorBase {
-  KRAKEN_STATIC_ONLY(TraversalIteratorBase);
+  WEBF_STATIC_ONLY(TraversalIteratorBase);
 
  public:
   using NodeType = typename Traversal::TraversalNodeType;

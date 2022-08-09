@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_GARBAGE_COLLECTED_H
-#define KRAKENBRIDGE_GARBAGE_COLLECTED_H
+#ifndef BRIDGE_GARBAGE_COLLECTED_H
+#define BRIDGE_GARBAGE_COLLECTED_H
 
 #include <quickjs/quickjs.h>
 #include <memory>
@@ -76,4 +76,4 @@ T* MakeGarbageCollected(Args&&... args) {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_GARBAGE_COLLECTED_H
+#endif  // BRIDGE_GARBAGE_COLLECTED_H

@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_WINDOW_OR_WORKER_GLOBAL_SCROPE_H
-#define KRAKENBRIDGE_WINDOW_OR_WORKER_GLOBAL_SCROPE_H
+#ifndef BRIDGE_WINDOW_OR_WORKER_GLOBAL_SCROPE_H
+#define BRIDGE_WINDOW_OR_WORKER_GLOBAL_SCROPE_H
 
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/qjs_function.h"
@@ -28,4 +28,4 @@ class WindowOrWorkerGlobalScope {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_WINDOW_OR_WORKER_GLOBAL_SCROPE_H
+#endif  // BRIDGE_WINDOW_OR_WORKER_GLOBAL_SCROPE_H

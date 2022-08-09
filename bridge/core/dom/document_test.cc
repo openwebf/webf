@@ -3,14 +3,14 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "gtest/gtest.h"
-#include "kraken_test_env.h"
+#include "webf_test_env.h"
 
 using namespace webf;
 
 TEST(Document, createElement) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "<div/>");
   };
@@ -30,7 +30,7 @@ TEST(Document, createElement) {
 TEST(Document, body) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "<body/>");
   };
@@ -48,7 +48,7 @@ TEST(Document, body) {
 TEST(Document, appendParentWillFail) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
@@ -62,7 +62,7 @@ TEST(Document, appendParentWillFail) {
 TEST(Document, createTextNode) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "<div>");
   };
@@ -86,7 +86,7 @@ TEST(Document, createTextNode) {
 TEST(Document, createComment) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "<div>");
   };
@@ -110,7 +110,7 @@ TEST(Document, createComment) {
 TEST(Document, instanceofNode) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true true");
   };
@@ -129,7 +129,7 @@ TEST(Document, instanceofNode) {
 TEST(Document, FreedByOutOfScope) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = false;
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
@@ -144,9 +144,9 @@ TEST(Document, FreedByOutOfScope) {
 }
 
 TEST(Document, createElementShouldWorkWithMultipleContext) {
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
 
-  kraken::KrakenPage* bridge1;
+  webf::WebFPage* bridge1;
 
   const char* code = "(() => { let img = document.createElement('img'); document.body.appendChild(img);  })();";
 

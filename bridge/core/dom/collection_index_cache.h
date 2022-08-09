@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_COLLECTION_INDEX_CACHE_H_
-#define KRAKENBRIDGE_CORE_DOM_COLLECTION_INDEX_CACHE_H_
+#ifndef BRIDGE_CORE_DOM_COLLECTION_INDEX_CACHE_H_
+#define BRIDGE_CORE_DOM_COLLECTION_INDEX_CACHE_H_
 
 #include <assert.h>
 #include <climits>
@@ -15,7 +15,7 @@ namespace webf {
 
 template <typename Collection, typename NodeType>
 class CollectionIndexCache {
-  KRAKEN_DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   CollectionIndexCache();
@@ -191,4 +191,4 @@ inline NodeType* CollectionIndexCache<Collection, NodeType>::NodeAfterCachedNode
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_COLLECTION_INDEX_CACHE_H_
+#endif  // BRIDGE_CORE_DOM_COLLECTION_INDEX_CACHE_H_

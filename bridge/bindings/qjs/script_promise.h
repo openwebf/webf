@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_H_
+#ifndef BRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_H_
+#define BRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_H_
 
 #include <quickjs/quickjs.h>
 #include "foundation/macros.h"
@@ -16,7 +16,7 @@ namespace webf {
 // So holding a ScriptPromise as a member variable in DOM object causes
 // memory leaks since it has a reference from C++ to QuickJS.
 class ScriptPromise final {
-  KRAKEN_DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   ScriptPromise() = default;
@@ -33,4 +33,4 @@ class ScriptPromise final {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_H_
+#endif  // BRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_H_

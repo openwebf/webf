@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_EXCEPTION_MESSAGE_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_EXCEPTION_MESSAGE_H_
+#ifndef BRIDGE_BINDINGS_QJS_EXCEPTION_MESSAGE_H_
+#define BRIDGE_BINDINGS_QJS_EXCEPTION_MESSAGE_H_
 
 #include <string>
 
@@ -22,4 +22,4 @@ class ExceptionMessage {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_EXCEPTION_MESSAGE_H_
+#endif  // BRIDGE_BINDINGS_QJS_EXCEPTION_MESSAGE_H_

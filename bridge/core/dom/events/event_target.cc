@@ -11,7 +11,7 @@
 #define PROPAGATION_CONTINUE 0
 
 #if UNIT_TEST
-#include "kraken_test_env.h"
+#include "webf_test_env.h"
 #endif
 
 namespace webf {

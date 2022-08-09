@@ -3,8 +3,8 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-#ifndef KRAKENBRIDGE_<%= blob.filename.toUpperCase() %>_H
-#define KRAKENBRIDGE_<%= blob.filename.toUpperCase() %>_H
+#ifndef BRIDGE_<%= blob.filename.toUpperCase() %>_H
+#define BRIDGE_<%= blob.filename.toUpperCase() %>_H
 
 #include <quickjs/quickjs.h>
 #include "bindings/qjs/wrapper_type_info.h"
@@ -12,4 +12,4 @@
 
 <%= content %>
 
-#endif //KRAKENBRIDGE_<%= blob.filename.toUpperCase() %>T_H
+#endif //BRIDGE_<%= blob.filename.toUpperCase() %>T_H

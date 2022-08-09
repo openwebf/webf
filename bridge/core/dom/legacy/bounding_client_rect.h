@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_LEGACY_BOUNDING_CLIENT_RECT_H_
-#define KRAKENBRIDGE_CORE_DOM_LEGACY_BOUNDING_CLIENT_RECT_H_
+#ifndef BRIDGE_CORE_DOM_LEGACY_BOUNDING_CLIENT_RECT_H_
+#define BRIDGE_CORE_DOM_LEGACY_BOUNDING_CLIENT_RECT_H_
 
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"
@@ -57,4 +57,4 @@ class BoundingClientRect : public ScriptWrappable {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_LEGACY_BOUNDING_CLIENT_RECT_H_
+#endif  // BRIDGE_CORE_DOM_LEGACY_BOUNDING_CLIENT_RECT_H_

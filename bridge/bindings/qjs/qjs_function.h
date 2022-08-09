@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_QJS_FUNCTION_H
-#define KRAKENBRIDGE_QJS_FUNCTION_H
+#ifndef BRIDGE_QJS_FUNCTION_H
+#define BRIDGE_QJS_FUNCTION_H
 
 #include "script_value.h"
 
@@ -41,4 +41,4 @@ class QJSFunction {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_QJS_FUNCTION_H
+#endif  // BRIDGE_QJS_FUNCTION_H

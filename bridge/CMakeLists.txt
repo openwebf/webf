@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10.0)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
-project(KrakenBridge)
+project(BRIDGE)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
 set(CMAKE_CXX_STANDARD 17)

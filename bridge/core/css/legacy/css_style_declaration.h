@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_CSS_STYLE_DECLARATION_H
-#define KRAKENBRIDGE_CSS_STYLE_DECLARATION_H
+#ifndef BRIDGE_CSS_STYLE_DECLARATION_H
+#define BRIDGE_CSS_STYLE_DECLARATION_H
 
 #include <unordered_map>
 #include "bindings/qjs/atomic_string.h"
@@ -46,4 +46,4 @@ class CSSStyleDeclaration : public ScriptWrappable {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CSS_STYLE_DECLARATION_H
+#endif  // BRIDGE_CSS_STYLE_DECLARATION_H

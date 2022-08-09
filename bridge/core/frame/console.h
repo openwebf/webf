@@ -13,11 +13,11 @@ namespace webf {
 
 class Console final {
  public:
-  static void __kraken_print__(ExecutingContext* context,
+  static void __webf_print__(ExecutingContext* context,
                                const AtomicString& log,
                                const AtomicString& level,
                                ExceptionState& exception);
-  static void __kraken_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state);
+  static void __webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state);
 };
 
 }  // namespace webf

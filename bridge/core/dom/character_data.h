@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CHARACTER_DATA_H
-#define KRAKENBRIDGE_CHARACTER_DATA_H
+#ifndef BRIDGE_CHARACTER_DATA_H
+#define BRIDGE_CHARACTER_DATA_H
 
 #include "node.h"
 
@@ -36,4 +36,4 @@ struct DowncastTraits<CharacterData> {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CHARACTER_DATA_H
+#endif  // BRIDGE_CHARACTER_DATA_H

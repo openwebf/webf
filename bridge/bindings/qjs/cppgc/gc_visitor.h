@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_GC_VISITOR_H
-#define KRAKENBRIDGE_GC_VISITOR_H
+#ifndef BRIDGE_GC_VISITOR_H
+#define BRIDGE_GC_VISITOR_H
 
 #include <bindings/qjs/script_wrappable.h>
 #include <quickjs/quickjs.h>
@@ -17,8 +17,8 @@ class ScriptWrappable;
 
 // Use GCVisitor to keep track gc managed members in C++ class.
 class GCVisitor final {
-  KRAKEN_DISALLOW_NEW();
-  KRAKEN_DISALLOW_IMPLICIT_CONSTRUCTORS(GCVisitor);
+  WEBF_DISALLOW_NEW();
+  WEBF_DISALLOW_IMPLICIT_CONSTRUCTORS(GCVisitor);
 
  public:
   explicit GCVisitor(JSRuntime* rt, JS_MarkFunc* markFunc) : runtime_(rt), markFunc_(markFunc){};
@@ -40,4 +40,4 @@ class GCVisitor final {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_GC_VISITOR_H
+#endif  // BRIDGE_GC_VISITOR_H

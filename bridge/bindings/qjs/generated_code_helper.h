@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_GENERATED_CODE_HELPER_H
-#define KRAKENBRIDGE_GENERATED_CODE_HELPER_H
+#ifndef BRIDGE_GENERATED_CODE_HELPER_H
+#define BRIDGE_GENERATED_CODE_HELPER_H
 
 #include "atomic_string.h"
 #include "bindings/qjs/dictionary_base.h"

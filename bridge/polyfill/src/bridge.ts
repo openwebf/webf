@@ -6,8 +6,8 @@
 declare const __webf_invoke_module__: (module: string, method: string, params?: Object | null, fn?: (err: Error, data: any) => void) => string;
 export const webfInvokeModule = __webf_invoke_module__;
 
-declare const __webf_module_listener__: (fn: (moduleName: string, event: Event, extra: string) => void) => void;
-export const addWebfModuleListener = __webf_module_listener__;
+declare const __webf_add_module_listener__: (fn: (moduleName: string, event: Event, extra: string) => void) => void;
+export const addWebfModuleListener = __webf_add_module_listener__;
 
 declare const __webf_location_reload__: () => void;
 export const webfLocationReload = __webf_location_reload__;

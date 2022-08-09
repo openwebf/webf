@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_QJS_INTERFACE_BRIDGE_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_QJS_INTERFACE_BRIDGE_H_
+#ifndef BRIDGE_BINDINGS_QJS_QJS_INTERFACE_BRIDGE_H_
+#define BRIDGE_BINDINGS_QJS_QJS_INTERFACE_BRIDGE_H_
 
 #include "core/executing_context.h"
 #include "script_wrappable.h"
@@ -26,4 +26,4 @@ class QJSInterfaceBridge {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_QJS_INTERFACE_BRIDGE_H_
+#endif  // BRIDGE_BINDINGS_QJS_QJS_INTERFACE_BRIDGE_H_

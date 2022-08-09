@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_CORE_DOM_EVENTS_REGISTERED_EVENTLISTENER_H_
-#define KRAKENBRIDGE_CORE_DOM_EVENTS_REGISTERED_EVENTLISTENER_H_
+#ifndef BRIDGE_CORE_DOM_EVENTS_REGISTERED_EVENTLISTENER_H_
+#define BRIDGE_CORE_DOM_EVENTS_REGISTERED_EVENTLISTENER_H_
 
 #include "event_listener.h"
 #include "foundation/macros.h"
@@ -16,7 +16,7 @@ class EventListenerOptions;
 // RegisteredEventListener represents 'event listener' defined in the DOM
 // standard. https://dom.spec.whatwg.org/#concept-event-listener
 class RegisteredEventListener final {
-  KRAKEN_DISALLOW_NEW()
+  WEBF_DISALLOW_NEW()
  public:
   RegisteredEventListener();
   RegisteredEventListener(const std::shared_ptr<EventListener>& listener,
@@ -60,4 +60,4 @@ bool operator==(const RegisteredEventListener&, const RegisteredEventListener&);
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_EVENTS_REGISTERED_EVENTLISTENER_H_
+#endif  // BRIDGE_CORE_DOM_EVENTS_REGISTERED_EVENTLISTENER_H_

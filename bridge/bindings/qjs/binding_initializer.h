@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDING_INITIALIZER_H
-#define KRAKENBRIDGE_BINDING_INITIALIZER_H
+#ifndef BRIDGE_BINDING_INITIALIZER_H
+#define BRIDGE_BINDING_INITIALIZER_H
 
 #include <quickjs/quickjs.h>
 
@@ -16,4 +16,4 @@ void InstallBindings(ExecutingContext* context);
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDING_INITIALIZER_H
+#endif  // BRIDGE_BINDING_INITIALIZER_H

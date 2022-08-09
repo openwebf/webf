@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_MODULE_MANAGER_H
-#define KRAKENBRIDGE_MODULE_MANAGER_H
+#ifndef BRIDGE_MODULE_MANAGER_H
+#define BRIDGE_MODULE_MANAGER_H
 
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/exception_state.h"
@@ -14,26 +14,26 @@ namespace webf {
 
 class ModuleManager {
  public:
-  static AtomicString __kraken_invoke_module__(ExecutingContext* context,
+  static AtomicString __webf_invoke_module__(ExecutingContext* context,
                                                const AtomicString& moduleName,
                                                const AtomicString& method,
                                                ExceptionState& exception);
-  static AtomicString __kraken_invoke_module__(ExecutingContext* context,
+  static AtomicString __webf_invoke_module__(ExecutingContext* context,
                                                const AtomicString& moduleName,
                                                const AtomicString& method,
-                                               ScriptValue& params,
+                                               ScriptValue& paramsValue,
                                                ExceptionState& exception);
-  static AtomicString __kraken_invoke_module__(ExecutingContext* context,
+  static AtomicString __webf_invoke_module__(ExecutingContext* context,
                                                const AtomicString& moduleName,
                                                const AtomicString& method,
-                                               ScriptValue& params,
+                                               ScriptValue& paramsValue,
                                                std::shared_ptr<QJSFunction> callback,
                                                ExceptionState& exception);
-  static void __kraken_add_module_listener__(ExecutingContext* context,
+  static void __webf_add_module_listener__(ExecutingContext* context,
                                              const std::shared_ptr<QJSFunction>& handler,
                                              ExceptionState& exception);
 };
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_MODULE_MANAGER_H
+#endif  // BRIDGE_MODULE_MANAGER_H

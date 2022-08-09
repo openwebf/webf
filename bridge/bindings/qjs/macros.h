@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDING_MACROS_H
-#define KRAKENBRIDGE_BINDING_MACROS_H
+#ifndef BRIDGE_BINDING_MACROS_H
+#define BRIDGE_BINDING_MACROS_H
 
 #define QJS_GLOBAL_BINDING_FUNCTION(context, function, name, argc)     \
   {                                                                    \
@@ -56,4 +56,4 @@
     static JSValue setter(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv); \
   };
 
-#endif  // KRAKENBRIDGE_BINDING_MACROS_H
+#endif  // BRIDGE_BINDING_MACROS_H

@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_HTML_HTML_DIV_ELEMENT_H_
-#define KRAKENBRIDGE_CORE_HTML_HTML_DIV_ELEMENT_H_
+#ifndef BRIDGE_CORE_HTML_HTML_DIV_ELEMENT_H_
+#define BRIDGE_CORE_HTML_HTML_DIV_ELEMENT_H_
 
 #include "html_element.h"
 
@@ -22,4 +22,4 @@ class HTMLDivElement : public HTMLElement {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_HTML_HTML_DIV_ELEMENT_H_
+#endif  // BRIDGE_CORE_HTML_HTML_DIV_ELEMENT_H_

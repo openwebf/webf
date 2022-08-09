@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_HTML_HTML_COLLECTION_H_
-#define KRAKENBRIDGE_CORE_HTML_HTML_COLLECTION_H_
+#ifndef BRIDGE_CORE_HTML_HTML_COLLECTION_H_
+#define BRIDGE_CORE_HTML_HTML_COLLECTION_H_
 
 #include "bindings/qjs/script_wrappable.h"
 
@@ -17,4 +17,4 @@ class HTMLCollection : public ScriptWrappable {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_HTML_HTML_COLLECTION_H_
+#endif  // BRIDGE_CORE_HTML_HTML_COLLECTION_H_

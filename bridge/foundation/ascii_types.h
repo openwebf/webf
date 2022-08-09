@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_FOUNDATION_ASCII_TYPES_H_
-#define KRAKENBRIDGE_FOUNDATION_ASCII_TYPES_H_
+#ifndef BRIDGE_FOUNDATION_ASCII_TYPES_H_
+#define BRIDGE_FOUNDATION_ASCII_TYPES_H_
 
 namespace webf {
 
@@ -61,4 +61,4 @@ inline bool IsLowerASCII(const CharacterType* characters, size_t length) {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_FOUNDATION_ASCII_TYPES_H_
+#endif  // BRIDGE_FOUNDATION_ASCII_TYPES_H_

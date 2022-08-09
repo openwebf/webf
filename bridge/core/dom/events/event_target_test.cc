@@ -4,14 +4,14 @@
  */
 #include "event_target.h"
 #include "gtest/gtest.h"
-#include "kraken_test_env.h"
+#include "webf_test_env.h"
 
 using namespace webf;
 
 TEST(EventTarget, addEventListener) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     EXPECT_STREQ(message.c_str(), "1234");
     logCalled = true;
   };
@@ -31,7 +31,7 @@ TEST(EventTarget, addEventListener) {
 TEST(EventTarget, removeEventListener) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
@@ -50,7 +50,7 @@ TEST(EventTarget, removeEventListener) {
 // TEST(EventTarget, setNoEventTargetProperties) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
 //    EXPECT_STREQ(message.c_str(), "{name: 1}");
 //  };
@@ -70,7 +70,7 @@ TEST(EventTarget, removeEventListener) {
 // TEST(EventTarget, propertyEventHandler) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
 //    EXPECT_STREQ(message.c_str(), "ƒ () 1234");
 //  };
@@ -93,7 +93,7 @@ TEST(EventTarget, removeEventListener) {
 // TEST(EventTarget, setUnExpectedAttributeEventHandler) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = false;
 //  };
 //  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
@@ -115,7 +115,7 @@ TEST(EventTarget, removeEventListener) {
 // TEST(EventTarget, propertyEventOnWindow) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
 //    EXPECT_STREQ(message.c_str(), "1234");
 //  };
@@ -135,7 +135,7 @@ TEST(EventTarget, removeEventListener) {
 // TEST(EventTarget, asyncFunctionCallback) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
 //    EXPECT_STREQ(message.c_str(), "done");
 //  };
@@ -177,7 +177,7 @@ TEST(EventTarget, removeEventListener) {
 // TEST(EventTarget, ClassInheritEventTarget) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
 //    EXPECT_STREQ(message.c_str(), "ƒ () ƒ ()");
 //  };
@@ -215,7 +215,7 @@ TEST(EventTarget, removeEventListener) {
 //
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
 //    EXPECT_STREQ(message.c_str(), "1234");
 //  };
@@ -255,7 +255,7 @@ TEST(EventTarget, removeEventListener) {
 //
 // TEST(EventTarget, globalBindListener) {
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
 //    EXPECT_STREQ(message.c_str(), "clicked");
 //  };
@@ -268,7 +268,7 @@ TEST(EventTarget, removeEventListener) {
 // TEST(EventTarget, shouldKeepAtom) {
 //  auto bridge = TEST_init();
 //  bool static logCalled = false;
-//  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
 //    EXPECT_STREQ(message.c_str(), "2");
 //  };

@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_CPPGC_LOCAL_HANDLE_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_CPPGC_LOCAL_HANDLE_H_
+#ifndef BRIDGE_BINDINGS_QJS_CPPGC_LOCAL_HANDLE_H_
+#define BRIDGE_BINDINGS_QJS_CPPGC_LOCAL_HANDLE_H_
 
 #include <quickjs/quickjs.h>
 #include <type_traits>
@@ -23,7 +23,7 @@ class ScriptWrappable;
  */
 template <typename T>
 class Local {
-  KRAKEN_STACK_ALLOCATED();
+  WEBF_STACK_ALLOCATED();
 
  public:
   static Local<T> Empty() { return Local<T>(nullptr); }
@@ -61,4 +61,4 @@ Local<T> MakeLocal(Args&&... args) {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_CPPGC_LOCAL_HANDLE_H_
+#endif  // BRIDGE_BINDINGS_QJS_CPPGC_LOCAL_HANDLE_H_

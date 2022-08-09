@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_NATIVE_STRING_UTILS_H
-#define KRAKENBRIDGE_NATIVE_STRING_UTILS_H
+#ifndef BRIDGE_NATIVE_STRING_UTILS_H
+#define BRIDGE_NATIVE_STRING_UTILS_H
 
 #include <quickjs/quickjs.h>
 #include <codecvt>
@@ -42,4 +42,4 @@ void fromUTF8(const std::string& source, std::basic_string<T, std::char_traits<T
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_NATIVE_STRING_UTILS_H
+#endif  // BRIDGE_NATIVE_STRING_UTILS_H

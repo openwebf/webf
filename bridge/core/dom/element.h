@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_ELEMENT_H
-#define KRAKENBRIDGE_ELEMENT_H
+#ifndef BRIDGE_ELEMENT_H
+#define BRIDGE_ELEMENT_H
 
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "container_node.h"
@@ -125,4 +125,4 @@ struct DowncastTraits<Element> {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_ELEMENT_H
+#endif  // BRIDGE_ELEMENT_H

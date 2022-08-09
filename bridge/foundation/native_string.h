@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_NATIVE_STRING_H
-#define KRAKENBRIDGE_NATIVE_STRING_H
+#ifndef BRIDGE_NATIVE_STRING_H
+#define BRIDGE_NATIVE_STRING_H
 
 #include <cinttypes>
 #include <cstdlib>
@@ -28,4 +28,4 @@ struct NativeString {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_NATIVE_STRING_H
+#endif  // BRIDGE_NATIVE_STRING_H

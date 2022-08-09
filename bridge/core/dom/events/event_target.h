@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_EVENT_TARGET_H
-#define KRAKENBRIDGE_EVENT_TARGET_H
+#ifndef BRIDGE_EVENT_TARGET_H
+#define BRIDGE_EVENT_TARGET_H
 
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/js_event_listener.h"
@@ -44,7 +44,7 @@ enum class DispatchEventResult {
 };
 
 struct FiringEventIterator {
-  KRAKEN_DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   FiringEventIterator(const AtomicString& event_type, size_t& iterator, size_t& end)
@@ -58,7 +58,7 @@ struct FiringEventIterator {
 using FiringEventIteratorVector = std::vector<FiringEventIterator>;
 
 class EventTargetData final {
-  KRAKEN_DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   EventTargetData();
@@ -284,4 +284,4 @@ class EventTargetWithInlineData : public EventTarget {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_EVENT_TARGET_H
+#endif  // BRIDGE_EVENT_TARGET_H

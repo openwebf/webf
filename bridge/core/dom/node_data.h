@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_NODE_DATA_H_
-#define KRAKENBRIDGE_CORE_DOM_NODE_DATA_H_
+#ifndef BRIDGE_CORE_DOM_NODE_DATA_H_
+#define BRIDGE_CORE_DOM_NODE_DATA_H_
 
 #include <cinttypes>
 #include "bindings/qjs/cppgc/garbage_collected.h"
@@ -39,4 +39,4 @@ class NodeData {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_NODE_DATA_H_
+#endif  // BRIDGE_CORE_DOM_NODE_DATA_H_

@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
+#ifndef BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
+#define BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
 
 #include <quickjs/quickjs.h>
 #include <functional>
@@ -22,7 +22,7 @@ namespace webf {
 // identical. Comparing two AtomicString instances is much faster than comparing
 // two String instances because we just check string storage identity.
 class AtomicString {
-  KRAKEN_DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   enum class StringKind { kIsLowerCase, kIsUpperCase, kIsMixed };
@@ -91,4 +91,4 @@ class AtomicString {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
+#endif  // BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_

@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_CONTEXT_DATA_H
-#define KRAKENBRIDGE_CONTEXT_DATA_H
+#ifndef BRIDGE_CONTEXT_DATA_H
+#define BRIDGE_CONTEXT_DATA_H
 
 #include <quickjs/quickjs.h>
 #include <unordered_map>
@@ -38,4 +38,4 @@ class ExecutionContextData final {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CONTEXT_DATA_H
+#endif  // BRIDGE_CONTEXT_DATA_H

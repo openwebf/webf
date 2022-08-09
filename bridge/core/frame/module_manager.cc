@@ -22,7 +22,7 @@ void handleInvokeModuleTransientCallback(void* ptr, int32_t contextId, const cha
 
   if (moduleContext->callback == nullptr) {
     JSValue exception = JS_ThrowTypeError(moduleContext->context->ctx(),
-                                          "Failed to execute '__kraken_invoke_module__': callback is null.");
+                                          "Failed to execute '__webf_invoke_module__': callback is null.");
     context->HandleException(&exception);
     return;
   }
@@ -60,23 +60,23 @@ void handleInvokeModuleUnexpectedCallback(void* callbackContext,
   static_assert("Unexpected module callback, please check your invokeModule implementation on the dart side.");
 }
 
-AtomicString ModuleManager::__kraken_invoke_module__(ExecutingContext* context,
+AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                      const AtomicString& moduleName,
                                                      const AtomicString& method,
                                                      ExceptionState& exception) {
   ScriptValue empty = ScriptValue::Empty(context->ctx());
-  return __kraken_invoke_module__(context, moduleName, method, empty, nullptr, exception);
+  return __webf_invoke_module__(context, moduleName, method, empty, nullptr, exception);
 }
 
-AtomicString ModuleManager::__kraken_invoke_module__(ExecutingContext* context,
+AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                      const AtomicString& moduleName,
                                                      const AtomicString& method,
                                                      ScriptValue& paramsValue,
                                                      ExceptionState& exception) {
-  return __kraken_invoke_module__(context, moduleName, method, paramsValue, nullptr, exception);
+  return __webf_invoke_module__(context, moduleName, method, paramsValue, nullptr, exception);
 }
 
-AtomicString ModuleManager::__kraken_invoke_module__(ExecutingContext* context,
+AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                      const AtomicString& moduleName,
                                                      const AtomicString& method,
                                                      ScriptValue& paramsValue,
@@ -93,7 +93,7 @@ AtomicString ModuleManager::__kraken_invoke_module__(ExecutingContext* context,
   if (context->dartMethodPtr()->invokeModule == nullptr) {
     exception.ThrowException(
         context->ctx(), ErrorType::InternalError,
-        "Failed to execute '__kraken_invoke_module__': dart method (invokeModule) is not registered.");
+        "Failed to execute '__webf_invoke_module__': dart method (invokeModule) is not registered.");
     return AtomicString::Empty(context->ctx());
   }
 
@@ -119,7 +119,7 @@ AtomicString ModuleManager::__kraken_invoke_module__(ExecutingContext* context,
   return AtomicString::From(context->ctx(), result);
 }
 
-void ModuleManager::__kraken_add_module_listener__(ExecutingContext* context,
+void ModuleManager::__webf_add_module_listener__(ExecutingContext* context,
                                                    const std::shared_ptr<QJSFunction>& handler,
                                                    ExceptionState& exception) {
   auto listener = ModuleListener::Create(handler);

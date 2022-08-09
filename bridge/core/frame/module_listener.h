@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_MODULE_LISTENER_H
-#define KRAKENBRIDGE_MODULE_LISTENER_H
+#ifndef BRIDGE_MODULE_LISTENER_H
+#define BRIDGE_MODULE_LISTENER_H
 
 #include "bindings/qjs/qjs_function.h"
 
@@ -29,4 +29,4 @@ class ModuleListener {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_MODULE_LISTENER_H
+#endif  // BRIDGE_MODULE_LISTENER_H

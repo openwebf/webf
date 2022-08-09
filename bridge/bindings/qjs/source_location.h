@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_SOURCE_LOCATION_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_SOURCE_LOCATION_H_
+#ifndef BRIDGE_BINDINGS_QJS_SOURCE_LOCATION_H_
+#define BRIDGE_BINDINGS_QJS_SOURCE_LOCATION_H_
 
 #include <memory>
 #include <string>
@@ -33,4 +33,4 @@ class SourceLocation {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_SOURCE_LOCATION_H_
+#endif  // BRIDGE_BINDINGS_QJS_SOURCE_LOCATION_H_

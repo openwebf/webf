@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_MODULE_CALLBACK_H
-#define KRAKENBRIDGE_MODULE_CALLBACK_H
+#ifndef BRIDGE_MODULE_CALLBACK_H
+#define BRIDGE_MODULE_CALLBACK_H
 
 #include <quickjs/list.h>
 #include "bindings/qjs/qjs_function.h"
@@ -26,4 +26,4 @@ class ModuleCallback {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_MODULE_CALLBACK_H
+#endif  // BRIDGE_MODULE_CALLBACK_H

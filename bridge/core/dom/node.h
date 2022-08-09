@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_NODE_H
-#define KRAKENBRIDGE_NODE_H
+#ifndef BRIDGE_NODE_H
+#define BRIDGE_NODE_H
 
 #include <set>
 #include <utility>
@@ -318,4 +318,4 @@ inline void Node::SetParentOrShadowHostNode(ContainerNode* parent) {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_NODE_H
+#endif  // BRIDGE_NODE_H

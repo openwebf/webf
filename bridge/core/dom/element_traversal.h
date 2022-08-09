@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_
-#define KRAKENBRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_
+#ifndef BRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_
+#define BRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_
 
 #include "element.h"
 #include "foundation/macros.h"
@@ -14,7 +14,7 @@
 namespace webf {
 
 class HasTagName {
-  KRAKEN_STACK_ALLOCATED();
+  WEBF_STACK_ALLOCATED();
 
  public:
   explicit HasTagName(const AtomicString& tag_name) : tag_name_(tag_name) {}
@@ -60,7 +60,7 @@ class HasTagName {
 // ElementTraversal is a specialized version of Traversal<Element>.
 template <class ElementType>
 class Traversal {
-  KRAKEN_STATIC_ONLY(Traversal);
+  WEBF_STATIC_ONLY(Traversal);
 
  public:
   using TraversalNodeType = ElementType;
@@ -410,4 +410,4 @@ inline ElementType* Traversal<ElementType>::NextSibling(const Node& current, Mat
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_
+#endif  // BRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_

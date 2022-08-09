@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_DOM_TIMER_H
-#define KRAKENBRIDGE_DOM_TIMER_H
+#ifndef BRIDGE_DOM_TIMER_H
+#define BRIDGE_DOM_TIMER_H
 
 #include "bindings/qjs/qjs_function.h"
 #include "bindings/qjs/script_wrappable.h"
@@ -39,4 +39,4 @@ class DOMTimer {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_DOM_TIMER_H
+#endif  // BRIDGE_DOM_TIMER_H

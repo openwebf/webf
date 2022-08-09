@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_WINDOW_H
-#define KRAKENBRIDGE_WINDOW_H
+#ifndef BRIDGE_WINDOW_H
+#define BRIDGE_WINDOW_H
 
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/wrapper_type_info.h"
@@ -53,4 +53,4 @@ class Window : public EventTargetWithInlineData {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_WINDOW_H
+#endif  // BRIDGE_WINDOW_H

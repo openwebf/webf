@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_MODULE_LISTENER_CONTAINER_H
-#define KRAKENBRIDGE_MODULE_LISTENER_CONTAINER_H
+#ifndef BRIDGE_MODULE_LISTENER_CONTAINER_H
+#define BRIDGE_MODULE_LISTENER_CONTAINER_H
 
 #include <forward_list>
 #include "module_listener.h"
@@ -21,4 +21,4 @@ class ModuleListenerContainer final {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_MODULE_LISTENER_CONTAINER_H
+#endif  // BRIDGE_MODULE_LISTENER_CONTAINER_H

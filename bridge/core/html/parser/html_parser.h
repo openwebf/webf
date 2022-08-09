@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_HTML_PARSER_H
-#define KRAKENBRIDGE_HTML_PARSER_H
+#ifndef BRIDGE_HTML_PARSER_H
+#define BRIDGE_HTML_PARSER_H
 
 #include <third_party/gumbo-parser/src/gumbo.h>
 #include <string>
@@ -30,4 +30,4 @@ class HTMLParser {
 };
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_HTML_PARSER_H
+#endif  // BRIDGE_HTML_PARSER_H

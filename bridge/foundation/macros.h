@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_MACROS_H
-#define KRAKENBRIDGE_MACROS_H
+#ifndef BRIDGE_MACROS_H
+#define BRIDGE_MACROS_H
 
 #include <stddef.h>
 
@@ -20,32 +20,32 @@
 
 #define assert_m(exp, msg) assert(((void)msg, exp))
 
-#define KRAKEN_DISALLOW_COPY(TypeName) TypeName(const TypeName&) = delete
+#define WEBF_DISALLOW_COPY(TypeName) TypeName(const TypeName&) = delete
 
-#define KRAKEN_DISALLOW_ASSIGN(TypeName) TypeName& operator=(const TypeName&) = delete
+#define WEBF_DISALLOW_ASSIGN(TypeName) TypeName& operator=(const TypeName&) = delete
 
-#define KRAKEN_DISALLOW_MOVE(TypeName) \
+#define WEBF_DISALLOW_MOVE(TypeName) \
   TypeName(TypeName&&) = delete;       \
   TypeName& operator=(TypeName&&) = delete
 
-#define KRAKEN_STATIC_ONLY(Type)         \
+#define WEBF_STATIC_ONLY(Type)         \
   Type() = delete;                       \
   Type(const Type&) = delete;            \
   Type& operator=(const Type&) = delete; \
   void* operator new(size_t) = delete;   \
   void* operator new(size_t, void*) = delete
 
-#define KRAKEN_STACK_ALLOCATED()       \
+#define WEBF_STACK_ALLOCATED()       \
  private:                              \
   void* operator new(size_t) = delete; \
   void* operator new(size_t, void*) = delete
 
-// KRAKEN_DISALLOW_NEW(): Cannot be allocated with new operators but can be a
+// WEBF_DISALLOW_NEW(): Cannot be allocated with new operators but can be a
 // part of object, a value object in collections or stack allocated. If it has
 // Members you need a trace method and the containing object needs to call that
 // trace method.
 //
-#define KRAKEN_DISALLOW_NEW()                                     \
+#define WEBF_DISALLOW_NEW()                                     \
  public:                                                          \
   using IsDisallowNewMarker = int;                                \
   void* operator new(size_t, void* location) { return location; } \
@@ -53,18 +53,18 @@
  private:                                                         \
   void* operator new(size_t) = delete;
 
-#define KRAKEN_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+#define WEBF_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&) = delete;             \
   TypeName& operator=(const TypeName&) = delete
 
-#define KRAKEN_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName) \
+#define WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName) \
   TypeName(const TypeName&) = delete;                  \
   TypeName(TypeName&&) = delete;                       \
   TypeName& operator=(const TypeName&) = delete;       \
   TypeName& operator=(TypeName&&) = delete
 
-#define KRAKEN_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
+#define WEBF_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
   TypeName() = delete;                                  \
-  KRAKEN_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName)
+  WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName)
 
-#endif  // KRAKENBRIDGE_MACROS_H
+#endif  // BRIDGE_MACROS_H

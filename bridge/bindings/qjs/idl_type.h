@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_CONVERTER_TS_TYPE_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_CONVERTER_TS_TYPE_H_
+#ifndef BRIDGE_BINDINGS_QJS_CONVERTER_TS_TYPE_H_
+#define BRIDGE_BINDINGS_QJS_CONVERTER_TS_TYPE_H_
 
 #include <vector>
 #include "converter.h"
@@ -69,4 +69,4 @@ struct IDLSequence final : public IDLTypeBase {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_CONVERTER_TS_TYPE_H_
+#endif  // BRIDGE_BINDINGS_QJS_CONVERTER_TS_TYPE_H_

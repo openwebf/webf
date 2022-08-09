@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_BINDING_OBJECT_H_
-#define KRAKENBRIDGE_CORE_DOM_BINDING_OBJECT_H_
+#ifndef BRIDGE_CORE_DOM_BINDING_OBJECT_H_
+#define BRIDGE_CORE_DOM_BINDING_OBJECT_H_
 
 #include <cinttypes>
 #include "bindings/qjs/atomic_string.h"
@@ -74,4 +74,4 @@ class BindingObject {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_BINDING_OBJECT_H_
+#endif  // BRIDGE_CORE_DOM_BINDING_OBJECT_H_

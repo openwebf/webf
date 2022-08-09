@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_SCRIPT_WRAPPABLE_H
-#define KRAKENBRIDGE_SCRIPT_WRAPPABLE_H
+#ifndef BRIDGE_SCRIPT_WRAPPABLE_H
+#define BRIDGE_SCRIPT_WRAPPABLE_H
 
 #include <quickjs/quickjs.h>
 #include "bindings/qjs/cppgc/garbage_collected.h"
@@ -86,4 +86,4 @@ Local<T>::~Local<T>() {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_SCRIPT_WRAPPABLE_H
+#endif  // BRIDGE_SCRIPT_WRAPPABLE_H

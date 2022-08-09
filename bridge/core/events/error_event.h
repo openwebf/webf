@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_
-#define KRAKENBRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_
+#ifndef BRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_
+#define BRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_
 
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
@@ -55,4 +55,4 @@ struct DowncastTraits<ErrorEvent> {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_
+#endif  // BRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_

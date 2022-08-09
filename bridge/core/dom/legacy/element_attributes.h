@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_
-#define KRAKENBRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_
+#ifndef BRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_
+#define BRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_
 
 #include <unordered_map>
 #include "bindings/qjs/atomic_string.h"
@@ -51,4 +51,4 @@ class ElementAttributes : public ScriptWrappable {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_
+#endif  // BRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_

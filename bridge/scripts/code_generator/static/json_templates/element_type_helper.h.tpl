@@ -3,8 +3,8 @@
  // and input files:
  //   <%= template_path %>
 
-#ifndef KRAKENBRIDGE_CORE_HTML_TYPE_HELPER_H_
-#define KRAKENBRIDGE_CORE_HTML_TYPE_HELPER_H_
+#ifndef BRIDGE_CORE_HTML_TYPE_HELPER_H_
+#define BRIDGE_CORE_HTML_TYPE_HELPER_H_
 
 
 #include "core/dom/element.h"

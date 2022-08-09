@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_JS_EVENT_LISTENER_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_JS_EVENT_LISTENER_H_
+#ifndef BRIDGE_BINDINGS_QJS_JS_EVENT_LISTENER_H_
+#define BRIDGE_BINDINGS_QJS_JS_EVENT_LISTENER_H_
 
 #include "foundation/casting.h"
 #include "js_based_event_listener.h"
@@ -53,4 +53,4 @@ struct DowncastTraits<JSEventListener> {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_JS_EVENT_LISTENER_H_
+#endif  // BRIDGE_BINDINGS_QJS_JS_EVENT_LISTENER_H_

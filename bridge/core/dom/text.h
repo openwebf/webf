@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_TEXT_H_
-#define KRAKENBRIDGE_CORE_DOM_TEXT_H_
+#ifndef BRIDGE_CORE_DOM_TEXT_H_
+#define BRIDGE_CORE_DOM_TEXT_H_
 
 #include "character_data.h"
 
@@ -39,4 +39,4 @@ struct DowncastTraits<Text> {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_TEXT_H_
+#endif  // BRIDGE_CORE_DOM_TEXT_H_

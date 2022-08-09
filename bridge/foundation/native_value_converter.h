@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
-#define KRAKENBRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
+#ifndef BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
+#define BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
 
 #include "core/dom/binding_object.h"
 #include "native_type.h"
@@ -127,4 +127,4 @@ struct NativeValueConverter<NativeTypeAsyncFunction> : public NativeValueConvert
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
+#endif  // BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_

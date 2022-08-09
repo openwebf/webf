@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_
-#define KRAKENBRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_
+#ifndef BRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_
+#define BRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_
 
 #include "node_list.h"
 
@@ -31,4 +31,4 @@ class EmptyNodeList : public NodeList {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_
+#endif  // BRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_

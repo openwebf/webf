@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_JS_CONTEXT_H
-#define KRAKENBRIDGE_JS_CONTEXT_H
+#ifndef BRIDGE_JS_CONTEXT_H
+#define BRIDGE_JS_CONTEXT_H
 
 #include <quickjs/list.h>
 #include <quickjs/quickjs.h>
@@ -149,7 +149,7 @@ class ExecutingContext {
 };
 
 class ObjectProperty {
-  KRAKEN_DISALLOW_COPY_ASSIGN_AND_MOVE(ObjectProperty);
+  WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(ObjectProperty);
 
  public:
   ObjectProperty() = delete;
@@ -170,4 +170,4 @@ std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExc
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_JS_CONTEXT_H
+#endif  // BRIDGE_JS_CONTEXT_H

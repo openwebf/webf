@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_WEBF_TEST_CONTEXT_H
-#define KRAKENBRIDGE_WEBF_TEST_CONTEXT_H
+#ifndef BRIDGE_WEBF_TEST_CONTEXT_H
+#define BRIDGE_WEBF_TEST_CONTEXT_H
 
 #include "bindings/qjs/qjs_function.h"
 #include "core/executing_context.h"
@@ -19,10 +19,10 @@ struct ImageSnapShotContext {
   list_head link;
 };
 
-class KrakenTestContext final {
+class WebFTestContext final {
  public:
-  explicit KrakenTestContext() = delete;
-  explicit KrakenTestContext(ExecutingContext* context);
+  explicit WebFTestContext() = delete;
+  explicit WebFTestContext(ExecutingContext* context);
 
   /// Evaluate JavaScript source code with build-in test frameworks, use in test only.
   bool evaluateTestScripts(const uint16_t* code, size_t codeLength, const char* sourceURL, int startLine);
@@ -36,9 +36,9 @@ class KrakenTestContext final {
  private:
   /// the pointer of JSContext, ownership belongs to JSContext
   ExecutingContext* context_{nullptr};
-  KrakenPage* page_;
+  WebFPage* page_;
 };
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_WEBF_TEST_CONTEXT_H
+#endif  // BRIDGE_WEBF_TEST_CONTEXT_H

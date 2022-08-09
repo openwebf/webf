@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CONVERTER_H
-#define KRAKENBRIDGE_CONVERTER_H
+#ifndef BRIDGE_CONVERTER_H
+#define BRIDGE_CONVERTER_H
 
 #include <cassert>
 
@@ -27,4 +27,4 @@ struct ConverterBase {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CONVERTER_H
+#endif  // BRIDGE_CONVERTER_H

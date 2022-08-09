@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_CHILD_NODE_LIST_H_
-#define KRAKENBRIDGE_CORE_DOM_CHILD_NODE_LIST_H_
+#ifndef BRIDGE_CORE_DOM_CHILD_NODE_LIST_H_
+#define BRIDGE_CORE_DOM_CHILD_NODE_LIST_H_
 
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/dom/collection_index_cache.h"
@@ -50,4 +50,4 @@ class ChildNodeList : public NodeList {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_CHILD_NODE_LIST_H_
+#endif  // BRIDGE_CORE_DOM_CHILD_NODE_LIST_H_

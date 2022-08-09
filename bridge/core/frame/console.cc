@@ -9,7 +9,7 @@
 
 namespace webf {
 
-void Console::__kraken_print__(ExecutingContext* context,
+void Console::__webf_print__(ExecutingContext* context,
                                const AtomicString& log,
                                const AtomicString& level,
                                ExceptionState& exception) {
@@ -19,7 +19,7 @@ void Console::__kraken_print__(ExecutingContext* context,
   printLog(context, stream, level != built_in_string::kempty_string ? level.ToStdString() : "info", nullptr);
 }
 
-void Console::__kraken_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state) {
+void Console::__webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state) {
   std::stringstream stream;
   std::string buffer = log.ToStdString();
   stream << buffer;

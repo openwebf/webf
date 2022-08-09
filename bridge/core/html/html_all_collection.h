@@ -3,8 +3,8 @@
 // * Author: Kraken Team.
 // */
 //
-//#ifndef KRAKENBRIDGE_HTML_ALL_COLLECTION_H
-//#define KRAKENBRIDGE_HTML_ALL_COLLECTION_H
+//#ifndef BRIDGE_HTML_ALL_COLLECTION_H
+//#define BRIDGE_HTML_ALL_COLLECTION_H
 //
 //#include "bindings/qjs/garbage_collected.h"
 //
@@ -28,4 +28,4 @@
 //
 //}  // namespace webf
 //
-//#endif  // KRAKENBRIDGE_HTML_ALL_COLLECTION_H
+//#endif  // BRIDGE_HTML_ALL_COLLECTION_H

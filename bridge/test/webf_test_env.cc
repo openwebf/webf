@@ -11,8 +11,8 @@
 #include "core/frame/dom_timer.h"
 #include "core/page.h"
 #include "foundation/native_string.h"
-#include "kraken_bridge_test.h"
-#include "kraken_test_env.h"
+#include "webf_bridge_test.h"
+#include "webf_test_env.h"
 
 #if defined(__linux__) || defined(__APPLE__)
 static int64_t get_time_ms(void) {
@@ -140,14 +140,14 @@ uint32_t TEST_requestAnimationFrame(webf::FrameCallback* frameCallback, int32_t 
 }
 
 void TEST_cancelAnimationFrame(int32_t contextId, int32_t id) {
-  auto* page = static_cast<webf::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   auto* context = page->GetExecutingContext();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(ScriptState::runtime()));
   ts->os_frameCallbacks.erase(id);
 }
 
 void TEST_clearTimeout(int32_t contextId, int32_t timerId) {
-  auto* page = static_cast<webf::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   auto* context = page->GetExecutingContext();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(ScriptState::runtime()));
   ts->os_timers.erase(timerId);
@@ -202,7 +202,7 @@ std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   TEST_mockDartMethods(contextId, onJsError);
 
   initTestFramework(contextId);
-  auto* page = static_cast<webf::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   auto* context = page->GetExecutingContext();
   JSThreadState* th = new JSThreadState();
   JS_SetRuntimeOpaque(ScriptState::runtime(), th);

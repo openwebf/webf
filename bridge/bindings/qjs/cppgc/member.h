@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_CPPGC_MEMBER_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_CPPGC_MEMBER_H_
+#ifndef BRIDGE_BINDINGS_QJS_CPPGC_MEMBER_H_
+#define BRIDGE_BINDINGS_QJS_CPPGC_MEMBER_H_
 
 #include <type_traits>
 #include "bindings/qjs/qjs_engine_patch.h"
@@ -97,4 +97,4 @@ class Member {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_CPPGC_MEMBER_H_
+#endif  // BRIDGE_BINDINGS_QJS_CPPGC_MEMBER_H_

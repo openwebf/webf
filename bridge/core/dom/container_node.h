@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_CORE_DOM_CONTAINER_NODE_H_
-#define KRAKENBRIDGE_CORE_DOM_CONTAINER_NODE_H_
+#ifndef BRIDGE_CORE_DOM_CONTAINER_NODE_H_
+#define BRIDGE_CORE_DOM_CONTAINER_NODE_H_
 
 #include <vector>
 #include "bindings/qjs/cppgc/gc_visitor.h"
@@ -122,4 +122,4 @@ struct DowncastTraits<ContainerNode> {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_DOM_CONTAINER_NODE_H_
+#endif  // BRIDGE_CORE_DOM_CONTAINER_NODE_H_

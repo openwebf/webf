@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_FOUNDATION_CASTING_H_
-#define KRAKENBRIDGE_FOUNDATION_CASTING_H_
+#ifndef BRIDGE_FOUNDATION_CASTING_H_
+#define BRIDGE_FOUNDATION_CASTING_H_
 
 #include <cassert>
 #include <type_traits>
@@ -144,4 +144,4 @@ Derived* DynamicTo(Base& from) {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_FOUNDATION_CASTING_H_
+#endif  // BRIDGE_FOUNDATION_CASTING_H_

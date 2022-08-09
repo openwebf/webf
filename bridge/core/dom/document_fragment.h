@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_DOCUMENT_FRAGMENT_H
-#define KRAKENBRIDGE_DOCUMENT_FRAGMENT_H
+#ifndef BRIDGE_DOCUMENT_FRAGMENT_H
+#define BRIDGE_DOCUMENT_FRAGMENT_H
 
 #include "container_node.h"
 
@@ -42,4 +42,4 @@ struct DowncastTraits<DocumentFragment> {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_DOCUMENT_FRAGMENT_H
+#endif  // BRIDGE_DOCUMENT_FRAGMENT_H

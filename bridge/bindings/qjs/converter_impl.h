@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
+#ifndef BRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
+#define BRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
 
 #include <type_traits>
 #include "atomic_string.h"
@@ -430,4 +430,4 @@ struct Converter<Window> : public ConverterBase<Window> {
 
 };  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
+#endif  // BRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_

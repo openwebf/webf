@@ -21,10 +21,10 @@ String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
 
 final String __dirname = path.dirname(Platform.script.path);
-final String testDirectory = Platform.environment['KRAKEN_TEST_DIR'] ?? __dirname;
+final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
-const int KRAKEN_NUM = 1;
-Map<int, WebF> krakenMap = Map();
+const int WEBF_NUM = 1;
+Map<int, WebF> webfMap = Map();
 
 // Test for UriParser.
 class IntegrationTestUriParser extends UriParser {
@@ -38,10 +38,10 @@ class IntegrationTestUriParser extends UriParser {
   }
 }
 
-// By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
+// By CLI: `WEBF_ENABLE_TEST=true flutter run`
 void main() async {
   // Overrides library name.
-  WebFDynamicLibrary.libName = 'libkraken_test';
+  WebFDynamicLibrary.libName = 'libwebf_test';
 
   WebFWebSocket.initialize();
 
@@ -60,8 +60,8 @@ void main() async {
   ];
   List<Widget> widgets = [];
 
-  for (int i = 0; i < KRAKEN_NUM; i++) {
-    var kraken = krakenMap[i] = WebF(
+  for (int i = 0; i < WEBF_NUM; i++) {
+    var webf = webfMap[i] = WebF(
       viewportWidth: 360,
       viewportHeight: 640,
       bundle: WebFBundle.fromContent('console.log("Starting Plugin tests...")'),
@@ -69,14 +69,14 @@ void main() async {
       disableViewportHeightAssertion: true,
       uriParser: IntegrationTestUriParser(),
     );
-    widgets.add(kraken);
+    widgets.add(webf);
   }
 
   runApp(MaterialApp(
-    title: 'Kraken Plugin Tests',
+    title: 'WebF Plugin Tests',
     debugShowCheckedModeBanner: false,
     home: Scaffold(
-      appBar: AppBar(title: Text('Kraken Plugin Tests')),
+      appBar: AppBar(title: Text('WebF Plugin Tests')),
       body: Wrap(
         children: widgets,
       ),

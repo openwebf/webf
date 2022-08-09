@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_CPPGC_MUTATION_SCOPE_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_CPPGC_MUTATION_SCOPE_H_
+#ifndef BRIDGE_BINDINGS_QJS_CPPGC_MUTATION_SCOPE_H_
+#define BRIDGE_BINDINGS_QJS_CPPGC_MUTATION_SCOPE_H_
 
 #include <quickjs/quickjs.h>
 #include <unordered_map>
@@ -19,7 +19,7 @@ class ScriptWrappable;
  * A stack-allocated class that record all members mutations in stack scope.
  */
 class MemberMutationScope {
-  KRAKEN_DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   MemberMutationScope() = delete;
@@ -41,4 +41,4 @@ class MemberMutationScope {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_CPPGC_MUTATION_SCOPE_H_
+#endif  // BRIDGE_BINDINGS_QJS_CPPGC_MUTATION_SCOPE_H_

@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_SCRIPT_VALUE_H
-#define KRAKENBRIDGE_SCRIPT_VALUE_H
+#ifndef BRIDGE_SCRIPT_VALUE_H
+#define BRIDGE_SCRIPT_VALUE_H
 
 #include <quickjs/quickjs.h>
 #include <memory>
@@ -24,7 +24,7 @@ class GCVisitor;
 // QuickJS running details.
 class ScriptValue final {
   // ScriptValue should only allocate at stack.
-  KRAKEN_DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   // Create an errorObject from string error message.
@@ -72,4 +72,4 @@ class ScriptValue final {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_SCRIPT_VALUE_H
+#endif  // BRIDGE_SCRIPT_VALUE_H

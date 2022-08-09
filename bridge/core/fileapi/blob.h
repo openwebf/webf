@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_BLOB_H
-#define KRAKENBRIDGE_BLOB_H
+#ifndef BRIDGE_BLOB_H
+#define BRIDGE_BLOB_H
 
 #include <string>
 #include <vector>
@@ -74,4 +74,4 @@ class Blob : public ScriptWrappable {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BLOB_H
+#endif  // BRIDGE_BLOB_H

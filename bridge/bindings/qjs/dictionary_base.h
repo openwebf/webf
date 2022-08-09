@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_DICTIONARY_BASE_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_DICTIONARY_BASE_H_
+#ifndef BRIDGE_BINDINGS_QJS_DICTIONARY_BASE_H_
+#define BRIDGE_BINDINGS_QJS_DICTIONARY_BASE_H_
 
 #include "bindings/qjs/cppgc/garbage_collected.h"
 
@@ -36,4 +36,4 @@ class DictionaryBase {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_DICTIONARY_BASE_H_
+#endif  // BRIDGE_BINDINGS_QJS_DICTIONARY_BASE_H_

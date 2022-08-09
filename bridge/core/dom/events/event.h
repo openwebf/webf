@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_EVENT_H
-#define KRAKENBRIDGE_EVENT_H
+#ifndef BRIDGE_EVENT_H
+#define BRIDGE_EVENT_H
 
 #include <cinttypes>
 #include "bindings/qjs/atomic_string.h"
@@ -231,4 +231,4 @@ class Event : public ScriptWrappable {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_EVENT_H
+#endif  // BRIDGE_EVENT_H

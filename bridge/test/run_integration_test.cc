@@ -6,11 +6,10 @@
 #include <fstream>
 #include "foundation/logging.h"
 #include "gtest/gtest.h"
-#include "kraken_bridge_test.h"
-#include "kraken_test_env.h"
+#include "webf_bridge_test.h"
+#include "webf_test_env.h"
 
 using namespace webf;
-#include "page.h"
 #include "webf_bridge_test.h"
 #include "webf_test_env.h"
 

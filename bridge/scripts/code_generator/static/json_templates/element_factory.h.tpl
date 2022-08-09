@@ -3,8 +3,8 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-#ifndef KRAKENBRIDGE_CORE_HTML_ELEMENT_FACTORY_H_
-#define KRAKENBRIDGE_CORE_HTML_ELEMENT_FACTORY_H_
+#ifndef BRIDGE_CORE_HTML_ELEMENT_FACTORY_H_
+#define BRIDGE_CORE_HTML_ELEMENT_FACTORY_H_
 
 #include "bindings/qjs/atomic_string.h"
 
@@ -22,4 +22,4 @@ class HTMLElementFactory {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_HTML_ELEMENT_FACTORY_H_
+#endif  // BRIDGE_CORE_HTML_ELEMENT_FACTORY_H_

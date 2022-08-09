@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_MEMBER_INSTALLER_H
-#define KRAKENBRIDGE_MEMBER_INSTALLER_H
+#ifndef BRIDGE_MEMBER_INSTALLER_H
+#define BRIDGE_MEMBER_INSTALLER_H
 
 #include <quickjs/quickjs.h>
 #include <initializer_list>
@@ -51,4 +51,4 @@ class MemberInstaller {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_MEMBER_INSTALLER_H
+#endif  // BRIDGE_MEMBER_INSTALLER_H

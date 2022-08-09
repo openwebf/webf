@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_SCREEN_H
-#define KRAKENBRIDGE_SCREEN_H
+#ifndef BRIDGE_SCREEN_H
+#define BRIDGE_SCREEN_H
 
 #include "core/dom/events/event_target.h"
 
@@ -25,4 +25,4 @@ class Screen : public EventTargetWithInlineData {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_SCREEN_H
+#endif  // BRIDGE_SCREEN_H

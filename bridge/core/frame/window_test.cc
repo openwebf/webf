@@ -5,14 +5,14 @@
 
 #include "window.h"
 #include "gtest/gtest.h"
-#include "kraken_test_env.h"
+#include "webf_test_env.h"
 
 using namespace webf;
 
 TEST(Window, windowIsGlobalThis) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
@@ -51,7 +51,7 @@ TEST(Window, requestAnimationFrame) {
   auto bridge = TEST_init();
   bool static logCalled = false;
 
-  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     EXPECT_STREQ(message.c_str(), "456");
     logCalled = true;
   };

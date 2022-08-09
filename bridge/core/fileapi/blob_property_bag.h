@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_CORE_FILEAPI_BLOB_PROPERTY_BAG_H_
-#define KRAKENBRIDGE_CORE_FILEAPI_BLOB_PROPERTY_BAG_H_
+#ifndef BRIDGE_CORE_FILEAPI_BLOB_PROPERTY_BAG_H_
+#define BRIDGE_CORE_FILEAPI_BLOB_PROPERTY_BAG_H_
 
 #include <quickjs/quickjs.h>
 #include <memory>
@@ -26,4 +26,4 @@ class BlobPropertyBag final {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_FILEAPI_BLOB_PROPERTY_BAG_H_
+#endif  // BRIDGE_CORE_FILEAPI_BLOB_PROPERTY_BAG_H_

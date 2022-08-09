@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_CORE_SCRIPT_STATE_H_
-#define KRAKENBRIDGE_CORE_SCRIPT_STATE_H_
+#ifndef BRIDGE_CORE_SCRIPT_STATE_H_
+#define BRIDGE_CORE_SCRIPT_STATE_H_
 
 #include <quickjs/quickjs.h>
 #include "bindings/qjs/script_wrappable.h"
@@ -28,4 +28,4 @@ class ScriptState {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_CORE_SCRIPT_STATE_H_
+#endif  // BRIDGE_CORE_SCRIPT_STATE_H_

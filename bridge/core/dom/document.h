@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_DOCUMENT_H
-#define KRAKENBRIDGE_DOCUMENT_H
+#ifndef BRIDGE_DOCUMENT_H
+#define BRIDGE_DOCUMENT_H
 
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
@@ -81,4 +81,4 @@ class Document : public ContainerNode, public TreeScope {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_DOCUMENT_H
+#endif  // BRIDGE_DOCUMENT_H

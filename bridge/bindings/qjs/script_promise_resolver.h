@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef KRAKENBRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_RESOLVER_H_
-#define KRAKENBRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_RESOLVER_H_
+#ifndef BRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_RESOLVER_H_
+#define BRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_RESOLVER_H_
 
 #include "converter_impl.h"
 #include "script_promise.h"
@@ -67,4 +67,4 @@ class ScriptPromiseResolver {
 
 }  // namespace webf
 
-#endif  // KRAKENBRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_RESOLVER_H_
+#endif  // BRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_RESOLVER_H_
