@@ -20,19 +20,19 @@ bool <%= className %>::FillQJSObjectWithMembers(JSContext* ctx, JSValue qjs_dict
   }
 
   <% _.forEach(props, function(prop, index) { %>
-  JS_SetPropertyStr(ctx, qjs_dictionary, "<%= prop.name %>_", Converter<<%= generateIDLTypeConverter(prop.type) %>>::ToValue(ctx, <%= prop.name %>_));
+  JS_SetPropertyStr(ctx, qjs_dictionary, "<%= prop.name %>", Converter<<%= generateIDLTypeConverter(prop.type) %>>::ToValue(ctx, <%= prop.name %>_));
   <% }); %>
 
   return true;
 }
 
-void <%= className %>::FillMembersWithQJSObject(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+bool <%= className %>::FillMembersWithQJSObject(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
   <% if (object.parent) { %>
   <%= object.parent %>::FillMembersWithQJSObject(ctx, value, exception_state);
   <% } %>
 
   if (!JS_IsObject(value)) {
-    return;
+    return false;
   }
 
   <% _.forEach(props, function(prop, index) { %>
@@ -44,5 +44,5 @@ void <%= className %>::FillMembersWithQJSObject(JSContext* ctx, JSValue value, E
 
   <% }); %>
 
-
+  return true;
 }

@@ -10,6 +10,8 @@
 
 namespace webf {
 
+class ExceptionState;
+
 // DictionaryBase is the common base class of all the IDL dictionary classes.
 // Most importantly this class provides a way of type dispatching (e.g. overload
 // resolutions, SFINAE technique, etc.) so that it's possible to distinguish
@@ -32,6 +34,7 @@ class DictionaryBase {
   // Fills the given QuickJS object with the dictionary members.  Returns true on
   // success, otherwise returns false with throwing an exception.
   virtual bool FillQJSObjectWithMembers(JSContext* ctx, JSValue qjs_dictionary) const = 0;
+  virtual bool FillMembersWithQJSObject(JSContext* ctx, JSValue qjs_object, ExceptionState& exception_state) = 0;
 };
 
 }  // namespace webf

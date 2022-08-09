@@ -47,6 +47,9 @@ class Window : public EventTargetWithInlineData {
 
   void Trace(GCVisitor* visitor) const override;
 
+  // Override default ToQuickJS() to return Global object when access `window` property.
+  JSValue ToQuickJS() const override;
+
  private:
   Member<Screen> screen_;
 };

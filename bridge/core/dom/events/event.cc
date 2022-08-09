@@ -21,8 +21,6 @@ Event* Event::From(ExecutingContext* context, NativeEvent* native_event) {
   return event;
 }
 
-Event::Event(ExecutingContext* context) : Event(context, AtomicString::Empty(context->ctx())) {}
-
 Event::Event(ExecutingContext* context, const AtomicString& event_type)
     : Event(context,
             event_type,

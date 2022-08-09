@@ -78,12 +78,14 @@ TEST(Context, globalErrorHandlerTargetReturnToWindow) {
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
 
-    EXPECT_STREQ(message.c_str(), "true");
+    EXPECT_STREQ(message.c_str(), "error true true true");
   };
 
   std::string code = R"(
-window.addEventListener('error', (e) => { console.log(e.target === window) });
-throw new Error('1234');
+let oldError = new Error('1234');
+
+window.addEventListener('error', (e) => { console.log(e.type, e.target === window, window === globalThis, e.error === oldError) });
+throw oldError;
 )";
   bridge->evaluateScript(code.c_str(), code.size(), "file://", 0);
   EXPECT_EQ(logCalled, true);

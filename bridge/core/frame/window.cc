@@ -26,6 +26,7 @@ Window* Window::open(const AtomicString& url, ExceptionState& exception_state) {
       NativeValueConverter<NativeTypeString>::ToNativeValue(url.ToNativeString().release()),
   };
   InvokeBindingMethod(binding_call_methods::kopen, 1, args, exception_state);
+  return this;
 }
 
 Screen* Window::screen() {
@@ -137,6 +138,10 @@ void Window::cancelAnimationFrame(double request_id, ExceptionState& exception_s
 void Window::Trace(GCVisitor* visitor) const {
   visitor->Trace(screen_);
   EventTargetWithInlineData::Trace(visitor);
+}
+
+JSValue Window::ToQuickJS() const {
+  return JS_GetGlobalObject(ctx());
 }
 
 }  // namespace webf

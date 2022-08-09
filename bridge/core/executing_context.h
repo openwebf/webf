@@ -39,6 +39,7 @@ struct NativeByteCode {
 class ExecutingContext;
 class Document;
 class MemberMutationScope;
+class ErrorEvent;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
 
@@ -105,6 +106,10 @@ class ExecutingContext {
   // Force dart side to execute the pending ui commands.
   void FlushUICommand();
 
+  void DispatchErrorEvent(ErrorEvent* error_event);
+  void DispatchErrorEventInterval(ErrorEvent* error_event);
+  void ReportErrorEvent(ErrorEvent* error_event);
+
   static void DispatchGlobalUnhandledRejectionEvent(ExecutingContext* context,
                                                     JSValueConst promise,
                                                     JSValueConst error);
@@ -141,6 +146,7 @@ class ExecutingContext {
   ModuleListenerContainer module_listener_container_;
   ModuleCallbackCoordinator module_callbacks_;
   ExecutionContextData context_data_{this};
+  bool in_dispatch_error_event_{false};
   UICommandBuffer ui_command_buffer_{this};
   std::unique_ptr<DartMethodPointer> dart_method_ptr_ = std::make_unique<DartMethodPointer>();
   RejectedPromises rejected_promises_;

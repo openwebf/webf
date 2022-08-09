@@ -3,12 +3,13 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "executing_context.h"
+#include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
+#include "event_type_names.h"
 #include "core/dom/document.h"
-#include "core/html/html_html_element.h"
+#include "core/events/error_event.h"
 #include "polyfill.h"
 #include "qjs_window.h"
-
 #include "foundation/logging.h"
 
 namespace webf {
@@ -145,7 +146,7 @@ void* ExecutingContext::owner() {
 bool ExecutingContext::HandleException(JSValue* exc) {
   if (JS_IsException(*exc)) {
     JSValue error = JS_GetException(script_state_.ctx());
-    ReportError(error);
+    MemberMutationScope scope{this};
     DispatchGlobalErrorEvent(this, error);
     JS_FreeValue(script_state_.ctx(), error);
     return false;
@@ -244,35 +245,13 @@ uint8_t* ExecutingContext::DumpByteCode(const char* code,
 }
 
 void ExecutingContext::DispatchGlobalErrorEvent(ExecutingContext* context, JSValueConst error) {
-  //  JSContext* ctx = context->ctx();
-  //  auto* window = static_cast<Window*>(JS_GetOpaque(context->global(), Window::classId()));
-  //
-  //  {
-  //    JSValue ErrorEventValue = JS_GetPropertyStr(ctx, context->global(), "ErrorEvent");
-  //    JSValue errorType = JS_NewString(ctx, "error");
-  //    JSValue errorInit = JS_NewObject(ctx);
-  //    JS_SetPropertyStr(ctx, errorInit, "error", JS_DupValue(ctx, error));
-  //    JS_SetPropertyStr(ctx, errorInit, "message", JS_GetPropertyStr(ctx, error, "message"));
-  //    JS_SetPropertyStr(ctx, errorInit, "lineno", JS_GetPropertyStr(ctx, error, "lineNumber"));
-  //    JS_SetPropertyStr(ctx, errorInit, "filename", JS_GetPropertyStr(ctx, error, "fileName"));
-  //    JS_SetPropertyStr(ctx, errorInit, "colno", JS_NewUint32(ctx, 0));
-  //    JSValue arguments[] = {errorType, errorInit};
-  //    JSValue errorEventValue = JS_CallConstructor(context->ctx(), ErrorEventValue, 2, arguments);
-  //    if (JS_IsException(errorEventValue)) {
-  //      context->handleException(&errorEventValue);
-  //      return;
-  //    }
-  //
-  //    auto* errorEvent = static_cast<EventInstance*>(JS_GetOpaque(errorEventValue, Event::kEventClassID));
-  //    window->dispatchEvent(errorEvent);
-  //
-  //    JS_FreeValue(ctx, ErrorEventValue);
-  //    JS_FreeValue(ctx, errorEventValue);
-  //    JS_FreeValue(ctx, errorType);
-  //    JS_FreeValue(ctx, errorInit);
-  //
-  //    context->drainPendingPromiseJobs();
-  //  }
+  ExceptionState exceptionState;
+
+  auto error_init = ErrorEventInit::Create(context->ctx(), error, exceptionState);
+  error_init->setError(Converter<IDLAny>::FromValue(context->ctx(), error, exceptionState));
+  auto* error_event = ErrorEvent::Create(context, event_type_names::kerror, error_init, exceptionState);
+
+  context->DispatchErrorEvent(error_event);
 }
 
 static void dispatchPromiseRejectionEvent(const char* eventType,
@@ -310,6 +289,27 @@ static void dispatchPromiseRejectionEvent(const char* eventType,
 
 void ExecutingContext::FlushUICommand() {
   dartMethodPtr()->flushUICommand(context_id_);
+}
+
+void ExecutingContext::DispatchErrorEvent(ErrorEvent* error_event) {
+  if (in_dispatch_error_event_) {
+    return;
+  }
+
+  DispatchErrorEventInterval(error_event);
+  ReportErrorEvent(error_event);
+}
+
+void ExecutingContext::DispatchErrorEventInterval(ErrorEvent* error_event) {
+  assert(!in_dispatch_error_event_);
+  in_dispatch_error_event_ = true;
+  auto* window = toScriptWrappable<Window>(Global());
+  window->dispatchEvent(error_event, ASSERT_NO_EXCEPTION());
+  in_dispatch_error_event_ = false;
+}
+
+void ExecutingContext::ReportErrorEvent(ErrorEvent* error_event) {
+  ReportError(error_event->error().QJSValue());
 }
 
 void ExecutingContext::DispatchGlobalUnhandledRejectionEvent(ExecutingContext* context,
@@ -370,10 +370,6 @@ void ExecutingContext::SetMutationScope(MemberMutationScope& mutation_scope) {
 void ExecutingContext::ClearMutationScope() {
   active_mutation_scope = active_mutation_scope->Parent();
 }
-
-// PendingPromises* ExecutingContext::PendingPromises() {
-//  return &pending_promises_;
-//}
 
 void ExecutingContext::InstallDocument() {
   MemberMutationScope scope{this};
