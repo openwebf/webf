@@ -63,20 +63,19 @@ describe('css descendent selector', () => {
         document.body.appendChild(div);
         await snapshot();
     });
-    // error
+
     it('009', async () => {
         const style = <style>{`#div em { color: red; }`}</style>;
-        const div = <div id="div1" ><em> 009 Filler Text </em> </div >;
+        const div = <div id="div" ><em> 009 Filler Text </em> </div >;
         document.head.appendChild(style);
         document.body.appendChild(div);
         await snapshot();
     });
 
-    // error
     it('010', async () => {
         const style = <style>{`#div
                             em { color: red; }`}</style>;
-        const div = <div id="div1" > <em>010 Filler Text < /em> </div >;
+        const div = <div id="div" > <em>010 Filler Text < /em> </div >;
         document.head.appendChild(style);
         document.body.appendChild(div);
         await snapshot();
