@@ -39,7 +39,7 @@ describe('css attribute selector', () => {
         await snapshot();
     });
     // error
-    it('006', async () => {
+    xit('006', async () => {
         const style = <style>{`[1digit], div { color: red; }`}</style>;
         const div = <div> 006 Filler Text</div>
         document.head.appendChild(style);
