@@ -1,5 +1,5 @@
 describe('css tag selector', () => {
-    fit('001', async () => {
+    it('001', async () => {
         const style = <style>{`p { color: green; }`}</style>;
         const p1 = <p>This sentence must be green.</p>;
         const p2 = <p>This sentence must be green.</p>;

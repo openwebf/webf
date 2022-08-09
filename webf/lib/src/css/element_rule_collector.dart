@@ -42,7 +42,7 @@ class ElementRuleCollector {
 
     // Merge all the rules
     CSSStyleDeclaration declaration = CSSStyleDeclaration();
-    for (CSSRule rule in matchedRules.reversed) {
+    for (CSSRule rule in matchedRules) {
       if (rule is CSSStyleRule) {
         declaration.merge(rule.declaration);
       }
@@ -51,7 +51,7 @@ class ElementRuleCollector {
   }
 
   List<CSSRule> _collectMatchingRulesForList(List<CSSRule>? rules, Element element) {
-    if (rules == null) {
+    if (rules == null || rules.isEmpty) {
       return [];
     }
     List<CSSRule> matchedRules = [];
