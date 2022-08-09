@@ -12,7 +12,7 @@
 #include <string>
 #include "bindings/qjs/native_string_utils.h"
 
-namespace kraken {
+namespace webf {
 
 enum NativeTag {
   TAG_STRING = 0,
@@ -77,6 +77,6 @@ NativeValue Native_NewInt64(int64_t value);
 NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr);
 NativeValue Native_NewJSON(const ScriptValue& value);
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // BRIDGE_NATIVE_VALUE_H

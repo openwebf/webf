@@ -73,7 +73,7 @@ clearTimeout(timer);
 TEST(Timer, clearTimeoutWhenSetTimeout) {
   auto bridge = TEST_init();
 
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
+  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
 
   std::string code = R"(
 let timer = setTimeout(() => {

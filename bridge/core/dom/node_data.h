@@ -10,7 +10,7 @@
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 
-namespace kraken {
+namespace webf {
 
 class ChildNodeList;
 class EmptyNodeList;
@@ -37,6 +37,6 @@ class NodeData {
   Member<NodeList> child_node_list_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_NODE_DATA_H_

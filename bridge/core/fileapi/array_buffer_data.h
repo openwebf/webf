@@ -5,13 +5,13 @@
 #ifndef KRAKENBRIDGE_CORE_FILEAPI_ARRAY_BUFFER_DATA_H_
 #define KRAKENBRIDGE_CORE_FILEAPI_ARRAY_BUFFER_DATA_H_
 
-namespace kraken {
+namespace webf {
 
 struct ArrayBufferData {
   uint8_t* buffer;
   int32_t length;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_FILEAPI_ARRAY_BUFFER_DATA_H_

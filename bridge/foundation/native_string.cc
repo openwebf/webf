@@ -5,7 +5,7 @@
 #include "native_string.h"
 #include <string>
 
-namespace kraken {
+namespace webf {
 
 NativeString::NativeString(const uint16_t* string, uint32_t length) : length_(length) {
   string_ = static_cast<const uint16_t*>(malloc(length * sizeof(uint16_t)));
@@ -21,4 +21,4 @@ NativeString::~NativeString() {
   delete[] string_;
 }
 
-}  // namespace kraken
+}  // namespace webf

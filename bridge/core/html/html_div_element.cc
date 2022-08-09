@@ -6,8 +6,8 @@
 #include "html_div_element.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLDivElement::HTMLDivElement(Document& document) : HTMLElement(html_names::kdiv, &document) {}
 
-}  // namespace kraken
+}  // namespace webf

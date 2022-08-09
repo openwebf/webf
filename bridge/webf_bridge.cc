@@ -13,7 +13,7 @@
 #include "foundation/logging.h"
 #include "foundation/ui_command_buffer.h"
 #include "foundation/ui_task_queue.h"
-#include "include/kraken_bridge.h"
+#include "include/webf_bridge.h"
 
 #if defined(_WIN32)
 #define SYSTEM_NAME "windows"  // Windows
@@ -74,7 +74,7 @@ void initJSPagePool(int poolSize) {
     webf::WebFPage::pageContextPool[i] = nullptr;
   }
 
-  kraken::KrakenPage::pageContextPool[0] = new kraken::KrakenPage(0, nullptr);
+  webf::WebFPage::pageContextPool[0] = new webf::WebFPage(0, nullptr);
   inited = true;
   maxPoolSize = poolSize;
 }
@@ -98,12 +98,12 @@ int32_t allocateNewPage(int32_t targetContextId) {
     targetContextId = searchForAvailableContextId();
   }
 
-  assert(kraken::KrakenPage::pageContextPool[targetContextId] == nullptr &&
+  assert(webf::WebFPage::pageContextPool[targetContextId] == nullptr &&
          (std::string("can not Allocate page at index") + std::to_string(targetContextId) +
           std::string(": page have already exist."))
              .c_str());
-  auto* page = new kraken::KrakenPage(targetContextId, nullptr);
-  kraken::KrakenPage::pageContextPool[targetContextId] = page;
+  auto* page = new webf::WebFPage(targetContextId, nullptr);
+  webf::WebFPage::pageContextPool[targetContextId] = page;
   return targetContextId;
 }
 
@@ -120,14 +120,14 @@ bool checkPage(int32_t contextId) {
 bool checkPage(int32_t contextId, void* context) {
   if (webf::WebFPage::pageContextPool[contextId] == nullptr)
     return false;
-  auto* page = static_cast<kraken::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   return page->GetExecutingContext() == context;
 }
 
 void evaluateScripts(int32_t contextId, NativeString* code, const char* bundleFilename, int startLine) {
   assert(checkPage(contextId) && "evaluateScripts: contextId is not valid");
-  auto context = static_cast<kraken::KrakenPage*>(getPage(contextId));
-  context->evaluateScript(reinterpret_cast<kraken::NativeString*>(code), bundleFilename, startLine);
+  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
+  context->evaluateScript(reinterpret_cast<webf::NativeString*>(code), bundleFilename, startLine);
 }
 
 void evaluateQuickjsByteCode(int32_t contextId, uint8_t* bytes, int32_t byteLen) {
@@ -145,8 +145,8 @@ void parseHTML(int32_t contextId, const char* code, int32_t length) {
 void reloadJsContext(int32_t contextId) {
   assert(checkPage(contextId) && "reloadJSContext: contextId is not valid");
   auto bridgePtr = getPage(contextId);
-  auto context = static_cast<kraken::KrakenPage*>(bridgePtr);
-  auto newContext = new kraken::KrakenPage(contextId, nullptr);
+  auto context = static_cast<webf::WebFPage*>(bridgePtr);
+  auto newContext = new webf::WebFPage(contextId, nullptr);
   delete context;
   webf::WebFPage::pageContextPool[contextId] = newContext;
 }
@@ -157,14 +157,14 @@ void invokeModuleEvent(int32_t contextId,
                        void* event,
                        NativeString* extra) {
   assert(checkPage(contextId) && "invokeEventListener: contextId is not valid");
-  auto context = static_cast<kraken::KrakenPage*>(getPage(contextId));
-  context->invokeModuleEvent(reinterpret_cast<kraken::NativeString*>(moduleName), eventType, event,
-                             reinterpret_cast<kraken::NativeString*>(extra));
+  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
+  context->invokeModuleEvent(reinterpret_cast<webf::NativeString*>(moduleName), eventType, event,
+                             reinterpret_cast<webf::NativeString*>(extra));
 }
 
 void registerDartMethods(int32_t contextId, uint64_t* methodBytes, int32_t length) {
   assert(checkPage(contextId) && "registerDartMethods: contextId is not valid");
-  auto context = static_cast<kraken::KrakenPage*>(getPage(contextId));
+  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
   context->registerDartMethods(methodBytes, length);
 }
 
@@ -187,21 +187,21 @@ void setConsoleMessageHandler(ConsoleMessageHandler handler) {
 }
 
 void dispatchUITask(int32_t contextId, void* context, void* callback) {
-  auto* page = static_cast<kraken::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   assert(std::this_thread::get_id() == page->currentThread());
   reinterpret_cast<void (*)(void*)>(callback)(context);
 }
 
 void flushUITask(int32_t contextId) {
-  kraken::UITaskQueue::instance(contextId)->flushTask();
+  webf::UITaskQueue::instance(contextId)->flushTask();
 }
 
 void registerUITask(int32_t contextId, Task task, void* data) {
-  kraken::UITaskQueue::instance(contextId)->registerTask(task, data);
+  webf::UITaskQueue::instance(contextId)->registerTask(task, data);
 };
 
 void* getUICommandItems(int32_t contextId) {
-  auto* page = static_cast<kraken::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   if (page == nullptr)
     return nullptr;
   return page->GetExecutingContext()->uiCommandBuffer()->data();
@@ -227,7 +227,7 @@ void registerContextDisposedCallbacks(int32_t contextId, Task task, void* data) 
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
-  kraken::ExecutingContext::pluginByteCode[pluginName] = kraken::NativeByteCode{bytes, length};
+  webf::ExecutingContext::pluginByteCode[pluginName] = webf::NativeByteCode{bytes, length};
 }
 
 int32_t profileModeEnabled() {

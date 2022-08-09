@@ -8,9 +8,9 @@
 #include <quickjs/list.h>
 #include "bindings/qjs/qjs_function.h"
 
-namespace kraken {
+namespace webf {
 
-// ModuleCallback is an asynchronous callback function, usually from the 4th parameter of `kraken.invokeModule`
+// ModuleCallback is an asynchronous callback function, usually from the 4th parameter of `webf.invokeModule`
 // function. When the asynchronous operation on the Dart side ends, the callback is will called and to return to the JS
 // executing environment.
 class ModuleCallback {
@@ -24,6 +24,6 @@ class ModuleCallback {
   std::shared_ptr<QJSFunction> function_{nullptr};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_MODULE_CALLBACK_H

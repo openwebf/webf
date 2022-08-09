@@ -5,7 +5,7 @@
 #include "html_canvas_element.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLCanvasElement::HTMLCanvasElement(Document& document) : HTMLElement(html_names::kcanvas, &document) {}
-}  // namespace kraken
+}  // namespace webf

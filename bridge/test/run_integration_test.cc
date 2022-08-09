@@ -9,7 +9,7 @@
 #include "kraken_bridge_test.h"
 #include "kraken_test_env.h"
 
-using namespace kraken;
+using namespace webf;
 #include "page.h"
 #include "webf_bridge_test.h"
 #include "webf_test_env.h"
@@ -42,7 +42,7 @@ TEST(IntegrationTest, runSpecs) {
   bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
   executeTest(context->contextId(), [](int32_t contextId, void* status) -> void* {
-    KRAKEN_LOG(VERBOSE) << "done";
+    WEBF_LOG(VERBOSE) << "done";
     return nullptr;
   });
 

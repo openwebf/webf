@@ -8,7 +8,7 @@
 
 #include <utility>
 
-namespace kraken {
+namespace webf {
 
 void bindCustomEvent(std::unique_ptr<ExecutionContext>& context) {
   JSValue constructor = context->contextData()->constructorForType(&customEventTypeInfo);
@@ -130,4 +130,4 @@ IMPL_PROPERTY_GETTER(CustomEvent, detail)(JSContext* ctx, JSValue this_val, int 
   return JS_DupValue(ctx, customEventInstance->m_detail);
 }
 
-}  // namespace kraken
+}  // namespace webf

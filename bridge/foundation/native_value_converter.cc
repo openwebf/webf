@@ -5,7 +5,7 @@
 
 #include "native_value_converter.h"
 
-namespace kraken {
+namespace webf {
 
 #define AnonymousFunctionCallPreFix "_anonymous_fn_"
 #define AsyncAnonymousFunctionCallPreFix "_anonymous_async_fn_"
@@ -134,4 +134,4 @@ std::shared_ptr<QJSFunction> CreateAsyncCallback(JSContext* ctx, int function_id
   return result;
 }
 
-}  // namespace kraken
+}  // namespace webf

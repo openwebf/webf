@@ -5,8 +5,8 @@
 #include "html_image_element.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLImageElement::HTMLImageElement(Document& document) : HTMLElement(html_names::kimg, &document) {}
 
-}  // namespace kraken
+}  // namespace webf

@@ -5,8 +5,8 @@
 #include "html_body_element.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLBodyElement::HTMLBodyElement(Document& document) : HTMLElement(html_names::kbody, &document) {}
 
-}  // namespace kraken
+}  // namespace webf

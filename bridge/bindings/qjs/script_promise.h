@@ -9,7 +9,7 @@
 #include "foundation/macros.h"
 #include "script_value.h"
 
-namespace kraken {
+namespace webf {
 
 // ScriptPromise is the class for representing Promise values in C++ world.
 // ScriptPromise holds a Promise.
@@ -31,6 +31,6 @@ class ScriptPromise final {
   ScriptValue promise_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_H_

@@ -7,7 +7,7 @@
 #include "bindings/qjs/qjs_engine_patch.h"
 #include "page.h"
 
-namespace kraken {
+namespace webf {
 
 void bindTouchEvent(ExecutionContext* context) {
   auto* constructor = TouchEvent::instance(context);
@@ -260,4 +260,4 @@ IMPL_PROPERTY_GETTER(TouchEvent, shiftKey)(JSContext* ctx, JSValue this_val, int
 TouchEventInstance::TouchEventInstance(TouchEvent* event, NativeEvent* nativeEvent)
     : EventInstance(event, nativeEvent) {}
 
-}  // namespace kraken
+}  // namespace webf

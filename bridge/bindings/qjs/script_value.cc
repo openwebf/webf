@@ -11,7 +11,7 @@
 #include "qjs_bounding_client_rect.h"
 #include "qjs_engine_patch.h"
 
-namespace kraken {
+namespace webf {
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);
@@ -142,4 +142,4 @@ void ScriptValue::Trace(GCVisitor* visitor) {
   visitor->Trace(value_);
 }
 
-}  // namespace kraken
+}  // namespace webf

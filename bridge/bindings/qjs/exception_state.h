@@ -11,7 +11,7 @@
 
 #define ASSERT_NO_EXCEPTION() ExceptionState().ReturnThis()
 
-namespace kraken {
+namespace webf {
 
 enum ErrorType { TypeError, InternalError, RangeError, ReferenceError, SyntaxError };
 
@@ -33,6 +33,6 @@ class ExceptionState {
   JSValue exception_{JS_NULL};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_EXCEPTION_STATE_H

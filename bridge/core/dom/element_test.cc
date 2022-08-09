@@ -6,7 +6,7 @@
 #include "core/dom/legacy/bounding_client_rect.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
-using namespace kraken;
+using namespace webf;
 
 TEST(Element, setAttribute) {
   bool static errorCalled = false;

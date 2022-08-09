@@ -18,10 +18,10 @@
 //  TEST_OnEventTargetDisposed onEventTargetDisposed{nullptr};
 //};
 //
-//// Mock dart methods and add async timer to emulate kraken environment in C++ unit test.
+//// Mock dart methods and add async timer to emulate webf environment in C++ unit test.
 //
 
-namespace kraken {
+namespace webf {
 
 std::unique_ptr<KrakenPage> TEST_init(OnJSError onJsError);
 std::unique_ptr<KrakenPage> TEST_init();
@@ -29,7 +29,7 @@ std::unique_ptr<KrakenPage> TEST_allocateNewPage();
 void TEST_runLoop(ExecutingContext* context);
 void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError);
 
-}  // namespace kraken
+}  // namespace webf
 // void TEST_dispatchEvent(int32_t contextId, EventTarget* eventTarget, const std::string type);
 // void TEST_callNativeMethod(void* nativePtr, void* returnValue, void* method, int32_t argc, void* argv);
 // void TEST_registerEventTargetDisposedCallback(int32_t contextUniqueId, TEST_OnEventTargetDisposed callback);

@@ -11,7 +11,7 @@
 #include "node_traversal.h"
 #include "traversal_range.h"
 
-namespace kraken {
+namespace webf {
 
 class HasTagName {
   KRAKEN_STACK_ALLOCATED();
@@ -408,6 +408,6 @@ inline ElementType* Traversal<ElementType>::NextSibling(const Node& current, Mat
   return element;
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_

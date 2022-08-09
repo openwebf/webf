@@ -8,7 +8,7 @@
 
 #include "character_data.h"
 
-namespace kraken {
+namespace webf {
 
 class Text : public CharacterData {
   DEFINE_WRAPPERTYPEINFO();
@@ -37,6 +37,6 @@ struct DowncastTraits<Text> {
   static bool AllowFrom(const Node& node) { return node.IsTextNode(); };
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_TEXT_H_

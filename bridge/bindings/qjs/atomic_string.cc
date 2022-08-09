@@ -6,7 +6,7 @@
 #include "atomic_string.h"
 #include "built_in_string.h"
 
-namespace kraken {
+namespace webf {
 
 AtomicString AtomicString::Empty(JSContext* ctx) {
   AtomicString tmp = built_in_string::kempty_string;
@@ -181,4 +181,4 @@ const AtomicString AtomicString::ToLowerSlow() const {
   return AtomicString(ctx_, str);
 }
 
-}  // namespace kraken
+}  // namespace webf

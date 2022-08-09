@@ -7,7 +7,7 @@
 
 #include "event_target.h"
 
-namespace kraken {
+namespace webf {
 
 // Constructible version of EventTarget. Calls to EventTarget
 // constructor in JavaScript will return an instance of this class.
@@ -18,6 +18,6 @@ namespace kraken {
 // decrease.
 class EventTargetImpl : public EventTarget {};
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_EVENTS_EVENT_TARGET_IMPL_H_

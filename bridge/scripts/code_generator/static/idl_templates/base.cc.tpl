@@ -14,7 +14,7 @@
 #include "bindings/qjs/cppgc/mutation_scope.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 <% if (wrapperTypeInfoInit) { %>
 <%= wrapperTypeInfoInit %>

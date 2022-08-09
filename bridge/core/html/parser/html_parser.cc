@@ -10,7 +10,7 @@
 #include "foundation/logging.h"
 #include "html_parser.h"
 
-namespace kraken {
+namespace webf {
 
 inline std::string trim(const std::string& str) {
   std::string tmp = str;
@@ -104,7 +104,7 @@ bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTML
       }
     }
   } else {
-    KRAKEN_LOG(ERROR) << "Root node is null.";
+    WEBF_LOG(ERROR) << "Root node is null.";
   }
 
   return true;
@@ -164,4 +164,4 @@ void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

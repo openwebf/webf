@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
 
-using namespace kraken;
+using namespace webf;
 
 TEST(Console, rawPrintShouldWork) {
   static bool logExecuted = false;

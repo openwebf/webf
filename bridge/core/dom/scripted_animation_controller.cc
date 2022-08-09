@@ -6,7 +6,7 @@
 #include "scripted_animation_controller.h"
 #include "frame_request_callback_collection.h"
 
-namespace kraken {
+namespace webf {
 
 static void handleRAFTransientCallback(void* ptr, int32_t contextId, double highResTimeStamp, const char* errmsg) {
   auto* frame_callback = static_cast<FrameCallback*>(ptr);
@@ -63,4 +63,4 @@ void ScriptAnimationController::Trace(GCVisitor* visitor) const {
   frame_request_callback_collection_.Trace(visitor);
 }
 
-}  // namespace kraken
+}  // namespace webf

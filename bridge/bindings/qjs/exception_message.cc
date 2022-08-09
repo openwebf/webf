@@ -6,7 +6,7 @@
 #include "exception_message.h"
 #include <vector>
 
-namespace kraken {
+namespace webf {
 
 std::string ExceptionMessage::FormatString(const char* format, ...) {
   va_list args;
@@ -50,4 +50,4 @@ std::string ExceptionMessage::ArgumentNullOrIncorrectType(int argument_index, co
   return FormatString("The %d argument provided is either null, or an invalid %s object.", argument_index, expect_type);
 }
 
-}  // namespace kraken
+}  // namespace webf

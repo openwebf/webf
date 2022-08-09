@@ -8,7 +8,7 @@
 #include <forward_list>
 #include "module_listener.h"
 
-namespace kraken {
+namespace webf {
 
 class ModuleListenerContainer final {
  public:
@@ -19,6 +19,6 @@ class ModuleListenerContainer final {
   friend ModuleListener;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_MODULE_LISTENER_CONTAINER_H

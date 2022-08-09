@@ -7,7 +7,7 @@
 
 #include "event.h"
 
-namespace kraken {
+namespace webf {
 
 void bindCustomEvent(ExecutionContext* context);
 
@@ -72,6 +72,6 @@ auto customEventCreator =
 
 const WrapperTypeInfo customEventTypeInfo = {"CustomEvent", &eventTypeInfo, customEventCreator};
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CUSTOM_EVENT_H

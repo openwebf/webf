@@ -8,7 +8,7 @@
 
 #include <cassert>
 
-namespace kraken {
+namespace webf {
 
 class ContainerNode;
 class Document;
@@ -38,6 +38,6 @@ class TreeScope {
   TreeScope* parent_tree_scope_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_TREE_SCOPE_H_

@@ -6,7 +6,7 @@
 #include "mutation_scope.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 MemberMutationScope::MemberMutationScope(ExecutingContext* context) : context_(context) {
   context->SetMutationScope(*this);
@@ -42,4 +42,4 @@ void MemberMutationScope::ApplyRecord() {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

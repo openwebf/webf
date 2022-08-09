@@ -12,7 +12,7 @@
 #include "native_string_utils.h"
 #include "qjs_engine_patch.h"
 
-using namespace kraken;
+using namespace webf;
 
 using TestCallback = void (*)(JSContext* ctx);
 

@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 
@@ -31,6 +31,6 @@ class SourceLocation {
   unsigned column_number_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_SOURCE_LOCATION_H_

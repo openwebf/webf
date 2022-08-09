@@ -10,7 +10,7 @@
 #include "bindings/qjs/qjs_function.h"
 #include "module_callback.h"
 
-namespace kraken {
+namespace webf {
 
 class ModuleManager {
  public:
@@ -34,6 +34,6 @@ class ModuleManager {
                                              ExceptionState& exception);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_MODULE_MANAGER_H

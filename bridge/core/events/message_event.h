@@ -9,7 +9,7 @@
 #include "core/dom/events/event.h"
 #include "qjs_message_event_init.h"
 
-namespace kraken {
+namespace webf {
 
 class MessageEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
@@ -40,6 +40,6 @@ class MessageEvent : public Event {
   AtomicString source_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_EVENTS_MESSAGE_EVENT_H_

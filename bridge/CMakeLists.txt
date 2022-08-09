@@ -358,25 +358,27 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 #    core/html/html_image_element.h
 #    core/html/html_script_element.cc
 #    core/html/html_script_element.h
-    core/html/html_unknown_element.cc
-    core/html/html_unknown_element.h
-    # Legacy implements, should remove them in the future.
-    core/dom/legacy/space_split_string.cc
-    core/dom/legacy/space_split_string.h
-    core/dom/legacy/element_attributes.cc
-    core/dom/legacy/element_attributes.h
-    core/dom/legacy/bounding_client_rect.cc
-    core/dom/legacy/bounding_client_rect.h
+          core/html/html_unknown_element.cc
+          core/html/html_unknown_element.h
+          # Legacy implements, should remove them in the future.
+          core/dom/legacy/space_split_string.cc
+          core/dom/legacy/space_split_string.h
+          core/dom/legacy/element_attributes.cc
+          core/dom/legacy/element_attributes.h
+          core/dom/legacy/bounding_client_rect.cc
+          core/dom/legacy/bounding_client_rect.h
+          core/timing/performance.cc
+          core/timing/performance.h
 
-#    core/dom/character_data.cc
-#    core/dom/character_data.h
-#    core/dom/comment.cc
-#    core/dom/comment.h
-#    core/dom/node.cc
-#    core/dom/node.h
-#    core/dom/events/custom_event.cc
-#    core/dom/events/custom_event.h
-#    core/dom/events/event.h
+          #    core/dom/character_data.cc
+          #    core/dom/character_data.h
+          #    core/dom/comment.cc
+          #    core/dom/comment.h
+          #    core/dom/node.cc
+          #    core/dom/node.h
+          #    core/dom/events/custom_event.cc
+          #    core/dom/events/custom_event.h
+          #    core/dom/events/event.h
 #    core/dom/events/event.cc
 #    core/dom/events/event_listener_map.cc
 #    core/dom/events/event_listener_map.h

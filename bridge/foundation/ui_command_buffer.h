@@ -11,7 +11,7 @@
 #include "bindings/qjs/native_string_utils.h"
 #include "native_value.h"
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 
@@ -79,6 +79,6 @@ class UICommandBuffer {
   std::vector<UICommandItem> queue;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // BRIDGE_FOUNDATION_UI_COMMAND_BUFFER_H_

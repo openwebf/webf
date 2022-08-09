@@ -11,7 +11,7 @@
 #include "module_callback.h"
 #include "module_manager.h"
 
-namespace kraken {
+namespace webf {
 
 class ModuleListener;
 
@@ -29,6 +29,6 @@ class ModuleCallbackCoordinator final {
   friend ModuleListener;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_MODULE_CALLBACK_COORDINATOR_H

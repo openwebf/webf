@@ -9,7 +9,7 @@
 #include "foundation/logging.h"
 #include "include/webf_bridge.h"
 
-namespace kraken {
+namespace webf {
 
 UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {
   queue.reserve(0);
@@ -53,4 +53,4 @@ void UICommandBuffer::clear() {
   queue.clear();
 }
 
-}  // namespace kraken
+}  // namespace webf

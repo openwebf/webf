@@ -7,7 +7,7 @@
 #include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 NativeValue Native_NewNull() {
   return (NativeValue){.u = {.int64 = 0}, NativeTag::TAG_NULL};
@@ -70,4 +70,4 @@ NativeValue Native_NewJSON(const ScriptValue& value) {
   return result;
 }
 
-}  // namespace kraken
+}  // namespace webf

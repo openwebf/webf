@@ -5,7 +5,7 @@
 #include "blob_part.h"
 #include "qjs_blob.h"
 
-namespace kraken {
+namespace webf {
 
 std::shared_ptr<BlobPart> BlobPart::Create(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
   auto* context = ExecutingContext::From(ctx);
@@ -82,4 +82,4 @@ Blob* BlobPart::GetBlob() const {
   return blob_;
 }
 
-}  // namespace kraken
+}  // namespace webf

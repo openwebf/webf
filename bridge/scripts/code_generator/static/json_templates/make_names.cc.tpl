@@ -5,7 +5,7 @@
 
 #include "<%= name %>.h"
 
-namespace kraken {
+namespace webf {
 namespace <%= name %> {
 
 void* names_storage[kNamesCount * ((sizeof(AtomicString) + sizeof(void *) - 1) / sizeof(void *))];
@@ -51,4 +51,4 @@ void Dispose(){
 
 
 }
-} // kraken
+} // webf

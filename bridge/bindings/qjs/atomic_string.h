@@ -15,7 +15,7 @@
 #include "native_string_utils.h"
 #include "qjs_engine_patch.h"
 
-namespace kraken {
+namespace webf {
 
 // An AtomicString instance represents a string, and multiple AtomicString
 // instances can share their string storage if the strings are
@@ -89,6 +89,6 @@ class AtomicString {
   StringKind kind_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_

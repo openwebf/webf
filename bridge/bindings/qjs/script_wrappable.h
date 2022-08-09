@@ -11,7 +11,7 @@
 #include "foundation/macros.h"
 #include "wrapper_type_info.h"
 
-namespace kraken {
+namespace webf {
 
 class ScriptValue;
 class GCVisitor;
@@ -84,6 +84,6 @@ Local<T>::~Local<T>() {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_SCRIPT_WRAPPABLE_H

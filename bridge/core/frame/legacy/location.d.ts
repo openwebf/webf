@@ -1,1 +1,1 @@
-declare const __kraken_location_reload__: () => void;
+declare const __webf_location_reload__: () => void;

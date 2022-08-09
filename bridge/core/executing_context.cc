@@ -11,7 +11,7 @@
 
 #include "foundation/logging.h"
 
-namespace kraken {
+namespace webf {
 
 static std::atomic<int32_t> context_unique_id{0};
 
@@ -25,15 +25,15 @@ std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExc
 
 ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& handler, void* owner)
     : context_id_(contextId), handler_(handler), owner_(owner), ctx_invalid_(false), unique_id_(context_unique_id++) {
-#if ENABLE_PROFILE
-  auto jsContextStartTime =
-      std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
-          .count();
-  auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
-  nativePerformance.mark(PERF_JS_CONTEXT_INIT_START, jsContextStartTime);
-  nativePerformance.mark(PERF_JS_CONTEXT_INIT_END);
-  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
-#endif
+//#if ENABLE_PROFILE
+//  auto jsContextStartTime =
+//      std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
+//          .count();
+//  auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
+//  nativePerformance.mark(PERF_JS_CONTEXT_INIT_START, jsContextStartTime);
+//  nativePerformance.mark(PERF_JS_CONTEXT_INIT_END);
+//  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
+//#endif
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
   valid_contexts[contextId] = true;
@@ -57,20 +57,20 @@ ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& 
   // Binding global object and window.
   InstallGlobal();
 
-#if ENABLE_PROFILE
-  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_END);
-  nativePerformance.mark(PERF_JS_POLYFILL_INIT_START);
-#endif
+//#if ENABLE_PROFILE
+//  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_END);
+//  nativePerformance.mark(PERF_JS_POLYFILL_INIT_START);
+//#endif
 
-  initKrakenPolyFill(this);
+  initWebFPolyFill(this);
 
   for (auto& p : pluginByteCode) {
     EvaluateByteCode(p.second.bytes, p.second.length);
   }
 
-#if ENABLE_PROFILE
-  nativePerformance.mark(PERF_JS_POLYFILL_INIT_END);
-#endif
+//#if ENABLE_PROFILE
+//  nativePerformance.mark(PERF_JS_POLYFILL_INIT_END);
+//#endif
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -396,4 +396,4 @@ bool isContextValid(int32_t contextId) {
   return valid_contexts[contextId];
 }
 
-}  // namespace kraken
+}  // namespace webf

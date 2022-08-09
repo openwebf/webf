@@ -12,7 +12,7 @@
 #include "qjs_engine_patch.h"
 #include "script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 // Arithmetic values
 inline JSValue toQuickJS(JSContext* ctx, double v) {
@@ -50,6 +50,6 @@ inline JSValue toQuickJS(JSContext* ctx, ArrayBufferData data) {
   return JS_NewArrayBufferCopy(ctx, data.buffer, data.length);
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_TO_QUICKJS_H_

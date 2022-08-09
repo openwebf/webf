@@ -5,7 +5,7 @@
 
 #include "js_based_event_listener.h"
 
-namespace kraken {
+namespace webf {
 
 // Implements step 2. of "inner invoke".
 // https://dom.spec.whatwg.org/#concept-event-listener-inner-invoke
@@ -22,4 +22,4 @@ void JSBasedEventListener::Invoke(ExecutingContext* context, Event* event, Excep
 
 JSBasedEventListener::JSBasedEventListener() {}
 
-}  // namespace kraken
+}  // namespace webf

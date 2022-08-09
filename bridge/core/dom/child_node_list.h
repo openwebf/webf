@@ -11,7 +11,7 @@
 #include "core/dom/container_node.h"
 #include "core/dom/node_list.h"
 
-namespace kraken {
+namespace webf {
 
 class ExceptionState;
 
@@ -48,6 +48,6 @@ class ChildNodeList : public NodeList {
   mutable CollectionIndexCache<ChildNodeList, Node> collection_index_cache_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_CHILD_NODE_LIST_H_

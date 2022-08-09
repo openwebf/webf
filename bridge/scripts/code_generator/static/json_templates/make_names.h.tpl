@@ -9,7 +9,7 @@
 
 #include "bindings/qjs/atomic_string.h"
 
-namespace kraken {
+namespace webf {
 namespace <%= name %> {
 
 <% _.forEach(data, function(name, index) { %>
@@ -29,6 +29,6 @@ void Dispose();
 
 }
 
-} // kraken
+} // webf
 
 #endif  // #define <%= _.snakeCase(name).toUpperCase() %>

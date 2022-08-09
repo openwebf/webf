@@ -7,7 +7,7 @@
 #include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
 
-namespace kraken {
+namespace webf {
 
 ScriptWrappable::ScriptWrappable(JSContext* ctx)
     : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)) {}
@@ -166,4 +166,4 @@ void ScriptWrappable::InitializeQuickJSObject() {
   JS_SetPrototype(ctx_, jsObject_, prototype);
 }
 
-}  // namespace kraken
+}  // namespace webf

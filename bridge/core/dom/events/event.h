@@ -12,7 +12,7 @@
 #include "foundation/native_string.h"
 #include "qjs_event_init.h"
 
-namespace kraken {
+namespace webf {
 
 class EventTarget;
 class ExceptionState;
@@ -229,6 +229,6 @@ class Event : public ScriptWrappable {
   EventTarget* current_target_{nullptr};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_EVENT_H

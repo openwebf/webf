@@ -9,7 +9,7 @@
 #include "atomic_string.h"
 #include "gtest/gtest.h"
 
-using namespace kraken;
+using namespace webf;
 
 using TestCallback = void (*)(JSContext* ctx);
 

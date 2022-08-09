@@ -5,7 +5,7 @@
 #include "script_promise.h"
 #include "qjs_engine_patch.h"
 
-namespace kraken {
+namespace webf {
 
 ScriptPromise::ScriptPromise(JSContext* ctx, JSValue promise) : ctx_(ctx) {
   if (JS_IsUndefined(promise) || JS_IsNull(promise))
@@ -24,4 +24,4 @@ JSValue ScriptPromise::ToQuickJS() {
 
 void ScriptPromise::Trace(GCVisitor* visitor) {}
 
-}  // namespace kraken
+}  // namespace webf

@@ -7,11 +7,11 @@
 #include "core/frame/window.h"
 #include "foundation/native_value_converter.h"
 
-namespace kraken {
+namespace webf {
 
 Screen::Screen(Window* window, NativeBindingObject* native_binding_object)
     : EventTargetWithInlineData(window->GetExecutingContext()) {
   BindDartObject(native_binding_object);
 }
 
-}  // namespace kraken
+}  // namespace webf

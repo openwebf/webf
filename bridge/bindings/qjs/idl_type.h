@@ -9,7 +9,7 @@
 #include <vector>
 #include "converter.h"
 
-namespace kraken {
+namespace webf {
 
 struct IDLTypeBase {
   using ImplType = void;
@@ -67,6 +67,6 @@ struct IDLSequence final : public IDLTypeBase {
   using ImplType = typename std::vector<T>;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_CONVERTER_TS_TYPE_H_

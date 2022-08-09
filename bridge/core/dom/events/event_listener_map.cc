@@ -4,7 +4,7 @@
  */
 #include "event_listener_map.h"
 
-namespace kraken {
+namespace webf {
 
 EventListenerMap::EventListenerMap() {}
 
@@ -121,4 +121,4 @@ void EventListenerMap::Trace(GCVisitor* visitor) const {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

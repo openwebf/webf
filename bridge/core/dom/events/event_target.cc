@@ -14,7 +14,7 @@
 #include "kraken_test_env.h"
 #endif
 
-namespace kraken {
+namespace webf {
 
 static std::atomic<int32_t> global_event_target_id{0};
 
@@ -260,6 +260,6 @@ void EventTargetWithInlineData::Trace(GCVisitor* visitor) const {
   data_.Trace(visitor);
 }
 
-}  // namespace kraken
+}  // namespace webf
 
-// namespace kraken::binding::qjs
+// namespace webf::binding::qjs

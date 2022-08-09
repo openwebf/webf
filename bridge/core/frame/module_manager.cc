@@ -6,7 +6,7 @@
 #include "core/executing_context.h"
 #include "module_callback.h"
 
-namespace kraken {
+namespace webf {
 
 struct ModuleContext {
   ExecutingContext* context;
@@ -126,4 +126,4 @@ void ModuleManager::__kraken_add_module_listener__(ExecutingContext* context,
   context->ModuleListeners()->AddModuleListener(listener);
 }
 
-}  // namespace kraken
+}  // namespace webf

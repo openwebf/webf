@@ -9,7 +9,7 @@
 #include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 class Console final {
  public:
@@ -20,6 +20,6 @@ class Console final {
   static void __kraken_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKE_CONSOLE_H

@@ -7,13 +7,13 @@
 
 #include "core/html/html_element.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLTextareaElement : public HTMLElement {
  public:
   explicit HTMLTextareaElement(Document&);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_HTML_FORMS_HTML_TEXTAREA_ELEMENT_H_

@@ -10,7 +10,7 @@
 #include "bindings/qjs/atomic_string.h"
 #include "foundation/native_value.h"
 
-namespace kraken {
+namespace webf {
 
 class BindingObject;
 class NativeBindingObject;
@@ -72,6 +72,6 @@ class BindingObject {
   NativeBindingObject* binding_object_{new NativeBindingObject(this)};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_BINDING_OBJECT_H_

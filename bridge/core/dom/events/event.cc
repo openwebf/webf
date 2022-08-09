@@ -6,7 +6,7 @@
 #include "core/executing_context.h"
 #include "event_target.h"
 
-namespace kraken {
+namespace webf {
 
 Event* Event::From(ExecutingContext* context, NativeEvent* native_event) {
   AtomicString event_type = AtomicString::From(context->ctx(), native_event->type);
@@ -160,4 +160,4 @@ void Event::SetHandlingPassive(PassiveMode mode) {
 
 void Event::Trace(GCVisitor* visitor) const {}
 
-}  // namespace kraken
+}  // namespace webf

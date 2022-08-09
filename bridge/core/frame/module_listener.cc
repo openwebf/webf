@@ -6,7 +6,7 @@
 
 #include <utility>
 
-namespace kraken {
+namespace webf {
 
 std::shared_ptr<ModuleListener> ModuleListener::Create(const std::shared_ptr<QJSFunction>& function) {
   return std::make_shared<ModuleListener>(function);
@@ -14,4 +14,4 @@ std::shared_ptr<ModuleListener> ModuleListener::Create(const std::shared_ptr<QJS
 
 ModuleListener::ModuleListener(std::shared_ptr<QJSFunction> function) : function_(std::move(function)) {}
 
-}  // namespace kraken
+}  // namespace webf

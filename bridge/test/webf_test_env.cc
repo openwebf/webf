@@ -29,12 +29,12 @@ static int64_t get_time_ms(void) {
 }
 #endif
 
-namespace kraken {
+namespace webf {
 
 typedef struct {
   struct list_head link;
   int64_t timeout;
-  kraken::DOMTimer* timer;
+  webf::DOMTimer* timer;
   int32_t contextId;
   bool isInterval;
   AsyncCallback func;
@@ -42,7 +42,7 @@ typedef struct {
 
 typedef struct {
   struct list_head link;
-  kraken::FrameCallback* callback;
+  webf::FrameCallback* callback;
   int32_t contextId;
   AsyncRAFCallback handler;
   int32_t callbackId;
@@ -86,7 +86,7 @@ void TEST_reloadApp(int32_t contextId) {}
 
 int32_t timerId = 0;
 
-int32_t TEST_setTimeout(kraken::DOMTimer* timer, int32_t contextId, AsyncCallback callback, int32_t timeout) {
+int32_t TEST_setTimeout(webf::DOMTimer* timer, int32_t contextId, AsyncCallback callback, int32_t timeout) {
   JSRuntime* rt = ScriptState::runtime();
   auto* context = timer->context();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
@@ -103,7 +103,7 @@ int32_t TEST_setTimeout(kraken::DOMTimer* timer, int32_t contextId, AsyncCallbac
   return id;
 }
 
-int32_t TEST_setInterval(kraken::DOMTimer* timer, int32_t contextId, AsyncCallback callback, int32_t timeout) {
+int32_t TEST_setInterval(webf::DOMTimer* timer, int32_t contextId, AsyncCallback callback, int32_t timeout) {
   JSRuntime* rt = ScriptState::runtime();
   auto* context = timer->context();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
@@ -122,7 +122,7 @@ int32_t TEST_setInterval(kraken::DOMTimer* timer, int32_t contextId, AsyncCallba
 
 int32_t callbackId = 0;
 
-uint32_t TEST_requestAnimationFrame(kraken::FrameCallback* frameCallback, int32_t contextId, AsyncRAFCallback handler) {
+uint32_t TEST_requestAnimationFrame(webf::FrameCallback* frameCallback, int32_t contextId, AsyncRAFCallback handler) {
   JSRuntime* rt = ScriptState::runtime();
   auto* context = frameCallback->context();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
@@ -140,14 +140,14 @@ uint32_t TEST_requestAnimationFrame(kraken::FrameCallback* frameCallback, int32_
 }
 
 void TEST_cancelAnimationFrame(int32_t contextId, int32_t id) {
-  auto* page = static_cast<kraken::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::KrakenPage*>(getPage(contextId));
   auto* context = page->GetExecutingContext();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(ScriptState::runtime()));
   ts->os_frameCallbacks.erase(id);
 }
 
 void TEST_clearTimeout(int32_t contextId, int32_t timerId) {
-  auto* page = static_cast<kraken::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::KrakenPage*>(getPage(contextId));
   auto* context = page->GetExecutingContext();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(ScriptState::runtime()));
   ts->os_timers.erase(timerId);
@@ -202,7 +202,7 @@ std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   TEST_mockDartMethods(contextId, onJsError);
 
   initTestFramework(contextId);
-  auto* page = static_cast<kraken::KrakenPage*>(getPage(contextId));
+  auto* page = static_cast<webf::KrakenPage*>(getPage(contextId));
   auto* context = page->GetExecutingContext();
   JSThreadState* th = new JSThreadState();
   JS_SetRuntimeOpaque(ScriptState::runtime(), th);
@@ -220,7 +220,7 @@ std::unique_ptr<webf::WebFPage> TEST_allocateNewPage() {
   return std::unique_ptr<webf::WebFPage>(static_cast<webf::WebFPage*>(getPage(newContextId)));
 }
 
-static bool jsPool(kraken::ExecutingContext* context) {
+static bool jsPool(webf::ExecutingContext* context) {
   JSRuntime* rt = ScriptState::runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   int64_t cur_time, delay;
@@ -267,7 +267,7 @@ static bool jsPool(kraken::ExecutingContext* context) {
   return false;
 }
 
-void TEST_runLoop(kraken::ExecutingContext* context) {
+void TEST_runLoop(webf::ExecutingContext* context) {
   for (;;) {
     context->DrainPendingPromiseJobs();
     if (jsPool(context))
@@ -300,7 +300,7 @@ void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError) {
   registerDartMethods(contextId, mockMethods.data(), mockMethods.size());
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 // void TEST_dispatchEvent(int32_t contextId, EventTarget* eventTarget, const std::string type) {
 //  NativeEventTarget* nativeEventTarget = new NativeEventTarget(eventTarget);

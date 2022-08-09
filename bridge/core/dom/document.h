@@ -14,7 +14,7 @@
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLBodyElement;
 class HTMLHeadElement;
@@ -79,6 +79,6 @@ class Document : public ContainerNode, public TreeScope {
   ScriptAnimationController script_animation_controller_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_DOCUMENT_H

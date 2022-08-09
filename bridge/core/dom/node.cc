@@ -14,7 +14,7 @@
 #include "node_traversal.h"
 #include "text.h"
 
-namespace kraken {
+namespace webf {
 
 Node* Node::Create(ExecutingContext* context, ExceptionState& exception_state) {
   exception_state.ThrowException(context->ctx(), ErrorType::TypeError, "Illegal constructor");
@@ -420,4 +420,4 @@ void Node::Trace(GCVisitor* visitor) const {
   EventTarget::Trace(visitor);
 }
 
-}  // namespace kraken
+}  // namespace webf

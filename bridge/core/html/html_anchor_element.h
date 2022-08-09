@@ -7,13 +7,13 @@
 
 #include "html_element.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLAnchorElement : public HTMLElement {
  public:
   explicit HTMLAnchorElement(Document&);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_HTML_ANCHOR_ELEMENT_H

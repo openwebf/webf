@@ -12,7 +12,7 @@
 #include "legacy/element_attributes.h"
 #include "qjs_scroll_to_options.h"
 
-namespace kraken {
+namespace webf {
 
 class Element : public ContainerNode {
   DEFINE_WRAPPERTYPEINFO();
@@ -123,6 +123,6 @@ struct DowncastTraits<Element> {
   static bool AllowFrom(const Node& node) { return node.IsElementNode(); }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_ELEMENT_H

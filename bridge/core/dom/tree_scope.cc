@@ -6,10 +6,10 @@
 #include "tree_scope.h"
 #include "document.h"
 
-namespace kraken {
+namespace webf {
 
 TreeScope::TreeScope(Document& document) : root_node_(&document), document_(&document) {
   root_node_->SetTreeScope(this);
 }
 
-}  // namespace kraken
+}  // namespace webf

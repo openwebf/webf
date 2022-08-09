@@ -9,7 +9,7 @@
 #include "core/executing_context.h"
 #include "script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 template <class QJST, class T>
 class QJSInterfaceBridge {
@@ -24,6 +24,6 @@ class QJSInterfaceBridge {
   };
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_QJS_INTERFACE_BRIDGE_H_

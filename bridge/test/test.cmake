@@ -10,9 +10,9 @@ add_subdirectory(./third_party/googletest)
 add_subdirectory(./third_party/benchmark)
 
 list(APPEND WEBF_TEST_SOURCE
-  page_test.cc
-  page_test.h
-)
+        test/webf_test_context.cc
+        test/webf_test_context.h
+        )
 list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./test/webf_test_env.cc
   ./test/webf_test_env.h

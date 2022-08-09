@@ -35,7 +35,7 @@
 #include "qjs_window.h"
 #include "qjs_window_or_worker_global_scope.h"
 
-namespace kraken {
+namespace webf {
 
 void InstallBindings(ExecutingContext* context) {
   // Must follow the inheritance order when install.
@@ -72,4 +72,4 @@ void InstallBindings(ExecutingContext* context) {
   QJSElementAttributes::Install(context);
 }
 
-}  // namespace kraken
+}  // namespace webf

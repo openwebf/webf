@@ -10,7 +10,7 @@
 #include "core/dom/events/event.h"
 #include "qjs_error_event_init.h"
 
-namespace kraken {
+namespace webf {
 
 class ErrorEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
@@ -53,6 +53,6 @@ struct DowncastTraits<ErrorEvent> {
   static bool AllowFrom(const Event& event) { return event.IsErrorEvent(); }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_

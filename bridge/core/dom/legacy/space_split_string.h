@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace kraken {
+namespace webf {
 
 class SpaceSplitString {
  public:
@@ -25,6 +25,6 @@ class SpaceSplitString {
   std::vector<std::string> m_szData;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_LEGACY_SPACE_SPLIT_STRING_H_

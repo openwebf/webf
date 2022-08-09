@@ -11,7 +11,7 @@
 #include "node.h"
 #include "traversal_range.h"
 
-namespace kraken {
+namespace webf {
 
 class NodeTraversal {
   KRAKEN_STATIC_ONLY(NodeTraversal);
@@ -171,6 +171,6 @@ inline Node* NodeTraversal::ChildAtTemplate(NodeType& parent, unsigned index) {
   return child;
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_NODE_TRAVERSAL_H_

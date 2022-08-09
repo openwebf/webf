@@ -1,6 +1,6 @@
 #include "core/<%= blob.implement %>.h"
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 

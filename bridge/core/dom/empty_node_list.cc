@@ -6,7 +6,7 @@
 #include "empty_node_list.h"
 #include "core/dom/node.h"
 
-namespace kraken {
+namespace webf {
 
 EmptyNodeList::EmptyNodeList(Node* root_node) : owner_(root_node), NodeList(root_node->ctx()) {}
 
@@ -16,4 +16,4 @@ Node* EmptyNodeList::VirtualOwnerNode() const {
   return &OwnerNode();
 }
 
-}  // namespace kraken
+}  // namespace webf

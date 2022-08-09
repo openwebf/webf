@@ -5,7 +5,7 @@
 #include "executing_context_data.h"
 #include "executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 JSValue ExecutionContextData::constructorForType(const WrapperTypeInfo* type) {
   auto it = constructor_map_.find(type);
@@ -80,4 +80,4 @@ void ExecutionContextData::Dispose() {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

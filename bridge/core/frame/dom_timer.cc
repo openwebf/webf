@@ -13,7 +13,7 @@
 #include "kraken_test_env.h"
 #endif
 
-namespace kraken {
+namespace webf {
 
 std::shared_ptr<DOMTimer> DOMTimer::create(ExecutingContext* context, const std::shared_ptr<QJSFunction>& callback) {
   return std::make_shared<DOMTimer>(context, callback);
@@ -37,4 +37,4 @@ void DOMTimer::setTimerId(int32_t timerId) {
   timerId_ = timerId;
 }
 
-}  // namespace kraken
+}  // namespace webf

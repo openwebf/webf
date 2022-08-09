@@ -8,7 +8,7 @@
 #include "event_listener.h"
 #include "foundation/macros.h"
 
-namespace kraken {
+namespace webf {
 
 class AddEventListenerOptions;
 class EventListenerOptions;
@@ -58,6 +58,6 @@ class RegisteredEventListener final {
 
 bool operator==(const RegisteredEventListener&, const RegisteredEventListener&);
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_EVENTS_REGISTERED_EVENTLISTENER_H_

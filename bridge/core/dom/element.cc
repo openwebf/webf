@@ -15,7 +15,7 @@
 #include "core/html/parser/html_parser.h"
 #include "foundation/native_value_converter.h"
 
-namespace kraken {
+namespace webf {
 
 Element::Element(const AtomicString& tag_name, Document* document, Node::ConstructionType construction_type)
     : ContainerNode(document, construction_type), tag_name_(tag_name) {
@@ -405,4 +405,4 @@ bool Element::ChildTypeAllowed(NodeType type) const {
   return false;
 }
 
-}  // namespace kraken
+}  // namespace webf

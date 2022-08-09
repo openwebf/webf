@@ -29,7 +29,7 @@
 #include "frame/module_listener_container.h"
 #include "script_state.h"
 
-namespace kraken {
+namespace webf {
 
 struct NativeByteCode {
   uint8_t* bytes;
@@ -45,7 +45,7 @@ using JSExceptionHandler = std::function<void(ExecutingContext* context, const c
 bool isContextValid(int32_t contextId);
 
 // An environment in which script can execute. This class exposes the common
-// properties of script execution environments on the kraken.
+// properties of script execution environments on the webf.
 // Window : Document : ExecutionContext = 1 : 1 : 1 at any point in time.
 class ExecutingContext {
  public:
@@ -81,10 +81,10 @@ class ExecutingContext {
   // not be used after the ExecutionContext is destroyed.
   DOMTimerCoordinator* Timers();
 
-  // Gets the ModuleListeners which registered by `kraken.addModuleListener API`.
+  // Gets the ModuleListeners which registered by `webf.addModuleListener API`.
   ModuleListenerContainer* ModuleListeners();
 
-  // Gets the ModuleCallbacks which from the 4th parameter of `kraken.invokeModule` function.
+  // Gets the ModuleCallbacks which from the 4th parameter of `webf.invokeModule` function.
   ModuleCallbackCoordinator* ModuleCallbacks();
 
   // Get all pending promises which are not resolved or rejected.
@@ -111,7 +111,7 @@ class ExecutingContext {
   static void DispatchGlobalRejectionHandledEvent(ExecutingContext* context, JSValueConst promise, JSValueConst error);
   static void DispatchGlobalErrorEvent(ExecutingContext* context, JSValueConst error);
 
-  // Bytecodes which registered by kraken plugins.
+  // Bytecodes which registered by webf plugins.
   static std::unordered_map<std::string, NativeByteCode> pluginByteCode;
 
  private:
@@ -168,6 +168,6 @@ class ObjectProperty {
 
 std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExceptionHandler& handler, void* owner);
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_JS_CONTEXT_H

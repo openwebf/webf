@@ -7,7 +7,7 @@
 
 #include "character_data.h"
 
-namespace kraken {
+namespace webf {
 
 class Comment : public CharacterData {
   DEFINE_WRAPPERTYPEINFO();
@@ -25,6 +25,6 @@ class Comment : public CharacterData {
   Node* Clone(Document&, CloneChildrenFlag) const override;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_COMMENT_H

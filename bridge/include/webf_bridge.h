@@ -11,9 +11,6 @@
 #define WEBF_EXPORT_C extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 
-WEBF_EXPORT_C
-std::thread::id getUIThreadId();
-
 typedef struct NativeString NativeString;
 typedef struct NativeScreen NativeScreen;
 typedef struct NativeByteCode NativeByteCode;

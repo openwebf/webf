@@ -4,9 +4,9 @@
  */
 #include "html_unknown_element.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLUnknownElement::HTMLUnknownElement(const AtomicString& tag_name, Document& document)
     : HTMLElement(tag_name, &document) {}
 
-}  // namespace kraken
+}  // namespace webf

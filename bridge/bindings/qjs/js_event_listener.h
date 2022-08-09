@@ -9,7 +9,7 @@
 #include "foundation/casting.h"
 #include "js_based_event_listener.h"
 
-namespace kraken {
+namespace webf {
 
 // |JSEventListener| implements EventListener in the DOM standard.
 // https://dom.spec.whatwg.org/#callbackdef-eventlistener
@@ -51,6 +51,6 @@ struct DowncastTraits<JSEventListener> {
   }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_JS_EVENT_LISTENER_H_

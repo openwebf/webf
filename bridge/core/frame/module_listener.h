@@ -7,12 +7,12 @@
 
 #include "bindings/qjs/qjs_function.h"
 
-namespace kraken {
+namespace webf {
 
 class ModuleCallbackCoordinator;
 class ModuleListenerContainer;
 
-// ModuleListener is an persistent callback function. Registered from user with `kraken.addModuleListener` method.
+// ModuleListener is an persistent callback function. Registered from user with `webf.addModuleListener` method.
 // When module event triggered at dart side, All module listener will be invoked and let user to dispatch further
 // operations.
 class ModuleListener {
@@ -27,6 +27,6 @@ class ModuleListener {
   friend ModuleCallbackCoordinator;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_MODULE_LISTENER_H

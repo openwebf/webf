@@ -9,7 +9,7 @@
 #include <quickjs/quickjs.h>
 #include <initializer_list>
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 
@@ -49,6 +49,6 @@ class MemberInstaller {
   static void InstallFunctions(ExecutingContext* context, JSValue root, std::initializer_list<FunctionConfig> config);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_MEMBER_INSTALLER_H

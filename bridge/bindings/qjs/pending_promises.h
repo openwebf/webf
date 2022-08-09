@@ -9,7 +9,7 @@
 #include <vector>
 #include "script_promise.h"
 
-namespace kraken {
+namespace webf {
 
 class PendingPromises {
  public:
@@ -20,6 +20,6 @@ class PendingPromises {
   std::vector<ScriptPromise> promises_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_PENDING_PROMISES_H_

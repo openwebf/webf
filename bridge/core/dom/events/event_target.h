@@ -22,7 +22,7 @@ void TEST_invokeBindingMethod(void* nativePtr, void* returnValue, void* method, 
 #define GetPropertyMagic "%g"
 #define SetPropertyMagic "%s"
 
-namespace kraken {
+namespace webf {
 
 enum class DispatchEventResult {
   // Event was not canceled by event handler or default event handler.
@@ -282,6 +282,6 @@ class EventTargetWithInlineData : public EventTarget {
 //  friend StyleDeclarationInstance;
 //};
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_EVENT_TARGET_H

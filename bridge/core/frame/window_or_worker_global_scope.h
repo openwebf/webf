@@ -9,7 +9,7 @@
 #include "bindings/qjs/qjs_function.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 class WindowOrWorkerGlobalScope {
  public:
@@ -26,6 +26,6 @@ class WindowOrWorkerGlobalScope {
   static void clearTimeout(ExecutingContext* context, int32_t timerId, ExceptionState& exception);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_WINDOW_OR_WORKER_GLOBAL_SCROPE_H

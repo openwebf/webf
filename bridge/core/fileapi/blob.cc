@@ -8,7 +8,7 @@
 #include "built_in_string.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 class BlobReaderClient {
  public:
@@ -161,4 +161,4 @@ void Blob::AppendBytes(uint8_t* buffer, uint32_t length) {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

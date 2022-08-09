@@ -5,8 +5,8 @@
 #include "html_anchor_element.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLAnchorElement::HTMLAnchorElement(Document& document) : HTMLElement(html_names::ka, &document) {}
 
-}  // namespace kraken
+}  // namespace webf

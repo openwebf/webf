@@ -8,7 +8,7 @@
 
 #include "node.h"
 
-namespace kraken {
+namespace webf {
 
 class Document;
 
@@ -34,6 +34,6 @@ struct DowncastTraits<CharacterData> {
   static bool AllowFrom(const Node& node) { return node.IsCharacterDataNode(); }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CHARACTER_DATA_H

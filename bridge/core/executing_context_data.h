@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include "bindings/qjs/wrapper_type_info.h"
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 
@@ -36,6 +36,6 @@ class ExecutionContextData final {
   ExecutingContext* m_context;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CONTEXT_DATA_H

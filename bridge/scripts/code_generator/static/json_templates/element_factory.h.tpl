@@ -8,7 +8,7 @@
 
 #include "bindings/qjs/atomic_string.h"
 
-namespace kraken {
+namespace webf {
 
 class Document;
 class HTMLElement;
@@ -20,6 +20,6 @@ class HTMLElementFactory {
   static void Dispose();
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_HTML_ELEMENT_FACTORY_H_

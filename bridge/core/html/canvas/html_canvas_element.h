@@ -7,13 +7,13 @@
 
 #include "core/html/html_element.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLCanvasElement : public HTMLElement {
  public:
   explicit HTMLCanvasElement(Document&);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_HTML_CANVAS_HTML_CANVAS_ELEMENT_H_

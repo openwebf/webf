@@ -119,8 +119,6 @@ class RefCountedThreadSafe : public internal::RefCountedThreadSafeBase {
   // and also writing one's own ref pointer class impossible.
   void Adopt() { internal::RefCountedThreadSafeBase::Adopt(); }
 #endif
-
-  DISALLOW_COPY_AND_ASSIGN(RefCountedThreadSafe);
 };
 
 // If you subclass |RefCountedThreadSafe| and want to keep your destructor

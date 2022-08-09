@@ -8,13 +8,13 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 class Location {
  public:
-  static void __kraken_location_reload__(ExecutingContext* context, ExceptionState& exception_state);
+  static void __webf_location_reload__(ExecutingContext* context, ExceptionState& exception_state);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_LOCATION_H

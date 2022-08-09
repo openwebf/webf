@@ -8,7 +8,7 @@
 
 #include "bindings/qjs/script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 class Node;
 class ExceptionState;
@@ -39,6 +39,6 @@ class NodeList : public ScriptWrappable {
  protected:
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_NODE_LIST_H_

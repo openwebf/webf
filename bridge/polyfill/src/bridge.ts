@@ -9,5 +9,8 @@ export const webfInvokeModule = __webf_invoke_module__;
 declare const __webf_module_listener__: (fn: (moduleName: string, event: Event, extra: string) => void) => void;
 export const addWebfModuleListener = __webf_module_listener__;
 
+declare const __webf_location_reload__: () => void;
+export const webfLocationReload = __webf_location_reload__;
+
 declare const __webf_print__: (log: string, level?: string) => void;
 export const webfPrint = __webf_print__;

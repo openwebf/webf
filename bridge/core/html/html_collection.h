@@ -8,13 +8,13 @@
 
 #include "bindings/qjs/script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLCollection : public ScriptWrappable {
  public:
  private:
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_HTML_HTML_COLLECTION_H_

@@ -7,13 +7,13 @@
 
 #include "core/html/html_element.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLInputElement : public HTMLElement {
  public:
   explicit HTMLInputElement(Document&);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_HTML_FORMS_HTML_INPUT_ELEMENT_H_

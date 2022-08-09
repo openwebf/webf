@@ -10,7 +10,7 @@
 #include "empty_node_list.h"
 #include "node_list.h"
 
-namespace kraken {
+namespace webf {
 
 ChildNodeList* NodeData::GetChildNodeList(ContainerNode& node) {
   assert(!child_node_list_ || &node == child_node_list_->VirtualOwnerNode());
@@ -37,4 +37,4 @@ void NodeData::Trace(GCVisitor* visitor) const {
   visitor->Trace(child_node_list_->ToQuickJSUnsafe());
 }
 
-}  // namespace kraken
+}  // namespace webf

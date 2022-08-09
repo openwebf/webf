@@ -7,7 +7,7 @@
 #include <utility>
 #include "bindings/qjs/cppgc/gc_visitor.h"
 
-namespace kraken {
+namespace webf {
 
 std::shared_ptr<FrameCallback> FrameCallback::Create(ExecutingContext* context,
                                                      const std::shared_ptr<QJSFunction>& callback) {
@@ -54,4 +54,4 @@ void FrameRequestCallbackCollection::Trace(GCVisitor* visitor) const {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

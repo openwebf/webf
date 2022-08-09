@@ -6,7 +6,7 @@
 #include <algorithm>
 #include "cppgc/gc_visitor.h"
 
-namespace kraken {
+namespace webf {
 
 bool QJSFunction::IsFunction(JSContext* ctx) {
   return JS_IsFunction(ctx, function_);
@@ -34,4 +34,4 @@ void QJSFunction::Trace(GCVisitor* visitor) const {
   visitor->Trace(function_);
 }
 
-}  // namespace kraken
+}  // namespace webf

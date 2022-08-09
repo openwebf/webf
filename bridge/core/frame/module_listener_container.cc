@@ -4,10 +4,10 @@
  */
 #include "module_listener_container.h"
 
-namespace kraken {
+namespace webf {
 
 void ModuleListenerContainer::AddModuleListener(const std::shared_ptr<ModuleListener>& listener) {
   listeners_.push_front(listener);
 }
 
-}  // namespace kraken
+}  // namespace webf

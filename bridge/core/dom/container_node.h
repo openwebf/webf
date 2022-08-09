@@ -11,7 +11,7 @@
 #include "node.h"
 #include "node_list.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLCollection;
 
@@ -120,6 +120,6 @@ struct DowncastTraits<ContainerNode> {
   static bool AllowFrom(const Node& node) { return node.IsContainerNode(); }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_CONTAINER_NODE_H_

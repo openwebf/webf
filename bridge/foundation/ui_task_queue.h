@@ -8,7 +8,7 @@
 
 #include "task_queue.h"
 
-namespace kraken {
+namespace webf {
 
 class UITaskQueue : public TaskQueue {
  public:
@@ -28,6 +28,6 @@ class UITaskQueue : public TaskQueue {
   int m_contextId;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // BRIDGE_UI_TASK_QUEUE_H

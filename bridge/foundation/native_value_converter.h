@@ -9,7 +9,7 @@
 #include "native_type.h"
 #include "native_value.h"
 
-namespace kraken {
+namespace webf {
 
 // NativeValueConverter converts types back and forth from C++ types to NativeValue. The template
 // parameter |T| determines what kind of type conversion to perform.
@@ -125,6 +125,6 @@ struct NativeValueConverter<NativeTypeAsyncFunction> : public NativeValueConvert
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) { return CreateAsyncCallback(ctx, value.u.int64); }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_

@@ -4,7 +4,7 @@
  */
 #include "source_location.h"
 
-namespace kraken {
+namespace webf {
 
 std::unique_ptr<SourceLocation> SourceLocation::Capture(const std::string& url,
                                                         unsigned int line_number,
@@ -17,4 +17,4 @@ SourceLocation::SourceLocation(const std::string& url, unsigned int line_number,
 
 SourceLocation::~SourceLocation() {}
 
-}  // namespace kraken
+}  // namespace webf

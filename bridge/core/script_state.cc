@@ -9,7 +9,7 @@
 #include "html_element_factory.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 JSRuntime* runtime_ = nullptr;
 std::atomic<int32_t> runningContexts{0};
@@ -63,4 +63,4 @@ ScriptState::~ScriptState() {
 #endif
   ctx_ = nullptr;
 }
-}  // namespace kraken
+}  // namespace webf

@@ -12,7 +12,7 @@
 #include "bindings/qjs/script_value.h"
 #include "bindings/qjs/script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 class Element;
 
@@ -44,6 +44,6 @@ class CSSStyleDeclaration : public ScriptWrappable {
   int32_t owner_element_target_id_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CSS_STYLE_DECLARATION_H

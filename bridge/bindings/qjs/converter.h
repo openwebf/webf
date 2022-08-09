@@ -8,7 +8,7 @@
 
 #include <cassert>
 
-namespace kraken {
+namespace webf {
 
 // The template parameter |T| determines what kind of type conversion to perform.
 // It is not supposed to be used directly: there needs to be a specialization for each type which represents
@@ -25,6 +25,6 @@ struct ConverterBase {
   using ImplType = typename T::ImplType;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CONVERTER_H

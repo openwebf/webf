@@ -7,7 +7,7 @@
 
 #include "container_node.h"
 
-namespace kraken {
+namespace webf {
 
 class DocumentFragment : public ContainerNode {
   DEFINE_WRAPPERTYPEINFO();
@@ -40,6 +40,6 @@ struct DowncastTraits<DocumentFragment> {
   static bool AllowFrom(const Node& node) { return node.IsDocumentFragment(); }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_DOCUMENT_FRAGMENT_H

@@ -5,7 +5,7 @@
 #include "registered_eventListener.h"
 #include "qjs_add_event_listener_options.h"
 
-namespace kraken {
+namespace webf {
 
 RegisteredEventListener::RegisteredEventListener() = default;
 
@@ -59,4 +59,4 @@ bool operator==(const RegisteredEventListener& lhs, const RegisteredEventListene
   return lhs.Callback()->Matches(*rhs.Callback()) && lhs.Capture() == rhs.Capture();
 }
 
-}  // namespace kraken
+}  // namespace webf

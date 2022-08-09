@@ -6,7 +6,7 @@
 #include "document.h"
 #include "events/event_target.h"
 
-namespace kraken {
+namespace webf {
 
 DocumentFragment* DocumentFragment::Create(Document& document) {
   return MakeGarbageCollected<DocumentFragment>(&document, ConstructionType::kCreateDocumentFragment);
@@ -48,4 +48,4 @@ bool DocumentFragment::ChildTypeAllowed(NodeType type) const {
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

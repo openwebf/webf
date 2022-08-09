@@ -4,7 +4,7 @@
  */
 #include "error_event.h"
 
-namespace kraken {
+namespace webf {
 
 ErrorEvent* ErrorEvent::Create(ExecutingContext* context, const std::string& message) {
   return MakeGarbageCollected<ErrorEvent>(context, message);
@@ -39,4 +39,4 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
                                                         initializer->lineno(),
                                                         initializer->colno())) {}
 
-}  // namespace kraken
+}  // namespace webf

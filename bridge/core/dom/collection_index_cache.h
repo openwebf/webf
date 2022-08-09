@@ -11,7 +11,7 @@
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "foundation/macros.h"
 
-namespace kraken {
+namespace webf {
 
 template <typename Collection, typename NodeType>
 class CollectionIndexCache {
@@ -189,6 +189,6 @@ inline NodeType* CollectionIndexCache<Collection, NodeType>::NodeAfterCachedNode
   return current_node;
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_COLLECTION_INDEX_CACHE_H_

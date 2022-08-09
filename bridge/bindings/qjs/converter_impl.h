@@ -26,7 +26,7 @@
 #include "js_event_listener.h"
 #include "native_string_utils.h"
 
-namespace kraken {
+namespace webf {
 
 template <typename T>
 struct is_shared_ptr : std::false_type {};
@@ -428,6 +428,6 @@ struct Converter<Window> : public ConverterBase<Window> {
   }
 };
 
-};  // namespace kraken
+};  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_

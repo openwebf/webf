@@ -3,15 +3,15 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef KRAKENBRIDGE_KRAKEN_TEST_CONTEXT_H
-#define KRAKENBRIDGE_KRAKEN_TEST_CONTEXT_H
+#ifndef KRAKENBRIDGE_WEBF_TEST_CONTEXT_H
+#define KRAKENBRIDGE_WEBF_TEST_CONTEXT_H
 
 #include "bindings/qjs/qjs_function.h"
 #include "core/executing_context.h"
 #include "core/page.h"
-#include "kraken_bridge_test.h"
+#include "webf_bridge_test.h"
 
-namespace kraken {
+namespace webf {
 
 struct ImageSnapShotContext {
   JSValue callback;
@@ -39,6 +39,6 @@ class KrakenTestContext final {
   KrakenPage* page_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
-#endif  // KRAKENBRIDGE_KRAKEN_TEST_CONTEXT_H
+#endif  // KRAKENBRIDGE_WEBF_TEST_CONTEXT_H

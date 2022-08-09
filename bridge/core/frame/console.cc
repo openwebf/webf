@@ -7,7 +7,7 @@
 #include "built_in_string.h"
 #include "foundation/logging.h"
 
-namespace kraken {
+namespace webf {
 
 void Console::__kraken_print__(ExecutingContext* context,
                                const AtomicString& log,
@@ -26,4 +26,4 @@ void Console::__kraken_print__(ExecutingContext* context, const AtomicString& lo
   printLog(context, stream, "info", nullptr);
 }
 
-}  // namespace kraken
+}  // namespace webf

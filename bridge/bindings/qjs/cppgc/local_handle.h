@@ -12,7 +12,7 @@
 #include "foundation/macros.h"
 #include "mutation_scope.h"
 
-namespace kraken {
+namespace webf {
 
 template <typename T>
 class LocalTrait;
@@ -59,6 +59,6 @@ Local<T> MakeLocal(Args&&... args) {
   return LocalTrait<T>::Allocate(std::forward<Args>(args)...);
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_CPPGC_LOCAL_HANDLE_H_

@@ -8,7 +8,7 @@
 
 #include "node_list.h"
 
-namespace kraken {
+namespace webf {
 
 class ExceptionState;
 
@@ -29,6 +29,6 @@ class EmptyNodeList : public NodeList {
   Node* owner_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_

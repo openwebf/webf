@@ -8,7 +8,7 @@
 
 #include "bindings/qjs/dom/element.h"
 
-namespace kraken {
+namespace webf {
 
 void bindTouchEvent(ExecutionContext* context);
 
@@ -113,6 +113,6 @@ class TouchEventInstance : public EventInstance {
   friend TouchEvent;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // BRIDGE_TOUCH_EVENTT_H

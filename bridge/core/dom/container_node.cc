@@ -10,7 +10,7 @@
 #include "document_fragment.h"
 #include "node_traversal.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLCollection* ContainerNode::Children() {
   // TODO: add children implements.
@@ -450,4 +450,4 @@ void ContainerNode::Trace(GCVisitor* visitor) const {
   Node::Trace(visitor);
 }
 
-}  // namespace kraken
+}  // namespace webf

@@ -8,7 +8,7 @@
 #include "built_in_string.h"
 #include "core/dom/element.h"
 
-namespace kraken {
+namespace webf {
 
 static inline bool IsNumberIndex(const StringView& name) {
   if (name.Empty())
@@ -101,4 +101,4 @@ bool ElementAttributes::IsEquivalent(const ElementAttributes& other) const {
 
 void ElementAttributes::Trace(GCVisitor* visitor) const {}
 
-}  // namespace kraken
+}  // namespace webf

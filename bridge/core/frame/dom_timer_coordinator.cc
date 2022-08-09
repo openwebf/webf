@@ -11,7 +11,7 @@
 #include "kraken_test_env.h"
 #endif
 
-namespace kraken {
+namespace webf {
 
 static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
   auto* context = timer->context();
@@ -63,4 +63,4 @@ std::shared_ptr<DOMTimer> DOMTimerCoordinator::getTimerById(int32_t timerId) {
   return m_activeTimers[timerId];
 }
 
-}  // namespace kraken
+}  // namespace webf

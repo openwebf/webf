@@ -5,10 +5,10 @@
 #include "gc_visitor.h"
 #include "bindings/qjs/script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 void GCVisitor::Trace(JSValue value) {
   JS_MarkValue(runtime_, value, markFunc_);
 }
 
-}  // namespace kraken
+}  // namespace webf

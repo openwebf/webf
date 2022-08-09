@@ -9,7 +9,7 @@
 #include <string>
 #include "foundation/native_string.h"
 
-namespace kraken {
+namespace webf {
 
 class Node;
 class Element;
@@ -28,6 +28,6 @@ class HTMLParser {
 
   static bool parseHTML(const std::string& html, Node* rootNode, bool isHTMLFragment);
 };
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_HTML_PARSER_H

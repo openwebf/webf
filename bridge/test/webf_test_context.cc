@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "kraken_test_context.h"
+#include "webf_test_context.h"
 #include "bindings/qjs/member_installer.h"
 #include "core/dom/document.h"
 #include "core/fileapi/blob.h"
@@ -11,7 +11,7 @@
 #include "qjs_blob.h"
 #include "testframework.h"
 
-namespace kraken {
+namespace webf {
 
 static JSValue executeTest(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   JSValue& callback = argv[0];
@@ -67,7 +67,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         "Failed to execute '__kraken_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.");
   }
 
-  std::unique_ptr<NativeString> screenShotNativeString = kraken::jsValueToNativeString(ctx, screenShotValue);
+  std::unique_ptr<NativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
   auto fn = [](void* ptr, int32_t contextId, int8_t result, const char* errmsg) {
@@ -186,7 +186,7 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
                              "Failed to execute '__kraken_simulate_keypress__': first arguments should be a string");
   }
 
-  std::unique_ptr<NativeString> nativeString = kraken::jsValueToNativeString(ctx, charStringValue);
+  std::unique_ptr<NativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
   void* p = static_cast<void*>(nativeString.get());
   context->dartMethodPtr()->simulateInputText(static_cast<NativeString*>(p));
   return JS_NULL;
@@ -242,9 +242,9 @@ void KrakenTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
       return JS_ThrowTypeError(ctx, "failed to execute 'done': parameter 1 (status) is not a string");
     }
 
-    KRAKEN_LOG(VERBOSE) << "Done..";
+    WEBF_LOG(VERBOSE) << "Done..";
 
-    std::unique_ptr<NativeString> status = kraken::jsValueToNativeString(ctx, statusValue);
+    std::unique_ptr<NativeString> status = webf::jsValueToNativeString(ctx, statusValue);
     callbackContext->executeCallback(callbackContext->context->contextId(), status.get());
     JS_FreeValue(ctx, proxyObject);
     return JS_NULL;
@@ -313,4 +313,4 @@ void KrakenTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_
   assert_m(i == length, "Dart native methods count is not equal with C++ side method registrations.");
 }
 
-}  // namespace kraken
+}  // namespace webf

@@ -7,9 +7,8 @@
 #define BRIDGE_INSPECTOR_TASK_QUEUE_H
 
 #include "task_queue.h"
-#include "webf_foundation.h"
 
-namespace kraken {
+namespace webf {
 
 class InspectorTaskQueue;
 using Task = void (*)(void*);
@@ -35,6 +34,6 @@ class InspectorTaskQueue : public TaskQueue {
   static fml::RefPtr<InspectorTaskQueue> instance_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // BRIDGE_INSPECTOR_TASK_QUEUE_H

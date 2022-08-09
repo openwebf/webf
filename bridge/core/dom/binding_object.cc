@@ -9,7 +9,7 @@
 #include "core/executing_context.h"
 #include "foundation/logging.h"
 
-namespace kraken {
+namespace webf {
 
 void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
@@ -42,7 +42,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
     return Native_NewNull();
   }
 
-  KRAKEN_LOG(VERBOSE) << " binding object_ " << &binding_object_;
+  WEBF_LOG(VERBOSE) << " binding object_ " << &binding_object_;
   NativeValue return_value = Native_NewNull();
   binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value,
                                                        method.ToNativeString().release(), argc, argv);
@@ -63,4 +63,4 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   return InvokeBindingMethod(binding_call_methods::ksetPropertyMagic, 2, argv, exception_state);
 }
 
-}  // namespace kraken
+}  // namespace webf

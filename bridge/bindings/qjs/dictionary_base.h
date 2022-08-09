@@ -8,7 +8,7 @@
 
 #include "bindings/qjs/cppgc/garbage_collected.h"
 
-namespace kraken {
+namespace webf {
 
 // DictionaryBase is the common base class of all the IDL dictionary classes.
 // Most importantly this class provides a way of type dispatching (e.g. overload
@@ -34,6 +34,6 @@ class DictionaryBase {
   virtual bool FillQJSObjectWithMembers(JSContext* ctx, JSValue qjs_dictionary) const = 0;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_DICTIONARY_BASE_H_

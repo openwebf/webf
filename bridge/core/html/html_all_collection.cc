@@ -5,7 +5,7 @@
 //
 //#include "html_all_collection.h"
 //
-// namespace kraken {
+// namespace webf{
 //
 // JSValue AllCollection::item(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  if (argc < 1) {
@@ -77,4 +77,4 @@
 //  return JS_NewUint32(ctx, collection->m_nodes.size());
 //}
 //
-//}  // namespace kraken
+//}  // namespace webf

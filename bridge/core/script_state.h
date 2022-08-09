@@ -8,7 +8,7 @@
 #include <quickjs/quickjs.h>
 #include "bindings/qjs/script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 // ScriptState is an abstraction class that holds all information about script
 // execution (e.g., JSContext etc). If you need any info about the script execution, you're expected to
@@ -26,6 +26,6 @@ class ScriptState {
   JSContext* ctx_{nullptr};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_SCRIPT_STATE_H_

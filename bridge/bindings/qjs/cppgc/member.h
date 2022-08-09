@@ -13,7 +13,7 @@
 #include "foundation/casting.h"
 #include "mutation_scope.h"
 
-namespace kraken {
+namespace webf {
 
 class ScriptWrappable;
 
@@ -95,6 +95,6 @@ class Member {
   JSRuntime* runtime_{nullptr};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_CPPGC_MEMBER_H_

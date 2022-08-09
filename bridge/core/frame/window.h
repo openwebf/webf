@@ -11,7 +11,7 @@
 #include "qjs_scroll_to_options.h"
 #include "screen.h"
 
-namespace kraken {
+namespace webf {
 
 class Window : public EventTargetWithInlineData {
   DEFINE_WRAPPERTYPEINFO();
@@ -51,6 +51,6 @@ class Window : public EventTargetWithInlineData {
   Member<Screen> screen_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_WINDOW_H

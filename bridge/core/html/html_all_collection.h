@@ -8,7 +8,7 @@
 //
 //#include "bindings/qjs/garbage_collected.h"
 //
-// namespace kraken {
+// namespace webf{
 //
 // class HTMLAllCollection : public HostObject {
 // public:
@@ -26,6 +26,6 @@
 //  std::vector<NodeInstance*> m_nodes;
 //};
 //
-//}  // namespace kraken
+//}  // namespace webf
 //
 //#endif  // KRAKENBRIDGE_HTML_ALL_COLLECTION_H

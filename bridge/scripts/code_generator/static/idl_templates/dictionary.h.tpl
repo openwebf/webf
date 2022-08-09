@@ -3,7 +3,7 @@
 #include "qjs_<%= _.snakeCase(object.parent) %>.h"
 <% } %>
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 class ExceptionState;

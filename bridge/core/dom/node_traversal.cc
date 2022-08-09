@@ -5,7 +5,7 @@
 
 #include "node_traversal.h"
 
-namespace kraken {
+namespace webf {
 
 Node* NodeTraversal::NextAncestorSibling(const Node& current) {
   assert(!current.nextSibling());
@@ -95,4 +95,4 @@ Node* NodeTraversal::PreviousPostOrder(const Node& current, const Node* stay_wit
   return PreviousAncestorSiblingPostOrder(current, stay_within);
 }
 
-}  // namespace kraken
+}  // namespace webf

@@ -14,7 +14,7 @@
 #include "foundation/macros.h"
 #include "registered_eventListener.h"
 
-namespace kraken {
+namespace webf {
 
 class AddEventListenerOptions;
 class EventListenerOptions;
@@ -55,6 +55,6 @@ class EventListenerMap final {
   std::vector<std::pair<AtomicString, std::unique_ptr<EventListenerVector>>> entries_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_DOM_EVENT_LISTENER_MAP_H_

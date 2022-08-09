@@ -6,7 +6,7 @@
 #include "character_data.h"
 #include "core/dom/document.h"
 
-namespace kraken {
+namespace webf {
 
 void CharacterData::setData(const AtomicString& data) {
   data_ = data;
@@ -21,4 +21,4 @@ CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, No
   assert(type == kCreateOther || type == kCreateText);
 }
 
-}  // namespace kraken
+}  // namespace webf

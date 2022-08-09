@@ -5,7 +5,7 @@
 
 #include "message_event.h"
 
-namespace kraken {
+namespace webf {
 
 MessageEvent* MessageEvent::Create(ExecutingContext* context,
                                    const AtomicString& type,
@@ -47,4 +47,4 @@ AtomicString MessageEvent::source() const {
   return source_;
 }
 
-}  // namespace kraken
+}  // namespace webf

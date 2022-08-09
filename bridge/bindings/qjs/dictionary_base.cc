@@ -5,7 +5,7 @@
 
 #include "dictionary_base.h"
 
-namespace kraken {
+namespace webf {
 
 JSValue DictionaryBase::toQuickJS(JSContext* ctx) const {
   JSValue object = JS_NewObject(ctx);
@@ -15,4 +15,4 @@ JSValue DictionaryBase::toQuickJS(JSContext* ctx) const {
   return object;
 }
 
-}  // namespace kraken
+}  // namespace webf

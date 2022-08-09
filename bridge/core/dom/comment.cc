@@ -7,7 +7,7 @@
 #include "document.h"
 #include "tree_scope.h"
 
-namespace kraken {
+namespace webf {
 
 Comment* Comment::Create(ExecutingContext* context, ExceptionState& exception_state) {
   return MakeGarbageCollected<Comment>(*context->document(), ConstructionType::kCreateOther);
@@ -34,4 +34,4 @@ Node* Comment::Clone(Document& factory, CloneChildrenFlag flag) const {
   return Create(factory);
 }
 
-}  // namespace kraken
+}  // namespace webf

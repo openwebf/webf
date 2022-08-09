@@ -24,7 +24,7 @@
 #include "inspector/impl/jsc_console_client_impl.h"
 #endif
 
-namespace kraken {
+namespace webf {
 namespace {
 
 const char* StripDots(const char* path) {
@@ -131,4 +131,4 @@ void printLog(ExecutingContext* context, std::stringstream& stream, std::string 
   }
 }
 
-}  // namespace kraken
+}  // namespace webf

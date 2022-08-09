@@ -11,7 +11,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "space_split_string.h"
 
-namespace kraken {
+namespace webf {
 
 class ExceptionState;
 class Element;
@@ -49,6 +49,6 @@ class ElementAttributes : public ScriptWrappable {
   std::shared_ptr<SpaceSplitString> class_name_{std::make_shared<SpaceSplitString>("")};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_

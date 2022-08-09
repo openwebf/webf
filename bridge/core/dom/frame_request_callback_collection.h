@@ -7,7 +7,7 @@
 
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 // |FrameCallback| is an interface type which generalizes callbacks which are
 // invoked when a script-based animation needs to be resampled.
@@ -39,7 +39,7 @@ class FrameRequestCallbackCollection final {
   std::unordered_map<uint32_t, std::shared_ptr<FrameCallback>> frameCallbacks_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 class frame_request_callback_collection {};
 

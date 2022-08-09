@@ -6,7 +6,7 @@
 #include "child_node_list.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 
-namespace kraken {
+namespace webf {
 
 ChildNodeList::ChildNodeList(ContainerNode* parent) : parent_(parent), NodeList(parent->ctx()) {}
 ChildNodeList::~ChildNodeList() = default;
@@ -47,4 +47,4 @@ void ChildNodeList::Trace(GCVisitor* visitor) const {
   NodeList::Trace(visitor);
 }
 
-}  // namespace kraken
+}  // namespace webf

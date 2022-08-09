@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include "foundation/macros.h"
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 class ScriptWrappable;
@@ -39,6 +39,6 @@ class MemberMutationScope {
   std::unordered_map<ScriptWrappable*, int> mutation_records_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_CPPGC_MUTATION_SCOPE_H_

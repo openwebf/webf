@@ -8,12 +8,12 @@
 
 #include <quickjs/quickjs.h>
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 
 void InstallBindings(ExecutingContext* context);
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDING_INITIALIZER_H

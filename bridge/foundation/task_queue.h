@@ -11,7 +11,7 @@
 #include "ref_counter.h"
 #include "ref_ptr.h"
 
-namespace kraken {
+namespace webf {
 
 using Task = void (*)(void*);
 
@@ -36,6 +36,6 @@ class TaskQueue : public fml::RefCountedThreadSafe<TaskQueue> {
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(TaskQueue);
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // BRIDGE_TASK_QUEUE_H

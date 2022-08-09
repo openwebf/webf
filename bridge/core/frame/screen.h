@@ -7,7 +7,7 @@
 
 #include "core/dom/events/event_target.h"
 
-namespace kraken {
+namespace webf {
 
 class Window;
 
@@ -23,6 +23,6 @@ class Screen : public EventTargetWithInlineData {
  private:
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_SCREEN_H

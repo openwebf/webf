@@ -16,7 +16,7 @@
 #include "foundation/native_string.h"
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 
-namespace kraken {
+namespace webf {
 
 using AsyncCallback = void (*)(void* callbackContext, int32_t contextId, const char* errmsg);
 using AsyncRAFCallback = void (*)(void* callbackContext, int32_t contextId, double result, const char* errmsg);
@@ -94,6 +94,6 @@ struct DartMethodPointer {
 #endif
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif

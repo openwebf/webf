@@ -4,7 +4,7 @@
  */
 #include "exception_state.h"
 
-namespace kraken {
+namespace webf {
 
 void ExceptionState::ThrowException(JSContext* ctx, ErrorType type, const std::string& message) {
   switch (type) {
@@ -42,4 +42,4 @@ JSValue ExceptionState::ToQuickJS() {
   return exception_;
 }
 
-}  // namespace kraken
+}  // namespace webf

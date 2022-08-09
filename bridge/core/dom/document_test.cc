@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 #include "kraken_test_env.h"
 
-using namespace kraken;
+using namespace webf;
 
 TEST(Document, createElement) {
   bool static errorCalled = false;
@@ -15,7 +15,7 @@ TEST(Document, createElement) {
     EXPECT_STREQ(message.c_str(), "<div/>");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -35,7 +35,7 @@ TEST(Document, body) {
     EXPECT_STREQ(message.c_str(), "<body/>");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -67,7 +67,7 @@ TEST(Document, createTextNode) {
     EXPECT_STREQ(message.c_str(), "<div>");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -91,7 +91,7 @@ TEST(Document, createComment) {
     EXPECT_STREQ(message.c_str(), "<div>");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -115,7 +115,7 @@ TEST(Document, instanceofNode) {
     EXPECT_STREQ(message.c_str(), "true true true");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -133,7 +133,7 @@ TEST(Document, FreedByOutOfScope) {
     logCalled = false;
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();

@@ -9,7 +9,7 @@
 #include "ascii_types.h"
 #include "native_string.h"
 
-namespace kraken {
+namespace webf {
 
 class StringView final {
  public:
@@ -23,9 +23,9 @@ class StringView final {
 
   bool IsLowerASCII() const {
     if (is_8bit_) {
-      return kraken::IsLowerASCII(Characters8(), length());
+      return webf::IsLowerASCII(Characters8(), length());
     }
-    return kraken::IsLowerASCII(Characters16(), length());
+    return webf::IsLowerASCII(Characters16(), length());
   }
 
   const char* Characters8() const { return static_cast<const char*>(bytes_); }
@@ -41,6 +41,6 @@ class StringView final {
   unsigned is_8bit_ : 1;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_FOUNDATION_STRING_VIEW_H_

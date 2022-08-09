@@ -7,7 +7,7 @@
 #include "page.h"
 #include "webf_test_env.h"
 
-using namespace kraken;
+using namespace webf;
 
 TEST(Context, isValid) {
   {
@@ -105,7 +105,7 @@ TEST(Context, unrejectPromiseWillTriggerUnhandledRejectionEvent) {
   static int logIndex = 0;
   static std::string logs[] = {"error event cannot read property 'forceNullError' of null",
                                "unhandled event {promise: Promise {...}, reason: Error {...}} true"};
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(logs[logIndex++].c_str(), message.c_str());
   };
@@ -173,7 +173,7 @@ TEST(Context, unhandledRejectionEventWillTriggerWhenNotHandled) {
   static bool logCalled = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto bridge = TEST_init(errorHandler);
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
   };
 
@@ -204,7 +204,7 @@ TEST(Context, handledRejectionEventWillTriggerWhenUnHandledRejectHandled) {
   static bool logCalled = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto bridge = TEST_init(errorHandler);
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
   };
 

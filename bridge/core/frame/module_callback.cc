@@ -4,7 +4,7 @@
  */
 #include "module_callback.h"
 
-namespace kraken {
+namespace webf {
 
 std::shared_ptr<ModuleCallback> ModuleCallback::Create(std::shared_ptr<QJSFunction> function) {
   return std::make_shared<ModuleCallback>(function);
@@ -16,4 +16,4 @@ std::shared_ptr<QJSFunction> ModuleCallback::value() {
   return function_;
 }
 
-}  // namespace kraken
+}  // namespace webf

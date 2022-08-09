@@ -22,8 +22,7 @@
   <% } %>
 <% }); %>
 
-
-namespace kraken {
+namespace webf {
 
 
 <% function generateTypeHelperTemplate(name) {

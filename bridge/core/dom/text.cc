@@ -6,7 +6,7 @@
 #include "text.h"
 #include "document.h"
 
-namespace kraken {
+namespace webf {
 
 Text* Text::Create(Document& document, const AtomicString& value) {
   return MakeGarbageCollected<Text>(document, value, ConstructionType::kCreateText);
@@ -33,4 +33,4 @@ Node* Text::Clone(Document& document, CloneChildrenFlag flag) const {
   return Create(document, data());
 }
 
-}  // namespace kraken
+}  // namespace webf

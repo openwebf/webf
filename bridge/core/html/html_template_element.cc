@@ -6,7 +6,7 @@
 #include "core/dom/document_fragment.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLTemplateElement::HTMLTemplateElement(Document& document) : HTMLElement(html_names::ktemplate, &document) {}
 
@@ -21,4 +21,4 @@ DocumentFragment* HTMLTemplateElement::ContentInternal() const {
   return content_.Get();
 }
 
-}  // namespace kraken
+}  // namespace webf

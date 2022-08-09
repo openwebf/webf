@@ -4,7 +4,7 @@
  */
 #include "module_callback_coordinator.h"
 
-namespace kraken {
+namespace webf {
 
 void ModuleCallbackCoordinator::AddModuleCallbacks(std::shared_ptr<ModuleCallback>&& callback) {
   listeners_.push_front(callback);
@@ -20,4 +20,4 @@ const std::forward_list<std::shared_ptr<ModuleCallback>>* ModuleCallbackCoordina
 
 ModuleCallbackCoordinator::ModuleCallbackCoordinator() {}
 
-}  // namespace kraken
+}  // namespace webf

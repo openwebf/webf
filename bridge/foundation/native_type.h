@@ -10,7 +10,7 @@
 #include "bindings/qjs/script_value.h"
 #include "foundation/native_string.h"
 
-namespace kraken {
+namespace webf {
 
 struct NativeTypeBase {
   using ImplType = void;
@@ -49,6 +49,6 @@ struct NativeTypeFunction final : public NativeTypeBaseHelper<std::shared_ptr<QJ
 // Async function
 struct NativeTypeAsyncFunction final : public NativeTypeBaseHelper<std::shared_ptr<QJSFunction>> {};
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_FOUNDATION_NATIVE_TYPE_H_

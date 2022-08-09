@@ -25,8 +25,7 @@
   <% } %>
 <% }); %>
 
-
-namespace kraken {
+namespace webf {
 
 using HTMLConstructorFunction = HTMLElement* (*)(Document&);
 
@@ -100,4 +99,4 @@ void HTMLElementFactory::Dispose() {
   g_html_constructors = nullptr;
 }
 
-}  // namespace kraken
+}  // namespace webf

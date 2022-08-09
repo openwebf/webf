@@ -7,7 +7,7 @@
 
 #include "script_value.h"
 
-namespace kraken {
+namespace webf {
 
 // https://webidl.spec.whatwg.org/#dfn-callback-interface
 // QJSFunction memory are auto managed by std::shared_ptr.
@@ -39,6 +39,6 @@ class QJSFunction {
   JSValue function_{JS_NULL};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_QJS_FUNCTION_H

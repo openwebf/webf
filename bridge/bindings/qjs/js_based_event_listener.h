@@ -10,7 +10,7 @@
 #include "core/dom/events/event_listener.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 // |JSBasedEventListener| is the base class for JS-based event listeners,
 // i.e. EventListener and EventHandler in the standards.
@@ -55,6 +55,6 @@ struct DowncastTraits<JSBasedEventListener> {
   static bool AllowFrom(const EventListener& event_listener) { return event_listener.IsJSBasedEventListener(); }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_JS_BASED_EVENT_LISTENER_H_

@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace kraken {
+namespace webf {
 
 class ExceptionMessage {
  public:
@@ -20,6 +20,6 @@ class ExceptionMessage {
  private:
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_EXCEPTION_MESSAGE_H_

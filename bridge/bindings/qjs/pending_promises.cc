@@ -5,10 +5,10 @@
 #include "pending_promises.h"
 #include "script_promise.h"
 
-namespace kraken {
+namespace webf {
 
 void PendingPromises::TrackPendingPromises(ScriptPromise&& promise) {
   promises_.emplace_back(promise);
 }
 
-}  // namespace kraken
+}  // namespace webf

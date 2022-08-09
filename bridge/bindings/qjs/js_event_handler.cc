@@ -9,7 +9,7 @@
 #include "core/events/error_event.h"
 #include "event_type_names.h"
 
-namespace kraken {
+namespace webf {
 
 std::unique_ptr<JSEventHandler> JSEventHandler::CreateOrNull(JSContext* ctx,
                                                              JSValue value,
@@ -102,4 +102,4 @@ void JSEventHandler::InvokeInternal(EventTarget& event_target, Event& event, Exc
 
 void JSEventHandler::Trace(GCVisitor* visitor) const {}
 
-}  // namespace kraken
+}  // namespace webf

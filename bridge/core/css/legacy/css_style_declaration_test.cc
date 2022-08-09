@@ -7,7 +7,7 @@
 #include "page.h"
 #include "webf_test_env.h"
 
-using namespace kraken;
+using namespace webf;
 
 TEST(CSSStyleDeclaration, setStyleData) {
   bool static errorCalled = false;

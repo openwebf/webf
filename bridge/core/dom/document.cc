@@ -14,7 +14,7 @@
 #include "foundation/ascii_types.h"
 #include "html_element_factory.h"
 
-namespace kraken {
+namespace webf {
 
 Document* Document::Create(ExecutingContext* context, ExceptionState& exception_state) {
   return MakeGarbageCollected<Document>(context);
@@ -208,4 +208,4 @@ void Document::Trace(GCVisitor* visitor) const {
   ContainerNode::Trace(visitor);
 }
 
-}  // namespace kraken
+}  // namespace webf

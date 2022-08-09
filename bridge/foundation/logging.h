@@ -9,19 +9,19 @@
 #include <sstream>
 #include <string>
 
-#define KRAKEN_LOG_STREAM(severity) ::kraken::LogMessage(::kraken::severity, __FILE__, __LINE__, nullptr).stream()
+#define WEBF_LOG_STREAM(severity) ::webf::LogMessage(::webf::severity, __FILE__, __LINE__, nullptr).stream()
 
-#define KRAKEN_LAZY_STREAM(stream, condition) !(condition) ? (void)0 : ::kraken::LogMessageVoidify() & (stream)
+#define WEBF_LAZY_STREAM(stream, condition) !(condition) ? (void)0 : ::webf::LogMessageVoidify() & (stream)
 
-#define KRAKEN_EAT_STREAM_PARAMETERS(ignored) \
+#define WEBF_EAT_STREAM_PARAMETERS(ignored) \
   true || (ignored) ? (void)0 : ::LogMessageVoidify() & ::LogMessage(::LOG_FATAL, 0, 0, nullptr).stream()
 
-#define KRAKEN_LOG(severity) KRAKEN_LAZY_STREAM(KRAKEN_LOG_STREAM(severity), true)
+#define WEBF_LOG(severity) WEBF_LAZY_STREAM(WEBF_LOG_STREAM(severity), true)
 
-#define KRAKEN_CHECK(condition) \
-  KRAKEN_LAZY_STREAM(::kraken::LogMessage(::kraken::FATAL, __FILE__, __LINE__, #condition).stream(), !(condition))
+#define WEBF_CHECK(condition) \
+  WEBF_LAZY_STREAM(::webf::LogMessage(::webf::FATAL, __FILE__, __LINE__, #condition).stream(), !(condition))
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 
@@ -65,6 +65,6 @@ class LogMessage {
 
 void printLog(ExecutingContext* context, std::stringstream& stream, std::string level, void* ctx);
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // FOUNDATION_LOGGING_H_

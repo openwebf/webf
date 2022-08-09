@@ -8,7 +8,7 @@
 #include "core/executing_context.h"
 #include "event.h"
 
-namespace kraken {
+namespace webf {
 
 class JSBasedEventListener;
 
@@ -57,6 +57,6 @@ class EventListener {
   friend JSBasedEventListener;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_EVENTS_EVENT_LISTENER_H_

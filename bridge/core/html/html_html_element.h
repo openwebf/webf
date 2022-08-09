@@ -7,7 +7,7 @@
 
 #include "html_element.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLHtmlElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
@@ -19,6 +19,6 @@ class HTMLHtmlElement : public HTMLElement {
  private:
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_HTML_HTML_HTML_ELEMENT_H_

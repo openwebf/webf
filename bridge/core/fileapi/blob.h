@@ -14,7 +14,7 @@
 #include "blob_part.h"
 #include "blob_property_bag.h"
 
-namespace kraken {
+namespace webf {
 
 class Blob : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
@@ -72,6 +72,6 @@ class Blob : public ScriptWrappable {
   std::vector<uint8_t> _data;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BLOB_H

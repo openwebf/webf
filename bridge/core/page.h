@@ -17,7 +17,9 @@
 
 namespace webf {
 
-using JSBridgeDisposeCallback = void (*)(KrakenPage* bridge);
+class WebFPage;
+
+using JSBridgeDisposeCallback = void (*)(WebFPage* bridge);
 using ConsoleMessageHandler = std::function<void(void* ctx, const std::string& message, int logLevel)>;
 
 /// WebFPage is class which manage all js objects create by <WebF> flutter widget.
@@ -44,7 +46,6 @@ class WebFPage final {
   uint8_t* dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength);
   void evaluateByteCode(uint8_t* bytes, size_t byteLength);
 
-  [[nodiscard]] webf::binding::qjs::ExecutionContext* getContext() const { return m_context; }
   void registerDartMethods(uint64_t* methodBytes, int32_t length);
   std::thread::id currentThread() const;
 

@@ -9,7 +9,7 @@
 #include <cassert>
 #include "bindings/qjs/qjs_engine_patch.h"
 
-namespace kraken {
+namespace webf {
 
 // Define all built-in wrapper class id.
 enum {
@@ -23,6 +23,7 @@ enum {
   JS_CLASS_NODE,
   JS_CLASS_ELEMENT,
   JS_CLASS_SCREEN,
+  JS_CLASS_PERFORMANCE,
   JS_CLASS_DOCUMENT,
   JS_CLASS_CHARACTER_DATA,
   JS_CLASS_TEXT,
@@ -90,6 +91,6 @@ class WrapperTypeInfo final {
   StringPropertyCheckerHandler string_property_checker_handler_{nullptr};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_WRAPPER_TYPE_INFO_H

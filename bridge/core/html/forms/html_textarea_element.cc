@@ -5,8 +5,8 @@
 #include "html_textarea_element.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLTextareaElement::HTMLTextareaElement(Document& document) : HTMLElement(html_names::ktextarea, &document) {}
 
-}  // namespace kraken
+}  // namespace webf

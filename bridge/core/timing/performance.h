@@ -6,6 +6,9 @@
 #ifndef BRIDGE_PERFORMANCE_H
 #define BRIDGE_PERFORMANCE_H
 
+#include "core/dom/binding_object.h"
+#include "bindings/qjs/script_wrappable.h"
+
 #if ENABLE_PROFILE
 #define PERF_WIDGET_CREATION_COST "widget_creation_cost"
 #define PERF_CONTROLLER_PROPERTIES_INIT_COST "controller_properties_init_cost"
@@ -121,11 +124,7 @@
 #define PERF_PAINT_END "paint_end"
 #endif
 
-#include "bindings/qjs/host_object.h"
-
 namespace webf {
-
-void bindPerformance(ExecutionContext* context);
 
 struct NativePerformanceEntry {
   NativePerformanceEntry(const std::string& name,
@@ -146,88 +145,76 @@ struct NativePerformanceEntry {
   int64_t uniqueId;
 };
 
-class PerformanceEntry : public HostObject {
- public:
-  PerformanceEntry() = delete;
-  explicit PerformanceEntry(ExecutionContext* context, NativePerformanceEntry* m_nativePerformanceEntry);
+//class PerformanceEntry : public HostObject {
+// public:
+//  PerformanceEntry() = delete;
+//  explicit PerformanceEntry(ExecutionContext* context, NativePerformanceEntry* m_nativePerformanceEntry);
+//
+//  DEFINE_READONLY_PROPERTY(name);
+//  DEFINE_READONLY_PROPERTY(entryType);
+//  DEFINE_READONLY_PROPERTY(startTime);
+//  DEFINE_READONLY_PROPERTY(duration);
+//
+// private:
+//  NativePerformanceEntry* m_nativePerformanceEntry{nullptr};
+//};
+//
+//class PerformanceMark : public PerformanceEntry {
+// public:
+//  PerformanceMark() = delete;
+//  explicit PerformanceMark(ExecutionContext* context, std::string& name, int64_t startTime);
+//  explicit PerformanceMark(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry);
+//};
+//
+//class PerformanceMeasure : public PerformanceEntry {
+// public:
+//  PerformanceMeasure() = delete;
+//  explicit PerformanceMeasure(ExecutionContext* context, std::string& name, int64_t startTime, int64_t duration);
+//  explicit PerformanceMeasure(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry);
+//};
+//
+//class NativePerformance {
+// public:
+//  void mark(const std::string& markName);
+//  void mark(const std::string& markName, int64_t startTime);
+//  std::vector<NativePerformanceEntry*>* entries{new std::vector<NativePerformanceEntry*>()};
+//};
 
-  DEFINE_READONLY_PROPERTY(name);
-  DEFINE_READONLY_PROPERTY(entryType);
-  DEFINE_READONLY_PROPERTY(startTime);
-  DEFINE_READONLY_PROPERTY(duration);
-
- private:
-  NativePerformanceEntry* m_nativePerformanceEntry{nullptr};
-};
-
-class PerformanceMark : public PerformanceEntry {
- public:
-  PerformanceMark() = delete;
-  explicit PerformanceMark(ExecutionContext* context, std::string& name, int64_t startTime);
-  explicit PerformanceMark(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry);
-};
-
-class PerformanceMeasure : public PerformanceEntry {
- public:
-  PerformanceMeasure() = delete;
-  explicit PerformanceMeasure(ExecutionContext* context, std::string& name, int64_t startTime, int64_t duration);
-  explicit PerformanceMeasure(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry);
-};
-
-class NativePerformance {
- public:
-  void mark(const std::string& markName);
-  void mark(const std::string& markName, int64_t startTime);
-  std::vector<NativePerformanceEntry*>* entries{new std::vector<NativePerformanceEntry*>()};
-};
-
-class Performance : public HostObject {
+class Performance : public ScriptWrappable, BindingObject {
+  DEFINE_WRAPPERTYPEINFO();
  public:
   Performance() = delete;
-  explicit Performance(ExecutionContext* context);
 
-  OBJECT_INSTANCE(Performance);
+  double now() const;
 
-  static JSValue now(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-  static JSValue toJSON(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-  static JSValue clearMarks(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-  static JSValue clearMeasures(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-  static JSValue getEntries(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-  static JSValue getEntriesByName(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-  static JSValue getEntriesByType(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-  static JSValue mark(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-  static JSValue measure(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue now(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue toJSON(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue clearMarks(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue clearMeasures(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue getEntries(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue getEntriesByName(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue getEntriesByType(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue mark(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+//  static JSValue measure(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
 #if ENABLE_PROFILE
   static JSValue __webf_navigation_summary__(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
   void measureSummary(JSValue* exception);
 #endif
 
-  NativePerformance m_nativePerformance;
-
-  DEFINE_READONLY_PROPERTY(timeOrigin);
+//  DEFINE_READONLY_PROPERTY(timeOrigin);
 
  private:
-  void internalMeasure(const std::string& name,
-                       const std::string& startMark,
-                       const std::string& endMark,
-                       JSValue* exception);
-  double internalNow();
-  std::vector<NativePerformanceEntry*> getFullEntries();
-
-  DEFINE_FUNCTION(now, 0);
-  DEFINE_FUNCTION(toJSON, 0);
-  DEFINE_FUNCTION(clearMarks, 1);
-  DEFINE_FUNCTION(clearMeasures, 1);
-  DEFINE_FUNCTION(getEntries, 0);
-  DEFINE_FUNCTION(getEntriesByName, 2);
-  DEFINE_FUNCTION(getEntriesByType, 1);
-  DEFINE_FUNCTION(mark, 1);
-  DEFINE_FUNCTION(measure, 4);
-
-#if ENABLE_PROFILE
-  DEFINE_FUNCTION(__webf_navigation_summary__, 0);
-#endif
+//  void internalMeasure(const std::string& name,
+//                       const std::string& startMark,
+//                       const std::string& endMark,
+//                       JSValue* exception);
+//  double internalNow();
+//  std::vector<NativePerformanceEntry*> getFullEntries();
+//
+//#if ENABLE_PROFILE
+//  DEFINE_FUNCTION(__webf_navigation_summary__, 0);
+//#endif
 };
 
 }  // namespace webf

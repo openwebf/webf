@@ -7,17 +7,17 @@
 #include "gtest/gtest.h"
 #include "kraken_test_env.h"
 
-using namespace kraken;
+using namespace webf;
 
 TEST(Window, windowIsGlobalThis) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
-    KRAKEN_LOG(VERBOSE) << errmsg;
+    WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
@@ -51,7 +51,7 @@ TEST(Window, requestAnimationFrame) {
   auto bridge = TEST_init();
   bool static logCalled = false;
 
-  kraken::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  webf::KrakenPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     EXPECT_STREQ(message.c_str(), "456");
     logCalled = true;
   };

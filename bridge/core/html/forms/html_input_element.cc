@@ -5,8 +5,8 @@
 #include "html_input_element.h"
 #include "html_names.h"
 
-namespace kraken {
+namespace webf {
 
 HTMLInputElement::HTMLInputElement(Document& document) : HTMLElement(html_names::kinput, &document) {}
 
-}  // namespace kraken
+}  // namespace webf

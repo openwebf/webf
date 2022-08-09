@@ -6,7 +6,7 @@
 #include "core/executing_context.h"
 #include "pending_promises.h"
 
-namespace kraken {
+namespace webf {
 
 std::shared_ptr<ScriptPromiseResolver> ScriptPromiseResolver::Create(ExecutingContext* context) {
   return std::make_shared<ScriptPromiseResolver>(context);
@@ -54,4 +54,4 @@ void ScriptPromiseResolver::ResolveOrRejectImmediately(JSValue value) {
   context_->DrainPendingPromiseJobs();
 }
 
-}  // namespace kraken
+}  // namespace webf

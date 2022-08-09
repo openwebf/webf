@@ -3,25 +3,23 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "webf_bridge_test.h"
 #include <atomic>
 #include "bindings/qjs/native_string_utils.h"
-#include "kraken_bridge_test.h"
-#include "kraken_test_context.h"
+#include "webf_test_context.h"
 
-std::unordered_map<int, kraken::KrakenTestContext*> testContextPool =
-    std::unordered_map<int, kraken::KrakenTestContext*>();
+std::unordered_map<int, webf::KrakenTestContext*> testContextPool = std::unordered_map<int, webf::KrakenTestContext*>();
 
 void initTestFramework(int32_t contextId) {
-  auto* page = static_cast<kraken::KrakenPage*>(getPage(contextId));
-  auto testContext = new kraken::KrakenTestContext(page->GetExecutingContext());
+  auto* page = static_cast<webf::KrakenPage*>(getPage(contextId));
+  auto testContext = new webf::KrakenTestContext(page->GetExecutingContext());
   testContextPool[contextId] = testContext;
 }
 
 int8_t evaluateTestScripts(int32_t contextId, void* code, const char* bundleFilename, int startLine) {
   auto testContext = testContextPool[contextId];
-  return testContext->evaluateTestScripts(static_cast<kraken::NativeString*>(code)->string(),
-                                          static_cast<kraken::NativeString*>(code)->length(), bundleFilename,
-                                          startLine);
+  return testContext->evaluateTestScripts(static_cast<webf::NativeString*>(code)->string(),
+                                          static_cast<webf::NativeString*>(code)->length(), bundleFilename, startLine);
 }
 
 void executeTest(int32_t contextId, ExecuteCallback executeCallback) {

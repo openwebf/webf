@@ -5,7 +5,7 @@
 #ifndef KRAKENBRIDGE_FOUNDATION_ASCII_TYPES_H_
 #define KRAKENBRIDGE_FOUNDATION_ASCII_TYPES_H_
 
-namespace kraken {
+namespace webf {
 
 template <typename CharType>
 inline bool IsASCII(CharType c) {
@@ -59,6 +59,6 @@ inline bool IsLowerASCII(const CharacterType* characters, size_t length) {
   return !contains_upper_case;
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_FOUNDATION_ASCII_TYPES_H_

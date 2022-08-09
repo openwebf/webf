@@ -11,7 +11,7 @@
 #include "foundation/macros.h"
 #include "member.h"
 
-namespace kraken {
+namespace webf {
 
 class ScriptWrappable;
 
@@ -38,6 +38,6 @@ class GCVisitor final {
   friend class ScriptWrappable;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_GC_VISITOR_H

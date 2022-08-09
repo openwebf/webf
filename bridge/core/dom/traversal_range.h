@@ -7,7 +7,7 @@
 
 #include "foundation/macros.h"
 
-namespace kraken {
+namespace webf {
 
 class Node;
 
@@ -118,6 +118,6 @@ using TraversalDescendantRange = TraversalRange<TraversalDescendantIterator<T>>;
 template <class T>
 using TraversalInclusiveDescendantRange = TraversalRange<TraversalInclusiveDescendantIterator<T>>;
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_DOM_TRAVERSAL_RANGE_H_

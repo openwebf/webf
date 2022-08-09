@@ -11,7 +11,7 @@
 
 #include "foundation/macros.h"
 
-namespace kraken {
+namespace webf {
 
 struct NativeString {
   NativeString(const uint16_t* string, uint32_t length);
@@ -26,6 +26,6 @@ struct NativeString {
   uint32_t length_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_NATIVE_STRING_H

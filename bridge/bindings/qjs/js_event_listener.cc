@@ -6,7 +6,7 @@
 #include "js_event_listener.h"
 #include "core/dom/events/event_target.h"
 
-namespace kraken {
+namespace webf {
 
 JSEventListener::JSEventListener(std::shared_ptr<QJSFunction> listener) : event_listener_(listener) {}
 JSValue JSEventListener::GetListenerObject(EventTarget&) {
@@ -29,4 +29,4 @@ void JSEventListener::Trace(GCVisitor* visitor) const {
   event_listener_->Trace(visitor);
 }
 
-}  // namespace kraken
+}  // namespace webf

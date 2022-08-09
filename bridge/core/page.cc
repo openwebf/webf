@@ -14,13 +14,13 @@
 #include "page.h"
 #include "polyfill.h"
 
-namespace kraken {
+namespace webf {
 
-ConsoleMessageHandler KrakenPage::consoleMessageHandler{nullptr};
+ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
-kraken::KrakenPage** KrakenPage::pageContextPool{nullptr};
+webf::WebFPage** WebFPage::pageContextPool{nullptr};
 
-KrakenPage::KrakenPage(int32_t contextId, const JSExceptionHandler& handler)
+WebFPage::WebFPage(int32_t contextId, const JSExceptionHandler& handler)
     : contextId(contextId), ownerThreadId(std::this_thread::get_id()) {
   context_ = new ExecutingContext(
       contextId,
@@ -28,12 +28,12 @@ KrakenPage::KrakenPage(int32_t contextId, const JSExceptionHandler& handler)
         if (context->dartMethodPtr()->onJsError != nullptr) {
           context->dartMethodPtr()->onJsError(context->contextId(), message);
         }
-        KRAKEN_LOG(ERROR) << message << std::endl;
+        WEBF_LOG(ERROR) << message << std::endl;
       },
       this);
 }
 
-bool KrakenPage::parseHTML(const char* code, size_t length) {
+bool WebFPage::parseHTML(const char* code, size_t length) {
   if (!context_->IsValid())
     return false;
 
@@ -47,10 +47,10 @@ bool KrakenPage::parseHTML(const char* code, size_t length) {
   return true;
 }
 
-void KrakenPage::invokeModuleEvent(const NativeString* moduleName,
-                                   const char* eventType,
-                                   void* ptr,
-                                   NativeString* extra) {
+void WebFPage::invokeModuleEvent(const NativeString* moduleName,
+                                 const char* eventType,
+                                 void* ptr,
+                                 NativeString* extra) {
   if (!context_->IsValid())
     return;
 
@@ -80,46 +80,46 @@ void KrakenPage::invokeModuleEvent(const NativeString* moduleName,
   }
 }
 
-void KrakenPage::evaluateScript(const NativeString* script, const char* url, int startLine) {
+void WebFPage::evaluateScript(const NativeString* script, const char* url, int startLine) {
   if (!context_->IsValid())
     return;
 
-#if ENABLE_PROFILE
-  auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
-  nativePerformance.mark(PERF_JS_PARSE_TIME_START);
-  std::u16string patchedCode = std::u16string(u"performance.mark('js_parse_time_end');") +
-                               std::u16string(reinterpret_cast<const char16_t*>(script->string), script->length);
-  context_->evaluateJavaScript(patchedCode.c_str(), patchedCode.size(), url, startLine);
-#else
+//#if ENABLE_PROFILE
+//  auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
+//  nativePerformance.mark(PERF_JS_PARSE_TIME_START);
+//  std::u16string patchedCode = std::u16string(u"performance.mark('js_parse_time_end');") +
+//                               std::u16string(reinterpret_cast<const char16_t*>(script->string), script->length);
+//  context_->evaluateJavaScript(patchedCode.c_str(), patchedCode.size(), url, startLine);
+//#else
   context_->EvaluateJavaScript(script->string(), script->length(), url, startLine);
-#endif
+//#endif
 }
 
-void KrakenPage::evaluateScript(const uint16_t* script, size_t length, const char* url, int startLine) {
+void WebFPage::evaluateScript(const uint16_t* script, size_t length, const char* url, int startLine) {
   if (!context_->IsValid())
     return;
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
-void KrakenPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
+void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
   if (!context_->IsValid())
     return;
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
-uint8_t* KrakenPage::dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength) {
+uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength) {
   if (!context_->IsValid())
     return nullptr;
   return context_->DumpByteCode(script, length, url, byteLength);
 }
 
-void KrakenPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
+void WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!context_->IsValid())
     return;
   context_->EvaluateByteCode(bytes, byteLength);
 }
 
-void KrakenPage::registerDartMethods(uint64_t* methodBytes, int32_t length) {
+void WebFPage::registerDartMethods(uint64_t* methodBytes, int32_t length) {
   size_t i = 0;
 
   auto& dartMethodPointer = context_->dartMethodPtr();
@@ -136,7 +136,7 @@ void KrakenPage::registerDartMethods(uint64_t* methodBytes, int32_t length) {
   dartMethodPointer->flushUICommand = reinterpret_cast<FlushUICommand>(methodBytes[i++]);
 
 #if ENABLE_PROFILE
-  methodPointer->getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(methodBytes[i++]);
+  dartMethodPointer->getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(methodBytes[i++]);
 #else
   i++;
 #endif
@@ -147,22 +147,22 @@ void KrakenPage::registerDartMethods(uint64_t* methodBytes, int32_t length) {
   assert_m(i == length, "Dart native methods count is not equal with C++ side method registrations.");
 }
 
-std::thread::id KrakenPage::currentThread() const {
+std::thread::id WebFPage::currentThread() const {
   return ownerThreadId;
 }
 
-KrakenPage::~KrakenPage() {
+WebFPage::~WebFPage() {
 #if IS_TEST
   if (disposeCallback != nullptr) {
     disposeCallback(this);
   }
 #endif
   delete context_;
-  KrakenPage::pageContextPool[contextId] = nullptr;
+  WebFPage::pageContextPool[contextId] = nullptr;
 }
 
-void KrakenPage::reportError(const char* errmsg) {
+void WebFPage::reportError(const char* errmsg) {
   handler_(context_, errmsg);
 }
 
-}  // namespace kraken
+}  // namespace webf

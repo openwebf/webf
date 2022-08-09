@@ -6,7 +6,7 @@
 #include "native_string_utils.h"
 #include "bindings/qjs/qjs_engine_patch.h"
 
-namespace kraken {
+namespace webf {
 
 std::unique_ptr<NativeString> jsValueToNativeString(JSContext* ctx, JSValue value) {
   bool isValueString = true;
@@ -55,4 +55,4 @@ std::string jsValueToStdString(JSContext* ctx, JSValue& value) {
   return str;
 }
 
-}  // namespace kraken
+}  // namespace webf

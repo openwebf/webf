@@ -7,7 +7,7 @@
 
 #include "html_element.h"
 
-namespace kraken {
+namespace webf {
 
 class DocumentFragment;
 
@@ -24,6 +24,6 @@ class HTMLTemplateElement : public HTMLElement {
   mutable Member<DocumentFragment> content_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_TEMPLATE_ELEMENTT_H

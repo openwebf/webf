@@ -14,7 +14,7 @@
 
 #include "foundation/native_string.h"
 
-namespace kraken {
+namespace webf {
 
 // Convert to string and return a full copy of NativeString from JSValue.
 std::unique_ptr<NativeString> jsValueToNativeString(JSContext* ctx, JSValue value);
@@ -40,6 +40,6 @@ void fromUTF8(const std::string& source, std::basic_string<T, std::char_traits<T
   result = convertor.from_bytes(source);
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_NATIVE_STRING_UTILS_H

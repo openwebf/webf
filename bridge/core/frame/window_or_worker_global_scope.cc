@@ -5,7 +5,7 @@
 #include "window_or_worker_global_scope.h"
 #include "core/frame/dom_timer.h"
 
-namespace kraken {
+namespace webf {
 
 static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
   auto* context = timer->context();
@@ -122,4 +122,4 @@ void WindowOrWorkerGlobalScope::clearTimeout(ExecutingContext* context, int32_t 
   context->Timers()->removeTimeoutById(timerId);
 }
 
-}  // namespace kraken
+}  // namespace webf

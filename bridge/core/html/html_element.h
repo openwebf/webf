@@ -8,7 +8,7 @@
 
 #include "core/dom/element.h"
 
-namespace kraken {
+namespace webf {
 
 class HTMLElement : public Element {
   DEFINE_WRAPPERTYPEINFO();
@@ -40,6 +40,6 @@ struct DowncastTraits<HTMLElement> {
   static bool AllowFrom(const Node& node) { return node.IsHTMLElement(); }
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_HTML_HTML_ELEMENT_H_

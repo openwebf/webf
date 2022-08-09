@@ -13,7 +13,7 @@
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 class WrapperTypeInfo;
@@ -70,6 +70,6 @@ class ScriptValue final {
   JSValue value_{JS_NULL};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_SCRIPT_VALUE_H

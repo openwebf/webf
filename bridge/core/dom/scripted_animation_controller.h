@@ -9,7 +9,7 @@
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "frame_request_callback_collection.h"
 
-namespace kraken {
+namespace webf {
 
 class ScriptAnimationController {
  public:
@@ -23,6 +23,6 @@ class ScriptAnimationController {
   FrameRequestCallbackCollection frame_request_callback_collection_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_BOM_SCRIPT_ANIMATION_CONTROLLER_H_

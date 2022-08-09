@@ -6,7 +6,7 @@
 #include "bounding_client_rect.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 BoundingClientRect* BoundingClientRect::Create(ExecutingContext* context,
                                                NativeBoundingClientRect* native_bounding_client_rect) {
@@ -30,4 +30,4 @@ BoundingClientRect::BoundingClientRect(ExecutingContext* context, NativeBounding
 
 void BoundingClientRect::Trace(GCVisitor* visitor) const {}
 
-}  // namespace kraken
+}  // namespace webf

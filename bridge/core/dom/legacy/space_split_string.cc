@@ -5,7 +5,7 @@
 
 #include "space_split_string.h"
 
-namespace kraken {
+namespace webf {
 
 std::string SpaceSplitString::m_delimiter{" "};
 
@@ -57,4 +57,4 @@ bool SpaceSplitString::containsAll(std::string s) {
   return flag;
 }
 
-}  // namespace kraken
+}  // namespace webf

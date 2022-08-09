@@ -5,7 +5,7 @@
 
 #include "ui_task_queue.h"
 
-namespace kraken {
+namespace webf {
 std::mutex UITaskQueue::ui_task_creation_mutex_{};
 fml::RefPtr<UITaskQueue> UITaskQueue::instance_{};
 
@@ -14,4 +14,4 @@ int32_t UITaskQueue::registerTask(const Task& task, void* data) {
   return taskId;
 }
 
-}  // namespace kraken
+}  // namespace webf

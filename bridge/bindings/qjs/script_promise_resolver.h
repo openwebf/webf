@@ -9,7 +9,7 @@
 #include "script_promise.h"
 #include "to_quickjs.h"
 
-namespace kraken {
+namespace webf {
 
 class ScriptPromiseResolver {
  public:
@@ -65,6 +65,6 @@ class ScriptPromiseResolver {
   JSValue reject_func_{JS_NULL};
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_RESOLVER_H_

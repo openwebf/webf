@@ -11,7 +11,7 @@
 #include "event_type_names.h"
 #include "foundation/native_value_converter.h"
 
-namespace kraken {
+namespace webf {
 
 Window::Window(ExecutingContext* context) : EventTargetWithInlineData(context) {
   context->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateWindow, (void*)bindingObject());
@@ -139,4 +139,4 @@ void Window::Trace(GCVisitor* visitor) const {
   EventTargetWithInlineData::Trace(visitor);
 }
 
-}  // namespace kraken
+}  // namespace webf

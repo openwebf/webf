@@ -7,7 +7,7 @@
 #include "core/dom/element.h"
 #include "core/executing_context.h"
 
-namespace kraken {
+namespace webf {
 
 template <typename CharacterType>
 inline bool isASCIILower(CharacterType character) {
@@ -153,4 +153,4 @@ AtomicString CSSStyleDeclaration::InternalRemoveProperty(std::string& name) {
   return return_value;
 }
 
-}  // namespace kraken
+}  // namespace webf

@@ -14,7 +14,7 @@
 #include "node_data.h"
 #include "tree_scope.h"
 
-namespace kraken {
+namespace webf {
 
 const int kDOMNodeTypeShift = 2;
 const int kElementNamespaceTypeShift = 4;
@@ -316,6 +316,6 @@ inline void Node::SetParentOrShadowHostNode(ContainerNode* parent) {
   parent_or_shadow_host_node_ = reinterpret_cast<Node*>(parent);
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_NODE_H

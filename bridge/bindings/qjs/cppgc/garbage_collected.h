@@ -13,7 +13,7 @@
 #include "foundation/macros.h"
 #include "local_handle.h"
 
-namespace kraken {
+namespace webf {
 
 template <typename T>
 class MakeGarbageCollectedTrait;
@@ -74,6 +74,6 @@ T* MakeGarbageCollected(Args&&... args) {
   return MakeLocal<T>(MakeGarbageCollectedTrait<T>::Allocate(std::forward<Args>(args)...)).Get();
 }
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_GARBAGE_COLLECTED_H

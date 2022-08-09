@@ -9,7 +9,7 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"
 
-namespace kraken {
+namespace webf {
 
 class ExecutingContext;
 
@@ -55,6 +55,6 @@ class BoundingClientRect : public ScriptWrappable {
   double left_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_CORE_DOM_LEGACY_BOUNDING_CLIENT_RECT_H_

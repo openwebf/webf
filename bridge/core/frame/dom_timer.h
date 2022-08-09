@@ -9,7 +9,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "dom_timer_coordinator.h"
 
-namespace kraken {
+namespace webf {
 
 class DOMTimer {
  public:
@@ -37,6 +37,6 @@ class DOMTimer {
   std::shared_ptr<QJSFunction> callback_;
 };
 
-}  // namespace kraken
+}  // namespace webf
 
 #endif  // KRAKENBRIDGE_DOM_TIMER_H
