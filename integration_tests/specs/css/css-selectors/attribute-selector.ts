@@ -1,4 +1,4 @@
-fdescribe('css attribute selector', () => {
+describe('css attribute selector', () => {
     it('001', async () => {
         const style = <style>{`[id] { color: red; }`}</style>;
         const div = <div id="div1" >001- Filler Text </div>;
@@ -31,10 +31,9 @@ fdescribe('css attribute selector', () => {
         document.body.appendChild(div);
         await snapshot();
     });
-    // error
     it('005', async () => {
         const style = <style>{`[class= "class1"][id = "div1"][class= "class1"][id = "div1"][id = "div1"] { color: red;}`}</style>;
-        const div = <div class="div1" > 005 Filler Text < /div>;
+        const div = <div class="class1" id = "div1" > 005 Filler Text </div>;
         document.head.appendChild(style);
         document.body.appendChild(div);
         await snapshot();
@@ -42,10 +41,9 @@ fdescribe('css attribute selector', () => {
     // error
     it('006', async () => {
         const style = <style>{`[1digit], div { color: red; }`}</style>;
-        const div = <div class="div1" > 006 Filler Text < /div>;
+        const div = <div> 006 Filler Text</div>
         document.head.appendChild(style);
         document.body.appendChild(div);
         await snapshot();
     });
-
 });

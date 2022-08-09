@@ -66,4 +66,90 @@ describe('css class selector', () => {
     document.head.removeChild(style2);
     await snapshot();
   });
+
+  it('001', async () => {
+    const style = <style>{`div.div1 { color: red; }`}</style>;
+    const div = <div class="div11" > 001 Filler Text </div>;
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
+  it('002', async () => {
+    const style = <style>{`div.div1 { color: red; }`}</style>;
+    const div = <div class="div1" > 002 Filler Text < /div>;
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
+  it('003', async () => {
+    const style = <style>{`.div1 { color: red; }`}</style>;
+    const div = <div class="div1" > 003 Filler Text < /div>;
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
+  it('004', async () => {
+    const style = <style>{`div.bar.foo.bat { color: red; }`}</style>;
+    const div = <div class="foo bar bat" > 004 Filler Text < /div>;
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();   
+  });
+
+  it('005', async () => {
+    const style = <style>{`.teST { color: green; } .TEst { background: red; color: yellow; }`}</style>;
+    const p = <p class="teST" > 005 This text should be green.</p>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    await snapshot();   
+  });
+
+  it('006', async () => {
+    const style = <style>{`p { background: green; color: white; } .fail.test { background: red; color: yellow; }`}</style>;
+    const p = <p class="pass test" > 006 This should have a green background.</p>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    await snapshot();   
+  });
+
+  it('007', async () => {
+    const style = <style>{`p { background: red; color: yellow; } .pass.test { background: green; color: white; }`}</style>;
+    const p = <p class="pass test" > 007 This should have a green background.< /p>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    await snapshot();   
+  });
+
+  it('008', async () => {
+    const style = <style>{`p { background: red; color: yellow; } .pass { background: green; color: white; }`}</style>;
+    const p = <p class="pass test" > 008 This should have a green background.< /p>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    await snapshot();   
+  });
+
+  it('009', async () => {
+    const style = <style>{`p { background: red; color: yellow; } .test { background: green; color: white; }`}</style>;
+    const p1 = <p class= "test line" > This line should be green.< /p>
+    const p2 = <p class= "line test" > This line should be green.< /p>
+    const p3 = <p class= " test line" > This line should be green.< /p>
+    const p4 = <p class= " line test" > This line should be green.< /p>
+    const p5 = <p class= "test line " > This line should be green.< /p>
+    const p6 = < p class= "line test " > This line should be green.< /p>
+    const p7 = < p class= " test line " > This line should be green.< /p>
+    const p8 = < p class= " line test " > This line should be green.< /p>
+    document.head.appendChild(style);
+    document.body.appendChild(p1);
+    document.body.appendChild(p2);
+    document.body.appendChild(p3);
+    document.body.appendChild(p4);
+    document.body.appendChild(p5);
+    document.body.appendChild(p6);
+    document.body.appendChild(p7);
+    document.body.appendChild(p8);
+    await snapshot();
+  });
 });

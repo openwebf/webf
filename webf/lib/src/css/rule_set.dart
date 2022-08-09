@@ -75,22 +75,18 @@ class RuleSet {
 
     if (id != null && id.isNotEmpty == true) {
       insertRule(id, rule, idRules);
-      return;
     }
 
     if (className != null && className.isNotEmpty == true) {
       insertRule(className, rule, classRules);
-      return;
     }
 
     if (attributeName != null && attributeName.isNotEmpty == true) {
       insertRule(attributeName.toUpperCase(), rule, attributeRules);
-      return;
     }
 
     if (tagName != null && tagName.isNotEmpty == true) {
       insertRule(tagName.toUpperCase(), rule, tagRules);
-      return;
     }
     universalRules.add(rule);
   }
