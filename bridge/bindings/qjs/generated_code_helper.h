@@ -1,7 +1,7 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef KRAKENBRIDGE_GENERATED_CODE_HELPER_H
 #define KRAKENBRIDGE_GENERATED_CODE_HELPER_H
