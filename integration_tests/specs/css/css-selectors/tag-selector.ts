@@ -14,4 +14,24 @@ describe("css tag selector", () => {
     document.body.appendChild(p5);
     await snapshot();
   });
+
+  fit("002", async () => {
+    const style = <style>{`div, blockquote { color: green; }`}</style>;
+    const p = <p>Test passes if the "Filler Text" below is green.</p>;
+    const blockquote = <blockquote>Filler Text</blockquote>;
+    const div = <div>Filler Text</div>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    document.body.appendChild(blockquote);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
+  fit("003", async () => {
+    const style = <style>{`DIV { color: green; }`}</style>;
+    const div = <div>Filler Text</div>;
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
 });
