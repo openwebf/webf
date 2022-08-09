@@ -175,9 +175,7 @@ TEST(Context, unhandledRejectionEventWillTriggerWhenNotHandled) {
   static bool logCalled = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto bridge = TEST_init(errorHandler);
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-    logCalled = true;
-  };
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
 
   std::string code = R"(
 window.addEventListener('unhandledrejection', event => {
@@ -206,9 +204,7 @@ TEST(Context, handledRejectionEventWillTriggerWhenUnHandledRejectHandled) {
   static bool logCalled = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto bridge = TEST_init(errorHandler);
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-    logCalled = true;
-  };
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
 
   std::string code = R"(
 window.addEventListener('unhandledrejection', event => {

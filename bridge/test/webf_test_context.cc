@@ -63,8 +63,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
   if (context->dartMethodPtr()->matchImageSnapshot == nullptr) {
     return JS_ThrowTypeError(
-        ctx,
-        "Failed to execute '__webf_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.");
+        ctx, "Failed to execute '__webf_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.");
   }
 
   std::unique_ptr<NativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
@@ -99,8 +98,8 @@ static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSVa
   auto* context = ExecutingContext::From(ctx);
 #if FLUTTER_BACKEND
   if (context->dartMethodPtr()->environment == nullptr) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_environment__': dart method (environment) is not registered.");
+    return JS_ThrowTypeError(ctx,
+                             "Failed to execute '__webf_environment__': dart method (environment) is not registered.");
   }
   const char* env = context->dartMethodPtr()->environment();
   return JS_ParseJSON(ctx, env, strlen(env), "");
@@ -118,8 +117,7 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
 
   JSValue inputArrayValue = argv[0];
   if (!JS_IsObject(inputArrayValue)) {
-    return JS_ThrowTypeError(ctx,
-                             "Failed to execute '__webf_simulate_pointer__': first arguments should be an array.");
+    return JS_ThrowTypeError(ctx, "Failed to execute '__webf_simulate_pointer__': first arguments should be an array.");
   }
 
   JSValue pointerValue = argv[1];
@@ -182,8 +180,7 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
   JSValue& charStringValue = argv[0];
 
   if (!JS_IsString(charStringValue)) {
-    return JS_ThrowTypeError(ctx,
-                             "Failed to execute '__webf_simulate_keypress__': first arguments should be a string");
+    return JS_ThrowTypeError(ctx, "Failed to execute '__webf_simulate_keypress__': first arguments should be a string");
   }
 
   std::unique_ptr<NativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
@@ -284,9 +281,9 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
 }
 
 bool WebFTestContext::evaluateTestScripts(const uint16_t* code,
-                                            size_t codeLength,
-                                            const char* sourceURL,
-                                            int startLine) {
+                                          size_t codeLength,
+                                          const char* sourceURL,
+                                          int startLine) {
   if (!context_->IsValid())
     return false;
   return context_->EvaluateJavaScript(code, codeLength, sourceURL, startLine);

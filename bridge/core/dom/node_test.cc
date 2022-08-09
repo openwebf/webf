@@ -57,9 +57,7 @@ TEST(Node, childNodes) {
 TEST(Node, textNodeHaveEmptyChildNodes) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-    logCalled = true;
-  };
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
   auto context = bridge->GetExecutingContext();
   const char* code =

@@ -25,17 +25,17 @@
 #define WEBF_DISALLOW_ASSIGN(TypeName) TypeName& operator=(const TypeName&) = delete
 
 #define WEBF_DISALLOW_MOVE(TypeName) \
-  TypeName(TypeName&&) = delete;       \
+  TypeName(TypeName&&) = delete;     \
   TypeName& operator=(TypeName&&) = delete
 
-#define WEBF_STATIC_ONLY(Type)         \
+#define WEBF_STATIC_ONLY(Type)           \
   Type() = delete;                       \
   Type(const Type&) = delete;            \
   Type& operator=(const Type&) = delete; \
   void* operator new(size_t) = delete;   \
   void* operator new(size_t, void*) = delete
 
-#define WEBF_STACK_ALLOCATED()       \
+#define WEBF_STACK_ALLOCATED()         \
  private:                              \
   void* operator new(size_t) = delete; \
   void* operator new(size_t, void*) = delete
@@ -45,7 +45,7 @@
 // Members you need a trace method and the containing object needs to call that
 // trace method.
 //
-#define WEBF_DISALLOW_NEW()                                     \
+#define WEBF_DISALLOW_NEW()                                       \
  public:                                                          \
   using IsDisallowNewMarker = int;                                \
   void* operator new(size_t, void* location) { return location; } \
@@ -54,17 +54,17 @@
   void* operator new(size_t) = delete;
 
 #define WEBF_DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&) = delete;             \
+  TypeName(const TypeName&) = delete;           \
   TypeName& operator=(const TypeName&) = delete
 
 #define WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName) \
-  TypeName(const TypeName&) = delete;                  \
-  TypeName(TypeName&&) = delete;                       \
-  TypeName& operator=(const TypeName&) = delete;       \
+  TypeName(const TypeName&) = delete;                \
+  TypeName(TypeName&&) = delete;                     \
+  TypeName& operator=(const TypeName&) = delete;     \
   TypeName& operator=(TypeName&&) = delete
 
 #define WEBF_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
-  TypeName() = delete;                                  \
+  TypeName() = delete;                                \
   WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName)
 
 #endif  // BRIDGE_MACROS_H

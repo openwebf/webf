@@ -21,13 +21,17 @@ ErrorEvent* ErrorEvent::Create(ExecutingContext* context,
 }
 
 ErrorEvent::ErrorEvent(ExecutingContext* context, const std::string& message)
-    : Event(context, event_type_names::kerror), message_(message), source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
+    : Event(context, event_type_names::kerror),
+      message_(message),
+      source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
 
 ErrorEvent::ErrorEvent(ExecutingContext* context, const std::string& message, std::unique_ptr<SourceLocation> location)
     : Event(context, event_type_names::kerror), message_(message), source_location_(std::move(location)) {}
 
 ErrorEvent::ErrorEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
-    : Event(context, event_type_names::kerror), message_(type.ToStdString()), source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
+    : Event(context, event_type_names::kerror),
+      message_(type.ToStdString()),
+      source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
 
 ErrorEvent::ErrorEvent(ExecutingContext* context,
                        const AtomicString& type,

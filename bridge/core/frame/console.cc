@@ -10,9 +10,9 @@
 namespace webf {
 
 void Console::__webf_print__(ExecutingContext* context,
-                               const AtomicString& log,
-                               const AtomicString& level,
-                               ExceptionState& exception) {
+                             const AtomicString& log,
+                             const AtomicString& level,
+                             ExceptionState& exception) {
   std::stringstream stream;
   std::string buffer = log.ToStdString();
   stream << buffer;

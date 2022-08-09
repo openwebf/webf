@@ -13,27 +13,27 @@ namespace webf {
 
 using namespace std::chrono;
 
-//IMPL_PROPERTY_GETTER(PerformanceEntry, name)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// IMPL_PROPERTY_GETTER(PerformanceEntry, name)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* entry = static_cast<PerformanceEntry*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  return JS_NewString(ctx, entry->m_nativePerformanceEntry->name);
 //}
 //
-//IMPL_PROPERTY_GETTER(PerformanceEntry, entryType)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// IMPL_PROPERTY_GETTER(PerformanceEntry, entryType)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* entry = static_cast<PerformanceEntry*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  return JS_NewString(ctx, entry->m_nativePerformanceEntry->entryType);
 //}
 //
-//IMPL_PROPERTY_GETTER(PerformanceEntry, startTime)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// IMPL_PROPERTY_GETTER(PerformanceEntry, startTime)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* entry = static_cast<PerformanceEntry*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  return JS_NewUint32(ctx, entry->m_nativePerformanceEntry->startTime);
 //}
 //
-//IMPL_PROPERTY_GETTER(PerformanceEntry, duration)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// IMPL_PROPERTY_GETTER(PerformanceEntry, duration)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* entry = static_cast<PerformanceEntry*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  return JS_NewUint32(ctx, entry->m_nativePerformanceEntry->duration);
 //}
 //
-//IMPL_PROPERTY_GETTER(Performance, timeOrigin)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// IMPL_PROPERTY_GETTER(Performance, timeOrigin)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* performance = static_cast<Performance*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  int64_t time =
 //      std::chrono::duration_cast<std::chrono::milliseconds>(performance->m_context->timeOrigin.time_since_epoch())
@@ -41,11 +41,11 @@ using namespace std::chrono;
 //  return JS_NewUint32(ctx, time);
 //}
 
-//JSValue Performance::now(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::now(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* performance = static_cast<Performance*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  return JS_NewFloat64(ctx, performance->internalNow());
 //}
-//JSValue Performance::toJSON(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::toJSON(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* performance = static_cast<Performance*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  double now = performance->internalNow();
 //  int64_t timeOrigin =
@@ -58,7 +58,7 @@ using namespace std::chrono;
 //  return object;
 //}
 //
-//static JSValue buildPerformanceEntry(const std::string& entryType,
+// static JSValue buildPerformanceEntry(const std::string& entryType,
 //                                     ExecutionContext* context,
 //                                     NativePerformanceEntry* nativePerformanceEntry) {
 //  if (entryType == "mark") {
@@ -71,7 +71,7 @@ using namespace std::chrono;
 //  return JS_NULL;
 //}
 //
-//JSValue Performance::clearMarks(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::clearMarks(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* performance = static_cast<Performance*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  JSValue targetMark = JS_NULL;
 //  if (argc == 1) {
@@ -102,7 +102,7 @@ using namespace std::chrono;
 //
 //  return JS_NULL;
 //}
-//JSValue Performance::clearMeasures(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::clearMeasures(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  JSValue targetMark = JS_NULL;
 //  if (argc == 1) {
 //    targetMark = argv[0];
@@ -133,7 +133,7 @@ using namespace std::chrono;
 //
 //  return JS_NULL;
 //}
-//JSValue Performance::getEntries(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::getEntries(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* performance = static_cast<Performance*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  auto entries = performance->getFullEntries();
 //
@@ -152,7 +152,7 @@ using namespace std::chrono;
 //  JS_FreeValue(ctx, pushMethod);
 //  return returnArray;
 //}
-//JSValue Performance::getEntriesByName(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::getEntriesByName(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  if (argc == 0) {
 //    return JS_ThrowTypeError(
 //        ctx, "Failed to execute 'getEntriesByName' on 'Performance': 1 argument required, but only 0 present.");
@@ -175,7 +175,7 @@ using namespace std::chrono;
 //  JS_FreeValue(ctx, pushMethod);
 //  return targetEntriesArray;
 //}
-//JSValue Performance::getEntriesByType(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::getEntriesByType(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  if (argc == 0) {
 //    return JS_ThrowTypeError(
 //        ctx, "Failed to execute 'getEntriesByName' on 'Performance': 1 argument required, but only 0 present.");
@@ -197,7 +197,7 @@ using namespace std::chrono;
 //  JS_FreeValue(ctx, pushMethod);
 //  return targetEntriesArray;
 //}
-//JSValue Performance::mark(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::mark(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  if (argc != 1) {
 //    return JS_ThrowTypeError(ctx,
 //                             "Failed to execute 'mark' on 'Performance': 1 argument required, but only 0 present.");
@@ -209,10 +209,11 @@ using namespace std::chrono;
 //
 //  return JS_NULL;
 //}
-//JSValue Performance::measure(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::measure(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  if (argc == 0) {
 //    return JS_ThrowTypeError(ctx,
-//                             "Failed to execute 'measure' on 'Performance': 1 argument required, but only 0 present.");
+//                             "Failed to execute 'measure' on 'Performance': 1 argument required, but only 0
+//                             present.");
 //  }
 //
 //  std::string name = jsValueToStdString(ctx, argv[0]);
@@ -239,37 +240,37 @@ using namespace std::chrono;
 //  return JS_NULL;
 //}
 //
-//PerformanceEntry::PerformanceEntry(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry)
+// PerformanceEntry::PerformanceEntry(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry)
 //    : HostObject(context, "PerformanceEntry"), m_nativePerformanceEntry(nativePerformanceEntry) {}
 //
-//PerformanceMark::PerformanceMark(ExecutionContext* context, std::string& name, int64_t startTime)
+// PerformanceMark::PerformanceMark(ExecutionContext* context, std::string& name, int64_t startTime)
 //    : PerformanceEntry(context,
 //                       new NativePerformanceEntry(name, "mark", startTime, 0, PERFORMANCE_ENTRY_NONE_UNIQUE_ID)) {}
-//PerformanceMark::PerformanceMark(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry)
+// PerformanceMark::PerformanceMark(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry)
 //    : PerformanceEntry(context, nativePerformanceEntry) {}
-//PerformanceMeasure::PerformanceMeasure(ExecutionContext* context,
+// PerformanceMeasure::PerformanceMeasure(ExecutionContext* context,
 //                                       std::string& name,
 //                                       int64_t startTime,
 //                                       int64_t duration)
 //    : PerformanceEntry(
 //          context,
 //          new NativePerformanceEntry(name, "measure", startTime, duration, PERFORMANCE_ENTRY_NONE_UNIQUE_ID)) {}
-//PerformanceMeasure::PerformanceMeasure(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry)
+// PerformanceMeasure::PerformanceMeasure(ExecutionContext* context, NativePerformanceEntry* nativePerformanceEntry)
 //    : PerformanceEntry(context, nativePerformanceEntry) {}
-//void NativePerformance::mark(const std::string& markName) {
+// void NativePerformance::mark(const std::string& markName) {
 //  int64_t startTime = std::chrono::duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
 //  auto* nativePerformanceEntry =
 //      new NativePerformanceEntry{markName, "mark", startTime, 0, PERFORMANCE_ENTRY_NONE_UNIQUE_ID};
 //  entries->emplace_back(nativePerformanceEntry);
 //}
-//void NativePerformance::mark(const std::string& markName, int64_t startTime) {
+// void NativePerformance::mark(const std::string& markName, int64_t startTime) {
 //  auto* nativePerformanceEntry =
 //      new NativePerformanceEntry{markName, "mark", startTime, 0, PERFORMANCE_ENTRY_NONE_UNIQUE_ID};
 //  entries->emplace_back(nativePerformanceEntry);
 //}
 //
-//Performance::Performance(ExecutionContext* context) : HostObject(context, "Performance") {}
-//void Performance::internalMeasure(const std::string& name,
+// Performance::Performance(ExecutionContext* context) : HostObject(context, "Performance") {}
+// void Performance::internalMeasure(const std::string& name,
 //                                  const std::string& startMark,
 //                                  const std::string& endMark,
 //                                  JSValue* exception) {
@@ -281,7 +282,8 @@ using namespace std::chrono;
 //                      [&startMark](NativePerformanceEntry* entry) -> bool { return entry->name == startMark; });
 //
 //    if (startMarkCount == 0) {
-//      *exception = JS_ThrowTypeError(m_ctx, "Failed to execute 'measure' on 'Performance': The mark %s does not exist.",
+//      *exception = JS_ThrowTypeError(m_ctx, "Failed to execute 'measure' on 'Performance': The mark %s does not
+//      exist.",
 //                                     startMark.c_str());
 //      return;
 //    }
@@ -291,7 +293,8 @@ using namespace std::chrono;
 //                      [&endMark](NativePerformanceEntry* entry) -> bool { return entry->name == endMark; });
 //
 //    if (endMarkCount == 0) {
-//      *exception = JS_ThrowTypeError(m_ctx, "Failed to execute 'measure' on 'Performance': The mark %s does not exist.",
+//      *exception = JS_ThrowTypeError(m_ctx, "Failed to execute 'measure' on 'Performance': The mark %s does not
+//      exist.",
 //                                     endMark.c_str());
 //      return;
 //    }
@@ -340,13 +343,13 @@ using namespace std::chrono;
 //    }
 //  }
 //}
-//double Performance::now() const {
+// double Performance::now() const {
 //  auto now = std::chrono::system_clock::now();
 //  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - GetExecutingContext()->timeOrigin);
 //  auto reducedDuration = std::floor(duration / 1000us) * 1000us;
 //  return std::chrono::duration_cast<std::chrono::milliseconds>(reducedDuration).count();
 //}
-//std::vector<NativePerformanceEntry*> Performance::getFullEntries() {
+// std::vector<NativePerformanceEntry*> Performance::getFullEntries() {
 //  auto* bridgeEntries = m_nativePerformance.entries;
 //#if ENABLE_PROFILE
 //  if (getDartMethod()->getPerformanceEntries == nullptr) {
@@ -382,7 +385,7 @@ using namespace std::chrono;
 //
 //#if ENABLE_PROFILE
 //
-//void Performance::measureSummary(JSValue* exception) {
+// void Performance::measureSummary(JSValue* exception) {
 //  internalMeasure(PERF_WIDGET_CREATION_COST, PERF_CONTROLLER_INIT_START, PERF_CONTROLLER_INIT_END, exception);
 //  internalMeasure(PERF_CONTROLLER_PROPERTIES_INIT_COST, PERF_CONTROLLER_INIT_START, PERF_CONTROLLER_PROPERTY_INIT,
 //                  exception);
@@ -397,15 +400,16 @@ using namespace std::chrono;
 //  internalMeasure(PERF_ELEMENT_MANAGER_PROPERTIES_INIT_COST, PERF_ELEMENT_MANAGER_INIT_START,
 //                  PERF_ELEMENT_MANAGER_PROPERTY_INIT, exception);
 //  internalMeasure(PERF_ROOT_ELEMENT_INIT_COST, PERF_ROOT_ELEMENT_INIT_START, PERF_ROOT_ELEMENT_INIT_END, exception);
-//  internalMeasure(PERF_ROOT_ELEMENT_PROPERTIES_INIT_COST, PERF_ROOT_ELEMENT_INIT_START, PERF_ROOT_ELEMENT_PROPERTY_INIT,
+//  internalMeasure(PERF_ROOT_ELEMENT_PROPERTIES_INIT_COST, PERF_ROOT_ELEMENT_INIT_START,
+//  PERF_ROOT_ELEMENT_PROPERTY_INIT,
 //                  exception);
 //  internalMeasure(PERF_JS_CONTEXT_INIT_COST, PERF_JS_CONTEXT_INIT_START, PERF_JS_CONTEXT_INIT_END, exception);
 //  internalMeasure(PERF_JS_HOST_CLASS_GET_PROPERTY_COST, PERF_JS_HOST_CLASS_GET_PROPERTY_START,
 //                  PERF_JS_HOST_CLASS_GET_PROPERTY_END, exception);
 //  internalMeasure(PERF_JS_HOST_CLASS_SET_PROPERTY_COST, PERF_JS_HOST_CLASS_SET_PROPERTY_START,
 //                  PERF_JS_HOST_CLASS_SET_PROPERTY_END, exception);
-//  internalMeasure(PERF_JS_HOST_CLASS_INIT_COST, PERF_JS_HOST_CLASS_INIT_START, PERF_JS_HOST_CLASS_INIT_END, exception);
-//  internalMeasure(PERF_JS_NATIVE_FUNCTION_CALL_COST, PERF_JS_NATIVE_FUNCTION_CALL_START,
+//  internalMeasure(PERF_JS_HOST_CLASS_INIT_COST, PERF_JS_HOST_CLASS_INIT_START, PERF_JS_HOST_CLASS_INIT_END,
+//  exception); internalMeasure(PERF_JS_NATIVE_FUNCTION_CALL_COST, PERF_JS_NATIVE_FUNCTION_CALL_START,
 //                  PERF_JS_NATIVE_FUNCTION_CALL_END, exception);
 //  internalMeasure(PERF_JS_NATIVE_METHOD_INIT_COST, PERF_JS_NATIVE_METHOD_INIT_START, PERF_JS_NATIVE_METHOD_INIT_END,
 //                  exception);
@@ -436,7 +440,7 @@ using namespace std::chrono;
 //  internalMeasure(PERF_JS_PARSE_TIME_COST, PERF_JS_PARSE_TIME_START, PERF_JS_PARSE_TIME_END, exception);
 //}
 //
-//std::vector<NativePerformanceEntry*> findAllMeasures(const std::vector<NativePerformanceEntry*>& entries,
+// std::vector<NativePerformanceEntry*> findAllMeasures(const std::vector<NativePerformanceEntry*>& entries,
 //                                                     const std::string& targetName) {
 //  std::vector<NativePerformanceEntry*> resultEntries;
 //
@@ -449,7 +453,7 @@ using namespace std::chrono;
 //  return resultEntries;
 //};
 //
-//double getMeasureTotalDuration(const std::vector<NativePerformanceEntry*>& measures) {
+// double getMeasureTotalDuration(const std::vector<NativePerformanceEntry*>& measures) {
 //  double duration = 0.0;
 //  for (auto entry : measures) {
 //    duration += entry->duration;
@@ -457,7 +461,7 @@ using namespace std::chrono;
 //  return duration / 1000;
 //}
 
-//JSValue Performance::__webf_navigation_summary__(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+// JSValue Performance::__webf_navigation_summary__(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
 //  auto* performance = static_cast<Performance*>(JS_GetOpaque(this_val, ExecutionContext::kHostObjectClassId));
 //  JSValue exception = JS_NULL;
 //  performance->measureSummary(&exception);
@@ -538,7 +542,7 @@ using namespace std::chrono;
 //  char buffer[5000];
 //  // clang-format off
 //  sprintf(buffer, R"(
-//Total time cost(without paint and layout): %.*fms
+// Total time cost(without paint and layout): %.*fms
 //
 //%s: %.*fms
 //  + %s %.*fms
@@ -553,7 +557,7 @@ using namespace std::chrono;
 //    + %s %.*fms
 //    + %s %.*fms
 //    + %s %.*fms
-//First Bundle Load: %.*fms
+// First Bundle Load: %.*fms
 //  + %s %.*fms
 //  + %s %.*fms
 //  + %s %.*fms
@@ -574,7 +578,7 @@ using namespace std::chrono;
 //  + %s %.*fms avg: %.*fms count: %zu
 //  + %s %.*fms avg: %.*fms count: %zu
 //  + %s %.*fms avg: %.*fms count: %zu
-//Rendering: %.*fms
+// Rendering: %.*fms
 //  + %s %.*fms avg: %.*fms count: %zu
 //  + %s %.*fms avg: %.*fms count: %zu
 //  + %s %.*fms avg: %.*fms count: %zu
@@ -601,17 +605,17 @@ using namespace std::chrono;
 //          PERF_JS_PARSE_TIME_COST, 2, jsParseTimeCost,
 //          PERF_FLUSH_UI_COMMAND_COST, 2, flushUiCommandCost, 2, flushUiCommandAvg, flushUiCommandCount,
 //          PERF_CREATE_ELEMENT_COST, 2, createElementCost, 2, createElementAvg, createElementCount,
-//          PERF_JS_HOST_CLASS_GET_PROPERTY_COST, 2, jsHostClassGetPropertyCost, 2, jsHostClassGetPropertyAvg, jsHostClassGetPropertyCount,
-//          PERF_JS_HOST_CLASS_SET_PROPERTY_COST, 2, jsHostClassSetPropertyCost, 2, jsHostClassSetPropertyAvg, jsHostClassSetPropertyCount,
-//          PERF_JS_HOST_CLASS_INIT_COST, 2, jsHostClassInitCost, 2, jsHostClassInitAvg, jsHostClassInitCount,
-//          PERF_JS_NATIVE_FUNCTION_CALL_COST, 2, jsNativeFunctionCost, 2, jsNativeFunctionAvg, jsNativeFunctionCount,
-//          PERF_CREATE_TEXT_NODE_COST, 2, createTextNodeCost, 2, createTextNodeAvg, createTextNodeCount,
-//          PERF_CREATE_COMMENT_COST, 2, createCommentCost, 2, createCommentAvg, createCommentCount,
-//          PERF_DISPOSE_EVENT_TARGET_COST, 2, disposeEventTargetCost, 2, disposeEventTargetAvg, disposeEventTargetCount,
-//          PERF_ADD_EVENT_COST, 2, addEventCost, 2, addEventAvg, addEventCount,
-//          PERF_INSERT_ADJACENT_NODE_COST, 2, insertAdjacentNodeCost, 2, insertAdjacentNodeAvg, insertAdjacentNodeCount,
-//          PERF_REMOVE_NODE_COST, 2, removeNodeCost, 2, removeNodeAvg, removeNodeCount,
-//          PERF_SET_STYLE_COST, 2, setStyleCost, 2, setStyleAvg, setStyleCount,
+//          PERF_JS_HOST_CLASS_GET_PROPERTY_COST, 2, jsHostClassGetPropertyCost, 2, jsHostClassGetPropertyAvg,
+//          jsHostClassGetPropertyCount, PERF_JS_HOST_CLASS_SET_PROPERTY_COST, 2, jsHostClassSetPropertyCost, 2,
+//          jsHostClassSetPropertyAvg, jsHostClassSetPropertyCount, PERF_JS_HOST_CLASS_INIT_COST, 2,
+//          jsHostClassInitCost, 2, jsHostClassInitAvg, jsHostClassInitCount, PERF_JS_NATIVE_FUNCTION_CALL_COST, 2,
+//          jsNativeFunctionCost, 2, jsNativeFunctionAvg, jsNativeFunctionCount, PERF_CREATE_TEXT_NODE_COST, 2,
+//          createTextNodeCost, 2, createTextNodeAvg, createTextNodeCount, PERF_CREATE_COMMENT_COST, 2,
+//          createCommentCost, 2, createCommentAvg, createCommentCount, PERF_DISPOSE_EVENT_TARGET_COST, 2,
+//          disposeEventTargetCost, 2, disposeEventTargetAvg, disposeEventTargetCount, PERF_ADD_EVENT_COST, 2,
+//          addEventCost, 2, addEventAvg, addEventCount, PERF_INSERT_ADJACENT_NODE_COST, 2, insertAdjacentNodeCost, 2,
+//          insertAdjacentNodeAvg, insertAdjacentNodeCount, PERF_REMOVE_NODE_COST, 2, removeNodeCost, 2, removeNodeAvg,
+//          removeNodeCount, PERF_SET_STYLE_COST, 2, setStyleCost, 2, setStyleAvg, setStyleCount,
 //          PERF_DOM_FORCE_LAYOUT_COST, 2, domForceLayoutCost, 2, domForceLayoutAvg, domForceLayoutCount,
 //          PERF_DOM_FLUSH_UI_COMMAND_COST, 2, domFlushUICommandCost, 2, domFlushUICommandAvg, domFlushUICommandCount,
 //          PERF_SET_PROPERTIES_COST, 2, setPropertiesCost, 2, setPropertiesAvg, setPropertiesCount,

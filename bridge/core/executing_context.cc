@@ -5,12 +5,12 @@
 #include "executing_context.h"
 #include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
-#include "event_type_names.h"
 #include "core/dom/document.h"
 #include "core/events/error_event.h"
+#include "event_type_names.h"
+#include "foundation/logging.h"
 #include "polyfill.h"
 #include "qjs_window.h"
-#include "foundation/logging.h"
 
 namespace webf {
 
@@ -26,15 +26,15 @@ std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExc
 
 ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& handler, void* owner)
     : context_id_(contextId), handler_(handler), owner_(owner), ctx_invalid_(false), unique_id_(context_unique_id++) {
-//#if ENABLE_PROFILE
-//  auto jsContextStartTime =
-//      std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
-//          .count();
-//  auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
-//  nativePerformance.mark(PERF_JS_CONTEXT_INIT_START, jsContextStartTime);
-//  nativePerformance.mark(PERF_JS_CONTEXT_INIT_END);
-//  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
-//#endif
+  //#if ENABLE_PROFILE
+  //  auto jsContextStartTime =
+  //      std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
+  //          .count();
+  //  auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
+  //  nativePerformance.mark(PERF_JS_CONTEXT_INIT_START, jsContextStartTime);
+  //  nativePerformance.mark(PERF_JS_CONTEXT_INIT_END);
+  //  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
+  //#endif
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
   valid_contexts[contextId] = true;
@@ -58,10 +58,10 @@ ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& 
   // Binding global object and window.
   InstallGlobal();
 
-//#if ENABLE_PROFILE
-//  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_END);
-//  nativePerformance.mark(PERF_JS_POLYFILL_INIT_START);
-//#endif
+  //#if ENABLE_PROFILE
+  //  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_END);
+  //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_START);
+  //#endif
 
   initWebFPolyFill(this);
 
@@ -69,9 +69,9 @@ ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& 
     EvaluateByteCode(p.second.bytes, p.second.length);
   }
 
-//#if ENABLE_PROFILE
-//  nativePerformance.mark(PERF_JS_POLYFILL_INIT_END);
-//#endif
+  //#if ENABLE_PROFILE
+  //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_END);
+  //#endif
 }
 
 ExecutingContext::~ExecutingContext() {

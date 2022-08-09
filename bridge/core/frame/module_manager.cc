@@ -61,27 +61,27 @@ void handleInvokeModuleUnexpectedCallback(void* callbackContext,
 }
 
 AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                     const AtomicString& moduleName,
-                                                     const AtomicString& method,
-                                                     ExceptionState& exception) {
+                                                   const AtomicString& moduleName,
+                                                   const AtomicString& method,
+                                                   ExceptionState& exception) {
   ScriptValue empty = ScriptValue::Empty(context->ctx());
   return __webf_invoke_module__(context, moduleName, method, empty, nullptr, exception);
 }
 
 AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                     const AtomicString& moduleName,
-                                                     const AtomicString& method,
-                                                     ScriptValue& paramsValue,
-                                                     ExceptionState& exception) {
+                                                   const AtomicString& moduleName,
+                                                   const AtomicString& method,
+                                                   ScriptValue& paramsValue,
+                                                   ExceptionState& exception) {
   return __webf_invoke_module__(context, moduleName, method, paramsValue, nullptr, exception);
 }
 
 AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                     const AtomicString& moduleName,
-                                                     const AtomicString& method,
-                                                     ScriptValue& paramsValue,
-                                                     std::shared_ptr<QJSFunction> callback,
-                                                     ExceptionState& exception) {
+                                                   const AtomicString& moduleName,
+                                                   const AtomicString& method,
+                                                   ScriptValue& paramsValue,
+                                                   std::shared_ptr<QJSFunction> callback,
+                                                   ExceptionState& exception) {
   std::unique_ptr<NativeString> params;
   if (!paramsValue.IsEmpty()) {
     params = paramsValue.ToJSONStringify(&exception).ToString().ToNativeString();
@@ -120,8 +120,8 @@ AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
 }
 
 void ModuleManager::__webf_add_module_listener__(ExecutingContext* context,
-                                                   const std::shared_ptr<QJSFunction>& handler,
-                                                   ExceptionState& exception) {
+                                                 const std::shared_ptr<QJSFunction>& handler,
+                                                 ExceptionState& exception) {
   auto listener = ModuleListener::Create(handler);
   context->ModuleListeners()->AddModuleListener(listener);
 }

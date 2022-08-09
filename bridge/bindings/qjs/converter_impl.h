@@ -415,8 +415,8 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T
   static JSValue ToValue(JSContext* ctx, const T* value) { return value->ToQuickJS(); }
 };
 
-//template <>
-//struct Converter<Window> : public ConverterBase<Window> {
+// template <>
+// struct Converter<Window> : public ConverterBase<Window> {
 //  static Window* FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
 //    return toScriptWrappable<Window>(value);
 //  }
