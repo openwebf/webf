@@ -15,8 +15,8 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  it("002", async () => {
-    const style = <style>{`div, blockquote { color: green; }`}</style>;
+  fit("002", async () => {
+    const style = <style>{`div, blockquote, p { color: green; }`}</style>;
     const p = <p>Test passes if the "Filler Text" below is green.</p>;
     const blockquote = <blockquote>Filler Text</blockquote>;
     const div = <div>Filler Text</div>;
@@ -35,7 +35,7 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  fit("004", async () => {
+  it("004", async () => {
     const style = <style>{`body * {
         margin: 1em 0;
         font: inherit;
