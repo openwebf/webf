@@ -60,4 +60,35 @@ describe("css tag selector", () => {
     document.body.appendChild(e7);
     await snapshot();
   });
+
+  it("005", async () => {
+    const style = <style>{` body { color: green; }`}</style>;
+    const p = <p>Test passes if all text on this page is green.</p>;
+    const div = <div>Filler Text</div>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
+  it("006", async () => {
+    const style = <style>{` * { color: green; }`}</style>;
+    const p = <p>Test passes if all text on this page is green.</p>;
+    const div = <div>Filler Text</div>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
+  fit("007", async () => {
+    const style = <style>{` html, div { border: 10px solid blue; }`}</style>;
+    const p = <p>Test passes if all text on this page is green.</p>;
+    const div = <div>Filler Text</div>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
 });
