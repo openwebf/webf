@@ -18,6 +18,7 @@ import 'package:webf/rendering.dart';
 final RegExp _splitRegExp = RegExp(r'\s+');
 const String _ONE_SPACE = ' ';
 const String _STYLE_PROPERTY = 'style';
+const String _ID = 'id';
 const String _CLASS_NAME = 'class';
 
 /// Defined by W3C Standard,
@@ -80,7 +81,12 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
-  String? get id => getAttribute('id');
+  String? _id;
+  String? get id => _id;
+  set id(String? id) {
+    _id = id;
+    recalculateStyle();
+  }
 
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
@@ -976,6 +982,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // @TODO: Parse inline style css text.
     } else if (_CLASS_NAME == qualifiedName) {
       className = value;
+    } else if (_ID == qualifiedName) {
+      id = value;
     }
   }
 

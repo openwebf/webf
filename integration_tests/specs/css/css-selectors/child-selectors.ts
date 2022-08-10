@@ -55,4 +55,150 @@ describe("css child selector", () => {
         document.head.appendChild(style);
         await snapshot();
     });
+
+    it("008", async () => {
+        const style = <style>{` :first-child  { border: 10px solid blue; }`}</style>;
+        const div = <div>Filler Text</div>;
+        const p = <p>Test passes if there is a blue border around the viewport and around "Filler Text" above.</p>
+        document.head.appendChild(style);
+        document.body.appendChild(div);
+        document.body.appendChild(p);
+        await snapshot();
+    });
+
+    fit("009", async () => {
+        const style = <style>{` :root { color: green; }`}</style>;
+        const p1 = <p>Should be green </p>;
+        const p2 = <p>Should be green </p>;
+        const p3 = <p>Should be green </p>;
+        const p4 = <p>Should be green </p>;
+        const p5 = <p>Should be green </p>;
+        document.head.appendChild(style);
+        document.body.appendChild(p1);
+        document.body.appendChild(p2);
+        document.body.appendChild(p3);
+        document.body.appendChild(p4);
+        document.body.appendChild(p5);
+        await snapshot();
+    });
+
+    fit("0010", async () => {
+        const style = <style>{` 
+        :first-child #a {
+            color: green;
+          }
+          :nth-child(n) #b {
+            color: green;
+          }
+          :first-of-type #c {
+            color: green;
+          }
+          :nth-of-type(1) #d {
+            color: green;
+          }
+          :last-of-type #e {
+            color: green;
+          }
+          :last-child #f {
+            color: green;
+          }
+          :nth-last-child(1) #g {
+            color: green;
+          }
+          :nth-last-of-type(n) #h {
+            color: green;
+          }
+        
+          #i {
+            color: green;
+          }
+        
+          /* NB: not matching intentionally */
+          :nth-last-child(2) #i {
+            color: red;
+          }
+        `}</style>;
+        document.head.appendChild(style);
+
+        const p1 = <p id="a">Should be green</p>;
+        const p2 = <p id="b">Should be green</p>;
+        const p3 = <p id="c">Should be green</p>;
+        const p4 = <p id="d">Should be green</p>;
+        const p5 = <p id="e">Should be green</p>;
+        const p6 = <p id="f">Should be green</p>;
+        const p7 = <p id="g">Should be green</p>;
+        const p8 = <p id="h">Should be green</p>;
+        const p9 = <p id="i">Should be green</p>;
+        document.body.appendChild(p1);
+        document.body.appendChild(p2);
+        document.body.appendChild(p3);
+        document.body.appendChild(p4);
+        document.body.appendChild(p5);
+        document.body.appendChild(p6);
+        document.body.appendChild(p7);
+        document.body.appendChild(p8);
+        document.body.appendChild(p9);
+        await snapshot();
+    });
+
+    fit("0011", async () => {
+        const style = <style>{` 
+        :root:first-child #a {
+            color: green;
+          }
+          :root:nth-child(n) #b {
+            color: green;
+          }
+          :root:first-of-type #c {
+            color: green;
+          }
+          :root:nth-of-type(1) #d {
+            color: green;
+          }
+          :root:last-of-type #e {
+            color: green;
+          }
+          :root:last-child #f {
+            color: green;
+          }
+          :root:nth-last-child(1) #g {
+            color: green;
+          }
+          :root:nth-last-of-type(n) #h {
+            color: green;
+          }
+        
+          #i {
+            color: green;
+          }
+        
+          /* NB: not matching intentionally */
+          :root:nth-last-child(2) #i {
+            color: red;
+          }
+        `}</style>;
+        
+        const p1 = <p id="a">Should be green</p>;
+        const p2 = <p id="b">Should be green</p>;
+        const p3 = <p id="c">Should be green</p>;
+        const p4 = <p id="d">Should be green</p>;
+        const p5 = <p id="e">Should be green</p>;
+        const p6 = <p id="f">Should be green</p>;
+        const p7 = <p id="g">Should be green</p>;
+        const p8 = <p id="h">Should be green</p>;
+        const p9 = <p id="i">Should be green</p>;
+
+        document.head.appendChild(style);
+        document.body.appendChild(p1);
+        document.body.appendChild(p2);
+        document.body.appendChild(p3);
+        document.body.appendChild(p4);
+        document.body.appendChild(p5);
+        document.body.appendChild(p6);
+        document.body.appendChild(p7);
+        document.body.appendChild(p8);
+        document.body.appendChild(p9);
+        await snapshot();
+    });
+    
 })
