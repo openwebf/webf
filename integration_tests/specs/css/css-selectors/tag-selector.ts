@@ -15,7 +15,7 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  fit("002", async () => {
+  it("002", async () => {
     const style = <style>{`div, blockquote, p { color: green; }`}</style>;
     const p = <p>Test passes if the "Filler Text" below is green.</p>;
     const blockquote = <blockquote>Filler Text</blockquote>;
@@ -81,7 +81,7 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  fit("007", async () => {
+  it("007", async () => {
     const style = <style>{` html, div { border: 10px solid blue; }`}</style>;
     const p = <p>Test passes if all text on this page is green.</p>;
     const div = <div>Filler Text</div>;
@@ -90,5 +90,4 @@ describe("css tag selector", () => {
     document.body.appendChild(div);
     await snapshot();
   });
-
 });

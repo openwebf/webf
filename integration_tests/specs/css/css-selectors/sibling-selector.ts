@@ -1,4 +1,4 @@
-fdescribe("css sibling selector", () => {
+describe("css sibling selector", () => {
   it("001", async () => {
     const style = <style>{`div { color: red; }
     [class=foo] + div { color: green; }
