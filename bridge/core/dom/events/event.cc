@@ -129,6 +129,10 @@ bool Event::IsErrorEvent() const {
   return false;
 }
 
+bool Event::IsPromiseRejectionEvent() const {
+  return false;
+}
+
 void Event::preventDefault(ExceptionState& exception_state) {
   if (handling_passive_ != PassiveMode::kNotPassive && handling_passive_ != PassiveMode::kNotPassiveDefault) {
     return;

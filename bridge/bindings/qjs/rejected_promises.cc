@@ -54,6 +54,8 @@ void RejectedPromises::Process(ExecutingContext* context) {
   }
   report_handled_rejection_.clear();
 
+  MemberMutationScope mutation_scope{context};
+
   // Dispatch unhandled rejectionEvents.
   for (auto& entry : unhandledRejections) {
     context->ReportError(entry.second->m_reason);

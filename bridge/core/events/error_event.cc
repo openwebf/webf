@@ -44,4 +44,6 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
                                                         initializer->lineno(),
                                                         initializer->colno())) {}
 
+bool ErrorEvent::IsErrorEvent() const { return true; }
+
 }  // namespace webf

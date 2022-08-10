@@ -9,6 +9,7 @@
 #include "core/events/error_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
+#include "core/events/promise_rejection_event.h"
 #include "polyfill.h"
 #include "qjs_window.h"
 
@@ -254,37 +255,22 @@ void ExecutingContext::DispatchGlobalErrorEvent(ExecutingContext* context, JSVal
   context->DispatchErrorEvent(error_event);
 }
 
-static void dispatchPromiseRejectionEvent(const char* eventType,
+static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
                                           ExecutingContext* context,
                                           JSValueConst promise,
                                           JSValueConst error) {
-  //  JSContext* ctx = context->ctx();
-  //  auto* window = static_cast<WindowInstance*>(JS_GetOpaque(context->global(), Window::classId()));
-  //
-  //  // Trigger PromiseRejectionEvent(unhandledrejection) event.
-  //  {
-  //    JSValue PromiseRejectionEventValue = JS_GetPropertyStr(ctx, context->global(), "PromiseRejectionEvent");
-  //    JSValue errorType = JS_NewString(ctx, eventType);
-  //    JSValue errorInit = JS_NewObject(ctx);
-  //    JS_SetPropertyStr(ctx, errorInit, "promise", JS_DupValue(ctx, promise));
-  //    JS_SetPropertyStr(ctx, errorInit, "reason", JS_DupValue(ctx, error));
-  //    JSValue arguments[] = {errorType, errorInit};
-  //    JSValue rejectEventValue = JS_CallConstructor(context->ctx(), PromiseRejectionEventValue, 2, arguments);
-  //    if (JS_IsException(rejectEventValue)) {
-  //      context->handleException(&rejectEventValue);
-  //      return;
-  //    }
-  //
-  //    auto* rejectEvent = static_cast<EventInstance*>(JS_GetOpaque(rejectEventValue, Event::kEventClassID));
-  //    window->dispatchEvent(rejectEvent);
-  //
-  //    JS_FreeValue(ctx, errorType);
-  //    JS_FreeValue(ctx, errorInit);
-  //    JS_FreeValue(ctx, rejectEventValue);
-  //    JS_FreeValue(ctx, PromiseRejectionEventValue);
-  //
-  //    context->drainPendingPromiseJobs();
-  //  }
+  ExceptionState exception_state;
+
+  auto event_init = PromiseRejectionEventInit::Create();
+  event_init->setPromise(Converter<IDLAny>::FromValue(context->ctx(), promise, exception_state));
+  event_init->setReason(Converter<IDLAny>::FromValue(context->ctx(), error, exception_state));
+  auto event = PromiseRejectionEvent::Create(context, event_type, event_init, exception_state);
+
+  auto* window = toScriptWrappable<Window>(context->Global());
+  window->dispatchEvent(event, exception_state);
+  if (exception_state.HasException()) {
+    context->ReportError(error);
+  }
 }
 
 void ExecutingContext::FlushUICommand() {
@@ -304,8 +290,15 @@ void ExecutingContext::DispatchErrorEventInterval(ErrorEvent* error_event) {
   assert(!in_dispatch_error_event_);
   in_dispatch_error_event_ = true;
   auto* window = toScriptWrappable<Window>(Global());
-  window->dispatchEvent(error_event, ASSERT_NO_EXCEPTION());
+  ExceptionState exception_state;
+  window->dispatchEvent(error_event, exception_state);
   in_dispatch_error_event_ = false;
+
+  if (exception_state.HasException()) {
+    JSValue error = JS_GetException(ctx());
+    ReportError(error);
+    JS_FreeValue(ctx(), error);
+  }
 }
 
 void ExecutingContext::ReportErrorEvent(ErrorEvent* error_event) {
@@ -319,12 +312,12 @@ void ExecutingContext::DispatchGlobalUnhandledRejectionEvent(ExecutingContext* c
   DispatchGlobalErrorEvent(context, error);
 
   // Trigger unhandledRejection event.
-  dispatchPromiseRejectionEvent("unhandledrejection", context, promise, error);
+  DispatchPromiseRejectionEvent(event_type_names::kunhandledrejection, context, promise, error);
 }
 
 void ExecutingContext::DispatchGlobalRejectionHandledEvent(ExecutingContext* context, JSValue promise, JSValue error) {
   // Trigger rejectionhandled event.
-  dispatchPromiseRejectionEvent("rejectionhandled", context, promise, error);
+  DispatchPromiseRejectionEvent(event_type_names::krejectionhandled, context, promise, error);
 }
 
 std::unordered_map<std::string, NativeByteCode> ExecutingContext::pluginByteCode{};

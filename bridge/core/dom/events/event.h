@@ -141,6 +141,7 @@ class Event : public ScriptWrappable {
 
   virtual bool IsBeforeUnloadEvent() const;
   virtual bool IsErrorEvent() const;
+  virtual bool IsPromiseRejectionEvent() const;
 
   // This callback is invoked when an event listener has been dispatched
   // at the current target. It should only be used to influence UMA metrics

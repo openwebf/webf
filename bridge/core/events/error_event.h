@@ -42,6 +42,8 @@ class ErrorEvent : public Event {
 
   SourceLocation* Location() const { return source_location_.get(); }
 
+  bool IsErrorEvent() const override;
+
  private:
   std::string message_;
   std::unique_ptr<SourceLocation> source_location_{nullptr};

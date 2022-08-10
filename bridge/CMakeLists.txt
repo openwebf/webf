@@ -330,6 +330,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/error_event.h
     core/events/message_event.h
     core/events/message_event.cc
+    core/events/promise_rejection_event.cc
+    core/events/promise_rejection_event.h
     core/html/parser/html_parser.cc
     core/html/parser/html_parser.h
     core/html/html_collection.cc
@@ -462,6 +464,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_body_element.h
     out/qjs_html_html_element.cc
     out/qjs_html_html_element.h
+    out/qjs_promise_rejection_event.h
+    out/qjs_promise_rejection_event.cc
+    out/qjs_promise_rejection_event_init.h
+    out/qjs_promise_rejection_event_init.cc
     out/qjs_html_template_element.cc
     out/qjs_html_template_element.h
     out/html_element_type_helper.h
