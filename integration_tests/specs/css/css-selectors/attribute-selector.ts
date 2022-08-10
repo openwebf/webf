@@ -46,4 +46,66 @@ describe('css attribute selector', () => {
         document.body.appendChild(div);
         await snapshot();
     });
+
+    fit('007', async () => {
+        const style = <style>{`div[class^="a"]  { color: green; }`}</style>;
+        const div1 = <div class="abc">should be green</div>
+        const div2 = <div class="acb">should be green</div>
+        const div3 = <div class="bac">should not be green</div>
+        document.head.appendChild(style);
+        document.body.appendChild(div1);
+        document.body.appendChild(div2);
+        document.body.appendChild(div3);
+        await snapshot();
+    });
+
+    it('007', async () => {
+        const style = <style>{`div[class^="a"]  { color: green; }`}</style>;
+        const div1 = <div class="abc">should be green</div>
+        const div2 = <div class="acb">should be green</div>
+        const div3 = <div class="bac">should not be green</div>
+        document.head.appendChild(style);
+        document.body.appendChild(div1);
+        document.body.appendChild(div2);
+        document.body.appendChild(div3);
+        await snapshot();
+    });
+
+    it('008', async () => {
+        const style = <style>{`div[class$="c"]  { color: green; }`}</style>;
+        const div1 = <div class="abc">should be green</div>
+        const div2 = <div class="acb">should not be green</div>
+        const div3 = <div class="bac">should be green</div>
+        document.head.appendChild(style);
+        document.body.appendChild(div1);
+        document.body.appendChild(div2);
+        document.body.appendChild(div3);
+        await snapshot();
+    });
+
+    it('009', async () => {
+        const style = <style>{`div[class*="c"]  { color: green; }`}</style>;
+        const div1 = <div class="abc">should be green</div>
+        const div2 = <div class="acb">should be green</div>
+        const div3 = <div class="bac">should be green</div>
+        document.head.appendChild(style);
+        document.body.appendChild(div1);
+        document.body.appendChild(div2);
+        document.body.appendChild(div3);
+        await snapshot();
+    });
+
+    it('010', async () => {
+        const style = <style>{`div[class|="a"]  { color: green; }`}</style>;
+        const div1 = <div class="a">should be green</div>
+        const div2 = <div class="a-test">should be green</div>
+        const div3 = <div class="b-test">should not be green</div>
+        const div4 = <div class="c-test">should not be green</div>
+        document.head.appendChild(style);
+        document.body.appendChild(div1);
+        document.body.appendChild(div2);
+        document.body.appendChild(div3);
+        document.body.appendChild(div4);
+        await snapshot();
+    });
 });
