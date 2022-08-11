@@ -1,3 +1,15 @@
+## 0.12.0+2
+
+**Bug Fixed**
+
+* Add Flutter version requirement at pubspec.yaml.
+
+## 0.12.0+1
+
+**Bug Fixed**
+
+* Fix Apple silicon platform build error.
+
 ## 0.12.0
 
 **Big News**
