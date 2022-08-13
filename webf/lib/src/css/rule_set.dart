@@ -18,6 +18,12 @@ class RuleSet {
   final CSSMap tagRules = HashMap();
   final List<CSSRule> universalRules = [];
 
+  void addRules(List<CSSRule> rules) {
+    for (CSSRule rule in rules) {
+      addRule(rule);
+    }
+  }
+
   void addRule(CSSRule rule) {
     rules.add(rule);
     if (rule is CSSStyleRule) {
@@ -66,8 +72,9 @@ class RuleSet {
         }
       }
     }
-
+    bool isInserted = false;
     void insertRule(String key, CSSRule rule, CSSMap map) {
+      isInserted = true;
       List<CSSRule>? rules = map[key] ?? [];
       rules.add(rule);
       map[key] = rules;
@@ -88,6 +95,9 @@ class RuleSet {
     if (tagName != null && tagName.isNotEmpty == true) {
       insertRule(tagName.toUpperCase(), rule, tagRules);
     }
-    universalRules.add(rule);
+
+    if (!isInserted) {
+      universalRules.add(rule);
+    }
   }
 }
