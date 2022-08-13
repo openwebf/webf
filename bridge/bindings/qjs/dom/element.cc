@@ -434,7 +434,7 @@ IMPL_PROPERTY_GETTER(Element, style)(JSContext* ctx, JSValue this_val, int argc,
 
 IMPL_PROPERTY_SETTER(Element, style)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
   JSValue value = argv[0];
-  JSValue args[] = { JS_NewString(ctx, "style"), value};
+  JSValue args[] = {JS_NewString(ctx, "style"), value};
   return setAttribute(ctx, this_val, 2, args);
 }
 
