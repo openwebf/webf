@@ -980,7 +980,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     internalSetAttribute(qualifiedName, value);
     if (_STYLE_PROPERTY == qualifiedName) {
       CSSStyleDeclaration declaration = CSSParser(value).parseInlineStyle();
-      _applyInlineStyle(declaration);
+      style.merge(declaration);
+      recalculateStyle();
     } else if (_CLASS_NAME == qualifiedName) {
       className = value;
     } else if (_ID == qualifiedName) {

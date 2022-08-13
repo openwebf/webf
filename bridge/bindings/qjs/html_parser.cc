@@ -154,7 +154,7 @@ void HTMLParser::parseProperty(ElementInstance* element, GumboElement* gumboElem
       }
       arrStyles.push_back(strStyles.substr(prev_pos, pos - prev_pos));
 
-      auto* style = element->style();
+      auto* style = element->styleDeclaration();
 
       for (auto& s : arrStyles) {
         std::string::size_type position = s.find(':');
