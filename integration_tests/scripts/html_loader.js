@@ -6,10 +6,7 @@ const HTMLParser = require('node-html-parser');
 
 const SCRIPT = 'script';
 
-let filename = '';
-const scripts = [];
-
-const traverseParseHTML = (ele) => {
+const traverseParseHTML = (ele, scripts) => {
   ele.childNodes && ele.childNodes.forEach(e => {
     if (e.rawTagName === SCRIPT) {
       e.childNodes.forEach(item => {
@@ -21,12 +18,14 @@ const traverseParseHTML = (ele) => {
         item._rawText = '';
       })
     }
-    traverseParseHTML(e);
+    traverseParseHTML(e, scripts);
   });
 }
 
 const loader = function(source) {
+  const filename = path.basename(this.resourcePath)
   const opts = this.query || {};
+  const scripts = []
   const snapshotFilepath = path.relative(
     opts.workspacePath,
     path.join(
@@ -36,7 +35,7 @@ const loader = function(source) {
   );
 
   let root = HTMLParser.parse(source);
-  traverseParseHTML(root);
+  traverseParseHTML(root, scripts);
 
   // Set attr of HTML can let the case use fit. For example: <html fit> xxx </html>.
   let isFit = false;
@@ -50,28 +49,15 @@ const loader = function(source) {
 
   return `
     describe('html-${path.basename(filename)}', () => {
-      // Use html_snapshot to snapshot in html file.
-      const html_snapshot = async (...argv) => {
-        if (argv.length === 0) {
-          await snapshot(null, '${snapshotFilepath}');
-        } else if (argv.length === 1) {
-          await snapshot(argv[0], '${snapshotFilepath}');
-        }
-      };
-
       // Use html_parse to parser html in html file.
-      const html_parse = () => __kraken_parse_html__('${htmlString}');
+      const html_parse = () => __webf_parse_html__('${htmlString}');
 
       ${isFit ? 'fit' : 'it'}("should work", async () => {\
         html_parse();\
-        ${scripts.length === 0 ? 'await html_snapshot();' : scripts.join('\n')}
+        ${scripts.length === 0 ? `await snapshot(null, '${snapshotFilepath}', false);` : scripts.join('\n')}
       })
     });
   `;
-};
-
-loader.pitch = (f) => {
-  filename = f;
 };
 
 module.exports = loader;

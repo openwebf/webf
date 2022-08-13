@@ -674,7 +674,7 @@ declare namespace jasmine {
          * Expect a element to match a image.
          * @param snapshotName
          */
-        toMatchSnapshot(snapshotName?: any): Promise<boolean>;
+        toMatchSnapshot(snapshotName?: any, postfix?: boolean | string): Promise<boolean>;
 
         /**
          * Expect a promise to be resolved.

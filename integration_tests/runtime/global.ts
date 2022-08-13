@@ -206,14 +206,14 @@ function append(parent: HTMLElement, child: Node) {
   parent.appendChild(child);
 }
 
-async function snapshot(target?: any, filename?: String) {
+async function snapshot(target?: any, filename?: String, postfix?: boolean | string) {
   if (target && target.toBlob) {
-    await expectAsync(target.toBlob(1.0)).toMatchSnapshot(filename);
+    await expectAsync(target.toBlob(1.0)).toMatchSnapshot(filename, postfix);
   } else {
     if (typeof target == 'number') {
       await sleep(target);
     }
-    await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename);
+    await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
   }
 }
 
