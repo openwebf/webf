@@ -13,7 +13,7 @@ CSSRule? parseSingleRule(String rule) {
 
 void main() {
   group('CSSStyleRuleParser', () {
-  test('0', () {
+    test('0', () {
       CSSRule? rule = parseSingleRule('div p, #id:first-line { color : red; }');
       expect(rule is CSSStyleRule, true);
       CSSStyleRule styleRule = rule as CSSStyleRule;
@@ -55,7 +55,7 @@ void main() {
       CSSRule? rule = parseSingleRule('.foo{--custom:some\n value;}');
       CSSStyleRule styleRule = rule as CSSStyleRule;
       expect(styleRule.lastSimpleSelector?.name, 'foo');
-      expect(styleRule.declaration.getPropertyValue('--custom'), 'some value');
+      expect(styleRule.declaration.getPropertyValue('--custom'), 'some\n value');
     });
 
     test('6', () {
@@ -68,23 +68,24 @@ void main() {
     test('7', () {
       CSSRule? rule = parseSingleRule('.foo \t {background: url(data:image/png;base64, CNbyblAAAAHElEQVQI12P4) red}');
       CSSStyleRule styleRule = rule as CSSStyleRule;
-      expect(styleRule.  lastSimpleSelector?.name, 'foo');
+      expect(styleRule.lastSimpleSelector?.name, 'foo');
       expect(styleRule.declaration.getPropertyValue('backgroundColor'), 'red');
-      expect(styleRule.declaration.getPropertyValue('backgroundImage'), 'url(data:image/png;base64, CNbyblAAAAHElEQVQI12P4)');
+      expect(styleRule.declaration.getPropertyValue('backgroundImage'),
+          'url(data:image/png;base64, CNbyblAAAAHElEQVQI12P4)');
     });
 
     test('8', () {
       CSSRule? rule = parseSingleRule('.foo { color: rgb(255, 255, 0)}');
       CSSStyleRule styleRule = rule as CSSStyleRule;
       expect(styleRule.lastSimpleSelector?.name, 'foo');
-      expect(styleRule.declaration.getPropertyValue('color'), 'rgb(255,255,0)');
+      expect(styleRule.declaration.getPropertyValue('color'), 'rgb(255, 255, 0)');
     });
 
     test('9', () {
       CSSRule? rule = parseSingleRule('.foo { background : ; color: rgb(255, 255, 0)}');
       CSSStyleRule styleRule = rule as CSSStyleRule;
       expect(styleRule.lastSimpleSelector?.name, 'foo');
-      expect(styleRule.declaration.getPropertyValue('color'), 'rgb(255,255,0)');
+      expect(styleRule.declaration.getPropertyValue('color'), 'rgb(255, 255, 0)');
     });
 
     test('10', () {
@@ -95,7 +96,7 @@ void main() {
       expect(simpleSelectors[1].simpleSelector.name, 'nth-child');
       expect(simpleSelectors[1].simpleSelector is PseudoClassFunctionSelector, true);
       expect((simpleSelectors[1].simpleSelector as PseudoClassFunctionSelector).argument, ['4']);
-      expect(styleRule.declaration.getPropertyValue('color'), 'rgb(255,255,0)');
+      expect(styleRule.declaration.getPropertyValue('color'), 'rgb(255, 255, 0)');
     });
 
     test('11', () {
@@ -113,14 +114,14 @@ void main() {
       final simpleSelectors = styleRule.selectorGroup.selectors.first.simpleSelectorSequences;
       expect(simpleSelectors[0].simpleSelector.name, 'div');
       expect(simpleSelectors[1].simpleSelector.name, 'p');
-      expect(styleRule.declaration.getPropertyValue('color'), 'rgb(255,255,0)');
+      expect(styleRule.declaration.getPropertyValue('color'), 'rgb(255, 255, 0)');
     });
 
     test('13', () {
       CSSRule? rule = parseSingleRule('.foo { background-image: url( "./image (1).jpg" )}');
       CSSStyleRule styleRule = rule as CSSStyleRule;
       expect(styleRule.lastSimpleSelector?.name, 'foo');
-      expect(styleRule.declaration.getPropertyValue('background-image'), 'url(./image (1).jpg)');
+      expect(styleRule.declaration.getPropertyValue('backgroundImage'), 'url( "./image (1).jpg" )');
     });
 
     test('14', () {
@@ -136,10 +137,10 @@ void main() {
       expect(styleRule.lastSimpleSelector?.name, 'foo');
     });
 
-  test('16', () {
-    CSSRule? rule = parseSingleRule(' .foo { margin: 64px 0 32px; text-align: center;}');
-    CSSStyleRule styleRule = rule as CSSStyleRule;
-    expect(styleRule.lastSimpleSelector?.name, 'foo');
-  });
+    test('16', () {
+      CSSRule? rule = parseSingleRule(' .foo { margin: 64px 0 32px; text-align: center;}');
+      CSSStyleRule styleRule = rule as CSSStyleRule;
+      expect(styleRule.lastSimpleSelector?.name, 'foo');
+    });
   });
 }

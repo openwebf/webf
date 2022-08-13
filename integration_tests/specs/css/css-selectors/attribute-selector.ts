@@ -47,7 +47,7 @@ describe('css attribute selector', () => {
         await snapshot();
     });
 
-    fit('007', async () => {
+    it('007', async () => {
         const style = <style>{`div[class^="a"]  { color: green; }`}</style>;
         const div1 = <div class="abc">should be green</div>
         const div2 = <div class="acb">should be green</div>

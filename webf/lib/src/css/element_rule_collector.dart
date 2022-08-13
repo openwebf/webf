@@ -32,16 +32,24 @@ class ElementRuleCollector {
     // universal
     matchedRules.addAll(_collectMatchingRulesForList(ruleSet.universalRules, element));
 
+    CSSStyleDeclaration declaration = CSSStyleDeclaration();
+    if (matchedRules.isEmpty) {
+      return declaration;
+    }
+
     // sort selector
     matchedRules.sort((leftRule, rightRule) {
       if (leftRule is! CSSStyleRule || rightRule is! CSSStyleRule) {
         return 0;
       }
-      return leftRule.selectorGroup.specificity.compareTo(rightRule.selectorGroup.specificity);
+      int isCompare = leftRule.selectorGroup.specificity.compareTo(rightRule.selectorGroup.specificity);
+      if (isCompare == 0) {
+        return ruleSet.rules.indexOf(leftRule).compareTo(ruleSet.rules.indexOf(rightRule));
+      }
+      return isCompare;
     });
 
     // Merge all the rules
-    CSSStyleDeclaration declaration = CSSStyleDeclaration();
     for (CSSRule rule in matchedRules) {
       if (rule is CSSStyleRule) {
         declaration.merge(rule.declaration);

@@ -979,7 +979,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   void setAttribute(String qualifiedName, String value) {
     internalSetAttribute(qualifiedName, value);
     if (_STYLE_PROPERTY == qualifiedName) {
-      // @TODO: Parse inline style css text.
+      CSSStyleDeclaration declaration = CSSParser(value).parseInlineStyle();
+      _applyInlineStyle(declaration);
     } else if (_CLASS_NAME == qualifiedName) {
       className = value;
     } else if (_ID == qualifiedName) {

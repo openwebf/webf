@@ -275,7 +275,7 @@ describe("css child selector", () => {
     await snapshot();
   });
 
-  fit("014", async () => {
+  it("014", async () => {
     const style = (
       <style>{` 
       last-child #f {

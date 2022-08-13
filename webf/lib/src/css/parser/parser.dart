@@ -28,6 +28,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:webf/css.dart';
@@ -82,17 +83,14 @@ class CSSParser {
 
   /// Main entry point for parsing an entire CSS file.
   CSSStyleSheet parse() {
-    var ruleSet = RuleSet();
-    while (!_maybeEat(TokenKind.END_OF_FILE)) {
-      final rule = processRule();
-      if (rule != null) {
-        ruleSet.addRule(rule);
-      } else {
-        _next();
-      }
-    }
-    checkEndOfFile();
+    final ruleSet = RuleSet();
+    final rules = parseRules();
+    ruleSet.addRules(rules);
     return CSSStyleSheet(ruleSet);
+  }
+
+  CSSStyleDeclaration parseInlineStyle() {
+    return processDeclarations(checkBrace: false, important: true);
   }
 
   List<CSSRule> parseRules() {
@@ -444,25 +442,18 @@ class CSSParser {
     }
   }
 
-  CSSStyleDeclaration processDeclarations({bool checkBrace = true}) {
-    var start = _peekToken.span;
-
+  CSSStyleDeclaration processDeclarations({bool checkBrace = true, bool important = false}) {
     if (checkBrace) _eat(TokenKind.LBRACE);
 
-    var decls = <CSSRule>[];
-
     var declaration = CSSStyleDeclaration();
-
     do {
       var selectorGroup = _nestedSelector();
       while (selectorGroup != null) {
         // Nested selector so process as a ruleset.
-        var ruleset = processRule(selectorGroup)!;
-        decls.add(ruleset);
+        processRule(selectorGroup)!;
         selectorGroup = _nestedSelector();
       }
-
-      processDeclaration(declaration);
+      processDeclaration(declaration, important: important);
     } while (_maybeEat(TokenKind.SEMICOLON));
 
     if (checkBrace) _eat(TokenKind.RBRACE);
@@ -860,7 +851,7 @@ class CSSParser {
   //   property: expr prio? \9; - IE8 and below property, /9 before semi-colon
   //   *IDENT                   - IE7 or below
   //   _IDENT                   - IE6 property (automatically a valid ident)
-  void processDeclaration(CSSStyleDeclaration style) {
+  void processDeclaration(CSSStyleDeclaration style, {bool important = false}) {
     // IDENT ':' expr '!important'?
     if (TokenKind.isIdentifier(_peekToken.kind)) {
       var propertyIdent = camelize(identifier().name);
@@ -891,7 +882,7 @@ class CSSParser {
       var expr = processExpr();
 
       // Handle !important (prio)
-      var importantPriority = _maybeEat(TokenKind.IMPORTANT);
+      var importantPriority = important ? important : _maybeEat(TokenKind.IMPORTANT);
       style.setProperty(propertyIdent, expr, importantPriority);
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
       _next();
@@ -910,13 +901,24 @@ class CSSParser {
   String processExpr([bool ieFilter = false]) {
     var start = _peekToken.span;
     FileSpan? end;
-    while (_peek() != TokenKind.SEMICOLON) {
+
+    var parenCount = 0;
+    while (!_maybeEat(TokenKind.END_OF_FILE)) {
+      if (_peek() == TokenKind.LPAREN) {
+        parenCount++;
+      }
+      if (_peek() == TokenKind.RPAREN) {
+        parenCount--;
+      }
+      if (parenCount == 0 && (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
+        break;
+      }
       end = _next().span;
     }
     if (end != null) {
       return start.expand(end).text;
     }
-    return '';
+    return _peekToken.text;
   }
 
   static const int MAX_UNICODE = 0x10FFFF;

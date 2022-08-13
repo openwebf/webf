@@ -19,6 +19,9 @@ const String _0Percent = '0%';
 
 // a-b -> aB
 String camelize(String str) {
+  if (str.startsWith('--')) {
+    return str;
+  }
   return str.replaceAllMapped(RegExp(r'-(\w)'), (match) {
     String subStr = match[0]!.substring(1);
     return subStr.isNotEmpty ? subStr.toUpperCase() : '';
