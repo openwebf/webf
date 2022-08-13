@@ -90,7 +90,7 @@ class CSSParser {
   }
 
   CSSStyleDeclaration parseInlineStyle() {
-    return processDeclarations(checkBrace: false, important: true);
+    return processDeclarations(checkBrace: false);
   }
 
   List<CSSRule> parseRules() {
@@ -442,7 +442,7 @@ class CSSParser {
     }
   }
 
-  CSSStyleDeclaration processDeclarations({bool checkBrace = true, bool important = false}) {
+  CSSStyleDeclaration processDeclarations({bool checkBrace = true}) {
     if (checkBrace) _eat(TokenKind.LBRACE);
 
     var declaration = CSSStyleDeclaration();
@@ -453,7 +453,7 @@ class CSSParser {
         processRule(selectorGroup)!;
         selectorGroup = _nestedSelector();
       }
-      processDeclaration(declaration, important: important);
+      processDeclaration(declaration);
     } while (_maybeEat(TokenKind.SEMICOLON));
 
     if (checkBrace) _eat(TokenKind.RBRACE);
@@ -851,7 +851,7 @@ class CSSParser {
   //   property: expr prio? \9; - IE8 and below property, /9 before semi-colon
   //   *IDENT                   - IE7 or below
   //   _IDENT                   - IE6 property (automatically a valid ident)
-  void processDeclaration(CSSStyleDeclaration style, {bool important = false}) {
+  void processDeclaration(CSSStyleDeclaration style) {
     // IDENT ':' expr '!important'?
     if (TokenKind.isIdentifier(_peekToken.kind)) {
       var propertyIdent = camelize(identifier().name);
@@ -882,7 +882,7 @@ class CSSParser {
       var expr = processExpr();
 
       // Handle !important (prio)
-      var importantPriority = important ? important : _maybeEat(TokenKind.IMPORTANT);
+      var importantPriority = _maybeEat(TokenKind.IMPORTANT);
       style.setProperty(propertyIdent, expr, importantPriority);
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
       _next();

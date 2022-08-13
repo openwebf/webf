@@ -112,6 +112,7 @@ class Element : public Node {
   DEFINE_PROTOTYPE_READONLY_PROPERTY(children);
   DEFINE_PROTOTYPE_READONLY_PROPERTY(attributes);
 
+  DEFINE_PROTOTYPE_PROPERTY(style);
   DEFINE_PROTOTYPE_PROPERTY(className);
   DEFINE_PROTOTYPE_PROPERTY(innerHTML);
   DEFINE_PROTOTYPE_PROPERTY(outerHTML);
@@ -149,7 +150,7 @@ class ElementInstance : public NodeInstance {
   std::string getRegisteredTagName();
   std::string outerHTML();
   std::string innerHTML();
-  StyleDeclarationInstance* style();
+  StyleDeclarationInstance* styleDeclaration();
 
   static inline JSClassID classID();
 
