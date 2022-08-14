@@ -46,12 +46,15 @@ export class FunctionDeclaration extends PropsDeclaration {
 
 export enum ClassObjectKind {
   interface,
-  dictionary
+  dictionary,
+  mixin
 }
 
 export class ClassObject {
+  static globalClassMap = new Map<string, ClassObject>();
   name: string;
   parent: string;
+  mixinParent: string[];
   props: PropsDeclaration[] = [];
   indexedProp?: IndexedPropertyDeclaration;
   methods: FunctionDeclaration[] = [];

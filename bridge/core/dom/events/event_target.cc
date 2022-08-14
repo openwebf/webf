@@ -133,6 +133,36 @@ DispatchEventResult EventTarget::GetDispatchEventResult(const Event& event) {
   return DispatchEventResult::kNotCanceled;
 }
 
+bool EventTarget::SetAttributeEventListener(const AtomicString& event_type,
+                                            const std::shared_ptr<EventListener>& listener,
+                                            ExceptionState& exception_state) {
+  RegisteredEventListener* registered_listener = GetAttributeRegisteredEventListener(event_type);
+  if (!listener) {
+    if (registered_listener)
+      removeEventListener(event_type, registered_listener->Callback(), exception_state);
+    return false;
+  }
+  if (registered_listener) {
+    registered_listener->SetCallback(listener);
+    return true;
+  }
+  return addEventListener(event_type, listener, exception_state);
+}
+
+std::shared_ptr<EventListener> EventTarget::GetAttributeEventListener(const AtomicString& event_type) {
+  RegisteredEventListener* registered_listener = GetAttributeRegisteredEventListener(event_type);
+  if (registered_listener)
+    return registered_listener->Callback();
+  return nullptr;
+}
+
+EventListenerVector* EventTarget::GetEventListeners(const AtomicString& event_type) {
+  EventTargetData* data = GetEventTargetData();
+  if (!data)
+    return nullptr;
+  return data->event_listener_map.Find(event_type);
+}
+
 bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
                                            const std::shared_ptr<EventListener>& listener,
                                            const std::shared_ptr<AddEventListenerOptions>& options) {
@@ -195,6 +225,19 @@ DispatchEventResult EventTarget::DispatchEventInternal(Event& event, ExceptionSt
 
 NativeValue EventTarget::HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) const {
   return Native_NewNull();
+}
+
+RegisteredEventListener* EventTarget::GetAttributeRegisteredEventListener(const AtomicString& event_type) {
+  EventListenerVector* listener_vector = GetEventListeners(event_type);
+  if (!listener_vector)
+    return nullptr;
+
+  for (auto& event_listener : *listener_vector) {
+    auto listener = event_listener.Callback();
+    if (GetExecutingContext() && listener->IsEventHandler())
+      return &event_listener;
+  }
+  return nullptr;
 }
 
 bool EventTarget::FireEventListeners(Event& event,

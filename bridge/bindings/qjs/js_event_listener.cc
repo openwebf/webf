@@ -4,15 +4,14 @@
  */
 
 #include "js_event_listener.h"
+
+#include <utility>
 #include "core/dom/events/event_target.h"
 
 namespace webf {
 
-JSEventListener::JSEventListener(std::shared_ptr<QJSFunction> listener) : event_listener_(listener) {}
-JSValue JSEventListener::GetListenerObject(EventTarget&) {
-  return event_listener_->ToQuickJS();
-}
-JSValue JSEventListener::GetEffectiveFunction(EventTarget&) {
+JSEventListener::JSEventListener(std::shared_ptr<QJSFunction> listener) : event_listener_(std::move(listener)) {}
+JSValue JSEventListener::GetListenerObject() {
   return event_listener_->ToQuickJS();
 }
 void JSEventListener::InvokeInternal(EventTarget& event_target, Event& event, ExceptionState& exception_state) {

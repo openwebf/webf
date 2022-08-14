@@ -312,6 +312,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/element_traversal.h
     core/dom/document.cc
     core/dom/document.h
+    core/dom/global_event_handlers.h
     core/dom/scripted_animation_controller.cc
     core/dom/scripted_animation_controller.h
     core/dom/node_data.cc
@@ -348,6 +349,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_html_element.h
     core/html/html_template_element.cc
     core/html/html_template_element.h
+
 #    core/html/html_anchor_element.h
 #    core/html/html_anchor_element.cc
 #    core/html/html_template_element.cc

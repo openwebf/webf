@@ -6,7 +6,9 @@ import {
   FunctionArguments,
   FunctionArgumentType,
   FunctionDeclaration,
-  FunctionObject, IndexedPropertyDeclaration, ParameterMode,
+  FunctionObject,
+  IndexedPropertyDeclaration,
+  ParameterMode,
   PropsDeclaration,
 } from './declaration';
 import {generatorSource} from './generator';
@@ -30,6 +32,18 @@ function getHeritageType(heritage: HeritageClause) {
     return (expression as ts.Identifier).escapedText;
   }
   return null;
+}
+
+function getMixins(hertage: HeritageClause): string[] | null {
+  if (hertage.types.length <= 1) return null;
+  let mixins: string[] = [];
+  hertage.types.slice(1).forEach(types => {
+    let expression = types.expression;
+    if (expression.kind === ts.SyntaxKind.Identifier) {
+      mixins.push((expression as ts.Identifier).escapedText!);
+    }
+  });
+  return mixins;
 }
 
 function getPropName(propName: ts.PropertyName) {
@@ -132,13 +146,15 @@ function isParamsReadOnly(m: ts.PropertySignature): boolean {
 function walkProgram(statement: ts.Statement) {
   switch(statement.kind) {
     case ts.SyntaxKind.InterfaceDeclaration: {
-      let interfaceName = getInterfaceName(statement);
+      let interfaceName = getInterfaceName(statement) as string;
       let s = (statement as ts.InterfaceDeclaration);
       let obj = new ClassObject();
       if (s.heritageClauses) {
         let heritage = s.heritageClauses[0];
         let heritageType = getHeritageType(heritage);
+        let mixins = getMixins(heritage);
         if (heritageType) obj.parent = heritageType.toString();
+        if (mixins) obj.mixinParent = mixins;
       }
 
       obj.name = s.name.escapedText.toString();
@@ -148,6 +164,9 @@ function walkProgram(statement: ts.Statement) {
         // @ts-ignore
         if (decoratorExpression.expression.kind === ts.SyntaxKind.Identifier && decoratorExpression.expression.escapedText === 'Dictionary') {
           obj.kind = ClassObjectKind.dictionary;
+          // @ts-ignore
+        } else if (decoratorExpression.expression.kind === ts.SyntaxKind.Identifier && decoratorExpression.expression.escapedText === 'Mixin') {
+          obj.kind = ClassObjectKind.mixin;
         }
       }
 
@@ -226,6 +245,8 @@ function walkProgram(statement: ts.Statement) {
           }
         }
       });
+
+      ClassObject.globalClassMap[interfaceName] = obj;
 
       return obj;
     }

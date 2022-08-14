@@ -49,6 +49,7 @@
     "close",
     "closing",
     "complete",
+    "gotpointercapture",
     "compositionend",
     "compositionstart",
     "compositionupdate",

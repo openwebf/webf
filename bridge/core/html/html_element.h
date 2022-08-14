@@ -7,6 +7,7 @@
 #define BRIDGE_CORE_HTML_HTML_ELEMENT_H_
 
 #include "core/dom/element.h"
+#include "core/dom/global_event_handlers.h"
 
 namespace webf {
 

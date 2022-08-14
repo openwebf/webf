@@ -24,9 +24,7 @@ class JSEventListener final : public JSBasedEventListener {
 
   explicit JSEventListener(std::shared_ptr<QJSFunction> listener);
 
-  JSValue GetListenerObject(EventTarget&) override;
-
-  JSValue GetEffectiveFunction(EventTarget&) override;
+  JSValue GetListenerObject() override;
 
   bool IsJSEventListener() const override { return true; }
 

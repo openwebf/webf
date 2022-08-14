@@ -1,10 +1,10 @@
-import {ClassObject, ClassObjectKind, FunctionObject} from "./declaration";
-import _ from "lodash";
+import {ClassObject, ClassObjectKind, FunctionDeclaration, FunctionObject, PropsDeclaration} from "./declaration";
+import _, {mixin} from "lodash";
 import {IDLBlob} from "./IDLBlob";
 import {getClassName} from "./utils";
 import fs from 'fs';
 import path from 'path';
-import {generateIDLTypeConverter, generateTypeValue} from "./generateSource";
+import {generateTypeValue} from "./generateSource";
 import {GenerateOptions} from "./generator";
 
 export enum TemplateKind {

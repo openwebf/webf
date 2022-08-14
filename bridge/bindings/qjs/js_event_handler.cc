@@ -11,14 +11,14 @@
 
 namespace webf {
 
-std::unique_ptr<JSEventHandler> JSEventHandler::CreateOrNull(JSContext* ctx,
+std::shared_ptr<JSEventHandler> JSEventHandler::CreateOrNull(JSContext* ctx,
                                                              JSValue value,
                                                              JSEventHandler::HandlerType handler_type) {
   if (!JS_IsFunction(ctx, value)) {
     return nullptr;
   }
 
-  return std::make_unique<JSEventHandler>(QJSFunction::Create(ctx, value), handler_type);
+  return std::make_shared<JSEventHandler>(QJSFunction::Create(ctx, value), handler_type);
 }
 
 bool JSEventHandler::Matches(const EventListener& other) const {
@@ -30,7 +30,7 @@ void JSEventHandler::InvokeInternal(EventTarget& event_target, Event& event, Exc
   // Step 1. Let callback be the result of getting the current value of the
   //         event handler given eventTarget and name.
   // Step 2. If callback is null, then return.
-  JSValue listener_value = GetListenerObject(*event.currentTarget());
+  JSValue listener_value = GetListenerObject();
   if (JS_IsNull(listener_value))
     return;
 

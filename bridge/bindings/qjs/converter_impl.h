@@ -24,6 +24,7 @@
 #include "exception_message.h"
 #include "idl_type.h"
 #include "js_event_listener.h"
+#include "js_event_handler.h"
 #include "native_string_utils.h"
 
 namespace webf {
@@ -370,6 +371,40 @@ struct Converter<JSEventListener> : public ConverterBase<JSEventListener> {
   }
 };
 
+template<>
+struct Converter<IDLEventHandler> : public ConverterBase<IDLEventHandler> {
+  static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    assert(!JS_IsException(value));
+    return JSEventHandler::CreateOrNull(ctx, value, JSEventHandler::HandlerType::kEventHandler);
+  }
+
+  static JSValue ToValue(JSContext* ctx, ImplType value) {
+    if (DynamicTo<JSBasedEventListener>(*value)) {
+      return To<JSBasedEventListener>(*value).GetListenerObject();
+    }
+    return JS_NULL;
+  }
+};
+
+template<>
+struct Converter<IDLNullable<IDLEventHandler>> : public ConverterBase<IDLEventHandler> {
+  static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    if (JS_IsNull(value)) {
+      return nullptr;
+    }
+    assert(!JS_IsException(value));
+    return Converter<IDLEventHandler>::FromValue(ctx, value, exception_state);
+  }
+
+  static JSValue ToValue(JSContext* ctx, ImplType value) {
+    if (value == nullptr) {
+      return JS_NULL;
+    }
+
+    return Converter<IDLEventHandler>::ToValue(ctx, value);
+  }
+};
+
 template <>
 struct Converter<IDLNullable<JSEventListener>> : public ConverterBase<JSEventListener> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
@@ -381,6 +416,7 @@ struct Converter<IDLNullable<JSEventListener>> : public ConverterBase<JSEventLis
     return Converter<JSEventListener>::FromValue(ctx, value, exception_state);
   }
 };
+
 
 // DictionaryBase and Derived class.
 template <typename T>

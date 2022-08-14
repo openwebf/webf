@@ -360,13 +360,11 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
     switch (templateKind) {
       case TemplateKind.Interface: {
         object = object as ClassObject;
-        object.props.forEach(prop => {
-          options.classMethodsInstallList.push(`{"${prop.name}", ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
-        });
 
-        let overloadMethods = {};
-        let filtedMethods: FunctionDeclaration[] = [];
-        object.methods.forEach((method, i) => {
+        function addObjectProps(prop: PropsDeclaration) {
+          options.classMethodsInstallList.push(`{"${prop.name}", ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+        }
+        function addObjectMethods(method: FunctionDeclaration, i: number) {
           if (overloadMethods.hasOwnProperty(method.name)) {
             overloadMethods[method.name].push(method)
           } else {
@@ -374,7 +372,13 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
             filtedMethods.push(method);
             options.classPropsInstallList.push(`{"${method.name}", ${method.name}, ${method.args.length}}`)
           }
-        });
+        }
+
+        object.props.forEach(addObjectProps);
+
+        let overloadMethods = {};
+        let filtedMethods: FunctionDeclaration[] = [];
+        object.methods.forEach(addObjectMethods);
 
         if (object.construct) {
           options.constructorInstallList.push(`{"${getClassName(blob)}", nullptr, nullptr, constructor}`)
@@ -405,6 +409,17 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
           }
         }
 
+        let mixinParent = object.mixinParent;
+        let mixinObjects: ClassObject[] | null = null;
+        if (mixinParent) {
+          mixinObjects = mixinParent.map(mixinName => ClassObject.globalClassMap[mixinName]).filter(o => !!o);
+
+          mixinObjects.forEach(mixinObject => {
+            mixinObject.methods.forEach(addObjectMethods);
+            mixinObject.props.forEach(addObjectProps);
+          });
+        }
+
         options.wrapperTypeInfoInit = `
 const WrapperTypeInfo QJS${getClassName(blob)}::wrapper_type_info_ {${wrapperTypeRegisterList.join(', ')}};
 const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClassName(blob)}::wrapper_type_info_;`;
@@ -412,6 +427,7 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
           className: getClassName(blob),
           blob: blob,
           object: object,
+          mixinObjects,
           generateFunctionBody,
           generateTypeValue,
           generateOverLoadSwitchBody,

@@ -66,6 +66,6 @@ void RejectedPromises::Process(ExecutingContext* context) {
   for (auto& entry : reportHandledRejection) {
     context->DispatchGlobalRejectionHandledEvent(context, entry->m_promise, entry->m_reason);
   }
-}
+ }
 
 }  // namespace webf

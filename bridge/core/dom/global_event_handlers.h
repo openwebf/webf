@@ -1,0 +1,91 @@
+/*
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
+
+#ifndef BRIDGE_CORE_DOM_GLOBAL_EVENT_HANDLERS_H_
+#define BRIDGE_CORE_DOM_GLOBAL_EVENT_HANDLERS_H_
+
+#include "foundation/macros.h"
+#include "event_type_names.h"
+#include "core/dom/events/event_target.h"
+
+namespace webf {
+
+class GlobalEventHandlers {
+  WEBF_STATIC_ONLY(GlobalEventHandlers);
+
+ public:
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(abort, kabort);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(animationcancel, kanimationcancel);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(animationend, kanimationend);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(animationiteration, kanimationiteration);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(animationstart, kanimationstart);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(blur, kblur);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(cancel, kcancel);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(canplay, kcanplay);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(canplaythrough, kcanplaythrough);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(change, kchange);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(click, kclick);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(close, kclose);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(dblclick, kdblclick);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(ended, kended);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(error, kerror);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(focus, kfocus);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(gotpointercapture, kgotpointercapture);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(input, kinput);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(invalid, kinvalid);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(keydown, kkeydown);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(keypress, kkeypress);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(keyup, kkeyup);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(load, kload);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(loadeddata, kloadeddata);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(loadedmetadata, kloadedmetadata);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(loadstart, kloadstart);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(lostpointercapture, klostpointercapture);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(mousedown, kmousedown);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(mouseenter, kmouseenter);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(mouseleave, kmouseleave);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(mousemove, kmousemove);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(mouseout, kmouseout);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(mouseover, kmouseover);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(mouseup, kmouseup);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pause, kpause);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(play, kplay);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(playing, kplaying);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pointercancel, kpointercancel);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pointerdown, kpointerdown);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pointerenter, kpointerenter);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pointerleave, kpointerleave);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pointermove, kpointermove);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pointerout, kpointerout);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pointerover, kpointerover);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(pointerup, kpointerup);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(ratechange, kratechange);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(onreset, kratechange);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(reset, kreset);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(resize, kresize);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(scroll, kscroll);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(seeked, kseeked);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(seeking, kseeking);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(select, kselect);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(selectionchange, kselectionchange);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(selectstart, kselectstart);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(stalled, kstalled);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(submit, ksubmit);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(suspend, ksuspend);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(toggle, ktoggle);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(touchcancel, ktouchcancel);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(touchend, ktouchend);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(touchmove, ktouchmove);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(touchstart, ktouchstart);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(transitioncancel, ktransitioncancel);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(transitionend, ktransitionend);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(transitionrun, ktransitionrun);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(transitionstart, ktransitionstart);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(waiting, kwaiting);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(wheel, kwheel);
+};
+
+}
+
+#endif  // BRIDGE_CORE_DOM_GLOBAL_EVENT_HANDLERS_H_

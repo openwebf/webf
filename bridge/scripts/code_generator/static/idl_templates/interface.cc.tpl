@@ -128,3 +128,38 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
 }
 <% } %>
 <% }); %>
+
+
+<% if (mixinObjects) { %>
+<% mixinObjects.forEach(function(object) { %>
+
+<% _.forEach(object.props, function(prop, index) { %>
+static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
+  assert(<%= blob.filename %> != nullptr);
+  MemberMutationScope scope{ExecutingContext::From(ctx)};
+  return Converter<<%= generateIDLTypeConverter(prop.type) %>>::ToValue(ctx, <%= object.name %>::<%= prop.name %>(*<%= blob.filename %>));
+}
+<% if (!prop.readonly) { %>
+static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+ auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
+  ExceptionState exception_state;
+  auto&& v = Converter<<%= generateIDLTypeConverter(prop.type) %>>::FromValue(ctx, argv[0], exception_state);
+  if (exception_state.HasException()) {
+    return exception_state.ToQuickJS();
+  }
+  MemberMutationScope scope{ExecutingContext::From(ctx)};
+
+  <%= object.name %>::set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(*<%= blob.filename %>, v, exception_state);
+  if (exception_state.HasException()) {
+    return exception_state.ToQuickJS();
+  }
+
+  return JS_DupValue(ctx, argv[0]);
+}
+<% } %>
+<% }); %>
+
+
+<% }); %>
+<% } %>

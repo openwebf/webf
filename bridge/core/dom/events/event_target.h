@@ -113,6 +113,12 @@ class EventTarget : public ScriptWrappable, public BindingObject {
 
   static DispatchEventResult GetDispatchEventResult(const Event&);
 
+  // Used for legacy "onEvent" attribute APIs.
+  bool SetAttributeEventListener(const AtomicString& event_type, const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state);
+  std::shared_ptr<EventListener> GetAttributeEventListener(const AtomicString& event_type);
+
+  EventListenerVector* GetEventListeners(const AtomicString& event_type);
+
   int32_t eventTargetId() const { return event_target_id_; }
 
   virtual bool IsWindowOrWorkerGlobalScope() const { return false; }
@@ -135,6 +141,8 @@ class EventTarget : public ScriptWrappable, public BindingObject {
   virtual EventTargetData& EnsureEventTargetData() = 0;
 
  private:
+  RegisteredEventListener* GetAttributeRegisteredEventListener(const AtomicString& event_type);
+
   int32_t event_target_id_;
   bool FireEventListeners(Event&, EventTargetData*, EventListenerVector&, ExceptionState&);
 };
@@ -165,11 +173,11 @@ class EventTargetWithInlineData : public EventTarget {
   }
 
 #define DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)              \
-  static EventListener* on##lower_name(EventTarget& eventTarget) {                   \
+  static std::shared_ptr<EventListener> on##lower_name(EventTarget& eventTarget) {                   \
     return eventTarget.GetAttributeEventListener(event_type_names::symbol_name);     \
   }                                                                                  \
-  static void setOn##lower_name(EventTarget& eventTarget, EventListener* listener) { \
-    eventTarget.SetAttributeEventListener(event_type_names::symbol_name, listener);  \
+  static void setOn##lower_name(EventTarget& eventTarget, const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state) { \
+    eventTarget.SetAttributeEventListener(event_type_names::symbol_name, listener, exception_state);  \
   }
 
 #define DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                     \

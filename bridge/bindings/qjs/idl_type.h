@@ -55,6 +55,10 @@ struct IDLUSVString final : public IDLTypeBaseHelper<AtomicString> {};
 // Object
 struct IDLObject : public IDLTypeBaseHelper<ScriptValue> {};
 
+class JSEventHandler;
+// EventHandler
+struct IDLEventHandler : public IDLTypeBaseHelper<std::shared_ptr<EventListener>> {};
+
 class QJSFunction;
 // Function callback
 struct IDLCallback : public IDLTypeBaseHelper<std::shared_ptr<QJSFunction>> {
