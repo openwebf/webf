@@ -33,13 +33,6 @@ class RuleSet {
     }
   }
 
-  void deleteRule(int index) {
-    // CSSRule rule = rules.removeAt(index);
-    // if (rule is CSSStyleRule) {
-    //   // findBestRuleSetAndRemove(rule);
-    // }
-  }
-
   void reset() {
     rules.clear();
     idRules.clear();

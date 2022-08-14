@@ -7,7 +7,11 @@ import 'package:webf/dom.dart';
 import 'package:webf/src/css/selector_evaluator.dart';
 
 class ElementRuleCollector {
-  CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
+  bool matchedAnyRule(RuleSet ruleSet, Element element) {
+    return _matchedRules(ruleSet, element).isNotEmpty;
+  }
+
+  List<CSSRule> _matchedRules(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
 
     // #id
@@ -32,6 +36,11 @@ class ElementRuleCollector {
     // universal
     matchedRules.addAll(_collectMatchingRulesForList(ruleSet.universalRules, element));
 
+    return matchedRules;
+  }
+
+  CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
+    final matchedRules = _matchedRules(ruleSet, element);
     CSSStyleDeclaration declaration = CSSStyleDeclaration();
     if (matchedRules.isEmpty) {
       return declaration;
@@ -72,7 +81,7 @@ class ElementRuleCollector {
         if (evaluator.matchSelector(rule.selectorGroup, element)) {
           matchedRules.add(rule);
         }
-      } catch(error) {
+      } catch (error) {
         print('selector evaluator error: $error');
       }
     }
