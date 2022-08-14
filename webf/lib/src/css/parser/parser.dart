@@ -82,10 +82,11 @@ class CSSParser {
 
   /// Main entry point for parsing an entire CSS file.
   CSSStyleSheet parse() {
-    final ruleSet = RuleSet();
     final rules = parseRules();
+
+    final ruleSet = RuleSet();
     ruleSet.addRules(rules);
-    return CSSStyleSheet(ruleSet);
+    return CSSStyleSheet(rules);
   }
 
   Map<String, dynamic> parseInlineStyle() {

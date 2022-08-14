@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 List<CSSRule> parseRules(String rule) {
   CSSStyleSheet sheet = CSSParser(rule).parse();
-  return sheet.ruleSet.rules;
+  return sheet.cssRules;
 }
 
 void main() {
@@ -45,7 +45,8 @@ void main() {
       expect((rules[0] as CSSStyleRule).selectorText, 'foo');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
       expect((rules[1] as CSSStyleRule).selectorText, 'bar');
-      expect((rules[1] as CSSStyleRule).declaration.getPropertyValue('backgroundImage'), 'url(data:image/png;base64...)');
+      expect(
+          (rules[1] as CSSStyleRule).declaration.getPropertyValue('backgroundImage'), 'url(data:image/png;base64...)');
     });
 
     test('5', () {
@@ -67,7 +68,7 @@ void main() {
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
     });
 
-  test('7', () {
+    test('7', () {
       List<CSSRule> rules = parseRules('.foo h6{color: red}');
       expect(rules.length, 1);
       expect((rules[0] as CSSStyleRule).selectorText, 'foo h6');

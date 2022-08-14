@@ -19,6 +19,8 @@ class Document extends Node {
   GestureListener? gestureListener;
   WidgetDelegate? widgetDelegate;
 
+  RuleSet ruleSet = RuleSet();
+
   Document(
     BindingContext context, {
     required this.controller,
@@ -179,6 +181,7 @@ class Document extends Node {
 
   void addStyleSheet(CSSStyleSheet sheet) {
     styleSheets.add(sheet);
+    ruleSet.addRules(sheet.cssRules);
     recalculateDocumentStyle();
   }
 

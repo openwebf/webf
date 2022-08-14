@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 CSSRule? parseSingleRule(String rule) {
   CSSStyleSheet sheet = CSSParser(rule).parse();
-  return sheet.ruleSet.rules.first;
+  return sheet.cssRules.first;
 }
 
 void main() {

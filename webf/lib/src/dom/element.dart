@@ -882,6 +882,20 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return child;
   }
 
+  void updateStyleIfNeeded() {}
+  // 2. Node::invalidateStyle 方法 将元素所有祖先都标记需要更新样式
+  // 3. Document updateStyleIfNeeded()
+  // 3.1 flush pending sheet
+  // 比对 style sheet， 得到 ActiveSheetsChange 和  ChangedRuleSet
+  // 通过 ElementRuleCollector ElementRuleCollector::matchesAnyAuthorRules
+  // 对比后将 element 标记为 invalid (Invalidator::invalidateIfNeeded)
+  // 3.2 判断标记 needsStyleRecalc() ，执行 resolveStyle();
+  // 5. TreeResolver::resolveComposedTree
+  // 6. TreeResolver::resolveElement
+  // 6.1 TreeResolver::styleForStyleable return CSSStyleDeclaration
+  // 6.1.1 styleForElement
+  // 6.2 Merge CSSStyleDeclaration
+
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
@@ -1425,11 +1439,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void _applySheetStyle(CSSStyleDeclaration style) {
-    for (CSSStyleSheet sheet in ownerDocument.styleSheets) {
-      RuleSet ruleSet = sheet.ruleSet;
-      CSSStyleDeclaration? matchRule = ElementRuleCollector().collectionFromRuleSet(ruleSet, this);
-      style.merge(matchRule);
-    }
+    CSSStyleDeclaration? matchRule = ElementRuleCollector().collectionFromRuleSet(ownerDocument.ruleSet, this);
+    style.merge(matchRule);
   }
 
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue) {
