@@ -288,12 +288,12 @@ class CSSColor {
     } else if (color.startsWith(HSL)) {
       final hslMatch = _colorHslRegExp.firstMatch(color);
       if (hslMatch != null) {
-        final hslH = _parseColorHue(hslMatch[2]!, hslMatch[3]);
-        final hslS = _parseColorPart(hslMatch[4]!, 0, 1);
-        final hslL = _parseColorPart(hslMatch[5]!, 0, 1);
-        final hslA = hslMatch[7] != null ? _parseColorPart(hslMatch[7]!, 0, 1) : 1;
+        final double? hslH = _parseColorHue(hslMatch[2]!, hslMatch[3]);
+        final double? hslS = _parseColorPart(hslMatch[4]!, 0, 1);
+        final double? hslL = _parseColorPart(hslMatch[5]!, 0, 1);
+        final double? hslA = hslMatch[7] != null ? _parseColorPart(hslMatch[7]!, 0, 1) : 1;
         if (hslH != null && hslS != null && hslL != null && hslA != null) {
-          parsed = HSLColor.fromAHSL(hslA as double, hslH, hslS, hslL).toColor();
+          parsed = HSLColor.fromAHSL(hslA, hslH, hslS, hslL).toColor();
         }
       }
     } else if (_namedColors.containsKey(color)) {
