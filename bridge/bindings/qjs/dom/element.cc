@@ -427,17 +427,6 @@ IMPL_PROPERTY_SETTER(Element, className)(JSContext* ctx, JSValue this_val, int a
   return JS_DupValue(ctx, value);
 }
 
-IMPL_PROPERTY_GETTER(Element, style)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
-  getDartMethod()->flushUICommand();
-  return getAttribute(ctx, this_val, argc, argv);
-}
-
-IMPL_PROPERTY_SETTER(Element, style)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
-  JSValue value = argv[0];
-  JSValue args[] = {JS_NewString(ctx, "style"), value};
-  return setAttribute(ctx, this_val, 2, args);
-}
-
 IMPL_PROPERTY_GETTER(Element, offsetLeft)(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
   auto* element = static_cast<ElementInstance*>(JS_GetOpaque(this_val, Element::classId()));
   return element->getBindingProperty("offsetLeft");
@@ -855,7 +844,7 @@ ElementInstance::ElementInstance(Element* element, std::string tagName, bool sho
   JSValue style = JS_CallConstructor(m_ctx, CSSStyleDeclaration::instance(m_context)->jsObject, 1, arguments);
   m_style = static_cast<StyleDeclarationInstance*>(JS_GetOpaque(style, CSSStyleDeclaration::kCSSStyleDeclarationClassId));
 
-  JS_DefinePropertyValueStr(m_ctx, jsObject, "styleDeclaration", m_style->jsObject, JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(m_ctx, jsObject, "style", m_style->jsObject, JS_PROP_C_W_E);
 
   if (shouldAddUICommand) {
     std::unique_ptr<NativeString> args_01 = stringToNativeString(tagName);
@@ -865,7 +854,7 @@ ElementInstance::ElementInstance(Element* element, std::string tagName, bool sho
 
 JSClassExoticMethods ElementInstance::exoticMethods{nullptr, nullptr, nullptr, nullptr, hasProperty, getProperty, setProperty};
 
-StyleDeclarationInstance* ElementInstance::styleDeclaration() {
+StyleDeclarationInstance* ElementInstance::style() {
   return m_style;
 }
 
