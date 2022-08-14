@@ -102,9 +102,7 @@ class SimpleSelectorSequence extends TreeNode {
   int combinator;
   final SimpleSelector simpleSelector;
 
-  SimpleSelectorSequence(this.simpleSelector, [int combinator = TokenKind.COMBINATOR_NONE])
-      : combinator = combinator,
-        super();
+  SimpleSelectorSequence(this.simpleSelector, [this.combinator = TokenKind.COMBINATOR_NONE]) : super();
 
   bool get isCombinatorNone => combinator == TokenKind.COMBINATOR_NONE;
   bool get isCombinatorPlus => combinator == TokenKind.COMBINATOR_PLUS;
@@ -112,7 +110,7 @@ class SimpleSelectorSequence extends TreeNode {
   bool get isCombinatorTilde => combinator == TokenKind.COMBINATOR_TILDE;
   bool get isCombinatorDescendant => combinator == TokenKind.COMBINATOR_DESCENDANT;
 
-  String get _combinatorToString {
+  String get combinatorToString {
     switch (combinator) {
       case TokenKind.COMBINATOR_DESCENDANT:
         return ' ';

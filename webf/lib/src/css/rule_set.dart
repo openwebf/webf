@@ -34,7 +34,7 @@ class RuleSet {
   }
 
   void deleteRule(int index) {
-    CSSRule rule = rules.removeAt(index);
+    // CSSRule rule = rules.removeAt(index);
     // if (rule is CSSStyleRule) {
     //   // findBestRuleSetAndRemove(rule);
     // }
