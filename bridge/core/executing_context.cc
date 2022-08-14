@@ -7,9 +7,9 @@
 #include "built_in_string.h"
 #include "core/dom/document.h"
 #include "core/events/error_event.h"
+#include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
-#include "core/events/promise_rejection_event.h"
 #include "polyfill.h"
 #include "qjs_window.h"
 

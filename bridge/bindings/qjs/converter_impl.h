@@ -23,8 +23,8 @@
 #include "core/html/html_html_element.h"
 #include "exception_message.h"
 #include "idl_type.h"
-#include "js_event_listener.h"
 #include "js_event_handler.h"
+#include "js_event_listener.h"
 #include "native_string_utils.h"
 
 namespace webf {
@@ -371,7 +371,7 @@ struct Converter<JSEventListener> : public ConverterBase<JSEventListener> {
   }
 };
 
-template<>
+template <>
 struct Converter<IDLEventHandler> : public ConverterBase<IDLEventHandler> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
     assert(!JS_IsException(value));
@@ -386,7 +386,7 @@ struct Converter<IDLEventHandler> : public ConverterBase<IDLEventHandler> {
   }
 };
 
-template<>
+template <>
 struct Converter<IDLNullable<IDLEventHandler>> : public ConverterBase<IDLEventHandler> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
     if (JS_IsNull(value)) {
@@ -416,7 +416,6 @@ struct Converter<IDLNullable<JSEventListener>> : public ConverterBase<JSEventLis
     return Converter<JSEventListener>::FromValue(ctx, value, exception_state);
   }
 };
-
 
 // DictionaryBase and Derived class.
 template <typename T>

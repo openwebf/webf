@@ -1,13 +1,12 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "promise_rejection_event.h"
 #include "event_type_names.h"
 
 namespace webf {
-
 
 PromiseRejectionEvent* PromiseRejectionEvent::Create(ExecutingContext* context,
                                                      const AtomicString& type,
@@ -16,9 +15,9 @@ PromiseRejectionEvent* PromiseRejectionEvent::Create(ExecutingContext* context,
 }
 
 PromiseRejectionEvent* PromiseRejectionEvent::Create(ExecutingContext* context,
-                               const AtomicString& type,
-                               const std::shared_ptr<PromiseRejectionEventInit>& initializer,
-                               ExceptionState& exception_state) {
+                                                     const AtomicString& type,
+                                                     const std::shared_ptr<PromiseRejectionEventInit>& initializer,
+                                                     ExceptionState& exception_state) {
   return MakeGarbageCollected<PromiseRejectionEvent>(context, type, initializer, exception_state);
 }
 
@@ -28,15 +27,13 @@ PromiseRejectionEvent::PromiseRejectionEvent(ExecutingContext* context,
     : Event(context, type) {}
 
 PromiseRejectionEvent::PromiseRejectionEvent(ExecutingContext* context,
-                       const AtomicString& type,
-                       const std::shared_ptr<PromiseRejectionEventInit>& initializer,
-                       ExceptionState& exception_state)
-    : Event(context, type),
-      reason_(initializer->reason()),
-      promise_(initializer->promise()) {}
+                                             const AtomicString& type,
+                                             const std::shared_ptr<PromiseRejectionEventInit>& initializer,
+                                             ExceptionState& exception_state)
+    : Event(context, type), reason_(initializer->reason()), promise_(initializer->promise()) {}
 
 bool PromiseRejectionEvent::IsPromiseRejectionEvent() const {
   return true;
 }
 
-}
+}  // namespace webf

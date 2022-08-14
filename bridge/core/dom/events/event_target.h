@@ -114,7 +114,9 @@ class EventTarget : public ScriptWrappable, public BindingObject {
   static DispatchEventResult GetDispatchEventResult(const Event&);
 
   // Used for legacy "onEvent" attribute APIs.
-  bool SetAttributeEventListener(const AtomicString& event_type, const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state);
+  bool SetAttributeEventListener(const AtomicString& event_type,
+                                 const std::shared_ptr<EventListener>& listener,
+                                 ExceptionState& exception_state);
   std::shared_ptr<EventListener> GetAttributeEventListener(const AtomicString& event_type);
 
   EventListenerVector* GetEventListeners(const AtomicString& event_type);
@@ -172,12 +174,13 @@ class EventTargetWithInlineData : public EventTarget {
     SetAttributeEventListener(event_type_names::symbol_name, listener);                                \
   }
 
-#define DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)              \
-  static std::shared_ptr<EventListener> on##lower_name(EventTarget& eventTarget) {                   \
-    return eventTarget.GetAttributeEventListener(event_type_names::symbol_name);     \
-  }                                                                                  \
-  static void setOn##lower_name(EventTarget& eventTarget, const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state) { \
-    eventTarget.SetAttributeEventListener(event_type_names::symbol_name, listener, exception_state);  \
+#define DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                                   \
+  static std::shared_ptr<EventListener> on##lower_name(EventTarget& eventTarget) {                        \
+    return eventTarget.GetAttributeEventListener(event_type_names::symbol_name);                          \
+  }                                                                                                       \
+  static void setOn##lower_name(EventTarget& eventTarget, const std::shared_ptr<EventListener>& listener, \
+                                ExceptionState& exception_state) {                                        \
+    eventTarget.SetAttributeEventListener(event_type_names::symbol_name, listener, exception_state);      \
   }
 
 #define DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                     \

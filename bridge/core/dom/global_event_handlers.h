@@ -1,13 +1,13 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef BRIDGE_CORE_DOM_GLOBAL_EVENT_HANDLERS_H_
 #define BRIDGE_CORE_DOM_GLOBAL_EVENT_HANDLERS_H_
 
-#include "foundation/macros.h"
-#include "event_type_names.h"
 #include "core/dom/events/event_target.h"
+#include "event_type_names.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -86,6 +86,6 @@ class GlobalEventHandlers {
   DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(wheel, kwheel);
 };
 
-}
+}  // namespace webf
 
 #endif  // BRIDGE_CORE_DOM_GLOBAL_EVENT_HANDLERS_H_
