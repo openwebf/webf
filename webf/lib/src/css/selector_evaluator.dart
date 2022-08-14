@@ -263,7 +263,6 @@ class SelectorEvaluator extends SelectorVisitor {
         } else {
           return false;
         }
-        break;
     }
     throw _unimplemented(selector);
   }

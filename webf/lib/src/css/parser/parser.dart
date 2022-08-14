@@ -28,7 +28,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:webf/css.dart';
@@ -89,8 +88,44 @@ class CSSParser {
     return CSSStyleSheet(ruleSet);
   }
 
-  CSSStyleDeclaration parseInlineStyle() {
-    return processDeclarations(checkBrace: false);
+  Map<String, dynamic> parseInlineStyle() {
+    Map<String, dynamic> style = {};
+    do {
+      if (TokenKind.isIdentifier(_peekToken.kind)) {
+        var propertyIdent = camelize(identifier().name);
+        var resetProperty = false;
+        var keepGoing = true;
+        while (keepGoing) {
+          switch (_peek()) {
+            case TokenKind.COLON:
+              _eat(TokenKind.COLON);
+              keepGoing = false;
+              break;
+            case TokenKind.SEMICOLON:
+            case TokenKind.NEWLINE:
+              resetProperty = true;
+              _next();
+              break;
+            case TokenKind.IDENTIFIER:
+              if (resetProperty) {
+                propertyIdent = identifier().name;
+              }
+              break;
+            default:
+              keepGoing = false;
+          }
+        }
+        var expr = processExpr();
+        style[propertyIdent] = expr;
+      } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
+        _next();
+      } else if (_peekToken.kind == TokenKind.DIRECTIVE_INCLUDE) {
+        // TODO @include mixinName in the declaration area.
+      } else if (_peekToken.kind == TokenKind.DIRECTIVE_EXTEND) {
+        _next();
+      }
+    } while (_maybeEat(TokenKind.SEMICOLON));
+    return style;
   }
 
   List<CSSRule> parseRules() {
@@ -233,10 +268,7 @@ class CSSParser {
   ///                         '}'
   ///     supports:           '@supports' supports_condition group_rule_body
   TreeNode? processDirective() {
-    var start = _peekToken.span;
-
-    var tokId = _peek();
-    final tokenId = tokId as int;
+    var tokenId = _peek();
     switch (tokenId) {
       case TokenKind.DIRECTIVE_IMPORT:
         _next();
@@ -361,16 +393,6 @@ class CSSParser {
     return null;
   }
 
-  SourceSpan _makeSpan(FileSpan start) {
-    // TODO(terry): there are places where we are creating spans before we eat
-    // the tokens, so using _previousToken is not always valid.
-    // TODO(nweiz): use < rather than compareTo when SourceSpan supports it.
-    if (_previousToken == null || _previousToken!.span.compareTo(start) < 0) {
-      return start;
-    }
-    return start.expand(_previousToken!.span);
-  }
-
   CSSRule? processRule([SelectorGroup? selectorGroup]) {
     if (selectorGroup == null) {
       processDirective();
@@ -463,7 +485,6 @@ class CSSParser {
 
   SelectorGroup? processSelectorGroup() {
     var selectors = <Selector>[];
-    var start = _peekToken.span;
 
     tokenizer.inSelector = true;
     do {
@@ -483,7 +504,6 @@ class CSSParser {
   /// Return list of selectors
   Selector? processSelector() {
     var simpleSequences = <SimpleSelectorSequence>[];
-    var start = _peekToken.span;
     while (true) {
       // First item is never descendant make sure it's COMBINATOR_NONE.
       var selectorItem = simpleSelectorSequence(simpleSequences.isEmpty);
@@ -517,7 +537,6 @@ class CSSParser {
   }
 
   SimpleSelectorSequence? simpleSelectorSequence(bool forceCombinatorNone) {
-    var start = _peekToken.span;
     var combinatorType = TokenKind.COMBINATOR_NONE;
     var thisOperator = false;
 
@@ -593,11 +612,10 @@ class CSSParser {
     //              code.
     // TODO(terry): Need to handle attribute namespace too.
     dynamic first;
-    var start = _peekToken.span;
     switch (_peek()) {
       case TokenKind.ASTERISK:
         // Mark as universal namespace.
-        var tok = _next();
+        _next();
         first = Wildcard();
         break;
       case TokenKind.IDENTIFIER:
@@ -746,8 +764,6 @@ class CSSParser {
   ///     DIMENSION         {num}{ident}
   ///     NUMBER            {num}
   List<String> /* SelectorExpression | LiteralTerm */ processSelectorExpression() {
-    var start = _peekToken.span;
-
     var expressions = <String>[];
 
     Token? termToken;
@@ -764,10 +780,10 @@ class CSSParser {
           break;
         case TokenKind.SINGLE_QUOTE:
           final value = processQuotedString(false);
-          return ["'${_escapeString(value as String, single: true)}'"];
+          return ["'${_escapeString(value, single: true)}'"];
         case TokenKind.DOUBLE_QUOTE:
           final value = processQuotedString(false);
-          return ['"${_escapeString(value as String)}"'];
+          return ['"${_escapeString(value)}"'];
         case TokenKind.IDENTIFIER:
           final value = identifier(); // Snarf up the ident we'll remap, maybe.
           expressions.add(value.name);
@@ -798,8 +814,6 @@ class CSSParser {
   //
   //     SUBSTRMATCH:      '*='
   AttributeSelector? processAttribute() {
-    var start = _peekToken.span;
-
     if (_maybeEat(TokenKind.LBRACK)) {
       var attrName = identifier();
 
@@ -924,8 +938,6 @@ class CSSParser {
   static const int MAX_UNICODE = 0x10FFFF;
 
   String processQuotedString([bool urlString = false]) {
-    var start = _peekToken.span;
-
     // URI term sucks up everything inside of quotes(' or ") or between parens
     var stopToken = urlString ? TokenKind.RPAREN : -1;
 
@@ -938,18 +950,15 @@ class CSSParser {
       case TokenKind.SINGLE_QUOTE:
         stopToken = TokenKind.SINGLE_QUOTE;
         _next(); // Skip the SINGLE_QUOTE.
-        start = _peekToken.span;
         break;
       case TokenKind.DOUBLE_QUOTE:
         stopToken = TokenKind.DOUBLE_QUOTE;
         _next(); // Skip the DOUBLE_QUOTE.
-        start = _peekToken.span;
         break;
       default:
         if (urlString) {
           if (_peek() == TokenKind.LPAREN) {
             _next(); // Skip the LPAREN.
-            start = _peekToken.span;
           }
           stopToken = TokenKind.RPAREN;
         } else {
@@ -1019,7 +1028,6 @@ class CSSParser {
   //  function:     IDENT '(' expr ')'
   //
   dynamic processFunction(Identifier func) {
-    var start = _peekToken.span;
     var name = func.name;
 
     switch (name) {
