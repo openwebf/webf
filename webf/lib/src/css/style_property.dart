@@ -22,7 +22,7 @@ String camelize(String str) {
   if (str.startsWith('--')) {
     return str;
   }
-  return str.replaceAllMapped(RegExp(r'-(\w)'), (match) {
+  return str.replaceAllMapped(_camelCaseReg, (match) {
     String subStr = match[0]!.substring(1);
     return subStr.isNotEmpty ? subStr.toUpperCase() : '';
   });

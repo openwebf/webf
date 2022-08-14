@@ -51,7 +51,7 @@ class RuleSet {
 
   // indexed by selectorText
   void findBestRuleSetAndAdd(CSSStyleRule rule) {
-    String? id, className, attributeName, tagName, pseudoElementName, pseudoFunctionName;
+    String? id, className, attributeName, tagName;
 
     for (final selector in rule.selectorGroup.selectors) {
       for (final simpleSelectorSequence in selector.simpleSelectorSequences) {
