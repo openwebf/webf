@@ -27,7 +27,9 @@ class RuleSet {
   void addRule(CSSRule rule) {
     rules.add(rule);
     if (rule is CSSStyleRule) {
-      findBestRuleSetAndAdd(rule);
+      for (final selector in rule.selectorGroup.selectors) {
+        findBestRuleSetAndAdd(selector, rule);
+      }
     } else {
       assert(false, 'Unsupported rule type: ${rule.runtimeType}');
     }
@@ -43,31 +45,33 @@ class RuleSet {
   }
 
   // indexed by selectorText
-  void findBestRuleSetAndAdd(CSSStyleRule rule) {
-    String? id, className, attributeName, tagName;
+  void findBestRuleSetAndAdd(Selector selector, CSSRule rule) {
+    String? id, className, attributeName, tagName, pseudoName;
 
-    for (final selector in rule.selectorGroup.selectors) {
-      for (final simpleSelectorSequence in selector.simpleSelectorSequences) {
-        final simpleSelector = simpleSelectorSequence.simpleSelector;
-        switch (simpleSelector.runtimeType) {
-          case IdSelector:
-            id = simpleSelector.name;
-            break;
-          case ClassSelector:
-            className = simpleSelector.name;
-            break;
-          case AttributeSelector:
-            attributeName = simpleSelector.name;
-            break;
-          case ElementSelector:
-            tagName = simpleSelector.name;
-            break;
+    for (final simpleSelectorSequence in selector.simpleSelectorSequences.reversed) {
+      final simpleSelector = simpleSelectorSequence.simpleSelector;
+      if (simpleSelector.runtimeType == IdSelector) {
+        id = simpleSelector.name;
+      } else if (simpleSelector.runtimeType == ClassSelector) {
+        className = simpleSelector.name;
+      } else if (simpleSelector.runtimeType == AttributeSelector) {
+        attributeName = simpleSelector.name;
+      } else if (simpleSelector.runtimeType == ElementSelector) {
+        if (simpleSelector.isWildcard) {
+          break;
         }
+        tagName = simpleSelector.name;
+      } else if (simpleSelector.runtimeType == PseudoClassSelector ||
+          simpleSelector.runtimeType == PseudoElementSelector) {
+        pseudoName = simpleSelector.name;
+      }
+
+      if (id != null || className != null || attributeName != null || tagName != null || pseudoName != null) {
+        break;
       }
     }
-    bool isInserted = false;
+
     void insertRule(String key, CSSRule rule, CSSMap map) {
-      isInserted = true;
       List<CSSRule>? rules = map[key] ?? [];
       rules.add(rule);
       map[key] = rules;
@@ -75,22 +79,24 @@ class RuleSet {
 
     if (id != null && id.isNotEmpty == true) {
       insertRule(id, rule, idRules);
+      return;
     }
 
     if (className != null && className.isNotEmpty == true) {
       insertRule(className, rule, classRules);
+      return;
     }
 
     if (attributeName != null && attributeName.isNotEmpty == true) {
       insertRule(attributeName.toUpperCase(), rule, attributeRules);
+      return;
     }
 
     if (tagName != null && tagName.isNotEmpty == true) {
       insertRule(tagName.toUpperCase(), rule, tagRules);
+      return;
     }
 
-    if (!isInserted) {
-      universalRules.add(rule);
-    }
+    universalRules.add(rule);
   }
 }

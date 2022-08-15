@@ -110,7 +110,7 @@ class SelectorEvaluator extends SelectorVisitor {
 
   @override
   bool visitPseudoClassSelector(PseudoClassSelector node) {
-    switch (node.name) {
+    switch (node.name.toLowerCase()) {
       // http://dev.w3.org/csswg/selectors-4/#structural-pseudos
 
       // http://dev.w3.org/csswg/selectors-4/#the-root-pseudo
@@ -135,7 +135,7 @@ class SelectorEvaluator extends SelectorVisitor {
 
       // http://dev.w3.org/csswg/selectors-4/#the-last-child-pseudo
       case 'last-child':
-        return _element!.nextElementSibling == null;
+        return _element!.nextSibling == null;
 
       //http://drafts.csswg.org/selectors-4/#first-of-type-pseudo
       //http://drafts.csswg.org/selectors-4/#last-of-type-pseudo
@@ -171,7 +171,7 @@ class SelectorEvaluator extends SelectorVisitor {
         break;
       // http://dev.w3.org/csswg/selectors-4/#the-only-child-pseudo
       case 'only-child':
-        return _element!.previousElementSibling == null && _element!.nextElementSibling == null;
+        return _element!.previousSibling == null && _element!.nextSibling == null;
 
       // http://dev.w3.org/csswg/selectors-4/#link
       case 'link':
