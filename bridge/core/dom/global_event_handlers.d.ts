@@ -1,7 +1,5 @@
 type IDLEventHandler = Function;
 
-// @ts-ignore
-@Mixin()
 export interface GlobalEventHandlers {
     /**
      * Fires when the user aborts the download.

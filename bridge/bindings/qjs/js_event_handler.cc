@@ -30,8 +30,7 @@ void JSEventHandler::InvokeInternal(EventTarget& event_target, Event& event, Exc
   // Step 1. Let callback be the result of getting the current value of the
   //         event handler given eventTarget and name.
   // Step 2. If callback is null, then return.
-  JSValue listener_value = GetListenerObject();
-  if (JS_IsNull(listener_value))
+  if (event_handler_ == nullptr)
     return;
 
   // Step 3. Let special error event handling be true if event is an ErrorEvent
@@ -74,10 +73,10 @@ void JSEventHandler::InvokeInternal(EventTarget& event_target, Event& event, Exc
                  ScriptValue(ctx, Converter<IDLInt64>::ToValue(ctx, error_event->lineno())),
                  ScriptValue(ctx, Converter<IDLInt64>::ToValue(ctx, error_event->colno())), error_attribute};
   } else {
-    arguments.emplace_back(ctx, event.ToQuickJS());
+    arguments.emplace_back(event.ToValue());
   }
 
-  ScriptValue result = event_handler_->Invoke(event.ctx(), ScriptValue(event_target.ctx(), event_target.ToQuickJS()),
+  ScriptValue result = event_handler_->Invoke(event.ctx(), event_target.ToValue(),
                                               arguments.size(), arguments.data());
   if (result.IsException()) {
     exception_state.ThrowException(event.ctx(), result.QJSValue());
@@ -100,6 +99,8 @@ void JSEventHandler::InvokeInternal(EventTarget& event_target, Event& event, Exc
   // TODO: special handling for beforeunload event and onerror event.
 }
 
-void JSEventHandler::Trace(GCVisitor* visitor) const {}
+void JSEventHandler::Trace(GCVisitor* visitor) const {
+  event_handler_->Trace(visitor);
+}
 
 }  // namespace webf
