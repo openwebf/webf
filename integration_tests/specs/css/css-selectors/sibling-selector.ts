@@ -22,7 +22,8 @@ describe("css sibling selector", () => {
     const p8 = <div>This sentence must be green.</div>;
     const p9 = <div>This sentence must be green.</div>;
     const p10 = <div>This sentence must be green.</div>;
-    document.head.appendChild(style);
+    
+       document.head.appendChild(style);
     document.body.appendChild(div);
     document.body.appendChild(p1);
     document.body.appendChild(p2);
@@ -42,7 +43,8 @@ describe("css sibling selector", () => {
     const p = <p>Test passes if the first line of "Filler Text" below is green, but the second line of "Filler Text" below is black.</p>;
     const div1 = <div> 002 Filler Text</div>;
     const div2 = <div>Filler Text</div>;
-    document.head.appendChild(style);
+    
+       document.head.appendChild(style);
     document.body.appendChild(p);
     document.body.appendChild(div1);
     document.body.appendChild(div2);
@@ -51,7 +53,8 @@ describe("css sibling selector", () => {
 
   it("003", async () => {
     const style = <style>{`p + div { color: green; }`}</style>;
-    document.head.appendChild(style);
+    
+       document.head.appendChild(style);
     document.body.innerHTML = `<body>
                        <p>Test passes if the first line of "Filler Text" below is green, but the second line of "Filler Text" below is black.</p>
                         <!-- This is a comment -->                 
@@ -62,7 +65,8 @@ describe("css sibling selector", () => {
 
   xit("004", async () => {
     const style = <style>{`p + div { color: green; }`}</style>;
-    document.head.appendChild(style);
+    
+       document.head.appendChild(style);
     document.body.innerHTML = `<body>
                        <p>Test passes if the first line of "Filler Text" below is green, but the second line of "Filler Text" below is black.</p>
                        Filler Text

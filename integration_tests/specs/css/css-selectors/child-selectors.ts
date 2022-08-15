@@ -1,18 +1,21 @@
 describe("css child selector", () => {
   it("001", async () => {
     const style = <style>{`div > h1 { color: green; }`}</style>;
-    const h1 = <h1>Filler Text</h1>;
+    const h1 = <h1> 001 Text should not be green </h1>;
+    
     document.head.appendChild(style);
     document.body.appendChild(h1);
     await snapshot();
   });
+
   it("002", async () => {
     const style = <style>{`div > h1 { color: green; }`}</style>;
     const div = (
       <div>
-        <h1>Filler Text</h1>
+        <h1>002 Text should be green </h1>
       </div>
     );
+    
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
@@ -23,10 +26,11 @@ describe("css child selector", () => {
     const div = (
       <div>
         <blockquote>
-          <h1>Filler Text</h1>{" "}
+          <h1>003 Text should not be green </h1>{" "}
         </blockquote>{" "}
       </div>
     );
+    
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
@@ -34,14 +38,10 @@ describe("css child selector", () => {
 
   it("004", async () => {
     const style = <style>{`div:first-child { color: green; }`}</style>;
-    const div1 = <div>Filler Text</div>;
-    const div2 = <div>Filler Text</div>;
-    const p = (
-      <p>
-        Test passes if the first "Filler Text" above is green and the second one
-        is black.
-      </p>
-    );
+    const div1 = <div>004 Text should be green </div>;
+    const div2 = <div>Text should not be green </div>;
+    const p = <p>Text should not be green </p>;
+    
     document.head.appendChild(style);
     document.body.appendChild(div1);
     document.body.appendChild(div2);
@@ -53,17 +53,18 @@ describe("css child selector", () => {
     const style = <style>{`div:first-child { color: green; }`}</style>;
     document.body = (
       <body>
-        Filler Text<div>Filler Text</div>
-        <div>Filler Text</div>
+        005 <div>should be green</div>
+        <div>should not be green</div>
       </body>
     );
+    
     document.head.appendChild(style);
     await snapshot();
   });
 
   it("006", async () => {
     const style = <style>{`div:fiRsT-cHiLd { color: green; }`}</style>;
-    const div = <div>Filler Text</div>;
+    const div = <div> 006 should be green</div>;
     document.body.appendChild(div);
     document.head.appendChild(style);
     await snapshot();
@@ -75,7 +76,7 @@ describe("css child selector", () => {
     );
     document.body = (
       <body>
-        <p>This text should be green.</p>
+        <p> 007 This text should be green.</p>
       </body>
     );
     document.head.appendChild(style);
@@ -83,16 +84,10 @@ describe("css child selector", () => {
   });
 
   it("008", async () => {
-    const style = (
-      <style>{` :first-child  { border: 10px solid blue; }`}</style>
-    );
-    const div = <div>Filler Text</div>;
-    const p = (
-      <p>
-        Test passes if there is a blue border around the viewport and around
-        "Filler Text" above.
-      </p>
-    );
+    const style = <style>{` :first-child  { color: green; }`}</style>;
+    const div = <div> 008 Filler Text should be green </div>;
+    const p = <p> Filler Text </p>;
+    
     document.head.appendChild(style);
     document.body.appendChild(div);
     document.body.appendChild(p);
@@ -101,11 +96,12 @@ describe("css child selector", () => {
 
   it("009", async () => {
     const style = <style>{` :root { color: green; }`}</style>;
-    const p1 = <p>Should be green </p>;
+    const p1 = <p>009 Should be green </p>;
     const p2 = <p>Should be green </p>;
     const p3 = <p>Should be green </p>;
     const p4 = <p>Should be green </p>;
     const p5 = <p>Should be green </p>;
+    
     document.head.appendChild(style);
     document.body.appendChild(p1);
     document.body.appendChild(p2);
@@ -153,9 +149,10 @@ describe("css child selector", () => {
           }
         `}</style>
     );
+    
     document.head.appendChild(style);
 
-    const p1 = <p id="a">Should be green</p>;
+    const p1 = <p id="a">10 Should be green</p>;
     const p2 = <p id="b">Should be green</p>;
     const p3 = <p id="c">Should be green</p>;
     const p4 = <p id="d">Should be green</p>;
@@ -215,7 +212,7 @@ describe("css child selector", () => {
         `}</style>
     );
 
-    const p1 = <p id="a">Should be green</p>;
+    const p1 = <p id="a">11 Should be green</p>;
     const p2 = <p id="b">Should be green</p>;
     const p3 = <p id="c">Should be green</p>;
     const p4 = <p id="d">Should be green</p>;
@@ -225,6 +222,7 @@ describe("css child selector", () => {
     const p8 = <p id="h">Should be green</p>;
     const p9 = <p id="i">Should be green</p>;
 
+    
     document.head.appendChild(style);
     document.body.appendChild(p1);
     document.body.appendChild(p2);
@@ -251,12 +249,13 @@ describe("css child selector", () => {
         <li> 012 Should be green</li>
       </ul>
     );
+    
     document.head.appendChild(style);
     document.body.appendChild(ul);
     await snapshot();
   });
 
-  it("013", async () => {
+  xit("013", async () => {
     const style = (
       <style>{` 
         li:only-child {
@@ -270,31 +269,28 @@ describe("css child selector", () => {
         <li> 013 Should not be green</li>
       </ul>
     );
+    
     document.head.appendChild(style);
     document.body.appendChild(ul);
     await snapshot();
   });
 
+  // error
   it("014", async () => {
     const style = (
-      <style>{` 
-      last-child #f {
-        color: green;
-      }
-        `}</style>
+      <style>{`:last-child #f { color: green; }`}</style>
     );
-
     const p = <p>014</p>;
-    const p1 = <p id="a">Should be green</p>;
-    const p2 = <p id="b">Should be green</p>;
-    const p3 = <p id="c">Should be green</p>;
-    const p4 = <p id="d">Should be green</p>;
-    const p5 = <p id="e">Should be green</p>;
+    const p1 = <p id="a">Should not be green</p>;
+    const p2 = <p id="b">Should not be green</p>;
+    const p3 = <p id="c">Should not be green</p>;
+    const p4 = <p id="d">Should not be green</p>;
+    const p5 = <p id="e">Should not be green</p>;
     const p6 = <p id="f">Should be green</p>;
-    const p7 = <p id="g">Should be green</p>;
-    const p8 = <p id="h">Should be green</p>;
-    const p9 = <p id="i">Should be green</p>;
-
+    const p7 = <p id="g">Should not be green</p>;
+    const p8 = <p id="h">Should not be green</p>;
+    const p9 = <p id="i">Should not be green</p>;
+    
     document.head.appendChild(style);
     document.body.appendChild(p);
     document.body.appendChild(p1);

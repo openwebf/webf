@@ -139,6 +139,8 @@ class Document extends Node {
     if (documentElement == child) {
       documentElement = null;
     }
+    ruleSet.reset();
+    styleSheets.clear();
     return super.removeChild(child);
   }
 
