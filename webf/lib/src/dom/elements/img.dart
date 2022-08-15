@@ -469,6 +469,9 @@ class ImageElement extends Element {
     // the image when they no longer need to access it or draw it.
     ui.Image? clonedImage = _cachedImageInfo?.image.clone();
     if (clonedImage != null) {
+      / fix width/height when naturalWidth unequal real width because of image scale by flutter engine
+      width = clonedImage.width;
+      height = clonedImage.height;
       _renderImage?.image = clonedImage;
       _resizeImage();
     }
