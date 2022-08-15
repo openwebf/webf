@@ -105,8 +105,7 @@ TEST(Context, unrejectPromiseWillTriggerUnhandledRejectionEvent) {
   };
   auto bridge = TEST_init(errorHandler);
   static int logIndex = 0;
-  static std::string logs[] = {"error event cannot read property 'forceNullError' of null",
-                               "unhandled event {promise: Promise {...}, reason: Error {...}} true"};
+  static std::string logs[] = {"unhandled event {promise: Promise {...}, reason: Error {...}} true"};
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(logs[logIndex++].c_str(), message.c_str());
@@ -130,7 +129,7 @@ var p = new Promise(function (resolve, reject) {
   bridge->evaluateScript(code.c_str(), code.size(), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, true);
   EXPECT_EQ(logCalled, true);
-  EXPECT_EQ(logIndex, 2);
+  EXPECT_EQ(logIndex, 1);
   webf::WebFPage::consoleMessageHandler = nullptr;
 }
 

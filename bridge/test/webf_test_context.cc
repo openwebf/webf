@@ -6,6 +6,7 @@
 #include "webf_test_context.h"
 #include "bindings/qjs/member_installer.h"
 #include "core/dom/document.h"
+#include "core/html/html_body_element.h"
 #include "core/fileapi/blob.h"
 #include "core/html/parser/html_parser.h"
 #include "qjs_blob.h"

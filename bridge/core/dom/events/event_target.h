@@ -72,6 +72,8 @@ class EventTargetData final {
   std::unique_ptr<FiringEventIteratorVector> firing_event_iterators;
 };
 
+class Node;
+
 // All DOM event targets extend EventTarget. The spec is defined here:
 // https://dom.spec.whatwg.org/#interface-eventtarget
 // EventTarget objects allow us to add and remove an event
@@ -88,6 +90,8 @@ class EventTarget : public ScriptWrappable, public BindingObject {
   EventTarget() = delete;
   ~EventTarget();
   explicit EventTarget(ExecutingContext* context);
+
+  virtual Node* ToNode();
 
   bool addEventListener(const AtomicString& event_type,
                         const std::shared_ptr<EventListener>& event_listener,
@@ -183,29 +187,28 @@ class EventTargetWithInlineData : public EventTarget {
     eventTarget.SetAttributeEventListener(event_type_names::symbol_name, listener, exception_state);      \
   }
 
-#define DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                     \
-  EventListener* on##lower_name() {                                                         \
-    return GetDocument().GetWindowAttributeEventListener(event_type_names::symbol_name);    \
-  }                                                                                         \
-  void setOn##lower_name(EventListener* listener) {                                         \
-    GetDocument().SetWindowAttributeEventListener(event_type_names::symbol_name, listener); \
+#define DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                                      \
+  std::shared_ptr<EventListener> on##lower_name() {                                                          \
+    return GetDocument().GetWindowAttributeEventListener(event_type_names::symbol_name);                     \
+  }                                                                                                          \
+  void setOn##lower_name(const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state) {  \
+    GetDocument().SetWindowAttributeEventListener(event_type_names::symbol_name, listener, exception_state); \
   }
 
-#define DEFINE_STATIC_WINDOW_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                      \
-  static EventListener* on##lower_name(EventTarget& eventTarget) {                                  \
-    if (Node* node = eventTarget.ToNode()) {                                                        \
-      return node->GetDocument().GetWindowAttributeEventListener(event_type_names::symbol_name);    \
-    }                                                                                               \
-    DCHECK(eventTarget.ToLocalDOMWindow());                                                         \
-    return eventTarget.GetAttributeEventListener(event_type_names::symbol_name);                    \
-  }                                                                                                 \
-  static void setOn##lower_name(EventTarget& eventTarget, EventListener* listener) {                \
-    if (Node* node = eventTarget.ToNode()) {                                                        \
-      node->GetDocument().SetWindowAttributeEventListener(event_type_names::symbol_name, listener); \
-    } else {                                                                                        \
-      DCHECK(eventTarget.ToLocalDOMWindow());                                                       \
-      eventTarget.SetAttributeEventListener(event_type_names::symbol_name, listener);               \
-    }                                                                                               \
+#define DEFINE_STATIC_WINDOW_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                                       \
+  static std::shared_ptr<EventListener> on##lower_name(EventTarget& eventTarget) {                                   \
+    if (Node* node = eventTarget.ToNode()) {                                                                         \
+      return node->GetDocument().GetWindowAttributeEventListener(event_type_names::symbol_name);                     \
+    }                                                                                                                \
+    return eventTarget.GetAttributeEventListener(event_type_names::symbol_name);                                     \
+  }                                                                                                                  \
+  static void setOn##lower_name(EventTarget& eventTarget, const std::shared_ptr<EventListener>& listener,            \
+                                ExceptionState& exception_state) {                                                   \
+    if (Node* node = eventTarget.ToNode()) {                                                                         \
+      node->GetDocument().SetWindowAttributeEventListener(event_type_names::symbol_name, listener, exception_state); \
+    } else {                                                                                                         \
+      eventTarget.SetAttributeEventListener(event_type_names::symbol_name, listener, exception_state);               \
+    }                                                                                                                \
   }
 
 //

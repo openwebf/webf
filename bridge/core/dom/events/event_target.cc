@@ -45,6 +45,10 @@ EventTarget::~EventTarget() {
 EventTarget::EventTarget(ExecutingContext* context)
     : BindingObject(context), ScriptWrappable(context->ctx()), event_target_id_(global_event_target_id++) {}
 
+Node* EventTarget::ToNode() {
+  return nullptr;
+}
+
 bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
                                    const std::shared_ptr<AddEventListenerOptions>& options,

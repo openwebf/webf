@@ -2,8 +2,9 @@ import {EventTarget} from "../dom/events/event_target";
 import {ScrollOptions} from "../dom/scroll_options";
 import {ScrollToOptions} from "../dom/scroll_to_options";
 import {Screen} from "./screen";
+import {WindowEventHandlers} from "./window_event_handlers";
 
-interface Window extends EventTarget {
+interface Window extends EventTarget, WindowEventHandlers {
   open(url?: string): Window | null;
   scrollTo(options?: ScrollToOptions): void;
   scrollTo(x: number, y: number): void;

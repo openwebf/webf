@@ -60,6 +60,8 @@ class Node : public EventTarget {
   using ImplType = Node*;
   static Node* Create(ExecutingContext* context, ExceptionState& exception_state);
 
+  Node* ToNode() override;
+
   // DOM methods & attributes for Node
   virtual std::string nodeName() const = 0;
   virtual std::string nodeValue() const = 0;

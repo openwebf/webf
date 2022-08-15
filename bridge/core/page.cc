@@ -9,6 +9,7 @@
 #include "core/dart_methods.h"
 #include "core/dom/document.h"
 #include "core/frame/window.h"
+#include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
 #include "foundation/logging.h"
 #include "page.h"

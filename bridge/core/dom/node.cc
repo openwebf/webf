@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include "character_data.h"
 #include "child_node_list.h"
+#include "element.h"
 #include "document.h"
 #include "document_fragment.h"
 #include "empty_node_list.h"
@@ -19,6 +20,10 @@ namespace webf {
 Node* Node::Create(ExecutingContext* context, ExceptionState& exception_state) {
   exception_state.ThrowException(context->ctx(), ErrorType::TypeError, "Illegal constructor");
   return nullptr;
+}
+
+Node* Node::ToNode() {
+  return this;
 }
 
 void Node::setNodeValue(const AtomicString& value, ExceptionState& exception_state) {

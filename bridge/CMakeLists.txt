@@ -277,6 +277,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/frame/legacy/location.cc
     core/frame/legacy/location.h
     core/frame/module_callback_coordinator.h
+    core/frame/window_event_handlers.h
     core/css/legacy/css_style_declaration.cc
     core/css/legacy/css_style_declaration.h
     core/dom/frame_request_callback_collection.cc

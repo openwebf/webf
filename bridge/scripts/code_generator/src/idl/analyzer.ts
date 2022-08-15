@@ -40,7 +40,7 @@ function getMixins(hertage: HeritageClause): string[] | null {
   hertage.types.slice(1).forEach(types => {
     let expression = types.expression;
     if (expression.kind === ts.SyntaxKind.Identifier) {
-      mixins.push((expression as ts.Identifier).escapedText!);
+      mixins.push((expression as ts.Identifier).escapedText! as string);
     }
   });
   return mixins;

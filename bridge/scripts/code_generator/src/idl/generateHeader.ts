@@ -1,5 +1,5 @@
-import {ClassObject, ClassObjectKind, FunctionDeclaration, FunctionObject, PropsDeclaration} from "./declaration";
-import _, {mixin} from "lodash";
+import {ClassObject, ClassObjectKind, FunctionObject} from "./declaration";
+import _ from "lodash";
 import {IDLBlob} from "./IDLBlob";
 import {getClassName} from "./utils";
 import fs from 'fs';
@@ -20,6 +20,8 @@ export function getTemplateKind(object: ClassObject | FunctionObject | null): Te
   } else if (object instanceof ClassObject) {
     if (object.kind === ClassObjectKind.dictionary) {
       return TemplateKind.Dictionary;
+    } else if(object.kind === ClassObjectKind.mixin) {
+      return TemplateKind.null;
     }
     return TemplateKind.Interface;
   }

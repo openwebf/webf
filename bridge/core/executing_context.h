@@ -38,6 +38,7 @@ struct NativeByteCode {
 
 class ExecutingContext;
 class Document;
+class Window;
 class MemberMutationScope;
 class ErrorEvent;
 
@@ -100,6 +101,7 @@ class ExecutingContext {
   void ClearMutationScope();
 
   FORCE_INLINE Document* document() { return document_; };
+  FORCE_INLINE Window* window() { return window_; }
   FORCE_INLINE UICommandBuffer* uiCommandBuffer() { return &ui_command_buffer_; };
   FORCE_INLINE std::unique_ptr<DartMethodPointer>& dartMethodPtr() { return dart_method_ptr_; }
 
@@ -142,6 +144,7 @@ class ExecutingContext {
   JSValue global_object_{JS_NULL};
   bool ctx_invalid_{false};
   Document* document_{nullptr};
+  Window* window_{nullptr};
   DOMTimerCoordinator timers_;
   ModuleListenerContainer module_listener_container_;
   ModuleCallbackCoordinator module_callbacks_;

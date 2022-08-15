@@ -4,7 +4,11 @@
  */
 #include "document.h"
 #include "bindings/qjs/exception_message.h"
+#include "core/frame/window.h"
 #include "core/dom/element.h"
+#include "core/dom/comment.h"
+#include "core/dom/document_fragment.h"
+#include "core/dom/text.h"
 #include "core/html/html_body_element.h"
 #include "core/html/html_element.h"
 #include "core/html/html_head_element.h"
@@ -130,6 +134,10 @@ Node* Document::Clone(Document&, CloneChildrenFlag) const {
   return nullptr;
 }
 
+HTMLHtmlElement* Document::documentElement() const {
+  return DynamicTo<HTMLHtmlElement>(document_element_.Get());
+}
+
 void Document::InitDocumentElement() {
   ExceptionState exception_state;
   AppendChild(document_element_, exception_state);
@@ -200,6 +208,18 @@ uint32_t Document::RequestAnimationFrame(const std::shared_ptr<FrameCallback>& c
 
 void Document::CancelAnimationFrame(uint32_t request_id, ExceptionState& exception_state) {
   script_animation_controller_.CancelFrameCallback(GetExecutingContext(), request_id, exception_state);
+}
+
+void Document::SetWindowAttributeEventListener(const AtomicString& event_type, const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state) {
+  Window* window = GetExecutingContext()->window();
+  if (!window) return;
+  window->SetAttributeEventListener(event_type, listener, exception_state);
+}
+
+std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const AtomicString& event_type) {
+  Window* window = GetExecutingContext()->window();
+  if (!window) return nullptr;
+  return window->GetAttributeEventListener(event_type);
 }
 
 void Document::Trace(GCVisitor* visitor) const {

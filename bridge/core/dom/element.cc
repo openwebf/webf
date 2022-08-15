@@ -3,12 +3,14 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "element.h"
+#include "text.h"
 
 #include <utility>
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "html_element_type_helper.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"

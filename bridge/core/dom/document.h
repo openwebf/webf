@@ -7,10 +7,6 @@
 
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
-#include "core/dom/comment.h"
-#include "core/dom/document_fragment.h"
-#include "core/dom/text.h"
-#include "html_element_type_helper.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
 
@@ -19,6 +15,8 @@ namespace webf {
 class HTMLBodyElement;
 class HTMLHeadElement;
 class HTMLHtmlElement;
+class Text;
+class Comment;
 
 // A document (https://dom.spec.whatwg.org/#concept-document) is the root node
 // of a tree of DOM nodes, generally resulting from the parsing of a markup
@@ -48,7 +46,7 @@ class Document : public ContainerNode, public TreeScope {
 
   Node* Clone(Document&, CloneChildrenFlag) const override;
 
-  [[nodiscard]] HTMLHtmlElement* documentElement() const { return DynamicTo<HTMLHtmlElement>(document_element_.Get()); }
+  [[nodiscard]] HTMLHtmlElement* documentElement() const;
   void InitDocumentElement();
 
   // "body element" as defined by HTML5
@@ -70,6 +68,11 @@ class Document : public ContainerNode, public TreeScope {
 
   uint32_t RequestAnimationFrame(const std::shared_ptr<FrameCallback>& callback, ExceptionState& exception_state);
   void CancelAnimationFrame(uint32_t request_id, ExceptionState& exception_state);
+
+  // Helper functions for forwarding LocalDOMWindow event related tasks to the
+  // LocalDOMWindow if it exists.
+  void SetWindowAttributeEventListener(const AtomicString& event_type, const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state);
+  std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const override;
 

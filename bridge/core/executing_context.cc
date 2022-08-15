@@ -266,8 +266,7 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
   event_init->setReason(Converter<IDLAny>::FromValue(context->ctx(), error, exception_state));
   auto event = PromiseRejectionEvent::Create(context, event_type, event_init, exception_state);
 
-  auto* window = toScriptWrappable<Window>(context->Global());
-  window->dispatchEvent(event, exception_state);
+  context->window()->dispatchEvent(event, exception_state);
   if (exception_state.HasException()) {
     context->ReportError(error);
   }
@@ -289,9 +288,8 @@ void ExecutingContext::DispatchErrorEvent(ErrorEvent* error_event) {
 void ExecutingContext::DispatchErrorEventInterval(ErrorEvent* error_event) {
   assert(!in_dispatch_error_event_);
   in_dispatch_error_event_ = true;
-  auto* window = toScriptWrappable<Window>(Global());
   ExceptionState exception_state;
-  window->dispatchEvent(error_event, exception_state);
+  window_->dispatchEvent(error_event, exception_state);
   in_dispatch_error_event_ = false;
 
   if (exception_state.HasException()) {
@@ -373,9 +371,9 @@ void ExecutingContext::InstallDocument() {
 
 void ExecutingContext::InstallGlobal() {
   MemberMutationScope mutation_scope{this};
-  auto* window = MakeGarbageCollected<Window>(this);
-  JS_SetPrototype(ctx(), Global(), window->ToQuickJSUnsafe());
-  JS_SetOpaque(Global(), window);
+  window_  = MakeGarbageCollected<Window>(this);
+  JS_SetPrototype(ctx(), Global(), window_->ToQuickJSUnsafe());
+  JS_SetOpaque(Global(), window_);
 }
 
 // An lock free context validator.

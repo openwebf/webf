@@ -13,6 +13,11 @@
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/cppgc/mutation_scope.h"
 #include "core/executing_context.h"
+#include "core/dom/element.h"
+#include "core/dom/text.h"
+#include "core/dom/document.h"
+#include "core/dom/document_fragment.h"
+#include "core/dom/comment.h"
 
 namespace webf {
 
