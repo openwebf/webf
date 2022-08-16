@@ -1,7 +1,8 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:kraken/rendering.dart';
+import '../../rendering.dart';
+
 
 /// OverflowLayout is a class for tracking content that spills out of a box
 ///  This class is used by RenderBox
