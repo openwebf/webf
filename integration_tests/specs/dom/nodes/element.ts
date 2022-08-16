@@ -71,7 +71,7 @@ describe('DOM Element API', () => {
     div.scrollBy(0, 10);
 
     expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
-      bottom: 200, height: 30, left: 30, right: 60, top: 180, width: 30, x: 30, y: 180
+      bottom: 200, height: 30, left: 30, right: 60, top: 170, width: 30, x: 30, y: 170
     } as any);
 
   });

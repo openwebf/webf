@@ -4124,7 +4124,7 @@ getJasmineRequireObj().toMatchSnapshot = function (j$) {
    */
   return function toMatchSnapshot(util, customEqualityTesters) {
     return {
-      compare: function (actualPromise, filename) {
+      compare: function (actualPromise, filename, postfix) {
         if (!j$.isPromiseLike(actualPromise)) {
           throw new Error('Expected toMatchSnapshot to be called on a promise.');
         }
@@ -4135,12 +4135,14 @@ getJasmineRequireObj().toMatchSnapshot = function (j$) {
 
         const countWithinSameSpec = ++_matchSnapshotCounter[specId];
 
-        filename = `${filename}.${md5(this.description).slice(0, 8)}${countWithinSameSpec}`;
+        let postfixString = postfix === false ? '' : postfix ? postfix : [md5(this.description).slice(0, 8), countWithinSameSpec].join('');
+
+        filename = [filename, postfixString].filter(Boolean).join('.')
 
         return actualPromise.then(blob => {
           return new Promise((resolve, reject) => {
             // @TODO: the C++ HostingObject of Blob, need to removed when jsa support constructor operation.
-            __kraken_match_image_snapshot__(blob, filename, (status, errmsg) => {
+            __webf_match_image_snapshot__(blob, filename, (status, errmsg) => {
               // @NOTE: toMatchSnapshot should resolve before spec done.
               const _currentSpec = j$.getEnv().currentRunnable();
               if (_currentSpec.id !== specId) {
