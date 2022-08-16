@@ -249,10 +249,10 @@ class RenderLayoutBox extends RenderBoxModel
       final Matrix4 transform = Matrix4.identity();
       applyLayoutTransform(child, transform, false);
       Offset tlOffset = MatrixUtils.transformPoint(transform,Offset(childOverflowLayoutRect.left,childOverflowLayoutRect.top));
-      overflowRect = Rect.fromLTRB(min(overflowRect.left, tlOffset.dx),
-          min(overflowRect.top, tlOffset.dy),
-          max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
-          max(overflowRect.bottom,tlOffset.dy + childOverflowLayoutRect.height));
+      overflowRect = Rect.fromLTRB(math.min(overflowRect.left, tlOffset.dx),
+          math.min(overflowRect.top, tlOffset.dy),
+          math.max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
+          math.max(overflowRect.bottom,tlOffset.dy + childOverflowLayoutRect.height));
     }
 
     addLayoutOverflow(overflowRect);
