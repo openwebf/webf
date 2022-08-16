@@ -229,7 +229,7 @@ class RenderLayoutBox extends RenderBoxModel
 
   void addOverflowLayoutFromChild(RenderBox child) {
     final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-    if (child is RenderTextBox || child is RenderPositionPlaceholder || !child.hasSize) {
+    if (child is RenderTextBox || child is RenderPositionPlaceholder || !child.hasSize || child is RenderConstrainedBox) {
       return;
     }
     CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
