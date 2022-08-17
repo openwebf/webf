@@ -258,17 +258,17 @@ void ExecutingContext::DispatchGlobalErrorEvent(ExecutingContext* context, JSVal
 static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
                                           ExecutingContext* context,
                                           JSValueConst promise,
-                                          JSValueConst error) {
+                                          JSValueConst reason) {
   ExceptionState exception_state;
 
   auto event_init = PromiseRejectionEventInit::Create();
   event_init->setPromise(Converter<IDLAny>::FromValue(context->ctx(), promise, exception_state));
-  event_init->setReason(Converter<IDLAny>::FromValue(context->ctx(), error, exception_state));
+  event_init->setReason(Converter<IDLAny>::FromValue(context->ctx(), reason, exception_state));
   auto event = PromiseRejectionEvent::Create(context, event_type, event_init, exception_state);
 
   context->window()->dispatchEvent(event, exception_state);
   if (exception_state.HasException()) {
-    context->ReportError(error);
+    context->ReportError(reason);
   }
 }
 
@@ -305,12 +305,9 @@ void ExecutingContext::ReportErrorEvent(ErrorEvent* error_event) {
 
 void ExecutingContext::DispatchGlobalUnhandledRejectionEvent(ExecutingContext* context,
                                                              JSValueConst promise,
-                                                             JSValueConst error) {
-  // Trigger onerror event.
-  DispatchGlobalErrorEvent(context, error);
-
+                                                             JSValueConst reason) {
   // Trigger unhandledRejection event.
-  DispatchPromiseRejectionEvent(event_type_names::kunhandledrejection, context, promise, error);
+  DispatchPromiseRejectionEvent(event_type_names::kunhandledrejection, context, promise, reason);
 }
 
 void ExecutingContext::DispatchGlobalRejectionHandledEvent(ExecutingContext* context, JSValue promise, JSValue error) {

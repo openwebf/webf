@@ -214,8 +214,11 @@ std::unique_ptr<webf::WebFPage> TEST_init() {
   return TEST_init(nullptr);
 }
 
-std::unique_ptr<webf::WebFPage> TEST_allocateNewPage() {
+std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
   uint32_t newContextId = allocateNewPage(-1);
+
+  TEST_mockDartMethods(newContextId, onJsError);
+
   initTestFramework(newContextId);
   return std::unique_ptr<webf::WebFPage>(static_cast<webf::WebFPage*>(getPage(newContextId)));
 }

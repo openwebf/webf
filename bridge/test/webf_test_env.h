@@ -25,7 +25,7 @@ namespace webf {
 
 std::unique_ptr<WebFPage> TEST_init(OnJSError onJsError);
 std::unique_ptr<WebFPage> TEST_init();
-std::unique_ptr<WebFPage> TEST_allocateNewPage();
+std::unique_ptr<WebFPage> TEST_allocateNewPage(OnJSError onJsError);
 void TEST_runLoop(ExecutingContext* context);
 void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError);
 
