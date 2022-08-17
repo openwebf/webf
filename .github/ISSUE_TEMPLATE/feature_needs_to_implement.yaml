@@ -1,0 +1,35 @@
+name: 📍 Feature needs to implement
+description: Webf need to implement the spec of other browser already implemented.
+labels:
+  - enhancement
+  - implement
+
+body:
+  - type: dropdown
+    validations:
+      required: true
+    attributes:
+      label: Feature type
+      options:
+        - ECMAScript/JavaScript
+        - CSS/DOM Style
+        - BOM API
+        - DOM API
+        - Others
+
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: The spec link.
+      description: For example https://drafts.csswg.org/css-fonts/#font-prop
+
+  - type: textarea
+    attributes:
+      label: How much important for you
+      description: | 
+        Why you need this feature?
+        Is there have any other way to meet your requirements?
+      placeholder: |
+        You can write 'better to have' or 'must be have' and why.
+        You also can write 'xxx framework must be depends on'.
