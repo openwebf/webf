@@ -1,13 +1,13 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef BRIDGE_CORE_FRAME_WINDOW_EVENT_HANDLERS_H_
 #define BRIDGE_CORE_FRAME_WINDOW_EVENT_HANDLERS_H_
 
-#include "foundation/macros.h"
-#include "event_type_names.h"
 #include "core/dom/document.h"
+#include "event_type_names.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -27,7 +27,6 @@ class WindowEventHandlers {
   DEFINE_STATIC_WINDOW_ATTRIBUTE_EVENT_LISTENER(unload, kunload);
 };
 
-}
-
+}  // namespace webf
 
 #endif  // BRIDGE_CORE_FRAME_WINDOW_EVENT_HANDLERS_H_

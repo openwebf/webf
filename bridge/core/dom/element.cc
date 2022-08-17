@@ -10,12 +10,12 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
-#include "html_element_type_helper.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
 #include "foundation/native_value_converter.h"
+#include "html_element_type_helper.h"
 
 namespace webf {
 

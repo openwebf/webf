@@ -368,7 +368,7 @@ void ExecutingContext::InstallDocument() {
 
 void ExecutingContext::InstallGlobal() {
   MemberMutationScope mutation_scope{this};
-  window_  = MakeGarbageCollected<Window>(this);
+  window_ = MakeGarbageCollected<Window>(this);
   JS_SetPrototype(ctx(), Global(), window_->ToQuickJSUnsafe());
   JS_SetOpaque(Global(), window_);
 }

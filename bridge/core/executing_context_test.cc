@@ -171,7 +171,7 @@ generateRejectedPromise(true);
 
 TEST(Context, unhandledRejectionEventWillTriggerWhenNotHandled) {
   static bool logCalled = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {  };
+  auto errorHandler = [](int32_t contextId, const char* errmsg) {};
   auto bridge = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;

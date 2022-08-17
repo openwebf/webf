@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include "character_data.h"
 #include "child_node_list.h"
-#include "element.h"
 #include "document.h"
 #include "document_fragment.h"
+#include "element.h"
 #include "empty_node_list.h"
 #include "node_data.h"
 #include "node_traversal.h"

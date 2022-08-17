@@ -5,9 +5,9 @@
 #ifndef BRIDGE_CORE_HTML_HTML_BODY_ELEMENT_H_
 #define BRIDGE_CORE_HTML_HTML_BODY_ELEMENT_H_
 
-#include "html_element.h"
 #include "core/dom/document.h"
 #include "core/frame/window_event_handlers.h"
+#include "html_element.h"
 
 namespace webf {
 

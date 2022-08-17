@@ -71,7 +71,9 @@ class Document : public ContainerNode, public TreeScope {
 
   // Helper functions for forwarding LocalDOMWindow event related tasks to the
   // LocalDOMWindow if it exists.
-  void SetWindowAttributeEventListener(const AtomicString& event_type, const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state);
+  void SetWindowAttributeEventListener(const AtomicString& event_type,
+                                       const std::shared_ptr<EventListener>& listener,
+                                       ExceptionState& exception_state);
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const override;
