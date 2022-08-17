@@ -1176,6 +1176,13 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Flexbox with no size on main axis should adapt the main axis size with children.
       double initialFreeSpace = isMainSizeDefinite ? maxMainSize - totalSpace : 0;
 
+      double layoutContentMainSize = _isHorizontalFlexDirection ? boxSize!.width : boxSize!.height;
+
+      // Flexbox with minSize on main axis when layoutContentMainSize < minSize, adapt freeSpace
+      if(layoutContentMainSize <= _getMinMainAxisSize(this)  && initialFreeSpace == 0) {
+        initialFreeSpace = layoutContentMainSize - totalSpace;
+      }
+
       bool isFlexGrow = initialFreeSpace > 0 && totalFlexGrow > 0;
       bool isFlexShrink = initialFreeSpace < 0 && totalFlexShrink > 0;
 
