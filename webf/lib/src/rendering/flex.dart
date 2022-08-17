@@ -1164,7 +1164,13 @@ class RenderFlexLayout extends RenderLayoutBox {
           marginHorizontal = child.renderStyle.marginLeft.computedValue + child.renderStyle.marginRight.computedValue;
           marginVertical = child.renderStyle.marginTop.computedValue + child.renderStyle.marginBottom.computedValue;
           if (flexBasis != null) {
-            childSpace = flexBasis;
+            // Flexbox flexBasis == 0.0, need use minContentHeight/minContentWidth as childSpace
+            if(flexBasis == 0) {
+              childSpace = _isHorizontalFlexDirection ? (runChild.child as RenderBoxModel).minContentWidth :
+              (runChild.child as RenderBoxModel).minContentHeight;
+            } else {
+              childSpace = flexBasis;
+            }
           }
         }
         double mainAxisMargin = _isHorizontalFlexDirection ? marginHorizontal : marginVertical;
