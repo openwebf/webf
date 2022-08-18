@@ -31,6 +31,12 @@ const String _REL_STYLESHEET = 'stylesheet';
 class LinkElement extends Element {
   LinkElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
 
+  CSSStyleSheet? get styleSheet => _styleSheet;
+  CSSStyleSheet? _styleSheet;
+
+  bool _loading = false;
+  bool get loading => _loading;
+
   Uri? _resolvedHyperlink;
   final Map<String, bool> _stylesheetLoaded = {};
 
@@ -103,15 +109,13 @@ class LinkElement extends Element {
   set href(String value) {
     internalSetAttribute('href', value);
     _resolveHyperlink();
-    // Should waiting for all properties had set up.
-    Future.microtask(() {
-      _fetchAndApplyCSSStyle();
-    });
+    _process();
   }
 
   String get rel => getAttribute('rel') ?? '';
   set rel(String value) {
     internalSetAttribute('rel', value);
+    _process();
   }
 
   String get type => getAttribute('type') ?? '';
@@ -132,6 +136,15 @@ class LinkElement extends Element {
     }
   }
 
+  void _process() {
+    if (_resolvedHyperlink != null && _stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
+      return;
+    }
+    Future.microtask(() {
+      _fetchAndApplyCSSStyle();
+    });
+  }
+
   void _fetchAndApplyCSSStyle() async {
     if (_resolvedHyperlink != null &&
         rel == _REL_STYLESHEET &&
@@ -141,12 +154,13 @@ class LinkElement extends Element {
       WebFBundle bundle = WebFBundle.fromUrl(url);
       _stylesheetLoaded[url] = true;
       try {
+        _loading = true;
         // Increment count when request.
         ownerDocument.incrementRequestCount();
 
         await bundle.resolve(contextId);
         assert(bundle.isResolved, 'Failed to obtain $url');
-
+        _loading = false;
         // Decrement count when response.
         ownerDocument.decrementRequestCount();
 
@@ -170,16 +184,26 @@ class LinkElement extends Element {
   }
 
   void _addCSSStyleSheet(String css) {
-    final sheet = CSSParser(css).parse();
-    ownerDocument.addStyleSheet(sheet);
+    _styleSheet = CSSParser(css).parse();
   }
 
   @override
-  void connectedCallback() async {
-    super.connectedCallback();
+  void connectedCallback() {
+    if (rel == _REL_STYLESHEET) {
+      ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
+    }
     if (_resolvedHyperlink != null) {
       _fetchAndApplyCSSStyle();
     }
+    super.connectedCallback();
+  }
+
+  @override
+  void disconnectedCallback() {
+    if (rel == _REL_STYLESHEET) {
+      ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
+    }
+    super.disconnectedCallback();
   }
 }
 
@@ -201,6 +225,8 @@ const String _CSS_MIME = 'text/css';
 class StyleElement extends Element {
   StyleElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
   final String _type = _CSS_MIME;
+
+  CSSStyleSheet? get styleSheet => _styleSheet;
   CSSStyleSheet? _styleSheet;
 
   // Bindings.
@@ -244,11 +270,9 @@ class StyleElement extends Element {
     String? text = collectElementChildText();
     if (text != null) {
       if (_styleSheet != null) {
-        _styleSheet!.replaceSync(text);
-        ownerDocument.recalculateDocumentStyle();
+        _styleSheet!.replace(text);
       } else {
-        final sheet = CSSParser(text).parse();
-        ownerDocument.addStyleSheet(_styleSheet = sheet);
+        _styleSheet = CSSParser(text).parse();
       }
     }
   }
@@ -277,7 +301,10 @@ class StyleElement extends Element {
   @override
   void connectedCallback() {
     if (_type == _CSS_MIME) {
-      _recalculateStyle();
+      if (_styleSheet == null) {
+        _recalculateStyle();
+      }
+      ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
     }
     super.connectedCallback();
   }
@@ -285,7 +312,7 @@ class StyleElement extends Element {
   @override
   void disconnectedCallback() {
     if (_styleSheet != null) {
-      ownerDocument.removeStyleSheet(_styleSheet!);
+      ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
     }
     super.disconnectedCallback();
   }

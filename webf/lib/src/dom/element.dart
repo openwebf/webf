@@ -882,7 +882,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return child;
   }
 
-  void updateStyleIfNeeded() {}
   // 2. Node::invalidateStyle 方法 将元素所有祖先都标记需要更新样式
   // 3. Document updateStyleIfNeeded()
   // 3.1 flush pending sheet
@@ -1485,6 +1484,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void recalculateNestedStyle() {
+    if (!needsStyleRecalculate) {
+      return;
+    }
     recalculateStyle();
     // Update children style.
     children.forEach((Element child) {

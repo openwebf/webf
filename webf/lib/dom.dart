@@ -20,6 +20,7 @@ export 'src/dom/screen.dart';
 export 'src/dom/element_registry.dart';
 
 // Elements
+export 'src/dom/style_node_manager.dart';
 export 'src/dom/elements/semantics_text.dart';
 export 'src/dom/elements/grouping_content.dart';
 export 'src/dom/elements/sections.dart';
