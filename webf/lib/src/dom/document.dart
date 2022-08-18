@@ -19,7 +19,10 @@ class Document extends Node {
   GestureListener? gestureListener;
   WidgetDelegate? widgetDelegate;
 
-  RuleSet ruleSet = RuleSet();
+  StyleNodeManager get styleNodeManager => _styleNodeManager;
+  late StyleNodeManager _styleNodeManager;
+
+  final RuleSet ruleSet = RuleSet();
 
   Document(
     BindingContext context, {
@@ -29,6 +32,7 @@ class Document extends Node {
     this.widgetDelegate,
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
+    _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
   }
 
@@ -181,20 +185,27 @@ class Document extends Node {
   // The styleSheets attribute is readonly attribute.
   final List<CSSStyleSheet> styleSheets = [];
 
-  void addStyleSheet(CSSStyleSheet sheet) {
-    styleSheets.add(sheet);
-    ruleSet.addRules(sheet.cssRules);
-    recalculateDocumentStyle();
+  void handleStyleSheets(List<CSSStyleSheet> sheets) {
+    styleSheets.clear();
+    styleSheets.addAll(sheets.map((e) => e.clone()));
+    ruleSet.reset();
+    for (var sheet in sheets) {
+      ruleSet.addRules(sheet.cssRules);
+    }
   }
 
-  void removeStyleSheet(CSSStyleSheet sheet) {
-    styleSheets.remove(sheet);
+  void updateStyleIfNeeded() {
+    styleNodeManager.updateActiveStyleSheets();
     recalculateDocumentStyle();
   }
 
   void recalculateDocumentStyle() {
+    if (!needsStyleRecalculate) {
+      return;
+    }
     // Recalculate style for all nodes sync.
     documentElement?.recalculateNestedStyle();
+    needsStyleRecalculate = false;
   }
 
   @override
