@@ -70,7 +70,7 @@ final DartInvokeEventListener _invokeModuleEvent =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
 
 void invokeModuleEvent(int contextId, String moduleName, Event? event, String extra) {
-  if (KrakenController.getControllerOfJSContextId(contextId) == null) {
+  if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return;
   }
   Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
@@ -205,7 +205,7 @@ int allocateNewPage([int targetContextId = -1]) {
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);
 typedef DartRegisterPluginByteCode = void Function(Pointer<Uint8> bytes, int length, Pointer<Utf8> pluginName);
 
-final DartRegisterPluginByteCode _registerPluginByteCode = KrakenDynamicLibrary
+final DartRegisterPluginByteCode _registerPluginByteCode = WebFDynamicLibrary
     .ref
     .lookup<NativeFunction<NativeRegisterPluginByteCode>>(
     'registerPluginByteCode')
@@ -410,13 +410,13 @@ void clearUICommand(int contextId) {
 }
 
 void flushUICommandWithContextId(int contextId) {
-  KrakenController? controller = KrakenController.getControllerOfJSContextId(contextId);
+  WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   if (controller != null) {
     flushUICommand(controller.view);
   }
 }
 
-void flushUICommand(KrakenViewController view) {
+void flushUICommand(WebFViewController view) {
   Pointer<Uint64> nativeCommandItems =
   _getUICommandItems(view.contextId);
   int commandLength = _getUICommandItemSize(view.contextId);
@@ -432,7 +432,7 @@ void flushUICommand(KrakenViewController view) {
   List<UICommand> commands = readNativeUICommandToDart(
       nativeCommandItems, commandLength, view.contextId);
 
-  SchedulerBinding.instance!.scheduleFrame();
+  SchedulerBinding.instance.scheduleFrame();
 
   if (kProfileMode) {
     PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_END);

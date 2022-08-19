@@ -66,38 +66,6 @@ struct Converter<IDLOptional<T>, std::enable_if_t<std::is_pointer<typename Conve
   }
 };
 
-// Nullable value for pointer value
-template <typename T>
-struct Converter<IDLNullable<T>, std::enable_if_t<std::is_pointer<typename Converter<T>::ImplType>::value>>
-    : public ConverterBase<IDLNullable<T>> {
-  using ImplType = typename Converter<T>::ImplType;
-
-  static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
-    if (JS_IsNull(value)) {
-      return nullptr;
-    }
-    return Converter<T>::FromValue(ctx, value, exception_state);
-  }
-
-  static ImplType ArgumentsValue(ExecutingContext* context,
-                                 JSValue value,
-                                 uint32_t argv_index,
-                                 ExceptionState& exception_state) {
-    if (JS_IsNull(value)) {
-      return nullptr;
-    }
-    return Converter<T>::ArgumentsValue(context, value, argv_index, exception_state);
-  }
-
-  static JSValue ToValue(JSContext* ctx, typename Converter<T>::ImplType value) {
-    if (value == nullptr) {
-      return JS_NULL;
-    }
-
-    return Converter<T>::ToValue(ctx, value);
-  }
-};
-
 template <typename T>
 struct Converter<IDLOptional<T>, std::enable_if_t<is_shared_ptr<typename Converter<T>::ImplType>::value>>
     : public ConverterBase<IDLOptional<T>> {
@@ -450,18 +418,35 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T
   static JSValue ToValue(JSContext* ctx, const T* value) { return value->ToQuickJS(); }
 };
 
-// template <>
-// struct Converter<Window> : public ConverterBase<Window> {
-//  static Window* FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
-//    return toScriptWrappable<Window>(value);
-//  }
-//  static JSValue ToValue(JSContext* ctx, Window* window) {
-//    return JS_DupValue(ctx, window->GetExecutingContext()->Global());
-//  }
-//  static JSValue ToValue(JSContext* ctx, const Window* window) {
-//    return JS_DupValue(ctx, window->GetExecutingContext()->Global());
-//  }
-//};
+template <typename T>
+struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T>::value>>> : ConverterBase<T> {
+  static T* FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    if (JS_IsNull(value)) {
+      return nullptr;
+    }
+    return Converter<T>::FromValue(ctx, value, exception_state);
+  }
+
+  static T* ArgumentsValue(ExecutingContext* context,
+                                 JSValue value,
+                                 uint32_t argv_index,
+                                 ExceptionState& exception_state) {
+    if (JS_IsNull(value)) {
+      return nullptr;
+    }
+    return Converter<T>::ArgumentsValue(context, value, argv_index, exception_state);
+  }
+
+  static JSValue ToValue(JSContext* ctx, T* value) {
+    if (value == nullptr) return JS_NULL;
+    return Converter<T>::ToValue(ctx, value);
+  }
+
+  static JSValue ToValue(JSContext* ctx, const T* value) {
+    if (value == nullptr) return JS_NULL;
+    return Converter<T>::ToValue(ctx, value);
+  }
+};
 
 };  // namespace webf
 

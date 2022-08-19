@@ -29,7 +29,7 @@ typedef DartAsyncAnonymousFunctionCallback = void Function(
 void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> returnValue, Pointer<NativeString> nativeMethod, int argc, Pointer<NativeValue> argv) {
   String method = nativeStringToString(nativeMethod);
   List<dynamic> values = List.generate(argc, (i) {
-    Pointer<NativeValue> nativeVal ue = argv.elementAt(i);
+    Pointer<NativeValue> nativeValue = argv.elementAt(i);
     return fromNativeValue(nativeValue);
   });
 

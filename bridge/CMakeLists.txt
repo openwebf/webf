@@ -332,6 +332,22 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/error_event.h
     core/events/message_event.h
     core/events/message_event.cc
+    core/events/animation_event.cc
+    core/events/animation_event.h
+    core/events/close_event.cc
+    core/events/close_event.h
+    core/events/ui_event.cc
+    core/events/ui_event.h
+    core/events/focus_event.cc
+    core/events/focus_event.h
+    core/events/gesture_event.cc
+    core/events/gesture_event.h
+    core/events/input_event.cc
+    core/events/input_event.h
+    core/events/intersection_change_event.cc
+    core/events/intersection_change_event.h
+    core/events/keyboard_event.cc
+    core/events/keyboard_event.h
     core/events/promise_rejection_event.cc
     core/events/promise_rejection_event.h
     core/html/parser/html_parser.cc
@@ -394,92 +410,64 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   # Gen sources.
   list(APPEND BRIDGE_SOURCE
     out/qjs_console.cc
-    out/qjs_console.h
     out/qjs_module_manager.cc
-    out/qjs_module_manager.h
     out/qjs_window_or_worker_global_scope.cc
-    out/qjs_window_or_worker_global_scope.h
     out/qjs_window.cc
-    out/qjs_window.h
     out/qjs_location.cc
-    out/qjs_location.h
     out/qjs_blob.cc
-    out/qjs_blob.h
     out/qjs_event.cc
-    out/qjs_event.h
     out/qjs_add_event_listener_options.cc
-    out/qjs_add_event_listener_options.h
     out/qjs_event_listener_options.cc
-    out/qjs_event_listener_options.h
-    out/qjs_error_event.h
     out/qjs_error_event.cc
     out/qjs_message_event.cc
-    out/qjs_message_event.h
-    out/qjs_message_event_init.h
     out/qjs_message_event_init.cc
-    out/qjs_error_event_init.h
+    out/qjs_close_event.cc
+    out/qjs_close_event_init.cc
+    out/qjs_focus_event.cc
+    out/qjs_focus_event_init.cc
+    out/qjs_input_event.cc
+    out/qjs_input_event_init.cc
+    out/qjs_ui_event.cc
+    out/qjs_ui_event_init.cc
+    out/qjs_gesture_event.cc
+    out/qjs_gesture_event_init.cc
+    out/qjs_intersection_change_event.cc
+    out/qjs_intersection_change_event_init.cc
+    out/qjs_keyboard_event.cc
+    out/qjs_keyboard_event_init.cc
+    out/qjs_animation_event.cc
+    out/qjs_animation_event_init.cc
     out/qjs_error_event_init.cc
-    out/qjs_event_init.h
     out/qjs_event_init.cc
     out/qjs_event_target.cc
-    out/qjs_event_target.h
-    out/qjs_node.h
     out/qjs_node.cc
     out/qjs_document.cc
-    out/qjs_document.h
     out/qjs_element.cc
-    out/qjs_element.h
     out/qjs_element_attributes.cc
-    out/qjs_element_attributes.h
     out/qjs_character_data.cc
-    out/qjs_character_data.h
     out/qjs_comment.cc
-    out/qjs_comment.h
     out/qjs_document_fragment.cc
-    out/qjs_document_fragment.h
     out/qjs_bounding_client_rect.cc
-    out/qjs_bounding_client_rect.h
     out/qjs_css_style_declaration.cc
-    out/qjs_css_style_declaration.h
     out/qjs_text.cc
-    out/qjs_text.h
     out/qjs_screen.cc
-    out/qjs_screen.h
     out/qjs_node_list.cc
-    out/qjs_node_list.h
-    out/event_type_names.h
     out/event_type_names.cc
     out/built_in_string.cc
-    out/built_in_string.h
     out/binding_call_methods.cc
-    out/binding_call_methods.h
     out/qjs_scroll_options.cc
-    out/qjs_scroll_options.h
     out/qjs_scroll_to_options.cc
-    out/qjs_scroll_to_options.h
     out/qjs_html_element.cc
-    out/qjs_html_element.h
     out/qjs_html_div_element.cc
-    out/qjs_html_div_element.h
     out/qjs_html_head_element.cc
-    out/qjs_html_head_element.h
     out/qjs_html_body_element.cc
-    out/qjs_html_body_element.h
     out/qjs_html_html_element.cc
-    out/qjs_html_html_element.h
-    out/qjs_promise_rejection_event.h
     out/qjs_promise_rejection_event.cc
-    out/qjs_promise_rejection_event_init.h
     out/qjs_promise_rejection_event_init.cc
     out/qjs_html_template_element.cc
-    out/qjs_html_template_element.h
-    out/html_element_type_helper.h
     out/qjs_html_unknown_element.cc
-    out/qjs_html_unknown_element.h
     out/html_element_factory.cc
-    out/html_element_factory.h
     out/html_names.cc
-    out/html_names.h
     )
 
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
@@ -490,7 +478,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 endif ()
 
 list(APPEND PUBLIC_HEADER
-  include/webf_bridge.h
+        include/webf_bridge.h
   )
 
 add_library(webf SHARED ${BRIDGE_SOURCE})

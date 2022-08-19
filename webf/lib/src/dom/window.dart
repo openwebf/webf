@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:ui';
-import 'dart:ffi';
+import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart';
 
 import 'package:webf/bridge.dart';
@@ -19,7 +19,7 @@ class Window extends EventTarget {
   final Screen screen;
 
   Window(BindingContext? context, this.document)
-      : screen = Screen(BindingContext(context!.contextId, malloc.allocate(sizeOf<NativeBindingObject>()))), super(context);
+      : screen = Screen(BindingContext(context!.contextId, malloc.allocate(ffi.sizeOf<NativeBindingObject>()))), super(context);
 
   @override
   EventTarget? get parentEventTarget => null;

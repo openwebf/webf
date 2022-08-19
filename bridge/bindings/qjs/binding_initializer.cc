@@ -17,6 +17,14 @@
 #include "qjs_element_attributes.h"
 #include "qjs_error_event.h"
 #include "qjs_event.h"
+#include "qjs_ui_event.h"
+#include "qjs_animation_event.h"
+#include "qjs_close_event.h"
+#include "qjs_focus_event.h"
+#include "qjs_gesture_event.h"
+#include "qjs_input_event.h"
+#include "qjs_intersection_change_event.h"
+#include "qjs_keyboard_event.h"
 #include "qjs_event_target.h"
 #include "qjs_html_body_element.h"
 #include "qjs_html_div_element.h"
@@ -51,6 +59,14 @@ void InstallBindings(ExecutingContext* context) {
   QJSErrorEvent::Install(context);
   QJSPromiseRejectionEvent::Install(context);
   QJSMessageEvent::Install(context);
+  QJSUIEvent::Install(context);
+  QJSAnimationEvent::Install(context);
+  QJSCloseEvent::Install(context);
+  QJSFocusEvent::Install(context);
+  QJSGestureEvent::Install(context);
+  QJSInputEvent::Install(context);
+  QJSIntersectionChangeEvent::Install(context);
+  QJSKeyboardEvent::Install(context);
   QJSNode::Install(context);
   QJSNodeList::Install(context);
   QJSDocument::Install(context);

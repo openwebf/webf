@@ -22,6 +22,9 @@ export function getClassName(blob: IDLBlob) {
   if (raw.slice(0, 3) == 'css') {
     return 'CSS' + raw.slice(3);
   }
+  if (raw.slice(0, 2) == 'ui') {
+    return 'UI' + raw.slice(2);
+  }
 
   return `${raw[0].toUpperCase() + raw.slice(1)}`;
 }

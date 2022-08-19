@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:flutter/foundation.dart';
-import 'package:kraken/bridge.dart';
+import 'package:webf/bridge.dart';
 import 'dart:ffi';
 
 typedef BindingObjectOperation = void Function(BindingObject bindingObject);
