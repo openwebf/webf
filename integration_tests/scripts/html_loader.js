@@ -23,14 +23,16 @@ const traverseParseHTML = (ele, scripts) => {
 }
 
 const loader = function(source) {
-  const filename = path.basename(this.resourcePath)
+  const filepath = this.resourcePath
+  const filename = path.basename(filepath)
   const opts = this.query || {};
   const scripts = []
+  const testRelativePath = path.relative(opts.testPath, filepath)
   const snapshotFilepath = path.relative(
     opts.workspacePath,
     path.join(
       opts.snapshotPath,
-      path.relative(opts.testPath, filename),
+      testRelativePath,
     )
   );
 
@@ -48,7 +50,7 @@ const loader = function(source) {
   const htmlString = root.toString().replace(/\n/g, '');
 
   return `
-    describe('html-${path.basename(filename)}', () => {
+    describe('HTMLSpec/${testRelativePath}', () => {
       // Use html_parse to parser html in html file.
       const html_parse = () => __webf_parse_html__('${htmlString}');
 
