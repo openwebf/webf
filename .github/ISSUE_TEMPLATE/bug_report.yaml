@@ -1,0 +1,64 @@
+name: 🐛 Normal Bug Report
+description: Report a normal bug such as Webf Usage/Build Error/Performance.
+labels: bug
+
+body:
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: Affected version
+      description: Please specify which version of webf you are using.
+      placeholder: 0.12.0 or main
+  
+  - type: checkboxes
+    validations:
+      required: true
+    attributes:
+      label: No same issues found.
+      description: Please search already existed issues before you create. Make sure there are no duplicate questions.
+      options:
+        - label: Yes, I search all issues but not found.
+          required: true
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Steps to Reproduce
+      description: Provide a detailed list of steps that reproduce the issue.
+      placeholder: |
+        1. Create a emtpy div
+        2. Append to body
+        3. ...
+  
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Code example
+      description: |
+        Please provide a minimal code example that reproduces the problem.
+        You can use a repostory on Github or [Github Gist](https://gist.github.com) link.
+      placeholder: |
+        https://gist.github.com/xxx/xxx
+        or
+        ```
+        const div = document.createElement('div')
+        ```
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Expected results
+      description: What did you want to see?
+      placeholder: Please paste a picture or describe what did you want to see?
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Actual results
+      description: What did you see?
+      placeholder: What did you see?
