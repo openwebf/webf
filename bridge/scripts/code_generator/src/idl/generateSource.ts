@@ -406,6 +406,7 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
             if (!object.indexedProp.readonly) {
               wrapperTypeRegisterList.push(`StringPropertySetterCallback`);
             }
+            wrapperTypeRegisterList.push('StringPropertyCheckerCallback');
           }
         }
 

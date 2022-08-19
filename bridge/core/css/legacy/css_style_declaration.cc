@@ -6,6 +6,7 @@
 #include <vector>
 #include "core/dom/element.h"
 #include "core/executing_context.h"
+#include "css_property_list.h"
 
 namespace webf {
 
@@ -106,6 +107,10 @@ std::string CSSStyleDeclaration::ToString() const {
 
   s += "\"";
   return s;
+}
+
+bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {
+  return cssPropertyList.count(key.ToStdString()) > 0;
 }
 
 AtomicString CSSStyleDeclaration::InternalGetPropertyValue(std::string& name) {

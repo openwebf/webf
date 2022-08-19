@@ -90,8 +90,7 @@ TEST(Element, style) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
-  const char* code = "console.log(Object.keys(document.body))";
+  const char* code = "console.log('borderTop' in document.body.style, 'borderXXX' in document.body.style)";
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }

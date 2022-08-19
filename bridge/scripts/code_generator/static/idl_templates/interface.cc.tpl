@@ -31,6 +31,16 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     }
     return Converter<<%= generateIDLTypeConverter(object.indexedProp.type) %>>::ToValue(ctx, result);
   };
+  bool QJS<%= className %>::StringPropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
+    auto* self = toScriptWrappable<<%= className %>>(obj);
+    ExceptionState exception_state;
+    MemberMutationScope scope{ExecutingContext::From(ctx)};
+    bool result = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
+    if (UNLIKELY(exception_state.HasException())) {
+      return false;
+    }
+    return result;
+  }
   <% } %>
   <% if (!object.indexedProp.readonly) { %>
     <% if (object.indexedProp.indexKeyType == 'number') { %>

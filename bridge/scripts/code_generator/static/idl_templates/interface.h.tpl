@@ -23,6 +23,7 @@ class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= c
   static JSValue IndexedPropertyGetterCallback(JSContext* ctx, JSValue obj, uint32_t index);
   <% } else { %>
   static JSValue StringPropertyGetterCallback(JSContext* ctx, JSValue obj, JSAtom key);
+  static bool StringPropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom atom);
   <% } %>
   <% if (!object.indexedProp.readonly) { %>
 
