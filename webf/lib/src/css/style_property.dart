@@ -13,6 +13,7 @@ const String _comma = ', ';
 const String _0s = '0s';
 const String _0 = '0';
 const String _1 = '1';
+const String _0Percent = '0%';
 
 // Origin version: https://github.com/jedmao/css-list-helpers/blob/master/src/index.ts
 List<String> _splitBySpace(String value) {
@@ -720,9 +721,13 @@ class CSSStyleProperty {
               CSSPercentage.isPercentage(value) ||
               value == AUTO))) {
         basis = value;
-      } else {
+      }
+      else {
         return null;
       }
+    }
+    if (basis == null && values.length <=2) {
+      basis = _0Percent;
     }
 
     return [grow ?? _1, shrink ?? _1, basis ?? _0];

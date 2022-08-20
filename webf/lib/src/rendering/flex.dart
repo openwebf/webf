@@ -306,6 +306,13 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (maxMainSize != null && flexBasis > maxMainSize) flexBasis = maxMainSize;
       }
 
+      ///  https://www.w3.org/TR/2018/CR-css-flexbox-1-20181119/#flex-basis-property
+      ///  percentage values of flex-basis are resolved against the flex item’s containing block (i.e. its flex container);
+      ///  and if that containing block’s size is indefinite, the used value for flex-basis is content.
+      if (flexBasis !=null && flexBasis == 0 && child.renderStyle.flexBasis?.type ==  CSSLengthType.PERCENTAGE) {
+        flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
+      }
+
       return flexBasis;
     }
     return null;

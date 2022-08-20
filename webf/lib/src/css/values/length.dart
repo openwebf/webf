@@ -550,7 +550,7 @@ class CSSLength {
       }
     }
 
-    if (value == 0) {
+    if (value == 0 && propertyName != FLEX_BASIS) {
       return CSSLengthValue.zero;
     } else if (value == null) {
       return CSSLengthValue.unknown;
