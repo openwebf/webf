@@ -32,6 +32,7 @@ export class PropsDeclaration {
   typeMode: ParameterMode;
   name: string;
   readonly: boolean;
+  optional: boolean;
 }
 
 export class IndexedPropertyDeclaration extends PropsDeclaration {

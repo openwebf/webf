@@ -68,12 +68,12 @@ export function generateTypeValue(type: ParameterType[]): string {
   return '';
 }
 
-export function generateIDLTypeConverter(type: ParameterType[]): string {
+export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boolean): string {
   let haveNull = type.some(t => t === FunctionArgumentType.null);
   let returnValue = '';
 
   if (type[0] === FunctionArgumentType.array) {
-    returnValue = `IDLSequence<${generateIDLTypeConverter(type.slice(1))}>`;
+    returnValue = `IDLSequence<${generateIDLTypeConverter(type.slice(1), isOptional)}>`;
   } else if (typeof type[0] === 'string') {
     returnValue = type[0];
   } else {
@@ -108,6 +108,8 @@ export function generateIDLTypeConverter(type: ParameterType[]): string {
 
   if (haveNull) {
     returnValue = `IDLNullable<${returnValue}>`;
+  } else if (isOptional) {
+    returnValue = `IDLOptional<${returnValue}>`;
   }
 
   return returnValue;
@@ -189,6 +191,10 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   isConstructor: false,
   isInstanceMethod: false
 }) {
+  if (options.isConstructor && declaration.returnType[0] == FunctionArgumentType.void) {
+    return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
+  }
+
   let minimalRequiredArgc = 0;
   declaration.args.forEach(m => {
     if (m.required) minimalRequiredArgc++;
@@ -224,6 +230,7 @@ ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${min
   } else {
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
+
 
   return `${requiredArgumentsInit.join('\n')}
 if (argc <= ${minimalRequiredArgc}) {

@@ -6,6 +6,7 @@
 #define BRIDGE_CORE_EVENTS_FOCUS_EVENT_H_
 
 #include "bindings/qjs/dictionary_base.h"
+#include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
 #include "qjs_focus_event_init.h"
@@ -55,7 +56,7 @@ class FocusEvent : public UIEvent {
   EventTarget* relatedTarget() const;
 
  private:
-  EventTarget* related_target_;
+  Member<EventTarget> related_target_;
 };
 
 }  // namespace webf

@@ -71,67 +71,31 @@ endif()
 
 list(APPEND BRIDGE_SOURCE
   webf_bridge.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
   foundation/logging.cc
-  foundation/logging.h
-  foundation/colors.h
   foundation/native_string.cc
-  foundation/native_string.h
-  foundation/ref_counted_internal.h
-  foundation/ref_counter.h
-  foundation/ref_ptr.h
-  foundation/ref_ptr_internal.h
-  foundation/ui_task_queue.h
   foundation/ui_task_queue.cc
-  foundation/inspector_task_queue.h
   foundation/inspector_task_queue.cc
   foundation/task_queue.cc
-  foundation/task_queue.h
   foundation/string_view.cc
-  foundation/string_view.h
   foundation/native_value.cc
-  foundation/native_value.h
-  foundation/native_type.h
-  foundation/native_value_converter.h
   foundation/native_value_converter.cc
-  foundation/casting.h
   foundation/ui_command_buffer.cc
-  foundation/ui_command_buffer.h
   polyfill/dist/polyfill.cc
   )
 
 list(APPEND GUMBO_PARSER
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/attribute.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/attribute.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/char_ref.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/char_ref.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/error.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/error.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/gumbo.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/insertion_mode.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/parser.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/parser.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_buffer.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_buffer.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_piece.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_piece.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tag_enum.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tag_gperf.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tag_sizes.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tag_strings.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tag.c
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_piece.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_piece.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/token_type.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tokenizer_states.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tokenizer.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tokenizer.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/utf8.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/utf8.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/util.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/util.h
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/vector.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/vector.h
   )
 
 list(APPEND BRIDGE_INCLUDE
@@ -156,20 +120,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
   list(APPEND QUICK_JS_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libbf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libbf.h
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/cutils.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/cutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libregexp.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libregexp.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libregexp-opcode.h
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libunicode.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libunicode.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libunicode-table.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/list.h
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/quickjs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/quickjs.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/quickjs-atom.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/quickjs-opcode.h
     )
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
@@ -182,229 +136,103 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
   list(APPEND BRIDGE_SOURCE
     # Binding files
-    bindings/qjs/idl_type.h
-    bindings/qjs/converter.h
-    bindings/qjs/converter_impl.h
     bindings/qjs/dictionary_base.cc
-    bindings/qjs/dictionary_base.h
     bindings/qjs/js_based_event_listener.cc
-    bindings/qjs/js_based_event_listener.h
     bindings/qjs/js_event_handler.cc
-    bindings/qjs/js_event_handler.h
     bindings/qjs/js_event_listener.cc
-    bindings/qjs/js_event_listener.h
     bindings/qjs/binding_initializer.cc
-    bindings/qjs/binding_initializer.h
     bindings/qjs/member_installer.cc
-    bindings/qjs/member_installer.h
     bindings/qjs/source_location.cc
-    bindings/qjs/source_location.h
-    bindings/qjs/cppgc/garbage_collected.h
     bindings/qjs/cppgc/gc_visitor.cc
-    bindings/qjs/cppgc/gc_visitor.h
     bindings/qjs/cppgc/mutation_scope.cc
-    bindings/qjs/cppgc/mutation_scope.h
-    bindings/qjs/cppgc/member.h
-    bindings/qjs/cppgc/local_handle.h
     bindings/qjs/script_wrappable.cc
-    bindings/qjs/script_wrappable.h
-    bindings/qjs/wrapper_type_info.h
-    bindings/qjs/heap_hashmap.h
     bindings/qjs/native_string_utils.cc
-    bindings/qjs/native_string_utils.h
     bindings/qjs/qjs_engine_patch.cc
-    bindings/qjs/qjs_engine_patch.h
     bindings/qjs/qjs_function.cc
-    bindings/qjs/qjs_function.h
     bindings/qjs/script_value.cc
-    bindings/qjs/script_value.h
     bindings/qjs/script_promise.cc
-    bindings/qjs/script_promise.h
-    bindings/qjs/to_quickjs.h
-    bindings/qjs/qjs_interface_bridge.h
     bindings/qjs/script_promise_resolver.cc
-    bindings/qjs/script_promise_resolver.h
     bindings/qjs/atomic_string.cc
-    bindings/qjs/atomic_string.h
-    bindings/qjs/generated_code_helper.h
     bindings/qjs/exception_state.cc
-    bindings/qjs/exception_state.h
     bindings/qjs/exception_message.cc
-    bindings/qjs/exception_message.h
-    bindings/qjs/rejected_promises.h
     bindings/qjs/rejected_promises.cc
     bindings/qjs/pending_promises.cc
-    bindings/qjs/pending_promises.h
-
     # Core sources
     core/executing_context.cc
-    core/executing_context.h
     core/script_state.cc
-    core/script_state.h
-    core/page.h
     core/page.cc
     core/executing_context_data.cc
-    core/executing_context_data.h
-    core/dart_methods.h
-    core/dart_methods.h
-    core/fileapi/blob.h
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc
-    core/fileapi/blob_part.h
     core/fileapi/blob_property_bag.cc
-    core/fileapi/blob_property_bag.h
     core/frame/console.cc
-    core/frame/console.h
     core/frame/dom_timer.cc
-    core/frame/dom_timer.h
     core/frame/dom_timer_coordinator.cc
-    core/frame/dom_timer_coordinator.h
     core/frame/window_or_worker_global_scope.cc
-    core/frame/window_or_worker_global_scope.h
     core/frame/module_listener.cc
-    core/frame/module_listener.h
     core/frame/module_listener_container.cc
-    core/frame/module_listener_container.h
     core/frame/module_manager.cc
-    core/frame/module_manager.h
     core/frame/module_callback.cc
-    core/frame/module_callback.h
     core/frame/module_callback_coordinator.cc
-    core/frame/window.h
     core/frame/window.cc
-    core/frame/screen.h
     core/frame/screen.cc
     core/frame/legacy/location.cc
-    core/frame/legacy/location.h
-    core/frame/module_callback_coordinator.h
-    core/frame/window_event_handlers.h
+    core/timing/performance.cc
     core/css/legacy/css_style_declaration.cc
-    core/css/legacy/css_style_declaration.h
     core/dom/frame_request_callback_collection.cc
-    core/dom/frame_request_callback_collection.h
-    core/dom/events/event_listener.h
     core/dom/events/registered_eventListener.cc
-    core/dom/events/registered_eventListener.h
     core/dom/events/event_listener_map.cc
-    core/dom/events/event_listener_map.h
-    core/dom/events/event.h
     core/dom/events/event.cc
-    core/dom/events/event_target.h
     core/dom/events/event_target.cc
     core/dom/events/event_listener_map.cc
     core/dom/events/event_target_impl.cc
-    core/dom/events/event_target_impl.h
-    core/dom/binding_object.h
     core/dom/binding_object.cc
     core/dom/node.cc
-    core/dom/node.h
     core/dom/node_traversal.cc
-    core/dom/node_traversal.h
     core/dom/character_data.cc
-    core/dom/character_data.h
     core/dom/comment.cc
-    core/dom/comment.h
     core/dom/text.cc
-    core/dom/text.h
     core/dom/tree_scope.cc
-    core/dom/tree_scope.h
     core/dom/element.cc
-    core/dom/element.h
-    core/dom/element_traversal.h
     core/dom/document.cc
-    core/dom/document.h
-    core/dom/global_event_handlers.h
     core/dom/scripted_animation_controller.cc
-    core/dom/scripted_animation_controller.h
     core/dom/node_data.cc
-    core/dom/node_data.h
-    core/dom/document_fragment.h
     core/dom/document_fragment.cc
-    core/dom/collection_index_cache.h
     core/dom/child_node_list.cc
-    core/dom/child_node_list.h
     core/dom/empty_node_list.cc
-    core/dom/empty_node_list.h
-    core/dom/node_list.h
     core/dom/container_node.cc
-    core/dom/container_node.h
     core/events/error_event.cc
-    core/events/error_event.h
-    core/events/message_event.h
     core/events/message_event.cc
     core/events/animation_event.cc
-    core/events/animation_event.h
     core/events/close_event.cc
-    core/events/close_event.h
     core/events/ui_event.cc
-    core/events/ui_event.h
     core/events/focus_event.cc
-    core/events/focus_event.h
     core/events/gesture_event.cc
-    core/events/gesture_event.h
     core/events/input_event.cc
-    core/events/input_event.h
     core/events/intersection_change_event.cc
-    core/events/intersection_change_event.h
     core/events/keyboard_event.cc
-    core/events/keyboard_event.h
     core/events/promise_rejection_event.cc
-    core/events/promise_rejection_event.h
     core/html/parser/html_parser.cc
-    core/html/parser/html_parser.h
     core/html/html_collection.cc
-    core/html/html_collection.h
     core/html/html_element.cc
-    core/html/html_element.h
     core/html/html_div_element.cc
-    core/html/html_div_element.h
     core/html/html_head_element.cc
-    core/html/html_head_element.h
-    core/html/html_body_element.h
     core/html/html_body_element.cc
     core/html/html_html_element.cc
-    core/html/html_html_element.h
     core/html/html_template_element.cc
-    core/html/html_template_element.h
-
-#    core/html/html_anchor_element.h
 #    core/html/html_anchor_element.cc
 #    core/html/html_template_element.cc
-#    core/html/html_template_element.h
 #    core/html/forms/html_input_element.cc
-#    core/html/forms/html_input_element.h
 #    core/html/forms/html_textarea_element.cc
-#    core/html/forms/html_textarea_element.h
 #    core/html/html_image_element.cc
-#    core/html/html_image_element.h
 #    core/html/html_script_element.cc
-#    core/html/html_script_element.h
-          core/html/html_unknown_element.cc
-          core/html/html_unknown_element.h
-          # Legacy implements, should remove them in the future.
-          core/dom/legacy/space_split_string.cc
-          core/dom/legacy/space_split_string.h
-          core/dom/legacy/element_attributes.cc
-          core/dom/legacy/element_attributes.h
-          core/dom/legacy/bounding_client_rect.cc
-          core/dom/legacy/bounding_client_rect.h
-          core/timing/performance.cc
-          core/timing/performance.h
-
-          #    core/dom/character_data.cc
-          #    core/dom/character_data.h
-          #    core/dom/comment.cc
-          #    core/dom/comment.h
-          #    core/dom/node.cc
-          #    core/dom/node.h
-          #    core/dom/events/custom_event.cc
-          #    core/dom/events/custom_event.h
-          #    core/dom/events/event.h
-#    core/dom/events/event.cc
-#    core/dom/events/event_listener_map.cc
-#    core/dom/events/event_listener_map.h
-#    core/dom/events/event_target.cc
-#    core/dom/events/event_target.h
+    core/html/html_unknown_element.cc
+    # Legacy implements, should remove them in the future.
+    core/dom/legacy/space_split_string.cc
+    core/dom/legacy/element_attributes.cc
+    core/dom/legacy/bounding_client_rect.cc
+    core/input/touch.cc
+    core/input/touch_list.cc
     )
 
   # Gen sources.
@@ -433,6 +261,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_gesture_event_init.cc
     out/qjs_intersection_change_event.cc
     out/qjs_intersection_change_event_init.cc
+    out/qjs_touch.cc
+    out/qjs_touch_init.cc
+    out/qjs_touch_list.cc
     out/qjs_keyboard_event.cc
     out/qjs_keyboard_event_init.cc
     out/qjs_animation_event.cc

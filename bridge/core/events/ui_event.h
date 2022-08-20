@@ -6,6 +6,8 @@
 #define BRIDGE_CORE_EVENTS_UI_EVENT_H_
 
 #include "bindings/qjs/dictionary_base.h"
+#include "bindings/qjs/cppgc/member.h"
+#include "core/frame/window.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
 #include "qjs_ui_event_init.h"
@@ -58,7 +60,7 @@ class UIEvent : public Event {
 
  private:
   double detail_;
-  Window* view_;
+  Member<Window> view_;
   double which_;
 };
 

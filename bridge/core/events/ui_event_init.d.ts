@@ -5,9 +5,9 @@ import {UIEvent} from "./ui_event";
 // @ts-ignore
 @Dictionary()
 export interface UIEventInit extends EventInit {
-    detail: number;
-    view: Window | null;
+    detail?: number;
+    view?: Window | null;
     /** @deprecated */
-    which: number;
+    which?: number;
     new(type: string, init?: UIEventInit): UIEvent;
 }

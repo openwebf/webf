@@ -3,6 +3,7 @@
  */
 
 #include "ui_event.h"
+#include "core/frame/window.h"
 
 namespace webf {
 

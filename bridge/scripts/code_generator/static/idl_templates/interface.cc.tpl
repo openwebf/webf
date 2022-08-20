@@ -18,7 +18,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
       return exception_state.ToQuickJS();
     }
 
-    return Converter<<%= generateIDLTypeConverter(object.indexedProp.type) %>>::ToValue(ctx, result);
+    return Converter<<%= generateIDLTypeConverter(object.indexedProp.type, object.indexedProp.optional) %>>::ToValue(ctx, result);
   };
   <% } else { %>
   JSValue QJS<%= className %>::StringPropertyGetterCallback(JSContext* ctx, JSValue obj, JSAtom key) {
@@ -29,7 +29,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     if (UNLIKELY(exception_state.HasException())) {
       return exception_state.ToQuickJS();
     }
-    return Converter<<%= generateIDLTypeConverter(object.indexedProp.type) %>>::ToValue(ctx, result);
+    return Converter<<%= generateIDLTypeConverter(object.indexedProp.type, object.indexedProp.optional) %>>::ToValue(ctx, result);
   };
   bool QJS<%= className %>::StringPropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
     auto* self = toScriptWrappable<<%= className %>>(obj);
@@ -48,7 +48,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     auto* self = toScriptWrappable<<%= className %>>(obj);
     ExceptionState exception_state;
     MemberMutationScope scope{ExecutingContext::From(ctx)};
-    auto&& v = Converter<<%= generateIDLTypeConverter(object.indexedProp.type) %>>::FromValue(ctx, value, exception_state);
+    auto&& v = Converter<<%= generateIDLTypeConverter(object.indexedProp.type, object.indexedProp.optional) %>>::FromValue(ctx, value, exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return false;
     }
@@ -63,7 +63,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     auto* self = toScriptWrappable<<%= className %>>(obj);
     ExceptionState exception_state;
     MemberMutationScope scope{ExecutingContext::From(ctx)};
-    auto&& v = Converter<<%= generateIDLTypeConverter(object.indexedProp.type) %>>::FromValue(ctx, value, exception_state);
+    auto&& v = Converter<<%= generateIDLTypeConverter(object.indexedProp.type, object.indexedProp.optional) %>>::FromValue(ctx, value, exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return false;
     }
@@ -110,16 +110,16 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   if (UNLIKELY(exception_state.HasException())) {
     return exception_state.ToQuickJS();
   }
-  return Converter<<%= generateIDLTypeConverter(prop.type) %>>::ToValue(ctx, v);
+  return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, v);
   <% } else { %>
-  return Converter<<%= generateIDLTypeConverter(prop.type) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>());
+  return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>());
   <% } %>
 }
 <% if (!prop.readonly) { %>
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   ExceptionState exception_state;
-  auto&& v = Converter<<%= generateIDLTypeConverter(prop.type) %>>::FromValue(ctx, argv[0], exception_state);
+  auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }
@@ -148,13 +148,13 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   assert(<%= blob.filename %> != nullptr);
   MemberMutationScope scope{ExecutingContext::From(ctx)};
-  return Converter<<%= generateIDLTypeConverter(prop.type) %>>::ToValue(ctx, <%= object.name %>::<%= prop.name %>(*<%= blob.filename %>));
+  return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= object.name %>::<%= prop.name %>(*<%= blob.filename %>));
 }
 <% if (!prop.readonly) { %>
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   ExceptionState exception_state;
-  auto&& v = Converter<<%= generateIDLTypeConverter(prop.type) %>>::FromValue(ctx, argv[0], exception_state);
+  auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }

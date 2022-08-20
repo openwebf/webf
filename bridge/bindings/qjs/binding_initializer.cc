@@ -23,6 +23,8 @@
 #include "qjs_focus_event.h"
 #include "qjs_gesture_event.h"
 #include "qjs_input_event.h"
+#include "qjs_touch.h"
+#include "qjs_touch_list.h"
 #include "qjs_intersection_change_event.h"
 #include "qjs_keyboard_event.h"
 #include "qjs_event_target.h"
@@ -56,10 +58,10 @@ void InstallBindings(ExecutingContext* context) {
   QJSEventTarget::Install(context);
   QJSWindow::Install(context);
   QJSEvent::Install(context);
+  QJSUIEvent::Install(context);
   QJSErrorEvent::Install(context);
   QJSPromiseRejectionEvent::Install(context);
   QJSMessageEvent::Install(context);
-  QJSUIEvent::Install(context);
   QJSAnimationEvent::Install(context);
   QJSCloseEvent::Install(context);
   QJSFocusEvent::Install(context);
@@ -85,6 +87,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);
   QJSBlob::Install(context);
+  QJSTouch::Install(context);
+  QJSTouchList::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

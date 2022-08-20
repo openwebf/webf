@@ -183,6 +183,9 @@ function walkProgram(statement: ts.Statement) {
               let mode = new ParameterMode();
               prop.type = getParameterType(propKind, mode);
               prop.typeMode = mode;
+              if (member.questionToken) {
+                prop.optional = true;
+              }
               if (prop.type[0] === FunctionArgumentType.function) {
                 let f = (m.type as ts.FunctionTypeNode);
                 let functionProps = prop as FunctionDeclaration;

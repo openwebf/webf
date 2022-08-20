@@ -4,6 +4,7 @@
 
 #include "focus_event.h"
 #include "core/dom/events/event_target.h"
+#include "core/frame/window.h"
 
 namespace webf {
 
