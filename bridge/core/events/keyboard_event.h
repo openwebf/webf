@@ -25,18 +25,14 @@ class KeyboardEvent : public UIEvent {
   };
   using ImplType = KeyboardEvent*;
 
-  static KeyboardEvent* Create(ExecutingContext* context,
-                               const AtomicString& type,
-                               ExceptionState& exception_state);
+  static KeyboardEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   static KeyboardEvent* Create(ExecutingContext* context,
                                const AtomicString& type,
                                const std::shared_ptr<KeyboardEventInit>& initializer,
                                ExceptionState& exception_state);
 
-  explicit KeyboardEvent(ExecutingContext* context,
-                         const AtomicString& type,
-                         ExceptionState& exception_state);
+  explicit KeyboardEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   explicit KeyboardEvent(ExecutingContext* context,
                          const AtomicString& type,

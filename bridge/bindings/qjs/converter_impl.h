@@ -419,7 +419,8 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T
 };
 
 template <typename T>
-struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T>::value>>> : ConverterBase<T> {
+struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T>::value>>>
+    : ConverterBase<T> {
   static T* FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
     if (JS_IsNull(value)) {
       return nullptr;
@@ -428,9 +429,9 @@ struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<Script
   }
 
   static T* ArgumentsValue(ExecutingContext* context,
-                                 JSValue value,
-                                 uint32_t argv_index,
-                                 ExceptionState& exception_state) {
+                           JSValue value,
+                           uint32_t argv_index,
+                           ExceptionState& exception_state) {
     if (JS_IsNull(value)) {
       return nullptr;
     }
@@ -438,12 +439,14 @@ struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<Script
   }
 
   static JSValue ToValue(JSContext* ctx, T* value) {
-    if (value == nullptr) return JS_NULL;
+    if (value == nullptr)
+      return JS_NULL;
     return Converter<T>::ToValue(ctx, value);
   }
 
   static JSValue ToValue(JSContext* ctx, const T* value) {
-    if (value == nullptr) return JS_NULL;
+    if (value == nullptr)
+      return JS_NULL;
     return Converter<T>::ToValue(ctx, value);
   }
 };

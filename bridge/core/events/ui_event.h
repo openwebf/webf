@@ -5,13 +5,12 @@
 #ifndef BRIDGE_CORE_EVENTS_UI_EVENT_H_
 #define BRIDGE_CORE_EVENTS_UI_EVENT_H_
 
-#include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/cppgc/member.h"
-#include "core/frame/window.h"
+#include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
+#include "core/frame/window.h"
 #include "qjs_ui_event_init.h"
-
 
 namespace webf {
 
@@ -21,9 +20,7 @@ class UIEvent : public Event {
  public:
   using ImplType = UIEvent*;
 
-  static UIEvent* Create(ExecutingContext* context,
-                         const AtomicString& type,
-                         ExceptionState& exception_state);
+  static UIEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   static UIEvent* Create(ExecutingContext* context,
                          const AtomicString& type,
@@ -36,9 +33,7 @@ class UIEvent : public Event {
                          const std::shared_ptr<UIEventInit>& initializer,
                          ExceptionState& exception_state);
 
-  explicit UIEvent(ExecutingContext* context,
-                   const AtomicString& type,
-                   ExceptionState& exception_state);
+  explicit UIEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   explicit UIEvent(ExecutingContext* context,
                    const AtomicString& type,

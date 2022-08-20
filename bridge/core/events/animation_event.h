@@ -17,9 +17,7 @@ class AnimationEvent : public Event {
 
  public:
   using ImplType = AnimationEvent*;
-  static AnimationEvent* Create(ExecutingContext* context,
-                                const AtomicString& type,
-                                ExceptionState& exception_state);
+  static AnimationEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
   static AnimationEvent* Create(ExecutingContext* context,
                                 const AtomicString& type,
                                 const AtomicString& animation_name,

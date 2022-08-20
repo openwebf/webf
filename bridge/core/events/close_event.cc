@@ -26,7 +26,8 @@ CloseEvent* CloseEvent::Create(ExecutingContext* context,
   return MakeGarbageCollected<CloseEvent>(context, type, initializer, exception_state);
 }
 
-CloseEvent::CloseEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state): Event(context, type) {}
+CloseEvent::CloseEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
+    : Event(context, type) {}
 
 CloseEvent::CloseEvent(ExecutingContext* context,
                        const AtomicString& type,

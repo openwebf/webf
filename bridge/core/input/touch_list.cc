@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "touch_list.h"
@@ -23,9 +23,9 @@ bool TouchList::SetItem(uint32_t index, Touch* touch, ExceptionState& exception_
 }
 
 void TouchList::Trace(GCVisitor* visitor) const {
-  for(auto& item : values_) {
+  for (auto& item : values_) {
     item->Trace(visitor);
   }
 }
 
-}
+}  // namespace webf

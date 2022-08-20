@@ -1,7 +1,7 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef BRIDGE_CORE_EVENTS_GESTURE_EVENT_H_
 #define BRIDGE_CORE_EVENTS_GESTURE_EVENT_H_
@@ -19,23 +19,19 @@ class GestureEvent : public Event {
  public:
   using ImplType = GestureEvent*;
 
-  static GestureEvent* Create(ExecutingContext* context,
-                              const AtomicString& type,
-                              ExceptionState& exception_state);
+  static GestureEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   static GestureEvent* Create(ExecutingContext* context,
-                            const AtomicString& type,
-                            const std::shared_ptr<GestureEventInit>& initializer,
-                            ExceptionState& exception_state);
+                              const AtomicString& type,
+                              const std::shared_ptr<GestureEventInit>& initializer,
+                              ExceptionState& exception_state);
+
+  explicit GestureEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   explicit GestureEvent(ExecutingContext* context,
                         const AtomicString& type,
+                        const std::shared_ptr<GestureEventInit>& initializer,
                         ExceptionState& exception_state);
-
-  explicit GestureEvent(ExecutingContext* context,
-                      const AtomicString& type,
-                      const std::shared_ptr<GestureEventInit>& initializer,
-                      ExceptionState& exception_state);
 
   const AtomicString& state() const;
   const AtomicString& direction() const;
@@ -57,6 +53,6 @@ class GestureEvent : public Event {
   double rotation_;
 };
 
-}
+}  // namespace webf
 
 #endif  // BRIDGE_CORE_EVENTS_GESTURE_EVENT_H_

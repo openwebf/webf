@@ -7,11 +7,9 @@
 
 namespace webf {
 
-
 UIEvent* UIEvent::Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state) {
   return MakeGarbageCollected<UIEvent>(context, type, exception_state);
 }
-
 
 UIEvent* UIEvent::Create(ExecutingContext* context,
                          const AtomicString& type,
@@ -30,7 +28,8 @@ UIEvent* UIEvent::Create(ExecutingContext* context,
                                        exception_state);
 }
 
-UIEvent::UIEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state): Event(context, type) {}
+UIEvent::UIEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
+    : Event(context, type) {}
 
 UIEvent::UIEvent(ExecutingContext* context,
                  const AtomicString& type,

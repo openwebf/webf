@@ -7,7 +7,6 @@
 
 namespace webf {
 
-
 GestureEvent* GestureEvent::Create(ExecutingContext* context,
                                    const AtomicString& type,
                                    ExceptionState& exception_state) {
@@ -21,7 +20,8 @@ GestureEvent* GestureEvent::Create(ExecutingContext* context,
   return MakeGarbageCollected<GestureEvent>(context, type, initializer, exception_state);
 }
 
-GestureEvent::GestureEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state): Event(context, type) {}
+GestureEvent::GestureEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
+    : Event(context, type) {}
 
 GestureEvent::GestureEvent(ExecutingContext* context,
                            const AtomicString& type,

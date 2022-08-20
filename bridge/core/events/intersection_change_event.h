@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef BRIDGE_INTERSECTION_CHANGE_EVENT_H
@@ -15,6 +15,7 @@ namespace webf {
 
 class IntersectionChangeEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = IntersectionChangeEvent*;
 
@@ -23,14 +24,14 @@ class IntersectionChangeEvent : public Event {
                                          ExceptionState& exception_state);
 
   static IntersectionChangeEvent* Create(ExecutingContext* context,
-                            const AtomicString& type,
-                            const std::shared_ptr<IntersectionChangeEventInit>& initializer,
-                            ExceptionState& exception_state);
+                                         const AtomicString& type,
+                                         const std::shared_ptr<IntersectionChangeEventInit>& initializer,
+                                         ExceptionState& exception_state);
 
   explicit IntersectionChangeEvent(ExecutingContext* context,
-                      const AtomicString& type,
-                      const std::shared_ptr<IntersectionChangeEventInit>& initializer,
-                      ExceptionState& exception_state);
+                                   const AtomicString& type,
+                                   const std::shared_ptr<IntersectionChangeEventInit>& initializer,
+                                   ExceptionState& exception_state);
 
   explicit IntersectionChangeEvent(ExecutingContext* context,
                                    const AtomicString& type,
@@ -42,6 +43,6 @@ class IntersectionChangeEvent : public Event {
   double intersection_ratio_;
 };
 
-}
+}  // namespace webf
 
 #endif  // BRIDGE_INTERSECTION_CHANGE_EVENT_H

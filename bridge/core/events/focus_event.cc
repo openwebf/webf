@@ -29,7 +29,8 @@ FocusEvent* FocusEvent::Create(ExecutingContext* context,
   return MakeGarbageCollected<FocusEvent>(context, type, initializer, exception_state);
 }
 
-FocusEvent::FocusEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state): UIEvent(context, type, exception_state) {}
+FocusEvent::FocusEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
+    : UIEvent(context, type, exception_state) {}
 
 FocusEvent::FocusEvent(ExecutingContext* context,
                        const AtomicString& type,

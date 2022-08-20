@@ -24,17 +24,14 @@ class CloseEvent : public Event {
                             bool was_clean,
                             ExceptionState& exception_state);
 
-  static CloseEvent* Create(ExecutingContext* context,
-                            const AtomicString& type, ExceptionState& exception_state);
+  static CloseEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   static CloseEvent* Create(ExecutingContext* context,
                             const AtomicString& type,
                             const std::shared_ptr<CloseEventInit>& initializer,
                             ExceptionState& exception_state);
 
-  explicit CloseEvent(ExecutingContext* context,
-                      const AtomicString& type,
-                      ExceptionState& exception_state);
+  explicit CloseEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
   explicit CloseEvent(ExecutingContext* context,
                       const AtomicString& type,
                       int32_t code,
