@@ -9,6 +9,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
 import 'package:webf/widget.dart';
 
@@ -89,6 +90,31 @@ class Document extends Node {
     if (_loadEventDelayCount == 0) {
       controller.checkCompleted();
     }
+  }
+
+  @override
+  getBindingProperty(String key) {
+    switch (key) {
+      case 'querySelectorAll':
+        return querySelectorAll;
+      case 'querySelector':
+        return querySelector;
+    }
+    return super.getBindingProperty(key);
+  }
+
+  dynamic querySelector(List<dynamic> args) {
+    if (args.isEmpty || args.first is! String) {
+      return null;
+    }
+    return QuerySelector.querySelector(this, args.first);
+  }
+
+  dynamic querySelectorAll(List<dynamic> args) {
+    if (args.isEmpty || args.first is! String) {
+      return null;
+    }
+    return QuerySelector.querySelectorAll(this, args.first);
   }
 
   Element? _documentElement;

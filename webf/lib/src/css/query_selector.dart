@@ -31,6 +31,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 
+Element? querySelector(Node node, String selector) =>
+    SelectorEvaluator().querySelector(node, _parseSelectorGroup(selector));
+
+List<Element> querySelectorAll(Node node, String selector) {
+  final group = _parseSelectorGroup(selector);
+  final results = <Element>[];
+  SelectorEvaluator().querySelectorAll(node, group, results);
+  return results;
+}
+
+// http://dev.w3.org/csswg/selectors-4/#grouping
+SelectorGroup? _parseSelectorGroup(String selector) {
+  CSSParser parser = CSSParser(selector)..tokenizer.inSelector = true;
+  return parser.processSelectorGroup();
+}
+
 class SelectorEvaluator extends SelectorVisitor {
   Element? _element;
 
@@ -40,6 +56,22 @@ class SelectorEvaluator extends SelectorVisitor {
     }
     _element = element;
     return visitSelectorGroup(selector);
+  }
+
+  Element? querySelector(Node root, SelectorGroup? selector) {
+    for (var element in root.childNodes.whereType<Element>()) {
+      if (matchSelector(selector, element)) return element;
+      final result = querySelector(element, selector);
+      if (result != null) return result;
+    }
+    return null;
+  }
+
+  void querySelectorAll(Node root, SelectorGroup? selector, List<Element> results) {
+    for (var element in root.childNodes.whereType<Element>()) {
+      if (matchSelector(selector, element)) results.add(element);
+      querySelectorAll(element, selector, results);
+    }
   }
 
   @override

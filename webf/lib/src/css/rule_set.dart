@@ -19,6 +19,8 @@ class RuleSet {
   final CSSMap tagRules = HashMap();
   final List<CSSRule> universalRules = [];
 
+  int _lastPosition = 0;
+
   void addRules(List<CSSRule> rules) {
     for (CSSRule rule in rules) {
       addRule(rule);
@@ -26,6 +28,7 @@ class RuleSet {
   }
 
   void addRule(CSSRule rule) {
+    rule.position = _lastPosition++;
     if (rule is CSSStyleRule) {
       for (final selector in rule.selectorGroup.selectors) {
         findBestRuleSetAndAdd(selector, rule);
