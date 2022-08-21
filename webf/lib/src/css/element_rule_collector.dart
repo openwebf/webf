@@ -4,7 +4,7 @@
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/src/css/selector_evaluator.dart';
+import 'package:webf/src/css/query_selector.dart';
 
 class ElementRuleCollector {
   bool matchedAnyRule(RuleSet ruleSet, Element element) {

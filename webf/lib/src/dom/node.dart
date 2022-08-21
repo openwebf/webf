@@ -104,7 +104,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   int _frameCallbackId = 0;
 
   void childrenChanged() {
-    if (!this.isConnected) {
+    if (!isConnected) {
       return;
     }
     Node parent = this;
