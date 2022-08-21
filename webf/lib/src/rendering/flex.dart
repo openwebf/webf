@@ -309,7 +309,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       ///  https://www.w3.org/TR/2018/CR-css-flexbox-1-20181119/#flex-basis-property
       ///  percentage values of flex-basis are resolved against the flex item’s containing block (i.e. its flex container);
       ///  and if that containing block’s size is indefinite, the used value for flex-basis is content.
-      if (flexBasis !=null && flexBasis == 0 && child.renderStyle.flexBasis?.type ==  CSSLengthType.PERCENTAGE) {
+      if (flexBasis != null && flexBasis == 0 && child.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
         flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
       }
 
@@ -1185,7 +1185,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       double layoutContentMainSize = _isHorizontalFlexDirection ? contentSize.width : contentSize.height;
       // Flexbox with minSize on main axis when maxMainSize < minSize && maxMainSize < RenderBox.Size, adapt freeSpace
-      if (maxMainSize != null && (maxMainSize < _getMinMainAxisSize(this) || maxMainSize < layoutContentMainSize) && initialFreeSpace == 0) {
+      if (maxMainSize != null &&
+          (maxMainSize < _getMinMainAxisSize(this) || maxMainSize < layoutContentMainSize) &&
+          initialFreeSpace == 0) {
         maxMainSize = math.max(layoutContentMainSize, _getMinMainAxisSize(this));
         initialFreeSpace = maxMainSize - totalSpace;
       }

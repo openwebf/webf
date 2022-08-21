@@ -721,12 +721,11 @@ class CSSStyleProperty {
               CSSPercentage.isPercentage(value) ||
               value == AUTO))) {
         basis = value;
-      }
-      else {
+      } else {
         return null;
       }
     }
-    if (basis == null && values.length <=2) {
+    if (basis == null && values.length <= 2) {
       basis = _0Percent;
     }
 
