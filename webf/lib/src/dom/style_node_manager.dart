@@ -16,6 +16,10 @@ import 'package:webf/dom.dart';
 class StyleNodeManager {
   final List<Node> _styleSheetCandidateNodes = [];
 
+  final List<CSSStyleSheet> _pendingStyleSheets = [];
+
+  bool get hasPendingStyleSheet => _pendingStyleSheets.isNotEmpty;
+
   final Document document;
 
   StyleNodeManager(this.document);
@@ -41,8 +45,14 @@ class StyleNodeManager {
     _styleSheetCandidateNodes.insert(0, node);
   }
 
-  void removeStyleSheetCandidateNode(Node node) {
-    _styleSheetCandidateNodes.remove(node);
+  void removeStyleSheetCandidateNode(Node node) {}
+
+  void appendPendingStyleSheet(CSSStyleSheet styleSheet) {
+    _pendingStyleSheets.add(styleSheet);
+  }
+
+  void removePendingStyleSheet(CSSStyleSheet styleSheet) {
+    _pendingStyleSheets.removeWhere((element) => element == styleSheet);
   }
 
   void updateActiveStyleSheets() {
@@ -79,6 +89,7 @@ class StyleNodeManager {
         }
       }
     });
+    document.needsStyleRecalculate = true;
   }
 
   RuleSet analyzeStyleSheetChangeRuleSet(List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets) {

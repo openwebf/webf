@@ -14,6 +14,10 @@ class ElementRuleCollector {
   List<CSSRule> _matchedRules(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
 
+    if (ruleSet.rules.isEmpty) {
+      return matchedRules;
+    }
+
     // #id
     String? id = element.id;
     if (id != null) {

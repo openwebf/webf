@@ -140,6 +140,12 @@ class LinkElement extends Element {
     if (_resolvedHyperlink != null && _stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
       return;
     }
+    if (_resolvedHyperlink != null) {
+      _stylesheetLoaded.remove(_resolvedHyperlink.toString());
+    }
+    if (_styleSheet != null) {
+      ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
+    }
     Future.microtask(() {
       _fetchAndApplyCSSStyle();
     });
@@ -165,10 +171,12 @@ class LinkElement extends Element {
         ownerDocument.decrementRequestCount();
 
         final String cssString = await resolveStringFromData(bundle.data!);
-        _addCSSStyleSheet(cssString);
+        _styleSheet = CSSParser(cssString).parse();
+        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
+          ownerDocument.updateStyleIfNeeded();
           dispatchEvent(Event(EVENT_LOAD));
         });
       } catch (e) {
@@ -183,27 +191,22 @@ class LinkElement extends Element {
     }
   }
 
-  void _addCSSStyleSheet(String css) {
-    _styleSheet = CSSParser(css).parse();
-  }
-
   @override
   void connectedCallback() {
-    if (rel == _REL_STYLESHEET) {
-      ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
-    }
+    super.connectedCallback();
+    ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
     if (_resolvedHyperlink != null) {
       _fetchAndApplyCSSStyle();
     }
-    super.connectedCallback();
   }
 
   @override
   void disconnectedCallback() {
-    if (rel == _REL_STYLESHEET) {
-      ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
-    }
     super.disconnectedCallback();
+    if (_styleSheet != null) {
+      ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
+    }
+    ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
   }
 }
 
@@ -274,6 +277,9 @@ class StyleElement extends Element {
       } else {
         _styleSheet = CSSParser(text).parse();
       }
+      if (_styleSheet != null) {
+        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+      }
     }
   }
 
@@ -300,18 +306,19 @@ class StyleElement extends Element {
 
   @override
   void connectedCallback() {
+    super.connectedCallback();
     if (_type == _CSS_MIME) {
       if (_styleSheet == null) {
         _recalculateStyle();
       }
       ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
     }
-    super.connectedCallback();
   }
 
   @override
   void disconnectedCallback() {
     if (_styleSheet != null) {
+      ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
       ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
     }
     super.disconnectedCallback();
