@@ -14,7 +14,7 @@ class ElementRuleCollector {
   List<CSSRule> _matchedRules(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
 
-    if (ruleSet.rules.isEmpty) {
+    if (ruleSet.isEmpty) {
       return matchedRules;
     }
 
@@ -57,7 +57,7 @@ class ElementRuleCollector {
       }
       int isCompare = leftRule.selectorGroup.specificity.compareTo(rightRule.selectorGroup.specificity);
       if (isCompare == 0) {
-        return ruleSet.rules.indexOf(leftRule).compareTo(ruleSet.rules.indexOf(rightRule));
+        return leftRule.position.compareTo(rightRule.position);
       }
       return isCompare;
     });

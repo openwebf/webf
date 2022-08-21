@@ -195,7 +195,7 @@ class Document extends Node {
   }
 
   void updateStyleIfNeeded() {
-    if (!styleNodeManager.hasPendingStyleSheet) {
+    if (!ownerDocument.needsStyleRecalculate) {
       return;
     }
     styleNodeManager.updateActiveStyleSheets();

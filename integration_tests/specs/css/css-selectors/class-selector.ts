@@ -152,4 +152,12 @@ describe('css class selector', () => {
     document.body.appendChild(p8);
     await snapshot();
   });
+
+  it('010', async () => {
+    const style = <style>{`.rule1 { background: red; color: yellow; } .rule2 { background: green; color: white; }`}</style>;
+    const p = <p class="rule2 rule1" > 010 This should have a green background.< /p>;
+    document.head.appendChild(style);
+    document.body.appendChild(p);
+    await snapshot();   
+  });
 });

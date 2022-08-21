@@ -100,6 +100,9 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   // Children changed steps for node.
   // https://dom.spec.whatwg.org/#concept-node-children-changed-ext
+
+  int _frameCallbackId = 0;
+
   void childrenChanged() {
     if (!this.isConnected) {
       return;
@@ -110,11 +113,11 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       parent.needsStyleRecalculate = true;
       parent = parent.parentNode!;
     }
-
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!ownerDocument.needsStyleRecalculate) {
-        return;
-      }
+    ownerDocument.needsStyleRecalculate = true;
+    if (_frameCallbackId > 0) {
+      SchedulerBinding.instance.cancelFrameCallbackWithId(_frameCallbackId);
+    }
+    _frameCallbackId = SchedulerBinding.instance.scheduleFrameCallback((_) {
       ownerDocument.updateStyleIfNeeded();
     });
   }
@@ -284,14 +287,14 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       childNodes.remove(child);
       child.parentNode = null;
 
+      if (isConnected) {
+        child.disconnectedCallback();
+      }
+
       // To remove a node, run step 21 from the spec:
       // 21. Run the children changed steps for parent.
       // https://dom.spec.whatwg.org/#concept-node-remove
       childrenChanged();
-
-      if (isConnected) {
-        child.disconnectedCallback();
-      }
     }
     return child;
   }
@@ -368,12 +371,12 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     List<Node> chain2 = [];
     Node? current = this;
     while (current != null && current.parentNode != null) {
-      chain1.add(current);
+      chain1.insert(0, current);
       current = current.parentNode;
     }
     current = other;
     while (current != null && current.parentNode != null) {
-      chain2.add(current);
+      chain2.insert(0, current);
       current = current.parentNode;
     }
 
@@ -383,7 +386,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     }
 
     // Walk the two chains backwards and look for the first difference.
-    for (int i = 0; i < math.min(chain1.length, chain2.length) - 1; i++) {
+    for (int i = 0; i < math.min(chain1.length, chain2.length); i++) {
       if (chain1[i] != chain2[i]) {
         if (chain2[i].nextSibling == null) {
           return DocumentPosition.FOLLOWING;

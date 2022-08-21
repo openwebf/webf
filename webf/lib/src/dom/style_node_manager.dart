@@ -45,7 +45,9 @@ class StyleNodeManager {
     _styleSheetCandidateNodes.insert(0, node);
   }
 
-  void removeStyleSheetCandidateNode(Node node) {}
+  void removeStyleSheetCandidateNode(Node node) {
+    _styleSheetCandidateNodes.remove(node);
+  }
 
   void appendPendingStyleSheet(CSSStyleSheet styleSheet) {
     _pendingStyleSheets.add(styleSheet);
@@ -62,6 +64,9 @@ class StyleNodeManager {
     }
     newSheets = _collectActiveStyleSheets().where((element) => element.cssRules.isNotEmpty).toList();
     RuleSet changedRuleSet = analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
+    if (changedRuleSet.isEmpty) {
+      return;
+    }
     invalidateElementStyle(changedRuleSet);
     document.handleStyleSheets(newSheets);
   }
@@ -132,13 +137,19 @@ class StyleNodeManager {
 
     for (int index = 0; index < mergeSorted.length; index++) {
       CSSStyleSheet sheet = mergeSorted[index];
-      CSSStyleSheet sheet1 = mergeSorted[++index];
-      if (index == mergeSorted.length || sheet != sheet1) {
+      if (index + 1 < mergeSorted.length) {
+        ++index;
+      }
+      CSSStyleSheet sheet1 = mergeSorted[index];
+      if (index == mergeSorted.length - 1 || sheet != sheet1) {
         ruleSet.addRules(sheet1.cssRules);
         continue;
       }
 
-      CSSStyleSheet sheet2 = mergeSorted[++index];
+      if (index + 1 < mergeSorted.length) {
+        ++index;
+      }
+      CSSStyleSheet sheet2 = mergeSorted[index];
       if (equals(sheet1.cssRules, sheet2.cssRules)) {
         continue;
       }
