@@ -10,7 +10,8 @@ import 'package:webf/css.dart';
 typedef CSSMap = HashMap<String, List<CSSRule>>;
 
 class RuleSet {
-  final List<CSSRule> rules = [];
+  bool get isEmpty =>
+      idRules.isEmpty && classRules.isEmpty && attributeRules.isEmpty && tagRules.isEmpty && universalRules.isEmpty;
 
   final CSSMap idRules = HashMap();
   final CSSMap classRules = HashMap();
@@ -25,7 +26,6 @@ class RuleSet {
   }
 
   void addRule(CSSRule rule) {
-    rules.add(rule);
     if (rule is CSSStyleRule) {
       for (final selector in rule.selectorGroup.selectors) {
         findBestRuleSetAndAdd(selector, rule);
@@ -36,7 +36,6 @@ class RuleSet {
   }
 
   void reset() {
-    rules.clear();
     idRules.clear();
     classRules.clear();
     attributeRules.clear();

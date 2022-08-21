@@ -8,6 +8,8 @@ abstract class CSSRule {
   CSSStyleSheet? parentStyleSheet;
   CSSRule? parentRule;
 
+  int position = -1;
+
   // https://drafts.csswg.org/cssom/#dom-cssrule-type
   // The following attribute and constants are historical.
   int? type;

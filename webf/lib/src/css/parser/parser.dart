@@ -126,10 +126,12 @@ class CSSParser {
     return style;
   }
 
-  List<CSSRule> parseRules() {
+  List<CSSRule> parseRules({int startPosition = 0}) {
     var rules = <CSSRule>[];
+    int position = startPosition;
     while (!_maybeEat(TokenKind.END_OF_FILE)) {
       final rule = processRule();
+      rule?.position = position++;
       if (rule != null) {
         rules.add(rule);
       } else {
