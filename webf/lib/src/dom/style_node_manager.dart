@@ -11,7 +11,9 @@ import 'package:webf/dom.dart';
 /*
   Handling element style updates
   1. log all style element
-  2.
+  2. collect stylesheets
+  3. calculate changed rule set
+  4. invalidated element
  */
 class StyleNodeManager {
   final List<Node> _styleSheetCandidateNodes = [];

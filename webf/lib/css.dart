@@ -22,7 +22,7 @@ export 'src/css/border.dart';
 export 'src/css/gradient.dart';
 export 'src/css/render_style.dart';
 export 'src/css/rule.dart';
-export 'src/css/style_rule.dart';
+export 'src/css/css_rule.dart';
 export 'src/css/style_declaration.dart';
 export 'src/css/style_property.dart';
 export 'src/css/style_sheet.dart';

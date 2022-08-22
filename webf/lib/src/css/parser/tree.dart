@@ -32,8 +32,6 @@ part of 'parser.dart';
 
 /// The base type for all nodes in a CSS abstract syntax tree.
 abstract class TreeNode {
-  TreeNode clone();
-
   /// Classic double-dispatch visitor for implementing passes.
   dynamic visit(Visitor visitor) {}
 }
@@ -42,9 +40,6 @@ class Identifier extends TreeNode {
   String name;
 
   Identifier(this.name) : super();
-
-  @override
-  Identifier clone() => Identifier(name);
 
   @override
   String toString() {
@@ -57,22 +52,18 @@ class Identifier extends TreeNode {
 
 class Wildcard extends TreeNode {
   Wildcard() : super();
-  @override
-  Wildcard clone() => Wildcard();
+
   String get name => '*';
 }
 
 class ThisOperator extends TreeNode {
   ThisOperator() : super();
-  @override
-  ThisOperator clone() => ThisOperator();
+
   String get name => '&';
 }
 
 class Negation extends TreeNode {
   Negation() : super();
-  @override
-  Negation clone() => Negation();
 
   String get name => 'not';
 }

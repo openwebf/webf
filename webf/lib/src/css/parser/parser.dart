@@ -159,7 +159,7 @@ class CSSParser {
   /// Generate an error if [file] has not been completely consumed.
   void checkEndOfFile() {
     if (!(_peekKind(TokenKind.END_OF_FILE) || _peekKind(TokenKind.INCOMPLETE_COMMENT))) {
-      _error('premature end of file unknown CSS', _peekToken.span);
+      _error('premature end of file unknown CSS');
     }
   }
 
@@ -169,7 +169,7 @@ class CSSParser {
   //   the danger here.
   bool isPrematureEndOfFile() {
     if (_maybeEat(TokenKind.END_OF_FILE)) {
-      _error('unexpected end of file', _peekToken.span);
+      _error('unexpected end of file');
       return true;
     } else {
       return false;
@@ -232,17 +232,27 @@ class CSSParser {
     } catch (e) {
       message = 'parsing error expected $expected';
     }
-    _error(message, tok.span);
+    _error(message);
   }
 
-  void _error(String message, SourceSpan? location) {
+  void _error(String message, {SourceSpan? location}) {
     location ??= _peekToken.span;
-    // messages.error(message, location);
+    print(location.message(message, color: '\u001b[31m'));
   }
 
-  void _warning(String message, SourceSpan? location) {
-    location ??= _peekToken.span;
-    // messages.warning(message, location);
+  void _warning(String message, {SourceSpan? location}) {
+    location ??= _makeSpan(_peekToken.span);
+    print(location.message(message, color: '\u001b[35m'));
+  }
+
+  SourceSpan _makeSpan(FileSpan start) {
+    // TODO(terry): there are places where we are creating spans before we eat
+    // the tokens, so using _previousToken is not always valid.
+    // TODO(nweiz): use < rather than compareTo when SourceSpan supports it.
+    if (_previousToken == null || _previousToken!.span.compareTo(start) < 0) {
+      return start;
+    }
+    return start.expand(_previousToken!.span);
   }
 
   /// Directive grammar:
@@ -265,7 +275,7 @@ class CSSParser {
   ///                           declarations
   ///                         '}'
   ///     supports:           '@supports' supports_condition group_rule_body
-  TreeNode? processDirective() {
+  CSSRule? processDirective() {
     var tokenId = _peek();
     switch (tokenId) {
       case TokenKind.DIRECTIVE_IMPORT:
@@ -331,7 +341,7 @@ class CSSParser {
       // TODO(terry): Remove workaround when bug 8270 is fixed.
       case TokenKind.DIRECTIVE_MS_KEYFRAMES:
         if (tokenId == TokenKind.DIRECTIVE_MS_KEYFRAMES && isChecked) {
-          // _warning('@-ms-keyframes should be @keyframes');
+          _warning('@-ms-keyframes should be @keyframes');
         }
         // TODO(terry): End of workaround.
 
@@ -348,7 +358,30 @@ class CSSParser {
         //       ['from'|'to'|PERCENTAGE] [',' ['from'|'to'|PERCENTAGE] ]* ;
         _next();
 
-        return null;
+        String name = '';
+        if (_peekIdentifier()) {
+          name = identifier().name;
+        }
+        assert(name.isNotEmpty, 'keyframes rule name must not be null');
+        _eat(TokenKind.LBRACE);
+
+        var keyframe = CSSKeyframesRule(tokenId, name);
+        do {
+          List<String> selectors = [];
+          do {
+            final selector = _next().text;
+            final text = _peekToken.text;
+            // ignore unit type
+            if (TokenKind.matchUnits(text, 0, text.length) != -1) {
+              _next();
+            }
+            selectors.add(selector);
+          } while (_maybeEat(TokenKind.COMMA));
+
+          keyframe.add(KeyFrameBlock(selectors, processDeclarations()));
+        } while (!_maybeEat(TokenKind.RBRACE) && !isPrematureEndOfFile());
+
+        return keyframe;
 
       case TokenKind.DIRECTIVE_FONTFACE:
         _next();
@@ -378,7 +411,7 @@ class CSSParser {
         return null;
       case TokenKind.DIRECTIVE_CONTENT:
         // TODO(terry): TBD
-        // _warning('@content not implemented.');
+        _warning('@content not implemented.');
         return null;
       case TokenKind.DIRECTIVE_MOZ_DOCUMENT:
         return null;
@@ -393,7 +426,11 @@ class CSSParser {
 
   CSSRule? processRule([SelectorGroup? selectorGroup]) {
     if (selectorGroup == null) {
-      processDirective();
+      final directive = processDirective();
+      if (directive != null) {
+        _maybeEat(TokenKind.SEMICOLON);
+        return directive;
+      }
       selectorGroup = processSelectorGroup();
     }
     if (selectorGroup != null) {
@@ -527,7 +564,7 @@ class CSSParser {
     if (selector != null) {
       for (var sequence in selector.simpleSelectorSequences) {
         if (!sequence.isCombinatorNone) {
-          // _error('compound selector can not contain combinator');
+          _error('compound selector can not contain combinator - ${sequence.combinatorToString}');
         }
       }
     }
@@ -661,7 +698,7 @@ class CSSParser {
         _eat(TokenKind.HASH);
 
         if (_anyWhiteSpaceBeforePeekToken(TokenKind.HASH)) {
-          // _error('Not a valid ID selector expected #id');
+          _error('Not a valid ID selector expected #id', location: _makeSpan(start));
           return null;
         }
         return IdSelector(identifier());
@@ -669,7 +706,7 @@ class CSSParser {
         _eat(TokenKind.DOT);
 
         if (_anyWhiteSpaceBeforePeekToken(TokenKind.DOT)) {
-          // _error('Not a valid class selector expected .className');
+          _error('Not a valid class selector expected .className', location: _makeSpan(start));
           return null;
         }
         return ClassSelector(identifier());
@@ -679,7 +716,7 @@ class CSSParser {
       case TokenKind.LBRACK:
         return processAttribute();
       case TokenKind.DOUBLE:
-        _error('name must start with a alpha character, but found a number', _peekToken.span);
+        _error('name must start with a alpha character, but found a number');
         _next();
         break;
     }
@@ -840,7 +877,7 @@ class CSSParser {
         }
 
         if (value == null) {
-          _error('expected attribute value string or ident', _peekToken.span);
+          _error('expected attribute value string or ident');
         }
       }
 
@@ -936,6 +973,8 @@ class CSSParser {
   static const int MAX_UNICODE = 0x10FFFF;
 
   String processQuotedString([bool urlString = false]) {
+    var start = _peekToken.span;
+
     // URI term sucks up everything inside of quotes(' or ") or between parens
     var stopToken = urlString ? TokenKind.RPAREN : -1;
 
@@ -948,19 +987,22 @@ class CSSParser {
       case TokenKind.SINGLE_QUOTE:
         stopToken = TokenKind.SINGLE_QUOTE;
         _next(); // Skip the SINGLE_QUOTE.
+        start = _peekToken.span;
         break;
       case TokenKind.DOUBLE_QUOTE:
         stopToken = TokenKind.DOUBLE_QUOTE;
         _next(); // Skip the DOUBLE_QUOTE.
+        start = _peekToken.span;
         break;
       default:
         if (urlString) {
           if (_peek() == TokenKind.LPAREN) {
             _next(); // Skip the LPAREN.
+            start = _peekToken.span;
           }
           stopToken = TokenKind.RPAREN;
         } else {
-          // _error('unexpected string');
+          _error('unexpected string', location: _makeSpan(start));
         }
         break;
     }
@@ -1013,7 +1055,7 @@ class CSSParser {
     }
 
     if (!matchingParens) {
-      _error('problem parsing function expected ), ', _peekToken.span);
+      _error('problem parsing function expected ), ');
     }
 
     tokenizer._inString = inString;
@@ -1032,7 +1074,7 @@ class CSSParser {
       case 'rgb':
         var expr = processExpr();
         if (!_maybeEat(TokenKind.RPAREN)) {
-          _error('problem parsing function expected ), ', _peekToken.span);
+          _error('problem parsing function expected ), ');
         }
         return 'rgb($expr)';
       case 'url':
@@ -1042,7 +1084,7 @@ class CSSParser {
 
         // TODO(terry): Better error message and checking for mismatched quotes.
         if (_peek() == TokenKind.END_OF_FILE) {
-          _error('problem parsing URI', _peekToken.span);
+          _error('problem parsing URI');
         }
 
         if (_peek() == TokenKind.RPAREN) {
@@ -1061,13 +1103,13 @@ class CSSParser {
         //      (GradientType=0,StartColorStr='#9d8b83', EndColorStr='#847670');
         var expr = processExpr();
         if (!_maybeEat(TokenKind.RPAREN)) {
-          _error('problem parsing var expected ), ', _peekToken.span);
+          _error('problem parsing var expected');
         }
         return expr;
       default:
         var expr = processExpr();
         if (!_maybeEat(TokenKind.RPAREN)) {
-          _error('problem parsing function expected ), ', _peekToken.span);
+          _error('problem parsing function expected');
         }
         return expr;
     }
@@ -1078,7 +1120,7 @@ class CSSParser {
 
     if (!TokenKind.isIdentifier(tok.kind) && !TokenKind.isKindIdentifier(tok.kind)) {
       if (isChecked) {
-        _warning('expected identifier, but found $tok', tok.span);
+        _warning('expected identifier, but found $tok', location: tok.span);
       }
       return Identifier('');
     }
