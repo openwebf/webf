@@ -550,7 +550,7 @@ class CSSLength {
       }
     }
 
-    if (value == 0 && propertyName != FLEX_BASIS) {
+    if (value == 0 && unit != CSSLengthType.PERCENTAGE) {
       return CSSLengthValue.zero;
     } else if (value == null) {
       return CSSLengthValue.unknown;
