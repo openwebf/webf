@@ -118,6 +118,9 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       SchedulerBinding.instance.cancelFrameCallbackWithId(_frameCallbackId);
     }
     _frameCallbackId = SchedulerBinding.instance.scheduleFrameCallback((_) {
+      if (!ownerDocument.needsStyleRecalculate) {
+        return;
+      }
       ownerDocument.updateStyleIfNeeded();
     });
   }
