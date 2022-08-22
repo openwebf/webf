@@ -30,7 +30,7 @@ describe('Link Element', () => {
     document.head.appendChild(link);
  
     let p = document.createElement('p');
-    p.appendChild(document.createTextNode('This text should be green on a white background'));
+    p.appendChild(document.createTextNode('002 This text should be green on a white background'));
     BODY.appendChild(p);
   });
 

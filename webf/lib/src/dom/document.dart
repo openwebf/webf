@@ -221,9 +221,6 @@ class Document extends Node {
   }
 
   void updateStyleIfNeeded() {
-    if (!ownerDocument.needsStyleRecalculate) {
-      return;
-    }
     styleNodeManager.updateActiveStyleSheets();
     recalculateDocumentStyle();
   }
