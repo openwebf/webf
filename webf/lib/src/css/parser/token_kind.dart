@@ -137,6 +137,35 @@ class TokenKind {
   static const int SUBSTRING_MATCH = 534; // '*='
   static const int NO_MATCH = 535; // No operator.
 
+  // Unit types:
+  static const int UNIT_EM = 600;
+  static const int UNIT_EX = 601;
+  static const int UNIT_LENGTH_PX = 602;
+  static const int UNIT_LENGTH_CM = 603;
+  static const int UNIT_LENGTH_MM = 604;
+  static const int UNIT_LENGTH_IN = 605;
+  static const int UNIT_LENGTH_PT = 606;
+  static const int UNIT_LENGTH_PC = 607;
+  static const int UNIT_ANGLE_DEG = 608;
+  static const int UNIT_ANGLE_RAD = 609;
+  static const int UNIT_ANGLE_GRAD = 610;
+  static const int UNIT_ANGLE_TURN = 611;
+  static const int UNIT_TIME_MS = 612;
+  static const int UNIT_TIME_S = 613;
+  static const int UNIT_FREQ_HZ = 614;
+  static const int UNIT_FREQ_KHZ = 615;
+  static const int UNIT_PERCENT = 616;
+  static const int UNIT_FRACTION = 617;
+  static const int UNIT_RESOLUTION_DPI = 618;
+  static const int UNIT_RESOLUTION_DPCM = 619;
+  static const int UNIT_RESOLUTION_DPPX = 620;
+  static const int UNIT_CH = 621; // Measure of "0" U+0030 glyph.
+  static const int UNIT_REM = 622; // computed value ‘font-size’ on root elem.
+  static const int UNIT_VIEWPORT_VW = 623;
+  static const int UNIT_VIEWPORT_VH = 624;
+  static const int UNIT_VIEWPORT_VMIN = 625;
+  static const int UNIT_VIEWPORT_VMAX = 626;
+
   // Directives (@nnnn)
   static const int DIRECTIVE_NONE = 640;
   static const int DIRECTIVE_IMPORT = 641;
@@ -242,12 +271,43 @@ class TokenKind {
     {'type': TokenKind.MARGIN_DIRECTIVE_RIGHTBOTTOM, 'value': 'right-bottom'},
   ];
 
+  static const List<Map<String, dynamic>> _UNITS = [
+    {'unit': TokenKind.UNIT_EM, 'value': 'em'},
+    {'unit': TokenKind.UNIT_EX, 'value': 'ex'},
+    {'unit': TokenKind.UNIT_LENGTH_PX, 'value': 'px'},
+    {'unit': TokenKind.UNIT_LENGTH_CM, 'value': 'cm'},
+    {'unit': TokenKind.UNIT_LENGTH_MM, 'value': 'mm'},
+    {'unit': TokenKind.UNIT_LENGTH_IN, 'value': 'in'},
+    {'unit': TokenKind.UNIT_LENGTH_PT, 'value': 'pt'},
+    {'unit': TokenKind.UNIT_LENGTH_PC, 'value': 'pc'},
+    {'unit': TokenKind.UNIT_ANGLE_DEG, 'value': 'deg'},
+    {'unit': TokenKind.UNIT_ANGLE_RAD, 'value': 'rad'},
+    {'unit': TokenKind.UNIT_ANGLE_GRAD, 'value': 'grad'},
+    {'unit': TokenKind.UNIT_ANGLE_TURN, 'value': 'turn'},
+    {'unit': TokenKind.UNIT_TIME_MS, 'value': 'ms'},
+    {'unit': TokenKind.UNIT_TIME_S, 'value': 's'},
+    {'unit': TokenKind.UNIT_FREQ_HZ, 'value': 'hz'},
+    {'unit': TokenKind.UNIT_FREQ_KHZ, 'value': 'khz'},
+    {'unit': TokenKind.UNIT_FRACTION, 'value': 'fr'},
+    {'unit': TokenKind.UNIT_RESOLUTION_DPI, 'value': 'dpi'},
+    {'unit': TokenKind.UNIT_RESOLUTION_DPCM, 'value': 'dpcm'},
+    {'unit': TokenKind.UNIT_RESOLUTION_DPPX, 'value': 'dppx'},
+    {'unit': TokenKind.UNIT_CH, 'value': 'ch'},
+    {'unit': TokenKind.UNIT_REM, 'value': 'rem'},
+    {'unit': TokenKind.UNIT_VIEWPORT_VW, 'value': 'vw'},
+    {'unit': TokenKind.UNIT_VIEWPORT_VH, 'value': 'vh'},
+    {'unit': TokenKind.UNIT_VIEWPORT_VMIN, 'value': 'vmin'},
+    {'unit': TokenKind.UNIT_VIEWPORT_VMAX, 'value': 'vmax'},
+    {'unit': TokenKind.UNIT_PERCENT, 'value': '%'},
+  ];
+
   // Some more constants:
   static const int ASCII_UPPER_A = 65; // ASCII value for uppercase A
   static const int ASCII_UPPER_Z = 90; // ASCII value for uppercase Z
 
   /// Return the token that matches the unit ident found.
-  static int matchList(Iterable<Map<String, dynamic>> identList, String tokenField, String text, int offset, int length) {
+  static int matchList(
+      Iterable<Map<String, dynamic>> identList, String tokenField, String text, int offset, int length) {
     for (final entry in identList) {
       final ident = entry['value'] as String;
 
@@ -258,7 +318,8 @@ class TokenKind {
           var identChar = ident.codeUnitAt(i);
           var char = text.codeUnitAt(idx++);
           // Compare lowercase to lowercase then check if char is uppercase.
-          match = match && (char == identChar || ((char >= ASCII_UPPER_A && char <= ASCII_UPPER_Z) && (char + 32) == identChar));
+          match = match &&
+              (char == identChar || ((char >= ASCII_UPPER_A && char <= ASCII_UPPER_Z) && (char + 32) == identChar));
           if (!match) {
             break;
           }
@@ -287,6 +348,11 @@ class TokenKind {
   /// Return the token that matches the media operator found.
   static int matchMediaOperator(String text, int offset, int length) {
     return matchList(MEDIA_OPERATORS, 'type', text, offset, length);
+  }
+
+  /// Return the token that matches the unit ident found.
+  static int matchUnits(String text, int offset, int length) {
+    return matchList(_UNITS, 'unit', text, offset, length);
   }
 
   static String? idToValue(Iterable<Object?> identList, int tokenId) {

@@ -19,6 +19,8 @@ class RuleSet {
   final CSSMap tagRules = HashMap();
   final List<CSSRule> universalRules = [];
 
+  final Map<String, CSSKeyframesRule> keyframesRules = {};
+
   int _lastPosition = 0;
 
   void addRules(List<CSSRule> rules) {
@@ -33,6 +35,8 @@ class RuleSet {
       for (final selector in rule.selectorGroup.selectors) {
         findBestRuleSetAndAdd(selector, rule);
       }
+    } else if (rule is CSSKeyframesRule) {
+      keyframesRules[rule.name] = rule;
     } else {
       assert(false, 'Unsupported rule type: ${rule.runtimeType}');
     }

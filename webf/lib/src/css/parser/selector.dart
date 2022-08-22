@@ -50,9 +50,6 @@ class SelectorGroup extends TreeNode {
   SelectorGroup(this.selectors) : super();
 
   @override
-  SelectorGroup clone() => SelectorGroup(selectors);
-
-  @override
   dynamic visit(Visitor visitor) => visitor.visitSelectorGroup(this);
 
   int _calcSpecificity() {
@@ -87,13 +84,6 @@ class Selector extends TreeNode {
   int get length => simpleSelectorSequences.length;
 
   @override
-  Selector clone() {
-    var simpleSequences = simpleSelectorSequences.map((ss) => ss.clone()).toList();
-
-    return Selector(simpleSequences);
-  }
-
-  @override
   dynamic visit(Visitor visitor) => visitor.visitSelector(this);
 }
 
@@ -126,9 +116,6 @@ class SimpleSelectorSequence extends TreeNode {
   }
 
   @override
-  SimpleSelectorSequence clone() => SimpleSelectorSequence(simpleSelector, combinator);
-
-  @override
   dynamic visit(Visitor visitor) => visitor.visitSimpleSelectorSequence(this);
 
   @override
@@ -157,9 +144,6 @@ abstract class SimpleSelector extends TreeNode {
 // element name
 class ElementSelector extends SimpleSelector {
   ElementSelector(name) : super(name);
-
-  @override
-  ElementSelector clone() => ElementSelector(_name);
 
   @override
   String toString() => name;
@@ -229,9 +213,6 @@ class AttributeSelector extends SimpleSelector {
   }
 
   @override
-  AttributeSelector clone() => AttributeSelector(_name as Identifier, _op, value);
-
-  @override
   String toString() => '[$name${matchOperator()}${valueToString()}]';
 
   @override
@@ -241,8 +222,6 @@ class AttributeSelector extends SimpleSelector {
 // #id
 class IdSelector extends SimpleSelector {
   IdSelector(Identifier name) : super(name);
-  @override
-  IdSelector clone() => IdSelector(_name as Identifier);
 
   @override
   String toString() => '#$_name';
@@ -254,8 +233,7 @@ class IdSelector extends SimpleSelector {
 // .class
 class ClassSelector extends SimpleSelector {
   ClassSelector(Identifier name) : super(name);
-  @override
-  ClassSelector clone() => ClassSelector(_name as Identifier);
+
   @override
   String toString() => '.$_name';
 
@@ -266,9 +244,6 @@ class ClassSelector extends SimpleSelector {
 // :pseudoClass
 class PseudoClassSelector extends SimpleSelector {
   PseudoClassSelector(Identifier name) : super(name);
-
-  @override
-  PseudoClassSelector clone() => PseudoClassSelector(_name as Identifier);
 
   @override
   String toString() => ':$name';
@@ -285,9 +260,6 @@ class PseudoElementSelector extends SimpleSelector {
   PseudoElementSelector(Identifier name, {this.isLegacy = false}) : super(name);
 
   @override
-  PseudoElementSelector clone() => PseudoElementSelector(_name as Identifier);
-
-  @override
   String toString() => "${isLegacy ? ':' : '::'}$name";
 
   @override
@@ -299,9 +271,6 @@ class PseudoClassFunctionSelector extends PseudoClassSelector {
   final dynamic argument; // Selector, List<String>
 
   PseudoClassFunctionSelector(Identifier name, this.argument) : super(name);
-
-  @override
-  PseudoClassFunctionSelector clone() => PseudoClassFunctionSelector(_name as Identifier, argument);
 
   Selector get selector => argument as Selector;
 
@@ -318,9 +287,6 @@ class PseudoElementFunctionSelector extends PseudoElementSelector {
   PseudoElementFunctionSelector(Identifier name, this.expression) : super(name);
 
   @override
-  PseudoElementFunctionSelector clone() => PseudoElementFunctionSelector(_name as Identifier, expression);
-
-  @override
   dynamic visit(Visitor visitor) => visitor.visitPseudoElementFunctionSelector(this);
 }
 
@@ -329,9 +295,6 @@ class NegationSelector extends SimpleSelector {
   final SimpleSelector? negationArg;
 
   NegationSelector(this.negationArg) : super(Negation());
-
-  @override
-  NegationSelector clone() => NegationSelector(negationArg);
 
   @override
   dynamic visit(Visitor visitor) => visitor.visitNegationSelector(this);
