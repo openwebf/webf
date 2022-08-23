@@ -12,6 +12,12 @@ EmptyNodeList::EmptyNodeList(Node* root_node) : owner_(root_node), NodeList(root
 
 void EmptyNodeList::Trace(GCVisitor* visitor) const {}
 
+bool EmptyNodeList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+  return false;
+}
+
+void EmptyNodeList::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {}
+
 Node* EmptyNodeList::VirtualOwnerNode() const {
   return &OwnerNode();
 }

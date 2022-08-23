@@ -19,6 +19,18 @@ Node* ChildNodeList::item(unsigned index, ExceptionState& exception_state) const
   return collection_index_cache_.NodeAt(*this, index);
 }
 
+bool ChildNodeList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+  int32_t index = std::stoi(key.ToStdString());
+  return collection_index_cache_.NodeAt(*this, index);
+}
+
+void ChildNodeList::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
+  uint32_t size = collection_index_cache_.NodeCount(*this);
+  for (int i = 0; i < size; i ++) {
+    names.emplace_back(AtomicString(ctx(), std::to_string(i)));
+  }
+}
+
 Node* ChildNodeList::TraverseForwardToOffset(unsigned offset, Node& current_node, unsigned& current_offset) const {
   assert(current_offset < offset);
   assert(OwnerNode().childNodes() == this);

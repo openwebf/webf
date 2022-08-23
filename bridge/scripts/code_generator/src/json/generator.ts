@@ -4,7 +4,6 @@ import _ from 'lodash';
 
 function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[]): string {
   let compiled = _.template(template.raw);
-  console.log(deps);
   return compiled({
     _: _,
     name: blob.filename,

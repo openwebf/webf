@@ -404,7 +404,11 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
             wrapperTypeRegisterList.push(`IndexedPropertyGetterCallback`);
             if (!object.indexedProp.readonly) {
               wrapperTypeRegisterList.push(`IndexedPropertySetterCallback`);
+            } else {
+              wrapperTypeRegisterList.push('nullptr');
             }
+            wrapperTypeRegisterList.push('nullptr');
+            wrapperTypeRegisterList.push('nullptr');
           } else {
             wrapperTypeRegisterList.push('nullptr');
             wrapperTypeRegisterList.push('nullptr');
@@ -412,9 +416,13 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
             wrapperTypeRegisterList.push(`StringPropertyGetterCallback`);
             if (!object.indexedProp.readonly) {
               wrapperTypeRegisterList.push(`StringPropertySetterCallback`);
+            } else {
+              wrapperTypeRegisterList.push('nullptr');
             }
-            wrapperTypeRegisterList.push('StringPropertyCheckerCallback');
           }
+
+          wrapperTypeRegisterList.push('PropertyCheckerCallback');
+          wrapperTypeRegisterList.push('PropertyEnumerateCallback');
         }
 
         let mixinParent = object.mixinParent;

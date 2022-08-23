@@ -45,6 +45,7 @@ enum {
   JS_CLASS_DOCUMENT_FRAGMENT,
   JS_CLASS_BOUNDING_CLIENT_RECT,
   JS_CLASS_ELEMENT_ATTRIBUTES,
+  JS_CLASS_HTML_COLLECTION,
   JS_CLASS_HTML_ELEMENT,
   JS_CLASS_HTML_DIV_ELEMENT,
   JS_CLASS_HTML_BODY_ELEMENT,
@@ -75,7 +76,11 @@ using StringPropertySetterHandler = bool (*)(JSContext* ctx, JSValueConst obj, J
 
 // Callback when check property exist on object.
 // exp: 'hello' in obj;
-using StringPropertyCheckerHandler = bool (*)(JSContext* ctx, JSValueConst obj, JSAtom atom);
+using PropertyCheckerHandler = bool (*)(JSContext* ctx, JSValueConst obj, JSAtom atom);
+
+// Callback when enums all property on object.
+// exp: Object.keys(obj);
+using PropertyEnumerateHandler = int (*)(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj);
 
 // This struct provides a way to store a bunch of information that is helpful
 // when creating quickjs objects. Each quickjs bindings class has exactly one static
@@ -101,7 +106,8 @@ class WrapperTypeInfo final {
   IndexedPropertySetterHandler indexed_property_setter_handler_{nullptr};
   StringPropertyGetterHandler string_property_getter_handler_{nullptr};
   StringPropertySetterHandler string_property_setter_handler_{nullptr};
-  StringPropertyCheckerHandler string_property_checker_handler_{nullptr};
+  PropertyCheckerHandler property_checker_handler_{nullptr};
+  PropertyEnumerateHandler property_enumerate_handler_{nullptr};
 };
 
 }  // namespace webf

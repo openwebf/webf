@@ -90,7 +90,16 @@ static int HandleJSPropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSA
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
-  return wrapper_type_info->string_property_checker_handler_(ctx, obj, atom);
+  return wrapper_type_info->property_checker_handler_(ctx, obj, atom);
+}
+
+/// This callback will be called when JS code enumerate all own properties on this object.
+/// Exp: Object.keys(obj);
+static int HandleJSPropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj) {
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* wrapper_type_info = object->GetWrapperTypeInfo();
+
+  return wrapper_type_info->property_enumerate_handler_(ctx, ptab, plen, obj);
 }
 
 static int HandleJSGetOwnPropertyNames(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj) {
@@ -140,12 +149,17 @@ void ScriptWrappable::InitializeQuickJSObject() {
     }
 
     // Define the callback when check object property exist.
-    if (UNLIKELY(wrapper_type_info->string_property_checker_handler_ != nullptr)) {
+    if (UNLIKELY(wrapper_type_info->property_checker_handler_ != nullptr)) {
       exotic_methods->has_property = HandleJSPropertyCheckerCallback;
     }
 
+    if (UNLIKELY(wrapper_type_info->property_enumerate_handler_ != nullptr)) {
+      exotic_methods->get_own_property_names = HandleJSPropertyEnumerateCallback;
+    } else {
+      exotic_methods->get_own_property_names = HandleJSGetOwnPropertyNames;
+    }
+
     // Support iterate script wrappable defined properties.
-    exotic_methods->get_own_property_names = HandleJSGetOwnPropertyNames;
     exotic_methods->get_own_property = HandleJSGetOwnProperty;
 
     def.exotic = exotic_methods;

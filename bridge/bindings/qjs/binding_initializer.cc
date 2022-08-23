@@ -22,6 +22,7 @@
 #include "qjs_event_target.h"
 #include "qjs_focus_event.h"
 #include "qjs_gesture_event.h"
+#include "qjs_html_collection.h"
 #include "qjs_html_body_element.h"
 #include "qjs_html_div_element.h"
 #include "qjs_html_element.h"

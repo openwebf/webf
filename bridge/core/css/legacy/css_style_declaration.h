@@ -37,6 +37,7 @@ class CSSStyleDeclaration : public ScriptWrappable {
   std::string ToString() const;
 
   bool NamedPropertyQuery(const AtomicString&, ExceptionState&);
+  void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
 
  private:
   AtomicString InternalGetPropertyValue(std::string& name);

@@ -11,6 +11,7 @@
 namespace webf {
 
 class ExceptionState;
+class AtomicString;
 
 class EmptyNodeList : public NodeList {
  public:
@@ -22,6 +23,8 @@ class EmptyNodeList : public NodeList {
  private:
   unsigned length() const override { return 0; }
   Node* item(unsigned, ExceptionState& exception_state) const override { return nullptr; }
+  bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) override;
+  void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) override;
 
   bool IsEmptyNodeList() const override { return true; }
   Node* VirtualOwnerNode() const override;

@@ -39,7 +39,7 @@ enum class NodeListSearchRoot {
   kTreeScope,
 };
 
-class LiveNodeListBase : public ScriptWrappable {
+class LiveNodeListBase : public GarbageCollected<LiveNodeListBase> {
  public:
   explicit LiveNodeListBase(ContainerNode* owner_node,
                             NodeListSearchRoot search_root,
@@ -48,8 +48,7 @@ class LiveNodeListBase : public ScriptWrappable {
       : owner_node_(owner_node),
         search_root_(static_cast<unsigned>(search_root)),
         invalidation_type_(invalidation_type),
-        collection_type_(collection_type),
-        ScriptWrappable(owner_node->ctx()) {
+        collection_type_(collection_type) {
     assert(search_root_ == static_cast<unsigned>(search_root));
     assert(invalidation_type_ == static_cast<unsigned>(invalidation_type));
     assert(collection_type_ == static_cast<unsigned>(collection_type));

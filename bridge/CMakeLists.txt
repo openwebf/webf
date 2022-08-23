@@ -214,7 +214,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/keyboard_event.cc
     core/events/promise_rejection_event.cc
     core/html/parser/html_parser.cc
-    core/html/html_collection.cc
+    core/html/legacy/html_collection.cc
     core/html/html_element.cc
     core/html/html_div_element.cc
     core/html/html_head_element.cc
@@ -291,6 +291,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_scroll_options.cc
     out/qjs_scroll_to_options.cc
     out/qjs_html_element.cc
+    out/qjs_html_collection.cc
     out/qjs_html_div_element.cc
     out/qjs_html_head_element.cc
     out/qjs_html_body_element.cc

@@ -19,11 +19,12 @@ class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= c
  <% if (object.construct) { %> static void InstallConstructor(ExecutingContext* context); <% } %>
 
  <% if (object.indexedProp) { %>
+  static int PropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj);
+  static bool PropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom atom);
   <% if (object.indexedProp.indexKeyType == 'number') { %>
   static JSValue IndexedPropertyGetterCallback(JSContext* ctx, JSValue obj, uint32_t index);
   <% } else { %>
   static JSValue StringPropertyGetterCallback(JSContext* ctx, JSValue obj, JSAtom key);
-  static bool StringPropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom atom);
   <% } %>
   <% if (!object.indexedProp.readonly) { %>
 

@@ -12,6 +12,7 @@ namespace webf {
 
 class Node;
 class ExceptionState;
+class AtomicString;
 
 class NodeList : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
@@ -27,6 +28,9 @@ class NodeList : public ScriptWrappable {
   // DOM methods & attributes for NodeList
   virtual unsigned length() const = 0;
   virtual Node* item(unsigned index, ExceptionState& exception_state) const = 0;
+
+  virtual bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) = 0;
+  virtual void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) = 0;
 
   // Other methods (not part of DOM)
   virtual bool IsEmptyNodeList() const { return false; }

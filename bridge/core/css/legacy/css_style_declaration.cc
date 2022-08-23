@@ -113,6 +113,12 @@ bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionS
   return cssPropertyList.count(key.ToStdString()) > 0;
 }
 
+void CSSStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {
+  for(auto& entry : cssPropertyList) {
+    names.emplace_back(AtomicString(ctx(), entry.first));
+  }
+}
+
 AtomicString CSSStyleDeclaration::InternalGetPropertyValue(std::string& name) {
   name = parseJavaScriptCSSPropertyName(name);
 

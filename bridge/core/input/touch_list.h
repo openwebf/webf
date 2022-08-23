@@ -18,6 +18,9 @@ class TouchList : public ScriptWrappable {
   Touch* item(uint32_t index, ExceptionState& exception_state) const;
   bool SetItem(uint32_t index, Touch* touch, ExceptionState& exception_state);
 
+  bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
+  void NamedPropertyEnumerator(std::vector<AtomicString>& props, ExceptionState& exception_state);
+
   void Trace(GCVisitor* visitor) const override;
 
  private:

@@ -5,6 +5,33 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
 <% } %>
 
 <% if (object.indexedProp) { %>
+  bool QJS<%= className %>::PropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
+    auto* self = toScriptWrappable<<%= className %>>(obj);
+    ExceptionState exception_state;
+    MemberMutationScope scope{ExecutingContext::From(ctx)};
+    bool result = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
+    if (UNLIKELY(exception_state.HasException())) {
+      return false;
+    }
+    return result;
+  }
+  int QJS<%= className %>::PropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValue obj) {
+    auto* self = toScriptWrappable<<%= className %>>(obj);
+    ExceptionState exception_state;
+    MemberMutationScope scope{ExecutingContext::From(ctx)};
+    std::vector<AtomicString> props;
+    self->NamedPropertyEnumerator(props, exception_state);
+    auto *tabs = new JSPropertyEnum[props.size()];
+    for(int i = 0; i < props.size(); i ++) {
+      tabs[i].atom = JS_DupAtom(ctx, props[i].Impl());
+      tabs[i].is_enumerable = true;
+    }
+
+    *plen = props.size();
+    *ptab = tabs;
+    return 0;
+  }
+
   <% if (object.indexedProp.indexKeyType == 'number') { %>
   JSValue QJS<%= className %>::IndexedPropertyGetterCallback(JSContext* ctx, JSValue obj, uint32_t index) {
     auto* self = toScriptWrappable<<%= className %>>(obj);
@@ -31,16 +58,6 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     }
     return Converter<<%= generateIDLTypeConverter(object.indexedProp.type, object.indexedProp.optional) %>>::ToValue(ctx, result);
   };
-  bool QJS<%= className %>::StringPropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
-    auto* self = toScriptWrappable<<%= className %>>(obj);
-    ExceptionState exception_state;
-    MemberMutationScope scope{ExecutingContext::From(ctx)};
-    bool result = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
-    if (UNLIKELY(exception_state.HasException())) {
-      return false;
-    }
-    return result;
-  }
   <% } %>
   <% if (!object.indexedProp.readonly) { %>
     <% if (object.indexedProp.indexKeyType == 'number') { %>

@@ -25,6 +25,9 @@ class ChildNodeList : public NodeList {
 
   Node* item(unsigned index, ExceptionState& exception_state) const override;
 
+  bool NamedPropertyQuery(const AtomicString &key, ExceptionState &exception_state) override;
+  void NamedPropertyEnumerator(std::vector<AtomicString> &names, ExceptionState &exception_state) override;
+
   // Non-DOM API.
   void InvalidateCache() { collection_index_cache_.Invalidate(); }
   ContainerNode& OwnerNode() const { return *parent_.Get(); }
