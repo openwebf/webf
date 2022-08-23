@@ -17,6 +17,14 @@
 
 namespace webf {
 
+int Node::ELEMENT_NODE = kElementNode;
+int Node::ATTRIBUTE_NODE = kAttributeNode;
+int Node::TEXT_NODE = kTextNode;
+int Node::COMMENT_NODE = kCommentNode;
+int Node::DOCUMENT_NODE = kDocumentNode;
+int Node::DOCUMENT_TYPE_NODE = kDocumentTypeNode;
+int Node::DOCUMENT_FRAGMENT_NODE = kDocumentFragmentNode;
+
 Node* Node::Create(ExecutingContext* context, ExceptionState& exception_state) {
   exception_state.ThrowException(context->ctx(), ErrorType::TypeError, "Illegal constructor");
   return nullptr;

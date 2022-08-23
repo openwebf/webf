@@ -17,6 +17,8 @@ interface Element extends Node {
   readonly ownerDocument: Document;
   scrollLeft: number;
   scrollTop: number;
+  readonly scrollWidth: DartImpl<number>;
+  readonly scrollHeight: DartImpl<number>;
   /**
    * Returns the HTML-uppercased qualified name.
    */
@@ -33,6 +35,9 @@ interface Element extends Node {
    * Removes element's first attribute whose qualified name is qualifiedName.
    */
   removeAttribute(qualifiedName: string): void;
+
+  // CSSOM View Module
+  // https://drafts.csswg.org/cssom-view/#extension-to-the-element-interface
   getBoundingClientRect(): BoundingClientRect;
 
   scroll(options?: ScrollToOptions): void;
@@ -42,7 +47,8 @@ interface Element extends Node {
   scrollTo(options?: ScrollToOptions): void;
   scrollTo(x: number, y: number): void;
 
-  // Kraken special API.
+  // Export the target element's rendering content to PNG.
+  // WebF special API.
   toBlob(devicePixelRatioValue?: double): Promise<ArrayBuffer>;
 
   new(): void;

@@ -189,6 +189,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/binding_object.cc
     core/dom/node.cc
     core/dom/node_traversal.cc
+    core/dom/live_node_list_base.cc
     core/dom/character_data.cc
     core/dom/comment.cc
     core/dom/text.cc
@@ -220,6 +221,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_body_element.cc
     core/html/html_html_element.cc
     core/html/html_template_element.cc
+    core/html/html_all_collection.cc
 #    core/html/html_anchor_element.cc
 #    core/html/html_template_element.cc
 #    core/html/forms/html_input_element.cc

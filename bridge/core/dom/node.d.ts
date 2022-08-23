@@ -5,6 +5,25 @@ import {NodeList} from "./node_list";
 
 /** Node is an interface from which a number of DOM API object types inherit. It allows those types to be treated similarly; for example, inheriting the same set of methods, or being tested in the same way. */
 interface Node extends EventTarget {
+  readonly ELEMENT_NODE: StaticMember<number>;
+  readonly ATTRIBUTE_NODE: StaticMember<number>;
+  readonly TEXT_NODE: StaticMember<number>;
+  readonly COMMENT_NODE: StaticMember<number>;
+  readonly DOCUMENT_NODE: StaticMember<number>;
+  readonly DOCUMENT_TYPE_NODE: StaticMember<number>;
+  readonly DOCUMENT_FRAGMENT_NODE: StaticMember<number>;
+
+  /**
+   * Returns the type of node.
+   */
+  readonly nodeType: number;
+  /**
+   * Returns a string appropriate for the type of node.
+   */
+  readonly nodeName: string;
+
+  nodeValue: string | null;
+
   /**
    * Returns the children.
    */
@@ -25,15 +44,7 @@ interface Node extends EventTarget {
    * Returns the next sibling.
    */
   readonly nextSibling: Node | null;
-  /**
-   * Returns a string appropriate for the type of node.
-   */
-  readonly nodeName: string;
-  /**
-   * Returns the type of node.
-   */
-  readonly nodeType: number;
-  nodeValue: string | null;
+
   /**
    * Returns the node document. Returns null for documents.
    */

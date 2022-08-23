@@ -18,6 +18,18 @@ class HTMLHtmlElement;
 class Text;
 class Comment;
 
+enum NodeListInvalidationType : int {
+  kDoNotInvalidateOnAttributeChanges = 0,
+  kInvalidateOnClassAttrChange,
+  kInvalidateOnIdNameAttrChange,
+  kInvalidateOnNameAttrChange,
+  kInvalidateOnForAttrChange,
+  kInvalidateForFormControls,
+  kInvalidateOnHRefAttrChange,
+  kInvalidateOnAnyAttrChange,
+};
+const int kNumNodeListInvalidationTypes = kInvalidateOnAnyAttrChange + 1;
+
 // A document (https://dom.spec.whatwg.org/#concept-document) is the root node
 // of a tree of DOM nodes, generally resulting from the parsing of a markup
 // (typically, HTML) resource.

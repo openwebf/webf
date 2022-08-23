@@ -106,6 +106,11 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       let argument = typeReference.typeArguments![0];
       // @ts-ignore
       return getParameterBaseType(argument);
+    } else if (identifier === 'StaticMember') {
+      if (mode) mode.static = true;
+      let argument = typeReference.typeArguments![0];
+      // @ts-ignore
+      return getParameterBaseType(argument);
     }
 
     return identifier;

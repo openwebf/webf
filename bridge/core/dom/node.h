@@ -57,6 +57,15 @@ class Node : public EventTarget {
     kDocumentFragmentNode = 11,
   };
 
+  // Constant properties.
+  static int ELEMENT_NODE;
+  static int ATTRIBUTE_NODE;
+  static int TEXT_NODE;
+  static int COMMENT_NODE;
+  static int DOCUMENT_NODE;
+  static int DOCUMENT_TYPE_NODE;
+  static int DOCUMENT_FRAGMENT_NODE;
+
   using ImplType = Node*;
   static Node* Create(ExecutingContext* context, ExceptionState& exception_state);
 

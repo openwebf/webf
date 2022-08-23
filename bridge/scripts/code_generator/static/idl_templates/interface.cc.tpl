@@ -111,6 +111,8 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
     return exception_state.ToQuickJS();
   }
   return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, v);
+  <% } else if (prop.typeMode && prop.typeMode.static) { %>
+  return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>);
   <% } else { %>
   return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>());
   <% } %>

@@ -25,6 +25,7 @@ export class FunctionArguments {
 export class ParameterMode {
   newObject?: boolean;
   dartImpl?: boolean;
+  static?: boolean;
 }
 
 export class PropsDeclaration {

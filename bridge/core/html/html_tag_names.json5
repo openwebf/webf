@@ -3,7 +3,10 @@
     "templates": [
       {
         "template": "make_names",
-        "filename": "html_names"
+        "filename": "html_names",
+        "deps": [
+          "./html_attribute_names.json5"
+        ]
       },
       {
         "template": "element_factory",

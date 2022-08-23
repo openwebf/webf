@@ -22,6 +22,13 @@ namespace <%= name %> {
   <% } %>
 <% }) %>
 
+<% if (deps && deps.html_attribute_names) { %>
+  constexpr unsigned kHtmlAttributeNamesCount = <%= deps.html_attribute_names.data.length %>;
+  <% _.forEach(deps.html_attribute_names.data, function(name, index) { %>
+    extern const AtomicString& k<%= upperCamelCase(name) %>Attr;
+  <% }) %>
+<% } %>
+
 constexpr unsigned kNamesCount = <%= data.length %>;
 
 void Init(JSContext* ctx);

@@ -10,3 +10,4 @@ declare type JSEventListener = void;
 
 // This property is implemented by Dart side
 type DartImpl<T> = T;
+type StaticMember<T> = T;
