@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -221,8 +222,25 @@ class Document extends Node {
   }
 
   void updateStyleIfNeeded() {
-    styleNodeManager.updateActiveStyleSheets();
+    if (styleSheets.isEmpty && !styleNodeManager.hasPendingStyleSheet) {
+      return;
+    }
+    if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
+      flushStyle(rebuild: true);
+      return;
+    }
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      flushStyle();
+    });
+  }
+
+  void flushStyle({bool rebuild = false}) {
+    if (!needsStyleRecalculate) {
+      return;
+    }
+    styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
     recalculateDocumentStyle();
+    needsStyleRecalculate = false;
   }
 
   void recalculateDocumentStyle() {
@@ -231,7 +249,6 @@ class Document extends Node {
     }
     // Recalculate style for all nodes sync.
     documentElement?.recalculateNestedStyle();
-    needsStyleRecalculate = false;
   }
 
   @override

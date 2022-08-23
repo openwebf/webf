@@ -6,7 +6,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
@@ -100,9 +99,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   // Children changed steps for node.
   // https://dom.spec.whatwg.org/#concept-node-children-changed-ext
-
-  int _frameCallbackId = 0;
-
   void childrenChanged() {
     if (!isConnected) {
       return;
@@ -114,22 +110,14 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       parent = parent.parentNode!;
     }
     ownerDocument.needsStyleRecalculate = true;
-    if (_frameCallbackId > 0) {
-      SchedulerBinding.instance.cancelFrameCallbackWithId(_frameCallbackId);
-    }
-    _frameCallbackId = SchedulerBinding.instance.scheduleFrameCallback((_) {
-      if (!ownerDocument.needsStyleRecalculate) {
-        return;
-      }
-      ownerDocument.updateStyleIfNeeded();
-    });
+    ownerDocument.updateStyleIfNeeded();
   }
 
   // FIXME: The ownerDocument getter steps are to return null, if this is a document; otherwise this’s node document.
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
   late Document ownerDocument;
 
-  bool needsStyleRecalculate = false;
+  bool needsStyleRecalculate = true;
 
   /// The Node.parentElement read-only property returns the DOM node's parent Element,
   /// or null if the node either has no parent, or its parent isn't a DOM Element.
