@@ -59,17 +59,19 @@ class StyleNodeManager {
     _pendingStyleSheets.removeWhere((element) => element == styleSheet);
   }
 
-  void updateActiveStyleSheets() {
+  void updateActiveStyleSheets({bool rebuild = false}) {
     List<CSSStyleSheet> newSheets = _collectActiveStyleSheets();
     if (newSheets.isEmpty) {
       return;
     }
-    newSheets = _collectActiveStyleSheets().where((element) => element.cssRules.isNotEmpty).toList();
-    RuleSet changedRuleSet = analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
-    if (changedRuleSet.isEmpty) {
-      return;
+    if (rebuild == false) {
+      newSheets = _collectActiveStyleSheets().where((element) => element.cssRules.isNotEmpty).toList();
+      RuleSet changedRuleSet = analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
+      if (changedRuleSet.isEmpty) {
+        return;
+      }
+      invalidateElementStyle(changedRuleSet);
     }
-    invalidateElementStyle(changedRuleSet);
     document.handleStyleSheets(newSheets);
   }
 
