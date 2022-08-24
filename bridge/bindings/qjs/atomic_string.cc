@@ -45,6 +45,20 @@ AtomicString::StringKind GetStringKind(JSValue stringValue) {
   return GetStringKind(reinterpret_cast<const char*>(p->u.str8));
 }
 
+AtomicString::StringKind GetStringKind(const NativeString* native_string) {
+  AtomicString::StringKind predictKind = std::islower(native_string->string()[0])
+                                             ? AtomicString::StringKind::kIsLowerCase
+                                             : AtomicString::StringKind::kIsUpperCase;
+  for(int i = 0; i < native_string->length(); i ++) {
+    uint16_t c = native_string->string()[i];
+    if (predictKind == AtomicString::StringKind::kIsUpperCase && !std::isupper(c)) {
+      return AtomicString::StringKind::kIsMixed;
+    } else if (predictKind == AtomicString::StringKind::kIsLowerCase && !std::islower(c)) {
+      return AtomicString::StringKind::kIsMixed;
+    }
+  }
+}
+
 }  // namespace
 
 AtomicString::AtomicString(JSContext* ctx, const std::string& string)
@@ -53,6 +67,13 @@ AtomicString::AtomicString(JSContext* ctx, const std::string& string)
       atom_(JS_NewAtom(ctx, string.c_str())),
       kind_(GetStringKind(string)),
       length_(string.size()) {}
+
+AtomicString::AtomicString(JSContext* ctx, const NativeString* native_string)
+    : runtime_(JS_GetRuntime(ctx)),
+      ctx_(ctx),
+      atom_(JS_NewUnicodeAtom(ctx, native_string->string(), native_string->length())),
+      kind_(GetStringKind(native_string)),
+      length_(native_string->length()) {}
 
 AtomicString::AtomicString(JSContext* ctx, JSValue value)
     : runtime_(JS_GetRuntime(ctx)), ctx_(ctx), atom_(JS_ValueToAtom(ctx, value)) {

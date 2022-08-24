@@ -10,8 +10,6 @@
 namespace webf {
 
 class HTMLCollection : public ScriptWrappable {
-  DEFINE_WRAPPERTYPEINFO();
-
  public:
   HTMLCollection(ContainerNode* base, CollectionType);
 

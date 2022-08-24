@@ -36,6 +36,7 @@ class AtomicString {
 
   AtomicString() = default;
   AtomicString(JSContext* ctx, const std::string& string);
+  AtomicString(JSContext* ctx, const NativeString* native_string);
   AtomicString(JSContext* ctx, JSValue value);
   AtomicString(JSContext* ctx, JSAtom atom);
   ~AtomicString() { JS_FreeAtomRT(runtime_, atom_); };

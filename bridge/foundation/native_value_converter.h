@@ -32,9 +32,9 @@ struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<Na
 
 template <>
 struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
-  static NativeValue ToNativeValue(ImplType value) { return Native_NewString(value); }
+  static NativeValue ToNativeValue(const ImplType& value) { return Native_NewString(value.ToNativeString().release()); }
 
-  static ImplType FromNativeValue(NativeValue value) { return static_cast<NativeString*>(value.u.ptr); }
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) { return AtomicString(ctx, static_cast<NativeString*>(value.u.ptr));; }
 };
 
 template <>

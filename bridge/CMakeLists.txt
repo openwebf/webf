@@ -222,6 +222,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_html_element.cc
     core/html/html_template_element.cc
     core/html/html_all_collection.cc
+    core/html/html_anchor_element.cc
 #    core/html/html_anchor_element.cc
 #    core/html/html_template_element.cc
 #    core/html/forms/html_input_element.cc
@@ -291,7 +292,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_scroll_options.cc
     out/qjs_scroll_to_options.cc
     out/qjs_html_element.cc
-    out/qjs_html_collection.cc
+    out/qjs_html_all_collection.cc
+    out/qjs_html_anchor_element.cc
     out/qjs_html_div_element.cc
     out/qjs_html_head_element.cc
     out/qjs_html_body_element.cc

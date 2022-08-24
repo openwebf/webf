@@ -1,4 +1,4 @@
-import {Element} from "../../dom/element";
+import {Element} from "../dom/element";
 
 interface HTMLCollection {
     readonly length: double;

@@ -115,6 +115,7 @@ static inline bool __JS_AtomIsConst(JSAtom v) {
 
 uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length);
 JSValue JS_NewUnicodeString(JSContext* ctx, const uint16_t* code, uint32_t length);
+JSAtom JS_NewUnicodeAtom(JSContext* ctx, const uint16_t* code, uint32_t length);
 JSClassID JSValueGetClassId(JSValue);
 bool JS_IsProxy(JSValue value);
 bool JS_IsPromise(JSValue value);

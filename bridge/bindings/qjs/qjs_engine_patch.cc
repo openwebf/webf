@@ -302,6 +302,13 @@ JSValue JS_NewUnicodeString(JSContext* ctx, const uint16_t* code, uint32_t lengt
   return JS_MKPTR(JS_TAG_STRING, str);
 }
 
+JSAtom JS_NewUnicodeAtom(JSContext* ctx, const uint16_t* code, uint32_t length) {
+  JSValue value = JS_NewUnicodeString(ctx, code, length);
+  JSAtom atom = JS_ValueToAtom(ctx, value);
+  JS_FreeValue(ctx, value);
+  return atom;
+}
+
 JSClassID JSValueGetClassId(JSValue obj) {
   JSObject* p;
   if (JS_VALUE_GET_TAG(obj) != JS_TAG_OBJECT)

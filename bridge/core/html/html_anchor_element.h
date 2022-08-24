@@ -10,8 +10,10 @@
 namespace webf {
 
 class HTMLAnchorElement : public HTMLElement {
+  DEFINE_WRAPPERTYPEINFO();
  public:
-  explicit HTMLAnchorElement(Document&);
+  explicit HTMLAnchorElement(Document& document);
+ private:
 };
 
 }  // namespace webf

@@ -28,7 +28,7 @@ struct NativeTypeNull final : public NativeTypeBaseHelper<ScriptValue> {};
 struct NativeTypeBool final : public NativeTypeBaseHelper<bool> {};
 
 // String
-struct NativeTypeString final : public NativeTypeBaseHelper<NativeString*> {};
+struct NativeTypeString final : public NativeTypeBaseHelper<AtomicString> {};
 
 // Int64
 struct NativeTypeInt64 final : public NativeTypeBaseHelper<int64_t> {};

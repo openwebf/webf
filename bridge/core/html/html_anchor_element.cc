@@ -7,6 +7,6 @@
 
 namespace webf {
 
-HTMLAnchorElement::HTMLAnchorElement(Document& document) : HTMLElement(html_names::ka, &document) {}
+HTMLAnchorElement::HTMLAnchorElement(Document& document): HTMLElement(html_names::ka, &document) {}
 
 }  // namespace webf
