@@ -19,6 +19,7 @@ const String _0Percent = '0%';
 
 // a-b -> aB
 String camelize(String str) {
+  // variables
   if (str.startsWith('--')) {
     return str;
   }
