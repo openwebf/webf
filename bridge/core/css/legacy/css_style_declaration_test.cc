@@ -37,7 +37,7 @@ TEST(CSSStyleDeclaration, enumerateStyles) {
   });
   auto context = bridge->GetExecutingContext();
   const char* code =
-      "console.log(Object.getOwnPropertyNames(document.body.style))";
+      "console.log(Object.keys(document.body.style))";
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);

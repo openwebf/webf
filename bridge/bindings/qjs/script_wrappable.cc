@@ -155,12 +155,37 @@ void ScriptWrappable::InitializeQuickJSObject() {
 
     if (UNLIKELY(wrapper_type_info->property_enumerate_handler_ != nullptr)) {
       exotic_methods->get_own_property_names = HandleJSPropertyEnumerateCallback;
-    } else {
-      exotic_methods->get_own_property_names = HandleJSGetOwnPropertyNames;
-    }
+      exotic_methods->get_own_property = [](JSContext *ctx, JSPropertyDescriptor *desc,
+                                            JSValueConst obj, JSAtom prop) -> int {
+        auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+        auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
-    // Support iterate script wrappable defined properties.
-    exotic_methods->get_own_property = HandleJSGetOwnProperty;
+        if (wrapper_type_info->string_property_getter_handler_ != nullptr) {
+          JSValue returnValue = wrapper_type_info->string_property_getter_handler_(ctx, obj, prop);
+          if (!JS_IsNull(returnValue)) {
+            desc->flags = JS_PROP_ENUMERABLE;
+            desc->value = returnValue;
+            return true;
+          }
+        }
+
+        if (wrapper_type_info->indexed_property_getter_handler_ != nullptr) {
+          uint32_t index = JS_AtomToUInt32(prop);
+          JSValue returnValue = wrapper_type_info->indexed_property_getter_handler_(ctx, obj, index);
+          if (!JS_IsNull(returnValue)) {
+            desc->flags = JS_PROP_ENUMERABLE;
+            desc->value = returnValue;
+            return true;
+          }
+        }
+
+        return false;
+      };
+    } else {
+      // Support iterate script wrappable defined properties.
+      exotic_methods->get_own_property_names = HandleJSGetOwnPropertyNames;
+      exotic_methods->get_own_property = HandleJSGetOwnProperty;
+    }
 
     def.exotic = exotic_methods;
     def.finalizer = HandleJSObjectFinalized;
