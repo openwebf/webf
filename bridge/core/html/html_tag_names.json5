@@ -23,16 +23,15 @@
 //      "name": "canvas",
 //      "interfaceHeaderDir": "core/html/canvas"
 //    },
-//    {
-//      "name": "a",
-//      "interfaceName": "HTMLAnchorElement",
-//      "filename": "html_anchor_element"
-//    },
+    {
+      "name": "a",
+      "interfaceName": "HTMLAnchorElement",
+      "filename": "html_anchor_element"
+    },
     "html",
     "body",
     "head",
     "div",
-    "a",
 //    {
 //      "name": "input",
 //      "interfaceHeaderDir": "core/html/forms"
@@ -43,11 +42,11 @@
 //      "interfaceHeaderDir": "core/html/forms"
 //    },
     "template",
-//    {
-//      "name": "img",
-//      "interfaceName": "HTMLImageElement",
-//      "filename": "html_image_element"
-//    },
-//    "script"
+    {
+      "name": "img",
+      "interfaceName": "HTMLImageElement",
+      "filename": "html_image_element"
+    },
+    "script"
   ]
 }

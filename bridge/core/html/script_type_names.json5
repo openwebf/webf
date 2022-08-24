@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "script_type_names"
+      }
+    ]
+  },
+  "data": [
+    "classic",
+    "module",
+    "importmap",
+    "speculationrules",
+    "webbundle"
+  ]
+}

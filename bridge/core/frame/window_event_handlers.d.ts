@@ -1,5 +1,7 @@
 type IDLEventHandler = Function;
 
+// @ts-ignore
+@Mixin()
 export interface WindowEventHandlers {
     onbeforeunload: IDLEventHandler | null;
     onhashchange: IDLEventHandler | null;

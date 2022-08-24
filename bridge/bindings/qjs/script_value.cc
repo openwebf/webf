@@ -98,8 +98,7 @@ NativeValue ScriptValue::ToNative() const {
     }
   } else if (JS_IsString(value_)) {
     // NativeString owned by NativeValue will be freed by users.
-    NativeString* string = this->ToString().ToNativeString().release();
-    return NativeValueConverter<NativeTypeString>::ToNativeValue(string);
+    return NativeValueConverter<NativeTypeString>::ToNativeValue(ToString());
   }
 
   //  else if (JS_IsFunction(ctx_, value_)) {

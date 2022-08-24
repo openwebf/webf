@@ -25,6 +25,11 @@ class KeyboardEvent : public UIEvent {
   };
   using ImplType = KeyboardEvent*;
 
+  static double DOM_KEY_LOCATION_LEFT;
+  static double DOM_KEY_LOCATION_RIGHT;
+  static double DOM_KEY_LOCATION_NUMPAD;
+  static double DOM_KEY_LOCATION_STANDARD;
+
   static KeyboardEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   static KeyboardEvent* Create(ExecutingContext* context,
@@ -50,11 +55,6 @@ class KeyboardEvent : public UIEvent {
   bool metaKey() const;
   bool repeat() const;
   bool shiftKey() const;
-
-  double DOM_KEY_LOCATION_LEFT() const;
-  double DOM_KEY_LOCATION_NUMPAD() const;
-  double DOM_KEY_LOCATION_RIGHT() const;
-  double DOM_KEY_LOCATION_STANDARD() const;
 
   bool getModifierState(const AtomicString& key_args, ExceptionState& exception_state);
 

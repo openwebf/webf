@@ -36,11 +36,24 @@ bool <%= className %>::FillMembersWithQJSObject(JSContext* ctx, JSValue value, E
   }
 
   <% _.forEach(props, function(prop, index) { %>
+
+  <% if (prop.optional) { %>
   {
-      JSValue v = JS_GetPropertyStr(ctx, value, "<%= prop.name %>");
+    JSAtom key = JS_NewAtom(ctx, "<%= prop.name %>");
+    if (JS_HasProperty(ctx, value, key)) {
+      JSValue v = JS_GetProperty(ctx, value, key);
       <%= prop.name %>_ = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, v, exception_state);
       JS_FreeValue(ctx, v);
+    };
+    JS_FreeAtom(ctx, key);
   }
+  <% } else { %>
+  {
+    JSValue v = JS_GetPropertyStr(ctx, value, "<%= prop.name %>");
+    <%= prop.name %>_ = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, v, exception_state);
+    JS_FreeValue(ctx, v);
+  }
+  <% } %>
 
   <% }); %>
 

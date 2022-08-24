@@ -56,5 +56,18 @@
     "pathname",
     "search",
     "hash",
+    "alt",
+    "src",
+    "srcset",
+    "sizes",
+    "naturalWidth",
+    "naturalHeight",
+    "complete",
+    "currentSrc",
+    "decoding",
+    "fetchPriority",
+    "loading",
+    "noModule",
+    "async"
   ]
 }

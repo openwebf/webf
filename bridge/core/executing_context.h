@@ -77,6 +77,9 @@ class ExecutingContext {
   // Make global object inherit from WindowProperties.
   void InstallGlobal();
 
+  // Register active script wrappers.
+  void RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable);
+
   // Gets the DOMTimerCoordinator which maintains the "active timer
   // list" of tasks created by setTimeout and setInterval. The
   // DOMTimerCoordinator is owned by the ExecutionContext and should
@@ -155,6 +158,7 @@ class ExecutingContext {
   RejectedPromises rejected_promises_;
   PendingPromises pending_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
+  std::vector<ScriptWrappable*> active_wrappers_;
 };
 
 class ObjectProperty {

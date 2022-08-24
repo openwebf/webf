@@ -13,6 +13,8 @@ class HTMLScriptElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  static bool supports(const AtomicString& type, ExceptionState& exception_state);
+
   explicit HTMLScriptElement(Document& document);
 
  private:

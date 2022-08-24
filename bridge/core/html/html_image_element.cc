@@ -9,4 +9,15 @@ namespace webf {
 
 HTMLImageElement::HTMLImageElement(Document& document) : HTMLElement(html_names::kimg, &document) {}
 
+ScriptPromise HTMLImageElement::decode(ExceptionState& exception_state) const {
+  exception_state.ThrowException(ctx(), ErrorType::InternalError, "Not implemented.");
+  // @TODO not implemented.
+  return ScriptPromise();
+}
+
+bool HTMLImageElement::KeepAlive() const {
+  return true;
+}
+
+
 }  // namespace webf

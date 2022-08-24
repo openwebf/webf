@@ -57,6 +57,13 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
 
   void InitializeQuickJSObject() override;
 
+  /**
+   * Classes kept alive as long as
+   * they have a pending activity. Destroying the corresponding ExecutionContext
+   * implicitly releases them to avoid leaks.
+   */
+  virtual bool KeepAlive() const;
+
  private:
   JSValue jsObject_{JS_NULL};
   JSContext* ctx_{nullptr};

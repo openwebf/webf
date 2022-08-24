@@ -154,6 +154,7 @@ function walkProgram(statement: ts.Statement) {
       let interfaceName = getInterfaceName(statement) as string;
       let s = (statement as ts.InterfaceDeclaration);
       let obj = new ClassObject();
+      let constructorDefined = false;
       if (s.heritageClauses) {
         let heritage = s.heritageClauses[0];
         let heritageType = getHeritageType(heritage);
@@ -249,10 +250,15 @@ function walkProgram(statement: ts.Statement) {
             });
             c.returnType = getParameterType(m.type);
             obj.construct = c;
+            constructorDefined = true;
             break;
           }
         }
       });
+
+      if (!constructorDefined && obj.kind === ClassObjectKind.interface) {
+        throw new Error(`Interface: ${interfaceName} didn't have constructor defined.`);
+      }
 
       ClassObject.globalClassMap[interfaceName] = obj;
 

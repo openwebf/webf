@@ -7,6 +7,11 @@
 
 namespace webf {
 
+double KeyboardEvent::DOM_KEY_LOCATION_LEFT = KeyLocationCode::kDomKeyLocationLeft;
+double KeyboardEvent::DOM_KEY_LOCATION_RIGHT = KeyLocationCode::kDomKeyLocationRight;
+double KeyboardEvent::DOM_KEY_LOCATION_STANDARD = KeyLocationCode::kDomKeyLocationStandard;
+double KeyboardEvent::DOM_KEY_LOCATION_NUMPAD = KeyLocationCode::kDomKeyLocationNumpad;
+
 KeyboardEvent* KeyboardEvent::Create(ExecutingContext* context,
                                      const AtomicString& type,
                                      ExceptionState& exception_state) {
@@ -42,22 +47,6 @@ KeyboardEvent::KeyboardEvent(ExecutingContext* context,
 
 bool KeyboardEvent::getModifierState(const AtomicString& key_args, ExceptionState& exception_state) {
   return false;
-}
-
-double KeyboardEvent::DOM_KEY_LOCATION_LEFT() const {
-  return KeyLocationCode::kDomKeyLocationLeft;
-}
-
-double KeyboardEvent::DOM_KEY_LOCATION_NUMPAD() const {
-  return KeyLocationCode::kDomKeyLocationNumpad;
-}
-
-double KeyboardEvent::DOM_KEY_LOCATION_RIGHT() const {
-  return KeyLocationCode::kDomKeyLocationRight;
-}
-
-double KeyboardEvent::DOM_KEY_LOCATION_STANDARD() const {
-  return KeyLocationCode::kDomKeyLocationStandard;
 }
 
 bool KeyboardEvent::altKey() const {

@@ -57,6 +57,8 @@ AtomicString::StringKind GetStringKind(const NativeString* native_string) {
       return AtomicString::StringKind::kIsMixed;
     }
   }
+
+  return predictKind;
 }
 
 }  // namespace

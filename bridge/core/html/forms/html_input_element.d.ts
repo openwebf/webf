@@ -12,9 +12,9 @@ interface HTMLInputElement extends HTMLElement {
   disabled: boolean;
   min: string;
   max: string;
-  minLength: long;
-  maxLength: long;
-  size: long;
+  minLength: double;
+  maxLength: double;
+  size: double;
   multiple: boolean;
   name: string;
   step: string;
@@ -26,4 +26,5 @@ interface HTMLInputElement extends HTMLElement {
   inputMode: string;
   focus(): void;
   blur(): void;
+  new(): void;
 }

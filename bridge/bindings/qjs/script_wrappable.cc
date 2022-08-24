@@ -10,7 +10,8 @@
 namespace webf {
 
 ScriptWrappable::ScriptWrappable(JSContext* ctx)
-    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)) {}
+    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)) {
+}
 
 JSValue ScriptWrappable::ToQuickJS() const {
   return JS_DupValue(ctx_, jsObject_);
@@ -200,9 +201,18 @@ void ScriptWrappable::InitializeQuickJSObject() {
   jsObject_ = JS_NewObjectClass(ctx_, wrapper_type_info->classId);
   JS_SetOpaque(jsObject_, this);
 
+  if (KeepAlive()) {
+    JS_DupValue(ctx_, jsObject_);
+    context_->RegisterActiveScriptWrappers(this);
+  }
+
   // Let our instance into inherit prototype methods.
   JSValue prototype = GetExecutingContext()->contextData()->prototypeForType(wrapper_type_info);
   JS_SetPrototype(ctx_, jsObject_, prototype);
+}
+
+bool ScriptWrappable::KeepAlive() const {
+  return false;
 }
 
 }  // namespace webf

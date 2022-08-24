@@ -28,6 +28,8 @@
 #include "qjs_html_element.h"
 #include "qjs_html_head_element.h"
 #include "qjs_html_html_element.h"
+#include "qjs_html_script_element.h"
+#include "qjs_html_image_element.h"
 #include "qjs_html_template_element.h"
 #include "qjs_html_unknown_element.h"
 #include "qjs_input_event.h"
@@ -82,6 +84,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLHeadElement::Install(context);
   QJSHTMLBodyElement::Install(context);
   QJSHTMLHtmlElement::Install(context);
+  QJSHTMLImageElement::Install(context);
+  QJSHTMLScriptElement::Install(context);
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
   QJSCSSStyleDeclaration::Install(context);

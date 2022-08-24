@@ -44,10 +44,12 @@ interface CanvasRenderingContext2D {
   transform(a: number, b: number, c: number, d: number, e: number, f: number): void;
   translate(x: number, y: number): void;
   reset(): void;
+  new(): void;
 }
 
 interface HTMLCanvasElement extends HTMLElement {
   width: int64;
   height: int64;
   getContext: (contextType: string) => CanvasRenderingContext2D;
+  new(): void;
 }

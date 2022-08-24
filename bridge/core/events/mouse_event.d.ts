@@ -1,6 +1,7 @@
 import {UIEvent} from "./ui_event";
 import {EventTarget} from "../dom/events/event_target";
 import {Window} from "../frame/window";
+import {MouseEventInit} from "./mouse_event_init";
 
 /** Events that occur due to the user interacting with a pointing device (such as a mouse). Common events using this interface include click, dblclick, mouseup, mousedown. */
 interface MouseEvent extends UIEvent {
@@ -25,4 +26,5 @@ interface MouseEvent extends UIEvent {
     readonly y: number;
     getModifierState(keyArg: string): boolean;
     initMouseEvent(typeArg: string, canBubbleArg: boolean, cancelableArg: boolean, viewArg: Window, detailArg: number, screenXArg: number, screenYArg: number, clientXArg: number, clientYArg: number, ctrlKeyArg: boolean, altKeyArg: boolean, shiftKeyArg: boolean, metaKeyArg: boolean, buttonArg: number, relatedTargetArg: EventTarget | null): void;
+    new(type: string, init: MouseEventInit): MouseEvent;
 }

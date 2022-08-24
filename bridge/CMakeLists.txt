@@ -223,6 +223,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_template_element.cc
     core/html/html_all_collection.cc
     core/html/html_anchor_element.cc
+    core/html/html_image_element.cc
+    core/html/html_script_element.cc
 #    core/html/html_anchor_element.cc
 #    core/html/html_template_element.cc
 #    core/html/forms/html_input_element.cc
@@ -298,12 +300,15 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_head_element.cc
     out/qjs_html_body_element.cc
     out/qjs_html_html_element.cc
+    out/qjs_html_image_element.cc
+    out/qjs_html_script_element.cc
     out/qjs_promise_rejection_event.cc
     out/qjs_promise_rejection_event_init.cc
     out/qjs_html_template_element.cc
     out/qjs_html_unknown_element.cc
     out/html_element_factory.cc
     out/html_names.cc
+    out/script_type_names.cc
     )
 
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2

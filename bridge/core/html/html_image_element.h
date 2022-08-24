@@ -11,11 +11,14 @@ namespace webf {
 
 class HTMLImageElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
-
  public:
   explicit HTMLImageElement(Document& document);
 
+  bool KeepAlive() const override;
+
+  ScriptPromise decode(ExceptionState& exception_state) const;
  private:
+
 };
 
 }  // namespace webf

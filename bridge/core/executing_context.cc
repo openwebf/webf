@@ -88,6 +88,11 @@ ExecutingContext::~ExecutingContext() {
   }
 
   JS_FreeValue(script_state_.ctx(), global_object_);
+
+  // Free active wrappers.
+  for (auto& active_wrapper : active_wrappers_) {
+    JS_FreeValue(ctx(), active_wrapper->ToQuickJSUnsafe());
+  }
 }
 
 ExecutingContext* ExecutingContext::From(JSContext* ctx) {
@@ -371,6 +376,10 @@ void ExecutingContext::InstallGlobal() {
   window_ = MakeGarbageCollected<Window>(this);
   JS_SetPrototype(ctx(), Global(), window_->ToQuickJSUnsafe());
   JS_SetOpaque(Global(), window_);
+}
+
+void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable) {
+  active_wrappers_.emplace_back(script_wrappable);
 }
 
 // An lock free context validator.

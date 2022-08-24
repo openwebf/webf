@@ -19,4 +19,5 @@ interface HTMLTextAreaElement extends HTMLElement {
   inputMode: string;
   focus(): void;
   blur(): void;
+  new(): void;
 }

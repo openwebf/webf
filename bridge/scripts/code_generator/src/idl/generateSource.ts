@@ -36,6 +36,20 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
 `;
 }
 
+export function isTypeNeedAllocate(type: ParameterType[]) {
+  switch(type[0]) {
+    case FunctionArgumentType.undefined:
+    case FunctionArgumentType.null:
+    case FunctionArgumentType.int32:
+    case FunctionArgumentType.int64:
+    case FunctionArgumentType.boolean:
+    case FunctionArgumentType.double:
+      return false;
+    default:
+      return true;
+  }
+}
+
 export function generateTypeValue(type: ParameterType[]): string {
   switch (type[0]) {
     case FunctionArgumentType.int64: {
@@ -447,6 +461,7 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
           generateFunctionBody,
           generateTypeValue,
           generateOverLoadSwitchBody,
+          isTypeNeedAllocate,
           overloadMethods,
           filtedMethods,
           generateIDLTypeConverter,

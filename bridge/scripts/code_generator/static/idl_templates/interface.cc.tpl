@@ -123,7 +123,12 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 
   <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
   ExceptionState exception_state;
-  typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(<%= blob.filename %>->GetBindingProperty(binding_call_methods::k<%= prop.name %>, exception_state));
+  auto&& native_value = <%= blob.filename %>->GetBindingProperty(binding_call_methods::k<%= prop.name %>, exception_state);
+  <% if (isTypeNeedAllocate(prop.type)) { %>
+  typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(ctx, native_value);
+  <% } else { %>
+  typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(native_value);
+  <% } %>
   if (UNLIKELY(exception_state.HasException())) {
     return exception_state.ToQuickJS();
   }
