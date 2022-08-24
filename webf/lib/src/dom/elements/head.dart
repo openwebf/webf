@@ -172,11 +172,12 @@ class LinkElement extends Element {
 
         final String cssString = await resolveStringFromData(bundle.data!);
         _styleSheet = CSSParser(cssString).parse();
+        ownerDocument.needsStyleRecalculate = true;
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+        ownerDocument.updateStyleIfNeeded();
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
-          ownerDocument.updateStyleIfNeeded();
           dispatchEvent(Event(EVENT_LOAD));
         });
       } catch (e) {
