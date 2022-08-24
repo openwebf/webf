@@ -24,7 +24,7 @@ describe('Link Element', () => {
     link.addEventListener('load', async () => {
         await snapshot();
         link.setAttribute('href', 'assets:assets/good.css');
-        await snapshot(0.5);
+        await snapshot(0.1);
         done();
     });
     document.head.appendChild(link);

@@ -64,15 +64,21 @@ class StyleNodeManager {
     if (newSheets.isEmpty) {
       return;
     }
+    newSheets = newSheets.where((element) => element.cssRules.isNotEmpty).toList();
     if (rebuild == false) {
-      newSheets = _collectActiveStyleSheets().where((element) => element.cssRules.isNotEmpty).toList();
       RuleSet changedRuleSet = analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
       if (changedRuleSet.isEmpty) {
         return;
       }
       invalidateElementStyle(changedRuleSet);
+    } else {
+      document.visitChild((node) {
+        node.needsStyleRecalculate = true;
+      });
     }
+    document.needsStyleRecalculate = true;
     document.handleStyleSheets(newSheets);
+    _pendingStyleSheets.clear();
   }
 
   List<CSSStyleSheet> _collectActiveStyleSheets() {
@@ -98,7 +104,6 @@ class StyleNodeManager {
         }
       }
     });
-    document.needsStyleRecalculate = true;
   }
 
   RuleSet analyzeStyleSheetChangeRuleSet(List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets) {
