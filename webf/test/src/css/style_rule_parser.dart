@@ -142,5 +142,17 @@ void main() {
       CSSStyleRule styleRule = rule as CSSStyleRule;
       expect(styleRule.lastSimpleSelector?.name, 'foo');
     });
+
+    test('17', () {
+      CSSRule? rule = parseSingleRule(' .foo { width: calc(100% - 100px); }');
+      CSSStyleRule styleRule = rule as CSSStyleRule;
+      expect(styleRule.lastSimpleSelector?.name, 'foo');
+    });
+
+    test('18', () {
+      CSSRule? rule = parseSingleRule(' .foo { --x: red; }');
+      CSSStyleRule styleRule = rule as CSSStyleRule;
+      expect(styleRule.lastSimpleSelector?.name, 'foo');
+    });
   });
 }
