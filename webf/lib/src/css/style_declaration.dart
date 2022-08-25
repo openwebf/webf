@@ -433,10 +433,18 @@ class CSSStyleDeclaration {
       _properties[propertyName] = pendingProperties[propertyName]!;
     }
 
+    propertyNames.sort((left, right) {
+      final isVariableLeft = CSSVariable.isVariable(left) ? 1 : 0;
+      final isVariableRight = CSSVariable.isVariable(right) ? 1 : 0;
+      if (isVariableLeft == 1 || isVariableRight == 1) {
+        return isVariableRight - isVariableLeft;
+      }
+      return 0;
+    });
+
     for (String propertyName in propertyNames) {
       String? prevValue = prevValues[propertyName];
       String currentValue = pendingProperties[propertyName]!;
-
       _emitPropertyChanged(propertyName, prevValue, currentValue);
     }
   }

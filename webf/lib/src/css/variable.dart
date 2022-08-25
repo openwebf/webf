@@ -4,7 +4,7 @@
  */
 
 import 'dart:collection';
-import 'render_style.dart';
+import 'package:webf/css.dart';
 
 mixin CSSVariableMixin on RenderStyle {
   Map<String, String>? _storage;
@@ -24,8 +24,16 @@ mixin CSSVariableMixin on RenderStyle {
     Map<String, String>? storage = _storage;
     _addDependency(identifier, propertyName);
 
-    if (storage != null && storage.containsKey(identifier)) {
-      return storage[identifier];
+    if (storage != null && storage[identifier] != null) {
+      final variable = CSSVariable.tryParse(this, propertyName, storage[identifier]!);
+      if (variable != null) {
+        final id = variable.identifier.trim();
+        if (storage[id] != null) {
+          return getCSSVariable(id, propertyName);
+        }
+      } else {
+        return storage[identifier];
+      }
     } else {
       // Inherits from renderStyle tree.
       return parent?.getCSSVariable(identifier, propertyName);
