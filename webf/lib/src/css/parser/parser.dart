@@ -929,7 +929,6 @@ class CSSParser {
       }
 
       var expr = processExpr();
-
       // Handle !important (prio)
       var importantPriority = _maybeEat(TokenKind.IMPORTANT);
       style.setProperty(propertyIdent, expr, importantPriority);
@@ -960,6 +959,9 @@ class CSSParser {
         parenCount--;
       }
       if (parenCount == 0 && (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
+        break;
+      }
+      if (_peek() == TokenKind.IMPORTANT) {
         break;
       }
       end = _next().span;
