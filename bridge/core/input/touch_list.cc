@@ -29,7 +29,7 @@ bool TouchList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exce
 }
 
 void TouchList::NamedPropertyEnumerator(std::vector<AtomicString>& props, ExceptionState& exception_state) {
-  for(int i = 0; i < values_.size(); i ++) {
+  for (int i = 0; i < values_.size(); i++) {
     props.emplace_back(AtomicString(ctx(), std::to_string(i)));
   }
 }

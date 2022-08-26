@@ -19,5 +19,4 @@ bool HTMLImageElement::KeepAlive() const {
   return true;
 }
 
-
 }  // namespace webf

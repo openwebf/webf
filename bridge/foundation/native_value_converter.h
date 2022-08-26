@@ -34,7 +34,10 @@ template <>
 struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
   static NativeValue ToNativeValue(const ImplType& value) { return Native_NewString(value.ToNativeString().release()); }
 
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) { return AtomicString(ctx, static_cast<NativeString*>(value.u.ptr));; }
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
+    return AtomicString(ctx, static_cast<NativeString*>(value.u.ptr));
+    ;
+  }
 };
 
 template <>
@@ -78,7 +81,9 @@ template <>
 struct NativeValueConverter<NativeTypePointer<NativeBindingObject>>
     : public NativeValueConverterBase<NativeTypePointer<NativeBindingObject>> {
   static NativeValue ToNativeValue(ImplType value) { return Native_NewPtr(JSPointerType::BindingObject, value); }
-  static NativeValue ToNativeValue(BindingObject* value) { return Native_NewPtr(JSPointerType::BindingObject, value->bindingObject()); }
+  static NativeValue ToNativeValue(BindingObject* value) {
+    return Native_NewPtr(JSPointerType::BindingObject, value->bindingObject());
+  }
   static ImplType FromNativeValue(NativeValue value) { return static_cast<ImplType>(value.u.ptr); }
 };
 

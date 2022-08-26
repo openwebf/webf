@@ -159,7 +159,8 @@ class EventTargetWithInlineData : public EventTarget {
  public:
   EventTargetWithInlineData() = delete;
   explicit EventTargetWithInlineData(ExecutingContext* context) : EventTarget(context){};
-  explicit EventTargetWithInlineData(ExecutingContext* context, NativeBindingObject* native_binding_object) : EventTarget(context, native_binding_object){};
+  explicit EventTargetWithInlineData(ExecutingContext* context, NativeBindingObject* native_binding_object)
+      : EventTarget(context, native_binding_object){};
 
   void Trace(GCVisitor* visitor) const override;
 

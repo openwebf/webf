@@ -74,8 +74,7 @@ BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_sta
   GetExecutingContext()->FlushUICommand();
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetBoundingClientRect, 0, nullptr, exception_state);
   return BoundingClientRect::Create(
-      GetExecutingContext(),
-      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
+      GetExecutingContext(), NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
 }
 
 void Element::click(ExceptionState& exception_state) {

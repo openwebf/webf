@@ -26,7 +26,7 @@ bool ChildNodeList::NamedPropertyQuery(const AtomicString& key, ExceptionState& 
 
 void ChildNodeList::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
   uint32_t size = collection_index_cache_.NodeCount(*this);
-  for (int i = 0; i < size; i ++) {
+  for (int i = 0; i < size; i++) {
     names.emplace_back(AtomicString(ctx(), std::to_string(i)));
   }
 }

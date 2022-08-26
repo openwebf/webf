@@ -11,6 +11,7 @@ namespace webf {
 
 class HTMLImageElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = HTMLImageElement*;
   explicit HTMLImageElement(Document& document);
@@ -18,8 +19,8 @@ class HTMLImageElement : public HTMLElement {
   bool KeepAlive() const override;
 
   ScriptPromise decode(ExceptionState& exception_state) const;
- private:
 
+ private:
 };
 
 }  // namespace webf

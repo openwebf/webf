@@ -11,6 +11,7 @@ namespace webf {
 
 class HTMLInputElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   explicit HTMLInputElement(Document&);
 };

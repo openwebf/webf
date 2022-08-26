@@ -22,7 +22,7 @@ class BoundingClientRect : public ScriptWrappable, public BindingObject {
   static BoundingClientRect* Create(ExecutingContext* context, NativeBindingObject* native_binding_object);
   explicit BoundingClientRect(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-  NativeValue HandleCallFromDartSide(NativeString *method, int32_t argc, const NativeValue *argv) const override;
+  NativeValue HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) const override;
 
   double x() const { return x_; }
   double y() const { return y_; }

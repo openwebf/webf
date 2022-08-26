@@ -4,10 +4,10 @@
  */
 #include "html_canvas_element.h"
 #include "binding_call_methods.h"
+#include "canvas_rendering_context_2d.h"
+#include "canvas_types.h"
 #include "foundation/native_value_converter.h"
 #include "html_names.h"
-#include "canvas_types.h"
-#include "canvas_rendering_context_2d.h"
 
 namespace webf {
 

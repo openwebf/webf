@@ -114,7 +114,7 @@ bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionS
 }
 
 void CSSStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {
-  for(auto& entry : cssPropertyList) {
+  for (auto& entry : cssPropertyList) {
     names.emplace_back(AtomicString(ctx(), entry.first));
   }
 }

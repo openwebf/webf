@@ -339,11 +339,9 @@ struct Converter<JSEventListener> : public ConverterBase<JSEventListener> {
   }
 };
 
-template<>
+template <>
 struct Converter<IDLPromise> : public ConverterBase<IDLPromise> {
-  static JSValue ToValue(JSContext* ctx, ImplType value) {
-    return value.ToQuickJS();
-  }
+  static JSValue ToValue(JSContext* ctx, ImplType value) { return value.ToQuickJS(); }
 };
 
 template <>

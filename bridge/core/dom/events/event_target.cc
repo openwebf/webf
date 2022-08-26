@@ -46,7 +46,9 @@ EventTarget::EventTarget(ExecutingContext* context)
     : BindingObject(context), ScriptWrappable(context->ctx()), event_target_id_(global_event_target_id++) {}
 
 EventTarget::EventTarget(ExecutingContext* context, NativeBindingObject* native_binding_object)
-    : BindingObject(context, native_binding_object), ScriptWrappable(context->ctx()), event_target_id_(global_event_target_id++) {}
+    : BindingObject(context, native_binding_object),
+      ScriptWrappable(context->ctx()),
+      event_target_id_(global_event_target_id++) {}
 
 Node* EventTarget::ToNode() {
   return nullptr;

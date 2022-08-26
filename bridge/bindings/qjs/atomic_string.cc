@@ -49,7 +49,7 @@ AtomicString::StringKind GetStringKind(const NativeString* native_string) {
   AtomicString::StringKind predictKind = std::islower(native_string->string()[0])
                                              ? AtomicString::StringKind::kIsLowerCase
                                              : AtomicString::StringKind::kIsUpperCase;
-  for(int i = 0; i < native_string->length(); i ++) {
+  for (int i = 0; i < native_string->length(); i++) {
     uint16_t c = native_string->string()[i];
     if (predictKind == AtomicString::StringKind::kIsUpperCase && !std::isupper(c)) {
       return AtomicString::StringKind::kIsMixed;
@@ -102,7 +102,8 @@ bool AtomicString::IsEmpty() const {
 }
 
 std::string AtomicString::ToStdString() const {
-  if (IsNull()) return "";
+  if (IsNull())
+    return "";
 
   const char* buf = JS_AtomToCString(ctx_, atom_);
   std::string result = std::string(buf);

@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef BRIDGE_BINDINGS_QJS_HEAP_VECTOR_H_
 #define BRIDGE_BINDINGS_QJS_HEAP_VECTOR_H_
@@ -20,11 +20,11 @@ class HeapVector final {
 
 template <typename V>
 void HeapVector<V>::Trace(GCVisitor* visitor) const {
-  for(auto& item : entries_) {
+  for (auto& item : entries_) {
     visitor->Trace(item);
   }
 }
 
-}
+}  // namespace webf
 
 #endif  // BRIDGE_BINDINGS_QJS_HEAP_VECTOR_H_

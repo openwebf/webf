@@ -5,18 +5,18 @@
 #ifndef BRIDGE_CORE_HTML_CANVAS_HTML_CANVAS_ELEMENT_H_
 #define BRIDGE_CORE_HTML_CANVAS_HTML_CANVAS_ELEMENT_H_
 
-#include "core/html/html_element.h"
 #include "canvas_rendering_context.h"
+#include "core/html/html_element.h"
 
 namespace webf {
 
 class HTMLCanvasElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   explicit HTMLCanvasElement(Document&);
 
   CanvasRenderingContext* getContext(const AtomicString& type, ExceptionState& exception_state) const;
-
 };
 
 }  // namespace webf

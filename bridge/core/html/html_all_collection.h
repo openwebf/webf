@@ -12,10 +12,11 @@ namespace webf {
 
 class HTMLAllCollection : public HTMLCollection {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
  private:
 };
 
-}
+}  // namespace webf
 
 #endif  // BRIDGE_CORE_HTML_HTML_ALL_COLLECTION_H_

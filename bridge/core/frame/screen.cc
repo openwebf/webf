@@ -10,7 +10,6 @@
 namespace webf {
 
 Screen::Screen(Window* window, NativeBindingObject* native_binding_object)
-    : EventTargetWithInlineData(window->GetExecutingContext(), native_binding_object) {
-}
+    : EventTargetWithInlineData(window->GetExecutingContext(), native_binding_object) {}
 
 }  // namespace webf

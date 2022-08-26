@@ -10,8 +10,7 @@
 namespace webf {
 
 ScriptWrappable::ScriptWrappable(JSContext* ctx)
-    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)) {
-}
+    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)) {}
 
 JSValue ScriptWrappable::ToQuickJS() const {
   return JS_DupValue(ctx_, jsObject_);
@@ -156,8 +155,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
 
     if (UNLIKELY(wrapper_type_info->property_enumerate_handler_ != nullptr)) {
       exotic_methods->get_own_property_names = HandleJSPropertyEnumerateCallback;
-      exotic_methods->get_own_property = [](JSContext *ctx, JSPropertyDescriptor *desc,
-                                            JSValueConst obj, JSAtom prop) -> int {
+      exotic_methods->get_own_property = [](JSContext* ctx, JSPropertyDescriptor* desc, JSValueConst obj,
+                                            JSAtom prop) -> int {
         auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
         auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
