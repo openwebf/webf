@@ -22,7 +22,8 @@
 #include "qjs_event_target.h"
 #include "qjs_focus_event.h"
 #include "qjs_gesture_event.h"
-#include "qjs_html_collection.h"
+#include "qjs_html_all_collection.h"
+#include "qjs_html_canvas_element.h"
 #include "qjs_html_body_element.h"
 #include "qjs_html_div_element.h"
 #include "qjs_html_element.h"
@@ -88,6 +89,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLScriptElement::Install(context);
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
+  QJSHTMLCanvasElement::Install(context);
   QJSCSSStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);

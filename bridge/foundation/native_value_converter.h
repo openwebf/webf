@@ -5,7 +5,7 @@
 #ifndef BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
 #define BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
 
-#include "core/dom/binding_object.h"
+#include "core/binding_object.h"
 #include "native_type.h"
 #include "native_value.h"
 
@@ -71,34 +71,14 @@ struct NativeValueConverter<NativeTypeJSON> : public NativeValueConverterBase<Na
   }
 };
 
-class NativeBoundingClientRect;
 class BindingObject;
 struct NativeBindingObject;
-class NativeScreen;
-class NativeCanvasRenderingContext2D;
-
-template <>
-struct NativeValueConverter<NativeTypePointer<NativeBoundingClientRect>>
-    : public NativeValueConverterBase<NativeTypePointer<NativeBoundingClientRect>> {
-  static NativeValue ToNativeValue(ImplType value) {
-    return Native_NewPtr(JSPointerType::NativeBoundingClientRect, value);
-  }
-  static ImplType FromNativeValue(NativeValue value) { return static_cast<ImplType>(value.u.ptr); }
-};
 
 template <>
 struct NativeValueConverter<NativeTypePointer<NativeBindingObject>>
     : public NativeValueConverterBase<NativeTypePointer<NativeBindingObject>> {
   static NativeValue ToNativeValue(ImplType value) { return Native_NewPtr(JSPointerType::BindingObject, value); }
-  static ImplType FromNativeValue(NativeValue value) { return static_cast<ImplType>(value.u.ptr); }
-};
-
-template <>
-struct NativeValueConverter<NativeTypePointer<NativeCanvasRenderingContext2D>>
-    : public NativeValueConverterBase<NativeTypePointer<NativeCanvasRenderingContext2D>> {
-  static NativeValue ToNativeValue(ImplType value) {
-    return Native_NewPtr(JSPointerType::NativeCanvasRenderingContext2D, value);
-  }
+  static NativeValue ToNativeValue(BindingObject* value) { return Native_NewPtr(JSPointerType::BindingObject, value->bindingObject()); }
   static ImplType FromNativeValue(NativeValue value) { return static_cast<ImplType>(value.u.ptr); }
 };
 

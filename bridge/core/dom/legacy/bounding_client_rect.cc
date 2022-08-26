@@ -8,26 +8,17 @@
 
 namespace webf {
 
-BoundingClientRect* BoundingClientRect::Create(ExecutingContext* context,
-                                               NativeBoundingClientRect* native_bounding_client_rect) {
-  return MakeGarbageCollected<BoundingClientRect>(context, native_bounding_client_rect);
+BoundingClientRect* BoundingClientRect::Create(ExecutingContext* context, NativeBindingObject* native_binding_object) {
+  return MakeGarbageCollected<BoundingClientRect>(context, native_binding_object);
 }
 
-BoundingClientRect* BoundingClientRect::Create(ExecutingContext* context, ExceptionState& exceptionState) {
-  return nullptr;
+BoundingClientRect::BoundingClientRect(ExecutingContext* context, NativeBindingObject* native_binding_object)
+    : ScriptWrappable(context->ctx()), BindingObject(context, native_binding_object) {}
+
+NativeValue BoundingClientRect::HandleCallFromDartSide(NativeString* method,
+                                                       int32_t argc,
+                                                       const NativeValue* argv) const {
+  return Native_NewNull();
 }
-
-BoundingClientRect::BoundingClientRect(ExecutingContext* context, NativeBoundingClientRect* nativeBoundingClientRect)
-    : ScriptWrappable(context->ctx()),
-      x_(nativeBoundingClientRect->x),
-      y_(nativeBoundingClientRect->y),
-      width_(nativeBoundingClientRect->width),
-      height_(nativeBoundingClientRect->height),
-      top_(nativeBoundingClientRect->top),
-      right_(nativeBoundingClientRect->right),
-      left_(nativeBoundingClientRect->left),
-      bottom_(nativeBoundingClientRect->bottom) {}
-
-void BoundingClientRect::Trace(GCVisitor* visitor) const {}
 
 }  // namespace webf

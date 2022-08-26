@@ -19,10 +19,10 @@
     ]
   },
   "data": [
-//    {
-//      "name": "canvas",
-//      "interfaceHeaderDir": "core/html/canvas"
-//    },
+    {
+      "name": "canvas",
+      "interfaceHeaderDir": "core/html/canvas"
+    },
     {
       "name": "a",
       "interfaceName": "HTMLAnchorElement",
@@ -32,15 +32,15 @@
     "body",
     "head",
     "div",
-//    {
-//      "name": "input",
-//      "interfaceHeaderDir": "core/html/forms"
-//    },
-//    {
-//      "name": "textarea",
-//      "interfaceName": "HTMLTextareaElement",
-//      "interfaceHeaderDir": "core/html/forms"
-//    },
+    {
+      "name": "input",
+      "interfaceHeaderDir": "core/html/forms"
+    },
+    {
+      "name": "textarea",
+      "interfaceName": "HTMLTextareaElement",
+      "interfaceHeaderDir": "core/html/forms"
+    },
     "template",
     {
       "name": "img",

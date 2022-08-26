@@ -45,20 +45,16 @@ typedef CanvasAction = void Function(Canvas, Size);
 
 class CanvasRenderingContext2D extends BindingObject {
   CanvasRenderingContext2D(this.canvas)
-      : _pointer = malloc.allocate<NativeCanvasRenderingContext2D>(ffi.sizeOf<NativeCanvasRenderingContext2D>()),
+      : _pointer = malloc.allocate<NativeBindingObject>(ffi.sizeOf<NativeBindingObject>()),
         super();
 
-  final ffi.Pointer<NativeCanvasRenderingContext2D> _pointer;
+  final ffi.Pointer<NativeBindingObject> _pointer;
 
   @override
   get pointer => _pointer;
 
   @override
   get contextId => canvas.contextId;
-
-  ffi.Pointer<NativeCanvasRenderingContext2D> toNative() {
-    return pointer;
-  }
 
   @override
   invokeBindingMethod(String method, List args) {

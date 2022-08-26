@@ -1,30 +1,30 @@
 import {HTMLElement} from "../html_element";
 
 interface HTMLInputElement extends HTMLElement {
-  width: number;
-  height: number;
-  defaultValue: string;
-  value: string;
-  accept: string;
-  autocomplete: string;
-  autofocus: boolean;
-  checked: boolean;
-  disabled: boolean;
-  min: string;
-  max: string;
-  minLength: double;
-  maxLength: double;
-  size: double;
-  multiple: boolean;
-  name: string;
-  step: string;
-  pattern: string;
-  required: boolean;
-  readonly: boolean;
-  placeholder: string
-  type: string;
-  inputMode: string;
-  focus(): void;
-  blur(): void;
+  width: DartImpl<number>;
+  height: DartImpl<number>;
+  defaultValue: DartImpl<string>;
+  value: DartImpl<string>;
+  accept: DartImpl<string>;
+  autocomplete: DartImpl<string>;
+  autofocus: DartImpl<boolean>;
+  checked: DartImpl<boolean>;
+  disabled: DartImpl<boolean>;
+  min: DartImpl<string>;
+  max: DartImpl<string>;
+  minLength: DartImpl<double>;
+  maxLength: DartImpl<double>;
+  size: DartImpl<double>;
+  multiple: DartImpl<boolean>;
+  name: DartImpl<string>;
+  step: DartImpl<string>;
+  pattern: DartImpl<string>;
+  required: DartImpl<boolean>;
+  readonly: DartImpl<boolean>;
+  placeholder: DartImpl<string>
+  type: DartImpl<string>;
+  inputMode: DartImpl<string>;
+  focus(): DartImpl<void>;
+  blur(): DartImpl<void>;
   new(): void;
 }

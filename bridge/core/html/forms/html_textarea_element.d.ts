@@ -2,22 +2,22 @@
 import {HTMLElement} from "../html_element";
 
 interface HTMLTextAreaElement extends HTMLElement {
-  defaultValue: string;
-  value: string;
-  cols: double;
-  rows: double;
-  wrap: string;
-  autofocus: boolean;
-  autocomplete: string;
-  disabled: boolean;
-  minLength: double;
-  maxLength: double;
-  name: string;
-  placeholder: string;
-  readonly: boolean;
-  required: boolean;
-  inputMode: string;
-  focus(): void;
-  blur(): void;
+  defaultValue: DartImpl<string>;
+  value: DartImpl<string>;
+  cols: DartImpl<double>;
+  rows: DartImpl<double>;
+  wrap: DartImpl<string>;
+  autofocus: DartImpl<boolean>;
+  autocomplete: DartImpl<string>;
+  disabled: DartImpl<boolean>;
+  minLength: DartImpl<double>;
+  maxLength: DartImpl<double>;
+  name: DartImpl<string>;
+  placeholder: DartImpl<string>;
+  readonly: DartImpl<boolean>;
+  required: DartImpl<boolean>;
+  inputMode: DartImpl<string>;
+  focus(): DartImpl<void>;
+  blur(): DartImpl<void>;
   new(): void;
 }

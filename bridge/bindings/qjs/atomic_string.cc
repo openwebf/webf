@@ -102,6 +102,8 @@ bool AtomicString::IsEmpty() const {
 }
 
 std::string AtomicString::ToStdString() const {
+  if (IsNull()) return "";
+
   const char* buf = JS_AtomToCString(ctx_, atom_);
   std::string result = std::string(buf);
   JS_FreeCString(ctx_, buf);

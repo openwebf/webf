@@ -9,7 +9,7 @@
 #include "bindings/qjs/js_event_listener.h"
 #include "bindings/qjs/qjs_function.h"
 #include "bindings/qjs/script_wrappable.h"
-#include "core/dom/binding_object.h"
+#include "core/binding_object.h"
 #include "event_listener_map.h"
 #include "foundation/logging.h"
 #include "foundation/native_string.h"
@@ -90,6 +90,7 @@ class EventTarget : public ScriptWrappable, public BindingObject {
   EventTarget() = delete;
   ~EventTarget();
   explicit EventTarget(ExecutingContext* context);
+  explicit EventTarget(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
   virtual Node* ToNode();
 
@@ -158,6 +159,7 @@ class EventTargetWithInlineData : public EventTarget {
  public:
   EventTargetWithInlineData() = delete;
   explicit EventTargetWithInlineData(ExecutingContext* context) : EventTarget(context){};
+  explicit EventTargetWithInlineData(ExecutingContext* context, NativeBindingObject* native_binding_object) : EventTarget(context, native_binding_object){};
 
   void Trace(GCVisitor* visitor) const override;
 

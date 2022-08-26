@@ -77,7 +77,6 @@ ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& 
 
 ExecutingContext::~ExecutingContext() {
   valid_contexts[context_id_] = false;
-  ctx_invalid_ = true;
 
   // Check if current context have unhandled exceptions.
   JSValue exception = JS_GetException(script_state_.ctx());
@@ -93,6 +92,8 @@ ExecutingContext::~ExecutingContext() {
   for (auto& active_wrapper : active_wrappers_) {
     JS_FreeValue(ctx(), active_wrapper->ToQuickJSUnsafe());
   }
+
+  ctx_invalid_ = true;
 }
 
 ExecutingContext* ExecutingContext::From(JSContext* ctx) {

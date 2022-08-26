@@ -6,9 +6,10 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 
-class BoundingClientRect {
-  static const BoundingClientRect zero = BoundingClientRect(0, 0, 0, 0, 0, 0, 0, 0);
+class BoundingClientRect extends BindingObject {
+  static BoundingClientRect zero = BoundingClientRect(0, 0, 0, 0, 0, 0, 0, 0);
 
   final double x;
   final double y;
@@ -19,20 +20,35 @@ class BoundingClientRect {
   final double bottom;
   final double left;
 
-  const BoundingClientRect(this.x, this.y, this.width, this.height, this.top, this.right, this.bottom, this.left);
+  BoundingClientRect(this.x, this.y, this.width, this.height, this.top, this.right, this.bottom, this.left)
+      : _pointer = malloc.allocate<NativeBindingObject>(sizeOf<NativeBindingObject>()),
+        super();
 
-  Pointer<NativeBoundingClientRect> toNative() {
-    Pointer<NativeBoundingClientRect> nativeBoundingClientRect =
-        malloc.allocate<NativeBoundingClientRect>(sizeOf<NativeBoundingClientRect>());
-    nativeBoundingClientRect.ref.width = width;
-    nativeBoundingClientRect.ref.height = height;
-    nativeBoundingClientRect.ref.x = x;
-    nativeBoundingClientRect.ref.y = y;
-    nativeBoundingClientRect.ref.top = top;
-    nativeBoundingClientRect.ref.right = right;
-    nativeBoundingClientRect.ref.left = left;
-    nativeBoundingClientRect.ref.bottom = bottom;
-    return nativeBoundingClientRect;
+  final Pointer<NativeBindingObject> _pointer;
+
+  @override
+  get pointer => _pointer;
+
+  @override
+  dynamic getBindingProperty(String key) {
+    switch(key) {
+      case 'x':
+        return x;
+      case 'y':
+        return y;
+      case 'width':
+        return width;
+      case 'height':
+        return height;
+      case 'left':
+        return left;
+      case 'right':
+        return right;
+      case 'top':
+        return top;
+      case 'bottom':
+        return bottom;
+    }
   }
 
   Map<String, double> toJSON() {

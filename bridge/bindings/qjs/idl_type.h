@@ -55,6 +55,9 @@ struct IDLUSVString final : public IDLTypeBaseHelper<AtomicString> {};
 // Object
 struct IDLObject : public IDLTypeBaseHelper<ScriptValue> {};
 
+// Promise
+struct IDLPromise : public IDLTypeBaseHelper<ScriptPromise> {};
+
 class JSEventHandler;
 // EventHandler
 struct IDLEventHandler : public IDLTypeBaseHelper<std::shared_ptr<EventListener>> {};

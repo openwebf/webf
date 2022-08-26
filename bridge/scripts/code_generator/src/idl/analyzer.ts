@@ -90,7 +90,9 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
     let identifier = (typeReference.typeName as ts.Identifier).text;
     if (identifier === 'Function') {
       return FunctionArgumentType.function;
-    } else if (identifier === 'int32') {
+    } else if (identifier === 'Promise') {
+      return FunctionArgumentType.promise;
+    }else if (identifier === 'int32') {
       return FunctionArgumentType.int32;
     } else if (identifier === 'int64') {
       return FunctionArgumentType.int64;
@@ -138,7 +140,9 @@ function getParameterType(type: ts.TypeNode, mode?: ParameterMode): ParameterTyp
 function paramsNodeToArguments(parameter: ts.ParameterDeclaration): FunctionArguments {
   let args = new FunctionArguments();
   args.name = getParameterName(parameter.name);
-  args.type = getParameterType(parameter.type!);
+  let typeMode = new ParameterMode();
+  args.type = getParameterType(parameter.type!, typeMode);
+  args.typeMode = typeMode;
   args.required = !parameter.questionToken;
   return args;
 }
@@ -214,6 +218,7 @@ function walkProgram(statement: ts.Statement) {
             f.args = [];
             m.parameters.forEach(params => {
               let p = paramsNodeToArguments(params);
+
               f.args.push(p);
             });
             obj.methods.push(f);

@@ -8,32 +8,21 @@
 
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"
+#include "core/binding_object.h"
 
 namespace webf {
 
 class ExecutingContext;
 
-struct NativeBoundingClientRect {
-  double x;
-  double y;
-  double width;
-  double height;
-  double top;
-  double right;
-  double bottom;
-  double left;
-};
-
-class BoundingClientRect : public ScriptWrappable {
+class BoundingClientRect : public ScriptWrappable, public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
   BoundingClientRect() = delete;
-  static BoundingClientRect* Create(ExecutingContext* context, NativeBoundingClientRect* native_bounding_client_rect);
-  static BoundingClientRect* Create(ExecutingContext* context, ExceptionState& exceptionState);
-  explicit BoundingClientRect(ExecutingContext* context, NativeBoundingClientRect* nativeBoundingClientRect);
+  static BoundingClientRect* Create(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  explicit BoundingClientRect(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-  void Trace(GCVisitor* visitor) const override;
+  NativeValue HandleCallFromDartSide(NativeString *method, int32_t argc, const NativeValue *argv) const override;
 
   double x() const { return x_; }
   double y() const { return y_; }

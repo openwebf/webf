@@ -10,6 +10,7 @@
 namespace webf {
 
 class HTMLTextareaElement : public HTMLElement {
+  DEFINE_WRAPPERTYPEINFO();
  public:
   explicit HTMLTextareaElement(Document&);
 };

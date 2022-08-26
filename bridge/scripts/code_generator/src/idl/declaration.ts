@@ -4,6 +4,7 @@ export enum FunctionArgumentType {
   // Basic types
   dom_string,
   object,
+  promise,
   int32,
   int64,
   double,
@@ -19,6 +20,7 @@ export enum FunctionArgumentType {
 export class FunctionArguments {
   name: string;
   type: ParameterType[] = [];
+  typeMode: ParameterMode;
   required: boolean;
 }
 

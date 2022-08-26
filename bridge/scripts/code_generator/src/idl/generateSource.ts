@@ -16,12 +16,6 @@ import path from 'path';
 import {getTemplateKind, TemplateKind} from "./generateHeader";
 import {GenerateOptions} from "./generator";
 
-enum PropType {
-  hostObject,
-  Element,
-  Event
-}
-
 function generateMethodArgumentsCheck(m: FunctionDeclaration) {
   if (m.args.length == 0) return '';
 
@@ -113,6 +107,9 @@ export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boo
       case FunctionArgumentType.object:
         returnValue = `IDLObject`;
         break;
+      case FunctionArgumentType.promise:
+        returnValue = 'IDLPromise';
+        break;
       default:
       case FunctionArgumentType.any:
         returnValue = `IDLAny`;
@@ -131,6 +128,10 @@ export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boo
 
 function generateNativeValueTypeConverter(type: ParameterType[]): string {
   let returnValue = '';
+
+  if (typeof type[0] === 'string') {
+    return `NativeTypePointer<NativeBindingObject>`;
+  }
 
   switch (type[0]) {
     case FunctionArgumentType.int32:
@@ -176,13 +177,36 @@ function generateCallMethodName(name: string) {
   return name;
 }
 
+function generateDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, args: FunctionArguments[]): string {
+  let nativeArguments = args.map(i => {
+    return `NativeValueConverter<${generateNativeValueTypeConverter(i.type)}>::ToNativeValue(args_${i.name})`;
+  });
+
+  let returnValueAssignment = '';
+
+  if (declare.returnType[0] != FunctionArgumentType.void) {
+    returnValueAssignment = 'auto&& native_value =';
+  }
+
+  return `
+auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+NativeValue arguments[] = {
+  ${nativeArguments.join(',\n')}
+};
+${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${declare.args.length}, arguments, exception_state);
+${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverter(declare.returnType)}>::ToValue(NativeValueConverter<${generateNativeValueTypeConverter(declare.returnType)}>::FromNativeValue(native_value))` : ''};
+  `.trim();
+}
+
 function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, previousArguments: string[], options: GenFunctionBodyOptions) {
   let call = '';
   let returnValueAssignment = '';
   if (declare.returnType[0] != FunctionArgumentType.void) {
     returnValueAssignment = 'return_value =';
   }
-  if (options.isInstanceMethod) {
+  if (declare.returnTypeMode?.dartImpl) {
+    call = generateDartImplCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
+  } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
   } else {
@@ -238,13 +262,14 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   if (declaration.returnType[0] != FunctionArgumentType.void) {
     returnValueAssignment = 'return_value =';
   }
-  if (options.isInstanceMethod) {
+  if (declaration.returnTypeMode?.dartImpl) {
+    call = generateDartImplCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc));
+  } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${minimalRequiredArgc > 0 ? `${requiredArguments.join(',')}` : 'exception_state'});`;
   } else {
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
-
 
   return `${requiredArgumentsInit.join('\n')}
 if (argc <= ${minimalRequiredArgc}) {
@@ -255,10 +280,6 @@ if (argc <= ${minimalRequiredArgc}) {
 ${optionalArgumentsInit.join('\n')}
 `;
 }
-
-type OverLoadMethods = {
-  [name: string]: FunctionDeclaration[];
-};
 
 function generateOverLoadSwitchBody(overloadMethods: FunctionDeclaration[]) {
   let callBodyList = overloadMethods.map((overload, index) => {
@@ -323,22 +344,10 @@ function generateReturnValueResult(blob: IDLBlob, type: ParameterType[], mode?: 
     return `return_value->${method}()`;
   }
 
-  if (typeof type[0] === 'string') {
-    if (type[0] === 'Promise') {
-      return `return_value.${method}()`;
-    } else {
-      return `return_value->${method}()`;
-    }
-  }
-
   return `Converter<${generateIDLTypeConverter(type)}>::ToValue(ctx, std::move(return_value))`;
 }
 
 type GenFunctionBodyOptions = { isConstructor?: boolean, isInstanceMethod?: boolean };
-
-function generateIndexedPropertyBody() {
-
-}
 
 function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, options: GenFunctionBodyOptions = {
   isConstructor: false,

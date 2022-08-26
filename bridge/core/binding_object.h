@@ -61,11 +61,11 @@ class BindingObject {
   NativeValue GetBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const;
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
 
-  const NativeBindingObject* bindingObject() const { return binding_object_; }
+  NativeBindingObject* bindingObject() const { return binding_object_; }
 
  protected:
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.
-  void BindDartObject(NativeBindingObject* native_binding_object);
+  explicit BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
  private:
   ExecutingContext* context_{nullptr};

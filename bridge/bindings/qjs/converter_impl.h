@@ -339,6 +339,13 @@ struct Converter<JSEventListener> : public ConverterBase<JSEventListener> {
   }
 };
 
+template<>
+struct Converter<IDLPromise> : public ConverterBase<IDLPromise> {
+  static JSValue ToValue(JSContext* ctx, ImplType value) {
+    return value.ToQuickJS();
+  }
+};
+
 template <>
 struct Converter<IDLEventHandler> : public ConverterBase<IDLEventHandler> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {

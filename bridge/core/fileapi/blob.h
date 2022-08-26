@@ -20,6 +20,7 @@ class Blob : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  using ImplType = Blob*;
   static Blob* Create(ExecutingContext* context, ExceptionState& exception_state);
   static Blob* Create(ExecutingContext* context);
   static Blob* Create(ExecutingContext* context,

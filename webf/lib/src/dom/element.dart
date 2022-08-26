@@ -259,7 +259,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   invokeBindingMethod(String method, List args) {
     switch (method) {
       case 'getBoundingClientRect':
-        return getBoundingClientRect().toNative();
+        return getBoundingClientRect();
       case 'scroll':
         return scroll(castToType<double>(args[0]), castToType<double>(args[1]));
       case 'scrollBy':

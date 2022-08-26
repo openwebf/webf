@@ -186,7 +186,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/events/event_target.cc
     core/dom/events/event_listener_map.cc
     core/dom/events/event_target_impl.cc
-    core/dom/binding_object.cc
+          core/binding_object.cc
     core/dom/node.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
@@ -225,13 +225,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_anchor_element.cc
     core/html/html_image_element.cc
     core/html/html_script_element.cc
-#    core/html/html_anchor_element.cc
-#    core/html/html_template_element.cc
-#    core/html/forms/html_input_element.cc
-#    core/html/forms/html_textarea_element.cc
-#    core/html/html_image_element.cc
-#    core/html/html_script_element.cc
     core/html/html_unknown_element.cc
+    core/html/canvas/html_canvas_element.cc
+    core/html/canvas/canvas_rendering_context.cc
+    core/html/canvas/canvas_rendering_context_2d.cc
+    core/html/forms/html_button_element.cc
+    core/html/forms/html_input_element.cc
+    core/html/forms/html_textarea_element.cc
     # Legacy implements, should remove them in the future.
     core/dom/legacy/space_split_string.cc
     core/dom/legacy/element_attributes.cc
@@ -301,6 +301,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_body_element.cc
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
+    out/qjs_html_canvas_element.cc
+    out/qjs_canvas_rendering_context_2d.cc
+    out/qjs_canvas_rendering_context.cc
+    out/canvas_types.cc
+    out/qjs_html_button_element.cc
+    out/qjs_html_input_element.cc
+    out/qjs_html_textarea_element.cc
     out/qjs_html_script_element.cc
     out/qjs_promise_rejection_event.cc
     out/qjs_promise_rejection_event_init.cc

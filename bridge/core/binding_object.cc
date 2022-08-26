@@ -26,7 +26,7 @@ BindingObject::~BindingObject() {
   delete binding_object_;
 }
 
-void BindingObject::BindDartObject(NativeBindingObject* native_binding_object) {
+BindingObject::BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object) {
   native_binding_object->binding_target_ = this;
   native_binding_object->invoke_binding_methods_from_dart = NativeBindingObject::HandleCallFromDartSide;
   binding_object_ = native_binding_object;

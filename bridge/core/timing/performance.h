@@ -7,7 +7,7 @@
 #define BRIDGE_PERFORMANCE_H
 
 #include "bindings/qjs/script_wrappable.h"
-#include "core/dom/binding_object.h"
+#include "core/binding_object.h"
 
 #if ENABLE_PROFILE
 #define PERF_WIDGET_CREATION_COST "widget_creation_cost"

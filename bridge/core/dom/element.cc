@@ -75,7 +75,7 @@ BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_sta
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetBoundingClientRect, 0, nullptr, exception_state);
   return BoundingClientRect::Create(
       GetExecutingContext(),
-      NativeValueConverter<NativeTypePointer<NativeBoundingClientRect>>::FromNativeValue(result));
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
 }
 
 void Element::click(ExceptionState& exception_state) {

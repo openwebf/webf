@@ -286,10 +286,6 @@ class NativeBindingObject extends Struct {
   external Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> invokeBindingMethodFromNative;
 }
 
-class NativeCanvasRenderingContext2D extends Struct {
-  external Pointer<NativeFunction> invokeBindingMethod;
-}
-
 class NativePerformanceEntry extends Struct {
   external Pointer<Utf8> name;
   external Pointer<Utf8> entryType;

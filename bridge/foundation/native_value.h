@@ -29,8 +29,6 @@ enum NativeTag {
 enum class JSPointerType {
   AsyncContextContext = 0,
   NativeFunctionContext = 1,
-  NativeBoundingClientRect = 2,
-  NativeCanvasRenderingContext2D = 3,
   BindingObject = 4
 };
 
