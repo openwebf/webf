@@ -42,7 +42,6 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
     return Native_NewNull();
   }
 
-  WEBF_LOG(VERBOSE) << " binding object_ " << &binding_object_;
   NativeValue return_value = Native_NewNull();
   binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value,
                                                        method.ToNativeString().release(), argc, argv);

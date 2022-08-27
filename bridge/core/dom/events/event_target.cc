@@ -39,7 +39,7 @@ EventTarget* EventTarget::Create(ExecutingContext* context, ExceptionState& exce
 }
 
 EventTarget::~EventTarget() {
-  //  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget, nullptr);
+    GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget, nullptr);
 }
 
 EventTarget::EventTarget(ExecutingContext* context)

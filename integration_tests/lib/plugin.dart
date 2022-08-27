@@ -56,7 +56,11 @@ void main() async {
   File specs = File(path.join(testDirectory, '.specs/plugin.build.js'));
 
   List<Map<String, String>> allSpecsPayload = [
-    {'filename': path.basename(specs.path), 'filepath': specs.path, 'code': specs.readAsStringSync()}
+    {
+      'filename': path.basename(specs.path),
+      'filepath': specs.path,
+      'code': specs.readAsStringSync()
+    }
   ];
   List<Widget> widgets = [];
 
@@ -84,12 +88,11 @@ void main() async {
   ));
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    registerDartTestMethodsToCpp();
-
     List<Future<String>> testResults = [];
 
     for (int i = 0; i < widgets.length; i++) {
       int contextId = i;
+      registerDartTestMethodsToCpp(contextId);
       initTestFramework(contextId);
       addJSErrorListener(contextId, (String err) {
         print(err);
