@@ -234,13 +234,22 @@ class Document extends Node {
     });
   }
 
+  bool _recalculating = false;
   void flushStyle({bool rebuild = false}) {
     if (!needsStyleRecalculate) {
       return;
     }
-    styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
+    if (_recalculating) {
+      return;
+    }
+    _recalculating = true;
+    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
+      _recalculating = false;
+      return;
+    }
     recalculateDocumentStyle();
     needsStyleRecalculate = false;
+    _recalculating = false;
   }
 
   void recalculateDocumentStyle() {

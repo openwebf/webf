@@ -8,9 +8,7 @@
 <link rel="help" href="http://www.w3.org/TR/css-variables-1/#cycles">
 <link rel="match" href="support/color-green-ref.html">
 <style>
-body {
-  color: orange;
-}
+
 p {
   color: crimson;
   --a: red var(--b) var(--g);
@@ -19,8 +17,6 @@ p {
   --d: var(--e);
   --e: var(--a);
   --f: var(--e);
-  --g: green;
-  color: var(--g);
 }
 </style>
 <p>This text must be green.</p>

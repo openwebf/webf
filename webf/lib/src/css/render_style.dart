@@ -25,7 +25,7 @@ abstract class RenderStyle {
   dynamic resolveValue(String property, String present);
 
   // CSSVariable
-  String? getCSSVariable(String identifier, String propertyName);
+  dynamic getCSSVariable(String identifier, String propertyName);
   void setCSSVariable(String identifier, String value);
 
   // Geometry
@@ -400,7 +400,7 @@ class CSSRenderStyle extends RenderStyle
     RenderStyle renderStyle = this;
 
     // Process CSSVariable.
-    dynamic value = CSSVariable.tryParse(renderStyle, propertyName, propertyValue);
+    dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
       return value;
     }
