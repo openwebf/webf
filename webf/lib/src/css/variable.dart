@@ -7,7 +7,7 @@ import 'dart:collection';
 import 'package:webf/css.dart';
 
 mixin CSSVariableMixin on RenderStyle {
-  Map<String, String>? _storage;
+  Map<String, dynamic>? _storage;
   final Map<String, List<String>> _propertyDependencies = {};
 
   void _addDependency(String identifier, String propertyName) {
@@ -20,17 +20,25 @@ mixin CSSVariableMixin on RenderStyle {
   }
 
   @override
-  String? getCSSVariable(String identifier, String propertyName) {
-    Map<String, String>? storage = _storage;
+  dynamic getCSSVariable(String identifier, String propertyName) {
+    if (_checkStorageLoop(identifier)) {
+      return null;
+    }
+
+    Map<String, dynamic>? storage = _storage;
     _addDependency(identifier, propertyName);
 
     if (storage != null && storage[identifier] != null) {
-      final variable = CSSVariable.tryParse(this, propertyName, storage[identifier]!);
-      if (variable != null) {
+      final variable = storage[identifier];
+      if (variable != null && variable is CSSVariable) {
         final id = variable.identifier.trim();
-        if (storage[id] != null) {
+        if (storage[id] != null && id != identifier) {
           return getCSSVariable(id, propertyName);
         }
+        if (variable.defaultValue != null) {
+          return variable.defaultValue;
+        }
+        return null;
       } else {
         return storage[identifier];
       }
@@ -40,13 +48,39 @@ mixin CSSVariableMixin on RenderStyle {
     }
   }
 
+  bool _checkStorageLoop(String identifier) {
+    Map<String, dynamic>? storage = _storage;
+    if (storage == null) {
+      return false;
+    }
+    if (storage[identifier] == null) {
+      return false;
+    }
+    if (storage[identifier] is! CSSVariable) {
+      return false;
+    }
+    CSSVariable fast = storage[identifier]!;
+    CSSVariable slow = storage[identifier]!;
+    while (storage[fast.identifier] != null &&
+        storage[fast.identifier] is CSSVariable &&
+        storage[storage[fast.identifier]!.identifier] != null &&
+        storage[storage[fast.identifier]!.identifier] is CSSVariable) {
+      fast = storage[storage[fast.identifier]!.identifier]!;
+      slow = storage[slow.identifier]!;
+      if (fast == slow) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // --x: red
   // key: --x
   // value: red
   @override
   void setCSSVariable(String identifier, String value) {
-    _storage ??= HashMap<String, String>();
-    _storage![identifier] = value;
+    _storage ??= HashMap<String, dynamic>();
+    _storage![identifier] = CSSVariable.tryParse(this, value) ?? value;
 
     if (_propertyDependencies.containsKey(identifier)) {
       _notifyCSSVariableChanged(_propertyDependencies[identifier]!, value);

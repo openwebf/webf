@@ -59,16 +59,16 @@ class StyleNodeManager {
     _pendingStyleSheets.removeWhere((element) => element == styleSheet);
   }
 
-  void updateActiveStyleSheets({bool rebuild = false}) {
+  bool updateActiveStyleSheets({bool rebuild = false}) {
     List<CSSStyleSheet> newSheets = _collectActiveStyleSheets();
     if (newSheets.isEmpty) {
-      return;
+      return false;
     }
     newSheets = newSheets.where((element) => element.cssRules.isNotEmpty).toList();
     if (rebuild == false) {
       RuleSet changedRuleSet = analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
       if (changedRuleSet.isEmpty) {
-        return;
+        return false;
       }
       invalidateElementStyle(changedRuleSet);
     } else {
@@ -79,6 +79,7 @@ class StyleNodeManager {
     document.needsStyleRecalculate = true;
     document.handleStyleSheets(newSheets);
     _pendingStyleSheets.clear();
+    return true;
   }
 
   List<CSSStyleSheet> _collectActiveStyleSheets() {

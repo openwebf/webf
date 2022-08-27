@@ -733,7 +733,7 @@ class CSSParser {
     //              : or :: and making this a normal selector.  For now,
     //              create an empty pseudoName.
     Identifier pseudoName;
-    if (_peekIdentifier()) {
+    if (_peekIdentifier() && _peekToken.text != 'var' && _peekToken.text != 'rgb' && _peekToken.text != 'rgba') {
       pseudoName = identifier();
     } else {
       return null;
@@ -929,9 +929,15 @@ class CSSParser {
       }
 
       var expr = processExpr();
-      // Handle !important (prio)
-      var importantPriority = _maybeEat(TokenKind.IMPORTANT);
-      style.setProperty(propertyIdent, expr, importantPriority);
+      if (expr != null) {
+        // Handle !important (prio)
+        var importantPriority = false;
+        // handle multi-important
+        while (_maybeEat(TokenKind.IMPORTANT)) {
+          importantPriority = true;
+        }
+        style.setProperty(propertyIdent, expr, importantPriority);
+      }
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
       _next();
     } else if (_peekToken.kind == TokenKind.DIRECTIVE_INCLUDE) {
@@ -946,9 +952,11 @@ class CSSParser {
   //  expression:   term [ operator? term]*
   //
   //  operator:     '/' | ','
-  String processExpr([bool ieFilter = false]) {
+  String? processExpr([bool ieFilter = false]) {
     var start = _peekToken.span;
     FileSpan? end;
+
+    bool hasSynaxError = false;
 
     var parenCount = 0;
     while (!_maybeEat(TokenKind.END_OF_FILE)) {
@@ -958,13 +966,21 @@ class CSSParser {
       if (_peek() == TokenKind.RPAREN) {
         parenCount--;
       }
-      if (parenCount == 0 && (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
+      if (parenCount <= 0 && (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
         break;
       }
       if (_peek() == TokenKind.IMPORTANT) {
-        break;
+        if (parenCount == 0) {
+          break;
+        } else {
+          // synax error
+          hasSynaxError = true;
+        }
       }
       end = _next().span;
+    }
+    if (hasSynaxError || parenCount < 0) {
+      return null;
     }
     if (end != null) {
       return start.expand(end).text;

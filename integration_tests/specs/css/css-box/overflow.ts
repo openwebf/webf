@@ -192,6 +192,7 @@ describe('Overflow', () => {
 
   it('overflow with absolute positioned elements', async (done) => {
     let scroller;
+    let div1;
     let container = createElement('div', {
       style: {
         display: 'inline-block',
@@ -210,27 +211,34 @@ describe('Overflow', () => {
           border: '5px solid #000',
           padding: '5px'
         }
-      }, [
-        createElement('div', {
+      }, 
+      [
+        div1 = createElement('div', {
           style: {
             position: 'absolute',
             right: '-20px',
+            width: '100px',
             color: 'red',
             display: 'inline',
-            bottom: '-550px'
+            bottom: '0px',
+            backgroundColor: 'blue'
           }
-        }, [
+        },
+        [
           createText('XXX')
         ])
       ])
     ]);
 
     document.body.appendChild(container);
+    div1.style.backgroundColor = 'red';
+
     await snapshot();
 
     requestAnimationFrame(async () => {
+      div1.style.backgroundColor = 'green';
       scroller.scroll(20, 550);
-      await snapshot(0.2);
+      await snapshot();
       done();
     });
   });
