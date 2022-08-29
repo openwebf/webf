@@ -315,9 +315,7 @@ JSValue Document::querySelector(JSContext* ctx, JSValue this_val, int argc, JSVa
 
   auto* document = static_cast<DocumentInstance*>(JS_GetOpaque(this_val, Document::classId()));
   std::string selectorText = jsValueToStdString(ctx, argv[0]);
-  NativeValue arguments[] = {
-      Native_NewCString(selectorText)
-  };
+  NativeValue arguments[] = {Native_NewCString(selectorText)};
 
   return document->invokeBindingMethod("querySelector", 1, arguments);
 }
@@ -331,9 +329,7 @@ JSValue Document::querySelectorAll(JSContext* ctx, JSValue this_val, int argc, J
 
   auto* document = static_cast<DocumentInstance*>(JS_GetOpaque(this_val, Document::classId()));
   std::string selectorText = jsValueToStdString(ctx, argv[0]);
-  NativeValue arguments[] = {
-      Native_NewCString(selectorText)
-  };
+  NativeValue arguments[] = {Native_NewCString(selectorText)};
 
   return document->invokeBindingMethod("querySelectorAll", 1, arguments);
 }

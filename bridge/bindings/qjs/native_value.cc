@@ -42,11 +42,7 @@ NativeValue Native_NewFloat64(double value) {
 }
 
 NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr) {
-  return (NativeValue){
-      reinterpret_cast<uint64_t>(ptr),
-      static_cast<int64_t>(pointerType),
-      NativeTag::TAG_POINTER
-  };
+  return (NativeValue){reinterpret_cast<uint64_t>(ptr), static_cast<int64_t>(pointerType), NativeTag::TAG_POINTER};
 }
 
 NativeValue Native_NewBool(bool value) {
