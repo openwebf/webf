@@ -16,35 +16,36 @@ void main() {
     test('1', () {
       List<CSSRule> rules = parseRules('.foo {color: red} \n .bar {}');
       expect(rules.length, 2);
-      expect((rules[0] as CSSStyleRule).selectorText, 'foo');
+      expect((rules[0] as CSSStyleRule).selectorText, '.foo');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
-      expect((rules[1] as CSSStyleRule).selectorText, 'bar');
+      expect((rules[1] as CSSStyleRule).selectorText, '.bar');
     });
 
     test('2', () {
       List<CSSRule> rules = parseRules('{} \n .foo {color: red;} ;\n .bar {;;}');
       expect(rules.length, 2);
-      expect((rules[0] as CSSStyleRule).selectorText, 'foo');
+      expect((rules[0] as CSSStyleRule).selectorText, '.foo');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
-      expect((rules[1] as CSSStyleRule).selectorText, 'bar');
+      expect((rules[1] as CSSStyleRule).selectorText, '.bar');
     });
 
     test('3', () {
       List<CSSRule> rules = parseRules('.foo {color: red;} .bar { .x {}; color: #aaa} .baz {}');
-      expect(rules.length, 3);
-      expect((rules[0] as CSSStyleRule).selectorText, 'foo');
+      expect(rules.length, 4);
+      expect((rules[0] as CSSStyleRule).selectorText, '.foo');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
-      expect((rules[1] as CSSStyleRule).selectorText, 'bar');
+      expect((rules[1] as CSSStyleRule).selectorText, '.bar');
       expect((rules[1] as CSSStyleRule).declaration.getPropertyValue('color'), '#aaa');
-      expect((rules[2] as CSSStyleRule).selectorText, 'baz');
+      expect((rules[2] as CSSStyleRule).selectorText, '.bar .x');
+      expect((rules[3] as CSSStyleRule).selectorText, '.baz');
     });
 
     test('4', () {
       List<CSSRule> rules = parseRules('.foo {color: red} .bar {background: url(data:image/png;base64...)}');
       expect(rules.length, 2);
-      expect((rules[0] as CSSStyleRule).selectorText, 'foo');
+      expect((rules[0] as CSSStyleRule).selectorText, '.foo');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
-      expect((rules[1] as CSSStyleRule).selectorText, 'bar');
+      expect((rules[1] as CSSStyleRule).selectorText, '.bar');
       expect(
           (rules[1] as CSSStyleRule).declaration.getPropertyValue('backgroundImage'), 'url(data:image/png;base64...)');
     });
@@ -52,7 +53,7 @@ void main() {
     test('5', () {
       List<CSSRule> rules = parseRules('@charset "utf-8"; .foo {color: red}');
       expect(rules.length, 1);
-      expect((rules[0] as CSSStyleRule).selectorText, 'foo');
+      expect((rules[0] as CSSStyleRule).selectorText, '.foo');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
     });
 
@@ -64,14 +65,14 @@ void main() {
         }
       ''');
       expect(rules.length, 1);
-      expect((rules[0] as CSSStyleRule).selectorText, 'foo');
+      expect((rules[0] as CSSStyleRule).selectorText, '.foo');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
     });
 
     test('7', () {
       List<CSSRule> rules = parseRules('.foo h6{color: red}');
       expect(rules.length, 1);
-      expect((rules[0] as CSSStyleRule).selectorText, 'foo h6');
+      expect((rules[0] as CSSStyleRule).selectorText, '.foo h6');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
     });
   });

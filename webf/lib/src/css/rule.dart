@@ -6,7 +6,6 @@ import 'package:webf/css.dart';
 abstract class CSSRule {
   String cssText = '';
   CSSStyleSheet? parentStyleSheet;
-  CSSRule? parentRule;
 
   int position = -1;
 

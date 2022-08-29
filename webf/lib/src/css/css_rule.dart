@@ -7,6 +7,13 @@ import 'package:webf/css.dart';
 
 /// https://drafts.csswg.org/cssom/#the-cssstylerule-interface
 class CSSStyleRule extends CSSRule {
+  final SelectorTextVisitor _selectorTextVisitor = SelectorTextVisitor();
+
+  String get selectorText {
+    _selectorTextVisitor.visitSelectorGroup(selectorGroup);
+    return _selectorTextVisitor.toString();
+  }
+
   @override
   String get cssText => declaration.cssText;
 
@@ -20,14 +27,6 @@ class CSSStyleRule extends CSSRule {
 
   SimpleSelector? get lastSimpleSelector {
     return selectorGroup.selectors.last.simpleSelectorSequences.last.simpleSelector;
-  }
-
-  String get selectorText {
-    var sb = StringBuffer();
-    selectorGroup.selectors.forEach((selector) {
-      sb.write(selector.simpleSelectorSequences.map((ss) => ss.simpleSelector.name).join(' '));
-    });
-    return sb.toString();
   }
 }
 
