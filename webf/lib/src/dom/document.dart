@@ -94,14 +94,14 @@ class Document extends Node {
   }
 
   @override
-  getBindingProperty(String key) {
-    switch (key) {
+  invokeBindingMethod(String method, List args) {
+    switch (method) {
       case 'querySelectorAll':
-        return querySelectorAll;
+        return querySelectorAll(args);
       case 'querySelector':
-        return querySelector;
+        return querySelector(args);
     }
-    return super.getBindingProperty(key);
+    return super.invokeBindingMethod(method, args);
   }
 
   dynamic querySelector(List<dynamic> args) {

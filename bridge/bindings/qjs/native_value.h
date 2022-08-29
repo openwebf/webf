@@ -15,22 +15,23 @@ enum NativeTag {
   TAG_NULL = 3,
   TAG_FLOAT64 = 4,
   TAG_JSON = 5,
-  TAG_POINTER = 6,
-  TAG_FUNCTION = 7,
-  TAG_ASYNC_FUNCTION = 8,
+  TAG_LIST = 6,
+  TAG_POINTER = 7,
+  TAG_FUNCTION = 8,
+  TAG_ASYNC_FUNCTION = 9,
 };
 
-enum class JSPointerType { AsyncContextContext = 0, NativeFunctionContext = 1, NativeBoundingClientRect = 2, NativeCanvasRenderingContext2D = 3, NativeEventTarget = 4 };
+enum class JSPointerType { AsyncContextContext = 0, NativeFunctionContext = 1, NativeBoundingClientRect = 2, NativeCanvasRenderingContext2D = 3, NativeBindingObject = 4 };
 
 namespace webf::binding::qjs {
 
 // Exchange data struct between dart and C++
 struct NativeValue {
-  double float64;
   union {
-    int64_t int64;
-    void* ptr;
+    uint64_t uint64;
+    double float64;
   } u;
+  int64_t int64;
   int64_t tag;
 };
 

@@ -40,6 +40,8 @@ class Document : public Node {
   static JSValue getElementById(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
   static JSValue getElementsByTagName(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
   static JSValue getElementsByClassName(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+  static JSValue querySelector(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+  static JSValue querySelectorAll(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
   JSValue getElementConstructor(ExecutionContext* context, const std::string& tagName);
   bool isCustomElement(const std::string& tagName);
@@ -63,6 +65,8 @@ class Document : public Node {
   DEFINE_PROTOTYPE_FUNCTION(getElementById, 1);
   DEFINE_PROTOTYPE_FUNCTION(getElementsByTagName, 1);
   DEFINE_PROTOTYPE_FUNCTION(getElementsByClassName, 1);
+  DEFINE_PROTOTYPE_FUNCTION(querySelector, 1);
+  DEFINE_PROTOTYPE_FUNCTION(querySelectorAll, 1);
 
   void defineElement(const std::string& tagName, Element* constructor);
 
