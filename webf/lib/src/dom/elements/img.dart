@@ -343,10 +343,15 @@ class ImageElement extends Element {
     if (_styleWidth == null && _attrWidth != null) {
       // The intrinsic width of the image in pixels. Must be an integer without a unit.
       renderStyle.width = CSSLengthValue(_attrWidth, CSSLengthType.PX);
-    }
+    } else if(_styleWidth == null && _renderImage?.image?.width != null) {
+      // fix width/height when naturalWidth unequal real width because of image scale by flutter engine
+      style.setProperty(WIDTH, '${_renderImage?.image?.width}px');
+    } 
     if (_styleHeight == null && _attrHeight != null) {
       // The intrinsic height of the image, in pixels. Must be an integer without a unit.
       renderStyle.height = CSSLengthValue(_attrHeight, CSSLengthType.PX);
+    } else if(_styleHeight == null && _renderImage?.image?.height != null)  {
+      style.setProperty(HEIGHT, '${_renderImage?.image?.height}px');
     }
 
     renderStyle.intrinsicWidth = naturalWidth.toDouble();
@@ -469,9 +474,6 @@ class ImageElement extends Element {
     // the image when they no longer need to access it or draw it.
     ui.Image? clonedImage = _cachedImageInfo?.image.clone();
     if (clonedImage != null) {
-      // fix width/height when naturalWidth unequal real width because of image scale by flutter engine
-      width = clonedImage.width;
-      height = clonedImage.height;
       _renderImage?.image = clonedImage;
       _resizeImage();
     }
