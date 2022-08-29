@@ -1424,9 +1424,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
+  final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
   void _applySheetStyle(CSSStyleDeclaration style) {
-    CSSStyleDeclaration? matchRule = ElementRuleCollector().collectionFromRuleSet(ownerDocument.ruleSet, this);
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_START);
+    }
+    CSSStyleDeclaration matchRule = ElementRuleCollector().collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_END);
+    }
   }
 
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue) {

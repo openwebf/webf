@@ -7,7 +7,7 @@
          FlutterApplication and put your custom class here. -->
     <application
         android:usesCleartextTraffic="true"
-        android:name="io.flutter.app.FlutterApplication"
+        android:name="${applicationName}"
         android:label="performance_tests"
         android:icon="@mipmap/ic_launcher">
         <activity
