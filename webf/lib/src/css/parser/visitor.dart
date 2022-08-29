@@ -104,3 +104,94 @@ class SelectorVisitor implements Visitor {
   @override
   dynamic visitNegationSelector(NegationSelector node) => visitSimpleSelector(node);
 }
+
+class SelectorTextVisitor extends Visitor {
+  StringBuffer _buff = StringBuffer();
+
+  void emit(String str) {
+    _buff.write(str);
+  }
+
+  @override
+  String toString() => _buff.toString().trim();
+
+  @override
+  dynamic visitSelectorGroup(SelectorGroup node) {
+    _buff = StringBuffer();
+    var selectors = node.selectors;
+    var selectorsLength = selectors.length;
+    for (var i = 0; i < selectorsLength; i++) {
+      if (i > 0) emit(',');
+      selectors[i].visit(this);
+    }
+  }
+
+  @override
+  void visitSelector(Selector node) {
+    for (var selectorSequences in node.simpleSelectorSequences) {
+      selectorSequences.visit(this);
+    }
+  }
+
+  @override
+  void visitSimpleSelectorSequence(SimpleSelectorSequence node) {
+    emit(node.combinatorToString);
+    node.simpleSelector.visit(this);
+  }
+
+  @override
+  void visitSimpleSelector(SimpleSelector node) {
+    emit(node.name);
+  }
+
+  @override
+  void visitElementSelector(ElementSelector node) {
+    emit(node.toString());
+  }
+
+  @override
+  void visitAttributeSelector(AttributeSelector node) {
+    emit(node.toString());
+  }
+
+  @override
+  void visitIdSelector(IdSelector node) {
+    emit(node.toString());
+  }
+
+  @override
+  void visitClassSelector(ClassSelector node) {
+    emit(node.toString());
+  }
+
+  @override
+  void visitPseudoClassSelector(PseudoClassSelector node) {
+    emit(node.toString());
+  }
+
+  @override
+  void visitPseudoElementSelector(PseudoElementSelector node) {
+    emit(node.toString());
+  }
+
+  @override
+  void visitPseudoClassFunctionSelector(PseudoClassFunctionSelector node) {
+    emit(':${node.name}(');
+    node.argument.visit(this);
+    emit(')');
+  }
+
+  @override
+  void visitPseudoElementFunctionSelector(PseudoElementFunctionSelector node) {
+    emit('::${node.name}(');
+    node.expression.join(' , ');
+    emit(')');
+  }
+
+  @override
+  void visitNegationSelector(NegationSelector node) {
+    emit(':not(');
+    node.negationArg!.visit(this);
+    emit(')');
+  }
+}

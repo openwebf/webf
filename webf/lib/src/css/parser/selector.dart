@@ -299,3 +299,49 @@ class NegationSelector extends SimpleSelector {
   @override
   dynamic visit(Visitor visitor) => visitor.visitNegationSelector(this);
 }
+
+/// Merge the nested selector sequences [current] to the [parent] sequences or
+/// substitue any & with the parent selector.
+List<SimpleSelectorSequence> mergeNestedSelector(
+    List<SimpleSelectorSequence> parent, List<SimpleSelectorSequence> current) {
+  // If any & operator then the parent selector will be substituted otherwise
+  // the parent selector is pre-pended to the current selector.
+  var hasThis = current.any((s) => s.simpleSelector.isThis);
+
+  var newSequence = <SimpleSelectorSequence>[];
+
+  if (!hasThis) {
+    // If no & in the sector group then prefix with the parent selector.
+    newSequence.addAll(parent);
+    newSequence.addAll(_convertToDescendentSequence(current));
+  } else {
+    for (var sequence in current) {
+      if (sequence.simpleSelector.isThis) {
+        // Substitue the & with the parent selector and only use a combinator
+        // descendant if & is prefix by a sequence with an empty name e.g.,
+        // "... + &", "&", "... ~ &", etc.
+        var hasPrefix = newSequence.isNotEmpty && newSequence.last.simpleSelector.name.isNotEmpty;
+        newSequence.addAll(hasPrefix ? _convertToDescendentSequence(parent) : parent);
+      } else {
+        newSequence.add(sequence);
+      }
+    }
+  }
+
+  return newSequence;
+}
+
+/// Return selector sequences with first sequence combinator being a
+/// descendant.  Used for nested selectors when the parent selector needs to
+/// be prefixed to a nested selector or to substitute the this (&) with the
+/// parent selector.
+List<SimpleSelectorSequence> _convertToDescendentSequence(List<SimpleSelectorSequence> sequences) {
+  if (sequences.isEmpty) return sequences;
+
+  var newSequences = <SimpleSelectorSequence>[];
+  var first = sequences.first;
+  newSequences.add(SimpleSelectorSequence(first.simpleSelector, TokenKind.COMBINATOR_DESCENDANT));
+  newSequences.addAll(sequences.skip(1));
+
+  return newSequences;
+}

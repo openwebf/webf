@@ -48,6 +48,25 @@ class Identifier extends TreeNode {
     // a valid identifier.
     return name;
   }
+
+  bool isFunction() {
+    return name == 'var' ||
+        name == 'rgb' ||
+        name == 'rgba' ||
+        name == 'translate' ||
+        name == 'rotate' ||
+        name == 'calc' ||
+        name == 'hsl' ||
+        name == 'hsla' ||
+        name == 'linear-gradient' ||
+        name == 'radial-gradient' ||
+        name == 'repeating-linear-gradient' ||
+        name == 'repeating-radial-gradient' ||
+        name == 'cubic-bezier' ||
+        name == 'attr' ||
+        name == 'url';
+    ;
+  }
 }
 
 class Wildcard extends TreeNode {

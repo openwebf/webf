@@ -154,5 +154,24 @@ void main() {
       CSSStyleRule styleRule = rule as CSSStyleRule;
       expect(styleRule.lastSimpleSelector?.name, 'foo');
     });
+
+    test('19', () {
+      CSSRule? rule = parseSingleRule(' .foo { transform: translate(30px, 20px) rotate(20deg); }');
+      CSSStyleRule styleRule = rule as CSSStyleRule;
+      expect(styleRule.lastSimpleSelector?.name, 'foo');
+    });
+
+    test('20', () {
+      CSSStyleSheet sheet = CSSParser('#header { color: red; h1 { font-size: 26px; }}').parse();
+      CSSStyleRule styleRule1 = sheet.cssRules[0] as CSSStyleRule;
+      CSSStyleRule styleRule2 = sheet.cssRules[1] as CSSStyleRule;
+      final visitor = SelectorTextVisitor();
+      visitor.visitSelectorGroup(styleRule1.selectorGroup);
+      expect(visitor.toString(), '#header');
+      expect(styleRule1.declaration.getPropertyValue('color'), 'red');
+      visitor.visitSelectorGroup(styleRule2.selectorGroup);
+      expect(visitor.toString(), '#header h1');
+      expect(styleRule2.declaration.getPropertyValue('fontSize'), '26px');
+    });
   });
 }

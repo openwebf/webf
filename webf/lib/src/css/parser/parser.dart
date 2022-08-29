@@ -129,9 +129,9 @@ class CSSParser {
   List<CSSRule> parseRules({int startPosition = 0}) {
     var rules = <CSSRule>[];
     while (!_maybeEat(TokenKind.END_OF_FILE)) {
-      final rule = processRule();
-      if (rule != null) {
-        rules.add(rule);
+      final data = processRule();
+      if (data != null) {
+        rules.addAll(data);
       } else {
         _next();
       }
@@ -378,7 +378,10 @@ class CSSParser {
             selectors.add(selector);
           } while (_maybeEat(TokenKind.COMMA));
 
-          keyframe.add(KeyFrameBlock(selectors, processDeclarations()));
+          final declarations = processDeclarations();
+          if (declarations.last is CSSStyleDeclaration) {
+            keyframe.add(KeyFrameBlock(selectors, declarations.last));
+          }
         } while (!_maybeEat(TokenKind.RBRACE) && !isPrematureEndOfFile());
 
         return keyframe;
@@ -424,17 +427,35 @@ class CSSParser {
     return null;
   }
 
-  CSSRule? processRule([SelectorGroup? selectorGroup]) {
+  List<CSSRule>? processRule([SelectorGroup? selectorGroup]) {
     if (selectorGroup == null) {
       final directive = processDirective();
       if (directive != null) {
         _maybeEat(TokenKind.SEMICOLON);
-        return directive;
+        return [directive];
       }
       selectorGroup = processSelectorGroup();
     }
     if (selectorGroup != null) {
-      return CSSStyleRule(selectorGroup, processDeclarations());
+      final declarations = processDeclarations();
+      CSSStyleDeclaration declaration = declarations.where((element) => element is CSSStyleDeclaration).last!;
+      Iterable childRules = declarations.where((element) => element is CSSStyleRule);
+      CSSStyleRule rule = CSSStyleRule(selectorGroup, declaration);
+      List<CSSRule> rules = [rule];
+      for (CSSStyleRule childRule in childRules) {
+        // child Rule
+        for (Selector selector in childRule.selectorGroup.selectors) {
+          // parentRule
+          for (Selector parentSelector in selectorGroup.selectors) {
+            List<SimpleSelectorSequence> newSelectorSequences =
+                mergeNestedSelector(parentSelector.simpleSelectorSequences, selector.simpleSelectorSequences);
+            selector.simpleSelectorSequences.clear();
+            selector.simpleSelectorSequences.addAll(newSelectorSequences);
+          }
+        }
+        rules.add(childRule);
+      }
+      return rules;
     }
     return null;
   }
@@ -442,9 +463,9 @@ class CSSParser {
   List<CSSRule> processGroupRuleBody() {
     var nodes = <CSSRule>[];
     while (!(_peekKind(TokenKind.RBRACE) || _peekKind(TokenKind.END_OF_FILE))) {
-      var rule = processRule();
-      if (rule != null) {
-        nodes.add(rule);
+      var rules = processRule();
+      if (rules != null) {
+        nodes.addAll(rules);
         continue;
       }
       break;
@@ -475,9 +496,6 @@ class CSSParser {
   /// Return [:null:] if no selector or [SelectorGroup] if a selector was
   /// parsed.
   SelectorGroup? _nestedSelector() {
-    // var oldMessages = messages;
-    // _createMessages();
-
     var markedData = _mark;
 
     // Look a head do we have a nested selector instead of a declaration?
@@ -489,33 +507,32 @@ class CSSParser {
     if (!nestedSelector) {
       // Not a selector so restore the world.
       _restore(markedData);
-      // messages = oldMessages;
       return null;
     } else {
       // Remember any messages from look ahead.
-      // oldMessages.mergeMessages(messages);
-      // messages = oldMessages;
       return selGroup;
     }
   }
 
-  CSSStyleDeclaration processDeclarations({bool checkBrace = true}) {
+  // return list of rule && CSSStyleDeclaration
+  List<dynamic> processDeclarations({bool checkBrace = true}) {
     if (checkBrace) _eat(TokenKind.LBRACE);
 
     var declaration = CSSStyleDeclaration();
+    List list = [declaration];
     do {
       var selectorGroup = _nestedSelector();
       while (selectorGroup != null) {
         // Nested selector so process as a ruleset.
-        processRule(selectorGroup)!;
+        List<CSSRule> rule = processRule(selectorGroup)!;
+        list.addAll(rule);
         selectorGroup = _nestedSelector();
       }
       processDeclaration(declaration);
     } while (_maybeEat(TokenKind.SEMICOLON));
 
     if (checkBrace) _eat(TokenKind.RBRACE);
-
-    return declaration;
+    return list;
   }
 
   SelectorGroup? processSelectorGroup() {
@@ -732,9 +749,13 @@ class CSSParser {
     // TODO(terry): If no identifier specified consider optimizing out the
     //              : or :: and making this a normal selector.  For now,
     //              create an empty pseudoName.
+    // TODO(jiangzhou): Forced to evade
     Identifier pseudoName;
-    if (_peekIdentifier() && _peekToken.text != 'var' && _peekToken.text != 'rgb' && _peekToken.text != 'rgba') {
+    if (_peekIdentifier()) {
       pseudoName = identifier();
+      if (pseudoName.isFunction()) {
+        return null;
+      }
     } else {
       return null;
     }
