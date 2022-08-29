@@ -170,8 +170,8 @@ const Map<String, int> _namedColors = {
 final _colorHexRegExp = RegExp(r'^#([a-f0-9]{3,8})$', caseSensitive: false);
 final _colorHslRegExp =
     RegExp(r'^(hsla?)\(([0-9.-]+)(deg|rad|grad|turn)?[,\s]+([0-9.]+%)[,\s]+([0-9.]+%)([,\s/]+([0-9.]+%?))?\s*\)$');
-final _colorRgbRegExp = RegExp(
-    r'^(rgba?)\(([+-]?[^\s,.]+%?)[,\s]+([+-]?[^\s,.]+%?)[,\s]+([+-]?[^\s,.]+%?)([,\s/]+([+-]?[^\s,.]+%?))?\s*\)$');
+final _colorRgbRegExp =
+    RegExp(r'^(rgba?)\(([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)([,\s/]+([+-]?[^\s,]+%?))?\s*\)$');
 
 final LinkedLruHashMap<String, Color> _cachedParsedColor = LinkedLruHashMap(maximumSize: 100);
 
