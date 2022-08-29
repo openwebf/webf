@@ -8,13 +8,15 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 
 class NativeValue extends Struct {
-  @Double()
-  external double float64;
+  // Or Float64
+  @Uint64()
+  external int u;
 
   @Int64()
-  external int u;
+  external int int64;
 
   @Int64()
   external int tag;
@@ -27,6 +29,7 @@ enum JSValueType {
   TAG_NULL,
   TAG_FLOAT64,
   TAG_JSON,
+  TAG_LIST,
   TAG_POINTER,
   TAG_FUNCTION,
   TAG_ASYNC_FUNCTION
@@ -80,9 +83,9 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
     case JSValueType.TAG_NULL:
       return null;
     case JSValueType.TAG_FLOAT64:
-      return nativeValue.ref.float64;
+      return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:
-      JSPointerType pointerType = JSPointerType.values[nativeValue.ref.float64.toInt()];
+      JSPointerType pointerType = JSPointerType.values[nativeValue.ref.int64];
       switch (pointerType) {
         case JSPointerType.NativeBoundingClientRect:
           return Pointer.fromAddress(nativeValue.ref.u).cast<NativeBoundingClientRect>();
@@ -115,7 +118,17 @@ void toNativeValue(Pointer<NativeValue> target, value) {
     target.ref.u = value ? 1 : 0;
   } else if (value is double) {
     target.ref.tag = JSValueType.TAG_FLOAT64.index;
-    target.ref.float64 = value;
+    target.ref.u = doubleToUint64(value);
+  } else if (value is List) {
+    target.ref.tag = JSValueType.TAG_LIST.index;
+    target.ref.int64 = value.length;
+    Pointer<Pointer<NativeValue>> lists = malloc.allocate<Pointer<NativeValue>>(sizeOf<NativeValue>() * value.length);
+    target.ref.u = lists.address;
+    for(int i = 0; i < value.length; i ++) {
+      Pointer<NativeValue> list_item = malloc.allocate(sizeOf<NativeValue>());
+      toNativeValue(list_item, value[i]);
+      lists[i] = list_item;
+    }
   } else if (value is String) {
     target.ref.tag = JSValueType.TAG_STRING.index;
     target.ref.u = stringToNativeString(value).address;
@@ -123,12 +136,17 @@ void toNativeValue(Pointer<NativeValue> target, value) {
     target.ref.tag = JSValueType.TAG_POINTER.index;
     target.ref.u = value.address;
     if (value is Pointer<NativeBoundingClientRect>) {
-      target.ref.float64 = JSPointerType.NativeBoundingClientRect.index.toDouble();
+      target.ref.int64 = JSPointerType.NativeBoundingClientRect.index;
     } else if (value is Pointer<NativeCanvasRenderingContext2D>) {
-      target.ref.float64 = JSPointerType.NativeCanvasRenderingContext2D.index.toDouble();
+      target.ref.int64 = JSPointerType.NativeCanvasRenderingContext2D.index;
     } else if (value is Pointer<NativeBindingObject>) {
-      target.ref.float64 = JSPointerType.NativeBindingObject.index.toDouble();
+      target.ref.int64 = JSPointerType.NativeBindingObject.index;
     }
+  } else if (value is BindingObject) {
+    target.ref.tag = JSValueType.TAG_POINTER.index;
+    assert(value.pointer is Pointer);
+    target.ref.u = (value.pointer as Pointer).address;
+    target.ref.int64 = JSPointerType.NativeBindingObject.index;
   } else if (value is AsyncAnonymousNativeFunction) {
     int id = _functionId++;
     _asyncFunctionMap[id] = value;

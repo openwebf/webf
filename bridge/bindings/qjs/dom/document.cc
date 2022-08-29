@@ -306,6 +306,38 @@ JSValue Document::getElementsByClassName(JSContext* ctx, JSValue this_val, int a
   return array;
 }
 
+JSValue Document::querySelector(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+  if (argc < 1) {
+    return JS_ThrowTypeError(ctx, "Uncaught TypeError: Failed to execute 'querySelector' on 'Document': 1 argument required, but only 0 present.");
+  }
+
+  getDartMethod()->flushUICommand();
+
+  auto* document = static_cast<DocumentInstance*>(JS_GetOpaque(this_val, Document::classId()));
+  std::string selectorText = jsValueToStdString(ctx, argv[0]);
+  NativeValue arguments[] = {
+      Native_NewCString(selectorText)
+  };
+
+  return document->invokeBindingMethod("querySelector", 1, arguments);
+}
+
+JSValue Document::querySelectorAll(JSContext* ctx, JSValue this_val, int argc, JSValue* argv) {
+  if (argc < 1) {
+    return JS_ThrowTypeError(ctx, "Uncaught TypeError: Failed to execute 'querySelector' on 'Document': 1 argument required, but only 0 present.");
+  }
+
+  getDartMethod()->flushUICommand();
+
+  auto* document = static_cast<DocumentInstance*>(JS_GetOpaque(this_val, Document::classId()));
+  std::string selectorText = jsValueToStdString(ctx, argv[0]);
+  NativeValue arguments[] = {
+      Native_NewCString(selectorText)
+  };
+
+  return document->invokeBindingMethod("querySelectorAll", 1, arguments);
+}
+
 void Document::defineElement(const std::string& tagName, Element* constructor) {
   elementConstructorMap[tagName] = constructor;
 }
