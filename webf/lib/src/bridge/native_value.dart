@@ -151,7 +151,7 @@ void toNativeValue(Pointer<NativeValue> target, value) {
     int id = _functionId++;
     _asyncFunctionMap[id] = value;
     target.ref.tag = JSValueType.TAG_ASYNC_FUNCTION.index;
-    target.ref.u = id;
+    target.ref.int64 = id;
   } else if (value is AnonymousNativeFunction) {
     int id = _functionId++;
     _functionMap[id] = value;
