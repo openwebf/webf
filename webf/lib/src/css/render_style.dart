@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/css/css_animation.dart';
 
 typedef RenderStyleVisitor<T extends RenderStyle> = void Function(T renderStyle);
 
@@ -161,6 +162,16 @@ abstract class RenderStyle {
   // Sliver
   Axis get sliverDirection;
 
+  // Animation
+  List<String> get animationName;
+  List<String> get animationDuration;
+  List<String> get animationTimingFunction;
+  List<String> get animationDelay;
+  List<String> get animationIterationCount;
+  List<String> get animationDirection;
+  List<String> get animationFillMode;
+  List<String> get animationPlayState;
+
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
   void addColorRelativeProperty(String propertyName);
@@ -204,7 +215,8 @@ class CSSRenderStyle extends RenderStyle
         CSSFilterEffectsMixin,
         CSSOpacityMixin,
         CSSTransitionMixin,
-        CSSVariableMixin {
+        CSSVariableMixin,
+        CSSAnimationMixin {
   CSSRenderStyle({required this.target});
 
   @override
@@ -597,6 +609,17 @@ class CSSRenderStyle extends RenderStyle
       case TRANSITION_DURATION:
       case TRANSITION_TIMING_FUNCTION:
       case TRANSITION_PROPERTY:
+        value = CSSStyleProperty.getMultipleValues(propertyValue);
+        break;
+      // Animation
+      case ANIMATION_DELAY:
+      case ANIMATION_DIRECTION:
+      case ANIMATION_DURATION:
+      case ANIMATION_FILL_MODE:
+      case ANIMATION_ITERATION_COUNT:
+      case ANIMATION_NAME:
+      case ANIMATION_PLAY_STATE:
+      case ANIMATION_TIMING_FUNCTION:
         value = CSSStyleProperty.getMultipleValues(propertyValue);
         break;
     }

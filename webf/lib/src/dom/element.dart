@@ -157,7 +157,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         _isDefaultRepaintBoundary = isDefaultRepaintBoundary,
         super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
-    style = CSSStyleDeclaration.computedStyle(this, _defaultStyle, _onStyleChanged);
+    style = CSSStyleDeclaration.computedStyle(this, _defaultStyle, _onStyleChanged, _onStyleFlushed);
 
     // Init render style.
     renderStyle = CSSRenderStyle(target: this);
@@ -1345,6 +1345,31 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case TRANSITION_PROPERTY:
         renderStyle.transitionProperty = value;
         break;
+       // Animation
+      case ANIMATION_DELAY:
+        renderStyle.animationDelay = value;
+        break;
+      case ANIMATION_NAME:
+        renderStyle.animationName = value;
+        break;
+      case ANIMATION_DIRECTION:
+        renderStyle.animationDirection = value;
+        break;
+      case ANIMATION_DURATION:
+        renderStyle.animationDuration = value;
+        break;
+      case ANIMATION_PLAY_STATE:
+        renderStyle.animationPlayState = value;
+        break;
+      case ANIMATION_FILL_MODE:
+        renderStyle.animationFillMode = value;
+        break;
+      case ANIMATION_ITERATION_COUNT:
+        renderStyle.animationIterationCount = value;
+        break;
+      case ANIMATION_TIMING_FUNCTION:
+        renderStyle.animationTimingFunction = value;
+        break;
       // Others
       case OBJECT_FIT:
         renderStyle.objectFit = value;
@@ -1434,6 +1459,19 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       renderStyle.runTransition(propertyName, prevValue, currentValue);
     } else {
       setRenderStyle(propertyName, currentValue);
+    }
+  }
+
+  void _onStyleFlushed(List<String> properties) {
+    if (renderStyle.shouldAnimation(properties)) {
+      renderStyle.beforeRunningAnimation();
+      if (renderBoxModel!.hasSize) {
+        renderStyle.runAnimation();
+      } else {
+        SchedulerBinding.instance.addPostFrameCallback((callback) {
+          renderStyle.runAnimation();
+        });
+      }
     }
   }
 

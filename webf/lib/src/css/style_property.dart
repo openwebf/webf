@@ -4,6 +4,7 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/src/css/css_animation.dart';
 
 // a-b to aB
 final RegExp _camelCaseReg = RegExp(r'-(\w)');
@@ -394,7 +395,7 @@ class CSSStyleProperty {
   // all, -moz-specific, sliding; => ['all', '-moz-specific', 'sliding']
   static List<String>? getMultipleValues(String property) {
     if (property.isEmpty) return null;
-    return property.split(_commaRegExp);
+    return property.split(_commaRegExp).map((e) => e.trim()).toList();
   }
 
   static List<List<String?>>? getShadowValues(String property) {
@@ -851,5 +852,106 @@ class CSSStyleProperty {
     }
 
     return [x, y];
+  }
+
+  static List<String?>? _getAnimationValues(String shorthandProperty) {
+    List<String> animations = shorthandProperty.split(_commaRegExp);
+    List<String?> values = List.filled(8, null);
+
+    for (String animation in animations) {
+      List<String> parts = _splitBySpace(animation.trim());
+
+      String? duration;
+      String? timingFunction;
+      String? delay;
+      String? iterationCount;
+      String? direction;
+      String? fillMode;
+      String? playState;
+      String? name;
+
+      for (String part in parts) {
+        if (parts.length <= 4 &&
+            name == null &&
+            CSSAnimationMixin.isValidAnimationNameValue(part)) {
+          name = part;
+        } else if (duration == null && CSSTime.isTime(part)) {
+          duration = part;
+        } else if (timingFunction == null &&
+            CSSAnimationMixin.isValidTransitionTimingFunctionValue(part)) {
+          timingFunction = part;
+        } else if (delay == null && CSSTime.isTime(part)) {
+          delay = part;
+        } else if (iterationCount == null && (CSSNumber.isNumber(part) || part == 'infinite')) {
+          iterationCount = part;
+        } else if (direction == null &&
+            CSSAnimationMixin.isValidAnimationDirectionValue(part)) {
+          direction = part;
+        } else if (fillMode == null &&
+            CSSAnimationMixin.isValidAnimationFillModeValue(part)) {
+          fillMode = part;
+        } else if (playState == null &&
+            CSSAnimationMixin.isValidAnimationPlayStateValue(part)) {
+          playState = part;
+        } else if (parts.length > 4 &&
+            name == null &&
+            CSSAnimationMixin.isValidAnimationNameValue(part)) {
+          name = part;
+        } else {
+          continue;
+          // return null;
+        }
+      }
+
+      duration = duration ?? _0s;
+      timingFunction = timingFunction ?? EASE;
+      delay = delay ?? _0s;
+      iterationCount = iterationCount ?? _1;
+      direction = direction ?? NORMAL;
+      fillMode = fillMode ?? NONE;
+      playState = playState ?? RUNNING;
+      name = name ?? NONE;
+
+      values[0] == null
+          ? values[0] = duration
+          : values[0] = values[0]! + (_comma + duration);
+      values[1] == null
+          ? values[1] = timingFunction
+          : values[1] = values[1]! + (_comma + timingFunction);
+      values[2] == null
+          ? values[2] = delay
+          : values[2] = values[2]! + (_comma + delay);
+      values[3] == null
+          ? values[3] = iterationCount
+          : values[3] = values[3]! + (_comma + iterationCount);
+      values[4] == null
+          ? values[4] = direction
+          : values[4] = values[4]! + (_comma + direction);
+      values[5] == null
+          ? values[5] = fillMode
+          : values[5] = values[5]! + (_comma + fillMode);
+      values[6] == null
+          ? values[6] = playState
+          : values[6] = values[6]! + (_comma + playState);
+      values[7] == null
+          ? values[7] = name
+          : values[7] = values[7]! + (_comma + name);
+    }
+
+    return values;
+  }
+
+  static void setShorthandAnimation(Map<String, String?> properties, String shorthandValue) {
+    List<String?>? values = _getAnimationValues(shorthandValue);
+    if (values == null) return;
+
+    properties[ANIMATION_DURATION] = values[0];
+    properties[ANIMATION_TIMING_FUNCTION] = values[1];
+    properties[ANIMATION_DELAY] = values[2];
+    properties[ANIMATION_ITERATION_COUNT] = values[3];
+    properties[ANIMATION_DIRECTION] = values[4];
+    properties[ANIMATION_FILL_MODE] = values[5];
+    properties[ANIMATION_PLAY_STATE] = values[6];
+    properties[ANIMATION_NAME] = values[7];
   }
 }
