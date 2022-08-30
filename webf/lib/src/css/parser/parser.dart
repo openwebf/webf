@@ -438,8 +438,8 @@ class CSSParser {
     }
     if (selectorGroup != null) {
       final declarations = processDeclarations();
-      CSSStyleDeclaration declaration = declarations.where((element) => element is CSSStyleDeclaration).last!;
-      Iterable childRules = declarations.where((element) => element is CSSStyleRule);
+      CSSStyleDeclaration declaration = declarations.whereType<CSSStyleDeclaration>().last;
+      Iterable childRules = declarations.whereType<CSSStyleRule>();
       CSSStyleRule rule = CSSStyleRule(selectorGroup, declaration);
       List<CSSRule> rules = [rule];
       for (CSSStyleRule childRule in childRules) {

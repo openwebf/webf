@@ -98,6 +98,7 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
       }
     case JSValueType.TAG_FUNCTION:
     case JSValueType.TAG_ASYNC_FUNCTION:
+    case JSValueType.TAG_LIST:
       break;
     case JSValueType.TAG_JSON:
       Pointer<NativeString> nativeString = Pointer.fromAddress(nativeValue.ref.u);
@@ -160,6 +161,6 @@ void toNativeValue(Pointer<NativeValue> target, value) {
   } else if (value is Object) {
     String str = jsonEncode(value);
     target.ref.tag = JSValueType.TAG_JSON.index;
-    target.ref.int64 = str.toNativeUtf8().address;
+    target.ref.u = str.toNativeUtf8().address;
   }
 }

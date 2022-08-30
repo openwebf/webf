@@ -1,5 +1,5 @@
 /*
-Copyright 2013, the Dart project authors. 
+Copyright 2013, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -65,7 +65,6 @@ class Identifier extends TreeNode {
         name == 'cubic-bezier' ||
         name == 'attr' ||
         name == 'url';
-    ;
   }
 }
 
