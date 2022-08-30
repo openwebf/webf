@@ -514,7 +514,7 @@ class CSSParser {
     }
   }
 
-  // return list of rule && CSSStyleDeclaration
+  // return list of rule || CSSStyleDeclaration
   List<dynamic> processDeclarations({bool checkBrace = true}) {
     if (checkBrace) _eat(TokenKind.LBRACE);
 

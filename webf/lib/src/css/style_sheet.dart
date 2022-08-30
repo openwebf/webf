@@ -20,14 +20,11 @@ class CSSStyleSheet implements StyleSheet, Comparable {
 
   final String content;
 
-  List<CSSRule> get cssRules => _cssRules;
-  late List<CSSRule> _cssRules;
+  final List<CSSRule> cssRules;
 
-  CSSStyleSheet(this.content, this._cssRules, {this.disabled = false, this.href});
+  CSSStyleSheet(this.content, this.cssRules, {this.disabled = false, this.href});
 
-  CSSStyleSheet.from(this.content, {this.disabled = false, this.href}) {
-    _cssRules = CSSParser(content).parseRules();
-  }
+  CSSStyleSheet.from(this.content, {this.disabled = false, this.href}) : cssRules = CSSParser(content).parseRules();
 
   insertRule(String text, int index) {
     List<CSSRule> rules = CSSParser(text).parseRules();
