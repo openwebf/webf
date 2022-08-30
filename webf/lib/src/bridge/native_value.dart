@@ -77,9 +77,9 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
       freeNativeString(nativeString);
       return result;
     case JSValueType.TAG_INT:
-      return nativeValue.ref.u;
+      return nativeValue.ref.int64;
     case JSValueType.TAG_BOOL:
-      return nativeValue.ref.u == 1;
+      return nativeValue.ref.int64 == 1;
     case JSValueType.TAG_NULL:
       return null;
     case JSValueType.TAG_FLOAT64:
@@ -112,10 +112,10 @@ void toNativeValue(Pointer<NativeValue> target, value) {
     target.ref.tag = JSValueType.TAG_NULL.index;
   } else if (value is int) {
     target.ref.tag = JSValueType.TAG_INT.index;
-    target.ref.u = value;
+    target.ref.int64 = value;
   } else if (value is bool) {
     target.ref.tag = JSValueType.TAG_BOOL.index;
-    target.ref.u = value ? 1 : 0;
+    target.ref.int64 = value ? 1 : 0;
   } else if (value is double) {
     target.ref.tag = JSValueType.TAG_FLOAT64.index;
     target.ref.u = doubleToUint64(value);
@@ -156,10 +156,10 @@ void toNativeValue(Pointer<NativeValue> target, value) {
     int id = _functionId++;
     _functionMap[id] = value;
     target.ref.tag = JSValueType.TAG_FUNCTION.index;
-    target.ref.u = id;
+    target.ref.int64 = id;
   } else if (value is Object) {
     String str = jsonEncode(value);
     target.ref.tag = JSValueType.TAG_JSON.index;
-    target.ref.u = str.toNativeUtf8().address;
+    target.ref.int64 = str.toNativeUtf8().address;
   }
 }
