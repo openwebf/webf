@@ -221,6 +221,7 @@ class Document extends Node {
     }
   }
 
+  bool _recalculating = false;
   void updateStyleIfNeeded() {
     if (styleSheets.isEmpty && !styleNodeManager.hasPendingStyleSheet) {
       return;
@@ -229,22 +230,21 @@ class Document extends Node {
       flushStyle(rebuild: true);
       return;
     }
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      flushStyle();
-    });
-  }
-
-  bool _recalculating = false;
-  void flushStyle({bool rebuild = false}) {
-    if (!needsStyleRecalculate) {
-      return;
-    }
     if (_recalculating) {
       return;
     }
     _recalculating = true;
-    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
       _recalculating = false;
+      flushStyle();
+    });
+  }
+
+  void flushStyle({bool rebuild = false}) {
+    if (!needsStyleRecalculate) {
+      return;
+    }
+    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       return;
     }
     recalculateDocumentStyle();

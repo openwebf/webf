@@ -449,20 +449,20 @@ class CSSStyleDeclaration {
     }
   }
 
-  void merge(CSSStyleDeclaration declaration) {
+  void union(CSSStyleDeclaration declaration) {
     Map<String, String> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
 
     for (String propertyName in properties.keys) {
-      bool isImportant = _importants[propertyName] ?? false;
+      bool currentIsImportant = _importants[propertyName] ?? false;
+      bool otherIsImportant = declaration._importants[propertyName] ?? false;
       String? currentValue = properties[propertyName];
       String? otherValue = declaration._pendingProperties[propertyName];
 
-      if (!isImportant && !isNullOrEmptyValue(otherValue) && currentValue != otherValue) {
+      if ((otherIsImportant || !currentIsImportant) && !isNullOrEmptyValue(otherValue) && currentValue != otherValue) {
         // Update property.
         _pendingProperties[propertyName] = otherValue!;
-        bool otherIsImportant = declaration._importants[propertyName] ?? false;
         if (otherIsImportant) {
           _importants[propertyName] = true;
         }
@@ -470,13 +470,13 @@ class CSSStyleDeclaration {
     }
 
     for (String propertyName in declaration._pendingProperties.keys) {
-      bool isImportant = _importants[propertyName] ?? false;
+      bool currentIsImportant = _importants[propertyName] ?? false;
+      bool otherIsImportant = declaration._importants[propertyName] ?? false;
       String? currentValue = properties[propertyName];
       String? otherValue = declaration._pendingProperties[propertyName];
-      if (!isImportant && isNullOrEmptyValue(currentValue) && !isNullOrEmptyValue(otherValue)) {
+      if ((otherIsImportant || !currentIsImportant) && isNullOrEmptyValue(currentValue) && currentValue != otherValue) {
         // Add property.
         _pendingProperties[propertyName] = otherValue!;
-        bool otherIsImportant = declaration._importants[propertyName] ?? false;
         if (otherIsImportant) {
           _importants[propertyName] = true;
         }
@@ -484,37 +484,43 @@ class CSSStyleDeclaration {
     }
   }
 
-  Map<String, String?> diff(CSSStyleDeclaration other) {
-    Map<String, String?> diffs = {};
-
+  // return update status
+  bool diff(CSSStyleDeclaration other) {
     Map<String, String> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
-
+    bool updateStatus = false;
     for (String propertyName in properties.keys) {
       String? prevValue = properties[propertyName];
       String? currentValue = other._pendingProperties[propertyName];
+      bool currentImportant = other._importants[propertyName] ?? false;
 
       if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
         continue;
       } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
         // Remove property.
-        diffs[propertyName] = null;
+        removeProperty(propertyName, currentImportant);
+        updateStatus = true;
       } else if (prevValue != currentValue) {
         // Update property.
-        diffs[propertyName] = currentValue;
+        setProperty(propertyName, currentValue, currentImportant);
+        updateStatus = true;
       }
     }
 
     for (String propertyName in other._pendingProperties.keys) {
       String? prevValue = properties[propertyName];
       String? currentValue = other._pendingProperties[propertyName];
+      bool currentImportant = other._importants[propertyName] ?? false;
+
       if (isNullOrEmptyValue(prevValue) && !isNullOrEmptyValue(currentValue)) {
         // Add property.
-        diffs[propertyName] = currentValue;
+        setProperty(propertyName, currentValue, currentImportant);
+        updateStatus = true;
       }
     }
-    return diffs;
+
+    return updateStatus;
   }
 
   /// Override [] and []= operator to get/set style properties.

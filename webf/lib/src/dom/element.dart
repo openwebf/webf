@@ -1426,7 +1426,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   void _applySheetStyle(CSSStyleDeclaration style) {
     CSSStyleDeclaration? matchRule = ElementRuleCollector().collectionFromRuleSet(ownerDocument.ruleSet, this);
-    style.merge(matchRule);
+    style.union(matchRule);
   }
 
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue) {
@@ -1459,12 +1459,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
-      Map<String, String?> diffs = style.diff(newStyle);
-      if (diffs.isNotEmpty) {
-        // Update render style.
-        diffs.forEach((String propertyName, String? value) {
-          style.setProperty(propertyName, value);
-        });
+      if (style.diff(newStyle)) {
         style.flushPendingProperties();
       }
     }
