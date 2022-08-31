@@ -92,11 +92,11 @@ class CSSStyleDeclaration {
     String css = EMPTY_STRING;
     _properties.forEach((property, value) {
       if (css.isNotEmpty) css += ' ';
-      css += '${_kebabize(property)}: $value;';
+      css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
     _sheetStyle.forEach((property, value) {
       if (css.isNotEmpty) css += ' ';
-      css += '${_kebabize(property)}: $value;';
+      css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
     return css;
   }
@@ -575,6 +575,14 @@ class CSSStyleDeclaration {
 
   @override
   String toString() => 'CSSStyleDeclaration($cssText)';
+
+  @override
+  int get hashCode => cssText.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    return hashCode == other.hashCode;
+  }
 }
 
 // aB to a-b

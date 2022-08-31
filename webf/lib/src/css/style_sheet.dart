@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:webf/css.dart';
+import 'package:quiver/core.dart';
 
 abstract class StyleSheet {}
 
@@ -18,13 +19,11 @@ class CSSStyleSheet implements StyleSheet, Comparable {
   /// A string containing the baseURL used to resolve relative URLs in the stylesheet.
   String? href;
 
-  final String content;
-
   final List<CSSRule> cssRules;
 
-  CSSStyleSheet(this.content, this.cssRules, {this.disabled = false, this.href});
+  CSSStyleSheet(this.cssRules, {this.disabled = false, this.href});
 
-  CSSStyleSheet.from(this.content, {this.disabled = false, this.href}) : cssRules = CSSParser(content).parseRules();
+  // CSSStyleSheet(this.content, {this.disabled = false, this.href}) : cssRules = CSSParser(content).parseRules();
 
   insertRule(String text, int index) {
     List<CSSRule> rules = CSSParser(text).parseRules();
@@ -51,14 +50,14 @@ class CSSStyleSheet implements StyleSheet, Comparable {
 
   @override
   bool operator ==(Object other) {
-    return other is CSSStyleSheet && other.content == content;
+    return hashCode == other.hashCode;
   }
 
   @override
-  int get hashCode => content.hashCode;
+  int get hashCode => hashObjects(cssRules);
 
   CSSStyleSheet clone() {
-    CSSStyleSheet sheet = CSSStyleSheet(content, List.from(cssRules), disabled: disabled, href: href);
+    CSSStyleSheet sheet = CSSStyleSheet(List.from(cssRules), disabled: disabled, href: href);
     return sheet;
   }
 
