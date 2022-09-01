@@ -292,17 +292,16 @@ int EventTargetInstance::hasProperty(JSContext* ctx, JSValue obj, JSAtom atom) {
     return true;
 
   JSValue atomString = JS_AtomToString(ctx, atom);
-  JSString* p = JS_VALUE_GET_STRING(atomString);
+  std::string eventType = jsValueToStdString(ctx, atomString);
   // There are still one reference_count in atom. It's safe to free here.
   JS_FreeValue(ctx, atomString);
 
-  if (!p->is_wide_char && p->u.str8[0] == 'o' && p->u.str8[1] == 'n') {
-    const char* eventTypeName = reinterpret_cast<const char*>(p->u.str8);
-    if (EventTypeNames::isEventTypeName(eventTypeName)) {
+  if (eventType[0] == 'o' && eventType[1] == 'n') {
+    if (EventTypeNames::isEventTypeName(eventType)) {
       return true;
     }
 
-    return !JS_IsNull(eventTarget->getAttributesEventHandler(p));
+    return !JS_IsNull(eventTarget->getAttributesEventHandler(atomString));
   }
 
   return eventTarget->m_properties.contains(atom);
@@ -319,12 +318,12 @@ JSValue EventTargetInstance::getProperty(JSContext* ctx, JSValue obj, JSAtom ato
   JS_FreeValue(ctx, prototype);
 
   JSValue atomString = JS_AtomToString(ctx, atom);
-  JSString* p = JS_VALUE_GET_STRING(atomString);
+  std::string eventType = jsValueToStdString(ctx, atomString);
   // There are still one reference_count in atom. It's safe to free here.
   JS_FreeValue(ctx, atomString);
 
-  if (!p->is_wide_char && p->u.str8[0] == 'o' && p->u.str8[1] == 'n') {
-    return eventTarget->getAttributesEventHandler(p);
+  if (eventType[0] == 'o' && eventType[1] == 'n') {
+    return eventTarget->getAttributesEventHandler(atomString);
   }
 
   if (eventTarget->m_properties.contains(atom)) {
@@ -372,13 +371,13 @@ int EventTargetInstance::setProperty(JSContext* ctx, JSValue obj, JSAtom atom, J
   JS_FreeValue(ctx, prototype);
 
   JSValue atomString = JS_AtomToString(ctx, atom);
-  JSString* p = JS_VALUE_GET_STRING(atomString);
+  std::string eventType = jsValueToStdString(ctx, atomString);
 
-  if (!p->is_wide_char && p->len > 2 && p->u.str8[0] == 'o' && p->u.str8[1] == 'n') {
-    eventTarget->setAttributesEventHandler(p, value);
+  if (eventType.substr(0, 2) == "on") {
+    eventTarget->setAttributesEventHandler(atomString, value);
   } else {
     eventTarget->m_properties.setProperty(JS_DupAtom(ctx, atom), JS_DupValue(ctx, value));
-    if (isJavaScriptExtensionElementInstance(eventTarget->context(), eventTarget->jsObject) && !p->is_wide_char && p->u.str8[0] != '_') {
+    if (isJavaScriptExtensionElementInstance(eventTarget->context(), eventTarget->jsObject) && eventType[0] != '_') {
       std::unique_ptr<NativeString> args_01 = atomToNativeString(ctx, atom);
       std::unique_ptr<NativeString> args_02 = jsValueToNativeString(ctx, value);
       eventTarget->m_context->uiCommandBuffer()->addCommand(eventTarget->m_eventTargetId, UICommand::setAttribute, *args_01, *args_02, nullptr);
@@ -410,10 +409,9 @@ JSValue EventTargetInstance::invokeBindingMethod(const char* method, int32_t arg
   return returnValue;
 }
 
-void EventTargetInstance::setAttributesEventHandler(JSString* p, JSValue value) {
-  char eventType[p->len + 1 - 2];
-  memcpy(eventType, &p->u.str8[2], p->len + 1 - 2);
-  JSAtom atom = JS_NewAtom(m_ctx, eventType);
+void EventTargetInstance::setAttributesEventHandler(JSValue key, JSValue value) {
+  std::string eventType = jsValueToStdString(m_ctx, key).substr(2);
+  JSAtom atom = JS_NewAtom(m_ctx, eventType.c_str());
 
   enum SetAttributeEventHandlerOperation { kAddEventListener, kRemoveEventListener, kDoNothing };
 
@@ -440,10 +438,9 @@ void EventTargetInstance::setAttributesEventHandler(JSString* p, JSValue value) 
   }
 }
 
-JSValue EventTargetInstance::getAttributesEventHandler(JSString* p) {
-  char eventType[p->len + 1 - 2];
-  memcpy(eventType, &p->u.str8[2], p->len + 1 - 2);
-  JSAtom atom = JS_NewAtom(m_ctx, eventType);
+JSValue EventTargetInstance::getAttributesEventHandler(JSValue key) {
+  std::string eventType = jsValueToStdString(m_ctx, key).substr(2);
+  JSAtom atom = JS_NewAtom(m_ctx, eventType.c_str());
   if (!m_eventHandlerMap.contains(atom)) {
     JS_FreeAtom(m_ctx, atom);
     return JS_NULL;

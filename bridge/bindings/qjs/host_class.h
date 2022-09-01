@@ -8,7 +8,7 @@
 
 #include "executing_context.h"
 #include "qjs_patch.h"
-#include "third_party/quickjs/quickjs.h"
+#include "quickjs/quickjs.h"
 
 namespace webf::binding::qjs {
 
