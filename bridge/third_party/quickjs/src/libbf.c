@@ -1,6 +1,6 @@
 /*
  * Tiny arbitrary precision floating point library
- * 
+ *
  * Copyright (c) 2017-2021 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,19 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdlib.h>
-#include <stdio.h>
+#include <assert.h>
 #include <inttypes.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #ifdef __AVX2__
 #include <immintrin.h>
 #endif
 
-#include "cutils.h"
-#include "libbf.h"
+#include "core/convertion.h"
+#include "quickjs/cutils.h"
+#include "quickjs/libbf.h"
 
 /* enable it to check the multiplication result */
 //#define USE_MUL_CHECK
@@ -2815,18 +2816,6 @@ int bf_mul_pow_radix(bf_t *r, const bf_t *T, limb_t radix,
     }
     bf_delete(B);
     return ret;
-}
-
-static inline int to_digit(int c)
-{
-    if (c >= '0' && c <= '9')
-        return c - '0';
-    else if (c >= 'A' && c <= 'Z')
-        return c - 'A' + 10;
-    else if (c >= 'a' && c <= 'z')
-        return c - 'a' + 10;
-    else
-        return 36;
 }
 
 /* add a limb at 'pos' and decrement pos. new space is created if
