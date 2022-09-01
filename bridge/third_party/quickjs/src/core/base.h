@@ -67,6 +67,12 @@
 #define CONFIG_PRINTF_RNDN
 #endif
 
+/* define to include Atomics.* operations which depend on the OS
+   threads */
+#if !defined(EMSCRIPTEN)
+#define CONFIG_ATOMICS
+#endif
+
 #if !defined(EMSCRIPTEN)
 /* enable stack limitation */
 #define CONFIG_STACK_CHECK
@@ -103,11 +109,11 @@
 /* test the GC by forcing it before each object allocation */
 //#define FORCE_GC_AT_MALLOC
 
-#ifdef CONFIG_ATOMICS
+//#ifdef CONFIG_ATOMICS
 #include <pthread.h>
 #include <stdatomic.h>
 #include <errno.h>
-#endif
+//#endif
 
 
 #endif

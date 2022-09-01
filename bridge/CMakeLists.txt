@@ -139,7 +139,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/cutils.c
     third_party/quickjs/src/libregexp.c
     third_party/quickjs/src/libunicode.c
-#    third_party/quickjs/src/quickjs.c
     third_party/quickjs/src/core/string.c
     third_party/quickjs/src/core/function.c
     third_party/quickjs/src/core/memory.c
@@ -294,7 +293,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
-  target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"} -DCONFIG_ATOMICS=1)
+  target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
 
 endif ()
 
