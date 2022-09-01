@@ -449,34 +449,24 @@ class CSSStyleDeclaration {
     }
   }
 
+  // Inserts the style of the given Declaration into the current Declaration.
   void union(CSSStyleDeclaration declaration) {
     Map<String, String> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
-
-    for (String propertyName in properties.keys) {
-      bool currentIsImportant = _importants[propertyName] ?? false;
-      bool otherIsImportant = declaration._importants[propertyName] ?? false;
-      String? currentValue = properties[propertyName];
-      String? otherValue = declaration._pendingProperties[propertyName];
-
-      if ((otherIsImportant || !currentIsImportant) && !isNullOrEmptyValue(otherValue) && currentValue != otherValue) {
-        // Update property.
-        _pendingProperties[propertyName] = otherValue!;
-        if (otherIsImportant) {
-          _importants[propertyName] = true;
-        }
-      }
-    }
 
     for (String propertyName in declaration._pendingProperties.keys) {
       bool currentIsImportant = _importants[propertyName] ?? false;
       bool otherIsImportant = declaration._importants[propertyName] ?? false;
       String? currentValue = properties[propertyName];
       String? otherValue = declaration._pendingProperties[propertyName];
-      if ((otherIsImportant || !currentIsImportant) && isNullOrEmptyValue(currentValue) && currentValue != otherValue) {
+      if ((otherIsImportant || !currentIsImportant) && currentValue != otherValue) {
         // Add property.
-        _pendingProperties[propertyName] = otherValue!;
+        if (otherValue != null) {
+          _pendingProperties[propertyName] = otherValue;
+        } else {
+          _pendingProperties.remove(propertyName);
+        }
         if (otherIsImportant) {
           _importants[propertyName] = true;
         }
@@ -484,7 +474,7 @@ class CSSStyleDeclaration {
     }
   }
 
-  // return update status
+  // Merge the difference between the declarations and return the updated status
   bool merge(CSSStyleDeclaration other) {
     Map<String, String> properties = {}
       ..addAll(_properties)
