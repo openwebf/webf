@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
@@ -1429,7 +1430,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_START);
     }
-    CSSStyleDeclaration matchRule = ElementRuleCollector().collectionFromRuleSet(ownerDocument.ruleSet, this);
+    CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_END);
@@ -1466,7 +1467,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
-      if (style.diff(newStyle)) {
+      if (style.merge(newStyle)) {
         style.flushPendingProperties();
       }
     }

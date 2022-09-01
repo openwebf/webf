@@ -59,6 +59,30 @@ describe('CSS Variables', () => {
     });
   });
 
+  it('variable resolve percentage color', async (done) => {
+    document.head.appendChild(
+      createStyle(`
+      .inner {
+        --a: 100%;
+        background-color: rgb(var(--a), 0%, 0%);
+      }
+    `)
+    );
+
+    document.body.appendChild(
+      <div class='outer'>
+        <div class='inbetween'>
+          <div class='inner'>Background should be red.</div>
+        </div>
+      </div>
+    );
+
+    requestAnimationFrame(async () => {
+      await snapshot();
+      done();
+    });
+  });
+
   it('variable resolve color', async (done) => {
     document.head.appendChild(
       createStyle(`
@@ -84,6 +108,7 @@ describe('CSS Variables', () => {
       done();
     });
   });
+
 
   it('nested variables', async (done) => {
     document.head.appendChild(

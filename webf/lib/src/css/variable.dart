@@ -22,35 +22,28 @@ mixin CSSVariableMixin on RenderStyle {
 
   @override
   dynamic getCSSVariable(String identifier, String propertyName) {
-    if (_checkStorageLoop(identifier)) {
-      return null;
-    }
+    CSSVariable? variable = _getRawVariable(identifier);
     _addDependency(identifier, propertyName);
-    if (_variableStorage != null && _variableStorage![identifier] != null) {
-      CSSVariable variable = _variableStorage![identifier]!;
-      final id = variable.identifier.trim();
-      if (_variableStorage![id] != null && id != identifier) {
-        return getCSSVariable(id, propertyName);
-      }
-      if (variable.defaultValue != null) {
-        return variable.defaultValue;
-      }
-      return null;
-    } else if (_identifierStorage != null && _identifierStorage![identifier] != null) {
-      return _identifierStorage![identifier];
-    } else {
-      // Inherits from renderStyle tree.
-      return parent?.getCSSVariable(identifier, propertyName);
+    if (variable != null) {
+      identifier = variable.identifier.trim();
     }
+    if (_identifierStorage != null && _identifierStorage![identifier] != null) {
+      return _identifierStorage![identifier];
+    }
+    if (variable?.defaultValue != null) {
+      return variable!.defaultValue;
+    }
+    // Inherits from renderStyle tree.
+    return parent?.getCSSVariable(identifier, propertyName);
   }
 
-  bool _checkStorageLoop(String identifier) {
-    Map<String, dynamic>? storage = _variableStorage;
+  CSSVariable? _getRawVariable(String identifier) {
+    Map<String, CSSVariable>? storage = _variableStorage;
     if (storage == null) {
-      return false;
+      return null;
     }
     if (storage[identifier] == null) {
-      return false;
+      return null;
     }
     CSSVariable fast = storage[identifier]!;
     CSSVariable slow = storage[identifier]!;
@@ -58,10 +51,10 @@ mixin CSSVariableMixin on RenderStyle {
       fast = storage[storage[fast.identifier]!.identifier]!;
       slow = storage[slow.identifier]!;
       if (fast == slow) {
-        return true;
+        return null;
       }
     }
-    return false;
+    return storage[fast.identifier] ?? fast;
   }
 
   // --x: red

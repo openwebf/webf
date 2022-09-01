@@ -448,8 +448,9 @@ double? _parseColorPart(String value, double min, double max, RenderStyle? rende
     if (computedValue == null) {
       return null;
     }
-    v = double.tryParse(computedValue);
+    value = computedValue;
   }
+
   if (value.endsWith('%')) {
     final p = double.tryParse(value.substring(0, value.length - 1));
     if (p == null) return null;

@@ -485,7 +485,7 @@ class CSSStyleDeclaration {
   }
 
   // return update status
-  bool diff(CSSStyleDeclaration other) {
+  bool merge(CSSStyleDeclaration other) {
     Map<String, String> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
