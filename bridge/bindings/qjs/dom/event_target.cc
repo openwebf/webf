@@ -377,7 +377,7 @@ int EventTargetInstance::setProperty(JSContext* ctx, JSValue obj, JSAtom atom, J
     eventTarget->setAttributesEventHandler(atomString, value);
   } else {
     eventTarget->m_properties.setProperty(JS_DupAtom(ctx, atom), JS_DupValue(ctx, value));
-    if (isJavaScriptExtensionElementInstance(eventTarget->context(), eventTarget->jsObject) && eventType['0'] != '_') {
+    if (isJavaScriptExtensionElementInstance(eventTarget->context(), eventTarget->jsObject) && eventType[0] != '_') {
       std::unique_ptr<NativeString> args_01 = atomToNativeString(ctx, atom);
       std::unique_ptr<NativeString> args_02 = jsValueToNativeString(ctx, value);
       eventTarget->m_context->uiCommandBuffer()->addCommand(eventTarget->m_eventTargetId, UICommand::setAttribute, *args_01, *args_02, nullptr);
