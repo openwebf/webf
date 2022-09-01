@@ -4,9 +4,8 @@
  */
 
 #include "qjs_patch.h"
-#include <string.h>
 #include <quickjs/src/core/types.h>
-
+#include <string.h>
 
 uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
   if (JS_VALUE_GET_TAG(value) != JS_TAG_STRING) {
