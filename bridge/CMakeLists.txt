@@ -199,7 +199,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/host_object.h
     bindings/qjs/host_object.cc
     bindings/qjs/host_class.h
-    bindings/qjs/qjs_patch.cc
+          bindings/qjs/qjs_patch.c
     bindings/qjs/qjs_patch.h
     bindings/qjs/rejected_promises.cc
     bindings/qjs/rejected_promises.h

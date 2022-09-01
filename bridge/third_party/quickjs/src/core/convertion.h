@@ -117,11 +117,11 @@ static inline int to_digit(int c) {
 double js_strtod(const char* p, int radix, BOOL is_float);
 
 #ifdef CONFIG_BIGNUM
-static JSValue js_string_to_bigint(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent);
-static JSValue js_string_to_bigfloat(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent);
-static JSValue js_string_to_bigdecimal(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent);
-static JSValue js_atof(JSContext* ctx, const char* str, const char** pp, int radix, int flags);
-static JSValue js_atof2(JSContext* ctx, const char* str, const char** pp, int radix, int flags, slimb_t* pexponent);
+JSValue js_string_to_bigint(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent);
+JSValue js_string_to_bigfloat(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent);
+JSValue js_string_to_bigdecimal(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent);
+JSValue js_atof(JSContext* ctx, const char* str, const char** pp, int radix, int flags);
+JSValue js_atof2(JSContext* ctx, const char* str, const char** pp, int radix, int flags, slimb_t* pexponent);
 #else
 JSValue js_atof(JSContext* ctx, const char* str, const char** pp, int radix, int flags);
 #endif
@@ -135,12 +135,12 @@ int JS_NumberIsInteger(JSContext* ctx, JSValueConst val);
 BOOL JS_NumberIsNegativeOrMinusZero(JSContext* ctx, JSValueConst val);
 
 #ifdef CONFIG_BIGNUM
-static JSValue js_bigint_to_string1(JSContext* ctx, JSValueConst val, int radix);
-static JSValue js_bigint_to_string(JSContext* ctx, JSValueConst val);
-static JSValue js_ftoa(JSContext* ctx, JSValueConst val1, int radix, limb_t prec, bf_flags_t flags);
-static JSValue js_bigfloat_to_string(JSContext* ctx, JSValueConst val);
-static JSValue js_bigdecimal_to_string1(JSContext* ctx, JSValueConst val, limb_t prec, int flags);
-static JSValue js_bigdecimal_to_string(JSContext* ctx, JSValueConst val);
+JSValue js_bigint_to_string1(JSContext* ctx, JSValueConst val, int radix);
+JSValue js_bigint_to_string(JSContext* ctx, JSValueConst val);
+JSValue js_ftoa(JSContext* ctx, JSValueConst val1, int radix, limb_t prec, bf_flags_t flags);
+JSValue js_bigfloat_to_string(JSContext* ctx, JSValueConst val);
+JSValue js_bigdecimal_to_string1(JSContext* ctx, JSValueConst val, limb_t prec, int flags);
+JSValue js_bigdecimal_to_string(JSContext* ctx, JSValueConst val);
 #endif
 
 /* 2 <= base <= 36 */

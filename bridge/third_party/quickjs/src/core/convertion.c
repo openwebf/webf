@@ -795,7 +795,7 @@ double js_strtod(const char* p, int radix, BOOL is_float) {
 }
 
 #ifdef CONFIG_BIGNUM
-static JSValue js_string_to_bigint(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent) {
+JSValue js_string_to_bigint(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent) {
   bf_t a_s, *a = &a_s;
   int ret;
   JSValue val;
@@ -812,7 +812,7 @@ static JSValue js_string_to_bigint(JSContext* ctx, const char* buf, int radix, i
   return val;
 }
 
-static JSValue js_string_to_bigfloat(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent) {
+JSValue js_string_to_bigfloat(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent) {
   bf_t* a;
   int ret;
   JSValue val;
@@ -834,7 +834,7 @@ static JSValue js_string_to_bigfloat(JSContext* ctx, const char* buf, int radix,
   return val;
 }
 
-static JSValue js_string_to_bigdecimal(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent) {
+JSValue js_string_to_bigdecimal(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent) {
   bfdec_t* a;
   int ret;
   JSValue val;
@@ -856,7 +856,7 @@ static JSValue js_string_to_bigdecimal(JSContext* ctx, const char* buf, int radi
 /* return an exception in case of memory error. Return JS_NAN if
    invalid syntax */
 #ifdef CONFIG_BIGNUM
-static JSValue js_atof2(JSContext* ctx, const char* str, const char** pp, int radix, int flags, slimb_t* pexponent)
+JSValue js_atof2(JSContext* ctx, const char* str, const char** pp, int radix, int flags, slimb_t* pexponent)
 #else
 JSValue js_atof(JSContext* ctx, const char* str, const char** pp, int radix, int flags)
 #endif
@@ -1078,7 +1078,7 @@ mem_error:
 }
 
 #ifdef CONFIG_BIGNUM
-static JSValue js_atof(JSContext* ctx, const char* str, const char** pp, int radix, int flags) {
+JSValue js_atof(JSContext* ctx, const char* str, const char** pp, int radix, int flags) {
   return js_atof2(ctx, str, pp, radix, flags, NULL);
 }
 #endif
@@ -1155,7 +1155,7 @@ BOOL JS_NumberIsNegativeOrMinusZero(JSContext* ctx, JSValueConst val) {
 
 #ifdef CONFIG_BIGNUM
 
-static JSValue js_bigint_to_string1(JSContext* ctx, JSValueConst val, int radix) {
+JSValue js_bigint_to_string1(JSContext* ctx, JSValueConst val, int radix) {
   JSValue ret;
   bf_t a_s, *a;
   char* str;
@@ -1177,11 +1177,11 @@ static JSValue js_bigint_to_string1(JSContext* ctx, JSValueConst val, int radix)
   return ret;
 }
 
-static JSValue js_bigint_to_string(JSContext* ctx, JSValueConst val) {
+JSValue js_bigint_to_string(JSContext* ctx, JSValueConst val) {
   return js_bigint_to_string1(ctx, val, 10);
 }
 
-static JSValue js_ftoa(JSContext* ctx, JSValueConst val1, int radix, limb_t prec, bf_flags_t flags) {
+JSValue js_ftoa(JSContext* ctx, JSValueConst val1, int radix, limb_t prec, bf_flags_t flags) {
   JSValue val, ret;
   bf_t a_s, *a;
   char* str;
@@ -1232,11 +1232,11 @@ static JSValue js_ftoa(JSContext* ctx, JSValueConst val1, int radix, limb_t prec
   return ret;
 }
 
-static JSValue js_bigfloat_to_string(JSContext* ctx, JSValueConst val) {
+JSValue js_bigfloat_to_string(JSContext* ctx, JSValueConst val) {
   return js_ftoa(ctx, val, 10, 0, BF_RNDN | BF_FTOA_FORMAT_FREE_MIN);
 }
 
-static JSValue js_bigdecimal_to_string1(JSContext* ctx, JSValueConst val, limb_t prec, int flags) {
+JSValue js_bigdecimal_to_string1(JSContext* ctx, JSValueConst val, limb_t prec, int flags) {
   JSValue ret;
   bfdec_t* a;
   char* str;
@@ -1255,7 +1255,7 @@ static JSValue js_bigdecimal_to_string1(JSContext* ctx, JSValueConst val, limb_t
   return ret;
 }
 
-static JSValue js_bigdecimal_to_string(JSContext* ctx, JSValueConst val) {
+JSValue js_bigdecimal_to_string(JSContext* ctx, JSValueConst val) {
   return js_bigdecimal_to_string1(ctx, val, 0, BF_RNDZ | BF_FTOA_FORMAT_FREE);
 }
 

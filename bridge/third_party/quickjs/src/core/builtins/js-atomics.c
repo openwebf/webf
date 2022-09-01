@@ -3,6 +3,10 @@
 #include "../exception.h"
 #include "js-typed-array.h"
 
+#if CONFIG_BIGNUM
+#include "js-big-num.h"
+#endif
+
 /* Atomics */
 #ifdef CONFIG_ATOMICS
 

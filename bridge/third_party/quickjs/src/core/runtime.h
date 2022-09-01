@@ -38,6 +38,10 @@
 #include "function.h"
 #include "gc.h"
 
+#if CONFIG_BIGNUM
+#include "builtins/js-big-num.h"
+#endif
+
 #define JS_BACKTRACE_FLAG_SKIP_FIRST_LEVEL (1 << 0)
 /* only taken into account if filename is provided */
 #define JS_BACKTRACE_FLAG_SINGLE_LEVEL (1 << 1)
@@ -116,7 +120,10 @@ static inline BOOL is_strict_mode(JSContext* ctx) {
 };
 
 #ifdef CONFIG_BIGNUM
-inline BOOL is_math_mode(JSContext* ctx);
+static inline BOOL is_math_mode(JSContext* ctx) {
+  JSStackFrame* sf = ctx->rt->current_stack_frame;
+  return (sf && (sf->js_mode & JS_MODE_MATH));
+}
 #endif
 
 int js_update_property_flags(JSContext* ctx, JSObject* p, JSShapeProperty** pprs, int flags);

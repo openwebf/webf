@@ -127,8 +127,8 @@ class EventTargetInstance : public Instance {
   static int deleteProperty(JSContext* ctx, JSValueConst obj, JSAtom prop);
 
   // Used for legacy "onEvent" attribute APIs.
-  void setAttributesEventHandler(JSString* p, JSValue value);
-  JSValue getAttributesEventHandler(JSString* p);
+  void setAttributesEventHandler(JSValue key, JSValue value);
+  JSValue getAttributesEventHandler(JSValue p);
 
  private:
   bool internalDispatchEvent(EventInstance* eventInstance);

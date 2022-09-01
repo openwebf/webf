@@ -59,13 +59,6 @@ static const JSClassExoticMethods js_arguments_exotic_methods = {
     .define_own_property = js_arguments_define_own_property,
 };
 
-#ifdef CONFIG_BIGNUM
-inline BOOL is_math_mode(JSContext* ctx) {
-  JSStackFrame* sf = ctx->rt->current_stack_frame;
-  return (sf && (sf->js_mode & JS_MODE_MATH));
-}
-#endif
-
 void dbuf_put_leb128(DynBuf* s, uint32_t v) {
   uint32_t a;
   for (;;) {

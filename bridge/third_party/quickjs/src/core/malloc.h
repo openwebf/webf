@@ -53,7 +53,7 @@ size_t js_malloc_usable_size_unknown(const void* ptr);
 
 
 #if CONFIG_BIGNUM
-static void* js_bf_realloc(void* opaque, void* ptr, size_t size);
+void* js_bf_realloc(void* opaque, void* ptr, size_t size);
 #endif
 
 #endif

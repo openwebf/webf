@@ -90,7 +90,7 @@ void* js_mallocz_rt(JSRuntime* rt, size_t size) {
 
 #ifdef CONFIG_BIGNUM
 /* called by libbf */
-static void* js_bf_realloc(void* opaque, void* ptr, size_t size) {
+void* js_bf_realloc(void* opaque, void* ptr, size_t size) {
   JSRuntime* rt = opaque;
   return js_realloc_rt(rt, ptr, size);
 }
