@@ -1,4 +1,4 @@
-package com.example.performance_tests
+package com.openwebf.performance_tests
 
 import io.flutter.embedding.android.FlutterActivity
 
