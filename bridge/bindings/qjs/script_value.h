@@ -8,6 +8,7 @@
 #include <quickjs/quickjs.h>
 #include <memory>
 
+#include "qjs_engine_patch.h"
 #include "atomic_string.h"
 #include "exception_state.h"
 #include "foundation/macros.h"
