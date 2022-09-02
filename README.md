@@ -60,7 +60,7 @@ WebF provide a rendering engine which follow the W3C standard like the browser d
 
 With WebF, Web Apps and Flutter Apps are sharing the rendering context. It means that you can use Flutter Widgets define your HTML elements and embedded your Web App as a Flutter Widget in your flutter apps.
 
-<img src="https://andycall.oss-accelerate.aliyuncs.com/images/11659542021_.pic.jpg" width="800" style="display: block; margin: 0 auto;" />
+<img src="https://user-images.githubusercontent.com/4409743/186230941-83b0aa1c-59d1-4d8d-be10-958a3ae64114.jpg" width="800" style="display: block; margin: 0 auto;" />
 
 ## 👏 Contributing [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/openwebf/webf/pulls)
 

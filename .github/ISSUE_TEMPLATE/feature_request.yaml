@@ -1,0 +1,30 @@
+name: 🚀 Feature request
+description: Suggest an new idea
+labels: enhancement
+
+body:
+  - type: checkboxes
+    validations:
+      required: true
+    attributes:
+      label: Should this be an RFC?
+      description: |
+        WebF uses the RFC Process to propose and discuss substantial changes.
+        Significant changes should not be opened as feature request issues here, but follow the RFC process at https://github.com/openwebf/design-document.
+      options:
+        - label: This is not a substantial change
+          required: true
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Description
+      description: |
+        Please describe the feature request in as much detail as possible, including examples of how you would use the new feature.
+
+  - type: textarea
+    attributes:
+      label: Alternatives and Workarounds
+      description: |
+        Please describe any alternatives or workarounds you have considered that could be used instead of this feature.

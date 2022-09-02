@@ -184,4 +184,40 @@ describe('flexbox-flex', () => {
 
     await snapshot();
   });
+  it('flex with minHeight', async () => {
+    let div;
+    div = createElement(
+      'div',
+      {
+        style: {
+          background: '#f92',
+          width: '300px',
+          height: '300px',
+          display: 'flex',
+          flexDirection: 'column'
+        },
+      },
+      [createElement(
+       'div',
+       {
+         style: {
+           display: 'flex',
+           'background': '#6ad0e2',
+           flexDirection: 'column',
+           minHeight: '120px',
+         },
+       },
+       [
+         createElement('div', {
+           style: {
+             background: '#f32',
+             flex: '1',
+           },
+         }),
+       ]
+     )]
+    );
+      BODY.appendChild(div);
+      await snapshot();
+    });
 });

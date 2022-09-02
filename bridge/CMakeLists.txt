@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10.0)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
-project(BRIDGE)
+project(WebF)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
 set(CMAKE_CXX_STANDARD 17)
@@ -43,15 +43,15 @@ list(APPEND WEBF_PUBLIC_HEADERS
 )
 
 set(QUICKJS_PUBLIC_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/cutils.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libregexp.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libregexp-opcode.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libunicode.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libunicode-table.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/list.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/quickjs.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/quickjs-atom.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/quickjs-opcode.h
+  third_party/quickjs/cutils.h
+  third_party/quickjs/libregexp.h
+  third_party/quickjs/libregexp-opcode.h
+  third_party/quickjs/libunicode.h
+  third_party/quickjs/libunicode-table.h
+  third_party/quickjs/list.h
+  third_party/quickjs/quickjs.h
+  third_party/quickjs/quickjs-atom.h
+  third_party/quickjs/quickjs-opcode.h
 )
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -119,17 +119,54 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   )
 
   list(APPEND QUICK_JS_SOURCE
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libbf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/cutils.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libregexp.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/libunicode.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/quickjs.c
-    )
+    third_party/quickjs/src/libbf.c
+    third_party/quickjs/src/cutils.c
+    third_party/quickjs/src/libregexp.c
+    third_party/quickjs/src/libunicode.c
+    third_party/quickjs/src/core/string.c
+    third_party/quickjs/src/core/function.c
+    third_party/quickjs/src/core/memory.c
+    third_party/quickjs/src/core/bytecode.c
+    third_party/quickjs/src/core/object.c
+    third_party/quickjs/src/core/exception.c
+    third_party/quickjs/src/core/gc.c
+    third_party/quickjs/src/core/malloc.c
+    third_party/quickjs/src/core/shape.c
+    third_party/quickjs/src/core/parser.c
+    third_party/quickjs/src/core/convertion.c
+    third_party/quickjs/src/core/runtime.c
+    third_party/quickjs/src/core/module.c
+    third_party/quickjs/src/core/builtins/js-array.c
+    third_party/quickjs/src/core/builtins/js-async-function.c
+    third_party/quickjs/src/core/builtins/js-async-generator.c
+    third_party/quickjs/src/core/builtins/js-atomics.c
+    third_party/quickjs/src/core/builtins/js-big-num.c
+    third_party/quickjs/src/core/builtins/js-boolean.c
+    third_party/quickjs/src/core/builtins/js-date.c
+    third_party/quickjs/src/core/builtins/js-function.c
+    third_party/quickjs/src/core/builtins/js-generator.c
+    third_party/quickjs/src/core/builtins/js-json.c
+    third_party/quickjs/src/core/builtins/js-map.c
+    third_party/quickjs/src/core/builtins/js-math.c
+    third_party/quickjs/src/core/builtins/js-number.c
+    third_party/quickjs/src/core/builtins/js-object.c
+    third_party/quickjs/src/core/builtins/js-closures.c
+    third_party/quickjs/src/core/builtins/js-operator.c
+    third_party/quickjs/src/core/builtins/js-promise.c
+    third_party/quickjs/src/core/builtins/js-proxy.c
+    third_party/quickjs/src/core/builtins/js-reflect.c
+    third_party/quickjs/src/core/builtins/js-regexp.c
+    third_party/quickjs/src/core/builtins/js-string.c
+    third_party/quickjs/src/core/builtins/js-symbol.c
+    third_party/quickjs/src/core/builtins/js-typed-array.c
+  )
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
   endif()
+
+  target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
@@ -326,8 +363,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 endif ()
 
 list(APPEND PUBLIC_HEADER
-        include/webf_bridge.h
-  )
+  include/webf_bridge.h
+)
 
 add_library(webf SHARED ${BRIDGE_SOURCE})
 add_library(webf_static STATIC ${BRIDGE_SOURCE})
