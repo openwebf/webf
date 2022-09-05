@@ -102,10 +102,6 @@ class CSSStyleDeclaration {
       if (css.isNotEmpty) css += ' ';
       css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
-    _sheetStyle.forEach((property, value) {
-      if (css.isNotEmpty) css += ' ';
-      css += '${_kebabize(property)}: $value;';
-    });
     return css;
   }
 
@@ -237,8 +233,8 @@ class CSSStyleDeclaration {
           CSSStyleProperty.setShorthandTextDecoration(longhandProperties, normalizedValue);
           break;
         case ANIMATION:
-          CSSStyleProperty.setShorthandAnimation(
-              longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandAnimation(longhandProperties, normalizedValue);
+          break;
       }
       _cachedExpandedShorthand[cacheKey] = longhandProperties;
     }
@@ -460,41 +456,6 @@ class CSSStyleDeclaration {
     }
 
     onStyleFlushed?.call(propertyNames);
-  }
-
-  void mergeOld(CSSStyleDeclaration declaration) {
-    Map<String, String> properties = {}
-      ..addAll(_properties)
-      ..addAll(_pendingProperties);
-
-    for (String propertyName in properties.keys) {
-      bool isImportant = _importants[propertyName] ?? false;
-      String? currentValue = properties[propertyName];
-      String? otherValue = declaration._pendingProperties[propertyName];
-
-      if (!isImportant && !isNullOrEmptyValue(otherValue) && currentValue != otherValue) {
-        // Update property.
-        _pendingProperties[propertyName] = otherValue!;
-        bool otherIsImportant = declaration._importants[propertyName] ?? false;
-        if (otherIsImportant) {
-          _importants[propertyName] = true;
-        }
-      }
-    }
-
-    for (String propertyName in declaration._pendingProperties.keys) {
-      bool isImportant = _importants[propertyName] ?? false;
-      String? currentValue = properties[propertyName];
-      String? otherValue = declaration._pendingProperties[propertyName];
-      if (!isImportant && isNullOrEmptyValue(currentValue) && !isNullOrEmptyValue(otherValue)) {
-        // Add property.
-        _pendingProperties[propertyName] = otherValue!;
-        bool otherIsImportant = declaration._importants[propertyName] ?? false;
-        if (otherIsImportant) {
-          _importants[propertyName] = true;
-        }
-      }
-    }
   }
 
   // Inserts the style of the given Declaration into the current Declaration.
