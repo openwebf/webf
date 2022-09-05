@@ -181,6 +181,8 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
   RegisteredEventListener registered_listener;
   bool added = EnsureEventTargetData().event_listener_map.Add(event_type, listener, options, &registered_listener);
 
+  GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kAddEvent, std::move(event_type.ToNativeString()), nullptr);
+
   return added;
 }
 
@@ -219,6 +221,8 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
         --firing_iterator.iterator;
     }
   }
+
+  GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kRemoveEvent, std::move(event_type.ToNativeString()), nullptr);
 
   return true;
 }

@@ -67,7 +67,7 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
-            anticlockwise: args[5] == 1 ? true : false);
+            anticlockwise: (args.length > 5 && args[5] == 1) ? true : false);
       case 'arcTo':
         return arcTo(
             castToType<num>(args[0]).toDouble(),
@@ -127,7 +127,7 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble());
       case 'clip':
-        PathFillType fillType = castToType<String>(args[0]) == EVENODD ? PathFillType.evenOdd : PathFillType.nonZero;
+        PathFillType fillType = (args.isNotEmpty && castToType<String>(args[0]) == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
         return clip(fillType);
       case 'closePath':
         return closePath();
@@ -167,9 +167,9 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble(),
             castToType<num>(args[6]).toDouble(),
-            anticlockwise: args[7] == 1 ? true : false);
+            anticlockwise: (args.length > 7 && args[7] == 1) ? true : false);
       case 'fill':
-        PathFillType fillType = args[0] == EVENODD ? PathFillType.evenOdd : PathFillType.nonZero;
+        PathFillType fillType = (args.isNotEmpty && args[0] == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
         return fill(fillType);
       case 'lineTo':
         return lineTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
