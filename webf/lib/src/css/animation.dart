@@ -470,6 +470,10 @@ class KeyframeEffect extends AnimationEffect {
     _interpolations = _makeInterpolations(_propertySpecificKeyframeGroups, renderStyle);
   }
 
+  Iterable<String> get properties {
+    return _propertySpecificKeyframeGroups.keys;
+  }
+
   static _defaultParse(value) {
     return value;
   }

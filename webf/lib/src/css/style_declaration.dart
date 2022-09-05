@@ -9,6 +9,7 @@ import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
 typedef StyleChangeListener = void Function(String property, String? original, String present);
+typedef StyleFlushedListener = void Function(List<String> properties);
 
 const Map<String, bool> _CSSShorthandProperty = {
   MARGIN: true,
@@ -30,6 +31,7 @@ const Map<String, bool> _CSSShorthandProperty = {
   OVERFLOW: true,
   TRANSITION: true,
   TEXT_DECORATION: true,
+  ANIMATION: true,
 };
 
 // Reorder the properties for control render style init order, the last is the largest.
@@ -68,11 +70,12 @@ class CSSStyleDeclaration {
   // TODO(yuanyan): defaultStyle should be longhand properties.
   Map<String, dynamic>? defaultStyle;
   StyleChangeListener? onStyleChanged;
+  StyleFlushedListener? onStyleFlushed;
 
   CSSStyleDeclaration();
 
   // ignore: prefer_initializing_formals
-  CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged);
+  CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
 
   /// An empty style declaration.
   static CSSStyleDeclaration empty = CSSStyleDeclaration();
@@ -85,6 +88,7 @@ class CSSStyleDeclaration {
   Map<String, String> _pendingProperties = {};
   final Map<String, bool> _importants = {};
   final Map<String, dynamic> _sheetStyle = {};
+  Map<String, dynamic> get sheetStyle => _sheetStyle;
 
   /// Textual representation of the declaration block.
   /// Setting this attribute changes the style.
@@ -227,6 +231,9 @@ class CSSStyleDeclaration {
           break;
         case TEXT_DECORATION:
           CSSStyleProperty.setShorthandTextDecoration(longhandProperties, normalizedValue);
+          break;
+        case ANIMATION:
+          CSSStyleProperty.setShorthandAnimation(longhandProperties, normalizedValue);
           break;
       }
       _cachedExpandedShorthand[cacheKey] = longhandProperties;
@@ -447,6 +454,8 @@ class CSSStyleDeclaration {
       String currentValue = pendingProperties[propertyName]!;
       _emitPropertyChanged(propertyName, prevValue, currentValue);
     }
+
+    onStyleFlushed?.call(propertyNames);
   }
 
   // Inserts the style of the given Declaration into the current Declaration.
