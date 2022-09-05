@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "script_state.h"
-#include "names_installer.h"
 #include "html_element_factory.h"
+#include "names_installer.h"
 
 namespace webf {
 
@@ -45,7 +45,8 @@ ScriptState::~ScriptState() {
 #if DUMP_LEAKS
   if (--runningContexts == 0) {
     // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
-    names_installer::Dispose();;
+    names_installer::Dispose();
+    ;
     HTMLElementFactory::Dispose();
 
     JS_FreeRuntime(runtime_);
