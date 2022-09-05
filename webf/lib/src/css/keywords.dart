@@ -279,6 +279,7 @@ const String CH = 'ch';
 // Functions
 const String ENV = 'env';
 const String VAR = 'var';
+const String CALC = 'calc';
 
 const String PERCENTAGE = '%';
 const String ZERO = '0';

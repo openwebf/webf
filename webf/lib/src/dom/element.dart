@@ -1057,6 +1057,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       value = value.computedValue(name);
     }
 
+    if (value is CSSCalcValue) {
+      value = CSSLengthValue(value.computedValue(name), CSSLengthType.PX);
+    }
+
     switch (name) {
       case DISPLAY:
         renderStyle.display = value;
