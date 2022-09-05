@@ -36,6 +36,7 @@ const kTagSpecificity = 0x000001;
 
 // https://drafts.csswg.org/cssom/#parse-a-group-of-selectors
 class SelectorGroup extends TreeNode {
+  final SelectorTextVisitor _selectorTextVisitor = SelectorTextVisitor();
   final List<Selector> selectors;
 
   int _specificity = -1;
@@ -45,6 +46,16 @@ class SelectorGroup extends TreeNode {
       _specificity = _calcSpecificity();
     }
     return _specificity;
+  }
+
+  String? _selectorText;
+  String get selectorText {
+    if (_selectorText != null) {
+      return _selectorText ?? '';
+    }
+    _selectorTextVisitor.visitSelectorGroup(this);
+    _selectorText = _selectorTextVisitor.toString();
+    return _selectorText ?? '';
   }
 
   SelectorGroup(this.selectors) : super();

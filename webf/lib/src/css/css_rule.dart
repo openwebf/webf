@@ -3,17 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:quiver/core.dart';
 import 'package:webf/css.dart';
 
 /// https://drafts.csswg.org/cssom/#the-cssstylerule-interface
 class CSSStyleRule extends CSSRule {
-  final SelectorTextVisitor _selectorTextVisitor = SelectorTextVisitor();
-
-  String get selectorText {
-    _selectorTextVisitor.visitSelectorGroup(selectorGroup);
-    return _selectorTextVisitor.toString();
-  }
-
   @override
   String get cssText => declaration.cssText;
 
@@ -25,8 +19,12 @@ class CSSStyleRule extends CSSRule {
 
   CSSStyleRule(this.selectorGroup, this.declaration) : super();
 
-  SimpleSelector? get lastSimpleSelector {
-    return selectorGroup.selectors.last.simpleSelectorSequences.last.simpleSelector;
+  @override
+  int get hashCode => hash2(selectorGroup, declaration);
+
+  @override
+  bool operator ==(Object other) {
+    return hashCode == other.hashCode;
   }
 }
 

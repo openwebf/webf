@@ -379,6 +379,10 @@ void Performance::measureSummary(JSValue* exception) {
   internalMeasure(PERF_INSERT_ADJACENT_NODE_COST, PERF_INSERT_ADJACENT_NODE_START, PERF_INSERT_ADJACENT_NODE_END, exception);
   internalMeasure(PERF_REMOVE_NODE_COST, PERF_REMOVE_NODE_START, PERF_REMOVE_NODE_END, exception);
   internalMeasure(PERF_SET_STYLE_COST, PERF_SET_STYLE_START, PERF_SET_STYLE_END, exception);
+  internalMeasure(PERF_PARSE_CSS_COST, PERF_PARSE_CSS_START, PERF_PARSE_CSS_END, exception);
+  internalMeasure(PERF_PARSE_INLINE_CSS_COST, PERF_PARSE_INLINE_CSS_START, PERF_PARSE_INLINE_CSS_END, exception);
+  internalMeasure(PERF_MATCH_ELEMENT_RULE_COST, PERF_MATCH_ELEMENT_RULE_START, PERF_MATCH_ELEMENT_RULE_END, exception);
+  internalMeasure(PERF_FLUSH_STYLE_COST, PERF_FLUSH_STYLE_START, PERF_FLUSH_STYLE_END, exception);
   internalMeasure(PERF_SET_PROPERTIES_COST, PERF_SET_PROPERTIES_START, PERF_SET_PROPERTIES_END, exception);
   internalMeasure(PERF_REMOVE_PROPERTIES_COST, PERF_REMOVE_PROPERTIES_START, PERF_REMOVE_PROPERTIES_END, exception);
   internalMeasure(PERF_FLEX_LAYOUT_COST, PERF_FLEX_LAYOUT_START, PERF_FLEX_LAYOUT_END, exception);
@@ -466,6 +470,10 @@ JSValue Performance::__webf_navigation_summary__(JSContext* ctx, JSValue this_va
   GET_COST(removeNode, PERF_REMOVE_NODE_COST);
   GET_COST(setStyle, PERF_SET_STYLE_COST);
   GET_COST(setProperties, PERF_SET_PROPERTIES_COST);
+  GET_COST(parseCss, PERF_PARSE_CSS_COST);
+  GET_COST(parseInlineCss, PERF_PARSE_INLINE_CSS_COST);
+  GET_COST(matchElementRule, PERF_MATCH_ELEMENT_RULE_COST);
+  GET_COST(flushStyle, PERF_FLUSH_STYLE_COST);
   GET_COST(removeProperties, PERF_REMOVE_PROPERTIES_COST);
   GET_COST(flexLayout, PERF_FLEX_LAYOUT_COST);
   GET_COST(flowLayout, PERF_FLOW_LAYOUT_COST);
@@ -525,6 +533,10 @@ First Bundle Load: %.*fms
   + %s %.*fms avg: %.*fms count: %zu
   + %s %.*fms avg: %.*fms count: %zu
   + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
 Rendering: %.*fms
   + %s %.*fms avg: %.*fms count: %zu
   + %s %.*fms avg: %.*fms count: %zu
@@ -563,6 +575,10 @@ Rendering: %.*fms
           PERF_INSERT_ADJACENT_NODE_COST, 2, insertAdjacentNodeCost, 2, insertAdjacentNodeAvg, insertAdjacentNodeCount,
           PERF_REMOVE_NODE_COST, 2, removeNodeCost, 2, removeNodeAvg, removeNodeCount,
           PERF_SET_STYLE_COST, 2, setStyleCost, 2, setStyleAvg, setStyleCount,
+          PERF_PARSE_CSS_COST, 2, parseCssCost, 2, parseCssAvg, parseCssCount,
+          PERF_PARSE_INLINE_CSS_COST, 2, parseInlineCssCost, 2, parseInlineCssAvg, parseInlineCssCount,
+          PERF_MATCH_ELEMENT_RULE_COST, 2, matchElementRuleCost, 2, matchElementRuleAvg, matchElementRuleCount,
+          PERF_FLUSH_STYLE_COST, 2, flushStyleCost, 2, flushStyleAvg, flushStyleCount,
           PERF_DOM_FORCE_LAYOUT_COST, 2, domForceLayoutCost, 2, domForceLayoutAvg, domForceLayoutCount,
           PERF_DOM_FLUSH_UI_COMMAND_COST, 2, domFlushUICommandCost, 2, domFlushUICommandAvg, domFlushUICommandCount,
           PERF_SET_PROPERTIES_COST, 2, setPropertiesCost, 2, setPropertiesAvg, setPropertiesCount,

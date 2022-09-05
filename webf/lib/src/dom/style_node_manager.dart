@@ -59,6 +59,7 @@ class StyleNodeManager {
     _pendingStyleSheets.removeWhere((element) => element == styleSheet);
   }
 
+  // TODO(jiangzhou): cache stylesheet
   bool updateActiveStyleSheets({bool rebuild = false}) {
     List<CSSStyleSheet> newSheets = _collectActiveStyleSheets();
     if (newSheets.isEmpty) {

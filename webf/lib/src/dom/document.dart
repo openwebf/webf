@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
@@ -9,6 +10,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
@@ -221,6 +223,7 @@ class Document extends Node {
     }
   }
 
+  bool _recalculating = false;
   void updateStyleIfNeeded() {
     if (styleSheets.isEmpty && !styleNodeManager.hasPendingStyleSheet) {
       return;
@@ -229,27 +232,32 @@ class Document extends Node {
       flushStyle(rebuild: true);
       return;
     }
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      flushStyle();
-    });
-  }
-
-  bool _recalculating = false;
-  void flushStyle({bool rebuild = false}) {
-    if (!needsStyleRecalculate) {
-      return;
-    }
     if (_recalculating) {
       return;
     }
     _recalculating = true;
-    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
       _recalculating = false;
+      flushStyle();
+    });
+  }
+
+  void flushStyle({bool rebuild = false}) {
+    if (!needsStyleRecalculate) {
+      return;
+    }
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_START);
+    }
+    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       return;
     }
     recalculateDocumentStyle();
     needsStyleRecalculate = false;
     _recalculating = false;
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_END);
+    }
   }
 
   void recalculateDocumentStyle() {

@@ -121,7 +121,7 @@ class SelectorTextVisitor extends Visitor {
     var selectors = node.selectors;
     var selectorsLength = selectors.length;
     for (var i = 0; i < selectorsLength; i++) {
-      if (i > 0) emit(',');
+      if (i > 0) emit(', ');
       selectors[i].visit(this);
     }
   }

@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
@@ -1345,7 +1346,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case TRANSITION_PROPERTY:
         renderStyle.transitionProperty = value;
         break;
-       // Animation
+      // Animation
       case ANIMATION_DELAY:
         renderStyle.animationDelay = value;
         break;
@@ -1449,9 +1450,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
+  final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
   void _applySheetStyle(CSSStyleDeclaration style) {
-    CSSStyleDeclaration? matchRule = ElementRuleCollector().collectionFromRuleSet(ownerDocument.ruleSet, this);
-    style.merge(matchRule);
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_START);
+    }
+    CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
+    style.union(matchRule);
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_END);
+    }
   }
 
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue) {
@@ -1497,12 +1505,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
-      Map<String, String?> diffs = style.diff(newStyle);
-      if (diffs.isNotEmpty) {
-        // Update render style.
-        diffs.forEach((String propertyName, String? value) {
-          style.setProperty(propertyName, value);
-        });
+      if (style.merge(newStyle)) {
         style.flushPendingProperties();
       }
     }

@@ -96,7 +96,11 @@ class CSSStyleDeclaration {
     String css = EMPTY_STRING;
     _properties.forEach((property, value) {
       if (css.isNotEmpty) css += ' ';
-      css += '${_kebabize(property)}: $value;';
+      css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
+    });
+    _sheetStyle.forEach((property, value) {
+      if (css.isNotEmpty) css += ' ';
+      css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
     _sheetStyle.forEach((property, value) {
       if (css.isNotEmpty) css += ' ';
@@ -458,7 +462,7 @@ class CSSStyleDeclaration {
     onStyleFlushed?.call(propertyNames);
   }
 
-  void merge(CSSStyleDeclaration declaration) {
+  void mergeOld(CSSStyleDeclaration declaration) {
     Map<String, String> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
@@ -493,37 +497,68 @@ class CSSStyleDeclaration {
     }
   }
 
-  Map<String, String?> diff(CSSStyleDeclaration other) {
-    Map<String, String?> diffs = {};
-
+  // Inserts the style of the given Declaration into the current Declaration.
+  void union(CSSStyleDeclaration declaration) {
     Map<String, String> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
 
+    for (String propertyName in declaration._pendingProperties.keys) {
+      bool currentIsImportant = _importants[propertyName] ?? false;
+      bool otherIsImportant = declaration._importants[propertyName] ?? false;
+      String? currentValue = properties[propertyName];
+      String? otherValue = declaration._pendingProperties[propertyName];
+      if ((otherIsImportant || !currentIsImportant) && currentValue != otherValue) {
+        // Add property.
+        if (otherValue != null) {
+          _pendingProperties[propertyName] = otherValue;
+        } else {
+          _pendingProperties.remove(propertyName);
+        }
+        if (otherIsImportant) {
+          _importants[propertyName] = true;
+        }
+      }
+    }
+  }
+
+  // Merge the difference between the declarations and return the updated status
+  bool merge(CSSStyleDeclaration other) {
+    Map<String, String> properties = {}
+      ..addAll(_properties)
+      ..addAll(_pendingProperties);
+    bool updateStatus = false;
     for (String propertyName in properties.keys) {
       String? prevValue = properties[propertyName];
       String? currentValue = other._pendingProperties[propertyName];
+      bool currentImportant = other._importants[propertyName] ?? false;
 
       if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
         continue;
       } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
         // Remove property.
-        diffs[propertyName] = null;
+        removeProperty(propertyName, currentImportant);
+        updateStatus = true;
       } else if (prevValue != currentValue) {
         // Update property.
-        diffs[propertyName] = currentValue;
+        setProperty(propertyName, currentValue, currentImportant);
+        updateStatus = true;
       }
     }
 
     for (String propertyName in other._pendingProperties.keys) {
       String? prevValue = properties[propertyName];
       String? currentValue = other._pendingProperties[propertyName];
+      bool currentImportant = other._importants[propertyName] ?? false;
+
       if (isNullOrEmptyValue(prevValue) && !isNullOrEmptyValue(currentValue)) {
         // Add property.
-        diffs[propertyName] = currentValue;
+        setProperty(propertyName, currentValue, currentImportant);
+        updateStatus = true;
       }
     }
-    return diffs;
+
+    return updateStatus;
   }
 
   /// Override [] and []= operator to get/set style properties.
@@ -578,6 +613,14 @@ class CSSStyleDeclaration {
 
   @override
   String toString() => 'CSSStyleDeclaration($cssText)';
+
+  @override
+  int get hashCode => cssText.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    return hashCode == other.hashCode;
+  }
 }
 
 // aB to a-b

@@ -445,8 +445,12 @@ double? _parseColorPart(String value, double min, double max, RenderStyle? rende
   if (value.startsWith('var') && renderStyle != null) {
     final variable = CSSVariable.tryParse(renderStyle, value);
     final computedValue = variable?.computedValue('');
-    v = double.tryParse(computedValue);
+    if (computedValue == null) {
+      return null;
+    }
+    value = computedValue;
   }
+
   if (value.endsWith('%')) {
     final p = double.tryParse(value.substring(0, value.length - 1));
     if (p == null) return null;

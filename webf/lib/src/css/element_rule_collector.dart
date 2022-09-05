@@ -65,7 +65,7 @@ class ElementRuleCollector {
     // Merge all the rules
     for (CSSRule rule in matchedRules) {
       if (rule is CSSStyleRule) {
-        declaration.merge(rule.declaration);
+        declaration.union(rule.declaration);
       }
     }
     return declaration;

@@ -29,10 +29,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 
 import 'package:webf/css.dart';
 
 import 'package:source_span/source_span.dart';
+import 'package:webf/module.dart';
 
 part 'tree.dart';
 part 'token.dart';
@@ -83,10 +85,13 @@ class CSSParser {
   /// Main entry point for parsing an entire CSS file.
   CSSStyleSheet parse() {
     final rules = parseRules();
-    return CSSStyleSheet(tokenizer._text, rules);
+    return CSSStyleSheet(rules);
   }
 
   Map<String, dynamic> parseInlineStyle() {
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_PARSE_INLINE_CSS_START);
+    }
     Map<String, dynamic> style = {};
     do {
       if (TokenKind.isIdentifier(_peekToken.kind)) {
@@ -123,10 +128,16 @@ class CSSParser {
         _next();
       }
     } while (_maybeEat(TokenKind.SEMICOLON));
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_PARSE_INLINE_CSS_END);
+    }
     return style;
   }
 
   List<CSSRule> parseRules({int startPosition = 0}) {
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_PARSE_CSS_START);
+    }
     var rules = <CSSRule>[];
     while (!_maybeEat(TokenKind.END_OF_FILE)) {
       final data = processRule();
@@ -137,6 +148,9 @@ class CSSParser {
       }
     }
     checkEndOfFile();
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_PARSE_CSS_END);
+    }
     return rules;
   }
 
@@ -438,8 +452,8 @@ class CSSParser {
     }
     if (selectorGroup != null) {
       final declarations = processDeclarations();
-      CSSStyleDeclaration declaration = declarations.where((element) => element is CSSStyleDeclaration).last!;
-      Iterable childRules = declarations.where((element) => element is CSSStyleRule);
+      CSSStyleDeclaration declaration = declarations.whereType<CSSStyleDeclaration>().last;
+      Iterable childRules = declarations.whereType<CSSStyleRule>();
       CSSStyleRule rule = CSSStyleRule(selectorGroup, declaration);
       List<CSSRule> rules = [rule];
       for (CSSStyleRule childRule in childRules) {
@@ -514,7 +528,7 @@ class CSSParser {
     }
   }
 
-  // return list of rule && CSSStyleDeclaration
+  // return list of rule || CSSStyleDeclaration
   List<dynamic> processDeclarations({bool checkBrace = true}) {
     if (checkBrace) _eat(TokenKind.LBRACE);
 
