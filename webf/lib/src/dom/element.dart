@@ -515,6 +515,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     // Cancel running transition.
     renderStyle.cancelRunningTransition();
 
+    // Cancel running animation.
+    renderStyle.cancelRunningAnimation();
+
     RenderBoxModel? renderBoxModel = this.renderBoxModel;
     if (renderBoxModel != null) {
       // The node detach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.

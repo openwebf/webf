@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
 import 'dart:ui';
 
 import 'package:webf/css.dart';
@@ -11,8 +15,7 @@ const String EVENT_ANIMATION_END = 'animationend';
 const String EVENT_ANIMATION_ITERATION = 'animationiteration';
 
 class AnimationEvent extends Event {
-  AnimationEvent(String type,
-      {String? animationName, double? elapsedTime, String? pseudoElement})
+  AnimationEvent(String type, {String? animationName, double? elapsedTime, String? pseudoElement})
       : animationName = animationName ?? '',
         elapsedTime = elapsedTime ?? 0.0,
         pseudoElement = pseudoElement ?? '',
@@ -25,26 +28,6 @@ class AnimationEvent extends Event {
 
 const String _0s = '0s';
 
-String _toCamelCase(String s) {
-  var sb = StringBuffer();
-  var shouldUpperCase = false;
-  for (int rune in s.runes) {
-    // '-' char code is 45
-    if (rune == 45) {
-      shouldUpperCase = true;
-    } else {
-      var char = String.fromCharCode(rune);
-      if (shouldUpperCase) {
-        sb.write(char.toUpperCase());
-        shouldUpperCase = false;
-      } else {
-        sb.write(char);
-      }
-    }
-  }
-
-  return sb.toString();
-}
 mixin CSSAnimationMixin on RenderStyle {
   List<String>? _animationName;
 
@@ -71,8 +54,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   @override
-  List<String> get animationTimingFunction =>
-      _animationTimingFunction ?? const [EASE];
+  List<String> get animationTimingFunction => _animationTimingFunction ?? const [EASE];
 
   List<String>? _animationDelay;
 
@@ -117,8 +99,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   @override
-  List<String> get animationPlayState =>
-      _animationPlayState ?? ['running']; // paused
+  List<String> get animationPlayState => _animationPlayState ?? ['running']; // paused
 
   bool shouldAnimation(List<String> properties) {
     if (renderBoxModel != null) {
@@ -152,22 +133,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   List<Keyframe>? _getKeyFrames(String animationName) {
-    final styleSheets = target.ownerDocument.styleSheets;
-
-    CSSKeyframesRule? cssKeyframesRule = null;
-    for (int j = styleSheets.length - 1; j >= 0; j--) {
-      final sheet = styleSheets[j];
-      List<CSSRule> rules = sheet.cssRules;
-      for (int i = rules.length - 1; i >= 0; i--) {
-        CSSRule rule = rules[i];
-        if (rule is CSSKeyframesRule) {
-          if (rule.name == animationName) {
-            cssKeyframesRule = rule;
-            break;
-          }
-        }
-      }
-    }
+    CSSKeyframesRule? cssKeyframesRule = target.ownerDocument.ruleSet.keyframesRules[animationName];
     if (cssKeyframesRule != null) {
       List<Keyframe> keyframes = [];
 
@@ -182,7 +148,7 @@ mixin CSSAnimationMixin on RenderStyle {
           offset = CSSPercentage.parsePercentage(keyText);
         }
         rule.declarations.sheetStyle.forEach((key, value) {
-          final property = _toCamelCase(key);
+          final property = camelize(key);
           keyframes.add(Keyframe(property, value, offset ?? 0, LINEAR));
         });
         return;
@@ -198,7 +164,7 @@ mixin CSSAnimationMixin on RenderStyle {
       if (name == NONE) {
         return;
       }
-      final fillMode = _toCamelCase(_getSingleString(animationFillMode, i));
+      final fillMode = camelize(_getSingleString(animationFillMode, i));
       List<Keyframe>? keyframes = _getKeyFrames(name);
       if (keyframes == null) {
         return;
@@ -243,9 +209,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   void runAnimation() {
-    final removeKeys = _runningAnimation.keys
-        .where((element) => !animationName.contains(element))
-        .toList();
+    final removeKeys = _runningAnimation.keys.where((element) => !animationName.contains(element)).toList();
 
     removeKeys.forEach((key) {
       Animation animation = _runningAnimation[key]!;
@@ -261,11 +225,11 @@ mixin CSSAnimationMixin on RenderStyle {
 
       final duration = _getSingleString(animationDuration, i);
       final delay = _getSingleString(animationDelay, i);
-      final direction = _toCamelCase(_getSingleString(animationDirection, i));
+      final direction = camelize(_getSingleString(animationDirection, i));
       final iterationCount = _getSingleString(animationIterationCount, i);
       final playState = _getSingleString(animationPlayState, i);
       final timingFunction = _getSingleString(animationTimingFunction, i);
-      final fillMode = _toCamelCase(_getSingleString(animationFillMode, i));
+      final fillMode = camelize(_getSingleString(animationFillMode, i));
 
       EffectTiming? options = EffectTiming(
         duration: CSSTime.parseTime(duration)!.toDouble(),
@@ -273,21 +237,17 @@ mixin CSSAnimationMixin on RenderStyle {
         delay: CSSTime.parseTime(delay)!.toDouble(),
         fill: FillMode.values.firstWhere((element) {
           return element.toString().split('.').last == fillMode;
-        },orElse:(){
+        }, orElse: () {
           return FillMode.both;
         }),
-        iterations: iterationCount == 'infinite'
-            ? -1
-            : (double.tryParse(iterationCount) ?? 1),
-        direction: PlaybackDirection.values.firstWhere(
-            (element) => element.toString().split('.').last == direction),
+        iterations: iterationCount == 'infinite' ? -1 : (double.tryParse(iterationCount) ?? 1),
+        direction: PlaybackDirection.values.firstWhere((element) => element.toString().split('.').last == direction),
       );
 
       List<Keyframe>? keyframes = _getKeyFrames(name);
 
       if (keyframes != null) {
-        KeyframeEffect effect =
-            KeyframeEffect(this, target, keyframes, options);
+        KeyframeEffect effect = KeyframeEffect(this, target, keyframes, options);
 
         Animation? animation = _runningAnimation[name];
 
@@ -297,8 +257,7 @@ mixin CSSAnimationMixin on RenderStyle {
           animation = Animation(effect, target.ownerDocument.animationTimeline);
 
           animation.onstart = () {
-            target.dispatchEvent(
-                AnimationEvent(EVENT_ANIMATION_START, animationName: name));
+            target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_START, animationName: name));
           };
 
           animation.oncancel = (AnimationPlaybackEvent event) {
@@ -313,8 +272,7 @@ mixin CSSAnimationMixin on RenderStyle {
               _revertOriginProperty(_runningAnimation[name]!);
             }
 
-            target.dispatchEvent(
-                AnimationEvent(EVENT_ANIMATION_END, animationName: name));
+            target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_END, animationName: name));
             // animation.dispose();
           };
 
@@ -326,8 +284,7 @@ mixin CSSAnimationMixin on RenderStyle {
             animation.playState != AnimationPlayState.finished) {
           animation.play();
         } else {
-          if (playState == 'paused' &&
-              animation.playState != AnimationPlayState.paused) {
+          if (playState == 'paused' && animation.playState != AnimationPlayState.paused) {
             animation.pause();
           }
         }
@@ -381,10 +338,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   static bool isValidAnimationFillModeValue(String value) {
-    return value == BACKWARDS ||
-        value == FORWARDS ||
-        value == BOTH ||
-        value == NONE;
+    return value == BACKWARDS || value == FORWARDS || value == BOTH || value == NONE;
   }
 
   static bool isValidAnimationPlayStateValue(String value) {
@@ -392,10 +346,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   static bool isValidAnimationDirectionValue(String value) {
-    return value == NORMAL ||
-        value == REVERSE ||
-        value == ALTERNATE ||
-        value == ALTERNATE_REVERSE;
+    return value == NORMAL || value == REVERSE || value == ALTERNATE || value == ALTERNATE_REVERSE;
   }
 
   static bool isBackwardsFillModeAnimation(Animation animation) {
@@ -404,8 +355,7 @@ mixin CSSAnimationMixin on RenderStyle {
       return false;
     }
     final isBackwards = effect.timing?.fill != null &&
-        (effect.timing!.fill == FillMode.backwards ||
-            effect.timing!.fill == FillMode.both);
+        (effect.timing!.fill == FillMode.backwards || effect.timing!.fill == FillMode.both);
 
     return isBackwards;
   }
