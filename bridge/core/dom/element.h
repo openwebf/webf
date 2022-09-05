@@ -47,16 +47,6 @@ class Element : public ContainerNode {
   ScriptPromise toBlob(double device_pixel_ratio, ExceptionState& exception_state);
   ScriptPromise toBlob(ExceptionState& exception_state);
 
-  double clientHeight() const;
-  double clientWidth() const;
-  double clientLeft() const;
-  double clientTop() const;
-
-  double scrollTop() const;
-  void setScrollTop(double v, ExceptionState& exception_state);
-  double scrollLeft() const;
-  void setScrollLeft(double v, ExceptionState& exception_state);
-
   std::string outerHTML();
   std::string innerHTML();
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);

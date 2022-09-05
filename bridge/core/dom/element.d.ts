@@ -8,15 +8,15 @@ interface Element extends Node {
   readonly attributes: ElementAttributes;
   readonly style: CSSStyleDeclaration;
 
-  readonly clientHeight: number;
-  readonly clientLeft: number;
-  readonly clientTop: number;
-  readonly clientWidth: number;
+  readonly clientHeight: DartImpl<number>;
+  readonly clientLeft: DartImpl<number>;
+  readonly clientTop: DartImpl<number>;
+  readonly clientWidth: DartImpl<number>;
   readonly outerHTML: string;
   innerHTML: string;
   readonly ownerDocument: Document;
-  scrollLeft: number;
-  scrollTop: number;
+  scrollLeft: DartImpl<number>;
+  scrollTop: DartImpl<number>;
   readonly scrollWidth: DartImpl<number>;
   readonly scrollHeight: DartImpl<number>;
   /**

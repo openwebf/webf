@@ -275,52 +275,6 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
   return resolver->Promise();
 }
 
-double Element::clientHeight() const {
-  ExceptionState exception_state;
-  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      GetBindingProperty(binding_call_methods::kclientHeight, exception_state));
-}
-
-double Element::clientWidth() const {
-  ExceptionState exception_state;
-  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      GetBindingProperty(binding_call_methods::kclientWidth, exception_state));
-}
-
-double Element::clientLeft() const {
-  ExceptionState exception_state;
-  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      GetBindingProperty(binding_call_methods::kclientLeft, exception_state));
-}
-
-double Element::clientTop() const {
-  ExceptionState exception_state;
-  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      GetBindingProperty(binding_call_methods::kclientTop, exception_state));
-}
-
-double Element::scrollTop() const {
-  ExceptionState exception_state;
-  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      GetBindingProperty(binding_call_methods::kscrollTop, exception_state));
-}
-
-void Element::setScrollTop(double v, ExceptionState& exception_state) {
-  SetBindingProperty(binding_call_methods::kscrollTop, NativeValueConverter<NativeTypeDouble>::ToNativeValue(v),
-                     exception_state);
-}
-
-double Element::scrollLeft() const {
-  ExceptionState exception_state;
-  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      GetBindingProperty(binding_call_methods::kclientTop, exception_state));
-}
-
-void Element::setScrollLeft(double v, ExceptionState& exception_state) {
-  SetBindingProperty(binding_call_methods::kscrollLeft, NativeValueConverter<NativeTypeDouble>::ToNativeValue(v),
-                     exception_state);
-}
-
 std::string Element::outerHTML() {
   std::string s = "<" + tagName().ToStdString();
 

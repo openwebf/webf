@@ -119,7 +119,8 @@ task('build-darwin-webf-lib', done => {
     webfTargets.push('webf_test');
   }
 
-  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-x86_64 --target ${webfTargets.join(' ')} -- -j 6`, {
+  let cpus = os.cpus();
+  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-x86_64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 

@@ -279,7 +279,9 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
 }
 
 void ExecutingContext::FlushUICommand() {
-  dartMethodPtr()->flushUICommand(context_id_);
+  if (uiCommandBuffer()->size() > 0) {
+    dartMethodPtr()->flushUICommand(context_id_);
+  }
 }
 
 void ExecutingContext::DispatchErrorEvent(ErrorEvent* error_event) {

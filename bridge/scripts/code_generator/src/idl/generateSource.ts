@@ -193,7 +193,7 @@ auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ?
 NativeValue arguments[] = {
   ${nativeArguments.join(',\n')}
 };
-${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${declare.args.length}, arguments, exception_state);
+${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${nativeArguments.length}, arguments, exception_state);
 ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverter(declare.returnType)}>::ToValue(NativeValueConverter<${generateNativeValueTypeConverter(declare.returnType)}>::FromNativeValue(native_value))` : ''};
   `.trim();
 }

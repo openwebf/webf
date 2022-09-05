@@ -85,21 +85,29 @@ class CanvasRenderingContext2D extends BindingObject {
         return strokeRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble());
       case 'fillText':
-        double maxWidth = castToType<num>(args[3]).toDouble();
-        if (!maxWidth.isNaN) {
+        if (args.length > 3) {
+          double maxWidth = castToType<num>(args[3]).toDouble();
+          if (!maxWidth.isNaN) {
+            return fillText(
+                castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
+                maxWidth: maxWidth);
+          }
           return fillText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
-              maxWidth: maxWidth);
+              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
         } else {
           return fillText(
               castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
         }
       case 'strokeText':
-        double maxWidth = castToType<num>(args[3]).toDouble();
-        if (!maxWidth.isNaN) {
+        if (args.length > 3) {
+          double maxWidth = castToType<num>(args[3]).toDouble();
+          if (!maxWidth.isNaN) {
+            return strokeText(
+                castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
+                maxWidth: maxWidth);
+          }
           return strokeText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
-              maxWidth: maxWidth);
+              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
         } else {
           return strokeText(
               castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());

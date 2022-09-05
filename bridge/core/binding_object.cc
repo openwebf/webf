@@ -26,7 +26,7 @@ BindingObject::~BindingObject() {
   delete binding_object_;
 }
 
-BindingObject::BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object) {
+BindingObject::BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object): context_(context) {
   native_binding_object->binding_target_ = this;
   native_binding_object->invoke_binding_methods_from_dart = NativeBindingObject::HandleCallFromDartSide;
   binding_object_ = native_binding_object;
@@ -36,6 +36,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
                                                int32_t argc,
                                                const NativeValue* argv,
                                                ExceptionState& exception_state) const {
+  context_->FlushUICommand();
   if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
     exception_state.ThrowException(context_->ctx(), ErrorType::InternalError,
                                    "Failed to call dart method: invokeBindingMethod not initialized.");

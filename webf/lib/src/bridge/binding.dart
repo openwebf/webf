@@ -69,11 +69,22 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
     var result;
     try {
       if (method == GetPropertyMagic && argc == 1) {
+        if (isEnabledLog) {
+          print('$bindingObject getBindingProperty key: ${values[0]}');
+        }
+
         result = bindingObject.getBindingProperty(values[0]);
       } else if (method == SetPropertyMagic && argc == 2) {
+        if (isEnabledLog) {
+          print('$bindingObject setBindingProperty key: ${values[0]} value: ${values[1]}');
+        }
+
         bindingObject.setBindingProperty(values[0], values[1]);
         result = null;
       } else {
+        if (isEnabledLog) {
+          print('$bindingObject invokeBindingMethod method: $method args: $values');
+        }
         result = bindingObject.invokeBindingMethod(method, values);
       }
     } catch (e, stack) {
@@ -95,6 +106,10 @@ void _dispatchEventToNative(Event event) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
   if (contextId != null && pointer != null) {
+    if (isEnabledLog) {
+      print('dispatch event to native side: target: ${event.target} event: $event');
+    }
+
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
@@ -107,8 +122,6 @@ void _dispatchEventToNative(Event event) {
     // Free the allocated arguments.
     malloc.free(method);
     malloc.free(allocatedNativeArguments);
-
-
   }
 }
 
@@ -128,9 +141,11 @@ abstract class BindingBridge {
 
   static void _bindObject(BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
+    print('native binding pointer: $nativeBindingObject');
     if (nativeBindingObject != null) {
       _nativeObjects[nativeBindingObject.address] = object;
       nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
+      print('register invokeBindingmethod from native: ${nativeBindingObject.ref.invokeBindingMethodFromNative}');
     }
   }
 
