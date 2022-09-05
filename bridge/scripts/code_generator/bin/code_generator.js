@@ -10,6 +10,7 @@ const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
 const { analyzer } = require('../dist/idl/analyzer');
 const { generateJSONTemplate } = require('../dist/json/generator');
+const { generateNamesInstaller } = require("../dist/json/generator");
 
 program
   .version(packageJSON.version)
@@ -74,9 +75,13 @@ function genCodeFromJSONData() {
     return new JSONTemplate(path.join(path.join(__dirname, '../static/json_templates'), template), filename);
   });
 
+  let names_needs_install = new Set();
   for (let i = 0; i < blobs.length; i ++) {
     let blob = blobs[i];
     blob.json.metadata.templates.forEach((targetTemplate) => {
+      if (targetTemplate.template === 'make_names') {
+        names_needs_install.add(targetTemplate.filename);
+      }
       let depsBlob = {};
       if (targetTemplate.deps) {
         let cwdDir = blob.source.split('/').slice(0, -1).join('/');
@@ -95,6 +100,14 @@ function genCodeFromJSONData() {
       result.source && fs.writeFileSync(genFilePath + '.cc', result.source);
     });
   }
+
+  // Generate name installer code.
+  let targetTemplateHeader = templates.find(t => t.filename === 'names_installer.h');
+  let targetTemplateBody = templates.find(t => t.filename === 'names_installer.cc');
+  let result = generateNamesInstaller(targetTemplateHeader, targetTemplateBody, names_needs_install);
+  let genFilePath = path.join(dist, 'names_installer');
+  fs.writeFileSync(genFilePath + '.h', result.header);
+  result.source && fs.writeFileSync(genFilePath + '.cc', result.source);
 }
 
 genCodeFromTypeDefine();

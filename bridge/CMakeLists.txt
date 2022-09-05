@@ -223,7 +223,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/events/event_target.cc
     core/dom/events/event_listener_map.cc
     core/dom/events/event_target_impl.cc
-          core/binding_object.cc
+    core/binding_object.cc
     core/dom/node.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
@@ -279,6 +279,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
   # Gen sources.
   list(APPEND BRIDGE_SOURCE
+    out/names_installer.cc
     out/qjs_console.cc
     out/qjs_module_manager.cc
     out/qjs_window_or_worker_global_scope.cc

@@ -262,7 +262,6 @@ function walkProgram(statement: ts.Statement) {
       });
 
       if (!constructorDefined && obj.kind === ClassObjectKind.interface) {
-        console.log(obj.kind);
         throw new Error(`Interface: ${interfaceName} didn't have constructor defined.`);
       }
 

@@ -12,7 +12,8 @@
 namespace webf {
 
 UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {
-  queue.reserve(0);
+  // It's rare to store over 1024 commands in one frame.
+  queue.reserve(1024);
 }
 
 void UICommandBuffer::addCommand(int32_t id, UICommand type, void* nativePtr) {

@@ -43,3 +43,25 @@ export function generateJSONTemplate(blob: JSONBlob, headerTemplate: JSONTemplat
     source: body,
   };
 }
+
+function generateNames(template: JSONTemplate, names: Set<string>) {
+  let compiled = _.template(template.raw);
+  return compiled({
+    _: _,
+    name: 'names_installer',
+    names: Array.from(names),
+    upperCamelCase
+  }).split('\n').filter(str => {
+    return str.trim().length > 0;
+  }).join('\n');
+}
+
+export function generateNamesInstaller(headerTemplate: JSONTemplate, bodyTemplate: JSONTemplate, names: Set<string>) {
+  let header = generateNames(headerTemplate, names);
+  let body = generateNames(bodyTemplate, names);
+
+  return {
+    header: header,
+    source: body,
+  };
+}
