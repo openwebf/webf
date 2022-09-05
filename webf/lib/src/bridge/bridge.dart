@@ -40,7 +40,7 @@ int initBridge(WebFViewController view) {
   if (_firstView) {
     Future.microtask(() {
       // Port flutter's frame callback into bridge.
-      SchedulerBinding.instance!.addPersistentFrameCallback((_) {
+      SchedulerBinding.instance.addPersistentFrameCallback((_) {
         flushUICommand(view);
       });
     });

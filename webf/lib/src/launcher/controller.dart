@@ -137,8 +137,11 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
     defineBuiltInElements();
 
-    // Execute UICommand.createDocument and UICommand.createWindow to initialize window and document.
-    flushUICommand(this);
+    // Wait viewport mounted on the outside renderObject tree.
+    Future.microtask(() {
+      // Execute UICommand.createDocument and UICommand.createWindow to initialize window and document.
+      flushUICommand(this);
+    });
 
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_ELEMENT_MANAGER_INIT_END);
