@@ -2,8 +2,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:ui';
-
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 

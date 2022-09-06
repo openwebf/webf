@@ -103,7 +103,6 @@ class _CSSCalcParser {
   final RenderStyle _renderStyle;
   final Tokenizer tokenizer;
 
-  Token? _previousToken;
   late Token _peekToken;
 
   _CSSCalcParser(this._renderStyle, String text, {int start = 0})
@@ -230,19 +229,13 @@ class _CSSCalcParser {
   }
 
   Token _next({bool unicodeRange = false}) {
-    final next = _previousToken = _peekToken;
+    final next = _peekToken;
     _peekToken = tokenizer.next(unicodeRange: unicodeRange);
     return next;
   }
 
-  // Is the next token a legal identifier?  This includes pseudo-keywords.
-  bool _peekIdentifier() {
-    return TokenKind.isIdentifier(_peekToken.kind);
-  }
-
   bool _maybeEat(int kind, {bool unicodeRange = false}) {
     if (_peekToken.kind == kind) {
-      _previousToken = _peekToken;
       _peekToken = tokenizer.next(unicodeRange: unicodeRange);
       return true;
     } else {
