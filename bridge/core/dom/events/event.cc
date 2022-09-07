@@ -5,21 +5,9 @@
 #include "event.h"
 #include "core/executing_context.h"
 #include "event_target.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 
 namespace webf {
-
-Event* Event::From(ExecutingContext* context, NativeEvent* native_event) {
-  AtomicString event_type = AtomicString::From(context->ctx(), native_event->type);
-
-  auto* event =
-      MakeGarbageCollected<Event>(context, event_type, native_event->bubbles == 0 ? Bubbles::kNo : Bubbles::kYes,
-                                  native_event->cancelable == 0 ? Cancelable::kNo : Cancelable::kYes,
-                                  ComposedMode::kComposed, native_event->timeStamp);
-  event->SetTarget(static_cast<EventTarget*>(native_event->target));
-  event->SetCurrentTarget(static_cast<EventTarget*>(native_event->currentTarget));
-  event->default_prevented_ = native_event->defaultPrevented;
-  return event;
-}
 
 Event::Event(ExecutingContext* context, const AtomicString& event_type)
     : Event(context,
@@ -61,15 +49,25 @@ Event::Event(ExecutingContext* context,
       current_target_(nullptr),
       time_stamp_(time_stamp) {}
 
-void Event::SetType(const AtomicString& type) {
+Event::Event(ExecutingContext *context, const AtomicString &event_type, NativeEvent *native_event) :
+    ScriptWrappable(context->ctx()),
+    type_(event_type),
+    bubbles_(native_event->bubbles),
+    cancelable_(native_event->cancelable),
+    time_stamp_(native_event->timeStamp),
+    default_prevented_(native_event->defaultPrevented),
+    target_(DynamicTo<EventTarget>(BindingObject::From(native_event->target))),
+    current_target_(DynamicTo<EventTarget>(BindingObject::From(native_event->currentTarget))) {}
+
+void Event::SetType(const AtomicString &type) {
   type_ = type;
 }
 
-EventTarget* Event::target() const {
+EventTarget *Event::target() const {
   return target_;
 }
 
-void Event::SetTarget(EventTarget* target) {
+void Event::SetTarget(EventTarget *target) {
   target_ = target;
 }
 
@@ -85,7 +83,7 @@ void Event::SetCurrentTarget(EventTarget* target) {
   current_target_ = target;
 }
 
-bool Event::IsUIEvent() const {
+bool Event::IsUiEvent() const {
   return false;
 }
 
@@ -114,6 +112,30 @@ bool Event::IsPointerEvent() const {
 }
 
 bool Event::IsInputEvent() const {
+  return false;
+}
+
+bool Event::IsCloseEvent() const {
+  return false;
+}
+
+bool Event::IsCustomEvent() const {
+  return false;
+}
+
+bool Event::IsTransitionEvent() const {
+  return false;
+}
+
+bool Event::IsAnimationEvent() const {
+  return false;
+}
+
+bool Event::IsMessageEvent() const {
+  return false;
+}
+
+bool Event::IsIntersectionchangeEvent() const {
   return false;
 }
 
@@ -160,6 +182,9 @@ void Event::SetHandlingPassive(PassiveMode mode) {
   handling_passive_ = mode;
 }
 
-void Event::Trace(GCVisitor* visitor) const {}
+void Event::Trace(GCVisitor *visitor) const {
+  visitor->Trace(target_);
+  visitor->Trace(current_target_);
+}
 
 }  // namespace webf

@@ -43,6 +43,11 @@
 #include "qjs_message_event.h"
 #include "qjs_module_manager.h"
 #include "qjs_node.h"
+#include "qjs_custom_event.h"
+#include "qjs_mouse_event.h"
+#include "qjs_touch_event.h"
+#include "qjs_transition_event.h"
+#include "qjs_pointer_event.h"
 #include "qjs_node_list.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
@@ -74,6 +79,11 @@ void InstallBindings(ExecutingContext* context) {
   QJSFocusEvent::Install(context);
   QJSGestureEvent::Install(context);
   QJSInputEvent::Install(context);
+  QJSCustomEvent::Install(context);
+  QJSMouseEvent::Install(context);
+  QJSPointerEvent::Install(context);
+  QJSTouchEvent::Install(context);
+  QJSTransitionEvent::Install(context);
   QJSIntersectionChangeEvent::Install(context);
   QJSKeyboardEvent::Install(context);
   QJSNode::Install(context);

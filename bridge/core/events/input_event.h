@@ -13,6 +13,8 @@
 
 namespace webf {
 
+struct NativeInputEvent;
+
 class InputEvent : public UIEvent {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -33,8 +35,12 @@ class InputEvent : public UIEvent {
                       const std::shared_ptr<InputEventInit>& initializer,
                       ExceptionState& exception_state);
 
+  explicit InputEvent(ExecutingContext* context, const AtomicString& type, NativeInputEvent* native_input_event);
+
   const AtomicString& inputType() const;
   const AtomicString& data() const;
+
+  bool IsInputEvent() const override;
 
  private:
   AtomicString input_type_;

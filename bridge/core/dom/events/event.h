@@ -8,6 +8,8 @@
 #include <cinttypes>
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
+#include "core/dom/events/event_target.h"
+#include "bindings/qjs/cppgc/member.h"
 #include "core/executing_context.h"
 #include "foundation/native_string.h"
 #include "qjs_event_init.h"
@@ -16,6 +18,7 @@ namespace webf {
 
 class EventTarget;
 class ExceptionState;
+struct NativeBindingObject;
 
 // Dart generated nativeEvent member are force align to 64-bit system. So all members in NativeEvent should have 64 bit
 // width.
@@ -41,9 +44,9 @@ struct NativeEvent {
   int64_t timeStamp{0};
   int64_t defaultPrevented{0};
   // The pointer address of target EventTargetInstance object.
-  void* target{nullptr};
+  NativeBindingObject* target{nullptr};
   // The pointer address of current target EventTargetInstance object.
-  void* currentTarget{nullptr};
+  NativeBindingObject* currentTarget{nullptr};
 };
 #endif
 
@@ -51,6 +54,13 @@ struct RawEvent {
   uint64_t* bytes;
   int64_t length;
 };
+
+template<typename T>
+T* toNativeEvent(RawEvent* raw_event) {
+  // NativeEvent members are memory aligned corresponding to NativeEvent.
+  // So we can reinterpret_cast raw bytes pointer to NativeEvent type directly.
+  return reinterpret_cast<T*>(raw_event->bytes);
+}
 
 class Event : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
@@ -99,8 +109,6 @@ class Event : public ScriptWrappable {
     return MakeGarbageCollected<Event>(context, type, init);
   };
 
-  static Event* From(ExecutingContext* context, NativeEvent* native_event);
-
   Event() = delete;
   explicit Event(ExecutingContext* context, const AtomicString& event_type);
   explicit Event(ExecutingContext* context, const AtomicString& type, const std::shared_ptr<EventInit>& init);
@@ -110,13 +118,14 @@ class Event : public ScriptWrappable {
                  Cancelable cancelable,
                  ComposedMode composed_mode,
                  double timeStamp);
+  explicit Event(ExecutingContext* context, const AtomicString& event_type, NativeEvent* native_event);
 
   bool propagationStopped() const { return propagation_stopped_; }
   bool bubbles() { return bubbles_; };
   double timeStamp() { return time_stamp_; }
   bool propagationImmediatelyStopped(ExceptionState& exception_state) { return immediate_propagation_stopped_; }
   bool cancelable() const { return cancelable_; }
-  const AtomicString& type() { return type_; };
+  const AtomicString& type() const { return type_; };
   void SetType(const AtomicString& type);
   EventTarget* target() const;
   void SetTarget(EventTarget* target);
@@ -127,7 +136,7 @@ class Event : public ScriptWrappable {
   void SetEventPhase(uint8_t event_phase) { event_phase_ = event_phase; }
 
   // These events are general classes of events.
-  virtual bool IsUIEvent() const;
+  virtual bool IsUiEvent() const;
   virtual bool IsMouseEvent() const;
   virtual bool IsFocusEvent() const;
   virtual bool IsKeyboardEvent() const;
@@ -135,6 +144,12 @@ class Event : public ScriptWrappable {
   virtual bool IsGestureEvent() const;
   virtual bool IsPointerEvent() const;
   virtual bool IsInputEvent() const;
+  virtual bool IsCloseEvent() const;
+  virtual bool IsCustomEvent() const;
+  virtual bool IsTransitionEvent() const;
+  virtual bool IsAnimationEvent() const;
+  virtual bool IsMessageEvent() const;
+  virtual bool IsIntersectionchangeEvent() const;
 
   // Drag events are a subset of mouse events.
   virtual bool IsDragEvent() const;
@@ -224,8 +239,8 @@ class Event : public ScriptWrappable {
   unsigned fire_only_capture_listeners_at_target_ : 1;
   unsigned fire_only_non_capture_listeners_at_target_ : 1;
 
-  EventTarget* target_{nullptr};
-  EventTarget* current_target_{nullptr};
+  Member<EventTarget> target_;
+  Member<EventTarget> current_target_;
 };
 
 }  // namespace webf

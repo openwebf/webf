@@ -52,7 +52,7 @@ class BindingObject {
   explicit BindingObject(ExecutingContext* context);
 
   // Handle call from dart side.
-  virtual NativeValue HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) const = 0;
+  virtual NativeValue HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) = 0;
   // Invoke methods which implemented at dart side.
   NativeValue InvokeBindingMethod(const AtomicString& method,
                                   int32_t argc,
@@ -62,6 +62,13 @@ class BindingObject {
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
 
   NativeBindingObject* bindingObject() const { return binding_object_; }
+
+  inline static BindingObject* From(NativeBindingObject* native_binding_object) {
+    return native_binding_object->binding_target_;
+  };
+
+  virtual bool IsEventTarget() const;
+  virtual bool IsTouchList() const;
 
  protected:
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.

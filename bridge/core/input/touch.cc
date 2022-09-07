@@ -3,6 +3,7 @@
  */
 
 #include "touch.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 
 namespace webf {
 
@@ -87,6 +88,10 @@ double Touch::screenY() const {
 
 EventTarget* Touch::target() const {
   return target_;
+}
+
+void Touch::Trace(GCVisitor *visitor) const {
+  visitor->Trace(target_);
 }
 
 }  // namespace webf

@@ -129,6 +129,7 @@ class EventTarget : public ScriptWrappable, public BindingObject {
   int32_t eventTargetId() const { return event_target_id_; }
 
   virtual bool IsWindowOrWorkerGlobalScope() const { return false; }
+  bool IsEventTarget() const override;
 
  protected:
   virtual bool AddEventListenerInternal(const AtomicString& event_type,
@@ -140,7 +141,8 @@ class EventTarget : public ScriptWrappable, public BindingObject {
 
   DispatchEventResult DispatchEventInternal(Event& event, ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) const override;
+  NativeValue HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv);
 
   // Subclasses should likely not override these themselves; instead, they
   // should subclass EventTargetWithInlineData.
@@ -152,6 +154,13 @@ class EventTarget : public ScriptWrappable, public BindingObject {
 
   int32_t event_target_id_;
   bool FireEventListeners(Event&, EventTargetData*, EventListenerVector&, ExceptionState&);
+};
+
+template <>
+struct DowncastTraits<EventTarget> {
+  static bool AllowFrom(const BindingObject& binding_object) {
+    return binding_object.IsEventTarget();
+  }
 };
 
 // Provide EventTarget with inlined EventTargetData for improved performance.

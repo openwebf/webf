@@ -9,7 +9,7 @@
 
 namespace webf {
 
-class TouchList : public ScriptWrappable {
+class TouchList : public ScriptWrappable, public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -25,6 +25,13 @@ class TouchList : public ScriptWrappable {
 
  private:
   std::vector<Touch*> values_;
+};
+
+template <>
+struct DowncastTraits<TouchList> {
+  static bool AllowFrom(const BindingObject& binding_object) {
+    return binding_object.IsTouchList();
+  }
 };
 
 }  // namespace webf

@@ -16,7 +16,7 @@ CanvasRenderingContext2D::CanvasRenderingContext2D(ExecutingContext* context,
 
 NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(NativeString* method,
                                                              int32_t argc,
-                                                             const NativeValue* argv) const {
+                                                             const NativeValue* argv) {
   return Native_NewNull();
 }
 

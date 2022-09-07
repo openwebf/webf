@@ -12,6 +12,8 @@
 
 namespace webf {
 
+struct NativeCloseEvent;
+
 class CloseEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -42,13 +44,16 @@ class CloseEvent : public Event {
                       const AtomicString& type,
                       const std::shared_ptr<CloseEventInit>& initializer,
                       ExceptionState& exception_state);
+  explicit CloseEvent(ExecutingContext* context, const AtomicString& type, NativeCloseEvent* raw_event);
 
-  int32_t code() const;
+  bool IsCloseEvent() const override;
+
+  int64_t code() const;
   const AtomicString& reason() const;
   bool wasClean() const;
 
  private:
-  int32_t code_;
+  int64_t code_;
   AtomicString reason_;
   bool was_clean_;
 };

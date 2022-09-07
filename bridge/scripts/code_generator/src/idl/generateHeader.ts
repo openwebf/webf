@@ -4,7 +4,7 @@ import {IDLBlob} from "./IDLBlob";
 import {getClassName} from "./utils";
 import fs from 'fs';
 import path from 'path';
-import {generateTypeValue} from "./generateSource";
+import {generateCoreTypeValue, generateRawTypeValue} from "./generateSource";
 import {GenerateOptions} from "./generator";
 
 export enum TemplateKind {
@@ -46,11 +46,14 @@ export function generateCppHeader(blob: IDLBlob, options: GenerateOptions) {
     switch(templateKind) {
       case TemplateKind.Interface: {
         if (!headerOptions.interface) {
+          object = (object as ClassObject);
           headerOptions.interface = true;
           return _.template(readTemplate('interface'))({
             className: getClassName(blob),
+            parentClassName: object.parent,
             blob: blob,
             object,
+            generateRawTypeValue,
             ...options
           });
         }
@@ -65,7 +68,7 @@ export function generateCppHeader(blob: IDLBlob, options: GenerateOptions) {
             blob: blob,
             object: object,
             props,
-            generateTypeValue: generateTypeValue
+            generateCoreTypeValue
           });
         }
         return '';

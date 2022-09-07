@@ -14,6 +14,8 @@
 
 namespace webf {
 
+struct NativeUIEvent;
+
 class UIEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -47,11 +49,15 @@ class UIEvent : public Event {
                    const std::shared_ptr<UIEventInit>& initializer,
                    ExceptionState& exception_state);
 
+  explicit UIEvent(ExecutingContext* context, const AtomicString& type, NativeUIEvent* native_ui_event);
+
   double detail() const;
   Window* view() const;
   double which() const;
 
-  bool IsUIEvent() const override;
+  bool IsUiEvent() const override;
+
+  void Trace(GCVisitor* visitor) const override;
 
  private:
   double detail_;
@@ -61,7 +67,7 @@ class UIEvent : public Event {
 
 template <>
 struct DowncastTraits<UIEvent> {
-  static bool AllowFrom(const Event& event) { return event.IsUIEvent(); }
+  static bool AllowFrom(const Event& event) { return event.IsUiEvent(); }
 };
 
 }  // namespace webf

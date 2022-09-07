@@ -46,6 +46,8 @@ class AnimationEvent : public Event {
   double elapsedTime() const;
   const AtomicString& pseudoElement() const;
 
+  bool IsAnimationEvent() const override;
+
  private:
   AtomicString animation_name_;
   AtomicString pseudo_element_;

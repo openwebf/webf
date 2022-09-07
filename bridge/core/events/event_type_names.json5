@@ -147,6 +147,9 @@
     "pointerout",
     "pointerover",
     "pointerup",
+    "gesturestart",
+    "gesturechange",
+    "gestureend",
     "popstate",
     "progress",
     "processorerror",
@@ -217,6 +220,7 @@
     "webglcontextlost",
     "webglcontextrestored",
     "wheel",
-    "zoom"
+    "zoom",
+    "intersectionchange"
   ]
 }

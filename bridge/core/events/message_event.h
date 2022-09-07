@@ -11,6 +11,8 @@
 
 namespace webf {
 
+struct NativeMessageEvent;
+
 class MessageEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -27,11 +29,14 @@ class MessageEvent : public Event {
   explicit MessageEvent(ExecutingContext* context,
                         const AtomicString& type,
                         const std::shared_ptr<MessageEventInit>& init);
+  explicit MessageEvent(ExecutingContext* context, const AtomicString& type, NativeMessageEvent* native_message_event);
 
   ScriptValue data() const;
   AtomicString origin() const;
   AtomicString lastEventId() const;
   AtomicString source() const;
+
+  bool IsMessageEvent() const override;
 
  private:
   ScriptValue data_;

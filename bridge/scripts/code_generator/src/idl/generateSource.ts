@@ -44,7 +44,7 @@ export function isTypeNeedAllocate(type: ParameterType[]) {
   }
 }
 
-export function generateTypeValue(type: ParameterType[]): string {
+export function generateCoreTypeValue(type: ParameterType[]): string {
   switch (type[0]) {
     case FunctionArgumentType.int64: {
       return 'int64_t';
@@ -71,6 +71,38 @@ export function generateTypeValue(type: ParameterType[]): string {
 
   if (typeof type[0] == 'string') {
     return type[0] + '*';
+  }
+
+  return '';
+}
+
+export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = false): string {
+  if (is32Bit) {
+    return 'int64_t';
+  }
+
+  switch (type[0]) {
+    case FunctionArgumentType.int64: {
+      return 'int64_t';
+    }
+    case FunctionArgumentType.int32: {
+      return 'int64_t';
+    }
+    case FunctionArgumentType.double: {
+      return 'double';
+    }
+    case FunctionArgumentType.boolean: {
+      return 'int64_t';
+    }
+    case FunctionArgumentType.dom_string: {
+      return 'NativeString*';
+    }
+    default:
+      return 'NativeBindingObject*';
+  }
+
+  if (typeof type[0] == 'string') {
+    return 'NativeBindingObject*';
   }
 
   return '';
@@ -468,7 +500,8 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
           object: object,
           mixinObjects,
           generateFunctionBody,
-          generateTypeValue,
+          generateCoreTypeValue,
+          generateRawTypeValue,
           generateOverLoadSwitchBody,
           isTypeNeedAllocate,
           overloadMethods,

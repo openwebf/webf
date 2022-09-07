@@ -141,5 +141,7 @@
     "cols",
     "rows",
     "wrap",
+    "dispatchEvent",
+    "getModifierState"
   ]
 }

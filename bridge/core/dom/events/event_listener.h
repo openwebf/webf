@@ -6,11 +6,11 @@
 #define BRIDGE_CORE_DOM_EVENTS_EVENT_LISTENER_H_
 
 #include "core/executing_context.h"
-#include "event.h"
 
 namespace webf {
 
 class JSBasedEventListener;
+class Event;
 
 // EventListener represents 'callback' in 'event listener' in DOM standard.
 // https://dom.spec.whatwg.org/#concept-event-listener

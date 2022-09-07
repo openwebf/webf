@@ -33,9 +33,7 @@ enum JSValueType {
 enum JSPointerType {
   AsyncFunctionContext,
   NativeFunctionContext,
-  NativeBoundingClientRect,
-  NativeCanvasRenderingContext2D,
-  BindingObject
+  Others
 }
 
 typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);

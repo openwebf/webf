@@ -13,6 +13,8 @@
 
 namespace webf {
 
+struct NativeKeyboardEvent;
+
 class KeyboardEvent : public UIEvent {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -44,6 +46,10 @@ class KeyboardEvent : public UIEvent {
                          const std::shared_ptr<KeyboardEventInit>& initializer,
                          ExceptionState& exception_state);
 
+  explicit KeyboardEvent(ExecutingContext* context,
+                         const AtomicString& type,
+                         NativeKeyboardEvent* native_keyboard_event);
+
   bool altKey() const;
   double charCode() const;
   const AtomicString& code() const;
@@ -72,11 +78,6 @@ class KeyboardEvent : public UIEvent {
   bool meta_key_;
   bool repeat_;
   bool shift_key_;
-};
-
-template <>
-struct DowncastTraits<KeyboardEvent> {
-  static bool AllowFrom(const Event& event) { return event.IsKeyboardEvent(); }
 };
 
 }  // namespace webf

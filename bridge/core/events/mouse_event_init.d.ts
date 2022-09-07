@@ -1,9 +1,9 @@
-import { EventInit } from "../dom/events/event_init";
 import {EventTarget} from "../dom/events/event_target";
+import {UIEventInit} from "./ui_event_init";
 
 // @ts-ignore
 @Dictionary()
-export interface MouseEventInit extends EventInit {
+export interface MouseEventInit extends UIEventInit {
     altKey?: boolean;
     button?: number;
     buttons?: number;

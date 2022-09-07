@@ -41,11 +41,6 @@ class PromiseRejectionEvent : public Event {
   ScriptValue reason_;
 };
 
-template <>
-struct DowncastTraits<PromiseRejectionEvent> {
-  static bool AllowFrom(const Event& event) { return event.IsErrorEvent(); }
-};
-
 }  // namespace webf
 
 #endif  // BRIDGE_CORE_EVENTS_PROMISE_REJECTION_EVENT_H_

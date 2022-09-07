@@ -12,6 +12,7 @@
 namespace webf {
 
 class EventTarget;
+class TouchList;
 
 // Define all built-in wrapper class id.
 enum {
@@ -22,6 +23,11 @@ enum {
   JS_CLASS_MESSAGE_EVENT,
   JS_CLASS_UI_EVENT,
   JS_CLASS_CLOSE_EVENT,
+  JS_CLASS_TOUCH_EVENT,
+  JS_CLASS_POINTER_EVENT,
+  JS_CLASS_MOUSE_EVENT,
+  JS_CLASS_CUSTOM_EVENT,
+  JS_CLASS_TRANSITION_EVENT,
   JS_CLASS_INPUT_EVENT,
   JS_CLASS_ANIMATION_EVENT,
   JS_CLASS_FOCUS_EVENT,

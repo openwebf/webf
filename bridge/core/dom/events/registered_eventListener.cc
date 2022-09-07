@@ -4,6 +4,7 @@
  */
 #include "registered_eventListener.h"
 #include "qjs_add_event_listener_options.h"
+#include "event.h"
 
 namespace webf {
 

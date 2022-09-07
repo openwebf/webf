@@ -135,6 +135,10 @@ void Window::cancelAnimationFrame(double request_id, ExceptionState& exception_s
   GetExecutingContext()->document()->CancelAnimationFrame(static_cast<uint32_t>(request_id), exception_state);
 }
 
+bool Window::IsWindowOrWorkerGlobalScope() const {
+  return true;
+}
+
 void Window::Trace(GCVisitor* visitor) const {
   visitor->Trace(screen_);
   EventTargetWithInlineData::Trace(visitor);

@@ -1,8 +1,37 @@
 #include "core/<%= blob.implement %>.h"
 
+<% if(parentClassName) { %>
+#include "qjs_<%= _.snakeCase(parentClassName) %>.h"
+<% } %>
+
 namespace webf {
 
 class ExecutingContext;
+
+<% if (className != "Event" && className != "CustomEvent" && _.endsWith(className, "Event")){ %>
+
+// Dart generated nativeEvent member are force align to 64-bit system. So all members in NativeEvent should have 64 bit
+// width.
+#if ANDROID_32_BIT
+struct Native<%= className %> {
+  Native<%= parentClassName %> native_event;
+  <% _.forEach(object.props, function(prop, index) { %>
+  <% if (prop.typeMode.static) { return; } %>
+<%= generateRawTypeValue(prop.type, true) %> <%= prop.name %>;
+  <% }) %>
+};
+#else
+// Use pointer instead of int64_t on 64 bit system can help compiler to choose best register for better running
+// performance.
+struct Native<%= className %> {
+Native<%= parentClassName %> native_event;
+<% _.forEach(object.props, function(prop, index) { %>
+<% if (prop.typeMode.static) { return; } %>
+<%= generateRawTypeValue(prop.type) %> <%= prop.name %>;
+<% }) %>
+};
+#endif
+<% } %>
 
 class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= className%>> {
  public:

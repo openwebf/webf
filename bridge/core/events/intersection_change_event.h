@@ -13,6 +13,8 @@
 
 namespace webf {
 
+struct NativeIntersectionChangeEvent;
+
 class IntersectionChangeEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -37,7 +39,11 @@ class IntersectionChangeEvent : public Event {
                                    const AtomicString& type,
                                    ExceptionState& exception_state);
 
+  explicit IntersectionChangeEvent(ExecutingContext* context, const AtomicString& type, NativeIntersectionChangeEvent* native_intersectionchange_event);
+
   double intersectionRatio() const;
+
+  bool IsIntersectionchangeEvent() const override;
 
  private:
   double intersection_ratio_;

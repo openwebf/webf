@@ -13,6 +13,8 @@
 
 namespace webf {
 
+struct NativeGestureEvent;
+
 class GestureEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -33,6 +35,8 @@ class GestureEvent : public Event {
                         const std::shared_ptr<GestureEventInit>& initializer,
                         ExceptionState& exception_state);
 
+  explicit GestureEvent(ExecutingContext* context, const AtomicString& type, NativeGestureEvent* native_gesture_event);
+
   const AtomicString& state() const;
   const AtomicString& direction() const;
   double deltaX() const;
@@ -41,6 +45,8 @@ class GestureEvent : public Event {
   double velocityY() const;
   double scale() const;
   double rotation() const;
+
+  bool IsGestureEvent() const override;
 
  private:
   AtomicString state_;

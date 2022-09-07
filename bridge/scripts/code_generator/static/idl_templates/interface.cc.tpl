@@ -40,7 +40,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     }
     ExceptionState exception_state;
     MemberMutationScope scope{ExecutingContext::From(ctx)};
-    <%= generateTypeValue(object.indexedProp.type) %> result = self->item(index, exception_state);
+    <%= generateCoreTypeValue(object.indexedProp.type) %> result = self->item(index, exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return exception_state.ToQuickJS();
     }
@@ -52,7 +52,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     auto* self = toScriptWrappable<<%= className %>>(obj);
     ExceptionState exception_state;
     MemberMutationScope scope{ExecutingContext::From(ctx)};
-    ${generateTypeValue(object.indexedProp.type)} result = self->item(AtomicString(ctx, key), exception_state);
+    ${generateCoreTypeValue(object.indexedProp.type)} result = self->item(AtomicString(ctx, key), exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return exception_state.ToQuickJS();
     }

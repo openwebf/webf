@@ -12,6 +12,7 @@
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
 #include "foundation/logging.h"
+#include "event_factory.h"
 #include "page.h"
 #include "polyfill.h"
 
@@ -59,8 +60,8 @@ void WebFPage::invokeModuleEvent(const NativeString* moduleName,
   Event* event = nullptr;
   if (ptr != nullptr) {
     std::string type = std::string(eventType);
-    auto* rawEvent = static_cast<RawEvent*>(ptr)->bytes;
-    event = Event::From(context_, reinterpret_cast<NativeEvent*>(rawEvent));
+    auto* rawEvent = static_cast<RawEvent*>(ptr);
+    event = EventFactory::Create(context_, AtomicString(ctx, type), rawEvent);
   }
 
   ScriptValue extraObject = ScriptValue::Empty(ctx);

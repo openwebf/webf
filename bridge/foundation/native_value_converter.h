@@ -77,14 +77,14 @@ struct NativeValueConverter<NativeTypeJSON> : public NativeValueConverterBase<Na
 class BindingObject;
 struct NativeBindingObject;
 
-template <>
-struct NativeValueConverter<NativeTypePointer<NativeBindingObject>>
-    : public NativeValueConverterBase<NativeTypePointer<NativeBindingObject>> {
-  static NativeValue ToNativeValue(ImplType value) { return Native_NewPtr(JSPointerType::BindingObject, value); }
+template <typename T>
+struct NativeValueConverter<NativeTypePointer<T>>
+    : public NativeValueConverterBase<NativeTypePointer<T>> {
+  static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::Others, value); }
   static NativeValue ToNativeValue(BindingObject* value) {
-    return Native_NewPtr(JSPointerType::BindingObject, value->bindingObject());
+    return Native_NewPtr(JSPointerType::Others, value->bindingObject());
   }
-  static ImplType FromNativeValue(NativeValue value) { return static_cast<ImplType>(value.u.ptr); }
+  static T* FromNativeValue(NativeValue value) { return static_cast<T*>(value.u.ptr); }
 };
 
 std::shared_ptr<QJSFunction> CreateSyncCallback(JSContext* ctx, int function_id);

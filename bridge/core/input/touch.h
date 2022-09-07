@@ -42,6 +42,8 @@ class Touch : public ScriptWrappable {
   double screenY() const;
   EventTarget* target() const;
 
+  void Trace(GCVisitor *visitor) const override;
+
  private:
   double altitude_angle_;
   double azimuth_angle_;

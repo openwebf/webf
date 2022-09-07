@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "event_factory",
+        "filename": "event_factory"
+      },
+      {
+        "template": "event_type_helper",
+        "filename": "event_type_helper"
+      }
+    ]
+  },
+  "data": [
+//    {
+//      "class": "AnimationEvent",
+//      "types": [
+//        "animationstart",
+//        "animationend",
+//        "animationcancel",
+//        "animationiteration"
+//      ]
+//    },
+    "close",
+//    "error",
+    "focus",
+    {
+      "class": "GestureEvent",
+      "types": [
+        "gesturestart",
+        "gesturechange",
+        "gestureend"
+      ]
+    },
+    "input",
+    {
+      "class": "IntersectionChangeEvent",
+      "types": [
+        "intersectionchange"
+      ]
+    },
+    {
+      "class": "KeyboardEvent",
+      "types": [
+        "keydown",
+        "keypress",
+        "keystatuseschange",
+        "keyup"
+      ]
+    },
+    "message",
+    {
+      "class": "PointerEvent",
+      "types": [
+        "pointercancel",
+        "pointerdown",
+        "pointerenter",
+        "pointerleave",
+        "pointerlockchange",
+        "pointerlockerror",
+        "pointermove",
+        "pointerout",
+        "pointerover",
+        "pointerup"
+      ]
+    },
+    {
+      "class": "TouchEvent",
+      "types": [
+        "touchstart",
+        "touchend",
+        "touchcancel",
+        "touchmove"
+      ]
+    },
+    {
+      "class": "MouseEvent",
+      "types": [
+        "mousedown",
+        "mouseenter",
+        "mouseleave",
+        "mousemove",
+        "mouseout",
+        "mouseover",
+        "mouseup",
+        "mousewheel"
+      ]
+    },
+    {
+      "class": "TransitionEvent",
+      "types": [
+        "transitioncancel",
+        "transitionend",
+        "transitionrun",
+        "transitionstart"
+      ]
+    }
+  ]
+}

@@ -14,6 +14,8 @@
 
 namespace webf {
 
+struct NativeFocusEvent;
+
 class FocusEvent : public UIEvent {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -49,7 +51,13 @@ class FocusEvent : public UIEvent {
                       const std::shared_ptr<FocusEventInit>& initializer,
                       ExceptionState& exception_state);
 
+  explicit FocusEvent(ExecutingContext* context,
+                      const AtomicString& type,
+                      NativeFocusEvent* native_focus_event);
+
   EventTarget* relatedTarget() const;
+
+  bool IsFocusEvent() const override;
 
  private:
   Member<EventTarget> related_target_;

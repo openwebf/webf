@@ -47,13 +47,17 @@ AnimationEvent::AnimationEvent(ExecutingContext* context,
                                const AtomicString& type,
                                const std::shared_ptr<AnimationEventInit>& initializer,
                                ExceptionState& exception_state)
-    : Event(context, event_type_names::kerror),
+    : Event(context, type),
       animation_name_(initializer->animationName()),
       pseudo_element_(initializer->pseudoElement()),
       elapsed_time_(initializer->elapsedTime()) {}
 
 const AtomicString& AnimationEvent::animationName() const {
   return animation_name_;
+}
+
+bool AnimationEvent::IsAnimationEvent() const {
+  return true;
 }
 
 double AnimationEvent::elapsedTime() const {

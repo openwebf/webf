@@ -64,4 +64,12 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   return InvokeBindingMethod(binding_call_methods::ksetPropertyMagic, 2, argv, exception_state);
 }
 
+bool BindingObject::IsEventTarget() const {
+  return false;
+}
+
+bool BindingObject::IsTouchList() const {
+  return false;
+}
+
 }  // namespace webf

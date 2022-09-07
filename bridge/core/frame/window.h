@@ -45,6 +45,8 @@ class Window : public EventTargetWithInlineData {
   double requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState);
   void cancelAnimationFrame(double request_id, ExceptionState& exception_state);
 
+  bool IsWindowOrWorkerGlobalScope() const override;
+
   void Trace(GCVisitor* visitor) const override;
 
   // Override default ToQuickJS() to return Global object when access `window` property.
@@ -53,6 +55,17 @@ class Window : public EventTargetWithInlineData {
  private:
   Member<Screen> screen_;
 };
+
+template <>
+struct DowncastTraits<Window> {
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsWindowOrWorkerGlobalScope();
+  }
+  static bool AllowFrom(const BindingObject& binding_object) {
+    return binding_object.IsEventTarget() && DynamicTo<EventTarget>(binding_object)->IsWindowOrWorkerGlobalScope();
+  }
+};
+
 
 }  // namespace webf
 

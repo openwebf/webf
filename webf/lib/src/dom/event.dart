@@ -183,6 +183,14 @@ class Event {
     bubbles = false;
   }
 
+  // Sync event properties from Raw pointer data.
+  void syncFromRaw(Pointer<RawNativeEvent> raw) {
+    assert(raw.ref.length >= 7);
+    bubbles = raw.ref.bytes[1] == 1;
+    cancelable = raw.ref.bytes[2] == 1;
+    defaultPrevented = raw.ref.bytes[4] == 1;
+  }
+
   Pointer toRaw([int extraLength = 0]) {
     Pointer<RawNativeEvent> event = malloc.allocate<RawNativeEvent>(sizeOf<RawNativeEvent>());
 
@@ -373,7 +381,9 @@ class CustomEvent extends Event {
 
   @override
   Pointer<RawNativeCustomEvent> toRaw([int methodLength = 0]) {
-    List<int> methods = [stringToNativeString(detail).address];
+    List<int> methods = [
+      detail.toNativeUtf8().address
+    ];
 
     Pointer<RawNativeCustomEvent> rawEvent = super.toRaw(methods.length).cast<RawNativeCustomEvent>();
     Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
@@ -468,7 +478,7 @@ class MessageEvent extends Event {
 
   @override
   Pointer<RawNativeMessageEvent> toRaw([int methodLength = 0]) {
-    List<int> methods = [stringToNativeString(jsonEncode(data)).address, stringToNativeString(origin).address];
+    List<int> methods = [(jsonEncode(data)).toNativeUtf8().address, stringToNativeString(origin).address];
 
     Pointer<RawNativeMessageEvent> rawEvent = super.toRaw(methods.length).cast<RawNativeMessageEvent>();
     Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));

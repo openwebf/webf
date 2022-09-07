@@ -6,71 +6,42 @@
 #define BRIDGE_CUSTOM_EVENT_H
 
 #include "event.h"
+#include "qjs_custom_event_init.h"
 
 namespace webf {
 
-void bindCustomEvent(ExecutionContext* context);
-
 struct NativeCustomEvent {
-  NativeEvent nativeEvent;
-  NativeString* detail{nullptr};
+  NativeEvent native_event;
+  const char* detail{nullptr};
 };
 
-class CustomEvent : public Event {
+class CustomEvent final : public Event {
+  DEFINE_WRAPPERTYPEINFO();
  public:
-  static JSClassID classId;
-  static CustomEvent* create(JSContext* ctx, JSValue eventType, JSValue init);
-  static CustomEvent* create(JSContext* ctx, NativeCustomEvent* nativeCustomEvent);
-  static JSValue constructor(ExecutionContext* context);
-  static JSValue prototype(ExecutionContext* context);
+  using ImplType = CustomEvent*;
 
-  CustomEvent(JSValue eventType, JSValue init);
-  CustomEvent(NativeCustomEvent* nativeEvent);
+  static CustomEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
+  static CustomEvent* Create(ExecutingContext* context, const AtomicString& type, NativeCustomEvent* native_custom_event);
+  static CustomEvent* Create(ExecutingContext* context, const AtomicString& type, const std::shared_ptr<CustomEventInit>& initialize, ExceptionState& exception_state);
 
-  void trace(JSRuntime* rt, JSValue val, JS_MarkFunc* mark_func) const override;
-  void dispose() const override;
+  CustomEvent() = delete;
+  explicit CustomEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
+  explicit CustomEvent(ExecutingContext* context, const AtomicString& type, NativeCustomEvent* native_custom_event);
+  explicit CustomEvent(ExecutingContext* context, const AtomicString& type, const std::shared_ptr<CustomEventInit>& initialize, ExceptionState& exception_state);
 
-  DEFINE_FUNCTION(initCustomEvent);
+  ScriptValue detail() const;
 
-  DEFINE_PROTOTYPE_READONLY_PROPERTY(detail);
+  bool IsCustomEvent() const override;
 
  private:
-  NativeCustomEvent* m_nativeCustomEvent{nullptr};
-  JSValue m_detail{JS_NULL};
+  ScriptValue detail_;
 };
 
-// class CustomEventInstance : public EventInstance {
-// public:
-//  explicit CustomEventInstance(CustomEvent* jsCustomEvent, JSAtom CustomEventType, JSValue eventInit);
-//  explicit CustomEventInstance(CustomEvent* jsCustomEvent, NativeCustomEvent* nativeCustomEvent);
-//
-// private:
-
-//  NativeCustomEvent* nativeCustomEvent{nullptr};
-//  friend CustomEvent;
-//};
-
-auto customEventCreator =
-    [](JSContext* ctx, JSValueConst func_obj, JSValueConst this_val, int argc, JSValueConst* argv, int flags)
-    -> JSValue {
-  if (argc < 1) {
-    return JS_ThrowTypeError(ctx, "Failed to construct 'CustomEvent': 1 argument required, but only 0 present.");
-  }
-
-  JSValue typeValue = argv[0];
-  JSValue customEventInit = JS_NULL;
-
-  if (argc == 2) {
-    customEventInit = argv[1];
-  }
-
-  auto* customEvent = CustomEvent::create(ctx, typeValue, customEventInit);
-  //  auto* customEvent = new CustomEventInstance(CustomEvent::instance(context()), typeAtom, customEventInit);
-  //  JS_FreeAtom(m_ctx, typeAtom);
-  return customEvent->toQuickJS();
+template <>
+struct DowncastTraits<CustomEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsCustomEvent(); }
 };
 
-const WrapperTypeInfo customEventTypeInfo = {"CustomEvent", &eventTypeInfo, customEventCreator};
 
 }  // namespace webf
 

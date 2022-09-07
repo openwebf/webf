@@ -7,9 +7,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
-endif()
+#if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+#  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+#endif()
 
 if (${ENABLE_PROFILE})
   add_definitions(-DENABLE_PROFILE=1)
@@ -220,6 +220,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
     core/dom/events/event.cc
+    core/dom/events/custom_event.cc
     core/dom/events/event_target.cc
     core/dom/events/event_listener_map.cc
     core/dom/events/event_target_impl.cc
@@ -247,6 +248,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/focus_event.cc
     core/events/gesture_event.cc
     core/events/input_event.cc
+    core/events/touch_event.cc
+    core/events/mouse_event.cc
+    core/events/pointer_event.cc
+    core/events/transition_event.cc
     core/events/intersection_change_event.cc
     core/events/keyboard_event.cc
     core/events/promise_rejection_event.cc
@@ -307,6 +312,17 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_touch.cc
     out/qjs_touch_init.cc
     out/qjs_touch_list.cc
+    out/qjs_touch_event.cc
+    out/qjs_touch_event_init.cc
+    out/qjs_pointer_event.cc
+    out/qjs_pointer_event_init.cc
+    out/qjs_mouse_event.cc
+    out/qjs_mouse_event_init.cc
+    out/qjs_transition_event.cc
+    out/qjs_transition_event_init.cc
+    out/event_factory.cc
+    out/qjs_custom_event.cc
+    out/qjs_custom_event_init.cc
     out/qjs_keyboard_event.cc
     out/qjs_keyboard_event_init.cc
     out/qjs_animation_event.cc

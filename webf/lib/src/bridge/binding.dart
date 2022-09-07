@@ -95,12 +95,6 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
   }
 }
 
-List prepareDispatchEventArguments(Event event) {
-  Pointer<Void> rawEvent = event.toRaw().cast<Void>();
-  bool isCustomEvent = event is CustomEvent;
-  return [event.type, rawEvent, isCustomEvent ? 1 : 0];
-}
-
 // Dispatch the event to the binding side.
 void _dispatchEventToNative(Event event) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
@@ -113,13 +107,19 @@ void _dispatchEventToNative(Event event) {
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
-    List dispatchEventArguments = prepareDispatchEventArguments(event);
+    Pointer<Void> rawEvent = event.toRaw().cast<Void>();
+    bool isCustomEvent = event is CustomEvent;
+    List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCustomEvent ? 1 : 0];
     Pointer<NativeString> method = stringToNativeString('dispatchEvent');
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(dispatchEventArguments);
 
     f(pointer, nullptr, method, dispatchEventArguments.length, allocatedNativeArguments);
 
+    // Native can mutate rawEvent directly, so we sync properties value from native side with rawEvent.
+    event.syncFromRaw(rawEvent.cast<RawNativeEvent>());
+
     // Free the allocated arguments.
+    malloc.free(rawEvent);
     malloc.free(method);
     malloc.free(allocatedNativeArguments);
   }

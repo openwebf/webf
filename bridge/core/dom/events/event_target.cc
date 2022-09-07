@@ -6,6 +6,10 @@
 #include "bindings/qjs/converter_impl.h"
 #include "event_type_names.h"
 #include "qjs_add_event_listener_options.h"
+#include "binding_call_methods.h"
+#include "native_value_converter.h"
+#include "event_factory.h"
+#include "custom_event.h"
 
 #define PROPAGATION_STOPPED 1
 #define PROPAGATION_CONTINUE 0
@@ -172,6 +176,10 @@ EventListenerVector* EventTarget::GetEventListeners(const AtomicString& event_ty
   return data->event_listener_map.Find(event_type);
 }
 
+bool EventTarget::IsEventTarget() const {
+  return true;
+}
+
 bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
                                            const std::shared_ptr<EventListener>& listener,
                                            const std::shared_ptr<AddEventListenerOptions>& options) {
@@ -238,8 +246,40 @@ DispatchEventResult EventTarget::DispatchEventInternal(Event& event, ExceptionSt
   return dispatch_result;
 }
 
-NativeValue EventTarget::HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) const {
+NativeValue EventTarget::HandleCallFromDartSide(NativeString* native_method, int32_t argc, const NativeValue* argv) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  AtomicString method = AtomicString(ctx(), native_method);
+
+  if (method == binding_call_methods::kdispatchEvent) {
+    return HandleDispatchEventFromDart(argc, argv);
+  }
+
   return Native_NewNull();
+}
+
+NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue *argv) {
+  assert(argc == 3);
+  AtomicString event_type = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), argv[0]);
+  RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
+  bool is_custom_event = NativeValueConverter<NativeTypeBool>::FromNativeValue(argv[2]);
+
+  Event* event;
+  if (is_custom_event) {
+    event = MakeGarbageCollected<CustomEvent>(GetExecutingContext(), event_type, toNativeEvent<NativeCustomEvent>(raw_event));
+  } else {
+    event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
+  }
+
+  ExceptionState exception_state;
+  bool result = dispatchEvent(event, exception_state);
+
+  if (exception_state.HasException()) {
+    JSValue error = JS_GetException(ctx());
+    GetExecutingContext()->ReportError(error);
+    JS_FreeValue(ctx(), error);
+  }
+
+  return NativeValueConverter<NativeTypeBool>::ToNativeValue(result);
 }
 
 RegisteredEventListener* EventTarget::GetAttributeRegisteredEventListener(const AtomicString& event_type) {

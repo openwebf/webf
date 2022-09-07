@@ -26,7 +26,7 @@ enum NativeTag {
   TAG_ASYNC_FUNCTION = 8,
 };
 
-enum class JSPointerType { AsyncContextContext = 0, NativeFunctionContext = 1, BindingObject = 4 };
+enum class JSPointerType { AsyncContextContext = 0, NativeFunctionContext = 1, Others = 2 };
 
 class ExecutingContext;
 class ScriptValue;
