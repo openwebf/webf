@@ -5,6 +5,7 @@
 #include "script_state.h"
 #include "html_element_factory.h"
 #include "names_installer.h"
+#include "event_factory.h"
 
 namespace webf {
 
@@ -46,8 +47,8 @@ ScriptState::~ScriptState() {
   if (--runningContexts == 0) {
     // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
     names_installer::Dispose();
-    ;
     HTMLElementFactory::Dispose();
+    EventFactory::Dispose();
 
     JS_FreeRuntime(runtime_);
     runtime_ = nullptr;

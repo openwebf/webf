@@ -27,7 +27,9 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
   // Free the previous duplicated function.
   JS_FreeValue(ctx, function_);
 
-  return ScriptValue(ctx, returnValue);
+  ScriptValue result = ScriptValue(ctx, returnValue);
+  JS_FreeValue(ctx, returnValue);
+  return result;
 }
 
 void QJSFunction::Trace(GCVisitor* visitor) const {
