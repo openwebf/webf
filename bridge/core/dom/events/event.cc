@@ -17,7 +17,7 @@ Event::Event(ExecutingContext* context, const AtomicString& event_type)
             ComposedMode::kComposed,
             std::chrono::system_clock::now().time_since_epoch().count()) {}
 
-Event::Event(ExecutingContext *context, const AtomicString &type, const std::shared_ptr<EventInit> &init)
+Event::Event(ExecutingContext* context, const AtomicString& type, const std::shared_ptr<EventInit>& init)
     : Event(context,
             type,
             init->bubbles() ? Bubbles::kYes : Bubbles::kNo,
