@@ -238,7 +238,7 @@ mixin CSSAnimationMixin on RenderStyle {
         }, orElse: () {
           return FillMode.both;
         }),
-        iterations: iterationCount == 'infinite' ? -1 : (double.tryParse(iterationCount) ?? 1),
+        iterations: iterationCount == 'infinite' ? double.infinity : (double.tryParse(iterationCount) ?? 1),
         direction: PlaybackDirection.values.firstWhere((element) => element.toString().split('.').last == direction),
       );
 

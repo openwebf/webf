@@ -6,11 +6,8 @@ import 'package:source_span/source_span.dart';
 import 'package:webf/css.dart';
 
 class CSSCalcValue {
-  final RenderStyle _renderStyle;
-
   final CalcExpressionNode? _expression;
-
-  CSSCalcValue(this._renderStyle, this._expression);
+  CSSCalcValue(this._expression);
 
   // Get the lazy calculated CSS resolved value.
   dynamic computedValue(String propertyName) {
@@ -27,7 +24,7 @@ class CSSCalcValue {
         final expression = fns.first.args.first;
         final _CSSCalcParser parser = _CSSCalcParser(propertyName, renderStyle, expression);
         CalcExpressionNode? node = parser.processCalcExpression();
-        return CSSCalcValue(renderStyle, node);
+        return CSSCalcValue(node);
       }
     }
     return null;

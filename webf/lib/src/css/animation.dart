@@ -319,6 +319,9 @@ class Animation {
   }
 
   void play() {
+    if (_totalDuration <= 0) {
+      return;
+    }
     _isPaused = false;
     if (_isFinished || _isIdle) {
       _rewind();
@@ -770,7 +773,10 @@ class KeyframeEffect extends AnimationEffect {
         d = d! + 1;
       }
       currentDirection = PlaybackDirection.normal;
-      if (d != double.infinity && d! % 2 != 0) {
+      if (d == null) {
+        print('123');
+      }
+      if (d != null && d != double.infinity && d % 2 != 0) {
         currentDirection = PlaybackDirection.reverse;
       }
     }
