@@ -129,11 +129,10 @@ void toNativeValue(Pointer<NativeValue> target, value) {
 }
 
 Pointer<NativeValue> makeNativeValueArguments(List<dynamic> args) {
-  Pointer<Pointer<NativeValue>> buffer = malloc.allocate(sizeOf<NativeValue>() * args.length).cast<Pointer<NativeValue>>();
+  Pointer<NativeValue> buffer = malloc.allocate(sizeOf<NativeValue>() * args.length);
 
   for(int i = 0; i < args.length; i ++) {
-    buffer[i] = malloc.allocate(sizeOf<NativeValue>());
-    toNativeValue(buffer[i], args[i]);
+    toNativeValue(buffer.elementAt(i), args[i]);
   }
 
   return buffer.cast<NativeValue>();

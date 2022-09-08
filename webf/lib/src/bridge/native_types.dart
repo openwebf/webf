@@ -35,7 +35,7 @@ class RawEvent extends Struct {
 class NativeTouchList extends Struct {
   @Int64()
   external int length;
-  external Pointer<Pointer<NativeTouch>> touches;
+  external Pointer<NativeTouch> touches;
 }
 
 class NativeTouch extends Struct {

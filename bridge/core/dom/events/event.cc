@@ -17,12 +17,13 @@ Event::Event(ExecutingContext* context, const AtomicString& event_type)
             ComposedMode::kComposed,
             std::chrono::system_clock::now().time_since_epoch().count()) {}
 
-Event::Event(ExecutingContext* context, const AtomicString& type, const std::shared_ptr<EventInit>& init)
-    : ScriptWrappable(context->ctx()),
-      type_(type),
-      bubbles_(init->bubbles()),
-      cancelable_(init->cancelable()),
-      composed_(init->composed()) {}
+Event::Event(ExecutingContext *context, const AtomicString &type, const std::shared_ptr<EventInit> &init)
+    : Event(context,
+            type,
+            init->bubbles() ? Bubbles::kYes : Bubbles::kNo,
+            init->cancelable() ? Cancelable::kYes : Cancelable::kNo,
+            init->composed() ? ComposedMode::kComposed : ComposedMode::kScoped,
+            std::chrono::system_clock::now().time_since_epoch().count()) {}
 
 Event::Event(ExecutingContext* context,
              const AtomicString& event_type,
@@ -53,9 +54,20 @@ Event::Event(ExecutingContext* context, const AtomicString& event_type, NativeEv
     : ScriptWrappable(context->ctx()),
       type_(event_type),
       bubbles_(native_event->bubbles),
+      composed_(native_event->composed),
       cancelable_(native_event->cancelable),
       time_stamp_(native_event->timeStamp),
       default_prevented_(native_event->defaultPrevented),
+      propagation_stopped_(false),
+      immediate_propagation_stopped_(false),
+      default_handled_(false),
+      was_initialized_(true),
+      is_trusted_(false),
+      handling_passive_(PassiveMode::kNotPassiveDefault),
+      prevent_default_called_on_uncancelable_event_(false),
+      fire_only_capture_listeners_at_target_(false),
+      fire_only_non_capture_listeners_at_target_(false),
+      event_phase_(0),
       target_(DynamicTo<EventTarget>(BindingObject::From(native_event->target))),
       current_target_(DynamicTo<EventTarget>(BindingObject::From(native_event->currentTarget))) {}
 

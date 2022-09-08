@@ -154,6 +154,7 @@ class Event {
   String type;
   bool bubbles = false;
   bool cancelable = false;
+  bool composed = false;
   EventTarget? currentTarget;
   EventTarget? target;
   int timeStamp = DateTime.now().millisecondsSinceEpoch;
@@ -202,6 +203,7 @@ class Event {
       stringToNativeString(type).address,
       bubbles ? 1 : 0,
       cancelable ? 1 : 0,
+      composed ? 1 : 0,
       timeStamp,
       defaultPrevented ? 1 : 0,
       (_target != null && _target.pointer != null) ? _target.pointer!.address : nullptr.address,
@@ -683,8 +685,7 @@ class Touch {
     this.azimuthAngle = 0,
   });
 
-  Pointer<NativeTouch> toNative() {
-    Pointer<NativeTouch> nativeTouch = malloc.allocate<NativeTouch>(sizeOf<NativeTouch>());
+  void toNative(Pointer<NativeTouch> nativeTouch) {
     nativeTouch.ref.identifier = identifier;
     nativeTouch.ref.target = target.pointer!;
     nativeTouch.ref.clientX = clientX;
@@ -699,7 +700,6 @@ class Touch {
     nativeTouch.ref.force = force;
     nativeTouch.ref.altitudeAngle = altitudeAngle;
     nativeTouch.ref.azimuthAngle = azimuthAngle;
-    return nativeTouch;
   }
 }
 
@@ -724,10 +724,10 @@ class TouchList {
 
   Pointer<NativeTouchList> toNative() {
     Pointer<NativeTouchList> touchList = malloc.allocate(sizeOf<NativeTouchList>());
-    Pointer<Pointer<NativeTouch>> touches =
-        malloc.allocate<Pointer<NativeTouch>>(sizeOf<NativeTouch>() * _items.length);
+    Pointer<NativeTouch> touches =
+        malloc.allocate<NativeTouch>(sizeOf<NativeTouch>() * _items.length);
     for (int i = 0; i < _items.length; i++) {
-      touches[i] = _items[i].toNative();
+      _items[i].toNative(touches.elementAt(i));
     }
     touchList.ref.length = _items.length;
     touchList.ref.touches = touches;

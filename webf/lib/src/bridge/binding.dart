@@ -100,16 +100,17 @@ void _dispatchEventToNative(Event event) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
   if (contextId != null && pointer != null) {
-    if (isEnabledLog) {
-      print('dispatch event to native side: target: ${event.target} event: $event');
-    }
-
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
     Pointer<Void> rawEvent = event.toRaw().cast<Void>();
     bool isCustomEvent = event is CustomEvent;
     List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCustomEvent ? 1 : 0];
+
+    if (isEnabledLog) {
+      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
+    }
+
     Pointer<NativeString> method = stringToNativeString('dispatchEvent');
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(dispatchEventArguments);
 
@@ -131,7 +132,7 @@ abstract class BindingBridge {
 
   static final SplayTreeMap<int, BindingObject> _nativeObjects = SplayTreeMap();
 
-  static BindingObject getBindingObject(Pointer<NativeBindingObject> pointer) {
+  static BindingObject getBindingObject(Pointer pointer) {
     BindingObject? target = _nativeObjects[pointer.address];
     if (target == null) {
       throw FlutterError('Can not get binding object: $pointer');
