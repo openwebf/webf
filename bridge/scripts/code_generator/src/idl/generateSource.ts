@@ -409,11 +409,11 @@ ${addIndent(callBody, 4)}
 }
 
 function readTemplate(name: string) {
-  return fs.readFileSync(path.join(__dirname, '../../static/idl_templates/' + name + '.cc.tpl'), {encoding: 'utf-8'});
+  return fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/' + name + '.cc.tpl'), {encoding: 'utf-8'});
 }
 
 export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
-  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../static/idl_templates/base.cc.tpl'), {encoding: 'utf-8'});
+  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/base.cc.tpl'), {encoding: 'utf-8'});
 
   const contents = blob.objects.map(object => {
     const templateKind = getTemplateKind(object);

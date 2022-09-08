@@ -210,9 +210,10 @@ class Event {
       (_currentTarget != null && _currentTarget.pointer != null) ? _currentTarget.pointer!.address : nullptr.address,
     ];
 
-    int totalLength = methods.length + extraLength;
+    // Allocate extra bytes to store subclass's members.
+    int nativeStructSize = methods.length + extraLength;
 
-    final Pointer<Uint64> bytes = malloc.allocate<Uint64>(totalLength * sizeOf<Uint64>());
+    final Pointer<Uint64> bytes = malloc.allocate<Uint64>(nativeStructSize * sizeOf<Uint64>());
     bytes.asTypedList(methods.length).setAll(0, methods);
     event.ref.bytes = bytes;
     event.ref.length = methods.length;
@@ -253,8 +254,10 @@ class PopStateEvent extends Event {
     List<int> methods = [stringToNativeString(jsonEncode(_popStateEventInit.state)).address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -315,12 +318,18 @@ class UIEvent extends Event {
         super(type, init);
 
   @override
-  Pointer<RawEvent> toRaw([int methodLength = 0]) {
-    List<int> methods = [doubleToUint64(detail), view?.pointer ?? nullptr, doubleToUint64(which)];
+  Pointer<RawEvent> toRaw([int extraMethodsLength = 0]) {
+    List<int> methods = [
+      doubleToUint64(detail),
+      view?.pointer?.address ?? nullptr.address,
+      doubleToUint64(which)
+    ];
 
-    Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length + extraMethodsLength).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -349,9 +358,11 @@ class MouseEvent extends UIEvent {
       doubleToUint64(offsetY)
     ];
 
-    Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length + methodLength).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -439,8 +450,10 @@ class GestureEvent extends Event {
     ];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -467,8 +480,10 @@ class CustomEvent extends Event {
     List<int> methods = [detail.toNativeUtf8().address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -487,8 +502,10 @@ class InputEvent extends Event {
     List<int> methods = [stringToNativeString(inputType).address, stringToNativeString(data).address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -541,8 +558,10 @@ class MediaError extends Event {
     List<int> methods = [code, stringToNativeString(message).address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -565,8 +584,10 @@ class MessageEvent extends Event {
     List<int> methods = [(jsonEncode(data)).toNativeUtf8().address, stringToNativeString(origin).address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -590,8 +611,10 @@ class CloseEvent extends Event {
     List<int> methods = [code, stringToNativeString(reason).address, wasClean ? 1 : 0];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -606,8 +629,10 @@ class IntersectionChangeEvent extends Event {
     List<int> methods = [doubleToUint64(intersectionRatio)];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }
@@ -639,8 +664,10 @@ class TouchEvent extends Event {
     ];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
-    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
     bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
 
     return rawEvent;
   }

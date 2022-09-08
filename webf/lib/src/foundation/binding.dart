@@ -21,7 +21,7 @@ abstract class BindingObject {
   final BindingContext? _context;
 
   int? get contextId => _context?.contextId;
-  get pointer => _context?.pointer;
+  Pointer<NativeBindingObject>? get pointer => _context?.pointer;
 
   BindingObject([BindingContext? context]) : _context = context {
     _bind();

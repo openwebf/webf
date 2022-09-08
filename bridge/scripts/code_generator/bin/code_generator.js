@@ -62,7 +62,7 @@ function genCodeFromJSONData() {
     cwd: source
   });
   let templateFiles = glob.sync('**/*.tpl', {
-    cwd: path.join(__dirname, '../static/json_templates')
+    cwd: path.join(__dirname, '../templates/json_templates')
   });
 
   let blobs = jsonFiles.map(file => {
@@ -72,7 +72,7 @@ function genCodeFromJSONData() {
 
   let templates = templateFiles.map(template => {
     let filename = template.split('/').slice(-1)[0].replace('.tpl', '');
-    return new JSONTemplate(path.join(path.join(__dirname, '../static/json_templates'), template), filename);
+    return new JSONTemplate(path.join(path.join(__dirname, '../templates/json_templates'), template), filename);
   });
 
   let names_needs_install = new Set();

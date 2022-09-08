@@ -68,7 +68,7 @@ struct MousePointer {
   double y;
   double change;
 };
-using SimulatePointer = void (*)(MousePointer**, int32_t length, int32_t pointer);
+using SimulatePointer = void (*)(MousePointer*, int32_t length, int32_t pointer);
 using SimulateInputText = void (*)(NativeString* nativeString);
 
 struct DartMethodPointer {

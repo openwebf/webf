@@ -39,10 +39,12 @@ struct CreateEventFunctionMapData {
   <% if (_.isString(item)) { %>
 
     static Event* <%= _.upperFirst(item) %>EventConstructor(ExecutingContext* context, const AtomicString& type, RawEvent* raw_event) {
+      assert(raw_event->length == sizeof(Native<%= _.upperFirst(item) %>Event) / sizeof(int64_t));
       return MakeGarbageCollected<<%= _.upperFirst(_.camelCase(item)) %>Event>(context, type, toNativeEvent<Native<%= _.upperFirst(item) %>Event>(raw_event));
     }
   <% } else if (_.isObject(item)) { %>
     static Event* <%= item.class %>Constructor(ExecutingContext* context, const AtomicString& type, RawEvent* raw_event) {
+      assert(raw_event->length == sizeof(Native<%= _.upperFirst(item.class) %>) / sizeof(int64_t));
       return MakeGarbageCollected<<%= item.class %>>(context, type, toNativeEvent<Native<%= _.upperFirst(item.class) %>>(raw_event));
     }
   <% } %>

@@ -92,7 +92,7 @@ final Pointer<NativeFunction<NativeEnvironment>> _nativeEnvironment =
     Pointer.fromFunction(_environment);
 
 typedef NativeSimulatePointer = Void Function(
-    Pointer<Pointer<MousePointer>>, Int32 length, Int32 pointer);
+    Pointer<MousePointer>, Int32 length, Int32 pointer);
 typedef NativeSimulateInputText = Void Function(Pointer<NativeString>);
 
 PointerChange _getPointerChange(double change) {
@@ -114,15 +114,14 @@ class MousePointer extends Struct {
 }
 
 void _simulatePointer(
-    Pointer<Pointer<MousePointer>> mousePointerList, int length, int pointer) {
+    Pointer<MousePointer> mousePointerList, int length, int pointer) {
   List<PointerData> data = [];
 
   for (int i = 0; i < length; i++) {
-    int contextId = mousePointerList[i].ref.contextId;
-    double x = mousePointerList[i].ref.x;
-    double y = mousePointerList[i].ref.y;
-
-    double change = mousePointerList[i].ref.change;
+    int contextId = mousePointerList.elementAt(i).ref.contextId;
+    double x = mousePointerList.elementAt(i).ref.x;
+    double y = mousePointerList.elementAt(i).ref.y;
+    double change = mousePointerList.elementAt(i).ref.change;
     data.add(PointerData(
         // TODO: remove hardcode '360' width that for double testing in one flutter window
         physicalX: (360 * contextId + x) * window.devicePixelRatio,
@@ -134,6 +133,8 @@ void _simulatePointer(
         change: _getPointerChange(change),
         pointerIdentifier: pointer));
   }
+
+  print('simulate pointer data: $data');
 
   PointerDataPacket dataPacket = PointerDataPacket(data: data);
   window.onPointerDataPacket!(dataPacket);

@@ -68,8 +68,12 @@ abstract class EventTarget extends BindingObject {
       event.currentTarget = this;
       // To avoid concurrent exception while prev handler modify the original handler list, causing list iteration
       // with error, copy the handlers here.
-      for (EventHandler handler in [...existHandler]) {
-        handler(event);
+      try {
+        for (EventHandler handler in [...existHandler]) {
+          handler(event);
+        }
+      } catch (e, stack) {
+        print('$e\n$stack');
       }
       event.currentTarget = null;
     }

@@ -132,10 +132,10 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   JS_ToUint32(ctx, &length, lengthValue);
   JS_FreeValue(ctx, lengthValue);
 
-  auto** mousePointerList = new MousePointer*[length];
+  auto* mousePointerList = new MousePointer[length];
 
   for (int i = 0; i < length; i++) {
-    auto mouse = new MousePointer();
+    MousePointer* mouse = &mousePointerList[i];
     JSValue params = JS_GetPropertyUint32(ctx, inputArrayValue, i);
     mouse->contextId = context->contextId();
     JSValue xValue = JS_GetPropertyUint32(ctx, params, 0);
@@ -153,7 +153,6 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
     mouse->x = x;
     mouse->y = y;
     mouse->change = change;
-    mousePointerList[i] = mouse;
 
     JS_FreeValue(ctx, params);
     JS_FreeValue(ctx, xValue);
