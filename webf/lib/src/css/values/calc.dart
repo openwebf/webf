@@ -14,17 +14,18 @@ class CSSCalcValue {
 
   // Get the lazy calculated CSS resolved value.
   dynamic computedValue(String propertyName) {
-    return _expression?.computedValue;
+    double? value = _expression?.computedValue;
+    return value;
   }
 
   // Try to parse CSSCalcValue.
-  static CSSCalcValue? tryParse(RenderStyle renderStyle, String propertyValue) {
+  static CSSCalcValue? tryParse(RenderStyle renderStyle, String propertyName, String propertyValue) {
     if (CSSFunction.isFunction(propertyValue, functionName: CALC)) {
       List<CSSFunctionalNotation> fns = CSSFunction.parseFunction(propertyValue);
       if (fns.first.args.isNotEmpty) {
         assert(fns.first.args.length == 1, 'Calc parameters count must be = 1');
         final expression = fns.first.args.first;
-        final _CSSCalcParser parser = _CSSCalcParser(renderStyle, expression);
+        final _CSSCalcParser parser = _CSSCalcParser(propertyName, renderStyle, expression);
         CalcExpressionNode? node = parser.processCalcExpression();
         return CSSCalcValue(renderStyle, node);
       }
@@ -100,12 +101,13 @@ class CalcOperationExpressionNode extends CalcExpressionNode {
 }
 
 class _CSSCalcParser {
+  final String propertyName;
   final RenderStyle _renderStyle;
   final Tokenizer tokenizer;
 
   late Token _peekToken;
 
-  _CSSCalcParser(this._renderStyle, String text, {int start = 0})
+  _CSSCalcParser(this.propertyName, this._renderStyle, String text, {int start = 0})
       : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
     _peekToken = tokenizer.next();
   }
@@ -151,15 +153,16 @@ class _CSSCalcParser {
     }
     nodes.add(firstNode);
     while (_peek() != TokenKind.END_OF_FILE) {
-      int operator = _peekToken.kind;
-      if (!_maybeEat(TokenKind.PLUS) && !_maybeEat(TokenKind.MINUS)) {
+      String operator = _peekToken.text;
+      if (_peekToken.text != '+' && _peekToken.text != '-') {
         break;
       }
+      _next();
       secondNode = processCalcProduct();
       if (secondNode == null) {
         return null;
       }
-      if (operator == TokenKind.MINUS) {
+      if (operator == '-') {
         secondNode = CalcNegateNode(secondNode);
       }
       nodes.add(secondNode);
@@ -183,15 +186,16 @@ class _CSSCalcParser {
     }
     nodes.add(firstNode);
     while (_peek() != TokenKind.END_OF_FILE) {
-      int operator = _peekToken.kind;
-      if (!_maybeEat(TokenKind.ASTERISK) && !_maybeEat(TokenKind.SLASH)) {
+      String operator = _peekToken.text;
+      if (_peekToken.text != '*' && _peekToken.text != '/') {
         break;
       }
+      _next();
       secondNode = processCalcValue();
       if (secondNode == null) {
         return null;
       }
-      if (operator == TokenKind.SLASH) {
+      if (operator == '/') {
         secondNode = CalcInvertNode(secondNode);
       }
       nodes.add(secondNode);
@@ -214,14 +218,12 @@ class _CSSCalcParser {
     String unit = _peekToken.text;
     // ignore unit type
     if (TokenKind.matchUnits(unit, 0, unit.length) == -1) {
-      return CalcLengthNode(CSSLengthValue(double.tryParse(value), CSSLengthType.PX));
+      return CalcLengthNode(CSSLengthValue(double.tryParse(value), CSSLengthType.PX, _renderStyle, propertyName));
     }
     value += unit;
-    if (!CSSLength.isLength(value)) {
-      return null;
-    }
+    CSSLengthValue lengthValue = CSSLength.parseLength(value, _renderStyle, propertyName);
     _next();
-    return CalcLengthNode(CSSLength.parseLength(value, _renderStyle));
+    return CalcLengthNode(lengthValue);
   }
 
   int _peek() {

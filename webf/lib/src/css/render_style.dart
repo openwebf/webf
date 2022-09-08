@@ -412,8 +412,8 @@ class CSSRenderStyle extends RenderStyle
     RenderStyle renderStyle = this;
 
     // Process CSSVariable.
-    dynamic value = CSSCalcValue.tryParse(renderStyle, propertyValue);
-    if (value != null) {
+    dynamic value = CSSCalcValue.tryParse(renderStyle, propertyName, propertyValue);
+    if (value != null && value is CSSCalcValue) {
       return value;
     }
 

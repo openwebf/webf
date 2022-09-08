@@ -7,7 +7,7 @@ import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
 import 'package:quiver/collection.dart';
 
-final RegExp _splitRegExp = RegExp(r'(?<!\+|-|\*|\/)\s+(?!\+|-|\*|\/)');
+final RegExp _splitRegExp = RegExp(r'(?<!\+|-|\*|\/)\s+(?!\+\s|-\s|\*\s|\/\s)');
 final LinkedLruHashMap<String, List<String>> _cachedParsedPosition = LinkedLruHashMap(maximumSize: 100);
 
 /// CSS Values and Units: https://drafts.csswg.org/css-values-3/#position

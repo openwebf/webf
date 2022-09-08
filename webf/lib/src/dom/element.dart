@@ -1061,7 +1061,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
 
     if (value is CSSCalcValue) {
-      value = CSSLengthValue(value.computedValue(name), CSSLengthType.PX);
+      if (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y) {
+        value = CSSBackgroundPosition(calcValue: value);
+      } else {
+        value = value.computedValue(name);
+      }
     }
 
     switch (name) {

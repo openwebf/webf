@@ -312,6 +312,24 @@ class CSSLengthValue {
                   : 0;
             }
             break;
+          case BACKGROUND_POSITION_X:
+            double? borderBoxWidth = renderStyle!.borderBoxWidth ?? renderStyle!.borderBoxLogicalWidth;
+            if (isPercentage && borderBoxWidth != null) {
+              final destinationWidth = renderBoxModel!.boxPainter?.backgroundImageSize?.width.toDouble() ?? 0;
+              _computedValue = (borderBoxWidth - destinationWidth) * value!;
+            } else {
+              _computedValue = value!;
+            }
+            break;
+          case BACKGROUND_POSITION_Y:
+            double? borderBoxHeight = renderStyle!.borderBoxHeight ?? renderStyle!.borderBoxLogicalHeight;
+            if (isPercentage && borderBoxHeight != null) {
+              final destinationHeight = renderBoxModel!.boxPainter?.backgroundImageSize?.height.toDouble() ?? 0;
+              _computedValue = (borderBoxHeight - destinationHeight) * value!;
+            } else {
+              _computedValue = value!;
+            }
+            break;
         }
         break;
       default:
@@ -324,7 +342,6 @@ class CSSLengthValue {
       RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
       cacheComputedValue(renderBoxModel.hashCode, propertyName!, _computedValue!);
     }
-
     return _computedValue!;
   }
 
