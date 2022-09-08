@@ -6,20 +6,18 @@
 
 namespace webf {
 
-TouchList::TouchList(ExecutingContext *context, NativeTouchList *native_touch_list) :
-    ScriptWrappable(context->ctx()),
-    native_touch_list_(native_touch_list) {
-}
+TouchList::TouchList(ExecutingContext* context, NativeTouchList* native_touch_list)
+    : ScriptWrappable(context->ctx()), native_touch_list_(native_touch_list) {}
 
 uint32_t TouchList::length() const {
   return values_.size();
 }
 
-Touch *TouchList::item(uint32_t index, ExceptionState &exception_state) const {
+Touch* TouchList::item(uint32_t index, ExceptionState& exception_state) const {
   return values_[index];
 }
 
-bool TouchList::SetItem(uint32_t index, Touch *touch, ExceptionState &exception_state) {
+bool TouchList::SetItem(uint32_t index, Touch* touch, ExceptionState& exception_state) {
   if (index >= values_.size()) {
     values_.emplace_back(touch);
   } else {

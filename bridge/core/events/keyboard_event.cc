@@ -46,23 +46,23 @@ KeyboardEvent::KeyboardEvent(ExecutingContext* context,
       repeat_(initializer->repeat()),
       shift_key_(initializer->shiftKey()) {}
 
-KeyboardEvent::KeyboardEvent(ExecutingContext *context,
-                             const AtomicString &type,
-                             NativeKeyboardEvent *native_keyboard_event) :
-    UIEvent(context, type, &native_keyboard_event->native_event),
-    alt_key_(native_keyboard_event->altKey),
-    char_code_(native_keyboard_event->charCode),
-    code_(AtomicString(ctx(), native_keyboard_event->code)),
-    ctrl_key_(native_keyboard_event->ctrlKey),
-    is_composing_(native_keyboard_event->isComposing),
-    key_(AtomicString(ctx(), native_keyboard_event->key)),
-    key_code_(native_keyboard_event->keyCode),
-    location_(native_keyboard_event->location),
-    meta_key_(native_keyboard_event->metaKey),
-    repeat_(native_keyboard_event->repeat),
-    shift_key_(native_keyboard_event->shiftKey) {}
+KeyboardEvent::KeyboardEvent(ExecutingContext* context,
+                             const AtomicString& type,
+                             NativeKeyboardEvent* native_keyboard_event)
+    : UIEvent(context, type, &native_keyboard_event->native_event),
+      alt_key_(native_keyboard_event->altKey),
+      char_code_(native_keyboard_event->charCode),
+      code_(AtomicString(ctx(), native_keyboard_event->code)),
+      ctrl_key_(native_keyboard_event->ctrlKey),
+      is_composing_(native_keyboard_event->isComposing),
+      key_(AtomicString(ctx(), native_keyboard_event->key)),
+      key_code_(native_keyboard_event->keyCode),
+      location_(native_keyboard_event->location),
+      meta_key_(native_keyboard_event->metaKey),
+      repeat_(native_keyboard_event->repeat),
+      shift_key_(native_keyboard_event->shiftKey) {}
 
-bool KeyboardEvent::getModifierState(const AtomicString &key_args, ExceptionState &exception_state) {
+bool KeyboardEvent::getModifierState(const AtomicString& key_args, ExceptionState& exception_state) {
   return false;
 }
 

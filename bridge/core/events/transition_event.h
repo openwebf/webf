@@ -13,24 +13,24 @@ namespace webf {
 struct NativeTransitionEvent;
 
 class TransitionEvent : public Event {
- DEFINE_WRAPPERTYPEINFO();
+  DEFINE_WRAPPERTYPEINFO();
+
  public:
+  using ImplType = TransitionEvent*;
 
-  using ImplType = TransitionEvent *;
+  static TransitionEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
-  static TransitionEvent *Create(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state);
+  static TransitionEvent* Create(ExecutingContext* context,
+                                 const AtomicString& type,
+                                 const std::shared_ptr<TransitionEventInit>& initializer,
+                                 ExceptionState& exception_state);
 
-  static TransitionEvent *Create(ExecutingContext *context,
-                                 const AtomicString &type,
-                                 const std::shared_ptr<TransitionEventInit> &initializer,
-                                 ExceptionState &exception_state);
+  explicit TransitionEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
-  explicit TransitionEvent(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state);
-
-  explicit TransitionEvent(ExecutingContext *context,
-                           const AtomicString &type,
-                           const std::shared_ptr<TransitionEventInit> &initializer,
-                           ExceptionState &exception_state);
+  explicit TransitionEvent(ExecutingContext* context,
+                           const AtomicString& type,
+                           const std::shared_ptr<TransitionEventInit>& initializer,
+                           ExceptionState& exception_state);
 
   explicit TransitionEvent(ExecutingContext* context,
                            const AtomicString& type,
@@ -48,6 +48,6 @@ class TransitionEvent : public Event {
   AtomicString pseudo_element_;
 };
 
-}
+}  // namespace webf
 
-#endif //WEBF_CORE_EVENTS_TRANSITION_EVENT_H_
+#endif  // WEBF_CORE_EVENTS_TRANSITION_EVENT_H_

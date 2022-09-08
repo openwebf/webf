@@ -9,42 +9,37 @@
 
 namespace webf {
 
-TouchEvent *TouchEvent::Create(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state) {
+TouchEvent* TouchEvent::Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state) {
   return MakeGarbageCollected<TouchEvent>(context, type, exception_state);
 }
 
-TouchEvent *TouchEvent::Create(ExecutingContext *context,
-                               const AtomicString &type,
-                               const std::shared_ptr<TouchEventInit> &initializer,
-                               ExceptionState &exception_state) {
+TouchEvent* TouchEvent::Create(ExecutingContext* context,
+                               const AtomicString& type,
+                               const std::shared_ptr<TouchEventInit>& initializer,
+                               ExceptionState& exception_state) {
   return MakeGarbageCollected<TouchEvent>(context, type, initializer, exception_state);
 }
 
-TouchEvent::TouchEvent(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state) : UIEvent(
-    context,
-    type,
-    exception_state) {
+TouchEvent::TouchEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
+    : UIEvent(context, type, exception_state) {}
 
-}
+TouchEvent::TouchEvent(ExecutingContext* context,
+                       const AtomicString& type,
+                       const std::shared_ptr<TouchEventInit>& initializer,
+                       ExceptionState& exception_state)
+    : UIEvent(context, type, initializer, exception_state) {}
 
-TouchEvent::TouchEvent(ExecutingContext *context,
-                       const AtomicString &type,
-                       const std::shared_ptr<TouchEventInit> &initializer,
-                       ExceptionState &exception_state) : UIEvent(context, type, initializer, exception_state) {}
-
-TouchEvent::TouchEvent(ExecutingContext *context,
-                       const AtomicString &type,
-                       NativeTouchEvent *native_touch_event) :
-    UIEvent(context, type, &native_touch_event->native_event),
-    alt_key_(native_touch_event->altKey),
-    ctrl_key_(native_touch_event->ctrlKey),
-    meta_key_(native_touch_event->metaKey),
-    shift_key_(native_touch_event->shiftKey),
-    changed_touches_(MakeGarbageCollected<TouchList>(context,
-                                                     static_cast<NativeTouchList *>(native_touch_event->changedTouches))),
-    target_touches_(MakeGarbageCollected<TouchList>(context,
-                                                    static_cast<NativeTouchList *>(native_touch_event->targetTouches))),
-    touches_(MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList *>(native_touch_event->touches))) {}
+TouchEvent::TouchEvent(ExecutingContext* context, const AtomicString& type, NativeTouchEvent* native_touch_event)
+    : UIEvent(context, type, &native_touch_event->native_event),
+      alt_key_(native_touch_event->altKey),
+      ctrl_key_(native_touch_event->ctrlKey),
+      meta_key_(native_touch_event->metaKey),
+      shift_key_(native_touch_event->shiftKey),
+      changed_touches_(
+          MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList*>(native_touch_event->changedTouches))),
+      target_touches_(
+          MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList*>(native_touch_event->targetTouches))),
+      touches_(MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList*>(native_touch_event->touches))) {}
 
 bool TouchEvent::altKey() const {
   return alt_key_;
@@ -61,22 +56,22 @@ bool TouchEvent::shiftKey() const {
   return shift_key_;
 }
 
-TouchList *TouchEvent::changedTouches() const {
+TouchList* TouchEvent::changedTouches() const {
   return changed_touches_;
 }
 
-TouchList *TouchEvent::targetTouches() const {
+TouchList* TouchEvent::targetTouches() const {
   return target_touches_;
 }
 
-void TouchEvent::Trace(GCVisitor *visitor) const {
+void TouchEvent::Trace(GCVisitor* visitor) const {
   visitor->Trace(touches_);
   visitor->Trace(changed_touches_);
   visitor->Trace(target_touches_);
   UIEvent::Trace(visitor);
 }
 
-TouchList *TouchEvent::touches() const {
+TouchList* TouchEvent::touches() const {
   return touches_;
 }
 
@@ -84,4 +79,4 @@ bool TouchEvent::IsTouchEvent() const {
   return true;
 }
 
-}
+}  // namespace webf

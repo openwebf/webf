@@ -3,9 +3,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "event.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/executing_context.h"
 #include "event_target.h"
-#include "bindings/qjs/cppgc/gc_visitor.h"
 
 namespace webf {
 
@@ -49,25 +49,25 @@ Event::Event(ExecutingContext* context,
       current_target_(nullptr),
       time_stamp_(time_stamp) {}
 
-Event::Event(ExecutingContext *context, const AtomicString &event_type, NativeEvent *native_event) :
-    ScriptWrappable(context->ctx()),
-    type_(event_type),
-    bubbles_(native_event->bubbles),
-    cancelable_(native_event->cancelable),
-    time_stamp_(native_event->timeStamp),
-    default_prevented_(native_event->defaultPrevented),
-    target_(DynamicTo<EventTarget>(BindingObject::From(native_event->target))),
-    current_target_(DynamicTo<EventTarget>(BindingObject::From(native_event->currentTarget))) {}
+Event::Event(ExecutingContext* context, const AtomicString& event_type, NativeEvent* native_event)
+    : ScriptWrappable(context->ctx()),
+      type_(event_type),
+      bubbles_(native_event->bubbles),
+      cancelable_(native_event->cancelable),
+      time_stamp_(native_event->timeStamp),
+      default_prevented_(native_event->defaultPrevented),
+      target_(DynamicTo<EventTarget>(BindingObject::From(native_event->target))),
+      current_target_(DynamicTo<EventTarget>(BindingObject::From(native_event->currentTarget))) {}
 
-void Event::SetType(const AtomicString &type) {
+void Event::SetType(const AtomicString& type) {
   type_ = type;
 }
 
-EventTarget *Event::target() const {
+EventTarget* Event::target() const {
   return target_;
 }
 
-void Event::SetTarget(EventTarget *target) {
+void Event::SetTarget(EventTarget* target) {
   target_ = target;
 }
 
@@ -182,7 +182,7 @@ void Event::SetHandlingPassive(PassiveMode mode) {
   handling_passive_ = mode;
 }
 
-void Event::Trace(GCVisitor *visitor) const {
+void Event::Trace(GCVisitor* visitor) const {
   visitor->Trace(target_);
   visitor->Trace(current_target_);
 }

@@ -5,33 +5,33 @@
 #ifndef WEBF_CORE_EVENTS_TOUCH_EVENT_H_
 #define WEBF_CORE_EVENTS_TOUCH_EVENT_H_
 
-#include "ui_event.h"
 #include "core/input/touch_list.h"
 #include "qjs_touch_event_init.h"
+#include "ui_event.h"
 
 namespace webf {
 
 struct NativeTouchEvent;
 
 class TouchEvent : public UIEvent {
- DEFINE_WRAPPERTYPEINFO();
+  DEFINE_WRAPPERTYPEINFO();
+
  public:
+  using ImplType = TouchEvent*;
 
-  using ImplType = TouchEvent *;
+  static TouchEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
-  static TouchEvent *Create(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state);
+  static TouchEvent* Create(ExecutingContext* context,
+                            const AtomicString& type,
+                            const std::shared_ptr<TouchEventInit>& initializer,
+                            ExceptionState& exception_state);
 
-  static TouchEvent *Create(ExecutingContext *context,
-                            const AtomicString &type,
-                            const std::shared_ptr<TouchEventInit> &initializer,
-                            ExceptionState &exception_state);
+  explicit TouchEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
-  explicit TouchEvent(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state);
-
-  explicit TouchEvent(ExecutingContext *context,
-                      const AtomicString &type,
-                      const std::shared_ptr<TouchEventInit> &initializer,
-                      ExceptionState &exception_state);
+  explicit TouchEvent(ExecutingContext* context,
+                      const AtomicString& type,
+                      const std::shared_ptr<TouchEventInit>& initializer,
+                      ExceptionState& exception_state);
 
   explicit TouchEvent(ExecutingContext* context, const AtomicString& type, NativeTouchEvent* native_touch_event);
 
@@ -43,7 +43,7 @@ class TouchEvent : public UIEvent {
   TouchList* targetTouches() const;
   TouchList* touches() const;
 
-  void Trace(GCVisitor *visitor) const override;
+  void Trace(GCVisitor* visitor) const override;
 
   bool IsTouchEvent() const override;
 
@@ -57,6 +57,6 @@ class TouchEvent : public UIEvent {
   Member<TouchList> touches_;
 };
 
-}
+}  // namespace webf
 
-#endif //WEBF_CORE_EVENTS_TOUCH_EVENT_H_
+#endif  // WEBF_CORE_EVENTS_TOUCH_EVENT_H_

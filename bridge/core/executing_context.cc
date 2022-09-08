@@ -320,7 +320,7 @@ void ExecutingContext::DispatchGlobalUnhandledRejectionEvent(ExecutingContext* c
 
 void ExecutingContext::DispatchGlobalRejectionHandledEvent(ExecutingContext* context, JSValue promise, JSValue error) {
   // Trigger rejectionhandled event.
-    DispatchPromiseRejectionEvent(event_type_names::krejectionhandled, context, promise, error);
+  DispatchPromiseRejectionEvent(event_type_names::krejectionhandled, context, promise, error);
 }
 
 std::unordered_map<std::string, NativeByteCode> ExecutingContext::pluginByteCode{};

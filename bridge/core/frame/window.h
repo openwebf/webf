@@ -58,14 +58,11 @@ class Window : public EventTargetWithInlineData {
 
 template <>
 struct DowncastTraits<Window> {
-  static bool AllowFrom(const EventTarget& event_target) {
-    return event_target.IsWindowOrWorkerGlobalScope();
-  }
+  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsWindowOrWorkerGlobalScope(); }
   static bool AllowFrom(const BindingObject& binding_object) {
     return binding_object.IsEventTarget() && DynamicTo<EventTarget>(binding_object)->IsWindowOrWorkerGlobalScope();
   }
 };
-
 
 }  // namespace webf
 

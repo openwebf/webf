@@ -5,32 +5,32 @@
 #ifndef WEBF_CORE_EVENTS_MOUSE_EVENT_H_
 #define WEBF_CORE_EVENTS_MOUSE_EVENT_H_
 
-#include "ui_event.h"
 #include "qjs_mouse_event_init.h"
+#include "ui_event.h"
 
 namespace webf {
 
 struct NativeMouseEvent;
 
 class MouseEvent : public UIEvent {
- DEFINE_WRAPPERTYPEINFO();
+  DEFINE_WRAPPERTYPEINFO();
+
  public:
+  using ImplType = MouseEvent*;
 
-  using ImplType = MouseEvent *;
+  static MouseEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
-  static MouseEvent *Create(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state);
+  static MouseEvent* Create(ExecutingContext* context,
+                            const AtomicString& type,
+                            const std::shared_ptr<MouseEventInit>& initializer,
+                            ExceptionState& exception_state);
 
-  static MouseEvent *Create(ExecutingContext *context,
-                            const AtomicString &type,
-                            const std::shared_ptr<MouseEventInit> &initializer,
-                            ExceptionState &exception_state);
+  explicit MouseEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
-  explicit MouseEvent(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state);
-
-  explicit MouseEvent(ExecutingContext *context,
-                      const AtomicString &type,
-                      const std::shared_ptr<MouseEventInit> &initializer,
-                      ExceptionState &exception_state);
+  explicit MouseEvent(ExecutingContext* context,
+                      const AtomicString& type,
+                      const std::shared_ptr<MouseEventInit>& initializer,
+                      ExceptionState& exception_state);
 
   explicit MouseEvent(ExecutingContext* context, const AtomicString& type, NativeMouseEvent* native_mouse_event);
 
@@ -52,9 +52,9 @@ class MouseEvent : public UIEvent {
   bool shiftKey() const;
   double x() const;
   double y() const;
-  EventTarget *relatedTarget() const;
+  EventTarget* relatedTarget() const;
 
-  void Trace(GCVisitor *visitor) const override;
+  void Trace(GCVisitor* visitor) const override;
 
   bool IsMouseEvent() const override;
 
@@ -80,6 +80,6 @@ class MouseEvent : public UIEvent {
   Member<EventTarget> related_target_;
 };
 
-}
+}  // namespace webf
 
-#endif //WEBF_CORE_EVENTS_TOUCH_EVENT_H_
+#endif  // WEBF_CORE_EVENTS_TOUCH_EVENT_H_

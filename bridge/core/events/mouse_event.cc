@@ -8,27 +8,25 @@
 
 namespace webf {
 
-MouseEvent *MouseEvent::Create(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state) {
+MouseEvent* MouseEvent::Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state) {
   return MakeGarbageCollected<MouseEvent>(context, type, exception_state);
 }
 
-MouseEvent *MouseEvent::Create(ExecutingContext *context,
-                               const AtomicString &type,
-                               const std::shared_ptr<MouseEventInit> &initializer,
-                               ExceptionState &exception_state) {
+MouseEvent* MouseEvent::Create(ExecutingContext* context,
+                               const AtomicString& type,
+                               const std::shared_ptr<MouseEventInit>& initializer,
+                               ExceptionState& exception_state) {
   return MakeGarbageCollected<MouseEvent>(context, type, initializer, exception_state);
 }
 
-MouseEvent::MouseEvent(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state) : UIEvent(
-    context,
-    type,
-    exception_state) {}
+MouseEvent::MouseEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
+    : UIEvent(context, type, exception_state) {}
 
-MouseEvent::MouseEvent(ExecutingContext *context,
-                       const AtomicString &type,
-                       const std::shared_ptr<MouseEventInit> &initializer,
-                       ExceptionState &exception_state) :
-    UIEvent(context, type, initializer, exception_state)
+MouseEvent::MouseEvent(ExecutingContext* context,
+                       const AtomicString& type,
+                       const std::shared_ptr<MouseEventInit>& initializer,
+                       ExceptionState& exception_state)
+    : UIEvent(context, type, initializer, exception_state)
 //    alt_key_(initializer->altKey()),
 //    button_(initializer->button()),
 //    buttons_(initializer->buttons()),
@@ -42,19 +40,19 @@ MouseEvent::MouseEvent(ExecutingContext *context,
 //    related_target_(initializer->relatedTarget()) {}
 {}
 
-MouseEvent::MouseEvent(ExecutingContext *context, const AtomicString &type, NativeMouseEvent *native_mouse_event) :
-    UIEvent(context, type, &native_mouse_event->native_event),
-//    alt_key_(native_mouse_event->altKey),
-//    button_(native_mouse_event->button),
-//    buttons_(native_mouse_event->buttons),
-    client_x_(native_mouse_event->clientX),
-    client_y_(native_mouse_event->clientY),
-//    ctrl_key_(native_mouse_event->ctrlKey),
-//    meta_key_(native_mouse_event->metaKey),
-//    movement_x_(native_mouse_event->movementX),
-//    movement_y_(native_mouse_event->movementY),
-    offset_x_(native_mouse_event->offsetX),
-    offset_y_(native_mouse_event->offsetY)
+MouseEvent::MouseEvent(ExecutingContext* context, const AtomicString& type, NativeMouseEvent* native_mouse_event)
+    : UIEvent(context, type, &native_mouse_event->native_event),
+      //    alt_key_(native_mouse_event->altKey),
+      //    button_(native_mouse_event->button),
+      //    buttons_(native_mouse_event->buttons),
+      client_x_(native_mouse_event->clientX),
+      client_y_(native_mouse_event->clientY),
+      //    ctrl_key_(native_mouse_event->ctrlKey),
+      //    meta_key_(native_mouse_event->metaKey),
+      //    movement_x_(native_mouse_event->movementX),
+      //    movement_y_(native_mouse_event->movementY),
+      offset_x_(native_mouse_event->offsetX),
+      offset_y_(native_mouse_event->offsetY)
 //    page_x_(native_mouse_event->pageX),
 //    page_y_(native_mouse_event->pageY),
 //    screen_x_(native_mouse_event->screenX),
@@ -119,7 +117,7 @@ double MouseEvent::y() const {
   return y_;
 };
 
-EventTarget *MouseEvent::relatedTarget() const {
+EventTarget* MouseEvent::relatedTarget() const {
   return related_target_;
 }
 
@@ -127,9 +125,9 @@ bool MouseEvent::IsMouseEvent() const {
   return true;
 }
 
-void MouseEvent::Trace(GCVisitor *visitor) const {
+void MouseEvent::Trace(GCVisitor* visitor) const {
   visitor->Trace(related_target_);
   UIEvent::Trace(visitor);
 }
 
-}
+}  // namespace webf

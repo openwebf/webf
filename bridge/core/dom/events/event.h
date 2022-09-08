@@ -7,9 +7,9 @@
 
 #include <cinttypes>
 #include "bindings/qjs/atomic_string.h"
+#include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/dom/events/event_target.h"
-#include "bindings/qjs/cppgc/member.h"
 #include "core/executing_context.h"
 #include "foundation/native_string.h"
 #include "qjs_event_init.h"
@@ -55,7 +55,7 @@ struct RawEvent {
   int64_t length;
 };
 
-template<typename T>
+template <typename T>
 T* toNativeEvent(RawEvent* raw_event) {
   // NativeEvent members are memory aligned corresponding to NativeEvent.
   // So we can reinterpret_cast raw bytes pointer to NativeEvent type directly.

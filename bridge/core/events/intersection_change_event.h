@@ -39,7 +39,9 @@ class IntersectionChangeEvent : public Event {
                                    const AtomicString& type,
                                    ExceptionState& exception_state);
 
-  explicit IntersectionChangeEvent(ExecutingContext* context, const AtomicString& type, NativeIntersectionChangeEvent* native_intersectionchange_event);
+  explicit IntersectionChangeEvent(ExecutingContext* context,
+                                   const AtomicString& type,
+                                   NativeIntersectionChangeEvent* native_intersectionchange_event);
 
   double intersectionRatio() const;
 

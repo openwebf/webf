@@ -158,9 +158,7 @@ class EventTarget : public ScriptWrappable, public BindingObject {
 
 template <>
 struct DowncastTraits<EventTarget> {
-  static bool AllowFrom(const BindingObject& binding_object) {
-    return binding_object.IsEventTarget();
-  }
+  static bool AllowFrom(const BindingObject& binding_object) { return binding_object.IsEventTarget(); }
 };
 
 // Provide EventTarget with inlined EventTargetData for improved performance.

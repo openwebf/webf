@@ -3,13 +3,13 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "event_target.h"
-#include "bindings/qjs/converter_impl.h"
-#include "event_type_names.h"
-#include "qjs_add_event_listener_options.h"
 #include "binding_call_methods.h"
-#include "native_value_converter.h"
-#include "event_factory.h"
+#include "bindings/qjs/converter_impl.h"
 #include "custom_event.h"
+#include "event_factory.h"
+#include "event_type_names.h"
+#include "native_value_converter.h"
+#include "qjs_add_event_listener_options.h"
 
 #define PROPAGATION_STOPPED 1
 #define PROPAGATION_CONTINUE 0
@@ -257,7 +257,7 @@ NativeValue EventTarget::HandleCallFromDartSide(NativeString* native_method, int
   return Native_NewNull();
 }
 
-NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue *argv) {
+NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv) {
   assert(argc == 3);
   AtomicString event_type = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), argv[0]);
   RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
@@ -265,7 +265,8 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
 
   Event* event;
   if (is_custom_event) {
-    event = MakeGarbageCollected<CustomEvent>(GetExecutingContext(), event_type, toNativeEvent<NativeCustomEvent>(raw_event));
+    event = MakeGarbageCollected<CustomEvent>(GetExecutingContext(), event_type,
+                                              toNativeEvent<NativeCustomEvent>(raw_event));
   } else {
     event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
   }

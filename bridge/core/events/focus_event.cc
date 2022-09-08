@@ -33,26 +33,27 @@ FocusEvent* FocusEvent::Create(ExecutingContext* context,
 FocusEvent::FocusEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
     : UIEvent(context, type, exception_state) {}
 
-FocusEvent::FocusEvent(ExecutingContext *context,
-                       const AtomicString &type,
+FocusEvent::FocusEvent(ExecutingContext* context,
+                       const AtomicString& type,
                        double detail,
-                       Window *view,
+                       Window* view,
                        double which,
-                       EventTarget *relatedTarget,
-                       ExceptionState &exception_state)
+                       EventTarget* relatedTarget,
+                       ExceptionState& exception_state)
     : UIEvent(context, type, detail, view, which, exception_state), related_target_(relatedTarget) {}
 
-FocusEvent::FocusEvent(ExecutingContext *context,
-                       const AtomicString &type,
-                       const std::shared_ptr<FocusEventInit> &initializer,
-                       ExceptionState &exception_state)
+FocusEvent::FocusEvent(ExecutingContext* context,
+                       const AtomicString& type,
+                       const std::shared_ptr<FocusEventInit>& initializer,
+                       ExceptionState& exception_state)
     : UIEvent(context, type, initializer, exception_state), related_target_(initializer->relatedTarget()) {}
 
-FocusEvent::FocusEvent(ExecutingContext *context, const AtomicString &type, NativeFocusEvent *native_focus_event)
+FocusEvent::FocusEvent(ExecutingContext* context, const AtomicString& type, NativeFocusEvent* native_focus_event)
     : UIEvent(context, type, &native_focus_event->native_event),
-      related_target_(DynamicTo<EventTarget>(BindingObject::From(static_cast<NativeBindingObject*>(native_focus_event->relatedTarget)))) {}
+      related_target_(DynamicTo<EventTarget>(
+          BindingObject::From(static_cast<NativeBindingObject*>(native_focus_event->relatedTarget)))) {}
 
-EventTarget *FocusEvent::relatedTarget() const {
+EventTarget* FocusEvent::relatedTarget() const {
   return related_target_;
 }
 

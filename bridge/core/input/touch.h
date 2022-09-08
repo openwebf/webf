@@ -14,7 +14,7 @@ namespace webf {
 
 struct NativeTouch {
   int64_t identifier;
-  NativeBindingObject *target;
+  NativeBindingObject* target;
   double clientX;
   double clientY;
   double screenX;
@@ -30,21 +30,21 @@ struct NativeTouch {
 };
 
 class Touch : public ScriptWrappable {
- DEFINE_WRAPPERTYPEINFO();
+  DEFINE_WRAPPERTYPEINFO();
 
  public:
-  using ImplType = Touch *;
-  static Touch *Create(ExecutingContext *context, ExceptionState &exception_state);
-  static Touch *Create(ExecutingContext *context,
-                       const std::shared_ptr<TouchInit> &initializer,
-                       ExceptionState &exception_state);
-  static Touch *Create(ExecutingContext *context, NativeTouch *native_touch);
+  using ImplType = Touch*;
+  static Touch* Create(ExecutingContext* context, ExceptionState& exception_state);
+  static Touch* Create(ExecutingContext* context,
+                       const std::shared_ptr<TouchInit>& initializer,
+                       ExceptionState& exception_state);
+  static Touch* Create(ExecutingContext* context, NativeTouch* native_touch);
 
-  explicit Touch(ExecutingContext *context, ExceptionState &exception_state);
-  explicit Touch(ExecutingContext *context,
-                 const std::shared_ptr<TouchInit> &initializer,
-                 ExceptionState &exception_state);
-  explicit Touch(ExecutingContext *context, NativeTouch *native_touch);
+  explicit Touch(ExecutingContext* context, ExceptionState& exception_state);
+  explicit Touch(ExecutingContext* context,
+                 const std::shared_ptr<TouchInit>& initializer,
+                 ExceptionState& exception_state);
+  explicit Touch(ExecutingContext* context, NativeTouch* native_touch);
 
   double altitudeAngle() const;
   double azimuthAngle() const;
@@ -61,7 +61,7 @@ class Touch : public ScriptWrappable {
   double screenY() const;
   EventTarget* target() const;
 
-  void Trace(GCVisitor *visitor) const override;
+  void Trace(GCVisitor* visitor) const override;
 
  private:
   double altitude_angle_;

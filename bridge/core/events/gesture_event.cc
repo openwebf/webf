@@ -24,10 +24,10 @@ GestureEvent* GestureEvent::Create(ExecutingContext* context,
 GestureEvent::GestureEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
     : Event(context, type) {}
 
-GestureEvent::GestureEvent(ExecutingContext *context,
-                           const AtomicString &type,
-                           const std::shared_ptr<GestureEventInit> &initializer,
-                           ExceptionState &exception_state)
+GestureEvent::GestureEvent(ExecutingContext* context,
+                           const AtomicString& type,
+                           const std::shared_ptr<GestureEventInit>& initializer,
+                           ExceptionState& exception_state)
     : Event(context, type),
       state_(initializer->state()),
       direction_(initializer->direction()),
@@ -36,29 +36,28 @@ GestureEvent::GestureEvent(ExecutingContext *context,
       scale_(initializer->scale()),
       rotation_(initializer->rotation()) {}
 
-GestureEvent::GestureEvent(ExecutingContext *context,
-                           const AtomicString &type,
-                           NativeGestureEvent *native_gesture_event) :
-    Event(context, type, &native_gesture_event->native_event),
-    state_(AtomicString(ctx(), native_gesture_event->state)),
-    direction_(AtomicString(ctx(), native_gesture_event->direction)),
-    deltaX_(native_gesture_event->deltaX),
-    deltaY_(native_gesture_event->deltaY),
-    velocityX_(native_gesture_event->velocityX),
-    velocityY_(native_gesture_event->velocityY),
-    scale_(native_gesture_event->scale),
-    rotation_(native_gesture_event->rotation) {
-}
+GestureEvent::GestureEvent(ExecutingContext* context,
+                           const AtomicString& type,
+                           NativeGestureEvent* native_gesture_event)
+    : Event(context, type, &native_gesture_event->native_event),
+      state_(AtomicString(ctx(), native_gesture_event->state)),
+      direction_(AtomicString(ctx(), native_gesture_event->direction)),
+      deltaX_(native_gesture_event->deltaX),
+      deltaY_(native_gesture_event->deltaY),
+      velocityX_(native_gesture_event->velocityX),
+      velocityY_(native_gesture_event->velocityY),
+      scale_(native_gesture_event->scale),
+      rotation_(native_gesture_event->rotation) {}
 
 bool GestureEvent::IsGestureEvent() const {
   return true;
 }
 
-const AtomicString &GestureEvent::state() const {
+const AtomicString& GestureEvent::state() const {
   return state_;
 }
 
-const AtomicString &GestureEvent::direction() const {
+const AtomicString& GestureEvent::direction() const {
   return direction_;
 }
 

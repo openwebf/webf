@@ -13,24 +13,24 @@ namespace webf {
 struct NativePointerEvent;
 
 class PointerEvent : public MouseEvent {
- DEFINE_WRAPPERTYPEINFO();
+  DEFINE_WRAPPERTYPEINFO();
+
  public:
+  using ImplType = UIEvent*;
 
-  using ImplType = UIEvent *;
+  static PointerEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
-  static PointerEvent *Create(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state);
+  static PointerEvent* Create(ExecutingContext* context,
+                              const AtomicString& type,
+                              const std::shared_ptr<PointerEventInit>& initializer,
+                              ExceptionState& exception_state);
 
-  static PointerEvent *Create(ExecutingContext *context,
-                            const AtomicString &type,
-                            const std::shared_ptr<PointerEventInit> &initializer,
-                            ExceptionState &exception_state);
+  explicit PointerEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
-  explicit PointerEvent(ExecutingContext *context, const AtomicString &type, ExceptionState &exception_state);
-
-  explicit PointerEvent(ExecutingContext *context,
-                      const AtomicString &type,
-                      const std::shared_ptr<PointerEventInit> &initializer,
-                      ExceptionState &exception_state);
+  explicit PointerEvent(ExecutingContext* context,
+                        const AtomicString& type,
+                        const std::shared_ptr<PointerEventInit>& initializer,
+                        ExceptionState& exception_state);
 
   explicit PointerEvent(ExecutingContext* context, const AtomicString& type, NativePointerEvent* native_pointer_event);
 
@@ -48,19 +48,18 @@ class PointerEvent : public MouseEvent {
   bool IsPointerEvent() const override;
 
  private:
-
-   double height_;
-   bool is_primary;
-   double pointer_id_;
-   AtomicString pointer_type_;
-   double pressure_;
-   double tangential_pressure_;
-   double tilt_x_;
-   double tilt_y_;
-   double twist_;
-   double width_;
+  double height_;
+  bool is_primary;
+  double pointer_id_;
+  AtomicString pointer_type_;
+  double pressure_;
+  double tangential_pressure_;
+  double tilt_x_;
+  double tilt_y_;
+  double twist_;
+  double width_;
 };
 
-}
+}  // namespace webf
 
-#endif //WEBF_CORE_EVENTS_TOUCH_EVENT_H_
+#endif  // WEBF_CORE_EVENTS_TOUCH_EVENT_H_

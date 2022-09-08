@@ -38,21 +38,20 @@ CloseEvent::CloseEvent(ExecutingContext* context,
                        ExceptionState& exception_state)
     : Event(context, type), code_(code), reason_(reason), was_clean_(was_clean) {}
 
-CloseEvent::CloseEvent(ExecutingContext *context,
-                       const AtomicString &type,
-                       const std::shared_ptr<CloseEventInit> &initializer,
-                       ExceptionState &exception_state)
+CloseEvent::CloseEvent(ExecutingContext* context,
+                       const AtomicString& type,
+                       const std::shared_ptr<CloseEventInit>& initializer,
+                       ExceptionState& exception_state)
     : Event(context, type),
       code_(initializer->code()),
       reason_(initializer->reason()),
       was_clean_(initializer->wasClean()) {}
 
-CloseEvent::CloseEvent(ExecutingContext *context, const AtomicString &type, NativeCloseEvent *native_close_event)
+CloseEvent::CloseEvent(ExecutingContext* context, const AtomicString& type, NativeCloseEvent* native_close_event)
     : Event(context, type, &native_close_event->native_event),
       code_(native_close_event->code),
       reason_(AtomicString(context->ctx(), native_close_event->reason)),
-      was_clean_(native_close_event->wasClean) {
-}
+      was_clean_(native_close_event->wasClean) {}
 
 bool CloseEvent::IsCloseEvent() const {
   return true;
@@ -62,7 +61,7 @@ int64_t CloseEvent::code() const {
   return code_;
 }
 
-const AtomicString &CloseEvent::reason() const {
+const AtomicString& CloseEvent::reason() const {
   return reason_;
 }
 

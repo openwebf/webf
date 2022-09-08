@@ -51,9 +51,7 @@ class FocusEvent : public UIEvent {
                       const std::shared_ptr<FocusEventInit>& initializer,
                       ExceptionState& exception_state);
 
-  explicit FocusEvent(ExecutingContext* context,
-                      const AtomicString& type,
-                      NativeFocusEvent* native_focus_event);
+  explicit FocusEvent(ExecutingContext* context, const AtomicString& type, NativeFocusEvent* native_focus_event);
 
   EventTarget* relatedTarget() const;
 

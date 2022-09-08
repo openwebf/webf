@@ -11,8 +11,8 @@
 #include "core/frame/window.h"
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
-#include "foundation/logging.h"
 #include "event_factory.h"
+#include "foundation/logging.h"
 #include "page.h"
 #include "polyfill.h"
 

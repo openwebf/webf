@@ -78,8 +78,7 @@ class BindingObject;
 struct NativeBindingObject;
 
 template <typename T>
-struct NativeValueConverter<NativeTypePointer<T>>
-    : public NativeValueConverterBase<NativeTypePointer<T>> {
+struct NativeValueConverter<NativeTypePointer<T>> : public NativeValueConverterBase<NativeTypePointer<T>> {
   static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::Others, value); }
   static NativeValue ToNativeValue(BindingObject* value) {
     return Native_NewPtr(JSPointerType::Others, value->bindingObject());
