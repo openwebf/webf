@@ -40,9 +40,11 @@ TouchEvent::TouchEvent(ExecutingContext *context,
     ctrl_key_(native_touch_event->ctrlKey),
     meta_key_(native_touch_event->metaKey),
     shift_key_(native_touch_event->shiftKey),
-    changed_touches_(DynamicTo<TouchList>(BindingObject::From(native_touch_event->changedTouches))),
-    target_touches_(DynamicTo<TouchList>(BindingObject::From(native_touch_event->targetTouches))),
-    touches_(DynamicTo<TouchList>(BindingObject::From(native_touch_event->touches))) {}
+    changed_touches_(MakeGarbageCollected<TouchList>(context,
+                                                     static_cast<NativeTouchList *>(native_touch_event->changedTouches))),
+    target_touches_(MakeGarbageCollected<TouchList>(context,
+                                                    static_cast<NativeTouchList *>(native_touch_event->targetTouches))),
+    touches_(MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList *>(native_touch_event->touches))) {}
 
 bool TouchEvent::altKey() const {
   return alt_key_;

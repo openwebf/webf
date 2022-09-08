@@ -23,7 +23,7 @@
 //    },
     "close",
 //    "error",
-    "focus",
+//    "focus",
     {
       "class": "GestureEvent",
       "types": [
@@ -39,31 +39,31 @@
         "intersectionchange"
       ]
     },
-    {
-      "class": "KeyboardEvent",
-      "types": [
-        "keydown",
-        "keypress",
-        "keystatuseschange",
-        "keyup"
-      ]
-    },
+//    {
+//      "class": "KeyboardEvent",
+//      "types": [
+//        "keydown",
+//        "keypress",
+//        "keystatuseschange",
+//        "keyup"
+//      ]
+//    },
     "message",
-    {
-      "class": "PointerEvent",
-      "types": [
-        "pointercancel",
-        "pointerdown",
-        "pointerenter",
-        "pointerleave",
-        "pointerlockchange",
-        "pointerlockerror",
-        "pointermove",
-        "pointerout",
-        "pointerover",
-        "pointerup"
-      ]
-    },
+//    {
+//      "class": "PointerEvent",
+//      "types": [
+//        "pointercancel",
+//        "pointerdown",
+//        "pointerenter",
+//        "pointerleave",
+//        "pointerlockchange",
+//        "pointerlockerror",
+//        "pointermove",
+//        "pointerout",
+//        "pointerover",
+//        "pointerup"
+//      ]
+//    },
     {
       "class": "TouchEvent",
       "types": [
@@ -76,24 +76,27 @@
     {
       "class": "MouseEvent",
       "types": [
-        "mousedown",
-        "mouseenter",
-        "mouseleave",
-        "mousemove",
-        "mouseout",
-        "mouseover",
-        "mouseup",
-        "mousewheel"
+        "click",
+        "dbclick",
+        "longpress"
+//        "mousedown",
+//        "mouseenter",
+//        "mouseleave",
+//        "mousemove",
+//        "mouseout",
+//        "mouseover",
+//        "mouseup",
+//        "mousewheel"
       ]
     },
-    {
-      "class": "TransitionEvent",
-      "types": [
-        "transitioncancel",
-        "transitionend",
-        "transitionrun",
-        "transitionstart"
-      ]
-    }
+//    {
+//      "class": "TransitionEvent",
+//      "types": [
+//        "transitioncancel",
+//        "transitionend",
+//        "transitionrun",
+//        "transitionstart"
+//      ]
+//    }
   ]
 }

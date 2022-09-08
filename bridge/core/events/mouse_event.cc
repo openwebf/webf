@@ -28,40 +28,41 @@ MouseEvent::MouseEvent(ExecutingContext *context,
                        const AtomicString &type,
                        const std::shared_ptr<MouseEventInit> &initializer,
                        ExceptionState &exception_state) :
-    UIEvent(context, type, initializer, exception_state),
-    alt_key_(initializer->altKey()),
-    button_(initializer->button()),
-    buttons_(initializer->buttons()),
-    client_x_(initializer->clientX()),
-    client_y_(initializer->clientY()),
-    ctrl_key_(initializer->ctrlKey()),
-    meta_key_(initializer->metaKey()),
-    screen_x_(initializer->screenX()),
-    screen_y_(initializer->screenY()),
-    shift_key_(initializer->shiftKey()),
-    related_target_(initializer->relatedTarget()) {}
+    UIEvent(context, type, initializer, exception_state)
+//    alt_key_(initializer->altKey()),
+//    button_(initializer->button()),
+//    buttons_(initializer->buttons()),
+//    client_x_(initializer->clientX()),
+//    client_y_(initializer->clientY()),
+//    ctrl_key_(initializer->ctrlKey()),
+//    meta_key_(initializer->metaKey()),
+//    screen_x_(initializer->screenX()),
+//    screen_y_(initializer->screenY()),
+//    shift_key_(initializer->shiftKey()),
+//    related_target_(initializer->relatedTarget()) {}
+{}
 
 MouseEvent::MouseEvent(ExecutingContext *context, const AtomicString &type, NativeMouseEvent *native_mouse_event) :
     UIEvent(context, type, &native_mouse_event->native_event),
-    alt_key_(native_mouse_event->altKey),
-    button_(native_mouse_event->button),
-    buttons_(native_mouse_event->buttons),
+//    alt_key_(native_mouse_event->altKey),
+//    button_(native_mouse_event->button),
+//    buttons_(native_mouse_event->buttons),
     client_x_(native_mouse_event->clientX),
     client_y_(native_mouse_event->clientY),
-    ctrl_key_(native_mouse_event->ctrlKey),
-    meta_key_(native_mouse_event->metaKey),
-    movement_x_(native_mouse_event->movementX),
-    movement_y_(native_mouse_event->movementY),
+//    ctrl_key_(native_mouse_event->ctrlKey),
+//    meta_key_(native_mouse_event->metaKey),
+//    movement_x_(native_mouse_event->movementX),
+//    movement_y_(native_mouse_event->movementY),
     offset_x_(native_mouse_event->offsetX),
-    offset_y_(native_mouse_event->offsetY),
-    page_x_(native_mouse_event->pageX),
-    page_y_(native_mouse_event->pageY),
-    screen_x_(native_mouse_event->screenX),
-    screen_y_(native_mouse_event->screenY),
-    shift_key_(native_mouse_event->shiftKey),
-    x_(native_mouse_event->x),
-    y_(native_mouse_event->y) {
-}
+    offset_y_(native_mouse_event->offsetY)
+//    page_x_(native_mouse_event->pageX),
+//    page_y_(native_mouse_event->pageY),
+//    screen_x_(native_mouse_event->screenX),
+//    screen_y_(native_mouse_event->screenY),
+//    shift_key_(native_mouse_event->shiftKey),
+//    x_(native_mouse_event->x),
+//    y_(native_mouse_event->y)
+{}
 
 bool MouseEvent::altKey() const {
   return alt_key_;

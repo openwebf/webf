@@ -7,19 +7,23 @@
 
 namespace webf {
 
-Touch* Touch::Create(ExecutingContext* context, ExceptionState& exception_state) {
+Touch *Touch::Create(ExecutingContext *context, ExceptionState &exception_state) {
   return MakeGarbageCollected<Touch>(context, exception_state);
 }
 
-Touch* Touch::Create(ExecutingContext* context,
-                     const std::shared_ptr<TouchInit>& initializer,
-                     ExceptionState& exception_state) {
+Touch *Touch::Create(ExecutingContext *context,
+                     const std::shared_ptr<TouchInit> &initializer,
+                     ExceptionState &exception_state) {
   return MakeGarbageCollected<Touch>(context, initializer, exception_state);
 }
 
-Touch::Touch(ExecutingContext* context, ExceptionState& exception_state) : ScriptWrappable(context->ctx()) {}
+Touch *Touch::Create(ExecutingContext *context, NativeTouch *native_touch) {
+  return MakeGarbageCollected<Touch>(context, native_touch);
+}
 
-Touch::Touch(ExecutingContext* context, const std::shared_ptr<TouchInit>& initializer, ExceptionState& exception_state)
+Touch::Touch(ExecutingContext *context, ExceptionState &exception_state) : ScriptWrappable(context->ctx()) {}
+
+Touch::Touch(ExecutingContext *context, const std::shared_ptr<TouchInit> &initializer, ExceptionState &exception_state)
     : ScriptWrappable(context->ctx()),
       identifier_(initializer->identifier()),
       target_(initializer->target()),
@@ -33,6 +37,22 @@ Touch::Touch(ExecutingContext* context, const std::shared_ptr<TouchInit>& initia
       radiusY_(initializer->radiusY()),
       rotationAngle_(initializer->rotationAngle()),
       force_(initializer->force()) {}
+
+Touch::Touch(ExecutingContext *context, NativeTouch *native_touch) :
+    ScriptWrappable(context->ctx()),
+    identifier_(native_touch->identifier),
+    clientX_(native_touch->clientX),
+    clientY_(native_touch->clientY),
+    screenX_(native_touch->screenX),
+    screenY_(native_touch->screenY),
+    pageX_(native_touch->pageX),
+    pageY_(native_touch->pageY),
+    radiusX_(native_touch->radiusX),
+    radiusY_(native_touch->radiusY),
+    rotationAngle_(native_touch->rotationAngle),
+    force_(native_touch->force),
+    altitude_angle_(native_touch->altitudeAngle),
+    azimuth_angle_(native_touch->azimuthAngle) {}
 
 double Touch::altitudeAngle() const {
   return altitude_angle_;

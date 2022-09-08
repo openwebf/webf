@@ -116,7 +116,7 @@ void _dispatchEventToNative(Event event) {
     f(pointer, nullptr, method, dispatchEventArguments.length, allocatedNativeArguments);
 
     // Native can mutate rawEvent directly, so we sync properties value from native side with rawEvent.
-    event.syncFromRaw(rawEvent.cast<RawNativeEvent>());
+    event.syncFromRaw(rawEvent.cast<RawEvent>());
 
     // Free the allocated arguments.
     malloc.free(rawEvent);

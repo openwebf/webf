@@ -48,7 +48,9 @@ enum BoxSizeType {
 mixin ElementBase on Node {
   RenderLayoutBox? _renderLayoutBox;
   RenderReplaced? _renderReplaced;
+
   RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced;
+
   set renderBoxModel(RenderBoxModel? value) {
     if (value == null) {
       _renderReplaced = null;
@@ -134,6 +136,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   bool _forceToRepaintBoundary = false;
+
   set forceToRepaintBoundary(bool value) {
     if (_forceToRepaintBoundary == value) {
       return;
@@ -529,6 +532,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   BoundingClientRect getBoundingClientRect() => boundingClientRect;
 
   bool _shouldConsumeScrollTicker = false;
+
   void _consumeScrollTicker(_) {
     if (_shouldConsumeScrollTicker && hasEventListener(EVENT_SCROLL)) {
       _dispatchScrollEvent();
@@ -1584,7 +1588,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   void click() {
     flushLayout();
-    Event clickEvent = MouseEvent(EVENT_CLICK, MouseEventInit(bubbles: true, cancelable: true));
+    Event clickEvent = MouseEvent(
+        EVENT_CLICK, MouseEventInit(bubbles: true, cancelable: true, detail: 1, view: ownerDocument.defaultView));
     // If element not in tree, click is fired and only response to itself.
     dispatchEvent(clickEvent);
   }

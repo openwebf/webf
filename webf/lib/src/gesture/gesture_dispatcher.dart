@@ -342,6 +342,7 @@ class GestureDispatcher {
           clientY: clientY,
           offsetX: localPosition.dx,
           offsetY: localPosition.dy,
+          view: (_target as Node).ownerDocument.defaultView
         ));
     _target?.dispatchEvent(event);
   }

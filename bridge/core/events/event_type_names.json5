@@ -46,6 +46,8 @@
     "change",
     "checking",
     "click",
+    "dbclick",
+    "longpress",
     "close",
     "closing",
     "complete",

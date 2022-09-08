@@ -9,11 +9,20 @@
 
 namespace webf {
 
-class TouchList : public ScriptWrappable, public BindingObject {
+struct NativeTouchList {
+  int64_t length;
+  NativeTouch* touches;
+};
+
+class TouchList : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
   using ImplType = TouchList*;
+
+  TouchList() = delete;
+  explicit TouchList(ExecutingContext* context, NativeTouchList* native_touch_list);
+
   uint32_t length() const;
   Touch* item(uint32_t index, ExceptionState& exception_state) const;
   bool SetItem(uint32_t index, Touch* touch, ExceptionState& exception_state);
@@ -25,13 +34,7 @@ class TouchList : public ScriptWrappable, public BindingObject {
 
  private:
   std::vector<Touch*> values_;
-};
-
-template <>
-struct DowncastTraits<TouchList> {
-  static bool AllowFrom(const BindingObject& binding_object) {
-    return binding_object.IsTouchList();
-  }
+  NativeTouchList* native_touch_list_;
 };
 
 }  // namespace webf

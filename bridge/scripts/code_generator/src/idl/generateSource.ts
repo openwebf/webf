@@ -98,7 +98,7 @@ export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = f
       return 'NativeString*';
     }
     default:
-      return 'NativeBindingObject*';
+      return 'void*';
   }
 
   if (typeof type[0] == 'string') {

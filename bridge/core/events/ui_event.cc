@@ -50,7 +50,7 @@ UIEvent::UIEvent(ExecutingContext *context,
 UIEvent::UIEvent(ExecutingContext *context, const AtomicString &type, NativeUIEvent *native_ui_event) :
     Event(context, type, &native_ui_event->native_event),
     detail_(native_ui_event->detail),
-    view_(DynamicTo<Window>(BindingObject::From(native_ui_event->view))),
+    view_(DynamicTo<Window>(BindingObject::From(static_cast<NativeBindingObject*>(native_ui_event->view)))),
     which_(native_ui_event->which) {
 }
 
