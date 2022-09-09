@@ -129,6 +129,7 @@ StringView AtomicString::ToStringView() const {
 
 AtomicString::AtomicString(const AtomicString& value) {
   if (&value != this) {
+    JS_FreeAtom(ctx_, atom_);
     atom_ = JS_DupAtom(value.ctx_, value.atom_);
   }
   ctx_ = value.ctx_;
@@ -139,6 +140,7 @@ AtomicString::AtomicString(const AtomicString& value) {
 
 AtomicString& AtomicString::operator=(const AtomicString& other) {
   if (&other != this) {
+    JS_FreeAtom(ctx_, atom_);
     atom_ = JS_DupAtom(other.ctx_, other.atom_);
   }
   runtime_ = other.runtime_;
@@ -150,6 +152,7 @@ AtomicString& AtomicString::operator=(const AtomicString& other) {
 
 AtomicString::AtomicString(AtomicString&& value) noexcept {
   if (&value != this) {
+    JS_FreeAtom(ctx_, atom_);
     atom_ = JS_DupAtom(value.ctx_, value.atom_);
   }
   ctx_ = value.ctx_;
@@ -160,6 +163,7 @@ AtomicString::AtomicString(AtomicString&& value) noexcept {
 
 AtomicString& AtomicString::operator=(AtomicString&& value) noexcept {
   if (&value != this) {
+    JS_FreeAtom(ctx_, atom_);
     atom_ = JS_DupAtom(value.ctx_, value.atom_);
   }
   ctx_ = value.ctx_;

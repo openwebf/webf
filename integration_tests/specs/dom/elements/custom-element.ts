@@ -37,6 +37,8 @@ describe('custom widget element', () => {
       done();
     });
 
+    await sleep(0.2);
+
     simulateClick(20, 20);
   });
 
@@ -156,7 +158,7 @@ describe('custom widget element', () => {
     flutterContainer.style.display = 'block';
 
     document.body.appendChild(flutterContainer);
- 
+
     const div = document.createElement('div');
     div.style.width = '100%';
     div.style.height = '100px';
@@ -167,12 +169,12 @@ describe('custom widget element', () => {
     div.appendChild(img);
 
     flutterContainer.appendChild(div);
-  
+
     requestAnimationFrame(async () => {
        const rect = div.getBoundingClientRect();
        expect(rect.height).toEqual(100);
        done();
-    });     
+    });
   });
 
   it('flutter widget should spread out the parent node when parent node is line-block', async () => {

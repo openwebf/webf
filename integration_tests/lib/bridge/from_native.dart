@@ -134,8 +134,6 @@ void _simulatePointer(
         pointerIdentifier: pointer));
   }
 
-  print('simulate pointer data: $data');
-
   PointerDataPacket dataPacket = PointerDataPacket(data: data);
   window.onPointerDataPacket!(dataPacket);
 }

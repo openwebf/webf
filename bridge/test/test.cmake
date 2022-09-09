@@ -23,6 +23,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/frame/module_manager_test.cc
   ./core/dom/events/event_target_test.cc
   ./core/dom/document_test.cc
+  ./core/dom/legacy/element_attribute_test.cc
   ./core/dom/node_test.cc
   ./core/dom/element_test.cc
   ./core/frame/dom_timer_test.cc
