@@ -29,75 +29,75 @@ const String _0s = '0s';
 mixin CSSAnimationMixin on RenderStyle {
   List<String>? _animationName;
 
+  @override
+  List<String> get animationName => _animationName ?? [NONE];
+
   set animationName(List<String>? value) {
     _animationName = value;
   }
 
-  @override
-  List<String> get animationName => _animationName ?? [NONE];
-
   List<String>? _animationDuration;
+
+  @override
+  List<String> get animationDuration => _animationDuration ?? const [_0s];
 
   set animationDuration(List<String>? value) {
     _animationDuration = value;
   }
 
-  @override
-  List<String> get animationDuration => _animationDuration ?? const [_0s];
-
   List<String>? _animationTimingFunction;
+
+  @override
+  List<String> get animationTimingFunction => _animationTimingFunction ?? const [EASE];
 
   set animationTimingFunction(List<String>? value) {
     _animationTimingFunction = value;
   }
 
-  @override
-  List<String> get animationTimingFunction => _animationTimingFunction ?? const [EASE];
-
   List<String>? _animationDelay;
+
+  @override
+  List<String> get animationDelay => _animationDelay ?? const [_0s];
 
   set animationDelay(List<String>? value) {
     _animationDelay = value;
   }
 
-  @override
-  List<String> get animationDelay => _animationDelay ?? const [_0s];
-
   List<String>? _animationIterationCount;
+
+  @override
+  List<String> get animationIterationCount => _animationIterationCount ?? ['1'];
 
   set animationIterationCount(List<String>? value) {
     _animationIterationCount = value;
   }
 
-  @override
-  List<String> get animationIterationCount => _animationIterationCount ?? ['1'];
-
   List<String>? _animationDirection;
+
+  @override
+  List<String> get animationDirection => _animationDirection ?? ['normal'];
 
   set animationDirection(List<String>? value) {
     _animationDirection = value;
   }
 
-  @override
-  List<String> get animationDirection => _animationDirection ?? ['normal'];
-
   List<String>? _animationFillMode;
+
+  @override
+  List<String> get animationFillMode => _animationFillMode ?? ['none'];
 
   set animationFillMode(List<String>? value) {
     _animationFillMode = value;
   }
 
-  @override
-  List<String> get animationFillMode => _animationFillMode ?? ['none'];
-
   List<String>? _animationPlayState;
+
+  @override
+  List<String> get animationPlayState => _animationPlayState ?? ['running']; // paused
 
   set animationPlayState(List<String>? value) {
     _animationPlayState = value;
   }
-
-  @override
-  List<String> get animationPlayState => _animationPlayState ?? ['running']; // paused
 
   bool shouldAnimation(List<String> properties) {
     if (renderBoxModel != null) {
