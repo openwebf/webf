@@ -78,6 +78,14 @@ class CalcLengthNode extends CalcExpressionNode {
   double get computedValue => value.computedValue;
 }
 
+class CalcNumberNode extends CalcExpressionNode {
+  final double value;
+  CalcNumberNode(this.value);
+
+  @override
+  double get computedValue => value;
+}
+
 class CalcOperationExpressionNode extends CalcExpressionNode {
   int operator;
   final CalcExpressionNode leftNode;
@@ -152,7 +160,7 @@ class _CSSCalcParser {
     while (_peek() != TokenKind.END_OF_FILE) {
       String operator = _peekToken.text;
       if (_peekToken.text != '+' && _peekToken.text != '-') {
-        break;
+        return null;
       }
       _next();
       secondNode = processCalcProduct();
@@ -215,7 +223,11 @@ class _CSSCalcParser {
     String unit = _peekToken.text;
     // ignore unit type
     if (TokenKind.matchUnits(unit, 0, unit.length) == -1) {
-      return CalcLengthNode(CSSLengthValue(double.tryParse(value), CSSLengthType.PX, _renderStyle, propertyName));
+      double? numberValue = double.tryParse(value);
+      if (numberValue == null) {
+        return null;
+      }
+      return CalcNumberNode(numberValue);
     }
     value += unit;
     CSSLengthValue lengthValue = CSSLength.parseLength(value, _renderStyle, propertyName);
