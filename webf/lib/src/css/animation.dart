@@ -769,13 +769,10 @@ class KeyframeEffect extends AnimationEffect {
     PlaybackDirection? currentDirection = playbackDirection;
     if (playbackDirection != PlaybackDirection.normal && playbackDirection != PlaybackDirection.reverse) {
       var d = currentIteration;
-      if (playbackDirection == PlaybackDirection.alternateReverse) {
-        d = d! + 1;
+      if (d != null && playbackDirection == PlaybackDirection.alternateReverse) {
+        d = d + 1;
       }
       currentDirection = PlaybackDirection.normal;
-      if (d == null) {
-        print('123');
-      }
       if (d != null && d != double.infinity && d % 2 != 0) {
         currentDirection = PlaybackDirection.reverse;
       }
