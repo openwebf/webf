@@ -4,12 +4,25 @@
  */
 
 #include "widget_element.h"
+#include "core/dom/document.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
 
 WidgetElement::WidgetElement(const AtomicString& tag_name, Document* document)
     : HTMLElement(tag_name, document, ConstructionType::kCreateWidgetElement) {}
+
+bool WidgetElement::IsValidName(const AtomicString& name) {
+  assert(Document::IsValidName(name));
+  StringView string_view = name.ToStringView();
+
+  const char* string = string_view.Characters8();
+  for(int i = 0; i < string_view.length(); i ++) {
+    if (string[i] == '-') return true;
+  }
+
+  return false;
+}
 
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
   NativeValue result = GetBindingProperty(key, exception_state);

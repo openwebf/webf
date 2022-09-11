@@ -9,6 +9,7 @@
 #include "core/dom/element.h"
 #include "core/dom/text.h"
 #include "core/frame/window.h"
+#include "core/html/custom/widget_element.h"
 #include "core/html/html_body_element.h"
 #include "core/html/html_element.h"
 #include "core/html/html_head_element.h"
@@ -40,6 +41,10 @@ Element* Document::createElement(const AtomicString& name, ExceptionState& excep
 
   if (auto* element = HTMLElementFactory::Create(name, *this)) {
     return element;
+  }
+
+  if (WidgetElement::IsValidName(name)) {
+    return MakeGarbageCollected<WidgetElement>(name, this);
   }
 
   return MakeGarbageCollected<HTMLUnknownElement>(name, *this);

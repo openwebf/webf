@@ -46,6 +46,7 @@
 #include "qjs_mouse_event.h"
 #include "qjs_node.h"
 #include "qjs_node_list.h"
+#include "qjs_widget_element.h"
 #include "qjs_pointer_event.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
@@ -94,6 +95,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSComment::Install(context);
   QJSElement::Install(context);
   QJSHTMLElement::Install(context);
+  QJSWidgetElement::Install(context);
   QJSHTMLDivElement::Install(context);
   QJSHTMLHeadElement::Install(context);
   QJSHTMLBodyElement::Install(context);

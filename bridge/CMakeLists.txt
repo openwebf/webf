@@ -239,7 +239,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/child_node_list.cc
     core/dom/empty_node_list.cc
     core/dom/container_node.cc
-    core/extensions/widget_element.cc
+    core/html/custom/widget_element.cc
     core/events/error_event.cc
     core/events/message_event.cc
     core/events/animation_event.cc

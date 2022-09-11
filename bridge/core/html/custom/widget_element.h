@@ -20,6 +20,8 @@ class WidgetElement : public HTMLElement {
   using ImplType = WidgetElement*;
   WidgetElement(const AtomicString& tag_name, Document* document);
 
+  static bool IsValidName(const AtomicString& name);
+
   bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
 
