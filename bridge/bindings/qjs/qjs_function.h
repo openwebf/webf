@@ -9,6 +9,8 @@
 
 namespace webf {
 
+using QJSFunctionCallback = ScriptValue(*)(JSContext* ctx, const ScriptValue& this_val, uint32_t argc, const ScriptValue* argv, void* private_data);
+
 // https://webidl.spec.whatwg.org/#dfn-callback-interface
 // QJSFunction memory are auto managed by std::shared_ptr.
 class QJSFunction {
@@ -16,7 +18,11 @@ class QJSFunction {
   static std::shared_ptr<QJSFunction> Create(JSContext* ctx, JSValue function) {
     return std::make_shared<QJSFunction>(ctx, function);
   }
+  static std::shared_ptr<QJSFunction> Create(JSContext* ctx, QJSFunctionCallback qjs_function_callback, int32_t length, void* private_data) {
+    return std::make_shared<QJSFunction>(ctx, qjs_function_callback, length, private_data);
+  }
   explicit QJSFunction(JSContext* ctx, JSValue function) : ctx_(ctx), function_(JS_DupValue(ctx, function)){};
+  explicit QJSFunction(JSContext* ctx, QJSFunctionCallback qjs_function_callback, int32_t length, void* private_data);
   // This safe to free function_ at GC stage.
   ~QJSFunction() { JS_FreeValue(ctx_, function_); }
 

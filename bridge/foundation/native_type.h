@@ -6,6 +6,7 @@
 #define BRIDGE_FOUNDATION_NATIVE_TYPE_H_
 
 #include <type_traits>
+#include <vector>
 #include "bindings/qjs/qjs_function.h"
 #include "bindings/qjs/script_value.h"
 #include "foundation/native_string.h"
@@ -38,6 +39,12 @@ struct NativeTypeDouble final : public NativeTypeBaseHelper<double> {};
 
 // JSON
 struct NativeTypeJSON final : public NativeTypeBaseHelper<ScriptValue> {};
+
+// Array
+template<typename T>
+struct NativeTypeArray final : public NativeTypeBase {
+  using ImplType = typename std::vector<T>;
+};
 
 // Pointer
 template <typename T>

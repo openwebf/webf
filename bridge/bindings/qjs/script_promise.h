@@ -7,6 +7,7 @@
 
 #include <quickjs/quickjs.h>
 #include "foundation/macros.h"
+#include "qjs_function.h"
 #include "script_value.h"
 
 namespace webf {
@@ -21,6 +22,7 @@ class ScriptPromise final {
  public:
   ScriptPromise() = default;
   ScriptPromise(JSContext* ctx, JSValue promise);
+  ScriptPromise(JSContext* ctx, std::shared_ptr<QJSFunction>* resolve_func, std::shared_ptr<QJSFunction>* reject_func);
 
   JSValue ToQuickJS();
 

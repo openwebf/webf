@@ -29,9 +29,17 @@ class ScriptPromiseResolver {
     ResolveOrReject(value, kResolving);
   }
 
+  void Resolve(JSValue value) {
+    ResolveOrReject(value, kResolving);
+  }
+
   // Anything that can be passed to toQuickJS can be passed to this function.
   template <typename T>
   void Reject(T value) {
+    ResolveOrReject(value, kRejecting);
+  }
+
+  void Reject(JSValue value) {
     ResolveOrReject(value, kRejecting);
   }
 
@@ -47,13 +55,17 @@ class ScriptPromiseResolver {
 
   template <typename T>
   void ResolveOrReject(T value, ResolutionState new_state) {
+    JSValue qjs_value = toQuickJS(context_->ctx(), value);
+    ResolveOrReject(qjs_value, new_state);
+    JS_FreeValue(context_->ctx(), qjs_value);
+  }
+
+  void ResolveOrReject(JSValue value, ResolutionState new_state) {
     if (state_ != kPending || !context_->IsValid() || !context_)
       return;
     assert(new_state == kResolving || new_state == kRejecting);
     state_ = new_state;
-    JSValue qjs_value = toQuickJS(context_->ctx(), value);
-    ResolveOrRejectImmediately(qjs_value);
-    JS_FreeValue(context_->ctx(), qjs_value);
+    ResolveOrRejectImmediately(value);
   }
 
   void ResolveOrRejectImmediately(JSValue value);

@@ -14,7 +14,10 @@ class NativeValue extends Struct {
   @Int64()
   external int u;
 
-  @Int64()
+  @Uint32()
+  external int uint32;
+
+  @Int32()
   external int tag;
 }
 
@@ -25,6 +28,7 @@ enum JSValueType {
   TAG_NULL,
   TAG_FLOAT64,
   TAG_JSON,
+  TAG_LIST,
   TAG_POINTER,
   TAG_FUNCTION,
   TAG_ASYNC_FUNCTION
@@ -43,6 +47,9 @@ int _functionId = 0;
 LinkedHashMap<int, AnonymousNativeFunction> _functionMap = LinkedHashMap();
 LinkedHashMap<int, AsyncAnonymousNativeFunction> _asyncFunctionMap = LinkedHashMap();
 
+// Save the relationship between function name and functionId in debug mode.
+LinkedHashMap<int, String> debugFunctionMap = LinkedHashMap();
+
 AnonymousNativeFunction? getAnonymousNativeFunctionFromId(int id) {
   return _functionMap[id];
 }
@@ -53,10 +60,18 @@ AsyncAnonymousNativeFunction? getAsyncAnonymousNativeFunctionFromId(int id) {
 
 void removeAnonymousNativeFunctionFromId(int id) {
   _functionMap.remove(id);
+  assert(() {
+    debugFunctionMap.remove(id);
+    return true;
+  }());
 }
 
 void removeAsyncAnonymousNativeFunctionFromId(int id) {
   _asyncFunctionMap.remove(id);
+  assert(() {
+    debugFunctionMap.remove(id);
+    return true;
+  }());
 }
 
 dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
@@ -79,6 +94,11 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
       return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:
       return Pointer.fromAddress(nativeValue.ref.u);
+    case JSValueType.TAG_LIST:
+      return List.generate(nativeValue.ref.uint32, (index) {
+        Pointer<NativeValue> head = Pointer.fromAddress(nativeValue.ref.u).cast<NativeValue>();
+        return fromNativeValue(head.elementAt(index));
+      });
     case JSValueType.TAG_FUNCTION:
     case JSValueType.TAG_ASYNC_FUNCTION:
       break;
@@ -110,7 +130,15 @@ void toNativeValue(Pointer<NativeValue> target, value) {
     target.ref.u = value.address;
   } else if (value is BindingObject) {
     target.ref.tag = JSValueType.TAG_POINTER.index;
-    target.ref.u = (value.pointer as Pointer?)!.address;
+    target.ref.u = (value.pointer)!.address;
+  } else if (value is List) {
+    target.ref.tag = JSValueType.TAG_LIST.index;
+    target.ref.uint32 = value.length;
+    Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
+    for(int i = 0; i < value.length; i ++) {
+      toNativeValue(lists.elementAt(i), value[i]);
+    }
+    target.ref.u = lists.address;
   } else if (value is AsyncAnonymousNativeFunction) {
     int id = _functionId++;
     _asyncFunctionMap[id] = value;

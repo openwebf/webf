@@ -86,9 +86,6 @@ struct NativeValueConverter<NativeTypePointer<T>> : public NativeValueConverterB
   static T* FromNativeValue(NativeValue value) { return static_cast<T*>(value.u.ptr); }
 };
 
-std::shared_ptr<QJSFunction> CreateSyncCallback(JSContext* ctx, int function_id);
-std::shared_ptr<QJSFunction> CreateAsyncCallback(JSContext* ctx, int function_id);
-
 template <>
 struct NativeValueConverter<NativeTypeFunction> : public NativeValueConverterBase<NativeTypeFunction> {
   static NativeValue ToNativeValue(ImplType value) {
@@ -96,7 +93,9 @@ struct NativeValueConverter<NativeTypeFunction> : public NativeValueConverterBas
     assert(false);
   }
 
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) { return CreateSyncCallback(ctx, value.u.int64); };
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
+    return QJSFunction::Create(ctx, BindingObject::AnonymousFunctionCallback, 4, value.u.ptr);
+  };
 };
 
 template <>
@@ -106,7 +105,32 @@ struct NativeValueConverter<NativeTypeAsyncFunction> : public NativeValueConvert
     assert(false);
   }
 
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) { return CreateAsyncCallback(ctx, value.u.int64); }
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
+    return QJSFunction::Create(ctx, BindingObject::AnonymousAsyncFunctionCallback, 4, value.u.ptr);
+  }
+};
+
+template<typename T>
+struct NativeValueConverter<NativeTypeArray<T>> : public NativeValueConverterBase<NativeTypeArray<T>> {
+  using ImplType = typename NativeTypeArray<typename NativeValueConverter<T>::ImplType>::ImplType;
+  static NativeValue ToNativeValue(ImplType value) {
+    auto* ptr = new NativeValue[value.size()];
+    for(int i = 0; i < value.size(); i ++) {
+      ptr[i] = NativeValueConverter<T>::ToNativeValue(value[i]);
+    }
+    return Native_NewList(value.size(), ptr);
+  }
+
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue native_value) {
+    size_t length = native_value.uint32;
+    auto* arr = static_cast<NativeValue*>(native_value.u.ptr);
+    std::vector<typename T::ImplType> vec;
+    vec.reserve(length);
+    for(int i = 0; i < length; i ++) {
+      vec[i] = NativeValueConverter<T>::FromNativeValue(ctx, arr[i]);
+    }
+    return vec;
+  }
 };
 
 }  // namespace webf

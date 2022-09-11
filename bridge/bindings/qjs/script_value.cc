@@ -5,13 +5,68 @@
 #include "script_value.h"
 #include <vector>
 #include "core/executing_context.h"
+#include "core/binding_object.h"
+#include "bindings/qjs/converter_impl.h"
 #include "cppgc/gc_visitor.h"
 #include "foundation/native_value_converter.h"
 #include "native_string_utils.h"
 #include "qjs_bounding_client_rect.h"
 #include "qjs_engine_patch.h"
+#include "qjs_event_target.h"
 
 namespace webf {
+
+static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value) {
+  switch (native_value.tag) {
+    case NativeTag::TAG_STRING: {
+      auto* string = static_cast<NativeString*>(native_value.u.ptr);
+      if (string == nullptr)
+        return JS_NULL;
+      JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());
+      delete string;
+      return returnedValue;
+    }
+    case NativeTag::TAG_INT: {
+      return JS_NewUint32(context->ctx(), native_value.u.int64);
+    }
+    case NativeTag::TAG_BOOL: {
+      return JS_NewBool(context->ctx(), native_value.u.int64 == 1);
+    }
+    case NativeTag::TAG_FLOAT64: {
+      return JS_NewFloat64(context->ctx(), native_value.u.float64);
+    }
+    case NativeTag::TAG_NULL: {
+      return JS_NULL;
+    }
+    case NativeTag::TAG_JSON: {
+      auto* str = static_cast<const char*>(native_value.u.ptr);
+      JSValue returnedValue = JS_ParseJSON(context->ctx(), str, strlen(str), "");
+      delete str;
+      return returnedValue;
+    }
+    case NativeTag::TAG_POINTER: {
+      auto* ptr = static_cast<NativeBindingObject*>(native_value.u.ptr);
+      auto* binding_object = BindingObject::From(ptr);
+
+      // Only eventTarget can be converted from nativeValue to JSValue.
+      auto* event_target = DynamicTo<EventTarget>(binding_object);;
+      if (event_target) {
+        return event_target->ToQuickJS();
+      }
+
+      return JS_NULL;
+    }
+    case NativeTag::TAG_FUNCTION: {
+      return NativeValueConverter<NativeTypeFunction>::FromNativeValue(context->ctx(), native_value)->ToQuickJS();
+    }
+    case NativeTag::TAG_ASYNC_FUNCTION: {
+      return NativeValueConverter<NativeTypeAsyncFunction>::FromNativeValue(context->ctx(), native_value)->ToQuickJS();
+    }
+  }
+  return JS_NULL;
+}
+
+ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value): ctx_(ctx), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);
@@ -99,23 +154,21 @@ NativeValue ScriptValue::ToNative() const {
   } else if (JS_IsString(value_)) {
     // NativeString owned by NativeValue will be freed by users.
     return NativeValueConverter<NativeTypeString>::ToNativeValue(ToString());
+  } else if (JS_IsArray(ctx_, value_)) {
+    std::vector<ScriptValue> values = Converter<IDLSequence<IDLAny>>::FromValue(ctx_, value_, ASSERT_NO_EXCEPTION());
+    auto* result = new NativeValue[values.size()];
+    for(int i = 0 ; i < values.size(); i ++) {
+      result[i] = values[i].ToNative();
+    }
+    return Native_NewList(values.size(), result);
   }
-
-  //  else if (JS_IsFunction(ctx_, value_)) {
-  //    auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx_));
-  //    auto* functionContext = new NativeFunctionContext{context, value_};
-  //    return Native_NewPtr(JSPointerType::NativeFunctionContext, functionContext);
-  //  }
-  //
   else if (JS_IsObject(value_)) {
-    //    auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx_));
-    //    auto* context = static_cast<ExecutionContext*>(JS_GetContextOpaque(ctx));
-    //    if (JS_IsInstanceOf(ctx, value, ImageElement::instance(context)->jsObject)) {
-    //      auto* imageElementInstance = static_cast<ImageElementInstance*>(JS_GetOpaque(value, Element::classId()));
-    //      return Native_NewPtr(JSPointerType::NativeEventTarget, imageElementInstance->nativeEventTarget);
-    //    }
-
-    //    return Native_NewJSON(context, value);
+    // TODO: needs a better way to convert bindingObject to pointers.
+    if (QJSEventTarget::HasInstance(ExecutingContext::From(ctx_), value_)) {
+      auto* event_target = toScriptWrappable<EventTarget>(value_);
+      return Native_NewPtr(JSPointerType::Others, event_target->bindingObject());
+    }
+    return NativeValueConverter<NativeTypeJSON>::ToNativeValue(ScriptValue(ctx_, value_));
   }
 
   return Native_NewNull();
@@ -135,6 +188,18 @@ bool ScriptValue::IsObject() {
 
 bool ScriptValue::IsString() {
   return JS_IsString(value_);
+}
+
+bool ScriptValue::IsNull() {
+  return JS_IsNull(value_);
+}
+
+bool ScriptValue::IsUndefined() {
+  return JS_IsUndefined(value_);
+}
+
+bool ScriptValue::IsBool() {
+  return JS_IsBool(value_);
 }
 
 void ScriptValue::Trace(GCVisitor* visitor) {

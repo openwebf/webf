@@ -82,11 +82,12 @@ class NativeTouch extends Struct {
 }
 
 typedef InvokeBindingsMethodsFromNative = Void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeString> method, Int32 argc, Pointer<NativeValue> argv);
+    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
+
 typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeString> method, Int32 argc, Pointer<NativeValue> argv);
+    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
 typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeString> method, int argc, Pointer<NativeValue> argv);
+    Pointer<NativeValue> return_value, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv);
 
 class NativeBindingObject extends Struct {
   external Pointer<Void> instance;

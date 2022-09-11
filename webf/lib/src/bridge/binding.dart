@@ -15,83 +15,147 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
-const String AnonymousFunctionCallPreFix = '_anonymous_fn_';
-const String AsyncAnonymousFunctionCallPreFix = '_anonymous_async_fn_';
-const String GetPropertyMagic = '%g';
-const String SetPropertyMagic = '%s';
+enum BindingMethodCallOperations {
+  GetProperty,
+  SetProperty,
+  GetAllPropertyNames,
+  AnonymousFunctionCall,
+  AsyncAnonymousFunction,
+}
 
 typedef NativeAsyncAnonymousFunctionCallback = Void Function(
     Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, Int32 contextId, Pointer<Utf8> errmsg);
 typedef DartAsyncAnonymousFunctionCallback = void Function(
     Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, int contextId, Pointer<Utf8> errmsg);
 
+typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dynamic> args);
+
+dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
+  assert(args.length == 1);
+  if (isEnabledLog) {
+    print('$bindingObject getBindingProperty key: ${args[0]}');
+  }
+
+  return bindingObject.getBindingProperty(args[0]);
+}
+
+dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args) {
+  assert(args.length == 2);
+  if (isEnabledLog) {
+    print('$bindingObject setBindingProperty key: ${args[0]} value: ${args[1]}');
+  }
+
+  bindingObject.setBindingProperty(args[0], args[1]);
+  return true;
+}
+
+dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> args) {
+  return bindingObject.getAllBindingPropertyNames();
+}
+
+List<BindingCallFunc> bindingCallMethodDispatchTable = [
+  getterBindingCall,
+  setterBindingCall,
+  getPropertyNamesBindingCall,
+];
+
 // This function receive calling from binding side.
-void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> returnValue, Pointer<NativeString> nativeMethod, int argc, Pointer<NativeValue> argv) {
-  String method = nativeStringToString(nativeMethod);
+void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindingObject,
+    Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
+  dynamic method = fromNativeValue(nativeMethod);
   List<dynamic> values = List.generate(argc, (i) {
     Pointer<NativeValue> nativeValue = argv.elementAt(i);
     return fromNativeValue(nativeValue);
   });
 
-  if (method.startsWith(AnonymousFunctionCallPreFix)) {
-    int id = int.parse(method.substring(AnonymousFunctionCallPreFix.length));
-    AnonymousNativeFunction fn = getAnonymousNativeFunctionFromId(id)!;
-    try {
-      var result = fn(values);
-      toNativeValue(returnValue, result);
-    } catch (e, stack) {
-      print('$e\n$stack');
-      toNativeValue(returnValue, null);
-    }
-    removeAnonymousNativeFunctionFromId(id);
-  } else if (method.startsWith(AsyncAnonymousFunctionCallPreFix)) {
-    int id = int.parse(method.substring(AsyncAnonymousFunctionCallPreFix.length));
-    AsyncAnonymousNativeFunction fn = getAsyncAnonymousNativeFunctionFromId(id)!;
-    int contextId = values[0];
-    Pointer<Void> callbackContext = (values[1] as Pointer).cast<Void>();
-    DartAsyncAnonymousFunctionCallback callback = (values[2] as Pointer).cast<NativeFunction<NativeAsyncAnonymousFunctionCallback>>().asFunction();
-    Future<dynamic> p = fn(values.sublist(3));
-    p.then((result) {
-      Pointer<NativeValue> nativeValue = malloc.allocate(sizeOf<NativeValue>());
-      toNativeValue(nativeValue, result);
-      callback(callbackContext, nativeValue, contextId, nullptr);
-      removeAsyncAnonymousNativeFunctionFromId(id);
-    }).catchError((e, stack) {
-      String errorMessage = '$e';
-      callback(callbackContext, nullptr, contextId, errorMessage.toNativeUtf8());
-      removeAsyncAnonymousNativeFunctionFromId(id);
-    });
-
-    toNativeValue(returnValue, null);
-  } else {
-    // @TODO: Should not share the same binding method, and separate by magic.
-    BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
-    var result;
-    try {
-      if (method == GetPropertyMagic && argc == 1) {
-        if (isEnabledLog) {
-          print('$bindingObject getBindingProperty key: ${values[0]}');
-        }
-
-        result = bindingObject.getBindingProperty(values[0]);
-      } else if (method == SetPropertyMagic && argc == 2) {
-        if (isEnabledLog) {
-          print('$bindingObject setBindingProperty key: ${values[0]} value: ${values[1]}');
-        }
-
-        bindingObject.setBindingProperty(values[0], values[1]);
-        result = null;
+  var result = null;
+  try {
+    // Method is binding call method operations from internal.
+    if (method is int) {
+      // Get and setter ops
+      if (method <= 2) {
+        BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
+        result = bindingCallMethodDispatchTable[method](bindingObject, values);
       } else {
-        if (isEnabledLog) {
-          print('$bindingObject invokeBindingMethod method: $method args: $values');
+        if (method == BindingMethodCallOperations.AnonymousFunctionCall) {
+          int id = values[0];
+          List<dynamic> functionArguments = values.sublist(1);
+          AnonymousNativeFunction? fn = getAnonymousNativeFunctionFromId(id);
+          if (fn == null) {
+            print('WebF warning: can not find registered anonymous native function for id: $id');
+            toNativeValue(returnValue, null);
+            return;
+          }
+          try {
+            if (isEnabledLog) {
+              String argsStr = functionArguments.map((e) => e.toString()).join(',');
+              print('Invoke AnonymousFunction ${debugFunctionMap[id]}($argsStr)');
+            }
+
+            result = fn(functionArguments);
+          } catch (e, stack) {
+            print('$e\n$stack');
+          }
+          removeAnonymousNativeFunctionFromId(id);
+        } else if (method == BindingMethodCallOperations.AsyncAnonymousFunction) {
+          int id = values[0];
+          AsyncAnonymousNativeFunction? fn = getAsyncAnonymousNativeFunctionFromId(id);
+          if (fn == null) {
+            print('WebF warning: can not find registered anonymous native async function for id: $id');
+            toNativeValue(returnValue, null);
+            return;
+          }
+          int contextId = values[1];
+          // Async callback should hold a context to store the current execution environment.
+          Pointer<Void> callbackContext = (values[2] as Pointer).cast<Void>();
+          DartAsyncAnonymousFunctionCallback callback =
+              (values[3] as Pointer).cast<NativeFunction<NativeAsyncAnonymousFunctionCallback>>().asFunction();
+          List<dynamic> functionArguments = values.sublist(4);
+          if (isEnabledLog) {
+            String argsStr = functionArguments.map((e) => e.toString()).join(',');
+            print('Invoke AsyncAnonymousFunction ${debugFunctionMap[id]}($argsStr)');
+          }
+
+          Future<dynamic> p = fn(functionArguments);
+          p.then((result) {
+            if (isEnabledLog) {
+              print('AsyncAnonymousFunction ${debugFunctionMap[id]} Resolved with $result');
+            }
+            Pointer<NativeValue> nativeValue = malloc.allocate(sizeOf<NativeValue>());
+            toNativeValue(nativeValue, result);
+            callback(callbackContext, nativeValue, contextId, nullptr);
+            removeAsyncAnonymousNativeFunctionFromId(id);
+          }).catchError((e, stack) {
+            String errorMessage = '$e\n$stack';
+            if (isEnabledLog) {
+              print('AsyncAnonymousFunction ${debugFunctionMap[id]} Rejected with $errorMessage');
+            }
+            callback(callbackContext, nullptr, contextId, errorMessage.toNativeUtf8());
+            removeAsyncAnonymousNativeFunctionFromId(id);
+          });
         }
-        result = bindingObject.invokeBindingMethod(method, values);
       }
-    } catch (e, stack) {
-      print('$e\n$stack');
-    } finally {
-      toNativeValue(returnValue, result);
+    } else {
+      BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
+      // invokeBindingMethod directly
+      if (isEnabledLog) {
+        print('$bindingObject invokeBindingMethod method: $method args: $values');
+      }
+      result = bindingObject.invokeBindingMethod(method, values);
     }
+  } catch (e, stack) {
+    print('$e\n$stack');
+  } finally {
+    toNativeValue(returnValue, result);
+
+    // Record the id and method name for debug use.
+    assert(() {
+      if (result is AsyncAnonymousNativeFunction || result is AnonymousNativeFunction) {
+        int id = values[0];
+        debugFunctionMap[id] = method;
+      }
+      return true;
+    }());
   }
 }
 
@@ -111,7 +175,8 @@ void _dispatchEventToNative(Event event) {
       print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
     }
 
-    Pointer<NativeString> method = stringToNativeString('dispatchEvent');
+    Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
+    toNativeValue(method, 'dispatchEvent');
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(dispatchEventArguments);
 
     f(pointer, nullptr, method, dispatchEventArguments.length, allocatedNativeArguments);
@@ -127,8 +192,11 @@ void _dispatchEventToNative(Event event) {
 }
 
 abstract class BindingBridge {
-  static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNative = Pointer.fromFunction(_invokeBindingMethodFromNativeImpl);
-  static Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> get nativeInvokeBindingMethod => _invokeBindingMethodFromNative;
+  static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNative =
+      Pointer.fromFunction(_invokeBindingMethodFromNativeImpl);
+
+  static Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> get nativeInvokeBindingMethod =>
+      _invokeBindingMethodFromNative;
 
   static final SplayTreeMap<int, BindingObject> _nativeObjects = SplayTreeMap();
 
@@ -168,13 +236,13 @@ abstract class BindingBridge {
 
   static void listenEvent(EventTarget target, String type) {
     assert(_debugShouldNotListenMultiTimes(target, type),
-      'Failed to listen event \'$type\' for $target, for which is already bound.');
+        'Failed to listen event \'$type\' for $target, for which is already bound.');
     target.addEventListener(type, _dispatchEventToNative);
   }
 
   static void unlistenEvent(EventTarget target, String type) {
     assert(_debugShouldNotUnlistenEmpty(target, type),
-      'Failed to unlisten event \'$type\' for $target, for which is already unbound.');
+        'Failed to unlisten event \'$type\' for $target, for which is already unbound.');
     target.removeEventListener(type, _dispatchEventToNative);
   }
 

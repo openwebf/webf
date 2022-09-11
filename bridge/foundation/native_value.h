@@ -21,9 +21,10 @@ enum NativeTag {
   TAG_NULL = 3,
   TAG_FLOAT64 = 4,
   TAG_JSON = 5,
-  TAG_POINTER = 6,
-  TAG_FUNCTION = 7,
-  TAG_ASYNC_FUNCTION = 8,
+  TAG_LIST = 6,
+  TAG_POINTER = 7,
+  TAG_FUNCTION = 8,
+  TAG_ASYNC_FUNCTION = 9,
 };
 
 enum class JSPointerType { AsyncContextContext = 0, NativeFunctionContext = 1, Others = 2 };
@@ -35,9 +36,11 @@ class ScriptValue;
 struct NativeValue {
   union {
     int64_t int64;
+    double float64;
     void* ptr;
   } u;
-  int64_t tag;
+  uint32_t uint32;
+  int32_t tag;
 };
 
 struct NativeFunctionContext;
@@ -64,10 +67,11 @@ struct NativeFunctionContext {
 
 NativeValue Native_NewNull();
 NativeValue Native_NewString(NativeString* string);
-NativeValue Native_NewCString(std::string string);
+NativeValue Native_NewCString(const std::string& string);
 NativeValue Native_NewFloat64(double value);
 NativeValue Native_NewBool(bool value);
 NativeValue Native_NewInt64(int64_t value);
+NativeValue Native_NewList(uint32_t argc, NativeValue* argv);
 NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr);
 NativeValue Native_NewJSON(const ScriptValue& value);
 

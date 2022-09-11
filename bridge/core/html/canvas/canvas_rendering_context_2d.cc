@@ -14,7 +14,7 @@ CanvasRenderingContext2D::CanvasRenderingContext2D(ExecutingContext* context,
                                                    NativeBindingObject* native_binding_object)
     : BindingObject(context, native_binding_object), CanvasRenderingContext(context) {}
 
-NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(NativeString* method,
+NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(const NativeValue* method,
                                                              int32_t argc,
                                                              const NativeValue* argv) {
   return Native_NewNull();

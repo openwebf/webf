@@ -18,7 +18,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext, public BindingOb
   CanvasRenderingContext2D() = delete;
   explicit CanvasRenderingContext2D(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-  NativeValue HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) override;
 
   bool IsCanvas2d() const override;
 };

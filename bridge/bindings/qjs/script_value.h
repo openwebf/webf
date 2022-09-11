@@ -41,6 +41,7 @@ class ScriptValue final {
       : ctx_(ctx), value_(JS_NewUnicodeString(ctx, string->string(), string->length())) {}
   explicit ScriptValue(JSContext* ctx, double v) : ctx_(ctx), value_(JS_NewFloat64(ctx, v)) {}
   explicit ScriptValue(JSContext* ctx) : ctx_(ctx){};
+  explicit ScriptValue(JSContext* ctx, const NativeValue& native_value);
   ScriptValue() = default;
 
   // Copy and assignment
@@ -63,12 +64,20 @@ class ScriptValue final {
   bool IsEmpty();
   bool IsObject();
   bool IsString();
+  bool IsNull();
+  bool IsUndefined();
+  bool IsBool();
 
   void Trace(GCVisitor* visitor);
 
  private:
   JSContext* ctx_{nullptr};
   JSValue value_{JS_NULL};
+};
+
+template<typename T, typename SFINAEHelper = void>
+class ScriptValueConverter {
+  using ImplType = T;
 };
 
 }  // namespace webf

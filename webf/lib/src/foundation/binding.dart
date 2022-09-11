@@ -48,6 +48,11 @@ abstract class BindingObject {
   //   el.foo = 'bar';
   void setBindingProperty(String key, value) {}
 
+  // Return a list contains all supported properties.
+  List<String> getAllBindingPropertyNames() {
+    return [];
+  }
+
   // Call a method, eg:
   //   el.getContext('2x');
   dynamic invokeBindingMethod(String method, List args) {}

@@ -18,13 +18,13 @@ class ExceptionState;
 
 using InvokeBindingsMethodsFromNative = void (*)(const NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
-                                                 NativeString* method,
+                                                 NativeValue* method,
                                                  int32_t argc,
                                                  const NativeValue* argv);
 
 using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_object,
                                               NativeValue* return_value,
-                                              NativeString* method,
+                                              NativeValue* method,
                                               int32_t argc,
                                               NativeValue* argv);
 
@@ -35,7 +35,7 @@ struct NativeBindingObject {
 
   static void HandleCallFromDartSide(NativeBindingObject* binding_object,
                                      NativeValue* return_value,
-                                     NativeString* method,
+                                     NativeValue* method,
                                      int32_t argc,
                                      NativeValue* argv);
 
@@ -44,15 +44,27 @@ struct NativeBindingObject {
   InvokeBindingsMethodsFromNative invoke_bindings_methods_from_native{nullptr};
 };
 
+enum BindingMethodCallOperations {
+  kGetProperty,
+  kSetProperty,
+  kGetAllPropertyNames,
+  kAnonymousFunctionCall,
+  kAsyncAnonymousFunction,
+};
+
 class BindingObject {
  public:
+  // This function were called when the anonymous function returned to the JS code has been called by users.
+  static ScriptValue AnonymousFunctionCallback(JSContext* ctx, const ScriptValue& this_val, uint32_t argc, const ScriptValue* argv, void* private_data);
+  static ScriptValue AnonymousAsyncFunctionCallback(JSContext* ctx, const ScriptValue& this_val, uint32_t argc, const ScriptValue* argv, void* private_data);
+
   using ImplType = BindingObject*;
   BindingObject() = delete;
   ~BindingObject();
   explicit BindingObject(ExecutingContext* context);
 
   // Handle call from dart side.
-  virtual NativeValue HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) = 0;
+  virtual NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) = 0;
   // Invoke methods which implemented at dart side.
   NativeValue InvokeBindingMethod(const AtomicString& method,
                                   int32_t argc,
@@ -60,6 +72,7 @@ class BindingObject {
                                   ExceptionState& exception_state) const;
   NativeValue GetBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const;
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
+  NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
   NativeBindingObject* bindingObject() const { return binding_object_; }
 
@@ -71,6 +84,11 @@ class BindingObject {
   virtual bool IsTouchList() const;
 
  protected:
+  NativeValue InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
+                                  int32_t argc,
+                                  const NativeValue* args,
+                                  ExceptionState& exception_state) const;
+
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.
   explicit BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object);
 

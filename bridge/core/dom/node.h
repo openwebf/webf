@@ -249,6 +249,7 @@ class Node : public EventTarget {
     kHasEventTargetDataFlag = 1 << 21,
 
     kHasDuplicateAttributes = 1 << 24,
+    kIsWidgetElement = 1 << 25,
 
     kSelfOrAncestorHasDirAutoAttribute = 1 << 27,
     kDefaultNodeFlags = kIsFinishedParsingChildrenFlag,
@@ -296,6 +297,8 @@ class Node : public EventTarget {
                               static_cast<NodeFlags>(ElementNamespaceType::kOther),
     kCreateHTMLElement = kDefaultNodeFlags | kIsContainerFlag | static_cast<NodeFlags>(DOMNodeType::kElement) |
                          static_cast<NodeFlags>(ElementNamespaceType::kHTML),
+    kCreateWidgetElement = kDefaultNodeFlags | kIsContainerFlag | static_cast<NodeFlags>(DOMNodeType::kElement) |
+                           static_cast<NodeFlags>(ElementNamespaceType::kHTML) | kIsWidgetElement,
     kCreateMathMLElement = kDefaultNodeFlags | kIsContainerFlag | static_cast<NodeFlags>(DOMNodeType::kElement) |
                            static_cast<NodeFlags>(ElementNamespaceType::kMathML),
     kCreateSVGElement = kDefaultNodeFlags | kIsContainerFlag | static_cast<NodeFlags>(DOMNodeType::kElement) |

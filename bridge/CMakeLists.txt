@@ -78,7 +78,6 @@ list(APPEND BRIDGE_SOURCE
   foundation/task_queue.cc
   foundation/string_view.cc
   foundation/native_value.cc
-  foundation/native_value_converter.cc
   foundation/ui_command_buffer.cc
   polyfill/dist/polyfill.cc
   )
@@ -240,6 +239,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/child_node_list.cc
     core/dom/empty_node_list.cc
     core/dom/container_node.cc
+    core/extensions/widget_element.cc
     core/events/error_event.cc
     core/events/message_event.cc
     core/events/animation_event.cc
@@ -356,6 +356,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
     out/qjs_html_canvas_element.cc
+    out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc
     out/qjs_canvas_rendering_context.cc
     out/canvas_types.cc

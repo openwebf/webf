@@ -246,9 +246,9 @@ DispatchEventResult EventTarget::DispatchEventInternal(Event& event, ExceptionSt
   return dispatch_result;
 }
 
-NativeValue EventTarget::HandleCallFromDartSide(NativeString* native_method, int32_t argc, const NativeValue* argv) {
+NativeValue EventTarget::HandleCallFromDartSide(const NativeValue* native_method, int32_t argc, const NativeValue* argv) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
-  AtomicString method = AtomicString(ctx(), native_method);
+  AtomicString method = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), *native_method);
 
   if (method == binding_call_methods::kdispatchEvent) {
     return HandleDispatchEventFromDart(argc, argv);

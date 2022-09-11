@@ -10,17 +10,18 @@
 namespace webf {
 
 NativeValue Native_NewNull() {
-  return (NativeValue){.u = {.int64 = 0}, NativeTag::TAG_NULL};
+  return (NativeValue){.u = {.int64 = 0}, .uint32 = 0, .tag = NativeTag::TAG_NULL};
 }
 
 NativeValue Native_NewString(NativeString* string) {
   return (NativeValue){
       .u = {.ptr = static_cast<void*>(string)},
-      NativeTag::TAG_STRING,
+      .uint32 = 0,
+      .tag = NativeTag::TAG_STRING,
   };
 }
 
-NativeValue Native_NewCString(std::string string) {
+NativeValue Native_NewCString(const std::string& string) {
   std::unique_ptr<NativeString> nativeString = stringToNativeString(string);
   // NativeString owned by NativeValue will be freed by users.
   return Native_NewString(nativeString.release());
@@ -32,26 +33,33 @@ NativeValue Native_NewFloat64(double value) {
 
   return (NativeValue){
       .u = {.int64 = result},
-      NativeTag::TAG_FLOAT64,
+      .uint32 = 0,
+      .tag = NativeTag::TAG_FLOAT64,
   };
 }
 
 NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr) {
-  return (NativeValue){.u = {.ptr = ptr}, NativeTag::TAG_POINTER};
+  return (NativeValue){.u = {.ptr = ptr}, .uint32 = static_cast<uint32_t>(pointerType), .tag = NativeTag::TAG_POINTER};
 }
 
 NativeValue Native_NewBool(bool value) {
   return (NativeValue){
       .u = {.int64 = value ? 1 : 0},
-      NativeTag::TAG_BOOL,
+      .uint32 = 0,
+      .tag = NativeTag::TAG_BOOL,
   };
 }
 
 NativeValue Native_NewInt64(int64_t value) {
   return (NativeValue){
       .u = {.int64 = value},
-      NativeTag::TAG_INT,
+      .uint32 = 0,
+      .tag = NativeTag::TAG_INT,
   };
+}
+
+NativeValue Native_NewList(uint32_t argc, NativeValue* argv) {
+  return (NativeValue){.u = {.ptr = reinterpret_cast<void*>(argv)}, .uint32 = argc, .tag = NativeTag::TAG_LIST};
 }
 
 NativeValue Native_NewJSON(const ScriptValue& value) {
@@ -65,7 +73,8 @@ NativeValue Native_NewJSON(const ScriptValue& value) {
   auto native_string = str.ToNativeString();
   NativeValue result = (NativeValue){
       .u = {.ptr = static_cast<void*>(native_string.release())},
-      NativeTag::TAG_JSON,
+      .uint32 = 0,
+      .tag = NativeTag::TAG_JSON,
   };
   return result;
 }

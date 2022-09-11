@@ -18,6 +18,16 @@ ScriptPromise::ScriptPromise(JSContext* ctx, JSValue promise) : ctx_(ctx) {
   promise_ = ScriptValue(ctx, promise);
 }
 
+ScriptPromise::ScriptPromise(JSContext* ctx, std::shared_ptr<QJSFunction>* resolve_func, std::shared_ptr<QJSFunction>* reject_func) {
+  JSValue resolving_funcs[2];
+  JSValue promise = JS_NewPromiseCapability(ctx, resolving_funcs);
+
+  *resolve_func = QJSFunction::Create(ctx, resolving_funcs[0]);
+  *reject_func = QJSFunction::Create(ctx, resolving_funcs[1]);
+
+  promise_ = ScriptValue(ctx, promise);
+}
+
 JSValue ScriptPromise::ToQuickJS() {
   return JS_DupValue(ctx_, promise_.QJSValue());
 }

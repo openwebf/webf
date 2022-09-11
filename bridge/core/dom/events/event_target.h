@@ -141,7 +141,7 @@ class EventTarget : public ScriptWrappable, public BindingObject {
 
   DispatchEventResult DispatchEventInternal(Event& event, ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(NativeString* method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const NativeValue* native_method, int32_t argc, const NativeValue* argv) override;
   NativeValue HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv);
 
   // Subclasses should likely not override these themselves; instead, they
