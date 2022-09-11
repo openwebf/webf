@@ -46,7 +46,6 @@
 #include "qjs_mouse_event.h"
 #include "qjs_node.h"
 #include "qjs_node_list.h"
-#include "qjs_widget_element.h"
 #include "qjs_pointer_event.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
@@ -56,6 +55,7 @@
 #include "qjs_touch_list.h"
 #include "qjs_transition_event.h"
 #include "qjs_ui_event.h"
+#include "qjs_widget_element.h"
 #include "qjs_window.h"
 #include "qjs_window_or_worker_global_scope.h"
 

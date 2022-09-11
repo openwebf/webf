@@ -17,8 +17,9 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
   StringView string_view = name.ToStringView();
 
   const char* string = string_view.Characters8();
-  for(int i = 0; i < string_view.length(); i ++) {
-    if (string[i] == '-') return true;
+  for (int i = 0; i < string_view.length(); i++) {
+    if (string[i] == '-')
+      return true;
   }
 
   return false;
