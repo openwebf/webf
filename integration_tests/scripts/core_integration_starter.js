@@ -28,10 +28,10 @@ function startIntegrationTest() {
   const tester = spawn(testExecutable, [], {
     env: {
       ...process.env,
-      KRAKEN_ENABLE_TEST: 'true',
+      WEBF_ENABLE_TEST: 'true',
       'enable-software-rendering': true,
       'skia-deterministic-rendering': true,
-      KRAKEN_TEST_DIR: path.join(__dirname, '../')
+      WEBF_TEST_DIR: path.join(__dirname, '../')
     },
     cwd: process.cwd(),
     stdio: 'inherit'

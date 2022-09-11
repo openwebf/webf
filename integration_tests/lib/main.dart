@@ -22,7 +22,7 @@ String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
 
 final String __dirname = path.dirname(Platform.script.path);
-final String testDirectory = Platform.environment['KRAKEN_TEST_DIR'] ?? __dirname;
+final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
@@ -60,14 +60,17 @@ void main() async {
   webF = WebF(
     viewportWidth: 360,
     viewportHeight: 640,
-    bundle: WebFBundle.fromContent('console.log("Starting integration tests...")', url: specUrl),
+    bundle: WebFBundle.fromContent(
+        'console.log("Starting integration tests...")',
+        url: specUrl),
     disableViewportWidthAssertion: true,
     disableViewportHeightAssertion: true,
     javaScriptChannel: javaScriptChannel,
     gestureListener: GestureListener(
       onDrag: (GestureEvent gestureEvent) {
         if (gestureEvent.state == EVENT_STATE_START) {
-          var event = CustomEvent('nativegesture', CustomEventInit(detail: 'nativegesture'));
+          var event = CustomEvent(
+              'nativegesture', CustomEventInit(detail: 'nativegesture'));
           webF.controller!.view.document.documentElement?.dispatchEvent(event);
         }
       },
