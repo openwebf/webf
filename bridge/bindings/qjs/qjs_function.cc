@@ -14,25 +14,31 @@ struct QJSFunctionCallbackContext {
   void* private_data;
 };
 
-static JSValue HandleQJSFunctionCallback(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int magic, JSValue *func_data) {
+static JSValue HandleQJSFunctionCallback(JSContext* ctx,
+                                         JSValueConst this_val,
+                                         int argc,
+                                         JSValueConst* argv,
+                                         int magic,
+                                         JSValue* func_data) {
   JSValue opaque_object = func_data[0];
   auto* context = static_cast<QJSFunctionCallbackContext*>(JS_GetOpaque(opaque_object, JS_CLASS_OBJECT));
   std::vector<ScriptValue> arguments;
   arguments.reserve(argc);
-  for(int i = 0; i < argc; i ++) {
+  for (int i = 0; i < argc; i++) {
     arguments[i] = ScriptValue(ctx, argv[i]);
   }
-  ScriptValue result = context->qjs_function_callback(ctx, ScriptValue(ctx, this_val), argc, arguments.data(), context->private_data);
+  ScriptValue result =
+      context->qjs_function_callback(ctx, ScriptValue(ctx, this_val), argc, arguments.data(), context->private_data);
   delete context;
   return JS_DupValue(ctx, result.QJSValue());
 }
 
-QJSFunction::QJSFunction(JSContext* ctx, QJSFunctionCallback qjs_function_callback, int32_t length, void* private_data) {
+QJSFunction::QJSFunction(JSContext* ctx,
+                         QJSFunctionCallback qjs_function_callback,
+                         int32_t length,
+                         void* private_data) {
   JSValue opaque_object = JS_NewObject(ctx);
-  auto* context = new QJSFunctionCallbackContext{
-      qjs_function_callback,
-      private_data
-  };
+  auto* context = new QJSFunctionCallbackContext{qjs_function_callback, private_data};
   JS_SetOpaque(opaque_object, context);
   function_ = JS_NewCFunctionData(ctx, HandleQJSFunctionCallback, length, 0, 1, &opaque_object);
 }

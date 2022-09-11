@@ -41,7 +41,7 @@ struct NativeTypeDouble final : public NativeTypeBaseHelper<double> {};
 struct NativeTypeJSON final : public NativeTypeBaseHelper<ScriptValue> {};
 
 // Array
-template<typename T>
+template <typename T>
 struct NativeTypeArray final : public NativeTypeBase {
   using ImplType = typename std::vector<T>;
 };

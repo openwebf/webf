@@ -75,7 +75,7 @@ class ScriptValue final {
   JSValue value_{JS_NULL};
 };
 
-template<typename T, typename SFINAEHelper = void>
+template <typename T, typename SFINAEHelper = void>
 class ScriptValueConverter {
   using ImplType = T;
 };

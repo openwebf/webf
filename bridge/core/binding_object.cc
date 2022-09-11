@@ -48,8 +48,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 
   NativeValue return_value = Native_NewNull();
   NativeValue native_method = NativeValueConverter<NativeTypeString>::ToNativeValue(method);
-  binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value,
-                                                       &native_method, argc, argv);
+  binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
   return return_value;
 }
 
@@ -66,8 +65,7 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 
   NativeValue return_value = Native_NewNull();
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
-  binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value,
-                                                       &native_method, argc, argv);
+  binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
   return return_value;
 }
 
@@ -85,7 +83,11 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv, exception_state);
 }
 
-ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx, const ScriptValue& this_val, uint32_t argc, const ScriptValue* argv, void* private_data) {
+ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
+                                                     const ScriptValue& this_val,
+                                                     uint32_t argc,
+                                                     const ScriptValue* argv,
+                                                     void* private_data) {
   auto id = reinterpret_cast<int64_t>(private_data);
   auto* binding_object = toScriptWrappable<BindingObject>(this_val.QJSValue());
 
@@ -93,12 +95,13 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx, const Scrip
   arguments.reserve(argc + 1);
 
   arguments[0] = NativeValueConverter<NativeTypeInt64>::ToNativeValue(id);
-  for(int i = 0; i < argc; i ++) {
+  for (int i = 0; i < argc; i++) {
     arguments[i + 1] = argv[i].ToNative();
   }
 
   ExceptionState exception_state;
-  NativeValue result = binding_object->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall, arguments.size(), arguments.data(), exception_state);
+  NativeValue result = binding_object->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall,
+                                                           arguments.size(), arguments.data(), exception_state);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx);
@@ -139,17 +142,17 @@ void HandleAnonymousAsyncCalledFromDart(void* ptr, NativeValue* native_value, in
   delete promise_context;
 }
 
-ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx, const ScriptValue& this_val, uint32_t argc, const ScriptValue* argv, void* private_data) {
+ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
+                                                          const ScriptValue& this_val,
+                                                          uint32_t argc,
+                                                          const ScriptValue* argv,
+                                                          void* private_data) {
   auto id = reinterpret_cast<int64_t>(private_data);
   auto* binding_object = toScriptWrappable<BindingObject>(this_val.QJSValue());
 
   auto promise_resolver = ScriptPromiseResolver::Create(binding_object->context_);
 
-  auto* promise_context = new BindingObjectPromiseContext{
-    binding_object,
-    binding_object->context_,
-    promise_resolver
-  };
+  auto* promise_context = new BindingObjectPromiseContext{binding_object, binding_object->context_, promise_resolver};
 
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 4);
@@ -157,14 +160,16 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx, const 
   arguments[0] = NativeValueConverter<NativeTypeInt64>::ToNativeValue(id);
   arguments[1] = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_object->context_->contextId());
   arguments[2] = NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context);
-  arguments[3] = NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDart));
+  arguments[3] = NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
+      reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDart));
 
-  for(int i = 0; i < argc; i ++) {
+  for (int i = 0; i < argc; i++) {
     arguments[i + 4] = argv[i].ToNative();
   }
 
   ExceptionState exception_state;
-  NativeValue result = binding_object->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(), exception_state);
+  NativeValue result = binding_object->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction,
+                                                           argc + 4, arguments.data(), exception_state);
   return ScriptValue(ctx, result);
 }
 

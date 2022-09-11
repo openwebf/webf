@@ -18,7 +18,9 @@ ScriptPromise::ScriptPromise(JSContext* ctx, JSValue promise) : ctx_(ctx) {
   promise_ = ScriptValue(ctx, promise);
 }
 
-ScriptPromise::ScriptPromise(JSContext* ctx, std::shared_ptr<QJSFunction>* resolve_func, std::shared_ptr<QJSFunction>* reject_func) {
+ScriptPromise::ScriptPromise(JSContext* ctx,
+                             std::shared_ptr<QJSFunction>* resolve_func,
+                             std::shared_ptr<QJSFunction>* reject_func) {
   JSValue resolving_funcs[2];
   JSValue promise = JS_NewPromiseCapability(ctx, resolving_funcs);
 

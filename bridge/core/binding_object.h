@@ -55,8 +55,16 @@ enum BindingMethodCallOperations {
 class BindingObject {
  public:
   // This function were called when the anonymous function returned to the JS code has been called by users.
-  static ScriptValue AnonymousFunctionCallback(JSContext* ctx, const ScriptValue& this_val, uint32_t argc, const ScriptValue* argv, void* private_data);
-  static ScriptValue AnonymousAsyncFunctionCallback(JSContext* ctx, const ScriptValue& this_val, uint32_t argc, const ScriptValue* argv, void* private_data);
+  static ScriptValue AnonymousFunctionCallback(JSContext* ctx,
+                                               const ScriptValue& this_val,
+                                               uint32_t argc,
+                                               const ScriptValue* argv,
+                                               void* private_data);
+  static ScriptValue AnonymousAsyncFunctionCallback(JSContext* ctx,
+                                                    const ScriptValue& this_val,
+                                                    uint32_t argc,
+                                                    const ScriptValue* argv,
+                                                    void* private_data);
 
   using ImplType = BindingObject*;
   BindingObject() = delete;

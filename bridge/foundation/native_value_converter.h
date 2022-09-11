@@ -110,12 +110,12 @@ struct NativeValueConverter<NativeTypeAsyncFunction> : public NativeValueConvert
   }
 };
 
-template<typename T>
+template <typename T>
 struct NativeValueConverter<NativeTypeArray<T>> : public NativeValueConverterBase<NativeTypeArray<T>> {
   using ImplType = typename NativeTypeArray<typename NativeValueConverter<T>::ImplType>::ImplType;
   static NativeValue ToNativeValue(ImplType value) {
     auto* ptr = new NativeValue[value.size()];
-    for(int i = 0; i < value.size(); i ++) {
+    for (int i = 0; i < value.size(); i++) {
       ptr[i] = NativeValueConverter<T>::ToNativeValue(value[i]);
     }
     return Native_NewList(value.size(), ptr);
@@ -126,7 +126,7 @@ struct NativeValueConverter<NativeTypeArray<T>> : public NativeValueConverterBas
     auto* arr = static_cast<NativeValue*>(native_value.u.ptr);
     std::vector<typename T::ImplType> vec;
     vec.reserve(length);
-    for(int i = 0; i < length; i ++) {
+    for (int i = 0; i < length; i++) {
       vec[i] = NativeValueConverter<T>::FromNativeValue(ctx, arr[i]);
     }
     return vec;

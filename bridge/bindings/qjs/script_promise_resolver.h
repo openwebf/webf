@@ -29,9 +29,7 @@ class ScriptPromiseResolver {
     ResolveOrReject(value, kResolving);
   }
 
-  void Resolve(JSValue value) {
-    ResolveOrReject(value, kResolving);
-  }
+  void Resolve(JSValue value) { ResolveOrReject(value, kResolving); }
 
   // Anything that can be passed to toQuickJS can be passed to this function.
   template <typename T>
@@ -39,9 +37,7 @@ class ScriptPromiseResolver {
     ResolveOrReject(value, kRejecting);
   }
 
-  void Reject(JSValue value) {
-    ResolveOrReject(value, kRejecting);
-  }
+  void Reject(JSValue value) { ResolveOrReject(value, kRejecting); }
 
  private:
   enum ResolutionState {

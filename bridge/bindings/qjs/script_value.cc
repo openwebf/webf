@@ -4,9 +4,9 @@
  */
 #include "script_value.h"
 #include <vector>
-#include "core/executing_context.h"
-#include "core/binding_object.h"
 #include "bindings/qjs/converter_impl.h"
+#include "core/binding_object.h"
+#include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
 #include "foundation/native_value_converter.h"
 #include "native_string_utils.h"
@@ -49,7 +49,8 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
       auto* binding_object = BindingObject::From(ptr);
 
       // Only eventTarget can be converted from nativeValue to JSValue.
-      auto* event_target = DynamicTo<EventTarget>(binding_object);;
+      auto* event_target = DynamicTo<EventTarget>(binding_object);
+      ;
       if (event_target) {
         return event_target->ToQuickJS();
       }
@@ -66,7 +67,8 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
   return JS_NULL;
 }
 
-ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value): ctx_(ctx), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
+ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value)
+    : ctx_(ctx), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);
@@ -157,12 +159,11 @@ NativeValue ScriptValue::ToNative() const {
   } else if (JS_IsArray(ctx_, value_)) {
     std::vector<ScriptValue> values = Converter<IDLSequence<IDLAny>>::FromValue(ctx_, value_, ASSERT_NO_EXCEPTION());
     auto* result = new NativeValue[values.size()];
-    for(int i = 0 ; i < values.size(); i ++) {
+    for (int i = 0; i < values.size(); i++) {
       result[i] = values[i].ToNative();
     }
     return Native_NewList(values.size(), result);
-  }
-  else if (JS_IsObject(value_)) {
+  } else if (JS_IsObject(value_)) {
     // TODO: needs a better way to convert bindingObject to pointers.
     if (QJSEventTarget::HasInstance(ExecutingContext::From(ctx_), value_)) {
       auto* event_target = toScriptWrappable<EventTarget>(value_);

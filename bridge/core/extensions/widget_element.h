@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_DOM_WIDGET_ELEMENT_H_
 #define WEBF_CORE_DOM_WIDGET_ELEMENT_H_
@@ -15,6 +15,7 @@ namespace webf {
 // The WidgetElement class in C++ is a wrapper and proxy all operations to the dart side.
 class WidgetElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = WidgetElement*;
   WidgetElement(const AtomicString& tag_name, Document* document);
@@ -26,9 +27,8 @@ class WidgetElement : public HTMLElement {
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
 
  private:
-
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_DOM_WIDGET_ELEMENT_H_
