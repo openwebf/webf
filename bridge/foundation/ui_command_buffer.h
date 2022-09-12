@@ -79,7 +79,6 @@ class UICommandBuffer {
   void clear();
 
  private:
-
   void addCommand(const UICommandItem& item);
 
   ExecutingContext* context_{nullptr};

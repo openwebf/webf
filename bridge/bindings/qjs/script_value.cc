@@ -43,7 +43,7 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
       auto* arr = static_cast<NativeValue*>(native_value.u.ptr);
       JSValue array = JS_NewArray(context->ctx());
       JS_SetPropertyStr(context->ctx(), array, "length", Converter<IDLInt64>::ToValue(context->ctx(), length));
-      for(int i = 0; i < length; i ++) {
+      for (int i = 0; i < length; i++) {
         JSValue value = FromNativeValue(context, arr[i]);
         JS_SetPropertyInt64(context->ctx(), array, i, value);
         JS_FreeValue(context->ctx(), value);

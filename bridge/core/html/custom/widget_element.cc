@@ -36,7 +36,7 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
   std::vector<AtomicString> property_names =
       NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), result);
   names.reserve(property_names.size());
-  for (auto & property_name : property_names) {
+  for (auto& property_name : property_names) {
     names.emplace_back(property_name);
   }
 }

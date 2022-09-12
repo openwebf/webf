@@ -100,7 +100,7 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
 
   ExceptionState exception_state;
   NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall,
-                                                           arguments.size(), arguments.data(), exception_state);
+                                                         arguments.size(), arguments.data(), exception_state);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx);
@@ -155,8 +155,10 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   arguments.reserve(argc + 4);
 
   arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(id));
-  arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(event_target->GetExecutingContext()->contextId()));
-  arguments.emplace_back(NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context));
+  arguments.emplace_back(
+      NativeValueConverter<NativeTypeInt64>::ToNativeValue(event_target->GetExecutingContext()->contextId()));
+  arguments.emplace_back(
+      NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context));
   arguments.emplace_back(NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
       reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDart)));
 
@@ -165,8 +167,8 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   }
 
   ExceptionState exception_state;
-  NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction,
-                                                           argc + 4, arguments.data(), exception_state);
+  NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4,
+                                                         arguments.data(), exception_state);
   return ScriptValue(ctx, result);
 }
 
