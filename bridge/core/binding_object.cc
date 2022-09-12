@@ -8,7 +8,6 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "core/executing_context.h"
-#include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
@@ -89,7 +88,7 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
                                                      const ScriptValue* argv,
                                                      void* private_data) {
   auto id = reinterpret_cast<int64_t>(private_data);
-  auto* binding_object = toScriptWrappable<BindingObject>(this_val.QJSValue());
+  auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
 
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 1);
@@ -100,21 +99,19 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
   }
 
   ExceptionState exception_state;
-  NativeValue result = binding_object->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall,
+  NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall,
                                                            arguments.size(), arguments.data(), exception_state);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx);
-    binding_object->context_->ReportError(error);
+    event_target->GetExecutingContext()->ReportError(error);
     JS_FreeValue(ctx, error);
     return ScriptValue::Empty(ctx);
   }
-
   return ScriptValue(ctx, result);
 }
 
 struct BindingObjectPromiseContext {
-  BindingObject* binding_object;
   ExecutingContext* context;
   std::shared_ptr<ScriptPromiseResolver> promise_resolver;
 };
@@ -148,17 +145,17 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
                                                           const ScriptValue* argv,
                                                           void* private_data) {
   auto id = reinterpret_cast<int64_t>(private_data);
-  auto* binding_object = toScriptWrappable<BindingObject>(this_val.QJSValue());
+  auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
 
-  auto promise_resolver = ScriptPromiseResolver::Create(binding_object->context_);
+  auto promise_resolver = ScriptPromiseResolver::Create(event_target->GetExecutingContext());
 
-  auto* promise_context = new BindingObjectPromiseContext{binding_object, binding_object->context_, promise_resolver};
+  auto* promise_context = new BindingObjectPromiseContext{event_target->GetExecutingContext(), promise_resolver};
 
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 4);
 
   arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(id));
-  arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_object->context_->contextId()));
+  arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(event_target->GetExecutingContext()->contextId()));
   arguments.emplace_back(NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context));
   arguments.emplace_back(NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
       reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDart)));
@@ -168,7 +165,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   }
 
   ExceptionState exception_state;
-  NativeValue result = binding_object->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction,
+  NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction,
                                                            argc + 4, arguments.data(), exception_state);
   return ScriptValue(ctx, result);
 }

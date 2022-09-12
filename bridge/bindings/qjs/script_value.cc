@@ -38,6 +38,18 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
     case NativeTag::TAG_NULL: {
       return JS_NULL;
     }
+    case NativeTag::TAG_LIST: {
+      size_t length = native_value.uint32;
+      auto* arr = static_cast<NativeValue*>(native_value.u.ptr);
+      JSValue array = JS_NewArray(context->ctx());
+      JS_SetPropertyStr(context->ctx(), array, "length", Converter<IDLInt64>::ToValue(context->ctx(), length));
+      for(int i = 0; i < length; i ++) {
+        JSValue value = FromNativeValue(context, arr[i]);
+        JS_SetPropertyInt64(context->ctx(), array, i, value);
+        JS_FreeValue(context->ctx(), value);
+      }
+      return array;
+    }
     case NativeTag::TAG_JSON: {
       auto* str = static_cast<const char*>(native_value.u.ptr);
       JSValue returnedValue = JS_ParseJSON(context->ctx(), str, strlen(str), "");
@@ -50,7 +62,6 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
 
       // Only eventTarget can be converted from nativeValue to JSValue.
       auto* event_target = DynamicTo<EventTarget>(binding_object);
-      ;
       if (event_target) {
         return event_target->ToQuickJS();
       }

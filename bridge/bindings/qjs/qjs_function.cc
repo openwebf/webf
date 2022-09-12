@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <vector>
 #include "cppgc/gc_visitor.h"
+#include "core/binding_object.h"
+#include "core/dom/events/event_target.h"
 
 namespace webf {
 
@@ -21,15 +23,16 @@ static JSValue HandleQJSFunctionCallback(JSContext* ctx,
                                          int magic,
                                          JSValue* func_data) {
   JSValue opaque_object = func_data[0];
-  auto* context = static_cast<QJSFunctionCallbackContext*>(JS_GetOpaque(opaque_object, JS_CLASS_OBJECT));
+  auto* callback_context = static_cast<QJSFunctionCallbackContext*>(JS_GetOpaque(opaque_object, JS_CLASS_OBJECT));
   std::vector<ScriptValue> arguments;
   arguments.reserve(argc);
   for (int i = 0; i < argc; i++) {
     arguments.emplace_back(ScriptValue(ctx, argv[i]));
   }
-  ScriptValue result =
-      context->qjs_function_callback(ctx, ScriptValue(ctx, this_val), argc, arguments.data(), context->private_data);
-  delete context;
+  ScriptValue result = callback_context->qjs_function_callback(ctx, ScriptValue(ctx, this_val), argc, arguments.data(),
+                                                               callback_context->private_data);
+  delete callback_context;
+  JS_FreeValue(ctx, opaque_object);
   return JS_DupValue(ctx, result.QJSValue());
 }
 

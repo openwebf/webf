@@ -84,7 +84,7 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
         BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
         result = bindingCallMethodDispatchTable[method](bindingObject, values);
       } else {
-        if (method == BindingMethodCallOperations.AnonymousFunctionCall) {
+        if (method == BindingMethodCallOperations.AnonymousFunctionCall.index) {
           int id = values[0];
           List<dynamic> functionArguments = values.sublist(1);
           AnonymousNativeFunction? fn = getAnonymousNativeFunctionFromId(id);
@@ -104,7 +104,7 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
             print('$e\n$stack');
           }
           removeAnonymousNativeFunctionFromId(id);
-        } else if (method == BindingMethodCallOperations.AsyncAnonymousFunction) {
+        } else if (method == BindingMethodCallOperations.AsyncAnonymousFunction.index) {
           int id = values[0];
           AsyncAnonymousNativeFunction? fn = getAsyncAnonymousNativeFunctionFromId(id);
           if (fn == null) {

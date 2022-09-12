@@ -11,20 +11,17 @@
 
 namespace webf {
 
-UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {
-  // It's rare to store over 1024 commands in one frame.
-  queue.reserve(1024);
-}
+UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {}
 
 void UICommandBuffer::addCommand(int32_t id, UICommand type, void* nativePtr) {
   UICommandItem item{id, static_cast<int32_t>(type), nativePtr};
-  queue.emplace_back(item);
+  addCommand(item);
 }
 
 void UICommandBuffer::addCommand(int32_t id, UICommand type, std::unique_ptr<NativeString>&& args_01, void* nativePtr) {
   assert(args_01 != nullptr);
   UICommandItem item{id, static_cast<int32_t>(type), args_01.release(), nativePtr};
-  queue.emplace_back(item);
+  addCommand(item);
 }
 
 void UICommandBuffer::addCommand(int32_t id,
@@ -35,23 +32,36 @@ void UICommandBuffer::addCommand(int32_t id,
   assert(args_01 != nullptr);
   assert(args_02 != nullptr);
   UICommandItem item{id, static_cast<int32_t>(type), args_01.release(), args_02.release(), nativePtr};
-  queue.emplace_back(item);
+  addCommand(item);
+}
+
+void UICommandBuffer::addCommand(const UICommandItem& item) {
+  if (size_ >= MAXIMUM_UI_COMMAND_SIZE) {
+    context_->FlushUICommand();
+    assert(size_ == 0);
+  }
+  buffer_[size_] = item;
+  size_++;
 }
 
 UICommandItem* UICommandBuffer::data() {
-  return queue.data();
+  return buffer_;
 }
 
 int64_t UICommandBuffer::size() {
-  return queue.size();
+  return size_;
+}
+
+bool UICommandBuffer::empty() {
+  return size_ == 0;
 }
 
 void UICommandBuffer::clear() {
-  for (auto command : queue) {
-    delete[] reinterpret_cast<const uint16_t*>(command.string_01);
-    delete[] reinterpret_cast<const uint16_t*>(command.string_02);
+  for (int i = 0; i < size_; i ++) {
+    delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_01);
+    delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_02);
   }
-  queue.clear();
+  size_ = 0;
 }
 
 }  // namespace webf

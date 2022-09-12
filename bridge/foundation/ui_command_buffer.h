@@ -33,7 +33,10 @@ enum class UICommand {
   kCreateDocumentFragment,
 };
 
+#define MAXIMUM_UI_COMMAND_SIZE 2056
+
 struct UICommandItem {
+  UICommandItem() = default;
   UICommandItem(int32_t id, int32_t type, NativeString* args_01, NativeString* args_02, void* nativePtr)
       : type(type),
         string_01(reinterpret_cast<int64_t>((new NativeString(args_01))->string())),
@@ -72,11 +75,16 @@ class UICommandBuffer {
   void addCommand(int32_t id, UICommand type, std::unique_ptr<NativeString>&& args_01, void* nativePtr);
   UICommandItem* data();
   int64_t size();
+  bool empty();
   void clear();
 
  private:
+
+  void addCommand(const UICommandItem& item);
+
   ExecutingContext* context_{nullptr};
-  std::vector<UICommandItem> queue;
+  UICommandItem buffer_[MAXIMUM_UI_COMMAND_SIZE];
+  size_t size_{0};
 };
 
 }  // namespace webf

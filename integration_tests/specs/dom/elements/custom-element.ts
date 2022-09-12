@@ -245,6 +245,12 @@ describe('custom html element', () => {
     await snapshot();
   });
 
+  it('dart implements getAllBindingPropertyNames works', async () => {
+    let sampleElement = document.createElement('sample-element');
+    let attributes = Object.keys(sampleElement);
+    expect(attributes).toEqual(['ping', 'fake', 'fn', 'asyncFn', 'asyncFnFailed']);
+  });
+
   it('support custom properties in dart directly', () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
