@@ -6,7 +6,6 @@
 #define BRIDGE_BINDINGS_QJS_SCRIPT_PROMISE_RESOLVER_H_
 
 #include "converter_impl.h"
-#include "script_promise.h"
 #include "to_quickjs.h"
 
 namespace webf {

@@ -34,6 +34,10 @@ JSValue ScriptPromise::ToQuickJS() {
   return JS_DupValue(ctx_, promise_.QJSValue());
 }
 
+ScriptValue ScriptPromise::ToValue() const {
+  return promise_;
+}
+
 void ScriptPromise::Trace(GCVisitor* visitor) {}
 
 }  // namespace webf

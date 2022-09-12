@@ -263,7 +263,10 @@ struct Converter<IDLSequence<T>> : public ConverterBase<IDLSequence<T>> {
     v.reserve(length);
 
     for (uint32_t i = 0; i < length; i++) {
-      auto&& item = Converter<T>::FromValue(ctx, JS_GetPropertyUint32(ctx, value, i), exception_state);
+      JSValue iv = JS_GetPropertyUint32(ctx, value, i);
+      auto&& item = Converter<T>::FromValue(ctx, iv, exception_state);
+      JS_FreeValue(ctx, iv);
+
       if (exception_state.HasException()) {
         return {};
       }

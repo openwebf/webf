@@ -25,6 +25,7 @@ class ScriptPromise final {
   ScriptPromise(JSContext* ctx, std::shared_ptr<QJSFunction>* resolve_func, std::shared_ptr<QJSFunction>* reject_func);
 
   JSValue ToQuickJS();
+  ScriptValue ToValue() const;
 
   void Trace(GCVisitor* visitor);
 

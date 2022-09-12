@@ -46,7 +46,6 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
       for (int i = 0; i < length; i++) {
         JSValue value = FromNativeValue(context, arr[i]);
         JS_SetPropertyInt64(context->ctx(), array, i, value);
-        JS_FreeValue(context->ctx(), value);
       }
       return array;
     }
@@ -180,7 +179,7 @@ NativeValue ScriptValue::ToNative() const {
       auto* event_target = toScriptWrappable<EventTarget>(value_);
       return Native_NewPtr(JSPointerType::Others, event_target->bindingObject());
     }
-    return NativeValueConverter<NativeTypeJSON>::ToNativeValue(ScriptValue(ctx_, value_));
+    return NativeValueConverter<NativeTypeJSON>::ToNativeValue(*this);
   }
 
   return Native_NewNull();
