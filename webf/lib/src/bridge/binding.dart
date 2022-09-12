@@ -33,7 +33,7 @@ typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dyn
 dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
   assert(args.length == 1);
   if (isEnabledLog) {
-    print('$bindingObject getBindingProperty key: ${args[0]}');
+    print('$bindingObject getBindingProperty key: ${args[0]} result: ${bindingObject.getBindingProperty(args[0])}');
   }
 
   return bindingObject.getBindingProperty(args[0]);
@@ -50,7 +50,14 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args) {
 }
 
 dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> args) {
-  return bindingObject.getAllBindingPropertyNames();
+  List<String> properties = List.empty(growable: true);
+  bindingObject.getAllBindingPropertyNames(properties);
+
+  if (isEnabledLog) {
+    print('$bindingObject getPropertyNamesBindingCall value: $properties');
+  }
+
+  return properties;
 }
 
 List<BindingCallFunc> bindingCallMethodDispatchTable = [

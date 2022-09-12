@@ -135,10 +135,10 @@ void toNativeValue(Pointer<NativeValue> target, value) {
     target.ref.tag = JSValueType.TAG_LIST.index;
     target.ref.uint32 = value.length;
     Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
+    target.ref.u = lists.address;
     for(int i = 0; i < value.length; i ++) {
       toNativeValue(lists.elementAt(i), value[i]);
     }
-    target.ref.u = lists.address;
   } else if (value is AsyncAnonymousNativeFunction) {
     int id = _functionId++;
     _asyncFunctionMap[id] = value;

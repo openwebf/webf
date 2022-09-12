@@ -36,7 +36,6 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
 
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
     return AtomicString(ctx, static_cast<NativeString*>(value.u.ptr));
-    ;
   }
 };
 
@@ -127,7 +126,7 @@ struct NativeValueConverter<NativeTypeArray<T>> : public NativeValueConverterBas
     std::vector<typename T::ImplType> vec;
     vec.reserve(length);
     for (int i = 0; i < length; i++) {
-      vec[i] = NativeValueConverter<T>::FromNativeValue(ctx, arr[i]);
+      vec.emplace_back(NativeValueConverter<T>::FromNativeValue(ctx, arr[i]));
     }
     return vec;
   }

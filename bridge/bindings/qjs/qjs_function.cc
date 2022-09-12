@@ -25,7 +25,7 @@ static JSValue HandleQJSFunctionCallback(JSContext* ctx,
   std::vector<ScriptValue> arguments;
   arguments.reserve(argc);
   for (int i = 0; i < argc; i++) {
-    arguments[i] = ScriptValue(ctx, argv[i]);
+    arguments.emplace_back(ScriptValue(ctx, argv[i]));
   }
   ScriptValue result =
       context->qjs_function_callback(ctx, ScriptValue(ctx, this_val), argc, arguments.data(), context->private_data);

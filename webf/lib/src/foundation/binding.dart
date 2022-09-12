@@ -49,8 +49,7 @@ abstract class BindingObject {
   void setBindingProperty(String key, value) {}
 
   // Return a list contains all supported properties.
-  List<String> getAllBindingPropertyNames() {
-    return [];
+  void getAllBindingPropertyNames(List<String> properties) {
   }
 
   // Call a method, eg:

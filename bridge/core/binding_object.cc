@@ -94,9 +94,9 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 1);
 
-  arguments[0] = NativeValueConverter<NativeTypeInt64>::ToNativeValue(id);
+  arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(id));
   for (int i = 0; i < argc; i++) {
-    arguments[i + 1] = argv[i].ToNative();
+    arguments.emplace_back(argv[i].ToNative());
   }
 
   ExceptionState exception_state;
@@ -157,14 +157,14 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 4);
 
-  arguments[0] = NativeValueConverter<NativeTypeInt64>::ToNativeValue(id);
-  arguments[1] = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_object->context_->contextId());
-  arguments[2] = NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context);
-  arguments[3] = NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
-      reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDart));
+  arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(id));
+  arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_object->context_->contextId()));
+  arguments.emplace_back(NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context));
+  arguments.emplace_back(NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
+      reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDart)));
 
   for (int i = 0; i < argc; i++) {
-    arguments[i + 4] = argv[i].ToNative();
+    arguments.emplace_back(argv[i].ToNative());
   }
 
   ExceptionState exception_state;
