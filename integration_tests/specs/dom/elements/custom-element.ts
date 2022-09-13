@@ -295,6 +295,24 @@ describe('custom html element', () => {
     expect(await p4).toEqual([{ name: 1 }]);
   });
 
+  it('return promise maybe not complete from dart side', async (done) => {
+    let sampleElement = document.createElement('sample-element');
+    let text = document.createTextNode('helloworld');
+    sampleElement.appendChild(text);
+    document.body.appendChild(sampleElement);
+    // @ts-ignore
+    let p = sampleElement.asyncFnNotComplete();
+    expect(p instanceof Promise);
+
+    p.then(() => {
+      done.fail('should not resolved');
+    });
+
+    setTimeout(() => {
+      done();
+    }, 2000);
+  });
+
   it('return promise error when dart async function throw error', async () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');

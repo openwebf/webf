@@ -18,14 +18,18 @@ ScriptPromiseResolver::ScriptPromiseResolver(ExecutingContext* context)
   promise_ = JS_NewPromiseCapability(context->ctx(), resolving_funcs);
   resolve_func_ = resolving_funcs[0];
   reject_func_ = resolving_funcs[1];
-
-  context->GetPendingPromises()->TrackPendingPromises(ScriptPromise(context_->ctx(), promise_));
 }
 
 ScriptPromiseResolver::~ScriptPromiseResolver() {
   JS_FreeValue(context_->ctx(), promise_);
   JS_FreeValue(context_->ctx(), resolve_func_);
   JS_FreeValue(context_->ctx(), reject_func_);
+}
+
+void ScriptPromiseResolver::Trace(GCVisitor* visitor) const {
+  visitor->Trace(promise_);
+  visitor->Trace(resolve_func_);
+  visitor->Trace(reject_func_);
 }
 
 ScriptPromise ScriptPromiseResolver::Promise() {

@@ -10,6 +10,8 @@
 
 namespace webf {
 
+class GCVisitor;
+
 class ScriptPromiseResolver {
  public:
   static std::shared_ptr<ScriptPromiseResolver> Create(ExecutingContext* context);
@@ -37,6 +39,8 @@ class ScriptPromiseResolver {
   }
 
   void Reject(JSValue value) { ResolveOrReject(value, kRejecting); }
+
+  void Trace(GCVisitor* visitor) const;
 
  private:
   enum ResolutionState {

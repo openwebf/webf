@@ -7,6 +7,7 @@
 #define BRIDGE_CORE_DOM_BINDING_OBJECT_H_
 
 #include <cinttypes>
+#include <set>
 #include "bindings/qjs/atomic_string.h"
 #include "foundation/native_value.h"
 
@@ -15,6 +16,8 @@ namespace webf {
 class BindingObject;
 class NativeBindingObject;
 class ExceptionState;
+class GCVisitor;
+class ScriptPromiseResolver;
 
 using InvokeBindingsMethodsFromNative = void (*)(const NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
@@ -52,6 +55,12 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
+struct BindingObjectPromiseContext {
+  ExecutingContext* context;
+  BindingObject* binding_object;
+  std::shared_ptr<ScriptPromiseResolver> promise_resolver;
+};
+
 class BindingObject {
  public:
   // This function were called when the anonymous function returned to the JS code has been called by users.
@@ -65,6 +74,7 @@ class BindingObject {
                                                     uint32_t argc,
                                                     const ScriptValue* argv,
                                                     void* private_data);
+  static void HandleAnonymousAsyncCalledFromDart(void* ptr, NativeValue* native_value, int32_t contextId, const char* errmsg);
 
   using ImplType = BindingObject*;
   BindingObject() = delete;
@@ -84,6 +94,8 @@ class BindingObject {
 
   NativeBindingObject* bindingObject() const { return binding_object_; }
 
+  void Trace(GCVisitor* visitor) const;
+
   inline static BindingObject* From(NativeBindingObject* native_binding_object) {
     return native_binding_object->binding_target_;
   };
@@ -92,6 +104,8 @@ class BindingObject {
   virtual bool IsTouchList() const;
 
  protected:
+  void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);
+  void FullFillPendingPromise(BindingObjectPromiseContext* binding_object_promise_context);
   NativeValue InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
                                   int32_t argc,
                                   const NativeValue* args,
@@ -103,6 +117,7 @@ class BindingObject {
  private:
   ExecutingContext* context_{nullptr};
   NativeBindingObject* binding_object_{new NativeBindingObject(this)};
+  std::set<BindingObjectPromiseContext*> pending_promise_contexts_;
 };
 
 }  // namespace webf

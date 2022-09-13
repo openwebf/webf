@@ -6,6 +6,7 @@
 #include "binding_object.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
+#include "core/dom/events/event_target.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "core/executing_context.h"
 #include "foundation/native_value_converter.h"
@@ -49,6 +50,14 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   NativeValue native_method = NativeValueConverter<NativeTypeString>::ToNativeValue(method);
   binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
   return return_value;
+}
+
+void BindingObject::TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context) {
+  pending_promise_contexts_.emplace(binding_object_promise_context);
+}
+
+void BindingObject::FullFillPendingPromise(BindingObjectPromiseContext* binding_object_promise_context) {
+  pending_promise_contexts_.erase(binding_object_promise_context);
 }
 
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
@@ -111,12 +120,7 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
   return ScriptValue(ctx, result);
 }
 
-struct BindingObjectPromiseContext {
-  ExecutingContext* context;
-  std::shared_ptr<ScriptPromiseResolver> promise_resolver;
-};
-
-void HandleAnonymousAsyncCalledFromDart(void* ptr, NativeValue* native_value, int32_t contextId, const char* errmsg) {
+void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr, NativeValue* native_value, int32_t contextId, const char* errmsg) {
   auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
   if (!promise_context->context->IsValid())
     return;
@@ -136,6 +140,8 @@ void HandleAnonymousAsyncCalledFromDart(void* ptr, NativeValue* native_value, in
     JS_FreeValue(context->ctx(), error_object);
   }
 
+  promise_context->binding_object->FullFillPendingPromise(promise_context);
+
   delete promise_context;
 }
 
@@ -149,7 +155,8 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
 
   auto promise_resolver = ScriptPromiseResolver::Create(event_target->GetExecutingContext());
 
-  auto* promise_context = new BindingObjectPromiseContext{event_target->GetExecutingContext(), promise_resolver};
+  auto* promise_context = new BindingObjectPromiseContext{event_target->GetExecutingContext(), event_target, promise_resolver};
+  event_target->TrackPendingPromiseBindingContext(promise_context);
 
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 4);
@@ -167,14 +174,20 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   }
 
   ExceptionState exception_state;
-  NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4,
+  event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4,
                                                          arguments.data(), exception_state);
-  return ScriptValue(ctx, result);
+  return promise_resolver->Promise().ToValue();
 }
 
 NativeValue BindingObject::GetAllBindingPropertyNames(ExceptionState& exception_state) const {
   context_->FlushUICommand();
   return InvokeBindingMethod(BindingMethodCallOperations::kGetAllPropertyNames, 0, nullptr, exception_state);
+}
+
+void BindingObject::Trace(GCVisitor* visitor) const {
+  for(auto&& promise_context : pending_promise_contexts_) {
+    promise_context->promise_resolver->Trace(visitor);
+  }
 }
 
 bool BindingObject::IsEventTarget() const {

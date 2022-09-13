@@ -180,6 +180,11 @@ bool EventTarget::IsEventTarget() const {
   return true;
 }
 
+void EventTarget::Trace(GCVisitor* visitor) const {
+  ScriptWrappable::Trace(visitor);
+  BindingObject::Trace(visitor);
+}
+
 bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
                                            const std::shared_ptr<EventListener>& listener,
                                            const std::shared_ptr<AddEventListenerOptions>& options) {
@@ -358,6 +363,7 @@ bool EventTarget::FireEventListeners(Event& event,
 }
 
 void EventTargetWithInlineData::Trace(GCVisitor* visitor) const {
+  EventTarget::Trace(visitor);
   data_.Trace(visitor);
 }
 

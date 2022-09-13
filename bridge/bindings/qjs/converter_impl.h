@@ -9,6 +9,7 @@
 #include <type_traits>
 #include "atomic_string.h"
 #include "converter.h"
+#include "script_promise.h"
 #include "core/dom/document.h"
 #include "core/dom/events/event.h"
 #include "core/dom/events/event_target.h"

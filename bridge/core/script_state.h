@@ -19,10 +19,15 @@ class ScriptState {
   ScriptState();
   ~ScriptState();
 
-  inline JSContext* ctx() { return ctx_; }
+  inline bool Invalid() const { return !ctx_invalid_; }
+  inline JSContext* ctx() {
+    assert(!ctx_invalid_ && "GetExecutingContext has been released");
+    return ctx_;
+  }
   static JSRuntime* runtime();
 
  private:
+  bool ctx_invalid_{false};
   JSContext* ctx_{nullptr};
 };
 

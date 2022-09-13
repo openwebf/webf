@@ -192,7 +192,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/exception_state.cc
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
-    bindings/qjs/pending_promises.cc
     # Core sources
     core/executing_context.cc
     core/script_state.cc

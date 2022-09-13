@@ -26,7 +26,7 @@ std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExc
 }
 
 ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& handler, void* owner)
-    : context_id_(contextId), handler_(handler), owner_(owner), ctx_invalid_(false), unique_id_(context_unique_id++) {
+    : context_id_(contextId), handler_(handler), owner_(owner), unique_id_(context_unique_id++) {
   //#if ENABLE_PROFILE
   //  auto jsContextStartTime =
   //      std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
@@ -92,8 +92,6 @@ ExecutingContext::~ExecutingContext() {
   for (auto& active_wrapper : active_wrappers_) {
     JS_FreeValue(ctx(), active_wrapper->ToQuickJSUnsafe());
   }
-
-  ctx_invalid_ = true;
 }
 
 ExecutingContext* ExecutingContext::From(JSContext* ctx) {
@@ -142,11 +140,10 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
 }
 
 bool ExecutingContext::IsValid() const {
-  return !ctx_invalid_;
+  return script_state_.Invalid();
 }
 
 void* ExecutingContext::owner() {
-  assert(!ctx_invalid_ && "GetExecutingContext has been released");
   return owner_;
 }
 
@@ -172,7 +169,6 @@ JSValue ExecutingContext::Global() {
 }
 
 JSContext* ExecutingContext::ctx() {
-  assert(!ctx_invalid_ && "GetExecutingContext has been released");
   return script_state_.ctx();
 }
 

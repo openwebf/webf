@@ -6,6 +6,7 @@
 #define BRIDGE_ELEMENT_H
 
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "bindings/qjs/script_promise.h"
 #include "container_node.h"
 #include "core/css/legacy/css_style_declaration.h"
 #include "legacy/bounding_client_rect.h"
