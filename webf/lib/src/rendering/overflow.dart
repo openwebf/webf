@@ -47,7 +47,10 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       Size scrollableSize = renderBoxModel.scrollableSize;
       Size scrollableViewportSize = renderBoxModel.scrollableViewportSize;
       // Border-radius always to clip inner content when overflow is not visible.
-      if (scrollableSize.width > scrollableViewportSize.width || borderRadius != null) {
+      if (scrollableSize.width > scrollableViewportSize.width
+          || borderRadius != null
+          || (renderBoxModel.overflowRect != null && renderBoxModel.overflowRect!.left < 0)
+      ){
         return true;
       }
     }
@@ -79,7 +82,10 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       Size scrollableSize = renderBoxModel.scrollableSize;
       Size scrollableViewportSize = renderBoxModel.scrollableViewportSize;
       // Border-radius always to clip inner content when overflow is not visible.
-      if (scrollableSize.height > scrollableViewportSize.height || borderRadius != null) {
+      if (scrollableSize.height > scrollableViewportSize.height
+          || borderRadius != null
+          || (renderBoxModel.overflowRect != null && renderBoxModel.overflowRect!.top < 0)
+      ) {
         return true;
       }
     }

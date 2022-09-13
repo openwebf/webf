@@ -90,6 +90,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     if (kProfileMode && PerformanceTiming.enabled()) {
       PerformanceTiming.instance().mark(PERF_INTRINSIC_LAYOUT_END, uniqueId: hashCode);
     }
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }
 
   @override

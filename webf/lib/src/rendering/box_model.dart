@@ -227,6 +227,7 @@ class RenderLayoutBox extends RenderBoxModel
     });
   }
 
+  // iterate add child to overflowLayout
   void addOverflowLayoutFromChild(RenderBox child) {
     final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
     if (child is RenderTextBox || child is RenderPositionPlaceholder || !child.hasSize || child is RenderConstrainedBox) {
