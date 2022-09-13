@@ -279,13 +279,9 @@ void TEST_runLoop(webf::ExecutingContext* context) {
   }
 }
 
-void TEST_onJSError(int32_t contextId, const char*) {
+void TEST_onJSError(int32_t contextId, const char*) {}
 
-}
-
-void TEST_onJSLog(int32_t contextId, int32_t level, const char*) {
-
-}
+void TEST_onJSLog(int32_t contextId, int32_t level, const char*) {}
 void TEST_onMatchImageSnapshot(void* callbackContext,
                                int32_t contextId,
                                uint8_t* bytes,
@@ -299,13 +295,9 @@ const char* TEST_environment() {
   return "";
 }
 
-void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {
+void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 
-}
-
-void TEST_simulateInputText(NativeString* nativeString) {
-
-}
+void TEST_simulateInputText(NativeString* nativeString) {}
 
 void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{
@@ -333,12 +325,10 @@ void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError) {
 }
 
 void TEST_mockTestEnvDartMethods(int32_t contextId) {
-  std::vector<uint64_t> mockMethods {
-    reinterpret_cast<uint64_t>(TEST_onJSError),
-    reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshot),
-    reinterpret_cast<uint64_t>(TEST_environment),
-    reinterpret_cast<uint64_t>(TEST_simulatePointer),
-    reinterpret_cast<uint64_t>(TEST_simulateInputText),
+  std::vector<uint64_t> mockMethods{
+      reinterpret_cast<uint64_t>(TEST_onJSError),         reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshot),
+      reinterpret_cast<uint64_t>(TEST_environment),       reinterpret_cast<uint64_t>(TEST_simulatePointer),
+      reinterpret_cast<uint64_t>(TEST_simulateInputText),
   };
 
   registerTestEnvDartMethods(contextId, mockMethods.data(), mockMethods.size());
