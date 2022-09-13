@@ -398,7 +398,7 @@ void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
 
   std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(new_child.eventTargetId()));
   std::unique_ptr<NativeString> args_02 = stringToNativeString("beforebegin");
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kInsertAdjacentNode,
+  GetExecutingContext()->uiCommandBuffer()->addCommand(next_child.eventTargetId(), UICommand::kInsertAdjacentNode,
                                                        std::move(args_01), std::move(args_02), nullptr);
 }
 
