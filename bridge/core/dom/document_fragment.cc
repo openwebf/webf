@@ -16,7 +16,9 @@ DocumentFragment* DocumentFragment::Create(ExecutingContext* context, ExceptionS
   return MakeGarbageCollected<DocumentFragment>(context->document(), ConstructionType::kCreateDocumentFragment);
 }
 
-DocumentFragment::DocumentFragment(Document* document, ConstructionType type) : ContainerNode(document, type) {}
+DocumentFragment::DocumentFragment(Document* document, ConstructionType type) : ContainerNode(document, type) {
+  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateDocumentFragment, (void*)bindingObject());
+}
 
 std::string DocumentFragment::nodeName() const {
   return "#document-fragment";

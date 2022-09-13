@@ -19,6 +19,7 @@
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
 #include "qjs_element.h"
+#include "qjs_document_fragment.h"
 #include "qjs_element_attributes.h"
 #include "qjs_error_event.h"
 #include "qjs_event.h"
@@ -90,6 +91,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSNode::Install(context);
   QJSNodeList::Install(context);
   QJSDocument::Install(context);
+  QJSDocumentFragment::Install(context);
   QJSCharacterData::Install(context);
   QJSText::Install(context);
   QJSComment::Install(context);

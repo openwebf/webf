@@ -4,7 +4,6 @@
  */
 #include "script_promise_resolver.h"
 #include "core/executing_context.h"
-#include "pending_promises.h"
 
 namespace webf {
 

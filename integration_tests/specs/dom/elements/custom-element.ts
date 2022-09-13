@@ -325,7 +325,7 @@ describe('custom html element', () => {
       let result = await p;
       throw new Error('should throw');
     } catch (e) {
-      expect(e.message).toBe('Assertion failed: "Asset error"');
+      expect(e.message.trim()).toBe('Assertion failed: "Asset error"');
     }
   });
 

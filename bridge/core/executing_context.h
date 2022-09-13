@@ -16,7 +16,6 @@
 #include <mutex>
 #include <unordered_map>
 #include "bindings/qjs/binding_initializer.h"
-#include "bindings/qjs/pending_promises.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
 #include "foundation/macros.h"
