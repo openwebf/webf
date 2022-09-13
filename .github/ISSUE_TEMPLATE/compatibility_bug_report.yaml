@@ -1,0 +1,83 @@
+name: 🕸 Compatibility Bug Report
+description: Create a compatibility bug report if webf is not works as same as browser.
+labels:
+  - compatibility
+  - bug
+
+body:
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: Affected version
+      description: Please specify which version of webf you are using.
+      placeholder: 0.12.0 or main
+  
+  - type: checkboxes
+    validations:
+      required: true
+    attributes:
+      label: No same issues found
+      description: Please search already existed issues before you create. Make sure there are no duplicate questions.
+      options:
+        - label: Yes, I search all issues but not found.
+          required: true
+
+  - type: dropdown
+    validations:
+      required: true
+    attributes:
+      label: Bug type
+      options:
+        - CSS/DOM Style
+        - JavaScript
+        - DOM/BOM
+        - Others
+
+  - type: input
+    attributes:
+      label: Which frontend framework you are using.
+      description: Please write down which framework you are using. You can write `Vanilla JS`/`Vanilla CSS` that you are not using any framework.
+      placeholder: |
+        Please fill framework name and versions, `Vue 3.x`/`Angular 10`/`Svelte 3.x`.
+        If you are using CSS framework, you can write `Bootstrap x.x`/`Tailwind x.x`.
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Steps to reproduce
+      description: Provide a detailed list of steps that reproduce the issue.
+      placeholder: |
+        1. Create a emtpy div
+        2. Append to body
+        3. ...
+  
+  - type: textarea
+    attributes:
+      label: Code example
+      description: |
+        Please provide a minimal code example that reproduces the problem.
+        You can use a repostory on Github or [Github Gist](https://gist.github.com) link.
+      placeholder: |
+        https://gist.github.com/xxx/xxx
+        or
+        ```
+        const div = document.createElement('div')
+        ```
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Expected results
+      description: Please fill in the correct result in the browser.
+      placeholder: Please paste a picture or describe what did the browser do?
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Actual results
+      description: Please fill in the wrong result in the webf.
+      placeholder: Please paste a picture or describe what did the webf do?

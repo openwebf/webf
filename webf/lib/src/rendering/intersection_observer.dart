@@ -84,7 +84,8 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     }
 
     if (_intersectionObserverLayer.layer == null) {
-      _intersectionObserverLayer.layer = IntersectionObserverLayer(elementSize: size, paintOffset: offset, onIntersectionChange: _onIntersectionChange!);
+      _intersectionObserverLayer.layer = IntersectionObserverLayer(
+          elementSize: size, paintOffset: offset, onIntersectionChange: _onIntersectionChange!);
     } else {
       _intersectionObserverLayer.layer!.elementSize = semanticBounds.size;
       _intersectionObserverLayer.layer!.paintOffset = offset;
@@ -95,7 +96,8 @@ mixin RenderIntersectionObserverMixin on RenderBox {
 }
 
 class IntersectionObserverLayer extends ContainerLayer {
-  IntersectionObserverLayer({required Size elementSize, required Offset paintOffset, required this.onIntersectionChange})
+  IntersectionObserverLayer(
+      {required Size elementSize, required Offset paintOffset, required this.onIntersectionChange})
       : // TODO: This is zero for box element. For sliver element, this offset points to the start of the element which may be outside the viewport.
         _elementOffset = Offset.zero,
         _elementSize = elementSize,
@@ -337,9 +339,15 @@ class IntersectionObserverEntry {
     required Rect rootBounds,
   }) {
     // Compute the intersection in the element's local coordinates.
-    final intersectionRect = boundingClientRect.overlaps(rootBounds) ? boundingClientRect.intersect(rootBounds).shift(-boundingClientRect.topLeft) : Rect.zero;
+    final intersectionRect = boundingClientRect.overlaps(rootBounds)
+        ? boundingClientRect.intersect(rootBounds).shift(-boundingClientRect.topLeft)
+        : Rect.zero;
 
-    return IntersectionObserverEntry(boundingClientRect: boundingClientRect, intersectionRect: intersectionRect, rootBounds: rootBounds, size: boundingClientRect.size);
+    return IntersectionObserverEntry(
+        boundingClientRect: boundingClientRect,
+        intersectionRect: intersectionRect,
+        rootBounds: rootBounds,
+        size: boundingClientRect.size);
   }
 
   // A Boolean value which is true if the target element intersects with the intersection observer's root.
