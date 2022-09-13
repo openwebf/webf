@@ -131,7 +131,7 @@ class EventTarget : public ScriptWrappable, public BindingObject {
   virtual bool IsWindowOrWorkerGlobalScope() const { return false; }
   bool IsEventTarget() const override;
 
-  void Trace(GCVisitor *visitor) const override;
+  void Trace(GCVisitor* visitor) const override;
 
  protected:
   virtual bool AddEventListenerInternal(const AtomicString& event_type,

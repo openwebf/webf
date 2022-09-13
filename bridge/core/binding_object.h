@@ -74,7 +74,10 @@ class BindingObject {
                                                     uint32_t argc,
                                                     const ScriptValue* argv,
                                                     void* private_data);
-  static void HandleAnonymousAsyncCalledFromDart(void* ptr, NativeValue* native_value, int32_t contextId, const char* errmsg);
+  static void HandleAnonymousAsyncCalledFromDart(void* ptr,
+                                                 NativeValue* native_value,
+                                                 int32_t contextId,
+                                                 const char* errmsg);
 
   using ImplType = BindingObject*;
   BindingObject() = delete;

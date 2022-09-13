@@ -6,8 +6,8 @@
 #include "binding_object.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
-#include "core/dom/events/event_target.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "core/dom/events/event_target.h"
 #include "core/executing_context.h"
 #include "foundation/native_value_converter.h"
 
@@ -120,7 +120,10 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
   return ScriptValue(ctx, result);
 }
 
-void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr, NativeValue* native_value, int32_t contextId, const char* errmsg) {
+void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr,
+                                                       NativeValue* native_value,
+                                                       int32_t contextId,
+                                                       const char* errmsg) {
   auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
   if (!promise_context->context->IsValid())
     return;
@@ -155,7 +158,8 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
 
   auto promise_resolver = ScriptPromiseResolver::Create(event_target->GetExecutingContext());
 
-  auto* promise_context = new BindingObjectPromiseContext{event_target->GetExecutingContext(), event_target, promise_resolver};
+  auto* promise_context =
+      new BindingObjectPromiseContext{event_target->GetExecutingContext(), event_target, promise_resolver};
   event_target->TrackPendingPromiseBindingContext(promise_context);
 
   std::vector<NativeValue> arguments;
@@ -174,8 +178,8 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   }
 
   ExceptionState exception_state;
-  event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4,
-                                                         arguments.data(), exception_state);
+  event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(),
+                                    exception_state);
   return promise_resolver->Promise().ToValue();
 }
 
@@ -185,7 +189,7 @@ NativeValue BindingObject::GetAllBindingPropertyNames(ExceptionState& exception_
 }
 
 void BindingObject::Trace(GCVisitor* visitor) const {
-  for(auto&& promise_context : pending_promise_contexts_) {
+  for (auto&& promise_context : pending_promise_contexts_) {
     promise_context->promise_resolver->Trace(visitor);
   }
 }

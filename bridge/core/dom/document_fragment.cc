@@ -17,7 +17,8 @@ DocumentFragment* DocumentFragment::Create(ExecutingContext* context, ExceptionS
 }
 
 DocumentFragment::DocumentFragment(Document* document, ConstructionType type) : ContainerNode(document, type) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateDocumentFragment, (void*)bindingObject());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateDocumentFragment,
+                                                       (void*)bindingObject());
 }
 
 std::string DocumentFragment::nodeName() const {
