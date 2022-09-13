@@ -28,6 +28,7 @@ std::unique_ptr<WebFPage> TEST_init();
 std::unique_ptr<WebFPage> TEST_allocateNewPage(OnJSError onJsError);
 void TEST_runLoop(ExecutingContext* context);
 void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError);
+void TEST_mockTestEnvDartMethods(int32_t contextId);
 
 }  // namespace webf
 // void TEST_dispatchEvent(int32_t contextId, EventTarget* eventTarget, const std::string type);

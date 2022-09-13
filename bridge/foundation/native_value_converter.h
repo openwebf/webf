@@ -90,6 +90,7 @@ struct NativeValueConverter<NativeTypeFunction> : public NativeValueConverterBas
   static NativeValue ToNativeValue(ImplType value) {
     // Not supported.
     assert(false);
+    return Native_NewNull();
   }
 
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
@@ -102,6 +103,7 @@ struct NativeValueConverter<NativeTypeAsyncFunction> : public NativeValueConvert
   static NativeValue ToNativeValue(ImplType value) {
     // Not supported.
     assert(false);
+    return Native_NewNull();
   }
 
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
