@@ -1,6 +1,6 @@
 import {Element} from "../dom/element";
 
-interface HTMLCollection {
+interface HTMLAllCollection {
     readonly length: double;
     item(index: double): Element | null;
     readonly [key: number]: Element | null;

@@ -19,7 +19,6 @@ export function analyzer(blob: IDLBlob) {
   blob.objects = sourceFile.statements.map(statement => walkProgram(statement)).filter(o => {
     return o instanceof ClassObject || o instanceof FunctionObject;
   }) as (FunctionObject | ClassObject)[];
-  return generatorSource(blob);
 }
 
 function getInterfaceName(statement: ts.Statement) {

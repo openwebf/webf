@@ -9,6 +9,7 @@ const { IDLBlob } = require('../dist/idl/IDLBlob');
 const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
 const { analyzer } = require('../dist/idl/analyzer');
+const { generatorSource } = require('../dist/idl/generator')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
 
@@ -41,9 +42,15 @@ function genCodeFromTypeDefine() {
     return new IDLBlob(path.join(source, file), dist, filename, implement);
   });
 
+  // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
-    let result = analyzer(b);
+    analyzer(b);
+  }
+
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    let result = generatorSource(b);
 
     if (!fs.existsSync(b.dist)) {
       fs.mkdirSync(b.dist, {recursive: true});

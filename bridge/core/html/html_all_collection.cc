@@ -5,4 +5,8 @@
 
 #include "html_all_collection.h"
 
-namespace webf {}
+namespace webf {
+
+HTMLAllCollection::HTMLAllCollection(ContainerNode* base, CollectionType type): HTMLCollection(base, type) {}
+
+}

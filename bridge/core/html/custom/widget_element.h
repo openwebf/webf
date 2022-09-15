@@ -5,6 +5,7 @@
 #ifndef WEBF_CORE_DOM_WIDGET_ELEMENT_H_
 #define WEBF_CORE_DOM_WIDGET_ELEMENT_H_
 
+#include <unordered_map>
 #include "core/html/html_element.h"
 
 namespace webf {
@@ -29,6 +30,7 @@ class WidgetElement : public HTMLElement {
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
 
  private:
+  std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;
 };
 
 }  // namespace webf

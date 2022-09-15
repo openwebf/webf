@@ -42,11 +42,16 @@ abstract class BindingObject {
 
   // Get a property, eg:
   //   console.log(el.foo);
-  dynamic getBindingProperty(String key) {}
+  dynamic getBindingProperty(String key) {
+    return unimplemented_properties_[key];
+  }
 
+  Map<String, dynamic> unimplemented_properties_ = {};
   // Set a property, eg:
   //   el.foo = 'bar';
-  void setBindingProperty(String key, value) {}
+  void setBindingProperty(String key, value) {
+    unimplemented_properties_[key] = value;
+  }
 
   // Return a list contains all supported properties.
   void getAllBindingPropertyNames(List<String> properties) {

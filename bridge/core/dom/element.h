@@ -12,6 +12,7 @@
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "qjs_scroll_to_options.h"
+#include "parent_node.h"
 
 namespace webf {
 

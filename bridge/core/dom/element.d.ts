@@ -3,8 +3,9 @@ import {Document} from "./document";
 import {ScrollToOptions} from "./scroll_to_options";
 import { ElementAttributes } from './legacy/element_attributes';
 import {CSSStyleDeclaration} from "../css/legacy/css_style_declaration";
+import {ParentNode} from "./parent_node";
 
-interface Element extends Node {
+interface Element extends Node, ParentNode {
   readonly attributes: ElementAttributes;
   readonly style: CSSStyleDeclaration;
 

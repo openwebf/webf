@@ -13,7 +13,7 @@
 
 namespace webf {
 
-class HTMLCollection;
+class HTMLAllCollection;
 
 // This constant controls how much buffer is initially allocated
 // for a Node Vector that is used to store child Nodes of a given Node.
@@ -31,7 +31,7 @@ class ContainerNode : public Node {
   bool HasOneTextChild() const { return HasOneChild() && first_child_->IsTextNode(); }
   bool HasChildCount(unsigned) const;
 
-  HTMLCollection* Children();
+  std::vector<Element*> Children();
 
   unsigned CountChildren() const;
 

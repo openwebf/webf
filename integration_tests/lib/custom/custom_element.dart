@@ -94,6 +94,8 @@ class SampleElement extends dom.Element implements BindingObject {
         return asyncFnFailed;
       case 'asyncFnNotComplete':
         return asyncFnNotComplete;
+      default:
+        return super.getBindingProperty(key);
     }
   }
 
