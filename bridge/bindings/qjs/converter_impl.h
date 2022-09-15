@@ -110,7 +110,6 @@ struct Converter<IDLOptional<T>, std::enable_if_t<std::is_arithmetic<typename Co
 template <>
 struct Converter<IDLAny> : public ConverterBase<IDLAny> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
-    assert(!JS_IsException(value));
     return ScriptValue(ctx, value);
   }
 

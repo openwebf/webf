@@ -5,10 +5,10 @@ interface HTMLImageElement extends HTMLElement {
     src: DartImpl<string>;
     srcset: DartImpl<string>;
     sizes: DartImpl<string>;
-    width: DartImpl<double>;
-    height: DartImpl<double>;
-    readonly naturalWidth: DartImpl<double>;
-    readonly naturalHeight: DartImpl<double>;
+    width: DartImpl<int64>;
+    height: DartImpl<int64>;
+    readonly naturalWidth: DartImpl<int64>;
+    readonly naturalHeight: DartImpl<int64>;
     readonly complete: DartImpl<boolean>;
     readonly currentSrc: DartImpl<boolean>;
     decoding: DartImpl<string>;

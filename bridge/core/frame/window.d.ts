@@ -6,6 +6,8 @@ import {WindowEventHandlers} from "./window_event_handlers";
 
 interface Window extends EventTarget, WindowEventHandlers {
   open(url?: string): Window | null;
+  scroll(x: number, y: number): void;
+  scroll(options?: ScrollToOptions): void;
   scrollTo(options?: ScrollToOptions): void;
   scrollTo(x: number, y: number): void;
   scrollBy(options?: ScrollToOptions): void;
