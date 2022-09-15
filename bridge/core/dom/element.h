@@ -55,7 +55,7 @@ class Element : public ContainerNode {
 
   bool HasTagName(const AtomicString&) const;
   std::string nodeValue() const override;
-  AtomicString tagName() const { return tag_name_; }
+  AtomicString tagName() const { return tag_name_.ToUpperSlow(); }
   std::string nodeName() const override;
 
   CSSStyleDeclaration* style();
