@@ -6,10 +6,10 @@
 #include "container_node.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "core/html/html_all_collection.h"
 #include "document.h"
 #include "document_fragment.h"
 #include "node_traversal.h"
-#include "core/html/html_all_collection.h"
 
 namespace webf {
 
@@ -17,7 +17,7 @@ namespace webf {
 std::vector<Element*> ContainerNode::Children() {
   std::vector<Element*> elements;
   uint32_t length = childNodes()->length();
-  for(int i = 0; i < length; i ++) {
+  for (int i = 0; i < length; i++) {
     auto* element = DynamicTo<Element>(childNodes()->item(i, ASSERT_NO_EXCEPTION()));
     if (element) {
       elements.emplace_back(element);

@@ -279,7 +279,7 @@ struct Converter<IDLSequence<T>> : public ConverterBase<IDLSequence<T>> {
   static JSValue ToValue(JSContext* ctx, ImplType value) {
     JSValue array = JS_NewArray(ctx);
     JS_SetPropertyStr(ctx, array, "length", Converter<IDLInt64>::ToValue(ctx, value.size()));
-    for(int i = 0; i < value.size(); i ++) {
+    for (int i = 0; i < value.size(); i++) {
       JS_SetPropertyUint32(ctx, array, i, Converter<T>::ToValue(ctx, value[i]));
     }
     return array;

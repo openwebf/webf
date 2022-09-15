@@ -14,9 +14,11 @@ class ContainerNode;
 
 class HTMLAllCollection : public HTMLCollection {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = HTMLAllCollection*;
   HTMLAllCollection(ContainerNode* base, CollectionType);
+
  private:
 };
 

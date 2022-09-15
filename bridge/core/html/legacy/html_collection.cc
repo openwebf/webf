@@ -16,7 +16,7 @@ unsigned int HTMLCollection::length() const {
   NodeList* node_list = base_->childNodes();
   int32_t length = 0;
 
-  for(int i = 0; i < node_list->length(); i ++) {
+  for (int i = 0; i < node_list->length(); i++) {
     if (DynamicTo<Element>(node_list->item(i, ASSERT_NO_EXCEPTION()))) {
       length++;
     }
@@ -30,8 +30,7 @@ Element* HTMLCollection::item(unsigned int offset, ExceptionState& exception_sta
   NodeList* node_list = base_->childNodes();
   int32_t length = 0;
 
-
-  for(int i = 0; i < node_list->length(); i ++) {
+  for (int i = 0; i < node_list->length(); i++) {
     auto* element = DynamicTo<Element>(node_list->item(i, ASSERT_NO_EXCEPTION()));
     if (element) {
       elements.emplace_back(element);

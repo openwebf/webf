@@ -15,7 +15,6 @@
 #include "qjs_close_event.h"
 #include "qjs_comment.h"
 #include "qjs_console.h"
-#include "qjs_html_all_collection.h"
 #include "qjs_css_style_declaration.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"

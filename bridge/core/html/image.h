@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_HTML_IMAGE_H_
 #define WEBF_CORE_HTML_IMAGE_H_
@@ -20,6 +20,6 @@ class Image : public HTMLImageElement {
  private:
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_HTML_IMAGE_H_
