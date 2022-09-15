@@ -267,6 +267,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_image_element.cc
     core/html/html_script_element.cc
     core/html/html_unknown_element.cc
+    core/html/image.cc
     core/html/canvas/html_canvas_element.cc
     core/html/canvas/canvas_rendering_context.cc
     core/html/canvas/canvas_rendering_context_2d.cc
@@ -355,6 +356,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
     out/qjs_html_canvas_element.cc
+    out/qjs_image.cc
     out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc
     out/qjs_canvas_rendering_context.cc
