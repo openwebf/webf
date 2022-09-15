@@ -83,6 +83,7 @@ class UICommandBuffer {
 
   ExecutingContext* context_{nullptr};
   UICommandItem buffer_[MAXIMUM_UI_COMMAND_SIZE];
+  bool update_batched_{false};
   size_t size_{0};
 };
 

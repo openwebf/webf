@@ -40,6 +40,14 @@ void UICommandBuffer::addCommand(const UICommandItem& item) {
     context_->FlushUICommand();
     assert(size_ == 0);
   }
+
+  if (!update_batched_ && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
+#if FLUTTER_BACKEND
+    context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
+#endif
+    update_batched_ = true;
+  }
+
   buffer_[size_] = item;
   size_++;
 }
@@ -62,6 +70,7 @@ void UICommandBuffer::clear() {
     delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_02);
   }
   size_ = 0;
+  update_batched_ = false;
 }
 
 }  // namespace webf
