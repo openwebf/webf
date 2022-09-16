@@ -2,15 +2,14 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "popstate_event.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "event_type_names.h"
-#include "popstate_event.h"
 #include "qjs_popstate_event.h"
 
 namespace webf {
 
-PopstateEvent* PopstateEvent::Create(ExecutingContext* context,
-                                     ExceptionState& exception_state) {
+PopstateEvent* PopstateEvent::Create(ExecutingContext* context, ExceptionState& exception_state) {
   return MakeGarbageCollected<PopstateEvent>(context, event_type_names::kpopstate, exception_state);
 }
 
@@ -34,7 +33,7 @@ PopstateEvent::PopstateEvent(ExecutingContext* context, const AtomicString& type
     : Event(context, type, &native_ui_event->native_event),
       state_(ScriptValue::CreateJsonObject(context->ctx(),
                                            static_cast<const char*>(native_ui_event->state),
-                                           strlen(static_cast<const char*>(native_ui_event->state)))){}
+                                           strlen(static_cast<const char*>(native_ui_event->state)))) {}
 
 ScriptValue PopstateEvent::state() const {
   return state_;
