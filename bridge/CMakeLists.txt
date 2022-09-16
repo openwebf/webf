@@ -249,6 +249,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/input_event.cc
     core/events/touch_event.cc
     core/events/mouse_event.cc
+          core/events/popstate_event.cc
     core/events/pointer_event.cc
     core/events/transition_event.cc
     core/events/intersection_change_event.cc
@@ -303,6 +304,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_focus_event_init.cc
     out/qjs_input_event.cc
     out/qjs_input_event_init.cc
+    out/qjs_popstate_event.cc
+    out/qjs_popstate_event_init.cc
     out/qjs_ui_event.cc
     out/qjs_ui_event_init.cc
     out/qjs_gesture_event.cc

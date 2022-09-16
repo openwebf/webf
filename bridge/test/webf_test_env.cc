@@ -202,7 +202,7 @@ std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   TEST_mockDartMethods(contextId, onJsError);
 
   initTestFramework(contextId);
-  TEST_mockTestEnvDartMethods(contextId);
+  TEST_mockTestEnvDartMethods(contextId, onJsError);
   auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   auto* context = page->GetExecutingContext();
   JSThreadState* th = new JSThreadState();
@@ -279,8 +279,6 @@ void TEST_runLoop(webf::ExecutingContext* context) {
   }
 }
 
-void TEST_onJSError(int32_t contextId, const char*) {}
-
 void TEST_onJSLog(int32_t contextId, int32_t level, const char*) {}
 void TEST_onMatchImageSnapshot(void* callbackContext,
                                int32_t contextId,
@@ -324,10 +322,12 @@ void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError) {
   registerDartMethods(contextId, mockMethods.data(), mockMethods.size());
 }
 
-void TEST_mockTestEnvDartMethods(int32_t contextId) {
+void TEST_mockTestEnvDartMethods(int32_t contextId, OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{
-      reinterpret_cast<uint64_t>(TEST_onJSError),         reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshot),
-      reinterpret_cast<uint64_t>(TEST_environment),       reinterpret_cast<uint64_t>(TEST_simulatePointer),
+      reinterpret_cast<uint64_t>(onJSError),
+      reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshot),
+      reinterpret_cast<uint64_t>(TEST_environment),
+      reinterpret_cast<uint64_t>(TEST_simulatePointer),
       reinterpret_cast<uint64_t>(TEST_simulateInputText),
   };
 

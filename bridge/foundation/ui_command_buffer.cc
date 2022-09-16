@@ -41,12 +41,12 @@ void UICommandBuffer::addCommand(const UICommandItem& item) {
     assert(size_ == 0);
   }
 
-  if (!update_batched_ && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
 #if FLUTTER_BACKEND
+  if (!update_batched_ && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
     context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
-#endif
     update_batched_ = true;
   }
+#endif
 
   buffer_[size_] = item;
   size_++;

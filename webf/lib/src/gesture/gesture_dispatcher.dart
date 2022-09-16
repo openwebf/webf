@@ -98,12 +98,14 @@ class GestureDispatcher {
   final Map<String, GestureRecognizer> _gestureRecognizers = <String, GestureRecognizer>{};
 
   List<EventTarget> _eventPath = const [];
+
   // Collect the events in the event path list.
   final Map<String, bool> _eventsInPath = {};
 
   final Throttling _throttler = Throttling(duration: Duration(milliseconds: _MAX_STEP_MS));
 
   final Map<int, EventTarget> _pointTargets = {};
+
   void _bindEventTargetWithTouchPoint(TouchPoint touchPoint, EventTarget eventTarget) {
     _pointTargets[touchPoint.id] = eventTarget;
   }
@@ -129,6 +131,7 @@ class GestureDispatcher {
   }
 
   final Map<int, TouchPoint> _touchPoints = {};
+
   void _addPoint(TouchPoint touchPoint) {
     _touchPoints[touchPoint.id] = touchPoint;
   }
@@ -336,13 +339,13 @@ class GestureDispatcher {
     Event event = MouseEvent(
         type,
         MouseEventInit(
-          bubbles: bubbles,
-          cancelable: cancelable,
           clientX: clientX,
           clientY: clientY,
           offsetX: localPosition.dx,
           offsetY: localPosition.dy,
-          view: (_target as Node).ownerDocument.defaultView
+          eventInit: UIEventInit(
+              view: (_target as Node).ownerDocument.defaultView,
+              eventInit: EventInit(bubbles: bubbles, cancelable: cancelable)),
         ));
     _target?.dispatchEvent(event);
   }

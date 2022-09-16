@@ -24,6 +24,7 @@
     "close",
 //    "error",
 //    "focus",
+    "popstate",
     {
       "class": "GestureEvent",
       "types": [
