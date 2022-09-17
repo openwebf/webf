@@ -7,23 +7,6 @@ import 'package:webf/dom.dart';
 
 // CSS Animation: https://drafts.csswg.org/css-animations/
 
-const String EVENT_ANIMATION_CANCEL = 'animationcancel';
-const String EVENT_ANIMATION_START = 'animationstart';
-const String EVENT_ANIMATION_END = 'animationend';
-const String EVENT_ANIMATION_ITERATION = 'animationiteration';
-
-class AnimationEvent extends Event {
-  AnimationEvent(String type, {String? animationName, double? elapsedTime, String? pseudoElement})
-      : animationName = animationName ?? '',
-        elapsedTime = elapsedTime ?? 0.0,
-        pseudoElement = pseudoElement ?? '',
-        super(type) {}
-
-  String animationName;
-  double elapsedTime;
-  String pseudoElement;
-}
-
 const String _0s = '0s';
 
 mixin CSSAnimationMixin on RenderStyle {
@@ -185,22 +168,6 @@ mixin CSSAnimationMixin on RenderStyle {
           }
           target.setInlineStyle(property, value);
         });
-
-        // for (var i = 0; i < keyframes.length; i++) {
-        //   Keyframe keyframe = keyframes[i];
-        //   String property = keyframe.property;
-        //   String? originStyle = target.inlineStyle[property];
-        //   if (originStyle == keyframe.value) {
-        //     continue;
-        //   }
-        //   if (originStyle != null) {
-        //     _cacheOriginProperties.putIfAbsent(property, () => originStyle);
-        //   }
-        //   if (keyframe.offset == 0) {
-        //     target.setInlineStyle(property, keyframe.value);
-        //     target.style.flushPendingProperties();
-        //   }
-        // }
       }
     }
     target.style.flushPendingProperties();

@@ -58,7 +58,10 @@ const String EVENT_LONG_PRESS = 'longpress';
 const String EVENT_DOUBLE_CLICK = 'dblclick';
 const String EVENT_DRAG = 'drag';
 const String EVENT_RESIZE = 'resize';
-
+const String EVENT_ANIMATION_CANCEL = 'animationcancel';
+const String EVENT_ANIMATION_START = 'animationstart';
+const String EVENT_ANIMATION_END = 'animationend';
+const String EVENT_ANIMATION_ITERATION = 'animationiteration';
 const String EVENT_STATE_START = 'start';
 const String EVENT_STATE_UPDATE = 'update';
 const String EVENT_STATE_END = 'end';
@@ -644,5 +647,32 @@ class TouchList {
     }
 
     return touchList;
+  }
+}
+
+class AnimationEvent extends Event {
+  AnimationEvent(String type, {String? animationName, double? elapsedTime, String? pseudoElement})
+      : animationName = animationName ?? '',
+        elapsedTime = elapsedTime ?? 0.0,
+        pseudoElement = pseudoElement ?? '',
+        super(type) {}
+
+  String animationName;
+  double elapsedTime;
+  String pseudoElement;
+
+  @override
+  Pointer<RawNativeEvent> toRaw([int methodLength = 0]) {
+    List<int> methods = [
+      stringToNativeString(animationName).address,
+      doubleToUint64(elapsedTime),
+      stringToNativeString(pseudoElement).address
+    ];
+
+    Pointer<RawNativeEvent> rawEvent = super.toRaw(methods.length).cast<RawNativeEvent>();
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList((rawEvent.ref.length + methods.length));
+    bytes.setAll(rawEvent.ref.length, methods);
+
+    return rawEvent;
   }
 }
