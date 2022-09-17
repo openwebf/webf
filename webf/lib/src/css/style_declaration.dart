@@ -99,10 +99,6 @@ class CSSStyleDeclaration with IterableMixin {
       if (css.isNotEmpty) css += ' ';
       css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
-    _sheetStyle.forEach((property, value) {
-      if (css.isNotEmpty) css += ' ';
-      css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
-    });
     return css;
   }
 

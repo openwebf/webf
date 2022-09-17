@@ -47,7 +47,7 @@ const loader = function(source) {
     }
   })
 
-  const htmlString = root.toString().replace(/['\n]/g,function(c){
+  const htmlString = root.toString().replace(/['\n]/g, function(c){
     return {'\n': '','\'': '\\'}[c];
   });
   
@@ -56,7 +56,7 @@ const loader = function(source) {
       // Use html_parse to parser html in html file.
       const html_parse = () => __webf_parse_html__('${htmlString}');
       var index = 0;
-      const snapshotAction = async () => { index++; await snapshot(null, '${snapshotFilepath}', index); };
+      const snapshotAction = async () => { await snapshot(null, '${snapshotFilepath}', index++); };
       ${isFit ? 'fit' : 'it'}("should work", async (done) => {\
         html_parse();\
         requestAnimationFrame(async () => {

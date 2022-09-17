@@ -171,9 +171,9 @@ class Document extends Node {
   Node removeChild(Node child) {
     if (documentElement == child) {
       documentElement = null;
+      ruleSet.reset();
+      styleSheets.clear();
     }
-    ruleSet.reset();
-    styleSheets.clear();
     return super.removeChild(child);
   }
 
