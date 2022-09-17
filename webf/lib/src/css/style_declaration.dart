@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:collection';
+
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -64,7 +66,7 @@ final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = 
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration {
+class CSSStyleDeclaration with IterableMixin {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -88,7 +90,6 @@ class CSSStyleDeclaration {
   Map<String, String> _pendingProperties = {};
   final Map<String, bool> _importants = {};
   final Map<String, dynamic> _sheetStyle = {};
-  Map<String, dynamic> get sheetStyle => _sheetStyle;
 
   /// Textual representation of the declaration block.
   /// Setting this attribute changes the style.
@@ -108,6 +109,7 @@ class CSSStyleDeclaration {
   // @TODO: Impl the cssText setter.
 
   /// The number of properties.
+  @override
   int get length => _properties.length;
 
   /// Returns a property name.
@@ -530,8 +532,12 @@ class CSSStyleDeclaration {
   }
 
   /// Check a css property is valid.
-  bool contains(String property) {
-    return getPropertyValue(property).isNotEmpty;
+  @override
+  bool contains(Object? property) {
+    if (property != null && property is String) {
+      return getPropertyValue(property).isNotEmpty;
+    }
+    return super.contains(property);
   }
 
   void addStyleChangeListener(StyleChangeListener listener) {
@@ -581,6 +587,11 @@ class CSSStyleDeclaration {
   @override
   bool operator ==(Object other) {
     return hashCode == other.hashCode;
+  }
+
+  @override
+  Iterator<MapEntry<String, String>> get iterator {
+    return _properties.entries.followedBy(_pendingProperties.entries).iterator;
   }
 }
 

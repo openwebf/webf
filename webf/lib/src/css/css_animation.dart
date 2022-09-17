@@ -128,10 +128,10 @@ mixin CSSAnimationMixin on RenderStyle {
         } else {
           offset = CSSPercentage.parsePercentage(keyText);
         }
-        rule.declarations.sheetStyle.forEach((key, value) {
-          final property = camelize(key);
-          keyframes.add(Keyframe(property, value, offset ?? 0, LINEAR));
-        });
+        for (MapEntry<String, String> entry in rule.declarations) {
+          final property = camelize(entry.key);
+          keyframes.add(Keyframe(property, entry.value, offset ?? 0, LINEAR));
+        }
         return;
       });
       return keyframes;
