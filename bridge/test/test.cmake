@@ -31,6 +31,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/frame/window_test.cc
   ./core/css/legacy/css_style_declaration_test.cc
   ./core/html/html_element_test.cc
+  ./core/timing/performance_test.cc
 )
 
 ### webf_unit_test executable

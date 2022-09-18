@@ -60,13 +60,13 @@ class ScriptValue final {
   AtomicString ToString() const;
   NativeValue ToNative() const;
 
-  bool IsException();
-  bool IsEmpty();
-  bool IsObject();
-  bool IsString();
-  bool IsNull();
-  bool IsUndefined();
-  bool IsBool();
+  bool IsException() const;
+  bool IsEmpty() const;
+  bool IsObject() const;
+  bool IsString() const;
+  bool IsNull() const;
+  bool IsUndefined() const;
+  bool IsBool() const;
 
   void Trace(GCVisitor* visitor) const;
 

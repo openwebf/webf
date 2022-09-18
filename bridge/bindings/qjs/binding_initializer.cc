@@ -26,6 +26,10 @@
 #include "qjs_event_target.h"
 #include "qjs_focus_event.h"
 #include "qjs_gesture_event.h"
+#include "qjs_performance.h"
+#include "qjs_performance_entry.h"
+#include "qjs_performance_mark.h"
+#include "qjs_performance_measure.h"
 #include "qjs_html_all_collection.h"
 #include "qjs_html_anchor_element.h"
 #include "qjs_html_body_element.h"
@@ -127,6 +131,10 @@ void InstallBindings(ExecutingContext* context) {
   QJSBlob::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);
+  QJSPerformance::Install(context);
+  QJSPerformanceEntry::Install(context);
+  QJSPerformanceMark::Install(context);
+  QJSPerformanceMeasure::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

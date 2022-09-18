@@ -213,6 +213,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/frame/screen.cc
     core/frame/legacy/location.cc
     core/timing/performance.cc
+    core/timing/performance_mark.cc
+    core/timing/performance_entry.cc
+    core/timing/performance_measure.cc
     core/css/legacy/css_style_declaration.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
@@ -249,7 +252,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/input_event.cc
     core/events/touch_event.cc
     core/events/mouse_event.cc
-          core/events/popstate_event.cc
+    core/events/popstate_event.cc
     core/events/pointer_event.cc
     core/events/transition_event.cc
     core/events/intersection_change_event.cc
@@ -372,6 +375,14 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_promise_rejection_event_init.cc
     out/qjs_html_template_element.cc
     out/qjs_html_unknown_element.cc
+    out/qjs_performance.cc
+    out/qjs_performance_entry.cc
+    out/qjs_performance_mark.cc
+    out/qjs_performance_measure.cc
+    out/performance_entry_names.cc
+    out/qjs_performance_measure_options.cc
+    out/qjs_performance_mark_options.cc
+    out/performance_mark_constants.cc
     out/html_element_factory.cc
     out/html_names.cc
     out/script_type_names.cc

@@ -185,31 +185,31 @@ NativeValue ScriptValue::ToNative() const {
   return Native_NewNull();
 }
 
-bool ScriptValue::IsException() {
+bool ScriptValue::IsException() const {
   return JS_IsException(value_);
 }
 
-bool ScriptValue::IsEmpty() {
+bool ScriptValue::IsEmpty() const {
   return JS_IsNull(value_) || JS_IsUndefined(value_);
 }
 
-bool ScriptValue::IsObject() {
+bool ScriptValue::IsObject() const {
   return JS_IsObject(value_);
 }
 
-bool ScriptValue::IsString() {
+bool ScriptValue::IsString() const {
   return JS_IsString(value_);
 }
 
-bool ScriptValue::IsNull() {
+bool ScriptValue::IsNull() const {
   return JS_IsNull(value_);
 }
 
-bool ScriptValue::IsUndefined() {
+bool ScriptValue::IsUndefined() const {
   return JS_IsUndefined(value_);
 }
 
-bool ScriptValue::IsBool() {
+bool ScriptValue::IsBool() const {
   return JS_IsBool(value_);
 }
 
