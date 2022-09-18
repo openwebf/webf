@@ -871,31 +871,23 @@ class CSSStyleProperty {
       String? name;
 
       for (String part in parts) {
-        if (parts.length <= 4 &&
-            name == null &&
-            CSSAnimationMixin.isValidAnimationNameValue(part)) {
+        if (parts.length <= 4 && name == null && CSSAnimationMixin.isValidAnimationNameValue(part)) {
           name = part;
         } else if (duration == null && CSSTime.isTime(part)) {
           duration = part;
-        } else if (timingFunction == null &&
-            CSSAnimationMixin.isValidTransitionTimingFunctionValue(part)) {
+        } else if (timingFunction == null && CSSAnimationMixin.isValidTransitionTimingFunctionValue(part)) {
           timingFunction = part;
         } else if (delay == null && CSSTime.isTime(part)) {
           delay = part;
         } else if (iterationCount == null && (CSSNumber.isNumber(part) || part == 'infinite')) {
           iterationCount = part;
-        } else if (direction == null &&
-            CSSAnimationMixin.isValidAnimationDirectionValue(part)) {
+        } else if (direction == null && CSSAnimationMixin.isValidAnimationDirectionValue(part)) {
           direction = part;
-        } else if (fillMode == null &&
-            CSSAnimationMixin.isValidAnimationFillModeValue(part)) {
+        } else if (fillMode == null && CSSAnimationMixin.isValidAnimationFillModeValue(part)) {
           fillMode = part;
-        } else if (playState == null &&
-            CSSAnimationMixin.isValidAnimationPlayStateValue(part)) {
+        } else if (playState == null && CSSAnimationMixin.isValidAnimationPlayStateValue(part)) {
           playState = part;
-        } else if (parts.length > 4 &&
-            name == null &&
-            CSSAnimationMixin.isValidAnimationNameValue(part)) {
+        } else if (parts.length > 4 && name == null && CSSAnimationMixin.isValidAnimationNameValue(part)) {
           name = part;
         } else {
           continue;
@@ -912,30 +904,14 @@ class CSSStyleProperty {
       playState = playState ?? RUNNING;
       name = name ?? NONE;
 
-      values[0] == null
-          ? values[0] = duration
-          : values[0] = values[0]! + (_comma + duration);
-      values[1] == null
-          ? values[1] = timingFunction
-          : values[1] = values[1]! + (_comma + timingFunction);
-      values[2] == null
-          ? values[2] = delay
-          : values[2] = values[2]! + (_comma + delay);
-      values[3] == null
-          ? values[3] = iterationCount
-          : values[3] = values[3]! + (_comma + iterationCount);
-      values[4] == null
-          ? values[4] = direction
-          : values[4] = values[4]! + (_comma + direction);
-      values[5] == null
-          ? values[5] = fillMode
-          : values[5] = values[5]! + (_comma + fillMode);
-      values[6] == null
-          ? values[6] = playState
-          : values[6] = values[6]! + (_comma + playState);
-      values[7] == null
-          ? values[7] = name
-          : values[7] = values[7]! + (_comma + name);
+      values[0] == null ? values[0] = duration : values[0] = values[0]! + (_comma + duration);
+      values[1] == null ? values[1] = timingFunction : values[1] = values[1]! + (_comma + timingFunction);
+      values[2] == null ? values[2] = delay : values[2] = values[2]! + (_comma + delay);
+      values[3] == null ? values[3] = iterationCount : values[3] = values[3]! + (_comma + iterationCount);
+      values[4] == null ? values[4] = direction : values[4] = values[4]! + (_comma + direction);
+      values[5] == null ? values[5] = fillMode : values[5] = values[5]! + (_comma + fillMode);
+      values[6] == null ? values[6] = playState : values[6] = values[6]! + (_comma + playState);
+      values[7] == null ? values[7] = name : values[7] = values[7]! + (_comma + name);
     }
 
     return values;
@@ -945,13 +921,13 @@ class CSSStyleProperty {
     List<String?>? values = _getAnimationValues(shorthandValue);
     if (values == null) return;
 
-    properties[ANIMATION_DURATION] = values[0];
-    properties[ANIMATION_TIMING_FUNCTION] = values[1];
-    properties[ANIMATION_DELAY] = values[2];
-    properties[ANIMATION_ITERATION_COUNT] = values[3];
-    properties[ANIMATION_DIRECTION] = values[4];
-    properties[ANIMATION_FILL_MODE] = values[5];
-    properties[ANIMATION_PLAY_STATE] = values[6];
+    properties[ANIMATION_DURATION] = values[0]?.toLowerCase();
+    properties[ANIMATION_TIMING_FUNCTION] = values[1]?.toLowerCase();
+    properties[ANIMATION_DELAY] = values[2]?.toLowerCase();
+    properties[ANIMATION_ITERATION_COUNT] = values[3]?.toLowerCase();
+    properties[ANIMATION_DIRECTION] = values[4]?.toLowerCase();
+    properties[ANIMATION_FILL_MODE] = values[5]?.toLowerCase();
+    properties[ANIMATION_PLAY_STATE] = values[6]?.toLowerCase();
     properties[ANIMATION_NAME] = values[7];
   }
 }

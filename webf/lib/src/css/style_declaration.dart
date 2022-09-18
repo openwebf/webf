@@ -264,7 +264,11 @@ class CSSStyleDeclaration with IterableMixin {
     return lowerCase;
   }
 
-  String _toLowerCase(String string) {
+  String _toLowerCase(String propertyName, String string) {
+    // ignore animation case sensitive
+    if (propertyName.startsWith(ANIMATION)) {
+      return string;
+    }
     // Like url("http://path") declared with quotation marks and
     // custom property names are case sensitive.
     String lowerCase = string.toLowerCase();
@@ -366,7 +370,7 @@ class CSSStyleDeclaration with IterableMixin {
       return;
     }
 
-    String normalizedValue = _toLowerCase(value.toString().trim());
+    String normalizedValue = _toLowerCase(propertyName, value.toString().trim());
 
     if (!_isValidValue(propertyName, normalizedValue)) return;
 
