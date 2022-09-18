@@ -3,9 +3,9 @@
  */
 
 #include "performance_mark.h"
-#include "performance.h"
-#include "bindings/qjs/script_value.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "bindings/qjs/script_value.h"
+#include "performance.h"
 
 namespace webf {
 

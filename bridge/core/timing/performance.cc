@@ -209,8 +209,8 @@ void Performance::measure(const AtomicString& measure_name,
   if (end_mark.IsEmpty()) {
     auto start_entry = std::find_if(start_it, entries_.end(),
                                     [&start_mark](auto&& entry) -> bool { return entry->name() == start_mark; });
-    auto* measure = PerformanceMeasure::Create(GetExecutingContext(), measure_name, (*start_entry)->startTime(), now(exception_state),
-                                               ScriptValue::Empty(ctx()), exception_state);
+    auto* measure = PerformanceMeasure::Create(GetExecutingContext(), measure_name, (*start_entry)->startTime(),
+                                               now(exception_state), ScriptValue::Empty(ctx()), exception_state);
     entries_.emplace_back(measure);
     return;
   }

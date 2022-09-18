@@ -31,7 +31,8 @@ bool RegisteredEventListener::Matches(const std::shared_ptr<EventListener>& list
   // Equality is soley based on the listener and useCapture flags.
   assert(callback_);
   assert(listener);
-  return callback_->Matches(*listener) && static_cast<bool>(use_capture_) == (options->hasCapture() && options->capture());
+  return callback_->Matches(*listener) &&
+         static_cast<bool>(use_capture_) == (options->hasCapture() && options->capture());
 }
 
 bool RegisteredEventListener::ShouldFire(const Event& event) const {

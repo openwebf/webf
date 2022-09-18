@@ -14,7 +14,10 @@ PerformanceEntry::PerformanceEntry(ExecutingContext* context,
                                    int64_t end_time)
     : ScriptWrappable(context->ctx()), name_(name), start_time_(start_time), duration_(end_time - start_time) {}
 
-PerformanceEntry::PerformanceEntry(int64_t duration, ExecutingContext* context, const AtomicString& name, int64_t start_time)
+PerformanceEntry::PerformanceEntry(int64_t duration,
+                                   ExecutingContext* context,
+                                   const AtomicString& name,
+                                   int64_t start_time)
     : ScriptWrappable(context->ctx()), name_(name), start_time_(start_time), duration_(duration) {}
 
 const AtomicString PerformanceEntry::name() const {

@@ -13,8 +13,7 @@ Text* Text::Create(Document& document, const AtomicString& value) {
 }
 
 Text* Text::Create(ExecutingContext* context, ExceptionState& exception_state) {
-  return MakeGarbageCollected<Text>(*context->document(), AtomicString::Empty(),
-                                    ConstructionType::kCreateText);
+  return MakeGarbageCollected<Text>(*context->document(), AtomicString::Empty(), ConstructionType::kCreateText);
 }
 
 Text* Text::Create(ExecutingContext* context, const AtomicString& value, ExceptionState& executing_context) {

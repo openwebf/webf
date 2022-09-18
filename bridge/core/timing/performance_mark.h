@@ -17,8 +17,9 @@ class PerformanceMark : public PerformanceEntry {
 
  public:
   static PerformanceMark* Create(ExecutingContext* context,
-                          const AtomicString& name,
-                          const std::shared_ptr<PerformanceMarkOptions>& mark_options, ExceptionState& exception_state);
+                                 const AtomicString& name,
+                                 const std::shared_ptr<PerformanceMarkOptions>& mark_options,
+                                 ExceptionState& exception_state);
 
   explicit PerformanceMark(ExecutingContext* context,
                            const AtomicString& name,

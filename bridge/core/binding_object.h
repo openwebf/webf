@@ -100,7 +100,8 @@ class BindingObject {
   void Trace(GCVisitor* visitor) const;
 
   inline static BindingObject* From(NativeBindingObject* native_binding_object) {
-    if (native_binding_object == nullptr) return nullptr;
+    if (native_binding_object == nullptr)
+      return nullptr;
 
     return native_binding_object->binding_target_;
   };

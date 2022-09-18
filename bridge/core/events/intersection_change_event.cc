@@ -31,7 +31,8 @@ IntersectionChangeEvent::IntersectionChangeEvent(ExecutingContext* context,
                                                  const AtomicString& type,
                                                  const std::shared_ptr<IntersectionChangeEventInit>& initializer,
                                                  ExceptionState& exception_state)
-    : Event(context, type), intersection_ratio_(initializer->hasIntersectionRatio() ? initializer->intersectionRatio() : 0.0) {}
+    : Event(context, type),
+      intersection_ratio_(initializer->hasIntersectionRatio() ? initializer->intersectionRatio() : 0.0) {}
 
 IntersectionChangeEvent::IntersectionChangeEvent(ExecutingContext* context,
                                                  const AtomicString& type,

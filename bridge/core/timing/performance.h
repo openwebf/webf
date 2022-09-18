@@ -7,11 +7,11 @@
 #define BRIDGE_PERFORMANCE_H
 
 #include <vector>
+#include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "bindings/qjs/cppgc/member.h"
-#include "qjs_performance_mark_options.h"
 #include "performance_entry.h"
+#include "qjs_performance_mark_options.h"
 
 namespace webf {
 
@@ -35,12 +35,17 @@ class Performance : public ScriptWrappable {
   ScriptValue toJSON(ExceptionState& exception_state) const;
   AtomicString ___webf_navigation_summary__(ExceptionState& exception_state) const;
   std::vector<Member<PerformanceEntry>> getEntries(ExceptionState& exception_state);
-  std::vector<Member<PerformanceEntry>> getEntriesByType(const AtomicString& entry_type, ExceptionState& exception_state);
+  std::vector<Member<PerformanceEntry>> getEntriesByType(const AtomicString& entry_type,
+                                                         ExceptionState& exception_state);
   std::vector<Member<PerformanceEntry>> getEntriesByName(const AtomicString& name, ExceptionState& exception_state);
-  std::vector<Member<PerformanceEntry>> getEntriesByName(const AtomicString& name, const AtomicString& entry_type, ExceptionState& exception_state);
+  std::vector<Member<PerformanceEntry>> getEntriesByName(const AtomicString& name,
+                                                         const AtomicString& entry_type,
+                                                         ExceptionState& exception_state);
 
   void mark(const AtomicString& name, ExceptionState& exception_state);
-  void mark(const AtomicString& name, const std::shared_ptr<PerformanceMarkOptions>& options, ExceptionState& exception_state);
+  void mark(const AtomicString& name,
+            const std::shared_ptr<PerformanceMarkOptions>& options,
+            ExceptionState& exception_state);
   void clearMarks(ExceptionState& exception_state);
   void clearMarks(const AtomicString& name, ExceptionState& exception_state);
   void clearMeasures(ExceptionState& exception_state);
@@ -48,17 +53,21 @@ class Performance : public ScriptWrappable {
 
   void measure(const AtomicString& measure_name, ExceptionState& exception_state);
   void measure(const AtomicString& measure_name, const AtomicString& start_mark, ExceptionState& exception_state);
-  void measure(const AtomicString& measure_name, const ScriptValue& start_mark_or_options, ExceptionState& exception_state);
-  void measure(const AtomicString& measure_name, const ScriptValue& start_mark_or_options, const AtomicString& end_mark, ExceptionState& exception_state);
+  void measure(const AtomicString& measure_name,
+               const ScriptValue& start_mark_or_options,
+               ExceptionState& exception_state);
+  void measure(const AtomicString& measure_name,
+               const ScriptValue& start_mark_or_options,
+               const AtomicString& end_mark,
+               ExceptionState& exception_state);
 
-  void Trace(GCVisitor *visitor) const override;
+  void Trace(GCVisitor* visitor) const override;
 
  private:
-
   void measure(const AtomicString& measure_name,
-                            const AtomicString& start_mark,
-                            const AtomicString& end_mark,
-                            ExceptionState& exception_state);
+               const AtomicString& start_mark,
+               const AtomicString& end_mark,
+               ExceptionState& exception_state);
 
   std::vector<Member<PerformanceEntry>> entries_;
 };

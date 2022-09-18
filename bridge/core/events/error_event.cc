@@ -40,9 +40,10 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
     : Event(context, event_type_names::kerror),
       message_(initializer->hasMessage() ? type.ToStdString() : ""),
       error_(initializer->hasError() ? initializer->error() : ScriptValue::Empty(ctx())),
-      source_location_(std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString() : "",
-                                                        initializer->lineno(),
-                                                        initializer->colno())) {}
+      source_location_(
+          std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString() : "",
+                                           initializer->lineno(),
+                                           initializer->colno())) {}
 
 bool ErrorEvent::IsErrorEvent() const {
   return true;

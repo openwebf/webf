@@ -5,8 +5,8 @@
 #ifndef WEBF_CORE_TIMING_PERFORMANCE_MEASURE_H_
 #define WEBF_CORE_TIMING_PERFORMANCE_MEASURE_H_
 
-#include "core/executing_context.h"
 #include "bindings/qjs/script_value.h"
+#include "core/executing_context.h"
 #include "performance_entry.h"
 
 namespace webf {

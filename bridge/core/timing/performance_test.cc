@@ -1,7 +1,7 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
@@ -20,8 +20,7 @@ TEST(Performance, now) {
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
-  const char* code =
-      "console.log(performance.now() < 20);";
+  const char* code = "console.log(performance.now() < 20);";
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
