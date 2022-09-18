@@ -871,9 +871,7 @@ class CSSStyleProperty {
       String? name;
 
       for (String part in parts) {
-        if (parts.length <= 4 && name == null && CSSAnimationMixin.isValidAnimationNameValue(part)) {
-          name = part;
-        } else if (duration == null && CSSTime.isTime(part)) {
+        if (duration == null && CSSTime.isTime(part)) {
           duration = part;
         } else if (timingFunction == null && CSSAnimationMixin.isValidTransitionTimingFunctionValue(part)) {
           timingFunction = part;
@@ -887,7 +885,7 @@ class CSSStyleProperty {
           fillMode = part;
         } else if (playState == null && CSSAnimationMixin.isValidAnimationPlayStateValue(part)) {
           playState = part;
-        } else if (parts.length > 4 && name == null && CSSAnimationMixin.isValidAnimationNameValue(part)) {
+        } else if (name == null && CSSAnimationMixin.isValidAnimationNameValue(part)) {
           name = part;
         } else {
           continue;
