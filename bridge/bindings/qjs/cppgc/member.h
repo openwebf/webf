@@ -27,6 +27,10 @@ class Member {
  public:
   Member() = default;
   Member(T* ptr) { SetRaw(ptr); }
+  Member(const Member<T>& other) {
+    raw_ = other.raw_;
+    runtime_ = other.runtime_;
+  }
   ~Member() {
     if (raw_ != nullptr) {
       assert(runtime_ != nullptr);
@@ -42,7 +46,7 @@ class Member {
   };
 
   T* Get() const { return raw_; }
-  void Clear() {
+  void Clear() const {
     if (raw_ == nullptr)
       return;
     auto* wrappable = To<ScriptWrappable>(raw_);
@@ -53,8 +57,8 @@ class Member {
 
   // Copy assignment.
   Member& operator=(const Member& other) {
-    operator=(other.Get());
-    other.Clear();
+    raw_ = other.raw_;
+    runtime_ = other.runtime_;
     return *this;
   }
   // Move assignment.
@@ -91,7 +95,7 @@ class Member {
     raw_ = p;
   }
 
-  T* raw_{nullptr};
+  mutable T* raw_{nullptr};
   JSRuntime* runtime_{nullptr};
 };
 
