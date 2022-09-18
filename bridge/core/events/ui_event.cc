@@ -45,7 +45,10 @@ UIEvent::UIEvent(ExecutingContext* context,
                  const AtomicString& type,
                  const std::shared_ptr<UIEventInit>& initializer,
                  ExceptionState& exception_state)
-    : Event(context, type), detail_(initializer->detail()), view_(initializer->view()), which_(initializer->which()) {}
+    : Event(context, type),
+      detail_(initializer->hasDetail() ? initializer->detail() : 0.0),
+      view_(initializer->hasView() ? initializer->view() : nullptr),
+      which_(initializer->hasWhich() ? initializer->which() : 0.0) {}
 
 UIEvent::UIEvent(ExecutingContext* context, const AtomicString& type, NativeUIEvent* native_ui_event)
     : Event(context, type, &native_ui_event->native_event),

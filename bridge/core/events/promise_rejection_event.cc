@@ -30,7 +30,9 @@ PromiseRejectionEvent::PromiseRejectionEvent(ExecutingContext* context,
                                              const AtomicString& type,
                                              const std::shared_ptr<PromiseRejectionEventInit>& initializer,
                                              ExceptionState& exception_state)
-    : Event(context, type), reason_(initializer->reason()), promise_(initializer->promise()) {}
+    : Event(context, type),
+      reason_(initializer->hasReason() ? initializer->reason() : ScriptValue::Empty(ctx())),
+      promise_(initializer->hasPromise() ? initializer->promise() : ScriptValue::Empty(ctx())) {}
 
 bool PromiseRejectionEvent::IsPromiseRejectionEvent() const {
   return true;

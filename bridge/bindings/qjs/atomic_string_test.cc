@@ -32,7 +32,7 @@ void TestAtomicString(TestCallback callback) {
 
 TEST(AtomicString, Empty) {
   TestAtomicString([](JSContext* ctx) {
-    AtomicString atomic_string = AtomicString::Empty(ctx);
+    AtomicString atomic_string = AtomicString::Empty();
     EXPECT_STREQ(atomic_string.ToStdString().c_str(), "");
   });
 }
@@ -93,7 +93,7 @@ TEST(AtomicString, CopyAssignment) {
     struct P {
       AtomicString str;
     };
-    P p{AtomicString::Empty(ctx)};
+    P p{AtomicString::Empty()};
     p.str = str;
     EXPECT_EQ(p.str == str, true);
   });
@@ -109,7 +109,7 @@ TEST(AtomicString, MoveAssignment) {
 
 TEST(AtomicString, CopyToRightReference) {
   TestAtomicString([](JSContext* ctx) {
-    AtomicString str = AtomicString::Empty(ctx);
+    AtomicString str = AtomicString::Empty();
     if (1 + 1 == 2) {
       str = AtomicString(ctx, "helloworld");
     }

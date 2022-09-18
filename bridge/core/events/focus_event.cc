@@ -46,7 +46,8 @@ FocusEvent::FocusEvent(ExecutingContext* context,
                        const AtomicString& type,
                        const std::shared_ptr<FocusEventInit>& initializer,
                        ExceptionState& exception_state)
-    : UIEvent(context, type, initializer, exception_state), related_target_(initializer->relatedTarget()) {}
+    : UIEvent(context, type, initializer, exception_state),
+      related_target_(initializer->hasRelatedTarget() ? initializer->relatedTarget() : nullptr) {}
 
 FocusEvent::FocusEvent(ExecutingContext* context, const AtomicString& type, NativeFocusEvent* native_focus_event)
     : UIEvent(context, type, &native_focus_event->native_event),

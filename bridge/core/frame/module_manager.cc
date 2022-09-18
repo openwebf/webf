@@ -86,7 +86,7 @@ AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   if (!paramsValue.IsEmpty()) {
     params = paramsValue.ToJSONStringify(&exception).ToString().ToNativeString();
     if (exception.HasException()) {
-      return AtomicString::Empty(context->ctx());
+      return AtomicString::Empty();
     }
   }
 
@@ -94,7 +94,7 @@ AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     exception.ThrowException(
         context->ctx(), ErrorType::InternalError,
         "Failed to execute '__webf_invoke_module__': dart method (invokeModule) is not registered.");
-    return AtomicString::Empty(context->ctx());
+    return AtomicString::Empty();
   }
 
   auto moduleCallback = ModuleCallback::Create(callback);
@@ -113,7 +113,7 @@ AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   }
 
   if (result == nullptr) {
-    return AtomicString::Empty(context->ctx());
+    return AtomicString::Empty();
   }
 
   return AtomicString::From(context->ctx(), result);

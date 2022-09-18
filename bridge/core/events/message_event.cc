@@ -35,10 +35,10 @@ MessageEvent::MessageEvent(ExecutingContext* context,
                            const AtomicString& type,
                            const std::shared_ptr<MessageEventInit>& init)
     : Event(context, type),
-      data_(init->data()),
-      origin_(init->origin()),
-      lastEventId_(init->lastEventId()),
-      source_(init->source()) {}
+      data_(init->hasData() ? init->data() : ScriptValue::Empty(ctx())),
+      origin_(init->hasOrigin() ? init->origin() : AtomicString::Empty()),
+      lastEventId_(init->hasLastEventId() ? init->lastEventId() : AtomicString::Empty()),
+      source_(init->hasSource() ? init->source() : AtomicString::Empty()) {}
 
 MessageEvent::MessageEvent(ExecutingContext* context,
                            const AtomicString& type,

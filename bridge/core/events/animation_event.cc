@@ -48,9 +48,9 @@ AnimationEvent::AnimationEvent(ExecutingContext* context,
                                const std::shared_ptr<AnimationEventInit>& initializer,
                                ExceptionState& exception_state)
     : Event(context, type),
-      animation_name_(initializer->animationName()),
-      pseudo_element_(initializer->pseudoElement()),
-      elapsed_time_(initializer->elapsedTime()) {}
+      animation_name_(initializer->hasAnimationName() ? initializer->animationName() : AtomicString::Empty()),
+      pseudo_element_(initializer->hasPseudoElement() ? initializer->pseudoElement() : AtomicString::Empty()),
+      elapsed_time_(initializer->hasElapsedTime() ? initializer->elapsedTime() : 0) {}
 
 const AtomicString& AnimationEvent::animationName() const {
   return animation_name_;

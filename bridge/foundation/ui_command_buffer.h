@@ -31,6 +31,7 @@ enum class UICommand {
   kCloneNode,
   kRemoveEvent,
   kCreateDocumentFragment,
+  kCreatePerformance,
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2056

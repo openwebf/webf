@@ -31,7 +31,7 @@ class AtomicString {
     std::size_t operator()(const AtomicString& k) const { return k.atom_; }
   };
 
-  static AtomicString Empty(JSContext* ctx);
+  static AtomicString Empty();
   static AtomicString From(JSContext* ctx, NativeString* native_string);
 
   AtomicString() = default;

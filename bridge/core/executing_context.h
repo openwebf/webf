@@ -38,6 +38,7 @@ struct NativeByteCode {
 class ExecutingContext;
 class Document;
 class Window;
+class Performance;
 class MemberMutationScope;
 class ErrorEvent;
 
@@ -99,10 +100,12 @@ class ExecutingContext {
   MemberMutationScope* mutationScope() const { return active_mutation_scope; }
   void ClearMutationScope();
 
-  FORCE_INLINE Document* document() { return document_; };
-  FORCE_INLINE Window* window() { return window_; }
+  FORCE_INLINE Document* document() const { return document_; };
+  FORCE_INLINE Window* window() const { return window_; }
+  FORCE_INLINE Performance* performance() const { return performance_; }
   FORCE_INLINE UICommandBuffer* uiCommandBuffer() { return &ui_command_buffer_; };
   FORCE_INLINE std::unique_ptr<DartMethodPointer>& dartMethodPtr() { return dart_method_ptr_; }
+  FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.
   void FlushUICommand();
@@ -125,6 +128,7 @@ class ExecutingContext {
   int32_t unique_id_;
 
   void InstallDocument();
+  void InstallPerformance();
 
   static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
@@ -143,6 +147,7 @@ class ExecutingContext {
   JSValue global_object_{JS_NULL};
   Document* document_{nullptr};
   Window* window_{nullptr};
+  Performance* performance_{nullptr};
   DOMTimerCoordinator timers_;
   ModuleListenerContainer module_listener_container_;
   ModuleCallbackCoordinator module_callbacks_;

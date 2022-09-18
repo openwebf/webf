@@ -24,7 +24,7 @@ AtomicString ElementAttributes::GetAttribute(const AtomicString& name) {
   bool numberIndex = IsNumberIndex(name.ToStringView());
 
   if (numberIndex) {
-    return AtomicString::Empty(ctx());
+    return AtomicString::Empty();
   }
 
   return attributes_[name];

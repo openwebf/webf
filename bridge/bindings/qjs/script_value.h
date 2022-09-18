@@ -68,7 +68,7 @@ class ScriptValue final {
   bool IsUndefined();
   bool IsBool();
 
-  void Trace(GCVisitor* visitor);
+  void Trace(GCVisitor* visitor) const;
 
  private:
   JSContext* ctx_{nullptr};

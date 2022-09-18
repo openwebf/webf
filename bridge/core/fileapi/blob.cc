@@ -90,7 +90,7 @@ Blob* Blob::slice(int64_t start, ExceptionState& exception_state) {
   return slice(start, _data.size(), exception_state);
 }
 Blob* Blob::slice(int64_t start, int64_t end, ExceptionState& exception_state) {
-  return slice(start, end, AtomicString::Empty(ctx()), exception_state);
+  return slice(start, end, AtomicString::Empty(), exception_state);
 }
 Blob* Blob::slice(int64_t start, int64_t end, const AtomicString& content_type, ExceptionState& exception_state) {
   auto* newBlob = MakeGarbageCollected<Blob>(ctx());

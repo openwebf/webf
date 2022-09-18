@@ -17,7 +17,7 @@ std::string CharacterData::nodeValue() const {
 }
 CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, Node::ConstructionType type)
     : Node(tree_scope.GetDocument().GetExecutingContext(), &tree_scope, type),
-      data_(!text.IsNull() ? text : AtomicString::Empty(ctx())) {
+      data_(!text.IsNull() ? text : AtomicString::Empty()) {
   assert(type == kCreateOther || type == kCreateText);
 }
 

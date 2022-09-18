@@ -8,6 +8,7 @@
 #include "core/dom/document.h"
 #include "core/events/error_event.h"
 #include "core/events/promise_rejection_event.h"
+#include "timing/performance.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
@@ -27,15 +28,15 @@ std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExc
 
 ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& handler, void* owner)
     : context_id_(contextId), handler_(handler), owner_(owner), unique_id_(context_unique_id++) {
-  //#if ENABLE_PROFILE
-  //  auto jsContextStartTime =
-  //      std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
-  //          .count();
-  //  auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
-  //  nativePerformance.mark(PERF_JS_CONTEXT_INIT_START, jsContextStartTime);
-  //  nativePerformance.mark(PERF_JS_CONTEXT_INIT_END);
-  //  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
-  //#endif
+//  #if ENABLE_PROFILE
+//    auto jsContextStartTime =
+//        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
+//            .count();
+//    auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
+//    nativePerformance.mark(PERF_JS_CONTEXT_INIT_START, jsContextStartTime);
+//    nativePerformance.mark(PERF_JS_CONTEXT_INIT_END);
+//    nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
+//  #endif
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
   valid_contexts[contextId] = true;
@@ -58,6 +59,9 @@ ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& 
 
   // Binding global object and window.
   InstallGlobal();
+
+  // Install performance
+  InstallPerformance();
 
   //#if ENABLE_PROFILE
   //  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_END);
@@ -368,6 +372,12 @@ void ExecutingContext::InstallDocument() {
   document_ = MakeGarbageCollected<Document>(this);
   document_->InitDocumentElement();
   DefineGlobalProperty("document", document_->ToQuickJS());
+}
+
+void ExecutingContext::InstallPerformance() {
+  MemberMutationScope scope{this};
+  performance_ = MakeGarbageCollected<Performance>(this);
+  DefineGlobalProperty("performance", performance_->ToQuickJS());
 }
 
 void ExecutingContext::InstallGlobal() {

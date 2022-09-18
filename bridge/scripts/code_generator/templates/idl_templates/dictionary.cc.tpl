@@ -44,12 +44,14 @@ bool <%= className %>::FillMembersWithQJSObject(JSContext* ctx, JSValue value, E
       JSValue v = JS_GetProperty(ctx, value, key);
       <%= prop.name %>_ = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, v, exception_state);
       JS_FreeValue(ctx, v);
-    };
+      has_<%= prop.name %>_ = true;
+    }
     JS_FreeAtom(ctx, key);
   }
   <% } else { %>
   {
     JSValue v = JS_GetPropertyStr(ctx, value, "<%= prop.name %>");
+    has_<%= prop.name %>_ = true;
     <%= prop.name %>_ = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, v, exception_state);
     JS_FreeValue(ctx, v);
   }

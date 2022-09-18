@@ -52,8 +52,8 @@ void Window::scroll(double x, double y, ExceptionState& exception_state) {
 
 void Window::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
   const NativeValue args[] = {
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->left()),
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->top()),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
   InvokeBindingMethod(binding_call_methods::kscroll, 2, args, exception_state);
 }
@@ -72,8 +72,8 @@ void Window::scrollBy(double x, double y, ExceptionState& exception_state) {
 
 void Window::scrollBy(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
   const NativeValue args[] = {
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->left()),
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->top()),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
   InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, exception_state);
 }

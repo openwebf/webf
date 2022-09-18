@@ -27,7 +27,7 @@ PopstateEvent::PopstateEvent(ExecutingContext* context,
                              const AtomicString& type,
                              const std::shared_ptr<PopstateEventInit>& initializer,
                              ExceptionState& exception_state)
-    : Event(context, type), state_(initializer->state()) {}
+    : Event(context, type), state_(initializer->hasState() ? initializer->state() : ScriptValue::Empty(ctx())) {}
 
 PopstateEvent::PopstateEvent(ExecutingContext* context, const AtomicString& type, NativePopstateEvent* native_ui_event)
     : Event(context, type, &native_ui_event->native_event),

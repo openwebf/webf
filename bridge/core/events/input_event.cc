@@ -27,8 +27,8 @@ InputEvent::InputEvent(ExecutingContext* context,
                        const std::shared_ptr<InputEventInit>& initializer,
                        ExceptionState& exception_state)
     : UIEvent(context, type, initializer, exception_state),
-      input_type_(initializer->inputType()),
-      data_(initializer->data()) {}
+      input_type_(initializer->hasInputType() ? initializer->inputType() : AtomicString::Empty()),
+      data_(initializer->hasData() ? initializer->data() : AtomicString::Empty()) {}
 
 InputEvent::InputEvent(ExecutingContext* context, const AtomicString& type, NativeInputEvent* native_input_event)
     : UIEvent(context, type, &native_input_event->native_event),

@@ -8,9 +8,8 @@
 
 namespace webf {
 
-AtomicString AtomicString::Empty(JSContext* ctx) {
-  AtomicString tmp = built_in_string::kempty_string;
-  return tmp;
+AtomicString AtomicString::Empty() {
+  return built_in_string::kempty_string;
 }
 
 AtomicString AtomicString::From(JSContext* ctx, NativeString* native_string) {

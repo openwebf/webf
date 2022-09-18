@@ -224,7 +224,7 @@ template <>
 struct Converter<IDLOptional<IDLDOMString>> : public ConverterBase<IDLDOMString> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
     if (JS_IsUndefined(value))
-      return AtomicString::Empty(ctx);
+      return AtomicString::Empty();
     return Converter<IDLDOMString>::FromValue(ctx, value, exception_state);
   }
 
@@ -241,7 +241,7 @@ template <>
 struct Converter<IDLNullable<IDLDOMString>> : public ConverterBase<IDLDOMString> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
     if (JS_IsNull(value))
-      return AtomicString::Empty(ctx);
+      return AtomicString::Empty();
     return Converter<IDLDOMString>::FromValue(ctx, value, exception_state);
   }
 

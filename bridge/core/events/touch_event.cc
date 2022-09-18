@@ -27,7 +27,14 @@ TouchEvent::TouchEvent(ExecutingContext* context,
                        const AtomicString& type,
                        const std::shared_ptr<TouchEventInit>& initializer,
                        ExceptionState& exception_state)
-    : UIEvent(context, type, initializer, exception_state) {}
+    : UIEvent(context, type, initializer, exception_state),
+      alt_key_(initializer->hasAltKey() && initializer->altKey()),
+      changed_touches_(initializer->hasChangedTouches() ? initializer->changedTouches() : nullptr),
+      ctrl_key_(initializer->hasCtrlKey() && initializer->ctrlKey()),
+      meta_key_(initializer->hasMetaKey() && initializer->metaKey()),
+      shift_key_(initializer->hasShiftKey() && initializer->shiftKey()),
+      target_touches_(initializer->hasTargetTouches() ? initializer->targetTouches() : nullptr),
+      touches_(initializer->hasTouches() ? initializer->touches() : nullptr) {}
 
 TouchEvent::TouchEvent(ExecutingContext* context, const AtomicString& type, NativeTouchEvent* native_touch_event)
     : UIEvent(context, type, &native_touch_event->native_event),

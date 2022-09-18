@@ -43,9 +43,9 @@ CloseEvent::CloseEvent(ExecutingContext* context,
                        const std::shared_ptr<CloseEventInit>& initializer,
                        ExceptionState& exception_state)
     : Event(context, type),
-      code_(initializer->code()),
-      reason_(initializer->reason()),
-      was_clean_(initializer->wasClean()) {}
+      code_(initializer->hasCode() ? initializer->code() : 0),
+      reason_(initializer->hasReason() ? initializer->reason() : AtomicString::Empty()),
+      was_clean_(initializer->hasWasClean() && initializer->wasClean()) {}
 
 CloseEvent::CloseEvent(ExecutingContext* context, const AtomicString& type, NativeCloseEvent* native_close_event)
     : Event(context, type, &native_close_event->native_event),

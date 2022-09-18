@@ -126,7 +126,7 @@ AtomicString CSSStyleDeclaration::InternalGetPropertyValue(std::string& name) {
     return properties_[name];
   }
 
-  return AtomicString::Empty(ctx());
+  return AtomicString::Empty();
 }
 
 bool CSSStyleDeclaration::InternalSetProperty(std::string& name, const AtomicString& value) {
@@ -150,7 +150,7 @@ AtomicString CSSStyleDeclaration::InternalRemoveProperty(std::string& name) {
   name = parseJavaScriptCSSPropertyName(name);
 
   if (UNLIKELY(properties_.count(name) == 0)) {
-    return AtomicString::Empty(ctx());
+    return AtomicString::Empty();
   }
 
   AtomicString return_value = properties_[name];

@@ -92,7 +92,7 @@ class Element : public ContainerNode {
 
   Member<ElementAttributes> attributes_;
   Member<CSSStyleDeclaration> cssom_wrapper_;
-  AtomicString tag_name_ = AtomicString::Empty(ctx());
+  AtomicString tag_name_ = AtomicString::Empty();
 };
 
 template <typename T>

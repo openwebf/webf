@@ -213,7 +213,7 @@ bool ScriptValue::IsBool() {
   return JS_IsBool(value_);
 }
 
-void ScriptValue::Trace(GCVisitor* visitor) {
+void ScriptValue::Trace(GCVisitor* visitor) const {
   visitor->Trace(value_);
 }
 

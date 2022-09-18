@@ -56,7 +56,7 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value, 
     if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
       return;
     };
-    _didModifyAttribute(name, AtomicString::Empty(ctx()), value);
+    _didModifyAttribute(name, AtomicString::Empty(), value);
   }
 
   std::unique_ptr<NativeString> args_01 = name.ToNativeString();
@@ -98,8 +98,8 @@ void Element::scroll(double x, double y, ExceptionState& exception_state) {
 void Element::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
   GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->left()),
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->top()),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
   InvokeBindingMethod(binding_call_methods::kscroll, 2, args, exception_state);
 }
@@ -120,8 +120,8 @@ void Element::scrollBy(double x, double y, ExceptionState& exception_state) {
 void Element::scrollBy(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
   GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->left()),
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->top()),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
   InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, exception_state);
 }

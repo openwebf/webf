@@ -27,9 +27,9 @@ TransitionEvent::TransitionEvent(ExecutingContext* context,
                                  const std::shared_ptr<TransitionEventInit>& initializer,
                                  ExceptionState& exception_state)
     : Event(context, type, initializer),
-      elapsed_time_(initializer->elapsedTime()),
-      property_name_(initializer->propertyName()),
-      pseudo_element_(initializer->pseudoElement()) {}
+      elapsed_time_(initializer->hasElapsedTime() ? initializer->elapsedTime() : 0.0),
+      property_name_(initializer->hasPropertyName() ? initializer->propertyName() : AtomicString::Empty()),
+      pseudo_element_(initializer->hasPseudoElement() ? initializer->pseudoElement() : AtomicString::Empty()) {}
 
 TransitionEvent::TransitionEvent(ExecutingContext* context,
                                  const AtomicString& type,

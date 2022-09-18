@@ -29,12 +29,12 @@ GestureEvent::GestureEvent(ExecutingContext* context,
                            const std::shared_ptr<GestureEventInit>& initializer,
                            ExceptionState& exception_state)
     : Event(context, type),
-      state_(initializer->state()),
-      direction_(initializer->direction()),
-      deltaX_(initializer->deltaX()),
-      deltaY_(initializer->deltaY()),
-      scale_(initializer->scale()),
-      rotation_(initializer->rotation()) {}
+      state_(initializer->hasState() ? initializer->state() : AtomicString::Empty()),
+      direction_(initializer->hasDirection() ? initializer->direction() : AtomicString::Empty()),
+      deltaX_(initializer->hasDeltaX() ? initializer->deltaX() : 0.0),
+      deltaY_(initializer->hasDeltaY() ? initializer->deltaY() : 0.0),
+      scale_(initializer->hasScale() ? initializer->scale() : 0.0),
+      rotation_(initializer->hasRotation() ? initializer->rotation() : 0.0) {}
 
 GestureEvent::GestureEvent(ExecutingContext* context,
                            const AtomicString& type,
