@@ -10,7 +10,12 @@ typedef CSSMap = HashMap<String, List<CSSRule>>;
 
 class RuleSet {
   bool get isEmpty =>
-      idRules.isEmpty && classRules.isEmpty && attributeRules.isEmpty && tagRules.isEmpty && universalRules.isEmpty;
+      idRules.isEmpty &&
+      classRules.isEmpty &&
+      attributeRules.isEmpty &&
+      tagRules.isEmpty &&
+      universalRules.isEmpty &&
+      keyframesRules.isEmpty;
 
   final CSSMap idRules = HashMap();
   final CSSMap classRules = HashMap();

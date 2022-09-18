@@ -38,11 +38,10 @@
   <script>
     var div = document.getElementsByTagName("div");
     div[0].style.animationDuration = "0s";
-    setTimeout(setAnimationDuration, 2000);
-
-    function setAnimationDuration() {
-      div[0].style.animationDuration = "2s";
-    }
+    await sleep(1);
+    div[0].style.animationDuration = "2s";
+    await sleep(1);
+    await snapshotAction();
   </script>
 </body>
 

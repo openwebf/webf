@@ -1,37 +1,39 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <style>
-      .container {
-        margin: 64px 0 32px;
-        text-align: center;
-      }
-      .logo {
-        width: 128px;
-      }
-      .p {
-        color: #ff6633;
-        line-height: 1.7em;
-      }
-      @keyframes example {
+<head>
+  <style>
+      @keyframes a {
         from {
-          background-color: red;
-          width: 100px;
+          color: red;
         }
         to {
-          background-color: yellow;
-          width: 200px;
+          color: blue;
+        }
+      }
+
+      @keyframes b {
+        from {
+          color: red;
+        }
+        to {
+          color: blue;
         }
       }
     </style>
-  </head>
-  <body>
-    <div class="container">
-      <img class="logo" src="./kraken.png" />
-    </div>
-    <script>
-      console.log("Welcome to Kraken!");
-    </script>
-    <script src="./bundle.js"></script>
-  </body>
+  <style>
+      @keyframes c {
+      from {
+          color: red;
+        }
+        to {
+          color: blue;
+        }
+    }
+  </style>
+</head>
+<body>
+<div style="animation: 1s ease infinite both a">A</div>
+<div style="animation: 1s ease infinite both b">B</div>
+<div style="animation: 1s ease infinite both c">C</div>
+</body>
 </html>
