@@ -6,6 +6,7 @@ import {HTMLHeadElement} from "../html/html_head_element";
 import {HTMLBodyElement} from "../html/html_body_element";
 import {HTMLHtmlElement} from "../html/html_html_element";
 import {Element} from "./element";
+import {Event} from "./events/event";
 
 interface Document extends Node {
   body: HTMLBodyElement | null;
@@ -18,6 +19,7 @@ interface Document extends Node {
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
   createComment(): Comment;
+  createEvent(event_type: string): Event;
 
   new(): Document;
 }

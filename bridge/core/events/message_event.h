@@ -25,7 +25,7 @@ class MessageEvent : public Event {
                               const std::shared_ptr<MessageEventInit>& init,
                               ExceptionState& exception_state);
 
-  explicit MessageEvent(ExecutingContext* context, const AtomicString& type);
+  explicit MessageEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
   explicit MessageEvent(ExecutingContext* context,
                         const AtomicString& type,
                         const std::shared_ptr<MessageEventInit>& init);

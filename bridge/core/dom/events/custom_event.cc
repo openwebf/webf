@@ -41,6 +41,29 @@ ScriptValue CustomEvent::detail() const {
   return detail_;
 }
 
+void CustomEvent::initCustomEvent(const AtomicString& type, ExceptionState& exception_state) {
+  initCustomEvent(type, false, false, ScriptValue::Empty(ctx()), exception_state);
+}
+void CustomEvent::initCustomEvent(const AtomicString& type, bool can_bubble, ExceptionState& exception_state) {
+  initCustomEvent(type, can_bubble, false, ScriptValue::Empty(ctx()), exception_state);
+}
+void CustomEvent::initCustomEvent(const AtomicString& type,
+                                  bool can_bubble,
+                                  bool cancelable,
+                                  ExceptionState& exception_state) {
+  initCustomEvent(type, can_bubble, cancelable, ScriptValue::Empty(ctx()), exception_state);
+}
+void CustomEvent::initCustomEvent(const AtomicString& type,
+                                  bool can_bubble,
+                                  bool cancelable,
+                                  const ScriptValue& detail,
+                                  ExceptionState& exception_state) {
+  initEvent(type, can_bubble, cancelable, exception_state);
+  if (!IsBeingDispatched() && !detail.IsEmpty()) {
+    detail_ = detail;
+  }
+}
+
 bool CustomEvent::IsCustomEvent() const {
   return true;
 }

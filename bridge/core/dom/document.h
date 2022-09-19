@@ -47,6 +47,7 @@ class Document : public ContainerNode, public TreeScope {
   Text* createTextNode(const AtomicString& value, ExceptionState& exception_state);
   DocumentFragment* createDocumentFragment(ExceptionState& exception_state);
   Comment* createComment(ExceptionState& exception_state);
+  Event* createEvent(const AtomicString& type, ExceptionState& exception_state);
 
   [[nodiscard]] std::string nodeName() const override;
   [[nodiscard]] std::string nodeValue() const override;

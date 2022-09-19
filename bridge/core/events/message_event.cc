@@ -19,7 +19,7 @@ struct NativeMessageEvent {
 MessageEvent* MessageEvent::Create(ExecutingContext* context,
                                    const AtomicString& type,
                                    ExceptionState& exception_state) {
-  return MakeGarbageCollected<MessageEvent>(context, type);
+  return MakeGarbageCollected<MessageEvent>(context, type, exception_state);
 }
 
 MessageEvent* MessageEvent::Create(ExecutingContext* context,
@@ -29,7 +29,7 @@ MessageEvent* MessageEvent::Create(ExecutingContext* context,
   return MakeGarbageCollected<MessageEvent>(context, type, init);
 }
 
-MessageEvent::MessageEvent(ExecutingContext* context, const AtomicString& type) : Event(context, type) {}
+MessageEvent::MessageEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state) : Event(context, type) {}
 
 MessageEvent::MessageEvent(ExecutingContext* context,
                            const AtomicString& type,

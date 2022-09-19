@@ -18,6 +18,7 @@
 #include "element_traversal.h"
 #include "foundation/ascii_types.h"
 #include "html_element_factory.h"
+#include "event_factory.h"
 
 namespace webf {
 
@@ -60,6 +61,10 @@ DocumentFragment* Document::createDocumentFragment(ExceptionState& exception_sta
 
 Comment* Document::createComment(ExceptionState& exception_state) {
   return Comment::Create(*this);
+}
+
+Event* Document::createEvent(const AtomicString& type, ExceptionState& exception_state) {
+  return EventFactory::Create(GetExecutingContext(), type, nullptr);
 }
 
 std::string Document::nodeName() const {
