@@ -9,10 +9,10 @@
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
 #include "core/css/legacy/css_style_declaration.h"
+#include "element_data.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
-#include "element_data.h"
 #include "qjs_scroll_to_options.h"
 
 namespace webf {
@@ -84,6 +84,7 @@ class Element : public ContainerNode {
  protected:
   const ElementData* GetElementData() const { return element_data_.get(); }
   ElementData& EnsureElementData() const;
+
  private:
   // Clone is private so that non-virtual CloneElementWithChildren and
   // CloneElementWithoutChildren are used inst
