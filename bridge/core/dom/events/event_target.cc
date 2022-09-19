@@ -287,7 +287,10 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   }
 
   ExceptionState exception_state;
-  bool result = dispatchEvent(event, exception_state);
+  event->SetTrusted(false);
+  event->SetEventPhase(Event::kAtTarget);
+  DispatchEventResult dispatch_result = FireEventListeners(*event, exception_state);
+  event->SetEventPhase(0);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx());
@@ -295,7 +298,7 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
     JS_FreeValue(ctx(), error);
   }
 
-  return NativeValueConverter<NativeTypeBool>::ToNativeValue(result);
+  return NativeValueConverter<NativeTypeBool>::ToNativeValue(dispatch_result != DispatchEventResult::kCanceledByEventHandler);
 }
 
 RegisteredEventListener* EventTarget::GetAttributeRegisteredEventListener(const AtomicString& event_type) {
