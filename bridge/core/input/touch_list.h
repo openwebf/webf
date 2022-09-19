@@ -20,6 +20,8 @@ class TouchList : public ScriptWrappable {
  public:
   using ImplType = TouchList*;
 
+  static void FromNativeTouchList(ExecutingContext* context, TouchList* touch_list, NativeTouchList* native_touch_list);
+
   TouchList() = delete;
   explicit TouchList(ExecutingContext* context, NativeTouchList* native_touch_list);
 
@@ -33,8 +35,7 @@ class TouchList : public ScriptWrappable {
   void Trace(GCVisitor* visitor) const override;
 
  private:
-  std::vector<Touch*> values_;
-  NativeTouchList* native_touch_list_;
+  std::vector<Member<Touch>> values_;
 };
 
 }  // namespace webf
