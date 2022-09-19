@@ -884,7 +884,7 @@ class RenderBoxModel extends RenderBox
             : 0,
         maxHeight: double.infinity,
       );
-      if(parent is RenderFlexLayout) {
+      if (parent is RenderFlexLayout) {
         constraints = BoxConstraints(
           minWidth: 0,
           maxWidth: double.infinity,
