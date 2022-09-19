@@ -18,7 +18,7 @@ class CharacterData : public Node {
  public:
   const AtomicString& data() const { return data_; }
   int64_t length() const { return data_.length(); };
-  void setData(const AtomicString& data);
+  void setData(const AtomicString& data, ExceptionState& exception_state);
 
   std::string nodeValue() const override;
 

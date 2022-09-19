@@ -8,8 +8,15 @@
 
 namespace webf {
 
-void CharacterData::setData(const AtomicString& data) {
+void CharacterData::setData(const AtomicString& data, ExceptionState& exception_state) {
   data_ = data;
+
+  std::unique_ptr<NativeString> args_01 = stringToNativeString("data");
+  std::unique_ptr<NativeString> args_02 = data.ToNativeString();
+
+  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kSetAttribute,
+                                                       std::move(args_01),
+                                                       std::move(args_02), (void*)bindingObject());
 }
 
 std::string CharacterData::nodeValue() const {
