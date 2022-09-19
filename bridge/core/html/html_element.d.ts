@@ -9,5 +9,7 @@ export interface HTMLElement extends Element, GlobalEventHandlers {
   readonly offsetWidth: DartImpl<double>;
   readonly offsetHeight: DartImpl<double>;
 
+  click(): DartImpl<void>;
+
   new(): void;
 }
