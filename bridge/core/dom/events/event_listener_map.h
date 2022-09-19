@@ -36,12 +36,14 @@ class EventListenerMap final {
   bool Add(const AtomicString& event_type,
            const std::shared_ptr<EventListener>& listener,
            const std::shared_ptr<AddEventListenerOptions>& options,
-           RegisteredEventListener* registered_event_listener);
+           RegisteredEventListener* registered_event_listener,
+           uint32_t* listener_count);
   bool Remove(const AtomicString& event_type,
               const std::shared_ptr<EventListener>& listener,
               const std::shared_ptr<EventListenerOptions>& options,
               size_t* index_of_removed_listener,
-              RegisteredEventListener* registered_event_listener);
+              RegisteredEventListener* registered_event_listener,
+              uint32_t* listener_count);
   EventListenerVector* Find(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const;

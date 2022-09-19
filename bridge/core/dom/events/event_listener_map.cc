@@ -11,7 +11,8 @@ EventListenerMap::EventListenerMap() {}
 static bool AddListenerToVector(EventListenerVector* vector,
                                 const std::shared_ptr<EventListener>& listener,
                                 const std::shared_ptr<AddEventListenerOptions>& options,
-                                RegisteredEventListener* registered_event_listener) {
+                                RegisteredEventListener* registered_event_listener,
+                                uint32_t* listener_count) {
   *registered_event_listener = RegisteredEventListener(listener, options);
 
   if (std::find(vector->begin(), vector->end(), *registered_event_listener) != vector->end()) {
@@ -19,6 +20,7 @@ static bool AddListenerToVector(EventListenerVector* vector,
   }
 
   vector->push_back(*registered_event_listener);
+  *listener_count = vector->size();
   return true;
 }
 
@@ -26,7 +28,8 @@ static bool RemoveListenerFromVector(EventListenerVector* listener_vector,
                                      const std::shared_ptr<EventListener>& listener,
                                      const std::shared_ptr<EventListenerOptions>& options,
                                      size_t* index_of_removed_listener,
-                                     RegisteredEventListener* registered_event_listener) {
+                                     RegisteredEventListener* registered_event_listener,
+                                     uint32_t* listener_count) {
   // Do a manual search for the matching listener. It is not
   // possible to create a listener on the stack because of the
   // const on |listener|.
@@ -43,6 +46,7 @@ static bool RemoveListenerFromVector(EventListenerVector* listener_vector,
   *registered_event_listener = *it;
   *index_of_removed_listener = it - listener_vector->begin();
   listener_vector->erase(it);
+  *listener_count = listener_vector->size();
 
   return true;
 }
@@ -75,25 +79,27 @@ void EventListenerMap::Clear() {
 bool EventListenerMap::Add(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& listener,
                            const std::shared_ptr<AddEventListenerOptions>& options,
-                           RegisteredEventListener* registered_event_listener) {
+                           RegisteredEventListener* registered_event_listener,
+                           uint32_t* listener_count) {
   for (const auto& entry : entries_) {
     if (entry.first == event_type)
-      return AddListenerToVector(entry.second.get(), listener, options, registered_event_listener);
+      return AddListenerToVector(entry.second.get(), listener, options, registered_event_listener, listener_count);
   }
 
   entries_.emplace_back(event_type, std::make_unique<EventListenerVector>());
-  return AddListenerToVector(entries_.back().second.get(), listener, options, registered_event_listener);
+  return AddListenerToVector(entries_.back().second.get(), listener, options, registered_event_listener, listener_count);
 }
 
 bool EventListenerMap::Remove(const AtomicString& event_type,
                               const std::shared_ptr<EventListener>& listener,
                               const std::shared_ptr<EventListenerOptions>& options,
                               size_t* index_of_removed_listener,
-                              RegisteredEventListener* registered_event_listener) {
+                              RegisteredEventListener* registered_event_listener,
+                              uint32_t* listener_count) {
   for (unsigned i = 0; i < entries_.size(); ++i) {
     if (entries_[i].first == event_type) {
       bool was_removed = RemoveListenerFromVector(entries_[i].second.get(), listener, options,
-                                                  index_of_removed_listener, registered_event_listener);
+                                                  index_of_removed_listener, registered_event_listener, listener_count);
       if (entries_[i].second->empty()) {
         entries_.erase(entries_.begin() + i);
       }

@@ -192,10 +192,13 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
     return false;
 
   RegisteredEventListener registered_listener;
-  bool added = EnsureEventTargetData().event_listener_map.Add(event_type, listener, options, &registered_listener);
+  uint32_t listener_count = 0;
+  bool added = EnsureEventTargetData().event_listener_map.Add(event_type, listener, options, &registered_listener, &listener_count);
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kAddEvent,
-                                                       std::move(event_type.ToNativeString()), nullptr);
+  if (added && listener_count == 1) {
+    GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kAddEvent,
+                                                         std::move(event_type.ToNativeString()), nullptr);
+  }
 
   return added;
 }
@@ -213,7 +216,8 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   size_t index_of_removed_listener;
   RegisteredEventListener registered_listener;
 
-  if (!d->event_listener_map.Remove(event_type, listener, options, &index_of_removed_listener, &registered_listener))
+  uint32_t listener_count = INT_MAX;
+  if (!d->event_listener_map.Remove(event_type, listener, options, &index_of_removed_listener, &registered_listener, &listener_count))
     return false;
 
   // Notify firing events planning to invoke the listener at 'index' that
@@ -236,8 +240,10 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
     }
   }
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kRemoveEvent,
-                                                       std::move(event_type.ToNativeString()), nullptr);
+  if (listener_count == 0) {
+    GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kRemoveEvent,
+                                                         std::move(event_type.ToNativeString()), nullptr);
+  }
 
   return true;
 }
