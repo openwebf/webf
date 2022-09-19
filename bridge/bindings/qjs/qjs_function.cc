@@ -62,6 +62,9 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
 
   JSValue returnValue = JS_Call(ctx, function_, this_val.QJSValue(), argc, argv);
 
+  ExecutingContext* context = ExecutingContext::From(ctx);
+  context->DrainPendingPromiseJobs();
+
   // Free the previous duplicated function.
   JS_FreeValue(ctx, function_);
 
