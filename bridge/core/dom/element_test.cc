@@ -79,6 +79,31 @@ TEST(Element, setAttributeWithHTML) {
   EXPECT_EQ(errorCalled, false);
 }
 
+TEST(Element, outerHTML) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    logCalled = true;
+    EXPECT_STREQ(message.c_str(), "<div attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>  <div attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>");
+  };
+  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+  auto context = bridge->GetExecutingContext();
+  std::string code = R"(
+const div = document.createElement('div');
+div.style.width = '100px';
+div.style.height = '100px';
+div.setAttribute('attr-key', 'attr-value');
+
+document.body.appendChild(div);
+console.log(div.outerHTML, div.innerHTML, document.body.innerHTML);
+)";
+  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  EXPECT_EQ(errorCalled, false);
+}
+
 TEST(Element, style) {
   bool static errorCalled = false;
   bool static logCalled = false;

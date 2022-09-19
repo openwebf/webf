@@ -276,7 +276,7 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
 }
 
 std::string Element::outerHTML() {
-  std::string s = "<" + tagName().ToStdString();
+  std::string s = "<" + nodeName();
 
   // Read attributes
   if (attributes_ != nullptr) {
@@ -290,7 +290,7 @@ std::string Element::outerHTML() {
 
   std::string childHTML = innerHTML();
   s += childHTML;
-  s += "</" + tagName().ToStdString() + ">";
+  s += "</" + nodeName() + ">";
 
   return s;
 }
