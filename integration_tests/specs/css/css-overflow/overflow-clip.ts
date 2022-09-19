@@ -40,4 +40,31 @@ describe('clip', () => {
   
     await snapshot(0.1);
   });
+
+    it('should works with transform', async () => {
+      let box = document.createElement('div');
+      document.body.style.background= '#f92';
+      document.body.style.width= '300px';
+      document.body.style.height= '300px';
+
+      box.style.width = '82px';
+      box.style.height = '82px';
+      box.style.marginLeft = '100px';
+      box.style.marginTop = '100px';
+      box.style.background = '#6ad0e2';
+      box.style.overflow = 'scroll';
+
+
+      const icon = document.createElement('div');
+      icon.style.width = '82px';
+      icon.style.height = '82px';
+      icon.style.zIndex = 0;
+      icon.style.background= '#f32'
+      icon.style.transform = 'translate(-32px,0px)';
+
+      box.appendChild(icon);
+
+      document.body.appendChild(box);
+      await snapshot(0.1);
+    });
 });
