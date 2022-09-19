@@ -581,7 +581,7 @@ describe('Tags textarea', () => {
     expect(textarea.value).toBe('');
   });
 
-  it('textarea attribute and property value priority', () => {
+  it('textarea attribute and property value priority', (done) => {
     let text;
     const textarea = createElement('textarea', {
       rows: 10,
@@ -611,6 +611,8 @@ describe('Tags textarea', () => {
       text.data = 'text content value 2';
       expect(textarea.defaultValue).toBe('text content value 2');
       expect(textarea.value).toBe('property value');
+
+      done()
     });
   });
 });
