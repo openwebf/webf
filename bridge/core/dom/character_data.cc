@@ -21,6 +21,11 @@ void CharacterData::setData(const AtomicString& data, ExceptionState& exception_
 std::string CharacterData::nodeValue() const {
   return data_.ToStdString();
 }
+
+bool CharacterData::IsCharacterDataNode() const {
+  return true;
+}
+
 CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, Node::ConstructionType type)
     : Node(tree_scope.GetDocument().GetExecutingContext(), &tree_scope, type),
       data_(!text.IsNull() ? text : AtomicString::Empty()) {

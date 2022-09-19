@@ -190,16 +190,30 @@ void Element::CloneAttributesFrom(const Element& other) {
   if (other.cssom_wrapper_ != nullptr) {
     EnsureCSSStyleDeclaration().CopyWith(other.cssom_wrapper_);
   }
+  if (other.element_data_ != nullptr) {
+    EnsureElementData().CopyWith(other.element_data_.get());
+  }
 }
 
 bool Element::HasEquivalentAttributes(const Element& other) const {
   return attributes_ != nullptr && other.attributes_ != nullptr && other.attributes_->IsEquivalent(*attributes_);
 }
 
+bool Element::IsWidgetElement() const {
+  return false;
+}
+
 void Element::Trace(GCVisitor* visitor) const {
   visitor->Trace(attributes_);
   visitor->Trace(cssom_wrapper_);
   ContainerNode::Trace(visitor);
+}
+
+ElementData& Element::EnsureElementData() const {
+  if (element_data_ == nullptr) {
+    element_data_ = std::make_unique<ElementData>();
+  }
+  return *element_data_;
 }
 
 Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
@@ -328,6 +342,13 @@ void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_
   } else {
     HTMLParser::parseHTMLFragment(html.c_str(), html.size(), this);
   }
+}
+
+AtomicString Element::id() const {
+  return EnsureElementData().Id();
+}
+void Element::setId(const AtomicString& new_id, ExceptionState& exception_state) {
+  EnsureElementData().SetId(new_id);
 }
 
 void Element::_notifyNodeRemoved(Node* node) {}

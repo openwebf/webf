@@ -21,6 +21,7 @@ class CharacterData : public Node {
   void setData(const AtomicString& data, ExceptionState& exception_state);
 
   std::string nodeValue() const override;
+  bool IsCharacterDataNode() const override;
 
  protected:
   CharacterData(TreeScope& tree_scope, const AtomicString& text, ConstructionType type);

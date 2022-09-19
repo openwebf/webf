@@ -144,7 +144,7 @@ AtomicString::AtomicString(const AtomicString& value) {
 
 AtomicString& AtomicString::operator=(const AtomicString& other) {
   if (&other != this) {
-    JS_FreeAtom(ctx_, atom_);
+    JS_FreeAtom(other.ctx_, atom_);
     atom_ = JS_DupAtom(other.ctx_, other.atom_);
   }
   runtime_ = other.runtime_;

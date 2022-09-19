@@ -35,6 +35,7 @@ class Text : public CharacterData {
 template <>
 struct DowncastTraits<Text> {
   static bool AllowFrom(const Node& node) { return node.IsTextNode(); };
+  static bool AllowFrom(const CharacterData& character_data) { return character_data.IsTextNode(); }
 };
 
 }  // namespace webf

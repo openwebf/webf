@@ -4,11 +4,11 @@ describe('Append child', () => {
     expect(() => {
       // @ts-ignore
       container.appendChild({name: 1});
-    }).toThrowError('Failed to execute \'appendChild\' on \'Node\': first arguments should be an Node type.');
+    }).toThrowError('parameter 1 is not of type \'Node\'.');
     expect(() => {
       // @ts-ignore
       container.appendChild(new Event('1234'));
-    }).toThrowError('Failed to execute \'appendChild\' on \'Node\': first arguments should be an Node type.');
+    }).toThrowError('parameter 1 is not of type \'Node\'.');
   });
   it('with orphan element', async () => {
     const style = {

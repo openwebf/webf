@@ -50,4 +50,11 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
 }
 
+void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag flag) {
+  auto* other_widget_element = DynamicTo<WidgetElement>(other);
+  if (other_widget_element) {
+    unimplemented_properties_ = other_widget_element->unimplemented_properties_;
+  }
+}
+
 }  // namespace webf

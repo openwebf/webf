@@ -12,6 +12,7 @@
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
+#include "element_data.h"
 #include "qjs_scroll_to_options.h"
 
 namespace webf {
@@ -53,6 +54,9 @@ class Element : public ContainerNode {
   std::string innerHTML();
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
 
+  AtomicString id() const;
+  void setId(const AtomicString& new_id, ExceptionState& exception_state);
+
   bool HasTagName(const AtomicString&) const;
   std::string nodeValue() const override;
   AtomicString tagName() const { return tag_name_.ToUpperSlow(); }
@@ -73,10 +77,13 @@ class Element : public ContainerNode {
 
   // Step 5 of https://dom.spec.whatwg.org/#concept-node-clone
   virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) {}
+  virtual bool IsWidgetElement() const;
 
   void Trace(GCVisitor* visitor) const override;
 
  protected:
+  const ElementData* GetElementData() const { return element_data_.get(); }
+  ElementData& EnsureElementData() const;
  private:
   // Clone is private so that non-virtual CloneElementWithChildren and
   // CloneElementWithoutChildren are used inst
@@ -90,6 +97,7 @@ class Element : public ContainerNode {
   void _didModifyAttribute(const AtomicString& name, const AtomicString& oldId, const AtomicString& newId);
   void _beforeUpdateId(JSValue oldIdValue, JSValue newIdValue);
 
+  mutable std::unique_ptr<ElementData> element_data_;
   Member<ElementAttributes> attributes_;
   Member<CSSStyleDeclaration> cssom_wrapper_;
   AtomicString tag_name_ = AtomicString::Empty();

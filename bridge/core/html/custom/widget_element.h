@@ -29,8 +29,15 @@ class WidgetElement : public HTMLElement {
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
 
+  void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) override;
+
  private:
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;
+};
+
+template <>
+struct DowncastTraits<WidgetElement> {
+  static bool AllowFrom(const Element& element) { return element.IsWidgetElement(); }
 };
 
 }  // namespace webf

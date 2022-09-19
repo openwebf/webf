@@ -6,9 +6,9 @@ import {CSSStyleDeclaration} from "../css/legacy/css_style_declaration";
 import {ParentNode} from "./parent_node";
 
 interface Element extends Node, ParentNode {
+  id: string;
   readonly attributes: ElementAttributes;
   readonly style: CSSStyleDeclaration;
-
   readonly clientHeight: DartImpl<number>;
   readonly clientLeft: DartImpl<number>;
   readonly clientTop: DartImpl<number>;

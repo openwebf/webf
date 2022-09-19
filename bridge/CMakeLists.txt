@@ -234,6 +234,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/text.cc
     core/dom/tree_scope.cc
     core/dom/element.cc
+    core/dom/element_data.cc
     core/dom/document.cc
     core/dom/scripted_animation_controller.cc
     core/dom/node_data.cc

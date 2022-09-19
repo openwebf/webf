@@ -149,9 +149,12 @@ Node* Node::cloneNode(bool deep, ExceptionState&) const {
   // host is an HTML template element.
   auto* fragment = DynamicTo<DocumentFragment>(this);
   bool clone_shadows_flag = fragment && fragment->IsTemplateContent();
-  return Clone(GetDocument(),
+  Node* new_node = Clone(GetDocument(),
                deep ? (clone_shadows_flag ? CloneChildrenFlag::kCloneWithShadows : CloneChildrenFlag::kClone)
                     : CloneChildrenFlag::kSkip);
+  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(new_node->eventTargetId()));
+  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCloneNode, std::move(args_01), nullptr);
+  return new_node;
 }
 
 bool Node::isEqualNode(Node* other, ExceptionState& exception_state) const {
