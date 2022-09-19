@@ -301,6 +301,10 @@ class TokenKind {
     {'unit': TokenKind.UNIT_PERCENT, 'value': '%'},
   ];
 
+  static const List<Map<String, dynamic>> _UNIT_PERCENT = [
+    {'unit': TokenKind.UNIT_PERCENT, 'value': '%'},
+  ];
+
   // Some more constants:
   static const int ASCII_UPPER_A = 65; // ASCII value for uppercase A
   static const int ASCII_UPPER_Z = 90; // ASCII value for uppercase Z
@@ -353,6 +357,11 @@ class TokenKind {
   /// Return the token that matches the unit ident found.
   static int matchUnits(String text, int offset, int length) {
     return matchList(_UNITS, 'unit', text, offset, length);
+  }
+
+  /// Return the token that matches the % unit
+  static int matchPercentUnit(String text, int offset, int length) {
+    return matchList(_UNIT_PERCENT, 'unit', text, offset, length);
   }
 
   static String? idToValue(Iterable<Object?> identList, int tokenId) {

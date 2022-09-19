@@ -574,6 +574,10 @@ class KeyframeEffect extends AnimationEffect {
         _Interpolation interpolation = _interpolations[i];
         double startOffset = interpolation.startOffset;
         double endOffset = interpolation.endOffset;
+        //fix filter invalid interval
+        if (_progress! < startOffset || _progress! > endOffset) {
+          continue;
+        }
         Curve? easingCurve = interpolation.easing;
         String property = interpolation.property;
         double offsetFraction = _progress! - startOffset;

@@ -383,8 +383,13 @@ class CSSParser {
         do {
           List<String> selectors = [];
           do {
-            var selector = _next().text;
+            String selector = _next().text;
             final text = _peekToken.text;
+            // fix % unit ignore error
+            if (TokenKind.matchPercentUnit(text, 0, text.length) != -1) {
+              selector = selector + text;
+              _next();
+            } else
             // ignore unit type
             if (TokenKind.matchUnits(text, 0, text.length) != -1) {
               selector += text; // join selector & unit
