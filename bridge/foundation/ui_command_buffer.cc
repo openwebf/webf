@@ -42,7 +42,7 @@ void UICommandBuffer::addCommand(const UICommandItem& item) {
   }
 
 #if FLUTTER_BACKEND
-  if (!update_batched_ && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
+  if (!update_batched_ && context_->IsValid() && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
     context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
     update_batched_ = true;
   }
