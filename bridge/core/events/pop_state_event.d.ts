@@ -1,6 +1,6 @@
 import {Event} from "../dom/events/event";
 
-interface PopstateEvent extends Event {
+interface PopStateEvent extends Event {
   readonly state: any;
-  new(): PopstateEvent;
+  new(): PopStateEvent;
 }

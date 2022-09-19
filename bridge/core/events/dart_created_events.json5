@@ -24,7 +24,12 @@
     "close",
 //    "error",
 //    "focus",
-    "popstate",
+    {
+      "class": "PopStateEvent",
+      "types": [
+        "popstate"
+      ]
+    },
     {
       "class": "GestureEvent",
       "types": [

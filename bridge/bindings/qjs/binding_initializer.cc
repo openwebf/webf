@@ -56,7 +56,7 @@
 #include "qjs_performance_mark.h"
 #include "qjs_performance_measure.h"
 #include "qjs_pointer_event.h"
-#include "qjs_popstate_event.h"
+#include "qjs_pop_state_event.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
 #include "qjs_text.h"
@@ -94,7 +94,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSMouseEvent::Install(context);
   QJSPointerEvent::Install(context);
   QJSTouchEvent::Install(context);
-  QJSPopstateEvent::Install(context);
+  QJSPopStateEvent::Install(context);
   QJSTransitionEvent::Install(context);
   QJSIntersectionChangeEvent::Install(context);
   QJSKeyboardEvent::Install(context);

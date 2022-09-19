@@ -2,6 +2,6 @@ import {EventInit} from "../dom/events/event_init";
 
 // @ts-ignore
 @Dictionary()
-export interface PopstateEventInit extends EventInit {
+export interface PopStateEventInit extends EventInit {
   state?: any;
 }
