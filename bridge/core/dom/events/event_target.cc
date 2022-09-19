@@ -298,7 +298,8 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
     JS_FreeValue(ctx(), error);
   }
 
-  return NativeValueConverter<NativeTypeBool>::ToNativeValue(dispatch_result != DispatchEventResult::kCanceledByEventHandler);
+  return NativeValueConverter<NativeTypeBool>::ToNativeValue(dispatch_result !=
+                                                             DispatchEventResult::kCanceledByEventHandler);
 }
 
 RegisteredEventListener* EventTarget::GetAttributeRegisteredEventListener(const AtomicString& event_type) {
