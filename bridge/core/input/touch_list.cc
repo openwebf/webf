@@ -7,9 +7,11 @@
 
 namespace webf {
 
-void TouchList::FromNativeTouchList(ExecutingContext* context, TouchList* touch_list, NativeTouchList* native_touch_list) {
+void TouchList::FromNativeTouchList(ExecutingContext* context,
+                                    TouchList* touch_list,
+                                    NativeTouchList* native_touch_list) {
   MemberMutationScope mutation_scope{context};
-  for(size_t i = 0; i < native_touch_list->length; i ++) {
+  for (size_t i = 0; i < native_touch_list->length; i++) {
     auto* touch = Touch::Create(context, &native_touch_list->touches[i]);
     touch_list->values_.emplace_back(touch);
   }

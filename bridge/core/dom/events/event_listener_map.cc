@@ -87,7 +87,8 @@ bool EventListenerMap::Add(const AtomicString& event_type,
   }
 
   entries_.emplace_back(event_type, std::make_unique<EventListenerVector>());
-  return AddListenerToVector(entries_.back().second.get(), listener, options, registered_event_listener, listener_count);
+  return AddListenerToVector(entries_.back().second.get(), listener, options, registered_event_listener,
+                             listener_count);
 }
 
 bool EventListenerMap::Remove(const AtomicString& event_type,
