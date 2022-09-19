@@ -43,7 +43,11 @@ class CustomEvent final : public Event {
   void initCustomEvent(const AtomicString& type, ExceptionState& exception_state);
   void initCustomEvent(const AtomicString& type, bool can_bubble, ExceptionState& exception_state);
   void initCustomEvent(const AtomicString& type, bool can_bubble, bool cancelable, ExceptionState& exception_state);
-  void initCustomEvent(const AtomicString& type, bool can_bubble, bool cancelable, const ScriptValue& detail, ExceptionState& exception_state);
+  void initCustomEvent(const AtomicString& type,
+                       bool can_bubble,
+                       bool cancelable,
+                       const ScriptValue& detail,
+                       ExceptionState& exception_state);
 
   bool IsCustomEvent() const override;
 

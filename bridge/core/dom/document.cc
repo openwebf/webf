@@ -16,9 +16,9 @@
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
 #include "element_traversal.h"
+#include "event_factory.h"
 #include "foundation/ascii_types.h"
 #include "html_element_factory.h"
-#include "event_factory.h"
 
 namespace webf {
 

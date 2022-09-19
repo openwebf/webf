@@ -29,7 +29,8 @@ MessageEvent* MessageEvent::Create(ExecutingContext* context,
   return MakeGarbageCollected<MessageEvent>(context, type, init);
 }
 
-MessageEvent::MessageEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state) : Event(context, type) {}
+MessageEvent::MessageEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
+    : Event(context, type) {}
 
 MessageEvent::MessageEvent(ExecutingContext* context,
                            const AtomicString& type,
