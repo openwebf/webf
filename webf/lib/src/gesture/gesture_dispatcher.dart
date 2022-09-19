@@ -314,13 +314,7 @@ class GestureDispatcher {
     return _dragEventInfo;
   }
 
-  void _handleMouseEvent(
-    String type, {
-    Offset localPosition = Offset.zero,
-    Offset globalPosition = Offset.zero,
-    bool bubbles = true,
-    bool cancelable = true,
-  }) {
+  void _handleMouseEvent(String type, {Offset localPosition = Offset.zero, Offset globalPosition = Offset.zero}) {
     if (_target == null) {
       return;
     }
@@ -336,17 +330,12 @@ class GestureDispatcher {
     double clientX = globalOffset.dx;
     double clientY = globalOffset.dy;
 
-    Event event = MouseEvent(
-        type,
-        MouseEventInit(
-          clientX: clientX,
-          clientY: clientY,
-          offsetX: localPosition.dx,
-          offsetY: localPosition.dy,
-          eventInit: UIEventInit(
-              view: (_target as Node).ownerDocument.defaultView,
-              eventInit: EventInit(bubbles: bubbles, cancelable: cancelable)),
-        ));
+    Event event = MouseEvent(type,
+        clientX: clientX,
+        clientY: clientY,
+        offsetX: localPosition.dx,
+        offsetY: localPosition.dy,
+        view: (_target as Node).ownerDocument.defaultView);
     _target?.dispatchEvent(event);
   }
 
@@ -360,17 +349,16 @@ class GestureDispatcher {
       double velocityY = 0.0,
       double scale = 0.0}) {
     Event event = GestureEvent(
-        type,
-        GestureEventInit(
-          state: state,
-          direction: direction,
-          rotation: rotation,
-          deltaX: deltaX,
-          deltaY: deltaY,
-          velocityX: velocityX,
-          velocityY: velocityY,
-          scale: scale,
-        ));
+      type,
+      state: state,
+      direction: direction,
+      rotation: rotation,
+      deltaX: deltaX,
+      deltaY: deltaY,
+      velocityX: velocityX,
+      velocityY: velocityY,
+      scale: scale,
+    );
     _target?.dispatchEvent(event);
   }
 

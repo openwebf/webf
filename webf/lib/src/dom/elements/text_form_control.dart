@@ -1075,7 +1075,7 @@ class TextFormControlElement extends Element implements TextInputClient, TickerP
       String inputData = '';
       // https://www.w3.org/TR/input-events-1/#interface-InputEvent-Attributes
       String inputType = '';
-      InputEvent inputEvent = InputEvent(InputEventInit(inputType: inputType, data: inputData));
+      InputEvent inputEvent = InputEvent(inputType: inputType, data: inputData);
       dispatchEvent(inputEvent);
       hasDirtyValue = true;
     }

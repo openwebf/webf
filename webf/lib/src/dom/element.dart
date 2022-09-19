@@ -1588,8 +1588,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   void click() {
     flushLayout();
-    Event clickEvent = MouseEvent(
-        EVENT_CLICK, MouseEventInit(eventInit: UIEventInit(detail: 1, view: ownerDocument.defaultView, eventInit: EventInit(bubbles: true, cancelable: true))));
+    Event clickEvent = MouseEvent(EVENT_CLICK, detail: 1, view: ownerDocument.defaultView);
     // If element not in tree, click is fired and only response to itself.
     dispatchEvent(clickEvent);
   }

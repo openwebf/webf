@@ -69,8 +69,7 @@ void main() async {
     gestureListener: GestureListener(
       onDrag: (GestureEvent gestureEvent) {
         if (gestureEvent.state == EVENT_STATE_START) {
-          var event = CustomEvent(
-              'nativegesture', CustomEventInit(detail: 'nativegesture'));
+          var event = CustomEvent('nativegesture', detail: 'nativegesture');
           webF.controller!.view.document.documentElement?.dispatchEvent(event);
         }
       },

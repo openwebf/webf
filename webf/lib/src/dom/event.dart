@@ -152,9 +152,15 @@ mixin ElementEventMixin on ElementBase {
 /// reference: https://developer.mozilla.org/zh-CN/docs/Web/API/Event
 class Event {
   String type;
-  bool bubbles = false;
-  bool cancelable = false;
-  bool composed = false;
+
+  // A boolean value indicating whether the event bubbles. The default is false.
+  bool bubbles;
+
+  // A boolean value indicating whether the event can be cancelled. The default is false.
+  bool cancelable;
+
+  // A boolean value indicating whether the event will trigger listeners outside of a shadow root (see Event.composed for more details).
+  bool composed;
   EventTarget? currentTarget;
   EventTarget? target;
   int timeStamp = DateTime.now().millisecondsSinceEpoch;
@@ -162,12 +168,12 @@ class Event {
   bool _immediateBubble = true;
   bool propagationStopped = false;
 
-  Event(this.type, [EventInit? init]) {
-    init ??= EventInit();
-
-    bubbles = init.bubbles;
-    cancelable = init.cancelable;
-  }
+  Event(
+    this.type, {
+    this.bubbles = false,
+    this.cancelable = false,
+    this.composed = false,
+  });
 
   void preventDefault() {
     if (cancelable) {
@@ -227,34 +233,10 @@ class Event {
   }
 }
 
-class EventInit {
-  // A boolean value indicating whether the event bubbles. The default is false.
-  final bool bubbles;
-
-  // A boolean value indicating whether the event can be cancelled. The default is false.
-  final bool cancelable;
-
-  // A boolean value indicating whether the event will trigger listeners outside of a shadow root (see Event.composed for more details).
-  final bool composed;
-
-  EventInit({
-    this.bubbles = false,
-    this.cancelable = false,
-    this.composed = false,
-  });
-
-  EventInit.fromEventInit([EventInit? eventInit])
-      : bubbles = eventInit?.bubbles ?? false,
-        cancelable = eventInit?.cancelable ?? false,
-        composed = eventInit?.composed ?? false;
-}
-
 class PopStateEvent extends Event {
   final dynamic state;
 
-  PopStateEvent(PopStateEventInit init)
-      : state = init.state,
-        super(EVENT_POP_STATE);
+  PopStateEvent({this.state}) : super(EVENT_POP_STATE);
 
   @override
   Pointer<RawEvent> toRaw([int methodLength = 0]) {
@@ -268,31 +250,6 @@ class PopStateEvent extends Event {
 
     return rawEvent;
   }
-}
-
-class PopStateEventInit extends EventInit {
-  final dynamic state;
-
-  PopStateEventInit({this.state, EventInit? init}) : super.fromEventInit(init);
-}
-
-class UIEventInit extends EventInit {
-  // Returns a long with details about the event, depending on the event type.
-  // For click or dblclick events, UIEvent.detail is the current click count.
-  //
-  // For mousedown or mouseup events, UIEvent.detail is 1 plus the current click count.
-  //
-  // For all other UIEvent objects, UIEvent.detail is always zero.
-  double detail;
-
-  // The UIEvent.view read-only property returns the WindowProxy object from which the event was generated. In browsers, this is the Window object the event happened in.
-  EventTarget? view;
-
-  // @Deprecated
-  // The UIEvent.which read-only property of the UIEvent interface returns a number that indicates which button was pressed on the mouse, or the numeric keyCode or the character code (charCode) of the key pressed on the keyboard.
-  double which;
-
-  UIEventInit({this.detail = 0, this.view, this.which = 0, EventInit? eventInit}) : super.fromEventInit(eventInit);
 }
 
 class UIEvent extends Event {
@@ -311,11 +268,15 @@ class UIEvent extends Event {
   // The UIEvent.which read-only property of the UIEvent interface returns a number that indicates which button was pressed on the mouse, or the numeric keyCode or the character code (charCode) of the key pressed on the keyboard.
   double which;
 
-  UIEvent(String type, [UIEventInit? init])
-      : detail = init?.detail ?? 0,
-        view = init?.view,
-        which = init?.which ?? 0,
-        super(type, init);
+  UIEvent(
+    String type, {
+    this.detail = 0.0,
+    this.view,
+    this.which = 0.0,
+    bool bubbles = false,
+    bool cancelable = false,
+    bool composed = false,
+  }) : super(type, bubbles: bubbles, cancelable: cancelable, composed: composed);
 
   @override
   Pointer<RawEvent> toRaw([int extraMethodsLength = 0]) {
@@ -338,12 +299,17 @@ class MouseEvent extends UIEvent {
   double offsetX;
   double offsetY;
 
-  MouseEvent(String type, [MouseEventInit? mouseEventInit])
-      : clientX = mouseEventInit?.clientX ?? 0.0,
-        clientY = mouseEventInit?.clientY ?? 0.0,
-        offsetX = mouseEventInit?.offsetX ?? 0.0,
-        offsetY = mouseEventInit?.offsetY ?? 0.0,
-        super(type, mouseEventInit);
+  MouseEvent(
+    String type, {
+    this.clientX = 0.0,
+    this.clientY = 0.0,
+    this.offsetX = 0.0,
+    this.offsetY = 0.0,
+    double detail = 0.0,
+    EventTarget? view,
+    double which = 0.0,
+  }) : super(type,
+            detail: detail, view: view, which: which, bubbles: true, cancelable: true, composed: false);
 
   @override
   Pointer<RawEvent> toRaw([int methodLength = 0]) {
@@ -364,18 +330,8 @@ class MouseEvent extends UIEvent {
   }
 }
 
-class MouseEventInit extends UIEventInit {
-  final double clientX;
-  final double clientY;
-  final double offsetX;
-  final double offsetY;
-
-  MouseEventInit(
-      {this.clientX = 0.0, this.clientY = 0.0, this.offsetX = 0.0, this.offsetY = 0.0, UIEventInit? eventInit})
-      : super(eventInit: eventInit);
-}
-
-class GestureEventInit extends EventInit {
+/// reference: https://developer.mozilla.org/en-US/docs/Web/API/GestureEvent
+class GestureEvent extends Event {
   final String state;
   final String direction;
   final double rotation;
@@ -385,42 +341,20 @@ class GestureEventInit extends EventInit {
   final double velocityY;
   final double scale;
 
-  GestureEventInit(
-      {this.state = '',
-      this.direction = '',
-      this.rotation = 0.0,
-      this.deltaX = 0.0,
-      this.deltaY = 0.0,
-      this.velocityX = 0.0,
-      this.velocityY = 0.0,
-      this.scale = 0.0,
-      EventInit? eventInit})
-      : super.fromEventInit(eventInit);
-}
-
-/// reference: https://developer.mozilla.org/en-US/docs/Web/API/GestureEvent
-class GestureEvent extends Event {
-  final GestureEventInit _gestureEventInit;
-
-  String get state => _gestureEventInit.state;
-
-  String get direction => _gestureEventInit.direction;
-
-  double get rotation => _gestureEventInit.rotation;
-
-  double get deltaX => _gestureEventInit.deltaX;
-
-  double get deltaY => _gestureEventInit.deltaY;
-
-  double get velocityX => _gestureEventInit.velocityX;
-
-  double get velocityY => _gestureEventInit.velocityY;
-
-  double get scale => _gestureEventInit.scale;
-
-  GestureEvent(String type, GestureEventInit gestureEventInit)
-      : _gestureEventInit = gestureEventInit,
-        super(type, gestureEventInit);
+  GestureEvent(
+    String type, {
+    this.state = '',
+    this.direction = '',
+    this.rotation = 0.0,
+    this.deltaX = 0.0,
+    this.deltaY = 0.0,
+    this.velocityX = 0.0,
+    this.velocityY = 0.0,
+    this.scale = 0.0,
+    bool bubbles = false,
+    bool cancelable = false,
+    bool composed = false,
+  }) : super(type, bubbles: bubbles, cancelable: cancelable, composed: composed);
 
   @override
   Pointer<RawEvent> toRaw([int methodLength = 0]) {
@@ -445,20 +379,18 @@ class GestureEvent extends Event {
   }
 }
 
-class CustomEventInit extends EventInit {
-  final String detail;
-
-  CustomEventInit({required this.detail, EventInit? eventInit}) : super.fromEventInit(eventInit);
-}
-
 /// reference: http://dev.w3.org/2006/webapi/DOM-Level-3-Events/html/DOM3-Events.html#interface-CustomEvent
 /// Attention: Detail now only can be a string.
 class CustomEvent extends Event {
   String detail;
 
-  CustomEvent(String type, [CustomEventInit? customEventInit])
-      : detail = customEventInit?.detail ?? '',
-        super(type, customEventInit);
+  CustomEvent(
+    String type, {
+    this.detail = '',
+    bool bubbles = false,
+    bool cancelable = false,
+    bool composed = false,
+  }) : super(type, bubbles: bubbles, cancelable: cancelable, composed: composed);
 
   @override
   Pointer<RawEvent> toRaw([int methodLength = 0]) {
@@ -472,13 +404,6 @@ class CustomEvent extends Event {
 
     return rawEvent;
   }
-}
-
-class InputEventInit extends UIEventInit {
-  String? inputType;
-  String? data;
-
-  InputEventInit({this.inputType, this.data, UIEventInit? uiEventInit}) : super(eventInit: uiEventInit);
 }
 
 // https://w3c.github.io/input-events/
@@ -502,10 +427,13 @@ class InputEvent extends UIEvent {
     return rawEvent;
   }
 
-  InputEvent(InputEventInit init)
-      : inputType = init.inputType ?? '',
-        data = init.data ?? '',
-        super(EVENT_INPUT);
+  InputEvent({
+    this.inputType = '',
+    this.data = '',
+    bool bubbles = false,
+    bool cancelable = false,
+    bool composed = false,
+  }) : super(EVENT_INPUT, bubbles: bubbles, cancelable: cancelable, composed: composed);
 }
 
 class AppearEvent extends Event {
@@ -630,34 +558,25 @@ class IntersectionChangeEvent extends Event {
   }
 }
 
-class TouchEventInit extends UIEventInit {
-  TouchList? touches;
-  TouchList? targetTouches;
-  TouchList? changedTouches;
-  bool? altKey;
-  bool? metaKey;
-  bool? ctrlKey;
-  bool? shiftKey;
-
-  TouchEventInit(
-      {this.touches,
-      this.targetTouches,
-      this.changedTouches,
-      this.altKey,
-      this.metaKey,
-      this.ctrlKey,
-      this.shiftKey,
-      UIEventInit? eventInit})
-      : super(eventInit: eventInit);
-}
-
 /// reference: https://w3c.github.io/touch-events/#touchevent-interface
 class TouchEvent extends UIEvent {
-  TouchEvent(String type, [TouchEventInit? eventInit]) : super(type, eventInit);
+  TouchEvent(
+    String type, {
+    TouchList? touches,
+    TouchList? targetTouches,
+    TouchList? changedTouches,
+    this.altKey = false,
+    this.metaKey = false,
+    this.ctrlKey = false,
+    this.shiftKey = false,
+  })  : touches = touches ?? TouchList(),
+        targetTouches = targetTouches ?? TouchList(),
+        changedTouches = changedTouches ?? TouchList(),
+        super(type, bubbles: true, cancelable: true, composed: true);
 
-  TouchList touches = TouchList();
-  TouchList targetTouches = TouchList();
-  TouchList changedTouches = TouchList();
+  TouchList touches;
+  TouchList targetTouches;
+  TouchList changedTouches;
 
   bool altKey = false;
   bool metaKey = false;
