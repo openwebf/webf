@@ -574,11 +574,15 @@ class KeyframeEffect extends AnimationEffect {
         _Interpolation interpolation = _interpolations[i];
         double startOffset = interpolation.startOffset;
         double endOffset = interpolation.endOffset;
+        //fix filter invalid interval
+        if (_progress! < startOffset || _progress! > endOffset) {
+          continue;
+        }
         Curve? easingCurve = interpolation.easing;
         String property = interpolation.property;
         double offsetFraction = _progress! - startOffset;
         double localDuration = endOffset - startOffset;
-        double scaledLocalTime = localDuration == 0 ? 0 : easingCurve!.transform(min(max(0, offsetFraction / localDuration), 1));
+        double scaledLocalTime = localDuration == 0 ? 0 : easingCurve!.transform(offsetFraction / localDuration);
 
         if (1 - scaledLocalTime < _timeEpsilon) {
           scaledLocalTime = 1;
