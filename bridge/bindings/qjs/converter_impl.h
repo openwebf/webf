@@ -119,6 +119,10 @@ struct Converter<IDLAny> : public ConverterBase<IDLAny> {
 template <>
 struct Converter<IDLOptional<IDLAny>> : public ConverterBase<IDLOptional<IDLAny>> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    if (JS_IsUndefined(value)) {
+      return ScriptValue::Empty(ctx);
+    }
+
     assert(!JS_IsException(value));
     return ScriptValue(ctx, value);
   }
@@ -255,7 +259,11 @@ struct Converter<IDLSequence<T>> : public ConverterBase<IDLSequence<T>> {
 
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
     assert(!JS_IsException(value));
-    assert(JS_IsArray(ctx, value));
+
+    if (!JS_IsArray(ctx, value)) {
+      exception_state.ThrowException(ctx, ErrorType::TypeError, "The expected type of value is not array.");
+      return {};
+    }
 
     ImplType v;
     uint32_t length = Converter<IDLUint32>::FromValue(ctx, JS_GetPropertyStr(ctx, value, "length"), exception_state);
