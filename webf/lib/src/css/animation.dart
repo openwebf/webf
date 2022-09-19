@@ -578,7 +578,7 @@ class KeyframeEffect extends AnimationEffect {
         String property = interpolation.property;
         double offsetFraction = _progress! - startOffset;
         double localDuration = endOffset - startOffset;
-        double scaledLocalTime = localDuration == 0 ? 0 : easingCurve!.transform(offsetFraction / localDuration);
+        double scaledLocalTime = localDuration == 0 ? 0 : easingCurve!.transform(min(max(0, offsetFraction / localDuration), 1));
 
         if (1 - scaledLocalTime < _timeEpsilon) {
           scaledLocalTime = 1;

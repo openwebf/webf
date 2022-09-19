@@ -383,10 +383,11 @@ class CSSParser {
         do {
           List<String> selectors = [];
           do {
-            final selector = _next().text;
+            var selector = _next().text;
             final text = _peekToken.text;
             // ignore unit type
             if (TokenKind.matchUnits(text, 0, text.length) != -1) {
+              selector += text; // join selector & unit
               _next();
             }
             selectors.add(selector);
