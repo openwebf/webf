@@ -63,6 +63,10 @@ Comment* Document::createComment(ExceptionState& exception_state) {
   return Comment::Create(*this);
 }
 
+Comment* Document::createComment(const AtomicString& data, ExceptionState& exception_state) {
+  return Comment::Create(*this);
+}
+
 Event* Document::createEvent(const AtomicString& type, ExceptionState& exception_state) {
   return EventFactory::Create(GetExecutingContext(), type, nullptr);
 }

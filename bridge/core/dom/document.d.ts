@@ -18,7 +18,7 @@ interface Document extends Node {
   createElement(tagName: string): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
-  createComment(): Comment;
+  createComment(data?: string): Comment;
   createEvent(event_type: string): Event;
 
   new(): Document;
