@@ -220,4 +220,42 @@ describe('flexbox-flex', () => {
       BODY.appendChild(div);
       await snapshot();
     });
+    it('flex with maxHeight', async () => {
+      let div;
+      div = createElement(
+        'div',
+        {
+          style: {
+            background: '#f92',
+            width: '300px',
+            height: '300px',
+            display: 'flex',
+            flexDirection: 'column'
+          },
+        },
+        [createElement(
+         'div',
+         {
+           style: {
+             display: 'flex',
+             background: '#6ad0e2',
+             flexDirection: 'column',
+           },
+         },
+         [
+           createElement('div', {
+             style: {
+               background: '#f32',
+               maxHeight:'30px',
+               overflow: 'scroll',
+               flexGrow:1,
+               fexShrink:1,
+             },
+           }),
+         ]
+       )]
+      );
+        BODY.appendChild(div);
+        await snapshot();
+      });    
 });
