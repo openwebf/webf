@@ -3,12 +3,13 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "document.h"
+#include "binding_call_methods.h"
 #include "bindings/qjs/exception_message.h"
 #include "core/dom/comment.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/element.h"
-#include "core/dom/text.h"
 #include "core/dom/events/event_target.h"
+#include "core/dom/text.h"
 #include "core/frame/window.h"
 #include "core/html/custom/widget_element.h"
 #include "core/html/html_all_collection.h"
@@ -22,7 +23,6 @@
 #include "foundation/ascii_types.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
-#include "binding_call_methods.h"
 
 namespace webf {
 
@@ -114,9 +114,7 @@ bool Document::ChildTypeAllowed(NodeType type) const {
 }
 
 Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
-  NativeValue arguments[] = {
-    NativeValueConverter<NativeTypeString>::ToNativeValue(selectors)
-  };
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
@@ -125,9 +123,7 @@ Element* Document::querySelector(const AtomicString& selectors, ExceptionState& 
 }
 
 std::vector<Element*> Document::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
-  NativeValue arguments[] = {
-      NativeValueConverter<NativeTypeString>::ToNativeValue(selectors)
-  };
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
