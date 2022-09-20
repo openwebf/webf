@@ -61,6 +61,7 @@ class Element : public ContainerNode {
   std::string nodeValue() const override;
   AtomicString tagName() const { return tag_name_.ToUpperSlow(); }
   std::string nodeName() const override;
+  std::string nodeNameLowerCase() const;
 
   CSSStyleDeclaration* style();
   CSSStyleDeclaration& EnsureCSSStyleDeclaration();

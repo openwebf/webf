@@ -147,6 +147,10 @@ std::string Element::nodeValue() const {
 }
 
 std::string Element::nodeName() const {
+  return tag_name_.ToUpperIfNecessary().ToStdString();
+}
+
+std::string Element::nodeNameLowerCase() const {
   return tag_name_.ToStdString();
 }
 
@@ -290,7 +294,7 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
 }
 
 std::string Element::outerHTML() {
-  std::string s = "<" + nodeName();
+  std::string s = "<" + nodeNameLowerCase();
 
   // Read attributes
   if (attributes_ != nullptr) {
@@ -304,7 +308,7 @@ std::string Element::outerHTML() {
 
   std::string childHTML = innerHTML();
   s += childHTML;
-  s += "</" + nodeName() + ">";
+  s += "</" + nodeNameLowerCase() + ">";
 
   return s;
 }

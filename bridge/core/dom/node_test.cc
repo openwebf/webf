@@ -28,6 +28,27 @@ TEST(Node, appendChild) {
   EXPECT_EQ(logCalled, true);
 }
 
+TEST(Node, nodeName) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    EXPECT_STREQ(message.c_str(), "DIV #text #document-fragment #comment #document");
+    logCalled = true;
+  };
+  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = bridge->GetExecutingContext();
+  const char* code =
+      "let div = document.createElement('div');"
+      "let text = document.createTextNode('helloworld');"
+      "let fragment = document.createDocumentFragment();"
+      "let comment = document.createComment();"
+      "console.log(div.nodeName, text.nodeName, fragment.nodeName, comment.nodeName, document.nodeName)";
+  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+
+  EXPECT_EQ(errorCalled, false);
+  EXPECT_EQ(logCalled, true);
+}
+
 TEST(Node, childNodes) {
   bool static errorCalled = false;
   bool static logCalled = false;
