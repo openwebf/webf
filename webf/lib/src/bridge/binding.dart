@@ -186,15 +186,18 @@ void _dispatchEventToNative(Event event) {
     toNativeValue(method, 'dispatchEvent');
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(dispatchEventArguments);
 
-    f(pointer, nullptr, method, dispatchEventArguments.length, allocatedNativeArguments);
-
-    // Native can mutate rawEvent directly, so we sync properties value from native side with rawEvent.
-    event.syncFromRaw(rawEvent.cast<RawEvent>());
+    Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
+    f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments);
+    Pointer<EventDispatchResult> dispatchResult = fromNativeValue(returnValue).cast<EventDispatchResult>();
+    event.cancelable = dispatchResult.ref.canceled;
+    event.propagationStopped = dispatchResult.ref.propagationStopped;
 
     // Free the allocated arguments.
     malloc.free(rawEvent);
     malloc.free(method);
     malloc.free(allocatedNativeArguments);
+    malloc.free(dispatchResult);
+    malloc.free(returnValue);
   }
 }
 

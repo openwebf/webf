@@ -20,6 +20,11 @@
 
 namespace webf {
 
+struct EventDispatchResult {
+  bool canceled{false};
+  bool propagationStopped{false};
+};
+
 static std::atomic<int32_t> global_event_target_id{0};
 
 Event::PassiveMode EventPassiveMode(const RegisteredEventListener& event_listener) {
@@ -298,8 +303,11 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
     JS_FreeValue(ctx(), error);
   }
 
-  return NativeValueConverter<NativeTypeBool>::ToNativeValue(dispatch_result !=
-                                                             DispatchEventResult::kCanceledByEventHandler);
+  auto* result = new EventDispatchResult{
+      .canceled = dispatch_result == DispatchEventResult::kCanceledByEventHandler,
+      .propagationStopped = event->propagationStopped()
+  };
+  return NativeValueConverter<NativeTypePointer<EventDispatchResult>>::ToNativeValue(result);
 }
 
 RegisteredEventListener* EventTarget::GetAttributeRegisteredEventListener(const AtomicString& event_type) {

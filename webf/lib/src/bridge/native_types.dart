@@ -32,6 +32,14 @@ class RawEvent extends Struct {
   external int length;
 }
 
+class EventDispatchResult extends Struct {
+  @Bool()
+  external bool canceled;
+
+  @Bool()
+  external bool propagationStopped;
+}
+
 class NativeTouchList extends Struct {
   @Int64()
   external int length;

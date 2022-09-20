@@ -191,14 +191,6 @@ class Event {
     bubbles = false;
   }
 
-  // Sync event properties from Raw pointer data.
-  void syncFromRaw(Pointer<RawEvent> raw) {
-    assert(raw.ref.length >= 7);
-    bubbles = raw.ref.bytes[1] == 1;
-    cancelable = raw.ref.bytes[2] == 1;
-    defaultPrevented = raw.ref.bytes[4] == 1;
-  }
-
   Pointer toRaw([int extraLength = 0]) {
     Pointer<RawEvent> event = malloc.allocate<RawEvent>(sizeOf<RawEvent>());
 
