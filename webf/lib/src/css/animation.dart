@@ -319,6 +319,9 @@ class Animation {
   }
 
   void play() {
+    if (_totalDuration <= 0) {
+      return;
+    }
     _isPaused = false;
     if (_isFinished || _isIdle) {
       _rewind();
@@ -470,6 +473,10 @@ class KeyframeEffect extends AnimationEffect {
     _interpolations = _makeInterpolations(_propertySpecificKeyframeGroups, renderStyle);
   }
 
+  Iterable<String> get properties {
+    return _propertySpecificKeyframeGroups.keys;
+  }
+
   static _defaultParse(value) {
     return value;
   }
@@ -567,6 +574,10 @@ class KeyframeEffect extends AnimationEffect {
         _Interpolation interpolation = _interpolations[i];
         double startOffset = interpolation.startOffset;
         double endOffset = interpolation.endOffset;
+        //fix filter invalid interval
+        if (_progress! < startOffset || _progress! > endOffset) {
+          continue;
+        }
         Curve? easingCurve = interpolation.easing;
         String property = interpolation.property;
         double offsetFraction = _progress! - startOffset;
@@ -762,11 +773,11 @@ class KeyframeEffect extends AnimationEffect {
     PlaybackDirection? currentDirection = playbackDirection;
     if (playbackDirection != PlaybackDirection.normal && playbackDirection != PlaybackDirection.reverse) {
       var d = currentIteration;
-      if (playbackDirection == PlaybackDirection.alternateReverse) {
-        d = d! + 1;
+      if (d != null && playbackDirection == PlaybackDirection.alternateReverse) {
+        d = d + 1;
       }
       currentDirection = PlaybackDirection.normal;
-      if (d != double.infinity && d! % 2 != 0) {
+      if (d != null && d != double.infinity && d % 2 != 0) {
         currentDirection = PlaybackDirection.reverse;
       }
     }

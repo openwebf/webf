@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+<title>CSS Animations Test: animation-delay - positive value</title>
+<style>
+  div {
+    animation-name: sample;
+    animation-duration: 3s;
+    animation-delay: 1s;
+
+    background-color: blue;
+    height: 100px;
+    width: 100px;
+    position: relative;
+  }
+
+  @keyframes sample {
+    from {
+      left: 150px;
+    }
+    to {
+      left: 0px;
+    }
+  }
+</style>
+</head>
+<body>
+  <p>
+    Test passes if there is a filled blue square with 'Filler Text',
+    which starts moving from right to left after about 5 seconds
+    from the time the page is loaded.
+  </p>
+  <div>Filler Text</div>
+</body>
+<script>
+  await sleep(1.01);
+  await snapshotAction();
+  await sleep(1);
+  await snapshotAction();
+</script>

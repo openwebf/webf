@@ -2,6 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
@@ -16,7 +18,19 @@ enum NodeType {
   DOCUMENT_FRAGMENT_NODE,
 }
 
+enum DocumentPosition {
+  EQUIVALENT,
+  DISCONNECTED,
+  PRECEDING,
+  FOLLOWING,
+  CONTAINS,
+  CONTAINED_BY,
+  IMPLEMENTATION_SPECIFIC,
+}
+
 enum RenderObjectManagerType { FLUTTER_ELEMENT, WEBF_NODE }
+
+typedef NoteVisitor = void Function(Node node);
 
 /// [RenderObjectNode] provide the renderObject related abstract life cycle for
 /// [Node] or [Element]s, which wrap [RenderObject]s, which provide the actual
@@ -85,17 +99,45 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   // Children changed steps for node.
   // https://dom.spec.whatwg.org/#concept-node-children-changed-ext
-  void childrenChanged() {}
+  void childrenChanged() {
+    if (!isConnected) {
+      return;
+    }
+    Node parent = this;
+    // invalidate
+    while (parent.parentNode != null) {
+      parent.needsStyleRecalculate = true;
+      parent = parent.parentNode!;
+    }
+    ownerDocument.needsStyleRecalculate = true;
+    ownerDocument.updateStyleIfNeeded();
+  }
 
   // FIXME: The ownerDocument getter steps are to return null, if this is a document; otherwise this’s node document.
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
   late Document ownerDocument;
+
+  bool needsStyleRecalculate = true;
 
   /// The Node.parentElement read-only property returns the DOM node's parent Element,
   /// or null if the node either has no parent, or its parent isn't a DOM Element.
   Element? get parentElement {
     if (parentNode != null && parentNode!.nodeType == NodeType.ELEMENT_NODE) {
       return parentNode as Element;
+    }
+    return null;
+  }
+
+  Element? get previousElementSibling {
+    if (previousSibling != null && previousSibling!.nodeType == NodeType.ELEMENT_NODE) {
+      return previousSibling as Element;
+    }
+    return null;
+  }
+
+  Element? get nextElementSibling {
+    if (nextSibling != null && nextSibling!.nodeType == NodeType.ELEMENT_NODE) {
+      return nextSibling as Element;
     }
     return null;
   }
@@ -168,6 +210,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   @override
   void didDetachRenderer() {}
 
+  void visitChild(NoteVisitor visitor) {
+    childNodes.forEach((node) {
+      node.visitChild(visitor);
+      visitor(node);
+    });
+  }
+
   @mustCallSuper
   Node appendChild(Node child) {
     child._ensureOrphan();
@@ -183,6 +232,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       child.connectedCallback();
     }
 
+    // invalid style
+    Node parent = this;
+    while (parent.parentNode != null) {
+      parent.needsStyleRecalculate = true;
+      parent = parent.parentNode!;
+    }
+    ownerDocument.needsStyleRecalculate = true;
     return child;
   }
 
@@ -222,14 +278,14 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       childNodes.remove(child);
       child.parentNode = null;
 
+      if (isConnected) {
+        child.disconnectedCallback();
+      }
+
       // To remove a node, run step 21 from the spec:
       // 21. Run the children changed steps for parent.
       // https://dom.spec.whatwg.org/#concept-node-remove
       childrenChanged();
-
-      if (isConnected) {
-        child.disconnectedCallback();
-      }
     }
     return child;
   }
@@ -295,6 +351,56 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   // Whether Kraken Node need to manage render object.
   RenderObjectManagerType get renderObjectManagerType => RenderObjectManagerType.WEBF_NODE;
+
+  DocumentPosition compareDocumentPosition(Node other) {
+    if (this == other) {
+      return DocumentPosition.EQUIVALENT;
+    }
+
+    // We need to find a common ancestor container, and then compare the indices of the two immediate children.
+    List<Node> chain1 = [];
+    List<Node> chain2 = [];
+    Node? current = this;
+    while (current != null && current.parentNode != null) {
+      chain1.insert(0, current);
+      current = current.parentNode;
+    }
+    current = other;
+    while (current != null && current.parentNode != null) {
+      chain2.insert(0, current);
+      current = current.parentNode;
+    }
+
+    // If the two elements don't have a common root, they're not in the same tree.
+    if (chain1.first != chain2.first) {
+      return DocumentPosition.DISCONNECTED;
+    }
+
+    // Walk the two chains backwards and look for the first difference.
+    for (int i = 0; i < math.min(chain1.length, chain2.length); i++) {
+      if (chain1[i] != chain2[i]) {
+        if (chain2[i].nextSibling == null) {
+          return DocumentPosition.FOLLOWING;
+        }
+        if (chain1[i].nextSibling == null) {
+          return DocumentPosition.PRECEDING;
+        }
+
+        // Otherwise we need to see which node occurs first.  Crawl backwards from child2 looking for child1.
+        Node? previousSibling = chain2[i].previousSibling;
+        while (previousSibling != null) {
+          if (chain1[i] == previousSibling) {
+            return DocumentPosition.FOLLOWING;
+          }
+          previousSibling = previousSibling.previousSibling;
+        }
+        return DocumentPosition.PRECEDING;
+      }
+    }
+    // There was no difference between the two parent chains, i.e., one was a subset of the other.  The shorter
+    // chain is the ancestor.
+    return chain1.length < chain2.length ? DocumentPosition.FOLLOWING : DocumentPosition.PRECEDING;
+  }
 }
 
 /// https://dom.spec.whatwg.org/#dom-node-nodetype

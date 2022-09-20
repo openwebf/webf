@@ -2,13 +2,17 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
 import 'package:webf/widget.dart';
 
@@ -19,6 +23,11 @@ class Document extends Node {
   GestureListener? gestureListener;
   WidgetDelegate? widgetDelegate;
 
+  StyleNodeManager get styleNodeManager => _styleNodeManager;
+  late StyleNodeManager _styleNodeManager;
+
+  final RuleSet ruleSet = RuleSet();
+
   Document(
     BindingContext context, {
     required this.controller,
@@ -27,6 +36,7 @@ class Document extends Node {
     this.widgetDelegate,
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
+    _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
   }
 
@@ -85,6 +95,31 @@ class Document extends Node {
     }
   }
 
+  @override
+  invokeBindingMethod(String method, List args) {
+    switch (method) {
+      case 'querySelectorAll':
+        return querySelectorAll(args);
+      case 'querySelector':
+        return querySelector(args);
+    }
+    return super.invokeBindingMethod(method, args);
+  }
+
+  dynamic querySelector(List<dynamic> args) {
+    if (args.isEmpty || args.first is! String) {
+      return null;
+    }
+    return QuerySelector.querySelector(this, args.first);
+  }
+
+  dynamic querySelectorAll(List<dynamic> args) {
+    if (args.isEmpty || args.first is! String) {
+      return null;
+    }
+    return QuerySelector.querySelectorAll(this, args.first);
+  }
+
   Element? _documentElement;
   Element? get documentElement => _documentElement;
   set documentElement(Element? element) {
@@ -136,6 +171,8 @@ class Document extends Node {
   Node removeChild(Node child) {
     if (documentElement == child) {
       documentElement = null;
+      ruleSet.reset();
+      styleSheets.clear();
     }
     return super.removeChild(child);
   }
@@ -177,17 +214,56 @@ class Document extends Node {
   // The styleSheets attribute is readonly attribute.
   final List<CSSStyleSheet> styleSheets = [];
 
-  void addStyleSheet(CSSStyleSheet sheet) {
-    styleSheets.add(sheet);
-    recalculateDocumentStyle();
+  void handleStyleSheets(List<CSSStyleSheet> sheets) {
+    styleSheets.clear();
+    styleSheets.addAll(sheets.map((e) => e.clone()));
+    ruleSet.reset();
+    for (var sheet in sheets) {
+      ruleSet.addRules(sheet.cssRules);
+    }
   }
 
-  void removeStyleSheet(CSSStyleSheet sheet) {
-    styleSheets.remove(sheet);
+  bool _recalculating = false;
+  void updateStyleIfNeeded() {
+    if (styleSheets.isEmpty && !styleNodeManager.hasPendingStyleSheet) {
+      return;
+    }
+    if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
+      flushStyle(rebuild: true);
+      return;
+    }
+    if (_recalculating) {
+      return;
+    }
+    _recalculating = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _recalculating = false;
+      flushStyle();
+    });
+  }
+
+  void flushStyle({bool rebuild = false}) {
+    if (!needsStyleRecalculate) {
+      return;
+    }
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_START);
+    }
+    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
+      return;
+    }
     recalculateDocumentStyle();
+    needsStyleRecalculate = false;
+    _recalculating = false;
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_END);
+    }
   }
 
   void recalculateDocumentStyle() {
+    if (!needsStyleRecalculate) {
+      return;
+    }
     // Recalculate style for all nodes sync.
     documentElement?.recalculateNestedStyle();
   }

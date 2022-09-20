@@ -3,12 +3,15 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:collection';
+
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
 typedef StyleChangeListener = void Function(String property, String? original, String present);
+typedef StyleFlushedListener = void Function(List<String> properties);
 
 const Map<String, bool> _CSSShorthandProperty = {
   MARGIN: true,
@@ -30,6 +33,7 @@ const Map<String, bool> _CSSShorthandProperty = {
   OVERFLOW: true,
   TRANSITION: true,
   TEXT_DECORATION: true,
+  ANIMATION: true,
 };
 
 // Reorder the properties for control render style init order, the last is the largest.
@@ -62,15 +66,18 @@ final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = 
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration {
+class CSSStyleDeclaration with IterableMixin {
   Element? target;
+
   // TODO(yuanyan): defaultStyle should be longhand properties.
   Map<String, dynamic>? defaultStyle;
   StyleChangeListener? onStyleChanged;
+  StyleFlushedListener? onStyleFlushed;
 
   CSSStyleDeclaration();
+
   // ignore: prefer_initializing_formals
-  CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged);
+  CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
 
   /// An empty style declaration.
   static CSSStyleDeclaration empty = CSSStyleDeclaration();
@@ -90,7 +97,7 @@ class CSSStyleDeclaration {
     String css = EMPTY_STRING;
     _properties.forEach((property, value) {
       if (css.isNotEmpty) css += ' ';
-      css += '${_kebabize(property)}: $value;';
+      css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
     return css;
   }
@@ -98,6 +105,7 @@ class CSSStyleDeclaration {
   // @TODO: Impl the cssText setter.
 
   /// The number of properties.
+  @override
   int get length => _properties.length;
 
   /// Returns a property name.
@@ -222,6 +230,9 @@ class CSSStyleDeclaration {
         case TEXT_DECORATION:
           CSSStyleProperty.setShorthandTextDecoration(longhandProperties, normalizedValue);
           break;
+        case ANIMATION:
+          CSSStyleProperty.setShorthandAnimation(longhandProperties, normalizedValue);
+          break;
       }
       _cachedExpandedShorthand[cacheKey] = longhandProperties;
     }
@@ -253,7 +264,11 @@ class CSSStyleDeclaration {
     return lowerCase;
   }
 
-  String _toLowerCase(String string) {
+  String _toLowerCase(String propertyName, String string) {
+    // ignore animation case sensitive
+    if (propertyName.startsWith(ANIMATION)) {
+      return string;
+    }
     // Like url("http://path") declared with quotation marks and
     // custom property names are case sensitive.
     String lowerCase = string.toLowerCase();
@@ -355,7 +370,7 @@ class CSSStyleDeclaration {
       return;
     }
 
-    String normalizedValue = _toLowerCase(value.toString().trim());
+    String normalizedValue = _toLowerCase(propertyName, value.toString().trim());
 
     if (!_isValidValue(propertyName, normalizedValue)) return;
 
@@ -373,7 +388,6 @@ class CSSStyleDeclaration {
       return;
     }
 
-    // Current only from inline style will mark the property as important.
     if (isImportant == true) {
       _importants[propertyName] = true;
     }
@@ -428,56 +442,102 @@ class CSSStyleDeclaration {
       _properties[propertyName] = pendingProperties[propertyName]!;
     }
 
+    propertyNames.sort((left, right) {
+      final isVariableLeft = CSSVariable.isVariable(left) ? 1 : 0;
+      final isVariableRight = CSSVariable.isVariable(right) ? 1 : 0;
+      if (isVariableLeft == 1 || isVariableRight == 1) {
+        return isVariableRight - isVariableLeft;
+      }
+      return 0;
+    });
+
     for (String propertyName in propertyNames) {
       String? prevValue = prevValues[propertyName];
       String currentValue = pendingProperties[propertyName]!;
-
       _emitPropertyChanged(propertyName, prevValue, currentValue);
     }
+
+    onStyleFlushed?.call(propertyNames);
   }
 
-  Map<String, String?> diff(CSSStyleDeclaration other) {
-    Map<String, String?> diffs = {};
-
+  // Inserts the style of the given Declaration into the current Declaration.
+  void union(CSSStyleDeclaration declaration) {
     Map<String, String> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
 
+    for (String propertyName in declaration._pendingProperties.keys) {
+      bool currentIsImportant = _importants[propertyName] ?? false;
+      bool otherIsImportant = declaration._importants[propertyName] ?? false;
+      String? currentValue = properties[propertyName];
+      String? otherValue = declaration._pendingProperties[propertyName];
+      if ((otherIsImportant || !currentIsImportant) && currentValue != otherValue) {
+        // Add property.
+        if (otherValue != null) {
+          _pendingProperties[propertyName] = otherValue;
+        } else {
+          _pendingProperties.remove(propertyName);
+        }
+        if (otherIsImportant) {
+          _importants[propertyName] = true;
+        }
+      }
+    }
+  }
+
+  // Merge the difference between the declarations and return the updated status
+  bool merge(CSSStyleDeclaration other) {
+    Map<String, String> properties = {}
+      ..addAll(_properties)
+      ..addAll(_pendingProperties);
+    bool updateStatus = false;
     for (String propertyName in properties.keys) {
       String? prevValue = properties[propertyName];
       String? currentValue = other._pendingProperties[propertyName];
+      bool currentImportant = other._importants[propertyName] ?? false;
 
       if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
         continue;
       } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
         // Remove property.
-        diffs[propertyName] = null;
+        removeProperty(propertyName, currentImportant);
+        updateStatus = true;
       } else if (prevValue != currentValue) {
         // Update property.
-        diffs[propertyName] = currentValue;
+        setProperty(propertyName, currentValue, currentImportant);
+        updateStatus = true;
       }
     }
 
     for (String propertyName in other._pendingProperties.keys) {
       String? prevValue = properties[propertyName];
       String? currentValue = other._pendingProperties[propertyName];
+      bool currentImportant = other._importants[propertyName] ?? false;
+
       if (isNullOrEmptyValue(prevValue) && !isNullOrEmptyValue(currentValue)) {
         // Add property.
-        diffs[propertyName] = currentValue;
+        setProperty(propertyName, currentValue, currentImportant);
+        updateStatus = true;
       }
     }
-    return diffs;
+
+    return updateStatus;
   }
 
   /// Override [] and []= operator to get/set style properties.
   operator [](String property) => getPropertyValue(property);
+
   operator []=(String property, value) {
     setProperty(property, value);
   }
 
   /// Check a css property is valid.
-  bool contains(String property) {
-    return getPropertyValue(property).isNotEmpty;
+  @override
+  bool contains(Object? property) {
+    if (property != null && property is String) {
+      return getPropertyValue(property).isNotEmpty;
+    }
+    return super.contains(property);
   }
 
   void addStyleChangeListener(StyleChangeListener listener) {
@@ -520,6 +580,19 @@ class CSSStyleDeclaration {
 
   @override
   String toString() => 'CSSStyleDeclaration($cssText)';
+
+  @override
+  int get hashCode => cssText.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    return hashCode == other.hashCode;
+  }
+
+  @override
+  Iterator<MapEntry<String, String>> get iterator {
+    return _properties.entries.followedBy(_pendingProperties.entries).iterator;
+  }
 }
 
 // aB to a-b

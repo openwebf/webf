@@ -47,16 +47,22 @@ const loader = function(source) {
     }
   })
 
-  const htmlString = root.toString().replace(/\n/g, '');
-
+  const htmlString = root.toString().replace(/['\n]/g, function(c){
+    return {'\n': '','\'': '\\'}[c];
+  });
+  
   return `
     describe('HTMLSpec/${testRelativePath}', () => {
       // Use html_parse to parser html in html file.
       const html_parse = () => __webf_parse_html__('${htmlString}');
-
-      ${isFit ? 'fit' : 'it'}("should work", async () => {\
+      var index = 0;
+      const snapshotAction = async () => { await snapshot(null, '${snapshotFilepath}', index.toString()); index++; };
+      ${isFit ? 'fit' : 'it'}("should work", async (done) => {\
         html_parse();\
-        ${scripts.length === 0 ? `await snapshot(null, '${snapshotFilepath}', false);` : scripts.join('\n')}
+        requestAnimationFrame(async () => {
+          ${scripts.length === 0 ? `await snapshotAction();` : scripts.join('\n')}
+          done();
+        });
       })
     });
   `;

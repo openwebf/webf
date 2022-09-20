@@ -1,6 +1,6 @@
 // https://drafts.csswg.org/css-env-1/#env-function
 describe('CSS Environment', () => {
-  it('work with safe-area-inset', async () => {
+  it('work with safe-area-inset', async (done) => {
       const container = document.createElement('div');
       const paddings = [
         'env(safe-area-inset-top)',
@@ -13,9 +13,10 @@ describe('CSS Environment', () => {
       document.body.appendChild(document.createTextNode('PASS if no red appears.'));
       document.body.appendChild(container);
       await snapshot();
+      done();
   });
 
-  it('work with safe-area-inset fallback', async () => {
+  it('work with safe-area-inset fallback', async (done) => {
       const container = document.createElement('div');
       // Env has value, so not fallback to other.
       const paddings = [
@@ -29,5 +30,6 @@ describe('CSS Environment', () => {
       document.body.appendChild(document.createTextNode('PASS if no red appears.'));
       document.body.appendChild(container);
       await snapshot();
+      done();
   });
 });

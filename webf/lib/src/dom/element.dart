@@ -12,12 +12,14 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 final RegExp _splitRegExp = RegExp(r'\s+');
 const String _ONE_SPACE = ' ';
 const String _STYLE_PROPERTY = 'style';
+const String _ID = 'id';
 const String _CLASS_NAME = 'class';
 
 /// Defined by W3C Standard,
@@ -81,6 +83,13 @@ typedef GetRenderBoxModel = RenderBoxModel? Function();
 abstract class Element extends Node with ElementBase, ElementEventMixin, ElementOverflowMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
+
+  String? _id;
+  String? get id => _id;
+  set id(String? id) {
+    _id = id;
+    recalculateStyle();
+  }
 
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
@@ -152,7 +161,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         _isDefaultRepaintBoundary = isDefaultRepaintBoundary,
         super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
-    style = CSSStyleDeclaration.computedStyle(this, _defaultStyle, _onStyleChanged);
+    style = CSSStyleDeclaration.computedStyle(this, _defaultStyle, _onStyleChanged, _onStyleFlushed);
 
     // Init render style.
     renderStyle = CSSRenderStyle(target: this);
@@ -508,6 +517,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     // Cancel running transition.
     renderStyle.cancelRunningTransition();
+
+    // Cancel running animation.
+    renderStyle.cancelRunningAnimation();
 
     RenderBoxModel? renderBoxModel = this.renderBoxModel;
     if (renderBoxModel != null) {
@@ -973,12 +985,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
+    internalSetAttribute(qualifiedName, value);
     if (_STYLE_PROPERTY == qualifiedName) {
-      // @TODO: Parse inline style css text.
+      final map = CSSParser(value).parseInlineStyle();
+      inlineStyle.addAll(map);
+      recalculateStyle();
     } else if (_CLASS_NAME == qualifiedName) {
       className = value;
+    } else if (_ID == qualifiedName) {
+      id = value;
     }
-    internalSetAttribute(qualifiedName, value);
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
@@ -1046,6 +1062,17 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     // Get the computed value of CSS variable.
     if (value is CSSVariable) {
       value = value.computedValue(name);
+    }
+
+    if (value is CSSCalcValue) {
+      if (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y) {
+        value = CSSBackgroundPosition(calcValue: value);
+      } else {
+        value = value.computedValue(name);
+        if (value != null) {
+          value = CSSLengthValue(value, CSSLengthType.PX);
+        }
+      }
     }
 
     switch (name) {
@@ -1337,6 +1364,31 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case TRANSITION_PROPERTY:
         renderStyle.transitionProperty = value;
         break;
+      // Animation
+      case ANIMATION_DELAY:
+        renderStyle.animationDelay = value;
+        break;
+      case ANIMATION_NAME:
+        renderStyle.animationName = value;
+        break;
+      case ANIMATION_DIRECTION:
+        renderStyle.animationDirection = value;
+        break;
+      case ANIMATION_DURATION:
+        renderStyle.animationDuration = value;
+        break;
+      case ANIMATION_PLAY_STATE:
+        renderStyle.animationPlayState = value;
+        break;
+      case ANIMATION_FILL_MODE:
+        renderStyle.animationFillMode = value;
+        break;
+      case ANIMATION_ITERATION_COUNT:
+        renderStyle.animationIterationCount = value;
+        break;
+      case ANIMATION_TIMING_FUNCTION:
+        renderStyle.animationTimingFunction = value;
+        break;
       // Others
       case OBJECT_FIT:
         renderStyle.objectFit = value;
@@ -1416,23 +1468,15 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
+  final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
   void _applySheetStyle(CSSStyleDeclaration style) {
-    if (classList.isNotEmpty) {
-      const String classSelectorPrefix = '.';
-      for (String className in classList) {
-        for (CSSStyleSheet sheet in ownerDocument.styleSheets) {
-          List<CSSRule> rules = sheet.cssRules;
-          for (int i = 0; i < rules.length; i++) {
-            CSSRule rule = rules[i];
-            if (rule is CSSStyleRule && rule.selectorText == (classSelectorPrefix + className)) {
-              var sheetStyle = rule.style;
-              for (String propertyName in sheetStyle.keys) {
-                style.setProperty(propertyName, sheetStyle[propertyName], false);
-              }
-            }
-          }
-        }
-      }
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_START);
+    }
+    CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
+    style.union(matchRule);
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_END);
     }
   }
 
@@ -1441,6 +1485,19 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       renderStyle.runTransition(propertyName, prevValue, currentValue);
     } else {
       setRenderStyle(propertyName, currentValue);
+    }
+  }
+
+  void _onStyleFlushed(List<String> properties) {
+    if (renderStyle.shouldAnimation(properties)) {
+      renderStyle.beforeRunningAnimation();
+      if (renderBoxModel!.hasSize) {
+        renderStyle.runAnimation();
+      } else {
+        SchedulerBinding.instance.addPostFrameCallback((callback) {
+          renderStyle.runAnimation();
+        });
+      }
     }
   }
 
@@ -1462,23 +1519,20 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void recalculateStyle() {
-    // TODO: current only support class selector in stylesheet
-    if (renderBoxModel != null && classList.isNotEmpty) {
+    if (renderBoxModel != null) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
-      Map<String, String?> diffs = style.diff(newStyle);
-      if (diffs.isNotEmpty) {
-        // Update render style.
-        diffs.forEach((String propertyName, String? value) {
-          style.setProperty(propertyName, value);
-        });
+      if (style.merge(newStyle)) {
         style.flushPendingProperties();
       }
     }
   }
 
   void recalculateNestedStyle() {
+    if (!needsStyleRecalculate) {
+      return;
+    }
     recalculateStyle();
     // Update children style.
     children.forEach((Element child) {
