@@ -56,6 +56,9 @@ class Document : public ContainerNode, public TreeScope {
   [[nodiscard]] NodeType nodeType() const override;
   [[nodiscard]] bool ChildTypeAllowed(NodeType) const override;
 
+  Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
+  std::vector<Element*> querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state);
+
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);
 

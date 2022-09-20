@@ -18,6 +18,7 @@ class BoundingClientRect : public ScriptWrappable, public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  using ImplType = BoundingClientRect*;
   BoundingClientRect() = delete;
   static BoundingClientRect* Create(ExecutingContext* context, NativeBindingObject* native_binding_object);
   explicit BoundingClientRect(ExecutingContext* context, NativeBindingObject* native_binding_object);

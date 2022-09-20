@@ -13,6 +13,8 @@
 
 namespace webf {
 
+struct NativeShareable {};
+
 struct NativeTypeBase {
   using ImplType = void;
 };

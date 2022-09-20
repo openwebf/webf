@@ -201,6 +201,7 @@ class Node : public EventTarget {
   [[nodiscard]] virtual bool ChildTypeAllowed(NodeType) const { return false; }
   [[nodiscard]] unsigned CountChildren() const;
 
+  bool IsNode() const override;
   bool IsDescendantOf(const Node*) const;
   bool contains(const Node*, ExceptionState&) const;
   [[nodiscard]] bool ContainsIncludingHostElements(const Node&) const;
@@ -320,6 +321,11 @@ class Node : public EventTarget {
   TreeScope* tree_scope_;
   std::unique_ptr<EventTargetDataObject> event_target_data_;
   std::unique_ptr<NodeData> node_data_;
+};
+
+template <>
+struct DowncastTraits<Node> {
+  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsNode(); }
 };
 
 inline ContainerNode* Node::ParentOrShadowHostNode() const {

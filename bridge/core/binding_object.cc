@@ -159,7 +159,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   auto promise_resolver = ScriptPromiseResolver::Create(event_target->GetExecutingContext());
 
   auto* promise_context =
-      new BindingObjectPromiseContext{event_target->GetExecutingContext(), event_target, promise_resolver};
+      new BindingObjectPromiseContext{{}, event_target->GetExecutingContext(), event_target, promise_resolver};
   event_target->TrackPendingPromiseBindingContext(promise_context);
 
   std::vector<NativeValue> arguments;

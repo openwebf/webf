@@ -142,6 +142,8 @@
     "rows",
     "wrap",
     "dispatchEvent",
-    "getModifierState"
+    "getModifierState",
+    "querySelector",
+    "querySelectorAll"
   ]
 }

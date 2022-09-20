@@ -20,7 +20,7 @@
 
 namespace webf {
 
-struct EventDispatchResult {
+struct EventDispatchResult : public NativeShareable {
   bool canceled{false};
   bool propagationStopped{false};
 };

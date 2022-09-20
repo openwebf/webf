@@ -162,7 +162,7 @@ function generateNativeValueTypeConverter(type: ParameterType[]): string {
   let returnValue = '';
 
   if (typeof type[0] === 'string') {
-    return `NativeTypePointer<NativeBindingObject>`;
+    return `NativeTypePointer<${type[0]}>`;
   }
 
   switch (type[0]) {

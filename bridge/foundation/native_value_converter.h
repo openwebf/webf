@@ -5,6 +5,7 @@
 #ifndef BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
 #define BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
 
+#include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "native_type.h"
 #include "native_value.h"
@@ -74,15 +75,31 @@ struct NativeValueConverter<NativeTypeJSON> : public NativeValueConverterBase<Na
 };
 
 class BindingObject;
-struct NativeBindingObject;
+struct NativeShareable;
 
 template <typename T>
-struct NativeValueConverter<NativeTypePointer<T>> : public NativeValueConverterBase<NativeTypePointer<T>> {
+struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_void_v<T>>>
+    : public NativeValueConverterBase<NativeTypePointer<T>> {
   static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::Others, value); }
-  static NativeValue ToNativeValue(BindingObject* value) {
-    return Native_NewPtr(JSPointerType::Others, value->bindingObject());
-  }
   static T* FromNativeValue(NativeValue value) { return static_cast<T*>(value.u.ptr); }
+  static T* FromNativeValue(JSContext* ctx, NativeValue value) { return static_cast<T*>(value.u.ptr); }
+};
+
+template <typename T>
+struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_of_v<NativeShareable, T>>>
+    : public NativeValueConverterBase<NativeTypePointer<T>> {
+  static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::Others, value); }
+  static T* FromNativeValue(NativeValue value) { return static_cast<T*>(value.u.ptr); }
+  static T* FromNativeValue(JSContext* ctx, NativeValue value) { return static_cast<T*>(value.u.ptr); }
+};
+
+template <typename T>
+struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_of_v<ScriptWrappable, T>>>
+    : public NativeValueConverterBase<T> {
+  static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::Others, value->bindingObject()); }
+  static T* FromNativeValue(JSContext* ctx, NativeValue value) {
+    return DynamicTo<T>(BindingObject::From(static_cast<NativeBindingObject*>(value.u.ptr)));
+  }
 };
 
 template <>

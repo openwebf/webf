@@ -123,6 +123,10 @@ inline bool IsElementOfType<const Element>(const Element&) {
 template <>
 struct DowncastTraits<Element> {
   static bool AllowFrom(const Node& node) { return node.IsElementNode(); }
+  static bool AllowFrom(const BindingObject& binding_object) {
+    return binding_object.IsEventTarget() && To<EventTarget>(binding_object).IsNode() &&
+           To<Node>(binding_object).IsElementNode();
+  }
 };
 
 }  // namespace webf

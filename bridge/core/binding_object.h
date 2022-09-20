@@ -9,6 +9,7 @@
 #include <cinttypes>
 #include <set>
 #include "bindings/qjs/atomic_string.h"
+#include "foundation/native_type.h"
 #include "foundation/native_value.h"
 
 namespace webf {
@@ -31,7 +32,7 @@ using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_objec
                                               int32_t argc,
                                               NativeValue* argv);
 
-struct NativeBindingObject {
+struct NativeBindingObject : public NativeShareable {
   NativeBindingObject() = delete;
   explicit NativeBindingObject(BindingObject* target)
       : binding_target_(target), invoke_binding_methods_from_dart(HandleCallFromDartSide){};
@@ -55,7 +56,7 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
-struct BindingObjectPromiseContext {
+struct BindingObjectPromiseContext : public NativeShareable {
   ExecutingContext* context;
   BindingObject* binding_object;
   std::shared_ptr<ScriptPromiseResolver> promise_resolver;
@@ -79,7 +80,6 @@ class BindingObject {
                                                  int32_t contextId,
                                                  const char* errmsg);
 
-  using ImplType = BindingObject*;
   BindingObject() = delete;
   ~BindingObject();
   explicit BindingObject(ExecutingContext* context);

@@ -51,7 +51,7 @@ struct NativeEvent {
 };
 #endif
 
-struct RawEvent {
+struct RawEvent : public NativeShareable {
   uint64_t* bytes;
   int64_t length;
 };

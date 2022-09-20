@@ -348,6 +348,10 @@ Document* Node::ownerDocument() const {
   return doc == this ? nullptr : doc;
 }
 
+bool Node::IsNode() const {
+  return true;
+}
+
 bool Node::IsDescendantOf(const Node* other) const {
   // Return true if other is an ancestor of this, otherwise false
   if (!other || isConnected() != other->isConnected())

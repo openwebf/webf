@@ -23,5 +23,8 @@ interface Document extends Node {
   createComment(data?: string): Comment;
   createEvent(event_type: string): Event;
 
+  querySelector(selectors: string): Element | null;
+  querySelectorAll(selectors: string): Element[];
+
   new(): Document;
 }
