@@ -6,15 +6,21 @@
 #ifndef BRIDGE_BINDINGS_QJS_BOM_PARENT_NODE_H_
 #define BRIDGE_BINDINGS_QJS_BOM_PARENT_NODE_H_
 
+#include <vector>
 #include "foundation/macros.h"
 
 namespace webf {
+
+class Element;
+class ContainerNode;
 
 class ParentNode {
   WEBF_STATIC_ONLY(ParentNode);
 
  public:
-  static std::vector<Element*> children(ContainerNode& node) { return node.Children(); }
+  static Element* firstElementChild(ContainerNode& node);
+  static Element* lastElementChild(ContainerNode& node);
+  static std::vector<Element*> children(ContainerNode& node);
 };
 
 }  // namespace webf

@@ -37,6 +37,11 @@ interface Element extends Node, ParentNode {
    */
   removeAttribute(qualifiedName: string): void;
 
+  /**
+   * Indicating whether the specified element has the specified attribute or not.
+   */
+  hasAttribute(qualifiedName: string): boolean;
+
   // CSSOM View Module
   // https://drafts.csswg.org/cssom-view/#extension-to-the-element-interface
   getBoundingClientRect(): BoundingClientRect;
