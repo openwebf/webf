@@ -140,9 +140,11 @@ Element* Document::getElementById(const AtomicString& id, ExceptionState& except
   return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
 }
 
-std::vector<Element*> Document::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
+std::vector<Element*> Document::getElementsByClassName(const AtomicString& class_name,
+                                                       ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(class_name)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
+  NativeValue result =
+      InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
   }

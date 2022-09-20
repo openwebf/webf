@@ -156,7 +156,8 @@ std::string Element::nodeNameLowerCase() const {
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(class_name)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
+  NativeValue result =
+      InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
