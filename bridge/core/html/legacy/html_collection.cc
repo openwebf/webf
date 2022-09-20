@@ -9,7 +9,8 @@
 
 namespace webf {
 
-HTMLCollection::HTMLCollection(ContainerNode* base, CollectionType type) : base_(base), type_(type), ScriptWrappable(base->ctx()) {}
+HTMLCollection::HTMLCollection(ContainerNode* base, CollectionType type)
+    : base_(base), type_(type), ScriptWrappable(base->ctx()) {}
 
 unsigned int HTMLCollection::length() const {
   int32_t length = 0;

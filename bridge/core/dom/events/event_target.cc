@@ -303,10 +303,8 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
     JS_FreeValue(ctx(), error);
   }
 
-  auto* result = new EventDispatchResult{
-      .canceled = dispatch_result == DispatchEventResult::kCanceledByEventHandler,
-      .propagationStopped = event->propagationStopped()
-  };
+  auto* result = new EventDispatchResult{.canceled = dispatch_result == DispatchEventResult::kCanceledByEventHandler,
+                                         .propagationStopped = event->propagationStopped()};
   return NativeValueConverter<NativeTypePointer<EventDispatchResult>>::ToNativeValue(result);
 }
 
