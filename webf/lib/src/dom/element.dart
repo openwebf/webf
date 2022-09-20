@@ -15,6 +15,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
 final RegExp _splitRegExp = RegExp(r'\s+');
 const String _ONE_SPACE = ' ';
@@ -280,10 +281,22 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         return scrollTo(castToType<double>(args[0]), castToType<double>(args[1]));
       case 'click':
         return click();
+      case 'getElementsByClassName':
+        return getElementsByClassName(args);
+      case 'getElementsByTagName':
+        return getElementsByTagName(args);
 
       default:
         super.invokeBindingMethod(method, args);
     }
+  }
+
+  dynamic getElementsByClassName(List<dynamic> args) {
+    return QuerySelector.querySelectorAll(this, '.' + args.first);
+  }
+
+  dynamic getElementsByTagName(List<dynamic> args) {
+    return QuerySelector.querySelectorAll(this, args.first);
   }
 
   void _updateRenderBoxModel() {

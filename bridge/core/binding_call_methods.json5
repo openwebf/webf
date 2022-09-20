@@ -144,6 +144,10 @@
     "dispatchEvent",
     "getModifierState",
     "querySelector",
-    "querySelectorAll"
+    "querySelectorAll",
+    "getElementById",
+    "getElementsByClassName",
+    "getElementsByName",
+    "getElementsByTagName"
   ]
 }

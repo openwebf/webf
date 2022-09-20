@@ -102,22 +102,40 @@ class Document extends Node {
         return querySelectorAll(args);
       case 'querySelector':
         return querySelector(args);
+      case 'getElementById':
+        return getElementById(args);
+      case 'getElementsByClassName':
+        return getElementsByClassName(args);
+      case 'getElementsByTagName':
+        return getElementsByTagName(args);
+      case 'getElementsByName':
+        return getElementsByName(args);
     }
     return super.invokeBindingMethod(method, args);
   }
 
   dynamic querySelector(List<dynamic> args) {
-    if (args.isEmpty || args.first is! String) {
-      return null;
-    }
     return QuerySelector.querySelector(this, args.first);
   }
 
   dynamic querySelectorAll(List<dynamic> args) {
-    if (args.isEmpty || args.first is! String) {
-      return null;
-    }
     return QuerySelector.querySelectorAll(this, args.first);
+  }
+
+  dynamic getElementById(List<dynamic> args) {
+    return QuerySelector.querySelector(this, '#' + args.first);
+  }
+
+  dynamic getElementsByClassName(List<dynamic> args) {
+    return QuerySelector.querySelectorAll(this, '.' + args.first);
+  }
+
+  dynamic getElementsByTagName(List<dynamic> args) {
+    return QuerySelector.querySelectorAll(this, args.first);
+  }
+
+  dynamic getElementsByName(List<dynamic> args) {
+    return QuerySelector.querySelectorAll(this, '[name="${args.first}"]');
   }
 
   Element? _documentElement;

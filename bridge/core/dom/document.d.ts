@@ -23,6 +23,11 @@ interface Document extends Node {
   createComment(data?: string): Comment;
   createEvent(event_type: string): Event;
 
+  getElementById(id: string): Element | null;
+  getElementsByClassName(className: string) : Element[];
+  getElementsByTagName(tagName: string): Element[];
+  getElementsByName(name: string): Element[];
+
   querySelector(selectors: string): Element | null;
   querySelectorAll(selectors: string): Element[];
 

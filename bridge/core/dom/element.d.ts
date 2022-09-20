@@ -46,6 +46,9 @@ interface Element extends Node, ParentNode {
   // https://drafts.csswg.org/cssom-view/#extension-to-the-element-interface
   getBoundingClientRect(): BoundingClientRect;
 
+  getElementsByClassName(className: string) : Element[];
+  getElementsByTagName(tagName: string): Element[];
+
   scroll(options?: ScrollToOptions): void;
   scroll(x: number, y: number): void;
   scrollBy(options?: ScrollToOptions): void;

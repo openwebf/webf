@@ -154,6 +154,24 @@ std::string Element::nodeNameLowerCase() const {
   return tag_name_.ToStdString();
 }
 
+std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(class_name)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return {};
+  }
+  return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
+}
+
+std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(tag_name)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return {};
+  }
+  return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
+}
+
 CSSStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;

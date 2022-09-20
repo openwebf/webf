@@ -59,6 +59,11 @@ class Document : public ContainerNode, public TreeScope {
   Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
   std::vector<Element*> querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state);
 
+  Element* getElementById(const AtomicString& id, ExceptionState& exception_state);
+  std::vector<Element*> getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state);
+  std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
+  std::vector<Element*> getElementsByName(const AtomicString& name, ExceptionState& exception_state);
+
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);
 
