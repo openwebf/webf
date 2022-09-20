@@ -15,6 +15,7 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
+#include "core/html/html_all_collection.h"
 #include "element_traversal.h"
 #include "event_factory.h"
 #include "foundation/ascii_types.h"
@@ -69,6 +70,10 @@ Comment* Document::createComment(const AtomicString& data, ExceptionState& excep
 
 Event* Document::createEvent(const AtomicString& type, ExceptionState& exception_state) {
   return EventFactory::Create(GetExecutingContext(), type, nullptr);
+}
+
+HTMLAllCollection* Document::all() {
+  return MakeGarbageCollected<HTMLAllCollection>(this, CollectionType::kDocAll);
 }
 
 std::string Document::nodeName() const {

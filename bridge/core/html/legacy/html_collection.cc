@@ -9,15 +9,14 @@
 
 namespace webf {
 
-HTMLCollection::HTMLCollection(ContainerNode* base, CollectionType) : base_(base), ScriptWrappable(base->ctx()) {}
+HTMLCollection::HTMLCollection(ContainerNode* base, CollectionType type) : base_(base), type_(type), ScriptWrappable(base->ctx()) {}
 
 unsigned int HTMLCollection::length() const {
-  std::vector<Element> elements;
-  NodeList* node_list = base_->childNodes();
   int32_t length = 0;
 
-  for (int i = 0; i < node_list->length(); i++) {
-    if (DynamicTo<Element>(node_list->item(i, ASSERT_NO_EXCEPTION()))) {
+  if (type_ == CollectionType::kDocAll) {
+    auto* document = DynamicTo<Document>(*base_);
+    for (const Node& child : NodeTraversal::InclusiveDescendantsOf(*document->documentElement())) {
       length++;
     }
   }
@@ -26,18 +25,18 @@ unsigned int HTMLCollection::length() const {
 }
 
 Element* HTMLCollection::item(unsigned int offset, ExceptionState& exception_state) const {
-  std::vector<Element*> elements;
-  NodeList* node_list = base_->childNodes();
-  int32_t length = 0;
-
-  for (int i = 0; i < node_list->length(); i++) {
-    auto* element = DynamicTo<Element>(node_list->item(i, ASSERT_NO_EXCEPTION()));
-    if (element) {
-      elements.emplace_back(element);
+  if (type_ == CollectionType::kDocAll) {
+    int32_t i = 0;
+    auto* document = DynamicTo<Document>(*base_);
+    for (Node& child : ElementTraversal ::InclusiveDescendantsOf(*document->documentElement())) {
+      if (i == offset) {
+        return DynamicTo<Element>(child);
+      }
+      i++;
     }
   }
 
-  return nodes_.at(offset);
+  return nullptr;
 }
 
 bool HTMLCollection::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {

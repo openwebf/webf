@@ -22,6 +22,7 @@ class HTMLCollection : public ScriptWrappable {
   void Trace(GCVisitor*) const override;
 
  private:
+  CollectionType type_;
   Member<ContainerNode> base_;
   std::vector<Element*> nodes_;
 };

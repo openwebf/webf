@@ -166,3 +166,21 @@ TEST(Document, createElementShouldWorkWithMultipleContext) {
 
   delete bridge1;
 }
+
+TEST(document, all) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    logCalled = true;
+    EXPECT_STREQ(message.c_str(), "3 <html>");
+  };
+  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+  auto context = bridge->GetExecutingContext();
+  const char* code = "console.log(document.all.length, document.all[0])";
+  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  EXPECT_EQ(errorCalled, false);
+  EXPECT_EQ(logCalled, true);
+}

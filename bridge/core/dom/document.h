@@ -49,6 +49,7 @@ class Document : public ContainerNode, public TreeScope {
   Comment* createComment(ExceptionState& exception_state);
   Comment* createComment(const AtomicString& data, ExceptionState& exception_state);
   Event* createEvent(const AtomicString& type, ExceptionState& exception_state);
+  HTMLAllCollection* all();
 
   [[nodiscard]] std::string nodeName() const override;
   [[nodiscard]] std::string nodeValue() const override;
@@ -96,6 +97,11 @@ class Document : public ContainerNode, public TreeScope {
   int node_count_;
   Member<Element> document_element_;
   ScriptAnimationController script_animation_controller_;
+};
+
+template <>
+struct DowncastTraits<Document> {
+  static bool AllowFrom(const Node& node) { return node.IsDocumentNode(); }
 };
 
 }  // namespace webf
