@@ -114,9 +114,16 @@ String invokeModule(Pointer<Void> callbackContext, int contextId, String moduleN
       });
     }
 
+    if (isEnabledLog) {
+      print('Invoke module name: $moduleName method: $method, params: ${(params != null && params != '""') ? jsonDecode(params) : null}');
+    }
+
     result = controller.module.moduleManager.invokeModule(
         moduleName, method, (params != null && params != '""') ? jsonDecode(params) : null, invokeModuleCallback);
   } catch (e, stack) {
+    if (isEnabledLog) {
+      print('Invoke module failed: $e\n$stack');
+    }
     String error = '$e\n$stack';
     callback(callbackContext, contextId, error.toNativeUtf8(), nullptr);
   }
