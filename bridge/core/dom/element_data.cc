@@ -7,7 +7,6 @@
 
 namespace webf {
 
-void ElementData::CopyWith(ElementData* other) {
-}
+void ElementData::CopyWith(ElementData* other) {}
 
 }  // namespace webf

@@ -27,8 +27,7 @@ bool CharacterData::IsCharacterDataNode() const {
 }
 
 CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, Node::ConstructionType type)
-    : Node(tree_scope.GetDocument().GetExecutingContext(), &tree_scope, type),
-      data_(text) {
+    : Node(tree_scope.GetDocument().GetExecutingContext(), &tree_scope, type), data_(text) {
   assert(type == kCreateOther || type == kCreateText);
 }
 

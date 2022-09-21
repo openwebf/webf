@@ -100,7 +100,6 @@ bool ElementAttributes::IsEquivalent(const ElementAttributes& other) const {
   return true;
 }
 
-void ElementAttributes::Trace(GCVisitor* visitor) const {
-}
+void ElementAttributes::Trace(GCVisitor* visitor) const {}
 
 }  // namespace webf

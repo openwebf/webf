@@ -2,9 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#include <utility>
 #include "element.h"
-#include "text.h"
+#include <utility>
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
@@ -13,9 +12,10 @@
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
+#include "element_attribute_names.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
-#include "element_attribute_names.h"
+#include "text.h"
 
 namespace webf {
 
