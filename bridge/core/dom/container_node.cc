@@ -245,7 +245,10 @@ Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_stat
   {
     Node* prev = child->previousSibling();
     Node* next = child->nextSibling();
-    { RemoveBetween(prev, next, *child); }
+    {
+      RemoveBetween(prev, next, *child);
+      NotifyNodeRemoved(*child);
+    }
   }
   return child;
 }
@@ -329,6 +332,7 @@ void ContainerNode::RemoveChildren() {
 
   while (Node* child = first_child_) {
     RemoveBetween(nullptr, child->nextSibling(), *child);
+    NotifyNodeRemoved(*child);
   }
 }
 
@@ -379,6 +383,7 @@ void ContainerNode::InsertNodeVector(const NodeVector& targets,
       assert(!target_node->parentNode());
       Node& child = *target_node;
       mutator(*this, child, next);
+      NotifyNodeInsertedInternal(child);
     }
   }
 }
@@ -428,16 +433,13 @@ void ContainerNode::AppendChildCommon(Node& child) {
                                                        std::move(args_01), std::move(args_02), nullptr);
 }
 
-void ContainerNode::NotifyNodeInserted(Node& root) {
-  NotifyNodeInsertedInternal(root);
-}
-
 void ContainerNode::NotifyNodeInsertedInternal(Node& root) {
   for (Node& node : NodeTraversal::InclusiveDescendantsOf(root)) {
     // As an optimization we don't notify leaf nodes when when inserting
     // into detached subtrees that are not in a shadow tree.
     if (!isConnected() && !node.IsContainerNode())
       continue;
+    node.InsertedInto(*this);
   }
 }
 

@@ -102,7 +102,7 @@ class Document : public ContainerNode, public TreeScope {
   void Trace(GCVisitor* visitor) const override;
 
  private:
-  int node_count_;
+  int node_count_{0};
   Member<Element> document_element_;
   ScriptAnimationController script_animation_controller_;
 };
