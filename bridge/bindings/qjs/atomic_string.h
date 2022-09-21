@@ -84,8 +84,8 @@ class AtomicString {
   JSRuntime* runtime_{nullptr};
   int64_t length_{0};
   JSAtom atom_{JS_ATOM_empty_string};
-  mutable JSAtom atom_upper_{JS_ATOM_NULL};
-  mutable JSAtom atom_lower_{JS_ATOM_NULL};
+  mutable JSAtom atom_upper_{JS_ATOM_empty_string};
+  mutable JSAtom atom_lower_{JS_ATOM_empty_string};
   StringKind kind_;
 };
 
