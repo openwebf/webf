@@ -1004,16 +1004,16 @@ class RenderBoxModel extends RenderBox
     return _contentSize ?? Size.zero;
   }
 
-  int get clientWidth {
+  double get clientWidth {
     double width = contentSize.width;
     width += renderStyle.padding.horizontal;
-    return width.toInt();
+    return width;
   }
 
-  int get clientHeight {
+  double get clientHeight {
     double height = contentSize.height;
     height += renderStyle.padding.vertical;
-    return height.toInt();
+    return height;
   }
 
   // Base layout methods to compute content constraints before content box layout.

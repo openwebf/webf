@@ -17,7 +17,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
-final RegExp _splitRegExp = RegExp(r'\s+');
+final RegExp classNameSplitRegExp = RegExp(r'\s+');
 const String _ONE_SPACE = ' ';
 const String _STYLE_PROPERTY = 'style';
 const String _ID = 'id';
@@ -115,7 +115,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   set className(String className) {
     _classList.clear();
-    List<String> classList = className.split(_splitRegExp);
+    List<String> classList = className.split(classNameSplitRegExp);
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
@@ -262,7 +262,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case 'className':
         className = castToType<String>(value);
         break;
-
+      case 'id':
+        id = castToType<String>(value);
+        break;
       default:
         super.setBindingProperty(key, value);
     }
@@ -1595,26 +1597,26 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   // The HTMLElement.offsetLeft read-only property returns the number of pixels that the upper left corner
   // of the current element is offset to the left within the HTMLElement.offsetParent node.
   // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsetleft
-  int get offsetLeft {
-    int offset = 0;
+  double get offsetLeft {
+    double offset = 0.0;
     if (!isRendererAttached) {
       return offset;
     }
     Offset relative = _getOffset(renderBoxModel!, ancestor: offsetParent);
-    offset += relative.dx.toInt();
+    offset += relative.dx;
     return offset;
   }
 
   // The HTMLElement.offsetTop read-only property returns the distance of the outer border
   // of the current element relative to the inner border of the top of the offsetParent node.
   // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsettop
-  int get offsetTop {
-    int offset = 0;
+  double get offsetTop {
+    double offset = 0.0;
     if (!isRendererAttached) {
       return offset;
     }
     Offset relative = _getOffset(renderBoxModel!, ancestor: offsetParent);
-    offset += relative.dy.toInt();
+    offset += relative.dy;
     return offset;
   }
 

@@ -176,7 +176,7 @@ void _dispatchEventToNative(Event event) {
 
     Pointer<Void> rawEvent = event.toRaw().cast<Void>();
     bool isCustomEvent = event is CustomEvent;
-    List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCustomEvent ? 1 : 0];
+    List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCustomEvent ? true : false];
 
     if (isEnabledLog) {
       print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
