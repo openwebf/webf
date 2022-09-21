@@ -269,7 +269,11 @@ describe('custom html element', () => {
 
     let arrs = [1, 2, 4, 8, 16];
     // @ts-ignore
-    expect(sampleElement.fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
+    let fn = sampleElement.fn;
+
+    expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
+    // @ts-ignore
+    expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
   });
 
   it('return promise when dart return future async function', async () => {

@@ -2,9 +2,10 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ffi';
+import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
-import 'dart:ffi';
 
 typedef BindingObjectOperation = void Function(BindingObject bindingObject);
 
@@ -25,6 +26,28 @@ abstract class BindingObject {
 
   BindingObject([BindingContext? context]) : _context = context {
     _bind();
+  }
+
+  int _functionId = 0;
+  final LinkedHashMap<int, AnonymousNativeFunction> _functionMap = LinkedHashMap();
+  final LinkedHashMap<int, AsyncAnonymousNativeFunction> _asyncFunctionMap = LinkedHashMap();
+
+  AnonymousNativeFunction? getAnonymousNativeFunctionFromId(int id) {
+    return _functionMap[id];
+  }
+  int setAnonymousNativeFunction(AnonymousNativeFunction fn) {
+    int newId = _functionId++;
+    _functionMap[newId] = fn;
+    return newId;
+  }
+
+  AsyncAnonymousNativeFunction? getAsyncAnonymousNativeFunctionFromId(int id) {
+    return _asyncFunctionMap[id];
+  }
+  int setAsyncAnonymousNativeFunction(AsyncAnonymousNativeFunction fn) {
+    int newId = _functionId++;
+    _functionMap[newId] = fn;
+    return newId;
   }
 
   // Bind dart side object method to receive invoking from native side.

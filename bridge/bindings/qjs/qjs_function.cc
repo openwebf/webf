@@ -31,8 +31,6 @@ static JSValue HandleQJSFunctionCallback(JSContext* ctx,
   }
   ScriptValue result = callback_context->qjs_function_callback(ctx, ScriptValue(ctx, this_val), argc, arguments.data(),
                                                                callback_context->private_data);
-  delete callback_context;
-  JS_FreeValue(ctx, opaque_object);
   return JS_DupValue(ctx, result.QJSValue());
 }
 
@@ -44,6 +42,7 @@ QJSFunction::QJSFunction(JSContext* ctx,
   auto* context = new QJSFunctionCallbackContext{qjs_function_callback, private_data};
   JS_SetOpaque(opaque_object, context);
   function_ = JS_NewCFunctionData(ctx, HandleQJSFunctionCallback, length, 0, 1, &opaque_object);
+  JS_FreeValue(ctx, opaque_object);
 }
 
 bool QJSFunction::IsFunction(JSContext* ctx) {

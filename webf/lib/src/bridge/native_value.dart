@@ -43,37 +43,6 @@ enum JSPointerType {
 typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);
 typedef AsyncAnonymousNativeFunction = Future<dynamic> Function(List<dynamic> args);
 
-int _functionId = 0;
-LinkedHashMap<int, AnonymousNativeFunction> _functionMap = LinkedHashMap();
-LinkedHashMap<int, AsyncAnonymousNativeFunction> _asyncFunctionMap = LinkedHashMap();
-
-// Save the relationship between function name and functionId in debug mode.
-LinkedHashMap<int, String> debugFunctionMap = LinkedHashMap();
-
-AnonymousNativeFunction? getAnonymousNativeFunctionFromId(int id) {
-  return _functionMap[id];
-}
-
-AsyncAnonymousNativeFunction? getAsyncAnonymousNativeFunctionFromId(int id) {
-  return _asyncFunctionMap[id];
-}
-
-void removeAnonymousNativeFunctionFromId(int id) {
-  _functionMap.remove(id);
-  assert(() {
-    debugFunctionMap.remove(id);
-    return true;
-  }());
-}
-
-void removeAsyncAnonymousNativeFunctionFromId(int id) {
-  _asyncFunctionMap.remove(id);
-  assert(() {
-    debugFunctionMap.remove(id);
-    return true;
-  }());
-}
-
 dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
   if (nativeValue == nullptr) return null;
 
@@ -110,7 +79,7 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
   }
 }
 
-void toNativeValue(Pointer<NativeValue> target, value) {
+void toNativeValue(BindingObject ownerBindingObject, Pointer<NativeValue> target, value) {
   if (value == null) {
     target.ref.tag = JSValueType.TAG_NULL.index;
   } else if (value is int) {
@@ -137,16 +106,14 @@ void toNativeValue(Pointer<NativeValue> target, value) {
     Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
     target.ref.u = lists.address;
     for(int i = 0; i < value.length; i ++) {
-      toNativeValue(lists.elementAt(i), value[i]);
+      toNativeValue(ownerBindingObject, lists.elementAt(i), value[i]);
     }
   } else if (value is AsyncAnonymousNativeFunction) {
-    int id = _functionId++;
-    _asyncFunctionMap[id] = value;
+    int id = ownerBindingObject.setAsyncAnonymousNativeFunction(value);
     target.ref.tag = JSValueType.TAG_ASYNC_FUNCTION.index;
     target.ref.u = id;
   } else if (value is AnonymousNativeFunction) {
-    int id = _functionId++;
-    _functionMap[id] = value;
+    int id = ownerBindingObject.setAnonymousNativeFunction(value);
     target.ref.tag = JSValueType.TAG_FUNCTION.index;
     target.ref.u = id;
   } else if (value is Object) {
@@ -156,11 +123,11 @@ void toNativeValue(Pointer<NativeValue> target, value) {
   }
 }
 
-Pointer<NativeValue> makeNativeValueArguments(List<dynamic> args) {
+Pointer<NativeValue> makeNativeValueArguments(BindingObject ownerBindingObject, List<dynamic> args) {
   Pointer<NativeValue> buffer = malloc.allocate(sizeOf<NativeValue>() * args.length);
 
   for(int i = 0; i < args.length; i ++) {
-    toNativeValue(buffer.elementAt(i), args[i]);
+    toNativeValue(ownerBindingObject, buffer.elementAt(i), args[i]);
   }
 
   return buffer.cast<NativeValue>();

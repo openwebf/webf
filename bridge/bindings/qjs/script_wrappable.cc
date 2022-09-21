@@ -161,20 +161,20 @@ void ScriptWrappable::InitializeQuickJSObject() {
         auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
         if (wrapper_type_info->string_property_getter_handler_ != nullptr) {
-          JSValue returnValue = wrapper_type_info->string_property_getter_handler_(ctx, obj, prop);
-          if (!JS_IsNull(returnValue)) {
+          JSValue return_value = wrapper_type_info->string_property_getter_handler_(ctx, obj, prop);
+          if (!JS_IsNull(return_value)) {
             desc->flags = JS_PROP_ENUMERABLE;
-            desc->value = returnValue;
+            desc->value = return_value;
             return true;
           }
         }
 
         if (wrapper_type_info->indexed_property_getter_handler_ != nullptr) {
           uint32_t index = JS_AtomToUInt32(prop);
-          JSValue returnValue = wrapper_type_info->indexed_property_getter_handler_(ctx, obj, index);
-          if (!JS_IsNull(returnValue)) {
+          JSValue return_value = wrapper_type_info->indexed_property_getter_handler_(ctx, obj, index);
+          if (!JS_IsNull(return_value)) {
             desc->flags = JS_PROP_ENUMERABLE;
-            desc->value = returnValue;
+            desc->value = return_value;
             return true;
           }
         }
