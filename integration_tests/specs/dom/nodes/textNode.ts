@@ -175,7 +175,7 @@ describe('TextNode', () => {
 
   it('should work with whitespace trim and collapse of space', async () => {
     let div;
- 
+
     div = createElement(
       'div',
       {

@@ -5,6 +5,7 @@
 
 #include "character_data.h"
 #include "core/dom/document.h"
+#include "built_in_string.h"
 
 namespace webf {
 
@@ -24,6 +25,10 @@ std::string CharacterData::nodeValue() const {
 
 bool CharacterData::IsCharacterDataNode() const {
   return true;
+}
+
+void CharacterData::setNodeValue(const AtomicString& value, ExceptionState& exception_state) {
+  setData(!value.IsEmpty() ? value : built_in_string::kempty_string, exception_state);
 }
 
 CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, Node::ConstructionType type)
