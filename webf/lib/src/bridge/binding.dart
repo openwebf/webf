@@ -89,14 +89,14 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
           List<dynamic> functionArguments = values.sublist(1);
           AnonymousNativeFunction? fn = bindingObject.getAnonymousNativeFunctionFromId(id);
           if (fn == null) {
-            print('WebF warning: can not find registered anonymous native function for id: $id');
+            print('WebF warning: can not find registered anonymous native function for id: $id bindingObject: $nativeBindingObject');
             toNativeValue(bindingObject, returnValue, null);
             return;
           }
           try {
             if (isEnabledLog) {
               String argsStr = functionArguments.map((e) => e.toString()).join(',');
-              print('Invoke AnonymousFunction id: $id, arguments: [$argsStr]');
+              print('Invoke AnonymousFunction id: $id, arguments: [$argsStr] bindingObject: $nativeBindingObject');
             }
 
             result = fn(functionArguments);
@@ -107,7 +107,7 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
           int id = values[0];
           AsyncAnonymousNativeFunction? fn = bindingObject.getAsyncAnonymousNativeFunctionFromId(id);
           if (fn == null) {
-            print('WebF warning: can not find registered anonymous native async function for id: $id');
+            print('WebF warning: can not find registered anonymous native async function for id: $id bindingObject: $nativeBindingObject');
             toNativeValue(bindingObject, returnValue, null);
             return;
           }

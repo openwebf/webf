@@ -38,6 +38,10 @@ abstract class BindingObject {
   int setAnonymousNativeFunction(AnonymousNativeFunction fn) {
     int newId = _functionId++;
     _functionMap[newId] = fn;
+
+    if (isEnabledLog) {
+      print('store native function for id: $newId bindingObject: $pointer');
+    }
     return newId;
   }
 
@@ -46,7 +50,12 @@ abstract class BindingObject {
   }
   int setAsyncAnonymousNativeFunction(AsyncAnonymousNativeFunction fn) {
     int newId = _functionId++;
-    _functionMap[newId] = fn;
+    _asyncFunctionMap[newId] = fn;
+
+    if (isEnabledLog) {
+      print('store async native function for id: $newId bindingObject: $pointer');
+    }
+
     return newId;
   }
 
