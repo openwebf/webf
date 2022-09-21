@@ -8,7 +8,6 @@
 namespace webf {
 
 void ElementData::CopyWith(ElementData* other) {
-  id_ = other->id_;
 }
 
 }  // namespace webf

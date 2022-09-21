@@ -13,7 +13,8 @@
 
 namespace webf {
 
-struct NativeShareable {};
+// Shared C struct which can be read by dart through Dart FFI.
+struct DartReadable {};
 
 struct NativeTypeBase {
   using ImplType = void;

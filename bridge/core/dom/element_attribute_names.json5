@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "element_attribute_names"
+      }
+    ]
+  },
+  "data": [
+    "id",
+    "className"
+  ]
+}

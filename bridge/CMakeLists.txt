@@ -386,6 +386,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/html_element_factory.cc
     out/html_names.cc
     out/script_type_names.cc
+    out/element_attribute_names.cc
     )
 
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2

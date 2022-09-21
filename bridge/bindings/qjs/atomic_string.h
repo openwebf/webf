@@ -51,7 +51,6 @@ class AtomicString {
     return JS_AtomToValue(ctx, atom_);
   };
 
-  bool IsNull() const;
   bool IsEmpty() const;
 
   JSAtom Impl() const { return atom_; }
@@ -84,7 +83,7 @@ class AtomicString {
   JSContext* ctx_{nullptr};
   JSRuntime* runtime_{nullptr};
   int64_t length_{0};
-  JSAtom atom_{JS_ATOM_NULL};
+  JSAtom atom_{JS_ATOM_empty_string};
   mutable JSAtom atom_upper_{JS_ATOM_NULL};
   mutable JSAtom atom_lower_{JS_ATOM_NULL};
   StringKind kind_;

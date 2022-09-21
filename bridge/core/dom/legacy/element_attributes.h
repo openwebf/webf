@@ -32,7 +32,6 @@ class ElementAttributes : public ScriptWrappable {
   bool hasAttribute(const AtomicString& name, ExceptionState& exception_state);
   void removeAttribute(const AtomicString& name, ExceptionState& exception_state);
   void CopyWith(ElementAttributes* attributes);
-  std::shared_ptr<SpaceSplitString> ClassName();
   std::string ToString();
 
   bool IsEquivalent(const ElementAttributes& other) const;
@@ -42,7 +41,6 @@ class ElementAttributes : public ScriptWrappable {
  private:
   int32_t owner_event_target_id_;
   std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher> attributes_;
-  std::shared_ptr<SpaceSplitString> class_name_{std::make_shared<SpaceSplitString>("")};
 };
 
 }  // namespace webf

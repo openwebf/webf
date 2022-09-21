@@ -32,7 +32,7 @@ using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_objec
                                               int32_t argc,
                                               NativeValue* argv);
 
-struct NativeBindingObject : public NativeShareable {
+struct NativeBindingObject : public DartReadable {
   NativeBindingObject() = delete;
   explicit NativeBindingObject(BindingObject* target)
       : binding_target_(target), invoke_binding_methods_from_dart(HandleCallFromDartSide){};
@@ -56,7 +56,7 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
-struct BindingObjectPromiseContext : public NativeShareable {
+struct BindingObjectPromiseContext : public DartReadable {
   ExecutingContext* context;
   BindingObject* binding_object;
   std::shared_ptr<ScriptPromiseResolver> promise_resolver;

@@ -98,16 +98,12 @@ AtomicString::AtomicString(JSContext* ctx, JSAtom atom)
   JS_FreeValue(ctx, string);
 }
 
-bool AtomicString::IsNull() const {
-  return atom_ == JS_ATOM_NULL;
-}
-
 bool AtomicString::IsEmpty() const {
   return *this == built_in_string::kempty_string;
 }
 
 std::string AtomicString::ToStdString() const {
-  if (IsNull())
+  if (IsEmpty())
     return "";
 
   const char* buf = JS_AtomToCString(ctx_, atom_);
@@ -179,7 +175,7 @@ AtomicString AtomicString::ToUpperIfNecessary() const {
   if (kind_ == StringKind::kIsUpperCase) {
     return *this;
   }
-  if (atom_upper_ != JS_ATOM_NULL)
+  if (atom_upper_ != JS_ATOM_empty_string)
     return *this;
   AtomicString upperString = ToUpperSlow();
   atom_upper_ = upperString.atom_;
@@ -198,7 +194,7 @@ const AtomicString AtomicString::ToLowerIfNecessary() const {
   if (kind_ == StringKind::kIsLowerCase) {
     return *this;
   }
-  if (atom_lower_ != JS_ATOM_NULL)
+  if (atom_lower_ != JS_ATOM_empty_string)
     return *this;
   AtomicString lowerString = ToLowerSlow();
   atom_lower_ = lowerString.atom_;

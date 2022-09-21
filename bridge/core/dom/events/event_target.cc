@@ -20,7 +20,7 @@
 
 namespace webf {
 
-struct EventDispatchResult : public NativeShareable {
+struct EventDispatchResult : public DartReadable {
   bool canceled{false};
   bool propagationStopped{false};
 };

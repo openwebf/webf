@@ -51,7 +51,7 @@ struct NativeEvent {
 };
 #endif
 
-struct RawEvent : public NativeShareable {
+struct RawEvent : public DartReadable {
   uint64_t* bytes;
   int64_t length;
 };

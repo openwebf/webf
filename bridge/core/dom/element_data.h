@@ -12,14 +12,9 @@ namespace webf {
 
 class ElementData {
  public:
-  const AtomicString& Id() const { return id_; }
-  AtomicString SetId(AtomicString new_id) const { return std::exchange(id_, std::move(new_id)); }
-  bool HasID() const { return !id_.IsNull(); }
-
   void CopyWith(ElementData* other);
 
  private:
-  mutable AtomicString id_;
 };
 
 }  // namespace webf

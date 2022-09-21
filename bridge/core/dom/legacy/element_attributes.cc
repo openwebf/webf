@@ -42,11 +42,6 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
     return false;
   }
 
-  if (name == built_in_string::kclass) {
-    std::string v = value.ToStdString();
-    class_name_->set(v);
-  }
-
   attributes_[name] = value;
 
   std::unique_ptr<NativeString> args_01 = name.ToNativeString();
@@ -80,10 +75,6 @@ void ElementAttributes::CopyWith(ElementAttributes* attributes) {
   for (auto& attr : attributes->attributes_) {
     attributes_[attr.first] = attr.second;
   }
-}
-
-std::shared_ptr<SpaceSplitString> ElementAttributes::ClassName() {
-  return class_name_;
 }
 
 std::string ElementAttributes::ToString() {

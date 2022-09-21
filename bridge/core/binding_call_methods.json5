@@ -148,6 +148,8 @@
     "getElementById",
     "getElementsByClassName",
     "getElementsByName",
-    "getElementsByTagName"
+    "getElementsByTagName",
+    "id",
+    "className"
   ]
 }
