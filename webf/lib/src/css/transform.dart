@@ -6,6 +6,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 const Offset _DEFAULT_TRANSFORM_OFFSET = Offset.zero;
 const Alignment _DEFAULT_TRANSFORM_ALIGNMENT = Alignment.center;
@@ -99,8 +100,15 @@ mixin CSSTransformMixin on RenderStyle {
   Offset? get effectiveTransformOffset {
     // Make sure it is used after renderBoxModel been created.
     assert(renderBoxModel != null);
-    Offset? offset = MatrixUtils.getAsTranslation(effectiveTransformMatrix);
-    return offset;
+    Vector3 translation = effectiveTransformMatrix.getTranslation();
+    return Offset(translation[0], translation[1]);
+  }
+
+  // Effective transform scale after renderBoxModel has been layouted.
+  double? get effectiveTransformScale {
+    assert(renderBoxModel != null);
+    double scale = effectiveTransformMatrix.getMaxScaleOnAxis();
+    return scale;
   }
 
   Offset get transformOffset => _transformOffset;
