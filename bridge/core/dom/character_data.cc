@@ -4,8 +4,8 @@
  */
 
 #include "character_data.h"
-#include "core/dom/document.h"
 #include "built_in_string.h"
+#include "core/dom/document.h"
 
 namespace webf {
 
