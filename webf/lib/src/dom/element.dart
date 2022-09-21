@@ -239,6 +239,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case 'clientHeight':
         return clientHeight;
 
+      case 'id':
+        return id;
       case 'className':
         return className;
       case 'classList':

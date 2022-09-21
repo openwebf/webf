@@ -476,6 +476,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       originalTarget.attributes.forEach((key, value) {
         newElement.setAttribute(key, value);
       });
+      newElement.className = originalTarget.className;
+      newElement.id = originalTarget.id;
     }
   }
 

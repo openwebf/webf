@@ -150,8 +150,7 @@ std::string Element::nodeNameLowerCase() const {
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(class_name)};
-  NativeValue result =
-      InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -234,9 +233,17 @@ ElementData& Element::EnsureElementData() const {
 }
 
 Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
-  if (flag == CloneChildrenFlag::kSkip)
-    return &CloneWithoutChildren(&factory);
-  Element* copy = &CloneWithChildren(flag, &factory);
+  Element* copy;
+  if (flag == CloneChildrenFlag::kSkip) {
+    copy = &CloneWithoutChildren(&factory);
+  } else {
+    copy = &CloneWithChildren(flag, &factory);
+  }
+
+  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(copy->eventTargetId()));
+  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCloneNode, std::move(args_01),
+                                                       nullptr);
+
   return copy;
 }
 
