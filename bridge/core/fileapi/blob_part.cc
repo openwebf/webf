@@ -41,7 +41,9 @@ std::shared_ptr<BlobPart> BlobPart::Create(JSContext* ctx, JSValue value, Except
       return nullptr;
     }
     buffer = JS_GetArrayBuffer(ctx, &length, arrayBufferObject);
-    return std::make_shared<BlobPart>(ctx, buffer, length, byte_offset, byte_length, byte_per_element);
+    auto blob_part = std::make_shared<BlobPart>(ctx, buffer, length, byte_offset, byte_length, byte_per_element);
+    JS_FreeValue(ctx, arrayBufferObject);
+    return blob_part;
   }
 
   return nullptr;

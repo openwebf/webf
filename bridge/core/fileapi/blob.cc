@@ -33,14 +33,7 @@ class BlobReaderClient {
 };
 
 void BlobReaderClient::Start() {
-  // Use setTimeout to simulate async data loading.
-  // TODO: Blob are part of File API in W3C standard, but not supported by Kraken from now on.
-  // Needs to remove this after File API had landed.
-  auto callback = [](void* ptr, int32_t contextId, const char* errmsg) -> void {
-    auto* client = static_cast<BlobReaderClient*>(ptr);
-    client->DidFinishLoading();
-  };
-  context_->dartMethodPtr()->setTimeout(this, context_->contextId(), callback, 0);
+  DidFinishLoading();
 }
 
 void BlobReaderClient::DidFinishLoading() {
@@ -126,7 +119,7 @@ ScriptPromise Blob::text(ExceptionState& exception_state) {
   return resolver->Promise();
 }
 
-void Blob::PopulateBlobData(std::vector<std::shared_ptr<BlobPart>>& data) {
+void Blob::PopulateBlobData(const std::vector<std::shared_ptr<BlobPart>>& data) {
   for (auto& item : data) {
     switch (item->GetContentType()) {
       case BlobPart::ContentType::kString: {

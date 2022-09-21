@@ -33,7 +33,7 @@ class Blob : public ScriptWrappable {
 
   Blob() = delete;
   explicit Blob(JSContext* ctx) : ScriptWrappable(ctx){};
-  explicit Blob(JSContext* ctx, std::vector<std::shared_ptr<BlobPart>>& data) : ScriptWrappable(ctx) {
+  explicit Blob(JSContext* ctx, const std::vector<std::shared_ptr<BlobPart>>& data) : ScriptWrappable(ctx) {
     PopulateBlobData(data);
   };
   explicit Blob(JSContext* ctx,
@@ -66,7 +66,7 @@ class Blob : public ScriptWrappable {
   void Trace(GCVisitor* visitor) const override;
 
  protected:
-  void PopulateBlobData(std::vector<std::shared_ptr<BlobPart>>& data);
+  void PopulateBlobData(const std::vector<std::shared_ptr<BlobPart>>& data);
 
  private:
   std::string mime_type_;
