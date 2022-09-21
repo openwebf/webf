@@ -1020,6 +1020,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       _removeInlineStyle();
     } else if (qualifiedName == _CLASS_NAME) {
       className = EMPTY_STRING;
+    } else if (qualifiedName == _ID) {
+      id = EMPTY_STRING;
     }
     attributes.remove(qualifiedName);
   }

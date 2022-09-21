@@ -58,12 +58,6 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value, 
     };
     _didModifyAttribute(name, AtomicString::Empty(), value);
   }
-
-  std::unique_ptr<NativeString> args_01 = name.ToNativeString();
-  std::unique_ptr<NativeString> args_02 = value.ToNativeString();
-
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kSetAttribute, std::move(args_01),
-                                                       std::move(args_02), nullptr);
 }
 
 void Element::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {

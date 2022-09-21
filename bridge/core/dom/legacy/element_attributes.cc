@@ -17,8 +17,8 @@ static inline bool IsNumberIndex(const StringView& name) {
   return f >= '0' && f <= '9';
 }
 
-ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element->ctx()) {}
-ElementAttributes::ElementAttributes(ExecutingContext* context) : ScriptWrappable(context->ctx()) {}
+ElementAttributes::ElementAttributes(Element* element)
+    : ScriptWrappable(element->ctx()), owner_event_target_id_(element->eventTargetId()) {}
 
 AtomicString ElementAttributes::GetAttribute(const AtomicString& name) {
   bool numberIndex = IsNumberIndex(name.ToStringView());
@@ -49,6 +49,12 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
 
   attributes_[name] = value;
 
+  std::unique_ptr<NativeString> args_01 = name.ToNativeString();
+  std::unique_ptr<NativeString> args_02 = value.ToNativeString();
+
+  GetExecutingContext()->uiCommandBuffer()->addCommand(owner_event_target_id_, UICommand::kSetAttribute,
+                                                       std::move(args_01), std::move(args_02), nullptr);
+
   return true;
 }
 
@@ -64,6 +70,10 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
   attributes_.erase(name);
+
+  std::unique_ptr<NativeString> args_01 = name.ToNativeString();
+  GetExecutingContext()->uiCommandBuffer()->addCommand(owner_event_target_id_, UICommand::kRemoveAttribute,
+                                                       std::move(args_01), nullptr);
 }
 
 void ElementAttributes::CopyWith(ElementAttributes* attributes) {
@@ -99,6 +109,7 @@ bool ElementAttributes::IsEquivalent(const ElementAttributes& other) const {
   return true;
 }
 
-void ElementAttributes::Trace(GCVisitor* visitor) const {}
+void ElementAttributes::Trace(GCVisitor* visitor) const {
+}
 
 }  // namespace webf

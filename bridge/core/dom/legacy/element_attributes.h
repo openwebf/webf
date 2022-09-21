@@ -24,13 +24,8 @@ class ElementAttributes : public ScriptWrappable {
   using ImplType = ElementAttributes*;
 
   static ElementAttributes* Create(Element* element) { return MakeGarbageCollected<ElementAttributes>(element); }
-  static ElementAttributes* Create(ExecutingContext* context, ExceptionState& exception_state) {
-    return MakeGarbageCollected<ElementAttributes>(context);
-  }
 
-  ElementAttributes(Element) = delete;
-  ElementAttributes(Element* element);
-  ElementAttributes(ExecutingContext* context);
+  explicit ElementAttributes(Element* element);
 
   AtomicString GetAttribute(const AtomicString& name);
   bool setAttribute(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state);
@@ -45,6 +40,7 @@ class ElementAttributes : public ScriptWrappable {
   void Trace(GCVisitor* visitor) const override;
 
  private:
+  int32_t owner_event_target_id_;
   std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher> attributes_;
   std::shared_ptr<SpaceSplitString> class_name_{std::make_shared<SpaceSplitString>("")};
 };
