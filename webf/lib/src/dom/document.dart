@@ -115,26 +115,33 @@ class Document extends Node {
   }
 
   dynamic querySelector(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
     return QuerySelector.querySelector(this, args.first);
   }
 
   dynamic querySelectorAll(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
     return QuerySelector.querySelectorAll(this, args.first);
   }
 
   dynamic getElementById(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
     return QuerySelector.querySelector(this, '#' + args.first);
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
-    return QuerySelector.querySelectorAll(this, '.' + args.first);
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
+    String selector = (args.first as String).split(classNameSplitRegExp).map((e) => '.' + e).join('');
+    return QuerySelector.querySelectorAll(this, selector);
   }
 
   dynamic getElementsByTagName(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
     return QuerySelector.querySelectorAll(this, args.first);
   }
 
   dynamic getElementsByName(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
     return QuerySelector.querySelectorAll(this, '[name="${args.first}"]');
   }
 
