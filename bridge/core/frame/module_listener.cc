@@ -14,4 +14,8 @@ std::shared_ptr<ModuleListener> ModuleListener::Create(const std::shared_ptr<QJS
 
 ModuleListener::ModuleListener(std::shared_ptr<QJSFunction> function) : function_(std::move(function)) {}
 
+const std::shared_ptr<QJSFunction>& ModuleListener::value() {
+  return function_;
+}
+
 }  // namespace webf

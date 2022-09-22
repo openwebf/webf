@@ -13,15 +13,18 @@ namespace webf {
 
 class DOMTimer {
  public:
-  enum TimerStatus { kPending, kExecuting, kFinished };
+  enum TimerKind { kOnce, kMultiple };
+  enum TimerStatus { kPending, kExecuting, kFinished, kCanceled };
 
-  static std::shared_ptr<DOMTimer> create(ExecutingContext* context, const std::shared_ptr<QJSFunction>& callback);
-  DOMTimer(ExecutingContext* context, std::shared_ptr<QJSFunction> callback);
+  static std::shared_ptr<DOMTimer> create(ExecutingContext* context, const std::shared_ptr<QJSFunction>& callback, TimerKind timer_kind);
+  DOMTimer(ExecutingContext* context, std::shared_ptr<QJSFunction> callback, TimerKind timer_kind);
 
   // Trigger timer callback.
   void Fire();
 
-  [[nodiscard]] int32_t timerId() const { return timerId_; };
+  TimerKind kind() const { return kind_; }
+
+  [[nodiscard]] int32_t timerId() const { return timer_id_; };
   void setTimerId(int32_t timerId);
 
   void SetStatus(TimerStatus status) { status_ = status; }
@@ -30,9 +33,9 @@ class DOMTimer {
   ExecutingContext* context() { return context_; }
 
  private:
+  TimerKind kind_;
   ExecutingContext* context_{nullptr};
-  int32_t timerId_{-1};
-  int32_t isInterval_{false};
+  int32_t timer_id_{-1};
   TimerStatus status_;
   std::shared_ptr<QJSFunction> callback_;
 };

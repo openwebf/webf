@@ -14,6 +14,8 @@ class ModuleListenerContainer final {
  public:
   void AddModuleListener(const std::shared_ptr<ModuleListener>& listener);
 
+  const std::forward_list<std::shared_ptr<ModuleListener>>& listeners() const;
+
  private:
   std::forward_list<std::shared_ptr<ModuleListener>> listeners_;
   friend ModuleListener;

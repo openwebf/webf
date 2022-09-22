@@ -23,15 +23,17 @@ class ExecutingContext;
 class DOMTimerCoordinator {
  public:
   // Creates and installs a new timer. Returns the assigned ID.
-  void installNewTimer(ExecutingContext* context, int32_t timerId, std::shared_ptr<DOMTimer> timer);
+  void installNewTimer(ExecutingContext* context, int32_t timer_id, std::shared_ptr<DOMTimer> timer);
 
-  // Removes and disposes the timer with the specified ID, if any. This may
-  // destroy the timer.
-  void* removeTimeoutById(int32_t timerId);
-  std::shared_ptr<DOMTimer> getTimerById(int32_t timerId);
+  // Then timer are going to be finished, remove them from active_timers_ list.
+  void removeTimeoutById(int32_t timer_id);
+  // Force stop and remove a timer, even if it's still executing.
+  void forceStopTimeoutById(int32_t timer_id);
+
+  std::shared_ptr<DOMTimer> getTimerById(int32_t timer_id);
 
  private:
-  std::unordered_map<int, std::shared_ptr<DOMTimer>> m_activeTimers;
+  std::unordered_map<int, std::shared_ptr<DOMTimer>> active_timers_;
 };
 
 }  // namespace webf

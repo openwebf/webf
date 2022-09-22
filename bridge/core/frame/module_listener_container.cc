@@ -10,4 +10,8 @@ void ModuleListenerContainer::AddModuleListener(const std::shared_ptr<ModuleList
   listeners_.push_front(listener);
 }
 
+const std::forward_list<std::shared_ptr<ModuleListener>>& ModuleListenerContainer::listeners() const {
+  return listeners_;
+}
+
 }  // namespace webf

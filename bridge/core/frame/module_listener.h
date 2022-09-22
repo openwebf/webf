@@ -20,6 +20,8 @@ class ModuleListener {
   static std::shared_ptr<ModuleListener> Create(const std::shared_ptr<QJSFunction>& function);
   explicit ModuleListener(std::shared_ptr<QJSFunction> function);
 
+  const std::shared_ptr<QJSFunction>& value();
+
  private:
   std::shared_ptr<QJSFunction> function_{nullptr};
 

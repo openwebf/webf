@@ -15,12 +15,12 @@
 
 namespace webf {
 
-std::shared_ptr<DOMTimer> DOMTimer::create(ExecutingContext* context, const std::shared_ptr<QJSFunction>& callback) {
-  return std::make_shared<DOMTimer>(context, callback);
+std::shared_ptr<DOMTimer> DOMTimer::create(ExecutingContext* context, const std::shared_ptr<QJSFunction>& callback, TimerKind timer_kind) {
+  return std::make_shared<DOMTimer>(context, callback, timer_kind);
 }
 
-DOMTimer::DOMTimer(ExecutingContext* context, std::shared_ptr<QJSFunction> callback)
-    : context_(context), callback_(std::move(callback)), status_(TimerStatus::kPending) {}
+DOMTimer::DOMTimer(ExecutingContext* context, std::shared_ptr<QJSFunction> callback, TimerKind timer_kind)
+    : context_(context), callback_(std::move(callback)), status_(TimerStatus::kPending), kind_(timer_kind ){}
 
 void DOMTimer::Fire() {
   if (!callback_->IsFunction(context_->ctx()))
@@ -34,7 +34,7 @@ void DOMTimer::Fire() {
 }
 
 void DOMTimer::setTimerId(int32_t timerId) {
-  timerId_ = timerId;
+  timer_id_ = timerId;
 }
 
 }  // namespace webf

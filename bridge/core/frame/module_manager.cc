@@ -100,19 +100,18 @@ AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     return AtomicString::Empty();
   }
 
-  auto moduleCallback = ModuleCallback::Create(callback);
-  context->ModuleCallbacks()->AddModuleCallbacks(std::move(moduleCallback));
-  ModuleContext* moduleContext = new ModuleContext{context, moduleCallback};
-
   NativeString* result;
   if (callback != nullptr) {
+    auto moduleCallback = ModuleCallback::Create(callback);
+    context->ModuleCallbacks()->AddModuleCallbacks(std::move(moduleCallback));
+    ModuleContext* moduleContext = new ModuleContext{context, moduleCallback};
     result = context->dartMethodPtr()->invokeModule(moduleContext, context->contextId(),
                                                     moduleName.ToNativeString().get(), method.ToNativeString().get(),
                                                     params.get(), handleInvokeModuleTransientCallback);
   } else {
-    result = context->dartMethodPtr()->invokeModule(moduleContext, context->contextId(),
-                                                    moduleName.ToNativeString().get(), method.ToNativeString().get(),
-                                                    params.get(), handleInvokeModuleUnexpectedCallback);
+    result = context->dartMethodPtr()->invokeModule(nullptr, context->contextId(), moduleName.ToNativeString().get(),
+                                                    method.ToNativeString().get(), params.get(),
+                                                    handleInvokeModuleUnexpectedCallback);
   }
 
   if (result == nullptr) {

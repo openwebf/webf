@@ -13,6 +13,7 @@ static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
   if (errmsg != nullptr) {
     JSValue exception = JS_ThrowTypeError(context->ctx(), "%s", errmsg);
     context->HandleException(&exception);
+    context->Timers()->forceStopTimeoutById(timer->timerId());
     return;
   }
 
@@ -21,9 +22,6 @@ static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
 
   // Trigger timer callbacks.
   timer->Fire();
-
-  // Executing pending async jobs.
-  context->DrainPendingPromiseJobs();
 }
 
 static void handleTransientCallback(void* ptr, int32_t contextId, const char* errmsg) {
@@ -32,6 +30,10 @@ static void handleTransientCallback(void* ptr, int32_t contextId, const char* er
 
   if (!context->IsValid())
     return;
+
+  if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+    return;
+  }
 
   timer->SetStatus(DOMTimer::TimerStatus::kExecuting);
   handleTimerCallback(timer, errmsg);
@@ -46,6 +48,10 @@ static void handlePersistentCallback(void* ptr, int32_t contextId, const char* e
 
   if (!context->IsValid())
     return;
+
+  if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+    return;
+  }
 
   handleTimerCallback(timer, errmsg);
 }
@@ -69,7 +75,7 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
 #endif
 
   // Create a timer object to keep track timer callback.
-  auto timer = DOMTimer::create(context, handler);
+  auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kOnce);
   auto timerId =
       context->dartMethodPtr()->setTimeout(timer.get(), context->contextId(), handleTransientCallback, timeout);
 
@@ -98,7 +104,7 @@ int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
   }
 
   // Create a timer object to keep track timer callback.
-  auto timer = DOMTimer::create(context, handler);
+  auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kMultiple);
 
   uint32_t timerId =
       context->dartMethodPtr()->setInterval(timer.get(), context->contextId(), handlePersistentCallback, timeout);
@@ -118,8 +124,18 @@ void WindowOrWorkerGlobalScope::clearTimeout(ExecutingContext* context, int32_t 
   }
 
   context->dartMethodPtr()->clearTimeout(context->contextId(), timerId);
+  context->Timers()->forceStopTimeoutById(timerId);
+}
 
-  context->Timers()->removeTimeoutById(timerId);
+void WindowOrWorkerGlobalScope::clearInterval(ExecutingContext* context, int32_t timerId, ExceptionState& exception) {
+  if (context->dartMethodPtr()->clearTimeout == nullptr) {
+    exception.ThrowException(context->ctx(), ErrorType::InternalError,
+                             "Failed to execute 'clearTimeout': dart method (clearTimeout) is not registered.");
+    return;
+  }
+
+  context->dartMethodPtr()->clearTimeout(context->contextId(), timerId);
+  context->Timers()->forceStopTimeoutById(timerId);
 }
 
 }  // namespace webf
