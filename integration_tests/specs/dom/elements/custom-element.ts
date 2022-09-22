@@ -345,6 +345,46 @@ describe('custom html element', () => {
     // @ts-ignore
     sampleElement._fake = [1, 2, 3, 4, 5];
     // @ts-ignore
+    sampleElement._fn = () => 1;
+    // @ts-ignore
+    sampleElement._self = sampleElement;
+    // @ts-ignore
     expect(sampleElement._fake).toEqual([1, 2, 3, 4, 5]);
+    // @ts-ignore
+    expect(sampleElement._fn()).toBe(1);
+    // @ts-ignore
+    expect(sampleElement._self === sampleElement);
+  });
+
+  it('should work with cloneNode', () => {
+    let sampleElement = document.createElement('sample-element');
+    let text = document.createTextNode('helloworld');
+    sampleElement.appendChild(text);
+    document.body.appendChild(sampleElement);
+
+    // @ts-ignore
+    expect(sampleElement._fake).toBe(null);
+
+    // @ts-ignore
+    sampleElement._fake = [1, 2, 3, 4, 5];
+    // @ts-ignore
+    sampleElement._fn = () => 1;
+    // @ts-ignore
+    sampleElement._self = sampleElement;
+    // @ts-ignore
+    expect(sampleElement._fake).toEqual([1, 2, 3, 4, 5]);
+    // @ts-ignore
+    expect(sampleElement._fn()).toBe(1);
+    // @ts-ignore
+    expect(sampleElement._self === sampleElement);
+
+    let clone = sampleElement.cloneNode();
+
+    // @ts-ignore
+    expect(clone._fake).toEqual([1,2,3,4,5]);
+    // @ts-ignore
+    expect(clone._fn()).toEqual(1);
+    // @ts-ignore
+    expect(clone._self).toBe(sampleElement);
   });
 });

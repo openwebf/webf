@@ -25,6 +25,13 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
   return false;
 }
 
+bool WidgetElement::IsUnderScoreProperty(const AtomicString& name) {
+  StringView string_view = name.ToStringView();
+
+  const char* string = string_view.Characters8();
+  return string_view.length() > 0 && string[0] == '_';
+}
+
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
   NativeValue result = GetBindingProperty(key, exception_state);
   return result.tag != NativeTag::TAG_NULL;
@@ -42,12 +49,37 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
+  // Properties with underscore are taken as raw javascript property.
+  if (IsUnderScoreProperty(key)) {
+    if (unimplemented_properties_.count(key) > 0) {
+      return unimplemented_properties_[key];
+    }
+
+    return ScriptValue::Empty(ctx());
+  }
+
   return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
+  if (IsUnderScoreProperty(key)) {
+    unimplemented_properties_[key] = value;
+    return true;
+  }
+
   NativeValue result = SetBindingProperty(key, value.ToNative(), exception_state);
   return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+}
+
+bool WidgetElement::IsWidgetElement() const {
+  return true;
+}
+
+void WidgetElement::Trace(GCVisitor* visitor) const {
+  HTMLElement::Trace(visitor);
+  for (auto& entry : unimplemented_properties_) {
+    entry.second.Trace(visitor);
+  }
 }
 
 void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag flag) {

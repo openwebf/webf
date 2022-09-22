@@ -22,6 +22,7 @@ class WidgetElement : public HTMLElement {
   WidgetElement(const AtomicString& tag_name, Document* document);
 
   static bool IsValidName(const AtomicString& name);
+  static bool IsUnderScoreProperty(const AtomicString& name);
 
   bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
@@ -29,7 +30,11 @@ class WidgetElement : public HTMLElement {
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
 
+  bool IsWidgetElement() const override;
+
   void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) override;
+
+  void Trace(GCVisitor* visitor) const override;
 
  private:
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;
