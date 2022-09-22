@@ -71,8 +71,8 @@ void WebFPage::invokeModuleEvent(const NativeString* moduleName,
     extraObject = ScriptValue::CreateJsonObject(ctx, extraString.c_str(), extraString.length());
   }
 
-  auto* listeners = context_->ModuleCallbacks()->listeners();
-  for (auto& listener : *listeners) {
+  auto listeners = context_->ModuleListeners()->listeners();
+  for (auto& listener : listeners) {
     ScriptValue arguments[] = {ScriptValue(ctx, moduleName),
                                event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
     ScriptValue result = listener->value()->Invoke(ctx, ScriptValue::Empty(ctx), 3, arguments);
