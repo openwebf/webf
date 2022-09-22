@@ -303,11 +303,13 @@ ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${min
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
 
-  return `${requiredArgumentsInit.join('\n')}
-if (argc <= ${minimalRequiredArgc}) {
+  let minimalRequiredCall = declaration.args.length == 0 ? call : `if (argc <= ${minimalRequiredArgc}) {
   ${call}
   break;
-}
+}`;
+
+  return `${requiredArgumentsInit.join('\n')}
+${minimalRequiredCall}
 
 ${optionalArgumentsInit.join('\n')}
 `;
