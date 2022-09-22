@@ -185,7 +185,7 @@ TEST(EventTarget, wontLeakWithStringProperty) {
   bridge->evaluateScript(code.c_str(), code.size(), "internal://", 0);
 }
 //
-//TEST(EventTarget, dispatchEventOnGC) {
+// TEST(EventTarget, dispatchEventOnGC) {
 //  using namespace webf;
 //
 //  bool static errorCalled = false;
@@ -228,7 +228,7 @@ TEST(EventTarget, wontLeakWithStringProperty) {
 //  EXPECT_EQ(logCalled, true);
 //}
 //
-//TEST(EventTarget, globalBindListener) {
+// TEST(EventTarget, globalBindListener) {
 //  bool static logCalled = false;
 //  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
 //    logCalled = true;
@@ -240,7 +240,7 @@ TEST(EventTarget, wontLeakWithStringProperty) {
 //  EXPECT_EQ(logCalled, true);
 //}
 //
-//TEST(EventTarget, shouldKeepAtom) {
+// TEST(EventTarget, shouldKeepAtom) {
 //  auto bridge = TEST_init();
 //  bool static logCalled = false;
 //  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
