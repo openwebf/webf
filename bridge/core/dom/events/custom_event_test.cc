@@ -5,8 +5,9 @@
 
 #include "event_target.h"
 #include "gtest/gtest.h"
-#include "page.h"
 #include "webf_test_env.h"
+
+using namespace webf;
 
 TEST(CustomEvent, instanceofEvent) {
   bool static errorCalled = false;
@@ -19,7 +20,7 @@ TEST(CustomEvent, instanceofEvent) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->getContext();
+  auto context = bridge->GetExecutingContext();
   const char* code =
       "let customEvent = new CustomEvent('abc', { detail: 'helloworld'});"
       "console.log(customEvent instanceof Event);";

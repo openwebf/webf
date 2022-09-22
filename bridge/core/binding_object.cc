@@ -35,6 +35,14 @@ BindingObject::BindingObject(ExecutingContext* context, NativeBindingObject* nat
   binding_object_ = native_binding_object;
 }
 
+void BindingObject::TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context) {
+  pending_promise_contexts_.emplace(binding_object_promise_context);
+}
+
+void BindingObject::FullFillPendingPromise(BindingObjectPromiseContext* binding_object_promise_context) {
+  pending_promise_contexts_.erase(binding_object_promise_context);
+}
+
 NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
                                                int32_t argc,
                                                const NativeValue* argv,
@@ -42,7 +50,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   context_->FlushUICommand();
   if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
     exception_state.ThrowException(context_->ctx(), ErrorType::InternalError,
-                                   "Failed to call dart method: invokeBindingMethod not initialized.");
+                                   "Failed to call dart method: invoke_bindings_methods_from_native not initialized.");
     return Native_NewNull();
   }
 
@@ -52,14 +60,6 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   return return_value;
 }
 
-void BindingObject::TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context) {
-  pending_promise_contexts_.emplace(binding_object_promise_context);
-}
-
-void BindingObject::FullFillPendingPromise(BindingObjectPromiseContext* binding_object_promise_context) {
-  pending_promise_contexts_.erase(binding_object_promise_context);
-}
-
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
                                                int32_t argc,
                                                const NativeValue* argv,
@@ -67,7 +67,7 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
   context_->FlushUICommand();
   if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
     exception_state.ThrowException(context_->ctx(), ErrorType::InternalError,
-                                   "Failed to call dart method: invokeBindingMethod not initialized.");
+                                   "Failed to call dart method: invoke_bindings_methods_from_native not initialized.");
     return Native_NewNull();
   }
 

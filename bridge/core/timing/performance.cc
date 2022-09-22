@@ -43,7 +43,9 @@ ScriptValue Performance::toJSON(ExceptionState& exception_state) const {
   return result;
 }
 
-AtomicString Performance::___webf_navigation_summary__(ExceptionState& exception_state) const {}
+AtomicString Performance::___webf_navigation_summary__(ExceptionState& exception_state) const {
+  return AtomicString::Empty();
+}
 
 std::vector<Member<PerformanceEntry>> Performance::getEntries(ExceptionState& exception_state) {
   return entries_;
