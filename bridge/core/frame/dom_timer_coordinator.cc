@@ -41,7 +41,9 @@ static void handleTransientCallback(void* ptr, int32_t context_id, const char* e
   context->Timers()->removeTimeoutById(timer->timerId());
 }
 
-void DOMTimerCoordinator::installNewTimer(ExecutingContext* context, int32_t timer_id, std::shared_ptr<DOMTimer> timer) {
+void DOMTimerCoordinator::installNewTimer(ExecutingContext* context,
+                                          int32_t timer_id,
+                                          std::shared_ptr<DOMTimer> timer) {
   active_timers_[timer_id] = timer;
 }
 

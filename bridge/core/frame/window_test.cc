@@ -129,8 +129,7 @@ TEST(Window, onloadShouldExist) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-  };
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
 
   std::string code = std::string(R"(
     console.assert('onload' in window);

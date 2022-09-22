@@ -16,7 +16,9 @@ class DOMTimer {
   enum TimerKind { kOnce, kMultiple };
   enum TimerStatus { kPending, kExecuting, kFinished, kCanceled };
 
-  static std::shared_ptr<DOMTimer> create(ExecutingContext* context, const std::shared_ptr<QJSFunction>& callback, TimerKind timer_kind);
+  static std::shared_ptr<DOMTimer> create(ExecutingContext* context,
+                                          const std::shared_ptr<QJSFunction>& callback,
+                                          TimerKind timer_kind);
   DOMTimer(ExecutingContext* context, std::shared_ptr<QJSFunction> callback, TimerKind timer_kind);
 
   // Trigger timer callback.

@@ -40,10 +40,7 @@ void handleInvokeModuleTransientCallback(void* ptr, int32_t contextId, const cha
     std::u16string argumentString = std::u16string(reinterpret_cast<const char16_t*>(json->string()), json->length());
     std::string utf8Arguments = toUTF8(argumentString);
     ScriptValue jsonObject = ScriptValue::CreateJsonObject(ctx, utf8Arguments.c_str(), utf8Arguments.size());
-    ScriptValue arguments[] = {
-        ScriptValue::Empty(ctx),
-        jsonObject
-    };
+    ScriptValue arguments[] = {ScriptValue::Empty(ctx), jsonObject};
     ScriptValue returnValue = moduleContext->callback->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
     if (returnValue.IsException()) {
       context->HandleException(&returnValue);
