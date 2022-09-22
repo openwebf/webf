@@ -154,7 +154,6 @@ TEST(EventTarget, ClassInheritEventTarget) {
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-    EXPECT_STREQ(message.c_str(), "ƒ () ƒ ()");
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
@@ -166,15 +165,32 @@ TEST(EventTarget, ClassInheritEventTarget) {
   constructor() {
     super();
   }
+
+  addEvent(event, fn) {
+    this.addEventListener(event, fn);
+  }
+
+  removeEvent(event, fn) {
+    this.removeEventListener(event, fn);
+  }
+
+  triggerEvent(event) {
+    this.dispatchEvent(event);
+  }
 }
 
- let s = new Sample();
- console.log(s.addEventListener, s.removeEventListener)
+let s = new Sample();
+let clickCount = 0;
+let f = () => clickCount++;
+s.addEvent('click', f);
+s.triggerEvent(new Event('click'));
+s.removeEvent('click', f);
+s.triggerEvent(new Event('click'));
+console.assert(clickCount == 1);
 )");
   bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
-  EXPECT_EQ(logCalled, true);
 }
 
 TEST(EventTarget, wontLeakWithStringProperty) {

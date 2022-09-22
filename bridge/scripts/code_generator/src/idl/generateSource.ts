@@ -392,6 +392,10 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
   let returnValueInit = generateReturnValueInit(blob, declare.returnType, options);
   let returnValueResult = generateReturnValueResult(blob, declare.returnType, declare.returnTypeMode, options);
 
+  let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
+  JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);
+  JS_FreeValue(ctx, proto);` : '';
+
   return `${paramCheck}
 
   ExceptionState exception_state;
@@ -406,6 +410,7 @@ ${addIndent(callBody, 4)}
   if (UNLIKELY(exception_state.HasException())) {
     return exception_state.ToQuickJS();
   }
+  ${constructorPrototypeInit}
   return ${returnValueResult};
 `;
 }
