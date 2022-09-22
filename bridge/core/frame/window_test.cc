@@ -122,3 +122,19 @@ TEST(Window, location) {
   bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
   EXPECT_EQ(logCalled, true);
 }
+
+TEST(Window, onloadShouldExist) {
+  static bool errorCalled = false;
+  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  };
+
+  std::string code = std::string(R"(
+    console.assert('onload' in window);
+  )");
+  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  EXPECT_EQ(errorCalled, false);
+}

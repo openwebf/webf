@@ -93,8 +93,8 @@ class Window extends EventTarget {
   // including the size of a rendered scroll bar (if any), or zero if there is no viewport.
   // https://drafts.csswg.org/cssom-view/#dom-window-innerwidth
   // This is a read only idl attribute.
-  int get innerWidth => _viewportSize.width.toInt();
-  int get innerHeight => _viewportSize.height.toInt();
+  double get innerWidth => _viewportSize.width;
+  double get innerHeight => _viewportSize.height;
 
   Size get _viewportSize {
     RenderViewportBox? viewport = document.viewport;

@@ -3,8 +3,9 @@ import {ScrollOptions} from "../dom/scroll_options";
 import {ScrollToOptions} from "../dom/scroll_to_options";
 import {Screen} from "./screen";
 import {WindowEventHandlers} from "./window_event_handlers";
+import {GlobalEventHandlers} from "../dom/global_event_handlers";
 
-interface Window extends EventTarget, WindowEventHandlers {
+interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   open(url?: string): Window | null;
   scroll(x: number, y: number): void;
   scroll(options?: ScrollToOptions): void;

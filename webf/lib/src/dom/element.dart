@@ -565,8 +565,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   void _consumeScrollTicker(_) {
     if (_shouldConsumeScrollTicker && hasEventListener(EVENT_SCROLL)) {
       _dispatchScrollEvent();
-      _shouldConsumeScrollTicker = false;
     }
+    _shouldConsumeScrollTicker = false;
   }
 
   /// https://drafts.csswg.org/cssom-view/#scrolling-events
