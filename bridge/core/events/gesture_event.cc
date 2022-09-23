@@ -52,7 +52,8 @@ GestureEvent::GestureEvent(ExecutingContext* context,
       velocityX_(native_gesture_event->velocityX),
       velocityY_(native_gesture_event->velocityY),
       scale_(native_gesture_event->scale),
-      rotation_(native_gesture_event->rotation) {}
+      rotation_(native_gesture_event->rotation) {
+}
 
 bool GestureEvent::IsGestureEvent() const {
   return true;

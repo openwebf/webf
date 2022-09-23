@@ -39,7 +39,8 @@ InputEvent::InputEvent(ExecutingContext* context, const AtomicString& type, Nati
       input_type_(AtomicString(ctx(), native_input_event->inputType)),
       data_(AtomicString(ctx(), native_input_event->data))
 #endif
-{}
+{
+}
 
 const AtomicString& InputEvent::inputType() const {
   return input_type_;

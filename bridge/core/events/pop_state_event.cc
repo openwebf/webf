@@ -40,7 +40,8 @@ PopStateEvent::PopStateEvent(ExecutingContext* context, const AtomicString& type
                                            static_cast<const char*>(native_ui_event->state),
                                            strlen(static_cast<const char*>(native_ui_event->state))))
 #endif
-{}
+{
+}
 
 ScriptValue PopStateEvent::state() const {
   return state_;

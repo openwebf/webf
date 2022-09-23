@@ -45,7 +45,8 @@ TransitionEvent::TransitionEvent(ExecutingContext* context,
       property_name_(AtomicString(ctx(), native_transition_event->propertyName)),
       pseudo_element_(AtomicString(ctx(), native_transition_event->pseudoElement))
 #endif
-{}
+{
+}
 
 double TransitionEvent::elapsedTime() const {
   return elapsed_time_;

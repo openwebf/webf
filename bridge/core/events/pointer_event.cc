@@ -56,7 +56,8 @@ PointerEvent::PointerEvent(ExecutingContext* context,
       tilt_x_(native_pointer_event->tiltX),
       tilt_y_(native_pointer_event->tiltY),
       twist_(native_pointer_event->twist),
-      width_(native_pointer_event->width) {}
+      width_(native_pointer_event->width) {
+}
 
 double PointerEvent::height() const {
   return height_;

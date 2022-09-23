@@ -58,7 +58,8 @@ UIEvent::UIEvent(ExecutingContext* context, const AtomicString& type, NativeUIEv
 #else
       view_(DynamicTo<Window>(BindingObject::From(static_cast<NativeBindingObject*>(native_ui_event->view)))),
 #endif
-      which_(native_ui_event->which) {}
+      which_(native_ui_event->which) {
+}
 
 double UIEvent::detail() const {
   return detail_;

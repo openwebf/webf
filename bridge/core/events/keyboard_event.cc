@@ -65,7 +65,8 @@ KeyboardEvent::KeyboardEvent(ExecutingContext* context,
       location_(native_keyboard_event->location),
       meta_key_(native_keyboard_event->metaKey),
       repeat_(native_keyboard_event->repeat),
-      shift_key_(native_keyboard_event->shiftKey) {}
+      shift_key_(native_keyboard_event->shiftKey) {
+}
 
 bool KeyboardEvent::getModifierState(const AtomicString& key_args, ExceptionState& exception_state) {
   return false;

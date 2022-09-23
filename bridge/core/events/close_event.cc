@@ -55,7 +55,8 @@ CloseEvent::CloseEvent(ExecutingContext* context, const AtomicString& type, Nati
 #else
       reason_(AtomicString(context->ctx(), native_close_event->reason)),
 #endif
-      was_clean_(native_close_event->wasClean) {}
+      was_clean_(native_close_event->wasClean) {
+}
 
 bool CloseEvent::IsCloseEvent() const {
   return true;

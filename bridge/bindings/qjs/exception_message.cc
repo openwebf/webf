@@ -4,8 +4,8 @@
  */
 
 #include "exception_message.h"
-#include <vector>
 #include <cassert>
+#include <vector>
 
 namespace webf {
 
