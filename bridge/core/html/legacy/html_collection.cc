@@ -53,10 +53,6 @@ void HTMLCollection::NamedPropertyEnumerator(std::vector<AtomicString>& names, E
 }
 
 void HTMLCollection::Trace(GCVisitor* visitor) const {
-  visitor->Trace(base_);
-  for (auto& node : nodes_) {
-    node->Trace(visitor);
-  }
 }
 
 }  // namespace webf

@@ -23,8 +23,8 @@ class HTMLCollection : public ScriptWrappable {
 
  private:
   CollectionType type_;
-  Member<ContainerNode> base_;
-  std::vector<Element*> nodes_;
+  ContainerNode* base_;
+  std::vector<Element> nodes_;
 };
 
 }  // namespace webf
