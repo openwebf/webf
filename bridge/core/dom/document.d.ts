@@ -17,7 +17,7 @@ interface Document extends Node {
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
 
-  createElement(tagName: string): Element;
+  createElement(tagName: string, options?: any): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
   createComment(data?: string): Comment;
