@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -490,7 +491,9 @@ class ImageElement extends Element {
     // Fire the load event at first frame come.
     if (_frameCount == 1 && !_loaded) {
       _loaded = true;
-      scheduleMicrotask(_dispatchLoadEvent);
+      SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+        _dispatchLoadEvent();
+      });
     }
   }
 
