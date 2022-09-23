@@ -54,7 +54,9 @@ Element* Document::createElement(const AtomicString& name, ExceptionState& excep
   return MakeGarbageCollected<HTMLUnknownElement>(name, *this);
 }
 
-Element* Document::createElement(const AtomicString& name, const ScriptValue& options, ExceptionState& exception_state) {
+Element* Document::createElement(const AtomicString& name,
+                                 const ScriptValue& options,
+                                 ExceptionState& exception_state) {
   return createElement(name, exception_state);
 }
 
