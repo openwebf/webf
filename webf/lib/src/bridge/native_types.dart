@@ -7,7 +7,6 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 
-import 'from_native.dart';
 import 'native_value.dart';
 
 // MUST READ:
