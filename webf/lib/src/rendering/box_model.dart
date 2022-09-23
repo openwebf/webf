@@ -15,6 +15,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 
+import 'box_overflow.dart';
 import 'debug_overlay.dart';
 
 // The hashCode of all the renderBox which is in layout.
@@ -216,6 +217,48 @@ class RenderLayoutBox extends RenderBoxModel
   void move(RenderBox child, {RenderBox? after}) {
     super.move(child, after: after);
     _paintingOrder = null;
+  }
+
+  // iterate add child to overflowLayout
+  void addOverflowLayoutFromChildren(List<RenderBox> children) {
+    children.forEach((child) {
+      addOverflowLayoutFromChild(child);
+    });
+  }
+
+  void addOverflowLayoutFromChild(RenderBox child) {
+    final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+    // TODO not support custom element and inline element overflowRect
+    if (!child.hasSize || (child is! RenderBoxModel && child is! RenderReplaced)) {
+      return;
+    }
+    CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
+    Rect overflowRect = Rect.fromLTWH(
+        childParentData.offset.dx, childParentData.offset.dy, child.boxSize!.width, child.boxSize!.height);
+
+    if (style.effectiveTransformOffset != null) {
+      overflowRect = overflowRect.shift(style.effectiveTransformOffset!);
+    }
+    // child overflowLayout effect parent overflowLayout when child effectiveOverflow is visible or auto
+    if (child.renderStyle.effectiveOverflowX == CSSOverflowType.visible ||
+        child.renderStyle.effectiveOverflowX == CSSOverflowType.auto ||
+        child.renderStyle.effectiveOverflowY == CSSOverflowType.auto ||
+        child.renderStyle.effectiveOverflowY == CSSOverflowType.visible) {
+      Rect childOverflowLayoutRect = child.overflowRect!.shift(Offset.zero);
+
+      // child overflowLayout rect need transform for parent`s cartesian coordinates
+      final Matrix4 transform = Matrix4.identity();
+      applyLayoutTransform(child, transform, false);
+      Offset tlOffset =
+          MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+      overflowRect = Rect.fromLTRB(
+          math.min(overflowRect.left, tlOffset.dx),
+          math.min(overflowRect.top, tlOffset.dy),
+          math.max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
+          math.max(overflowRect.bottom, tlOffset.dy + childOverflowLayoutRect.height));
+    }
+
+    addLayoutOverflow(overflowRect);
   }
 
   // Sort children by zIndex, used for paint and hitTest.
@@ -611,6 +654,7 @@ class RenderBoxModel extends RenderBox
     with
         RenderBoxModelBase,
         RenderBoxDecorationMixin,
+        RenderBoxOverflowLayout,
         RenderTransformMixin,
         RenderOverflowMixin,
         RenderOpacityMixin,
@@ -1035,6 +1079,7 @@ class RenderBoxModel extends RenderBox
     // Deflate padding constraints.
     contentConstraints = renderStyle.deflatePaddingConstraints(contentConstraints);
     _contentConstraints = contentConstraints;
+    clearOverflowLayout();
   }
 
   /// Find scroll container
