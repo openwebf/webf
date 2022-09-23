@@ -48,6 +48,7 @@ class RenderLineBreak extends RenderReplaced {
   @override
   void performLayout() {
     size = Size(0, constraints.maxHeight);
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }
 
   @override
