@@ -48,6 +48,13 @@ EventTarget* EventTarget::Create(ExecutingContext* context, ExceptionState& exce
 }
 
 EventTarget::~EventTarget() {
+#if UNIT_TEST
+  // Callback to unit test specs before eventTarget finalized.
+  if (TEST_getEnv(GetExecutingContext()->uniqueId())->on_event_target_disposed != nullptr) {
+    TEST_getEnv(GetExecutingContext()->uniqueId())->on_event_target_disposed(this);
+  }
+#endif
+
   GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget, nullptr);
 }
 

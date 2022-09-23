@@ -5,6 +5,9 @@
 #include "event_target.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
+#include "core/dom/events/event.h"
+#include "core/dom/container_node.h"
+#include "event_type_names.h"
 
 using namespace webf;
 
@@ -200,79 +203,36 @@ TEST(EventTarget, wontLeakWithStringProperty) {
       "img.any = '1234'";
   bridge->evaluateScript(code.c_str(), code.size(), "internal://", 0);
 }
-//
-// TEST(EventTarget, dispatchEventOnGC) {
-//  using namespace webf;
-//
-//  bool static errorCalled = false;
-//  bool static logCalled = false;
-//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-//    logCalled = true;
-//    EXPECT_STREQ(message.c_str(), "1234");
-//  };
-//  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-//  auto context = bridge->GetExecutingContext();
-//  std::string code = std::string(R"(
-//{
-//// Wrap div in a block scope will be freed by GC
-// let div = document.createElement('div');
-//}
-// window.onclick = () => {console.log(1234);}
-//
-// setTimeout(() => {});
-//)");
-//
-//  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-//
-//  static auto* window = static_cast<EventTargetInstance*>(JS_GetOpaque(context->global(), 1));
-//  static int32_t contextId = context->getContextId();
-//
-//  TEST_registerEventTargetDisposedCallback(context->uniqueId, [](EventTargetInstance* eventTargetInstance) {
-//    // Check to not crash when trigger click on disposed eventTarget
-//    TEST_dispatchEvent(contextId, eventTargetInstance, "click");
-//
-//    // Check to not crash when trigger event on any eventTarget.
-//    TEST_dispatchEvent(contextId, window, "click");
-//  });
-//
-//  // Run gc to trigger eventTarget been disposed by GC.
-//  JS_RunGC(context->runtime());
-//
-//  TEST_runLoop(context);
-//
-//  EXPECT_EQ(errorCalled, false);
-//  EXPECT_EQ(logCalled, true);
-//}
-//
-// TEST(EventTarget, globalBindListener) {
-//  bool static logCalled = false;
-//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-//    logCalled = true;
-//    EXPECT_STREQ(message.c_str(), "clicked");
-//  };
-//  auto bridge = TEST_init();
-//  std::string code = "addEventListener('click', () => {console.log('clicked'); }); dispatchEvent(new Event('click'))";
-//  bridge->evaluateScript(code.c_str(), code.size(), "internal://", 0);
-//  EXPECT_EQ(logCalled, true);
-//}
-//
-// TEST(EventTarget, shouldKeepAtom) {
-//  auto bridge = TEST_init();
-//  bool static logCalled = false;
-//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-//    logCalled = true;
-//    EXPECT_STREQ(message.c_str(), "2");
-//  };
-//  std::string code = "addEventListener('click', () => {console.log(1)});";
-//  bridge->evaluateScript(code.c_str(), code.size(), "internal://", 0);
-//  JS_RunGC(bridge->GetExecutingContext()->runtime());
-//
-//  std::string code2 = "addEventListener('appear', () => {console.log(2)});";
-//  bridge->evaluateScript(code2.c_str(), code2.size(), "internal://", 0);
-//
-//  JS_RunGC(bridge->GetExecutingContext()->runtime());
-//
-//  std::string code3 = "(function() { var eeee = new Event('appear'); dispatchEvent(eeee); } )();";
-//  bridge->evaluateScript(code3.c_str(), code3.size(), "internal://", 0);
-//  EXPECT_EQ(logCalled, true);
-//}
+
+TEST(EventTarget, globalBindListener) {
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    logCalled = true;
+    EXPECT_STREQ(message.c_str(), "clicked");
+  };
+  auto bridge = TEST_init();
+  std::string code = "addEventListener('click', () => {console.log('clicked'); }); dispatchEvent(new Event('click'))";
+  bridge->evaluateScript(code.c_str(), code.size(), "internal://", 0);
+  EXPECT_EQ(logCalled, true);
+}
+
+TEST(EventTarget, shouldKeepAtom) {
+  auto bridge = TEST_init();
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    logCalled = true;
+    EXPECT_STREQ(message.c_str(), "2");
+  };
+  std::string code = "addEventListener('click', () => {console.log(1)});";
+  bridge->evaluateScript(code.c_str(), code.size(), "internal://", 0);
+  JS_RunGC(JS_GetRuntime(bridge->GetExecutingContext()->ctx()));
+
+  std::string code2 = "addEventListener('appear', () => {console.log(2)});";
+  bridge->evaluateScript(code2.c_str(), code2.size(), "internal://", 0);
+
+  JS_RunGC(JS_GetRuntime(bridge->GetExecutingContext()->ctx()));
+
+  std::string code3 = "(function() { var eeee = new Event('appear'); dispatchEvent(eeee); } )();";
+  bridge->evaluateScript(code3.c_str(), code3.size(), "internal://", 0);
+  EXPECT_EQ(logCalled, true);
+}

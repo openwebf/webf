@@ -11,15 +11,16 @@
 #include "core/executing_context.h"
 #include "core/page.h"
 #include "foundation/logging.h"
-//
-//// Trigger a callbacks before GC free the eventTargets.
-// using TEST_OnEventTargetDisposed = void (*)(binding::qjs::EventTargetInstance* eventTargetInstance);
-// struct UnitTestEnv {
-//  TEST_OnEventTargetDisposed onEventTargetDisposed{nullptr};
-//};
-//
-//// Mock dart methods and add async timer to emulate webf environment in C++ unit test.
-//
+
+using namespace webf;
+
+// Trigger a callbacks before GC free the eventTargets.
+using TEST_OnEventTargetDisposed = void (*)(EventTarget* event_target);
+struct UnitTestEnv {
+  TEST_OnEventTargetDisposed on_event_target_disposed{nullptr};
+};
+
+// Mock dart methods and add async timer to emulate webf environment in C++ unit test.
 
 namespace webf {
 
@@ -29,11 +30,11 @@ std::unique_ptr<WebFPage> TEST_allocateNewPage(OnJSError onJsError);
 void TEST_runLoop(ExecutingContext* context);
 void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError);
 void TEST_mockTestEnvDartMethods(int32_t contextId, OnJSError onJSError);
-
+void TEST_registerEventTargetDisposedCallback(int32_t context_unique_id, TEST_OnEventTargetDisposed callback);
+std::shared_ptr<UnitTestEnv> TEST_getEnv(int32_t context_unique_id);
 }  // namespace webf
-// void TEST_dispatchEvent(int32_t contextId, EventTarget* eventTarget, const std::string type);
-// void TEST_callNativeMethod(void* nativePtr, void* returnValue, void* method, int32_t argc, void* argv);
-// void TEST_registerEventTargetDisposedCallback(int32_t contextUniqueId, TEST_OnEventTargetDisposed callback);
-// std::shared_ptr<UnitTestEnv> TEST_getEnv(int32_t contextUniqueId);
+   // void TEST_dispatchEvent(int32_t contextId, EventTarget* eventTarget, const std::string type);
+   // void TEST_callNativeMethod(void* nativePtr, void* returnValue, void* method, int32_t argc, void* argv);
+
 
 #endif  // BRIDGE_TEST_WEBF_TEST_ENV_H_

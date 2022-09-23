@@ -334,4 +334,21 @@ void TEST_mockTestEnvDartMethods(int32_t contextId, OnJSError onJSError) {
   registerTestEnvDartMethods(contextId, mockMethods.data(), mockMethods.size());
 }
 
+std::unordered_map<int32_t, std::shared_ptr<UnitTestEnv>> unitTestEnvMap;
+std::shared_ptr<UnitTestEnv> TEST_getEnv(int32_t contextUniqueId) {
+  if (unitTestEnvMap.count(contextUniqueId) == 0) {
+    unitTestEnvMap[contextUniqueId] = std::make_shared<UnitTestEnv>();
+  }
+
+  return unitTestEnvMap[contextUniqueId];
+}
+
+void TEST_registerEventTargetDisposedCallback(int32_t context_unique_id, TEST_OnEventTargetDisposed callback) {
+  if (unitTestEnvMap.count(context_unique_id) == 0) {
+    unitTestEnvMap[context_unique_id] = std::make_shared<UnitTestEnv>();
+  }
+
+  unitTestEnvMap[context_unique_id]->on_event_target_disposed = callback;
+}
+
 }  // namespace webf
