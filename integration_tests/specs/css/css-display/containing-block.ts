@@ -1632,4 +1632,323 @@ describe('containing-block', () => {
 
     await snapshot();
   });
+
+  it('percent-margin-bottom', async () => {
+    let p;
+    let container;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a blue square below.`)]
+    );
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        'data-expected-width': '100',
+        'data-expected-height': '100',
+        style: {
+          overflow: 'hidden',
+          background: 'blue',
+          'box-sizing': 'border-box',
+          width: '100px',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'margin-bottom': '50%',
+            height: '50px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(container);
+
+    await snapshot();
+  });
+  it('percent-margin-left', async () => {
+    let p;
+    let container;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a blue square below.`)]
+    );
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        style: {
+          'box-sizing': 'border-box',
+          width: '200px',
+        },
+      },
+      [
+        createElement('div', {
+          'data-expected-width': '100',
+          'data-expected-height': '100',
+          style: {
+            'margin-left': '50%',
+            height: '100px',
+            background: 'blue',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(container);
+
+    await snapshot();
+  });
+  it('percent-margin-right', async () => {
+    let p;
+    let container;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a blue square below.`)]
+    );
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        style: {
+          'box-sizing': 'border-box',
+          width: '200px',
+        },
+      },
+      [
+        createElement('div', {
+          'data-expected-width': '100',
+          'data-expected-height': '100',
+          style: {
+            'margin-right': '50%',
+            height: '100px',
+            background: 'blue',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(container);
+
+    await snapshot();
+  });
+  it('percent-margin-top', async () => {
+    let p;
+    let container;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a blue square below.`)]
+    );
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        'data-expected-width': '100',
+        'data-expected-height': '100',
+        style: {
+          overflow: 'hidden',
+          background: 'blue',
+          'box-sizing': 'border-box',
+          width: '100px',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'margin-top': '50%',
+            height: '50px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(container);
+
+    await snapshot();
+  });
+  it('percent-padding-bottom', async () => {
+    let p;
+    let container;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a blue square below.`)]
+    );
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        style: {
+          'box-sizing': 'border-box',
+          width: '500px',
+        },
+      },
+      [
+        createElement('div', {
+          'data-expected-width': '100',
+          'data-expected-height': '100',
+          style: {
+            'padding-bottom': '10%',
+            width: '100px',
+            height: '50px',
+            background: 'blue',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(container);
+
+    await snapshot();
+  });
+  it('percent-padding-left', async () => {
+    let p;
+    let container;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a blue square below.`)]
+    );
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        style: {
+          'box-sizing': 'border-box',
+          width: '500px',
+        },
+      },
+      [
+        createElement('div', {
+          'data-expected-width': '100',
+          'data-expected-height': '100',
+          style: {
+            'padding-left': '10%',
+            width: '50px',
+            height: '100px',
+            background: 'blue',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(container);
+
+    await snapshot();
+  });
+  it('percent-padding-right', async () => {
+    let p;
+    let container;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a blue square below.`)]
+    );
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        style: {
+          'box-sizing': 'border-box',
+          width: '500px',
+        },
+      },
+      [
+        createElement('div', {
+          'data-expected-width': '100',
+          'data-expected-height': '100',
+          style: {
+            'padding-right': '10%',
+            width: '50px',
+            height: '100px',
+            background: 'blue',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(container);
+
+    await snapshot();
+  });
+  it('percent-padding-top', async () => {
+    let p;
+    let container;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a blue square below.`)]
+    );
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        style: {
+          'box-sizing': 'border-box',
+          width: '500px',
+        },
+      },
+      [
+        createElement('div', {
+          'data-expected-width': '100',
+          'data-expected-height': '100',
+          style: {
+            'padding-top': '10%',
+            width: '100px',
+            height: '50px',
+            background: 'blue',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(container);
+
+    await snapshot();
+  });
 });

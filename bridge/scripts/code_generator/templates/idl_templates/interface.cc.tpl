@@ -34,12 +34,12 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
 
   <% if (object.indexedProp.indexKeyType == 'number') { %>
   JSValue QJS<%= className %>::IndexedPropertyGetterCallback(JSContext* ctx, JSValue obj, uint32_t index) {
+    ExceptionState exception_state;
+    MemberMutationScope scope{ExecutingContext::From(ctx)};
     auto* self = toScriptWrappable<<%= className %>>(obj);
     if (index >= self->length()) {
       return JS_UNDEFINED;
     }
-    ExceptionState exception_state;
-    MemberMutationScope scope{ExecutingContext::From(ctx)};
     <%= generateCoreTypeValue(object.indexedProp.type) %> result = self->item(index, exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return exception_state.ToQuickJS();

@@ -137,6 +137,8 @@ class ExecutingContext {
                                    JS_BOOL is_handled,
                                    void* opaque);
 
+  // Dart methods ptr should keep alive when ExecutingContext is disposing.
+  std::unique_ptr<DartMethodPointer> dart_method_ptr_ = std::make_unique<DartMethodPointer>();
   // From C++ standard, https://isocpp.org/wiki/faq/dtors#order-dtors-for-members
   // Members first initialized and destructed at the last.
   // Always keep ScriptState at the top of all stack allocated members to make sure it destructed in the last.
@@ -155,7 +157,6 @@ class ExecutingContext {
   ExecutionContextData context_data_{this};
   bool in_dispatch_error_event_{false};
   UICommandBuffer ui_command_buffer_{this};
-  std::unique_ptr<DartMethodPointer> dart_method_ptr_ = std::make_unique<DartMethodPointer>();
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::vector<ScriptWrappable*> active_wrappers_;
