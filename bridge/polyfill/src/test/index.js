@@ -136,9 +136,9 @@ global.simulateInputText = __webf_simulate_inputtext__;
 function resetDocumentElement() {
   window.scrollTo(0, 0);
 
-  while(document.documentElement.firstChild) {
-    document.documentElement.firstChild.remove();
-  }
+  document.removeChild(document.documentElement);
+  let html = document.createElement('html');
+  document.appendChild(html);
 
   let head = document.createElement('head');
   document.documentElement.appendChild(head);

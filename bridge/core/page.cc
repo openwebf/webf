@@ -41,6 +41,11 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
 
   MemberMutationScope scope{context_};
 
+  auto document_element = context_->document()->documentElement();
+  if (!document_element) {
+    return false;
+  }
+
   // Remove all Nodes including body and head.
   context_->document()->documentElement()->RemoveChildren();
 

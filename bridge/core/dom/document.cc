@@ -34,7 +34,6 @@ Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
   GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateDocument,
                                                        (void*)bindingObject());
-  document_element_ = MakeGarbageCollected<HTMLHtmlElement>(*this);
 }
 
 Element* Document::createElement(const AtomicString& name, ExceptionState& exception_state) {
@@ -213,12 +212,13 @@ Node* Document::Clone(Document&, CloneChildrenFlag) const {
 }
 
 HTMLHtmlElement* Document::documentElement() const {
-  return DynamicTo<HTMLHtmlElement>(document_element_.Get());
-}
+  for (HTMLElement* child = Traversal<HTMLElement>::FirstChild(*this); child;
+       child = Traversal<HTMLElement>::NextSibling(*child)) {
+    if (IsA<HTMLHtmlElement>(*child))
+      return DynamicTo<HTMLHtmlElement>(child);
+  }
 
-void Document::InitDocumentElement() {
-  ExceptionState exception_state;
-  AppendChild(document_element_, exception_state);
+  return nullptr;
 }
 
 // Legacy impl: Get the JS polyfill impl from global object.
@@ -305,7 +305,6 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
 }
 
 void Document::Trace(GCVisitor* visitor) const {
-  visitor->Trace(document_element_);
   script_animation_controller_.Trace(visitor);
   ContainerNode::Trace(visitor);
 }

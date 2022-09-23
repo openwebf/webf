@@ -70,7 +70,6 @@ class Document : public ContainerNode, public TreeScope {
   Node* Clone(Document&, CloneChildrenFlag) const override;
 
   [[nodiscard]] HTMLHtmlElement* documentElement() const;
-  void InitDocumentElement();
 
   // "body element" as defined by HTML5
   // (https://html.spec.whatwg.org/C/#the-body-element-2).
@@ -103,7 +102,6 @@ class Document : public ContainerNode, public TreeScope {
 
  private:
   int node_count_{0};
-  Member<Element> document_element_;
   ScriptAnimationController script_animation_controller_;
 };
 

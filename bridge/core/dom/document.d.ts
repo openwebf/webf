@@ -13,7 +13,7 @@ interface Document extends Node {
   readonly all: HTMLAllCollection;
   body: HTMLBodyElement | null;
   readonly head: HTMLHeadElement | null;
-  readonly documentElement: HTMLHtmlElement;
+  readonly documentElement: HTMLHtmlElement | null;
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
 

@@ -370,7 +370,6 @@ void ExecutingContext::ClearMutationScope() {
 void ExecutingContext::InstallDocument() {
   MemberMutationScope scope{this};
   document_ = MakeGarbageCollected<Document>(this);
-  document_->InitDocumentElement();
   DefineGlobalProperty("document", document_->ToQuickJS());
 }
 
