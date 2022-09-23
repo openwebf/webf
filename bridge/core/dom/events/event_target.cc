@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+#include <cstdint>
 #include "event_target.h"
-#include <limits>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "custom_event.h"
@@ -229,7 +229,7 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   size_t index_of_removed_listener;
   RegisteredEventListener registered_listener;
 
-  uint32_t listener_count = INT_MAX;
+  uint32_t listener_count = UINT32_MAX;
   if (!d->event_listener_map.Remove(event_type, listener, options, &index_of_removed_listener, &registered_listener,
                                     &listener_count))
     return false;
