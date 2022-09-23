@@ -6,6 +6,7 @@
 #ifndef BRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_
 #define BRIDGE_CORE_DOM_EMPTY_NODE_LIST_H_
 
+#include <vector>
 #include "node_list.h"
 
 namespace webf {

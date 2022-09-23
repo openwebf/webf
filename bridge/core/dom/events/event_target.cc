@@ -2,12 +2,12 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+#include <limits>
 #include "event_target.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "custom_event.h"
 #include "event_factory.h"
-#include "event_type_names.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
 

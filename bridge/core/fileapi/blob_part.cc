@@ -65,6 +65,8 @@ JSValue BlobPart::ToQuickJS(JSContext* ctx) const {
       return JS_NULL;
     }
   }
+
+  return JS_NULL;
 }
 
 BlobPart::ContentType BlobPart::GetContentType() const {
