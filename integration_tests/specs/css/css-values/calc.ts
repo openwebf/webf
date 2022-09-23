@@ -1,4 +1,4 @@
-fdescribe("calc", () => {
+describe("calc", () => {
   it("001", async () => {
     let div;
     div = createElement(
