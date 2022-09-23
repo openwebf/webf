@@ -42,11 +42,20 @@ TouchEvent::TouchEvent(ExecutingContext* context, const AtomicString& type, Nati
       ctrl_key_(native_touch_event->ctrlKey),
       meta_key_(native_touch_event->metaKey),
       shift_key_(native_touch_event->shiftKey),
+#if ANDROID_32_BIT
+      changed_touches_(
+          MakeGarbageCollected<TouchList>(context, reinterpret_cast<NativeTouchList*>(native_touch_event->changedTouches))),
+      target_touches_(
+          MakeGarbageCollected<TouchList>(context, reinterpret_cast<NativeTouchList*>(native_touch_event->targetTouches))),
+      touches_(MakeGarbageCollected<TouchList>(context, reinterpret_cast<NativeTouchList*>(native_touch_event->touches)))
+#else
       changed_touches_(
           MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList*>(native_touch_event->changedTouches))),
       target_touches_(
           MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList*>(native_touch_event->targetTouches))),
-      touches_(MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList*>(native_touch_event->touches))) {}
+      touches_(MakeGarbageCollected<TouchList>(context, static_cast<NativeTouchList*>(native_touch_event->touches)))
+#endif
+{}
 
 bool TouchEvent::altKey() const {
   return alt_key_;

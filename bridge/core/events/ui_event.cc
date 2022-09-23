@@ -53,7 +53,11 @@ UIEvent::UIEvent(ExecutingContext* context,
 UIEvent::UIEvent(ExecutingContext* context, const AtomicString& type, NativeUIEvent* native_ui_event)
     : Event(context, type, &native_ui_event->native_event),
       detail_(native_ui_event->detail),
+#if ANDROID_32_BIT
+      view_(DynamicTo<Window>(BindingObject::From(reinterpret_cast<NativeBindingObject*>(native_ui_event->view)))),
+#else
       view_(DynamicTo<Window>(BindingObject::From(static_cast<NativeBindingObject*>(native_ui_event->view)))),
+#endif
       which_(native_ui_event->which) {}
 
 double UIEvent::detail() const {

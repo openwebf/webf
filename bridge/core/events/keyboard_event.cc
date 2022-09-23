@@ -52,10 +52,15 @@ KeyboardEvent::KeyboardEvent(ExecutingContext* context,
     : UIEvent(context, type, &native_keyboard_event->native_event),
       alt_key_(native_keyboard_event->altKey),
       char_code_(native_keyboard_event->charCode),
+#if ANDROID_32_BIT
+      code_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_keyboard_event->code))),
+      key_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_keyboard_event->key))),
+#else
       code_(AtomicString(ctx(), native_keyboard_event->code)),
+      key_(AtomicString(ctx(), native_keyboard_event->key)),
+#endif
       ctrl_key_(native_keyboard_event->ctrlKey),
       is_composing_(native_keyboard_event->isComposing),
-      key_(AtomicString(ctx(), native_keyboard_event->key)),
       key_code_(native_keyboard_event->keyCode),
       location_(native_keyboard_event->location),
       meta_key_(native_keyboard_event->metaKey),

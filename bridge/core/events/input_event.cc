@@ -32,8 +32,14 @@ InputEvent::InputEvent(ExecutingContext* context,
 
 InputEvent::InputEvent(ExecutingContext* context, const AtomicString& type, NativeInputEvent* native_input_event)
     : UIEvent(context, type, &native_input_event->native_event),
+#if ANDROID_32_BIT
+      input_type_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_input_event->inputType))),
+      data_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_input_event->data)))
+#else
       input_type_(AtomicString(ctx(), native_input_event->inputType)),
-      data_(AtomicString(ctx(), native_input_event->data)) {}
+      data_(AtomicString(ctx(), native_input_event->data))
+#endif
+{}
 
 const AtomicString& InputEvent::inputType() const {
   return input_type_;

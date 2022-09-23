@@ -51,8 +51,13 @@ FocusEvent::FocusEvent(ExecutingContext* context,
 
 FocusEvent::FocusEvent(ExecutingContext* context, const AtomicString& type, NativeFocusEvent* native_focus_event)
     : UIEvent(context, type, &native_focus_event->native_event),
+#if ANDROID_32_BIT
+      related_target_(DynamicTo<EventTarget>(
+          BindingObject::From(reinterpret_cast<NativeBindingObject*>(native_focus_event->relatedTarget)))) {}
+#else
       related_target_(DynamicTo<EventTarget>(
           BindingObject::From(static_cast<NativeBindingObject*>(native_focus_event->relatedTarget)))) {}
+#endif
 
 EventTarget* FocusEvent::relatedTarget() const {
   return related_target_;

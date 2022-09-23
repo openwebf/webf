@@ -46,7 +46,11 @@ PointerEvent::PointerEvent(ExecutingContext* context,
       height_(native_pointer_event->height),
       is_primary(native_pointer_event->isPrimary),
       pointer_id_(native_pointer_event->pointerId),
+#if ANDROID_32_BIT
+      pointer_type_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_pointer_event->pointerType))),
+#else
       pointer_type_(AtomicString(ctx(), native_pointer_event->pointerType)),
+#endif
       pressure_(native_pointer_event->pressure),
       tangential_pressure_(native_pointer_event->tangentialPressure),
       tilt_x_(native_pointer_event->tiltX),

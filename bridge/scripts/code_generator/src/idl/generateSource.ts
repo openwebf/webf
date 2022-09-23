@@ -77,10 +77,6 @@ export function generateCoreTypeValue(type: ParameterType[]): string {
 }
 
 export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = false): string {
-  if (is32Bit) {
-    return 'int64_t';
-  }
-
   switch (type[0]) {
     case FunctionArgumentType.int64: {
       return 'int64_t';
@@ -95,13 +91,23 @@ export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = f
       return 'int64_t';
     }
     case FunctionArgumentType.dom_string: {
+      if (is32Bit) {
+        return 'int64_t';
+      }
+
       return 'NativeString*';
     }
     default:
+      if (is32Bit) {
+        return 'int64_t';
+      }
       return 'void*';
   }
 
   if (typeof type[0] == 'string') {
+    if (is32Bit) {
+      return 'int64_t';
+    }
     return 'NativeBindingObject*';
   }
 

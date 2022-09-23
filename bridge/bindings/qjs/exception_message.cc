@@ -5,6 +5,7 @@
 
 #include "exception_message.h"
 #include <vector>
+#include <cassert>
 
 namespace webf {
 

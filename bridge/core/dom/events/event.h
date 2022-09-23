@@ -27,6 +27,7 @@ struct NativeEvent {
   int64_t type{0};
   int64_t bubbles{0};
   int64_t cancelable{0};
+  int64_t composed{0};
   int64_t timeStamp{0};
   int64_t defaultPrevented{0};
   // The pointer address of target EventTargetInstance object.

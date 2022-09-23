@@ -7,6 +7,7 @@
 #define BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
 
 #include <quickjs/quickjs.h>
+#include <cassert>
 #include <functional>
 #include <memory>
 #include "foundation/macros.h"

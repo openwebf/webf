@@ -68,8 +68,14 @@ Event::Event(ExecutingContext* context, const AtomicString& event_type, NativeEv
       fire_only_capture_listeners_at_target_(false),
       fire_only_non_capture_listeners_at_target_(false),
       event_phase_(0),
+#if ANDROID_32_BIT
+      target_(DynamicTo<EventTarget>(BindingObject::From(reinterpret_cast<NativeBindingObject*>(native_event->target)))),
+      current_target_(DynamicTo<EventTarget>(BindingObject::From(reinterpret_cast<NativeBindingObject*>(native_event->currentTarget)))) {}
+#else
       target_(DynamicTo<EventTarget>(BindingObject::From(native_event->target))),
       current_target_(DynamicTo<EventTarget>(BindingObject::From(native_event->currentTarget))) {}
+#endif
+
 
 void Event::SetType(const AtomicString& type) {
   type_ = type;

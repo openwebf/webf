@@ -40,8 +40,13 @@ GestureEvent::GestureEvent(ExecutingContext* context,
                            const AtomicString& type,
                            NativeGestureEvent* native_gesture_event)
     : Event(context, type, &native_gesture_event->native_event),
+#if ANDROID_32_BIT
+      state_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_gesture_event->state))),
+      direction_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_gesture_event->direction))),
+#else
       state_(AtomicString(ctx(), native_gesture_event->state)),
       direction_(AtomicString(ctx(), native_gesture_event->direction)),
+#endif
       deltaX_(native_gesture_event->deltaX),
       deltaY_(native_gesture_event->deltaY),
       velocityX_(native_gesture_event->velocityX),

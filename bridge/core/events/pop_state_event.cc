@@ -31,9 +31,16 @@ PopStateEvent::PopStateEvent(ExecutingContext* context,
 
 PopStateEvent::PopStateEvent(ExecutingContext* context, const AtomicString& type, NativePopStateEvent* native_ui_event)
     : Event(context, type, &native_ui_event->native_event),
+#if ANDROID_32_BIT
+      state_(ScriptValue::CreateJsonObject(context->ctx(),
+                                           reinterpret_cast<const char*>(native_ui_event->state),
+                                           strlen(reinterpret_cast<const char*>(native_ui_event->state))))
+#else
       state_(ScriptValue::CreateJsonObject(context->ctx(),
                                            static_cast<const char*>(native_ui_event->state),
-                                           strlen(static_cast<const char*>(native_ui_event->state)))) {}
+                                           strlen(static_cast<const char*>(native_ui_event->state))))
+#endif
+{}
 
 ScriptValue PopStateEvent::state() const {
   return state_;
