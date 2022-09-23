@@ -191,6 +191,7 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
 
 static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
+  MemberMutationScope scope(context);
 
   if (argc == 1) {
     std::string strHTML = AtomicString(ctx, argv[0]).ToStdString();
