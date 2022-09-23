@@ -228,10 +228,8 @@ class RenderLayoutBox extends RenderBoxModel
 
   void addOverflowLayoutFromChild(RenderBox child) {
     final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-    if (child is RenderTextBox ||
-        child is RenderPositionPlaceholder ||
-        !child.hasSize ||
-        child is RenderConstrainedBox) {
+    // TODO not support custom element and inline element overflowRect
+    if (!child.hasSize || (child is! RenderBoxModel && child is! RenderReplaced)) {
       return;
     }
     CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
