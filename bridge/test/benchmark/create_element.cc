@@ -12,9 +12,9 @@ auto bridge = TEST_init();
 
 static void CreateRawJavaScriptObjects(benchmark::State& state) {
   auto context = bridge->GetExecutingContext();
-  uint8_t bytes[] = {
-      1,2,2,97,12,97,97,97,46,106,115,14,0,6,0,160,1,0,1,0,1,0,0,20,1,162,1,0,0,0,63,210,0,0,0,0,62,210,0,0,0,0,11,57,210,0,0,0,195,40,166,3,1,2,31,33
-  };
+  uint8_t bytes[] = {1, 2, 2, 97, 12, 97, 97,  97, 46, 106, 115, 14, 0,   6, 0, 160, 1,  0,  1,
+                     0, 1, 0, 0,  20, 1,  162, 1,  0,  0,   0,   63, 210, 0, 0, 0,   0,  62, 210,
+                     0, 0, 0, 0,  11, 57, 210, 0,  0,  0,   195, 40, 166, 3, 1, 2,   31, 33};
   // Perform setup here
   for (auto _ : state) {
     context->EvaluateByteCode(bytes, sizeof(bytes));
@@ -40,7 +40,7 @@ for(let i = 0; i < 1000; i ++) {
 )";
   // Perform setup here
   for (auto _ : state) {
-        context->EvaluateJavaScript(code.c_str(), code.size(), "internal://", 0);
+    context->EvaluateJavaScript(code.c_str(), code.size(), "internal://", 0);
   }
 }
 
@@ -68,7 +68,6 @@ for(let i = 0; i < 1000; i ++) {
     context->EvaluateJavaScript(code.c_str(), code.size(), "internal://", 0);
   }
 }
-
 
 BENCHMARK(CreateRawJavaScriptObjects)->Threads(1);
 BENCHMARK(CreateDivElement)->Threads(1);

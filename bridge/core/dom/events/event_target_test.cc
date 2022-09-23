@@ -3,11 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "event_target.h"
+#include "core/dom/container_node.h"
+#include "core/dom/events/event.h"
+#include "event_type_names.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
-#include "core/dom/events/event.h"
-#include "core/dom/container_node.h"
-#include "event_type_names.h"
 
 using namespace webf;
 
@@ -155,9 +155,7 @@ TEST(EventTarget, asyncFunctionCallback) {
 TEST(EventTarget, ClassInheritEventTarget) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-    logCalled = true;
-  };
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;

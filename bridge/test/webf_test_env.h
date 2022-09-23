@@ -36,5 +36,4 @@ std::shared_ptr<UnitTestEnv> TEST_getEnv(int32_t context_unique_id);
    // void TEST_dispatchEvent(int32_t contextId, EventTarget* eventTarget, const std::string type);
    // void TEST_callNativeMethod(void* nativePtr, void* returnValue, void* method, int32_t argc, void* argv);
 
-
 #endif  // BRIDGE_TEST_WEBF_TEST_ENV_H_

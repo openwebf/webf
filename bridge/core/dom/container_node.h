@@ -117,7 +117,9 @@ inline bool ContainerNode::HasChildCount(unsigned count) const {
 template <>
 struct DowncastTraits<ContainerNode> {
   static bool AllowFrom(const Node& node) { return node.IsContainerNode(); }
-  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsNode() && To<Node>(event_target).IsContainerNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsContainerNode();
+  }
 };
 
 }  // namespace webf
