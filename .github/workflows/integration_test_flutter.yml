@@ -53,15 +53,13 @@ jobs:
     - name: Check on failures
       if: steps.bridge_test.outcome == 'success'
       run: exit 0
-    run: sudo chmod -R +rwx /cores/* # Enable access to core dumps
-    - name: test enabling cores
-        ulimit -c               # should output 0 if disabled
-        ulimit -c unlimited
-        ulimit -c               # should output 'unlimited' now
-    - name: test access to core dump directory
-        sudo touch /cores/test
-        ls /cores
-        sudo rm /cores/test
+    - run: sudo chmod -R +rwx /cores/* # Enable access to core dumps
+    - run: ulimit -c               # should output 0 if disabled
+    - run: ulimit -c unlimited
+    - run: ulimit -c               # should output 'unlimited' now
+    - run: sudo touch /cores/test
+    - run: ls /cores
+    - run: sudo rm /cores/test
     - uses: actions/upload-artifact@master # capture all crashes as build artifacts
       if: steps.bridge_test.outcome != 'success'
       with:
