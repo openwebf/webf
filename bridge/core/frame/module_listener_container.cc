@@ -6,12 +6,21 @@
 
 namespace webf {
 
-void ModuleListenerContainer::AddModuleListener(const std::shared_ptr<ModuleListener>& listener) {
-  listeners_.push_front(listener);
+void ModuleListenerContainer::AddModuleListener(const AtomicString& name, const std::shared_ptr<ModuleListener>& listener) {
+  listeners_[name] = listener;
 }
 
-const std::forward_list<std::shared_ptr<ModuleListener>>& ModuleListenerContainer::listeners() const {
-  return listeners_;
+void ModuleListenerContainer::RemoveModuleListener(const AtomicString& name) {
+  listeners_.erase(name);
+}
+
+std::shared_ptr<ModuleListener> ModuleListenerContainer::listener(const AtomicString& name) {
+  if (listeners_.count(name) == 0) return nullptr;
+  return listeners_[name];
+}
+
+void ModuleListenerContainer::Clear() {
+  listeners_.clear();
 }
 
 }  // namespace webf

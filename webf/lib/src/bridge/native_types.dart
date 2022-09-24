@@ -29,6 +29,8 @@ class RawEvent extends Struct {
   external Pointer<Uint64> bytes;
   @Int64()
   external int length;
+  @Int8()
+  external int is_custom_event;
 }
 
 class EventDispatchResult extends Struct {

@@ -4,6 +4,7 @@
  */
 import 'dart:convert';
 
+import 'package:meta/meta.dart';
 import 'package:webf/bridge.dart' as bridge;
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
@@ -12,11 +13,14 @@ abstract class BaseModule {
   String get name;
   final ModuleManager? moduleManager;
   BaseModule(this.moduleManager);
-  String invoke(String method, params, InvokeModuleCallback callback);
+  dynamic invoke(String method, params, InvokeModuleCallback callback);
+  dynamic dispatchEvent({Event? event, data}) {
+    return moduleManager!.emitModuleEvent(name, event: event, data: data);
+  }
   void dispose();
 }
 
-typedef InvokeModuleCallback = void Function({String? error, Object? data});
+typedef InvokeModuleCallback = Future<dynamic> Function({String? error, Object? data});
 typedef NewModuleCreator = BaseModule Function(ModuleManager);
 typedef ModuleCreator = BaseModule Function(ModuleManager? moduleManager);
 
@@ -61,11 +65,11 @@ class ModuleManager {
     _creatorMap[fakeModule.name] = moduleCreator;
   }
 
-  void emitModuleEvent(String moduleName, {Event? event, Object? data}) {
-    bridge.emitModuleEvent(contextId, moduleName, event, jsonEncode(data));
+  dynamic emitModuleEvent(String moduleName, {Event? event, data}) {
+    return bridge.emitModuleEvent(contextId, moduleName, event, data);
   }
 
-  String invokeModule(String moduleName, String method, params, InvokeModuleCallback callback) {
+  dynamic invokeModule(String moduleName, String method, params, InvokeModuleCallback callback) {
     ModuleCreator? creator = _creatorMap[moduleName];
     if (creator == null) {
       throw Exception('ModuleManager: Can not find module of name: $moduleName');

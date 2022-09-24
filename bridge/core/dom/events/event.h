@@ -55,6 +55,7 @@ struct NativeEvent {
 struct RawEvent : public DartReadable {
   uint64_t* bytes;
   int64_t length;
+  int8_t is_custom_event;
 };
 
 template <typename T>

@@ -5,6 +5,7 @@
 #include <atomic>
 #include <unordered_map>
 
+#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
 #include "core/dom/document.h"
@@ -54,12 +55,12 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
   return true;
 }
 
-void WebFPage::invokeModuleEvent(const NativeString* moduleName,
-                                 const char* eventType,
-                                 void* ptr,
-                                 NativeString* extra) {
+NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
+                                         const char* eventType,
+                                         void* ptr,
+                                         NativeValue* extra) {
   if (!context_->IsValid())
-    return;
+    return nullptr;
 
   JSContext* ctx = context_->ctx();
   Event* event = nullptr;
@@ -69,22 +70,25 @@ void WebFPage::invokeModuleEvent(const NativeString* moduleName,
     event = EventFactory::Create(context_, AtomicString(ctx, type), rawEvent);
   }
 
-  ScriptValue extraObject = ScriptValue::Empty(ctx);
-  if (extra != nullptr) {
-    std::u16string u16Extra = std::u16string(reinterpret_cast<const char16_t*>(extra->string()), extra->length());
-    std::string extraString = toUTF8(u16Extra);
-    extraObject = ScriptValue::CreateJsonObject(ctx, extraString.c_str(), extraString.length());
+  ScriptValue extraObject = ScriptValue(ctx, *extra);
+  AtomicString module_name = AtomicString(ctx, native_module_name);
+  auto listener = context_->ModuleListeners()->listener(module_name);
+
+  if (listener == nullptr) {
+    return nullptr;
   }
 
-  auto listeners = context_->ModuleListeners()->listeners();
-  for (auto& listener : listeners) {
-    ScriptValue arguments[] = {ScriptValue(ctx, moduleName),
-                               event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
-    ScriptValue result = listener->value()->Invoke(ctx, ScriptValue::Empty(ctx), 3, arguments);
-    if (result.IsException()) {
-      context_->HandleException(&result);
-    }
+  ScriptValue arguments[] = {event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
+  ScriptValue result = listener->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
+  if (result.IsException()) {
+    context_->HandleException(&result);
+    return nullptr;
   }
+
+  auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+  NativeValue tmp = result.ToNative();
+  memcpy(return_value, &tmp, sizeof(NativeValue));
+  return return_value;
 }
 
 void WebFPage::evaluateScript(const NativeString* script, const char* url, int startLine) {

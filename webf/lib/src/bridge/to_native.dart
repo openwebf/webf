@@ -61,35 +61,35 @@ WebFInfo getWebFInfo() {
 }
 
 // Register invokeEventListener
-typedef NativeInvokeEventListener = Void Function(
-    Int32 contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeString>);
-typedef DartInvokeEventListener = void Function(
-    int contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeString>);
+typedef NativeInvokeEventListener = Pointer<NativeValue> Function(
+    Int32 contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
+typedef DartInvokeEventListener = Pointer<NativeValue> Function(
+    int contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
 
 final DartInvokeEventListener _invokeModuleEvent =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
 
-void invokeModuleEvent(int contextId, String moduleName, Event? event, String extra) {
+dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
-    return;
+    return null;
   }
   Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
   Pointer<Void> rawEvent = event == null ? nullptr : event.toRaw().cast<Void>();
-  _invokeModuleEvent(contextId, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent,
-      stringToNativeString(extra));
+  Pointer<NativeValue> extraData = malloc.allocate(sizeOf<NativeValue>());
+  toNativeValue(extraData, extra);
+  Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
+      contextId, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
   freeNativeString(nativeModuleName);
+  dynamic result = fromNativeValue(dispatchResult);
+  malloc.free(dispatchResult);
+  return result;
 }
 
-typedef DartDispatchEvent = int Function(
-    int contextId,
-    Pointer<NativeBindingObject> nativeBindingObject,
-    Pointer<NativeString> eventType,
-    Pointer<Void> nativeEvent,
-    int isCustomEvent
-    );
+typedef DartDispatchEvent = int Function(int contextId, Pointer<NativeBindingObject> nativeBindingObject,
+    Pointer<NativeString> eventType, Pointer<Void> nativeEvent, int isCustomEvent);
 
-void emitModuleEvent(int contextId, String moduleName, Event? event, String extra) {
-  invokeModuleEvent(contextId, moduleName, event, extra);
+dynamic emitModuleEvent(int contextId, String moduleName, Event? event, extra) {
+  return invokeModuleEvent(contextId, moduleName, event, extra);
 }
 
 // Register createScreen
@@ -205,11 +205,8 @@ int allocateNewPage([int targetContextId = -1]) {
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);
 typedef DartRegisterPluginByteCode = void Function(Pointer<Uint8> bytes, int length, Pointer<Utf8> pluginName);
 
-final DartRegisterPluginByteCode _registerPluginByteCode = WebFDynamicLibrary
-    .ref
-    .lookup<NativeFunction<NativeRegisterPluginByteCode>>(
-    'registerPluginByteCode')
-    .asFunction();
+final DartRegisterPluginByteCode _registerPluginByteCode =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterPluginByteCode>>('registerPluginByteCode').asFunction();
 
 void registerPluginByteCode(Uint8List bytecode, String name) {
   Pointer<Uint8> bytes = malloc.allocate(sizeOf<Uint8>() * bytecode.length);
@@ -245,10 +242,8 @@ Future<void> reloadJSContext(int contextId) async {
   return completer.future;
 }
 
-typedef NativeDispatchUITask = Void Function(
-    Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
-typedef DartDispatchUITask = void Function(
-    int contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef NativeDispatchUITask = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef DartDispatchUITask = void Function(int contextId, Pointer<Void> context, Pointer<Void> callback);
 
 final DartDispatchUITask _dispatchUITask =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDispatchUITask>>('dispatchUITask').asFunction();
@@ -342,10 +337,8 @@ final bool isEnabledLog = kDebugMode && Platform.environment['ENABLE_WEBF_JS_LOG
 // So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,
 // To ensure the fastest subsequent random access.
 List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, int commandLength, int contextId) {
-  List<int> rawMemory = nativeCommandItems
-      .cast<Int64>()
-      .asTypedList(commandLength * nativeCommandSize)
-      .toList(growable: false);
+  List<int> rawMemory =
+      nativeCommandItems.cast<Int64>().asTypedList(commandLength * nativeCommandSize).toList(growable: false);
   List<UICommand> results = List.generate(commandLength, (int _i) {
     int i = _i * nativeCommandSize;
     UICommand command = UICommand();
@@ -417,8 +410,7 @@ void flushUICommandWithContextId(int contextId) {
 }
 
 void flushUICommand(WebFViewController view) {
-  Pointer<Uint64> nativeCommandItems =
-  _getUICommandItems(view.contextId);
+  Pointer<Uint64> nativeCommandItems = _getUICommandItems(view.contextId);
   int commandLength = _getUICommandItemSize(view.contextId);
 
   if (commandLength == 0 || nativeCommandItems == nullptr) {
@@ -429,8 +421,7 @@ void flushUICommand(WebFViewController view) {
     PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
   }
 
-  List<UICommand> commands = readNativeUICommandToDart(
-      nativeCommandItems, commandLength, view.contextId);
+  List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, view.contextId);
 
   SchedulerBinding.instance.scheduleFrame();
 
@@ -450,8 +441,7 @@ void flushUICommand(WebFViewController view) {
     try {
       switch (commandType) {
         case UICommandType.createElement:
-          view.createElement(
-              id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
+          view.createElement(id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
           break;
         case UICommandType.createDocument:
           view.initDocument(id, nativePtr.cast<NativeBindingObject>());
@@ -460,12 +450,10 @@ void flushUICommand(WebFViewController view) {
           view.initWindow(id, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createTextNode:
-          view.createTextNode(
-              id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
+          view.createTextNode(id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
           break;
         case UICommandType.createComment:
-          view
-              .createComment(id, nativePtr.cast<NativeBindingObject>());
+          view.createComment(id, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.disposeEventTarget:
           view.disposeEventTarget(id);
@@ -504,8 +492,7 @@ void flushUICommand(WebFViewController view) {
           view.removeAttribute(id, key);
           break;
         case UICommandType.createDocumentFragment:
-          view.createDocumentFragment(
-              id, nativePtr.cast<NativeBindingObject>());
+          view.createDocumentFragment(id, nativePtr.cast<NativeBindingObject>());
           break;
         default:
           break;

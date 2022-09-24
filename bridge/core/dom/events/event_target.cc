@@ -285,19 +285,11 @@ NativeValue EventTarget::HandleCallFromDartSide(const NativeValue* native_method
 }
 
 NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv) {
-  assert(argc == 3);
+  assert(argc == 2);
   AtomicString event_type = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), argv[0]);
   RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
-  bool is_custom_event = NativeValueConverter<NativeTypeBool>::FromNativeValue(argv[2]);
 
-  Event* event;
-  if (is_custom_event) {
-    event = MakeGarbageCollected<CustomEvent>(GetExecutingContext(), event_type,
-                                              toNativeEvent<NativeCustomEvent>(raw_event));
-  } else {
-    event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
-  }
-
+  Event* event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
   ExceptionState exception_state;
   event->SetTrusted(false);
   event->SetEventPhase(Event::kAtTarget);

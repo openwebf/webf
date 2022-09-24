@@ -12,6 +12,7 @@
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 
 typedef struct NativeString NativeString;
+typedef struct NativeValue NativeValue;
 typedef struct NativeScreen NativeScreen;
 typedef struct NativeByteCode NativeByteCode;
 
@@ -46,11 +47,11 @@ void parseHTML(int32_t contextId, const char* code, int32_t length);
 WEBF_EXPORT_C
 void reloadJsContext(int32_t contextId);
 WEBF_EXPORT_C
-void invokeModuleEvent(int32_t contextId,
-                       NativeString* module,
-                       const char* eventType,
-                       void* event,
-                       NativeString* extra);
+NativeValue* invokeModuleEvent(int32_t contextId,
+                               NativeString* module,
+                               const char* eventType,
+                               void* event,
+                               NativeValue* extra);
 WEBF_EXPORT_C
 void registerDartMethods(int32_t contextId, uint64_t* methodBytes, int32_t length);
 WEBF_EXPORT_C

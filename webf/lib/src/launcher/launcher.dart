@@ -39,11 +39,8 @@ void launch(
   VoidCallback? _ordinaryOnMetricsChanged = window.onMetricsChanged;
 
   Future<void> _initWebFApp() async {
-    WebFNativeChannel channel = WebFNativeChannel();
-
     if (bundle == null) {
       String? backendEntrypointUrl = getBundleURLFromEnv() ?? getBundlePathFromEnv();
-      backendEntrypointUrl ??= await channel.getUrl();
       if (backendEntrypointUrl != null) {
         bundle = WebFBundle.fromUrl(backendEntrypointUrl);
       }
@@ -55,7 +52,6 @@ void launch(
       window.physicalSize.height / window.devicePixelRatio,
       background: background,
       showPerformanceOverlay: showPerformanceOverlay ?? Platform.environment[ENABLE_PERFORMANCE_OVERLAY] != null,
-      methodChannel: channel,
       entrypoint: bundle,
       devToolsService: devToolsService,
       httpClientInterceptor: httpClientInterceptor,

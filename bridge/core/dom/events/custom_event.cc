@@ -29,7 +29,7 @@ CustomEvent::CustomEvent(ExecutingContext* context, const AtomicString& type, Ex
 
 CustomEvent::CustomEvent(ExecutingContext* context, const AtomicString& type, NativeCustomEvent* native_custom_event)
     : Event(context, type, &native_custom_event->native_event),
-      detail_(ScriptValue::CreateJsonObject(ctx(), native_custom_event->detail, strlen(native_custom_event->detail))) {}
+      detail_(ScriptValue(ctx(), *native_custom_event->detail)) {}
 
 CustomEvent::CustomEvent(ExecutingContext* context,
                          const AtomicString& type,

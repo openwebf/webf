@@ -74,7 +74,8 @@ NativeString* TEST_invokeModule(void* callbackContext,
   }
 
   if (module == "MethodChannel") {
-    callback(callbackContext, contextId, nullptr, stringToNativeString("{\"result\": 1234}").release());
+    NativeValue data = Native_NewCString("{\"result\": 1234}");
+    callback(callbackContext, contextId, nullptr, &data);
   }
 
   return stringToNativeString(module).release();
