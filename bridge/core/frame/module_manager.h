@@ -15,27 +15,28 @@ namespace webf {
 class ModuleManager {
  public:
   static ScriptValue __webf_invoke_module__(ExecutingContext* context,
-                                             const AtomicString& module_name,
-                                             const AtomicString& method,
-                                             ExceptionState& exception);
+                                            const AtomicString& module_name,
+                                            const AtomicString& method,
+                                            ExceptionState& exception);
   static ScriptValue __webf_invoke_module__(ExecutingContext* context,
-                                             const AtomicString& module_name,
-                                             const AtomicString& method,
-                                             ScriptValue& params_value,
-                                             ExceptionState& exception);
+                                            const AtomicString& module_name,
+                                            const AtomicString& method,
+                                            ScriptValue& params_value,
+                                            ExceptionState& exception);
   static ScriptValue __webf_invoke_module__(ExecutingContext* context,
-                                             const AtomicString& module_name,
-                                             const AtomicString& method,
-                                             ScriptValue& params_value,
-                                             std::shared_ptr<QJSFunction> callback,
-                                             ExceptionState& exception);
+                                            const AtomicString& module_name,
+                                            const AtomicString& method,
+                                            ScriptValue& params_value,
+                                            std::shared_ptr<QJSFunction> callback,
+                                            ExceptionState& exception);
   static void __webf_add_module_listener__(ExecutingContext* context,
                                            const AtomicString& module_name,
                                            const std::shared_ptr<QJSFunction>& handler,
                                            ExceptionState& exception);
-  static void __webf_remove_module_listener__(ExecutingContext* context, const AtomicString& module_name, ExceptionState& exception_state);
+  static void __webf_remove_module_listener__(ExecutingContext* context,
+                                              const AtomicString& module_name,
+                                              ExceptionState& exception_state);
   static void __webf_clear_module_listener__(ExecutingContext* context, ExceptionState& exception_state);
-
 };
 
 }  // namespace webf

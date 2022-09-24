@@ -51,7 +51,10 @@ class WebFPage final {
 
   [[nodiscard]] ExecutingContext* GetExecutingContext() const { return context_; }
 
-  NativeValue* invokeModuleEvent(const NativeString* moduleName, const char* eventType, void* event, NativeValue* extra);
+  NativeValue* invokeModuleEvent(const NativeString* moduleName,
+                                 const char* eventType,
+                                 void* event,
+                                 NativeValue* extra);
   void reportError(const char* errmsg);
 
   int32_t contextId;

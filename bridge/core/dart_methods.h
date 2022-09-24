@@ -22,15 +22,18 @@ namespace webf {
 
 using AsyncCallback = void (*)(void* callbackContext, int32_t contextId, const char* errmsg);
 using AsyncRAFCallback = void (*)(void* callbackContext, int32_t contextId, double result, const char* errmsg);
-using AsyncModuleCallback = NativeValue* (*)(void* callbackContext, int32_t contextId, const char* errmsg, NativeValue* value);
+using AsyncModuleCallback = NativeValue* (*)(void* callbackContext,
+                                             int32_t contextId,
+                                             const char* errmsg,
+                                             NativeValue* value);
 using AsyncBlobCallback =
     void (*)(void* callbackContext, int32_t contextId, const char* error, uint8_t* bytes, int32_t length);
 typedef NativeValue* (*InvokeModule)(void* callbackContext,
-                                      int32_t contextId,
-                                      NativeString* moduleName,
-                                      NativeString* method,
-                                      NativeValue* params,
-                                      AsyncModuleCallback callback);
+                                     int32_t contextId,
+                                     NativeString* moduleName,
+                                     NativeString* method,
+                                     NativeValue* params,
+                                     AsyncModuleCallback callback);
 typedef void (*RequestBatchUpdate)(int32_t contextId);
 typedef void (*ReloadApp)(int32_t contextId);
 typedef int32_t (*SetTimeout)(void* callbackContext, int32_t contextId, AsyncCallback callback, int32_t timeout);

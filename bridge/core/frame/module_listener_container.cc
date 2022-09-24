@@ -6,7 +6,8 @@
 
 namespace webf {
 
-void ModuleListenerContainer::AddModuleListener(const AtomicString& name, const std::shared_ptr<ModuleListener>& listener) {
+void ModuleListenerContainer::AddModuleListener(const AtomicString& name,
+                                                const std::shared_ptr<ModuleListener>& listener) {
   listeners_[name] = listener;
 }
 
@@ -15,7 +16,8 @@ void ModuleListenerContainer::RemoveModuleListener(const AtomicString& name) {
 }
 
 std::shared_ptr<ModuleListener> ModuleListenerContainer::listener(const AtomicString& name) {
-  if (listeners_.count(name) == 0) return nullptr;
+  if (listeners_.count(name) == 0)
+    return nullptr;
   return listeners_[name];
 }
 

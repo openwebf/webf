@@ -13,7 +13,10 @@ struct ModuleContext {
   std::shared_ptr<ModuleCallback> callback;
 };
 
-NativeValue* handleInvokeModuleTransientCallback(void* ptr, int32_t contextId, const char* errmsg, NativeValue* extra_data) {
+NativeValue* handleInvokeModuleTransientCallback(void* ptr,
+                                                 int32_t contextId,
+                                                 const char* errmsg,
+                                                 NativeValue* extra_data) {
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
   ExecutingContext* context = moduleContext->context;
 
@@ -58,34 +61,34 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr, int32_t contextId, c
 }
 
 NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,
-                                          int32_t contextId,
-                                          const char* errmsg,
-                                          NativeValue* extra_data) {
+                                                  int32_t contextId,
+                                                  const char* errmsg,
+                                                  NativeValue* extra_data) {
   static_assert("Unexpected module callback, please check your invokeModule implementation on the dart side.");
 }
 
 ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                   const AtomicString& module_name,
-                                                   const AtomicString& method,
-                                                   ExceptionState& exception) {
+                                                  const AtomicString& module_name,
+                                                  const AtomicString& method,
+                                                  ExceptionState& exception) {
   ScriptValue empty = ScriptValue::Empty(context->ctx());
   return __webf_invoke_module__(context, module_name, method, empty, nullptr, exception);
 }
 
 ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                   const AtomicString& module_name,
-                                                   const AtomicString& method,
-                                                   ScriptValue& params_value,
-                                                   ExceptionState& exception) {
+                                                  const AtomicString& module_name,
+                                                  const AtomicString& method,
+                                                  ScriptValue& params_value,
+                                                  ExceptionState& exception) {
   return __webf_invoke_module__(context, module_name, method, params_value, nullptr, exception);
 }
 
 ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                   const AtomicString& module_name,
-                                                   const AtomicString& method,
-                                                   ScriptValue& params_value,
-                                                   std::shared_ptr<QJSFunction> callback,
-                                                   ExceptionState& exception) {
+                                                  const AtomicString& module_name,
+                                                  const AtomicString& method,
+                                                  ScriptValue& params_value,
+                                                  std::shared_ptr<QJSFunction> callback,
+                                                  ExceptionState& exception) {
   NativeValue params = params_value.ToNative();
   if (context->dartMethodPtr()->invokeModule == nullptr) {
     exception.ThrowException(
@@ -123,7 +126,9 @@ void ModuleManager::__webf_add_module_listener__(ExecutingContext* context,
   context->ModuleListeners()->AddModuleListener(module_name, listener);
 }
 
-void ModuleManager::__webf_remove_module_listener__(ExecutingContext* context, const AtomicString& module_name, ExceptionState& exception_state) {
+void ModuleManager::__webf_remove_module_listener__(ExecutingContext* context,
+                                                    const AtomicString& module_name,
+                                                    ExceptionState& exception_state) {
   context->ModuleListeners()->RemoveModuleListener(module_name);
 }
 
