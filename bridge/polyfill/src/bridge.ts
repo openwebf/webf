@@ -3,7 +3,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-declare const __webf_invoke_module__: (module: string, method: string, params?: Object | null, fn?: (err: Error, data: any) => any) => any;
+declare const __webf_invoke_module__: (module: string, method: string, params?: any | null, fn?: (err: Error, data: any) => any) => any;
 export const webfInvokeModule = __webf_invoke_module__;
 
 declare const __webf_add_module_listener__: (moduleName: string, fn: (event: Event, extra: any) => any) => void;

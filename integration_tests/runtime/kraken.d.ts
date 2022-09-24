@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2022-present The Kraken authors. All rights reserved.
  */
-type MethodCallHandler = (...args: any) => any;
+type MethodCallHandler = (args: any) => any;
 interface MethodChannel {
     addMethodCallHandler(method: string, handler: MethodCallHandler): void;
     removeMethodCallHandler(method: string): void;

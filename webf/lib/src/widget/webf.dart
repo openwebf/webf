@@ -199,11 +199,6 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
     double viewportWidth = _webfWidget.viewportWidth ?? window.physicalSize.width / window.devicePixelRatio;
     double viewportHeight = _webfWidget.viewportHeight ?? window.physicalSize.height / window.devicePixelRatio;
 
-    if (viewportWidth == 0.0 && viewportHeight == 0.0) {
-      throw FlutterError('''Can't get viewportSize from window. Please set viewportWidth and viewportHeight manually.
-This situation often happened when you trying creating webf when FlutterView not initialized.''');
-    }
-
     WebFController controller = WebFController(shortHash(_webfWidget.hashCode), viewportWidth, viewportHeight,
         background: _webfWidget.background,
         showPerformanceOverlay: Platform.environment[ENABLE_PERFORMANCE_OVERLAY] != null,
@@ -224,6 +219,36 @@ This situation often happened when you trying creating webf when FlutterView not
     OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
     if (onControllerCreated != null) {
       onControllerCreated(controller);
+    }
+
+    if (viewportWidth == 0.0 && viewportHeight == 0.0) {
+      // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
+      // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
+      VoidCallback? _ordinaryOnMetricsChanged = window.onMetricsChanged;
+      window.onMetricsChanged = () async {
+        if (window.physicalSize == Size.zero) {
+          return;
+        }
+
+        double viewportWidth = _webfWidget.viewportWidth ?? window.physicalSize.width / window.devicePixelRatio;
+        double viewportHeight = _webfWidget.viewportHeight ?? window.physicalSize.height / window.devicePixelRatio;
+
+        controller.view.viewportWidth = viewportWidth;
+        controller.view.document.documentElement!.renderStyle.width = CSSLengthValue(viewportWidth, CSSLengthType.PX);
+
+        controller.view.viewportHeight = viewportHeight;
+        controller.view.document.documentElement!.renderStyle.height = CSSLengthValue(viewportHeight, CSSLengthType.PX);
+
+        // Should proxy to ordinary window.onMetricsChanged callbacks.
+        if (_ordinaryOnMetricsChanged != null) {
+          _ordinaryOnMetricsChanged();
+          // Recover ordinary callback to window.onMetricsChanged
+          window.onMetricsChanged = _ordinaryOnMetricsChanged;
+        }
+      };
+
+      throw FlutterError('''Can't get viewportSize from window. Please set viewportWidth and viewportHeight manually.
+This situation often happened when you trying creating webf when FlutterView not initialized.''');
     }
 
     if (kProfileMode) {
