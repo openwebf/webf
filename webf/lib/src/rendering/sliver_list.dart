@@ -201,6 +201,11 @@ class RenderSliverListLayout extends RenderLayoutBox {
 
     didLayout();
 
+    // init overflowLayout size
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+
+    // TODO not process child overflowLayout
+
     if (kProfileMode && PerformanceTiming.enabled()) {
       PerformanceTiming.instance().mark(PERF_SILVER_LAYOUT_END,
           uniqueId: hashCode, startTime: DateTime.now().microsecondsSinceEpoch - childLayoutDuration);
