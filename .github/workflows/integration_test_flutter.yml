@@ -49,6 +49,24 @@ jobs:
     - run: npm i
     - run: ENABLE_ASAN=true npm run build:bridge:linux
     - run: node scripts/run_bridge_unit_test.js
+      id: bridge_test
+    - name: Check on failures
+      if: steps.bridge_test.outcome == 'success'
+      run: exit 0
+    run: sudo chmod -R +rwx /cores/* # Enable access to core dumps
+    - name: test enabling cores
+        ulimit -c               # should output 0 if disabled
+        ulimit -c unlimited
+        ulimit -c               # should output 'unlimited' now
+    - name: test access to core dump directory
+        sudo touch /cores/test
+        ls /cores
+        sudo rm /cores/test
+    - uses: actions/upload-artifact@master # capture all crashes as build artifacts
+      if: steps.bridge_test.outcome != 'success'
+      with:
+        name: crashes
+        path: /cores
 
   webf_unit_test:
     runs-on: ubuntu-latest
