@@ -91,6 +91,25 @@ TEST(EventTarget, propertyEventHandler) {
   EXPECT_EQ(logCalled, true);
 }
 
+TEST(EventTarget, overwritePropertyEventHandler) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  };
+  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+  auto context = bridge->GetExecutingContext();
+  const char* code =
+      "let div = document.createElement('div'); "
+      "div.onclick = function() { return 1234; };"
+      "div.onclick = null;"
+      "console.log(div.onclick)";
+  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  EXPECT_EQ(errorCalled, false);
+}
+
 TEST(EventTarget, propertyEventOnWindow) {
   bool static errorCalled = false;
   bool static logCalled = false;
