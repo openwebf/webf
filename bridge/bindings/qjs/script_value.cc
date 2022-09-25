@@ -78,7 +78,7 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
 }
 
 ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value)
-    : ctx_(ctx), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
+    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);
