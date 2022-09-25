@@ -246,9 +246,6 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
           window.onMetricsChanged = _ordinaryOnMetricsChanged;
         }
       };
-
-      throw FlutterError('''Can't get viewportSize from window. Please set viewportWidth and viewportHeight manually.
-This situation often happened when you trying creating webf when FlutterView not initialized.''');
     }
 
     if (kProfileMode) {
