@@ -69,6 +69,7 @@ class ExecutingContext {
   void* owner();
   bool HandleException(JSValue* exc);
   bool HandleException(ScriptValue* exc);
+  bool HandleException(ExceptionState& exception_state);
   void ReportError(JSValueConst error);
   void DrainPendingPromiseJobs();
   void DefineGlobalProperty(const char* prop, JSValueConst value);

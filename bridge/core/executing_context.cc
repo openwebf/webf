@@ -168,6 +168,16 @@ bool ExecutingContext::HandleException(ScriptValue* exc) {
   return HandleException(&value);
 }
 
+bool ExecutingContext::HandleException(ExceptionState& exception_state) {
+  if (exception_state.HasException()) {
+    JSValue error = JS_GetException(ctx());
+    ReportError(error);
+    JS_FreeValue(ctx(), error);
+    return false;
+  }
+  return true;
+}
+
 JSValue ExecutingContext::Global() {
   return global_object_;
 }

@@ -67,7 +67,7 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     return true;
   }
 
-  NativeValue result = SetBindingProperty(key, value.ToNative(), exception_state);
+  NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
   return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
 }
 

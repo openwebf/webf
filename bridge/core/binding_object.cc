@@ -101,20 +101,24 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
 
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 1);
-
   arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(id));
-  for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative());
-  }
 
   ExceptionState exception_state;
+
+  for (int i = 0; i < argc; i++) {
+    arguments.emplace_back(argv[i].ToNative(exception_state));
+  }
+
+  if (exception_state.HasException()) {
+    event_target->GetExecutingContext()->HandleException(exception_state);
+    return ScriptValue::Empty(ctx);
+  }
+
   NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall,
                                                          arguments.size(), arguments.data(), exception_state);
 
   if (exception_state.HasException()) {
-    JSValue error = JS_GetException(ctx);
-    event_target->GetExecutingContext()->ReportError(error);
-    JS_FreeValue(ctx, error);
+    event_target->GetExecutingContext()->HandleException(exception_state);
     return ScriptValue::Empty(ctx);
   }
   return ScriptValue(ctx, result);
@@ -173,13 +177,20 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   arguments.emplace_back(NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
       reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDart)));
 
+  ExceptionState exception_state;
+
   for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative());
+    arguments.emplace_back(argv[i].ToNative(exception_state));
   }
 
-  ExceptionState exception_state;
   event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(),
                                     exception_state);
+
+  if (exception_state.HasException()) {
+    event_target->GetExecutingContext()->HandleException(exception_state);
+    return ScriptValue::Empty(ctx);
+  }
+
   return promise_resolver->Promise().ToValue();
 }
 

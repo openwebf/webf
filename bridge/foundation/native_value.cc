@@ -62,8 +62,7 @@ NativeValue Native_NewList(uint32_t argc, NativeValue* argv) {
   return (NativeValue){.u = {.ptr = reinterpret_cast<void*>(argv)}, .uint32 = argc, .tag = NativeTag::TAG_LIST};
 }
 
-NativeValue Native_NewJSON(const ScriptValue& value) {
-  ExceptionState exception_state;
+NativeValue Native_NewJSON(const ScriptValue& value, ExceptionState& exception_state) {
   ScriptValue json = value.ToJSONStringify(&exception_state);
   if (exception_state.HasException()) {
     return Native_NewNull();

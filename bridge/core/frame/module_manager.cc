@@ -31,6 +31,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   }
 
   JSContext* ctx = moduleContext->context->ctx();
+  ExceptionState exception_state;
 
   NativeValue* return_value = nullptr;
   if (errmsg != nullptr) {
@@ -40,7 +41,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     if (result.IsException()) {
       context->HandleException(&result);
     }
-    NativeValue native_result = result.ToNative();
+    NativeValue native_result = result.ToNative(exception_state);
     return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
     memcpy(return_value, &native_result, sizeof(NativeValue));
   } else {
@@ -49,9 +50,14 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     if (result.IsException()) {
       context->HandleException(&result);
     }
-    NativeValue native_result = result.ToNative();
+    NativeValue native_result = result.ToNative(exception_state);
     return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
     memcpy(return_value, &native_result, sizeof(NativeValue));
+  }
+
+  if (exception_state.HasException()) {
+    context->HandleException(exception_state);
+    return nullptr;
   }
 
   context->ModuleCallbacks()->RemoveModuleCallbacks(moduleContext->callback);
@@ -89,7 +95,12 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   ScriptValue& params_value,
                                                   std::shared_ptr<QJSFunction> callback,
                                                   ExceptionState& exception) {
-  NativeValue params = params_value.ToNative();
+  NativeValue params = params_value.ToNative(exception);
+
+  if (exception.HasException()) {
+    return ScriptValue::Empty(context->ctx());
+  }
+
   if (context->dartMethodPtr()->invokeModule == nullptr) {
     exception.ThrowException(
         context->ctx(), ErrorType::InternalError,

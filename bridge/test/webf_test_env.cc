@@ -11,6 +11,7 @@
 #include "core/frame/dom_timer.h"
 #include "core/page.h"
 #include "foundation/native_string.h"
+#include "foundation/native_value_converter.h"
 #include "webf_bridge_test.h"
 #include "webf_test_env.h"
 
@@ -61,7 +62,7 @@ static void unlink_callback(JSThreadState* ts, JSFrameCallback* th) {
   ts->os_frameCallbacks.erase(th->callbackId);
 }
 
-NativeString* TEST_invokeModule(void* callbackContext,
+NativeValue* TEST_invokeModule(void* callbackContext,
                                 int32_t contextId,
                                 NativeString* moduleName,
                                 NativeString* method,
@@ -78,7 +79,10 @@ NativeString* TEST_invokeModule(void* callbackContext,
     callback(callbackContext, contextId, nullptr, &data);
   }
 
-  return stringToNativeString(module).release();
+  auto* result = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+  NativeValue tmp = Native_NewCString(module);
+  memcpy(result, &tmp, sizeof(NativeValue));
+  return result;
 };
 
 void TEST_requestBatchUpdate(int32_t contextId){};

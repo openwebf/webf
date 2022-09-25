@@ -85,8 +85,14 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
     return nullptr;
   }
 
+  ExceptionState exception_state;
   auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
-  NativeValue tmp = result.ToNative();
+  NativeValue tmp = result.ToNative(exception_state);
+  if (exception_state.HasException()) {
+    context_->HandleException(exception_state);
+    return nullptr;
+  }
+
   memcpy(return_value, &tmp, sizeof(NativeValue));
   return return_value;
 }

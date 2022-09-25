@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "module_listener_container.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 
 namespace webf {
 
