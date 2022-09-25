@@ -94,8 +94,7 @@ TEST(EventTarget, propertyEventHandler) {
 TEST(EventTarget, overwritePropertyEventHandler) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-  };
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;

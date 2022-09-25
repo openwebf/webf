@@ -28,7 +28,8 @@ class QJSFunction {
                                              void* private_data) {
     return std::make_shared<QJSFunction>(ctx, qjs_function_callback, length, private_data);
   }
-  explicit QJSFunction(JSContext* ctx, JSValue function) : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), function_(JS_DupValue(ctx, function)){};
+  explicit QJSFunction(JSContext* ctx, JSValue function)
+      : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), function_(JS_DupValue(ctx, function)){};
   explicit QJSFunction(JSContext* ctx, QJSFunctionCallback qjs_function_callback, int32_t length, void* private_data);
   ~QJSFunction() { JS_FreeValueRT(runtime_, function_); }
 

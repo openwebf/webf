@@ -36,10 +36,12 @@ class ScriptValue final {
   // Create an empty ScriptValue;
   static ScriptValue Empty(JSContext* ctx);
   // Wrap an Quickjs JSValue to ScriptValue.
-  explicit ScriptValue(JSContext* ctx, JSValue value) : ctx_(ctx), value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)) {};
+  explicit ScriptValue(JSContext* ctx, JSValue value)
+      : ctx_(ctx), value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const NativeString* string)
       : ctx_(ctx), value_(JS_NewUnicodeString(ctx, string->string(), string->length())), runtime_(JS_GetRuntime(ctx)) {}
-  explicit ScriptValue(JSContext* ctx, double v) : ctx_(ctx), value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
+  explicit ScriptValue(JSContext* ctx, double v)
+      : ctx_(ctx), value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
   explicit ScriptValue(JSContext* ctx) : ctx_(ctx), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const NativeValue& native_value);
   ScriptValue() = default;
