@@ -44,17 +44,14 @@ ScriptState::~ScriptState() {
   // Run GC to clean up remaining objects about m_ctx;
   JS_RunGC(runtime_);
 
-#if DUMP_LEAKS
   if (--runningContexts == 0) {
     // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
     names_installer::Dispose();
     HTMLElementFactory::Dispose();
     EventFactory::Dispose();
-
     JS_FreeRuntime(runtime_);
     runtime_ = nullptr;
   }
-#endif
   ctx_ = nullptr;
 }
 }  // namespace webf
