@@ -33,8 +33,13 @@
   <div>Filler Text</div>
 </body>
 <script>
-  await sleep(1.01);
+  await nextFrames();
   await snapshotAction();
   await sleep(1);
+  await nextFrames();
+  await snapshotAction();
+  await nextFrames(20);
+  await snapshotAction();
+  await nextFrames(50);
   await snapshotAction();
 </script>

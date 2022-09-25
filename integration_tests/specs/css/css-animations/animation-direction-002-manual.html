@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
+<meta charset="utf-8" fit="true">
 <title>CSS Animations Test: animation-direction - normal</title>
 <link rel="author" title="Nokia Inc." href="http://www.nokia.com">
 <link rel="author" title="Intel" href="http://www.intel.com">
@@ -42,10 +42,10 @@
   <div>Filler Text</div>
 </body>
 <script>
-  await sleep(0.5);
+  await nextFrames();
   await snapshotAction();
-  await sleep(1.4);
+  await nextFrames(20);
   await snapshotAction();
-  await sleep(0.5);
+  await nextFrames(20);
   await snapshotAction();
 </script>

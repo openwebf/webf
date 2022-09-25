@@ -24,16 +24,15 @@
 
   #test-negative-delay {
     animation-name: test-negative-delay;
-    animation-duration: 10s;
-    animation-delay: -5s;
+    animation-duration: 4s;
+    animation-delay: -2s;
 
     background-color: blue;
   }
 
   #ref-no-delay {
     animation-name: ref-no-delay;
-    animation-duration: 5s;
-
+    animation-duration: 2s;
     background-color: yellow;
   }
 
@@ -65,8 +64,10 @@
   <div id="ref-no-delay">Filler Text</div>
 </body>
 <script>
-  await sleep(0.01);
+  await nextFrames();
   await snapshotAction();
-  await sleep(3);
+  await nextFrames(20);
+  await snapshotAction();
+  await nextFrames(20);
   await snapshotAction();
 </script>
