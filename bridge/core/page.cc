@@ -62,6 +62,8 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
   if (!context_->IsValid())
     return nullptr;
 
+  MemberMutationScope scope{context_};
+
   JSContext* ctx = context_->ctx();
   Event* event = nullptr;
   if (ptr != nullptr) {

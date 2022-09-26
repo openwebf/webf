@@ -53,28 +53,17 @@ void main() async {
   // Set render font family AlibabaPuHuiTi to resolve rendering difference.
   CSSText.DEFAULT_FONT_FAMILY_FALLBACK = ['AlibabaPuHuiTi'];
 
-  File specs = File(path.join(testDirectory, '.specs/plugin.build.js'));
+  final String specTarget = '.specs/plugin.build.js';
+  final File spec = File(path.join(testDirectory, specTarget));
 
-  List<Map<String, String>> allSpecsPayload = [
-    {
-      'filename': path.basename(specs.path),
-      'filepath': specs.path,
-      'code': specs.readAsStringSync()
-    }
-  ];
-  List<Widget> widgets = [];
-
-  for (int i = 0; i < WEBF_NUM; i++) {
-    var webf = webfMap[i] = WebF(
-      viewportWidth: 360,
-      viewportHeight: 640,
-      bundle: WebFBundle.fromContent('console.log("Starting Plugin tests...")'),
-      disableViewportWidthAssertion: true,
-      disableViewportHeightAssertion: true,
-      uriParser: IntegrationTestUriParser(),
-    );
-    widgets.add(webf);
-  }
+  late WebF webF = WebF(
+    viewportWidth: 360,
+    viewportHeight: 640,
+    bundle: WebFBundle.fromContent('console.log("Starting Plugin tests...")'),
+    disableViewportWidthAssertion: true,
+    disableViewportHeightAssertion: true,
+    uriParser: IntegrationTestUriParser(),
+  );
 
   runApp(MaterialApp(
     title: 'WebF Plugin Tests',
@@ -82,41 +71,25 @@ void main() async {
     home: Scaffold(
       appBar: AppBar(title: Text('WebF Plugin Tests')),
       body: Wrap(
-        children: widgets,
+        children: [
+          webF
+        ],
       ),
     ),
   ));
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    List<Future<String>> testResults = [];
+    int contextId = webF.controller!.view.contextId;
+    initTestFramework(contextId);
+    registerDartTestMethodsToCpp(contextId);
+    addJSErrorListener(contextId, print);
 
-    for (int i = 0; i < widgets.length; i++) {
-      int contextId = i;
-      registerDartTestMethodsToCpp(contextId);
-      initTestFramework(contextId);
-      addJSErrorListener(contextId, (String err) {
-        print(err);
-      });
-
-      Map<String, String> payload = allSpecsPayload[i];
-
-      // Preload load test cases
-      String filename = payload['filename']!;
-      String code = payload['code']!;
-      evaluateTestScripts(contextId, code, url: filename);
-
-      testResults.add(executeTest(contextId));
-    }
-
-    List<String> results = await Future.wait(testResults);
-
-    for (int i = 0; i < results.length; i++) {
-      String status = results[i];
-      if (status == 'failed') {
-        exit(1);
-      }
-    }
-
-    exit(0);
+    // Preload load test cases
+    String code = spec.readAsStringSync();
+    evaluateTestScripts(contextId, code, url: 'assets://plugin.js');
+    String result = await executeTest(contextId);
+    // Manual dispose context for memory leak check.
+    disposePage(webF.controller!.view.contextId);
+    exit(result == 'failed' ? 1 : 0);
   });
 }
