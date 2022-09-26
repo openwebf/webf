@@ -86,14 +86,12 @@ Event* EventFactory::Create(ExecutingContext* context, const AtomicString& type,
   if (!g_event_constructors)
     CreateEventFunctionMap();
 
+  if (raw_event != nullptr && raw_event->is_custom_event) {
+    return MakeGarbageCollected<CustomEvent>(context, type, toNativeEvent<NativeCustomEvent>(raw_event));
+  }
+
   auto it = g_event_constructors->find(type);
   if (it == g_event_constructors->end()) {
-    if (raw_event == nullptr) {
-      return MakeGarbageCollected<Event>(context, type);
-    }
-    if (raw_event->is_custom_event) {
-      return MakeGarbageCollected<CustomEvent>(context, type, toNativeEvent<NativeCustomEvent>(raw_event));
-    }
     return MakeGarbageCollected<Event>(context, type, toNativeEvent<NativeEvent>(raw_event));
   }
   EventConstructorFunction function = it->second;
