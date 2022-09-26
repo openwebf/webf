@@ -5,16 +5,9 @@
 
 #include "message_event.h"
 #include "core/dom/events/event.h"
+#include "qjs_message_event.h"
 
 namespace webf {
-
-struct NativeMessageEvent {
-  NativeEvent native_event;
-  const char* data;
-  NativeString* origin;
-  NativeString* lastEventId;
-  NativeString* source;
-};
 
 MessageEvent* MessageEvent::Create(ExecutingContext* context,
                                    const AtomicString& type,
@@ -45,7 +38,7 @@ MessageEvent::MessageEvent(ExecutingContext* context,
                            const AtomicString& type,
                            NativeMessageEvent* native_message_event)
     : Event(context, type, &native_message_event->native_event),
-      data_(ScriptValue::CreateJsonObject(ctx(), native_message_event->data, strlen(native_message_event->data))),
+      data_(ScriptValue(ctx(), *(static_cast<NativeValue*>(native_message_event->data)))),
       origin_(AtomicString(ctx(), native_message_event->origin)),
       lastEventId_(AtomicString(ctx(), native_message_event->lastEventId)),
       source_(AtomicString(ctx(), native_message_event->source)) {}

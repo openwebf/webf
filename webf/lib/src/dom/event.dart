@@ -491,13 +491,22 @@ class MessageEvent extends Event {
 
   /// A USVString representing the origin of the message emitter.
   final String origin;
+  final String lastEventId;
+  final String source;
 
   MessageEvent(this.data, {this.origin = ''}) : super(EVENT_MESSAGE);
 
   @override
   Pointer<RawEvent> toRaw([int methodLength = 0]) {
-    List<int> methods = [(jsonEncode(data)).toNativeUtf8().address, stringToNativeString(origin).address];
-
+    Pointer<NativeValue> nativeData = malloc.allocate(sizeOf<NativeValue>());
+    toNativeValue(nativeData, data);
+    List<int> methods = [
+      nativeData.address,
+      stringToNativeString(origin).address,
+      stringToNativeString(lastEventId).address,
+      stringToNativeString(source).address
+    ];
+    
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
     int currentStructSize = rawEvent.ref.length + methods.length;
     Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
