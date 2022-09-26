@@ -12,6 +12,7 @@ import {HTMLAllCollection} from "../html/html_all_collection";
 interface Document extends Node {
   readonly all: HTMLAllCollection;
   body: HTMLBodyElement | null;
+  cookie: DartImpl<string>;
   readonly head: HTMLHeadElement | null;
   readonly documentElement: HTMLHtmlElement | null;
   // Legacy impl: get the polyfill implements from global object.

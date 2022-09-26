@@ -14,6 +14,7 @@ import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
+import 'package:webf/src/foundation/cookie_jar.dart';
 import 'package:webf/widget.dart';
 
 class Document extends Node {
@@ -54,6 +55,8 @@ class Document extends Node {
 
   Element? focusedElement;
 
+  CookieJar cookie_ = CookieJar();
+
   // Returns the Window object of the active document.
   // https://html.spec.whatwg.org/multipage/window-object.html#dom-document-defaultview-dev
   Window get defaultView => controller.view.window;
@@ -93,6 +96,27 @@ class Document extends Node {
     if (_loadEventDelayCount == 0) {
       controller.checkCompleted();
     }
+  }
+
+  @override
+  void setBindingProperty(String key, value) {
+    switch(key) {
+      case 'cookie':
+        cookie_.setCookie(value);
+        break;
+    }
+
+    super.setBindingProperty(key, value);
+  }
+
+  @override
+  getBindingProperty(String key) {
+    switch(key) {
+      case 'cookie':
+        return cookie_.cookie();
+    }
+
+    return super.getBindingProperty(key);
   }
 
   @override
