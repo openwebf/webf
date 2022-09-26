@@ -34,10 +34,8 @@ static JSValue HandleQJSFunctionCallback(JSContext* ctx,
   return JS_DupValue(ctx, result.QJSValue());
 }
 
-QJSFunction::QJSFunction(JSContext* ctx,
-                         QJSFunctionCallback qjs_function_callback,
-                         int32_t length,
-                         void* private_data): ctx_(ctx), runtime_(JS_GetRuntime(ctx)) {
+QJSFunction::QJSFunction(JSContext* ctx, QJSFunctionCallback qjs_function_callback, int32_t length, void* private_data)
+    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)) {
   JSValue opaque_object = JS_NewObject(ctx);
   auto* context = new QJSFunctionCallbackContext{qjs_function_callback, private_data};
   JS_SetOpaque(opaque_object, context);
