@@ -27,7 +27,7 @@ std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExc
 }
 
 ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& handler, void* owner)
-    : context_id_(contextId), handler_(handler), owner_(owner), unique_id_(context_unique_id++) {
+    : context_id_(contextId), handler_(handler), owner_(owner), unique_id_(context_unique_id++), is_context_valid_(true) {
   //  #if ENABLE_PROFILE
   //    auto jsContextStartTime =
   //        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
@@ -80,6 +80,7 @@ ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& 
 }
 
 ExecutingContext::~ExecutingContext() {
+  is_context_valid_ = false;
   valid_contexts[context_id_] = false;
 
   // Check if current context have unhandled exceptions.
@@ -143,7 +144,11 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   return true;
 }
 
-bool ExecutingContext::IsValid() const {
+bool ExecutingContext::IsContextValid() const {
+  return is_context_valid_;
+}
+
+bool ExecutingContext::IsCtxValid() const {
   return script_state_.Invalid();
 }
 
@@ -183,6 +188,7 @@ JSValue ExecutingContext::Global() {
 }
 
 JSContext* ExecutingContext::ctx() {
+  assert(IsCtxValid());
   return script_state_.ctx();
 }
 

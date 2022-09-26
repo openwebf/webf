@@ -33,7 +33,7 @@ static void handleTransientCallback(void* ptr, int32_t context_id, const char* e
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 
-  if (!context->IsValid())
+  if (!context->IsContextValid())
     return;
 
   handleTimerCallback(timer, errmsg);

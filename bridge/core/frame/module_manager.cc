@@ -20,7 +20,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
   ExecutingContext* context = moduleContext->context;
 
-  if (!context->IsValid())
+  if (!context->IsContextValid())
     return nullptr;
 
   if (moduleContext->callback == nullptr) {
@@ -71,6 +71,7 @@ NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,
                                                   const char* errmsg,
                                                   NativeValue* extra_data) {
   static_assert("Unexpected module callback, please check your invokeModule implementation on the dart side.");
+  return nullptr;
 }
 
 ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,

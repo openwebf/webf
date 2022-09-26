@@ -285,13 +285,13 @@ bool WebFTestContext::evaluateTestScripts(const uint16_t* code,
                                           size_t codeLength,
                                           const char* sourceURL,
                                           int startLine) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return false;
   return context_->EvaluateJavaScript(code, codeLength, sourceURL, startLine);
 }
 
 bool WebFTestContext::parseTestHTML(const uint16_t* code, size_t codeLength) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return false;
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), codeLength));
   return page_->parseHTML(utf8Code.c_str(), utf8Code.length());

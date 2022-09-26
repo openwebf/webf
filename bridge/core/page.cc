@@ -37,7 +37,7 @@ WebFPage::WebFPage(int32_t contextId, const JSExceptionHandler& handler)
 }
 
 bool WebFPage::parseHTML(const char* code, size_t length) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return false;
 
   MemberMutationScope scope{context_};
@@ -59,7 +59,7 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
                                          const char* eventType,
                                          void* ptr,
                                          NativeValue* extra) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return nullptr;
 
   MemberMutationScope scope{context_};
@@ -100,7 +100,7 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
 }
 
 void WebFPage::evaluateScript(const NativeString* script, const char* url, int startLine) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return;
 
   //#if ENABLE_PROFILE
@@ -115,25 +115,25 @@ void WebFPage::evaluateScript(const NativeString* script, const char* url, int s
 }
 
 void WebFPage::evaluateScript(const uint16_t* script, size_t length, const char* url, int startLine) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return;
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
 void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return;
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
 uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return nullptr;
   return context_->DumpByteCode(script, length, url, byteLength);
 }
 
 void WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return;
   context_->EvaluateByteCode(bytes, byteLength);
 }

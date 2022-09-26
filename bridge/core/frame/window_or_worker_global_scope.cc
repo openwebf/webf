@@ -28,7 +28,7 @@ static void handleTransientCallback(void* ptr, int32_t contextId, const char* er
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 
-  if (!context->IsValid())
+  if (!context->IsContextValid())
     return;
 
   if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
@@ -46,7 +46,7 @@ static void handlePersistentCallback(void* ptr, int32_t contextId, const char* e
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 
-  if (!context->IsValid())
+  if (!context->IsContextValid())
     return;
 
   if (timer->status() == DOMTimer::TimerStatus::kCanceled) {

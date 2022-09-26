@@ -129,7 +129,7 @@ void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr,
                                                        int32_t contextId,
                                                        const char* errmsg) {
   auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
-  if (!promise_context->context->IsValid())
+  if (!promise_context->context->IsContextValid())
     return;
   if (promise_context->context->contextId() != contextId)
     return;
