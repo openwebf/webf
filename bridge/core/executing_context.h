@@ -143,10 +143,12 @@ class ExecutingContext {
   // Members first initialized and destructed at the last.
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = std::make_unique<DartMethodPointer>();
-  // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer release.
+  // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer
+  // release.
   UICommandBuffer ui_command_buffer_{this};
-  // Keep uiCommandBuffer above ScriptState to make sure we can collect all disposedEventTarget command when free JSContext.
-  // When call JSFreeContext(ctx) inside ScriptState, all eventTargets will be finalized and UICommandBuffer will be fill up to UICommand::disposeEventTarget commands.
+  // Keep uiCommandBuffer above ScriptState to make sure we can collect all disposedEventTarget command when free
+  // JSContext. When call JSFreeContext(ctx) inside ScriptState, all eventTargets will be finalized and UICommandBuffer
+  // will be fill up to UICommand::disposeEventTarget commands.
   // ----------------------------------------------------------------------
   // All members above ScriptState will be freed after ScriptState freed
   // ----------------------------------------------------------------------

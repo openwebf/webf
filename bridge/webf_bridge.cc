@@ -66,9 +66,10 @@ int32_t searchForAvailableContextId() {
 }  // namespace
 
 namespace webf {
-  bool isDartHostRestart() { return is_dart_hot_restart; }
+bool isDartHostRestart() {
+  return is_dart_hot_restart;
 }
-
+}  // namespace webf
 
 void initJSPagePool(int poolSize) {
   // When dart hot restarted, should dispose previous bridge and clear task message queue.
