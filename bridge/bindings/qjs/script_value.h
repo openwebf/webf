@@ -60,7 +60,7 @@ class ScriptValue final {
   // Create a new ScriptValue from call JSON.stringify to current value.
   ScriptValue ToJSONStringify(ExceptionState* exception) const;
   AtomicString ToString() const;
-  NativeValue ToNative(ExceptionState& exception_state) const;
+  NativeValue ToNative() const;
 
   bool IsException() const;
   bool IsEmpty() const;
