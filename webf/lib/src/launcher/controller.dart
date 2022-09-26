@@ -146,6 +146,14 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_ELEMENT_MANAGER_INIT_END);
     }
+
+    SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
+  }
+
+  void _postFrameCallback(Duration timeStamp) {
+    if (disposed) return;
+    flushUICommand(this);
+    SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
   }
 
   // Index value which identify javascript runtime context.
