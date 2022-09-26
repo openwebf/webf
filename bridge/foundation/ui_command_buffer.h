@@ -63,10 +63,13 @@ struct UICommandItem {
   int64_t nativePtr{0};
 };
 
+bool isDartHostRestart();
+
 class UICommandBuffer {
  public:
   UICommandBuffer() = delete;
   explicit UICommandBuffer(ExecutingContext* context);
+  ~UICommandBuffer();
   void addCommand(int32_t id, UICommand type, void* nativePtr);
   void addCommand(int32_t id,
                   UICommand type,

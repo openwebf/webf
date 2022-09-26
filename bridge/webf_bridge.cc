@@ -40,6 +40,7 @@
 
 // this is not thread safe
 std::atomic<bool> inited{false};
+std::atomic<bool> is_dart_hot_restart{false};
 std::atomic<int32_t> poolIndex{0};
 int maxPoolSize = 0;
 
@@ -64,10 +65,17 @@ int32_t searchForAvailableContextId() {
 
 }  // namespace
 
+namespace webf {
+  bool isDartHostRestart() { return is_dart_hot_restart; }
+}
+
+
 void initJSPagePool(int poolSize) {
   // When dart hot restarted, should dispose previous bridge and clear task message queue.
   if (inited) {
+    is_dart_hot_restart = true;
     disposeAllPages();
+    is_dart_hot_restart = false;
   };
   webf::WebFPage::pageContextPool = new webf::WebFPage*[poolSize];
   for (int i = 1; i < poolSize; i++) {

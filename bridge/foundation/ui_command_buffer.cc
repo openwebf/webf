@@ -13,6 +13,15 @@ namespace webf {
 
 UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {}
 
+UICommandBuffer::~UICommandBuffer() {
+#if FLUTTER_BACKEND
+  // Flush and execute all disposeEventTarget commands when context released.
+  if (context_->dartMethodPtr()->flushUICommand != nullptr && !isDartHostRestart()) {
+    context_->dartMethodPtr()->flushUICommand(context_->contextId());
+  }
+#endif
+}
+
 void UICommandBuffer::addCommand(int32_t id, UICommand type, void* nativePtr) {
   UICommandItem item{id, static_cast<int32_t>(type), nativePtr};
   addCommand(item);
@@ -42,7 +51,7 @@ void UICommandBuffer::addCommand(const UICommandItem& item) {
   }
 
 #if FLUTTER_BACKEND
-  if (!update_batched_ && context_->IsValid() && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
+  if (!update_batched_ && context_->IsContextValid() && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
     context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
     update_batched_ = true;
   }
