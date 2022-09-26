@@ -74,6 +74,9 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
                                    const std::shared_ptr<AddEventListenerOptions>& options,
                                    ExceptionState& exception_state) {
+  if (options == nullptr) {
+    return AddEventListenerInternal(event_type, event_listener, AddEventListenerOptions::Create());
+  }
   return AddEventListenerInternal(event_type, event_listener, options);
 }
 
