@@ -78,7 +78,7 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
 }
 
 ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value)
-    : ctx_(ctx), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
+    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);
@@ -144,45 +144,51 @@ ScriptValue ScriptValue::ToJSONStringify(ExceptionState* exception) const {
 }
 
 AtomicString ScriptValue::ToString() const {
-  return AtomicString(ctx_, value_);
+  return {ctx_, value_};
 }
 
 NativeValue ScriptValue::ToNative() const {
-  if (JS_IsNull(value_) || JS_IsUndefined(value_)) {
-    return Native_NewNull();
-  } else if (JS_IsBool(value_)) {
-    return Native_NewBool(JS_ToBool(ctx_, value_));
-  } else if (JS_IsNumber(value_)) {
-    uint32_t tag = JS_VALUE_GET_TAG(value_);
-    if (JS_TAG_IS_FLOAT64(tag)) {
+  int8_t tag = JS_VALUE_GET_TAG(value_);
+
+  switch (tag) {
+    case JS_TAG_NULL:
+    case JS_TAG_UNDEFINED:
+      return Native_NewNull();
+    case JS_TAG_BOOL:
+      return Native_NewBool(JS_ToBool(ctx_, value_));
+    case JS_TAG_FLOAT64: {
       double v;
       JS_ToFloat64(ctx_, &v, value_);
       return Native_NewFloat64(v);
-    } else {
+    }
+    case JS_TAG_INT: {
       int32_t v;
       JS_ToInt32(ctx_, &v, value_);
       return Native_NewInt64(v);
     }
-  } else if (JS_IsString(value_)) {
-    // NativeString owned by NativeValue will be freed by users.
-    return NativeValueConverter<NativeTypeString>::ToNativeValue(ToString());
-  } else if (JS_IsArray(ctx_, value_)) {
-    std::vector<ScriptValue> values = Converter<IDLSequence<IDLAny>>::FromValue(ctx_, value_, ASSERT_NO_EXCEPTION());
-    auto* result = new NativeValue[values.size()];
-    for (int i = 0; i < values.size(); i++) {
-      result[i] = values[i].ToNative();
+    case JS_TAG_STRING:
+      // NativeString owned by NativeValue will be freed by users.
+      return NativeValueConverter<NativeTypeString>::ToNativeValue(ToString());
+    case JS_TAG_OBJECT: {
+      if (JS_IsArray(ctx_, value_)) {
+        std::vector<ScriptValue> values =
+            Converter<IDLSequence<IDLAny>>::FromValue(ctx_, value_, ASSERT_NO_EXCEPTION());
+        auto* result = new NativeValue[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+          result[i] = values[i].ToNative();
+        }
+        return Native_NewList(values.size(), result);
+      } else if (JS_IsObject(value_)) {
+        if (QJSEventTarget::HasInstance(ExecutingContext::From(ctx_), value_)) {
+          auto* event_target = toScriptWrappable<EventTarget>(value_);
+          return Native_NewPtr(JSPointerType::Others, event_target->bindingObject());
+        }
+        return NativeValueConverter<NativeTypeJSON>::ToNativeValue(*this);
+      }
     }
-    return Native_NewList(values.size(), result);
-  } else if (JS_IsObject(value_)) {
-    // TODO: needs a better way to convert bindingObject to pointers.
-    if (QJSEventTarget::HasInstance(ExecutingContext::From(ctx_), value_)) {
-      auto* event_target = toScriptWrappable<EventTarget>(value_);
-      return Native_NewPtr(JSPointerType::Others, event_target->bindingObject());
-    }
-    return NativeValueConverter<NativeTypeJSON>::ToNativeValue(*this);
+    default:
+      return Native_NewNull();
   }
-
-  return Native_NewNull();
 }
 
 bool ScriptValue::IsException() const {
