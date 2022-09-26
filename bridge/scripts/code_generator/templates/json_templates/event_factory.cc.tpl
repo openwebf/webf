@@ -92,6 +92,9 @@ Event* EventFactory::Create(ExecutingContext* context, const AtomicString& type,
 
   auto it = g_event_constructors->find(type);
   if (it == g_event_constructors->end()) {
+    if (raw_event == nullptr) {
+      return MakeGarbageCollected<Event>(context, type);
+    }
     return MakeGarbageCollected<Event>(context, type, toNativeEvent<NativeEvent>(raw_event));
   }
   EventConstructorFunction function = it->second;
