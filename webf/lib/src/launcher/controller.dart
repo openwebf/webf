@@ -310,23 +310,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     return null;
   }
 
-  // Save all WidgetElement to manager life cycle.
-  final List<WidgetElement> _widgetElements = [];
-
-  void deactivateWidgetElements() {
-    _widgetElements.forEach((element) {
-      element.deactivate();
-    });
-  }
-
-  void addWidgetElement(WidgetElement widgetElement) {
-    _widgetElements.add(widgetElement);
-  }
-
-  void _removeWidgetElement(WidgetElement widgetElement) {
-    _widgetElements.remove(widgetElement);
-  }
-
   T? _getEventTargetById<T>(int targetId) {
     EventTarget? target = _eventTargets[targetId];
     if (target is T)
@@ -342,10 +325,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   void _removeTarget(int targetId) {
     if (_eventTargets.containsKey(targetId)) {
       EventTarget? target = _eventTargets.remove(targetId);
-
-      if (target is WidgetElement) {
-        _removeWidgetElement(target);
-      }
     }
   }
 
@@ -356,7 +335,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   void _clearTargets() {
     // Set current eventTargets to a new object, clean old targets by gc.
     _eventTargets = <int, EventTarget>{};
-    _widgetElements.clear();
   }
 
   // export Uint8List bytes from rendered result.

@@ -173,9 +173,6 @@ class _WebFState extends State<WebF> with RouteAware {
 
   @override
   void deactivate() {
-    // Deactivate all WidgetElements in webf when webf Widget is deactivated.
-    widget.controller!.view.deactivateWidgetElements();
-
     super.deactivate();
   }
 }
@@ -287,13 +284,13 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
   }
 
   @override
-  _WebFRenderObjectElement createElement() {
-    return _WebFRenderObjectElement(this);
+  WebFRenderObjectElement createElement() {
+    return WebFRenderObjectElement(this);
   }
 }
 
-class _WebFRenderObjectElement extends SingleChildRenderObjectElement {
-  _WebFRenderObjectElement(WebFRenderObjectWidget widget) : super(widget);
+class WebFRenderObjectElement extends SingleChildRenderObjectElement {
+  WebFRenderObjectElement(WebFRenderObjectWidget widget) : super(widget);
 
   @override
   void mount(Element? parent, Object? newSlot) async {
@@ -305,6 +302,36 @@ class _WebFRenderObjectElement extends SingleChildRenderObjectElement {
     // So we bind _WebFRenderObjectElement into WebFController, and widgetElements created by controller can follow this to the root.
     controller.rootFlutterElement = this;
     await controller.executeEntrypoint(animationController: widget._webfWidget.animationController);
+  }
+
+  List<WebFRenderObjectToWidgetElement> customWidgetElements = [];
+
+  @override
+  void rebuild() {
+    super.rebuild();
+    customWidgetElements.forEach((element) {
+      element.mount(this, null);
+    });
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+
+    customWidgetElements.forEach((element) {
+      deactivateRecursively(element);
+    });
+  }
+
+  @override
+  void unmount() {
+    super.unmount();
+    customWidgetElements.clear();
+  }
+
+  void deactivateRecursively(Element element) {
+    element.deactivate();
+    element.visitChildren(deactivateRecursively);
   }
 
   // RenderObjects created by webf are manager by webf itself. There are no needs to operate renderObjects on _WebFRenderObjectElement.

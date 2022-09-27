@@ -44,13 +44,17 @@ class WebFRenderObjectToWidgetAdapter<T extends RenderObject> extends RenderObje
   /// child of [container].
   WebFRenderObjectToWidgetElement<T> attachToRenderTree(
       BuildOwner owner, RenderObjectElement parentElement, bool needBuild) {
-    Element? element;
+    WebFRenderObjectToWidgetElement? element;
 
     owner.lockState(() {
       element = createElement();
-      element?.mount(parentElement, null);
       assert(element != null);
     });
+
+    parentElement.markNeedsBuild();
+    if (parentElement is WebFRenderObjectElement) {
+      parentElement.customWidgetElements.add(element!);
+    }
 
     return element! as WebFRenderObjectToWidgetElement<T>;
   }
@@ -277,8 +281,6 @@ abstract class WidgetElement extends dom.Element {
         child: widget,
         container: renderBoxModel as ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>);
 
-    ownerDocument.controller.view.addWidgetElement(this);
-
     Element? parentFlutterElement;
     if (parentNode is WidgetElement) {
       parentFlutterElement = (parentNode as WidgetElement).renderObjectElement;
@@ -293,19 +295,6 @@ abstract class WidgetElement extends dom.Element {
   @override
   void dispose() {
     super.dispose();
-    if (renderObjectElement != null) {
-      deactivate();
-    }
-  }
-
-  void deactivate() {
-    assert(renderObjectElement != null);
-    deactivateRecursively(renderObjectElement!);
-  }
-
-  void deactivateRecursively(Element element) {
-    element.deactivate();
-    element.visitChildren(deactivateRecursively);
   }
 }
 
