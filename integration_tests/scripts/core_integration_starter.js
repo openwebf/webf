@@ -38,13 +38,18 @@ function startIntegrationTest() {
   });
 
   tester.on('close', (code) => {
+    console.log(code);
     process.exit(code);
   });
   tester.on('error', (error) => {
-    console.error(error);
+    console.error('integration failed', error);
     process.exit(1);
   });
   tester.on('exit', (code, signal) => {
+    if (signal) {
+      console.log('Process exit with ' + signal);
+      process.exit(1);
+    }
     if (code != 0) {
       process.exit(1);
     }

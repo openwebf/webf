@@ -165,6 +165,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
           if (!JS_IsNull(return_value)) {
             desc->flags = JS_PROP_ENUMERABLE;
             desc->value = return_value;
+            desc->getter = JS_NULL;
+            desc->setter = JS_NULL;
             return true;
           }
         }
@@ -175,6 +177,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
           if (!JS_IsNull(return_value)) {
             desc->flags = JS_PROP_ENUMERABLE;
             desc->value = return_value;
+            desc->getter = JS_NULL;
+            desc->setter = JS_NULL;
             return true;
           }
         }
