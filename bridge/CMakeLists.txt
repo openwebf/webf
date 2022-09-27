@@ -413,7 +413,6 @@ target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
 list(APPEND BRIDGE_LINK_LIBS gumbo_parse_static)
 
-add_definitions(-DANDROID_32_BIT=1)
 if (${IS_ANDROID})
   find_library(log-lib log)
 
