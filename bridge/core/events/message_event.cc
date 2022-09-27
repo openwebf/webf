@@ -45,7 +45,8 @@ MessageEvent::MessageEvent(ExecutingContext* context,
 #endif
       origin_(AtomicString(ctx(), native_message_event->origin)),
       lastEventId_(AtomicString(ctx(), native_message_event->lastEventId)),
-      source_(AtomicString(ctx(), native_message_event->source)) {}
+      source_(AtomicString(ctx(), native_message_event->source)) {
+}
 
 ScriptValue MessageEvent::data() const {
   return data_;
