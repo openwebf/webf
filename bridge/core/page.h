@@ -32,7 +32,10 @@ class WebFPage final {
   static webf::WebFPage** pageContextPool;
   static ConsoleMessageHandler consoleMessageHandler;
   WebFPage() = delete;
-  WebFPage(int32_t jsContext, const JSExceptionHandler& handler, const uint64_t* dart_methods, int32_t dart_methods_length);
+  WebFPage(int32_t jsContext,
+           const JSExceptionHandler& handler,
+           const uint64_t* dart_methods,
+           int32_t dart_methods_length);
   ~WebFPage();
 
   // Bytecodes which registered by webf plugins.
