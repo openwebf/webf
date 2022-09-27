@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:webf/webf.dart';
 
 typedef MethodCallCallback = Future<dynamic> Function(String method, Object? arguments);

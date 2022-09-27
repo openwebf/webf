@@ -5,26 +5,18 @@
 
 import 'dart:isolate';
 import 'dart:ffi';
-import 'dart:typed_data';
-
-import 'package:ffi/ffi.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 
 typedef NativePostTaskToInspectorThread = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
 typedef DartPostTaskToInspectorThread = void Function(int contextId, Pointer<Void> context, Pointer<Void> callback);
 
-void _postTaskToInspectorThread(int contextId, Pointer<Void> context, Pointer<Void> callback) {
-  ChromeDevToolsService? devTool = ChromeDevToolsService.getDevToolOfContextId(contextId);
-  if (devTool != null) {
-    devTool.isolateServerPort!.send(InspectorPostTaskMessage(context.address, callback.address));
-  }
-}
-
-final Pointer<NativeFunction<NativePostTaskToInspectorThread>> _nativePostTaskToInspectorThread =
-    Pointer.fromFunction(_postTaskToInspectorThread);
-
-final List<int> _dartNativeMethods = [_nativePostTaskToInspectorThread.address];
+// void _postTaskToInspectorThread(int contextId, Pointer<Void> context, Pointer<Void> callback) {
+//   ChromeDevToolsService? devTool = ChromeDevToolsService.getDevToolOfContextId(contextId);
+//   if (devTool != null) {
+//     devTool.isolateServerPort!.send(InspectorPostTaskMessage(context.address, callback.address));
+//   }
+// }
 
 void spawnIsolateInspectorServer(ChromeDevToolsService devTool, WebFController controller,
     {int port = INSPECTOR_DEFAULT_PORT, String? address}) {
@@ -112,16 +104,5 @@ class ChromeDevToolsService extends DevToolsService {
     _reloading = false;
     controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
     _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
-  }
-
-  // @TODO: Implement and remove.
-  // ignore: unused_element
-  static bool _registerUIDartMethodsToCpp(int contextId) {
-    final DartRegisterDartMethods _registerDartMethods = WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterDartMethods>>('registerUIDartMethods').asFunction();
-    Pointer<Uint64> bytes = malloc.allocate<Uint64>(_dartNativeMethods.length * sizeOf<Uint64>());
-    Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
-    nativeMethodList.setAll(0, _dartNativeMethods);
-    _registerDartMethods(contextId, bytes, _dartNativeMethods.length);
-    return true;
   }
 }
