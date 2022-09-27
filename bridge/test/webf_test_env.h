@@ -28,7 +28,7 @@ std::unique_ptr<WebFPage> TEST_init(OnJSError onJsError);
 std::unique_ptr<WebFPage> TEST_init();
 std::unique_ptr<WebFPage> TEST_allocateNewPage(OnJSError onJsError);
 void TEST_runLoop(ExecutingContext* context);
-void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError);
+std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError);
 void TEST_mockTestEnvDartMethods(int32_t contextId, OnJSError onJSError);
 void TEST_registerEventTargetDisposedCallback(int32_t context_unique_id, TEST_OnEventTargetDisposed callback);
 std::shared_ptr<UnitTestEnv> TEST_getEnv(int32_t context_unique_id);

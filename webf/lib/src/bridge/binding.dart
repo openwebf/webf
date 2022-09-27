@@ -158,7 +158,7 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
 void _dispatchEventToNative(Event event) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
-  if (contextId != null && pointer != null) {
+  if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr) {
     BindingObject bindingObject = BindingBridge.getBindingObject(pointer);
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
@@ -208,7 +208,7 @@ abstract class BindingBridge {
 
   static void _bindObject(BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
-    if (nativeBindingObject != null) {
+    if (nativeBindingObject != null && nativeBindingObject.ref.instance != nullptr) {
       _nativeObjects[nativeBindingObject.address] = object;
       nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
     }

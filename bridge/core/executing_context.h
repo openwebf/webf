@@ -52,7 +52,11 @@ bool isContextValid(int32_t contextId);
 class ExecutingContext {
  public:
   ExecutingContext() = delete;
-  ExecutingContext(int32_t contextId, const JSExceptionHandler& handler, void* owner);
+  ExecutingContext(int32_t contextId,
+                   JSExceptionHandler handler,
+                   void* owner,
+                   const uint64_t* dart_methods,
+                   int32_t dart_methods_length);
   ~ExecutingContext();
 
   static ExecutingContext* From(JSContext* ctx);
@@ -142,7 +146,7 @@ class ExecutingContext {
   // From C++ standard, https://isocpp.org/wiki/faq/dtors#order-dtors-for-members
   // Members first initialized and destructed at the last.
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
-  const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = std::make_unique<DartMethodPointer>();
+  const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
   // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer
   // release.
   UICommandBuffer ui_command_buffer_{this};
@@ -191,8 +195,6 @@ class ObjectProperty {
  private:
   JSValue m_value{JS_NULL};
 };
-
-std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExceptionHandler& handler, void* owner);
 
 }  // namespace webf
 

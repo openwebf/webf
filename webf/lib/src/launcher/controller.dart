@@ -11,6 +11,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:flutter/foundation.dart';
@@ -667,12 +668,13 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   // Call from JS Bridge before JS side eventTarget object been Garbage collected.
-  void disposeEventTarget(int targetId) {
+  void disposeEventTarget(int targetId, Pointer<NativeBindingObject> pointer) {
     Node? target = _getEventTargetById<Node>(targetId);
     if (target == null) return;
 
     _removeTarget(targetId);
     target.dispose();
+    malloc.free(pointer);
   }
 
   RenderObject getRootRenderObject() {
@@ -954,7 +956,8 @@ class WebFController {
       _module.dispose();
       _view.dispose();
 
-      allocateNewPage(_view.contextId);
+      List<int> methodBytes = makeDartMethodsData();
+      allocateNewPage(methodBytes, _view.contextId);
 
       _view = WebFViewController(view.viewportWidth, view.viewportHeight,
           background: _view.background,

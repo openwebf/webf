@@ -32,19 +32,18 @@ int initBridge(WebFViewController view) {
 
   int contextId = -1;
 
+  List<int> dartMethods = makeDartMethodsData();
+
   if (_firstView) {
-    initJSPagePool(kWebFJSPagePoolSize);
+    initJSPagePool(kWebFJSPagePoolSize, dartMethods);
     _firstView = false;
     contextId = 0;
   } else {
-    contextId = allocateNewPage();
+    contextId = allocateNewPage(dartMethods);
     if (contextId == -1) {
       throw Exception('Can\' allocate new webf bridge: bridge count had reach the maximum size.');
     }
   }
-
-  // Register methods first to share ptrs for bridge polyfill.
-  registerDartMethodsToCpp(contextId);
 
   return contextId;
 }

@@ -66,12 +66,12 @@ int32_t searchForAvailableContextId() {
 }  // namespace
 
 namespace webf {
-bool isDartHostRestart() {
+bool isDartHotRestart() {
   return is_dart_hot_restart;
 }
 }  // namespace webf
 
-void initJSPagePool(int poolSize) {
+void initJSPagePool(int poolSize, uint64_t* dart_methods, int32_t dart_methods_len) {
   // When dart hot restarted, should dispose previous bridge and clear task message queue.
   if (inited) {
     is_dart_hot_restart = true;
@@ -83,7 +83,7 @@ void initJSPagePool(int poolSize) {
     webf::WebFPage::pageContextPool[i] = nullptr;
   }
 
-  webf::WebFPage::pageContextPool[0] = new webf::WebFPage(0, nullptr);
+  webf::WebFPage::pageContextPool[0] = new webf::WebFPage(0, nullptr, dart_methods, dart_methods_len);
   inited = true;
   maxPoolSize = poolSize;
 }
@@ -98,7 +98,7 @@ void disposePage(int32_t contextId) {
   webf::WebFPage::pageContextPool[contextId] = nullptr;
 }
 
-int32_t allocateNewPage(int32_t targetContextId) {
+int32_t allocateNewPage(int32_t targetContextId, uint64_t* dart_methods, int32_t dart_methods_len) {
   if (targetContextId == -1) {
     targetContextId = ++poolIndex;
   }
@@ -111,7 +111,7 @@ int32_t allocateNewPage(int32_t targetContextId) {
          (std::string("can not Allocate page at index") + std::to_string(targetContextId) +
           std::string(": page have already exist."))
              .c_str());
-  auto* page = new webf::WebFPage(targetContextId, nullptr);
+  auto* page = new webf::WebFPage(targetContextId, nullptr, dart_methods, dart_methods_len);
   webf::WebFPage::pageContextPool[targetContextId] = page;
   return targetContextId;
 }
@@ -151,11 +151,11 @@ void parseHTML(int32_t contextId, const char* code, int32_t length) {
   context->parseHTML(code, length);
 }
 
-void reloadJsContext(int32_t contextId) {
+void reloadJsContext(int32_t contextId, uint64_t* dart_methods, int32_t dart_methods_len) {
   assert(checkPage(contextId) && "reloadJSContext: contextId is not valid");
   auto bridgePtr = getPage(contextId);
   auto context = static_cast<webf::WebFPage*>(bridgePtr);
-  auto newContext = new webf::WebFPage(contextId, nullptr);
+  auto newContext = new webf::WebFPage(contextId, nullptr, dart_methods, dart_methods_len);
   delete context;
   webf::WebFPage::pageContextPool[contextId] = newContext;
 }
@@ -170,12 +170,6 @@ NativeValue* invokeModuleEvent(int32_t contextId,
   auto* result = context->invokeModuleEvent(reinterpret_cast<webf::NativeString*>(moduleName), eventType, event,
                                             reinterpret_cast<webf::NativeValue*>(extra));
   return reinterpret_cast<NativeValue*>(result);
-}
-
-void registerDartMethods(int32_t contextId, uint64_t* methodBytes, int32_t length) {
-  assert(checkPage(contextId) && "registerDartMethods: contextId is not valid");
-  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
-  context->registerDartMethods(methodBytes, length);
 }
 
 static WebFInfo* webfInfo{nullptr};

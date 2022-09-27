@@ -55,7 +55,7 @@ EventTarget::~EventTarget() {
   }
 #endif
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget, nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget, bindingObject());
 }
 
 EventTarget::EventTarget(ExecutingContext* context)
