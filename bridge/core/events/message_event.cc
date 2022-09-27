@@ -38,7 +38,11 @@ MessageEvent::MessageEvent(ExecutingContext* context,
                            const AtomicString& type,
                            NativeMessageEvent* native_message_event)
     : Event(context, type, &native_message_event->native_event),
+#if ANDROID_32_BIT
+      data_(ScriptValue(ctx(), *(reinterpret_cast<NativeValue*>(native_message_event->data)))),
+#else
       data_(ScriptValue(ctx(), *(static_cast<NativeValue*>(native_message_event->data)))),
+#endif
       origin_(AtomicString(ctx(), native_message_event->origin)),
       lastEventId_(AtomicString(ctx(), native_message_event->lastEventId)),
       source_(AtomicString(ctx(), native_message_event->source)) {}

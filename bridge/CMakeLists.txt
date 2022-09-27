@@ -59,9 +59,14 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 endif()
 
 if (ENABLE_ASAN)
-  add_compile_options(-fsanitize=address -fno-omit-frame-pointer -O1)
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
   add_link_options(-fsanitize=address -fno-omit-frame-pointer)
 endif ()
+
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  # Avoid quickjs stackoverflow.
+  add_compile_options(-O1)
+endif()
 
 if (DEFINED PLATFORM)
   if (${PLATFORM} STREQUAL "OS")
@@ -408,6 +413,7 @@ target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
 list(APPEND BRIDGE_LINK_LIBS gumbo_parse_static)
 
+add_definitions(-DANDROID_32_BIT=1)
 if (${IS_ANDROID})
   find_library(log-lib log)
 
