@@ -387,4 +387,17 @@ describe('custom html element', () => {
     // @ts-ignore
     expect(clone._self).toBe(sampleElement);
   });
+
+  it('should work with flutter-checkbox', async (done) => {
+    let checkbox = document.createElement('flutter-checkbox');
+    document.body.appendChild(checkbox);
+    await snapshot();
+
+    await simulateClick(10, 10);
+
+    setTimeout(async () => {
+      await snapshot();
+      done();
+    }, 800);
+  });
 });

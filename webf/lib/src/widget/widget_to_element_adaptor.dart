@@ -48,21 +48,9 @@ class WebFRenderObjectToWidgetAdapter<T extends RenderObject> extends RenderObje
 
     owner.lockState(() {
       element = createElement();
+      element?.mount(parentElement, null);
       assert(element != null);
     });
-
-    // If renderview is building,skip the buildScope phase.
-    if (!needBuild) {
-      if (element != null) {
-        element?.mount(parentElement, null);
-      }
-    } else {
-      owner.buildScope(element!, () {
-        if (element != null) {
-          element?.mount(parentElement, null);
-        }
-      });
-    }
 
     return element! as WebFRenderObjectToWidgetElement<T>;
   }
@@ -185,11 +173,11 @@ abstract class WidgetElement extends dom.Element {
           isDefaultRepaintBoundary: isDefaultRepaintBoundary,
         ) {
     WidgetsFlutterBinding.ensureInitialized();
-    _state = _WebFAdapterWidgetState(this, attributes, childNodes);
+    _state = _WebFAdapterWidgetState(this);
     _widget = _WebFAdapterWidget(_state!);
   }
 
-  Widget build(BuildContext context, Map<String, String> attributes, List<Widget> children);
+  Widget build(BuildContext context, List<Widget> children);
 
   // The render object is inserted by Flutter framework when element is WidgetElement.
   @override
@@ -200,6 +188,12 @@ abstract class WidgetElement extends dom.Element {
     super.didDetachRenderer();
   }
 
+  void setState(VoidCallback callback) {
+    if (_state != null) {
+      _state!.requestUpdateState(callback);
+    }
+  }
+
   @override
   void didAttachRenderer() {
     // Children of WidgetElement should insert render object by Flutter Framework.
@@ -207,10 +201,18 @@ abstract class WidgetElement extends dom.Element {
   }
 
   @override
+  void setBindingProperty(String key, value) {
+    super.setBindingProperty(key, value);
+    if (_state != null) {
+      _state!.requestUpdateState();
+    }
+  }
+
+  @override
   void removeAttribute(String key) {
     super.removeAttribute(key);
     if (_state != null) {
-      _state!.onAttributeChanged(attributes);
+      _state!.requestUpdateState();
     }
   }
 
@@ -218,7 +220,7 @@ abstract class WidgetElement extends dom.Element {
   void setAttribute(String key, value) {
     super.setAttribute(key, value);
     if (_state != null) {
-      _state!.onAttributeChanged(attributes);
+      _state!.requestUpdateState();
     }
   }
 
@@ -227,10 +229,32 @@ abstract class WidgetElement extends dom.Element {
     super.appendChild(child);
 
     if (_state != null) {
-      _state!.onChildrenChanged(childNodes);
+      _state!.requestUpdateState();
     }
 
     return child;
+  }
+
+  @override
+  dom.Node insertBefore(dom.Node child, dom.Node referenceNode) {
+    dom.Node inserted = super.insertBefore(child, referenceNode);
+
+    if (_state != null) {
+      _state!.requestUpdateState();
+    }
+
+    return inserted;
+  }
+
+  @override
+  dom.Node? replaceChild(dom.Node newNode, dom.Node oldNode) {
+    dom.Node? replaced = super.replaceChild(newNode, oldNode);
+
+    if (_state != null) {
+      _state!.requestUpdateState();
+    }
+
+    return replaced;
   }
 
   @override
@@ -238,7 +262,7 @@ abstract class WidgetElement extends dom.Element {
     super.removeChild(child);
 
     if (_state != null) {
-      _state!.onChildrenChanged(children);
+      _state!.requestUpdateState();
     }
 
     return child;
@@ -297,19 +321,12 @@ class _WebFAdapterWidget extends StatefulWidget {
 }
 
 class _WebFAdapterWidgetState extends State<_WebFAdapterWidget> {
-  Map<String, String> _attributes;
   final WidgetElement _element;
-  late List<dom.Node> _childNodes;
+  _WebFAdapterWidgetState(this._element) {}
 
-  _WebFAdapterWidgetState(this._element, this._attributes, this._childNodes) {}
-
-  void onAttributeChanged(Map<String, String> attributes) {
+  void requestUpdateState([VoidCallback? callback]) {
     if (mounted) {
-      setState(() {
-        _attributes = attributes;
-      });
-    } else {
-      _attributes = attributes;
+      setState(callback ?? () {});
     }
   }
 
@@ -327,18 +344,29 @@ class _WebFAdapterWidgetState extends State<_WebFAdapterWidget> {
     return children;
   }
 
-  void onChildrenChanged(List<dom.Node> childNodes) {
+  void onChildrenChanged() {
     if (mounted) {
-      setState(() {
-        _childNodes = childNodes;
-      });
-    } else {
-      _childNodes = childNodes;
+      requestUpdateState();
     }
   }
 
   @override
+  void deactivate() {
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+  }
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'WidgetElement(${_element.tagName}) adapterWidgetState';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return _element.build(context, _attributes, convertNodeListToWidgetList(_childNodes));
+    return _element.build(context, convertNodeListToWidgetList(_element.childNodes));
   }
 }

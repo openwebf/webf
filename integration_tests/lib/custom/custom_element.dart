@@ -19,8 +19,7 @@ class WaterfallFlowWidgetElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, Map<String, dynamic> properties,
-      List<Widget> children) {
+  Widget build(BuildContext context, List<Widget> children) {
     _children = children;
 
     return WaterfallFlow.builder(
@@ -38,13 +37,65 @@ class WaterfallFlowWidgetElement extends WidgetElement {
   }
 }
 
+class FlutterCheckBoxElement extends WidgetElement {
+  FlutterCheckBoxElement(BindingContext? context) : super(context);
+  bool isChecked = false;
+
+  @override
+  getBindingProperty(String key) {
+    switch (key) {
+      case 'value':
+        return isChecked;
+    }
+
+    return super.getBindingProperty(key);
+  }
+
+  @override
+  void setBindingProperty(String key, value) {
+    switch (key) {
+      case 'value':
+        isChecked = value;
+        break;
+    }
+
+    super.setBindingProperty(key, value);
+  }
+
+  @override
+  Widget build(BuildContext context, List<Widget> children) {
+    Color getColor(Set<MaterialState> states) {
+      const Set<MaterialState> interactiveStates = <MaterialState>{
+        MaterialState.pressed,
+        MaterialState.hovered,
+        MaterialState.focused,
+      };
+      if (states.any(interactiveStates.contains)) {
+        return Colors.blue;
+      }
+      return Colors.red;
+    }
+
+    return Checkbox(
+      checkColor: Colors.white,
+      fillColor: MaterialStateProperty.resolveWith(getColor),
+      value: isChecked,
+      onChanged: (bool? value) {
+        setState(() {
+          isChecked = value ?? false;
+          dispatchEvent(dom.Event(dom.EVENT_CHANGE));
+        });
+      },
+    );
+  }
+}
+
 class TextWidgetElement extends WidgetElement {
   TextWidgetElement(BindingContext? context) : super(context);
 
   @override
-  Widget build(BuildContext context, Map<String, dynamic> properties,
-      List<Widget> children) {
-    return Text(properties['value'] ?? '',
+  Widget build(BuildContext context, List<Widget> children) {
+    return Text(getAttribute('value') ?? '',
         textDirection: TextDirection.ltr,
         style: TextStyle(color: Color.fromARGB(255, 100, 100, 100)));
   }
@@ -54,9 +105,8 @@ class ImageWidgetElement extends WidgetElement {
   ImageWidgetElement(BindingContext? context) : super(context);
 
   @override
-  Widget build(BuildContext context, Map<String, dynamic> properties,
-      List<Widget> children) {
-    return Image(image: AssetImage(properties['src']));
+  Widget build(BuildContext context, List<Widget> children) {
+    return Image(image: AssetImage(getAttribute('src')!));
   }
 }
 
@@ -64,8 +114,7 @@ class ContainerWidgetElement extends WidgetElement {
   ContainerWidgetElement(BindingContext? context) : super(context);
 
   @override
-  Widget build(BuildContext context, Map<String, dynamic> properties,
-      List<Widget> children) {
+  Widget build(BuildContext context, List<Widget> children) {
     return Container(
       width: 200,
       height: 200,
@@ -166,4 +215,6 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-asset-image', (BindingContext? context) {
     return ImageWidgetElement(context);
   });
+  WebF.defineCustomElement(
+      'flutter-checkbox', (context) => FlutterCheckBoxElement(context));
 }
