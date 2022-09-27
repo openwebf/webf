@@ -282,8 +282,8 @@ TEST(Context, accessGetUICommandItemsAfterDisposed) {
 }
 
 TEST(Context, disposeContext) {
-  initJSPagePool(1024 * 1024);
-  TEST_mockDartMethods(0, nullptr);
+  auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
+  initJSPagePool(1024 * 1024, mockedDartMethods.data(), mockedDartMethods.size());
   uint32_t contextId = 0;
   auto bridge = static_cast<webf::WebFPage*>(getPage(contextId));
   static bool disposed = false;

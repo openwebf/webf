@@ -172,14 +172,18 @@ void parseHTML(int contextId, String code) {
 }
 
 // Register initJsEngine
-typedef NativeInitJSPagePool = Void Function(Int32 poolSize);
-typedef DartInitJSPagePool = void Function(int poolSize);
+typedef NativeInitJSPagePool = Void Function(Int32 poolSize, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitJSPagePool = void Function(int poolSize, Pointer<Uint64> dartMethods, int length);
 
 final DartInitJSPagePool _initJSPagePool =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitJSPagePool>>('initJSPagePool').asFunction();
 
-void initJSPagePool(int poolSize) {
-  _initJSPagePool(poolSize);
+void initJSPagePool(int poolSize, List<int> dartMethods) {
+  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
+  Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
+  nativeMethodList.setAll(0, dartMethods);
+
+  _initJSPagePool(poolSize, bytes, dartMethods.length);
 }
 
 typedef NativeDisposePage = Void Function(Int32 contextId);
@@ -192,14 +196,18 @@ void disposePage(int contextId) {
   _disposePage(contextId);
 }
 
-typedef NativeAllocateNewPage = Int32 Function(Int32);
-typedef DartAllocateNewPage = int Function(int);
+typedef NativeAllocateNewPage = Int32 Function(Int32, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartAllocateNewPage = int Function(int, Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
-int allocateNewPage([int targetContextId = -1]) {
-  return _allocateNewPage(targetContextId);
+int allocateNewPage(List<int> dartMethods, [int targetContextId = -1]) {
+  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
+  Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
+  nativeMethodList.setAll(0, dartMethods);
+
+  return _allocateNewPage(targetContextId, bytes, dartMethods.length);
 }
 
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);
@@ -227,16 +235,19 @@ bool profileModeEnabled() {
 }
 
 // Regisdster reloadJsContext
-typedef NativeReloadJSContext = Void Function(Int32 contextId);
-typedef DartReloadJSContext = void Function(int contextId);
+typedef NativeReloadJSContext = Void Function(Int32 contextId, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartReloadJSContext = void Function(int contextId, Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartReloadJSContext _reloadJSContext =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeReloadJSContext>>('reloadJsContext').asFunction();
 
-Future<void> reloadJSContext(int contextId) async {
+Future<void> reloadJSContext(int contextId, List<int> dartMethods) async {
   Completer completer = Completer<void>();
   Future.microtask(() {
-    _reloadJSContext(contextId);
+    Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
+    Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
+    nativeMethodList.setAll(0, dartMethods);
+    _reloadJSContext(contextId, bytes, dartMethods.length);
     completer.complete();
   });
   return completer.future;
@@ -456,7 +467,7 @@ void flushUICommand(WebFViewController view) {
           view.createComment(id, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.disposeEventTarget:
-          view.disposeEventTarget(id);
+          view.disposeEventTarget(id, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.addEvent:
           view.addEvent(id, command.args[0]);

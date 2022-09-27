@@ -196,17 +196,16 @@ static int32_t inited{false};
 
 std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   uint32_t contextId;
+  auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   if (inited) {
-    contextId = allocateNewPage(-1);
+    contextId = allocateNewPage(-1, mockedDartMethods.data(), mockedDartMethods.size());
   } else {
     contextId = 0;
   }
-  std::call_once(testInitOnceFlag, []() {
-    initJSPagePool(1024 * 1024);
+  std::call_once(testInitOnceFlag, [&mockedDartMethods]() {
+    initJSPagePool(1024 * 1024, mockedDartMethods.data(), mockedDartMethods.size());
     inited = true;
   });
-
-  TEST_mockDartMethods(contextId, onJsError);
 
   initTestFramework(contextId);
   TEST_mockTestEnvDartMethods(contextId, onJsError);
@@ -223,9 +222,8 @@ std::unique_ptr<webf::WebFPage> TEST_init() {
 }
 
 std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
-  uint32_t newContextId = allocateNewPage(-1);
-
-  TEST_mockDartMethods(newContextId, onJsError);
+  auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
+  uint32_t newContextId = allocateNewPage(-1, mockedDartMethods.data(), mockedDartMethods.size());
 
   initTestFramework(newContextId);
   return std::unique_ptr<webf::WebFPage>(static_cast<webf::WebFPage*>(getPage(newContextId)));
@@ -304,7 +302,7 @@ void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 
 void TEST_simulateInputText(NativeString* nativeString) {}
 
-void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError) {
+std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{
       reinterpret_cast<uint64_t>(TEST_invokeModule),
       reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
@@ -326,7 +324,7 @@ void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError) {
 
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJsLog));
-  registerDartMethods(contextId, mockMethods.data(), mockMethods.size());
+  return mockMethods;
 }
 
 void TEST_mockTestEnvDartMethods(int32_t contextId, OnJSError onJSError) {

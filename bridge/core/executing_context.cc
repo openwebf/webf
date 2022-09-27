@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "executing_context.h"
+
+#include <utility>
 #include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
@@ -22,16 +24,17 @@ static std::atomic<int32_t> context_unique_id{0};
 bool valid_contexts[MAX_JS_CONTEXT];
 std::atomic<uint32_t> running_context_list{0};
 
-std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExceptionHandler& handler, void* owner) {
-  return std::make_unique<ExecutingContext>(contextId, handler, owner);
-}
-
-ExecutingContext::ExecutingContext(int32_t contextId, const JSExceptionHandler& handler, void* owner)
+ExecutingContext::ExecutingContext(int32_t contextId,
+                                   JSExceptionHandler handler,
+                                   void* owner,
+                                   const uint64_t* dart_methods,
+                                   int32_t dart_methods_length)
     : context_id_(contextId),
-      handler_(handler),
+      handler_(std::move(handler)),
       owner_(owner),
       unique_id_(context_unique_id++),
-      is_context_valid_(true) {
+      is_context_valid_(true),
+      dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {
   //  #if ENABLE_PROFILE
   //    auto jsContextStartTime =
   //        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())

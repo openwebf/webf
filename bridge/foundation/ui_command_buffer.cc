@@ -16,7 +16,7 @@ UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) 
 UICommandBuffer::~UICommandBuffer() {
 #if FLUTTER_BACKEND
   // Flush and execute all disposeEventTarget commands when context released.
-  if (context_->dartMethodPtr()->flushUICommand != nullptr && !isDartHostRestart()) {
+  if (context_->dartMethodPtr()->flushUICommand != nullptr && !isDartHotRestart()) {
     context_->dartMethodPtr()->flushUICommand(context_->contextId());
   }
 #endif

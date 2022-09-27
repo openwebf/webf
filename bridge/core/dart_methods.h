@@ -77,7 +77,9 @@ using SimulatePointer = void (*)(MousePointer*, int32_t length, int32_t pointer)
 using SimulateInputText = void (*)(NativeString* nativeString);
 
 struct DartMethodPointer {
-  DartMethodPointer() = default;
+  DartMethodPointer() = delete;
+  explicit DartMethodPointer(const uint64_t* dart_methods, int32_t dartMethodsLength);
+
   InvokeModule invokeModule{nullptr};
   RequestBatchUpdate requestBatchUpdate{nullptr};
   ReloadApp reloadApp{nullptr};

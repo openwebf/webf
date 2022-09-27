@@ -4,7 +4,6 @@
  */
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
 
@@ -404,15 +403,6 @@ final List<int> _dartNativeMethods = [
   _nativeOnJsLog.address,
 ];
 
-typedef NativeRegisterDartMethods = Void Function(Int32 contextId, Pointer<Uint64> methodBytes, Int32 length);
-typedef DartRegisterDartMethods = void Function(int contextId, Pointer<Uint64> methodBytes, int length);
-
-final DartRegisterDartMethods _registerDartMethods =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterDartMethods>>('registerDartMethods').asFunction();
-
-void registerDartMethodsToCpp(int contextId) {
-  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * _dartNativeMethods.length);
-  Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
-  nativeMethodList.setAll(0, _dartNativeMethods);
-  _registerDartMethods(contextId, bytes, _dartNativeMethods.length);
+List<int> makeDartMethodsData() {
+  return _dartNativeMethods;
 }

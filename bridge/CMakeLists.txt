@@ -199,6 +199,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/executing_context.cc
     core/script_state.cc
     core/page.cc
+    core/dart_methods.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc

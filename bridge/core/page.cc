@@ -23,7 +23,10 @@ ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
 webf::WebFPage** WebFPage::pageContextPool{nullptr};
 
-WebFPage::WebFPage(int32_t contextId, const JSExceptionHandler& handler)
+WebFPage::WebFPage(int32_t contextId,
+                   const JSExceptionHandler& handler,
+                   const uint64_t* dart_methods,
+                   int32_t dart_methods_length)
     : contextId(contextId), ownerThreadId(std::this_thread::get_id()) {
   context_ = new ExecutingContext(
       contextId,
@@ -33,7 +36,7 @@ WebFPage::WebFPage(int32_t contextId, const JSExceptionHandler& handler)
         }
         WEBF_LOG(ERROR) << message << std::endl;
       },
-      this);
+      this, dart_methods, dart_methods_length);
 }
 
 bool WebFPage::parseHTML(const char* code, size_t length) {
@@ -136,34 +139,6 @@ void WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!context_->IsContextValid())
     return;
   context_->EvaluateByteCode(bytes, byteLength);
-}
-
-void WebFPage::registerDartMethods(uint64_t* methodBytes, int32_t length) {
-  size_t i = 0;
-
-  auto& dartMethodPointer = context_->dartMethodPtr();
-
-  dartMethodPointer->invokeModule = reinterpret_cast<InvokeModule>(methodBytes[i++]);
-  dartMethodPointer->requestBatchUpdate = reinterpret_cast<RequestBatchUpdate>(methodBytes[i++]);
-  dartMethodPointer->reloadApp = reinterpret_cast<ReloadApp>(methodBytes[i++]);
-  dartMethodPointer->setTimeout = reinterpret_cast<SetTimeout>(methodBytes[i++]);
-  dartMethodPointer->setInterval = reinterpret_cast<SetInterval>(methodBytes[i++]);
-  dartMethodPointer->clearTimeout = reinterpret_cast<ClearTimeout>(methodBytes[i++]);
-  dartMethodPointer->requestAnimationFrame = reinterpret_cast<RequestAnimationFrame>(methodBytes[i++]);
-  dartMethodPointer->cancelAnimationFrame = reinterpret_cast<CancelAnimationFrame>(methodBytes[i++]);
-  dartMethodPointer->toBlob = reinterpret_cast<ToBlob>(methodBytes[i++]);
-  dartMethodPointer->flushUICommand = reinterpret_cast<FlushUICommand>(methodBytes[i++]);
-
-#if ENABLE_PROFILE
-  dartMethodPointer->getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(methodBytes[i++]);
-#else
-  i++;
-#endif
-
-  dartMethodPointer->onJsError = reinterpret_cast<OnJSError>(methodBytes[i++]);
-  dartMethodPointer->onJsLog = reinterpret_cast<OnJSLog>(methodBytes[i++]);
-
-  assert_m(i == length, "Dart native methods count is not equal with C++ side method registrations.");
 }
 
 std::thread::id WebFPage::currentThread() const {
