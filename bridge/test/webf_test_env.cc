@@ -179,7 +179,9 @@ void TEST_toBlob(void* ptr,
   blobCallback(ptr, contextId, nullptr, bytes, 5);
 }
 
-void TEST_flushUICommand() {}
+void TEST_flushUICommand(int32_t contextId) {
+  clearUICommandItems(contextId);
+}
 
 void TEST_onJsLog(int32_t contextId, int32_t level, const char*) {}
 

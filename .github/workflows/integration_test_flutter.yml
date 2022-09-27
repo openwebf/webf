@@ -30,7 +30,7 @@ jobs:
       with:
         cmake-version: ${{ env.cmakeVersion }}
     - run: npm i
-    - run: ENABLE_ASAN=true npm run build:bridge:macos
+    - run: npm run build:bridge:macos
     - uses: actions/upload-artifact@v2
       with:
         name: macos_bridge_binary
@@ -49,22 +49,6 @@ jobs:
     - run: npm i
     - run: ENABLE_ASAN=true npm run build:bridge:linux
     - run: node scripts/run_bridge_unit_test.js
-      id: bridge_test
-    - name: Check on failures
-      if: steps.bridge_test.outcome == 'success'
-      run: exit 0
-    - run: sudo chmod -R +rwx /cores/* # Enable access to core dumps
-    - run: ulimit -c               # should output 0 if disabled
-    - run: ulimit -c unlimited
-    - run: ulimit -c               # should output 'unlimited' now
-    - run: sudo touch /cores/test
-    - run: ls /cores
-    - run: sudo rm /cores/test
-    - uses: actions/upload-artifact@master # capture all crashes as build artifacts
-      if: steps.bridge_test.outcome != 'success'
-      with:
-        name: crashes
-        path: /cores
 
   webf_unit_test:
     runs-on: ubuntu-latest
