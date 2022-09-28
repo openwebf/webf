@@ -219,7 +219,9 @@ static JSValue triggerGlobalError(JSContext* ctx, JSValueConst this_val, int arg
 struct ExecuteCallbackContext {
   ExecuteCallbackContext() = delete;
 
-  explicit ExecuteCallbackContext(ExecutingContext* context, ExecuteCallback executeCallback, WebFTestContext* webf_context)
+  explicit ExecuteCallbackContext(ExecutingContext* context,
+                                  ExecuteCallback executeCallback,
+                                  WebFTestContext* webf_context)
       : executeCallback(executeCallback), context(context), webf_context(webf_context){};
   ExecuteCallback executeCallback;
   ExecutingContext* context;
