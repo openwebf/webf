@@ -19,6 +19,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
     show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
 import 'package:webf/bridge.dart';
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
@@ -254,6 +255,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     disposePage(_contextId);
 
     _clearTargets();
+
+    clearCssLength();
 
     document.dispose();
     window.dispose();
