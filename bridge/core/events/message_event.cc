@@ -50,7 +50,6 @@ MessageEvent::MessageEvent(ExecutingContext* context,
       source_(AtomicString(ctx(), native_message_event->source))
 #endif
 
-
 {
 }
 
