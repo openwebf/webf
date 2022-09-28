@@ -75,6 +75,41 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
+  ExecutingContext* context = ExecutingContext::From(ctx);
+  JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
+  if (JS_HasProperty(ctx, prototypeObject, atom)) {
+    JSValue target = JS_DupValue(ctx, prototypeObject);
+    JSValue setterFunc = JS_UNDEFINED;
+    while (JS_IsUndefined(setterFunc)) {
+      JSPropertyDescriptor descriptor;
+      descriptor.setter = JS_UNDEFINED;
+      descriptor.getter = JS_UNDEFINED;
+      descriptor.value = JS_UNDEFINED;
+      JS_GetOwnProperty(ctx, &descriptor, target, atom);
+      setterFunc = descriptor.setter;
+      if (JS_IsFunction(ctx, setterFunc)) {
+        JS_FreeValue(ctx, descriptor.getter);
+        break;
+      }
+
+      JSValue new_target = JS_GetPrototype(ctx, target);
+      JS_FreeValue(ctx, target);
+      target = new_target;
+      JS_FreeValue(ctx, descriptor.getter);
+      JS_FreeValue(ctx, descriptor.setter);
+    }
+
+    assert_m(JS_IsFunction(ctx, setterFunc), "Setter on prototype should be an function.");
+    JSValue ret = JS_Call(ctx, setterFunc, obj, 1, &value);
+    if (JS_IsException(ret))
+      return -1;
+
+    JS_FreeValue(ctx, ret);
+    JS_FreeValue(ctx, setterFunc);
+    JS_FreeValue(ctx, target);
+    return 0;
+  }
+
   if (wrapper_type_info->indexed_property_setter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
     return wrapper_type_info->indexed_property_setter_handler_(ctx, obj, JS_AtomToUInt32(atom), value);
   } else if (wrapper_type_info->string_property_setter_handler_ != nullptr) {
