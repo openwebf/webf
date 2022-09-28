@@ -40,25 +40,6 @@ class WebFRenderObjectToWidgetAdapter<T extends RenderObject> extends RenderObje
   @override
   void updateRenderObject(BuildContext context, RenderObject renderObject) {}
 
-  /// Inflate this widget and actually set the resulting [RenderObject] as the
-  /// child of [container].
-  WebFRenderObjectToWidgetElement<T> attachToRenderTree(
-      BuildOwner owner, RenderObjectElement parentElement, bool needBuild) {
-    WebFRenderObjectToWidgetElement? element;
-
-    owner.lockState(() {
-      element = createElement();
-      assert(element != null);
-    });
-
-    parentElement.markNeedsBuild();
-    if (parentElement is WebFRenderObjectElement) {
-      parentElement.customWidgetElements.add(element!);
-    }
-
-    return element! as WebFRenderObjectToWidgetElement<T>;
-  }
-
   @override
   String toStringShort() => debugShortDescription ?? super.toStringShort();
 }
@@ -190,6 +171,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void didDetachRenderer() {
     super.didDetachRenderer();
+    _detachWidget();
   }
 
   void setState(VoidCallback callback) {
@@ -275,26 +257,45 @@ abstract class WidgetElement extends dom.Element {
   RenderObjectElement? renderObjectElement;
 
   void _attachWidget(Widget widget) {
-    RenderObjectElement rootFlutterElement = ownerDocument.controller.rootFlutterElement;
+    // RenderObjectElement rootFlutterElement = ownerDocument.controller.rootFlutterElement;
 
     WebFRenderObjectToWidgetAdapter adaptor = WebFRenderObjectToWidgetAdapter(
         child: widget,
         container: renderBoxModel as ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>);
 
-    Element? parentFlutterElement;
-    if (parentNode is WidgetElement) {
-      parentFlutterElement = (parentNode as WidgetElement).renderObjectElement;
-    } else {
-      parentFlutterElement = (parentNode as dom.Element).flutterElement;
-    }
+    // RenderObjectElement? parentFlutterElement;
+    // if (parentNode is WidgetElement) {
+    //   parentFlutterElement = (parentNode as WidgetElement).renderObjectElement;
+    // } else {
+    //   parentFlutterElement = (parentNode as dom.Element).flutterElement;
+    // }
 
-    renderObjectElement = adaptor.attachToRenderTree(rootFlutterElement.owner!,
-        (parentFlutterElement ?? rootFlutterElement) as RenderObjectElement, parentFlutterElement == null);
+    if (ownerDocument.controller.onCustomElementAttached != null) {
+      ownerDocument.controller.onCustomElementAttached!(adaptor);
+    }
+  }
+
+  // TODO: if an customElements which contains sub-widget-elements are removed from
+  // DOM Tree, we should to modify the children in our widget's state to notify
+  // the flutter frameworks for update.
+  void _detachWidget() {
+    if (renderObjectElement == null) return;
+    deactivate();
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  void deactivate() {
+    assert(renderObjectElement != null);
+    deactivateRecursively(renderObjectElement!);
+  }
+
+  void deactivateRecursively(Element element) {
+    element.deactivate();
+    element.visitChildren(deactivateRecursively);
   }
 }
 

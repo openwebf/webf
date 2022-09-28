@@ -15,6 +15,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
@@ -838,7 +839,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     didDetachRenderer();
     if (dispose) {
-      renderBoxModel?.dispose();
+      // RenderObjects in WidgetElement are owned by Flutter Widget Frameworks.
+      // So we won't dispose the renderObjects held by WidgetElement anymore.
+      if (this is! WidgetElement) {
+        renderBoxModel?.dispose();
+      }
     }
 
     renderBoxModel = null;

@@ -61,6 +61,8 @@ class WebF extends StatefulWidget {
 
   final UriParser? uriParser;
 
+  final OnCustomElementAttached? onCustomElementAttached;
+
   WebFController? get controller {
     return WebFController.getControllerOfName(shortHash(this));
   }
@@ -108,6 +110,7 @@ class WebF extends StatefulWidget {
       this.httpClientInterceptor,
       this.uriParser,
       this.routeObserver,
+      this.onCustomElementAttached,
       // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
       // Maybe got unexpected error when change to other values, use this at your own risk!
       // We will fixed this on next version released. (v0.6.0)
@@ -136,9 +139,19 @@ class WebF extends StatefulWidget {
 }
 
 class _WebFState extends State<WebF> with RouteAware {
+  List<WebFRenderObjectToWidgetAdapter> custom_element_widgets = [];
+
+  void onCustomElementWidgetAdd(Widget adapter) {
+    // print('adater: $adapter');
+
+    setState(() {
+      custom_element_widgets.add(adapter as WebFRenderObjectToWidgetAdapter);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WebFTextControl(context);
+    return WebFTextControl(context, custom_element_widgets, onCustomElementWidgetAdd);
   }
 
   @override
@@ -178,11 +191,14 @@ class _WebFState extends State<WebF> with RouteAware {
 }
 
 class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
+  final OnCustomElementAttached onCustomElementAttached;
+
   // Creates a widget that visually hides its child.
-  const WebFRenderObjectWidget(WebF widget, WidgetDelegate widgetDelegate, {Key? key})
+  WebFRenderObjectWidget(WebF widget, WidgetDelegate widgetDelegate, this.onCustomElementAttached,
+      {Key? key, Widget? child})
       : _webfWidget = widget,
         _widgetDelegate = widgetDelegate,
-        super(key: key);
+        super(key: key, child: child);
 
   final WebF _webfWidget;
   final WidgetDelegate _widgetDelegate;
@@ -211,6 +227,7 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
         devToolsService: _webfWidget.devToolsService,
         httpClientInterceptor: _webfWidget.httpClientInterceptor,
         widgetDelegate: _widgetDelegate,
+        onCustomElementAttached: onCustomElementAttached,
         uriParser: _webfWidget.uriParser);
 
     OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
@@ -284,13 +301,13 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
   }
 
   @override
-  WebFRenderObjectElement createElement() {
-    return WebFRenderObjectElement(this);
+  _WebFRenderObjectElement createElement() {
+    return _WebFRenderObjectElement(this);
   }
 }
 
-class WebFRenderObjectElement extends SingleChildRenderObjectElement {
-  WebFRenderObjectElement(WebFRenderObjectWidget widget) : super(widget);
+class _WebFRenderObjectElement extends SingleChildRenderObjectElement {
+  _WebFRenderObjectElement(WebFRenderObjectWidget widget) : super(widget);
 
   @override
   void mount(Element? parent, Object? newSlot) async {
@@ -304,29 +321,24 @@ class WebFRenderObjectElement extends SingleChildRenderObjectElement {
     await controller.executeEntrypoint(animationController: widget._webfWidget.animationController);
   }
 
-  List<WebFRenderObjectToWidgetElement> customWidgetElements = [];
+  @override
+  void performRebuild() {
+    super.performRebuild();
+  }
 
   @override
   void rebuild() {
     super.rebuild();
-    customWidgetElements.forEach((element) {
-      element.mount(this, null);
-    });
   }
 
   @override
   void deactivate() {
     super.deactivate();
-
-    customWidgetElements.forEach((element) {
-      deactivateRecursively(element);
-    });
   }
 
   @override
   void unmount() {
     super.unmount();
-    customWidgetElements.clear();
   }
 
   void deactivateRecursively(Element element) {
@@ -337,8 +349,10 @@ class WebFRenderObjectElement extends SingleChildRenderObjectElement {
   // RenderObjects created by webf are manager by webf itself. There are no needs to operate renderObjects on _WebFRenderObjectElement.
   @override
   void insertRenderObjectChild(RenderObject child, Object? slot) {}
+
   @override
   void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {}
+
   @override
   void removeRenderObjectChild(RenderObject child, Object? slot) {}
 

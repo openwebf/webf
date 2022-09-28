@@ -13,7 +13,7 @@ import 'dart:ui' as ui;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
-import 'package:flutter/widgets.dart' show RenderObjectElement;
+import 'package:flutter/widgets.dart' show RenderObjectElement, Widget;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -25,6 +25,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/webf.dart';
 import 'package:webf/widget.dart';
 
 // Error handler when load bundle failed.
@@ -33,6 +34,7 @@ typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
+typedef OnCustomElementAttached = void Function(Widget newWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -325,7 +327,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   void _removeTarget(int targetId) {
     if (_eventTargets.containsKey(targetId)) {
-      EventTarget? target = _eventTargets.remove(targetId);
+      _eventTargets.remove(targetId);
     }
   }
 
@@ -830,6 +832,8 @@ class WebFController {
     _onJSLog = jsLogHandler;
   }
 
+  OnCustomElementAttached? onCustomElementAttached;
+
   String? _name;
   String? get name => _name;
   set name(String? value) {
@@ -859,6 +863,7 @@ class WebFController {
     WebFNavigationDelegate? navigationDelegate,
     WebFMethodChannel? methodChannel,
     WebFBundle? entrypoint,
+    this.onCustomElementAttached,
     this.widgetDelegate,
     this.onLoad,
     this.onLoadError,
