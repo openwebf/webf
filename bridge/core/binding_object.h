@@ -43,6 +43,7 @@ struct NativeBindingObject : public DartReadable {
                                      int32_t argc,
                                      NativeValue* argv);
 
+  bool disposed_{false};
   BindingObject* binding_target_{nullptr};
   InvokeBindingMethodsFromDart invoke_binding_methods_from_dart{nullptr};
   InvokeBindingsMethodsFromNative invoke_bindings_methods_from_native{nullptr};

@@ -4,7 +4,6 @@
  */
 import 'dart:ffi';
 
-import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 
@@ -21,7 +20,7 @@ class BoundingClientRect extends BindingObject {
   final double left;
 
   BoundingClientRect(this.x, this.y, this.width, this.height, this.top, this.right, this.bottom, this.left)
-      : _pointer = malloc.allocate<NativeBindingObject>(sizeOf<NativeBindingObject>()),
+      : _pointer = allocateNewBindingObject(),
         super();
 
   final Pointer<NativeBindingObject> _pointer;
