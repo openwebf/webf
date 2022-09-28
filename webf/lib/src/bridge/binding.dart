@@ -208,7 +208,7 @@ abstract class BindingBridge {
 
   static void _bindObject(BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
-    if (nativeBindingObject != null && nativeBindingObject.ref.instance != nullptr) {
+    if (nativeBindingObject != null && !nativeBindingObject.ref.disposed) {
       _nativeObjects[nativeBindingObject.address] = object;
       nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
     }

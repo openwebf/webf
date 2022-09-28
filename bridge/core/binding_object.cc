@@ -26,8 +26,10 @@ void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_ob
 BindingObject::BindingObject(ExecutingContext* context) : context_(context) {}
 BindingObject::~BindingObject() {
   // Set below properties to nullptr to avoid dart callback to native.
+  binding_object_->disposed_ = true;
   binding_object_->binding_target_ = nullptr;
   binding_object_->invoke_binding_methods_from_dart = nullptr;
+  binding_object_->invoke_bindings_methods_from_native = nullptr;
 }
 
 BindingObject::BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object)

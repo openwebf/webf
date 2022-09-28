@@ -3,8 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:ui';
-import 'dart:ffi' as ffi;
-import 'package:ffi/ffi.dart';
 
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
@@ -19,7 +17,8 @@ class Window extends EventTarget {
   final Screen screen;
 
   Window(BindingContext? context, this.document)
-      : screen = Screen(BindingContext(context!.contextId, malloc.allocate(ffi.sizeOf<NativeBindingObject>()))), super(context);
+      : screen = Screen(context!.contextId),
+        super(context);
 
   @override
   EventTarget? get parentEventTarget => null;
@@ -108,7 +107,9 @@ class Window extends EventTarget {
   @override
   void dispatchEvent(Event event) {
     // Events such as EVENT_DOM_CONTENT_LOADED need to ensure that listeners are flushed and registered.
-    if (contextId != null && event.type == EVENT_DOM_CONTENT_LOADED || event.type == EVENT_LOAD || event.type == EVENT_ERROR) {
+    if (contextId != null && event.type == EVENT_DOM_CONTENT_LOADED ||
+        event.type == EVENT_LOAD ||
+        event.type == EVENT_ERROR) {
       flushUICommandWithContextId(contextId!);
     }
     super.dispatchEvent(event);
