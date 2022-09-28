@@ -219,10 +219,11 @@ static JSValue triggerGlobalError(JSContext* ctx, JSValueConst this_val, int arg
 struct ExecuteCallbackContext {
   ExecuteCallbackContext() = delete;
 
-  explicit ExecuteCallbackContext(ExecutingContext* context, ExecuteCallback executeCallback)
-      : executeCallback(executeCallback), context(context){};
+  explicit ExecuteCallbackContext(ExecutingContext* context, ExecuteCallback executeCallback, WebFTestContext* webf_context)
+      : executeCallback(executeCallback), context(context), webf_context(webf_context){};
   ExecuteCallback executeCallback;
   ExecutingContext* context;
+  WebFTestContext* webf_context;
 };
 
 void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
@@ -245,9 +246,10 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
     std::unique_ptr<NativeString> status = webf::jsValueToNativeString(ctx, statusValue);
     callbackContext->executeCallback(callbackContext->context->contextId(), status.get());
     JS_FreeValue(ctx, proxyObject);
+    callbackContext->webf_context->execute_test_proxy_object_ = JS_NULL;
     return JS_NULL;
   };
-  auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback);
+  auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback, this);
   execute_test_proxy_object_ = JS_NewObject(context_->ctx());
   JS_SetOpaque(execute_test_proxy_object_, callbackContext);
   JSValue callbackData[]{execute_test_proxy_object_};
@@ -279,6 +281,10 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
 
   MemberInstaller::InstallFunctions(context, context->Global(), functionConfig);
   initWebFTestFramework(context);
+}
+
+WebFTestContext::~WebFTestContext() {
+  JS_FreeValue(context_->ctx(), execute_test_proxy_object_);
 }
 
 bool WebFTestContext::evaluateTestScripts(const uint16_t* code,

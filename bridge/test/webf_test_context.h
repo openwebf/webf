@@ -23,6 +23,7 @@ class WebFTestContext final {
  public:
   explicit WebFTestContext() = delete;
   explicit WebFTestContext(ExecutingContext* context);
+  ~WebFTestContext();
 
   /// Evaluate JavaScript source code with build-in test frameworks, use in test only.
   bool evaluateTestScripts(const uint16_t* code, size_t codeLength, const char* sourceURL, int startLine);
