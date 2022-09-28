@@ -215,7 +215,7 @@ class _WebFAdapterWidgetState extends State<_WebFAdapterWidget> {
         return (childNodes[index] as WidgetElement)._widget;
       } else {
         return childNodes[index].flutterWidget ??
-            WebFElementToWidgetAdaptor(childNodes[index], key: Key(index.toString()));
+            WebFNodeToWidgetAdaptor(childNodes[index], key: Key(index.toString()));
       }
     });
 

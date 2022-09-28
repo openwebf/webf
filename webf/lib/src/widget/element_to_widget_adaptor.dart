@@ -2,21 +2,23 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
 
-class WebFElementToWidgetAdaptor extends RenderObjectWidget {
+class WebFNodeToWidgetAdaptor extends RenderObjectWidget {
   final dom.Node _webFNode;
 
-  WebFElementToWidgetAdaptor(this._webFNode, {Key? key}) : super(key: key) {
+  WebFNodeToWidgetAdaptor(this._webFNode, {Key? key}) : super(key: key) {
     _webFNode.flutterWidget = this;
   }
 
   @override
   RenderObjectElement createElement() {
-    _webFNode.flutterElement = WebFElementToFlutterElementAdaptor(this);
+    _webFNode.flutterElement = WebFNodeToFlutterElementAdaptor(this);
     return _webFNode.flutterElement as RenderObjectElement;
   }
 
@@ -33,13 +35,20 @@ class WebFElementToWidgetAdaptor extends RenderObjectWidget {
       return _webFNode.renderer!;
     }
   }
-}
-
-class WebFElementToFlutterElementAdaptor extends RenderObjectElement {
-  WebFElementToFlutterElementAdaptor(RenderObjectWidget widget) : super(widget);
 
   @override
-  WebFElementToWidgetAdaptor get widget => super.widget as WebFElementToWidgetAdaptor;
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(AttributedStringProperty('WebFNodeType', AttributedString(_webFNode.nodeType.toString())));
+    properties.add(AttributedStringProperty('WebFNodeName', AttributedString(_webFNode.nodeName.toString())));
+  }
+}
+
+class WebFNodeToFlutterElementAdaptor extends RenderObjectElement {
+  WebFNodeToFlutterElementAdaptor(RenderObjectWidget widget) : super(widget);
+
+  @override
+  WebFNodeToWidgetAdaptor get widget => super.widget as WebFNodeToWidgetAdaptor;
 
   @override
   void mount(Element? parent, Object? newSlot) {
