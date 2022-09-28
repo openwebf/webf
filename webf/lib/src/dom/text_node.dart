@@ -110,9 +110,6 @@ class TextNode extends Node {
 
   @override
   RenderBox createRenderer() {
-    if (_renderTextBox != null) {
-      return _renderTextBox!;
-    }
     return _renderTextBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
   }
 

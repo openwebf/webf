@@ -10,23 +10,15 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 
-class WebFRenderObjectToWidgetAdapter<T extends RenderObject> extends RenderObjectWidget {
-  /// Creates a bridge from a [RenderObject] to an [Element] tree.
-  ///
-  /// Used by [WidgetsBinding] to attach the root widget to the [RenderView].
+class WebFRenderObjectToWidgetAdapter<T extends RenderObject> extends SingleChildRenderObjectWidget {
   WebFRenderObjectToWidgetAdapter({
-    this.child,
+    Widget? child,
     required this.container,
     this.debugShortDescription,
-  }) : super(key: GlobalObjectKey(container));
-
-  /// The widget below this widget in the tree.
-  ///
-  /// {@macro flutter.widgets.ProxyWidget.child}
-  final Widget? child;
+  }) : super(key: GlobalObjectKey(container), child: child);
 
   /// The [RenderObject] that is the parent of the [Element] created by this widget.
-  final ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> container;
+  final RenderObject container;
 
   /// A short description of this widget used by debugging aids.
   final String? debugShortDescription;
@@ -35,8 +27,7 @@ class WebFRenderObjectToWidgetAdapter<T extends RenderObject> extends RenderObje
   WebFRenderObjectToWidgetElement<T> createElement() => WebFRenderObjectToWidgetElement<T>(this);
 
   @override
-  ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> createRenderObject(BuildContext context) =>
-      container;
+  RenderObject createRenderObject(BuildContext context) => container;
 
   @override
   void updateRenderObject(BuildContext context, RenderObject renderObject) {}
@@ -45,88 +36,20 @@ class WebFRenderObjectToWidgetAdapter<T extends RenderObject> extends RenderObje
   String toStringShort() => debugShortDescription ?? super.toStringShort();
 }
 
-class WebFRenderObjectToWidgetElement<T extends RenderObject> extends RenderObjectElement {
-  /// Creates an element that is hosted by a [RenderObject].
-  ///
-  /// The [RenderObject] created by this element is not automatically set as a
-  /// child of the hosting [RenderObject]. To actually attach this element to
-  /// the render tree, call [RenderObjectToWidgetAdapter.attachToRenderTree].
+/// Creates an element that is hosted by a [RenderObject].
+class WebFRenderObjectToWidgetElement<T extends RenderObject> extends SingleChildRenderObjectElement {
   WebFRenderObjectToWidgetElement(WebFRenderObjectToWidgetAdapter<T> widget) : super(widget);
 
   @override
   WebFRenderObjectToWidgetAdapter get widget => super.widget as WebFRenderObjectToWidgetAdapter<T>;
 
-  Element? _child;
-
-  static const Object _rootChildSlot = Object();
-
   @override
-  void visitChildren(ElementVisitor visitor) {
-    if (_child != null) visitor(_child!);
-  }
-
-  @override
-  void forgetChild(Element child) {
-    assert(child == _child);
-    _child = null;
-    super.forgetChild(child);
-  }
-
-  @override
-  void mount(Element? parent, Object? newSlot) {
-    super.mount(parent, newSlot);
-    _rebuild();
-    assert(_child != null);
-  }
-
-  @override
-  void update(RenderObjectToWidgetAdapter<T> newWidget) {
-    super.update(newWidget);
-    assert(widget == newWidget);
-    _rebuild();
-  }
-
-  // When we are assigned a new widget, we store it here
-  // until we are ready to update to it.
-  Widget? _newWidget;
-
-  @override
-  void performRebuild() {
-    if (_newWidget != null) {
-      // _newWidget can be null if, for instance, we were rebuilt
-      // due to a reassemble.
-      final Widget newWidget = _newWidget!;
-      _newWidget = null;
-      update(newWidget as RenderObjectToWidgetAdapter<T>);
-    }
-    super.performRebuild();
-    assert(_newWidget == null);
-  }
-
-  void _rebuild() {
-    try {
-      _child = updateChild(_child, widget.child, _rootChildSlot);
-    } catch (exception, stack) {
-      final FlutterErrorDetails details = FlutterErrorDetails(
-        exception: exception,
-        stack: stack,
-        library: 'widgets library',
-        context: ErrorDescription('attaching to the render tree'),
-      );
-      FlutterError.reportError(details);
-      final Widget error = ErrorWidget.builder(details);
-      _child = updateChild(null, error, _rootChildSlot);
-    }
-  }
-
-  @override
-  ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> get renderObject =>
-      super.renderObject as ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>;
+  RenderObjectWithChildMixin<RenderObject> get renderObject => super.renderObject as RenderObjectWithChildMixin<RenderObject>;
 
   @override
   void insertRenderObjectChild(RenderObject child, Object? slot) {
     assert(renderObject.debugValidateChild(child));
-    renderObject.add(child as RenderBox);
+    renderObject.child = child;
   }
 
   @override
@@ -136,7 +59,7 @@ class WebFRenderObjectToWidgetElement<T extends RenderObject> extends RenderObje
 
   @override
   void removeRenderObjectChild(RenderObject child, Object? slot) {
-    renderObject.remove(child as RenderBox);
+    renderObject.child = null;
   }
 }
 
@@ -149,15 +72,10 @@ abstract class WidgetElement extends dom.Element {
     BindingContext? context, {
     Map<String, dynamic>? defaultStyle,
     bool isReplacedElement = false,
-    // WidgetElement Adds repaintBoundary by default to prevent the internal paint process from affecting the outside.
-    // If a lot of WidgetElement is used in a scene, you need to modify the default repaintBoundary according to the scene analysis.
-    // Otherwise it will cause performance problems by creating most layers.
-    bool isDefaultRepaintBoundary = true,
   }) : super(
           context,
           defaultStyle: defaultStyle,
-          isReplacedElement: isReplacedElement,
-          isDefaultRepaintBoundary: isDefaultRepaintBoundary,
+          isReplacedElement: true,
         ) {
     WidgetsFlutterBinding.ensureInitialized();
     _widget = _WebFAdapterWidget(this);
@@ -258,13 +176,10 @@ abstract class WidgetElement extends dom.Element {
   void _attachWidget(Widget widget) {
     WebFRenderObjectToWidgetAdapter adaptor = attachedAdapter = WebFRenderObjectToWidgetAdapter(
         child: widget,
-        container: renderBoxModel as ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>);
+        container: renderBoxModel!);
     ownerDocument.controller.onCustomElementAttached!(adaptor);
   }
 
-  // TODO: if an customElements which contains sub-widget-elements are removed from
-  // DOM Tree, we should to modify the children in our widget's state to notify
-  // the flutter frameworks for update.
   void _detachWidget() {
     ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
   }
