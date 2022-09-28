@@ -21,29 +21,40 @@ typedef InvokeModuleCallback = Future<dynamic> Function({String? error, Object? 
 typedef NewModuleCreator = BaseModule Function(ModuleManager);
 typedef ModuleCreator = BaseModule Function(ModuleManager? moduleManager);
 
+bool _isDefined = false;
+
+void _defineModuleCreator() {
+  if (_isDefined) return;
+  _isDefined = true;
+  _defineModule((ModuleManager? moduleManager) => AsyncStorageModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => ClipBoardModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => ConnectionModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => FetchModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => MethodChannelModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => NavigationModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => NavigatorModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => HistoryModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => LocationModule(moduleManager));
+}
+
+final Map<String, ModuleCreator> _creatorMap = {};
+
+void _defineModule(ModuleCreator moduleCreator) {
+  BaseModule fakeModule = moduleCreator(null);
+  if (_creatorMap.containsKey(fakeModule.name)) {
+    return;
+  }
+  _creatorMap[fakeModule.name] = moduleCreator;
+}
+
 class ModuleManager {
   final int contextId;
   final WebFController controller;
-
-  static final Map<String, ModuleCreator> _creatorMap = {};
-  static bool inited = false;
   final Map<String, BaseModule> _moduleMap = {};
 
   ModuleManager(this.controller, this.contextId) {
-    if (!inited) {
-      defineModule((ModuleManager? moduleManager) => AsyncStorageModule(moduleManager));
-      defineModule((ModuleManager? moduleManager) => ClipBoardModule(moduleManager));
-      defineModule((ModuleManager? moduleManager) => ConnectionModule(moduleManager));
-      defineModule((ModuleManager? moduleManager) => FetchModule(moduleManager));
-      defineModule((ModuleManager? moduleManager) => MethodChannelModule(moduleManager));
-      defineModule((ModuleManager? moduleManager) => NavigationModule(moduleManager));
-      defineModule((ModuleManager? moduleManager) => NavigatorModule(moduleManager));
-      defineModule((ModuleManager? moduleManager) => HistoryModule(moduleManager));
-      defineModule((ModuleManager? moduleManager) => LocationModule(moduleManager));
-      inited = true;
-    }
-
     // Init all module instances.
+    _defineModuleCreator();
     _creatorMap.forEach((String name, ModuleCreator creator) {
       _moduleMap[name] = creator(this);
     });
@@ -54,12 +65,7 @@ class ModuleManager {
   }
 
   static void defineModule(ModuleCreator moduleCreator) {
-    BaseModule fakeModule = moduleCreator(null);
-    if (_creatorMap.containsKey(fakeModule.name)) {
-      throw Exception('ModuleManager: redefined module of type: ${fakeModule.name}');
-    }
-
-    _creatorMap[fakeModule.name] = moduleCreator;
+    _defineModule(moduleCreator);
   }
 
   dynamic emitModuleEvent(String moduleName, {Event? event, data}) {
