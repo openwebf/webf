@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -85,14 +86,19 @@ class _WebFTextControlState extends State<WebFTextControl> with _FindElementFrom
               widget.parentContext.widget as WebF,
               widgetDelegate,
               onCustomElementAttached: (WebFRenderObjectToWidgetAdapter adapter) {
-                setState(() {
-                  customElementsProvider.onCustomElementWidgetAdd(adapter);
+                scheduleMicrotask(() {
+                  setState(() {
+                    customElementsProvider.onCustomElementWidgetAdd(adapter);
+                  });
                 });
               },
               onCustomElementDetached: (WebFRenderObjectToWidgetAdapter adapter) {
-                setState(() {
-                  customElementsProvider.onCustomElementWidgetRemove(adapter);
+                scheduleMicrotask(() {
+                  setState(() {
+                    customElementsProvider.onCustomElementWidgetRemove(adapter);
+                  });
                 });
+
               },
               children: customElementsProvider.customElementWidgets.toList(),
             )));
