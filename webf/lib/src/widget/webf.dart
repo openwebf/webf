@@ -142,6 +142,10 @@ class WebFCustomElementsProvider extends InheritedWidget {
     customElementWidgets.add(adapter);
   }
 
+  void onCustomElementWidgetRemove(WebFRenderObjectToWidgetAdapter adapter) {
+    customElementWidgets.remove(adapter);
+  }
+
   WebFCustomElementsProvider({required Widget child, required this.customElementWidgets}) : super(child: child);
 
   @override
@@ -162,8 +166,8 @@ class _WebFState extends State<WebF> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return WebFCustomElementsProvider(
-        child: WebFTextControl(context),
-        customElementWidgets: customElementWidgets,
+      child: WebFTextControl(context),
+      customElementWidgets: customElementWidgets,
     );
   }
 
@@ -205,11 +209,17 @@ class _WebFState extends State<WebF> with RouteAware {
 
 class WebFRenderObjectWidget extends MultiChildRenderObjectWidget {
   final OnCustomElementAttached onCustomElementAttached;
+  final OnCustomElementDetached onCustomElementDetached;
 
   // Creates a widget that visually hides its child.
-  WebFRenderObjectWidget(WebF widget, WidgetDelegate widgetDelegate, this.onCustomElementAttached,
-      {Key? key, required List<Widget> children})
-      : _webfWidget = widget,
+  WebFRenderObjectWidget(
+    WebF widget,
+    WidgetDelegate widgetDelegate, {
+    Key? key,
+    required List<Widget> children,
+    required this.onCustomElementAttached,
+    required this.onCustomElementDetached,
+  })  : _webfWidget = widget,
         _widgetDelegate = widgetDelegate,
         super(key: key, children: children);
 
@@ -241,6 +251,7 @@ class WebFRenderObjectWidget extends MultiChildRenderObjectWidget {
         httpClientInterceptor: _webfWidget.httpClientInterceptor,
         widgetDelegate: _widgetDelegate,
         onCustomElementAttached: onCustomElementAttached,
+        onCustomElementDetached: onCustomElementDetached,
         uriParser: _webfWidget.uriParser);
 
     OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;

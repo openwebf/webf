@@ -35,6 +35,7 @@ typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
 typedef OnCustomElementAttached = void Function(WebFRenderObjectToWidgetAdapter newWidget);
+typedef OnCustomElementDetached = void Function(WebFRenderObjectToWidgetAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -832,7 +833,9 @@ class WebFController {
     _onJSLog = jsLogHandler;
   }
 
+  // Internal usable. Notifications to WebF widget when custom element had changed.
   OnCustomElementAttached? onCustomElementAttached;
+  OnCustomElementDetached? onCustomElementDetached;
 
   String? _name;
   String? get name => _name;
@@ -864,6 +867,7 @@ class WebFController {
     WebFMethodChannel? methodChannel,
     WebFBundle? entrypoint,
     this.onCustomElementAttached,
+    this.onCustomElementDetached,
     this.widgetDelegate,
     this.onLoad,
     this.onLoadError,

@@ -84,9 +84,14 @@ class _WebFTextControlState extends State<WebFTextControl> with _FindElementFrom
             child: WebFRenderObjectWidget(
               widget.parentContext.widget as WebF,
               widgetDelegate,
-              (WebFRenderObjectToWidgetAdapter adapter) {
+              onCustomElementAttached: (WebFRenderObjectToWidgetAdapter adapter) {
                 setState(() {
                   customElementsProvider.onCustomElementWidgetAdd(adapter);
+                });
+              },
+              onCustomElementDetached: (WebFRenderObjectToWidgetAdapter adapter) {
+                setState(() {
+                  customElementsProvider.onCustomElementWidgetRemove(adapter);
                 });
               },
               children: customElementsProvider.customElementWidgets.toList(),

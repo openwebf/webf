@@ -143,6 +143,7 @@ class WebFRenderObjectToWidgetElement<T extends RenderObject> extends RenderObje
 abstract class WidgetElement extends dom.Element {
   late Widget _widget;
   _WebFAdapterWidgetState? _state;
+  WebFRenderObjectToWidgetAdapter? attachedAdapter;
 
   WidgetElement(
     BindingContext? context, {
@@ -254,48 +255,18 @@ abstract class WidgetElement extends dom.Element {
     return child;
   }
 
-  RenderObjectElement? renderObjectElement;
-
   void _attachWidget(Widget widget) {
-    // RenderObjectElement rootFlutterElement = ownerDocument.controller.rootFlutterElement;
-
-    WebFRenderObjectToWidgetAdapter adaptor = WebFRenderObjectToWidgetAdapter(
+    WebFRenderObjectToWidgetAdapter adaptor = attachedAdapter = WebFRenderObjectToWidgetAdapter(
         child: widget,
         container: renderBoxModel as ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>);
-
-    // RenderObjectElement? parentFlutterElement;
-    // if (parentNode is WidgetElement) {
-    //   parentFlutterElement = (parentNode as WidgetElement).renderObjectElement;
-    // } else {
-    //   parentFlutterElement = (parentNode as dom.Element).flutterElement;
-    // }
-
-    if (ownerDocument.controller.onCustomElementAttached != null) {
-      ownerDocument.controller.onCustomElementAttached!(adaptor);
-    }
+    ownerDocument.controller.onCustomElementAttached!(adaptor);
   }
 
   // TODO: if an customElements which contains sub-widget-elements are removed from
   // DOM Tree, we should to modify the children in our widget's state to notify
   // the flutter frameworks for update.
   void _detachWidget() {
-    if (renderObjectElement == null) return;
-    deactivate();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  void deactivate() {
-    assert(renderObjectElement != null);
-    deactivateRecursively(renderObjectElement!);
-  }
-
-  void deactivateRecursively(Element element) {
-    element.deactivate();
-    element.visitChildren(deactivateRecursively);
+    ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
   }
 }
 
