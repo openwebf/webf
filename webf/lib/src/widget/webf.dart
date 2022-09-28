@@ -61,8 +61,6 @@ class WebF extends StatefulWidget {
 
   final UriParser? uriParser;
 
-  final OnCustomElementAttached? onCustomElementAttached;
-
   WebFController? get controller {
     return WebFController.getControllerOfName(shortHash(this));
   }
@@ -110,7 +108,6 @@ class WebF extends StatefulWidget {
       this.httpClientInterceptor,
       this.uriParser,
       this.routeObserver,
-      this.onCustomElementAttached,
       // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
       // Maybe got unexpected error when change to other values, use this at your own risk!
       // We will fixed this on next version released. (v0.6.0)
@@ -138,20 +135,36 @@ class WebF extends StatefulWidget {
   _WebFState createState() => _WebFState();
 }
 
-class _WebFState extends State<WebF> with RouteAware {
-  List<WebFRenderObjectToWidgetAdapter> custom_element_widgets = [];
+class WebFCustomElementsProvider extends InheritedWidget {
+  final Set<WebFRenderObjectToWidgetAdapter> customElementWidgets;
 
-  void onCustomElementWidgetAdd(Widget adapter) {
-    // print('adater: $adapter');
-
-    setState(() {
-      custom_element_widgets.add(adapter as WebFRenderObjectToWidgetAdapter);
-    });
+  void onCustomElementWidgetAdd(WebFRenderObjectToWidgetAdapter adapter) {
+    customElementWidgets.add(adapter);
   }
+
+  WebFCustomElementsProvider({required Widget child, required this.customElementWidgets}) : super(child: child);
+
+  @override
+  bool updateShouldNotify(WebFCustomElementsProvider oldWidget) {
+    return customElementWidgets == oldWidget.customElementWidgets;
+  }
+
+  static WebFCustomElementsProvider of(BuildContext context) {
+    final WebFCustomElementsProvider? result = context.dependOnInheritedWidgetOfExactType<WebFCustomElementsProvider>();
+    assert(result != null, 'No FrogColor found in context');
+    return result!;
+  }
+}
+
+class _WebFState extends State<WebF> with RouteAware {
+  final Set<WebFRenderObjectToWidgetAdapter> customElementWidgets = {};
 
   @override
   Widget build(BuildContext context) {
-    return WebFTextControl(context, custom_element_widgets, onCustomElementWidgetAdd);
+    return WebFCustomElementsProvider(
+        child: WebFTextControl(context),
+        customElementWidgets: customElementWidgets,
+    );
   }
 
   @override
@@ -190,15 +203,15 @@ class _WebFState extends State<WebF> with RouteAware {
   }
 }
 
-class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
+class WebFRenderObjectWidget extends MultiChildRenderObjectWidget {
   final OnCustomElementAttached onCustomElementAttached;
 
   // Creates a widget that visually hides its child.
   WebFRenderObjectWidget(WebF widget, WidgetDelegate widgetDelegate, this.onCustomElementAttached,
-      {Key? key, Widget? child})
+      {Key? key, required List<Widget> children})
       : _webfWidget = widget,
         _widgetDelegate = widgetDelegate,
-        super(key: key, child: child);
+        super(key: key, children: children);
 
   final WebF _webfWidget;
   final WidgetDelegate _widgetDelegate;
@@ -306,7 +319,7 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
   }
 }
 
-class _WebFRenderObjectElement extends SingleChildRenderObjectElement {
+class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
   _WebFRenderObjectElement(WebFRenderObjectWidget widget) : super(widget);
 
   @override

@@ -189,7 +189,7 @@ class Document extends Node {
         element.renderStyle.height = CSSLengthValue(viewport.viewportSize.height, CSSLengthType.PX);
       } else {
         // Detach document element.
-        viewport.child = null;
+        viewport.removeAll();
       }
     }
 

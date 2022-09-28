@@ -4,21 +4,32 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/rendering.dart';
+import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
-class RenderViewportBox extends RenderProxyBox with RenderObjectWithControllerMixin, RenderEventListenerMixin {
+class RenderViewportParentData extends ContainerBoxParentData<RenderViewportBox> {}
+
+class RenderViewportBox extends RenderBox
+    with
+        RenderObjectWithControllerMixin,
+        RenderEventListenerMixin,
+        ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
+        RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderViewportBox({
     required Size viewportSize,
-    RenderBox? child,
     this.background,
     required WebFController controller,
   })  : _viewportSize = viewportSize,
-        super(child) {
+        super() {
     this.controller = controller;
   }
 
   // Cache all the fixed children of renderBoxModel of root element.
   List<RenderBoxModel> fixedChildren = [];
+
+  @override
+  void setupParentData(covariant RenderObject child) {
+    child.parentData = RenderViewportParentData();
+  }
 
   @override
   bool get isRepaintBoundary => true;
@@ -55,12 +66,24 @@ class RenderViewportBox extends RenderProxyBox with RenderObjectWithControllerMi
       height = _viewportSize.height;
     }
     size = constraints.constrain(Size(width, height));
-    if (child != null) {
-      child!.layout(BoxConstraints.tightFor(
+
+    RenderObject? child = firstChild;
+    while (child != null) {
+      final ContainerBoxParentData<RenderObject> childParentData = child.parentData as ContainerBoxParentData<RenderObject>;
+
+      child.layout(BoxConstraints.tightFor(
         width: width,
         height: height,
       ));
+
+      assert(child.parentData == childParentData);
+      child = childParentData.nextSibling;
     }
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
+    return defaultHitTestChildren(result, position: position);
   }
 
   @override
@@ -91,16 +114,12 @@ class RenderViewportBox extends RenderProxyBox with RenderObjectWithControllerMi
       );
     }
 
-    if (child != null) {
-      context.paintChild(child!, offset);
-    }
+    defaultPaint(context, offset);
   }
 
   @override
   void dispose() {
-    if (child != null) {
-      dropChild(child!);
-    }
+    removeAll();
     fixedChildren.clear();
     super.dispose();
   }

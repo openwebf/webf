@@ -13,7 +13,7 @@ import 'dart:ui' as ui;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
-import 'package:flutter/widgets.dart' show RenderObjectElement, Widget;
+import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -34,7 +34,7 @@ typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
-typedef OnCustomElementAttached = void Function(Widget newWidget);
+typedef OnCustomElementAttached = void Function(WebFRenderObjectToWidgetAdapter newWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 

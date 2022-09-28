@@ -55,21 +55,16 @@ class WidgetDelegate {
 
 // Widget involves actions of text control elements(input, textarea).
 class WebFTextControl extends StatefulWidget {
-  WebFTextControl(this.parentContext, this.custom_element_widgets, this.onCustomElementAttached);
+  WebFTextControl(this.parentContext);
 
   final BuildContext parentContext;
-  final List<WebFRenderObjectToWidgetAdapter> custom_element_widgets;
-  final OnCustomElementAttached onCustomElementAttached;
 
   @override
-  _WebFTextControlState createState() => _WebFTextControlState(custom_element_widgets, this.onCustomElementAttached);
+  _WebFTextControlState createState() => _WebFTextControlState();
 }
 
 class _WebFTextControlState extends State<WebFTextControl> with _FindElementFromContextMixin {
-  _WebFTextControlState(this.custom_element_widgets, this.onCustomElementAttached);
-
-  List<WebFRenderObjectToWidgetAdapter> custom_element_widgets;
-  final OnCustomElementAttached onCustomElementAttached;
+  _WebFTextControlState();
 
   @override
   void initState() {
@@ -79,6 +74,8 @@ class _WebFTextControlState extends State<WebFTextControl> with _FindElementFrom
 
   @override
   Widget build(BuildContext context) {
+    WebFCustomElementsProvider customElementsProvider = WebFCustomElementsProvider.of(context);
+
     return RepaintBoundary(
         child: FocusableActionDetector(
             actions: _actionMap,
@@ -87,8 +84,12 @@ class _WebFTextControlState extends State<WebFTextControl> with _FindElementFrom
             child: WebFRenderObjectWidget(
               widget.parentContext.widget as WebF,
               widgetDelegate,
-              onCustomElementAttached,
-              child: custom_element_widgets.isEmpty ? null : custom_element_widgets[0],
+              (WebFRenderObjectToWidgetAdapter adapter) {
+                setState(() {
+                  customElementsProvider.onCustomElementWidgetAdd(adapter);
+                });
+              },
+              children: customElementsProvider.customElementWidgets.toList(),
             )));
   }
 

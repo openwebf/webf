@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -158,8 +159,7 @@ abstract class WidgetElement extends dom.Element {
           isDefaultRepaintBoundary: isDefaultRepaintBoundary,
         ) {
     WidgetsFlutterBinding.ensureInitialized();
-    _state = _WebFAdapterWidgetState(this);
-    _widget = _WebFAdapterWidget(_state!);
+    _widget = _WebFAdapterWidget(this);
   }
 
   Widget build(BuildContext context, List<Widget> children);
@@ -300,19 +300,22 @@ abstract class WidgetElement extends dom.Element {
 }
 
 class _WebFAdapterWidget extends StatefulWidget {
-  final _WebFAdapterWidgetState _state;
+  final WidgetElement widgetElement;
 
-  _WebFAdapterWidget(this._state);
+  _WebFAdapterWidget(this.widgetElement, {Key? key}): super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return _state;
+    _WebFAdapterWidgetState state = _WebFAdapterWidgetState(widgetElement);
+    widgetElement._state = state;
+    return state;
   }
 }
 
 class _WebFAdapterWidgetState extends State<_WebFAdapterWidget> {
-  final WidgetElement _element;
-  _WebFAdapterWidgetState(this._element) {}
+  final WidgetElement widgetElement;
+
+  _WebFAdapterWidgetState(this.widgetElement);
 
   void requestUpdateState([VoidCallback? callback]) {
     if (mounted) {
@@ -323,8 +326,7 @@ class _WebFAdapterWidgetState extends State<_WebFAdapterWidget> {
   List<Widget> convertNodeListToWidgetList(List<dom.Node> childNodes) {
     List<Widget> children = List.generate(childNodes.length, (index) {
       if (childNodes[index] is WidgetElement) {
-        _WebFAdapterWidgetState state = (childNodes[index] as WidgetElement)._state!;
-        return state.build(context);
+        return (childNodes[index] as WidgetElement)._widget;
       } else {
         return childNodes[index].flutterWidget ??
             WebFElementToWidgetAdaptor(childNodes[index], key: Key(index.toString()));
@@ -341,22 +343,12 @@ class _WebFAdapterWidgetState extends State<_WebFAdapterWidget> {
   }
 
   @override
-  void deactivate() {
-    super.deactivate();
-  }
-
-  @override
-  void activate() {
-    super.activate();
-  }
-
-  @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'WidgetElement(${_element.tagName}) adapterWidgetState';
+    return 'WidgetElement(${widgetElement.tagName}) adapterWidgetState';
   }
 
   @override
   Widget build(BuildContext context) {
-    return _element.build(context, convertNodeListToWidgetList(_element.childNodes));
+    return widgetElement.build(context, convertNodeListToWidgetList(widgetElement.childNodes));
   }
 }
