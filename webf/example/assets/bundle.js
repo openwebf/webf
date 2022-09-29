@@ -9,5 +9,9 @@ p.style.animation = '3s ease-in 1s 1 reverse both running example';
 p.appendChild(text1);
 p.appendChild(br);
 p.appendChild(text2);
+p.onclick = e => {
+  console.log(typeof 10000n);
+  console.log(typeof BigInt(100));
+};
 
 document.body.appendChild(p);

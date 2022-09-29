@@ -96,8 +96,11 @@ class _MyHomePageState extends State<MyBrowser> {
             children: [
               _kraken = WebF(
                 devToolsService: ChromeDevToolsService(),
-                viewportWidth: viewportSize.width - queryData.padding.horizontal,
-                viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
+                viewportWidth:
+                    viewportSize.width - queryData.padding.horizontal,
+                viewportHeight: viewportSize.height -
+                    appBar.preferredSize.height -
+                    queryData.padding.vertical,
                 bundle: WebFBundle.fromUrl('assets:assets/bundle.html'),
               ),
             ],
