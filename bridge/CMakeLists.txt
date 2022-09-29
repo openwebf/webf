@@ -44,7 +44,6 @@ list(APPEND WEBF_PUBLIC_HEADERS
 
 set(QUICKJS_PUBLIC_HEADERS
   third_party/quickjs/cutils.h
-  third_party/quickjs/libbf.h
   third_party/quickjs/libregexp.h
   third_party/quickjs/libregexp-opcode.h
   third_party/quickjs/libunicode.h
@@ -393,7 +392,11 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
+<<<<<<< HEAD
   target_compile_options(quickjs PUBLIC -DCONFIG_BIGNUM -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
+=======
+  target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
+>>>>>>> parent of 1bf804ba2 (:sparkles: BigNUM emabled)
 
 endif ()
 
