@@ -154,7 +154,6 @@ describe('custom widget element', () => {
 
   it('getBoundingClientRect should work with items in waterfall-flow', async (done) => {
     const flutterContainer = document.createElement('waterfall-flow');
-    flutterContainer.style.width = '100vh';
     flutterContainer.style.height = '100vh';
     flutterContainer.style.display = 'block';
 
