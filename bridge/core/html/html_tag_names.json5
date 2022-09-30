@@ -33,6 +33,11 @@
     "head",
     "div",
     {
+      "name": "link",
+      "interfaceName": "HTMLLinkElement",
+      "filename": "html_link_element"
+    },
+    {
       "name": "input",
       "interfaceHeaderDir": "core/html/forms"
     },

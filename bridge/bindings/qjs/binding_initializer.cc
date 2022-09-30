@@ -38,6 +38,7 @@
 #include "qjs_html_image_element.h"
 #include "qjs_html_input_element.h"
 #include "qjs_html_script_element.h"
+#include "qjs_html_link_element.h"
 #include "qjs_html_template_element.h"
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
@@ -119,6 +120,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLButtonElement::Install(context);
   QJSImage::Install(context);
   QJSHTMLScriptElement::Install(context);
+  QJSHTMLLinkElement::Install(context);
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
   QJSHTMLCanvasElement::Install(context);
