@@ -9,21 +9,9 @@
       .logo {
         width: 128px;
       }
-      .list {
-        height: 500px;
-      }
       .p {
         color: #ff6633;
         line-height: 1.7em;
-      }
-      .flutter-container {
-        height: 200px;
-        border: 1px solid #000;
-      }
-      .flutter-container-item {
-         padding: 15px;
-         display: block;
-         background: red;
       }
       @keyframes example {
         from {
@@ -35,29 +23,15 @@
           width: 200px;
         }
       }
-
     </style>
   </head>
   <body>
     <div class="container">
       <img class="logo" src="./webf.png" />
-      <div id="container">
-        <flutter-listview class="flutter-container">
-          <div class="flutter-container-item">helloworld1</div>
-          <div class="flutter-container-item">helloworld2</div>
-          <flutter-container>
-            <flutter-checkbox></flutter-checkbox>
-          </flutter-container>
-          <div class="flutter-container-item">helloworld3</div>
-          <div class="flutter-container-item">helloworld4</div>
-        </flutter-listview>
-      </div>
     </div>
     <script>
-      let container = document.querySelector('#container');
-      let checkbox = document.querySelector('#checkbox');
-      container.onclick = () => container.remove();
-
+      console.log('Welcome to webf!');
     </script>
+    <script src="./bundle.js"></script>
   </body>
 </html>
