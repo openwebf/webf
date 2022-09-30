@@ -276,6 +276,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_anchor_element.cc
     core/html/html_image_element.cc
     core/html/html_script_element.cc
+    core/html/html_link_element.cc
     core/html/html_unknown_element.cc
     core/html/image.cc
     core/html/canvas/html_canvas_element.cc
@@ -368,6 +369,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
     out/qjs_html_canvas_element.cc
+    out/qjs_html_link_element.cc
     out/qjs_image.cc
     out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc
@@ -392,6 +394,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/html_element_factory.cc
     out/html_names.cc
     out/script_type_names.cc
+    out/defined_properties.cc
+    out/defined_properties_initializer.cc
     out/element_attribute_names.cc
     )
 

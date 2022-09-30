@@ -1,6 +1,6 @@
 import {Element} from "../dom/element";
 
-interface AnchorElement extends Element {
+interface HTMLAnchorElement extends Element {
   target: DartImpl<string>;
   accessKey: DartImpl<string>;
   download: DartImpl<string>;

@@ -7,6 +7,7 @@
 #include "bindings/qjs/exception_state.h"
 #include "built_in_string.h"
 #include "core/dom/element.h"
+#include "foundation/native_value_converter.h"
 
 namespace webf {
 
@@ -17,17 +18,26 @@ static inline bool IsNumberIndex(const StringView& name) {
   return f >= '0' && f <= '9';
 }
 
-ElementAttributes::ElementAttributes(Element* element)
-    : ScriptWrappable(element->ctx()), owner_event_target_id_(element->eventTargetId()) {}
+ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element->ctx()), element_(element) {}
 
-AtomicString ElementAttributes::GetAttribute(const AtomicString& name) {
+AtomicString ElementAttributes::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
   bool numberIndex = IsNumberIndex(name.ToStringView());
 
   if (numberIndex) {
     return AtomicString::Empty();
   }
 
-  return attributes_[name];
+  AtomicString value = attributes_[name];
+
+  // Fallback to directly FFI access to dart.
+  if (value.IsEmpty()) {
+    NativeValue dart_result = element_->GetBindingProperty(name, exception_state);
+    if (dart_result.tag == NativeTag::TAG_STRING) {
+      return NativeValueConverter<NativeTypeString>::FromNativeValue(element_->ctx(), dart_result);
+    }
+  }
+
+  return value;
 }
 
 bool ElementAttributes::setAttribute(const AtomicString& name,
@@ -44,11 +54,13 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
 
   attributes_[name] = value;
 
-  std::unique_ptr<NativeString> args_01 = name.ToNativeString();
-  std::unique_ptr<NativeString> args_02 = value.ToNativeString();
+  if (element_->IsAttributeDefinedInternal(name)) {
+    std::unique_ptr<NativeString> args_01 = name.ToNativeString();
+    std::unique_ptr<NativeString> args_02 = value.ToNativeString();
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(owner_event_target_id_, UICommand::kSetAttribute,
-                                                       std::move(args_01), std::move(args_02), nullptr);
+    GetExecutingContext()->uiCommandBuffer()->addCommand(element_->eventTargetId(), UICommand::kSetAttribute,
+                                                         std::move(args_01), std::move(args_02), nullptr);
+  }
 
   return true;
 }
@@ -67,7 +79,7 @@ void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState
   attributes_.erase(name);
 
   std::unique_ptr<NativeString> args_01 = name.ToNativeString();
-  GetExecutingContext()->uiCommandBuffer()->addCommand(owner_event_target_id_, UICommand::kRemoveAttribute,
+  GetExecutingContext()->uiCommandBuffer()->addCommand(element_->eventTargetId(), UICommand::kRemoveAttribute,
                                                        std::move(args_01), nullptr);
 }
 
@@ -100,6 +112,8 @@ bool ElementAttributes::IsEquivalent(const ElementAttributes& other) const {
   return true;
 }
 
-void ElementAttributes::Trace(GCVisitor* visitor) const {}
+void ElementAttributes::Trace(GCVisitor* visitor) const {
+  visitor->Trace(element_);
+}
 
 }  // namespace webf

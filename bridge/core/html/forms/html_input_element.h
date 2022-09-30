@@ -14,6 +14,8 @@ class HTMLInputElement : public HTMLElement {
 
  public:
   explicit HTMLInputElement(Document&);
+
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 };
 
 }  // namespace webf

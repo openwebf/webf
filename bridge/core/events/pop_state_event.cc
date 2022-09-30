@@ -52,6 +52,7 @@ bool PopStateEvent::IsPopstateEvent() const {
 }
 
 void PopStateEvent::Trace(GCVisitor* visitor) const {
+  state_.Trace(visitor);
   Event::Trace(visitor);
 }
 

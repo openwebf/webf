@@ -115,7 +115,7 @@ describe('querySelector api', () => {
     expect(document.querySelectorAll('*').length).toBe(8);
   });
 
-  it('querySelectorAll work with query attr', () => {
+  xit('querySelectorAll work with query attr', () => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';
@@ -468,7 +468,7 @@ describe('querySelector api', () => {
     expect(document.querySelector('a[href="openkraken.com"]')?.getAttribute('href')).toBe('openkraken.com');
   });
 
-  it('querySelector work with attr', () => {
+  xit('querySelector work with attr', () => {
     const container = document.createElement('div')
     container.appendChild(document.createTextNode('你好'))
     container.setAttribute('data-id', 'one')
@@ -477,7 +477,7 @@ describe('querySelector api', () => {
     expect(document.querySelector('[data-id="one"]')?.getAttribute('data-id')).toBe('one');
   });
 
-  it('querySelectorAll work with attr', () => {
+  xit('querySelectorAll work with attr', () => {
     const container = document.createElement('div')
     container.appendChild(document.createTextNode('你好'))
     container.setAttribute('data-id', 'one')

@@ -35,6 +35,7 @@ class WidgetElement : public HTMLElement {
   void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) override;
 
   void Trace(GCVisitor* visitor) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
  private:
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;

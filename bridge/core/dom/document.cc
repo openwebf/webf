@@ -23,6 +23,7 @@
 #include "foundation/ascii_types.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
+#include "qjs_document.h"
 
 namespace webf {
 
@@ -308,6 +309,10 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
   if (!window)
     return nullptr;
   return window->GetAttributeEventListener(event_type);
+}
+
+bool Document::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSDocument::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
 }
 
 void Document::Trace(GCVisitor* visitor) const {

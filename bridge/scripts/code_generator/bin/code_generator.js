@@ -45,7 +45,7 @@ function genCodeFromTypeDefine() {
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
-    analyzer(b);
+    analyzer(b, definedPropertyCollector);
   }
 
   for (let i = 0; i < blobs.length; i ++) {
@@ -82,7 +82,6 @@ function genCodeFromJSONData() {
     return new JSONTemplate(path.join(path.join(__dirname, '../templates/json_templates'), template), filename);
   });
 
-  let names_needs_install = new Set();
   for (let i = 0; i < blobs.length; i ++) {
     let blob = blobs[i];
     blob.json.metadata.templates.forEach((targetTemplate) => {
@@ -97,6 +96,19 @@ function genCodeFromJSONData() {
           depsBlob[filename] = new JSONBlob(path.join(cwdDir, depPath), filename).json;
         });
       }
+
+      // Inject allDefinedProperties set into the definedProperties source.
+      if (targetTemplate.filename === 'defined_properties') {
+        blob.json.data = Array.from(definedPropertyCollector.properties);
+      }
+
+      if (targetTemplate.filename === 'defined_properties_initializer') {
+        blob.json.data = {
+          filenames: Array.from(definedPropertyCollector.files),
+          interfaces: Array.from(definedPropertyCollector.interfaces)
+        };
+      }
+
       let targetTemplateHeaderData = templates.find(t => t.filename === targetTemplate.template + '.h');
       let targetTemplateBodyData = templates.find(t => t.filename === targetTemplate.template + '.cc');
       blob.filename = targetTemplate.filename;
@@ -116,6 +128,15 @@ function genCodeFromJSONData() {
   fs.writeFileSync(genFilePath + '.h', result.header);
   result.source && fs.writeFileSync(genFilePath + '.cc', result.source);
 }
+
+class DefinedPropertyCollector {
+  properties = new Set();
+  files = new Set();
+  interfaces = new Set();
+}
+
+let definedPropertyCollector = new DefinedPropertyCollector();
+let names_needs_install = new Set();
 
 genCodeFromTypeDefine();
 genCodeFromJSONData();

@@ -4,5 +4,12 @@
  */
 
 #include "html_element.h"
+#include "qjs_html_element.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+bool HTMLElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSHTMLElement::IsAttributeDefinedInternal(key) || Element::IsAttributeDefinedInternal(key);
+}
+
+}  // namespace webf

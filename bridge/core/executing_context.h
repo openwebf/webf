@@ -41,6 +41,7 @@ class Window;
 class Performance;
 class MemberMutationScope;
 class ErrorEvent;
+class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
 

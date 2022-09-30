@@ -4,9 +4,14 @@
  */
 #include "html_textarea_element.h"
 #include "html_names.h"
+#include "qjs_html_textarea_element.h"
 
 namespace webf {
 
 HTMLTextareaElement::HTMLTextareaElement(Document& document) : HTMLElement(html_names::ktextarea, &document) {}
+
+bool HTMLTextareaElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSHTMLTextareaElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
+}
 
 }  // namespace webf

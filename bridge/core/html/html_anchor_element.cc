@@ -4,9 +4,14 @@
  */
 #include "html_anchor_element.h"
 #include "html_names.h"
+#include "qjs_html_anchor_element.h"
 
 namespace webf {
 
 HTMLAnchorElement::HTMLAnchorElement(Document& document) : HTMLElement(html_names::ka, &document) {}
+
+bool HTMLAnchorElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSHTMLAnchorElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
+}
 
 }  // namespace webf

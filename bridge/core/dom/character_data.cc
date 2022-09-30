@@ -6,6 +6,7 @@
 #include "character_data.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
+#include "qjs_character_data.h"
 
 namespace webf {
 
@@ -29,6 +30,10 @@ bool CharacterData::IsCharacterDataNode() const {
 
 void CharacterData::setNodeValue(const AtomicString& value, ExceptionState& exception_state) {
   setData(!value.IsEmpty() ? value : built_in_string::kempty_string, exception_state);
+}
+
+bool CharacterData::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSCharacterData::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
 }
 
 CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, Node::ConstructionType type)
