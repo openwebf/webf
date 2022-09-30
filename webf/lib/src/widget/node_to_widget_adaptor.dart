@@ -16,6 +16,7 @@ class WebFNodeToWidgetAdaptor extends RenderObjectWidget {
 
   WebFNodeToWidgetAdaptor(this._webFNode, {Key? key}) : super(key: key) {
     _webFNode.flutterWidget = this;
+    _webFNode.managedByFlutterWidget = true;
   }
 
   @override

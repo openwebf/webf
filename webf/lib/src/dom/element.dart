@@ -819,6 +819,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
+  static bool isRenderObjectOwnedByFlutterFramework(Element element) {
+    return element is WidgetElement || element.managedByFlutterWidget;
+  }
+
   /// Unmount [renderBoxModel].
   @override
   void unmountRenderObject({bool deep = true, bool keepFixedAlive = false, bool dispose = true}) {
@@ -839,9 +843,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     didDetachRenderer();
     if (dispose) {
-      // RenderObjects in WidgetElement are owned by Flutter Widget Frameworks.
-      // So we won't dispose the renderObjects held by WidgetElement anymore.
-      if (this is! WidgetElement) {
+      // RenderObjects could be owned by Flutter Widget Frameworks.
+      if (!isRenderObjectOwnedByFlutterFramework(this)) {
         renderBoxModel?.dispose();
       }
     }

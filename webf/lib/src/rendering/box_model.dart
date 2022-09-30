@@ -1396,11 +1396,7 @@ class RenderBoxModel extends RenderBox
   @override
   @mustCallSuper
   void dispose() {
-    // Ensure pending layout/compositeBitsUpdate/paint render object to be finished.
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      // Call dispose method of renderBoxModel when it is detached from tree.
-      super.dispose();
-    });
+    super.dispose();
 
     // Dispose scroll behavior
     disposeScrollable();
