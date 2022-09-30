@@ -22,7 +22,6 @@ class Document extends Node {
   final AnimationTimeline animationTimeline = AnimationTimeline();
   RenderViewportBox? _viewport;
   GestureListener? gestureListener;
-  WidgetDelegate? widgetDelegate;
 
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
@@ -34,7 +33,6 @@ class Document extends Node {
     required this.controller,
     required RenderViewportBox viewport,
     this.gestureListener,
-    this.widgetDelegate,
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
     _styleNodeManager = StyleNodeManager(this);
@@ -321,7 +319,6 @@ class Document extends Node {
   void dispose() {
     _viewport = null;
     gestureListener = null;
-    widgetDelegate = null;
     styleSheets.clear();
     adoptedStyleSheets.clear();
     super.dispose();

@@ -1,4 +1,4 @@
-describe('Tags input', () => {
+xdescribe('Tags input', () => {
   it('basic', async () => {
     const input = document.createElement('input');
     input.style.width = '60px';

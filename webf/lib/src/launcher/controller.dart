@@ -95,8 +95,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   Color? background;
 
-  WidgetDelegate? widgetDelegate;
-
   WebFViewController(this._viewportWidth, this._viewportHeight,
       {this.background,
       this.enableDebug = false,
@@ -104,7 +102,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       required this.rootController,
       this.navigationDelegate,
       this.gestureListener,
-      this.widgetDelegate,
       // Viewport won't change when kraken page reload, should reuse previous page's viewportBox.
       RenderViewportBox? originalViewport}) {
     if (enableDebug) {
@@ -182,7 +179,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       viewport: viewport,
       controller: rootController,
       gestureListener: gestureListener,
-      widgetDelegate: widgetDelegate,
     );
     _setEventTarget(targetId, document);
 
@@ -810,8 +806,6 @@ class WebFController {
 
   GestureDispatcher gestureDispatcher = GestureDispatcher();
 
-  WidgetDelegate? widgetDelegate;
-
   LoadHandler? onLoad;
 
   // Error handler when load bundle failed.
@@ -868,7 +862,6 @@ class WebFController {
     WebFBundle? entrypoint,
     this.onCustomElementAttached,
     this.onCustomElementDetached,
-    this.widgetDelegate,
     this.onLoad,
     this.onLoadError,
     this.onJSError,
@@ -894,7 +887,6 @@ class WebFController {
       rootController: this,
       navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
       gestureListener: _gestureListener,
-      widgetDelegate: widgetDelegate,
     );
 
     if (kProfileMode) {
@@ -975,7 +967,6 @@ class WebFController {
           rootController: this,
           navigationDelegate: _view.navigationDelegate,
           gestureListener: _view.gestureListener,
-          widgetDelegate: _view.widgetDelegate,
           originalViewport: _view.viewport);
 
       _module = WebFModuleController(this, _view.contextId);

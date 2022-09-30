@@ -40,6 +40,8 @@ abstract class WidgetElement extends dom.Element {
     _widget = WebFAdapterWidget(this);
   }
 
+  void initState() {}
+
   Widget build(BuildContext context, List<Widget> children);
 
   // The render object is inserted by Flutter framework when element is WidgetElement.

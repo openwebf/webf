@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
@@ -43,9 +44,6 @@ class WebF extends StatefulWidget {
   // https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
   final RouteObserver<ModalRoute<void>>? routeObserver;
 
-  // Trigger when webf controller once created.
-  final OnControllerCreated? onControllerCreated;
-
   final LoadErrorHandler? onLoadError;
 
   final LoadHandler? onLoad;
@@ -78,9 +76,9 @@ class WebF extends StatefulWidget {
   }
 
   static void defineCustomElement(String tagName, ElementCreator creator) {
-    if (!_isValidCustomElementName(tagName)) {
-      throw ArgumentError('The element name "$tagName" is not valid.');
-    }
+    // if (!_isValidCustomElementName(tagName)) {
+    //   throw ArgumentError('The element name "$tagName" is not valid.');
+    // }
     defineElement(tagName.toUpperCase(), creator);
   }
 
@@ -97,7 +95,6 @@ class WebF extends StatefulWidget {
       this.viewportWidth,
       this.viewportHeight,
       this.bundle,
-      this.onControllerCreated,
       this.onLoad,
       this.navigationDelegate,
       this.javaScriptChannel,
@@ -135,39 +132,30 @@ class WebF extends StatefulWidget {
   _WebFState createState() => _WebFState();
 }
 
-class WebFCustomElementsProvider extends InheritedWidget {
-  final Set<WebFRenderObjectToWidgetAdapter> customElementWidgets;
-
-  void onCustomElementWidgetAdd(WebFRenderObjectToWidgetAdapter adapter) {
-    customElementWidgets.add(adapter);
-  }
-
-  void onCustomElementWidgetRemove(WebFRenderObjectToWidgetAdapter adapter) {
-    customElementWidgets.remove(adapter);
-  }
-
-  WebFCustomElementsProvider({required Widget child, required this.customElementWidgets}) : super(child: child);
-
-  @override
-  bool updateShouldNotify(WebFCustomElementsProvider oldWidget) {
-    return customElementWidgets == oldWidget.customElementWidgets;
-  }
-
-  static WebFCustomElementsProvider of(BuildContext context) {
-    final WebFCustomElementsProvider? result = context.dependOnInheritedWidgetOfExactType<WebFCustomElementsProvider>();
-    assert(result != null, 'No FrogColor found in context');
-    return result!;
-  }
-}
-
 class _WebFState extends State<WebF> with RouteAware {
   final Set<WebFRenderObjectToWidgetAdapter> customElementWidgets = {};
 
+  void onCustomElementWidgetAdd(WebFRenderObjectToWidgetAdapter adapter) {
+    setState(() {
+      customElementWidgets.add(adapter);
+    });
+  }
+
+  void onCustomElementWidgetRemove(WebFRenderObjectToWidgetAdapter adapter) {
+    setState(() {
+      customElementWidgets.remove(adapter);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WebFCustomElementsProvider(
-      child: WebFTextControl(context),
-      customElementWidgets: customElementWidgets,
+    return RepaintBoundary(
+      child: WebFRenderObjectWidget(
+        widget,
+        onCustomElementAttached: onCustomElementWidgetAdd,
+        onCustomElementDetached: onCustomElementWidgetRemove,
+        children: customElementWidgets.toList(),
+      ),
     );
   }
 
@@ -213,18 +201,15 @@ class WebFRenderObjectWidget extends MultiChildRenderObjectWidget {
 
   // Creates a widget that visually hides its child.
   WebFRenderObjectWidget(
-    WebF widget,
-    WidgetDelegate widgetDelegate, {
+    WebF widget, {
     Key? key,
     required List<Widget> children,
     required this.onCustomElementAttached,
     required this.onCustomElementDetached,
   })  : _webfWidget = widget,
-        _widgetDelegate = widgetDelegate,
         super(key: key, children: children);
 
   final WebF _webfWidget;
-  final WidgetDelegate _widgetDelegate;
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -249,15 +234,9 @@ class WebFRenderObjectWidget extends MultiChildRenderObjectWidget {
         navigationDelegate: _webfWidget.navigationDelegate,
         devToolsService: _webfWidget.devToolsService,
         httpClientInterceptor: _webfWidget.httpClientInterceptor,
-        widgetDelegate: _widgetDelegate,
         onCustomElementAttached: onCustomElementAttached,
         onCustomElementDetached: onCustomElementDetached,
         uriParser: _webfWidget.uriParser);
-
-    OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
-    if (onControllerCreated != null) {
-      onControllerCreated(controller);
-    }
 
     if (viewportWidth == 0.0 && viewportHeight == 0.0) {
       // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.

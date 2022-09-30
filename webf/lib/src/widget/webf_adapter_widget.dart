@@ -27,6 +27,12 @@ class WebFAdapterWidgetState extends State<WebFAdapterWidget> {
 
   WebFAdapterWidgetState(this.widgetElement);
 
+  @override
+  void initState() {
+    super.initState();
+    widgetElement.initState();
+  }
+
   void requestUpdateState([VoidCallback? callback]) {
     if (mounted) {
       setState(callback ?? () {});
