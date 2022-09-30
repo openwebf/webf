@@ -18,8 +18,7 @@ static inline bool IsNumberIndex(const StringView& name) {
   return f >= '0' && f <= '9';
 }
 
-ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element->ctx()), element_(element) {
-}
+ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element->ctx()), element_(element) {}
 
 AtomicString ElementAttributes::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
   bool numberIndex = IsNumberIndex(name.ToStringView());

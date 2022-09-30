@@ -12,4 +12,4 @@ bool HTMLButtonElement::IsAttributeDefinedInternal(const AtomicString& key) cons
   return QJSHTMLButtonElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
 }
 
-}
+}  // namespace webf

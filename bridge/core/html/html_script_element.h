@@ -17,7 +17,7 @@ class HTMLScriptElement : public HTMLElement {
 
   explicit HTMLScriptElement(Document& document);
 
-  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
  private:
 };

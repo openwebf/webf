@@ -18,7 +18,7 @@ class HTMLBodyElement : public HTMLElement {
   using ImplType = HTMLBodyElement*;
   explicit HTMLBodyElement(Document&);
 
-  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
   DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(blur, kblur);
   DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(error, kerror);

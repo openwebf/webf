@@ -99,7 +99,7 @@ class Document : public ContainerNode, public TreeScope {
                                        ExceptionState& exception_state);
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
-  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
   void Trace(GCVisitor* visitor) const override;
 

@@ -13,8 +13,8 @@
 #include "empty_node_list.h"
 #include "node_data.h"
 #include "node_traversal.h"
-#include "text.h"
 #include "qjs_node.h"
+#include "text.h"
 
 namespace webf {
 

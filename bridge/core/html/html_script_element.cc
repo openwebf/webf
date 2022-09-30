@@ -4,8 +4,8 @@
  */
 #include "html_script_element.h"
 #include "html_names.h"
-#include "script_type_names.h"
 #include "qjs_html_script_element.h"
+#include "script_type_names.h"
 
 namespace webf {
 

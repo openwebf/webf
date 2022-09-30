@@ -6,10 +6,10 @@
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
-#include "qjs_event_target.h"
 #include "event_factory.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
+#include "qjs_event_target.h"
 
 #define PROPAGATION_STOPPED 1
 #define PROPAGATION_CONTINUE 0

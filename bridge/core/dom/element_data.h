@@ -14,8 +14,6 @@ class ElementData {
  public:
   void CopyWith(ElementData* other);
 
-
-
  private:
   AtomicString class_;
 };

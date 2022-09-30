@@ -15,7 +15,7 @@ class HTMLTextareaElement : public HTMLElement {
  public:
   explicit HTMLTextareaElement(Document&);
 
-  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 };
 
 }  // namespace webf

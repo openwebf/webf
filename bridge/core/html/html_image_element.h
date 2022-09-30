@@ -16,7 +16,7 @@ class HTMLImageElement : public HTMLElement {
   using ImplType = HTMLImageElement*;
   explicit HTMLImageElement(Document& document);
 
-  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
   bool KeepAlive() const override;
 

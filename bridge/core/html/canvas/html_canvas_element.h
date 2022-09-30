@@ -18,7 +18,7 @@ class HTMLCanvasElement : public HTMLElement {
 
   CanvasRenderingContext* getContext(const AtomicString& type, ExceptionState& exception_state) const;
 
-  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 };
 
 }  // namespace webf

@@ -19,7 +19,7 @@ class HTMLTemplateElement : public HTMLElement {
 
   DocumentFragment* content() const;
 
-  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
  private:
   DocumentFragment* ContentInternal() const;
