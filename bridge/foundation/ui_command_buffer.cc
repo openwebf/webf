@@ -46,12 +46,16 @@ void UICommandBuffer::addCommand(int32_t id,
 
 void UICommandBuffer::addCommand(const UICommandItem& item) {
   if (size_ >= MAXIMUM_UI_COMMAND_SIZE) {
-    context_->FlushUICommand();
+    if (UNLIKELY(isDartHotRestart())) {
+      clear();
+    } else {
+      context_->FlushUICommand();
+    }
     assert(size_ == 0);
   }
 
 #if FLUTTER_BACKEND
-  if (!update_batched_ && context_->IsContextValid() && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
+  if (UNLIKELY(!update_batched_ && context_->IsContextValid() && context_->dartMethodPtr()->requestBatchUpdate != nullptr)) {
     context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
     update_batched_ = true;
   }
