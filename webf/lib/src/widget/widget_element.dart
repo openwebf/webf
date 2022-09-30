@@ -6,9 +6,14 @@ library webf;
 
 import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'webf_adapter_widget.dart';
 import 'render_object_to_widget_adaptor.dart';
+
+const Map<String, dynamic> _defaultStyle = {
+  DISPLAY: BLOCK,
+};
 
 abstract class WidgetElement extends dom.Element {
   late Widget _widget;
@@ -25,7 +30,10 @@ abstract class WidgetElement extends dom.Element {
     Map<String, dynamic>? defaultStyle,
   }) : super(
           context,
-          defaultStyle: defaultStyle,
+          defaultStyle: {
+            ..._defaultStyle,
+            ...?defaultStyle
+          },
           isReplacedElement: true,
         ) {
     WidgetsFlutterBinding.ensureInitialized();

@@ -7,9 +7,7 @@ library webf;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:webf/rendering.dart';
 import 'node_to_flutter_element_adapter.dart';
 
 class WebFNodeToWidgetAdaptor extends RenderObjectWidget {
@@ -28,16 +26,7 @@ class WebFNodeToWidgetAdaptor extends RenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    // Children of custom element need RenderFlowLayout nesting,
-    // otherwise the parent render layout will not be called when setting properties.
-    if (_webFNode is dom.Element) {
-      CSSRenderStyle renderStyle = CSSRenderStyle(target: _webFNode as dom.Element);
-      RenderFlowLayout renderFlowLayout = RenderFlowLayout(renderStyle: renderStyle);
-      renderFlowLayout.insert(_webFNode.renderer!);
-      return renderFlowLayout;
-    } else {
-      return _webFNode.renderer!;
-    }
+    return _webFNode.renderer!;
   }
 
   @override
