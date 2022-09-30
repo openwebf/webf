@@ -9,6 +9,7 @@
 #include <memory>
 #include "core/dart_methods.h"
 #include "core/executing_context.h"
+#include "bindings/qjs/cppgc/mutation_scope.h"
 #include "core/page.h"
 #include "foundation/logging.h"
 

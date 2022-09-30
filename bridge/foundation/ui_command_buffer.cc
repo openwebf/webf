@@ -79,6 +79,7 @@ void UICommandBuffer::clear() {
     delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_02);
   }
   size_ = 0;
+  memset(buffer_, 0, sizeof(buffer_));
   update_batched_ = false;
 }
 

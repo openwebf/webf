@@ -15,6 +15,7 @@
 #include "element_attribute_names.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
+#include "qjs_element.h"
 #include "text.h"
 
 namespace webf {
@@ -37,7 +38,7 @@ bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_s
 }
 
 AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
-  return EnsureElementAttributes().GetAttribute(name);
+  return EnsureElementAttributes().getAttribute(name, exception_state);
 }
 
 void Element::setAttribute(const AtomicString& name, const AtomicString& value) {
@@ -47,7 +48,7 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value) 
 
 void Element::setAttribute(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state) {
   if (EnsureElementAttributes().hasAttribute(name, exception_state)) {
-    AtomicString&& oldAttribute = EnsureElementAttributes().GetAttribute(name);
+    AtomicString&& oldAttribute = EnsureElementAttributes().getAttribute(name, exception_state);
     if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
       return;
     };
@@ -218,6 +219,10 @@ bool Element::HasEquivalentAttributes(const Element& other) const {
 
 bool Element::IsWidgetElement() const {
   return false;
+}
+
+bool Element::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSElement::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
 }
 
 void Element::Trace(GCVisitor* visitor) const {

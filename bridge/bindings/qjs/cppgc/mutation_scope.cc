@@ -4,6 +4,7 @@
  */
 
 #include "mutation_scope.h"
+#include "bindings/qjs/script_wrappable.h"
 #include "core/executing_context.h"
 
 namespace webf {

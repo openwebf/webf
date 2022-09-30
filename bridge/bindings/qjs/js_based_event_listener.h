@@ -7,6 +7,7 @@
 #define BRIDGE_BINDINGS_QJS_JS_BASED_EVENT_LISTENER_H_
 
 #include <quickjs/quickjs.h>
+#include "foundation/casting.h"
 #include "core/dom/events/event_listener.h"
 #include "core/executing_context.h"
 

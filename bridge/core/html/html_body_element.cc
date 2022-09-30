@@ -4,9 +4,14 @@
  */
 #include "html_body_element.h"
 #include "html_names.h"
+#include "qjs_html_body_element.h"
 
 namespace webf {
 
 HTMLBodyElement::HTMLBodyElement(Document& document) : HTMLElement(html_names::kbody, &document) {}
+
+bool HTMLBodyElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSHTMLBodyElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
+}
 
 }  // namespace webf

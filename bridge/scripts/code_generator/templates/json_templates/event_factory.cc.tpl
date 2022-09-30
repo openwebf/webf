@@ -29,7 +29,7 @@ using EventConstructorFunction = Event* (*)(ExecutingContext* context, const Ato
 
 using EventMap = std::unordered_map<AtomicString, EventConstructorFunction, AtomicString::KeyHasher>;
 
-static EventMap* g_event_constructors = nullptr;
+static thread_local EventMap* g_event_constructors = nullptr;
 
 struct CreateEventFunctionMapData {
   const AtomicString& tag;

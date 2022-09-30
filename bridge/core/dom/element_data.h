@@ -14,7 +14,10 @@ class ElementData {
  public:
   void CopyWith(ElementData* other);
 
+
+
  private:
+  AtomicString class_;
 };
 
 }  // namespace webf

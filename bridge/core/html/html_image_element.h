@@ -16,6 +16,8 @@ class HTMLImageElement : public HTMLElement {
   using ImplType = HTMLImageElement*;
   explicit HTMLImageElement(Document& document);
 
+  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+
   bool KeepAlive() const override;
 
   ScriptPromise decode(ExceptionState& exception_state) const;

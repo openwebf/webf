@@ -19,6 +19,8 @@ class HTMLTemplateElement : public HTMLElement {
 
   DocumentFragment* content() const;
 
+  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+
  private:
   DocumentFragment* ContentInternal() const;
   mutable Member<DocumentFragment> content_;

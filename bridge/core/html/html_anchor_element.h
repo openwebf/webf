@@ -15,6 +15,8 @@ class HTMLAnchorElement : public HTMLElement {
  public:
   explicit HTMLAnchorElement(Document& document);
 
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
+
  private:
 };
 

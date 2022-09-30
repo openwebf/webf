@@ -6,7 +6,7 @@
 #define BRIDGE_CORE_SCRIPT_STATE_H_
 
 #include <quickjs/quickjs.h>
-#include "bindings/qjs/script_wrappable.h"
+#include <cassert>
 
 namespace webf {
 

@@ -14,6 +14,7 @@
 #include "node_data.h"
 #include "node_traversal.h"
 #include "text.h"
+#include "qjs_node.h"
 
 namespace webf {
 
@@ -87,6 +88,10 @@ NodeData& Node::EnsureNodeData() {
   if (HasData())
     return *Data();
   return CreateNodeData();
+}
+
+bool Node::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSNode::IsAttributeDefinedInternal(key) || EventTarget::IsAttributeDefinedInternal(key);
 }
 
 Node& Node::TreeRoot() const {

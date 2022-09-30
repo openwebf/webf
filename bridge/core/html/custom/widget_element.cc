@@ -89,4 +89,8 @@ void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneC
   }
 }
 
+bool WidgetElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return true;
+}
+
 }  // namespace webf

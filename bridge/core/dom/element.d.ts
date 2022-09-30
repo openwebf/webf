@@ -8,6 +8,7 @@ import {ParentNode} from "./parent_node";
 interface Element extends Node, ParentNode {
   id: DartImpl<string>;
   className: DartImpl<string>;
+  class: DartImpl<string>;
   readonly attributes: ElementAttributes;
   readonly style: CSSStyleDeclaration;
   readonly clientHeight: DartImpl<number>;

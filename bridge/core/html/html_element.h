@@ -18,6 +18,8 @@ class HTMLElement : public Element {
   using ImplType = HTMLElement*;
   HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType);
 
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
+
  private:
 };
 

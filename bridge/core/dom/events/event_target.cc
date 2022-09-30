@@ -6,7 +6,7 @@
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
-#include "custom_event.h"
+#include "qjs_event_target.h"
 #include "event_factory.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
@@ -194,6 +194,10 @@ EventListenerVector* EventTarget::GetEventListeners(const AtomicString& event_ty
 
 bool EventTarget::IsEventTarget() const {
   return true;
+}
+
+bool EventTarget::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSEventTarget::IsAttributeDefinedInternal(key);
 }
 
 void EventTarget::Trace(GCVisitor* visitor) const {

@@ -8,6 +8,7 @@
 #include "canvas_types.h"
 #include "foundation/native_value_converter.h"
 #include "html_names.h"
+#include "qjs_html_canvas_element.h"
 
 namespace webf {
 
@@ -24,6 +25,10 @@ CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, 
   }
 
   return nullptr;
+}
+
+bool HTMLCanvasElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSHTMLCanvasElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
 }
 
 }  // namespace webf

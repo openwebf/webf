@@ -6,11 +6,12 @@
 #include "event_factory.h"
 #include "html_element_factory.h"
 #include "names_installer.h"
+#include "defined_properties_initializer.h"
 
 namespace webf {
 
-JSRuntime* runtime_ = nullptr;
-std::atomic<int32_t> runningContexts{0};
+thread_local JSRuntime* runtime_ = nullptr;
+thread_local std::atomic<int32_t> runningContexts{0};
 
 ScriptState::ScriptState() {
   runningContexts++;
@@ -25,6 +26,7 @@ ScriptState::ScriptState() {
 
   if (first_loaded) {
     names_installer::Init(ctx_);
+    DefinedPropertiesInitializer::Init();
     // Bump up the built-in classId. To make sure the created classId are larger than JS_CLASS_CUSTOM_CLASS_INIT_COUNT.
     for (int i = 0; i < JS_CLASS_CUSTOM_CLASS_INIT_COUNT - JS_CLASS_GC_TRACKER + 2; i++) {
       JSClassID id{0};
@@ -46,6 +48,7 @@ ScriptState::~ScriptState() {
 
   if (--runningContexts == 0) {
     // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
+    DefinedPropertiesInitializer::Dispose();
     names_installer::Dispose();
     HTMLElementFactory::Dispose();
     EventFactory::Dispose();

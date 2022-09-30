@@ -7,6 +7,7 @@
 #define BRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_
 
 #include <unordered_map>
+#include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "space_split_string.h"
@@ -27,7 +28,7 @@ class ElementAttributes : public ScriptWrappable {
 
   explicit ElementAttributes(Element* element);
 
-  AtomicString GetAttribute(const AtomicString& name);
+  AtomicString getAttribute(const AtomicString& name, ExceptionState& exception_state);
   bool setAttribute(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state);
   bool hasAttribute(const AtomicString& name, ExceptionState& exception_state);
   void removeAttribute(const AtomicString& name, ExceptionState& exception_state);
@@ -39,7 +40,7 @@ class ElementAttributes : public ScriptWrappable {
   void Trace(GCVisitor* visitor) const override;
 
  private:
-  int32_t owner_event_target_id_;
+  Member<Element> element_;
   std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher> attributes_;
 };
 

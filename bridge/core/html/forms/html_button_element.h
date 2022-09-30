@@ -14,6 +14,9 @@ class HTMLButtonElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+
+  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+
  private:
 };
 
