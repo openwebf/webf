@@ -16,7 +16,7 @@ class HTMLHtmlElement : public HTMLElement {
   using ImplType = HTMLHtmlElement*;
   explicit HTMLHtmlElement(Document&);
 
-  bool IsAttributeDefinedInternal(const AtomicString &key) const override;
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
  private:
 };
