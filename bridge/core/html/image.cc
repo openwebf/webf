@@ -3,6 +3,7 @@
  */
 
 #include "image.h"
+#include "qjs_image.h"
 
 namespace webf {
 
@@ -11,5 +12,9 @@ Image* Image::Create(ExecutingContext* context, ExceptionState& exception_state)
 }
 
 Image::Image(ExecutingContext* context, ExceptionState& exception_state) : HTMLImageElement(*context->document()) {}
+
+bool Image::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSImage::IsAttributeDefinedInternal(key) || HTMLImageElement::IsAttributeDefinedInternal(key);
+}
 
 }  // namespace webf
