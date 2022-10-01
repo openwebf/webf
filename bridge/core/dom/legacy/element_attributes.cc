@@ -54,13 +54,11 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
 
   attributes_[name] = value;
 
-  if (element_->IsAttributeDefinedInternal(name)) {
-    std::unique_ptr<NativeString> args_01 = name.ToNativeString();
-    std::unique_ptr<NativeString> args_02 = value.ToNativeString();
+  std::unique_ptr<NativeString> args_01 = name.ToNativeString();
+  std::unique_ptr<NativeString> args_02 = value.ToNativeString();
 
-    GetExecutingContext()->uiCommandBuffer()->addCommand(element_->eventTargetId(), UICommand::kSetAttribute,
-                                                         std::move(args_01), std::move(args_02), nullptr);
-  }
+  GetExecutingContext()->uiCommandBuffer()->addCommand(element_->eventTargetId(), UICommand::kSetAttribute,
+                                                       std::move(args_01), std::move(args_02), nullptr);
 
   return true;
 }
