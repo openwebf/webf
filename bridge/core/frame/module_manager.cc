@@ -94,7 +94,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   const AtomicString& module_name,
                                                   const AtomicString& method,
                                                   ScriptValue& params_value,
-                                                  std::shared_ptr<QJSFunction> callback,
+                                                  const std::shared_ptr<QJSFunction>& callback,
                                                   ExceptionState& exception) {
   NativeValue params = params_value.ToNative(exception);
 
@@ -112,7 +112,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   NativeValue* result;
   if (callback != nullptr) {
     auto moduleCallback = ModuleCallback::Create(callback);
-    context->ModuleCallbacks()->AddModuleCallbacks(std::move(moduleCallback));
+    context->ModuleCallbacks()->AddModuleCallbacks(moduleCallback);
     auto* moduleContext = new ModuleContext{context, moduleCallback};
     result = context->dartMethodPtr()->invokeModule(moduleContext, context->contextId(),
                                                     module_name.ToNativeString().get(), method.ToNativeString().get(),

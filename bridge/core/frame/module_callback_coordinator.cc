@@ -6,11 +6,11 @@
 
 namespace webf {
 
-void ModuleCallbackCoordinator::AddModuleCallbacks(std::shared_ptr<ModuleCallback>&& callback) {
-  listeners_.push_front(callback);
+void ModuleCallbackCoordinator::AddModuleCallbacks(std::shared_ptr<ModuleCallback> callback) {
+  listeners_.push_front(std::move(callback));
 }
 
-void ModuleCallbackCoordinator::RemoveModuleCallbacks(std::shared_ptr<ModuleCallback> callback) {
+void ModuleCallbackCoordinator::RemoveModuleCallbacks(const std::shared_ptr<ModuleCallback>& callback) {
   listeners_.remove(callback);
 }
 

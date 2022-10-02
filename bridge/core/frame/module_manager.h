@@ -27,7 +27,7 @@ class ModuleManager {
                                             const AtomicString& module_name,
                                             const AtomicString& method,
                                             ScriptValue& params_value,
-                                            std::shared_ptr<QJSFunction> callback,
+                                            const std::shared_ptr<QJSFunction>& callback,
                                             ExceptionState& exception);
   static void __webf_add_module_listener__(ExecutingContext* context,
                                            const AtomicString& module_name,
