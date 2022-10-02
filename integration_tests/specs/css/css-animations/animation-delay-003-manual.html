@@ -29,11 +29,14 @@
     Test passes if there is a filled blue square with 'Filler Text',
     which starts moving from right to left as soon as the page loads.
   </p>
-  <div>Filler Text</div>
+  <div id="animation-box">Filler Text</div>
 </body>
 <script>
-  await sleep(0.02);
-  await snapshotAction();
+  await sleep(0.1);
+  let animationBox = document.getElementById('animation-box');
+  expect(animationBox.offsetLeft < 150 && animationBox.offsetLeft > 120).toBe(true);
+  await sleep(1);
+  expect(animationBox.offsetLeft > 50 && animationBox.offsetLeft < 75).toBe(true);
   await sleep(3);
-  await snapshotAction();
+  expect(animationBox.offsetLeft === 0).toBe(true);
 </script>

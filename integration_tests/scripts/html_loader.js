@@ -41,9 +41,13 @@ const loader = function(source) {
 
   // Set attr of HTML can let the case use fit. For example: <html fit> xxx </html>.
   let isFit = false;
+  let isXit = false;
   root.childNodes && root.childNodes.forEach(ele => {
     if (ele.rawAttrs && ele.rawAttrs.indexOf('fit') >= 0) {
       isFit = true;
+    }
+    if (ele.rawAttrs && ele.rawAttrs.indexOf('xit') >= 0) {
+      isXit = true;
     }
   })
 
@@ -57,7 +61,7 @@ const loader = function(source) {
       const html_parse = () => __webf_parse_html__('${htmlString}');
       var index = 0;
       const snapshotAction = async () => { await snapshot(null, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
-      ${isFit ? 'fit' : 'it'}("should work", async (done) => {\
+      ${isFit ? 'fit' : isXit ? 'xit' : 'it'}("should work", async (done) => {\
         html_parse();\
         requestAnimationFrame(async () => {
           ${scripts.length === 0 ? `await snapshotAction();` : scripts.join('\n')}

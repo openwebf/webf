@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
+<meta charset="utf-8" xit="true">
 <title>CSS Animations Test: animation-duration - 0s, animation-fill-mode - forwards</title>
 <link rel="author" title="Intel" href="http://www.intel.com">
 <link rel="reviewer" title="Zhiqiang Zhang" href="mailto:zhiqiang.zhang@intel.com"> <!-- 2015-05-05 -->
@@ -49,7 +49,9 @@
 </body>
 
 <script>
-  await snapshotAction();
-  await sleep(0.5);
-  await snapshotAction();
+  await sleep(0.1);
+  const test = document.getElementById('test');
+  const previous = test.offsetLeft;
+  await sleep(1);
+  expect(test.offsetLeft).toBe(previous);
 </script>
