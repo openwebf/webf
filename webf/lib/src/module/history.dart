@@ -111,7 +111,7 @@ class HistoryModule extends BaseModule {
     moduleManager!.controller.view.window.dispatchEvent(popStateEvent);
   }
 
-  void pushState(state, [String? url]) {
+  void pushState(state, {String? url, String? title}) {
     WebFController controller = moduleManager!.controller;
     if (url != null) {
       String currentUrl = _previousStack.first.bundle.url;
@@ -132,7 +132,7 @@ class HistoryModule extends BaseModule {
     }
   }
 
-  void replaceState(state, [String? url]) {
+  void replaceState(state, {String? url, String? title}) {
     WebFController controller = moduleManager!.controller;
     if (url != null) {
       String currentUrl = _previousStack.first.bundle.url;
@@ -173,10 +173,10 @@ class HistoryModule extends BaseModule {
         forward();
         break;
       case 'pushState':
-        pushState(params[0], params.length > 1 ? params[1] : null);
+        pushState(params[0], title: params[1], url: params[2]);
         break;
       case 'replaceState':
-        replaceState(params[0], params.length > 1 ? params[1] : null);
+        replaceState(params[0], title: params[1], url: params[2]);
         break;
       case 'go':
         go(params);
