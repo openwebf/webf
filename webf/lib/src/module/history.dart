@@ -49,31 +49,31 @@ class HistoryModule extends BaseModule {
     }
   }
 
-  void _back() async {
+  void back() async {
     if (_previousStack.length > 1) {
       HistoryItem currentItem = _previousStack.first;
       _previousStack.removeFirst();
       _nextStack.addFirst(currentItem);
 
-      await _goTo(_previousStack.first.bundle.url);
+      await goTo(_previousStack.first.bundle.url);
 
       dynamic state = _previousStack.first.state;
       _dispatchPopStateEvent(state);
     }
   }
 
-  void _forward() {
+  void forward() {
     if (_nextStack.isNotEmpty) {
       HistoryItem currentItem = _nextStack.first;
       _nextStack.removeFirst();
       _previousStack.addFirst(currentItem);
 
-      _goTo(currentItem.bundle.url);
+      goTo(currentItem.bundle.url);
       _dispatchPopStateEvent(currentItem.state);
     }
   }
 
-  void _go(num? num) {
+  void go(num? num) {
     num ??= 0;
     if (num >= 0) {
       if (_nextStack.length < num) {
@@ -97,11 +97,11 @@ class HistoryModule extends BaseModule {
       }
     }
 
-    _goTo(_previousStack.first.bundle.url);
+    goTo(_previousStack.first.bundle.url);
     _dispatchPopStateEvent(_previousStack.first.state);
   }
 
-  Future<void> _goTo(String targetUrl) async {
+  Future<void> goTo(String targetUrl) async {
     NavigationModule navigationModule = moduleManager!.getModule<NavigationModule>('Navigation')!;
     await navigationModule.goTo(targetUrl);
   }
@@ -111,18 +111,13 @@ class HistoryModule extends BaseModule {
     moduleManager!.controller.view.window.dispatchEvent(popStateEvent);
   }
 
-  void _pushState(List<dynamic> params) {
+  void pushState(state, [String? url]) {
     WebFController controller = moduleManager!.controller;
-    dynamic state = params[0];
-    String? url = null;
-
-    if (params[2] != null) {
-      url = params[2];
-
+    if (url != null) {
       String currentUrl = _previousStack.first.bundle.url;
       Uri currentUri = Uri.parse(currentUrl);
 
-      Uri uri = Uri.parse(url!);
+      Uri uri = Uri.parse(url);
       uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
       if (uri.host.isNotEmpty && uri.host != currentUri.host) {
@@ -137,18 +132,13 @@ class HistoryModule extends BaseModule {
     }
   }
 
-  void _replaceState(List<dynamic> params) {
+  void replaceState(state, [String? url]) {
     WebFController controller = moduleManager!.controller;
-    dynamic state = params[0];
-    String? url = null;
-
-    if (params[2] != null) {
-      url = params[2];
-
+    if (url != null) {
       String currentUrl = _previousStack.first.bundle.url;
       Uri currentUri = Uri.parse(currentUrl);
 
-      Uri uri = Uri.parse(url!);
+      Uri uri = Uri.parse(url);
       uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
       if (uri.host.isNotEmpty && uri.host != currentUri.host) {
@@ -177,19 +167,19 @@ class HistoryModule extends BaseModule {
         HistoryItem history = _previousStack.first;
         return jsonEncode(history.state);
       case 'back':
-        _back();
+        back();
         break;
       case 'forward':
-        _forward();
+        forward();
         break;
       case 'pushState':
-        _pushState(params);
+        pushState(params[0], params.length > 1 ? params[1] : null);
         break;
       case 'replaceState':
-        _replaceState(params);
+        replaceState(params[0], params.length > 1 ? params[1] : null);
         break;
       case 'go':
-        _go(params);
+        go(params);
         break;
     }
     return EMPTY_STRING;
