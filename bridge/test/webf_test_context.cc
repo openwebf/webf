@@ -6,6 +6,7 @@
 #include "webf_test_context.h"
 #include "bindings/qjs/member_installer.h"
 #include "core/dom/document.h"
+#include "core/html/html_html_element.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_body_element.h"
 #include "core/html/parser/html_parser.h"
@@ -195,8 +196,7 @@ static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 
   if (argc == 1) {
     std::string strHTML = AtomicString(ctx, argv[0]).ToStdString();
-    auto* body = context->document()->body();
-    HTMLParser::parseHTML(strHTML, body);
+    HTMLParser::parseHTML(strHTML, context->document()->documentElement());
   }
 
   return JS_NULL;
