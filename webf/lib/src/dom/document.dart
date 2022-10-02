@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -15,7 +16,36 @@ import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
 import 'package:webf/src/foundation/cookie_jar.dart';
-import 'package:webf/widget.dart';
+
+/// In the document tree, there may contains WidgetElement which connected to a Flutter Elements.
+/// And these flutter element will be unmounted in the end of this frame and their renderObject will call dispose() too.
+/// So we can't dispose WebF Element's renderObject immediately if the WebF element are removed from document tree.
+/// This class will buffering all the renderObjects who's element are removed from the document tree, and they will be disposed
+/// in the end of this frame.
+class _InactiveRenderObjects {
+  final Set<RenderObject> _renderObjects = HashSet<RenderObject>();
+
+  void add(RenderObject? renderObject) {
+    if (renderObject == null) return;
+
+    if (_renderObjects.isEmpty) {
+      RendererBinding.instance.addPostFrameCallback((timeStamp) {
+        finalizeInactiveRenderObjects();
+      });
+    }
+
+    assert(!renderObject.debugDisposed!);
+    assert(!_renderObjects.contains(renderObject));
+    _renderObjects.add(renderObject);
+  }
+
+  void finalizeInactiveRenderObjects() {
+    for(RenderObject object in _renderObjects) {
+      object.dispose();
+    }
+    _renderObjects.clear();
+  }
+}
 
 class Document extends Node {
   final WebFController controller;
@@ -42,6 +72,8 @@ class Document extends Node {
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
   late ScriptRunner _scriptRunner;
   ScriptRunner get scriptRunner => _scriptRunner;
+
+  _InactiveRenderObjects inactiveRenderObjects = _InactiveRenderObjects();
 
   @override
   EventTarget? get parentEventTarget => defaultView;

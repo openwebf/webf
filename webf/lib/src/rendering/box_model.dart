@@ -1411,7 +1411,7 @@ class RenderBoxModel extends RenderBox
     // Dispose box decoration painter.
     disposePainter();
     // Evict render decoration image cache.
-    renderStyle.decoration?.image?.image.evict();
+    renderStyle.backgroundImage?.image?.evict();
   }
 
   Offset getTotalScrollOffset() {

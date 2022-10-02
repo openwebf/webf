@@ -845,7 +845,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (dispose) {
       // RenderObjects could be owned by Flutter Widget Frameworks.
       if (!isRenderObjectOwnedByFlutterFramework(this)) {
-        renderBoxModel?.dispose();
+        ownerDocument.inactiveRenderObjects.add(renderer);
       }
     }
 
