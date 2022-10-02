@@ -33,9 +33,7 @@ abstract class WidgetElement extends dom.Element {
           defaultStyle: {
             ..._defaultStyle,
             ...?defaultStyle
-          },
-          isReplacedElement: true,
-        ) {
+          }) {
     WidgetsFlutterBinding.ensureInitialized();
     _widget = WebFAdapterWidget(this);
   }
@@ -47,6 +45,9 @@ abstract class WidgetElement extends dom.Element {
   // The render object is inserted by Flutter framework when element is WidgetElement.
   @override
   dom.RenderObjectManagerType get renderObjectManagerType => dom.RenderObjectManagerType.FLUTTER_ELEMENT;
+
+  @override
+  bool get isWidgetElement => true;
 
   @override
   void didDetachRenderer() {

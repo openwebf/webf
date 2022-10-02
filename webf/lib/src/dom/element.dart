@@ -52,8 +52,9 @@ enum BoxSizeType {
 mixin ElementBase on Node {
   RenderLayoutBox? _renderLayoutBox;
   RenderReplaced? _renderReplaced;
+  RenderWidget? _renderWidget;
 
-  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced;
+  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget;
 
   set renderBoxModel(RenderBoxModel? value) {
     if (value == null) {
@@ -63,6 +64,8 @@ mixin ElementBase on Node {
       _renderReplaced = value;
     } else if (value is RenderLayoutBox) {
       _renderLayoutBox = value;
+    } else if (value is RenderWidget) {
+      _renderWidget = value;
     } else {
       if (!kReleaseMode) throw FlutterError('Unknown RenderBoxModel value.');
     }
@@ -96,6 +99,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
   final bool _isReplacedElement;
+
+  bool get isWidgetElement => false;
 
   // The attrs.
   final Map<String, String> attributes = <String, String>{};
@@ -306,7 +311,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   void _updateRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
-    if (_isReplacedElement) {
+    if (isWidgetElement) {
+       nextRenderBoxModel = _createRenderWidget();
+    } else if (_isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
     } else {
@@ -369,6 +376,19 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
           nextReplaced = previousReplaced;
         }
       }
+    }
+    return nextReplaced;
+  }
+
+  RenderWidget _createRenderWidget({ RenderWidget? previousRenderWidget }) {
+    RenderWidget nextReplaced;
+
+    if (previousRenderWidget == null) {
+      nextReplaced = RenderWidget(
+        renderStyle: renderStyle,
+      );
+    } else {
+      nextReplaced = previousRenderWidget;
     }
     return nextReplaced;
   }

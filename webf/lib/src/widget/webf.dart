@@ -76,9 +76,9 @@ class WebF extends StatefulWidget {
   }
 
   static void defineCustomElement(String tagName, ElementCreator creator) {
-    // if (!_isValidCustomElementName(tagName)) {
-    //   throw ArgumentError('The element name "$tagName" is not valid.');
-    // }
+    if (!_isValidCustomElementName(tagName)) {
+      throw ArgumentError('The element name "$tagName" is not valid.');
+    }
     defineElement(tagName.toUpperCase(), creator);
   }
 
@@ -136,14 +136,18 @@ class _WebFState extends State<WebF> with RouteAware {
   final Set<WebFRenderObjectToWidgetAdapter> customElementWidgets = {};
 
   void onCustomElementWidgetAdd(WebFRenderObjectToWidgetAdapter adapter) {
-    setState(() {
-      customElementWidgets.add(adapter);
+    Future.microtask(() {
+      setState(() {
+        customElementWidgets.add(adapter);
+      });
     });
   }
 
   void onCustomElementWidgetRemove(WebFRenderObjectToWidgetAdapter adapter) {
-    setState(() {
-      customElementWidgets.remove(adapter);
+    Future.microtask(() {
+      setState(() {
+        customElementWidgets.remove(adapter);
+      });
     });
   }
 

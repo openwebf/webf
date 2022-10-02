@@ -21,6 +21,7 @@ export 'src/rendering/event.dart';
 export 'src/rendering/opacity.dart';
 export 'src/rendering/overflow.dart';
 export 'src/rendering/transform.dart';
+export 'src/rendering/widget.dart';
 export 'src/rendering/viewport.dart';
 export 'src/rendering/paragraph.dart';
 export 'src/rendering/line_break.dart';
