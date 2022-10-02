@@ -1639,7 +1639,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     while (parent != null) {
       bool isNonStatic = parent.renderStyle.position != CSSPositionType.static;
-      if (parent is BodyElement || isNonStatic) {
+      if (parent == ownerDocument.documentElement || isNonStatic) {
         break;
       }
       parent = parent.parentElement;
