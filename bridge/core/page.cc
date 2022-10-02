@@ -50,9 +50,6 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
     return false;
   }
 
-  // Remove all Nodes including body and head.
-  context_->document()->documentElement()->RemoveChildren();
-
   HTMLParser::parseHTML(code, length, context_->document()->documentElement());
 
   return true;
