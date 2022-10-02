@@ -41,13 +41,18 @@
     which starts moving from right to left on the page load,
     and then moves from left to right. This cycle gets repeated.
   </p>
-  <div>Filler Text</div>
+  <div id="main">Filler Text</div>
 </body>
 <script>
+  await sleep(0.1);
+  const main = document.getElementById('main');
+  expect(main.offsetLeft > 130 && main.offsetLeft < 150).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft > 75 && main.offsetLeft < 120).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft > 0 && main.offsetLeft < 30).toBe(true);
   await sleep(0.5);
-  await snapshotAction();
-  await sleep(1.4);
-  await snapshotAction();
+  expect(main.offsetLeft > 50 && main.offsetLeft < 100).toBe(true);
   await sleep(0.5);
-  await snapshotAction();
+  expect(main.offsetLeft > 120 && main.offsetLeft < 150).toBe(true);
 </script>

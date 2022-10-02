@@ -24,15 +24,15 @@
 
   #test-negative-delay {
     animation-name: test-negative-delay;
-    animation-duration: 10s;
-    animation-delay: -5s;
+    animation-duration: 6s;
+    animation-delay: -3s;
 
     background-color: blue;
   }
 
   #ref-no-delay {
     animation-name: ref-no-delay;
-    animation-duration: 5s;
+    animation-duration: 3s;
 
     background-color: yellow;
   }
@@ -65,8 +65,15 @@
   <div id="ref-no-delay">Filler Text</div>
 </body>
 <script>
-  await sleep(0.01);
-  await snapshotAction();
+  await sleep(0.1);
+  const negativeDelay = document.getElementById('test-negative-delay');
+  const ref = document.getElementById('ref-no-delay');
+  expect(negativeDelay.offsetLeft).toBe(ref.offsetLeft);
+  expect(negativeDelay.offsetLeft < 75 && negativeDelay.offsetLeft > 70).toBe(true);
+  await sleep(1);
+  expect(negativeDelay.offsetLeft).toBe(ref.offsetLeft);
+  expect(negativeDelay.offsetLeft < 50 && negativeDelay.offsetLeft > 40).toBe(true);
   await sleep(3);
-  await snapshotAction();
+  expect(negativeDelay.offsetLeft).toBe(ref.offsetLeft);
+  expect(negativeDelay.offsetLeft === 0).toBe(true);
 </script>

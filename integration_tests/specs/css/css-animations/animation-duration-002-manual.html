@@ -34,11 +34,14 @@
     Test passes if there is a filled blue square with 'Filler Text',
     which starts moving from right to left upon page load and lasts for a span of 10 seconds.
   </p>
-  <div>Filler Text</div>
+  <div id="main">Filler Text</div>
 </body>
 <script>
-  await sleep(0.5);
-  await snapshotAction();
-  await sleep(1.4);
-  await snapshotAction();
+  const main = document.getElementById('main');
+  await sleep(0.1);
+  expect(main.offsetLeft > 120).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft === 0).toBe(true);
 </script>
