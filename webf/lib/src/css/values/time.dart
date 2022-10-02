@@ -19,15 +19,34 @@ class CSSTime {
     return (value == _0s || value == _0ms || _timeRegExp.firstMatch(value) != null);
   }
 
-  static int? parseTime(String input) {
-    if (_cachedParsedTime.containsKey(input)) {
-      return _cachedParsedTime[input];
-    }
+  static int? _parseTimeValue(String input) {
     int? milliseconds;
     if (input.endsWith(MILLISECONDS)) {
       milliseconds = double.tryParse(input.split(MILLISECONDS)[0])!.toInt();
     } else if (input.endsWith(SECOND)) {
       milliseconds = (double.tryParse(input.split(SECOND)[0])! * 1000).toInt();
+    }
+    return milliseconds;
+  }
+
+  static int? parseTime(String input) {
+    if (_cachedParsedTime.containsKey(input)) {
+      return _cachedParsedTime[input];
+    }
+
+    int? milliseconds = _parseTimeValue(input);
+
+    return _cachedParsedTime[input] = milliseconds;
+  }
+
+  static int? parseNotNegativeTime(String input) {
+    if (_cachedParsedTime.containsKey(input)) {
+      return _cachedParsedTime[input];
+    }
+
+    int? milliseconds = _parseTimeValue(input);
+    if (milliseconds != null && milliseconds < 0) {
+      milliseconds = 0;
     }
 
     return _cachedParsedTime[input] = milliseconds;

@@ -385,7 +385,7 @@ mixin CSSTransitionMixin on RenderStyle {
     // [duration, function, delay]
     if (transitionOptions != null) {
       return EffectTiming(
-        duration: CSSTime.parseTime(transitionOptions[0])!.toDouble(),
+        duration: CSSTime.parseNotNegativeTime(transitionOptions[0])!.toDouble(),
         easing: transitionOptions[1],
         delay: CSSTime.parseTime(transitionOptions[2])!.toDouble(),
         // In order for CSS Transitions to be seeked backwards, they need to have their fill mode set to backwards
