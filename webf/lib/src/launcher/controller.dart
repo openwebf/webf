@@ -943,6 +943,8 @@ class WebFController {
   final Queue<HistoryItem> previousHistoryStack = Queue();
   final Queue<HistoryItem> nextHistoryStack = Queue();
 
+  HistoryModule get history => _module.moduleManager.getModule('History')!;
+
   static Uri fallbackBundleUri([int? id]) {
     // The fallback origin uri, like `vm://bundle/0`
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
