@@ -153,8 +153,7 @@ abstract class WidgetElement extends dom.Element {
   void _attachWidget(Widget widget) {
     dom.Node? ancestorWidgetNode = getAncestorWidgetNode(this);
     if (ancestorWidgetNode != null) {
-      // ancestorWidgetNode.flutterWidgetState!.addWidgetChild(Text('1234'));
-      ancestorWidgetNode.flutterWidgetState!.addWidgetChild(widget);
+      (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(widget);
     } else {
       WebFWidgetElementToWidgetAdapter adaptor = attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!);
       ownerDocument.controller.onCustomElementAttached!(adaptor);

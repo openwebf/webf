@@ -12,11 +12,11 @@ import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 
+import 'custom_elements/main.dart';
 import 'test_module.dart';
 import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'bridge/to_native.dart';
-import 'custom/custom_element.dart';
 import 'local_http_server.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');

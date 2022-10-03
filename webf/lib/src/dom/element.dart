@@ -102,6 +102,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   bool get isWidgetElement => false;
 
+  // Holding reference if this element are managed by Flutter framework.
+  WebFElementToFlutterElementAdaptor? flutterElement;
+  WebFElementWidget? flutterWidget;
+  WebFElementState? flutterWidgetState;
+
   // The attrs.
   final Map<String, String> attributes = <String, String>{};
 

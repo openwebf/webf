@@ -6,6 +6,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' show Widget;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
@@ -88,9 +89,7 @@ abstract class LifecycleCallbacks {
 }
 
 abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCallbacks {
-  WebFNodeToFlutterElementAdaptor? flutterElement;
-  WebFNodeWidget? flutterWidget;
-  WebFNodeState? flutterWidgetState;
+  Widget? get flutterWidget => null;
   /// WebF node could be wrapped by [WebFElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
   /// So if managedByFlutterWidget is true, WebF DOM can not disposed Node's renderObject directly.
   bool managedByFlutterWidget = false;
@@ -195,9 +194,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   @override
   void dispose() {
     parentNode?.removeChild(this);
-    flutterWidget = null;
-    flutterElement = null;
-    flutterWidgetState = null;
     assert(!isRendererAttached, 'Should unmount $this before calling dispose.');
     super.dispose();
   }

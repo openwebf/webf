@@ -6,6 +6,8 @@
 export 'src/widget/webf.dart';
 export 'src/widget/render_object_to_widget_adaptor.dart';
 export 'src/widget/render_object_to_flutter_element_adapter.dart';
-export 'src/widget/node_to_widget_adaptor.dart';
-export 'src/widget/node_to_flutter_element_adapter.dart';
+export 'src/widget/character_data_to_flutter_element_adapter.dart';
+export 'src/widget/character_data_to_widget_adapter.dart';
+export 'src/widget/element_flutter_element_adapter.dart';
+export 'src/widget/element_to_widget_adapter.dart';
 export 'src/widget/widget_element.dart';

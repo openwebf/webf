@@ -5,8 +5,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
-import 'widget_element.dart';
-import 'node_to_widget_adaptor.dart';
+import 'package:webf/widget.dart';
 
 
 class WebFWidgetElementWidget extends StatefulWidget {
@@ -39,13 +38,20 @@ class WebFWidgetElementState extends State<WebFWidgetElementWidget> {
     }
   }
 
+  Widget buildNodeWidget(dom.Node node, {Key? key}) {
+    if (node is dom.CharacterData) {
+      return WebFCharacterDataToWidgetAdaptor(node, key: key);
+    }
+    return WebFElementWidget(node as dom.Element, key: key);
+  }
+
   List<Widget> convertNodeListToWidgetList(List<dom.Node> childNodes) {
     List<Widget> children = List.generate(childNodes.length, (index) {
       if (childNodes[index] is WidgetElement) {
         return (childNodes[index] as WidgetElement).widget;
       } else {
         return childNodes[index].flutterWidget ??
-            WebFNodeWidget(childNodes[index], key: Key(childNodes[index].hashCode.toString()));
+            buildNodeWidget(childNodes[index], key: Key(childNodes[index].hashCode.toString()));
       }
     });
 

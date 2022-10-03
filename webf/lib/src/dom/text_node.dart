@@ -12,7 +12,7 @@ const String NEW_LINE_CHAR = '\n';
 const String RETURN_CHAR = '\r';
 const String TAB_CHAR = '\t';
 
-class TextNode extends Node {
+class TextNode extends CharacterData {
   static const String NORMAL_SPACE = '\u0020';
 
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
