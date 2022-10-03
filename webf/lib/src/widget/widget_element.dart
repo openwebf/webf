@@ -16,14 +16,15 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 abstract class WidgetElement extends dom.Element {
-  late Widget _widget;
-  Widget get widget => _widget;
+  // An state
+  late WebFWidgetElementWidget _widget;
+  WebFWidgetElementWidget get widget => _widget;
 
-  WebFAdapterWidgetState? _state;
-  set state(WebFAdapterWidgetState? newState) {
+  WebFWidgetElementState? _state;
+  set state(WebFWidgetElementState? newState) {
     _state = newState;
   }
-  WebFRenderObjectToWidgetAdapter? attachedAdapter;
+  WebFWidgetElementToWidgetAdapter? attachedAdapter;
 
   WidgetElement(
     BindingContext? context, {
@@ -35,7 +36,7 @@ abstract class WidgetElement extends dom.Element {
             ...?defaultStyle
           }) {
     WidgetsFlutterBinding.ensureInitialized();
-    _widget = WebFAdapterWidget(this);
+    _widget = WebFWidgetElementWidget(this);
   }
 
   void initState() {}
@@ -135,10 +136,29 @@ abstract class WidgetElement extends dom.Element {
     return child;
   }
 
+  static dom.Node? getAncestorWidgetNode(WidgetElement element) {
+    dom.Node? parent = element.parentNode;
+
+    while(parent != null) {
+      if (parent.flutterWidget != null) {
+        return parent;
+      }
+
+      parent = parent.parentNode;
+    }
+
+    return null;
+  }
+
   void _attachWidget(Widget widget) {
-    WebFRenderObjectToWidgetAdapter adaptor =
-        attachedAdapter = WebFRenderObjectToWidgetAdapter(child: widget, container: renderBoxModel!);
-    ownerDocument.controller.onCustomElementAttached!(adaptor);
+    dom.Node? ancestorWidgetNode = getAncestorWidgetNode(this);
+    if (ancestorWidgetNode != null) {
+      // ancestorWidgetNode.flutterWidgetState!.addWidgetChild(Text('1234'));
+      ancestorWidgetNode.flutterWidgetState!.addWidgetChild(widget);
+    } else {
+      WebFWidgetElementToWidgetAdapter adaptor = attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!);
+      ownerDocument.controller.onCustomElementAttached!(adaptor);
+    }
   }
 
   void _detachWidget() {

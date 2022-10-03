@@ -35,8 +35,8 @@ typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
-typedef OnCustomElementAttached = void Function(WebFRenderObjectToWidgetAdapter newWidget);
-typedef OnCustomElementDetached = void Function(WebFRenderObjectToWidgetAdapter detachedWidget);
+typedef OnCustomElementAttached = void Function(WebFWidgetElementToWidgetAdapter newWidget);
+typedef OnCustomElementDetached = void Function(WebFWidgetElementToWidgetAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 

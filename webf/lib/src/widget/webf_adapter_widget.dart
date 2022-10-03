@@ -9,23 +9,23 @@ import 'widget_element.dart';
 import 'node_to_widget_adaptor.dart';
 
 
-class WebFAdapterWidget extends StatefulWidget {
+class WebFWidgetElementWidget extends StatefulWidget {
   final WidgetElement widgetElement;
 
-  WebFAdapterWidget(this.widgetElement, {Key? key}): super(key: key);
+  WebFWidgetElementWidget(this.widgetElement, {Key? key}): super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    WebFAdapterWidgetState state = WebFAdapterWidgetState(widgetElement);
+    WebFWidgetElementState state = WebFWidgetElementState(widgetElement);
     widgetElement.state = state;
     return state;
   }
 }
 
-class WebFAdapterWidgetState extends State<WebFAdapterWidget> {
+class WebFWidgetElementState extends State<WebFWidgetElementWidget> {
   final WidgetElement widgetElement;
 
-  WebFAdapterWidgetState(this.widgetElement);
+  WebFWidgetElementState(this.widgetElement);
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class WebFAdapterWidgetState extends State<WebFAdapterWidget> {
         return (childNodes[index] as WidgetElement).widget;
       } else {
         return childNodes[index].flutterWidget ??
-            WebFNodeToWidgetAdaptor(childNodes[index], key: Key(childNodes[index].hashCode.toString()));
+            WebFNodeWidget(childNodes[index], key: Key(childNodes[index].hashCode.toString()));
       }
     });
 

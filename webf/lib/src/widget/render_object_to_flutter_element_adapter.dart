@@ -10,10 +10,10 @@ import 'package:webf/webf.dart';
 
 /// Creates an element that is hosted by a [RenderObject].
 class WebFRenderObjectToWidgetElement<T extends RenderObject> extends SingleChildRenderObjectElement {
-  WebFRenderObjectToWidgetElement(WebFRenderObjectToWidgetAdapter<T> widget) : super(widget);
+  WebFRenderObjectToWidgetElement(WebFWidgetElementToWidgetAdapter<T> widget) : super(widget);
 
   @override
-  WebFRenderObjectToWidgetAdapter get widget => super.widget as WebFRenderObjectToWidgetAdapter<T>;
+  WebFWidgetElementToWidgetAdapter get widget => super.widget as WebFWidgetElementToWidgetAdapter<T>;
 
   @override
   RenderObjectWithChildMixin<RenderObject> get renderObject => super.renderObject as RenderObjectWithChildMixin<RenderObject>;

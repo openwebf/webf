@@ -8,8 +8,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'render_object_to_flutter_element_adapter.dart';
 
-class WebFRenderObjectToWidgetAdapter<T extends RenderObject> extends SingleChildRenderObjectWidget {
-  WebFRenderObjectToWidgetAdapter({
+class WebFWidgetElementToWidgetAdapter<T extends RenderObject> extends SingleChildRenderObjectWidget {
+  WebFWidgetElementToWidgetAdapter({
     Widget? child,
     required this.container,
     this.debugShortDescription,

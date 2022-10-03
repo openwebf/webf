@@ -133,9 +133,9 @@ class WebF extends StatefulWidget {
 }
 
 class _WebFState extends State<WebF> with RouteAware {
-  final Set<WebFRenderObjectToWidgetAdapter> customElementWidgets = {};
+  final Set<WebFWidgetElementToWidgetAdapter> customElementWidgets = {};
 
-  void onCustomElementWidgetAdd(WebFRenderObjectToWidgetAdapter adapter) {
+  void onCustomElementWidgetAdd(WebFWidgetElementToWidgetAdapter adapter) {
     Future.microtask(() {
       setState(() {
         customElementWidgets.add(adapter);
@@ -143,7 +143,7 @@ class _WebFState extends State<WebF> with RouteAware {
     });
   }
 
-  void onCustomElementWidgetRemove(WebFRenderObjectToWidgetAdapter adapter) {
+  void onCustomElementWidgetRemove(WebFWidgetElementToWidgetAdapter adapter) {
     Future.microtask(() {
       setState(() {
         customElementWidgets.remove(adapter);
@@ -154,7 +154,7 @@ class _WebFState extends State<WebF> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
-      child: WebFRenderObjectWidget(
+      child: WebFRootRenderObjectWidget(
         widget,
         onCustomElementAttached: onCustomElementWidgetAdd,
         onCustomElementDetached: onCustomElementWidgetRemove,
@@ -199,12 +199,12 @@ class _WebFState extends State<WebF> with RouteAware {
   }
 }
 
-class WebFRenderObjectWidget extends MultiChildRenderObjectWidget {
+class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
   final OnCustomElementAttached onCustomElementAttached;
   final OnCustomElementDetached onCustomElementDetached;
 
   // Creates a widget that visually hides its child.
-  WebFRenderObjectWidget(
+  WebFRootRenderObjectWidget(
     WebF widget, {
     Key? key,
     required List<Widget> children,
@@ -314,7 +314,7 @@ class WebFRenderObjectWidget extends MultiChildRenderObjectWidget {
 }
 
 class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
-  _WebFRenderObjectElement(WebFRenderObjectWidget widget) : super(widget);
+  _WebFRenderObjectElement(WebFRootRenderObjectWidget widget) : super(widget);
 
   @override
   void mount(Element? parent, Object? newSlot) async {
@@ -364,5 +364,5 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
   void removeRenderObjectChild(RenderObject child, Object? slot) {}
 
   @override
-  WebFRenderObjectWidget get widget => super.widget as WebFRenderObjectWidget;
+  WebFRootRenderObjectWidget get widget => super.widget as WebFRootRenderObjectWidget;
 }

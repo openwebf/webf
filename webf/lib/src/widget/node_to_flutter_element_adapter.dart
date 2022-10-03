@@ -2,16 +2,15 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'node_to_widget_adaptor.dart';
 
-class WebFNodeToFlutterElementAdaptor extends RenderObjectElement {
-  WebFNodeToFlutterElementAdaptor(RenderObjectWidget widget) : super(widget);
+class WebFNodeToFlutterElementAdaptor extends MultiChildRenderObjectElement {
+  WebFNodeToFlutterElementAdaptor(WebFElementToWidgetAdaptor widget) : super(widget);
 
   @override
-  WebFNodeToWidgetAdaptor get widget => super.widget as WebFNodeToWidgetAdaptor;
+  WebFElementToWidgetAdaptor get widget => super.widget as WebFElementToWidgetAdaptor;
 
   @override
   void mount(Element? parent, Object? newSlot) {
@@ -42,10 +41,4 @@ class WebFNodeToFlutterElementAdaptor extends RenderObjectElement {
       node.unmountRenderObject(dispose: false);
     }
   }
-
-  @override
-  void insertRenderObjectChild(RenderObject child, Object? slot) {}
-
-  @override
-  void moveRenderObjectChild(covariant RenderObject child, covariant Object? oldSlot, covariant Object? newSlot) {}
 }
