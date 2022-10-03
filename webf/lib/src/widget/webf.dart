@@ -348,11 +348,6 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     super.unmount();
   }
 
-  void deactivateRecursively(Element element) {
-    element.deactivate();
-    element.visitChildren(deactivateRecursively);
-  }
-
   // RenderObjects created by webf are manager by webf itself. There are no needs to operate renderObjects on _WebFRenderObjectElement.
   @override
   void insertRenderObjectChild(RenderObject child, Object? slot) {}

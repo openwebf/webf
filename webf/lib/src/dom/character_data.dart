@@ -9,7 +9,12 @@ class CharacterData extends Node {
   CharacterData(NodeType type, [context]) : super(type, context);
 
   WebFCharacterDataToFlutterElementAdapter? flutterElement;
-  WebFCharacterDataToWidgetAdaptor? flutterWidget;
+  WebFCharacterDataToWidgetAdaptor? _flutterWidget;
+  @override
+  WebFCharacterDataToWidgetAdaptor? get flutterWidget => _flutterWidget;
+  set flutterWidget(WebFCharacterDataToWidgetAdaptor? adapter) {
+    _flutterWidget = adapter;
+  }
 
   @override
   String get nodeName => throw UnimplementedError();

@@ -12,6 +12,8 @@ class WebFElementToFlutterElementAdaptor extends MultiChildRenderObjectElement {
   @override
   WebFElementToWidgetAdaptor get widget => super.widget as WebFElementToWidgetAdaptor;
 
+  dom.Element get webFElement => widget.webFElement;
+
   @override
   void mount(Element? parent, Object? newSlot) {
     widget.webFElement.createRenderer();
@@ -36,5 +38,15 @@ class WebFElementToFlutterElementAdaptor extends MultiChildRenderObjectElement {
     super.unmount();
 
     element.unmountRenderObject(dispose: false);
+  }
+
+  @override
+  void insertRenderObjectChild(covariant RenderObject child, covariant IndexedSlot<Element?> slot) {
+  }
+  @override
+  void moveRenderObjectChild(covariant RenderObject child, covariant IndexedSlot<Element?> oldSlot, covariant IndexedSlot<Element?> newSlot) {
+  }
+  @override
+  void removeRenderObjectChild(covariant RenderObject child, covariant Object? slot) {
   }
 }

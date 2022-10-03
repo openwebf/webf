@@ -2,6 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:collection';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -22,7 +24,7 @@ class WebFElementWidget extends StatefulWidget {
 }
 
 class WebFElementState extends State<WebFElementWidget> {
-  final Set<Widget> customElementWidgets = {};
+  final Set<Widget> customElementWidgets = HashSet();
   final dom.Element _webFElement;
 
   WebFElementState(this._webFElement);
@@ -32,6 +34,13 @@ class WebFElementState extends State<WebFElementWidget> {
     Future.microtask(() {
       setState(() {
         customElementWidgets.add(widget);
+      });
+    });
+  }
+  void removeWidgetChild(Widget widget) {
+    Future.microtask(() {
+      setState(() {
+        customElementWidgets.remove(widget);
       });
     });
   }

@@ -256,6 +256,25 @@ describe('custom widget element', () => {
     await sleep(0.1);
     await snapshot();
   });
+
+  it('flutter widgets should inserted at correct location with other DOM elements', async () => {
+    const form = document.createElement('flutter-form');
+    form.style.height = '300px';
+    form.appendChild(document.createTextNode('BEFORE CONTAINER.'));
+    for(let i = 0; i < 2; i ++) {
+      let div = document.createElement('div');
+      div.appendChild(document.createTextNode('BEFORE INPUT.'));
+      const input = document.createElement('flutter-input') as HTMLInputElement;
+      input.value = i.toString();
+      div.appendChild(input);
+      div.appendChild(document.createTextNode('AFTER INPUT.'));
+      form.appendChild(div);
+    }
+    form.appendChild(document.createTextNode('AFTER CONTAINER.'));
+    document.body.appendChild(form);
+    await sleep(0.1);
+    await snapshot();
+  });
 });
 
 describe('custom html element', () => {

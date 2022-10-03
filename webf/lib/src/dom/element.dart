@@ -104,7 +104,12 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   // Holding reference if this element are managed by Flutter framework.
   WebFElementToFlutterElementAdaptor? flutterElement;
-  WebFElementWidget? flutterWidget;
+  WebFElementWidget? flutterWidget_;
+  @override
+  WebFElementWidget? get flutterWidget => flutterWidget_;
+  set flutterWidget(WebFElementWidget? value) {
+    flutterWidget_ = value;
+  }
   WebFElementState? flutterWidgetState;
 
   // The attrs.
