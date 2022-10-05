@@ -159,8 +159,8 @@ class FlutterInputElement extends WidgetElement {
     return Transform.scale(
       child: Checkbox(value: checked, onChanged: (bool? newValue) {
         setState(() {
-          dispatchEvent(Event('change'));
           checked = newValue!;
+          dispatchEvent(Event('change'));
         });
       }),
       scale: getCheckboxSize(),

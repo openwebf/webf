@@ -40,7 +40,13 @@ abstract class WidgetElement extends dom.Element {
     _widget = WebFWidgetElementWidget(this);
   }
 
+  // State methods, proxy called from _state
   void initState() {}
+  void didUpdateWidget(covariant WebFWidgetElementWidget oldWidget) {}
+  void didChangeDependencies() {}
+
+  // Flutter Element life circle methods, proxy called when FlutterElement are mounted
+  void mount(Element? parent, Object? newSlot) {}
 
   Widget build(BuildContext context, List<Widget> children);
 

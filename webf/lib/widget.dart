@@ -12,3 +12,4 @@ export 'src/widget/element_flutter_element_adapter.dart';
 export 'src/widget/element_to_widget_adapter.dart';
 export 'src/widget/widget_element.dart';
 export 'src/widget/webf_element.dart';
+export 'src/widget/webf_adapter_widget.dart';

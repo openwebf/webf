@@ -14,10 +14,28 @@ class WebFWidgetElementWidget extends StatefulWidget {
   WebFWidgetElementWidget(this.widgetElement, {Key? key}): super(key: key);
 
   @override
+  StatefulElement createElement() {
+    return WebFWidgetElementElement(this);
+  }
+
+  @override
   State<StatefulWidget> createState() {
     WebFWidgetElementState state = WebFWidgetElementState(widgetElement);
     widgetElement.state = state;
     return state;
+  }
+}
+
+class WebFWidgetElementElement extends StatefulElement {
+  WebFWidgetElementElement(super.widget);
+
+  @override
+  WebFWidgetElementWidget get widget => super.widget as WebFWidgetElementWidget;
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    widget.widgetElement.mount(parent, newSlot);
   }
 }
 
@@ -30,6 +48,18 @@ class WebFWidgetElementState extends State<WebFWidgetElementWidget> {
   void initState() {
     super.initState();
     widgetElement.initState();
+  }
+
+  @override
+  void didUpdateWidget(covariant WebFWidgetElementWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    widgetElement.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widgetElement.didChangeDependencies();
   }
 
   void requestUpdateState([VoidCallback? callback]) {
