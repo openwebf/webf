@@ -70,18 +70,18 @@ class Window extends EventTarget {
 
   double get scrollY => document.documentElement!.scrollTop;
 
-  void scrollTo(double x, double y) {
+  void scrollTo(double x, double y, [bool withAnimation = false]) {
     document.flushStyle();
     document.documentElement!
       ..flushLayout()
-      ..scrollTo(x, y);
+      ..scrollTo(x, y, withAnimation);
   }
 
-  void scrollBy(double x, double y) {
+  void scrollBy(double x, double y, [bool withAnimation = false]) {
     document.flushStyle();
     document.documentElement!
       ..flushLayout()
-      ..scrollBy(x, y);
+      ..scrollBy(x, y, withAnimation);
   }
 
   String get colorScheme => window.platformBrightness == Brightness.light ? 'light' : 'dark';

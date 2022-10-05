@@ -711,7 +711,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       Element? focusedElement = document.focusedElement;
       if (focusedElement != null) {
         RenderBox? renderer = focusedElement.renderer;
-        if (renderer != null && renderer.hasSize) {
+        if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
           if (focusOffset.dy > viewportHeight - bottomInset - FOCUS_VIEWINSET_BOTTOM_OVERALL) {

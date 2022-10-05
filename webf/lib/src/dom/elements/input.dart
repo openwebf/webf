@@ -173,6 +173,15 @@ class FlutterInputElement extends WidgetElement {
     if (inputType == 'checkbox') {
       return createCheckBox(context);
     }
-    return createInput(context);
+    return Focus(
+      onFocusChange: (bool isFocus) {
+        if (isFocus) {
+          ownerDocument.focusedElement = this;
+        } else {
+          ownerDocument.focusedElement = null;
+        }
+      },
+      child: createInput(context),
+    );
   }
 }

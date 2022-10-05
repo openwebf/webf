@@ -39,17 +39,24 @@ class FlutterTextAreaElement extends WidgetElement {
       });
     }
 
-    return TextField(
-      enabled: enabled,
-      controller: controller,
-      decoration: InputDecoration(
-        border: InputBorder.none
-      ),
-      onChanged: onChanged,
-      minLines: 1,
-      maxLines: 3,
-      maxLength: 50,
-      keyboardType: TextInputType.multiline
+    return Focus(
+      child: TextField(
+          enabled: enabled,
+          controller: controller,
+          decoration: InputDecoration(border: InputBorder.none),
+          onChanged: onChanged,
+          minLines: 1,
+          maxLines: 3,
+          maxLength: 50,
+          keyboardType: TextInputType.multiline),
+      onFocusChange: (bool isFocus) {
+        if (isFocus) {
+          ownerDocument.focusedElement = this;
+          print('$this focused');
+        } else {
+          ownerDocument.focusedElement = null;
+        }
+      },
     );
   }
 }

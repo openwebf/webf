@@ -353,16 +353,16 @@ mixin ElementOverflowMixin on ElementBase {
     _scrollTo(y: value);
   }
 
-  void scroll(double x, double y) {
-    _scrollTo(x: x, y: y, withAnimation: false);
+  void scroll(double x, double y, [bool withAnimation = false]) {
+    _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
-  void scrollBy(double x, double y) {
-    _scrollBy(dx: x, dy: y, withAnimation: false);
+  void scrollBy(double x, double y, [bool withAnimation = false]) {
+    _scrollBy(dx: x, dy: y, withAnimation: withAnimation);
   }
 
-  void scrollTo(double x, double y) {
-    _scrollTo(x: x, y: y, withAnimation: false);
+  void scrollTo(double x, double y, [bool withAnimation = false]) {
+    _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
   double get scrollLeft {
