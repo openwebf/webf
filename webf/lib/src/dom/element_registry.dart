@@ -93,8 +93,9 @@ void defineBuiltInElements() {
   // Forms
   defineElement(LABEL, (context) => LabelElement(context));
   defineElement(BUTTON, (context) => ButtonElement(context));
-  // defineElement(INPUT, (context) => InputElement(context));
-  // defineElement(TEXTAREA, (context) => TextareaElement(context));
+  defineElement(INPUT, (context) => FlutterInputElement(context));
+  defineElement(FORM, (context) => FlutterFormElement(context));
+  defineElement(TEXTAREA, (context) => FlutterTextAreaElement(context));
   // Edits
   defineElement(DEL, (context) => DelElement(context));
   defineElement(INS, (context) => InsElement(context));
@@ -114,4 +115,5 @@ void defineBuiltInElements() {
   defineElement(BODY, (context) => BodyElement(context));
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
+  defineElement(LISTVIEW, (context) => FlutterListViewElement(context));
 }

@@ -13,7 +13,6 @@ import 'dart:ui' as ui;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
-import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -786,8 +785,6 @@ class WebFController {
   static final Map<String, int> _nameIdMap = {};
 
   UriParser? uriParser;
-
-  late RenderObjectElement rootFlutterElement;
 
   static WebFController? getControllerOfJSContextId(int? contextId) {
     if (!_controllerMap.containsKey(contextId)) {

@@ -321,10 +321,6 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     super.mount(parent, newSlot);
 
     WebFController controller = (renderObject as RenderObjectWithControllerMixin).controller!;
-
-    // We should make sure every flutter elements created under webf can be walk up to the root.
-    // So we bind _WebFRenderObjectElement into WebFController, and widgetElements created by controller can follow this to the root.
-    controller.rootFlutterElement = this;
     await controller.executeEntrypoint(animationController: widget._webfWidget.animationController);
   }
 

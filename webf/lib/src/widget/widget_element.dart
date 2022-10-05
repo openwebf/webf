@@ -15,6 +15,7 @@ const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,
 };
 
+// WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
 abstract class WidgetElement extends dom.Element {
   // An state
   late WebFWidgetElementWidget _widget;

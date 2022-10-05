@@ -38,3 +38,7 @@ export 'src/dom/elements/head.dart';
 export 'src/dom/elements/script.dart';
 export 'src/dom/elements/html.dart';
 export 'src/dom/elements/template.dart';
+export 'src/dom/elements/input.dart';
+export 'src/dom/elements/form.dart';
+export 'src/dom/elements/textarea.dart';
+export 'src/dom/elements/listview.dart';
