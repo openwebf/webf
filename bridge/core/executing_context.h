@@ -24,7 +24,7 @@
 #include "dart_methods.h"
 #include "executing_context_data.h"
 #include "frame/dom_timer_coordinator.h"
-#include "frame/module_callback_coordinator.h"
+#include "frame/module_context_coordinator.h"
 #include "frame/module_listener_container.h"
 #include "script_state.h"
 
@@ -98,7 +98,7 @@ class ExecutingContext {
   ModuleListenerContainer* ModuleListeners();
 
   // Gets the ModuleCallbacks which from the 4th parameter of `webf.invokeModule` function.
-  ModuleCallbackCoordinator* ModuleCallbacks();
+  ModuleContextCoordinator* ModuleContexts();
 
   // Get current script state.
   ScriptState* GetScriptState() { return &script_state_; }
@@ -171,7 +171,7 @@ class ExecutingContext {
   Performance* performance_{nullptr};
   DOMTimerCoordinator timers_;
   ModuleListenerContainer module_listener_container_;
-  ModuleCallbackCoordinator module_callbacks_;
+  ModuleContextCoordinator module_contexts_;
   ExecutionContextData context_data_{this};
   bool in_dispatch_error_event_{false};
   RejectedPromises rejected_promises_;

@@ -51,6 +51,7 @@ class ModuleManager {
   final int contextId;
   final WebFController controller;
   final Map<String, BaseModule> _moduleMap = {};
+  bool disposed = false;
 
   ModuleManager(this.controller, this.contextId) {
     // Init all module instances.
@@ -83,10 +84,16 @@ class ModuleManager {
     }
 
     BaseModule module = _moduleMap[moduleName]!;
-    return module.invoke(method, params, callback);
+    return module.invoke(method, params, ({String? error, Object? data}) async {
+      if (disposed) {
+        return null;
+      }
+      return callback(error: error, data: data);
+    });
   }
 
   void dispose() {
+    disposed = true;
     _moduleMap.forEach((key, module) {
       module.dispose();
     });

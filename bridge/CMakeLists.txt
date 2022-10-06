@@ -212,7 +212,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/frame/module_listener_container.cc
     core/frame/module_manager.cc
     core/frame/module_callback.cc
-    core/frame/module_callback_coordinator.cc
+    core/frame/module_context_coordinator.cc
     core/frame/window.cc
     core/frame/screen.cc
     core/frame/legacy/location.cc

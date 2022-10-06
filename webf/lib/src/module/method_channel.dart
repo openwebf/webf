@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:webf/webf.dart';
 
-typedef MethodCallCallback = Future<dynamic> Function(String method, Object? arguments);
+typedef MethodCallCallback = Future<dynamic> Function(String method, List<dynamic> arguments);
 const String METHOD_CHANNEL_NOT_INITIALIZED = 'MethodChannel not initialized.';
 const String CONTROLLER_NOT_INITIALIZED = 'WebF controller not initialized.';
 const String METHOD_CHANNEL_NAME = 'MethodChannel';
