@@ -373,8 +373,8 @@ ModuleListenerContainer* ExecutingContext::ModuleListeners() {
   return &module_listener_container_;
 }
 
-ModuleCallbackCoordinator* ExecutingContext::ModuleCallbacks() {
-  return &module_callbacks_;
+ModuleContextCoordinator* ExecutingContext::ModuleContexts() {
+  return &module_contexts_;
 }
 
 void ExecutingContext::SetMutationScope(MemberMutationScope& mutation_scope) {

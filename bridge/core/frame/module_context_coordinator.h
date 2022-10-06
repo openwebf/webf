@@ -14,16 +14,14 @@
 namespace webf {
 
 class ModuleListener;
+class ModuleContext;
 
-class ModuleCallbackCoordinator final {
+class ModuleContextCoordinator final {
  public:
-  ModuleCallbackCoordinator();
-
-  void AddModuleCallbacks(std::shared_ptr<ModuleCallback>&& callback);
-  void RemoveModuleCallbacks(std::shared_ptr<ModuleCallback> callback);
+  void AddModuleContext(std::shared_ptr<ModuleContext> module_context);
 
  private:
-  std::forward_list<std::shared_ptr<ModuleCallback>> listeners_;
+  std::forward_list<std::shared_ptr<ModuleContext>> module_contexts_;
   friend ModuleListener;
 };
 

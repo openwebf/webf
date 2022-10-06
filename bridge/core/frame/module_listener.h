@@ -9,7 +9,7 @@
 
 namespace webf {
 
-class ModuleCallbackCoordinator;
+class ModuleContextCoordinator;
 class ModuleListenerContainer;
 
 // ModuleListener is an persistent callback function. Registered from user with `webf.addModuleListener` method.
@@ -26,7 +26,7 @@ class ModuleListener {
   std::shared_ptr<QJSFunction> function_{nullptr};
 
   friend ModuleListenerContainer;
-  friend ModuleCallbackCoordinator;
+  friend ModuleContextCoordinator;
 };
 
 }  // namespace webf
