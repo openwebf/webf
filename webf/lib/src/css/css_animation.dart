@@ -226,10 +226,9 @@ mixin CSSAnimationMixin on RenderStyle {
           };
 
           animation.oncancel = (AnimationPlaybackEvent event) {
-            // target.dispatchEvent(
-            //     AnimationEvent(EVENT_ANIMATION_END, animationName: name));
-            // _runningAnimation.remove(name);
-            // animation?.dispose();
+            target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_END, animationName: name));
+            _runningAnimation.remove(name);
+            animation?.dispose();
           };
 
           animation.onfinish = (AnimationPlaybackEvent event) {
@@ -238,7 +237,7 @@ mixin CSSAnimationMixin on RenderStyle {
             }
 
             target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_END, animationName: name));
-            // animation.dispose();
+            animation.dispose();
           };
 
           _runningAnimation[name] = animation;
