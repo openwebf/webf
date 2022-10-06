@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
+import 'cookie_jar.dart';
 import 'http_cache.dart';
 import 'http_cache_object.dart';
 import 'http_client.dart';
@@ -138,6 +139,10 @@ class ProxyHttpClientRequest extends HttpClientRequest {
       if (clientInterceptor != null) {
         request = await _beforeRequest(clientInterceptor, request) ?? request;
       }
+      List<Cookie> cookies = await CookieJar.loadForRequest(_uri);
+      if (cookies.isNotEmpty) {
+        request.cookies.addAll(cookies);
+      }
 
       // Step 2: Handle cache-control and expires,
       //        if hit, no need to open request.
@@ -205,6 +210,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
           response = interceptorResponse;
         }
       }
+      await CookieJar.saveFromResponse(uri, response.cookies);
 
       // Check match cache, and then return cache.
       if (hitInterceptorResponse || hitNegotiateCache) {
