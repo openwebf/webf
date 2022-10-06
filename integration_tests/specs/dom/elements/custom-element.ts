@@ -242,11 +242,11 @@ describe('custom widget element', () => {
   });
 
   it('flutter widgets should works when append widget element inside of widget element m', async () => {
-    const form = document.createElement('flutter-form');
+    const form = document.createElement('form');
     form.style.height = '300px';
     for(let i = 0; i < 2; i ++) {
       let div = document.createElement('div');
-      let input = document.createElement('flutter-input') as HTMLInputElement;
+      let input = document.createElement('input');
       input.value = i.toString();
       div.appendChild(input);
       form.appendChild(div);
@@ -258,13 +258,13 @@ describe('custom widget element', () => {
   });
 
   it('flutter widgets should inserted at correct location with other DOM elements', async () => {
-    const form = document.createElement('flutter-form');
+    const form = document.createElement('form');
     form.style.height = '300px';
     form.appendChild(document.createTextNode('BEFORE CONTAINER.'));
     for(let i = 0; i < 2; i ++) {
       let div = document.createElement('div');
       div.appendChild(document.createTextNode('BEFORE INPUT.'));
-      const input = document.createElement('flutter-input') as HTMLInputElement;
+      const input = document.createElement('input') as HTMLInputElement;
       input.value = i.toString();
       div.appendChild(input);
       div.appendChild(document.createTextNode('AFTER INPUT.'));
@@ -429,8 +429,9 @@ describe('custom html element', () => {
     expect(clone._self).toBe(sampleElement);
   });
 
-  it('should work with flutter-checkbox', async (done) => {
-    let checkbox = document.createElement('flutter-checkbox');
+  it('should work with checkbox', async (done) => {
+    let checkbox = document.createElement('input');
+    checkbox.setAttribute('type', 'checkbox');
     document.body.appendChild(checkbox);
     await snapshot();
 
