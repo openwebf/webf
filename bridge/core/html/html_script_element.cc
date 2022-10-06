@@ -4,6 +4,7 @@
  */
 #include "html_script_element.h"
 #include "html_names.h"
+#include "qjs_html_script_element.h"
 #include "script_type_names.h"
 
 namespace webf {
@@ -16,6 +17,10 @@ bool HTMLScriptElement::supports(const AtomicString& type, ExceptionState& excep
     return true;
   }
   return false;
+}
+
+bool HTMLScriptElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSHTMLScriptElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
 }
 
 }  // namespace webf

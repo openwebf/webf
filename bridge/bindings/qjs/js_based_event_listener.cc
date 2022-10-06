@@ -14,7 +14,7 @@ void JSBasedEventListener::Invoke(ExecutingContext* context, Event* event, Excep
   assert(context);
   assert(event);
 
-  if (!context->IsValid())
+  if (!context->IsContextValid())
     return;
   // Step 10: Call a listener with event's currentTarget as receiver and event
   // and handle errors if thrown.

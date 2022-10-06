@@ -59,9 +59,14 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 endif()
 
 if (ENABLE_ASAN)
-  add_compile_options(-fsanitize=address -fno-omit-frame-pointer -O1)
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
   add_link_options(-fsanitize=address -fno-omit-frame-pointer)
 endif ()
+
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  # Avoid quickjs stackoverflow.
+  add_compile_options(-O1)
+endif()
 
 if (DEFINED PLATFORM)
   if (${PLATFORM} STREQUAL "OS")
@@ -194,6 +199,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/executing_context.cc
     core/script_state.cc
     core/page.cc
+    core/dart_methods.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc
@@ -270,6 +276,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_anchor_element.cc
     core/html/html_image_element.cc
     core/html/html_script_element.cc
+    core/html/html_link_element.cc
     core/html/html_unknown_element.cc
     core/html/image.cc
     core/html/canvas/html_canvas_element.cc
@@ -362,6 +369,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
     out/qjs_html_canvas_element.cc
+    out/qjs_html_link_element.cc
     out/qjs_image.cc
     out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc
@@ -386,6 +394,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/html_element_factory.cc
     out/html_names.cc
     out/script_type_names.cc
+    out/defined_properties.cc
+    out/defined_properties_initializer.cc
     out/element_attribute_names.cc
     )
 

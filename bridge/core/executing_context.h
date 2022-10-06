@@ -41,6 +41,7 @@ class Window;
 class Performance;
 class MemberMutationScope;
 class ErrorEvent;
+class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
 
@@ -52,7 +53,11 @@ bool isContextValid(int32_t contextId);
 class ExecutingContext {
  public:
   ExecutingContext() = delete;
-  ExecutingContext(int32_t contextId, const JSExceptionHandler& handler, void* owner);
+  ExecutingContext(int32_t contextId,
+                   JSExceptionHandler handler,
+                   void* owner,
+                   const uint64_t* dart_methods,
+                   int32_t dart_methods_length);
   ~ExecutingContext();
 
   static ExecutingContext* From(JSContext* ctx);
@@ -61,7 +66,8 @@ class ExecutingContext {
   bool EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine);
   bool EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine);
   bool EvaluateByteCode(uint8_t* bytes, size_t byteLength);
-  bool IsValid() const;
+  bool IsContextValid() const;
+  bool IsCtxValid() const;
   JSValue Global();
   JSContext* ctx();
   FORCE_INLINE int32_t contextId() const { return context_id_; };
@@ -69,6 +75,7 @@ class ExecutingContext {
   void* owner();
   bool HandleException(JSValue* exc);
   bool HandleException(ScriptValue* exc);
+  bool HandleException(ExceptionState& exception_state);
   void ReportError(JSValueConst error);
   void DrainPendingPromiseJobs();
   void DefineGlobalProperty(const char* prop, JSValueConst value);
@@ -105,7 +112,7 @@ class ExecutingContext {
   FORCE_INLINE Window* window() const { return window_; }
   FORCE_INLINE Performance* performance() const { return performance_; }
   FORCE_INLINE UICommandBuffer* uiCommandBuffer() { return &ui_command_buffer_; };
-  FORCE_INLINE std::unique_ptr<DartMethodPointer>& dartMethodPtr() { return dart_method_ptr_; }
+  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() { return dart_method_ptr_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.
@@ -136,14 +143,25 @@ class ExecutingContext {
                                    JSValueConst reason,
                                    JS_BOOL is_handled,
                                    void* opaque);
-
-  // Dart methods ptr should keep alive when ExecutingContext is disposing.
-  std::unique_ptr<DartMethodPointer> dart_method_ptr_ = std::make_unique<DartMethodPointer>();
+  // Warning: Don't change the orders of members in ExecutingContext if you really know what are you doing.
   // From C++ standard, https://isocpp.org/wiki/faq/dtors#order-dtors-for-members
   // Members first initialized and destructed at the last.
-  // Always keep ScriptState at the top of all stack allocated members to make sure it destructed in the last.
+  // Dart methods ptr should keep alive when ExecutingContext is disposing.
+  const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
+  // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer
+  // release.
+  UICommandBuffer ui_command_buffer_{this};
+  // Keep uiCommandBuffer above ScriptState to make sure we can collect all disposedEventTarget command when free
+  // JSContext. When call JSFreeContext(ctx) inside ScriptState, all eventTargets will be finalized and UICommandBuffer
+  // will be fill up to UICommand::disposeEventTarget commands.
+  // ----------------------------------------------------------------------
+  // All members above ScriptState will be freed after ScriptState freed
+  // ----------------------------------------------------------------------
   ScriptState script_state_;
-
+  // ----------------------------------------------------------------------
+  // All members below will be free before ScriptState freed.
+  // ----------------------------------------------------------------------
+  bool is_context_valid_{false};
   int32_t context_id_;
   JSExceptionHandler handler_;
   void* owner_;
@@ -156,7 +174,6 @@ class ExecutingContext {
   ModuleCallbackCoordinator module_callbacks_;
   ExecutionContextData context_data_{this};
   bool in_dispatch_error_event_{false};
-  UICommandBuffer ui_command_buffer_{this};
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::vector<ScriptWrappable*> active_wrappers_;
@@ -179,8 +196,6 @@ class ObjectProperty {
  private:
   JSValue m_value{JS_NULL};
 };
-
-std::unique_ptr<ExecutingContext> createJSContext(int32_t contextId, const JSExceptionHandler& handler, void* owner);
 
 }  // namespace webf
 

@@ -5,6 +5,7 @@
 #include "html_template_element.h"
 #include "core/dom/document_fragment.h"
 #include "html_names.h"
+#include "qjs_html_template_element.h"
 
 namespace webf {
 
@@ -19,6 +20,10 @@ DocumentFragment* HTMLTemplateElement::ContentInternal() const {
     content_ = DocumentFragment::Create(GetDocument());
 
   return content_.Get();
+}
+
+bool HTMLTemplateElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSHTMLTemplateElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
 }
 
 }  // namespace webf

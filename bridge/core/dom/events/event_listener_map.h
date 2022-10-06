@@ -44,7 +44,7 @@ class EventListenerMap final {
               size_t* index_of_removed_listener,
               RegisteredEventListener* registered_event_listener,
               uint32_t* listener_count);
-  EventListenerVector* Find(const AtomicString& event_type);
+  EventListenerVector* Find(const AtomicString& event_type) const;
 
   void Trace(GCVisitor* visitor) const;
 

@@ -494,6 +494,7 @@ class ImageElement extends Element {
       SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
         _dispatchLoadEvent();
       });
+      SchedulerBinding.instance.scheduleFrame();
     }
   }
 

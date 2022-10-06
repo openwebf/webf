@@ -1,7 +1,7 @@
 // https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element
 import {HTMLElement} from "../html_element";
 
-interface HTMLTextAreaElement extends HTMLElement {
+interface HTMLTextareaElement extends HTMLElement {
   defaultValue: DartImpl<string>;
   value: DartImpl<string>;
   cols: DartImpl<double>;

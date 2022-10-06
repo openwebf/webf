@@ -5,19 +5,20 @@
 #ifndef BRIDGE_MODULE_LISTENER_CONTAINER_H
 #define BRIDGE_MODULE_LISTENER_CONTAINER_H
 
-#include <forward_list>
+#include <unordered_map>
 #include "module_listener.h"
 
 namespace webf {
 
 class ModuleListenerContainer final {
  public:
-  void AddModuleListener(const std::shared_ptr<ModuleListener>& listener);
-
-  const std::forward_list<std::shared_ptr<ModuleListener>>& listeners() const;
+  void AddModuleListener(const AtomicString& name, const std::shared_ptr<ModuleListener>& listener);
+  void RemoveModuleListener(const AtomicString& name);
+  std::shared_ptr<ModuleListener> listener(const AtomicString& name);
+  void Clear();
 
  private:
-  std::forward_list<std::shared_ptr<ModuleListener>> listeners_;
+  std::unordered_map<AtomicString, std::shared_ptr<ModuleListener>, AtomicString::KeyHasher> listeners_;
   friend ModuleListener;
 };
 

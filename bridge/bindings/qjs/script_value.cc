@@ -147,7 +147,7 @@ AtomicString ScriptValue::ToString() const {
   return {ctx_, value_};
 }
 
-NativeValue ScriptValue::ToNative() const {
+NativeValue ScriptValue::ToNative(ExceptionState& exception_state) const {
   int8_t tag = JS_VALUE_GET_TAG(value_);
 
   switch (tag) {
@@ -175,7 +175,7 @@ NativeValue ScriptValue::ToNative() const {
             Converter<IDLSequence<IDLAny>>::FromValue(ctx_, value_, ASSERT_NO_EXCEPTION());
         auto* result = new NativeValue[values.size()];
         for (int i = 0; i < values.size(); i++) {
-          result[i] = values[i].ToNative();
+          result[i] = values[i].ToNative(exception_state);
         }
         return Native_NewList(values.size(), result);
       } else if (JS_IsObject(value_)) {
@@ -183,7 +183,7 @@ NativeValue ScriptValue::ToNative() const {
           auto* event_target = toScriptWrappable<EventTarget>(value_);
           return Native_NewPtr(JSPointerType::Others, event_target->bindingObject());
         }
-        return NativeValueConverter<NativeTypeJSON>::ToNativeValue(*this);
+        return NativeValueConverter<NativeTypeJSON>::ToNativeValue(*this, exception_state);
       }
     }
     default:

@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:convert';
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:typed_data';
 
@@ -78,47 +78,52 @@ void freeNativeString(Pointer<NativeString> pointer) {
 // 6. Call from C.
 
 // Register InvokeModule
-typedef NativeAsyncModuleCallback = Void Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<Utf8> errmsg, Pointer<NativeString> json);
-typedef DartAsyncModuleCallback = void Function(
-    Pointer<Void> callbackContext, int contextId, Pointer<Utf8> errmsg, Pointer<NativeString> json);
+typedef NativeAsyncModuleCallback = Pointer<NativeValue> Function(
+    Pointer<Void> callbackContext, Int32 contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
+typedef DartAsyncModuleCallback = Pointer<NativeValue> Function(
+    Pointer<Void> callbackContext, int contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
 
-typedef NativeInvokeModule = Pointer<NativeString> Function(
+typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<Void> callbackContext,
     Int32 contextId,
     Pointer<NativeString> module,
     Pointer<NativeString> method,
-    Pointer<NativeString> params,
+    Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>>);
 
-String invokeModule(Pointer<Void> callbackContext, int contextId, String moduleName, String method, String? params,
+dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String moduleName, String method, params,
     DartAsyncModuleCallback callback) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  String result = '';
+  dynamic result;
 
   try {
-    void invokeModuleCallback({String? error, data}) {
+    Future<dynamic> invokeModuleCallback({String? error, data}) {
+      Completer<dynamic> completer = Completer();
       // To make sure Promise then() and catch() executed before Promise callback called at JavaScript side.
       // We should make callback always async.
       Future.microtask(() {
+        Pointer<NativeValue> callbackResult = nullptr;
         if (error != null) {
           Pointer<Utf8> errmsgPtr = error.toNativeUtf8();
-          callback(callbackContext, contextId, errmsgPtr, nullptr);
+          callbackResult = callback(callbackContext, contextId, errmsgPtr, nullptr);
           malloc.free(errmsgPtr);
         } else {
-          Pointer<NativeString> dataPtr = stringToNativeString(jsonEncode(data));
-          callback(callbackContext, contextId, nullptr, dataPtr);
-          freeNativeString(dataPtr);
+          Pointer<NativeValue> dataPtr = malloc.allocate(sizeOf<NativeValue>());
+          toNativeValue(dataPtr, data);
+          callbackResult = callback(callbackContext, contextId, nullptr, dataPtr);
+          malloc.free(dataPtr);
         }
-      });
-    }
+        if (isEnabledLog) {
+          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: ${fromNativeValue(callbackResult)}');
+        }
 
-    if (isEnabledLog) {
-      print('Invoke module name: $moduleName method: $method, params: ${(params != null && params != '""') ? jsonDecode(params) : null}');
+        completer.complete(fromNativeValue(callbackResult));
+      });
+      return completer.future;
     }
 
     result = controller.module.moduleManager.invokeModule(
-        moduleName, method, (params != null && params != '""') ? jsonDecode(params) : null, invokeModuleCallback);
+        moduleName, method, params, invokeModuleCallback);
   } catch (e, stack) {
     if (isEnabledLog) {
       print('Invoke module failed: $e\n$stack');
@@ -127,19 +132,25 @@ String invokeModule(Pointer<Void> callbackContext, int contextId, String moduleN
     callback(callbackContext, contextId, error.toNativeUtf8(), nullptr);
   }
 
+  if (isEnabledLog) {
+    print('Invoke module name: $moduleName method: $method, params: $params return: $result');
+  }
+
   return result;
 }
 
-Pointer<NativeString> _invokeModule(
+Pointer<NativeValue> _invokeModule(
     Pointer<Void> callbackContext,
     int contextId,
     Pointer<NativeString> module,
     Pointer<NativeString> method,
-    Pointer<NativeString> params,
+    Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>> callback) {
-  String result = invokeModule(callbackContext, contextId, nativeStringToString(module), nativeStringToString(method),
-      params == nullptr ? null : nativeStringToString(params), callback.asFunction());
-  return stringToNativeString(result);
+  dynamic result = invokeModule(callbackContext, contextId, nativeStringToString(module), nativeStringToString(method),
+      fromNativeValue(params), callback.asFunction());
+  Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
+  toNativeValue(returnValue, result);
+  return returnValue;
 }
 
 final Pointer<NativeFunction<NativeInvokeModule>> _nativeInvokeModule = Pointer.fromFunction(_invokeModule);
@@ -392,15 +403,6 @@ final List<int> _dartNativeMethods = [
   _nativeOnJsLog.address,
 ];
 
-typedef NativeRegisterDartMethods = Void Function(Int32 contextId, Pointer<Uint64> methodBytes, Int32 length);
-typedef DartRegisterDartMethods = void Function(int contextId, Pointer<Uint64> methodBytes, int length);
-
-final DartRegisterDartMethods _registerDartMethods =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterDartMethods>>('registerDartMethods').asFunction();
-
-void registerDartMethodsToCpp(int contextId) {
-  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * _dartNativeMethods.length);
-  Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
-  nativeMethodList.setAll(0, _dartNativeMethods);
-  _registerDartMethods(contextId, bytes, _dartNativeMethods.length);
+List<int> makeDartMethodsData() {
+  return _dartNativeMethods;
 }

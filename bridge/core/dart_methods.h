@@ -14,21 +14,26 @@
 #include "webf_bridge.h"
 
 #include "foundation/native_string.h"
+#include "foundation/native_value.h"
+
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 
 namespace webf {
 
 using AsyncCallback = void (*)(void* callbackContext, int32_t contextId, const char* errmsg);
 using AsyncRAFCallback = void (*)(void* callbackContext, int32_t contextId, double result, const char* errmsg);
-using AsyncModuleCallback = void (*)(void* callbackContext, int32_t contextId, const char* errmsg, NativeString* json);
+using AsyncModuleCallback = NativeValue* (*)(void* callbackContext,
+                                             int32_t contextId,
+                                             const char* errmsg,
+                                             NativeValue* value);
 using AsyncBlobCallback =
     void (*)(void* callbackContext, int32_t contextId, const char* error, uint8_t* bytes, int32_t length);
-typedef NativeString* (*InvokeModule)(void* callbackContext,
-                                      int32_t contextId,
-                                      NativeString* moduleName,
-                                      NativeString* method,
-                                      NativeString* params,
-                                      AsyncModuleCallback callback);
+typedef NativeValue* (*InvokeModule)(void* callbackContext,
+                                     int32_t contextId,
+                                     NativeString* moduleName,
+                                     NativeString* method,
+                                     NativeValue* params,
+                                     AsyncModuleCallback callback);
 typedef void (*RequestBatchUpdate)(int32_t contextId);
 typedef void (*ReloadApp)(int32_t contextId);
 typedef int32_t (*SetTimeout)(void* callbackContext, int32_t contextId, AsyncCallback callback, int32_t timeout);
@@ -72,7 +77,9 @@ using SimulatePointer = void (*)(MousePointer*, int32_t length, int32_t pointer)
 using SimulateInputText = void (*)(NativeString* nativeString);
 
 struct DartMethodPointer {
-  DartMethodPointer() = default;
+  DartMethodPointer() = delete;
+  explicit DartMethodPointer(const uint64_t* dart_methods, int32_t dartMethodsLength);
+
   InvokeModule invokeModule{nullptr};
   RequestBatchUpdate requestBatchUpdate{nullptr};
   ReloadApp reloadApp{nullptr};

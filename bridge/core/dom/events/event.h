@@ -55,10 +55,11 @@ struct NativeEvent {
 struct RawEvent : public DartReadable {
   uint64_t* bytes;
   int64_t length;
+  int8_t is_custom_event;
 };
 
 template <typename T>
-T* toNativeEvent(RawEvent* raw_event) {
+inline T* toNativeEvent(RawEvent* raw_event) {
   // NativeEvent members are memory aligned corresponding to NativeEvent.
   // So we can reinterpret_cast raw bytes pointer to NativeEvent type directly.
   return reinterpret_cast<T*>(raw_event->bytes);

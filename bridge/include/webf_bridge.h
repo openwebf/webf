@@ -12,6 +12,7 @@
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 
 typedef struct NativeString NativeString;
+typedef struct NativeValue NativeValue;
 typedef struct NativeScreen NativeScreen;
 typedef struct NativeByteCode NativeByteCode;
 
@@ -28,11 +29,11 @@ typedef void (*Task)(void*);
 typedef void (*ConsoleMessageHandler)(void* ctx, const std::string& message, int logLevel);
 
 WEBF_EXPORT_C
-void initJSPagePool(int poolSize);
+void initJSPagePool(int poolSize, uint64_t* dart_methods, int32_t dart_methods_len);
 WEBF_EXPORT_C
 void disposePage(int32_t contextId);
 WEBF_EXPORT_C
-int32_t allocateNewPage(int32_t targetContextId);
+int32_t allocateNewPage(int32_t targetContextId, uint64_t* dart_methods, int32_t dart_methods_len);
 WEBF_EXPORT_C
 void* getPage(int32_t contextId);
 bool checkPage(int32_t contextId);
@@ -44,15 +45,13 @@ void evaluateQuickjsByteCode(int32_t contextId, uint8_t* bytes, int32_t byteLen)
 WEBF_EXPORT_C
 void parseHTML(int32_t contextId, const char* code, int32_t length);
 WEBF_EXPORT_C
-void reloadJsContext(int32_t contextId);
+void reloadJsContext(int32_t contextId, uint64_t* dart_methods, int32_t dart_methods_len);
 WEBF_EXPORT_C
-void invokeModuleEvent(int32_t contextId,
-                       NativeString* module,
-                       const char* eventType,
-                       void* event,
-                       NativeString* extra);
-WEBF_EXPORT_C
-void registerDartMethods(int32_t contextId, uint64_t* methodBytes, int32_t length);
+NativeValue* invokeModuleEvent(int32_t contextId,
+                               NativeString* module,
+                               const char* eventType,
+                               void* event,
+                               NativeValue* extra);
 WEBF_EXPORT_C
 WebFInfo* getWebFInfo();
 WEBF_EXPORT_C

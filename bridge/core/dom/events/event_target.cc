@@ -6,10 +6,10 @@
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
-#include "custom_event.h"
 #include "event_factory.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
+#include "qjs_event_target.h"
 
 #define PROPAGATION_STOPPED 1
 #define PROPAGATION_CONTINUE 0
@@ -55,7 +55,8 @@ EventTarget::~EventTarget() {
   }
 #endif
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget, nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget,
+                                                       bindingObject());
 }
 
 EventTarget::EventTarget(ExecutingContext* context)
@@ -74,6 +75,9 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
                                    const std::shared_ptr<AddEventListenerOptions>& options,
                                    ExceptionState& exception_state) {
+  if (options == nullptr) {
+    return AddEventListenerInternal(event_type, event_listener, AddEventListenerOptions::Create());
+  }
   return AddEventListenerInternal(event_type, event_listener, options);
 }
 
@@ -192,6 +196,10 @@ bool EventTarget::IsEventTarget() const {
   return true;
 }
 
+bool EventTarget::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return QJSEventTarget::IsAttributeDefinedInternal(key);
+}
+
 void EventTarget::Trace(GCVisitor* visitor) const {
   ScriptWrappable::Trace(visitor);
   BindingObject::Trace(visitor);
@@ -285,19 +293,11 @@ NativeValue EventTarget::HandleCallFromDartSide(const NativeValue* native_method
 }
 
 NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv) {
-  assert(argc == 3);
+  assert(argc == 2);
   AtomicString event_type = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), argv[0]);
   RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
-  bool is_custom_event = NativeValueConverter<NativeTypeBool>::FromNativeValue(argv[2]);
 
-  Event* event;
-  if (is_custom_event) {
-    event = MakeGarbageCollected<CustomEvent>(GetExecutingContext(), event_type,
-                                              toNativeEvent<NativeCustomEvent>(raw_event));
-  } else {
-    event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
-  }
-
+  Event* event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
   ExceptionState exception_state;
   event->SetTrusted(false);
   event->SetEventPhase(Event::kAtTarget);

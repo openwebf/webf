@@ -150,6 +150,8 @@
     "getElementsByName",
     "getElementsByTagName",
     "id",
-    "className"
+    "className",
+    "cookie",
+    "class"
   ]
 }

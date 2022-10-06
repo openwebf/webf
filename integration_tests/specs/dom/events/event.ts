@@ -471,4 +471,23 @@ describe('Event', () => {
 
       expect(ret).toEqual('1');
     });
+  it('should work with undefined addEventListener options', () => {
+    var el = createElement('div', {
+      style: {
+        width: '100px',
+        height: '100px',
+        background: 'red'
+      }
+    });
+    let ret = '';
+    function fn1() {
+      ret += '1';
+    }
+    el.addEventListener('click', fn1, undefined);
+    el.addEventListener('scroll', fn1, undefined);
+
+    el.click();
+
+    expect(ret).toEqual('1');
+  });
 });

@@ -67,7 +67,7 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     return true;
   }
 
-  NativeValue result = SetBindingProperty(key, value.ToNative(), exception_state);
+  NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
   return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
 }
 
@@ -87,6 +87,10 @@ void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneC
   if (other_widget_element) {
     unimplemented_properties_ = other_widget_element->unimplemented_properties_;
   }
+}
+
+bool WidgetElement::IsAttributeDefinedInternal(const AtomicString& key) const {
+  return true;
 }
 
 }  // namespace webf

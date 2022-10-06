@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include "event_type_names.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "core/dom/events/custom_event.h"
 
 <% _.forEach(data, (item, index) => { %>
 <% if (_.isString(item)) { %>
@@ -28,7 +29,7 @@ using EventConstructorFunction = Event* (*)(ExecutingContext* context, const Ato
 
 using EventMap = std::unordered_map<AtomicString, EventConstructorFunction, AtomicString::KeyHasher>;
 
-static EventMap* g_event_constructors = nullptr;
+static thread_local EventMap* g_event_constructors = nullptr;
 
 struct CreateEventFunctionMapData {
   const AtomicString& tag;
@@ -84,6 +85,11 @@ static void CreateEventFunctionMap() {
 Event* EventFactory::Create(ExecutingContext* context, const AtomicString& type, RawEvent* raw_event) {
   if (!g_event_constructors)
     CreateEventFunctionMap();
+
+  if (raw_event != nullptr && raw_event->is_custom_event) {
+    return MakeGarbageCollected<CustomEvent>(context, type, toNativeEvent<NativeCustomEvent>(raw_event));
+  }
+
   auto it = g_event_constructors->find(type);
   if (it == g_event_constructors->end()) {
     if (raw_event == nullptr) {

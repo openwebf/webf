@@ -29,6 +29,8 @@ class RawEvent extends Struct {
   external Pointer<Uint64> bytes;
   @Int64()
   external int length;
+  @Int8()
+  external int is_custom_event;
 }
 
 class EventDispatchResult extends Struct {
@@ -97,10 +99,18 @@ typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingOb
     Pointer<NativeValue> return_value, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv);
 
 class NativeBindingObject extends Struct {
+  @Bool()
+  external bool disposed;
   external Pointer<Void> instance;
   external Pointer<NativeFunction<InvokeBindingMethodsFromDart>> invokeBindingMethodFromDart;
   // Shared method called by JS side.
   external Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> invokeBindingMethodFromNative;
+}
+
+Pointer<NativeBindingObject> allocateNewBindingObject() {
+  Pointer<NativeBindingObject> pointer = malloc.allocate(sizeOf<NativeBindingObject>());
+  pointer.ref.disposed = false;
+  return pointer;
 }
 
 class NativePerformanceEntry extends Struct {

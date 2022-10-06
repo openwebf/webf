@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
+<meta charset="utf-8"  >
 <title>CSS Animations Test: animation-duration - 0s</title>
 <link rel="author" title="Nokia Inc." href="http://www.nokia.com">
 <link rel="author" title="Intel" href="http://www.intel.com">
@@ -36,12 +36,13 @@
   </p>
   <div>Filler Text</div>
   <script>
+    await sleep(0.1);
     var div = document.getElementsByTagName("div");
     div[0].style.animationDuration = "0s";
-    await sleep(1);
+    expect(div[0].offsetLeft).toBe(0);
     div[0].style.animationDuration = "2s";
     await sleep(1);
-    await snapshotAction();
+    expect(div[0].offsetLeft > 0 && div[0].offsetLeft < 75).toBe(true);
   </script>
 </body>
 

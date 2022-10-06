@@ -132,6 +132,9 @@ class EventTarget : public ScriptWrappable, public BindingObject {
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
 
+  // Check the attribute is defined in native.
+  virtual bool IsAttributeDefinedInternal(const AtomicString& key) const;
+
   void Trace(GCVisitor* visitor) const override;
 
  protected:

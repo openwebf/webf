@@ -31,7 +31,7 @@ using HTMLConstructorFunction = HTMLElement* (*)(Document&);
 
 using HTMLFunctionMap = std::unordered_map<AtomicString, HTMLConstructorFunction, AtomicString::KeyHasher>;
 
-static HTMLFunctionMap* g_html_constructors = nullptr;
+static thread_local HTMLFunctionMap* g_html_constructors = nullptr;
 
 struct CreateHTMLFunctionMapData {
   const AtomicString& tag;

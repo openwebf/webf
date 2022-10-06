@@ -7,7 +7,6 @@
 #define BRIDGE_FOUNDATION_UI_COMMAND_BUFFER_H_
 
 #include <cinttypes>
-#include <vector>
 #include "bindings/qjs/native_string_utils.h"
 #include "native_value.h"
 
@@ -34,7 +33,7 @@ enum class UICommand {
   kCreatePerformance,
 };
 
-#define MAXIMUM_UI_COMMAND_SIZE 2056
+#define MAXIMUM_UI_COMMAND_SIZE 2048
 
 struct UICommandItem {
   UICommandItem() = default;
@@ -54,8 +53,8 @@ struct UICommandItem {
         nativePtr(reinterpret_cast<int64_t>(nativePtr)){};
   UICommandItem(int32_t id, int32_t type, void* nativePtr)
       : type(type), id(id), nativePtr(reinterpret_cast<int64_t>(nativePtr)){};
-  int32_t type;
-  int32_t id;
+  int32_t type{0};
+  int32_t id{0};
   int32_t args_01_length{0};
   int32_t args_02_length{0};
   int64_t string_01{0};
@@ -63,10 +62,13 @@ struct UICommandItem {
   int64_t nativePtr{0};
 };
 
+bool isDartHotRestart();
+
 class UICommandBuffer {
  public:
   UICommandBuffer() = delete;
   explicit UICommandBuffer(ExecutingContext* context);
+  ~UICommandBuffer();
   void addCommand(int32_t id, UICommand type, void* nativePtr);
   void addCommand(int32_t id,
                   UICommand type,
@@ -85,7 +87,7 @@ class UICommandBuffer {
   ExecutingContext* context_{nullptr};
   UICommandItem buffer_[MAXIMUM_UI_COMMAND_SIZE];
   bool update_batched_{false};
-  size_t size_{0};
+  int64_t size_{0};
 };
 
 }  // namespace webf

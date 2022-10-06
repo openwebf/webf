@@ -90,7 +90,7 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
           AnonymousNativeFunction? fn = bindingObject.getAnonymousNativeFunctionFromId(id);
           if (fn == null) {
             print('WebF warning: can not find registered anonymous native function for id: $id bindingObject: $nativeBindingObject');
-            toNativeValue(bindingObject, returnValue, null);
+            toNativeValue(returnValue, null, bindingObject);
             return;
           }
           try {
@@ -108,7 +108,7 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
           AsyncAnonymousNativeFunction? fn = bindingObject.getAsyncAnonymousNativeFunctionFromId(id);
           if (fn == null) {
             print('WebF warning: can not find registered anonymous native async function for id: $id bindingObject: $nativeBindingObject');
-            toNativeValue(bindingObject, returnValue, null);
+            toNativeValue(returnValue, null, bindingObject);
             return;
           }
           int contextId = values[1];
@@ -128,7 +128,7 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
               print('AsyncAnonymousFunction call resolved callback: $id arguments:[$result]');
             }
             Pointer<NativeValue> nativeValue = malloc.allocate(sizeOf<NativeValue>());
-            toNativeValue(bindingObject, nativeValue, result);
+            toNativeValue(nativeValue, result, bindingObject);
             callback(callbackContext, nativeValue, contextId, nullptr);
           }).catchError((e, stack) {
             String errorMessage = '$e\n$stack';
@@ -150,7 +150,7 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
   } catch (e, stack) {
     print('$e\n$stack');
   } finally {
-    toNativeValue(bindingObject, returnValue, result);
+    toNativeValue(returnValue, result, bindingObject);
   }
 }
 
@@ -158,21 +158,20 @@ void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindi
 void _dispatchEventToNative(Event event) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
-  if (contextId != null && pointer != null) {
+  if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr) {
     BindingObject bindingObject = BindingBridge.getBindingObject(pointer);
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
     Pointer<Void> rawEvent = event.toRaw().cast<Void>();
-    bool isCustomEvent = event is CustomEvent;
-    List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCustomEvent ? true : false];
+    List<dynamic> dispatchEventArguments = [event.type, rawEvent];
 
     if (isEnabledLog) {
       print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
     }
 
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
-    toNativeValue(bindingObject, method, 'dispatchEvent');
+    toNativeValue(method, 'dispatchEvent');
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(bindingObject, dispatchEventArguments);
 
     Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
@@ -209,7 +208,7 @@ abstract class BindingBridge {
 
   static void _bindObject(BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
-    if (nativeBindingObject != null) {
+    if (nativeBindingObject != null && !nativeBindingObject.ref.disposed) {
       _nativeObjects[nativeBindingObject.address] = object;
       nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
     }

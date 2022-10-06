@@ -7,6 +7,7 @@
 #define BRIDGE_TEST_WEBF_TEST_ENV_H_
 
 #include <memory>
+#include "bindings/qjs/cppgc/mutation_scope.h"
 #include "core/dart_methods.h"
 #include "core/executing_context.h"
 #include "core/page.h"
@@ -28,7 +29,7 @@ std::unique_ptr<WebFPage> TEST_init(OnJSError onJsError);
 std::unique_ptr<WebFPage> TEST_init();
 std::unique_ptr<WebFPage> TEST_allocateNewPage(OnJSError onJsError);
 void TEST_runLoop(ExecutingContext* context);
-void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError);
+std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError);
 void TEST_mockTestEnvDartMethods(int32_t contextId, OnJSError onJSError);
 void TEST_registerEventTargetDisposedCallback(int32_t context_unique_id, TEST_OnEventTargetDisposed callback);
 std::shared_ptr<UnitTestEnv> TEST_getEnv(int32_t context_unique_id);

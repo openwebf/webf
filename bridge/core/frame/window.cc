@@ -8,6 +8,7 @@
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "core/dom/document.h"
 #include "core/events/message_event.h"
+#include "core/executing_context.h"
 #include "event_type_names.h"
 #include "foundation/native_value_converter.h"
 

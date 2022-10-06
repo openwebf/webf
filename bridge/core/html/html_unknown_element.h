@@ -15,6 +15,8 @@ class HTMLUnknownElement : public HTMLElement {
  public:
   explicit HTMLUnknownElement(const AtomicString&, Document& document);
 
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
+
  private:
 };
 

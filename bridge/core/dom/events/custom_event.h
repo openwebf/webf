@@ -12,7 +12,7 @@ namespace webf {
 
 struct NativeCustomEvent {
   NativeEvent native_event;
-  const char* detail{nullptr};
+  NativeValue* detail{nullptr};
 };
 
 class CustomEvent final : public Event {

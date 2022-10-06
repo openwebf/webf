@@ -25,7 +25,11 @@ void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_ob
 
 BindingObject::BindingObject(ExecutingContext* context) : context_(context) {}
 BindingObject::~BindingObject() {
-  delete binding_object_;
+  // Set below properties to nullptr to avoid dart callback to native.
+  binding_object_->disposed_ = true;
+  binding_object_->binding_target_ = nullptr;
+  binding_object_->invoke_binding_methods_from_dart = nullptr;
+  binding_object_->invoke_bindings_methods_from_native = nullptr;
 }
 
 BindingObject::BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object)
@@ -101,20 +105,24 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
 
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 1);
-
   arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(id));
-  for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative());
-  }
 
   ExceptionState exception_state;
+
+  for (int i = 0; i < argc; i++) {
+    arguments.emplace_back(argv[i].ToNative(exception_state));
+  }
+
+  if (exception_state.HasException()) {
+    event_target->GetExecutingContext()->HandleException(exception_state);
+    return ScriptValue::Empty(ctx);
+  }
+
   NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall,
                                                          arguments.size(), arguments.data(), exception_state);
 
   if (exception_state.HasException()) {
-    JSValue error = JS_GetException(ctx);
-    event_target->GetExecutingContext()->ReportError(error);
-    JS_FreeValue(ctx, error);
+    event_target->GetExecutingContext()->HandleException(exception_state);
     return ScriptValue::Empty(ctx);
   }
   return ScriptValue(ctx, result);
@@ -125,7 +133,7 @@ void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr,
                                                        int32_t contextId,
                                                        const char* errmsg) {
   auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
-  if (!promise_context->context->IsValid())
+  if (!promise_context->context->IsContextValid())
     return;
   if (promise_context->context->contextId() != contextId)
     return;
@@ -173,13 +181,20 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   arguments.emplace_back(NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
       reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDart)));
 
+  ExceptionState exception_state;
+
   for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative());
+    arguments.emplace_back(argv[i].ToNative(exception_state));
   }
 
-  ExceptionState exception_state;
   event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(),
                                     exception_state);
+
+  if (exception_state.HasException()) {
+    event_target->GetExecutingContext()->HandleException(exception_state);
+    return ScriptValue::Empty(ctx);
+  }
+
   return promise_resolver->Promise().ToValue();
 }
 

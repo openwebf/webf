@@ -8,6 +8,7 @@
 #include "core/dom/document.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_body_element.h"
+#include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
 #include "qjs_blob.h"
 #include "testframework.h"
@@ -195,8 +196,7 @@ static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 
   if (argc == 1) {
     std::string strHTML = AtomicString(ctx, argv[0]).ToStdString();
-    auto* body = context->document()->body();
-    HTMLParser::parseHTML(strHTML, body);
+    HTMLParser::parseHTML(strHTML, context->document()->documentElement());
   }
 
   return JS_NULL;
@@ -285,13 +285,13 @@ bool WebFTestContext::evaluateTestScripts(const uint16_t* code,
                                           size_t codeLength,
                                           const char* sourceURL,
                                           int startLine) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return false;
   return context_->EvaluateJavaScript(code, codeLength, sourceURL, startLine);
 }
 
 bool WebFTestContext::parseTestHTML(const uint16_t* code, size_t codeLength) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return false;
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), codeLength));
   return page_->parseHTML(utf8Code.c_str(), utf8Code.length());

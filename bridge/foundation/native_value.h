@@ -30,6 +30,7 @@ enum NativeTag {
 enum class JSPointerType { AsyncContextContext = 0, NativeFunctionContext = 1, Others = 2 };
 
 class ExecutingContext;
+class ExceptionState;
 class ScriptValue;
 
 // Exchange data struct between dart and C++
@@ -73,7 +74,7 @@ NativeValue Native_NewBool(bool value);
 NativeValue Native_NewInt64(int64_t value);
 NativeValue Native_NewList(uint32_t argc, NativeValue* argv);
 NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr);
-NativeValue Native_NewJSON(const ScriptValue& value);
+NativeValue Native_NewJSON(const ScriptValue& value, ExceptionState& exception_state);
 
 }  // namespace webf
 

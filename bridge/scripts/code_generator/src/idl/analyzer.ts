@@ -11,12 +11,17 @@ import {
   ParameterMode,
   PropsDeclaration,
 } from './declaration';
-import {generatorSource} from './generator';
 
-export function analyzer(blob: IDLBlob) {
+interface DefinedPropertyCollector {
+  properties: Set<string>;
+  files: Set<string>;
+  interfaces: Set<string>;
+}
+
+export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector) {
   let code = blob.raw;
   const sourceFile = ts.createSourceFile(blob.source, blob.raw, ScriptTarget.ES2020);
-  blob.objects = sourceFile.statements.map(statement => walkProgram(statement)).filter(o => {
+  blob.objects = sourceFile.statements.map(statement => walkProgram(blob, statement, definedPropertyCollector)).filter(o => {
     return o instanceof ClassObject || o instanceof FunctionObject;
   }) as (FunctionObject | ClassObject)[];
 }
@@ -151,7 +156,7 @@ function isParamsReadOnly(m: ts.PropertySignature): boolean {
   return m.modifiers.some(k => k.kind === ts.SyntaxKind.ReadonlyKeyword);
 }
 
-function walkProgram(statement: ts.Statement) {
+function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyCollector: DefinedPropertyCollector) {
   switch(statement.kind) {
     case ts.SyntaxKind.InterfaceDeclaration: {
       let interfaceName = getInterfaceName(statement) as string;
@@ -179,6 +184,11 @@ function walkProgram(statement: ts.Statement) {
         }
       }
 
+      if (obj.kind === ClassObjectKind.interface) {
+        definedPropertyCollector.interfaces.add('QJS' + interfaceName);
+        definedPropertyCollector.files.add(blob.filename);
+      }
+
       s.members.forEach(member => {
         switch(member.kind) {
           case ts.SyntaxKind.PropertySignature: {
@@ -186,6 +196,10 @@ function walkProgram(statement: ts.Statement) {
             let m = (member as ts.PropertySignature);
             prop.name = getPropName(m.name);
             prop.readonly = isParamsReadOnly(m);
+
+            if (obj.kind === ClassObjectKind.interface) {
+              definedPropertyCollector.properties.add(prop.name);
+            }
 
             let propKind = m.type;
             if (propKind) {

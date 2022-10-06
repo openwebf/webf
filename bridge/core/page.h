@@ -32,7 +32,10 @@ class WebFPage final {
   static webf::WebFPage** pageContextPool;
   static ConsoleMessageHandler consoleMessageHandler;
   WebFPage() = delete;
-  WebFPage(int32_t jsContext, const JSExceptionHandler& handler);
+  WebFPage(int32_t jsContext,
+           const JSExceptionHandler& handler,
+           const uint64_t* dart_methods,
+           int32_t dart_methods_length);
   ~WebFPage();
 
   // Bytecodes which registered by webf plugins.
@@ -46,12 +49,14 @@ class WebFPage final {
   uint8_t* dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength);
   void evaluateByteCode(uint8_t* bytes, size_t byteLength);
 
-  void registerDartMethods(uint64_t* methodBytes, int32_t length);
   std::thread::id currentThread() const;
 
   [[nodiscard]] ExecutingContext* GetExecutingContext() const { return context_; }
 
-  void invokeModuleEvent(const NativeString* moduleName, const char* eventType, void* event, NativeString* extra);
+  NativeValue* invokeModuleEvent(const NativeString* moduleName,
+                                 const char* eventType,
+                                 void* event,
+                                 NativeValue* extra);
   void reportError(const char* errmsg);
 
   int32_t contextId;

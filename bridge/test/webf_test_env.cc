@@ -11,6 +11,7 @@
 #include "core/frame/dom_timer.h"
 #include "core/page.h"
 #include "foundation/native_string.h"
+#include "foundation/native_value_converter.h"
 #include "webf_bridge_test.h"
 #include "webf_test_env.h"
 
@@ -61,12 +62,12 @@ static void unlink_callback(JSThreadState* ts, JSFrameCallback* th) {
   ts->os_frameCallbacks.erase(th->callbackId);
 }
 
-NativeString* TEST_invokeModule(void* callbackContext,
-                                int32_t contextId,
-                                NativeString* moduleName,
-                                NativeString* method,
-                                NativeString* params,
-                                AsyncModuleCallback callback) {
+NativeValue* TEST_invokeModule(void* callbackContext,
+                               int32_t contextId,
+                               NativeString* moduleName,
+                               NativeString* method,
+                               NativeString* params,
+                               AsyncModuleCallback callback) {
   std::string module = nativeStringToStdString(moduleName);
 
   if (module == "throwError") {
@@ -74,10 +75,14 @@ NativeString* TEST_invokeModule(void* callbackContext,
   }
 
   if (module == "MethodChannel") {
-    callback(callbackContext, contextId, nullptr, stringToNativeString("{\"result\": 1234}").release());
+    NativeValue data = Native_NewCString("{\"result\": 1234}");
+    callback(callbackContext, contextId, nullptr, &data);
   }
 
-  return stringToNativeString(module).release();
+  auto* result = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+  NativeValue tmp = Native_NewCString(module);
+  memcpy(result, &tmp, sizeof(NativeValue));
+  return result;
 };
 
 void TEST_requestBatchUpdate(int32_t contextId){};
@@ -174,7 +179,9 @@ void TEST_toBlob(void* ptr,
   blobCallback(ptr, contextId, nullptr, bytes, 5);
 }
 
-void TEST_flushUICommand() {}
+void TEST_flushUICommand(int32_t contextId) {
+  clearUICommandItems(contextId);
+}
 
 void TEST_onJsLog(int32_t contextId, int32_t level, const char*) {}
 
@@ -189,17 +196,16 @@ static int32_t inited{false};
 
 std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   uint32_t contextId;
+  auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   if (inited) {
-    contextId = allocateNewPage(-1);
+    contextId = allocateNewPage(-1, mockedDartMethods.data(), mockedDartMethods.size());
   } else {
     contextId = 0;
   }
-  std::call_once(testInitOnceFlag, []() {
-    initJSPagePool(1024 * 1024);
+  std::call_once(testInitOnceFlag, [&mockedDartMethods]() {
+    initJSPagePool(1024 * 1024, mockedDartMethods.data(), mockedDartMethods.size());
     inited = true;
   });
-
-  TEST_mockDartMethods(contextId, onJsError);
 
   initTestFramework(contextId);
   TEST_mockTestEnvDartMethods(contextId, onJsError);
@@ -216,9 +222,8 @@ std::unique_ptr<webf::WebFPage> TEST_init() {
 }
 
 std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
-  uint32_t newContextId = allocateNewPage(-1);
-
-  TEST_mockDartMethods(newContextId, onJsError);
+  auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
+  uint32_t newContextId = allocateNewPage(-1, mockedDartMethods.data(), mockedDartMethods.size());
 
   initTestFramework(newContextId);
   return std::unique_ptr<webf::WebFPage>(static_cast<webf::WebFPage*>(getPage(newContextId)));
@@ -297,7 +302,7 @@ void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 
 void TEST_simulateInputText(NativeString* nativeString) {}
 
-void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError) {
+std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{
       reinterpret_cast<uint64_t>(TEST_invokeModule),
       reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
@@ -319,7 +324,7 @@ void TEST_mockDartMethods(int32_t contextId, OnJSError onJSError) {
 
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJsLog));
-  registerDartMethods(contextId, mockMethods.data(), mockMethods.size());
+  return mockMethods;
 }
 
 void TEST_mockTestEnvDartMethods(int32_t contextId, OnJSError onJSError) {

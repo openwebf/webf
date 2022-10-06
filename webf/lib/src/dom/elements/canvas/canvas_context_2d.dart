@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:ffi' as ffi;
 
-import 'package:ffi/ffi.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
@@ -45,7 +44,7 @@ typedef CanvasAction = void Function(Canvas, Size);
 
 class CanvasRenderingContext2D extends BindingObject {
   CanvasRenderingContext2D(this.canvas)
-      : _pointer = malloc.allocate<NativeBindingObject>(ffi.sizeOf<NativeBindingObject>()),
+      : _pointer = allocateNewBindingObject(),
         super();
 
   final ffi.Pointer<NativeBindingObject> _pointer;

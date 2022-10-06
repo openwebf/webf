@@ -13,116 +13,139 @@ struct ModuleContext {
   std::shared_ptr<ModuleCallback> callback;
 };
 
-void handleInvokeModuleTransientCallback(void* ptr, int32_t contextId, const char* errmsg, NativeString* json) {
+NativeValue* handleInvokeModuleTransientCallback(void* ptr,
+                                                 int32_t contextId,
+                                                 const char* errmsg,
+                                                 NativeValue* extra_data) {
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
   ExecutingContext* context = moduleContext->context;
 
-  if (!context->IsValid())
-    return;
+  if (!context->IsContextValid())
+    return nullptr;
 
   if (moduleContext->callback == nullptr) {
     JSValue exception = JS_ThrowTypeError(moduleContext->context->ctx(),
                                           "Failed to execute '__webf_invoke_module__': callback is null.");
     context->HandleException(&exception);
-    return;
+    return nullptr;
   }
 
   JSContext* ctx = moduleContext->context->ctx();
+  ExceptionState exception_state;
 
+  NativeValue* return_value = nullptr;
   if (errmsg != nullptr) {
-    ScriptValue errorObject = ScriptValue::CreateErrorObject(ctx, errmsg);
-    ScriptValue arguments[] = {errorObject};
-    ScriptValue returnValue = moduleContext->callback->value()->Invoke(ctx, ScriptValue::Empty(ctx), 1, arguments);
-    if (returnValue.IsException()) {
-      context->HandleException(&returnValue);
+    ScriptValue error_object = ScriptValue::CreateErrorObject(ctx, errmsg);
+    ScriptValue arguments[] = {error_object};
+    ScriptValue result = moduleContext->callback->value()->Invoke(ctx, ScriptValue::Empty(ctx), 1, arguments);
+    if (result.IsException()) {
+      context->HandleException(&result);
     }
+    NativeValue native_result = result.ToNative(exception_state);
+    return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+    memcpy(return_value, &native_result, sizeof(NativeValue));
   } else {
-    std::u16string argumentString = std::u16string(reinterpret_cast<const char16_t*>(json->string()), json->length());
-    std::string utf8Arguments = toUTF8(argumentString);
-    ScriptValue jsonObject = ScriptValue::CreateJsonObject(ctx, utf8Arguments.c_str(), utf8Arguments.size());
-    ScriptValue arguments[] = {ScriptValue::Empty(ctx), jsonObject};
-    ScriptValue returnValue = moduleContext->callback->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
-    if (returnValue.IsException()) {
-      context->HandleException(&returnValue);
+    ScriptValue arguments[] = {ScriptValue::Empty(ctx), ScriptValue(ctx, *extra_data)};
+    ScriptValue result = moduleContext->callback->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
+    if (result.IsException()) {
+      context->HandleException(&result);
     }
+    NativeValue native_result = result.ToNative(exception_state);
+    return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+    memcpy(return_value, &native_result, sizeof(NativeValue));
   }
 
-  context->DrainPendingPromiseJobs();
+  if (exception_state.HasException()) {
+    context->HandleException(exception_state);
+    return nullptr;
+  }
+
   context->ModuleCallbacks()->RemoveModuleCallbacks(moduleContext->callback);
-
   delete moduleContext;
+
+  return return_value;
 }
 
-void handleInvokeModuleUnexpectedCallback(void* callbackContext,
-                                          int32_t contextId,
-                                          const char* errmsg,
-                                          NativeString* json) {
+NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,
+                                                  int32_t contextId,
+                                                  const char* errmsg,
+                                                  NativeValue* extra_data) {
   static_assert("Unexpected module callback, please check your invokeModule implementation on the dart side.");
+  return nullptr;
 }
 
-AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                   const AtomicString& moduleName,
-                                                   const AtomicString& method,
-                                                   ExceptionState& exception) {
+ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
+                                                  const AtomicString& module_name,
+                                                  const AtomicString& method,
+                                                  ExceptionState& exception) {
   ScriptValue empty = ScriptValue::Empty(context->ctx());
-  return __webf_invoke_module__(context, moduleName, method, empty, nullptr, exception);
+  return __webf_invoke_module__(context, module_name, method, empty, nullptr, exception);
 }
 
-AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                   const AtomicString& moduleName,
-                                                   const AtomicString& method,
-                                                   ScriptValue& paramsValue,
-                                                   ExceptionState& exception) {
-  return __webf_invoke_module__(context, moduleName, method, paramsValue, nullptr, exception);
+ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
+                                                  const AtomicString& module_name,
+                                                  const AtomicString& method,
+                                                  ScriptValue& params_value,
+                                                  ExceptionState& exception) {
+  return __webf_invoke_module__(context, module_name, method, params_value, nullptr, exception);
 }
 
-AtomicString ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                   const AtomicString& moduleName,
-                                                   const AtomicString& method,
-                                                   ScriptValue& paramsValue,
-                                                   std::shared_ptr<QJSFunction> callback,
-                                                   ExceptionState& exception) {
-  std::unique_ptr<NativeString> params;
-  if (!paramsValue.IsEmpty()) {
-    params = paramsValue.ToJSONStringify(&exception).ToString().ToNativeString();
-    if (exception.HasException()) {
-      return AtomicString::Empty();
-    }
+ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
+                                                  const AtomicString& module_name,
+                                                  const AtomicString& method,
+                                                  ScriptValue& params_value,
+                                                  std::shared_ptr<QJSFunction> callback,
+                                                  ExceptionState& exception) {
+  NativeValue params = params_value.ToNative(exception);
+
+  if (exception.HasException()) {
+    return ScriptValue::Empty(context->ctx());
   }
 
   if (context->dartMethodPtr()->invokeModule == nullptr) {
     exception.ThrowException(
         context->ctx(), ErrorType::InternalError,
         "Failed to execute '__webf_invoke_module__': dart method (invokeModule) is not registered.");
-    return AtomicString::Empty();
+    return ScriptValue::Empty(context->ctx());
   }
 
-  NativeString* result;
+  NativeValue* result;
   if (callback != nullptr) {
     auto moduleCallback = ModuleCallback::Create(callback);
     context->ModuleCallbacks()->AddModuleCallbacks(std::move(moduleCallback));
-    ModuleContext* moduleContext = new ModuleContext{context, moduleCallback};
+    auto* moduleContext = new ModuleContext{context, moduleCallback};
     result = context->dartMethodPtr()->invokeModule(moduleContext, context->contextId(),
-                                                    moduleName.ToNativeString().get(), method.ToNativeString().get(),
-                                                    params.get(), handleInvokeModuleTransientCallback);
+                                                    module_name.ToNativeString().get(), method.ToNativeString().get(),
+                                                    &params, handleInvokeModuleTransientCallback);
   } else {
-    result = context->dartMethodPtr()->invokeModule(nullptr, context->contextId(), moduleName.ToNativeString().get(),
-                                                    method.ToNativeString().get(), params.get(),
+    result = context->dartMethodPtr()->invokeModule(nullptr, context->contextId(), module_name.ToNativeString().get(),
+                                                    method.ToNativeString().get(), &params,
                                                     handleInvokeModuleUnexpectedCallback);
   }
 
   if (result == nullptr) {
-    return AtomicString::Empty();
+    return ScriptValue::Empty(context->ctx());
   }
 
-  return AtomicString::From(context->ctx(), result);
+  return ScriptValue(context->ctx(), *result);
 }
 
 void ModuleManager::__webf_add_module_listener__(ExecutingContext* context,
+                                                 const AtomicString& module_name,
                                                  const std::shared_ptr<QJSFunction>& handler,
                                                  ExceptionState& exception) {
   auto listener = ModuleListener::Create(handler);
-  context->ModuleListeners()->AddModuleListener(listener);
+  context->ModuleListeners()->AddModuleListener(module_name, listener);
+}
+
+void ModuleManager::__webf_remove_module_listener__(ExecutingContext* context,
+                                                    const AtomicString& module_name,
+                                                    ExceptionState& exception_state) {
+  context->ModuleListeners()->RemoveModuleListener(module_name);
+}
+
+void ModuleManager::__webf_clear_module_listener__(ExecutingContext* context, ExceptionState& exception_state) {
+  context->ModuleListeners()->Clear();
 }
 
 }  // namespace webf

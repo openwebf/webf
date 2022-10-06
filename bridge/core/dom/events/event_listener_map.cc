@@ -111,7 +111,7 @@ bool EventListenerMap::Remove(const AtomicString& event_type,
   return false;
 }
 
-EventListenerVector* EventListenerMap::Find(const AtomicString& event_type) {
+EventListenerVector* EventListenerMap::Find(const AtomicString& event_type) const {
   for (const auto& entry : entries_) {
     if (entry.first == event_type)
       return entry.second.get();

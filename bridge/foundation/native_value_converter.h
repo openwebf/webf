@@ -78,7 +78,9 @@ struct NativeValueConverter<NativeTypeDouble> : public NativeValueConverterBase<
 
 template <>
 struct NativeValueConverter<NativeTypeJSON> : public NativeValueConverterBase<NativeTypeJSON> {
-  static NativeValue ToNativeValue(ImplType value) { return Native_NewJSON(value); }
+  static NativeValue ToNativeValue(ImplType value, ExceptionState& exception_state) {
+    return Native_NewJSON(value, exception_state);
+  }
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
     assert(value.tag == NativeTag::TAG_JSON);
     auto* str = static_cast<const char*>(value.u.ptr);

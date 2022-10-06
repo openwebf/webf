@@ -78,7 +78,7 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
   }
 }
 
-void toNativeValue(BindingObject ownerBindingObject, Pointer<NativeValue> target, value) {
+void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBindingObject]) {
   if (value == null) {
     target.ref.tag = JSValueType.TAG_NULL.index;
   } else if (value is int) {
@@ -105,13 +105,13 @@ void toNativeValue(BindingObject ownerBindingObject, Pointer<NativeValue> target
     Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
     target.ref.u = lists.address;
     for(int i = 0; i < value.length; i ++) {
-      toNativeValue(ownerBindingObject, lists.elementAt(i), value[i]);
+      toNativeValue(lists.elementAt(i), value[i], ownerBindingObject);
     }
-  } else if (value is AsyncAnonymousNativeFunction) {
+  } else if (value is AsyncAnonymousNativeFunction && ownerBindingObject != null) {
     int id = ownerBindingObject.setAsyncAnonymousNativeFunction(value);
     target.ref.tag = JSValueType.TAG_ASYNC_FUNCTION.index;
     target.ref.u = id;
-  } else if (value is AnonymousNativeFunction) {
+  } else if (value is AnonymousNativeFunction && ownerBindingObject != null) {
     int id = ownerBindingObject.setAnonymousNativeFunction(value);
     target.ref.tag = JSValueType.TAG_FUNCTION.index;
     target.ref.u = id;
@@ -126,7 +126,7 @@ Pointer<NativeValue> makeNativeValueArguments(BindingObject ownerBindingObject, 
   Pointer<NativeValue> buffer = malloc.allocate(sizeOf<NativeValue>() * args.length);
 
   for(int i = 0; i < args.length; i ++) {
-    toNativeValue(ownerBindingObject, buffer.elementAt(i), args[i]);
+    toNativeValue(buffer.elementAt(i), args[i], ownerBindingObject);
   }
 
   return buffer.cast<NativeValue>();

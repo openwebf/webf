@@ -12,7 +12,7 @@ static void handleRAFTransientCallback(void* ptr, int32_t contextId, double high
   auto* frame_callback = static_cast<FrameCallback*>(ptr);
   auto* context = frame_callback->context();
 
-  if (!context->IsValid())
+  if (!context->IsContextValid())
     return;
 
   if (errmsg != nullptr) {

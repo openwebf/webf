@@ -5,6 +5,7 @@
 #include <atomic>
 #include <unordered_map>
 
+#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
 #include "core/dom/document.h"
@@ -22,7 +23,10 @@ ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
 webf::WebFPage** WebFPage::pageContextPool{nullptr};
 
-WebFPage::WebFPage(int32_t contextId, const JSExceptionHandler& handler)
+WebFPage::WebFPage(int32_t contextId,
+                   const JSExceptionHandler& handler,
+                   const uint64_t* dart_methods,
+                   int32_t dart_methods_length)
     : contextId(contextId), ownerThreadId(std::this_thread::get_id()) {
   context_ = new ExecutingContext(
       contextId,
@@ -32,11 +36,11 @@ WebFPage::WebFPage(int32_t contextId, const JSExceptionHandler& handler)
         }
         WEBF_LOG(ERROR) << message << std::endl;
       },
-      this);
+      this, dart_methods, dart_methods_length);
 }
 
 bool WebFPage::parseHTML(const char* code, size_t length) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return false;
 
   MemberMutationScope scope{context_};
@@ -46,20 +50,17 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
     return false;
   }
 
-  // Remove all Nodes including body and head.
-  context_->document()->documentElement()->RemoveChildren();
-
   HTMLParser::parseHTML(code, length, context_->document()->documentElement());
 
   return true;
 }
 
-void WebFPage::invokeModuleEvent(const NativeString* moduleName,
-                                 const char* eventType,
-                                 void* ptr,
-                                 NativeString* extra) {
-  if (!context_->IsValid())
-    return;
+NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
+                                         const char* eventType,
+                                         void* ptr,
+                                         NativeValue* extra) {
+  if (!context_->IsContextValid())
+    return nullptr;
 
   MemberMutationScope scope{context_};
 
@@ -71,26 +72,35 @@ void WebFPage::invokeModuleEvent(const NativeString* moduleName,
     event = EventFactory::Create(context_, AtomicString(ctx, type), rawEvent);
   }
 
-  ScriptValue extraObject = ScriptValue::Empty(ctx);
-  if (extra != nullptr) {
-    std::u16string u16Extra = std::u16string(reinterpret_cast<const char16_t*>(extra->string()), extra->length());
-    std::string extraString = toUTF8(u16Extra);
-    extraObject = ScriptValue::CreateJsonObject(ctx, extraString.c_str(), extraString.length());
+  ScriptValue extraObject = ScriptValue(ctx, *extra);
+  AtomicString module_name = AtomicString(ctx, native_module_name);
+  auto listener = context_->ModuleListeners()->listener(module_name);
+
+  if (listener == nullptr) {
+    return nullptr;
   }
 
-  auto listeners = context_->ModuleListeners()->listeners();
-  for (auto& listener : listeners) {
-    ScriptValue arguments[] = {ScriptValue(ctx, moduleName),
-                               event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
-    ScriptValue result = listener->value()->Invoke(ctx, ScriptValue::Empty(ctx), 3, arguments);
-    if (result.IsException()) {
-      context_->HandleException(&result);
-    }
+  ScriptValue arguments[] = {event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
+  ScriptValue result = listener->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
+  if (result.IsException()) {
+    context_->HandleException(&result);
+    return nullptr;
   }
+
+  ExceptionState exception_state;
+  auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+  NativeValue tmp = result.ToNative(exception_state);
+  if (exception_state.HasException()) {
+    context_->HandleException(exception_state);
+    return nullptr;
+  }
+
+  memcpy(return_value, &tmp, sizeof(NativeValue));
+  return return_value;
 }
 
 void WebFPage::evaluateScript(const NativeString* script, const char* url, int startLine) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return;
 
   //#if ENABLE_PROFILE
@@ -105,55 +115,27 @@ void WebFPage::evaluateScript(const NativeString* script, const char* url, int s
 }
 
 void WebFPage::evaluateScript(const uint16_t* script, size_t length, const char* url, int startLine) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return;
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
 void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return;
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
 uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return nullptr;
   return context_->DumpByteCode(script, length, url, byteLength);
 }
 
 void WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
-  if (!context_->IsValid())
+  if (!context_->IsContextValid())
     return;
   context_->EvaluateByteCode(bytes, byteLength);
-}
-
-void WebFPage::registerDartMethods(uint64_t* methodBytes, int32_t length) {
-  size_t i = 0;
-
-  auto& dartMethodPointer = context_->dartMethodPtr();
-
-  dartMethodPointer->invokeModule = reinterpret_cast<InvokeModule>(methodBytes[i++]);
-  dartMethodPointer->requestBatchUpdate = reinterpret_cast<RequestBatchUpdate>(methodBytes[i++]);
-  dartMethodPointer->reloadApp = reinterpret_cast<ReloadApp>(methodBytes[i++]);
-  dartMethodPointer->setTimeout = reinterpret_cast<SetTimeout>(methodBytes[i++]);
-  dartMethodPointer->setInterval = reinterpret_cast<SetInterval>(methodBytes[i++]);
-  dartMethodPointer->clearTimeout = reinterpret_cast<ClearTimeout>(methodBytes[i++]);
-  dartMethodPointer->requestAnimationFrame = reinterpret_cast<RequestAnimationFrame>(methodBytes[i++]);
-  dartMethodPointer->cancelAnimationFrame = reinterpret_cast<CancelAnimationFrame>(methodBytes[i++]);
-  dartMethodPointer->toBlob = reinterpret_cast<ToBlob>(methodBytes[i++]);
-  dartMethodPointer->flushUICommand = reinterpret_cast<FlushUICommand>(methodBytes[i++]);
-
-#if ENABLE_PROFILE
-  dartMethodPointer->getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(methodBytes[i++]);
-#else
-  i++;
-#endif
-
-  dartMethodPointer->onJsError = reinterpret_cast<OnJSError>(methodBytes[i++]);
-  dartMethodPointer->onJsLog = reinterpret_cast<OnJSLog>(methodBytes[i++]);
-
-  assert_m(i == length, "Dart native methods count is not equal with C++ side method registrations.");
 }
 
 std::thread::id WebFPage::currentThread() const {

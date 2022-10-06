@@ -12,6 +12,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 
+import 'test_module.dart';
 import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'bridge/to_native.dart';
@@ -29,6 +30,8 @@ void main() async {
   // Overrides library name.
   WebFDynamicLibrary.libName = 'libwebf_test';
   defineWebFCustomElements();
+
+  ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
 
   // FIXME: This is a workaround for testcases.
   ParagraphElement.defaultStyle = {DISPLAY: BLOCK};
@@ -49,8 +52,8 @@ void main() async {
   final File spec = File(path.join(testDirectory, specTarget));
   WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
   javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
-    javaScriptChannel.invokeMethod(method, arguments);
-    return 'method: ' + method;
+    dynamic returnedValue = await javaScriptChannel.invokeMethod(method, arguments);
+    return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
   };
 
   // This is a virtual location for test program to test [Location] functionality.

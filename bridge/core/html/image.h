@@ -17,6 +17,8 @@ class Image : public HTMLImageElement {
 
   explicit Image(ExecutingContext* context, ExceptionState& exception_state);
 
+  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
+
  private:
 };
 

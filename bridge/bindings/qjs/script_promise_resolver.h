@@ -60,7 +60,7 @@ class ScriptPromiseResolver {
   }
 
   void ResolveOrReject(JSValue value, ResolutionState new_state) {
-    if (state_ != kPending || !context_->IsValid() || !context_)
+    if (state_ != kPending || !context_->IsContextValid() || !context_)
       return;
     assert(new_state == kResolving || new_state == kRejecting);
     state_ = new_state;

@@ -13,6 +13,15 @@ namespace webf {
 
 UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {}
 
+UICommandBuffer::~UICommandBuffer() {
+#if FLUTTER_BACKEND
+  // Flush and execute all disposeEventTarget commands when context released.
+  if (context_->dartMethodPtr()->flushUICommand != nullptr && !isDartHotRestart()) {
+    context_->dartMethodPtr()->flushUICommand(context_->contextId());
+  }
+#endif
+}
+
 void UICommandBuffer::addCommand(int32_t id, UICommand type, void* nativePtr) {
   UICommandItem item{id, static_cast<int32_t>(type), nativePtr};
   addCommand(item);
@@ -37,12 +46,17 @@ void UICommandBuffer::addCommand(int32_t id,
 
 void UICommandBuffer::addCommand(const UICommandItem& item) {
   if (size_ >= MAXIMUM_UI_COMMAND_SIZE) {
-    context_->FlushUICommand();
+    if (UNLIKELY(isDartHotRestart())) {
+      clear();
+    } else {
+      context_->FlushUICommand();
+    }
     assert(size_ == 0);
   }
 
 #if FLUTTER_BACKEND
-  if (!update_batched_ && context_->IsValid() && context_->dartMethodPtr()->requestBatchUpdate != nullptr) {
+  if (UNLIKELY(!update_batched_ && context_->IsContextValid() &&
+               context_->dartMethodPtr()->requestBatchUpdate != nullptr)) {
     context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
     update_batched_ = true;
   }
@@ -70,6 +84,7 @@ void UICommandBuffer::clear() {
     delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_02);
   }
   size_ = 0;
+  memset(buffer_, 0, sizeof(buffer_));
   update_batched_ = false;
 }
 
