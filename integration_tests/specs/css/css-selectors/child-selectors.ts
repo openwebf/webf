@@ -1,4 +1,4 @@
-describe("css child selector", () => {
+describe('css child selector', () => {
   it("001", async () => {
     const style = <style>{`div > h1 { color: green; }`}</style>;
     const h1 = <h1> 001 Text should not be green </h1>;
