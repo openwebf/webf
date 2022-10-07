@@ -38,7 +38,7 @@ class KeyFrameBlock {
 class CSSKeyframesRule extends CSSRule {
   final int _keyframeName;
   final String name;
-  final List<KeyFrameBlock> blocks = [];
+  final List<Keyframe> keyframes = [];
 
   @override
   int get type => CSSRule.KEYFRAMES_RULE;
@@ -46,7 +46,19 @@ class CSSKeyframesRule extends CSSRule {
   CSSKeyframesRule(this._keyframeName, this.name) : super();
 
   void add(KeyFrameBlock block) {
-    blocks.add(block);
+    double? offset;
+    final keyText = block.blockSelectors[0];
+    if (keyText == 'from') {
+      offset = 0;
+    } else if (keyText == 'to') {
+      offset = 1;
+    } else {
+      offset = CSSPercentage.parsePercentage(keyText);
+    }
+    for (MapEntry<String, String> entry in block.declarations) {
+      final property = camelize(entry.key);
+      keyframes.add(Keyframe(property, entry.value, offset ?? 0, LINEAR));
+    }
   }
 
   String? get keyFrameName {

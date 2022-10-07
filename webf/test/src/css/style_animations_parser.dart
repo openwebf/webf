@@ -15,7 +15,7 @@ void main() {
     test('0', () {
       CSSRule? style = parseSingleRule('@keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }');
       expect(style is CSSKeyframesRule, true);
-      expect((style as CSSKeyframesRule).blocks.first.blockSelectors, ['75%', '100%']);
+      expect((style as CSSKeyframesRule).keyframes[0].offset, 0.75);
     });
   });
 }
