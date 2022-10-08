@@ -855,7 +855,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   /// Unmount [renderBoxModel].
   @override
-  void unmountRenderObject({bool deep = true, bool keepFixedAlive = false, bool dispose = true}) {
+  void unmountRenderObject({bool deep = true, bool keepFixedAlive = false, bool dispose = true, bool fromFlutterWidget = false}) {
+    if (!fromFlutterWidget) {
+      assert(!managedByFlutterWidget, 'You are trying to unmount a renderObject which are not owned by WebF Element.');
+    }
+
     // Ignore the fixed element to unmount render object.
     // It's useful for sliver manager to unmount child render object, but excluding fixed elements.
     if (keepFixedAlive && renderStyle.position == CSSPositionType.fixed) {

@@ -65,9 +65,7 @@ class FlutterInputElement extends WidgetElement {
   }
 
   TextInputType? getKeyboardType() {
-    String? inputType = getAttribute('type');
-    if (inputType == null) return null;
-    switch(inputType) {
+    switch(type) {
       case 'number':
         return TextInputType.number;
       case 'url':
@@ -76,10 +74,13 @@ class FlutterInputElement extends WidgetElement {
     return TextInputType.text;
   }
 
+  String get type => getAttribute('type') ?? 'text';
+  String get placeholder => getAttribute('placeholder') ?? '';
+  String? get label => getAttribute('label');
+  bool get disabled => getAttribute('disabled') == 'disabled';
+
   List<TextInputFormatter>? getInputFormatters() {
-    String? inputType = getAttribute('type');
-    if (inputType == null) return null;
-    switch(inputType) {
+    switch(type) {
       case 'number':
         return [FilteringTextInputFormatter.digitsOnly];
     }
@@ -88,9 +89,6 @@ class FlutterInputElement extends WidgetElement {
 
   Widget createInput(BuildContext context) {
     FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
-    String? label = getAttribute('label');
-    bool enabled = !(getAttribute('disabled') == 'disabled');
-
     onChanged(String newValue) {
       setState(() {
         InputEvent inputEvent = InputEvent(inputType: '', data: newValue);
@@ -99,9 +97,9 @@ class FlutterInputElement extends WidgetElement {
     }
 
     InputDecoration decoration = InputDecoration(
-      label: label != null ? Text(label) : null,
+      label: label != null ? Text(label!) : null,
       border: null,
-      hintText: getAttribute('placeholder') ?? '',
+      hintText: placeholder,
       suffixIcon: controller.value.text.isNotEmpty
           ? IconButton(
         iconSize: 14,
@@ -120,7 +118,7 @@ class FlutterInputElement extends WidgetElement {
     if (formContext != null) {
       return TextFormField(
         controller: controller,
-        enabled: enabled,
+        enabled: !disabled,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         style: TextStyle(fontFamily: renderStyle.fontFamily?.join(' '), fontSize: getFontSize()),
@@ -131,13 +129,15 @@ class FlutterInputElement extends WidgetElement {
 
     return TextField(
       controller: controller,
-      enabled: enabled,
+      enabled: !disabled,
       style: TextStyle(fontFamily: renderStyle.fontFamily?.join(' '), fontSize: getFontSize()),
       onChanged: onChanged,
       keyboardType: getKeyboardType(),
       inputFormatters: getInputFormatters(),
       onSubmitted: (String value) {
-        dispatchEvent(Event('submitted'));
+        if (type == 'search') {
+          dispatchEvent(Event('search'));
+        }
       },
       decoration: decoration,
     );
@@ -169,8 +169,7 @@ class FlutterInputElement extends WidgetElement {
 
   @override
   Widget build(BuildContext context, List<Widget> children) {
-    String? inputType = getAttribute('type') ?? 'text';
-    if (inputType == 'checkbox') {
+    if (type == 'checkbox') {
       return createCheckBox(context);
     }
     return Focus(

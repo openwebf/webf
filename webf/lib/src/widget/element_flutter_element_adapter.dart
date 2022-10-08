@@ -37,7 +37,7 @@ class WebFElementToFlutterElementAdaptor extends MultiChildRenderObjectElement {
 
     super.unmount();
 
-    element.unmountRenderObject(dispose: false);
+    element.unmountRenderObject(dispose: false, fromFlutterWidget: true);
   }
 
   @override
