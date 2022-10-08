@@ -79,6 +79,7 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
         if (child->v.element.children.length > 0) {
           if (child->v.element.tag == GUMBO_TAG_SCRIPT) {
             const char* code = ((GumboNode*)child->v.element.children.data[0])->v.text.text;
+            context->FlushUICommand();
             context->EvaluateJavaScript(code, strlen(code), "vm://", 0);
           } else {
             traverseHTML(element, child);
