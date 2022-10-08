@@ -27,6 +27,8 @@ class WebFElementState extends State<WebFElementWidget> {
   final Set<Widget> customElementWidgets = HashSet();
   final dom.Element _webFElement;
 
+  bool _disposed = false;
+
   WebFElementState(this._webFElement);
   dom.Node get webFElement => _webFElement;
 
@@ -39,6 +41,7 @@ class WebFElementState extends State<WebFElementWidget> {
   }
   void removeWidgetChild(Widget widget) {
     Future.microtask(() {
+      if (_disposed) return;
       setState(() {
         customElementWidgets.remove(widget);
       });
@@ -49,6 +52,13 @@ class WebFElementState extends State<WebFElementWidget> {
   void initState() {
     super.initState();
     _webFElement.flutterWidgetState = this;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _disposed = true;
+    customElementWidgets.clear();
   }
 
   @override

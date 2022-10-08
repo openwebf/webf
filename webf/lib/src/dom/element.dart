@@ -867,7 +867,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     // Dispose all renderObject when deep.
     if (deep) {
       for (Node child in [...childNodes]) {
-        child.unmountRenderObject(deep: deep, keepFixedAlive: keepFixedAlive);
+        /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
+        if (!child.managedByFlutterWidget) {
+          child.unmountRenderObject(deep: deep, keepFixedAlive: keepFixedAlive);
+        }
       }
     }
 
