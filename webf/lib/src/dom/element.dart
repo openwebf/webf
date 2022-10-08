@@ -571,9 +571,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     RenderBoxModel? renderBoxModel = this.renderBoxModel;
     if (renderBoxModel != null) {
-      // The node detach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
-      renderBoxModel.markAdjacentRenderParagraphNeedsLayout();
-
       // Remove all intersection change listeners.
       renderBoxModel.clearIntersectionChangeListeners();
 
