@@ -35,7 +35,8 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
 
   JSContext* ctx = moduleContext->context->ctx();
 
-  if (ctx == nullptr) return nullptr;
+  if (ctx == nullptr)
+    return nullptr;
 
   ExceptionState exception_state;
 
