@@ -43,6 +43,20 @@ function sleep(second: number) {
   return new Promise(done => originalTimeout(done, second * 1000));
 }
 
+function nextFrames(count = 0) {
+  return new Promise((resolve, reject) => {
+    function frame() {
+      if (count == 0) {
+        resolve();
+        return;
+      }
+      count--;
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
 type ElementProps = {
   [key: string]: any;
   style?: {
@@ -230,6 +244,7 @@ Object.assign(global, {
   simulateSwipe,
   simulateClick,
   sleep,
+  nextFrames,
   snapshot,
   simulatePointDown,
   simulatePointUp,

@@ -1,4 +1,4 @@
-describe("css child selector", () => {
+describe('css child selector', () => {
   it("001", async () => {
     const style = <style>{`div > h1 { color: green; }`}</style>;
     const h1 = <h1> 001 Text should not be green </h1>;
@@ -38,9 +38,9 @@ describe("css child selector", () => {
 
   it("004", async () => {
     const style = <style>{`div:first-child { color: green; }`}</style>;
-    const div1 = <div>004 Text should be green </div>;
-    const div2 = <div>Text should not be green </div>;
-    const p = <p>Text should not be green </p>;
+    const div1 = <div>004 Text should be green</div>;
+    const div2 = <div>Text should not be green</div>;
+    const p = <p>Text should not be green</p>;
     
     document.head.appendChild(style);
     document.body.appendChild(div1);
@@ -64,7 +64,7 @@ describe("css child selector", () => {
 
   it("006", async () => {
     const style = <style>{`div:fiRsT-cHiLd { color: green; }`}</style>;
-    const div = <div> 006 should be green</div>;
+    const div = <div>006 should be green</div>;
     document.body.appendChild(div);
     document.head.appendChild(style);
     await snapshot();
@@ -85,8 +85,8 @@ describe("css child selector", () => {
 
   it("008", async () => {
     const style = <style>{` :first-child  { color: green; }`}</style>;
-    const div = <div> 008 Filler Text should be green </div>;
-    const p = <p> Filler Text </p>;
+    const div = <div>008 Filler Text should be green</div>;
+    const p = <p>Filler Text</p>;
     
     document.head.appendChild(style);
     document.body.appendChild(div);
@@ -95,12 +95,12 @@ describe("css child selector", () => {
   });
 
   it("009", async () => {
-    const style = <style>{` :root { color: green; }`}</style>;
-    const p1 = <p>009 Should be green </p>;
-    const p2 = <p>Should be green </p>;
-    const p3 = <p>Should be green </p>;
-    const p4 = <p>Should be green </p>;
-    const p5 = <p>Should be green </p>;
+    const style = <style>{`:root { color: green; }`}</style>;
+    const p1 = <p>009 Should be green</p>;
+    const p2 = <p>Should be green</p>;
+    const p3 = <p>Should be green</p>;
+    const p4 = <p>Should be green</p>;
+    const p5 = <p>Should be green</p>;
     
     document.head.appendChild(style);
     document.body.appendChild(p1);

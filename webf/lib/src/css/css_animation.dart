@@ -115,28 +115,7 @@ mixin CSSAnimationMixin on RenderStyle {
 
   List<Keyframe>? _getKeyFrames(String animationName) {
     CSSKeyframesRule? cssKeyframesRule = target.ownerDocument.ruleSet.keyframesRules[animationName];
-    if (cssKeyframesRule != null) {
-      List<Keyframe> keyframes = [];
-
-      cssKeyframesRule.blocks.forEach((rule) {
-        double? offset;
-        final keyText = rule.blockSelectors[0];
-        if (keyText == 'from') {
-          offset = 0;
-        } else if (keyText == 'to') {
-          offset = 1;
-        } else {
-          offset = CSSPercentage.parsePercentage(keyText);
-        }
-        for (MapEntry<String, String> entry in rule.declarations) {
-          final property = camelize(entry.key);
-          keyframes.add(Keyframe(property, entry.value, offset ?? 0, LINEAR));
-        }
-        return;
-      });
-      return keyframes;
-    }
-    return null;
+    return cssKeyframesRule?.keyframes;
   }
 
   void beforeRunningAnimation() {
@@ -226,10 +205,9 @@ mixin CSSAnimationMixin on RenderStyle {
           };
 
           animation.oncancel = (AnimationPlaybackEvent event) {
-            // target.dispatchEvent(
-            //     AnimationEvent(EVENT_ANIMATION_END, animationName: name));
-            // _runningAnimation.remove(name);
-            // animation?.dispose();
+            target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_END, animationName: name));
+            _runningAnimation.remove(name);
+            animation?.dispose();
           };
 
           animation.onfinish = (AnimationPlaybackEvent event) {
@@ -238,7 +216,7 @@ mixin CSSAnimationMixin on RenderStyle {
             }
 
             target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_END, animationName: name));
-            // animation.dispose();
+            animation.dispose();
           };
 
           _runningAnimation[name] = animation;
