@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:flutter/rendering.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
@@ -80,6 +81,9 @@ class RenderViewportBox extends RenderBox
       child = childParentData.nextSibling;
     }
   }
+
+  @override
+  GestureDispatcher? get gestureDispatcher => controller!.gestureDispatcher;
 
   @override
   bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {

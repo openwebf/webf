@@ -70,6 +70,12 @@ abstract class WidgetElement extends dom.Element {
   }
 
   @override
+  void willAttachRenderer() {
+    super.willAttachRenderer();
+    attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!);
+  }
+
+  @override
   void didAttachRenderer() {
     // Children of WidgetElement should insert render object by Flutter Framework.
     _attachWidget(_widget);
@@ -159,11 +165,10 @@ abstract class WidgetElement extends dom.Element {
 
   void _attachWidget(Widget widget) {
     dom.Node? ancestorWidgetNode = getAncestorWidgetNode(this);
-    WebFWidgetElementToWidgetAdapter adapter = attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!);
     if (ancestorWidgetNode != null) {
-      (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(adapter);
+      (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);
     } else {
-      ownerDocument.controller.onCustomElementAttached!(adapter);
+      ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
     }
   }
 
@@ -175,6 +180,7 @@ abstract class WidgetElement extends dom.Element {
       } else {
         ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
       }
+      attachedAdapter = null;
     }
   }
 }

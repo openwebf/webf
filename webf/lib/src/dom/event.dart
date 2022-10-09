@@ -9,7 +9,6 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
 enum AppearEventType { none, appear, disappear }
@@ -72,7 +71,6 @@ mixin ElementEventMixin on ElementBase {
 
   void clearEventResponder(RenderEventListenerMixin renderBox) {
     renderBox.getEventTarget = null;
-    renderBox.getGestureDispather = null;
   }
 
   void ensureEventResponderBound() {
@@ -81,7 +79,6 @@ mixin ElementEventMixin on ElementBase {
     if (renderBox != null) {
       // Make sure pointer responder bind.
       renderBox.getEventTarget = getEventTarget;
-      renderBox.getGestureDispather = getGestureDispather;
 
       if (_hasIntersectionObserverEvent()) {
         renderBox.addIntersectionChangeListener(handleIntersectionChange);
@@ -121,10 +118,6 @@ mixin ElementEventMixin on ElementBase {
 
   EventTarget getEventTarget() {
     return this;
-  }
-
-  GestureDispatcher getGestureDispather() {
-    return ownerDocument.controller.gestureDispatcher;
   }
 
   void handleAppear() {
