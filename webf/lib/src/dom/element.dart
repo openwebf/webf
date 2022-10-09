@@ -202,9 +202,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @override
   RenderBox createRenderer() {
-    if (renderBoxModel != null) {
-      return renderBoxModel!;
-    }
     _updateRenderBoxModel();
     return renderBoxModel!;
   }
@@ -344,7 +341,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
         RenderBoxModel.detachRenderBox(previousRenderBoxModel);
 
-        if (parentRenderObject != null) {
+        if (parentRenderObject != null && parentRenderObject.attached) {
           RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
         }
       }
@@ -834,6 +831,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
 
     if (renderer != null) {
+      assert(parent.renderer!.attached);
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel.attachRenderBox(parent.renderer!, renderer!, after: after);
@@ -1138,8 +1136,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     switch (name) {
       case DISPLAY:
+        bool displayChanged = renderStyle.display != value;
         renderStyle.display = value;
-        _updateRenderBoxModelWithDisplay();
+        if (displayChanged) {
+          _updateRenderBoxModelWithDisplay();
+        }
         break;
       case Z_INDEX:
         renderStyle.zIndex = value;
