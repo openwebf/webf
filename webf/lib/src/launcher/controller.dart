@@ -631,12 +631,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
   }
 
-  void flushPendingStyleSheet() {
-    if (document.styleNodeManager.hasPendingStyleSheet) {
-      document.flushStyle(rebuild: true);
-    }
-  }
-
   // Hooks for DevTools.
   VoidCallback? debugDOMTreeChanged;
   void _debugDOMTreeChanged() {

@@ -522,7 +522,4 @@ void flushUICommand(WebFViewController view) {
     }
   }
   pendingStylePropertiesTargets.clear();
-
-  // Should flush all pending StyleSheets at the end of this frame.
-  view.flushPendingStyleSheet();
 }
