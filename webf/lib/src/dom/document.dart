@@ -225,47 +225,39 @@ class Document extends Node {
 
   bool _recalculating = false;
   void updateStyleIfNeeded() {
-    if (styleSheets.isEmpty && !styleNodeManager.hasPendingStyleSheet) {
-      return;
-    }
-    if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
-      flushStyle(rebuild: true);
+    if (!styleNodeManager.hasPendingStyleSheet) {
       return;
     }
     if (_recalculating) {
       return;
     }
     _recalculating = true;
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      _recalculating = false;
-      flushStyle();
-    });
+    if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
+      flushStyle(rebuild: true);
+      return;
+    }
+    flushStyle();
   }
 
   void flushStyle({bool rebuild = false}) {
     if (!needsStyleRecalculate) {
+      _recalculating = false;
       return;
     }
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_START);
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
+      _recalculating = false;
       return;
     }
-    recalculateDocumentStyle();
+    // Recalculate style for all nodes sync.
+    documentElement?.recalculateNestedStyle();
     needsStyleRecalculate = false;
     _recalculating = false;
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_END);
     }
-  }
-
-  void recalculateDocumentStyle() {
-    if (!needsStyleRecalculate) {
-      return;
-    }
-    // Recalculate style for all nodes sync.
-    documentElement?.recalculateNestedStyle();
   }
 
   @override
