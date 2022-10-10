@@ -39,9 +39,9 @@
 #endif
 
 // this is not thread safe
-std::atomic<bool> inited{false};
-std::atomic<bool> is_dart_hot_restart{false};
-std::atomic<int32_t> poolIndex{0};
+thread_local std::atomic<bool> inited{false};
+thread_local std::atomic<bool> is_dart_hot_restart{false};
+thread_local std::atomic<int32_t> poolIndex{0};
 int maxPoolSize = 0;
 
 namespace {
