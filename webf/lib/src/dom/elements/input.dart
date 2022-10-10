@@ -18,6 +18,12 @@ class FlutterInputElement extends WidgetElement {
 
   bool checked = false;
 
+  String get value => controller.value.text;
+  set value(String? value) {
+    if (value == null) return;
+    controller.value = TextEditingValue(text: value);
+  }
+
   @override
   getBindingProperty(String key) {
     switch (key) {
@@ -35,6 +41,9 @@ class FlutterInputElement extends WidgetElement {
       case 'checked':
         checked = value;
         break;
+      case 'value':
+        this.value = value;
+        break;
     }
     super.setBindingProperty(key, value);
   }
@@ -48,6 +57,10 @@ class FlutterInputElement extends WidgetElement {
       case 'checked':
         print('value:');
         checked = value == 'true';
+        break;
+      case 'value':
+        this.value = value;
+        break;
     }
     super.setAttribute(key, value);
   }
@@ -176,7 +189,7 @@ class FlutterInputElement extends WidgetElement {
       onFocusChange: (bool isFocus) {
         if (isFocus) {
           ownerDocument.focusedElement = this;
-        } else {
+        } else if (ownerDocument.focusedElement == this) {
           ownerDocument.focusedElement = null;
         }
       },
