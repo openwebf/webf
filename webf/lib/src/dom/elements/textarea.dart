@@ -76,7 +76,7 @@ class FlutterTextAreaElement extends WidgetElement {
       onFocusChange: (bool isFocus) {
         if (isFocus) {
           ownerDocument.focusedElement = this;
-        } else {
+        } else if (ownerDocument.focusedElement == this) {
           ownerDocument.focusedElement = null;
         }
       },

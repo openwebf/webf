@@ -33,6 +33,7 @@ class FlutterListViewElement extends WidgetElement {
   Widget build(BuildContext context, List<Widget> children) {
     return ListView(
       children: children,
+      padding: const EdgeInsets.all(0),
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
     );
