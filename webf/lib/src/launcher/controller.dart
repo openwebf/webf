@@ -709,6 +709,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     } else {
       bool shouldScrollByToCenter = false;
       Element? focusedElement = document.focusedElement;
+      double scrollOffset = 0;
       if (focusedElement != null) {
         RenderBox? renderer = focusedElement.renderer;
         if (renderer != null && renderer.attached && renderer.hasSize) {
@@ -716,15 +717,14 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
           if (focusOffset.dy > viewportHeight - bottomInset - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
+            scrollOffset = focusOffset.dy - (viewportHeight - bottomInset) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }
       // Show keyboard
       viewport.bottomInset = bottomInset;
       if (shouldScrollByToCenter) {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          window.scrollBy(0, bottomInset);
-        });
+        window.scrollBy(0, scrollOffset, true);
       }
     }
     _prevViewInsets = ui.window.viewInsets;

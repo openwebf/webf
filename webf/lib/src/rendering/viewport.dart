@@ -121,6 +121,12 @@ class RenderViewportBox extends RenderBox
     defaultPaint(context, offset);
   }
 
+  // WebF page can reload the whole page.
+  void reload() {
+    removeAll();
+    fixedChildren.clear();
+  }
+
   @override
   void dispose() {
     removeAll();
