@@ -1,3 +1,7 @@
+## 0.13.0-beta.4
+
+* Test for new custom elements system.
+
 ## 0.13.0-beta.3
 
 * Fix reload crash.
