@@ -35,7 +35,6 @@ class WebFWidgetElementElement extends StatefulElement {
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    widget.widgetElement.mount(parent, newSlot);
   }
 }
 
@@ -48,18 +47,6 @@ class WebFWidgetElementState extends State<WebFWidgetElementWidget> {
   void initState() {
     super.initState();
     widgetElement.initState();
-  }
-
-  @override
-  void didUpdateWidget(covariant WebFWidgetElementWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    widgetElement.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    widgetElement.didChangeDependencies();
   }
 
   void requestUpdateState([VoidCallback? callback]) {

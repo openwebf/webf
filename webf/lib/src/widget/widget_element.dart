@@ -1,9 +1,8 @@
-library webf;
-
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:meta/meta.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
@@ -42,11 +41,13 @@ abstract class WidgetElement extends dom.Element {
 
   // State methods, proxy called from _state
   void initState() {}
-  void didUpdateWidget(covariant WebFWidgetElementWidget oldWidget) {}
-  void didChangeDependencies() {}
 
-  // Flutter Element life circle methods, proxy called when FlutterElement are mounted
-  void mount(Element? parent, Object? newSlot) {}
+  // React to properties and attributes changes
+  void attributeDidUpdate(String key, value) {}
+  bool shouldElementRebuild(String key, previousValue, nextValue) {
+    return previousValue == nextValue;
+  }
+  void propertyDidUpdate(String key, value) {}
 
   Widget build(BuildContext context, List<Widget> children);
 
@@ -54,57 +55,72 @@ abstract class WidgetElement extends dom.Element {
   @override
   dom.RenderObjectManagerType get renderObjectManagerType => dom.RenderObjectManagerType.FLUTTER_ELEMENT;
 
+  @nonVirtual
   @override
   bool get isWidgetElement => true;
 
+  @mustCallSuper
   @override
   void didDetachRenderer() {
     super.didDetachRenderer();
     _detachWidget();
   }
 
+  @nonVirtual
   void setState(VoidCallback callback) {
     if (_state != null) {
       _state!.requestUpdateState(callback);
     }
   }
 
+  @mustCallSuper
   @override
   void willAttachRenderer() {
     super.willAttachRenderer();
     attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!);
   }
 
+  @mustCallSuper
   @override
   void didAttachRenderer() {
     // Children of WidgetElement should insert render object by Flutter Framework.
     _attachWidget(_widget);
   }
 
+  @mustCallSuper
   @override
   void setBindingProperty(String key, value) {
     super.setBindingProperty(key, value);
-    if (_state != null) {
+    bool shouldRebuild = shouldElementRebuild(key, getBindingProperty(key), value);
+    if (_state != null && shouldRebuild) {
       _state!.requestUpdateState();
     }
+    propertyDidUpdate(key, value);
   }
 
+  @mustCallSuper
   @override
   void removeAttribute(String key) {
     super.removeAttribute(key);
-    if (_state != null) {
+    bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), null);
+    if (_state != null && shouldRebuild) {
       _state!.requestUpdateState();
     }
+    attributeDidUpdate(key, null);
   }
 
+  @mustCallSuper
   @override
   void setAttribute(String key, value) {
     super.setAttribute(key, value);
-    if (_state != null) {
+    bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), value);
+    if (_state != null && shouldRebuild) {
       _state!.requestUpdateState();
     }
+    attributeDidUpdate(key, value);
   }
 
+  @nonVirtual
   @override
   dom.Node appendChild(dom.Node child) {
     super.appendChild(child);
@@ -116,6 +132,7 @@ abstract class WidgetElement extends dom.Element {
     return child;
   }
 
+  @nonVirtual
   @override
   dom.Node insertBefore(dom.Node child, dom.Node referenceNode) {
     dom.Node inserted = super.insertBefore(child, referenceNode);
@@ -127,6 +144,7 @@ abstract class WidgetElement extends dom.Element {
     return inserted;
   }
 
+  @nonVirtual
   @override
   dom.Node? replaceChild(dom.Node newNode, dom.Node oldNode) {
     dom.Node? replaced = super.replaceChild(newNode, oldNode);
@@ -138,6 +156,7 @@ abstract class WidgetElement extends dom.Element {
     return replaced;
   }
 
+  @nonVirtual
   @override
   dom.Node removeChild(dom.Node child) {
     super.removeChild(child);
@@ -149,7 +168,7 @@ abstract class WidgetElement extends dom.Element {
     return child;
   }
 
-  static dom.Node? getAncestorWidgetNode(WidgetElement element) {
+  static dom.Node? _getAncestorWidgetNode(WidgetElement element) {
     dom.Node? parent = element.parentNode;
 
     while(parent != null) {
@@ -164,7 +183,7 @@ abstract class WidgetElement extends dom.Element {
   }
 
   void _attachWidget(Widget widget) {
-    dom.Node? ancestorWidgetNode = getAncestorWidgetNode(this);
+    dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
     if (ancestorWidgetNode != null) {
       (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);
     } else {
@@ -174,7 +193,7 @@ abstract class WidgetElement extends dom.Element {
 
   void _detachWidget() {
     if (attachedAdapter != null) {
-      dom.Node? ancestorWidgetNode = getAncestorWidgetNode(this);
+      dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
       if (ancestorWidgetNode != null) {
         (ancestorWidgetNode as dom.Element).flutterWidgetState!.removeWidgetChild(attachedAdapter!);
       } else {
