@@ -3,51 +3,76 @@ import 'dart:io';
 import 'package:webf/foundation.dart';
 import 'package:path/path.dart' as path;
 
+import 'cookie/default_cookie_jar.dart';
 import 'cookie/file_storage.dart';
 import 'cookie/persist_cookie_jar.dart';
 import 'cookie/serializable_cookie.dart';
 
 class CookieJar {
+  final String url;
+  final cookies = <Cookie>[];
+  static final DefaultCookieJar domCookieJar = DefaultCookieJar();
+  static final Future<PersistCookieJar> persistCookieJar = _cj;
 
-  CookieJar() {
-  }
-
-  final Map<String, SerializableCookie> _pairs = {};
+  CookieJar(this.url);
 
   void setCookie(String value) {
     Cookie cookie = Cookie.fromSetCookieValue(value);
-    SerializableCookie serializableCookie = SerializableCookie(cookie);
-    _pairs[serializableCookie.cookie.name] = serializableCookie;
+    cookies.add(cookie);
+    Uri uri = Uri.parse(url);
+    if (uri.host.isNotEmpty) {
+      domCookieJar.saveFromResponse(uri, [cookie]);
+    }
+  }
+
+  void deleteCookies() {
+    Uri uri = Uri.parse(url);
+    if (uri.host.isNotEmpty) {
+      domCookieJar.delete(uri);
+    }
   }
 
   String cookie() {
-    List<String> cookiePairs = List.generate(_pairs.length, (index) {
-      String key = _pairs.keys.elementAt(index);
-      SerializableCookie value = _pairs.values.elementAt(index);
-      bool isHttpOnly = value.cookie.httpOnly;
-      bool isInvalid = value.isExpired();
+    final cookiePairs = <String>[];
+    cookies.forEach((value) {
+      SerializableCookie seCookie = SerializableCookie(value);
+      bool isHttpOnly = seCookie.cookie.httpOnly;
+      bool isInvalid = seCookie.isExpired();
       if (!isHttpOnly || !isInvalid) {
-        return '$key=${value.cookie.value}';
-      } else {
-        return '';
+        cookiePairs.add('${value.name}=${value.value}');
       }
     });
     return cookiePairs.join('; ');
   }
 
-  static final Future<PersistCookieJar> _cookieJar = _cj;
   static Future<PersistCookieJar> get _cj async {
     String appTemporaryPath = await getWebFTemporaryPath();
     return PersistCookieJar(storage: FileStorage(path.join(appTemporaryPath, 'cookies')));
   }
 
   static Future<void> saveFromResponse(Uri uri, List<Cookie> cookies) async {
-    PersistCookieJar cj = await CookieJar._cookieJar;
+    PersistCookieJar cj = await persistCookieJar;
     cj.saveFromResponse(uri, cookies);
   }
 
-  static Future<List<Cookie>> loadForRequest(Uri uri) async {
-    PersistCookieJar cj = await CookieJar._cookieJar;
-    return cj.loadForRequest(uri);
+  static Future<void> saveFromResponseRaw(Uri uri, List<String>? cookieStr) async {
+    PersistCookieJar cj = await persistCookieJar;
+    final list = <Cookie>[];
+    cookieStr?.forEach((element) {
+      list.add(Cookie.fromSetCookieValue(element));
+    });
+    cj.saveFromResponse(uri, list);
+  }
+
+  static Future<void> loadForRequest(Uri uri, List<Cookie> requestCookies) async {
+    List<Cookie> pageCookies = await domCookieJar.loadForRequest(uri);
+    if (pageCookies.isNotEmpty) {
+      requestCookies.addAll(pageCookies);
+    }
+    PersistCookieJar pCJ = await persistCookieJar;
+    List<Cookie> cookies = await pCJ.loadForRequest(uri);
+    if (cookies.isNotEmpty) {
+      requestCookies.addAll(cookies);
+    }
   }
 }

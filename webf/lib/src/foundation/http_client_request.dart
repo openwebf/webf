@@ -139,10 +139,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
       if (clientInterceptor != null) {
         request = await _beforeRequest(clientInterceptor, request) ?? request;
       }
-      List<Cookie> cookies = await CookieJar.loadForRequest(_uri);
-      if (cookies.isNotEmpty) {
-        request.cookies.addAll(cookies);
-      }
+      await CookieJar.loadForRequest(_uri, request.cookies);
 
       // Step 2: Handle cache-control and expires,
       //        if hit, no need to open request.
@@ -210,7 +207,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
           response = interceptorResponse;
         }
       }
-      await CookieJar.saveFromResponse(uri, response.cookies);
+      await CookieJar.saveFromResponseRaw(uri, response.headers[HttpHeaders.setCookieHeader]);
 
       // Check match cache, and then return cache.
       if (hitInterceptorResponse || hitNegotiateCache) {
