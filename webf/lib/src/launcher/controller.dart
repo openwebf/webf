@@ -958,6 +958,8 @@ class WebFController {
     Future.microtask(() {
       _module.dispose();
       _view.dispose();
+      // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
+      _view.viewport.reload();
 
       List<int> methodBytes = makeDartMethodsData();
       allocateNewPage(methodBytes, _view.contextId);
