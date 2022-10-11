@@ -1,12 +1,11 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
-#include "gtest/gtest.h"
 #include <quickjs/quickjs.h>
 #include <codecvt>
-
+#include "gtest/gtest.h"
 
 struct A {
   uint64_t value;
@@ -25,9 +24,9 @@ TEST(Quickjs, runJs) {
   JS_FreeContext(ctx);
   JS_FreeRuntime(runtime);
 
-//
-//  A a;
-//  a.value = 1;
+  //
+  //  A a;
+  //  a.value = 1;
 
-//  EXPECT_EQ(a.value, 1);
+  //  EXPECT_EQ(a.value, 1);
 }
