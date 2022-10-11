@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -79,7 +80,7 @@ class FetchModule extends BaseModule {
         request.add(data);
       } else if (data != null) {
         // Treat as string as default.
-        request.add(data.toString().codeUnits);
+        request.add(utf8.encode(data));
       }
 
       return request;
