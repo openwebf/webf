@@ -3,11 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
 
-enum InputSize {
-  small,
-  medium,
-  large
-}
+enum InputSize { small, medium, large }
 
 class FlutterInputElement extends WidgetElement {
   FlutterInputElement(BindingContext? context) : super(context);
@@ -19,6 +15,7 @@ class FlutterInputElement extends WidgetElement {
   bool checked = false;
 
   String get value => controller.value.text;
+
   set value(String? value) {
     if (value == null) return;
     controller.value = TextEditingValue(text: value);
@@ -37,7 +34,7 @@ class FlutterInputElement extends WidgetElement {
 
   @override
   void setBindingProperty(String key, value) {
-    switch(key) {
+    switch (key) {
       case 'checked':
         checked = value;
         break;
@@ -50,7 +47,7 @@ class FlutterInputElement extends WidgetElement {
 
   @override
   void setAttribute(String key, String value) {
-    switch(key) {
+    switch (key) {
       case 'size':
         inputSize = value;
         break;
@@ -66,7 +63,7 @@ class FlutterInputElement extends WidgetElement {
   }
 
   double getFontSize() {
-    switch(inputSize) {
+    switch (inputSize) {
       case 'small':
         return 14;
       case 'large':
@@ -78,7 +75,7 @@ class FlutterInputElement extends WidgetElement {
   }
 
   TextInputType? getKeyboardType() {
-    switch(type) {
+    switch (type) {
       case 'number':
         return TextInputType.number;
       case 'url':
@@ -88,12 +85,15 @@ class FlutterInputElement extends WidgetElement {
   }
 
   String get type => getAttribute('type') ?? 'text';
+
   String get placeholder => getAttribute('placeholder') ?? '';
+
   String? get label => getAttribute('label');
+
   bool get disabled => getAttribute('disabled') == 'disabled';
 
   List<TextInputFormatter>? getInputFormatters() {
-    switch(type) {
+    switch (type) {
       case 'number':
         return [FilteringTextInputFormatter.digitsOnly];
     }
@@ -115,16 +115,16 @@ class FlutterInputElement extends WidgetElement {
       hintText: placeholder,
       suffixIcon: controller.value.text.isNotEmpty
           ? IconButton(
-        iconSize: 14,
-        onPressed: () {
-          setState(() {
-            controller.clear();
-            InputEvent inputEvent = InputEvent(inputType: '', data: '');
-            dispatchEvent(inputEvent);
-          });
-        },
-        icon: Icon(Icons.clear),
-      )
+              iconSize: 14,
+              onPressed: () {
+                setState(() {
+                  controller.clear();
+                  InputEvent inputEvent = InputEvent(inputType: '', data: '');
+                  dispatchEvent(inputEvent);
+                });
+              },
+              icon: Icon(Icons.clear),
+            )
           : null,
     );
 
@@ -157,7 +157,7 @@ class FlutterInputElement extends WidgetElement {
   }
 
   double getCheckboxSize() {
-    switch(inputSize) {
+    switch (inputSize) {
       case 'small':
         return 0.7;
       case 'large':
@@ -170,12 +170,16 @@ class FlutterInputElement extends WidgetElement {
 
   Widget createCheckBox(BuildContext context) {
     return Transform.scale(
-      child: Checkbox(value: checked, onChanged: (bool? newValue) {
-        setState(() {
-          checked = newValue!;
-          dispatchEvent(Event('change'));
-        });
-      }),
+      child: Checkbox(
+          value: checked,
+          onChanged: disabled
+              ? null
+              : (bool? newValue) {
+                  setState(() {
+                    checked = newValue!;
+                    dispatchEvent(Event('change'));
+                  });
+                }),
       scale: getCheckboxSize(),
     );
   }

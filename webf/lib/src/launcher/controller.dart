@@ -1000,6 +1000,8 @@ class WebFController {
       devToolsService!.willReload();
     }
 
+    _isComplete = false;
+
     await unload();
     await executeEntrypoint();
 
