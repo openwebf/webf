@@ -43,7 +43,7 @@ abstract class WidgetElement extends dom.Element {
   void initState() {}
 
   // React to properties and attributes changes
-  void attributeDidUpdate(String key, value) {}
+  void attributeDidUpdate(String key, String value) {}
   bool shouldElementRebuild(String key, previousValue, nextValue) {
     return previousValue == nextValue;
   }
@@ -106,7 +106,7 @@ abstract class WidgetElement extends dom.Element {
     if (_state != null && shouldRebuild) {
       _state!.requestUpdateState();
     }
-    attributeDidUpdate(key, null);
+    attributeDidUpdate(key, '');
   }
 
   @mustCallSuper
