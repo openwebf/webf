@@ -84,7 +84,7 @@
   16: dump bytecode in hex
   32: dump line number table
  */
-//#define DUMP_BYTECODE  (1)
+#define DUMP_BYTECODE  (1)
 /* dump the occurence of the automatic GC */
 //#define DUMP_GC
 /* dump objects freed by the garbage collector */

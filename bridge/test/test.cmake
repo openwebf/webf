@@ -107,3 +107,10 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
     LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
 endif()
+
+add_executable(quickjs_unit_test
+        ./test/qjs_test.cc
+        )
+message(${BRIDGE_INCLUDE})
+target_include_directories(quickjs_unit_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test ./third_party/quickjs/include)
+target_link_libraries(quickjs_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS})
