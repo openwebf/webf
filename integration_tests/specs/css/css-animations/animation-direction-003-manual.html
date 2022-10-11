@@ -46,9 +46,9 @@
 <script>
   await sleep(0.1);
   const main = document.getElementById('main');
-  expect(main.offsetLeft > 130 && main.offsetLeft < 150).toBe(true);
+  expect(main.offsetLeft > 120 && main.offsetLeft < 150).toBe(true);
   await sleep(1);
-  expect(main.offsetLeft > 75 && main.offsetLeft < 120).toBe(true);
+  expect(main.offsetLeft > 60 && main.offsetLeft < 120).toBe(true);
   await sleep(1);
   expect(main.offsetLeft > 0 && main.offsetLeft < 30).toBe(true);
   await sleep(0.5);
