@@ -5,7 +5,6 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -25,12 +24,23 @@ import 'package:webf/src/foundation/cookie_jar.dart';
 class _InactiveRenderObjects {
   final Set<RenderObject> _renderObjects = HashSet<RenderObject>();
 
+  bool _isScheduled = false;
+
   void add(RenderObject? renderObject) {
     if (renderObject == null) return;
 
-    if (_renderObjects.isEmpty) {
+    if (_renderObjects.isEmpty && !_isScheduled) {
+      _isScheduled = true;
+      /// We needs to wait at least 2 frames to dispose all webf managed renderObjects.
+      /// All renderObjects managed by WebF should be disposed after Flutter managed renderObjects dispose.
       RendererBinding.instance.addPostFrameCallback((timeStamp) {
-        finalizeInactiveRenderObjects();
+        /// The Flutter framework will move all deactivated elements into _InactiveElement list.
+        /// They will be disposed in the next frame.
+        RendererBinding.instance.addPostFrameCallback((timeStamp) {
+          /// Now the renderObjects managed by Flutter framework are disposed, it's safe to dispose renderObject by our own.
+          finalizeInactiveRenderObjects();
+          _isScheduled = false;
+        });
       });
     }
 
