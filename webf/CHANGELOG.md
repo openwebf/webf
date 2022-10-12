@@ -1,3 +1,7 @@
+## 0.13.0-beta.7
+
+* fix github action ndk path.
+
 ## 0.13.0-beta.6
 
 * downgrade android NDK version requirement to r22b.
