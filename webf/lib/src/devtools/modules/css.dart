@@ -2,7 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-
+import 'dart:convert';
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
@@ -14,13 +14,16 @@ RegExp _camelCaseReg = RegExp(r'-(\w)');
 
 class InspectCSSModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
-  InspectCSSModule(ChromeDevToolsService devtoolsService) : super(devtoolsService);
+  InspectCSSModule(ChromeDevToolsService devtoolsService)
+      : super(devtoolsService);
 
   @override
   String get name => 'CSS';
 
   @override
-  void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
+  void receiveFromFrontend(
+      int? id, String method, Map<String, dynamic>? params) {
+    print('handle css: $id,$method,$params');
     switch (method) {
       case 'getMatchedStylesForNode':
         handleGetMatchedStylesForNode(id, params!);
@@ -39,7 +42,8 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element =
+        document.controller.view.getEventTargetById<Element>(nodeId);
     if (element != null) {
       MatchedStyles matchedStyles = MatchedStyles(
         inlineStyle: buildMatchedStyle(element),
@@ -50,7 +54,8 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetComputedStyleForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element =
+        document.controller.view.getEventTargetById<Element>(nodeId);
 
     if (element != null) {
       ComputedStyle computedStyle = ComputedStyle(
@@ -64,7 +69,8 @@ class InspectCSSModule extends UIInspectorModule {
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
   void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element =
+        document.controller.view.getEventTargetById<Element>(nodeId);
 
     if (element != null) {
       InlinedStyle inlinedStyle = InlinedStyle(
@@ -73,6 +79,32 @@ class InspectCSSModule extends UIInspectorModule {
       );
       sendToFrontend(id, inlinedStyle);
     }
+  }
+
+  dynamic parseRemovedStyle(String text) {
+    Map<String, String> styles = {};
+    if (text.isNotEmpty) {
+      int startIndex = text.indexOf('/*');
+      while (startIndex >= 0) {
+        String _startStr = text.substring(0, startIndex);
+        String _behandStr = text.substring(startIndex + 2);
+        int endIndex = _behandStr.indexOf('*/');
+        if (endIndex < 0) {
+          break;
+        }
+        String _suffixStr = _behandStr.substring(endIndex + 2);
+
+        String currentText = _behandStr.substring(0, endIndex);
+        text = '$_startStr$currentText$_suffixStr';
+
+        List<String> styleText = currentText.split(':');
+        styles[styleText[0].trim()] = styleText[1].trim();
+        startIndex = text.indexOf('/*');
+      }
+    }
+    print('resolveStyle:$styles,resolveValue:$text');
+
+    return MatchedRemoveStyles(remvedStyle: styles, resoveText: text);
   }
 
   void handleSetStyleTexts(int? id, Map<String, dynamic> params) {
@@ -85,8 +117,14 @@ class InspectCSSModule extends UIInspectorModule {
       // Use styleSheetId to identity element.
       int nodeId = edit['styleSheetId'];
       String text = edit['text'] ?? '';
+      // parse should remove style property
+      MatchedRemoveStyles resolvedText = parseRemovedStyle(text);
+      Map<String, String> removedStyles = resolvedText.remvedStyle;
+      text = resolvedText.resoveText;
+
       List<String> texts = text.split(';');
-      Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+      Element? element =
+          document.controller.view.getEventTargetById<Element>(nodeId);
       if (element != null) {
         for (String kv in texts) {
           kv = kv.trim();
@@ -94,6 +132,9 @@ class InspectCSSModule extends UIInspectorModule {
           if (_kv.length == 2) {
             String name = _kv[0].trim();
             String value = _kv[1].trim();
+            if (removedStyles.containsKey(name)) {
+              value = '/*$value*/';
+            }
             element.setInlineStyle(_camelize(name), value);
           }
         }
@@ -116,10 +157,20 @@ class InspectCSSModule extends UIInspectorModule {
     for (MapEntry<String, String> entry in element.style) {
       String kebabName = _kebabize(entry.key);
       String propertyValue = entry.value.toString();
+      bool isDisabled = false;
+      if (propertyValue.contains('/*')) {
+        isDisabled = true;
+        propertyValue = propertyValue.replaceAll('/*', '').replaceAll('*/', '');
+      }
       String _cssText = '$kebabName: $propertyValue';
+      if (isDisabled) {
+        _cssText = '/*$_cssText*/';
+      }
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
         value: entry.value,
+        text: _cssText,
+        disabled: isDisabled,
         range: SourceRange(
           startLine: 0,
           startColumn: cssText.length,
@@ -134,11 +185,16 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
+        styleSheetId: element.ownerDocument.controller.view
+            .getTargetIdByEventTarget(element),
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
-        range: SourceRange(startLine: 0, startColumn: 0, endLine: 0, endColumn: cssText.length));
+        range: SourceRange(
+            startLine: 0,
+            startColumn: 0,
+            endLine: 0,
+            endColumn: cssText.length));
   }
 
   static CSSStyle? buildInlineStyle(Element element) {
@@ -147,10 +203,20 @@ class InspectCSSModule extends UIInspectorModule {
     element.inlineStyle.forEach((key, value) {
       String kebabName = _kebabize(key);
       String propertyValue = value.toString();
+      bool isDisabled = false;
+      if (propertyValue.contains('/*')) {
+        isDisabled = true;
+        propertyValue = propertyValue.replaceAll('/*', '').replaceAll('*/', '');
+      }
       String _cssText = '$kebabName: $propertyValue';
+      if (isDisabled) {
+        _cssText = '/*$_cssText*/';
+      }
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
         value: value,
+        text: _cssText,
+        disabled: isDisabled,
         range: SourceRange(
           startLine: 0,
           startColumn: cssText.length,
@@ -165,11 +231,16 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
+        styleSheetId: element.ownerDocument.controller.view
+            .getTargetIdByEventTarget(element),
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
-        range: SourceRange(startLine: 0, startColumn: 0, endLine: 0, endColumn: cssText.length));
+        range: SourceRange(
+            startLine: 0,
+            startColumn: 0,
+            endLine: 0,
+            endColumn: cssText.length));
   }
 
   static String resolveCSSDisplayString(CSSDisplay display) {
@@ -240,33 +311,42 @@ class InspectCSSModule extends UIInspectorModule {
           propertyName,
         );
 
-        propertyValue = len == null ? '0' : '${len.computedValue}${_resolveCSSLengthType(len.type)}';
+        propertyValue = len == null
+            ? '0'
+            : '${len.computedValue}${_resolveCSSLengthType(len.type)}';
       }
 
       if (propertyName == DISPLAY) {
         propertyValue = resolveCSSDisplayString(element.renderStyle.display);
       }
 
-      computedStyle.add(CSSComputedStyleProperty(name: propertyName, value: propertyValue));
+      computedStyle.add(
+          CSSComputedStyleProperty(name: propertyName, value: propertyValue));
     }
 
     if (!style.contains(BORDER_TOP_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_TOP_STYLE), value: ZERO_PX));
+      computedStyle.add(CSSComputedStyleProperty(
+          name: _kebabize(BORDER_TOP_STYLE), value: ZERO_PX));
     }
     if (!style.contains(BORDER_RIGHT_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_RIGHT_STYLE), value: ZERO_PX));
+      computedStyle.add(CSSComputedStyleProperty(
+          name: _kebabize(BORDER_RIGHT_STYLE), value: ZERO_PX));
     }
     if (!style.contains(BORDER_BOTTOM_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_BOTTOM_STYLE), value: ZERO_PX));
+      computedStyle.add(CSSComputedStyleProperty(
+          name: _kebabize(BORDER_BOTTOM_STYLE), value: ZERO_PX));
     }
     if (!style.contains(BORDER_LEFT_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_LEFT_STYLE), value: ZERO_PX));
+      computedStyle.add(CSSComputedStyleProperty(
+          name: _kebabize(BORDER_LEFT_STYLE), value: ZERO_PX));
     }
 
     // Calc computed size.
-    Map<String, dynamic> boundingClientRect = element.boundingClientRect.toJSON();
+    Map<String, dynamic> boundingClientRect =
+        element.boundingClientRect.toJSON();
     boundingClientRect.forEach((String name, value) {
-      computedStyle.add(CSSComputedStyleProperty(name: name, value: '${value}px'));
+      computedStyle
+          .add(CSSComputedStyleProperty(name: name, value: '${value}px'));
     });
 
     return computedStyle;
@@ -276,6 +356,13 @@ class InspectCSSModule extends UIInspectorModule {
   static CSSStyle? buildAttributesStyle(Map<String, dynamic> properties) {
     return null;
   }
+}
+
+class MatchedRemoveStyles {
+  MatchedRemoveStyles({required this.remvedStyle, required this.resoveText});
+
+  Map<String, String> remvedStyle = <String, String>{};
+  String resoveText = '';
 }
 
 class MatchedStyles extends JSONEncodable {
@@ -495,7 +582,8 @@ class InlinedStyle extends JSONEncodable {
 
 // aB to a-b
 String _kebabize(String str) {
-  return str.replaceAllMapped(_kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
+  return str.replaceAllMapped(
+      _kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
 }
 
 // a-b to aB
