@@ -151,8 +151,48 @@ class _WebFState extends State<WebF> with RouteAware {
     });
   }
 
+  bool _flutterScreenIsReady = false;
+
+  watchWindowIsReady() {
+    double viewportWidth = window.physicalSize.width / window.devicePixelRatio;
+    double viewportHeight = window.physicalSize.height / window.devicePixelRatio;
+
+    if (viewportWidth == 0.0 && viewportHeight == 0.0) {
+      // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
+      // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
+      VoidCallback? _ordinaryOnMetricsChanged = window.onMetricsChanged;
+      window.onMetricsChanged = () async {
+        if (window.physicalSize == Size.zero) {
+          return;
+        }
+        setState(() {
+          _flutterScreenIsReady = true;
+        });
+
+        // Should proxy to ordinary window.onMetricsChanged callbacks.
+        if (_ordinaryOnMetricsChanged != null) {
+          _ordinaryOnMetricsChanged();
+          // Recover ordinary callback to window.onMetricsChanged
+          window.onMetricsChanged = _ordinaryOnMetricsChanged;
+        }
+      };
+    } else {
+      _flutterScreenIsReady = true;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    watchWindowIsReady();
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_flutterScreenIsReady) {
+      return SizedBox(width: 0, height: 0);
+    }
+
     return RepaintBoundary(
       child: WebFRootRenderObjectWidget(
         widget,
@@ -241,33 +281,6 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         onCustomElementAttached: onCustomElementAttached,
         onCustomElementDetached: onCustomElementDetached,
         uriParser: _webfWidget.uriParser);
-
-    if (viewportWidth == 0.0 && viewportHeight == 0.0) {
-      // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
-      // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
-      VoidCallback? _ordinaryOnMetricsChanged = window.onMetricsChanged;
-      window.onMetricsChanged = () async {
-        if (window.physicalSize == Size.zero) {
-          return;
-        }
-
-        double viewportWidth = _webfWidget.viewportWidth ?? window.physicalSize.width / window.devicePixelRatio;
-        double viewportHeight = _webfWidget.viewportHeight ?? window.physicalSize.height / window.devicePixelRatio;
-
-        controller.view.viewportWidth = viewportWidth;
-        controller.view.document.documentElement!.renderStyle.width = CSSLengthValue(viewportWidth, CSSLengthType.PX);
-
-        controller.view.viewportHeight = viewportHeight;
-        controller.view.document.documentElement!.renderStyle.height = CSSLengthValue(viewportHeight, CSSLengthType.PX);
-
-        // Should proxy to ordinary window.onMetricsChanged callbacks.
-        if (_ordinaryOnMetricsChanged != null) {
-          _ordinaryOnMetricsChanged();
-          // Recover ordinary callback to window.onMetricsChanged
-          window.onMetricsChanged = _ordinaryOnMetricsChanged;
-        }
-      };
-    }
 
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_CONTROLLER_INIT_END);
