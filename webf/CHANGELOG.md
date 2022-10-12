@@ -1,3 +1,10 @@
+## 0.13.0-beta.5
+
+fix: request body should be UTF-8 encoded string.
+fix: fix onLoad didn't not trigger when reload.
+fix: fix rendering empty if window size is not ready.
+fix: should dispose webf managed renderObject after flutter framework does.
+
 ## 0.13.0-beta.4
 
 * Test for new custom elements system.
