@@ -362,8 +362,10 @@ task(`build-ios-webf-lib`, (done) => {
     }
   });
 
+  let cpus = os.cpus();
+
   // build for simulator
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-x64 --target webf webf_static -- -j 12`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-x64 --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
@@ -387,7 +389,7 @@ task(`build-ios-webf-lib`, (done) => {
   });
 
   // Build for ARMv7, ARMv7s
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm --target webf webf_static -- -j 12`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
@@ -410,7 +412,7 @@ task(`build-ios-webf-lib`, (done) => {
   });
 
   // Build for ARM64
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm64 --target webf webf_static -- -j 12`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm64 --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
