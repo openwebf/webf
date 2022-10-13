@@ -9,7 +9,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
-import 'package:webf/src/scheduler/throttle.dart';
 
 const int _MAX_STEP_MS = 16;
 
@@ -100,8 +99,6 @@ class GestureDispatcher {
   List<EventTarget> _eventPath = const [];
   // Collect the events in the event path list.
   final Map<String, bool> _eventsInPath = {};
-
-  final Throttling _throttler = Throttling(duration: Duration(milliseconds: _MAX_STEP_MS));
 
   final Map<int, EventTarget> _pointTargets = {};
   void _bindEventTargetWithTouchPoint(TouchPoint touchPoint, EventTarget eventTarget) {
@@ -402,13 +399,7 @@ class GestureDispatcher {
         e.touches.append(touch);
       }
 
-      if (eventType == EVENT_TOUCH_MOVE) {
-        _throttler.throttle(() {
-          _pointTargets[currentTouchPoint.id]?.dispatchEvent(e);
-        });
-      } else {
-        _pointTargets[currentTouchPoint.id]?.dispatchEvent(e);
-      }
+      _pointTargets[currentTouchPoint.id]?.dispatchEvent(e);
     }
   }
 }
