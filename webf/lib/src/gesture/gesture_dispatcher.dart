@@ -10,8 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 
-const int _MAX_STEP_MS = 16;
-
 class _DragEventInfo extends Drag {
   _DragEventInfo(this.gestureDispatcher);
 
