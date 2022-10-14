@@ -81,7 +81,7 @@ class InspectCSSModule extends UIInspectorModule {
     }
   }
 
-  dynamic parseRemovedStyle(String text) {
+  Map<String, dynamic> parseRemovedStyle(String text) {
     Map<String, String> styles = {};
     if (text.isNotEmpty) {
       int startIndex = text.indexOf('/*');
@@ -102,9 +102,7 @@ class InspectCSSModule extends UIInspectorModule {
         startIndex = text.indexOf('/*');
       }
     }
-    print('resolveStyle:$styles,resolveValue:$text');
-
-    return MatchedRemoveStyles(remvedStyle: styles, resoveText: text);
+    return {'remvedStyle': styles, 'resoveText': text};
   }
 
   void handleSetStyleTexts(int? id, Map<String, dynamic> params) {
@@ -118,9 +116,9 @@ class InspectCSSModule extends UIInspectorModule {
       int nodeId = edit['styleSheetId'];
       String text = edit['text'] ?? '';
       // parse should remove style property
-      MatchedRemoveStyles resolvedText = parseRemovedStyle(text);
-      Map<String, String> removedStyles = resolvedText.remvedStyle;
-      text = resolvedText.resoveText;
+      Map<String, dynamic> resolvedText = parseRemovedStyle(text);
+      Map<String, String> removedStyles = resolvedText['remvedStyle'];
+      text = resolvedText['resoveText'] as String;
 
       List<String> texts = text.split(';');
       Element? element =
@@ -356,13 +354,6 @@ class InspectCSSModule extends UIInspectorModule {
   static CSSStyle? buildAttributesStyle(Map<String, dynamic> properties) {
     return null;
   }
-}
-
-class MatchedRemoveStyles {
-  MatchedRemoveStyles({required this.remvedStyle, required this.resoveText});
-
-  Map<String, String> remvedStyle = <String, String>{};
-  String resoveText = '';
 }
 
 class MatchedStyles extends JSONEncodable {
