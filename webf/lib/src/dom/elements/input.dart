@@ -47,6 +47,28 @@ mixin BaseInputElement on WidgetElement {
     return super.getBindingProperty(key);
   }
 
+  @override
+  void propertyDidUpdate(String key, value) {
+    _setAttribute(key, value);
+    super.propertyDidUpdate(key, value);
+  }
+
+  @override
+  void attributeDidUpdate(String key, String value) {
+    _setAttribute(key, value);
+    super.attributeDidUpdate(key, value);
+  }
+
+  void _setAttribute(String key, String value) {
+    switch (key) {
+      case 'value':
+        if (this.value != value) {
+          this.value = value;
+        }
+        break;
+    }
+  }
+
   TextInputType? getKeyboardType() {
     switch (type) {
       case 'number':
