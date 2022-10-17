@@ -14,15 +14,13 @@ RegExp _camelCaseReg = RegExp(r'-(\w)');
 
 class InspectCSSModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
-  InspectCSSModule(ChromeDevToolsService devtoolsService)
-      : super(devtoolsService);
+  InspectCSSModule(ChromeDevToolsService devtoolsService) : super(devtoolsService);
 
   @override
   String get name => 'CSS';
 
   @override
-  void receiveFromFrontend(
-      int? id, String method, Map<String, dynamic>? params) {
+  void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
     print('handle css: $id,$method,$params');
     switch (method) {
       case 'getMatchedStylesForNode':
@@ -42,8 +40,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element =
-        document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
     if (element != null) {
       MatchedStyles matchedStyles = MatchedStyles(
         inlineStyle: buildMatchedStyle(element),
@@ -54,8 +51,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetComputedStyleForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element =
-        document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
 
     if (element != null) {
       ComputedStyle computedStyle = ComputedStyle(
@@ -69,8 +65,7 @@ class InspectCSSModule extends UIInspectorModule {
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
   void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element =
-        document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
 
     if (element != null) {
       InlinedStyle inlinedStyle = InlinedStyle(
@@ -121,8 +116,7 @@ class InspectCSSModule extends UIInspectorModule {
       text = resolvedText['resoveText'] as String;
 
       List<String> texts = text.split(';');
-      Element? element =
-          document.controller.view.getEventTargetById<Element>(nodeId);
+      Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
       if (element != null) {
         for (String kv in texts) {
           kv = kv.trim();
@@ -183,16 +177,11 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerDocument.controller.view
-            .getTargetIdByEventTarget(element),
+        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
-        range: SourceRange(
-            startLine: 0,
-            startColumn: 0,
-            endLine: 0,
-            endColumn: cssText.length));
+        range: SourceRange(startLine: 0, startColumn: 0, endLine: 0, endColumn: cssText.length));
   }
 
   static CSSStyle? buildInlineStyle(Element element) {
@@ -229,16 +218,11 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerDocument.controller.view
-            .getTargetIdByEventTarget(element),
+        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
-        range: SourceRange(
-            startLine: 0,
-            startColumn: 0,
-            endLine: 0,
-            endColumn: cssText.length));
+        range: SourceRange(startLine: 0, startColumn: 0, endLine: 0, endColumn: cssText.length));
   }
 
   static String resolveCSSDisplayString(CSSDisplay display) {
@@ -309,42 +293,33 @@ class InspectCSSModule extends UIInspectorModule {
           propertyName,
         );
 
-        propertyValue = len == null
-            ? '0'
-            : '${len.computedValue}${_resolveCSSLengthType(len.type)}';
+        propertyValue = len == null ? '0' : '${len.computedValue}${_resolveCSSLengthType(len.type)}';
       }
 
       if (propertyName == DISPLAY) {
         propertyValue = resolveCSSDisplayString(element.renderStyle.display);
       }
 
-      computedStyle.add(
-          CSSComputedStyleProperty(name: propertyName, value: propertyValue));
+      computedStyle.add(CSSComputedStyleProperty(name: propertyName, value: propertyValue));
     }
 
     if (!style.contains(BORDER_TOP_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(
-          name: _kebabize(BORDER_TOP_STYLE), value: ZERO_PX));
+      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_TOP_STYLE), value: ZERO_PX));
     }
     if (!style.contains(BORDER_RIGHT_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(
-          name: _kebabize(BORDER_RIGHT_STYLE), value: ZERO_PX));
+      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_RIGHT_STYLE), value: ZERO_PX));
     }
     if (!style.contains(BORDER_BOTTOM_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(
-          name: _kebabize(BORDER_BOTTOM_STYLE), value: ZERO_PX));
+      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_BOTTOM_STYLE), value: ZERO_PX));
     }
     if (!style.contains(BORDER_LEFT_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(
-          name: _kebabize(BORDER_LEFT_STYLE), value: ZERO_PX));
+      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_LEFT_STYLE), value: ZERO_PX));
     }
 
     // Calc computed size.
-    Map<String, dynamic> boundingClientRect =
-        element.boundingClientRect.toJSON();
+    Map<String, dynamic> boundingClientRect = element.boundingClientRect.toJSON();
     boundingClientRect.forEach((String name, value) {
-      computedStyle
-          .add(CSSComputedStyleProperty(name: name, value: '${value}px'));
+      computedStyle.add(CSSComputedStyleProperty(name: name, value: '${value}px'));
     });
 
     return computedStyle;
@@ -573,8 +548,7 @@ class InlinedStyle extends JSONEncodable {
 
 // aB to a-b
 String _kebabize(String str) {
-  return str.replaceAllMapped(
-      _kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
+  return str.replaceAllMapped(_kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
 }
 
 // a-b to aB
