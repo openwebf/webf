@@ -130,9 +130,7 @@ global.simulatePointer = function simulatePointer(list, pointer) {
         if (typeof value[2] != 'number') throw new Error(`list[${i}][2] should be an number`);
       });
 
-      __webf_simulate_pointer__(list, pointer);
-
-      resolve();
+      __webf_simulate_pointer__(list, pointer, resolve);
     });
   });
 }

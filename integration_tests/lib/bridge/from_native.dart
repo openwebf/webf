@@ -80,7 +80,7 @@ Pointer<Utf8> _environment() {
 
 final Pointer<NativeFunction<NativeEnvironment>> _nativeEnvironment = Pointer.fromFunction(_environment);
 
-typedef NativeSimulatePointer = Void Function(Pointer<MousePointer>, Int32 length, Int32 pointer);
+typedef NativeSimulatePointer = Void Function(Pointer<Void> context, Pointer<MousePointer>, Int32 length, Int32 pointer, Pointer<NativeFunction<NativeAsyncCallback>> callback);
 typedef NativeSimulateInputText = Void Function(Pointer<NativeString>);
 
 PointerChange _getPointerChange(double change) {
@@ -110,24 +110,28 @@ class MousePointer extends Struct {
   external double delayY;
 }
 
-void _simulatePointer(Pointer<MousePointer> mousePointerList, int length, int pointer) {
+void _simulatePointer(Pointer<Void> context, Pointer<MousePointer> mousePointerList, int length, int pointer, Pointer<NativeFunction<NativeAsyncCallback>> callback) {
+  int _contextId = 0;
   sendPointerToWindow(List<List<PointerData>> data, int index) {
-    if (index >= data.length) return;
+    if (index >= data.length) {
+      DartAsyncCallback fn = callback.asFunction();
+      fn(context, _contextId, nullptr);
+      return;
+    }
 
     PointerDataPacket dataPacket = PointerDataPacket(data: data[index]);
     window.onPointerDataPacket!(dataPacket);
-    if (index < data.length) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        sendPointerToWindow(data, index + 1);
-      });
-    }
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      sendPointerToWindow(data, index + 1);
+    });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   List<List<PointerData>> dataList = [];
 
   for (int i = 0; i < length; i++) {
     List<PointerData> data = [];
-    int contextId = mousePointerList.elementAt(i).ref.contextId;
+    int contextId = _contextId = mousePointerList.elementAt(i).ref.contextId;
     double x = mousePointerList.elementAt(i).ref.x;
     double y = mousePointerList.elementAt(i).ref.y;
     PointerSignalKind signalKind = PointerSignalKind.values[mousePointerList.elementAt(i).ref.signalKind];

@@ -185,8 +185,7 @@ async function simulateClick(x: number, y: number, pointer: number = 0) {
 
 // Simulate an mouse swipe action.
 async function simulateSwipe(startX: number, startY: number, endX: number, endY: number, duration: number, pointer: number = 0) {
-  let params: [number, number, number, number, number, number][] = [
-  ];
+  let params: [number, number, number, number, number, number][] = [];
   let pointerMoveDelay = 0.016;
   let totalCount = duration / pointerMoveDelay;
   let diffXPerFrame = (endX - startX) / totalCount;
@@ -203,7 +202,6 @@ async function simulateSwipe(startX: number, startY: number, endX: number, endY:
 
     previousX = startX + diffX;
     previousY = startY + diffY;
-
   }
 
   await simulatePointer(params, pointer);

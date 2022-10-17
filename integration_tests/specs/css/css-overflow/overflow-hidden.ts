@@ -11,11 +11,11 @@ describe('hidden', () => {
     }, [
       (image = createElement('img', {
           src: 'assets/100x100-green.png',
-      })) 
+      }))
     ]);
-  
+
     document.body.appendChild(container);
-  
+
     await snapshot(0.1);
   });
 
@@ -31,13 +31,13 @@ describe('hidden', () => {
     }, [
       (image = createElement('img', {
           src: 'assets/100x100-green.png',
-      })) 
+      }))
     ]);
-  
+
     image.addEventListener('appear', function onAppear() {});
-  
+
     document.body.appendChild(container);
-  
+
     await snapshot(0.1);
   });
 
@@ -49,7 +49,12 @@ describe('hidden', () => {
           'box-sizing': 'border-box',
         },
       },
-      [createText(`There should be a text for test scroll logic to uset.`)]
+      [createText(`There should be a text for test scroll logic to uset.`),
+        createText(`There should be a text for test scroll logic to uset.`),
+        createText(`There should be a text for test scroll logic to uset.`),
+        createText(`There should be a text for test scroll logic to uset.`),
+        createText(`There should be a text for test scroll logic to uset.`),
+        createText(`There should be a text for test scroll logic to uset.`)]
 
     );
     let container = createElement('div', {
@@ -63,9 +68,10 @@ describe('hidden', () => {
       p
     ]);
     document.body.appendChild(container);
+    await snapshot();
     requestAnimationFrame(async () => {
-      await simulateSwipe(0, 60, 50, 0, 0.5);
-      await snapshot(1);
+      await simulateSwipe(0, 0, 0, 60, 1);
+      await snapshot();
       done();
     });
   });
