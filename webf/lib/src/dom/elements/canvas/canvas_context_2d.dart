@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:ffi' as ffi;
 
-import 'package:ffi/ffi.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
@@ -45,20 +44,16 @@ typedef CanvasAction = void Function(Canvas, Size);
 
 class CanvasRenderingContext2D extends BindingObject {
   CanvasRenderingContext2D(this.canvas)
-      : _pointer = malloc.allocate<NativeCanvasRenderingContext2D>(ffi.sizeOf<NativeCanvasRenderingContext2D>()),
+      : _pointer = allocateNewBindingObject(),
         super();
 
-  final ffi.Pointer<NativeCanvasRenderingContext2D> _pointer;
+  final ffi.Pointer<NativeBindingObject> _pointer;
 
   @override
   get pointer => _pointer;
 
   @override
   get contextId => canvas.contextId;
-
-  ffi.Pointer<NativeCanvasRenderingContext2D> toNative() {
-    return pointer;
-  }
 
   @override
   invokeBindingMethod(String method, List args) {
@@ -71,7 +66,7 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
-            anticlockwise: args[5] == 1 ? true : false);
+            anticlockwise: (args.length > 5 && args[5] == 1) ? true : false);
       case 'arcTo':
         return arcTo(
             castToType<num>(args[0]).toDouble(),
@@ -89,21 +84,29 @@ class CanvasRenderingContext2D extends BindingObject {
         return strokeRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble());
       case 'fillText':
-        double maxWidth = castToType<num>(args[3]).toDouble();
-        if (!maxWidth.isNaN) {
+        if (args.length > 3) {
+          double maxWidth = castToType<num>(args[3]).toDouble();
+          if (!maxWidth.isNaN) {
+            return fillText(
+                castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
+                maxWidth: maxWidth);
+          }
           return fillText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
-              maxWidth: maxWidth);
+              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
         } else {
           return fillText(
               castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
         }
       case 'strokeText':
-        double maxWidth = castToType<num>(args[3]).toDouble();
-        if (!maxWidth.isNaN) {
+        if (args.length > 3) {
+          double maxWidth = castToType<num>(args[3]).toDouble();
+          if (!maxWidth.isNaN) {
+            return strokeText(
+                castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
+                maxWidth: maxWidth);
+          }
           return strokeText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
-              maxWidth: maxWidth);
+              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
         } else {
           return strokeText(
               castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
@@ -123,7 +126,7 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble());
       case 'clip':
-        PathFillType fillType = castToType<String>(args[0]) == EVENODD ? PathFillType.evenOdd : PathFillType.nonZero;
+        PathFillType fillType = (args.isNotEmpty && castToType<String>(args[0]) == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
         return clip(fillType);
       case 'closePath':
         return closePath();
@@ -163,9 +166,9 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble(),
             castToType<num>(args[6]).toDouble(),
-            anticlockwise: args[7] == 1 ? true : false);
+            anticlockwise: (args.length > 7 && args[7] == 1) ? true : false);
       case 'fill':
-        PathFillType fillType = args[0] == EVENODD ? PathFillType.evenOdd : PathFillType.nonZero;
+        PathFillType fillType = (args.isNotEmpty && args[0] == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
         return fill(fillType);
       case 'lineTo':
         return lineTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());

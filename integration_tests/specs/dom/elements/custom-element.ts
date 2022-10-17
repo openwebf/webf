@@ -37,6 +37,8 @@ describe('custom widget element', () => {
       done();
     });
 
+    await sleep(0.2);
+
     simulateClick(20, 20);
   });
 
@@ -156,7 +158,7 @@ describe('custom widget element', () => {
     flutterContainer.style.display = 'block';
 
     document.body.appendChild(flutterContainer);
- 
+
     const div = document.createElement('div');
     div.style.width = '100%';
     div.style.height = '100px';
@@ -167,12 +169,12 @@ describe('custom widget element', () => {
     div.appendChild(img);
 
     flutterContainer.appendChild(div);
-  
+
     requestAnimationFrame(async () => {
        const rect = div.getBoundingClientRect();
        expect(rect.height).toEqual(100);
        done();
-    });     
+    });
   });
 
   it('flutter widget should spread out the parent node when parent node is line-block', async () => {
@@ -243,6 +245,12 @@ describe('custom html element', () => {
     await snapshot();
   });
 
+  it('dart implements getAllBindingPropertyNames works', async () => {
+    let sampleElement = document.createElement('sample-element');
+    let attributes = Object.keys(sampleElement);
+    expect(attributes).toEqual(['ping', 'fake', 'fn', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete']);
+  });
+
   it('support custom properties in dart directly', () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
@@ -261,7 +269,11 @@ describe('custom html element', () => {
 
     let arrs = [1, 2, 4, 8, 16];
     // @ts-ignore
-    expect(sampleElement.fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
+    let fn = sampleElement.fn;
+
+    expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
+    // @ts-ignore
+    expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
   });
 
   it('return promise when dart return future async function', async () => {
@@ -287,6 +299,24 @@ describe('custom html element', () => {
     expect(await p4).toEqual([{ name: 1 }]);
   });
 
+  it('return promise maybe not complete from dart side', async (done) => {
+    let sampleElement = document.createElement('sample-element');
+    let text = document.createTextNode('helloworld');
+    sampleElement.appendChild(text);
+    document.body.appendChild(sampleElement);
+    // @ts-ignore
+    let p = sampleElement.asyncFnNotComplete();
+    expect(p instanceof Promise);
+
+    p.then(() => {
+      done.fail('should not resolved');
+    });
+
+    setTimeout(() => {
+      done();
+    }, 2000);
+  });
+
   it('return promise error when dart async function throw error', async () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
@@ -299,7 +329,7 @@ describe('custom html element', () => {
       let result = await p;
       throw new Error('should throw');
     } catch (e) {
-      expect(e.message).toBe('Assertion failed: "Asset error"');
+      expect(e.message.trim()).toBe('Assertion failed: "Asset error"');
     }
   });
 
@@ -310,11 +340,51 @@ describe('custom html element', () => {
     document.body.appendChild(sampleElement);
 
     // @ts-ignore
-    expect(sampleElement._fake).toBe(undefined);
+    expect(sampleElement._fake).toBe(null);
 
     // @ts-ignore
     sampleElement._fake = [1, 2, 3, 4, 5];
     // @ts-ignore
+    sampleElement._fn = () => 1;
+    // @ts-ignore
+    sampleElement._self = sampleElement;
+    // @ts-ignore
     expect(sampleElement._fake).toEqual([1, 2, 3, 4, 5]);
+    // @ts-ignore
+    expect(sampleElement._fn()).toBe(1);
+    // @ts-ignore
+    expect(sampleElement._self === sampleElement);
+  });
+
+  it('should work with cloneNode', () => {
+    let sampleElement = document.createElement('sample-element');
+    let text = document.createTextNode('helloworld');
+    sampleElement.appendChild(text);
+    document.body.appendChild(sampleElement);
+
+    // @ts-ignore
+    expect(sampleElement._fake).toBe(null);
+
+    // @ts-ignore
+    sampleElement._fake = [1, 2, 3, 4, 5];
+    // @ts-ignore
+    sampleElement._fn = () => 1;
+    // @ts-ignore
+    sampleElement._self = sampleElement;
+    // @ts-ignore
+    expect(sampleElement._fake).toEqual([1, 2, 3, 4, 5]);
+    // @ts-ignore
+    expect(sampleElement._fn()).toBe(1);
+    // @ts-ignore
+    expect(sampleElement._self === sampleElement);
+
+    let clone = sampleElement.cloneNode();
+
+    // @ts-ignore
+    expect(clone._fake).toEqual([1,2,3,4,5]);
+    // @ts-ignore
+    expect(clone._fn()).toEqual(1);
+    // @ts-ignore
+    expect(clone._self).toBe(sampleElement);
   });
 });

@@ -42,7 +42,7 @@ class InspectCSSModule extends UIInspectorModule {
     Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
     if (element != null) {
       MatchedStyles matchedStyles = MatchedStyles(
-        inlineStyle: buildInlineStyle(element),
+        inlineStyle: buildMatchedStyle(element),
       );
       sendToFrontend(id, matchedStyles);
     }
@@ -108,6 +108,37 @@ class InspectCSSModule extends UIInspectorModule {
         JSONEncodableMap({
           'styles': styles,
         }));
+  }
+
+  static CSSStyle? buildMatchedStyle(Element element) {
+    List<CSSProperty> cssProperties = [];
+    String cssText = '';
+    for (MapEntry<String, String> entry in element.style) {
+      String kebabName = _kebabize(entry.key);
+      String propertyValue = entry.value.toString();
+      String _cssText = '$kebabName: $propertyValue';
+      CSSProperty cssProperty = CSSProperty(
+        name: kebabName,
+        value: entry.value,
+        range: SourceRange(
+          startLine: 0,
+          startColumn: cssText.length,
+          endLine: 0,
+          endColumn: cssText.length + _cssText.length + 1,
+        ),
+      );
+      cssText += '$_cssText; ';
+      cssProperties.add(cssProperty);
+    }
+
+    return CSSStyle(
+        // Absent for user agent stylesheet and user-specified stylesheet rules.
+        // Use hash code id to identity which element the rule belongs to.
+        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
+        cssProperties: cssProperties,
+        shorthandEntries: <ShorthandEntry>[],
+        cssText: cssText,
+        range: SourceRange(startLine: 0, startColumn: 0, endLine: 0, endColumn: cssText.length));
   }
 
   static CSSStyle? buildInlineStyle(Element element) {

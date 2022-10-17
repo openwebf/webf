@@ -32,13 +32,9 @@ const getPolyFillHeader = (outputName) => `/*
 #ifndef ${outputName.toUpperCase()}_H
 #define ${outputName.toUpperCase()}_H
 
-#if WEBF_JSC_ENGINE
-#include "bridge_jsc.h"
-#elif WEBF_QUICK_JS_ENGINE
-#include "page.h"
-#endif
+#include "core/executing_context.h"
 
-void initWebF${outputName}(webf::WebFPage *page);
+void initWebF${outputName}(webf::ExecutingContext *context);
 
 #endif // ${outputName.toUpperCase()}_H
 `;
@@ -53,7 +49,7 @@ uint8_t bytes[${uint8Array.length}] = {${uint8Array.join(',')}}; }`;
 };
 
 const getPolyfillEvalCall = () => {
-  return 'page->evaluateByteCode(bytes, byteLength);';
+  return 'context->EvaluateByteCode(bytes, byteLength);';
 }
 
 const getPolyFillSource = (source, outputName) => `/*
@@ -65,14 +61,14 @@ const getPolyFillSource = (source, outputName) => `/*
 
 ${getPolyFillJavaScriptSource(source)}
 
-void initWebF${outputName}(webf::WebFPage *page) {
+void initWebF${outputName}(webf::ExecutingContext *context) {
   ${getPolyfillEvalCall()}
 }
-`;
+  `;
 
-function convertJSToCpp(code, outputName) {
-  return getPolyFillSource(code, outputName);
-}
+  function convertJSToCpp(code, outputName) {
+    return getPolyFillSource(code, outputName);
+  }
 
 let source = argv.s;
 let output = argv.o;

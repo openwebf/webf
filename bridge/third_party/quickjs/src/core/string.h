@@ -32,10 +32,6 @@
 
 #define ATOM_GET_STR_BUF_SIZE 64
 
-#define JS_ATOM_TAG_INT (1U << 31)
-#define JS_ATOM_MAX_INT (JS_ATOM_TAG_INT - 1)
-#define JS_ATOM_MAX ((1U << 30) - 1)
-
 /* return the max count from the hash size */
 #define JS_ATOM_COUNT_RESIZE(n) ((n)*2)
 

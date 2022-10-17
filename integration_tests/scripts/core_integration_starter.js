@@ -28,10 +28,10 @@ function startIntegrationTest() {
   const tester = spawn(testExecutable, [], {
     env: {
       ...process.env,
-      KRAKEN_ENABLE_TEST: 'true',
+      WEBF_ENABLE_TEST: 'true',
       'enable-software-rendering': true,
       'skia-deterministic-rendering': true,
-      KRAKEN_TEST_DIR: path.join(__dirname, '../')
+      WEBF_TEST_DIR: path.join(__dirname, '../')
     },
     cwd: process.cwd(),
     stdio: 'inherit'
@@ -41,10 +41,14 @@ function startIntegrationTest() {
     process.exit(code);
   });
   tester.on('error', (error) => {
-    console.error(error);
+    console.error('integration failed', error);
     process.exit(1);
   });
   tester.on('exit', (code, signal) => {
+    if (signal) {
+      console.log('Process exit with ' + signal);
+      process.exit(1);
+    }
     if (code != 0) {
       process.exit(1);
     }

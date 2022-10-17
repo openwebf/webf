@@ -373,6 +373,7 @@ class CSSBackgroundPosition {
   CSSBackgroundPosition({
     this.length,
     this.percentage,
+    this.calcValue,
   });
 
   /// Absolute position to image container when length type is set.
@@ -380,6 +381,9 @@ class CSSBackgroundPosition {
 
   /// Relative position to image container when keyword or percentage type is set.
   double? percentage;
+
+  /// Relative position to image container when keyword or calcValue type is set.
+  CSSCalcValue? calcValue;
 }
 
 class CSSBackgroundSize {

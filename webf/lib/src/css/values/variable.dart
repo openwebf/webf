@@ -17,7 +17,7 @@ class CSSVariable {
   }
 
   // Try to parse CSSVariable.
-  static CSSVariable? tryParse(RenderStyle renderStyle, String propertyName, String propertyValue) {
+  static CSSVariable? tryParse(RenderStyle renderStyle, String propertyValue) {
     // font-size: var(--x);
     // font-size: var(--x, 28px);
     if (CSSFunction.isFunction(propertyValue, functionName: VAR)) {
@@ -25,7 +25,12 @@ class CSSVariable {
       if (fns.first.args.isNotEmpty) {
         if (fns.first.args.length > 1) {
           // Has default value for CSS Variable.
-          return CSSVariable(fns.first.args.first, renderStyle, defaultValue: fns.first.args.last);
+          dynamic defaultValue = fns.first.args.last.trim();
+          CSSVariable? defaultVar = CSSVariable.tryParse(renderStyle, defaultValue);
+          if (defaultVar != null) {
+            defaultValue = defaultVar;
+          }
+          return CSSVariable(fns.first.args.first, renderStyle, defaultValue: defaultValue);
         } else {
           return CSSVariable(fns.first.args.first, renderStyle);
         }
@@ -35,23 +40,24 @@ class CSSVariable {
   }
 
   final String identifier;
-  final String? defaultValue;
+  final dynamic defaultValue;
   final RenderStyle _renderStyle;
 
   CSSVariable(this.identifier, this._renderStyle, {this.defaultValue});
 
   // Get the lazy calculated CSS resolved value.
   dynamic computedValue(String propertyName) {
-    String? unsolvedValue = _renderStyle.getCSSVariable(identifier, propertyName) ?? defaultValue;
-    if (unsolvedValue == null) {
+    dynamic value = _renderStyle.getCSSVariable(identifier, propertyName) ?? defaultValue;
+    if (value == null) {
       return null;
     }
 
-    var resolved = _renderStyle.resolveValue(propertyName, unsolvedValue);
-    if (resolved is CSSVariable) {
-      return resolved.computedValue(propertyName);
+    if (value is CSSVariable) {
+      return value.computedValue(propertyName);
+    } else if (propertyName.isNotEmpty) {
+      return _renderStyle.resolveValue(propertyName, value);
     } else {
-      return resolved;
+      return value;
     }
   }
 

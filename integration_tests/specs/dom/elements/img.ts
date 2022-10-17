@@ -407,9 +407,6 @@ describe('Tags img', () => {
       div.appendChild(document.createTextNode(i));
 
       const img = document.createElement('img');
-      img.src = images[i % images.length];
-      div.appendChild(img);
-      img.style.width = '80px';
       img.onload = async () => {
         loadedCount++;
         if (loadedCount == imgCount) {
@@ -417,6 +414,9 @@ describe('Tags img', () => {
           done();
         }
       };
+      img.src = images[i % images.length];
+      div.appendChild(img);
+      img.style.width = '80px';
 
       flutterContainer.appendChild(div);
     }

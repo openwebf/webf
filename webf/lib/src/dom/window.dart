@@ -17,7 +17,7 @@ class Window extends EventTarget {
   final Screen screen;
 
   Window(BindingContext? context, this.document)
-      : screen = Screen(context),
+      : screen = Screen(context!.contextId),
         super(context);
 
   @override
@@ -71,12 +71,14 @@ class Window extends EventTarget {
   double get scrollY => document.documentElement!.scrollTop;
 
   void scrollTo(double x, double y) {
+    document.flushStyle();
     document.documentElement!
       ..flushLayout()
       ..scrollTo(x, y);
   }
 
   void scrollBy(double x, double y) {
+    document.flushStyle();
     document.documentElement!
       ..flushLayout()
       ..scrollBy(x, y);
@@ -90,8 +92,8 @@ class Window extends EventTarget {
   // including the size of a rendered scroll bar (if any), or zero if there is no viewport.
   // https://drafts.csswg.org/cssom-view/#dom-window-innerwidth
   // This is a read only idl attribute.
-  int get innerWidth => _viewportSize.width.toInt();
-  int get innerHeight => _viewportSize.height.toInt();
+  double get innerWidth => _viewportSize.width;
+  double get innerHeight => _viewportSize.height;
 
   Size get _viewportSize {
     RenderViewportBox? viewport = document.viewport;
@@ -105,8 +107,10 @@ class Window extends EventTarget {
   @override
   void dispatchEvent(Event event) {
     // Events such as EVENT_DOM_CONTENT_LOADED need to ensure that listeners are flushed and registered.
-    if (event.type == EVENT_DOM_CONTENT_LOADED || event.type == EVENT_LOAD || event.type == EVENT_ERROR) {
-      flushUICommand();
+    if (contextId != null && event.type == EVENT_DOM_CONTENT_LOADED ||
+        event.type == EVENT_LOAD ||
+        event.type == EVENT_ERROR) {
+      flushUICommandWithContextId(contextId!);
     }
     super.dispatchEvent(event);
   }

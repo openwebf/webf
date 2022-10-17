@@ -47,12 +47,6 @@ public class WebFPlugin implements FlutterPlugin, MethodCallHandler {
         channel.setMethodCallHandler(this);
     }
 
-    public void reload() {
-        if (channel != null) {
-            channel.invokeMethod("reload", null);
-        }
-    }
-
     WebF getWebF() {
       if (mWebF == null) {
         mWebF = WebF.get(flutterEngine);
@@ -63,36 +57,14 @@ public class WebFPlugin implements FlutterPlugin, MethodCallHandler {
     @Override
     public void onMethodCall(MethodCall call, Result result) {
         switch (call.method) {
-          case "getUrl": {
-            WebF webf = getWebF();
-            result.success(webf == null ? "" : webf.getUrl());
-            break;
-          }
-
           case "getDynamicLibraryPath": {
             WebF webf = getWebF();
             result.success(webf == null ? "" : webf.getDynamicLibraryPath());
             break;
           }
-
-          case "invokeMethod": {
-            WebF webf = getWebF();
-            if (webf != null) {
-              String method = call.argument("method");
-              Object args = call.argument("args");
-              assert method != null;
-              MethodCall callWrap = new MethodCall(method, args);
-              webf._handleMethodCall(callWrap, result);
-            } else {
-              result.error("WebF instance not found.", null, null);
-            }
-            break;
-          }
-
           case "getTemporaryDirectory":
             result.success(getTemporaryDirectory());
             break;
-
           default:
             result.notImplemented();
         }

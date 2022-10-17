@@ -5,14 +5,14 @@
 describe('Document getElementById', () => {
   it('basic test', () => {
     const div = document.createElement('div');
-    div.setAttribute('id', 'div');
+    div.id = 'div';
     const myDiv = document.getElementById('div');
     expect(myDiv).toBeNull();
   });
 
   it('not work with element not inserted into Document', () => {
     const div = document.createElement('div');
-    div.setAttribute('id', 'div');
+    div.id = 'div';
     expect(document.getElementById('div')).toBeNull();
   });
 

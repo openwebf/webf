@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "defined_properties_initializer",
+        "filename": "defined_properties_initializer"
+      }
+    ]
+  },
+  "data": [
+    // The data of defined_properties_initializer.json5 will be injected by code_generator scripts.
+  ]
+}

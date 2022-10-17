@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2022-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
@@ -79,8 +80,6 @@ class RefCountedThreadSafeBase {
   mutable bool adoption_required_;
   mutable bool destruction_started_;
 #endif
-
-  DISALLOW_COPY_AND_ASSIGN(RefCountedThreadSafeBase);
 };
 
 inline RefCountedThreadSafeBase::RefCountedThreadSafeBase()

@@ -2,13 +2,16 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ffi';
+import 'dart:collection';
 import 'package:flutter/foundation.dart';
+import 'package:webf/bridge.dart';
 
 typedef BindingObjectOperation = void Function(BindingObject bindingObject);
 
 class BindingContext {
   final int contextId;
-  final pointer;
+  final Pointer<NativeBindingObject> pointer;
   const BindingContext(this.contextId, this.pointer);
 }
 
@@ -19,10 +22,41 @@ abstract class BindingObject {
   final BindingContext? _context;
 
   int? get contextId => _context?.contextId;
-  get pointer => _context?.pointer;
+  Pointer<NativeBindingObject>? get pointer => _context?.pointer;
 
   BindingObject([BindingContext? context]) : _context = context {
     _bind();
+  }
+
+  int _functionId = 0;
+  final LinkedHashMap<int, AnonymousNativeFunction> _functionMap = LinkedHashMap();
+  final LinkedHashMap<int, AsyncAnonymousNativeFunction> _asyncFunctionMap = LinkedHashMap();
+
+  AnonymousNativeFunction? getAnonymousNativeFunctionFromId(int id) {
+    return _functionMap[id];
+  }
+  int setAnonymousNativeFunction(AnonymousNativeFunction fn) {
+    int newId = _functionId++;
+    _functionMap[newId] = fn;
+
+    if (isEnabledLog) {
+      print('store native function for id: $newId bindingObject: $pointer');
+    }
+    return newId;
+  }
+
+  AsyncAnonymousNativeFunction? getAsyncAnonymousNativeFunctionFromId(int id) {
+    return _asyncFunctionMap[id];
+  }
+  int setAsyncAnonymousNativeFunction(AsyncAnonymousNativeFunction fn) {
+    int newId = _functionId++;
+    _asyncFunctionMap[newId] = fn;
+
+    if (isEnabledLog) {
+      print('store async native function for id: $newId bindingObject: $pointer');
+    }
+
+    return newId;
   }
 
   // Bind dart side object method to receive invoking from native side.
@@ -40,11 +74,18 @@ abstract class BindingObject {
 
   // Get a property, eg:
   //   console.log(el.foo);
-  dynamic getBindingProperty(String key) {}
+  dynamic getBindingProperty(String key) {
+    return null;
+  }
 
   // Set a property, eg:
   //   el.foo = 'bar';
-  void setBindingProperty(String key, value) {}
+  void setBindingProperty(String key, value) {
+  }
+
+  // Return a list contains all supported properties.
+  void getAllBindingPropertyNames(List<String> properties) {
+  }
 
   // Call a method, eg:
   //   el.getContext('2x');
