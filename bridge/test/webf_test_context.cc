@@ -138,6 +138,10 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   for (int i = 0; i < length; i++) {
     MousePointer* mouse = &mousePointerList[i];
     JSValue params = JS_GetPropertyUint32(ctx, inputArrayValue, i);
+    JSValue paramsLengthValue = JS_GetPropertyStr(ctx, params, "length");
+    uint32_t params_length;
+    JS_ToUint32(ctx, &params_length, paramsLengthValue);
+
     mouse->contextId = context->contextId();
     JSValue xValue = JS_GetPropertyUint32(ctx, params, 0);
     JSValue yValue = JS_GetPropertyUint32(ctx, params, 1);
@@ -146,6 +150,27 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
     double x;
     double y;
     double change;
+    double delta_x = 0.0;
+    double delta_y = 0.0;
+    int32_t signal_kind = 0;
+
+    if (params_length > 2) {
+      JSValue signalKindValue = JS_GetPropertyUint32(ctx, params, 3);
+      JSValue delayXValue = JS_GetPropertyUint32(ctx, params, 4);
+      JSValue delayYValue = JS_GetPropertyUint32(ctx, params, 5);
+
+      JS_ToInt32(ctx, &signal_kind, signalKindValue);
+      JS_ToFloat64(ctx, &delta_x, delayXValue);
+      JS_ToFloat64(ctx, &delta_y, delayYValue);
+
+      mouse->signal_kind = signal_kind;
+      mouse->delta_x = delta_x;
+      mouse->delta_y = delta_y;
+
+      JS_FreeValue(ctx, signalKindValue);
+      JS_FreeValue(ctx, delayXValue);
+      JS_FreeValue(ctx, delayYValue);
+    }
 
     JS_ToFloat64(ctx, &x, xValue);
     JS_ToFloat64(ctx, &y, yValue);
@@ -159,6 +184,7 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
     JS_FreeValue(ctx, xValue);
     JS_FreeValue(ctx, yValue);
     JS_FreeValue(ctx, changeValue);
+    JS_FreeValue(ctx, paramsLengthValue);
   }
 
   uint32_t pointer;

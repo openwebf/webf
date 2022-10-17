@@ -364,8 +364,8 @@ final Pointer<NativeFunction<NativePerformanceGetEntries>> _nativeGetEntries =
 typedef NativeJSError = Void Function(Int32 contextId, Pointer<Utf8>);
 
 void _onJSError(int contextId, Pointer<Utf8> charStr) {
-  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  JSErrorHandler? handler = controller.onJSError;
+  WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
+  JSErrorHandler? handler = controller?.onJSError;
   if (handler != null) {
     String msg = charStr.toDartString();
     handler(msg);

@@ -185,20 +185,27 @@ async function simulateClick(x: number, y: number, pointer: number = 0) {
 
 // Simulate an mouse swipe action.
 async function simulateSwipe(startX: number, startY: number, endX: number, endY: number, duration: number, pointer: number = 0) {
-  let params: [number, number, number][] = [[startX, startY, PointerChange.down]];
-  let pointerMoveDelay = 0.001;
+  let params: [number, number, number, number, number, number][] = [
+  ];
+  let pointerMoveDelay = 0.016;
   let totalCount = duration / pointerMoveDelay;
-  let diffXPerSecond = (endX - startX) / totalCount;
-  let diffYPerSecond = (endY - startY) / totalCount;
+  let diffXPerFrame = (endX - startX) / totalCount;
+  let diffYPerFrame = (endY - startY) / totalCount;
 
+  let previousX = startX;
+  let previousY = startY;
   for (let i = 0; i < totalCount; i ++) {
     let progress = i / totalCount;
-    let diffX = diffXPerSecond * 100 * ease.transformInternal(progress);
-    let diffY = diffYPerSecond * 100 * ease.transformInternal(progress);
-    params.push([startX + diffX, startY + diffY, PointerChange.move])
+    let diffX = diffXPerFrame * 100 * ease.transformInternal(progress);
+    let diffY = diffYPerFrame * 100 * ease.transformInternal(progress);
+
+    params.push([startX + diffX, startY + diffY, PointerChange.move, PointerSignalKind.scroll, startX + diffX - previousX, startY + diffY - previousY])
+
+    previousX = startX + diffX;
+    previousY = startY + diffY;
+
   }
 
-  params.push([endX, endY, PointerChange.up]);
   await simulatePointer(params, pointer);
 }
 

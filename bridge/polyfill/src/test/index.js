@@ -112,6 +112,12 @@ PointerChange.move = 5;
 PointerChange.up = 6;
 global.PointerChange = PointerChange;
 
+function PointerSignalKind() {}
+PointerSignalKind.none = 0;
+PointerSignalKind.scroll = 1;
+PointerSignalKind.unknown = 2;
+global.PointerSignalKind = PointerSignalKind;
+
 global.simulatePointer = function simulatePointer(list, pointer) {
   return new Promise((resolve) => {
     requestAnimationFrame(() => {

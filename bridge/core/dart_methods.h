@@ -72,6 +72,9 @@ struct MousePointer {
   double x;
   double y;
   double change;
+  int32_t signal_kind;
+  double delta_x;
+  double delta_y;
 };
 using SimulatePointer = void (*)(MousePointer*, int32_t length, int32_t pointer);
 using SimulateInputText = void (*)(NativeString* nativeString);
