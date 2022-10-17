@@ -76,7 +76,8 @@ struct MousePointer {
   double delta_x;
   double delta_y;
 };
-using SimulatePointer = void (*)(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
+using SimulatePointer =
+    void (*)(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
 using SimulateInputText = void (*)(NativeString* nativeString);
 
 struct DartMethodPointer {
