@@ -1,0 +1,41 @@
+<html>
+  <head>
+    <style>
+      .bg {
+        background: red;
+      }
+      .bgcolor {
+        background-color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="bg" class="bg">(background) Background should change green to red after 1s.</div>
+    <div id="bgcolor" class="bgcolor">(background-color) Background should change green to red after 1s.</div>
+    <script>
+      let jsbg
+      setTimeout(() => {
+        jsbg = document.createElement('div')
+        jsbg.className = 'bg'
+        jsbg.style.background = 'green'
+        jsbg.appendChild(document.createTextNode('(background created by js) Background should change green to red after 1s.'))
+        document.body.appendChild(jsbg)
+
+        document.querySelector('#bg').style.background = 'green'
+        document.querySelector('#bgcolor').style.backgroundColor = 'green'
+      })
+      setTimeout(() => {
+        jsbg.style.background = ''
+        document.querySelector('#bg').style.background = ''
+        document.querySelector('#bgcolor').style.backgroundColor = ''
+      }, 1000)
+      
+    </script>
+  </body>
+</html>
+<script>
+  await sleep(0.1);
+  await snapshotAction();
+  await sleep(1);
+  await snapshotAction();
+</script>
