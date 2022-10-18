@@ -1,3 +1,7 @@
+## 0.13.0-beta.8
+
+* fix macOS arm64 build error.
+
 ## 0.13.0-beta.7
 
 * fix github action ndk path.
