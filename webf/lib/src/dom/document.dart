@@ -273,7 +273,7 @@ class Document extends Node {
 
   bool _recalculating = false;
   void updateStyleIfNeeded() {
-    if (!styleNodeManager.hasPendingStyleSheet) {
+    if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
       return;
     }
     if (_recalculating) {

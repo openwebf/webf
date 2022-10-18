@@ -21,6 +21,8 @@ class StyleNodeManager {
   final List<CSSStyleSheet> _pendingStyleSheets = [];
 
   bool get hasPendingStyleSheet => _pendingStyleSheets.isNotEmpty;
+  bool _isStyleSheetCandidateNodeChanged = false;
+  bool get isStyleSheetCandidateNodeChanged => _isStyleSheetCandidateNodeChanged;
 
   final Document document;
 
@@ -32,6 +34,7 @@ class StyleNodeManager {
     }
     if (_styleSheetCandidateNodes.isEmpty) {
       _styleSheetCandidateNodes.add(node);
+      _isStyleSheetCandidateNodeChanged = true;
       return;
     }
 
@@ -40,15 +43,18 @@ class StyleNodeManager {
       DocumentPosition position = _styleSheetCandidateNodes[i].compareDocumentPosition(node);
       if (position == DocumentPosition.FOLLOWING) {
         _styleSheetCandidateNodes.insert(i + 1, node);
+        _isStyleSheetCandidateNodeChanged = true;
         return;
       }
     }
 
     _styleSheetCandidateNodes.insert(0, node);
+    _isStyleSheetCandidateNodeChanged = true;
   }
 
   void removeStyleSheetCandidateNode(Node node) {
     _styleSheetCandidateNodes.remove(node);
+    _isStyleSheetCandidateNodeChanged = true;
   }
 
   void appendPendingStyleSheet(CSSStyleSheet styleSheet) {
@@ -80,6 +86,7 @@ class StyleNodeManager {
     document.needsStyleRecalculate = true;
     document.handleStyleSheets(newSheets);
     _pendingStyleSheets.clear();
+    _isStyleSheetCandidateNodeChanged = false;
     return true;
   }
 
