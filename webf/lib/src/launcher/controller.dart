@@ -18,15 +18,11 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
     show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
-import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/widget.dart';
 
 // Error handler when load bundle failed.
 typedef LoadHandler = void Function(WebFController controller);
@@ -204,9 +200,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   void initWindow(int targetId, Pointer<NativeBindingObject> pointer) {
-    window = Window(
-        BindingContext(_contextId, pointer),
-        document);
+    window = Window(BindingContext(_contextId, pointer), document);
     _registerPlatformBrightnessChange();
     _setEventTarget(targetId, window);
 
@@ -717,7 +711,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
           if (focusOffset.dy > viewportHeight - bottomInset - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
-            scrollOffset = focusOffset.dy - (viewportHeight - bottomInset) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
+            scrollOffset =
+                focusOffset.dy - (viewportHeight - bottomInset) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }

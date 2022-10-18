@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
 
 class HistoryItem {

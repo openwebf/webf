@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/src/widget/webf_element.dart';
 
 const INPUT = 'INPUT';
 const FORM = 'FORM';

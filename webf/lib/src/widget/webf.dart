@@ -13,7 +13,6 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/dom/element_registry.dart';
 
 class WebF extends StatefulWidget {
   // The background color for viewport, default to transparent.

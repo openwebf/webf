@@ -106,8 +106,9 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     if (!isConnected) {
       return;
     }
+
+    // invalidate style
     Node parent = this;
-    // invalidate
     while (parent.parentNode != null) {
       parent.needsStyleRecalculate = true;
       parent = parent.parentNode!;
@@ -226,22 +227,15 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     child.parentNode = this;
     childNodes.add(child);
 
+    if (child.isConnected) {
+      child.connectedCallback();
+    }
+
     // To insert a node into a parent before a child, run step 9 from the spec:
     // 9. Run the children changed steps for parent when inserting a node into a parent.
     // https://dom.spec.whatwg.org/#concept-node-insert
     childrenChanged();
 
-    if (child.isConnected) {
-      child.connectedCallback();
-    }
-
-    // invalid style
-    Node parent = this;
-    while (parent.parentNode != null) {
-      parent.needsStyleRecalculate = true;
-      parent = parent.parentNode!;
-    }
-    ownerDocument.needsStyleRecalculate = true;
     return child;
   }
 
@@ -255,14 +249,15 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       child.parentNode = this;
       childNodes.insert(referenceIndex, child);
 
+      if (child.isConnected) {
+        child.connectedCallback();
+      }
+
       // To insert a node into a parent before a child, run step 9 from the spec:
       // 9. Run the children changed steps for parent when inserting a node into a parent.
       // https://dom.spec.whatwg.org/#concept-node-insert
       childrenChanged();
 
-      if (child.isConnected) {
-        child.connectedCallback();
-      }
       return child;
     }
   }
@@ -305,15 +300,15 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       replacedNode = oldNode;
       childNodes[referenceIndex] = newNode;
 
-      // To insert a node into a parent before a child, run step 9 from the spec:
-      // 9. Run the children changed steps for parent when inserting a node into a parent.
-      // https://dom.spec.whatwg.org/#concept-node-insert
-      childrenChanged();
-
       if (isOldNodeConnected) {
         oldNode.disconnectedCallback();
         newNode.connectedCallback();
       }
+
+      // To insert a node into a parent before a child, run step 9 from the spec:
+      // 9. Run the children changed steps for parent when inserting a node into a parent.
+      // https://dom.spec.whatwg.org/#concept-node-insert
+      childrenChanged();
     }
     return replacedNode;
   }
