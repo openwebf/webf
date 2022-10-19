@@ -372,7 +372,10 @@ class CSSStyleDeclaration with IterableMixin {
 
     String normalizedValue = _toLowerCase(propertyName, value.toString().trim());
 
-    if (!_isValidValue(propertyName, normalizedValue)) return;
+    if (!_isValidValue(propertyName, normalizedValue)) {
+      removeProperty(propertyName, isImportant);
+      return;
+    }
 
     if (_CSSShorthandProperty[propertyName] != null) {
       return _expandShorthand(propertyName, normalizedValue, isImportant);
