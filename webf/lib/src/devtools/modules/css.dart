@@ -2,7 +2,6 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'dart:convert';
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
@@ -21,7 +20,6 @@ class InspectCSSModule extends UIInspectorModule {
 
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
-    print('handle css: $id,$method,$params');
     switch (method) {
       case 'getMatchedStylesForNode':
         handleGetMatchedStylesForNode(id, params!);
@@ -76,28 +74,28 @@ class InspectCSSModule extends UIInspectorModule {
     }
   }
 
-  Map<String, dynamic> parseRemovedStyle(String text) {
+  Map<String, dynamic> parseAnnotatedStyle(String text) {
     Map<String, String> styles = {};
     if (text.isNotEmpty) {
       int startIndex = text.indexOf('/*');
       while (startIndex >= 0) {
-        String _startStr = text.substring(0, startIndex);
-        String _behandStr = text.substring(startIndex + 2);
-        int endIndex = _behandStr.indexOf('*/');
+        String frontPart = text.substring(0, startIndex);
+        String backPart = text.substring(startIndex + 2);
+        int endIndex = backPart.indexOf('*/');
         if (endIndex < 0) {
           break;
         }
-        String _suffixStr = _behandStr.substring(endIndex + 2);
+        String _suffixStr = backPart.substring(endIndex + 2);
 
-        String currentText = _behandStr.substring(0, endIndex);
-        text = '$_startStr$currentText$_suffixStr';
+        String currentText = backPart.substring(0, endIndex);
+        text = '$frontPart$currentText$_suffixStr';
 
         List<String> styleText = currentText.split(':');
         styles[styleText[0].trim()] = styleText[1].trim();
         startIndex = text.indexOf('/*');
       }
     }
-    return {'remvedStyle': styles, 'resoveText': text};
+    return {'annotatedStyle': styles, 'resoveText': text};
   }
 
   void handleSetStyleTexts(int? id, Map<String, dynamic> params) {
@@ -110,9 +108,9 @@ class InspectCSSModule extends UIInspectorModule {
       // Use styleSheetId to identity element.
       int nodeId = edit['styleSheetId'];
       String text = edit['text'] ?? '';
-      // parse should remove style property
-      Map<String, dynamic> resolvedText = parseRemovedStyle(text);
-      Map<String, String> removedStyles = resolvedText['remvedStyle'];
+      // Use parser to remove annotated styles.
+      Map<String, dynamic> resolvedText = parseAnnotatedStyle(text);
+      Map<String, String> annotatedStyle = resolvedText['annotatedStyle'];
       text = resolvedText['resoveText'] as String;
 
       List<String> texts = text.split(';');
@@ -124,7 +122,7 @@ class InspectCSSModule extends UIInspectorModule {
           if (_kv.length == 2) {
             String name = _kv[0].trim();
             String value = _kv[1].trim();
-            if (removedStyles.containsKey(name)) {
+            if (annotatedStyle.containsKey(name)) {
               value = '/*$value*/';
             }
             element.setInlineStyle(_camelize(name), value);
