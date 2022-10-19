@@ -10,12 +10,4 @@ p.appendChild(text1);
 p.appendChild(br);
 p.appendChild(text2);
 
-
-p.addEventListener('click',function(){
-    
-})
-p.onclick = function(){
-    let co = p.style.backgroundColor
-    p.style.backgroundColor= co == 'yellow' ?  '#FFF':"yellow"
-}
 document.body.appendChild(p);

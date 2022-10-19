@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
@@ -74,30 +75,6 @@ class InspectCSSModule extends UIInspectorModule {
     }
   }
 
-  Map<String, dynamic> parseAnnotatedStyle(String text) {
-    Map<String, String> styles = {};
-    if (text.isNotEmpty) {
-      int startIndex = text.indexOf('/*');
-      while (startIndex >= 0) {
-        String frontPart = text.substring(0, startIndex);
-        String backPart = text.substring(startIndex + 2);
-        int endIndex = backPart.indexOf('*/');
-        if (endIndex < 0) {
-          break;
-        }
-        String _suffixStr = backPart.substring(endIndex + 2);
-
-        String currentText = backPart.substring(0, endIndex);
-        text = '$frontPart$currentText$_suffixStr';
-
-        List<String> styleText = currentText.split(':');
-        styles[styleText[0].trim()] = styleText[1].trim();
-        startIndex = text.indexOf('/*');
-      }
-    }
-    return {'annotatedStyle': styles, 'resoveText': text};
-  }
-
   void handleSetStyleTexts(int? id, Map<String, dynamic> params) {
     List edits = params['edits'];
     List<CSSStyle?> styles = [];
@@ -108,11 +85,6 @@ class InspectCSSModule extends UIInspectorModule {
       // Use styleSheetId to identity element.
       int nodeId = edit['styleSheetId'];
       String text = edit['text'] ?? '';
-      // Use parser to remove annotated styles.
-      Map<String, dynamic> resolvedText = parseAnnotatedStyle(text);
-      Map<String, String> annotatedStyle = resolvedText['annotatedStyle'];
-      text = resolvedText['resoveText'] as String;
-
       List<String> texts = text.split(';');
       Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
       if (element != null) {
@@ -122,9 +94,6 @@ class InspectCSSModule extends UIInspectorModule {
           if (_kv.length == 2) {
             String name = _kv[0].trim();
             String value = _kv[1].trim();
-            if (annotatedStyle.containsKey(name)) {
-              value = '/*$value*/';
-            }
             element.setInlineStyle(_camelize(name), value);
           }
         }
@@ -147,20 +116,10 @@ class InspectCSSModule extends UIInspectorModule {
     for (MapEntry<String, String> entry in element.style) {
       String kebabName = _kebabize(entry.key);
       String propertyValue = entry.value.toString();
-      bool isDisabled = false;
-      if (propertyValue.contains('/*')) {
-        isDisabled = true;
-        propertyValue = propertyValue.replaceAll('/*', '').replaceAll('*/', '');
-      }
       String _cssText = '$kebabName: $propertyValue';
-      if (isDisabled) {
-        _cssText = '/*$_cssText*/';
-      }
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
         value: entry.value,
-        text: _cssText,
-        disabled: isDisabled,
         range: SourceRange(
           startLine: 0,
           startColumn: cssText.length,
@@ -188,20 +147,10 @@ class InspectCSSModule extends UIInspectorModule {
     element.inlineStyle.forEach((key, value) {
       String kebabName = _kebabize(key);
       String propertyValue = value.toString();
-      bool isDisabled = false;
-      if (propertyValue.contains('/*')) {
-        isDisabled = true;
-        propertyValue = propertyValue.replaceAll('/*', '').replaceAll('*/', '');
-      }
       String _cssText = '$kebabName: $propertyValue';
-      if (isDisabled) {
-        _cssText = '/*$_cssText*/';
-      }
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
         value: value,
-        text: _cssText,
-        disabled: isDisabled,
         range: SourceRange(
           startLine: 0,
           startColumn: cssText.length,
