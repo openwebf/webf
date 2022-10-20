@@ -1,3 +1,7 @@
+## 0.13.0-beta.9
+
+* fix input border style.
+
 ## 0.13.0-beta.8
 
 * fix macOS arm64 build error.
