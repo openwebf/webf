@@ -39,13 +39,16 @@
     which starts moving from right to left, then back to right and moves from
     right to left again. This cycle gets repeated.
   </p>
-  <div>Filler Text</div>
+  <div id="main">Filler Text</div>
 </body>
 <script>
-  await nextFrames();
-  await snapshotAction();
-  await nextFrames(20);
-  await snapshotAction();
-  await nextFrames(20);
-  await snapshotAction();
+  await sleep(0.1);
+  const main = document.getElementById('main');
+  expect(main.offsetLeft > 100 && main.offsetLeft < 150).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft < 75 && main.offsetLeft > 0).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft > 100 && main.offsetLeft < 150).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft < 75 && main.offsetLeft > 0).toBe(true);
 </script>

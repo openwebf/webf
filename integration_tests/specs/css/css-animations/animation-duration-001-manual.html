@@ -42,6 +42,6 @@
     await sleep(2);
     div[0].style.animationDuration = "2s";
     await sleep(1);
-    await snapshotAction();
+    expect(div[0].offsetLeft < 50).toBe(true);
   </script>
 </body>
