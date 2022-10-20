@@ -8,12 +8,13 @@ enum InputSize {
   large,
 }
 
-class FlutterInputElement extends WidgetElement
-    with BaseInputElement, BaseCheckBoxElement {
+class FlutterInputElement extends WidgetElement with BaseInputElement, BaseCheckBoxElement {
   BindingContext? buildContext;
+
   FlutterInputElement(BindingContext? context) : super(context) {
     buildContext = context;
   }
+
   @override
   Widget build(BuildContext context, List<Widget> children) {
     switch (type) {
@@ -34,8 +35,11 @@ mixin BaseInputElement on WidgetElement {
   String get value => controller.value.text;
 
   set value(String? value) {
-    if (value == null) return;
-    controller.value = TextEditingValue(text: value);
+    if (value == null) {
+      controller.value = TextEditingValue.empty;
+    } else {
+      controller.value = TextEditingValue(text: value);
+    }
   }
 
   @override
@@ -49,7 +53,7 @@ mixin BaseInputElement on WidgetElement {
 
   @override
   void propertyDidUpdate(String key, value) {
-    _setAttribute(key, value);
+    _setAttribute(key, value == null ? '' : value.toString());
     super.propertyDidUpdate(key, value);
   }
 
@@ -70,6 +74,10 @@ mixin BaseInputElement on WidgetElement {
   }
 
   TextInputType? getKeyboardType() {
+    if (this is FlutterTextAreaElement) {
+      return TextInputType.multiline;
+    }
+
     switch (type) {
       case 'number':
         return TextInputType.number;
@@ -84,9 +92,13 @@ mixin BaseInputElement on WidgetElement {
   String get placeholder => getAttribute('placeholder') ?? '';
 
   String? get label => getAttribute('label');
+
   bool get disabled => getAttribute('disabled') != null;
+
   bool get autofocus => getAttribute('autofocus') != null;
+
   bool get readonly => getAttribute('readonly') != null;
+
   int? get maxLength {
     String? value = getAttribute('maxLength');
     if (value != null) return int.parse(value);
@@ -102,12 +114,13 @@ mixin BaseInputElement on WidgetElement {
   }
 
   Color get color => renderStyle.color;
+
   double? get height => renderStyle.height.value;
+
   double? get width => renderStyle.width.value;
 
   Widget _createInputWidget(BuildContext context, int minLines, int maxLines) {
-    FlutterFormElementContext? formContext =
-        context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
+    FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
     onChanged(String newValue) {
       setState(() {
         InputEvent inputEvent = InputEvent(inputType: '', data: newValue);
@@ -115,10 +128,11 @@ mixin BaseInputElement on WidgetElement {
       });
     }
 
+    bool isInput = this is FlutterInputElement;
+
     InputDecoration decoration = InputDecoration(
       label: label != null ? Text(label!) : null,
-      border: InputBorder.none,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+      border: isInput ? UnderlineInputBorder() : InputBorder.none,
       isDense: true,
       hintText: placeholder,
     );
@@ -130,14 +144,15 @@ mixin BaseInputElement on WidgetElement {
         style: TextStyle(
           fontFamily: renderStyle.fontFamily?.join(' '),
           color: color,
-          fontSize: renderStyle.fontSize.value,
+          fontSize: renderStyle.fontSize.computedValue,
         ),
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
-        cursorColor: color,
+        // @TODO: support CSS caret-color property.
+        // cursorColor: color,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         decoration: decoration,
@@ -149,14 +164,15 @@ mixin BaseInputElement on WidgetElement {
         style: TextStyle(
           fontFamily: renderStyle.fontFamily?.join(' '),
           color: color,
-          fontSize: renderStyle.fontSize.value,
+          fontSize: renderStyle.fontSize.computedValue,
         ),
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
-        cursorColor: color,
+        // @TODO: support CSS caret-color property.
+        // cursorColor: color,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         onSubmitted: (String value) {
@@ -177,22 +193,13 @@ mixin BaseInputElement on WidgetElement {
     return Container(
       alignment: height != null ? Alignment.center : null,
       decoration: BoxDecoration(
-        border: borderSides == null
-            ? Border.all(
-                width: 1,
-                color: Color.fromRGBO(118, 118, 118, 1),
-              )
-            : null,
-        borderRadius: borderSides == null && radius == null
-            ? BorderRadius.circular(4)
-            : null,
+        borderRadius: borderSides == null && radius == null ? BorderRadius.circular(4) : null,
       ),
       child: child,
     );
   }
 
-  Widget createInput(BuildContext context,
-      {int minLines = 1, int maxLines = 1}) {
+  Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
     return Focus(
       onFocusChange: (bool isFocus) {
         if (isFocus) {
@@ -215,6 +222,7 @@ mixin BaseInputElement on WidgetElement {
 /// create a checkBox widget when input type='checkbox'
 mixin BaseCheckBoxElement on WidgetElement {
   bool checked = false;
+
   bool get disabled => getAttribute('disabled') != null;
 
   @override
@@ -255,26 +263,19 @@ mixin BaseCheckBoxElement on WidgetElement {
   }
 
   Widget createCheckBox(BuildContext context) {
-    return Align(
-      alignment: Alignment.center,
-      child: SizedBox(
-        width: renderStyle.width.value,
-        height: renderStyle.height.value,
-        child: Transform.scale(
-          child: Checkbox(
-            value: checked,
-            onChanged: disabled
-                ? null
-                : (bool? newValue) {
-                    setState(() {
-                      checked = newValue!;
-                      dispatchEvent(Event('change'));
-                    });
-                  },
-          ),
-          scale: getCheckboxSize(),
-        ),
+    return Transform.scale(
+      child: Checkbox(
+        value: checked,
+        onChanged: disabled
+            ? null
+            : (bool? newValue) {
+                setState(() {
+                  checked = newValue!;
+                  dispatchEvent(Event('change'));
+                });
+              },
       ),
+      scale: getCheckboxSize(),
     );
   }
 }
