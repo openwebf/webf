@@ -377,48 +377,48 @@ mixin ElementOverflowMixin on ElementBase {
     _scrollTo(x: value);
   }
 
-  int get scrollHeight {
+  double get scrollHeight {
     WebFScrollable? scrollable = _getScrollable(Axis.vertical);
     if (scrollable?.position?.maxScrollExtent != null) {
       // Viewport height + maxScrollExtent
-      return renderBoxModel!.clientHeight + scrollable!.position!.maxScrollExtent.toInt();
+      return renderBoxModel!.clientHeight + scrollable!.position!.maxScrollExtent;
     }
 
     Size scrollContainerSize = renderBoxModel!.scrollableSize;
-    return scrollContainerSize.height.toInt();
+    return scrollContainerSize.height;
   }
 
-  int get scrollWidth {
+  double get scrollWidth {
     WebFScrollable? scrollable = _getScrollable(Axis.horizontal);
     if (scrollable?.position?.maxScrollExtent != null) {
-      return renderBoxModel!.clientWidth + scrollable!.position!.maxScrollExtent.toInt();
+      return renderBoxModel!.clientWidth + scrollable!.position!.maxScrollExtent;
     }
     Size scrollContainerSize = renderBoxModel!.scrollableSize;
-    return scrollContainerSize.width.toInt();
+    return scrollContainerSize.width;
   }
 
-  int get clientTop => renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue.toInt() ?? 0;
+  double get clientTop => renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
 
-  int get clientLeft => renderBoxModel?.renderStyle.effectiveBorderLeftWidth.computedValue.toInt() ?? 0;
+  double get clientLeft => renderBoxModel?.renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
 
-  int get clientWidth => renderBoxModel?.clientWidth ?? 0;
+  double get clientWidth => renderBoxModel?.clientWidth ?? 0.0;
 
-  int get clientHeight => renderBoxModel?.clientHeight ?? 0;
+  double get clientHeight => renderBoxModel?.clientHeight ?? 0.0;
 
-  int get offsetWidth {
+  double get offsetWidth {
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox == null) {
       return 0;
     }
-    return renderBox.hasSize ? renderBox.size.width.toInt() : 0;
+    return renderBox.hasSize ? renderBox.size.width : 0.0;
   }
 
-  int get offsetHeight {
+  double get offsetHeight {
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox == null) {
       return 0;
     }
-    return renderBox.hasSize ? renderBox.size.height.toInt() : 0;
+    return renderBox.hasSize ? renderBox.size.height : 0.0;
   }
 
   void _scrollBy({double dx = 0.0, double dy = 0.0, bool? withAnimation}) {

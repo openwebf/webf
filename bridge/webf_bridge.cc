@@ -1,18 +1,19 @@
 /*
- * Copyright (C) 2019-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "webf_bridge.h"
-#include <cassert>
-#include "dart_methods.h"
-#include "foundation/logging.h"
-#include "foundation/ui_task_queue.h"
-#if WEBF_QUICK_JS_ENGINE
-#include "page.h"
-#endif
-
 #include <atomic>
+#include <cassert>
 #include <thread>
+
+#include "bindings/qjs/native_string_utils.h"
+#include "core/page.h"
+#include "foundation/inspector_task_queue.h"
+#include "foundation/logging.h"
+#include "foundation/ui_command_buffer.h"
+#include "foundation/ui_task_queue.h"
+#include "include/webf_bridge.h"
 
 #if defined(_WIN32)
 #define SYSTEM_NAME "windows"  // Windows
@@ -39,26 +40,9 @@
 
 // this is not thread safe
 std::atomic<bool> inited{false};
+std::atomic<bool> is_dart_hot_restart{false};
 std::atomic<int32_t> poolIndex{0};
 int maxPoolSize = 0;
-NativeScreen screen;
-
-std::thread::id uiThreadId;
-
-std::thread::id getUIThreadId() {
-  return uiThreadId;
-}
-
-void printError(int32_t contextId, const char* errmsg) {
-  if (webf::getDartMethod()->onJsError != nullptr) {
-    webf::getDartMethod()->onJsError(contextId, errmsg);
-  }
-  if (webf::getDartMethod()->onJsLog != nullptr) {
-    webf::getDartMethod()->onJsLog(contextId, static_cast<int>(foundation::MessageLevel::Error), errmsg);
-  }
-
-  WEBF_LOG(ERROR) << errmsg << std::endl;
-}
 
 namespace {
 
@@ -81,18 +65,25 @@ int32_t searchForAvailableContextId() {
 
 }  // namespace
 
-void initJSPagePool(int poolSize) {
-  uiThreadId = std::this_thread::get_id();
+namespace webf {
+bool isDartHotRestart() {
+  return is_dart_hot_restart;
+}
+}  // namespace webf
+
+void initJSPagePool(int poolSize, uint64_t* dart_methods, int32_t dart_methods_len) {
   // When dart hot restarted, should dispose previous bridge and clear task message queue.
   if (inited) {
+    is_dart_hot_restart = true;
     disposeAllPages();
+    is_dart_hot_restart = false;
   };
   webf::WebFPage::pageContextPool = new webf::WebFPage*[poolSize];
   for (int i = 1; i < poolSize; i++) {
     webf::WebFPage::pageContextPool[i] = nullptr;
   }
 
-  webf::WebFPage::pageContextPool[0] = new webf::WebFPage(0, printError);
+  webf::WebFPage::pageContextPool[0] = new webf::WebFPage(0, nullptr, dart_methods, dart_methods_len);
   inited = true;
   maxPoolSize = poolSize;
 }
@@ -107,7 +98,7 @@ void disposePage(int32_t contextId) {
   webf::WebFPage::pageContextPool[contextId] = nullptr;
 }
 
-int32_t allocateNewPage(int32_t targetContextId) {
+int32_t allocateNewPage(int32_t targetContextId, uint64_t* dart_methods, int32_t dart_methods_len) {
   if (targetContextId == -1) {
     targetContextId = ++poolIndex;
   }
@@ -117,8 +108,10 @@ int32_t allocateNewPage(int32_t targetContextId) {
   }
 
   assert(webf::WebFPage::pageContextPool[targetContextId] == nullptr &&
-         (std::string("can not allocate page at index") + std::to_string(targetContextId) + std::string(": page have already exist.")).c_str());
-  auto* page = new webf::WebFPage(targetContextId, printError);
+         (std::string("can not Allocate page at index") + std::to_string(targetContextId) +
+          std::string(": page have already exist."))
+             .c_str());
+  auto* page = new webf::WebFPage(targetContextId, nullptr, dart_methods, dart_methods_len);
   webf::WebFPage::pageContextPool[targetContextId] = page;
   return targetContextId;
 }
@@ -137,13 +130,13 @@ bool checkPage(int32_t contextId, void* context) {
   if (webf::WebFPage::pageContextPool[contextId] == nullptr)
     return false;
   auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
-  return page->getContext() == context;
+  return page->GetExecutingContext() == context;
 }
 
 void evaluateScripts(int32_t contextId, NativeString* code, const char* bundleFilename, int startLine) {
   assert(checkPage(contextId) && "evaluateScripts: contextId is not valid");
   auto context = static_cast<webf::WebFPage*>(getPage(contextId));
-  context->evaluateScript(code, bundleFilename, startLine);
+  context->evaluateScript(reinterpret_cast<webf::NativeString*>(code), bundleFilename, startLine);
 }
 
 void evaluateQuickjsByteCode(int32_t contextId, uint8_t* bytes, int32_t byteLen) {
@@ -158,29 +151,25 @@ void parseHTML(int32_t contextId, const char* code, int32_t length) {
   context->parseHTML(code, length);
 }
 
-void reloadJsContext(int32_t contextId) {
+void reloadJsContext(int32_t contextId, uint64_t* dart_methods, int32_t dart_methods_len) {
   assert(checkPage(contextId) && "reloadJSContext: contextId is not valid");
   auto bridgePtr = getPage(contextId);
   auto context = static_cast<webf::WebFPage*>(bridgePtr);
-  auto newContext = new webf::WebFPage(contextId, printError);
+  auto newContext = new webf::WebFPage(contextId, nullptr, dart_methods, dart_methods_len);
   delete context;
   webf::WebFPage::pageContextPool[contextId] = newContext;
 }
 
-void invokeModuleEvent(int32_t contextId, NativeString* moduleName, const char* eventType, void* event, NativeString* extra) {
+NativeValue* invokeModuleEvent(int32_t contextId,
+                               NativeString* moduleName,
+                               const char* eventType,
+                               void* event,
+                               NativeValue* extra) {
   assert(checkPage(contextId) && "invokeEventListener: contextId is not valid");
   auto context = static_cast<webf::WebFPage*>(getPage(contextId));
-  context->invokeModuleEvent(moduleName, eventType, event, extra);
-}
-
-void registerDartMethods(uint64_t* methodBytes, int32_t length) {
-  webf::registerDartMethods(methodBytes, length);
-}
-
-NativeScreen* createScreen(double width, double height) {
-  screen.width = width;
-  screen.height = height;
-  return &screen;
+  auto* result = context->invokeModuleEvent(reinterpret_cast<webf::NativeString*>(moduleName), eventType, event,
+                                            reinterpret_cast<webf::NativeValue*>(extra));
+  return reinterpret_cast<NativeValue*>(result);
 }
 
 static WebFInfo* webfInfo{nullptr};
@@ -202,41 +191,38 @@ void setConsoleMessageHandler(ConsoleMessageHandler handler) {
 }
 
 void dispatchUITask(int32_t contextId, void* context, void* callback) {
-  assert(std::this_thread::get_id() == getUIThreadId());
+  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
+  assert(std::this_thread::get_id() == page->currentThread());
   reinterpret_cast<void (*)(void*)>(callback)(context);
 }
 
 void flushUITask(int32_t contextId) {
-  foundation::UITaskQueue::instance(contextId)->flushTask();
+  webf::UITaskQueue::instance(contextId)->flushTask();
 }
 
 void registerUITask(int32_t contextId, Task task, void* data) {
-  foundation::UITaskQueue::instance(contextId)->registerTask(task, data);
+  webf::UITaskQueue::instance(contextId)->registerTask(task, data);
 };
 
-void flushUICommandCallback() {
-  foundation::UICommandCallbackQueue::instance()->flushCallbacks();
-}
-
-UICommandItem* getUICommandItems(int32_t contextId) {
+void* getUICommandItems(int32_t contextId) {
   auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   if (page == nullptr)
     return nullptr;
-  return page->getContext()->uiCommandBuffer()->data();
+  return page->GetExecutingContext()->uiCommandBuffer()->data();
 }
 
 int64_t getUICommandItemSize(int32_t contextId) {
   auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   if (page == nullptr)
     return 0;
-  return page->getContext()->uiCommandBuffer()->size();
+  return page->GetExecutingContext()->uiCommandBuffer()->size();
 }
 
 void clearUICommandItems(int32_t contextId) {
   auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
   if (page == nullptr)
     return;
-  page->getContext()->uiCommandBuffer()->clear();
+  page->GetExecutingContext()->uiCommandBuffer()->clear();
 }
 
 void registerContextDisposedCallbacks(int32_t contextId, Task task, void* data) {
@@ -245,7 +231,7 @@ void registerContextDisposedCallbacks(int32_t contextId, Task task, void* data) 
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
-  webf::WebFPage::pluginByteCode[pluginName] = NativeByteCode{bytes, length};
+  webf::ExecutingContext::pluginByteCode[pluginName] = webf::NativeByteCode{bytes, length};
 }
 
 int32_t profileModeEnabled() {
@@ -254,18 +240,4 @@ int32_t profileModeEnabled() {
 #else
   return 0;
 #endif
-}
-
-NativeString* NativeString::clone() {
-  auto* newNativeString = new NativeString();
-  auto* newString = new uint16_t[length];
-
-  memcpy(newString, string, length * sizeof(uint16_t));
-  newNativeString->string = newString;
-  newNativeString->length = length;
-  return newNativeString;
-}
-
-void NativeString::free() {
-  delete[] string;
 }

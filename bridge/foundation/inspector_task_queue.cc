@@ -5,9 +5,9 @@
 
 #include "inspector_task_queue.h"
 
-namespace foundation {
+namespace webf {
 
 std::mutex InspectorTaskQueue::inspector_task_creation_mutex_{};
 fml::RefPtr<InspectorTaskQueue> InspectorTaskQueue::instance_{};
 
-}  // namespace foundation
+}  // namespace webf

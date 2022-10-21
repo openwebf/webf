@@ -61,45 +61,35 @@ WebFInfo getWebFInfo() {
 }
 
 // Register invokeEventListener
-typedef NativeInvokeEventListener = Void Function(
-    Int32 contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeString>);
-typedef DartInvokeEventListener = void Function(
-    int contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeString>);
+typedef NativeInvokeEventListener = Pointer<NativeValue> Function(
+    Int32 contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
+typedef DartInvokeEventListener = Pointer<NativeValue> Function(
+    int contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
 
 final DartInvokeEventListener _invokeModuleEvent =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
 
-void invokeModuleEvent(int contextId, String moduleName, Event? event, String extra) {
+dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
-    return;
+    return null;
   }
   Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
   Pointer<Void> rawEvent = event == null ? nullptr : event.toRaw().cast<Void>();
-  _invokeModuleEvent(contextId, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent,
-      stringToNativeString(extra));
+  Pointer<NativeValue> extraData = malloc.allocate(sizeOf<NativeValue>());
+  toNativeValue(extraData, extra);
+  Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
+      contextId, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
   freeNativeString(nativeModuleName);
+  dynamic result = fromNativeValue(dispatchResult);
+  malloc.free(dispatchResult);
+  return result;
 }
 
 typedef DartDispatchEvent = int Function(int contextId, Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeString> eventType, Pointer<Void> nativeEvent, int isCustomEvent);
 
-void emitUIEvent(int contextId, Pointer<NativeBindingObject> nativeBindingObject, Event event) {
-  if (WebFController.getControllerOfJSContextId(contextId) == null) {
-    return;
-  }
-  DartDispatchEvent dispatchEvent = nativeBindingObject.ref.dispatchEvent.asFunction();
-  Pointer<Void> rawEvent = event.toRaw().cast<Void>();
-  bool isCustomEvent = event is CustomEvent;
-  Pointer<NativeString> eventTypeString = stringToNativeString(event.type);
-  // @TODO: Make Event inherit BindingObject to pass value from bridge to dart.
-  int propagationStopped =
-      dispatchEvent(contextId, nativeBindingObject, eventTypeString, rawEvent, isCustomEvent ? 1 : 0);
-  event.propagationStopped = propagationStopped == 1 ? true : false;
-  freeNativeString(eventTypeString);
-}
-
-void emitModuleEvent(int contextId, String moduleName, Event? event, String extra) {
-  invokeModuleEvent(contextId, moduleName, event, extra);
+dynamic emitModuleEvent(int contextId, String moduleName, Event? event, extra) {
+  return invokeModuleEvent(contextId, moduleName, event, extra);
 }
 
 // Register createScreen
@@ -130,6 +120,7 @@ final DartParseHTML _parseHTML =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeParseHTML>>('parseHTML').asFunction();
 
 int _anonymousScriptEvaluationId = 0;
+
 void evaluateScripts(int contextId, String code, {String? url, int line = 0}) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return;
@@ -181,14 +172,18 @@ void parseHTML(int contextId, String code) {
 }
 
 // Register initJsEngine
-typedef NativeInitJSPagePool = Void Function(Int32 poolSize);
-typedef DartInitJSPagePool = void Function(int poolSize);
+typedef NativeInitJSPagePool = Void Function(Int32 poolSize, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitJSPagePool = void Function(int poolSize, Pointer<Uint64> dartMethods, int length);
 
 final DartInitJSPagePool _initJSPagePool =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitJSPagePool>>('initJSPagePool').asFunction();
 
-void initJSPagePool(int poolSize) {
-  _initJSPagePool(poolSize);
+void initJSPagePool(int poolSize, List<int> dartMethods) {
+  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
+  Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
+  nativeMethodList.setAll(0, dartMethods);
+
+  _initJSPagePool(poolSize, bytes, dartMethods.length);
 }
 
 typedef NativeDisposePage = Void Function(Int32 contextId);
@@ -201,14 +196,18 @@ void disposePage(int contextId) {
   _disposePage(contextId);
 }
 
-typedef NativeAllocateNewPage = Int32 Function(Int32);
-typedef DartAllocateNewPage = int Function(int);
+typedef NativeAllocateNewPage = Int32 Function(Int32, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartAllocateNewPage = int Function(int, Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
-int allocateNewPage([int targetContextId = -1]) {
-  return _allocateNewPage(targetContextId);
+int allocateNewPage(List<int> dartMethods, [int targetContextId = -1]) {
+  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
+  Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
+  nativeMethodList.setAll(0, dartMethods);
+
+  return _allocateNewPage(targetContextId, bytes, dartMethods.length);
 }
 
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);
@@ -236,29 +235,22 @@ bool profileModeEnabled() {
 }
 
 // Regisdster reloadJsContext
-typedef NativeReloadJSContext = Void Function(Int32 contextId);
-typedef DartReloadJSContext = void Function(int contextId);
+typedef NativeReloadJSContext = Void Function(Int32 contextId, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartReloadJSContext = void Function(int contextId, Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartReloadJSContext _reloadJSContext =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeReloadJSContext>>('reloadJsContext').asFunction();
 
-Future<void> reloadJSContext(int contextId) async {
+Future<void> reloadJSContext(int contextId, List<int> dartMethods) async {
   Completer completer = Completer<void>();
   Future.microtask(() {
-    _reloadJSContext(contextId);
+    Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
+    Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
+    nativeMethodList.setAll(0, dartMethods);
+    _reloadJSContext(contextId, bytes, dartMethods.length);
     completer.complete();
   });
   return completer.future;
-}
-
-typedef NativeFlushUICommandCallback = Void Function();
-typedef DartFlushUICommandCallback = void Function();
-
-final DartFlushUICommandCallback _flushUICommandCallback =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeFlushUICommandCallback>>('flushUICommandCallback').asFunction();
-
-void flushUICommandCallback() {
-  _flushUICommandCallback();
 }
 
 typedef NativeDispatchUITask = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
@@ -275,6 +267,8 @@ enum UICommandType {
   createElement,
   createTextNode,
   createComment,
+  createDocument,
+  createWindow,
   disposeEventTarget,
   addEvent,
   removeNode,
@@ -348,7 +342,7 @@ const int args01StringMemOffset = 2;
 const int args02StringMemOffset = 3;
 const int nativePtrMemOffset = 4;
 
-final bool isEnabledLog = kDebugMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
+final bool isEnabledLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
 
 // We found there are performance bottleneck of reading native memory with Dart FFI API.
 // So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,
@@ -419,104 +413,113 @@ void clearUICommand(int contextId) {
   _clearUICommandItems(contextId);
 }
 
-void flushUICommand() {
-  Map<int, WebFController?> controllerMap = WebFController.getControllerMap();
-  for (WebFController? controller in controllerMap.values) {
-    if (controller == null) continue;
-    Pointer<Uint64> nativeCommandItems = _getUICommandItems(controller.view.contextId);
-    int commandLength = _getUICommandItemSize(controller.view.contextId);
-
-    if (commandLength == 0 || nativeCommandItems == nullptr) {
-      continue;
-    }
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
-    }
-
-    List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, controller.view.contextId);
-
-    SchedulerBinding.instance.scheduleFrame();
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_END);
-    }
-
-    Map<int, bool> pendingStylePropertiesTargets = {};
-
-    // For new ui commands, we needs to tell engine to update frames.
-    for (int i = 0; i < commandLength; i++) {
-      UICommand command = commands[i];
-      UICommandType commandType = command.type;
-      int id = command.id;
-      Pointer nativePtr = command.nativePtr;
-
-      try {
-        switch (commandType) {
-          case UICommandType.createElement:
-            controller.view.createElement(id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
-            break;
-          case UICommandType.createTextNode:
-            controller.view.createTextNode(id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
-            break;
-          case UICommandType.createComment:
-            controller.view.createComment(id, nativePtr.cast<NativeBindingObject>());
-            break;
-          case UICommandType.disposeEventTarget:
-            controller.view.disposeEventTarget(id);
-            break;
-          case UICommandType.addEvent:
-            controller.view.addEvent(id, command.args[0]);
-            break;
-          case UICommandType.removeEvent:
-            controller.view.removeEvent(id, command.args[0]);
-            break;
-          case UICommandType.insertAdjacentNode:
-            int childId = int.parse(command.args[0]);
-            String position = command.args[1];
-            controller.view.insertAdjacentNode(id, position, childId);
-            break;
-          case UICommandType.removeNode:
-            controller.view.removeNode(id);
-            break;
-          case UICommandType.cloneNode:
-            int newId = int.parse(command.args[0]);
-            controller.view.cloneNode(id, newId);
-            break;
-          case UICommandType.setStyle:
-            String key = command.args[0];
-            String value = command.args[1];
-            controller.view.setInlineStyle(id, key, value);
-            pendingStylePropertiesTargets[id] = true;
-            break;
-          case UICommandType.setAttribute:
-            String key = command.args[0];
-            String value = command.args[1];
-            controller.view.setAttribute(id, key, value);
-            break;
-          case UICommandType.removeAttribute:
-            String key = command.args[0];
-            controller.view.removeAttribute(id, key);
-            break;
-          case UICommandType.createDocumentFragment:
-            controller.view.createDocumentFragment(id, nativePtr.cast<NativeBindingObject>());
-            break;
-          default:
-            break;
-        }
-      } catch (e, stack) {
-        print('$e\n$stack');
-      }
-    }
-
-    // For pending style properties, we needs to flush to render style.
-    for (int id in pendingStylePropertiesTargets.keys) {
-      try {
-        controller.view.flushPendingStyleProperties(id);
-      } catch (e, stack) {
-        print('$e\n$stack');
-      }
-    }
-    pendingStylePropertiesTargets.clear();
+void flushUICommandWithContextId(int contextId) {
+  WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
+  if (controller != null) {
+    flushUICommand(controller.view);
   }
+}
+
+void flushUICommand(WebFViewController view) {
+  Pointer<Uint64> nativeCommandItems = _getUICommandItems(view.contextId);
+  int commandLength = _getUICommandItemSize(view.contextId);
+
+  if (commandLength == 0 || nativeCommandItems == nullptr) {
+    return;
+  }
+
+  if (kProfileMode) {
+    PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
+  }
+
+  List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, view.contextId);
+
+  SchedulerBinding.instance.scheduleFrame();
+
+  if (kProfileMode) {
+    PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_END);
+  }
+
+  Map<int, bool> pendingStylePropertiesTargets = {};
+
+  // For new ui commands, we needs to tell engine to update frames.
+  for (int i = 0; i < commandLength; i++) {
+    UICommand command = commands[i];
+    UICommandType commandType = command.type;
+    int id = command.id;
+    Pointer nativePtr = command.nativePtr;
+
+    try {
+      switch (commandType) {
+        case UICommandType.createElement:
+          view.createElement(id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
+          break;
+        case UICommandType.createDocument:
+          view.initDocument(id, nativePtr.cast<NativeBindingObject>());
+          break;
+        case UICommandType.createWindow:
+          view.initWindow(id, nativePtr.cast<NativeBindingObject>());
+          break;
+        case UICommandType.createTextNode:
+          view.createTextNode(id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
+          break;
+        case UICommandType.createComment:
+          view.createComment(id, nativePtr.cast<NativeBindingObject>());
+          break;
+        case UICommandType.disposeEventTarget:
+          view.disposeEventTarget(id, nativePtr.cast<NativeBindingObject>());
+          break;
+        case UICommandType.addEvent:
+          view.addEvent(id, command.args[0]);
+          break;
+        case UICommandType.removeEvent:
+          view.removeEvent(id, command.args[0]);
+          break;
+        case UICommandType.insertAdjacentNode:
+          int childId = int.parse(command.args[0]);
+          String position = command.args[1];
+          view.insertAdjacentNode(id, position, childId);
+          break;
+        case UICommandType.removeNode:
+          view.removeNode(id);
+          break;
+        case UICommandType.cloneNode:
+          int newId = int.parse(command.args[0]);
+          view.cloneNode(id, newId);
+          break;
+        case UICommandType.setStyle:
+          String key = command.args[0];
+          String value = command.args[1];
+          view.setInlineStyle(id, key, value);
+          pendingStylePropertiesTargets[id] = true;
+          break;
+        case UICommandType.setAttribute:
+          String key = command.args[0];
+          String value = command.args[1];
+          view.setAttribute(id, key, value);
+          break;
+        case UICommandType.removeAttribute:
+          String key = command.args[0];
+          view.removeAttribute(id, key);
+          break;
+        case UICommandType.createDocumentFragment:
+          view.createDocumentFragment(id, nativePtr.cast<NativeBindingObject>());
+          break;
+        default:
+          break;
+      }
+    } catch (e, stack) {
+      print('$e\n$stack');
+    }
+  }
+
+  // For pending style properties, we needs to flush to render style.
+  for (int id in pendingStylePropertiesTargets.keys) {
+    try {
+      view.flushPendingStyleProperties(id);
+    } catch (e, stack) {
+      print('$e\n$stack');
+    }
+  }
+  pendingStylePropertiesTargets.clear();
 }

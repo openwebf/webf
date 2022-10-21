@@ -1,0 +1,26 @@
+{
+  metadata: {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "performance_entry_names"
+      }
+    ]
+  },
+  data: [
+//    "element",
+//    "event",
+//    "first-input",
+//    "largest-contentful-paint",
+//    "layout-shift",
+//    "longtask",
+    "mark",
+    "measure",
+//    "navigation",
+//    "paint",
+//    "resource",
+//    "taskattribution",
+//    "visibility-state",
+//    "back-forward-cache-restoration",
+  ],
+}

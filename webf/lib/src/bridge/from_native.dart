@@ -3,9 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:convert';
+import 'dart:async';
 import 'dart:ffi';
-import 'dart:ui' as ui;
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
@@ -48,6 +47,12 @@ int doubleToUint64(double value) {
   return byteData.getUint64(0);
 }
 
+int doubleToInt64(double value) {
+  var byteData = ByteData(8);
+  byteData.setFloat64(0, value);
+  return byteData.getInt64(0);
+}
+
 double uInt64ToDouble(int value) {
   var byteData = ByteData(8);
   byteData.setInt64(0, value);
@@ -73,61 +78,81 @@ void freeNativeString(Pointer<NativeString> pointer) {
 // 6. Call from C.
 
 // Register InvokeModule
-typedef NativeAsyncModuleCallback = Void Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<Utf8> errmsg, Pointer<NativeString> json);
-typedef DartAsyncModuleCallback = void Function(
-    Pointer<Void> callbackContext, int contextId, Pointer<Utf8> errmsg, Pointer<NativeString> json);
+typedef NativeAsyncModuleCallback = Pointer<NativeValue> Function(
+    Pointer<Void> callbackContext, Int32 contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
+typedef DartAsyncModuleCallback = Pointer<NativeValue> Function(
+    Pointer<Void> callbackContext, int contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
 
-typedef NativeInvokeModule = Pointer<NativeString> Function(
+typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<Void> callbackContext,
     Int32 contextId,
     Pointer<NativeString> module,
     Pointer<NativeString> method,
-    Pointer<NativeString> params,
+    Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>>);
 
-String invokeModule(Pointer<Void> callbackContext, int contextId, String moduleName, String method, String? params,
+dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String moduleName, String method, params,
     DartAsyncModuleCallback callback) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  String result = '';
+  dynamic result;
 
   try {
-    void invokeModuleCallback({String? error, data}) {
+    Future<dynamic> invokeModuleCallback({String? error, data}) {
+      Completer<dynamic> completer = Completer();
       // To make sure Promise then() and catch() executed before Promise callback called at JavaScript side.
       // We should make callback always async.
       Future.microtask(() {
+        if (controller.view.disposed) return;
+
+        Pointer<NativeValue> callbackResult = nullptr;
         if (error != null) {
           Pointer<Utf8> errmsgPtr = error.toNativeUtf8();
-          callback(callbackContext, contextId, errmsgPtr, nullptr);
+          callbackResult = callback(callbackContext, contextId, errmsgPtr, nullptr);
           malloc.free(errmsgPtr);
         } else {
-          Pointer<NativeString> dataPtr = stringToNativeString(jsonEncode(data));
-          callback(callbackContext, contextId, nullptr, dataPtr);
-          freeNativeString(dataPtr);
+          Pointer<NativeValue> dataPtr = malloc.allocate(sizeOf<NativeValue>());
+          toNativeValue(dataPtr, data);
+          callbackResult = callback(callbackContext, contextId, nullptr, dataPtr);
+          malloc.free(dataPtr);
         }
+        if (isEnabledLog) {
+          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: ${fromNativeValue(callbackResult)}');
+        }
+
+        completer.complete(fromNativeValue(callbackResult));
       });
+      return completer.future;
     }
 
     result = controller.module.moduleManager.invokeModule(
-        moduleName, method, (params != null && params != '""') ? jsonDecode(params) : null, invokeModuleCallback);
+        moduleName, method, params, invokeModuleCallback);
   } catch (e, stack) {
+    if (isEnabledLog) {
+      print('Invoke module failed: $e\n$stack');
+    }
     String error = '$e\n$stack';
     callback(callbackContext, contextId, error.toNativeUtf8(), nullptr);
+  }
+
+  if (isEnabledLog) {
+    print('Invoke module name: $moduleName method: $method, params: $params return: $result');
   }
 
   return result;
 }
 
-Pointer<NativeString> _invokeModule(
+Pointer<NativeValue> _invokeModule(
     Pointer<Void> callbackContext,
     int contextId,
     Pointer<NativeString> module,
     Pointer<NativeString> method,
-    Pointer<NativeString> params,
+    Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>> callback) {
-  String result = invokeModule(callbackContext, contextId, nativeStringToString(module), nativeStringToString(method),
-      params == nullptr ? null : nativeStringToString(params), callback.asFunction());
-  return stringToNativeString(result);
+  dynamic result = invokeModule(callbackContext, contextId, nativeStringToString(module), nativeStringToString(method),
+      fromNativeValue(params), callback.asFunction());
+  Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
+  toNativeValue(returnValue, result);
+  return returnValue;
 }
 
 final Pointer<NativeFunction<NativeInvokeModule>> _nativeInvokeModule = Pointer.fromFunction(_invokeModule);
@@ -283,15 +308,6 @@ void _cancelAnimationFrame(int contextId, int timerId) {
 final Pointer<NativeFunction<NativeCancelAnimationFrame>> _nativeCancelAnimationFrame =
     Pointer.fromFunction(_cancelAnimationFrame);
 
-typedef NativeGetScreen = Pointer<Void> Function();
-
-Pointer<Void> _getScreen() {
-  ui.Size size = ui.window.physicalSize;
-  return createScreen(size.width / ui.window.devicePixelRatio, size.height / ui.window.devicePixelRatio);
-}
-
-final Pointer<NativeFunction<NativeGetScreen>> _nativeGetScreen = Pointer.fromFunction(_getScreen);
-
 typedef NativeAsyncBlobCallback = Void Function(
     Pointer<Void> callbackContext, Int32 contextId, Pointer<Utf8>, Pointer<Uint8>, Int32);
 typedef DartAsyncBlobCallback = void Function(
@@ -317,38 +333,20 @@ void _toBlob(Pointer<Void> callbackContext, int contextId, Pointer<NativeFunctio
 
 final Pointer<NativeFunction<NativeToBlob>> _nativeToBlob = Pointer.fromFunction(_toBlob);
 
-typedef NativeFlushUICommand = Void Function();
-typedef DartFlushUICommand = void Function();
+typedef NativeFlushUICommand = Void Function(Int32 contextId);
+typedef DartFlushUICommand = void Function(int contextId);
 
-void _flushUICommand() {
+void _flushUICommand(int contextId) {
   if (kProfileMode) {
     PerformanceTiming.instance().mark(PERF_DOM_FLUSH_UI_COMMAND_START);
   }
-  flushUICommand();
+  flushUICommandWithContextId(contextId);
   if (kProfileMode) {
     PerformanceTiming.instance().mark(PERF_DOM_FLUSH_UI_COMMAND_END);
   }
 }
 
 final Pointer<NativeFunction<NativeFlushUICommand>> _nativeFlushUICommand = Pointer.fromFunction(_flushUICommand);
-
-typedef NativeInitWindow = Void Function(Int32 contextId, Pointer<NativeBindingObject> nativePtr);
-typedef DartInitWindow = void Function(int contextId, Pointer<NativeBindingObject> nativePtr);
-
-void _initWindow(int contextId, Pointer<NativeBindingObject> nativePtr) {
-  WebFViewController.windowNativePtrMap[contextId] = nativePtr;
-}
-
-final Pointer<NativeFunction<NativeInitWindow>> _nativeInitWindow = Pointer.fromFunction(_initWindow);
-
-typedef NativeInitDocument = Void Function(Int32 contextId, Pointer<NativeBindingObject> nativePtr);
-typedef DartInitDocument = void Function(int contextId, Pointer<NativeBindingObject> nativePtr);
-
-void _initDocument(int contextId, Pointer<NativeBindingObject> nativePtr) {
-  WebFViewController.documentNativePtrMap[contextId] = nativePtr;
-}
-
-final Pointer<NativeFunction<NativeInitDocument>> _nativeInitDocument = Pointer.fromFunction(_initDocument);
 
 typedef NativePerformanceGetEntries = Pointer<NativePerformanceEntryList> Function(Int32 contextId);
 typedef DartPerformanceGetEntries = Pointer<NativePerformanceEntryList> Function(int contextId);
@@ -400,25 +398,13 @@ final List<int> _dartNativeMethods = [
   _nativeClearTimeout.address,
   _nativeRequestAnimationFrame.address,
   _nativeCancelAnimationFrame.address,
-  _nativeGetScreen.address,
   _nativeToBlob.address,
   _nativeFlushUICommand.address,
-  _nativeInitWindow.address,
-  _nativeInitDocument.address,
   _nativeGetEntries.address,
   _nativeOnJsError.address,
   _nativeOnJsLog.address,
 ];
 
-typedef NativeRegisterDartMethods = Void Function(Pointer<Uint64> methodBytes, Int32 length);
-typedef DartRegisterDartMethods = void Function(Pointer<Uint64> methodBytes, int length);
-
-final DartRegisterDartMethods _registerDartMethods =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterDartMethods>>('registerDartMethods').asFunction();
-
-void registerDartMethodsToCpp() {
-  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * _dartNativeMethods.length);
-  Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
-  nativeMethodList.setAll(0, _dartNativeMethods);
-  _registerDartMethods(bytes, _dartNativeMethods.length);
+List<int> makeDartMethodsData() {
+  return _dartNativeMethods;
 }

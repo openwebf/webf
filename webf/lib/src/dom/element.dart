@@ -15,8 +15,9 @@ import 'package:webf/dom.dart';
 import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
-final RegExp _splitRegExp = RegExp(r'\s+');
+final RegExp classNameSplitRegExp = RegExp(r'\s+');
 const String _ONE_SPACE = ' ';
 const String _STYLE_PROPERTY = 'style';
 const String _ID = 'id';
@@ -50,7 +51,9 @@ enum BoxSizeType {
 mixin ElementBase on Node {
   RenderLayoutBox? _renderLayoutBox;
   RenderReplaced? _renderReplaced;
+
   RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced;
+
   set renderBoxModel(RenderBoxModel? value) {
     if (value == null) {
       _renderReplaced = null;
@@ -112,7 +115,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   set className(String className) {
     _classList.clear();
-    List<String> classList = className.split(_splitRegExp);
+    List<String> classList = className.split(classNameSplitRegExp);
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
@@ -143,6 +146,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   bool _forceToRepaintBoundary = false;
+
   set forceToRepaintBoundary(bool value) {
     if (_forceToRepaintBoundary == value) {
       return;
@@ -235,6 +239,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case 'clientHeight':
         return clientHeight;
 
+      case 'id':
+        return id;
       case 'className':
         return className;
       case 'classList':
@@ -258,7 +264,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case 'className':
         className = castToType<String>(value);
         break;
-
+      case 'id':
+        id = castToType<String>(value);
+        break;
       default:
         super.setBindingProperty(key, value);
     }
@@ -268,7 +276,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   invokeBindingMethod(String method, List args) {
     switch (method) {
       case 'getBoundingClientRect':
-        return getBoundingClientRect().toNative();
+        return getBoundingClientRect();
       case 'scroll':
         return scroll(castToType<double>(args[0]), castToType<double>(args[1]));
       case 'scrollBy':
@@ -277,10 +285,22 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         return scrollTo(castToType<double>(args[0]), castToType<double>(args[1]));
       case 'click':
         return click();
+      case 'getElementsByClassName':
+        return getElementsByClassName(args);
+      case 'getElementsByTagName':
+        return getElementsByTagName(args);
 
       default:
         super.invokeBindingMethod(method, args);
     }
+  }
+
+  dynamic getElementsByClassName(List<dynamic> args) {
+    return QuerySelector.querySelectorAll(this, '.' + args.first);
+  }
+
+  dynamic getElementsByTagName(List<dynamic> args) {
+    return QuerySelector.querySelectorAll(this, args.first);
   }
 
   void _updateRenderBoxModel() {
@@ -541,11 +561,12 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   BoundingClientRect getBoundingClientRect() => boundingClientRect;
 
   bool _shouldConsumeScrollTicker = false;
+
   void _consumeScrollTicker(_) {
     if (_shouldConsumeScrollTicker && hasEventListener(EVENT_SCROLL)) {
       _dispatchScrollEvent();
-      _shouldConsumeScrollTicker = false;
     }
+    _shouldConsumeScrollTicker = false;
   }
 
   /// https://drafts.csswg.org/cssom-view/#scrolling-events
@@ -1003,6 +1024,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       _removeInlineStyle();
     } else if (qualifiedName == _CLASS_NAME) {
       className = EMPTY_STRING;
+    } else if (qualifiedName == _ID) {
+      id = EMPTY_STRING;
     }
     attributes.remove(qualifiedName);
   }
@@ -1582,26 +1605,26 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   // The HTMLElement.offsetLeft read-only property returns the number of pixels that the upper left corner
   // of the current element is offset to the left within the HTMLElement.offsetParent node.
   // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsetleft
-  int get offsetLeft {
-    int offset = 0;
+  double get offsetLeft {
+    double offset = 0.0;
     if (!isRendererAttached) {
       return offset;
     }
     Offset relative = _getOffset(renderBoxModel!, ancestor: offsetParent);
-    offset += relative.dx.toInt();
+    offset += relative.dx;
     return offset;
   }
 
   // The HTMLElement.offsetTop read-only property returns the distance of the outer border
   // of the current element relative to the inner border of the top of the offsetParent node.
   // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsettop
-  int get offsetTop {
-    int offset = 0;
+  double get offsetTop {
+    double offset = 0.0;
     if (!isRendererAttached) {
       return offset;
     }
     Offset relative = _getOffset(renderBoxModel!, ancestor: offsetParent);
-    offset += relative.dy.toInt();
+    offset += relative.dy;
     return offset;
   }
 
@@ -1644,7 +1667,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   void click() {
     flushLayout();
-    Event clickEvent = MouseEvent(EVENT_CLICK, MouseEventInit(bubbles: true, cancelable: true));
+    Event clickEvent = MouseEvent(EVENT_CLICK, detail: 1, view: ownerDocument.defaultView);
     // If element not in tree, click is fired and only response to itself.
     dispatchEvent(clickEvent);
   }

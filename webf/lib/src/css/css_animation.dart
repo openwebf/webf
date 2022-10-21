@@ -176,7 +176,7 @@ mixin CSSAnimationMixin on RenderStyle {
       final fillMode = camelize(_getSingleString(animationFillMode, i));
 
       EffectTiming? options = EffectTiming(
-        duration: CSSTime.parseTime(duration)!.toDouble(),
+        duration: CSSTime.parseNotNegativeTime(duration)!.toDouble(),
         easing: timingFunction,
         delay: CSSTime.parseTime(delay)!.toDouble(),
         fill: FillMode.values.firstWhere((element) {

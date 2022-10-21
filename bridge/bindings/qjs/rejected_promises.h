@@ -11,15 +11,15 @@
 #include <unordered_map>
 #include <vector>
 
-namespace webf::binding::qjs {
+namespace webf {
 
-class ExecutionContext;
+class ExecutingContext;
 
 class RejectedPromises {
  public:
   class Message {
    public:
-    Message(ExecutionContext* context, JSValue promise, JSValue reason);
+    Message(ExecutingContext* context, JSValue promise, JSValue reason);
     ~Message();
 
     JSRuntime* m_runtime{nullptr};
@@ -28,17 +28,17 @@ class RejectedPromises {
   };
 
   // Keeping track unhandled promise rejection in current context, and throw unhandledRejection error
-  void trackUnhandledPromiseRejection(ExecutionContext* context, JSValue promise, JSValue reason);
+  void TrackUnhandledPromiseRejection(ExecutingContext* context, JSValue promise, JSValue reason);
   // When unhandled promise are handled in the future, should trigger a handledRejection event.
-  void trackHandledPromiseRejection(ExecutionContext* context, JSValue promise, JSValue reason);
+  void TrackHandledPromiseRejection(ExecutingContext* context, JSValue promise, JSValue reason);
   // Trigger events after promise executed.
-  void process(ExecutionContext* context);
+  void Process(ExecutingContext* context);
 
  private:
-  std::unordered_map<void*, std::unique_ptr<Message>> m_unhandledRejections;
-  std::vector<std::unique_ptr<Message>> m_reportHandledRejection;
+  std::unordered_map<void*, std::unique_ptr<Message>> unhandled_rejections_;
+  std::vector<std::unique_ptr<Message>> report_handled_rejection_;
 };
 
-}  // namespace webf::binding::qjs
+}  // namespace webf
 
 #endif  // BRIDGE_BINDINGS_QJS_REJECTED_PROMISES_H_

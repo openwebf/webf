@@ -1,14 +1,17 @@
 /*
  * Copyright (C) 2022-present The Kraken authors. All rights reserved.
  */
-type MethodHandler = (method: string, args: any[]) => void;
+type MethodCallHandler = (args: any) => any;
 interface MethodChannel {
-    addMethodCallHandler(handler: MethodHandler): void;
-    removeMethodCallHandler(handler: MethodHandler): void;
+    addMethodCallHandler(method: string, handler: MethodCallHandler): void;
+    removeMethodCallHandler(method: string): void;
+    clearMethodCallHandler(): void;
     invokeMethod(method: string, ...args: any[]): Promise<string>
 }
 
 interface WebF {
+    invokeModule: (module: string, method: string, params?: any | null, fn?: (err: Error, data: any) => any) => any;
+    addWebfModuleListener: (moduleName: string, fn: (event: Event, extra: any) => any) => void;
     methodChannel: MethodChannel;
 }
 

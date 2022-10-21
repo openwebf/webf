@@ -1,3 +1,11 @@
+## 0.13.0-beta.3
+
+* Fix reload crash.
+
+## 0.13.0-beta.2
+
+* Test for new bridge and css selector.
+
 ## 0.12.0+2
 
 **Bug Fixed**

@@ -19,7 +19,8 @@ class WaterfallFlowWidgetElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, Map<String, dynamic> properties, List<Widget> children) {
+  Widget build(BuildContext context, Map<String, dynamic> properties,
+      List<Widget> children) {
     _children = children;
 
     return WaterfallFlow.builder(
@@ -29,8 +30,9 @@ class WaterfallFlowWidgetElement extends WidgetElement {
         crossAxisCount: 2,
         crossAxisSpacing: 5.0,
         mainAxisSpacing: 5.0,
-        lastChildLayoutTypeBuilder: (index) =>
-            index == children.length ? LastChildLayoutType.foot : LastChildLayoutType.none,
+        lastChildLayoutTypeBuilder: (index) => index == children.length
+            ? LastChildLayoutType.foot
+            : LastChildLayoutType.none,
       ),
     );
   }
@@ -40,9 +42,11 @@ class TextWidgetElement extends WidgetElement {
   TextWidgetElement(BindingContext? context) : super(context);
 
   @override
-  Widget build(BuildContext context, Map<String, dynamic> properties, List<Widget> children) {
+  Widget build(BuildContext context, Map<String, dynamic> properties,
+      List<Widget> children) {
     return Text(properties['value'] ?? '',
-        textDirection: TextDirection.ltr, style: TextStyle(color: Color.fromARGB(255, 100, 100, 100)));
+        textDirection: TextDirection.ltr,
+        style: TextStyle(color: Color.fromARGB(255, 100, 100, 100)));
   }
 }
 
@@ -50,7 +54,8 @@ class ImageWidgetElement extends WidgetElement {
   ImageWidgetElement(BindingContext? context) : super(context);
 
   @override
-  Widget build(BuildContext context, Map<String, dynamic> properties, List<Widget> children) {
+  Widget build(BuildContext context, Map<String, dynamic> properties,
+      List<Widget> children) {
     return Image(image: AssetImage(properties['src']));
   }
 }
@@ -59,7 +64,8 @@ class ContainerWidgetElement extends WidgetElement {
   ContainerWidgetElement(BindingContext? context) : super(context);
 
   @override
-  Widget build(BuildContext context, Map<String, dynamic> properties, List<Widget> children) {
+  Widget build(BuildContext context, Map<String, dynamic> properties,
+      List<Widget> children) {
     return Container(
       width: 200,
       height: 200,
@@ -92,7 +98,24 @@ class SampleElement extends dom.Element implements BindingObject {
         return asyncFn;
       case 'asyncFnFailed':
         return asyncFnFailed;
+      case 'asyncFnNotComplete':
+        return asyncFnNotComplete;
+      default:
+        return super.getBindingProperty(key);
     }
+  }
+
+  @override
+  void getAllBindingPropertyNames(List<String> properties) {
+    super.getAllBindingPropertyNames(properties);
+    properties.addAll([
+      'ping',
+      'fake',
+      'fn',
+      'asyncFn',
+      'asyncFnFailed',
+      'asyncFnNotComplete'
+    ]);
   }
 
   String get ping => 'pong';
@@ -107,9 +130,14 @@ class SampleElement extends dom.Element implements BindingObject {
 
   Function get asyncFn => (List<dynamic> argv) async {
         Completer<dynamic> completer = Completer();
-        Timer(Duration(seconds: 1), () {
+        Timer(Duration(milliseconds: 200), () {
           completer.complete(argv[0]);
         });
+        return completer.future;
+      };
+
+  Function get asyncFnNotComplete => (List<dynamic> argv) async {
+        Completer<dynamic> completer = Completer();
         return completer.future;
       };
 

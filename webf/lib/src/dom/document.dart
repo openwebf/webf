@@ -13,6 +13,7 @@ import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
+import 'package:webf/src/foundation/cookie_jar.dart';
 import 'package:webf/widget.dart';
 
 class Document extends Node {
@@ -52,6 +53,8 @@ class Document extends Node {
   Document get ownerDocument => this;
 
   Element? focusedElement;
+
+  CookieJar cookie_ = CookieJar();
 
   // Returns the Window object of the active document.
   // https://html.spec.whatwg.org/multipage/window-object.html#dom-document-defaultview-dev
@@ -95,28 +98,74 @@ class Document extends Node {
   }
 
   @override
+  void setBindingProperty(String key, value) {
+    switch(key) {
+      case 'cookie':
+        cookie_.setCookie(value);
+        break;
+    }
+
+    super.setBindingProperty(key, value);
+  }
+
+  @override
+  getBindingProperty(String key) {
+    switch(key) {
+      case 'cookie':
+        return cookie_.cookie();
+    }
+
+    return super.getBindingProperty(key);
+  }
+
+  @override
   invokeBindingMethod(String method, List args) {
     switch (method) {
       case 'querySelectorAll':
         return querySelectorAll(args);
       case 'querySelector':
         return querySelector(args);
+      case 'getElementById':
+        return getElementById(args);
+      case 'getElementsByClassName':
+        return getElementsByClassName(args);
+      case 'getElementsByTagName':
+        return getElementsByTagName(args);
+      case 'getElementsByName':
+        return getElementsByName(args);
     }
     return super.invokeBindingMethod(method, args);
   }
 
   dynamic querySelector(List<dynamic> args) {
-    if (args.isEmpty || args.first is! String) {
-      return null;
-    }
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
     return QuerySelector.querySelector(this, args.first);
   }
 
   dynamic querySelectorAll(List<dynamic> args) {
-    if (args.isEmpty || args.first is! String) {
-      return null;
-    }
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
     return QuerySelector.querySelectorAll(this, args.first);
+  }
+
+  dynamic getElementById(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
+    return QuerySelector.querySelector(this, '#' + args.first);
+  }
+
+  dynamic getElementsByClassName(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
+    String selector = (args.first as String).split(classNameSplitRegExp).map((e) => '.' + e).join('');
+    return QuerySelector.querySelectorAll(this, selector);
+  }
+
+  dynamic getElementsByTagName(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
+    return QuerySelector.querySelectorAll(this, args.first);
+  }
+
+  dynamic getElementsByName(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
+    return QuerySelector.querySelectorAll(this, '[name="${args.first}"]');
   }
 
   Element? _documentElement;
