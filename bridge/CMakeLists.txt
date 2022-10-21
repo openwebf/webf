@@ -7,9 +7,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-#if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
-#endif()
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+endif()
 
 if (${ENABLE_PROFILE})
   add_definitions(-DENABLE_PROFILE=1)
@@ -212,7 +212,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/frame/module_listener_container.cc
     core/frame/module_manager.cc
     core/frame/module_callback.cc
-    core/frame/module_callback_coordinator.cc
+    core/frame/module_context_coordinator.cc
     core/frame/window.cc
     core/frame/screen.cc
     core/frame/legacy/location.cc

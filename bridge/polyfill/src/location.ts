@@ -3,9 +3,9 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-import {URL} from './url';
-import {webf} from './webf';
-import {webfLocationReload} from './bridge';
+import { URL } from './url';
+import { webf } from './webf';
+import { webfLocationReload } from './bridge';
 
 // Lazy parse url.
 let _url: URL;
@@ -51,7 +51,7 @@ export const location = {
     };
   },
   get reload() {
-      return webfLocationReload.bind(this);
+    return webfLocationReload.bind(this);
   },
   get replace() {
     return (replaceURL: string) => {

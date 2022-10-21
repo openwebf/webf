@@ -33,9 +33,9 @@ defineGlobalProperty('webf', webf);
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {
-      value: value,
-      enumerable: isEnumerable,
-      writable: true,
-      configurable: true
+    value: value,
+    enumerable: isEnumerable,
+    writable: true,
+    configurable: true
   });
 }

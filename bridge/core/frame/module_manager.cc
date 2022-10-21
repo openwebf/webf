@@ -4,11 +4,14 @@
  */
 #include "module_manager.h"
 #include "core/executing_context.h"
+#include "foundation/logging.h"
 #include "module_callback.h"
 
 namespace webf {
 
 struct ModuleContext {
+  ModuleContext(ExecutingContext* context, const std::shared_ptr<ModuleCallback>& callback)
+      : context(context), callback(callback) {}
   ExecutingContext* context;
   std::shared_ptr<ModuleCallback> callback;
 };
@@ -20,7 +23,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
   ExecutingContext* context = moduleContext->context;
 
-  if (!context->IsContextValid())
+  if (!context->IsCtxValid() || !context->IsContextValid())
     return nullptr;
 
   if (moduleContext->callback == nullptr) {
@@ -31,6 +34,10 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   }
 
   JSContext* ctx = moduleContext->context->ctx();
+
+  if (ctx == nullptr)
+    return nullptr;
+
   ExceptionState exception_state;
 
   NativeValue* return_value = nullptr;
@@ -59,9 +66,6 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     context->HandleException(exception_state);
     return nullptr;
   }
-
-  context->ModuleCallbacks()->RemoveModuleCallbacks(moduleContext->callback);
-  delete moduleContext;
 
   return return_value;
 }
@@ -111,10 +115,10 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
 
   NativeValue* result;
   if (callback != nullptr) {
-    auto moduleCallback = ModuleCallback::Create(callback);
-    context->ModuleCallbacks()->AddModuleCallbacks(std::move(moduleCallback));
-    auto* moduleContext = new ModuleContext{context, moduleCallback};
-    result = context->dartMethodPtr()->invokeModule(moduleContext, context->contextId(),
+    auto module_callback = ModuleCallback::Create(callback);
+    auto module_context = std::make_shared<ModuleContext>(context, module_callback);
+    context->ModuleContexts()->AddModuleContext(module_context);
+    result = context->dartMethodPtr()->invokeModule(module_context.get(), context->contextId(),
                                                     module_name.ToNativeString().get(), method.ToNativeString().get(),
                                                     &params, handleInvokeModuleTransientCallback);
   } else {
