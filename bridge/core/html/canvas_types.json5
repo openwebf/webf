@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "canvas_types"
+      }
+    ]
+  },
+  "data": [
+    "2d"
+  ]
+}

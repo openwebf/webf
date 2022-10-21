@@ -1,4 +1,4 @@
-group 'com.openwebf.kraken'
+group 'com.openwebf.webf'
 version '1.0'
 
 buildscript {

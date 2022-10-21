@@ -5,16 +5,14 @@
 
 import { URL } from './url';
 import { webf } from './webf';
+import { webfLocationReload } from './bridge';
 
-// @ts-ignore
-const webfLocation = window.__location__;
 // Lazy parse url.
 let _url: URL;
 export function getUrl() : URL {
   return _url ? _url : (_url = new URL(location.href));
 }
 
-const bindReload = webfLocation.reload.bind(webfLocation);
 export const location = {
   get href() {
     return webf.invokeModule('Location', 'getHref');
@@ -53,7 +51,7 @@ export const location = {
     };
   },
   get reload() {
-    return bindReload;
+    return webfLocationReload.bind(this);
   },
   get replace() {
     return (replaceURL: string) => {

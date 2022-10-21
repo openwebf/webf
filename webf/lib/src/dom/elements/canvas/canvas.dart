@@ -83,7 +83,7 @@ class CanvasElement extends Element {
   invokeBindingMethod(String method, List args) {
     switch (method) {
       case 'getContext':
-        return getContext(castToType<String>(args[0])).toNative();
+        return getContext(castToType<String>(args[0]));
       default:
         return super.invokeBindingMethod(method, args);
     }

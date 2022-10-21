@@ -279,7 +279,28 @@ const String CH = 'ch';
 // Functions
 const String ENV = 'env';
 const String VAR = 'var';
+const String CALC = 'calc';
 
 const String PERCENTAGE = '%';
 const String ZERO = '0';
 const String EMPTY_STRING = '';
+
+// Animation
+const String FORWARDS = 'forwards';
+const String BACKWARDS = 'backwards';
+const String BOTH = 'both';
+const String RUNNING = 'running';
+const String PAUSED = 'paused';
+const String REVERSE = 'reverse';
+const String ALTERNATE = 'alternate';
+const String ALTERNATE_REVERSE = 'alternate-reverse';
+
+const String ANIMATION = 'animation';
+const String ANIMATION_NAME = 'animationName';
+const String ANIMATION_DURATION = 'animationDuration';
+const String ANIMATION_TIMING_FUNCTION = 'animationTimingFunction';
+const String ANIMATION_DELAY = 'animationDelay';
+const String ANIMATION_ITERATION_COUNT = 'animationIterationCount';
+const String ANIMATION_DIRECTION = 'animationDirection';
+const String ANIMATION_FILL_MODE = 'animationFillMode';
+const String ANIMATION_PLAY_STATE = 'animationPlayState';

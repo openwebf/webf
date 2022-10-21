@@ -10,28 +10,31 @@ add_subdirectory(./third_party/googletest)
 add_subdirectory(./third_party/benchmark)
 
 list(APPEND WEBF_TEST_SOURCE
-  page_test.cc
-  page_test.h
-)
+        test/webf_test_context.cc
+        test/webf_test_context.h
+        )
 list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
-  ./bindings/qjs/js_context_test.cc
-  ./bindings/qjs/bom/timer_test.cc
-  ./bindings/qjs/bom/console_test.cc
-  ./bindings/qjs/qjs_patch_test.cc
-  ./bindings/qjs/host_object_test.cc
-  ./bindings/qjs/host_class_test.cc
-  ./bindings/qjs/dom/event_target_test.cc
-  ./bindings/qjs/module_manager_test.cc
-  ./bindings/qjs/dom/node_test.cc
-  ./bindings/qjs/dom/event_test.cc
-  ./bindings/qjs/dom/element_test.cc
-  ./bindings/qjs/dom/document_test.cc
-  ./bindings/qjs/dom/text_node_test.cc
-  ./bindings/qjs/bom/window_test.cc
-  ./bindings/qjs/dom/custom_event_test.cc
-  ./bindings/qjs/module_manager_test.cc
+  ./bindings/qjs/atomic_string_test.cc
+  ./bindings/qjs/script_value_test.cc
+  ./bindings/qjs/qjs_engine_patch_test.cc
+  ./core/dom/events/custom_event_test.cc
+  ./core/executing_context_test.cc
+  ./core/frame/console_test.cc
+  ./core/frame/module_manager_test.cc
+  ./core/dom/events/event_target_test.cc
+  ./core/dom/document_test.cc
+  ./core/dom/legacy/element_attribute_test.cc
+  ./core/dom/node_test.cc
+  ./core/html/legacy/html_collection_test.cc
+  ./core/dom/element_test.cc
+  ./core/frame/dom_timer_test.cc
+  ./core/frame/window_test.cc
+  ./core/css/legacy/css_style_declaration_test.cc
+  ./core/html/html_element_test.cc
+  ./core/html/custom/widget_element_test.cc
+  ./core/timing/performance_test.cc
 )
 
 ### webf_unit_test executable
@@ -95,6 +98,7 @@ add_library(webf_test SHARED ${WEBF_TEST_SOURCE})
 target_link_libraries(webf_test PRIVATE ${BRIDGE_LINK_LIBS} webf)
 target_include_directories(webf_test PRIVATE
   ${BRIDGE_INCLUDE}
+  ./test
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 
 if (DEFINED ENV{LIBRARY_OUTPUT_DIR})

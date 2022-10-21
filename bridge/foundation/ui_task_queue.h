@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2019-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef BRIDGE_UI_TASK_QUEUE_H
@@ -7,9 +8,7 @@
 
 #include "task_queue.h"
 
-namespace foundation {
-
-using Task = void (*)(void*);
+namespace webf {
 
 class UITaskQueue : public TaskQueue {
  public:
@@ -29,6 +28,6 @@ class UITaskQueue : public TaskQueue {
   int m_contextId;
 };
 
-}  // namespace foundation
+}  // namespace webf
 
 #endif  // BRIDGE_UI_TASK_QUEUE_H

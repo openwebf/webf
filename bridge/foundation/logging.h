@@ -1,16 +1,29 @@
 /*
- * Copyright (C) 2022-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef FOUNDATION_LOGGING_H_
 #define FOUNDATION_LOGGING_H_
 
 #include <sstream>
-
 #include <string>
-#include "include/webf_bridge.h"
 
-namespace foundation {
+#define WEBF_LOG_STREAM(severity) ::webf::LogMessage(::webf::severity, __FILE__, __LINE__, nullptr).stream()
+
+#define WEBF_LAZY_STREAM(stream, condition) !(condition) ? (void)0 : ::webf::LogMessageVoidify() & (stream)
+
+#define WEBF_EAT_STREAM_PARAMETERS(ignored) \
+  true || (ignored) ? (void)0 : ::LogMessageVoidify() & ::LogMessage(::LOG_FATAL, 0, 0, nullptr).stream()
+
+#define WEBF_LOG(severity) WEBF_LAZY_STREAM(WEBF_LOG_STREAM(severity), true)
+
+#define WEBF_CHECK(condition) \
+  WEBF_LAZY_STREAM(::webf::LogMessage(::webf::FATAL, __FILE__, __LINE__, #condition).stream(), !(condition))
+
+namespace webf {
+
+class ExecutingContext;
 
 typedef int LogSeverity;
 
@@ -20,7 +33,8 @@ constexpr LogSeverity INFO = 1;
 constexpr LogSeverity WARN = 2;
 constexpr LogSeverity DEBUG = 3;
 constexpr LogSeverity ERROR = 4;
-constexpr LogSeverity FATAL = 5;
+constexpr LogSeverity NUM_SEVERITIES = 5;
+constexpr LogSeverity FATAL = 6;
 
 enum class MessageLevel : uint8_t {
   Log = 1,
@@ -47,20 +61,10 @@ class LogMessage {
   const LogSeverity severity_;
   const char* file_;
   const int line_;
-
-  DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
 
-void printLog(int32_t contextId, std::stringstream& stream, std::string level, void* ctx);
+void printLog(ExecutingContext* context, std::stringstream& stream, std::string level, void* ctx);
 
-#define WEBF_LOG_STREAM(severity) ::foundation::LogMessage(::foundation::severity, __FILE__, __LINE__, nullptr).stream()
-
-#define WEBF_LAZY_STREAM(stream, condition) !(condition) ? (void)0 : foundation::LogMessageVoidify() & (stream)
-
-#define WEBF_LOG(severity) WEBF_LAZY_STREAM(WEBF_LOG_STREAM(severity), true)
-
-#define WEBF_CHECK(condition) WEBF_LAZY_STREAM(::foundation::LogMessage(::foundation::FATAL, __FILE__, __LINE__, #condition).stream(), !(condition))
-
-}  // namespace foundation
+}  // namespace webf
 
 #endif  // FOUNDATION_LOGGING_H_

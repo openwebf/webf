@@ -1,35 +1,33 @@
 /*
- * Copyright (C) 2020-present The Kraken authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "webf_bridge_test.h"
-#include "dart_methods.h"
-
-#if WEBF_JSC_ENGINE
-#include "bridge_test_jsc.h"
-#elif WEBF_QUICK_JS_ENGINE
-#include "page_test.h"
-#endif
 #include <atomic>
+#include "bindings/qjs/native_string_utils.h"
+#include "webf_test_context.h"
 
-std::unordered_map<int, webf::WebFPageTest*> bridgeTestPool = std::unordered_map<int, webf::WebFPageTest*>();
+std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();
 
 void initTestFramework(int32_t contextId) {
   auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
-  auto bridgeTest = new webf::WebFPageTest(page);
-  bridgeTestPool[contextId] = bridgeTest;
+  auto testContext = new webf::WebFTestContext(page->GetExecutingContext());
+  testContextPool[contextId] = testContext;
 }
 
-int8_t evaluateTestScripts(int32_t contextId, NativeString* code, const char* bundleFilename, int startLine) {
-  auto bridgeTest = bridgeTestPool[contextId];
-  return bridgeTest->evaluateTestScripts(code->string, code->length, bundleFilename, startLine);
+int8_t evaluateTestScripts(int32_t contextId, void* code, const char* bundleFilename, int startLine) {
+  auto testContext = testContextPool[contextId];
+  return testContext->evaluateTestScripts(static_cast<webf::NativeString*>(code)->string(),
+                                          static_cast<webf::NativeString*>(code)->length(), bundleFilename, startLine);
 }
 
 void executeTest(int32_t contextId, ExecuteCallback executeCallback) {
-  auto bridgeTest = bridgeTestPool[contextId];
-  bridgeTest->invokeExecuteTest(executeCallback);
+  auto testContext = testContextPool[contextId];
+  testContext->invokeExecuteTest(executeCallback);
 }
 
-void registerTestEnvDartMethods(uint64_t* methodBytes, int32_t length) {
-  webf::registerTestEnvDartMethods(methodBytes, length);
+void registerTestEnvDartMethods(int32_t contextId, uint64_t* methodBytes, int32_t length) {
+  auto testContext = testContextPool[contextId];
+  testContext->registerTestEnvDartMethods(methodBytes, length);
 }

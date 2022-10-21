@@ -7,7 +7,7 @@ describe('Insert before', () => {
     expect(() => {
       // @ts-ignore
       container.insertBefore(new Event('1234'), null);
-    }).toThrowError('Failed to execute \'insertBefore\' on \'Node\': parameter 1 is not of type \'Node\'');
+    }).toThrowError('parameter 1 is not of type \'Node\'.');
   });
   it('with node is a child of another parent', () => {
     let container = document.createElement('div');

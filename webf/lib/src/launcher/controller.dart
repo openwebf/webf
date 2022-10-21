@@ -11,6 +11,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:flutter/foundation.dart';
@@ -26,9 +27,6 @@ import 'package:webf/gesture.dart';
 import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
-
-const int WINDOW_ID = -1;
-const int DOCUMENT_ID = -2;
 
 // Error handler when load bundle failed.
 typedef LoadHandler = void Function(WebFController controller);
@@ -67,9 +65,6 @@ abstract class DevToolsService {
 
 // An kraken View Controller designed for multiple kraken view control.
 class WebFViewController implements WidgetsBindingObserver, ElementsBindingObserver {
-  static Map<int, Pointer<NativeBindingObject>> documentNativePtrMap = {};
-  static Map<int, Pointer<NativeBindingObject>> windowNativePtrMap = {};
-
   WebFController rootController;
 
   // The methods of the KrakenNavigateDelegation help you implement custom behaviors that are triggered
@@ -119,7 +114,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       PerformanceTiming.instance().mark(PERF_BRIDGE_INIT_START);
     }
     BindingBridge.setup();
-    _contextId = contextId ?? initBridge();
+    _contextId = contextId ?? initBridge(this);
 
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_BRIDGE_INIT_END);
@@ -144,18 +139,50 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
     defineBuiltInElements();
 
+    // Wait viewport mounted on the outside renderObject tree.
+    Future.microtask(() {
+      // Execute UICommand.createDocument and UICommand.createWindow to initialize window and document.
+      flushUICommand(this);
+    });
+
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_ELEMENT_MANAGER_INIT_END);
+    }
+
+    SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
+  }
+
+  void _postFrameCallback(Duration timeStamp) {
+    if (disposed) return;
+    flushUICommand(this);
+    SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
+  }
+
+  // Index value which identify javascript runtime context.
+  late int _contextId;
+  int get contextId => _contextId;
+
+  // Enable print debug message when rendering.
+  bool enableDebug;
+
+  // Kraken have already disposed.
+  bool _disposed = false;
+
+  bool get disposed => _disposed;
+
+  late RenderViewportBox viewport;
+  late Document document;
+  late Window window;
+
+  void initDocument(int targetId, Pointer<NativeBindingObject> pointer) {
     document = Document(
-      BindingContext(_contextId, documentNativePtrMap[_contextId]!),
+      BindingContext(_contextId, pointer),
       viewport: viewport,
       controller: rootController,
       gestureListener: gestureListener,
       widgetDelegate: widgetDelegate,
     );
-    _setEventTarget(DOCUMENT_ID, document);
-
-    window = Window(BindingContext(_contextId, windowNativePtrMap[_contextId]!), document);
-    _registerPlatformBrightnessChange();
-    _setEventTarget(WINDOW_ID, window);
+    _setEventTarget(targetId, document);
 
     // Listeners need to be registered to window in order to dispatch events on demand.
     if (gestureListener != null) {
@@ -176,6 +203,14 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         document.addEventListener(EVENT_DRAG, (Event event) => listener.onDrag!(event as GestureEvent));
       }
     }
+  }
+
+  void initWindow(int targetId, Pointer<NativeBindingObject> pointer) {
+    window = Window(
+        BindingContext(_contextId, pointer),
+        document);
+    _registerPlatformBrightnessChange();
+    _setEventTarget(targetId, window);
 
     // Blur input element when new input focused.
     window.addEventListener(EVENT_CLICK, (event) {
@@ -187,27 +222,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         (event.target as Element).focus();
       }
     });
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_ELEMENT_MANAGER_INIT_END);
-    }
   }
-
-  // Index value which identify javascript runtime context.
-  late int _contextId;
-  int get contextId => _contextId;
-
-  // Enable print debug message when rendering.
-  bool enableDebug;
-
-  // Kraken have already disposed.
-  bool _disposed = false;
-
-  bool get disposed => _disposed;
-
-  late RenderViewportBox viewport;
-  late Document document;
-  late Window window;
 
   void evaluateJavaScripts(String code) {
     assert(!_disposed, 'WebF have already disposed');
@@ -473,6 +488,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       originalTarget.attributes.forEach((key, value) {
         newElement.setAttribute(key, value);
       });
+      newElement.className = originalTarget.className;
+      newElement.id = originalTarget.id;
     }
   }
 
@@ -676,12 +693,13 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   // Call from JS Bridge before JS side eventTarget object been Garbage collected.
-  void disposeEventTarget(int targetId) {
+  void disposeEventTarget(int targetId, Pointer<NativeBindingObject> pointer) {
     Node? target = _getEventTargetById<Node>(targetId);
     if (target == null) return;
 
     _removeTarget(targetId);
     target.dispose();
+    malloc.free(pointer);
   }
 
   RenderObject getRootRenderObject() {
@@ -963,7 +981,8 @@ class WebFController {
       _module.dispose();
       _view.dispose();
 
-      allocateNewPage(_view.contextId);
+      List<int> methodBytes = makeDartMethodsData();
+      allocateNewPage(methodBytes, _view.contextId);
 
       _view = WebFViewController(view.viewportWidth, view.viewportHeight,
           background: _view.background,

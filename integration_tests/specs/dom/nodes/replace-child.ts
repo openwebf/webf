@@ -5,7 +5,7 @@ describe('Replace child', () => {
     let newChild = document.createElement('div');
     expect(() => {
       container.replaceChild(newChild, node);
-    }).toThrowError('Failed to execute \'replaceChild\' on \'Node\': The node to be replaced is not a child of this node.');
+    }).toThrowError('The node to be replaced is not a child of this node.');
   });
   it('with old child is not an type of node', () => {
     let container = document.createElement('div');

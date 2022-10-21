@@ -12,6 +12,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 
+import 'test_module.dart';
 import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'bridge/to_native.dart';
@@ -22,13 +23,15 @@ String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
 
 final String __dirname = path.dirname(Platform.script.path);
-final String testDirectory = Platform.environment['KRAKEN_TEST_DIR'] ?? __dirname;
+final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
   // Overrides library name.
   WebFDynamicLibrary.libName = 'libwebf_test';
   defineWebFCustomElements();
+
+  ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
 
   // FIXME: This is a workaround for testcases.
   ParagraphElement.defaultStyle = {DISPLAY: BLOCK};
@@ -49,8 +52,8 @@ void main() async {
   final File spec = File(path.join(testDirectory, specTarget));
   WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
   javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
-    javaScriptChannel.invokeMethod(method, arguments);
-    return 'method: ' + method;
+    dynamic returnedValue = await javaScriptChannel.invokeMethod(method, arguments);
+    return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
   };
 
   // This is a virtual location for test program to test [Location] functionality.
@@ -60,14 +63,16 @@ void main() async {
   webF = WebF(
     viewportWidth: 360,
     viewportHeight: 640,
-    bundle: WebFBundle.fromContent('console.log("Starting integration tests...")', url: specUrl),
+    bundle: WebFBundle.fromContent(
+        'console.log("Starting integration tests...")',
+        url: specUrl),
     disableViewportWidthAssertion: true,
     disableViewportHeightAssertion: true,
     javaScriptChannel: javaScriptChannel,
     gestureListener: GestureListener(
       onDrag: (GestureEvent gestureEvent) {
         if (gestureEvent.state == EVENT_STATE_START) {
-          var event = CustomEvent('nativegesture', CustomEventInit(detail: 'nativegesture'));
+          var event = CustomEvent('nativegesture', detail: 'nativegesture');
           webF.controller!.view.document.documentElement?.dispatchEvent(event);
         }
       },
@@ -94,10 +99,9 @@ void main() async {
   testTextInput = TestTextInput();
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    registerDartTestMethodsToCpp();
     int contextId = webF.controller!.view.contextId;
-
     initTestFramework(contextId);
+    registerDartTestMethodsToCpp(contextId);
     addJSErrorListener(contextId, print);
     // Preload load test cases
     String code = spec.readAsStringSync();

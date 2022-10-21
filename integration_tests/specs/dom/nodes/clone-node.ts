@@ -108,13 +108,14 @@ describe('Clone node', () => {
 
   it('should work with img element', async (done) => {
     const img = document.createElement('img');
+    img.addEventListener('load', loadImg);
     img.style.width = '100px';
     img.style.height = '100px';
     img.src = "assets/kraken.png";
     document.body.appendChild(img);
     const img2 = img.cloneNode(false);
+    img2.addEventListener('load', loadImg);
     document.body.appendChild(img2);
-
     let anotherImgHasLoad = false;
     async function loadImg() {
       if (anotherImgHasLoad) {
@@ -124,9 +125,6 @@ describe('Clone node', () => {
         anotherImgHasLoad = true;
       }
     }
-
-    img.addEventListener('load', loadImg);
-    img2.addEventListener('load', loadImg);
   })
 
   it('deep is not required', async () => {

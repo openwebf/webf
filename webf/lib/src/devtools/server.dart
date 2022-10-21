@@ -71,9 +71,6 @@ void attachInspector(int contextId) {
 }
 
 void initInspectorServerNativeBinding(int contextId) {
-  final DartRegisterDartMethods _registerInspectorServerDartMethods = WebFDynamicLibrary.ref
-      .lookup<NativeFunction<NativeRegisterDartMethods>>('registerInspectorDartMethods')
-      .asFunction();
   final Pointer<NativeFunction<NativeInspectorMessage>> _nativeInspectorMessage =
       Pointer.fromFunction(_onInspectorMessage);
   final Pointer<NativeFunction<NativeRegisterInspectorMessageCallback>> _nativeRegisterInspectorMessageCallback =
@@ -90,8 +87,6 @@ void initInspectorServerNativeBinding(int contextId) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(_dartNativeMethods.length * sizeOf<Uint64>());
   Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
   nativeMethodList.setAll(0, _dartNativeMethods);
-
-  _registerInspectorServerDartMethods(bytes, _dartNativeMethods.length);
 }
 
 void serverIsolateEntryPoint(SendPort isolateToMainStream) {

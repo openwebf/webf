@@ -5,7 +5,7 @@ on: [workflow_dispatch, pull_request]
 env:
   nodeVersion: "16"
   cmakeVersion: "3.22.x"
-  flutterVersion: "3.0.4"
+  flutterVersion: "3.0.5"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -30,7 +30,7 @@ jobs:
       with:
         cmake-version: ${{ env.cmakeVersion }}
     - run: npm i
-    - run: ENABLE_ASAN=true npm run build:bridge:macos
+    - run: npm run build:bridge:macos
     - uses: actions/upload-artifact@v2
       with:
         name: macos_bridge_binary

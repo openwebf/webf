@@ -608,7 +608,8 @@ class CSSMatrix {
   }
 
   static Matrix4? _computeMatrix(CSSFunctionalNotation method, RenderStyle renderStyle) {
-    switch (method.name) {
+    final methodName = method.name.toLowerCase();
+    switch (methodName) {
       case MATRIX:
         if (method.args.length == 6) {
           List<double?> args = List.filled(6, 0);

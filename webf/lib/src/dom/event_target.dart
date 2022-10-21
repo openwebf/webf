@@ -23,6 +23,7 @@ abstract class EventTarget extends BindingObject {
   @protected
   bool hasEventListener(String type) => _eventHandlers.containsKey(type);
 
+  // TODO: Support addEventListener options: capture, once, passive, signal.
   @mustCallSuper
   void addEventListener(String eventType, EventHandler eventHandler) {
     if (_disposed) return;
@@ -67,8 +68,12 @@ abstract class EventTarget extends BindingObject {
       event.currentTarget = this;
       // To avoid concurrent exception while prev handler modify the original handler list, causing list iteration
       // with error, copy the handlers here.
-      for (EventHandler handler in [...existHandler]) {
-        handler(event);
+      try {
+        for (EventHandler handler in [...existHandler]) {
+          handler(event);
+        }
+      } catch (e, stack) {
+        print('$e\n$stack');
       }
       event.currentTarget = null;
     }

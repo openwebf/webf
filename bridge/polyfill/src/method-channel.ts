@@ -5,27 +5,23 @@
 
 import { webfInvokeModule } from './bridge';
 
-type MethodCallHandler = (method: string, args: any[]) => void;
+type MethodCallHandler = (args: any[]) => void;
 
-let methodCallHandlers: MethodCallHandler[] = [];
+let methodCallHandlers: {[key: string]: MethodCallHandler} = {};
 
 // Like flutter platform channels
 export const methodChannel = {
-  setMethodCallHandler(handler: MethodCallHandler) {
-    console.warn('webf.methodChannel.setMethodCallHandler is a Deprecated API, use webf.methodChannel.addMethodCallHandler instead.');
-    methodChannel.addMethodCallHandler(handler);
-  },
-  addMethodCallHandler(handler: MethodCallHandler) {
-    methodCallHandlers.push(handler);
-  },
-  removeMethodCallHandler(handler: MethodCallHandler) {
-    let index = methodCallHandlers.indexOf(handler);
-    if (index != -1) {
-      methodCallHandlers.splice(index, 1);
+  addMethodCallHandler(method: string, handler: MethodCallHandler) {
+    if (typeof handler !== 'function') {
+      throw new Error('webf.addMethodCallHandler: handler should be an function.');
     }
+    methodCallHandlers[method] = handler;
+  },
+  removeMethodCallHandler(method: string) {
+    delete methodCallHandlers[method];
   },
   clearMethodCallHandler() {
-    methodCallHandlers.length = 0;
+    methodCallHandlers = {};
   },
   invokeMethod(method: string, ...args: any[]): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -37,10 +33,10 @@ export const methodChannel = {
   },
 };
 
-export function triggerMethodCallHandler(method: string, args: any) {
-  if (methodCallHandlers.length > 0) {
-    for (let handler of methodCallHandlers) {
-      handler(method, args);
-    }
+export function triggerMethodCallHandler(method: string, args: any[]) {
+  if (!methodCallHandlers.hasOwnProperty(method)) {
+    return null;
   }
+
+  return methodCallHandlers[method](args);
 }

@@ -2,37 +2,32 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-
 import 'package:webf/css.dart';
+import 'package:quiver/core.dart';
 
 abstract class StyleSheet {}
 
 const String _CSSStyleSheetType = 'text/css';
 
 // https://drafts.csswg.org/cssom-1/#cssstylesheet
-class CSSStyleSheet implements StyleSheet {
+class CSSStyleSheet implements StyleSheet, Comparable {
   String type = _CSSStyleSheetType;
 
   /// A Boolean indicating whether the stylesheet is disabled. False by default.
   bool disabled = false;
 
   /// A string containing the baseURL used to resolve relative URLs in the stylesheet.
-  String? herf;
+  String? href;
 
-  List<CSSRule> cssRules = [];
+  final List<CSSRule> cssRules;
 
-  CSSStyleSheet(String text, {this.disabled = false, this.herf}) {
-    List<CSSRule> rules = CSSParser.parseRules(text, parentStyleSheet: this);
-    cssRules.addAll(rules);
-  }
+  CSSStyleSheet(this.cssRules, {this.disabled = false, this.href});
+
+  // CSSStyleSheet(this.content, {this.disabled = false, this.href}) : cssRules = CSSParser(content).parseRules();
 
   insertRule(String text, int index) {
-    CSSRule? rule = CSSParser.parseRule(text);
-    if (rule != null) {
-      cssRules.insert(index, rule);
-    } else {
-      // TODO: throw error
-    }
+    List<CSSRule> rules = CSSParser(text).parseRules();
+    cssRules.addAll(rules);
   }
 
   /// Removes a rule from the stylesheet object.
@@ -43,11 +38,34 @@ class CSSStyleSheet implements StyleSheet {
   /// Synchronously replaces the content of the stylesheet with the content passed into it.
   replaceSync(String text) {
     cssRules.clear();
-    cssRules.addAll(CSSParser.parseRules(text));
+    List<CSSRule> rules = CSSParser(text).parseRules();
+    cssRules.addAll(rules);
   }
 
-  replace(String text) {
-    // TODO: put in next frame and return a future
-    replaceSync(text);
+  Future replace(String text) async {
+    return Future(() {
+      replaceSync(text);
+    });
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return hashCode == other.hashCode;
+  }
+
+  @override
+  int get hashCode => hashObjects(cssRules);
+
+  CSSStyleSheet clone() {
+    CSSStyleSheet sheet = CSSStyleSheet(List.from(cssRules), disabled: disabled, href: href);
+    return sheet;
+  }
+
+  @override
+  int compareTo(other) {
+    if (other is! CSSStyleSheet) {
+      return 0;
+    }
+    return hashCode.compareTo(other.hashCode);
   }
 }

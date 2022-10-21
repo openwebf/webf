@@ -4,8 +4,12 @@
  */
 
 #include <fstream>
+#include "foundation/logging.h"
 #include "gtest/gtest.h"
-#include "page.h"
+#include "webf_bridge_test.h"
+#include "webf_test_env.h"
+
+using namespace webf;
 #include "webf_bridge_test.h"
 #include "webf_test_env.h"
 
@@ -31,12 +35,15 @@ std::string readTestSpec() {
 // Very useful to fix bridge bugs.
 TEST(IntegrationTest, runSpecs) {
   auto bridge = TEST_init();
-  auto context = bridge->getContext();
+  auto context = bridge->GetExecutingContext();
 
   std::string code = readTestSpec();
   bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
-  executeTest(context->getContextId(), [](int32_t contextId, NativeString* status) -> void* { WEBF_LOG(VERBOSE) << "done"; });
+  executeTest(context->contextId(), [](int32_t contextId, void* status) -> void* {
+    WEBF_LOG(VERBOSE) << "done";
+    return nullptr;
+  });
 
   TEST_runLoop(context);
 }

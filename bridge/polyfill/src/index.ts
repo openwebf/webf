@@ -3,9 +3,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-import 'es6-promise/dist/es6-promise.auto';
 import './dom';
-import './query-selector';
 import { console } from './console';
 import { fetch, Request, Response, Headers } from './fetch';
 import { matchMedia } from './match-media';
@@ -17,10 +15,7 @@ import { asyncStorage } from './async-storage';
 import { URLSearchParams } from './url-search-params';
 import { URL } from './url';
 import { webf } from './webf';
-import { ErrorEvent, PromiseRejectionEvent } from './events';
 
-defineGlobalProperty('ErrorEvent', ErrorEvent);
-defineGlobalProperty('PromiseRejectionEvent', PromiseRejectionEvent);
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
 defineGlobalProperty('Response', Response);
@@ -35,7 +30,6 @@ defineGlobalProperty('asyncStorage', asyncStorage);
 defineGlobalProperty('URLSearchParams', URLSearchParams);
 defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
-defineGlobalProperty('ErrorEvent', ErrorEvent);
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {
