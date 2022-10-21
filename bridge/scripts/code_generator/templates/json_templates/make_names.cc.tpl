@@ -32,12 +32,18 @@ const AtomicString& k<%= name %> = reinterpret_cast<AtomicString*>(&names_storag
 
 void Init(JSContext* ctx) {
   struct NameEntry {
-     const char* str;
+    <% if (options.add_atom_prefix) { %>
+      JSAtom atom;
+    <% } else { %>
+      const char* str;
+    <% } %>
    };
 
   static const NameEntry kNames[] = {
       <% _.forEach(data, function(name) { %>
-        <% if (Array.isArray(name)) { %>
+        <% if (options.add_atom_prefix) { %>
+          { JS_ATOM_<%= name %> },
+        <% } else if (Array.isArray(name)) { %>
           { "<%= name[1] %>" },
         <% } else if(_.isObject(name)) { %>
           { "<%= name.name %>" },
@@ -57,7 +63,12 @@ void Init(JSContext* ctx) {
 
   for(size_t i = 0; i < std::size(kNames); i ++) {
     void* address = reinterpret_cast<AtomicString*>(&names_storage) + i;
-    new (address) AtomicString(ctx, kNames[i].str);
+    <% if (options.add_atom_prefix) { %>
+      new (address) AtomicString(ctx, kNames[i].atom);
+    <% } else { %>
+      new (address) AtomicString(ctx, kNames[i].str);
+    <% } %>
+
   }
 
   <% if (deps && deps.html_attribute_names) { %>
