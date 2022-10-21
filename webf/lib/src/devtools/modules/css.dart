@@ -124,10 +124,12 @@ class InspectCSSModule extends UIInspectorModule {
             String value = _kv[1].trim();
             if (annotatedStyle.containsKey(name)) {
               value = '/*$value*/';
+              element.style.removeProperty(_camelize(name));
             }
             element.setInlineStyle(_camelize(name), value);
           }
         }
+        element.style.flushPendingProperties();
         styles.add(buildInlineStyle(element));
       } else {
         styles.add(null);
