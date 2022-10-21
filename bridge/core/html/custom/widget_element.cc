@@ -4,8 +4,8 @@
  */
 
 #include "widget_element.h"
-#include "core/dom/document.h"
 #include "built_in_string.h"
+#include "core/dom/document.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
