@@ -48,6 +48,7 @@ abstract class WidgetElement extends dom.Element {
     return previousValue == nextValue;
   }
   void propertyDidUpdate(String key, value) {}
+  void styleDidUpdate(String property, String value) {}
 
   Widget build(BuildContext context, List<Widget> children);
 
@@ -96,6 +97,16 @@ abstract class WidgetElement extends dom.Element {
       _state!.requestUpdateState();
     }
     propertyDidUpdate(key, value);
+  }
+
+  @override
+  void setInlineStyle(String property, String value) {
+    super.setInlineStyle(property, value);
+    bool shouldRebuild = shouldElementRebuild(property, style.getPropertyValue(property), value);
+    if (_state != null && shouldRebuild) {
+      _state!.requestUpdateState();
+    }
+    styleDidUpdate(property, value);
   }
 
   @mustCallSuper
