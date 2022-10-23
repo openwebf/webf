@@ -100,6 +100,9 @@ abstract class RenderStyle {
   CSSLengthValue? get letterSpacing;
   CSSLengthValue? get wordSpacing;
 
+  // input
+  Color? get caretColor;
+
   // BoxModel
   double? get borderBoxLogicalWidth;
   double? get borderBoxLogicalHeight;
@@ -201,6 +204,7 @@ class CSSRenderStyle extends RenderStyle
         CSSBoxShadowMixin,
         CSSBoxMixin,
         CSSTextMixin,
+        CSSInputMixin,
         CSSPositionMixin,
         CSSTransformMixin,
         CSSVisibilityMixin,
@@ -526,6 +530,7 @@ class CSSRenderStyle extends RenderStyle
         value = CSSBorderSide.resolveBorderStyle(propertyValue);
         break;
       case COLOR:
+      case CARETCOLOR:
       case BACKGROUND_COLOR:
       case TEXT_DECORATION_COLOR:
       case BORDER_LEFT_COLOR:

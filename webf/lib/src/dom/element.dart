@@ -1464,6 +1464,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case SLIVER_DIRECTION:
         renderStyle.sliverDirection = value;
         break;
+      case CARETCOLOR:
+        renderStyle.caretColor = value;
+        break;
     }
   }
 

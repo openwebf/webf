@@ -8,7 +8,8 @@ enum InputSize {
   large,
 }
 
-class FlutterInputElement extends WidgetElement with BaseInputElement, BaseCheckBoxElement {
+class FlutterInputElement extends WidgetElement
+    with BaseInputElement, BaseCheckBoxElement {
   BindingContext? buildContext;
 
   FlutterInputElement(BindingContext? context) : super(context) {
@@ -99,6 +100,8 @@ mixin BaseInputElement on WidgetElement {
 
   bool get readonly => getAttribute('readonly') != null;
 
+  List<BorderSide>? get borderSides => renderStyle.borderSides;
+
   int? get maxLength {
     String? value = getAttribute('maxLength');
     if (value != null) return int.parse(value);
@@ -120,7 +123,8 @@ mixin BaseInputElement on WidgetElement {
   double? get width => renderStyle.width.value;
 
   Widget _createInputWidget(BuildContext context, int minLines, int maxLines) {
-    FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
+    FlutterFormElementContext? formContext =
+        context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
     onChanged(String newValue) {
       setState(() {
         InputEvent inputEvent = InputEvent(inputType: '', data: newValue);
@@ -132,7 +136,9 @@ mixin BaseInputElement on WidgetElement {
 
     InputDecoration decoration = InputDecoration(
       label: label != null ? Text(label!) : null,
-      border: isInput ? UnderlineInputBorder() : InputBorder.none,
+      border: isInput && borderSides == null
+          ? UnderlineInputBorder()
+          : InputBorder.none,
       isDense: true,
       hintText: placeholder,
     );
@@ -151,8 +157,7 @@ mixin BaseInputElement on WidgetElement {
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
-        // @TODO: support CSS caret-color property.
-        // cursorColor: color,
+        cursorColor: renderStyle.caretColor,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         decoration: decoration,
@@ -171,8 +176,7 @@ mixin BaseInputElement on WidgetElement {
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
-        // @TODO: support CSS caret-color property.
-        // cursorColor: color,
+        cursorColor: renderStyle.caretColor,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         onSubmitted: (String value) {
@@ -188,13 +192,8 @@ mixin BaseInputElement on WidgetElement {
 
   // set default border and border radius
   Widget _wrapperBorder(Widget child) {
-    List<BorderSide>? borderSides = renderStyle.borderSides;
-    List<Radius>? radius = renderStyle.borderRadius;
     return Container(
       alignment: height != null ? Alignment.center : null,
-      decoration: BoxDecoration(
-        borderRadius: borderSides == null && radius == null ? BorderRadius.circular(4) : null,
-      ),
       child: child,
     );
   }
