@@ -81,9 +81,12 @@ mixin BaseInputElement on WidgetElement {
 
     switch (type) {
       case 'number':
+      case 'tel':
         return TextInputType.number;
       case 'url':
         return TextInputType.url;
+      case 'email':
+        return TextInputType.emailAddress;
     }
     return TextInputType.text;
   }
@@ -101,6 +104,13 @@ mixin BaseInputElement on WidgetElement {
   bool get readonly => getAttribute('readonly') != null;
 
   List<BorderSide>? get borderSides => renderStyle.borderSides;
+
+  // for type 
+  bool get isSearch => type == 'search';
+  
+  bool get isPassWord => type == 'password';
+
+  bool _isFocus = false;
 
   int? get maxLength {
     String? value = getAttribute('maxLength');
@@ -135,13 +145,31 @@ mixin BaseInputElement on WidgetElement {
     bool isInput = this is FlutterInputElement;
 
     InputDecoration decoration = InputDecoration(
-      label: label != null ? Text(label!) : null,
-      border: isInput && borderSides == null
-          ? UnderlineInputBorder()
-          : InputBorder.none,
-      isDense: true,
-      hintText: placeholder,
-    );
+        label: label != null ? Text(label!) : null,
+        border: isInput && borderSides == null
+            ? UnderlineInputBorder()
+            : InputBorder.none,
+        isDense: true,
+        hintText: placeholder,
+        suffix: isSearch && value.isNotEmpty && _isFocus
+            ? SizedBox(
+                width: 14,
+                height: 14,
+                child: IconButton(
+                  iconSize: 14,
+                  padding: const EdgeInsets.all(0),
+                  onPressed: () {
+                    setState(() {
+                      controller.clear();
+                      InputEvent inputEvent =
+                          InputEvent(inputType: '', data: '');
+                      dispatchEvent(inputEvent);
+                    });
+                  },
+                  icon: Icon(Icons.clear),
+                ),
+              )
+            : null);
     late Widget widget;
     if (formContext != null) {
       widget = TextFormField(
@@ -157,7 +185,9 @@ mixin BaseInputElement on WidgetElement {
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
+        obscureText: isPassWord,
         cursorColor: renderStyle.caretColor,
+        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         decoration: decoration,
@@ -176,11 +206,13 @@ mixin BaseInputElement on WidgetElement {
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
+        obscureText: isPassWord,
         cursorColor: renderStyle.caretColor,
+        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         onSubmitted: (String value) {
-          if (type == 'search') {
+          if (isSearch) {
             dispatchEvent(Event('search'));
           }
         },
@@ -198,9 +230,19 @@ mixin BaseInputElement on WidgetElement {
     );
   }
 
-  Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
+  Widget createInput(BuildContext context,
+      {int minLines = 1, int maxLines = 1}) {
+    switch (type) {
+      case 'hidden':
+        return SizedBox(width: 0, height: 0);
+    }
     return Focus(
       onFocusChange: (bool isFocus) {
+        if (isSearch) {
+          setState(() {
+            _isFocus = isFocus;
+          });
+        }
         if (isFocus) {
           ownerDocument.focusedElement = this;
           oldValue = value;
