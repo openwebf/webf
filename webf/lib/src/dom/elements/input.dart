@@ -9,7 +9,7 @@ enum InputSize {
 }
 
 class FlutterInputElement extends WidgetElement
-    with BaseInputElement, BaseCheckBoxElement {
+    with BaseCheckBoxElement, BaseButtonElement, BaseInputElement {
   BindingContext? buildContext;
 
   FlutterInputElement(BindingContext? context) : super(context) {
@@ -21,6 +21,9 @@ class FlutterInputElement extends WidgetElement
     switch (type) {
       case 'checkbox':
         return createCheckBox(context);
+      case 'button':
+      case 'submit':
+        return createButton(context);
       // TODO support more type
       default:
         return createInput(context);
@@ -105,9 +108,9 @@ mixin BaseInputElement on WidgetElement {
 
   List<BorderSide>? get borderSides => renderStyle.borderSides;
 
-  // for type 
+  // for type
   bool get isSearch => type == 'search';
-  
+
   bool get isPassWord => type == 'password';
 
   bool _isFocus = false;
@@ -187,7 +190,8 @@ mixin BaseInputElement on WidgetElement {
         onChanged: onChanged,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor,
-        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
+        textInputAction:
+            isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         decoration: decoration,
@@ -208,7 +212,8 @@ mixin BaseInputElement on WidgetElement {
         onChanged: onChanged,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor,
-        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
+        textInputAction:
+            isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         onSubmitted: (String value) {
@@ -318,5 +323,57 @@ mixin BaseCheckBoxElement on WidgetElement {
       ),
       scale: getCheckboxSize(),
     );
+  }
+}
+
+/// create a button widget when input type is button or submit
+mixin BaseButtonElement on WidgetElement {
+  bool checked = false;
+  String _value = '';
+
+  bool get disabled => getAttribute('disabled') != null;
+  String get type => getAttribute('type') ?? 'button';
+
+  @override
+  void propertyDidUpdate(String key, value) {
+    _setValue(key, value == null ? '' : value.toString());
+    super.propertyDidUpdate(key, value);
+  }
+
+  @override
+  void attributeDidUpdate(String key, String value) {
+    _setValue(key, value);
+    super.attributeDidUpdate(key, value);
+  }
+
+  void _setValue(String key, String value) {
+    switch (key) {
+      case 'value':
+        if (_value != value) {
+          _value = value;
+        }
+        break;
+    }
+  }
+
+  Widget createButton(BuildContext context) {
+    return TextButton(
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.resolveWith<Color?>(
+              (states) => renderStyle.backgroundColor),
+        ),
+        onPressed: () {
+          var box = context.findRenderObject() as RenderBox;
+          Offset globalOffset =
+              box.globalToLocal(Offset(Offset.zero.dx, Offset.zero.dy));
+          double clientX = globalOffset.dx;
+          double clientY = globalOffset.dy;
+          Event event = MouseEvent(EVENT_CLICK,
+              clientX: clientX,
+              clientY: clientY,
+              view: ownerDocument.defaultView);
+          dispatchEvent(MouseEvent(EVENT_CLICK));
+        },
+        child: Text(_value));
   }
 }
