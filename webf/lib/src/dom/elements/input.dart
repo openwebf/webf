@@ -129,11 +129,16 @@ mixin BaseInputElement on WidgetElement {
     return null;
   }
 
-  Color get color => renderStyle.color;
-
   double? get height => renderStyle.height.value;
 
   double? get width => renderStyle.width.value;
+
+  TextStyle get _style => TextStyle(
+        color: renderStyle.color,
+        fontSize: renderStyle.fontSize.computedValue,
+        fontWeight: renderStyle.fontWeight,
+        fontFamily: renderStyle.fontFamily?.join(' '),
+      );
 
   Widget _createInputWidget(BuildContext context, int minLines, int maxLines) {
     FlutterFormElementContext? formContext =
@@ -178,11 +183,7 @@ mixin BaseInputElement on WidgetElement {
       widget = TextFormField(
         controller: controller,
         enabled: !disabled && !readonly,
-        style: TextStyle(
-          fontFamily: renderStyle.fontFamily?.join(' '),
-          color: color,
-          fontSize: renderStyle.fontSize.computedValue,
-        ),
+        style: _style,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
@@ -200,11 +201,7 @@ mixin BaseInputElement on WidgetElement {
       widget = TextField(
         controller: controller,
         enabled: !disabled && !readonly,
-        style: TextStyle(
-          fontFamily: renderStyle.fontFamily?.join(' '),
-          color: color,
-          fontSize: renderStyle.fontSize.computedValue,
-        ),
+        style: _style,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
@@ -356,6 +353,13 @@ mixin BaseButtonElement on WidgetElement {
     }
   }
 
+  TextStyle get _style => TextStyle(
+        color: renderStyle.color,
+        fontSize: renderStyle.fontSize.computedValue,
+        fontWeight: renderStyle.fontWeight,
+        fontFamily: renderStyle.fontFamily?.join(' '),
+      );
+
   Widget createButton(BuildContext context) {
     return TextButton(
         style: ButtonStyle(
@@ -374,6 +378,6 @@ mixin BaseButtonElement on WidgetElement {
               view: ownerDocument.defaultView);
           dispatchEvent(MouseEvent(EVENT_CLICK));
         },
-        child: Text(_value));
+        child: Text(_value, style: _style));
   }
 }
