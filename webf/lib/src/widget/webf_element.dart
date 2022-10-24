@@ -60,6 +60,6 @@ class _WebFElement extends MultiChildRenderObjectElement {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     dom.Element element = widget.element;
     super.unmount();
-    element.unmountRenderObject(dispose: false);
+    element.unmountRenderObject(dispose: false, fromFlutterWidget: true);
   }
 }

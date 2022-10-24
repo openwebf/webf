@@ -851,8 +851,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   /// Unmount [renderBoxModel].
   @override
   void unmountRenderObject({bool deep = true, bool keepFixedAlive = false, bool dispose = true, bool fromFlutterWidget = false}) {
-    if (!fromFlutterWidget) {
-      assert(!managedByFlutterWidget, 'You are trying to unmount a renderObject which are not owned by WebF Element.');
+    /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
+    /// So we do nothing here.
+    if (!fromFlutterWidget && managedByFlutterWidget) {
+      return;
     }
 
     // Ignore the fixed element to unmount render object.
@@ -866,10 +868,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     // Dispose all renderObject when deep.
     if (deep) {
       for (Node child in [...childNodes]) {
-        /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
-        if (!child.managedByFlutterWidget) {
-          child.unmountRenderObject(deep: deep, keepFixedAlive: keepFixedAlive);
-        }
+        child.unmountRenderObject(deep: deep, keepFixedAlive: keepFixedAlive);
       }
     }
 
