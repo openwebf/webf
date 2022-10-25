@@ -105,6 +105,7 @@ class ScrollPositionWithSingleContext extends ScrollPosition implements ScrollAc
   @override
   void applyNewDimensions() {
     super.applyNewDimensions();
+    context.setCanDrag(physics.shouldAcceptUserOffset(this));
   }
 
   @override

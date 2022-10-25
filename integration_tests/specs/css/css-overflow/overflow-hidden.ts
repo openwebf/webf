@@ -84,7 +84,7 @@ describe('hidden', () => {
           'box-sizing': 'border-box',
         },
       },
-      [createText(`There should be a text for test scroll logic to uset.`)]
+      [createText(`There should be a text for test scroll logic to use`)]
 
     );
     let container = createElement('div', {
@@ -113,7 +113,7 @@ describe('hidden', () => {
           'box-sizing': 'border-box',
         },
       },
-      [createText(`There should be a text for test scroll logic to uset.`)]
+      [createText(`There should be a text for test scroll logic to use`)]
     );
     let container = createElement('div', {
       style: {
@@ -143,7 +143,7 @@ describe('hidden', () => {
           'box-sizing': 'border-box',
         },
       },
-      [createText(`There should be a text for test scroll logic to uset.`)]
+      [createText(`There should be a text for test scroll logic to use`)]
     );
     let container = createElement('div', {
       style: {
