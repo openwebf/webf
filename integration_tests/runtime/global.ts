@@ -178,8 +178,10 @@ const ease = new Cubic(0.25, 0.1, 0.25, 1.0);
 // Simulate an mouse click action
 async function simulateClick(x: number, y: number, pointer: number = 0) {
   await simulatePointer([
+    [x, y, PointerChange.add],
     [x, y, PointerChange.down],
-    [x, y, PointerChange.up]
+    [x, y, PointerChange.up],
+    [x, y, PointerChange.remove]
   ], pointer);
 }
 
@@ -210,6 +212,7 @@ async function simulateSwipe(startX: number, startY: number, endX: number, endY:
 // Simulate an point down action.
 async function simulatePointDown(x: number, y: number, pointer: number = 0) {
   await simulatePointer([
+    [x, y, PointerChange.add],
     [x, y, PointerChange.down],
   ], pointer);
 }
@@ -218,6 +221,7 @@ async function simulatePointDown(x: number, y: number, pointer: number = 0) {
 async function simulatePointUp(x: number, y: number, pointer: number = 0) {
   await simulatePointer([
     [x, y, PointerChange.up],
+    [x, y, PointerChange.remove]
   ], pointer);
 }
 
