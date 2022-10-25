@@ -1,46 +1,51 @@
 describe('TouchEvent', () => {
-  it('should work with element touch start', (done) => {
+  it('should work with element touch start', async (done) => {
     const div = document.createElement('div')
     div.style.backgroundColor = 'red';
     div.style.width = '100px';
     div.style.height = '100px';
     document.body.appendChild(div);
 
-    div.addEventListener('touchstart', e => {
+    div.addEventListener('touchstart', async e => {
+      await simulatePointAdd(0, 0);
+      await simulatePointUp(0, 0);
       done();
     });
 
-    simulateSwipe(0, 0, 100, 100, 0.5);
+    await simulatePointDown(0, 0);
   });
-
-  it('should work with element touch end', (done) => {
+  it('should work with element touch end', async (done) => {
     const div = document.createElement('div')
     div.style.backgroundColor = 'red';
     div.style.width = '100px';
     div.style.height = '100px';
     document.body.appendChild(div);
 
-    div.addEventListener('touchend', e => {
+    div.addEventListener('touchend', async e => {
       done();
     });
 
-    simulateSwipe(0, 0, 100, 100, 0.5);
+    await simulatePointDown(0, 0);
+    await simulatePointUp(0, 0);
   });
 
-  it('should work with element touch move', (done) => {
+  it('should work with element touch move', async (done) => {
     const div = document.createElement('div')
     div.style.backgroundColor = 'red';
     div.style.width = '100px';
     div.style.height = '100px';
     document.body.appendChild(div);
 
-    div.addEventListener('touchmove', e => {
+    div.addEventListener('touchmove',async e => {
+      await simulatePointUp(4, 4);
       done();
     });
-    simulateSwipe(0, 0, 100, 100, 0.5);
+
+    await simulatePointDown(0, 0);
+    await simulatePointMove(1, 1);
   });
 
-  it('should work with element dispatch touch event', (done) => {
+  it('should work with element dispatch touch event', async (done) => {
     let touchNum = 0;
     const div = document.createElement('div');
     div.style.backgroundColor = 'yellow';
@@ -60,12 +65,17 @@ describe('TouchEvent', () => {
     div2.addEventListener('touchstart', () => touchNum++);
     div.appendChild(div2);
 
+    let touchStartTriggered = false;
     document.body.addEventListener('touchstart', () => {
       expect(touchNum).toBe(2);
-      done();
+      touchStartTriggered = true;
     });
+    document.body.addEventListener('click', () => {
+      expect(touchStartTriggered).toBe(true);
+      done();
+    })
 
-    simulateClick(120, 10);
+    await simulateClick(120, 10);
   });
 
   it('should work with touches', async (done) => {
@@ -144,11 +154,16 @@ describe('TouchEvent', () => {
     div.style.width = '30px';
     div.style.height = '30px';
 
+    let touchStartTriggered = false;
     const func = (e: TouchEvent) => {
       expect(e.changedTouches.length).toBe(1);
       div.removeEventListener('touchstart', func);
-      done();
+      touchStartTriggered = true;
     };
+    div.addEventListener('click', () => {
+      expect(touchStartTriggered).toBe(true);
+      done();
+    });
 
     div.addEventListener('touchstart', func)
 
@@ -163,8 +178,9 @@ describe('TouchEvent', () => {
     div.style.width = '30px';
     div.style.height = '30px';
 
-    const func = (e: TouchEvent) => {
+    const func = async (e: TouchEvent) => {
       expect(e.changedTouches.length).toBe(1);
+      await simulatePointUp(0, 10);
       div.removeEventListener('touchmove', func);
       done();
     };
@@ -173,7 +189,8 @@ describe('TouchEvent', () => {
 
     document.body.appendChild(div);
 
-    await simulateSwipe(0, 0, 0, 100, 0.5);
+    await simulatePointDown(0, 0);
+    await simulatePointMove(0, 10);
   });
 
   it('touchmove should work on body when element with position', async (done) => {
@@ -184,13 +201,15 @@ describe('TouchEvent', () => {
     div.style.position = 'fixed';
     document.body.appendChild(div);
 
-    document.body.addEventListener('touchmove', function callback() {
+    document.body.addEventListener('touchmove', async function callback() {
       document.body.removeEventListener('touchmove', callback);
+      await simulatePointUp(12, 12);
       done();
     });
 
-    requestAnimationFrame(() => {
-      simulateSwipe(10, 10, 10, 100, 0.5);
+    requestAnimationFrame(async () => {
+      await simulatePointDown(10, 10);
+      await simulatePointMove(12, 12);
     });
   });
 });

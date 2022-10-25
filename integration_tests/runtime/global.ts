@@ -212,16 +212,34 @@ async function simulateSwipe(startX: number, startY: number, endX: number, endY:
 // Simulate an point down action.
 async function simulatePointDown(x: number, y: number, pointer: number = 0) {
   await simulatePointer([
-    [x, y, PointerChange.add],
     [x, y, PointerChange.down],
   ], pointer);
 }
 
+async function simulatePointMove(x: number, y: number, pointer: number = 0) {
+  await simulatePointer([
+    [x, y, PointerChange.move],
+  ], pointer);
+}
+
+async function simulatePointAdd(x: number, y: number, pointer: number = 0) {
+  await simulatePointer([
+    [x, y, PointerChange.add],
+  ], pointer);
+}
+
+
+async function simulatePointRemove(x: number, y: number, pointer: number = 0) {
+  await simulatePointer([
+    [x, y, PointerChange.remove],
+  ], pointer);
+}
+
+
 // Simulate an point up action.
 async function simulatePointUp(x: number, y: number, pointer: number = 0) {
   await simulatePointer([
-    [x, y, PointerChange.up],
-    [x, y, PointerChange.remove]
+    [x, y, PointerChange.up]
   ], pointer);
 }
 
@@ -257,4 +275,7 @@ Object.assign(global, {
   snapshot,
   simulatePointDown,
   simulatePointUp,
+  simulatePointRemove,
+  simulatePointAdd,
+  simulatePointMove
 });
