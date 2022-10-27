@@ -140,6 +140,32 @@ describe('custom widget element', () => {
       await snapshot();
       setTimeout(async () => {
         container.removeChild(textB);
+        document.body.removeChild(container);
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it('flutter widget should work when div and text removed from this', async (done) => {
+    const container = document.createElement('flutter-container');
+    document.body.appendChild(container);
+    let divA = document.createElement('div');
+    let textA = document.createTextNode('A');
+    divA.appendChild(textA);
+    container.appendChild(divA);
+    await snapshot();
+    let textB = document.createTextNode('B');
+    let divB = document.createElement('div');
+    divB.appendChild(textB);
+    setTimeout(async () => {
+      container.appendChild(divB);
+      await snapshot();
+      container.removeChild(divA);
+      await snapshot();
+      setTimeout(async () => {
+        container.removeChild(divB);
+        document.body.removeChild(container);
         await snapshot();
         done();
       });
