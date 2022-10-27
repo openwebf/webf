@@ -32,6 +32,12 @@
 extern "C" {
 #endif
 
+/* define to include Atomics.* operations which depend on the OS
+   threads */
+#if !defined(EMSCRIPTEN)
+#define CONFIG_ATOMICS
+#endif
+
 #if defined(__GNUC__) || defined(__clang__)
 #define js_likely(x)          __builtin_expect(!!(x), 1)
 #define js_unlikely(x)        __builtin_expect(!!(x), 0)
@@ -187,12 +193,6 @@ static inline JS_BOOL JS_VALUE_IS_NAN(JSValue v) {
 }
 
 #else /* !JS_NAN_BOXING */
-
-/* define to include Atomics.* operations which depend on the OS
-   threads */
-#if !defined(EMSCRIPTEN)
-#define CONFIG_ATOMICS
-#endif
 
 typedef union JSValueUnion {
   int32_t int32;
