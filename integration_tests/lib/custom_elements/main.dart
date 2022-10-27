@@ -5,6 +5,7 @@ import 'flutter_button.dart';
 import 'flutter_image.dart';
 import 'flutter_listview.dart';
 import 'flutter_text.dart';
+import 'flutter_container.dart';
 import 'sample_element.dart';
 
 void defineWebFCustomElements() {
@@ -14,6 +15,7 @@ void defineWebFCustomElements() {
       'flutter-listview', (context) => FlutterListViewElement(context));
   WebF.defineCustomElement(
       'sample-element', (context) => SampleElement(context));
+  WebF.defineCustomElement('flutter-container', (context) => FlutterContainerElement(context));
   WebF.defineCustomElement('flutter-text', (BindingContext? context) {
     return TextWidgetElement(context);
   });
