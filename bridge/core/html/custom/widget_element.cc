@@ -5,6 +5,7 @@
 
 #include "widget_element.h"
 #include "core/dom/document.h"
+#include "built_in_string.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
@@ -56,6 +57,10 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     }
 
     return ScriptValue::Empty(ctx());
+  }
+
+  if (key == built_in_string::kSymbol_toStringTag) {
+    return ScriptValue(ctx(), tagName().ToNativeString().release());
   }
 
   return ScriptValue(ctx(), GetBindingProperty(key, exception_state));

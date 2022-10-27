@@ -238,7 +238,7 @@ struct JSObject {
 
 uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
   if (JS_VALUE_GET_TAG(value) != JS_TAG_STRING) {
-    value = JS_ToString(ctx, value);
+    value = JS_ToPropertyKey(ctx, value);
     if (JS_IsException(value))
       return nullptr;
   } else {
