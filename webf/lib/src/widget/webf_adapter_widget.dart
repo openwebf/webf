@@ -35,6 +35,10 @@ class WebFWidgetElementElement extends StatefulElement {
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
+    // Make sure RenderWidget had been created.
+    if (widget.widgetElement.renderer == null) {
+      widget.widgetElement.createRenderer();
+    }
   }
 }
 

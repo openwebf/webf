@@ -21,10 +21,6 @@ class FlutterButtonElement extends WidgetElement {
   @override
   Widget build(BuildContext context, List<Widget> children) {
     String type = getAttribute('type') ?? 'default';
-    print('left: ${renderStyle.width.computedValue}');
-    return ConstrainedBox(
-        constraints:
-            BoxConstraints.tightFor(width: renderStyle.width.computedValue, height: renderStyle.height.computedValue),
-        child: buildButton(context, type, children.isNotEmpty ? children[0] : Container()));
+    return buildButton(context, type, children.isNotEmpty ? children[0] : Container());
   }
 }

@@ -172,6 +172,36 @@ describe('custom widget element', () => {
     });
   });
 
+  it('flutter widget should work when wrap div and flutter widgets from this', async done => {
+    const container = document.createElement('flutter-container');
+    document.body.appendChild(container);
+    let buttonA = document.createElement('flutter-button');
+    let divA = document.createElement('div');
+    let textA = document.createTextNode('A');
+    divA.appendChild(textA);
+    buttonA.appendChild(divA);
+    container.appendChild(buttonA);
+    await snapshot();
+    let buttonB = document.createElement('flutter-button');
+    buttonB.style.height = '100px';
+    let textB = document.createTextNode('B');
+    let divB = document.createElement('div');
+    divB.appendChild(textB);
+    buttonB.appendChild(divB);
+    setTimeout(async () => {
+      container.appendChild(buttonB);
+      await snapshot();
+      container.removeChild(buttonA);
+      await snapshot();
+      setTimeout(async () => {
+        container.removeChild(buttonB);
+        document.body.removeChild(container);
+        await snapshot();
+        done();
+      });
+    });
+  });
+
   it('should work with flutter-listview', async () => {
     const flutterContainer = document.createElement('flutter-listview');
     flutterContainer.style.height = '100vh';

@@ -74,13 +74,16 @@ abstract class WidgetElement extends dom.Element {
     }
   }
 
+  /// [willAttachRenderer] and [didAttachRenderer] on WidgetElement will be called when this WidgetElement's parent is
+  /// standard WebF element.
+  /// If this WidgetElement's parent is another WidgetElement, [WebFWidgetElementElement.mount] and [WebFWidgetElementElement.unmount]
+  /// place the equivalence altitude to the [willAttachRenderer] and [didAttachRenderer].
   @mustCallSuper
   @override
   void willAttachRenderer() {
     super.willAttachRenderer();
     attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!);
   }
-
   @mustCallSuper
   @override
   void didAttachRenderer() {
