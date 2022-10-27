@@ -1,5 +1,11 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:webf/webf.dart';
 
 enum InputSize {
@@ -9,7 +15,11 @@ enum InputSize {
 }
 
 class FlutterInputElement extends WidgetElement
-    with BaseCheckBoxElement, BaseButtonElement, BaseInputElement {
+    with
+        BaseCheckBoxElement,
+        BaseButtonElement,
+        BaseInputElement,
+        BaseTimeElement {
   BindingContext? buildContext;
 
   FlutterInputElement(BindingContext? context) : super(context) {
@@ -24,7 +34,11 @@ class FlutterInputElement extends WidgetElement
       case 'button':
       case 'submit':
         return createButton(context);
-      // TODO support more type
+      case 'date':
+      // case 'month':
+      // case 'week':
+      case 'time':
+        return createTime(context);
       default:
         return createInput(context);
     }
@@ -379,5 +393,98 @@ mixin BaseButtonElement on WidgetElement {
           dispatchEvent(MouseEvent(EVENT_CLICK));
         },
         child: Text(_value, style: _style));
+  }
+}
+
+/// create a time widget when input type is date,time,month,week
+mixin BaseTimeElement on BaseInputElement {
+  bool checked = false;
+
+  @override
+  String get type => getAttribute('type') ?? 'button';
+
+  Future<DateTime?> _showDialog(BuildContext context,
+      {CupertinoDatePickerMode mode = CupertinoDatePickerMode.date}) async {
+    DateTime? time;
+    await showCupertinoModalPopup<void>(
+        context: context,
+        builder: (BuildContext context) => Container(
+              height: 216,
+              padding: const EdgeInsets.only(top: 6.0),
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              color: CupertinoColors.systemBackground.resolveFrom(context),
+              child: SafeArea(
+                top: false,
+                child: CupertinoDatePicker(
+                  initialDateTime: DateTime.now(),
+                  mode: mode,
+                  use24hFormat: true,
+                  onDateTimeChanged: (DateTime newDate) {
+                    time = newDate;
+                  },
+                ),
+              ),
+            ));
+    return time;
+  }
+
+  Future<String?> _showPicker(BuildContext context) async {
+    switch (type) {
+      case 'date':
+        DateTime? time;
+        switch (defaultTargetPlatform) {
+          case TargetPlatform.android:
+          case TargetPlatform.iOS:
+          case TargetPlatform.fuchsia:
+            time = await _showDialog(context);
+            break;
+          default:
+            time = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime.parse('19700101'),
+              lastDate: DateTime.parse('30000101'),
+            );
+        }
+        return time != null ? DateFormat('yyyy-MM-dd').format(time) : null;
+      case 'time':
+        switch (defaultTargetPlatform) {
+          case TargetPlatform.android:
+          case TargetPlatform.iOS:
+          case TargetPlatform.fuchsia:
+            var time =
+                await _showDialog(context, mode: CupertinoDatePickerMode.time);
+            if (time != null) {
+              var minute = time.minute.toString().padLeft(2, '0');
+              var hour = time.hour.toString().padLeft(2, '0');
+              return '$hour:$minute';
+            }
+            break;
+          default:
+            var time = await showTimePicker(
+                context: context, initialTime: TimeOfDay.now());
+            if (time != null) {
+              var minute = time.minute.toString().padLeft(2, '0');
+              var hour = time.hour.toString().padLeft(2, '0');
+              return '$hour:$minute';
+            }
+        }
+    }
+    return null;
+  }
+
+  Widget createTime(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        var time = await _showPicker(context);
+        if (time != null)
+          setState(() {
+            value = time;
+          });
+      },
+      child: AbsorbPointer(child: createInput(context)),
+    );
   }
 }
