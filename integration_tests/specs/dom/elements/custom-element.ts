@@ -126,6 +126,26 @@ describe('custom widget element', () => {
     await snapshot();
   });
 
+  it('flutter widget should work when text removed from this', async (done) => {
+    const container = document.createElement('flutter-container');
+    document.body.appendChild(container);
+    let textA = document.createTextNode('A');
+    container.appendChild(textA);
+    await snapshot();
+    let textB = document.createTextNode('B');
+    setTimeout(async () => {
+      container.appendChild(textB);
+      await snapshot();
+      container.removeChild(textA);
+      await snapshot();
+      setTimeout(async () => {
+        container.removeChild(textB);
+        await snapshot();
+        done();
+      });
+    });
+  });
+
   it('should work with flutter-listview', async () => {
     const flutterContainer = document.createElement('flutter-listview');
     flutterContainer.style.height = '100vh';
