@@ -2,19 +2,28 @@ import 'package:webf/webf.dart';
 import 'package:flutter/material.dart';
 
 class FlutterContainerElement extends WidgetElement {
-  FlutterContainerElement(BindingContext? context) : super(context);
+  FlutterContainerElement(BindingContext? context) : super(context, defaultStyle: {
+    'width': '200px',
+    'height': '200px',
+    'border': '5px solid red'
+  });
 
   @override
   Widget build(BuildContext context, List<Widget> children) {
+    double? topWidth = renderStyle.borderTopWidth?.value;
+    double? rightWidth = renderStyle.borderRightWidth?.value;
+    double? bottomWidth = renderStyle.borderBottomWidth?.value;
+    double? leftWidth = renderStyle.borderLeftWidth?.value;
+
     return Container(
-      width: 200,
-      height: 200,
-      decoration: const BoxDecoration(
+      width: renderStyle.width.value,
+      height: renderStyle.height.value,
+      decoration: BoxDecoration(
         border: Border(
-            top: BorderSide(width: 5, color: Colors.red),
-            bottom: BorderSide(width: 5, color: Colors.red),
-            left: BorderSide(width: 5, color: Colors.red),
-            right: BorderSide(width: 5, color: Colors.red)),
+            top: BorderSide(width: topWidth ?? 0.0, color: renderStyle.borderTopColor),
+            bottom: BorderSide(width: bottomWidth ?? 0.0, color: renderStyle.borderBottomColor),
+            left: BorderSide(width: leftWidth ?? 0.0, color: renderStyle.borderLeftColor),
+            right: BorderSide(width: rightWidth ?? 0.0, color: renderStyle.borderRightColor)),
       ),
       child: Column(
         children: children,
