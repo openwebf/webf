@@ -38,7 +38,6 @@ function startIntegrationTest() {
   });
 
   tester.on('close', (code) => {
-    console.log(code);
     process.exit(code);
   });
   tester.on('error', (error) => {

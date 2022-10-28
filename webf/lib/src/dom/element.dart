@@ -1524,7 +1524,13 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   void setInlineStyle(String property, String value) {
     // Current only for mark property is setting by inline style.
     inlineStyle[property] = value;
-    style.setProperty(property, value, true);
+    // recalculate matching styles for element when inline styles are removed.
+    if (value.isEmpty) {
+      style.removeProperty(property, true);
+      recalculateStyle();
+    } else {
+      style.setProperty(property, value, true);
+    }
   }
 
   void applyStyle(CSSStyleDeclaration style) {

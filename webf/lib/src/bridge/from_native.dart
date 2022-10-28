@@ -102,6 +102,8 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
       // To make sure Promise then() and catch() executed before Promise callback called at JavaScript side.
       // We should make callback always async.
       Future.microtask(() {
+        if (controller.view.disposed) return;
+
         Pointer<NativeValue> callbackResult = nullptr;
         if (error != null) {
           Pointer<Utf8> errmsgPtr = error.toNativeUtf8();

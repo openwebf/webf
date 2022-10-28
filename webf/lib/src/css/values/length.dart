@@ -425,6 +425,20 @@ void cacheComputedValue(int hashCode, String propertyName, double value) {
   }
 }
 
+void _clearCssLengthStaticValue() {
+  CSSLengthValue.zero.renderStyle = null;
+  CSSLengthValue.auto.renderStyle = null;
+  CSSLengthValue.initial.renderStyle = null;
+  CSSLengthValue.unknown.renderStyle = null;
+  CSSLengthValue.normal.renderStyle = null;
+  CSSLengthValue.none.renderStyle = null;
+}
+
+void clearCssLength() {
+  clearComputedValueCache();
+  _clearCssLengthStaticValue();
+}
+
 // Clear all the computed length value cache.
 void clearComputedValueCache() {
   _cachedComputedValue.clear();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
+<meta charset="utf-8" fit="true">
 <title>CSS Animations Test: animation-direction - alternate-reverse</title>
 <link rel="author" title="Intel" href="http://www.intel.com">
 <link rel="reviewer" title="Zhiqiang Zhang" href="mailto:zhiqiang.zhang@intel.com"> <!-- 2015-03-24 -->
@@ -51,8 +51,6 @@
   expect(main.offsetLeft > 60 && main.offsetLeft < 120).toBe(true);
   await sleep(1);
   expect(main.offsetLeft > 0 && main.offsetLeft < 30).toBe(true);
-  await sleep(0.5);
-  expect(main.offsetLeft > 50 && main.offsetLeft < 100).toBe(true);
-  await sleep(0.5);
-  expect(main.offsetLeft > 120 && main.offsetLeft < 150).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft > 110 && main.offsetLeft < 150).toBe(true);
 </script>
