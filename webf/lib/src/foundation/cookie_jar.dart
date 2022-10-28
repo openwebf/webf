@@ -2,11 +2,7 @@ import 'dart:io';
 
 import 'package:webf/foundation.dart';
 import 'package:path/path.dart' as path;
-
-import 'cookie/default_cookie_jar.dart';
-import 'cookie/file_storage.dart';
-import 'cookie/persist_cookie_jar.dart';
-import 'cookie/serializable_cookie.dart';
+import 'package:cookie_jar/cookie_jar.dart';
 
 class CookieJar {
   final String url;
