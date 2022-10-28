@@ -22,6 +22,7 @@ class CookieJar {
   }
 
   void deleteCookies() {
+    cookies.clear();
     Uri uri = Uri.parse(url);
     if (uri.host.isNotEmpty) {
       domCookieJar.delete(uri);
@@ -30,12 +31,21 @@ class CookieJar {
 
   String cookie() {
     final cookiePairs = <String>[];
+    Uri uri = Uri.parse(url);
+    String scheme = uri.scheme;
     cookies.forEach((value) {
       SerializableCookie seCookie = SerializableCookie(value);
       bool isHttpOnly = seCookie.cookie.httpOnly;
       bool isInvalid = seCookie.isExpired();
+      bool isSecure = seCookie.cookie.secure;
       if (!isHttpOnly || !isInvalid) {
-        cookiePairs.add('${value.name}=${value.value}');
+        if (isSecure) {
+          if (scheme == 'https') {
+            cookiePairs.add('${value.name}=${value.value}');
+          }
+        } else {
+          cookiePairs.add('${value.name}=${value.value}');
+        }
       }
     });
     return cookiePairs.join('; ');
