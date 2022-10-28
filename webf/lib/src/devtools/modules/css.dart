@@ -41,7 +41,8 @@ class InspectCSSModule extends UIInspectorModule {
     Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
     if (element != null) {
       MatchedStyles matchedStyles = MatchedStyles(
-        inlineStyle: buildMatchedStyle(element),
+        inlineStyle: buildInlineStyle(element),
+        matchedCSSRules: buildMatchRule(element),
       );
       sendToFrontend(id, matchedStyles);
     }
@@ -141,6 +142,11 @@ class InspectCSSModule extends UIInspectorModule {
         JSONEncodableMap({
           'styles': styles,
         }));
+  }
+
+  List<RuleMatch>? buildMatchRule(Element element) {
+    List<RuleMatch> matchRules = [];
+    return matchRules;
   }
 
   static CSSStyle? buildMatchedStyle(Element element) {
@@ -389,10 +395,14 @@ class CSSStyle extends JSONEncodable {
 }
 
 class RuleMatch extends JSONEncodable {
+  CSSRule rule;
+  List<int> matchingSelectors;
+
+  RuleMatch({required this.rule, required this.matchingSelectors});
+
   @override
   Map toJson() {
-    // TODO: implement toJson
-    throw UnimplementedError();
+    return {'rule': rule, 'matchingSelectors': matchingSelectors};
   }
 }
 
