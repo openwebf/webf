@@ -88,7 +88,7 @@ class InspectCSSModule extends UIInspectorModule {
         String _suffixStr = backPart.substring(endIndex + 2);
 
         String currentText = backPart.substring(0, endIndex);
-        text = '$frontPart$currentText$_suffixStr';
+        text = '$frontPart$currentText;$_suffixStr';
 
         List<String> styleText = currentText.split(':');
         styles[styleText[0].trim()] = styleText[1].trim();
