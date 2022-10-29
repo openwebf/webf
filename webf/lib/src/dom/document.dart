@@ -159,6 +159,14 @@ class Document extends Node {
     methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
     methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
+
+    if (kDebugMode) {
+      methods['__clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
+    }
+  }
+
+  dynamic debugClearCookies(List<dynamic> args) {
+    cookie.deleteCookies();
   }
 
   dynamic querySelector(List<dynamic> args) {
