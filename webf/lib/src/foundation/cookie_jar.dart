@@ -29,7 +29,6 @@ class CookieJar {
   }
 
   void deleteCookies() {
-    cookies.clear();
     Uri uri = Uri.parse(url);
     if (uri.host.isNotEmpty && _cookieJar != null) {
       _cookieJar!.delete(uri);
