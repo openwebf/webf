@@ -95,7 +95,52 @@ class PersistCookieJar extends DefaultCookieJar {
   }
 
   void _checkInitializedSync({bool force = false}) {
+    if (force || !_initialized) {
+      storage.initSync(persistSession, ignoreExpires);
+      // Load domain cookies
+      var str = storage.readSync(DomainsKey);
+      if (str != null && str.isNotEmpty) {
+        try {
+          final Map<String, dynamic> jsonData = json.decode(str);
 
+          final cookies = jsonData.map((String domain, dynamic _cookies) {
+            final Map<String, dynamic> cookies =
+            _cookies.cast<String, dynamic>();
+            final domainCookies = cookies.map((String path, dynamic map) {
+              final Map<String, String> cookieForPath =
+              map.cast<String, String>();
+              final realCookies = cookieForPath.map(
+                      (String cookieName, String cookie) =>
+                      MapEntry<String, SerializableCookie>(
+                          cookieName, SerializableCookie.fromJson(cookie)));
+              return MapEntry<String, Map<String, SerializableCookie>>(
+                  path, realCookies);
+            });
+            return MapEntry<String,
+                Map<String, Map<String, SerializableCookie>>>(
+                domain, domainCookies);
+          });
+          domainCookies
+            ..clear()
+            ..addAll(cookies);
+        } catch (e) {
+          storage.deleteSync(DomainsKey);
+        }
+      }
+
+      str = storage.readSync(IndexKey);
+      if ((str != null && str.isNotEmpty)) {
+        try {
+          final list = json.decode(str);
+          _hostSet = Set<String>.from(list);
+        } catch (e) {
+          storage.deleteSync(IndexKey);
+        }
+      } else {
+        _hostSet = <String>{};
+      }
+      _initialized = true;
+    }
   }
 
   @override
