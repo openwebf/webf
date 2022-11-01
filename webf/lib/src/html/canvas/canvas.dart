@@ -7,8 +7,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
+
+import 'canvas_context_2d.dart';
+import 'canvas_painter.dart';
 
 const String CANVAS = 'CANVAS';
 const int _ELEMENT_DEFAULT_WIDTH_IN_PIXEL = 300;
@@ -52,41 +54,18 @@ class CanvasElement extends Element {
   // Currently only 2d rendering context for canvas is supported.
   CanvasRenderingContext2D? context2d;
 
-  // Bindings.
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'width':
-        return width;
-      case 'height':
-        return height;
-      default:
-        return super.getBindingProperty(key);
-    }
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeMethods(methods);
+    methods['getContext'] = BindingObjectMethod(call: (args) => getContext(castToType<String>(args[0])));
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'width':
-        width = castToType<int>(value);
-        break;
-      case 'height':
-        height = castToType<int>(value);
-        break;
-      default:
-        super.setBindingProperty(key, value);
-    }
-  }
-
-  @override
-  invokeBindingMethod(String method, List args) {
-    switch (method) {
-      case 'getContext':
-        return getContext(castToType<String>(args[0]));
-      default:
-        return super.invokeBindingMethod(method, args);
-    }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = castToType<int>(value));
+    properties['height'] =
+        BindingObjectProperty(getter: () => height, setter: (value) => height = castToType<int>(value));
   }
 
   @override

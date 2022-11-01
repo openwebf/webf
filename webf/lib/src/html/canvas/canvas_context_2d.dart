@@ -11,9 +11,10 @@ import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:vector_math/vector_math_64.dart';
 
+import 'canvas.dart';
 import 'canvas_context.dart';
 import 'canvas_path_2d.dart';
 
@@ -56,235 +57,165 @@ class CanvasRenderingContext2D extends BindingObject {
   get contextId => canvas.contextId;
 
   @override
-  invokeBindingMethod(String method, List args) {
-    // @NOTE: Bridge not guarantee that input type number is double.
-    switch (method) {
-      case 'arc':
-        return arc(
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['arc'] = BindingObjectMethod(
+        call: (args) => arc(
             castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
-            anticlockwise: (args.length > 5 && args[5] == 1) ? true : false);
-      case 'arcTo':
-        return arcTo(
+            anticlockwise: (args.length > 5 && args[5] == 1) ? true : false));
+    methods['arcTo'] = BindingObjectMethod(
+        call: (args) => arcTo(
             castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble());
-      case 'fillRect':
-        return fillRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble());
-      case 'clearRect':
-        return clearRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble());
-      case 'strokeRect':
-        return strokeRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble());
-      case 'fillText':
-        if (args.length > 3) {
-          double maxWidth = castToType<num>(args[3]).toDouble();
-          if (!maxWidth.isNaN) {
-            return fillText(
-                castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
-                maxWidth: maxWidth);
-          }
+            castToType<num>(args[4]).toDouble()));
+    methods['fillRect'] = BindingObjectMethod(
+        call: (args) => fillRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+    methods['clearRect'] = BindingObjectMethod(
+        call: (args) => clearRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+    methods['strokeRect'] = BindingObjectMethod(
+        call: (args) => strokeRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+    methods['fillText'] = BindingObjectMethod(call: (args) {
+      if (args.length > 3) {
+        double maxWidth = castToType<num>(args[3]).toDouble();
+        if (!maxWidth.isNaN) {
           return fillText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
-        } else {
-          return fillText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
+              maxWidth: maxWidth);
         }
-      case 'strokeText':
-        if (args.length > 3) {
-          double maxWidth = castToType<num>(args[3]).toDouble();
-          if (!maxWidth.isNaN) {
-            return strokeText(
-                castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
-                maxWidth: maxWidth);
-          }
+        return fillText(
+            castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+      } else {
+        return fillText(
+            castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+      }
+    });
+    methods['strokeText'] = BindingObjectMethod(call: (args) {
+      if (args.length > 3) {
+        double maxWidth = castToType<num>(args[3]).toDouble();
+        if (!maxWidth.isNaN) {
           return strokeText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
-        } else {
-          return strokeText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
+              maxWidth: maxWidth);
         }
-      case 'save':
-        return save();
-      case 'restore':
-        return restore();
-      case 'beginPath':
-        return beginPath();
-      case 'bezierCurveTo':
-        return bezierCurveTo(
+        return strokeText(
+            castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+      } else {
+        return strokeText(
+            castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+      }
+    });
+    methods['save'] = BindingObjectMethod(call: (_) => save());
+    methods['restore'] = BindingObjectMethod(call: (_) => restore());
+    methods['beginPath'] = BindingObjectMethod(call: (_) => beginPath());
+    methods['bezierCurveTo'] = BindingObjectMethod(
+        call: (args) => bezierCurveTo(
             castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
-            castToType<num>(args[5]).toDouble());
-      case 'clip':
-        PathFillType fillType = (args.isNotEmpty && castToType<String>(args[0]) == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
-        return clip(fillType);
-      case 'closePath':
-        return closePath();
-      case 'drawImage':
-        BindingObject imageElement = BindingBridge.getBindingObject(args[0]);
-        if (imageElement is ImageElement) {
-          double sx = 0.0, sy = 0.0, sWidth = 0.0, sHeight = 0.0, dx = 0.0, dy = 0.0, dWidth = 0.0, dHeight = 0.0;
+            castToType<num>(args[5]).toDouble()));
+    methods['clip'] = BindingObjectMethod(call: (args) {
+      PathFillType fillType =
+          (args.isNotEmpty && castToType<String>(args[0]) == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
+      return clip(fillType);
+    });
+    methods['closePath'] = BindingObjectMethod(call: (_) => closePath());
+    methods['drawImage'] = BindingObjectMethod(call: (args) {
+      BindingObject imageElement = BindingBridge.getBindingObject(args[0]);
+      if (imageElement is ImageElement) {
+        double sx = 0.0, sy = 0.0, sWidth = 0.0, sHeight = 0.0, dx = 0.0, dy = 0.0, dWidth = 0.0, dHeight = 0.0;
 
-          if (args.length == 3) {
-            dx = castToType<num>(args[1]).toDouble();
-            dy = castToType<num>(args[2]).toDouble();
-          } else if (args.length == 5) {
-            dx = castToType<num>(args[1]).toDouble();
-            dy = castToType<num>(args[2]).toDouble();
-            dWidth = castToType<num>(args[3]).toDouble();
-            dHeight = castToType<num>(args[4]).toDouble();
-          } else if (args.length == 9) {
-            sx = castToType<num>(args[1]).toDouble();
-            sy = castToType<num>(args[2]).toDouble();
-            sWidth = castToType<num>(args[3]).toDouble();
-            sHeight = castToType<num>(args[4]).toDouble();
-            dx = castToType<num>(args[5]).toDouble();
-            dy = castToType<num>(args[6]).toDouble();
-            dWidth = castToType<num>(args[7]).toDouble();
-            dHeight = castToType<num>(args[8]).toDouble();
-          }
-
-          return drawImage(args.length, imageElement.image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+        if (args.length == 3) {
+          dx = castToType<num>(args[1]).toDouble();
+          dy = castToType<num>(args[2]).toDouble();
+        } else if (args.length == 5) {
+          dx = castToType<num>(args[1]).toDouble();
+          dy = castToType<num>(args[2]).toDouble();
+          dWidth = castToType<num>(args[3]).toDouble();
+          dHeight = castToType<num>(args[4]).toDouble();
+        } else if (args.length == 9) {
+          sx = castToType<num>(args[1]).toDouble();
+          sy = castToType<num>(args[2]).toDouble();
+          sWidth = castToType<num>(args[3]).toDouble();
+          sHeight = castToType<num>(args[4]).toDouble();
+          dx = castToType<num>(args[5]).toDouble();
+          dy = castToType<num>(args[6]).toDouble();
+          dWidth = castToType<num>(args[7]).toDouble();
+          dHeight = castToType<num>(args[8]).toDouble();
         }
-        break;
-      case 'ellipse':
-        return ellipse(
+
+        return drawImage(args.length, imageElement.image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+      }
+    });
+    methods['fill'] = BindingObjectMethod(call: (args) {
+      PathFillType fillType = (args.isNotEmpty && args[0] == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
+      return fill(fillType);
+    });
+    methods['lineTo'] = BindingObjectMethod(
+        call: (args) => lineTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
+    methods['moveTo'] = BindingObjectMethod(
+        call: (args) => moveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
+    methods['quadraticCurveTo'] = BindingObjectMethod(
+        call: (args) => quadraticCurveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+    methods['rect'] = BindingObjectMethod(
+        call: (args) => rect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+    methods['rotate'] = BindingObjectMethod(call: (args) => rotate(castToType<num>(args[0]).toDouble()));
+    methods['resetTransform'] = BindingObjectMethod(call: (_) => resetTransform());
+    methods['scale'] = BindingObjectMethod(
+        call: (args) => scale(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
+    methods['stroke'] = BindingObjectMethod(call: (args) => stroke());
+    methods['setTransform'] = BindingObjectMethod(
+        call: (args) => setTransform(
             castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
-            castToType<num>(args[5]).toDouble(),
-            castToType<num>(args[6]).toDouble(),
-            anticlockwise: (args.length > 7 && args[7] == 1) ? true : false);
-      case 'fill':
-        PathFillType fillType = (args.isNotEmpty && args[0] == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
-        return fill(fillType);
-      case 'lineTo':
-        return lineTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
-      case 'moveTo':
-        return moveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
-      case 'quadraticCurveTo':
-        return quadraticCurveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble());
-      case 'rect':
-        return rect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble());
-      case 'rotate':
-        return rotate(castToType<num>(args[0]).toDouble());
-      case 'resetTransform':
-        return resetTransform();
-      case 'scale':
-        return scale(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
-      case 'stroke':
-        return stroke();
-      case 'setTransform':
-        return setTransform(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble(),
-            castToType<num>(args[5]).toDouble());
-      case 'transform':
-        return transform(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble(),
-            castToType<num>(args[5]).toDouble());
-      case 'translate':
-        return translate(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
-      case 'reset':
-        return reset();
-      default:
-        return super.invokeBindingMethod(method, args);
-    }
+            castToType<num>(args[5]).toDouble()));
+    methods['translate'] = BindingObjectMethod(
+        call: (args) => translate(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
+    methods['reset'] = BindingObjectMethod(call: (_) => reset());
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'fillStyle':
-        Color? color = CSSColor.parseColor(castToType<String>(value));
-        if (color != null) fillStyle = color;
-        break;
-      case 'direction':
-        direction = parseDirection(castToType<String>(value));
-        break;
-      case 'font':
-        font = castToType<String>(value);
-        break;
-      case 'strokeStyle':
-        Color? color = CSSColor.parseColor(castToType<String>(value));
-        if (color != null) strokeStyle = color;
-        break;
-      case 'lineCap':
-        lineCap = parseLineCap(castToType<String>(value));
-        break;
-      // @TODO: Binding should guarantee that input value is determined type, like double or int.
-      case 'lineDashOffset':
-        lineDashOffset = castToType<num>(value).toDouble();
-        break;
-      case 'lineJoin':
-        lineJoin = parseLineJoin(castToType<String>(value));
-        break;
-      case 'lineWidth':
-        lineWidth = castToType<num>(value).toDouble();
-        break;
-      case 'miterLimit':
-        miterLimit = castToType<num>(value).toDouble();
-        break;
-      case 'textAlign':
-        textAlign = parseTextAlign(castToType<String>(value));
-        break;
-      case 'textBaseline':
-        textBaseline = parseTextBaseline(castToType<String>(value));
-        break;
-      default:
-        super.setBindingProperty(key, value);
-    }
-  }
-
-  @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'fillStyle':
-        return CSSColor.convertToHex(fillStyle);
-      case 'direction':
-        return _textDirectionInString;
-      case 'font':
-        return font;
-      case 'strokeStyle':
-        return CSSColor.convertToHex(strokeStyle);
-      case 'lineCap':
-        return lineCap;
-      case 'lineDashOffset':
-        return lineDashOffset;
-      case 'lineJoin':
-        return lineJoin;
-      case 'lineWidth':
-        return lineWidth;
-      case 'miterLimit':
-        return miterLimit;
-      case 'textAlign':
-        return textAlign.toString();
-      case 'textBaseline':
-        return textBaseline.toString();
-      default:
-        return super.getBindingProperty(key);
-    }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    properties['fillStyle'] = BindingObjectProperty(
+        getter: () => CSSColor.convertToHex(fillStyle),
+        setter: (value) {
+          Color? color = CSSColor.parseColor(castToType<String>(value));
+          if (color != null) fillStyle = color;
+        });
+    properties['direction'] = BindingObjectProperty(
+        getter: () => _textDirectionInString, setter: (value) => direction = parseDirection(castToType<String>(value)));
+    properties['font'] = BindingObjectProperty(getter: () => font, setter: (value) => font = castToType<String>(value));
+    properties['strokeStyle'] = BindingObjectProperty(
+        getter: () => CSSColor.convertToHex(strokeStyle),
+        setter: (value) {
+          Color? color = CSSColor.parseColor(castToType<String>(value));
+          if (color != null) strokeStyle = color;
+        });
+    properties['lineCap'] = BindingObjectProperty(
+        getter: () => lineCap, setter: (value) => lineCap = parseLineCap(castToType<String>(value)));
+    properties['lineDashOffset'] = BindingObjectProperty(
+        getter: () => lineDashOffset, setter: (value) => lineDashOffset = castToType<num>(value).toDouble());
+    properties['lineJoin'] = BindingObjectProperty(
+        getter: () => lineJoin, setter: (value) => lineJoin = parseLineJoin(castToType<String>(value)));
+    properties['lineWidth'] = BindingObjectProperty(
+        getter: () => lineWidth, setter: (value) => lineWidth = castToType<num>(value).toDouble());
+    properties['miterLimit'] = BindingObjectProperty(getter: () => miterLimit, setter: (value) => miterLimit = castToType<num>(value).toDouble());
+    properties['textAlign'] = BindingObjectProperty(getter: () => textAlign.toString(), setter: (value) => textAlign = parseTextAlign(castToType<String>(value)));;
+    properties['textBaseline'] = BindingObjectProperty(getter: () => textBaseline.toString(), setter: (value) => textBaseline = parseTextBaseline(castToType<String>(value)));;
   }
 
   @override
@@ -299,6 +230,7 @@ class CanvasRenderingContext2D extends BindingObject {
   CanvasRenderingContext2DSettings getContextAttributes() => _settings;
 
   CanvasElement canvas;
+
   // HACK: We need record the current matrix state because flutter canvas not export resetTransform now.
   // https://github.com/flutter/engine/pull/25449
   Matrix4 _matrix = Matrix4.identity();
@@ -391,6 +323,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   CanvasTextBaseline get textBaseline => _textBaseline;
+
   static TextDirection? parseDirection(String value) {
     switch (value) {
       case LTR:
@@ -413,6 +346,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   TextDirection get direction => _direction;
+
   String get _textDirectionInString {
     switch (_direction) {
       case TextDirection.ltr:
@@ -424,6 +358,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   Map<String, String?> _fontProperties = {};
   double? _fontSize;
+
   bool _parseFont(String newValue) {
     Map<String, String?> properties = {};
     CSSStyleProperty.setShorthandFont(properties, newValue);
@@ -459,6 +394,7 @@ class CanvasRenderingContext2D extends BindingObject {
   String get font => _font;
 
   final List _states = [];
+
   // push state on state stack
   void restore() {
     addAction((Canvas canvas, Size size) {
@@ -646,6 +582,7 @@ class CanvasRenderingContext2D extends BindingObject {
   StrokeCap get lineCap => _lineCap;
 
   double _lineDashOffset = 0.0;
+
   set lineDashOffset(double? value) {
     if (value == null) return;
     addAction((Canvas canvas, Size size) {
@@ -670,6 +607,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   // The lineJoin can effect the stroke(), strokeRect(), and strokeText() methods.
   StrokeJoin _lineJoin = StrokeJoin.miter;
+
   set lineJoin(StrokeJoin? value) {
     if (value == null) return;
     addAction((Canvas canvas, Size size) {

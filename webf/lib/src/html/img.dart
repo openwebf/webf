@@ -53,6 +53,7 @@ class ImageElement extends Element {
 
   // Useful for img to operate RenderPlaced is in lazy rendering.
   bool get _isInLazyLoading => (renderBoxModel as RenderReplaced?)?.isInLazyRendering == true;
+
   set _isInLazyRendering(bool value) {
     (renderBoxModel as RenderReplaced?)?.isInLazyRendering = value;
   }
@@ -94,74 +95,31 @@ class ImageElement extends Element {
 
   ImageElement([BindingContext? context]) : super(context, isReplacedElement: true, defaultStyle: _defaultStyle) {}
 
-  // Bindings.
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'src':
-        return src;
-      case 'loading':
-        return loading;
-      case 'width':
-        return width;
-      case 'height':
-        return height;
-      case 'scaling':
-        return scaling;
-      case 'naturalWidth':
-        return naturalWidth;
-      case 'naturalHeight':
-        return naturalHeight;
-      case 'complete':
-        return complete;
-      default:
-        return super.getBindingProperty(key);
-    }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+    properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
+    properties['loading'] =
+        BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
+    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = castToType<int>(value));
+    properties['height'] =
+        BindingObjectProperty(getter: () => height, setter: (value) => height = castToType<int>(value));
+    properties['scaling'] =
+        BindingObjectProperty(getter: () => scaling, setter: (value) => scaling = castToType<String>(value));
+    properties['naturalWidth'] = BindingObjectProperty(getter: () => naturalWidth);
+    properties['naturalHeight'] = BindingObjectProperty(getter: () => naturalHeight);
+    properties['complete'] = BindingObjectProperty(getter: () => complete);
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'src':
-        src = castToType<String>(value);
-        break;
-      case 'loading':
-        loading = castToType<String>(value);
-        break;
-      case 'width':
-        width = castToType<int>(value);
-        break;
-      case 'height':
-        height = castToType<int>(value);
-        break;
-      case 'scaling':
-        scaling = castToType<String>(value);
-        break;
-      default:
-        super.setBindingProperty(key, value);
-    }
-  }
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
 
-  @override
-  void setAttribute(String qualifiedName, String value) {
-    super.setAttribute(qualifiedName, value);
-    switch (qualifiedName) {
-      case 'src':
-        src = attributeToProperty<String>(value);
-        break;
-      case 'loading':
-        loading = attributeToProperty<String>(value);
-        break;
-      case 'width':
-        width = attributeToProperty<int>(value);
-        break;
-      case 'height':
-        height = attributeToProperty<int>(value);
-        break;
-      case 'scaling':
-        scaling = attributeToProperty<String>(value);
-        break;
-    }
+    attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
+    attributes['loading'] = ElementAttributeProperty(setter: (value) => loading = attributeToProperty<String>(value));
+    attributes['width'] = ElementAttributeProperty(setter: (value) => width = attributeToProperty<int>(value));
+    attributes['height'] = ElementAttributeProperty(setter: (value) => height = attributeToProperty<int>(value));
+    attributes['scaling'] = ElementAttributeProperty(setter: (value) => scaling = attributeToProperty<String>(value));
   }
 
   @override
@@ -216,6 +174,7 @@ class ImageElement extends Element {
   }
 
   ImageStreamListener? _imageStreamListener;
+
   ImageStreamListener get _listener =>
       _imageStreamListener ??= ImageStreamListener(_handleImageFrame, onError: _onImageError);
 
@@ -499,11 +458,13 @@ class ImageElement extends Element {
   }
 
   String get scaling => getAttribute(SCALING) ?? '';
+
   set scaling(String value) {
     internalSetAttribute(SCALING, value);
   }
 
   String get src => _resolvedUri?.toString() ?? '';
+
   set src(String value) {
     if (src != value) {
       _loaded = false;
@@ -550,6 +511,7 @@ class ImageElement extends Element {
   }
 
   String get loading => getAttribute(LOADING) ?? '';
+
   set loading(String value) {
     internalSetAttribute(SCALING, value);
     if (_isInLazyLoading) {

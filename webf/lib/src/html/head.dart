@@ -35,68 +35,35 @@ class LinkElement extends Element {
   CSSStyleSheet? _styleSheet;
 
   bool _loading = false;
+
   bool get loading => _loading;
 
   Uri? _resolvedHyperlink;
   final Map<String, bool> _stylesheetLoaded = {};
 
-  // Bindings.
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'disabled':
-        return disabled;
-      case 'rel':
-        return rel;
-      case 'href':
-        return href;
-      case 'type':
-        return type;
-      default:
-        return super.getBindingProperty(key);
-    }
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+
+    attributes['disabled'] = ElementAttributeProperty(setter: (value) => disabled = attributeToProperty<bool>(value));
+    attributes['rel'] = ElementAttributeProperty(setter: (value) => rel = attributeToProperty<String>(value));
+    attributes['href'] = ElementAttributeProperty(setter: (value) => href = attributeToProperty<String>(value));
+    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'disabled':
-        disabled = castToType<bool>(value);
-        break;
-      case 'rel':
-        rel = castToType<String>(value);
-        break;
-      case 'href':
-        href = castToType<String>(value);
-        break;
-      case 'type':
-        type = castToType<String>(value);
-        break;
-      default:
-        super.setBindingProperty(key, value);
-    }
-  }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
 
-  @override
-  void setAttribute(String qualifiedName, String value) {
-    super.setAttribute(qualifiedName, value);
-    switch (qualifiedName) {
-      case 'disabled':
-        disabled = attributeToProperty<bool>(value);
-        break;
-      case 'rel':
-        rel = attributeToProperty<String>(value);
-        break;
-      case 'href':
-        href = attributeToProperty<String>(value);
-        break;
-      case 'type':
-        type = attributeToProperty<String>(value);
-        break;
-    }
+    properties['disabled'] =
+        BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = castToType<bool>(value));
+    properties['rel'] = BindingObjectProperty(getter: () => rel, setter: (value) => rel = castToType<String>(value));
+    properties['href'] = BindingObjectProperty(getter: () => href, setter: (value) => href = castToType<String>(value));
+    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
   }
 
   bool get disabled => getAttribute('disabled') != null;
+
   set disabled(bool value) {
     if (value) {
       internalSetAttribute('disabled', '');
@@ -106,6 +73,7 @@ class LinkElement extends Element {
   }
 
   String get href => _resolvedHyperlink?.toString() ?? '';
+
   set href(String value) {
     internalSetAttribute('href', value);
     _resolveHyperlink();
@@ -113,12 +81,14 @@ class LinkElement extends Element {
   }
 
   String get rel => getAttribute('rel') ?? '';
+
   set rel(String value) {
     internalSetAttribute('rel', value);
     _process();
   }
 
   String get type => getAttribute('type') ?? '';
+
   set type(String value) {
     internalSetAttribute('type', value);
   }
@@ -233,36 +203,16 @@ class StyleElement extends Element {
   CSSStyleSheet? get styleSheet => _styleSheet;
   CSSStyleSheet? _styleSheet;
 
-  // Bindings.
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'type':
-        return type;
-      default:
-        return super.getBindingProperty(key);
-    }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'type':
-        type = castToType<String>(value);
-        break;
-      default:
-        super.setBindingProperty(key, value);
-    }
-  }
-
-  @override
-  void setAttribute(String qualifiedName, String value) {
-    super.setAttribute(qualifiedName, value);
-    switch (qualifiedName) {
-      case 'type':
-        type = attributeToProperty<String>(value);
-        break;
-    }
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
   }
 
   String get type => getAttribute('type') ?? '';

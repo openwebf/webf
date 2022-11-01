@@ -29,25 +29,18 @@ class BoundingClientRect extends BindingObject {
   get pointer => _pointer;
 
   @override
-  dynamic getBindingProperty(String key) {
-    switch(key) {
-      case 'x':
-        return x;
-      case 'y':
-        return y;
-      case 'width':
-        return width;
-      case 'height':
-        return height;
-      case 'left':
-        return left;
-      case 'right':
-        return right;
-      case 'top':
-        return top;
-      case 'bottom':
-        return bottom;
-    }
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    properties['x'] = BindingObjectProperty(getter: () => x);
+    properties['y'] = BindingObjectProperty(getter: () => y);
+    properties['width'] = BindingObjectProperty(getter: () => width);
+    properties['height'] = BindingObjectProperty(getter: () => height);
+    properties['left'] = BindingObjectProperty(getter: () => left);
+    properties['right'] = BindingObjectProperty(getter: () => right);
+    properties['top'] = BindingObjectProperty(getter: () => top);
+    properties['bottom'] = BindingObjectProperty(getter: () => bottom);
   }
 
   Map<String, double> toJSON() {

@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
@@ -85,12 +86,26 @@ typedef GetViewportSize = Size Function();
 /// Get the render box model of current element.
 typedef GetRenderBoxModel = RenderBoxModel? Function();
 
+typedef ElementAttributeGetter = String? Function();
+typedef ElementAttributeSetter = void Function(String value);
+typedef ElementAttributeDeleter = void Function();
+
+class ElementAttributeProperty {
+  ElementAttributeProperty({this.getter, this.setter, this.deleter});
+
+  final ElementAttributeGetter? getter;
+  final ElementAttributeSetter? setter;
+  final ElementAttributeDeleter? deleter;
+}
+
 abstract class Element extends Node with ElementBase, ElementEventMixin, ElementOverflowMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
   String? _id;
+
   String? get id => _id;
+
   set id(String? id) {
     _id = id;
     recalculateStyle();
@@ -105,11 +120,14 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   // Holding reference if this element are managed by Flutter framework.
   WebFElementToFlutterElementAdaptor? flutterElement;
   WebFElementWidget? flutterWidget_;
+
   @override
   WebFElementWidget? get flutterWidget => flutterWidget_;
+
   set flutterWidget(WebFElementWidget? value) {
     flutterWidget_ = value;
   }
+
   WebFElementState? flutterWidgetState;
 
   // The attrs.
@@ -182,6 +200,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     // Init render style.
     renderStyle = CSSRenderStyle(target: this);
+
+    // Init attribute getter and setter.
+    initializeAttributes(_attributeProperties);
   }
 
   @override
@@ -220,92 +241,63 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
+  final Map<String, ElementAttributeProperty> _attributeProperties = {};
+  @mustCallSuper
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    attributes[_STYLE_PROPERTY] = ElementAttributeProperty(setter: (value) {
+      final map = CSSParser(value).parseInlineStyle();
+      inlineStyle.addAll(map);
+      recalculateStyle();
+    }, deleter: () {
+      _removeInlineStyle();
+    });
+    attributes[_CLASS_NAME] = ElementAttributeProperty(setter: (value) => className = value, deleter: () {
+      className = EMPTY_STRING;
+    });
+    attributes[_ID] = ElementAttributeProperty(setter: (value) => id = value, deleter: () {
+      id = EMPTY_STRING;
+    });
+  }
+
   // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-htmlelement-interface
   // https://www.w3.org/TR/cssom-view-1/#extension-to-the-element-interface
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'offsetTop':
-        return offsetTop;
-      case 'offsetLeft':
-        return offsetLeft;
-      case 'offsetWidth':
-        return offsetWidth;
-      case 'offsetHeight':
-        return offsetHeight;
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    properties['offsetTop'] = BindingObjectProperty(getter: () => offsetTop);
+    properties['offsetLeft'] = BindingObjectProperty(getter: () => offsetLeft);
+    properties['offsetWidth'] = BindingObjectProperty(getter: () => offsetWidth);
+    properties['offsetHeight'] = BindingObjectProperty(getter: () => offsetHeight);
 
-      case 'scrollTop':
-        return scrollTop;
-      case 'scrollLeft':
-        return scrollLeft;
-      case 'scrollWidth':
-        return scrollWidth;
-      case 'scrollHeight':
-        return scrollHeight;
+    properties['scrollTop'] =
+        BindingObjectProperty(getter: () => scrollTop, setter: (value) => scrollTop = castToType<double>(value));
+    properties['scrollLeft'] =
+        BindingObjectProperty(getter: () => scrollLeft, setter: (value) => scrollLeft = castToType<double>(value));
+    properties['scrollWidth'] = BindingObjectProperty(getter: () => scrollWidth);
+    properties['scrollHeight'] = BindingObjectProperty(getter: () => scrollHeight);
 
-      case 'clientTop':
-        return clientTop;
-      case 'clientLeft':
-        return clientLeft;
-      case 'clientWidth':
-        return clientWidth;
-      case 'clientHeight':
-        return clientHeight;
+    properties['clientTop'] = BindingObjectProperty(getter: () => clientTop);
+    properties['clientLeft'] = BindingObjectProperty(getter: () => clientLeft);
+    properties['clientWidth'] = BindingObjectProperty(getter: () => clientWidth);
+    properties['clientHeight'] = BindingObjectProperty(getter: () => clientHeight);
 
-      case 'id':
-        return id;
-      case 'className':
-        return className;
-      case 'classList':
-        return classList;
-
-      default:
-        return super.getBindingProperty(key);
-    }
+    properties['id'] = BindingObjectProperty(getter: () => id, setter: (value) => id = castToType<String>(value));
+    properties['className'] =
+        BindingObjectProperty(getter: () => className, setter: (value) => className = castToType<String>(value));
+    properties['classList'] = BindingObjectProperty(getter: () => classList);
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'scrollTop':
-        scrollTop = castToType<double>(value);
-        break;
-      case 'scrollLeft':
-        scrollLeft = castToType<double>(value);
-        break;
-
-      case 'className':
-        className = castToType<String>(value);
-        break;
-      case 'id':
-        id = castToType<String>(value);
-        break;
-      default:
-        super.setBindingProperty(key, value);
-    }
-  }
-
-  @override
-  invokeBindingMethod(String method, List args) {
-    switch (method) {
-      case 'getBoundingClientRect':
-        return getBoundingClientRect();
-      case 'scroll':
-        return scroll(castToType<double>(args[0]), castToType<double>(args[1]));
-      case 'scrollBy':
-        return scrollBy(castToType<double>(args[0]), castToType<double>(args[1]));
-      case 'scrollTo':
-        return scrollTo(castToType<double>(args[0]), castToType<double>(args[1]));
-      case 'click':
-        return click();
-      case 'getElementsByClassName':
-        return getElementsByClassName(args);
-      case 'getElementsByTagName':
-        return getElementsByTagName(args);
-
-      default:
-        super.invokeBindingMethod(method, args);
-    }
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['getBoundingClientRect'] = BindingObjectMethod(call: (_) => getBoundingClientRect());
+    methods['scroll'] =
+        BindingObjectMethod(call: (args) => scroll(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['scrollBy'] =
+        BindingObjectMethod(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['scrollTo'] =
+        BindingObjectMethod(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['click'] = BindingObjectMethod(call: (_) => click());
+    methods['getElementsByClassName'] = BindingObjectMethod(call: (args) => getElementsByClassName(args));
+    methods['getElementsByTagName'] = BindingObjectMethod(call: (args) => getElementsByTagName(args));
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
@@ -319,7 +311,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   void _updateRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
-       nextRenderBoxModel = _createRenderWidget();
+      nextRenderBoxModel = _createRenderWidget();
     } else if (_isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
@@ -387,7 +379,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return nextReplaced;
   }
 
-  RenderWidget _createRenderWidget({ RenderWidget? previousRenderWidget }) {
+  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget}) {
     RenderWidget nextReplaced;
 
     if (previousRenderWidget == null) {
@@ -797,6 +789,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     style.dispose();
     attributes.clear();
     disposeScrollable();
+    _attributeProperties.clear();
     super.dispose();
   }
 
@@ -850,7 +843,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   /// Unmount [renderBoxModel].
   @override
-  void unmountRenderObject({bool deep = true, bool keepFixedAlive = false, bool dispose = true, bool fromFlutterWidget = false}) {
+  void unmountRenderObject(
+      {bool deep = true, bool keepFixedAlive = false, bool dispose = true, bool fromFlutterWidget = false}) {
     /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
     /// So we do nothing here.
     if (!fromFlutterWidget && managedByFlutterWidget) {
@@ -1036,20 +1030,21 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @mustCallSuper
   String? getAttribute(String qualifiedName) {
+    ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
+
+    if (propertyHandler != null && propertyHandler.getter != null) {
+      return propertyHandler.getter!();
+    }
+
     return attributes[qualifiedName];
   }
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
     internalSetAttribute(qualifiedName, value);
-    if (_STYLE_PROPERTY == qualifiedName) {
-      final map = CSSParser(value).parseInlineStyle();
-      inlineStyle.addAll(map);
-      recalculateStyle();
-    } else if (_CLASS_NAME == qualifiedName) {
-      className = value;
-    } else if (_ID == qualifiedName) {
-      id = value;
+    ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
+    if (propertyHandler != null && propertyHandler.setter != null) {
+      propertyHandler.setter!(value);
     }
   }
 
@@ -1059,13 +1054,12 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @mustCallSuper
   void removeAttribute(String qualifiedName) {
-    if (qualifiedName == _STYLE_PROPERTY) {
-      _removeInlineStyle();
-    } else if (qualifiedName == _CLASS_NAME) {
-      className = EMPTY_STRING;
-    } else if (qualifiedName == _ID) {
-      id = EMPTY_STRING;
+    ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
+
+    if (propertyHandler != null && propertyHandler.deleter != null) {
+      propertyHandler.deleter!();
     }
+
     attributes.remove(qualifiedName);
   }
 

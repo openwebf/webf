@@ -3,6 +3,7 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/src/foundation/binding.dart';
 import 'package:webf/widget.dart';
 
 class CharacterData extends Node {
@@ -28,5 +29,13 @@ class CharacterData extends Node {
 
     flutterElement = null;
     flutterWidget = null;
+  }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
   }
 }

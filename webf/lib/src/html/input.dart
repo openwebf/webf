@@ -1,12 +1,14 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:webf/webf.dart';
+import 'package:webf/html.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/widget.dart';
+import 'package:webf/foundation.dart';
 
 enum InputSize {
   small,
@@ -15,11 +17,7 @@ enum InputSize {
 }
 
 class FlutterInputElement extends WidgetElement
-    with
-        BaseCheckBoxElement,
-        BaseButtonElement,
-        BaseInputElement,
-        BaseTimeElement {
+    with BaseCheckBoxElement, BaseButtonElement, BaseInputElement, BaseTimeElement {
   BindingContext? buildContext;
 
   FlutterInputElement(BindingContext? context) : super(context) {
@@ -52,43 +50,29 @@ mixin BaseInputElement on WidgetElement {
 
   String get value => controller.value.text;
 
-  set value(String? value) {
+  set value(value) {
     if (value == null) {
       controller.value = TextEditingValue.empty;
     } else {
-      controller.value = TextEditingValue(text: value);
+      value = value.toString();
+      if (controller.value.text != value) {
+        controller.value = TextEditingValue(text: value.toString());
+      }
     }
   }
 
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'value':
-        return controller.value.text;
-    }
-    return super.getBindingProperty(key);
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
   }
 
   @override
-  void propertyDidUpdate(String key, value) {
-    _setAttribute(key, value == null ? '' : value.toString());
-    super.propertyDidUpdate(key, value);
-  }
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
 
-  @override
-  void attributeDidUpdate(String key, String value) {
-    _setAttribute(key, value);
-    super.attributeDidUpdate(key, value);
-  }
-
-  void _setAttribute(String key, String value) {
-    switch (key) {
-      case 'value':
-        if (this.value != value) {
-          this.value = value;
-        }
-        break;
-    }
+    attributes['value'] = ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
   }
 
   TextInputType? getKeyboardType() {
@@ -155,8 +139,7 @@ mixin BaseInputElement on WidgetElement {
       );
 
   Widget _createInputWidget(BuildContext context, int minLines, int maxLines) {
-    FlutterFormElementContext? formContext =
-        context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
+    FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
     onChanged(String newValue) {
       setState(() {
         InputEvent inputEvent = InputEvent(inputType: '', data: newValue);
@@ -168,9 +151,7 @@ mixin BaseInputElement on WidgetElement {
 
     InputDecoration decoration = InputDecoration(
         label: label != null ? Text(label!) : null,
-        border: isInput && borderSides == null
-            ? UnderlineInputBorder()
-            : InputBorder.none,
+        border: isInput && borderSides == null ? UnderlineInputBorder() : InputBorder.none,
         isDense: true,
         hintText: placeholder,
         suffix: isSearch && value.isNotEmpty && _isFocus
@@ -183,8 +164,7 @@ mixin BaseInputElement on WidgetElement {
                   onPressed: () {
                     setState(() {
                       controller.clear();
-                      InputEvent inputEvent =
-                          InputEvent(inputType: '', data: '');
+                      InputEvent inputEvent = InputEvent(inputType: '', data: '');
                       dispatchEvent(inputEvent);
                     });
                   },
@@ -205,8 +185,7 @@ mixin BaseInputElement on WidgetElement {
         onChanged: onChanged,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor,
-        textInputAction:
-            isSearch ? TextInputAction.search : TextInputAction.newline,
+        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         decoration: decoration,
@@ -223,8 +202,7 @@ mixin BaseInputElement on WidgetElement {
         onChanged: onChanged,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor,
-        textInputAction:
-            isSearch ? TextInputAction.search : TextInputAction.newline,
+        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         onSubmitted: (String value) {
@@ -246,8 +224,7 @@ mixin BaseInputElement on WidgetElement {
     );
   }
 
-  Widget createInput(BuildContext context,
-      {int minLines = 1, int maxLines = 1}) {
+  Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
     switch (type) {
       case 'hidden':
         return SizedBox(width: 0, height: 0);
@@ -283,31 +260,17 @@ mixin BaseCheckBoxElement on WidgetElement {
   bool get disabled => getAttribute('disabled') != null;
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'checked':
-        checked = value;
-        break;
-    }
-    super.setBindingProperty(key, value);
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['checked'] = BindingObjectProperty(getter: () => checked, setter: (value) => checked = value);
   }
 
   @override
-  void setAttribute(String key, String value) {
-    switch (key) {
-      case 'checked':
-        checked = value == 'true';
-    }
-    super.setAttribute(key, value);
-  }
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
 
-  @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'checked':
-        return checked;
-    }
-    return super.getBindingProperty(key);
+    attributes['checked'] = ElementAttributeProperty(getter: () => checked.toString(), setter: (value) => checked = value == 'true');
   }
 
   double getCheckboxSize() {
@@ -343,6 +306,7 @@ mixin BaseButtonElement on WidgetElement {
   String _value = '';
 
   bool get disabled => getAttribute('disabled') != null;
+
   String get type => getAttribute('type') ?? 'button';
 
   @override
@@ -390,7 +354,7 @@ mixin BaseButtonElement on WidgetElement {
               clientX: clientX,
               clientY: clientY,
               view: ownerDocument.defaultView);
-          dispatchEvent(MouseEvent(EVENT_CLICK));
+          dispatchEvent(event);
         },
         child: Text(_value, style: _style));
   }
@@ -454,8 +418,7 @@ mixin BaseTimeElement on BaseInputElement {
           case TargetPlatform.android:
           case TargetPlatform.iOS:
           case TargetPlatform.fuchsia:
-            var time =
-                await _showDialog(context, mode: CupertinoDatePickerMode.time);
+            var time = await _showDialog(context, mode: CupertinoDatePickerMode.time);
             if (time != null) {
               var minute = time.minute.toString().padLeft(2, '0');
               var hour = time.hour.toString().padLeft(2, '0');
@@ -463,8 +426,7 @@ mixin BaseTimeElement on BaseInputElement {
             }
             break;
           default:
-            var time = await showTimePicker(
-                context: context, initialTime: TimeOfDay.now());
+            var time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
             if (time != null) {
               var minute = time.minute.toString().padLeft(2, '0');
               var hour = time.hour.toString().padLeft(2, '0');

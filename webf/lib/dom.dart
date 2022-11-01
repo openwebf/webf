@@ -19,26 +19,4 @@ export 'src/dom/document_fragment.dart';
 export 'src/dom/sliver_manager.dart';
 export 'src/dom/screen.dart';
 export 'src/dom/element_registry.dart';
-
-// Elements
 export 'src/dom/style_node_manager.dart';
-export 'src/dom/elements/semantics_text.dart';
-export 'src/dom/elements/grouping_content.dart';
-export 'src/dom/elements/sections.dart';
-export 'src/dom/elements/headings.dart';
-export 'src/dom/elements/forms.dart';
-export 'src/dom/elements/edits.dart';
-export 'src/dom/elements/a.dart';
-export 'src/dom/elements/body.dart';
-export 'src/dom/elements/canvas/canvas.dart';
-export 'src/dom/elements/canvas/canvas_context_2d.dart';
-export 'src/dom/elements/img.dart';
-export 'src/dom/elements/object.dart';
-export 'src/dom/elements/head.dart';
-export 'src/dom/elements/script.dart';
-export 'src/dom/elements/html.dart';
-export 'src/dom/elements/template.dart';
-export 'src/dom/elements/input.dart';
-export 'src/dom/elements/form.dart';
-export 'src/dom/elements/textarea.dart';
-export 'src/dom/elements/listview.dart';

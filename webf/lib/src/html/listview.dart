@@ -24,11 +24,6 @@ class FlutterListViewElement extends WidgetElement {
   }
 
   @override
-  void setAttribute(String key, String value) {
-    super.setAttribute(key, value);
-  }
-
-  @override
   Widget build(BuildContext context, List<Widget> children) {
     return ListView(
       children: children,

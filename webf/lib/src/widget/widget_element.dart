@@ -91,17 +91,6 @@ abstract class WidgetElement extends dom.Element {
     _attachWidget(_widget);
   }
 
-  @mustCallSuper
-  @override
-  void setBindingProperty(String key, value) {
-    super.setBindingProperty(key, value);
-    bool shouldRebuild = shouldElementRebuild(key, getBindingProperty(key), value);
-    if (_state != null && shouldRebuild) {
-      _state!.requestUpdateState();
-    }
-    propertyDidUpdate(key, value);
-  }
-
   @override
   void setInlineStyle(String property, String value) {
     super.setInlineStyle(property, value);

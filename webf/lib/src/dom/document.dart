@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
@@ -139,43 +140,18 @@ class Document extends Node {
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch(key) {
-      case 'cookie':
-        cookie_.setCookie(value);
-        break;
-    }
-
-    super.setBindingProperty(key, value);
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    properties['cookie'] = BindingObjectProperty(getter: () => cookie_.cookie(), setter: (value) => cookie_.setCookie(value));
   }
 
   @override
-  getBindingProperty(String key) {
-    switch(key) {
-      case 'cookie':
-        return cookie_.cookie();
-    }
-
-    return super.getBindingProperty(key);
-  }
-
-  @override
-  invokeBindingMethod(String method, List args) {
-    switch (method) {
-      case 'querySelectorAll':
-        return querySelectorAll(args);
-      case 'querySelector':
-        return querySelector(args);
-      case 'getElementById':
-        return getElementById(args);
-      case 'getElementsByClassName':
-        return getElementsByClassName(args);
-      case 'getElementsByTagName':
-        return getElementsByTagName(args);
-      case 'getElementsByName':
-        return getElementsByName(args);
-    }
-    return super.invokeBindingMethod(method, args);
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['querySelectorAll'] = BindingObjectMethod(call: (args) => querySelectorAll(args));
+    methods['querySelector'] = BindingObjectMethod(call: (args) => querySelector(args));
+    methods['getElementById'] = BindingObjectMethod(call: (args) => getElementById(args));
+    methods['getElementsByClassName'] = BindingObjectMethod(call: (args) => getElementsByClassName(args));
+    methods['getElementsByTagName'] = BindingObjectMethod(call: (args) => getElementsByTagName(args));
+    methods['getElementsByName'] = BindingObjectMethod(call: (args) => getElementsByName(args));
   }
 
   dynamic querySelector(List<dynamic> args) {

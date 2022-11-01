@@ -32,6 +32,7 @@ class ScriptRunner {
   final int _contextId;
 
   final List<ScriptExecution> _syncScriptTasks = [];
+
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
 
@@ -149,79 +150,33 @@ class ScriptElement extends Element {
 
   Uri? _resolvedSource;
 
-  // Bindings.
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'src':
-        return src;
-      case 'async':
-        return async;
-      case 'defer':
-        return defer;
-      case 'type':
-        return type;
-      case 'charset':
-        return charset;
-      case 'text':
-        return text;
-      default:
-        return super.getBindingProperty(key);
-    }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
+    properties['async'] =
+        BindingObjectProperty(getter: () => async, setter: (value) => async = castToType<bool>(value));
+    properties['defer'] = BindingObjectProperty(getter: () => defer, setter: (value) => defer = castToType<bool>(value));
+    properties['charset'] = BindingObjectProperty(getter: () => charset, setter: (value) => charset = castToType<String>(value));
+    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
+    properties['text'] = BindingObjectProperty(getter: () => text, setter: (value) => text = castToType<String>(value));
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'src':
-        src = castToType<String>(value);
-        break;
-      case 'async':
-        async = castToType<bool>(value);
-        break;
-      case 'defer':
-        defer = castToType<bool>(value);
-        break;
-      case 'type':
-        type = castToType<String>(value);
-        break;
-      case 'charset':
-        charset = castToType<String>(value);
-        break;
-      case 'text':
-        text = castToType<String>(value);
-        break;
-      default:
-        super.setBindingProperty(key, value);
-    }
-  }
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
 
-  @override
-  void setAttribute(String qualifiedName, String value) {
-    super.setAttribute(qualifiedName, value);
-    switch (qualifiedName) {
-      case 'src':
-        src = attributeToProperty<String>(value);
-        break;
-      case 'async':
-        async = attributeToProperty<bool>(value);
-        break;
-      case 'defer':
-        defer = attributeToProperty<bool>(value);
-        break;
-      case 'type':
-        type = attributeToProperty<String>(value);
-        break;
-      case 'charset':
-        charset = attributeToProperty<String>(value);
-        break;
-      case 'text':
-        text = attributeToProperty<String>(value);
-        break;
-    }
+    attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
+    attributes['async'] = ElementAttributeProperty(setter: (value) => async = attributeToProperty<bool>(value));
+    attributes['defer'] = ElementAttributeProperty(setter: (value) => defer = attributeToProperty<bool>(value));
+    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
+    attributes['charset'] = ElementAttributeProperty(setter: (value) => charset = attributeToProperty<String>(value));
+    attributes['text'] = ElementAttributeProperty(setter: (value) => text = attributeToProperty<String>(value));
   }
 
   String get src => _resolvedSource?.toString() ?? '';
+
   set src(String value) {
     internalSetAttribute('src', value);
     _resolveSource(value);
@@ -230,6 +185,7 @@ class ScriptElement extends Element {
   }
 
   bool get async => getAttribute('async') != null;
+
   set async(bool value) {
     if (value) {
       internalSetAttribute('async', '');

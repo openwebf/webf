@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webf/widget.dart';
-import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 
 const TEXTAREA = 'TEXTAREA';
 
