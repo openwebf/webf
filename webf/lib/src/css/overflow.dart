@@ -378,6 +378,10 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollHeight {
+    if (!isRendererAttached) {
+      return 0.0;
+    }
+
     WebFScrollable? scrollable = _getScrollable(Axis.vertical);
     if (scrollable?.position?.maxScrollExtent != null) {
       // Viewport height + maxScrollExtent
@@ -389,6 +393,9 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollWidth {
+    if (!isRendererAttached) {
+      return 0.0;
+    }
     WebFScrollable? scrollable = _getScrollable(Axis.horizontal);
     if (scrollable?.position?.maxScrollExtent != null) {
       return renderBoxModel!.clientWidth + scrollable!.position!.maxScrollExtent;

@@ -6,36 +6,16 @@ import 'package:webf/foundation.dart';
 class SampleElement extends dom.Element implements BindingObject {
   SampleElement(BindingContext? context) : super(context);
 
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'ping':
-        return ping;
-      case 'fake':
-        return fake;
-      case 'fn':
-        return fn;
-      case 'asyncFn':
-        return asyncFn;
-      case 'asyncFnFailed':
-        return asyncFnFailed;
-      case 'asyncFnNotComplete':
-        return asyncFnNotComplete;
-      default:
-        return super.getBindingProperty(key);
-    }
-  }
-
   @override
-  void getAllBindingPropertyNames(List<String> properties) {
-    super.getAllBindingPropertyNames(properties);
-    properties.addAll([
-      'ping',
-      'fake',
-      'fn',
-      'asyncFn',
-      'asyncFnFailed',
-      'asyncFnNotComplete'
-    ]);
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['ping'] = BindingObjectProperty(getter: () => ping);
+    properties['fake'] = BindingObjectProperty(getter: () => fake);
+    properties['fn'] = BindingObjectProperty(getter: () => fn);
+    properties['asyncFn'] = BindingObjectProperty(getter: () => asyncFn);
+    properties['asyncFnFailed'] = BindingObjectProperty(getter: () => asyncFnFailed);
+    properties['asyncFnNotComplete'] = BindingObjectProperty(getter: () => asyncFnNotComplete);
   }
 
   String get ping => 'pong';

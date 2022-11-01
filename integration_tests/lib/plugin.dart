@@ -1,13 +1,12 @@
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:ansicolor/ansicolor.dart';
