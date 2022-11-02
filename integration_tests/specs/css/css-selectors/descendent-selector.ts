@@ -80,4 +80,11 @@ describe('css descendent selector', () => {
       document.body.appendChild(div);
       await snapshot();
   });
+  it('011', async () => {
+    const style = <style>{`.div.a .text { color: red; }`}</style>;
+    const div = <div class="div a"><div class="text">011 Filler Text </div></div>;
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
 });
