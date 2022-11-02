@@ -8,10 +8,6 @@
 
 namespace webf {
 
-HTMLInputElement::HTMLInputElement(Document& document) : HTMLElement(html_names::kinput, &document) {}
-
-bool HTMLInputElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLInputElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
+HTMLInputElement::HTMLInputElement(Document& document) : WidgetElement(html_names::kinput, &document) {}
 
 }  // namespace webf

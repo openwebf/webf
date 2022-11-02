@@ -21,6 +21,7 @@
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
 
+#include "dart_context.h"
 #include "dart_methods.h"
 #include "executing_context_data.h"
 #include "frame/dom_timer_coordinator.h"
@@ -41,6 +42,7 @@ class Window;
 class Performance;
 class MemberMutationScope;
 class ErrorEvent;
+class DartContext;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
@@ -53,11 +55,7 @@ bool isContextValid(int32_t contextId);
 class ExecutingContext {
  public:
   ExecutingContext() = delete;
-  ExecutingContext(int32_t contextId,
-                   JSExceptionHandler handler,
-                   void* owner,
-                   const uint64_t* dart_methods,
-                   int32_t dart_methods_length);
+  ExecutingContext(DartContext* dart_context, int32_t contextId, JSExceptionHandler handler, void* owner);
   ~ExecutingContext();
 
   static ExecutingContext* From(JSContext* ctx);
@@ -110,9 +108,10 @@ class ExecutingContext {
 
   FORCE_INLINE Document* document() const { return document_; };
   FORCE_INLINE Window* window() const { return window_; }
+  FORCE_INLINE DartContext* dartContext() const { return dart_context_; };
   FORCE_INLINE Performance* performance() const { return performance_; }
   FORCE_INLINE UICommandBuffer* uiCommandBuffer() { return &ui_command_buffer_; };
-  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() { return dart_method_ptr_; }
+  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() { return dart_context_->dartMethodPtr(); }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.
@@ -129,7 +128,9 @@ class ExecutingContext {
   static void DispatchGlobalErrorEvent(ExecutingContext* context, JSValueConst error);
 
   // Bytecodes which registered by webf plugins.
-  static std::unordered_map<std::string, NativeByteCode> pluginByteCode;
+  static std::unordered_map<std::string, NativeByteCode> plugin_byte_code;
+  // Raw string codes which registered by webf plugins.
+  static std::unordered_map<std::string, std::string> plugin_string_code;
 
  private:
   std::chrono::time_point<std::chrono::system_clock> time_origin_;
@@ -146,8 +147,6 @@ class ExecutingContext {
   // Warning: Don't change the orders of members in ExecutingContext if you really know what are you doing.
   // From C++ standard, https://isocpp.org/wiki/faq/dtors#order-dtors-for-members
   // Members first initialized and destructed at the last.
-  // Dart methods ptr should keep alive when ExecutingContext is disposing.
-  const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
   // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer
   // release.
   UICommandBuffer ui_command_buffer_{this};
@@ -163,6 +162,7 @@ class ExecutingContext {
   // ----------------------------------------------------------------------
   bool is_context_valid_{false};
   int32_t context_id_;
+  DartContext* dart_context_{nullptr};
   JSExceptionHandler handler_;
   void* owner_;
   JSValue global_object_{JS_NULL};

@@ -307,8 +307,6 @@ mixin BaseButtonElement on WidgetElement {
 
   bool get disabled => getAttribute('disabled') != null;
 
-  String get type => getAttribute('type') ?? 'button';
-
   @override
   void propertyDidUpdate(String key, value) {
     _setValue(key, value == null ? '' : value.toString());
@@ -363,9 +361,6 @@ mixin BaseButtonElement on WidgetElement {
 /// create a time widget when input type is date,time,month,week
 mixin BaseTimeElement on BaseInputElement {
   bool checked = false;
-
-  @override
-  String get type => getAttribute('type') ?? 'button';
 
   Future<DateTime?> _showDialog(BuildContext context,
       {CupertinoDatePickerMode mode = CupertinoDatePickerMode.date}) async {

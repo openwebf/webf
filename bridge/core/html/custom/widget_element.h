@@ -6,6 +6,7 @@
 #define WEBF_CORE_DOM_WIDGET_ELEMENT_H_
 
 #include <unordered_map>
+#include <set>
 #include "core/html/html_element.h"
 
 namespace webf {
@@ -22,10 +23,11 @@ class WidgetElement : public HTMLElement {
   WidgetElement(const AtomicString& tag_name, Document* document);
 
   static bool IsValidName(const AtomicString& name);
-  static bool IsUnderScoreProperty(const AtomicString& name);
 
   bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
+
+  NativeValue HandleCallFromDartSide(const NativeValue* native_method, int32_t argc, const NativeValue* argv) override;
 
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
@@ -38,6 +40,8 @@ class WidgetElement : public HTMLElement {
   bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
  private:
+  NativeValue HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv);
+  std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;
 };
 

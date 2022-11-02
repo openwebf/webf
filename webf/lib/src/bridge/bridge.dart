@@ -11,11 +11,10 @@ import 'binding.dart';
 import 'from_native.dart';
 import 'to_native.dart';
 
-/// The maximum webf pages running in the same times.
-/// Can be upgrade to larger amount if you have enough memory spaces.
-int kWebFJSPagePoolSize = 1024;
-
 bool _firstView = true;
+int _contextId = 0;
+
+int newContextId() { return ++_contextId; }
 
 /// Init bridge
 int initBridge(WebFViewController view) {
@@ -30,20 +29,14 @@ int initBridge(WebFViewController view) {
     PerformanceTiming.instance().mark(PERF_BRIDGE_REGISTER_DART_METHOD_END);
   }
 
-  int contextId = -1;
-
-  List<int> dartMethods = makeDartMethodsData();
-
   if (_firstView) {
-    initJSPagePool(kWebFJSPagePoolSize, dartMethods);
+    List<int> dartMethods = makeDartMethodsData();
+    initDartContext(dartMethods);
     _firstView = false;
-    contextId = 0;
-  } else {
-    contextId = allocateNewPage(dartMethods);
-    if (contextId == -1) {
-      throw Exception('Can\' allocate new webf bridge: bridge count had reach the maximum size.');
-    }
   }
 
-  return contextId;
+  int pageId = newContextId();
+  allocateNewPage(pageId);
+
+  return pageId;
 }

@@ -18,7 +18,7 @@ else ()
 endif ()
 
 execute_process(
-  COMMAND bash "-c" "npm install"
+  COMMAND bash "-c" "if [ ! -d \"node_modules\" ]; then npm install; fi"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
 ) # install code_generator deps
 
@@ -200,6 +200,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
+    core/dart_context.cc
+    core/dart_context_data.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc

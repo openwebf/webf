@@ -40,6 +40,8 @@ class BindingObjectMethod {
 abstract class BindingObject {
   static BindingObjectOperation? bind;
   static BindingObjectOperation? unbind;
+  // To make sure same kind of WidgetElement only sync once.
+  static final Map<Type, bool> _alreadySyncWidgetElements = {};
 
   final BindingContext? _context;
 
@@ -50,6 +52,31 @@ abstract class BindingObject {
     _bind();
     initializeProperties(_properties);
     initializeMethods(_methods);
+
+    if (this is WidgetElement && !_alreadySyncWidgetElements.containsKey(runtimeType)) {
+      _alreadySyncWidgetElements[runtimeType] = true;
+      _syncPropertiesAndMethodsToNativeSlow();
+    }
+  }
+
+  void _syncPropertiesAndMethodsToNativeSlow() {
+    assert(pointer != null);
+
+    List<String> properties = _properties.keys.toList(growable: false);
+    List<String> methods = _methods.keys.toList(growable: false);
+
+    Pointer<NativeValue> arguments = malloc.allocate(sizeOf<NativeValue>() * 2);
+    toNativeValue(arguments.elementAt(0), properties);
+    toNativeValue(arguments.elementAt(1), methods);
+
+    DartInvokeBindingMethodsFromDart f = pointer!.ref.invokeBindingMethodFromDart.asFunction();
+    Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
+
+    Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
+    toNativeValue(method, 'syncPropertiesAndMethods');
+    f(pointer!, returnValue, method, 2, arguments);
+    bool result = fromNativeValue(returnValue);
+    assert(result == true);
   }
 
   final Map<String, BindingObjectProperty> _properties = {};

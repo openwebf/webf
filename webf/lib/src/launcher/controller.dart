@@ -956,8 +956,7 @@ class WebFController {
       // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
       _view.viewport.reload();
 
-      List<int> methodBytes = makeDartMethodsData();
-      allocateNewPage(methodBytes, _view.contextId);
+      allocateNewPage(_view.contextId);
 
       _view = WebFViewController(view.viewportWidth, view.viewportHeight,
           background: _view.background,

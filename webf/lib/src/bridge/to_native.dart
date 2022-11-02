@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:async';
+import 'dart:collection';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
@@ -55,15 +55,21 @@ final DartGetWebFInfo _getWebFInfo =
 
 final WebFInfo _cachedInfo = WebFInfo(_getWebFInfo());
 
+final HashMap<int, Pointer<Void>> _allocatedPages = HashMap();
+
+Pointer<Void>? getAllocatedPage(int contextId) {
+  return _allocatedPages[contextId];
+}
+
 WebFInfo getWebFInfo() {
   return _cachedInfo;
 }
 
 // Register invokeEventListener
 typedef NativeInvokeEventListener = Pointer<NativeValue> Function(
-    Int32 contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
+    Pointer<Void>, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
 typedef DartInvokeEventListener = Pointer<NativeValue> Function(
-    int contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
+    Pointer<Void>, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
 
 final DartInvokeEventListener _invokeModuleEvent =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
@@ -76,8 +82,9 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   Pointer<Void> rawEvent = event == null ? nullptr : event.toRaw().cast<Void>();
   Pointer<NativeValue> extraData = malloc.allocate(sizeOf<NativeValue>());
   toNativeValue(extraData, extra);
+  assert(_allocatedPages.containsKey(contextId));
   Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
-      contextId, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
+      _allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
   freeNativeString(nativeModuleName);
   dynamic result = fromNativeValue(dispatchResult);
   malloc.free(dispatchResult);
@@ -104,13 +111,13 @@ Pointer<Void> createScreen(double width, double height) {
 
 // Register evaluateScripts
 typedef NativeEvaluateScripts = Void Function(
-    Int32 contextId, Pointer<NativeString> code, Pointer<Utf8> url, Int32 startLine);
+    Pointer<Void>, Pointer<NativeString> code, Pointer<Utf8> url, Int32 startLine);
 typedef DartEvaluateScripts = void Function(
-    int contextId, Pointer<NativeString> code, Pointer<Utf8> url, int startLine);
+    Pointer<Void>, Pointer<NativeString> code, Pointer<Utf8> url, int startLine);
 
 // Register parseHTML
-typedef NativeParseHTML = Void Function(Int32 contextId, Pointer<Utf8> code, Int32 length);
-typedef DartParseHTML = void Function(int contextId, Pointer<Utf8> code, int length);
+typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Utf8> code, Int32 length);
+typedef DartParseHTML = void Function(Pointer<Void>, Pointer<Utf8> code, int length);
 
 final DartEvaluateScripts _evaluateScripts =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateScripts>>('evaluateScripts').asFunction();
@@ -133,15 +140,16 @@ void evaluateScripts(int contextId, String code, {String? url, int line = 0}) {
   Pointer<NativeString> nativeString = stringToNativeString(code);
   Pointer<Utf8> _url = url.toNativeUtf8();
   try {
-    _evaluateScripts(contextId, nativeString, _url, line);
+    assert(_allocatedPages.containsKey(contextId));
+    _evaluateScripts(_allocatedPages[contextId]!, nativeString, _url, line);
   } catch (e, stack) {
     print('$e\n$stack');
   }
   freeNativeString(nativeString);
 }
 
-typedef NativeEvaluateQuickjsByteCode = Void Function(Int32 contextId, Pointer<Uint8> bytes, Int32 byteLen);
-typedef DartEvaluateQuickjsByteCode = void Function(int contextId, Pointer<Uint8> bytes, int byteLen);
+typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen);
+typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen);
 
 final DartEvaluateQuickjsByteCode _evaluateQuickjsByteCode = WebFDynamicLibrary.ref
     .lookup<NativeFunction<NativeEvaluateQuickjsByteCode>>('evaluateQuickjsByteCode')
@@ -153,7 +161,8 @@ void evaluateQuickjsByteCode(int contextId, Uint8List bytes) {
   }
   Pointer<Uint8> byteData = malloc.allocate(sizeOf<Uint8>() * bytes.length);
   byteData.asTypedList(bytes.length).setAll(0, bytes);
-  _evaluateQuickjsByteCode(contextId, byteData, bytes.length);
+  assert(_allocatedPages.containsKey(contextId));
+  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length);
   malloc.free(byteData);
 }
 
@@ -163,7 +172,8 @@ void parseHTML(int contextId, String code) {
   }
   Pointer<Utf8> nativeCode = code.toNativeUtf8();
   try {
-    _parseHTML(contextId, nativeCode, nativeCode.length);
+    assert(_allocatedPages.containsKey(contextId));
+    _parseHTML(_allocatedPages[contextId]!, nativeCode, nativeCode.length);
   } catch (e, stack) {
     print('$e\n$stack');
   }
@@ -171,42 +181,41 @@ void parseHTML(int contextId, String code) {
 }
 
 // Register initJsEngine
-typedef NativeInitJSPagePool = Void Function(Int32 poolSize, Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartInitJSPagePool = void Function(int poolSize, Pointer<Uint64> dartMethods, int length);
+typedef NativeInitDartContext = Void Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitDartContext = void Function(Pointer<Uint64> dartMethods, int methodsLength);
 
-final DartInitJSPagePool _initJSPagePool =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitJSPagePool>>('initJSPagePool').asFunction();
+final DartInitDartContext _initDartContext =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartContext>>('initDartContext').asFunction();
 
-void initJSPagePool(int poolSize, List<int> dartMethods) {
+void initDartContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-
-  _initJSPagePool(poolSize, bytes, dartMethods.length);
+  _initDartContext(bytes, dartMethods.length);
 }
 
-typedef NativeDisposePage = Void Function(Int32 contextId);
-typedef DartDisposePage = void Function(int contextId);
+typedef NativeDisposePage = Void Function(Pointer<Void> page);
+typedef DartDisposePage = void Function(Pointer<Void> page);
 
 final DartDisposePage _disposePage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePage').asFunction();
 
 void disposePage(int contextId) {
-  _disposePage(contextId);
+  Pointer<Void> page = _allocatedPages[contextId]!;
+  _disposePage(page);
+  _allocatedPages.remove(contextId);
 }
 
-typedef NativeAllocateNewPage = Int32 Function(Int32, Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartAllocateNewPage = int Function(int, Pointer<Uint64> dartMethods, int methodsLength);
+typedef NativeAllocateNewPage = Pointer<Void> Function(Int32);
+typedef DartAllocateNewPage = Pointer<Void> Function(int);
 
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
-int allocateNewPage(List<int> dartMethods, [int targetContextId = -1]) {
-  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
-  Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
-  nativeMethodList.setAll(0, dartMethods);
-
-  return _allocateNewPage(targetContextId, bytes, dartMethods.length);
+void allocateNewPage(int targetContextId) {
+  Pointer<Void> page = _allocateNewPage(targetContextId);
+  assert(!_allocatedPages.containsKey(targetContextId));
+  _allocatedPages[targetContextId] = page;
 }
 
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);
@@ -233,33 +242,11 @@ bool profileModeEnabled() {
   return _profileModeEnabled() == _CODE_ENABLED;
 }
 
-// Regisdster reloadJsContext
-typedef NativeReloadJSContext = Void Function(Int32 contextId, Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartReloadJSContext = void Function(int contextId, Pointer<Uint64> dartMethods, int methodsLength);
-
-final DartReloadJSContext _reloadJSContext =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeReloadJSContext>>('reloadJsContext').asFunction();
-
-Future<void> reloadJSContext(int contextId, List<int> dartMethods) async {
-  Completer completer = Completer<void>();
-  Future.microtask(() {
-    Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
-    Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
-    nativeMethodList.setAll(0, dartMethods);
-    _reloadJSContext(contextId, bytes, dartMethods.length);
-    completer.complete();
-  });
-  return completer.future;
-}
-
 typedef NativeDispatchUITask = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
 typedef DartDispatchUITask = void Function(int contextId, Pointer<Void> context, Pointer<Void> callback);
 
-final DartDispatchUITask _dispatchUITask =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDispatchUITask>>('dispatchUITask').asFunction();
-
 void dispatchUITask(int contextId, Pointer<Void> context, Pointer<Void> callback) {
-  _dispatchUITask(contextId, context, callback);
+  // _dispatchUITask(contextId, context, callback);
 }
 
 enum UICommandType {
@@ -295,20 +282,20 @@ class UICommandItem extends Struct {
   external Pointer nativePtr;
 }
 
-typedef NativeGetUICommandItems = Pointer<Uint64> Function(Int32 contextId);
-typedef DartGetUICommandItems = Pointer<Uint64> Function(int contextId);
+typedef NativeGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
+typedef DartGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
 
 final DartGetUICommandItems _getUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandItems>>('getUICommandItems').asFunction();
 
-typedef NativeGetUICommandItemSize = Int64 Function(Int64 contextId);
-typedef DartGetUICommandItemSize = int Function(int contextId);
+typedef NativeGetUICommandItemSize = Int64 Function(Pointer<Void>);
+typedef DartGetUICommandItemSize = int Function(Pointer<Void>);
 
 final DartGetUICommandItemSize _getUICommandItemSize =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandItemSize>>('getUICommandItemSize').asFunction();
 
-typedef NativeClearUICommandItems = Void Function(Int32 contextId);
-typedef DartClearUICommandItems = void Function(int contextId);
+typedef NativeClearUICommandItems = Void Function(Pointer<Void>);
+typedef DartClearUICommandItems = void Function(Pointer<Void>);
 
 final DartClearUICommandItems _clearUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeClearUICommandItems>>('clearUICommandItems').asFunction();
@@ -403,13 +390,14 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
   }, growable: false);
 
   // Clear native command.
-  _clearUICommandItems(contextId);
+  _clearUICommandItems(_allocatedPages[contextId]!);
 
   return results;
 }
 
 void clearUICommand(int contextId) {
-  _clearUICommandItems(contextId);
+  assert(_allocatedPages.containsKey(contextId));
+  _clearUICommandItems(_allocatedPages[contextId]!);
 }
 
 void flushUICommandWithContextId(int contextId) {
@@ -420,8 +408,9 @@ void flushUICommandWithContextId(int contextId) {
 }
 
 void flushUICommand(WebFViewController view) {
-  Pointer<Uint64> nativeCommandItems = _getUICommandItems(view.contextId);
-  int commandLength = _getUICommandItemSize(view.contextId);
+  assert(_allocatedPages.containsKey(view.contextId));
+  Pointer<Uint64> nativeCommandItems = _getUICommandItems(_allocatedPages[view.contextId]!);
+  int commandLength = _getUICommandItemSize(_allocatedPages[view.contextId]!);
 
   if (commandLength == 0 || nativeCommandItems == nullptr) {
     return;

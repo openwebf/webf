@@ -159,9 +159,9 @@ final List<int> _dartNativeMethods = [
 ];
 
 typedef Native_RegisterTestEnvDartMethods = Void Function(
-    Int32 contextId, Pointer<Uint64> methodBytes, Int32 length);
+    Pointer<Void>, Pointer<Uint64> methodBytes, Int32 length);
 typedef Dart_RegisterTestEnvDartMethods = void Function(
-    int contextId, Pointer<Uint64> methodBytes, int length);
+    Pointer<Void>, Pointer<Uint64> methodBytes, int length);
 
 final Dart_RegisterTestEnvDartMethods _registerTestEnvDartMethods =
     WebFDynamicLibrary.ref
@@ -174,5 +174,5 @@ void registerDartTestMethodsToCpp(int contextId) {
       malloc.allocate<Uint64>(sizeOf<Uint64>() * _dartNativeMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
   nativeMethodList.setAll(0, _dartNativeMethods);
-  _registerTestEnvDartMethods(contextId, bytes, _dartNativeMethods.length);
+  _registerTestEnvDartMethods(getAllocatedPage(contextId)!, bytes, _dartNativeMethods.length);
 }

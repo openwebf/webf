@@ -21,14 +21,12 @@ namespace webf {
 
 ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
-webf::WebFPage** WebFPage::pageContextPool{nullptr};
-
-WebFPage::WebFPage(int32_t contextId,
-                   const JSExceptionHandler& handler,
-                   const uint64_t* dart_methods,
-                   int32_t dart_methods_length)
+WebFPage::WebFPage(DartContext* dart_context,
+                   int32_t contextId,
+                   const JSExceptionHandler& handler)
     : contextId(contextId), ownerThreadId(std::this_thread::get_id()) {
   context_ = new ExecutingContext(
+      dart_context,
       contextId,
       [](ExecutingContext* context, const char* message) {
         if (context->dartMethodPtr()->onJsError != nullptr) {
@@ -36,7 +34,7 @@ WebFPage::WebFPage(int32_t contextId,
         }
         WEBF_LOG(ERROR) << message << std::endl;
       },
-      this, dart_methods, dart_methods_length);
+      this);
 }
 
 bool WebFPage::parseHTML(const char* code, size_t length) {
@@ -149,7 +147,6 @@ WebFPage::~WebFPage() {
   }
 #endif
   delete context_;
-  WebFPage::pageContextPool[contextId] = nullptr;
 }
 
 void WebFPage::reportError(const char* errmsg) {

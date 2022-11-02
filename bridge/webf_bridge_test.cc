@@ -10,24 +10,21 @@
 
 std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();
 
-void initTestFramework(int32_t contextId) {
-  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
-  auto testContext = new webf::WebFTestContext(page->GetExecutingContext());
-  testContextPool[contextId] = testContext;
+void* initTestFramework(void* page_) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+  return new webf::WebFTestContext(page->GetExecutingContext());
 }
 
-int8_t evaluateTestScripts(int32_t contextId, void* code, const char* bundleFilename, int startLine) {
-  auto testContext = testContextPool[contextId];
-  return testContext->evaluateTestScripts(static_cast<webf::NativeString*>(code)->string(),
+int8_t evaluateTestScripts(void* testContext, void* code, const char* bundleFilename, int startLine) {
+  return reinterpret_cast<webf::WebFTestContext*>(testContext)->evaluateTestScripts(static_cast<webf::NativeString*>(code)->string(),
                                           static_cast<webf::NativeString*>(code)->length(), bundleFilename, startLine);
 }
 
-void executeTest(int32_t contextId, ExecuteCallback executeCallback) {
-  auto testContext = testContextPool[contextId];
-  testContext->invokeExecuteTest(executeCallback);
+void executeTest(void* testContext, ExecuteCallback executeCallback) {
+  reinterpret_cast<webf::WebFTestContext*>(testContext)->invokeExecuteTest(executeCallback);
 }
 
-void registerTestEnvDartMethods(int32_t contextId, uint64_t* methodBytes, int32_t length) {
-  auto testContext = testContextPool[contextId];
-  testContext->registerTestEnvDartMethods(methodBytes, length);
+void registerTestEnvDartMethods(void* testContext, uint64_t* methodBytes, int32_t length) {
+  reinterpret_cast<webf::WebFTestContext*>(testContext)->registerTestEnvDartMethods(methodBytes, length);
 }

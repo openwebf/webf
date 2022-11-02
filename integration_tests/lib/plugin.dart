@@ -2,7 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:io';
-
+import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
@@ -79,14 +79,14 @@ void main() async {
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     int contextId = webF.controller!.view.contextId;
-    initTestFramework(contextId);
+    Pointer<Void> testContext = initTestFramework(contextId);
     registerDartTestMethodsToCpp(contextId);
     addJSErrorListener(contextId, print);
 
     // Preload load test cases
     String code = spec.readAsStringSync();
     evaluateTestScripts(contextId, code, url: 'assets://plugin.js');
-    String result = await executeTest(contextId);
+    String result = await executeTest(testContext, contextId);
     // Manual dispose context for memory leak check.
     disposePage(webF.controller!.view.contextId);
     exit(result == 'failed' ? 1 : 0);

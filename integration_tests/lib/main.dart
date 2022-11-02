@@ -3,6 +3,7 @@
  */
 import 'dart:async';
 import 'dart:io';
+import 'dart:ffi';
 
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/material.dart';
@@ -100,13 +101,13 @@ void main() async {
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     int contextId = webF.controller!.view.contextId;
-    initTestFramework(contextId);
+    Pointer<Void> testContext = initTestFramework(contextId);
     registerDartTestMethodsToCpp(contextId);
     addJSErrorListener(contextId, print);
     // Preload load test cases
     String code = spec.readAsStringSync();
     evaluateTestScripts(contextId, codeInjection + code, url: specUrl);
-    String result = await executeTest(contextId);
+    String result = await executeTest(testContext, contextId);
     // Manual dispose context for memory leak check.
     disposePage(webF.controller!.view.contextId);
 

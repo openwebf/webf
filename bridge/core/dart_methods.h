@@ -11,8 +11,6 @@
 
 #include <memory>
 #include <thread>
-#include "webf_bridge.h"
-
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
 
