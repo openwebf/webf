@@ -4,9 +4,9 @@
  */
 
 #include "gtest/gtest.h"
+#include "include/webf_bridge.h"
 #include "page.h"
 #include "webf_test_env.h"
-#include "include/webf_bridge.h"
 
 using namespace webf;
 

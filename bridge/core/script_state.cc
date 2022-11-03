@@ -12,7 +12,7 @@ namespace webf {
 
 thread_local std::atomic<int32_t> runningContexts{0};
 
-ScriptState::ScriptState(DartContext* dart_context): dart_context_(dart_context) {
+ScriptState::ScriptState(DartContext* dart_context) : dart_context_(dart_context) {
   runningContexts++;
   bool first_loaded = false;
   if (dart_context_->runtime() == nullptr) {

@@ -5,8 +5,8 @@
 #ifndef WEBF_CORE_DOM_WIDGET_ELEMENT_H_
 #define WEBF_CORE_DOM_WIDGET_ELEMENT_H_
 
-#include <unordered_map>
 #include <set>
+#include <unordered_map>
 #include "core/html/html_element.h"
 
 namespace webf {

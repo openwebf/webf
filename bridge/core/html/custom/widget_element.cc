@@ -134,7 +134,7 @@ void WidgetElement::Trace(GCVisitor* visitor) const {
     entry.second.Trace(visitor);
   }
 
-  for(auto& entry : async_cached_methods_) {
+  for (auto& entry : async_cached_methods_) {
     entry.second.Trace(visitor);
   }
 }
@@ -169,7 +169,7 @@ NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, 
     shape.built_in_methods_.emplace(method);
   }
 
-  for(auto& method : async_methods) {
+  for (auto& method : async_methods) {
     shape.built_in_async_methods_.emplace(method);
   }
 
@@ -188,7 +188,8 @@ ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name)
 ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
   auto* data = new BindingObject::AnonymousFunctionData();
   data->method_name = method_name.ToStdString();
-  return ScriptValue(ctx(), QJSFunction::Create(ctx(), BindingObject::AnonymousAsyncFunctionCallback, 4, data)->ToQuickJSUnsafe());
+  return ScriptValue(
+      ctx(), QJSFunction::Create(ctx(), BindingObject::AnonymousAsyncFunctionCallback, 4, data)->ToQuickJSUnsafe());
 }
 
 }  // namespace webf

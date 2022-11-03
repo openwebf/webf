@@ -13,8 +13,8 @@
 #include "foundation/native_string.h"
 #include "foundation/native_value_converter.h"
 #include "webf_bridge_test.h"
-#include "webf_test_env.h"
 #include "webf_test_context.h"
+#include "webf_test_env.h"
 
 #if defined(__linux__) || defined(__APPLE__)
 static int64_t get_time_ms(void) {
@@ -212,7 +212,8 @@ std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
   JSThreadState* th = new JSThreadState();
-  JS_SetRuntimeOpaque(reinterpret_cast<WebFTestContext*>(testContext)->page()->GetExecutingContext()->dartContext()->runtime(), th);
+  JS_SetRuntimeOpaque(
+      reinterpret_cast<WebFTestContext*>(testContext)->page()->GetExecutingContext()->dartContext()->runtime(), th);
 
   return std::unique_ptr<webf::WebFPage>(reinterpret_cast<webf::WebFPage*>(page));
 }

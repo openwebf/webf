@@ -8,8 +8,8 @@
 #include <thread>
 
 #include "bindings/qjs/native_string_utils.h"
-#include "core/page.h"
 #include "core/dart_context.h"
+#include "core/page.h"
 #include "foundation/inspector_task_queue.h"
 #include "foundation/logging.h"
 #include "foundation/ui_command_buffer.h"
@@ -100,7 +100,7 @@ NativeValue* invokeModuleEvent(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   auto* result = page->invokeModuleEvent(reinterpret_cast<webf::NativeString*>(module_name), eventType, event,
-                                            reinterpret_cast<webf::NativeValue*>(extra));
+                                         reinterpret_cast<webf::NativeValue*>(extra));
   return reinterpret_cast<NativeValue*>(result);
 }
 

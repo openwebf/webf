@@ -38,8 +38,7 @@ TEST(Performance, timeOrigin) {
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
-  const char* code =
-      "console.log(typeof performance.timeOrigin === 'number');";
+  const char* code = "console.log(typeof performance.timeOrigin === 'number');";
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
