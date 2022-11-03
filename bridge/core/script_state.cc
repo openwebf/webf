@@ -10,33 +10,26 @@
 
 namespace webf {
 
-thread_local JSRuntime* runtime_ = nullptr;
 thread_local std::atomic<int32_t> runningContexts{0};
 
-ScriptState::ScriptState() {
+ScriptState::ScriptState(DartContext* dart_context): dart_context_(dart_context) {
   runningContexts++;
   bool first_loaded = false;
-  if (runtime_ == nullptr) {
-    runtime_ = JS_NewRuntime();
+  if (dart_context_->runtime() == nullptr) {
+    dart_context_->InitializeJSRuntime();
     first_loaded = true;
   }
   // Avoid stack overflow when running in multiple threads.
-  JS_UpdateStackTop(runtime_);
-  ctx_ = JS_NewContext(runtime_);
+  ctx_ = JS_NewContext(dart_context_->runtime());
 
   if (first_loaded) {
     names_installer::Init(ctx_);
     DefinedPropertiesInitializer::Init();
-    // Bump up the built-in classId. To make sure the created classId are larger than JS_CLASS_CUSTOM_CLASS_INIT_COUNT.
-    for (int i = 0; i < JS_CLASS_CUSTOM_CLASS_INIT_COUNT - JS_CLASS_GC_TRACKER + 2; i++) {
-      JSClassID id{0};
-      JS_NewClassID(&id);
-    }
   }
 }
 
 JSRuntime* ScriptState::runtime() {
-  return runtime_;
+  return dart_context_->runtime();
 }
 
 ScriptState::~ScriptState() {
@@ -44,16 +37,10 @@ ScriptState::~ScriptState() {
   JS_FreeContext(ctx_);
 
   // Run GC to clean up remaining objects about m_ctx;
-  JS_RunGC(runtime_);
+  JS_RunGC(dart_context_->runtime());
 
   if (--runningContexts == 0) {
-    // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
-    DefinedPropertiesInitializer::Dispose();
-    names_installer::Dispose();
-    HTMLElementFactory::Dispose();
-    EventFactory::Dispose();
-    JS_FreeRuntime(runtime_);
-    runtime_ = nullptr;
+    dart_context_->DisposeJSRuntime();
   }
   ctx_ = nullptr;
 }

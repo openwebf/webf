@@ -14,11 +14,11 @@ namespace webf {
 struct WidgetElementShape {
   std::set<AtomicString> built_in_properties_;
   std::set<AtomicString> built_in_methods_;
+  std::set<AtomicString> built_in_async_methods_;
 };
 
 class DartContextData {
  public:
-
   std::unordered_map<AtomicString, WidgetElementShape, AtomicString::KeyHasher>& widgetElementShapes() { return widget_element_shapes_; }
 
  private:

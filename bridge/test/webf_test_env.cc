@@ -96,8 +96,8 @@ void TEST_reloadApp(int32_t contextId) {}
 int32_t timerId = 0;
 
 int32_t TEST_setTimeout(webf::DOMTimer* timer, int32_t contextId, AsyncCallback callback, int32_t timeout) {
-  JSRuntime* rt = ScriptState::runtime();
   auto* context = timer->context();
+  JSRuntime* rt = context->dartContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
   th->timeout = get_time_ms() + timeout;
@@ -113,8 +113,8 @@ int32_t TEST_setTimeout(webf::DOMTimer* timer, int32_t contextId, AsyncCallback 
 }
 
 int32_t TEST_setInterval(webf::DOMTimer* timer, int32_t contextId, AsyncCallback callback, int32_t timeout) {
-  JSRuntime* rt = ScriptState::runtime();
   auto* context = timer->context();
+  JSRuntime* rt = context->dartContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
   th->timeout = get_time_ms() + timeout;
@@ -132,8 +132,8 @@ int32_t TEST_setInterval(webf::DOMTimer* timer, int32_t contextId, AsyncCallback
 int32_t callbackId = 0;
 
 uint32_t TEST_requestAnimationFrame(webf::FrameCallback* frameCallback, int32_t contextId, AsyncRAFCallback handler) {
-  JSRuntime* rt = ScriptState::runtime();
   auto* context = frameCallback->context();
+  JSRuntime* rt = context->dartContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSFrameCallback* th = static_cast<JSFrameCallback*>(js_mallocz(context->ctx(), sizeof(*th)));
   th->handler = handler;
@@ -151,14 +151,14 @@ uint32_t TEST_requestAnimationFrame(webf::FrameCallback* frameCallback, int32_t 
 void TEST_cancelAnimationFrame(int32_t contextId, int32_t id) {
   auto* page = test_context_map[contextId]->page();
   auto* context = page->GetExecutingContext();
-  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(ScriptState::runtime()));
+  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartContext()->runtime()));
   ts->os_frameCallbacks.erase(id);
 }
 
 void TEST_clearTimeout(int32_t contextId, int32_t timerId) {
   auto* page = test_context_map[contextId]->page();
   auto* context = page->GetExecutingContext();
-  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(ScriptState::runtime()));
+  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartContext()->runtime()));
   ts->os_timers.erase(timerId);
 }
 
@@ -212,7 +212,7 @@ std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
   JSThreadState* th = new JSThreadState();
-  JS_SetRuntimeOpaque(ScriptState::runtime(), th);
+  JS_SetRuntimeOpaque(reinterpret_cast<WebFTestContext*>(testContext)->page()->GetExecutingContext()->dartContext()->runtime(), th);
 
   return std::unique_ptr<webf::WebFPage>(reinterpret_cast<webf::WebFPage*>(page));
 }
@@ -232,7 +232,7 @@ std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
 }
 
 static bool jsPool(webf::ExecutingContext* context) {
-  JSRuntime* rt = ScriptState::runtime();
+  JSRuntime* rt = context->dartContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   int64_t cur_time, delay;
   struct list_head* el;

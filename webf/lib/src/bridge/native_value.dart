@@ -36,9 +36,6 @@ enum JSValueType {
 
 enum JSPointerType { AsyncFunctionContext, NativeFunctionContext, Others }
 
-typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);
-typedef AsyncAnonymousNativeFunction = Future<dynamic> Function(List<dynamic> args);
-
 dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
   if (nativeValue == nullptr) return null;
 
@@ -100,18 +97,6 @@ void _initNativeToValueMap() {
   _nativeToValueMap[String] = (target, {ownerBindingObject, value}) {
     target.ref.tag = JSValueType.TAG_STRING.index;
     target.ref.u = stringToNativeString(value).address;
-  };
-  _nativeToValueMap[AsyncAnonymousNativeFunction] = (target, {ownerBindingObject, value}) {
-    if (ownerBindingObject == null) return;
-    int id = ownerBindingObject.setAsyncAnonymousNativeFunction(value);
-    target.ref.tag = JSValueType.TAG_ASYNC_FUNCTION.index;
-    target.ref.u = id;
-  };
-  _nativeToValueMap[AnonymousNativeFunction] = (target, {ownerBindingObject, value}) {
-    if (ownerBindingObject == null) return;
-    int id = ownerBindingObject.setAnonymousNativeFunction(value);
-    target.ref.tag = JSValueType.TAG_FUNCTION.index;
-    target.ref.u = id;
   };
 }
 

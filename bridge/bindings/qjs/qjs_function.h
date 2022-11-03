@@ -36,6 +36,7 @@ class QJSFunction {
   bool IsFunction(JSContext* ctx);
 
   JSValue ToQuickJS() { return JS_DupValue(ctx_, function_); };
+  JSValue ToQuickJSUnsafe() { return function_; }
 
   // Performs "invoke".
   // https://webidl.spec.whatwg.org/#invoke-a-callback-function

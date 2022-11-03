@@ -150,19 +150,19 @@ class ExecutingContext {
   // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer
   // release.
   UICommandBuffer ui_command_buffer_{this};
+  DartContext* dart_context_{nullptr};
   // Keep uiCommandBuffer above ScriptState to make sure we can collect all disposedEventTarget command when free
   // JSContext. When call JSFreeContext(ctx) inside ScriptState, all eventTargets will be finalized and UICommandBuffer
   // will be fill up to UICommand::disposeEventTarget commands.
   // ----------------------------------------------------------------------
   // All members above ScriptState will be freed after ScriptState freed
   // ----------------------------------------------------------------------
-  ScriptState script_state_;
+  ScriptState script_state_{dart_context_};
   // ----------------------------------------------------------------------
   // All members below will be free before ScriptState freed.
   // ----------------------------------------------------------------------
   bool is_context_valid_{false};
   int32_t context_id_;
-  DartContext* dart_context_{nullptr};
   JSExceptionHandler handler_;
   void* owner_;
   JSValue global_object_{JS_NULL};

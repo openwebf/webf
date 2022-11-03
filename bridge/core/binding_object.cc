@@ -65,7 +65,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 }
 
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
-                                               int32_t argc,
+                                               size_t argc,
                                                const NativeValue* argv,
                                                ExceptionState& exception_state) const {
   context_->FlushUICommand();
@@ -100,12 +100,12 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
                                                      uint32_t argc,
                                                      const ScriptValue* argv,
                                                      void* private_data) {
-  auto id = reinterpret_cast<int64_t>(private_data);
+  auto data = std::unique_ptr<AnonymousFunctionData>(reinterpret_cast<AnonymousFunctionData*>(private_data));
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
 
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 1);
-  arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(id));
+  arguments.emplace_back(NativeValueConverter<NativeTypeString>::ToNativeValue(data->method_name));
 
   ExceptionState exception_state;
 
@@ -161,7 +161,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
                                                           uint32_t argc,
                                                           const ScriptValue* argv,
                                                           void* private_data) {
-  auto id = reinterpret_cast<int64_t>(private_data);
+  auto data = std::unique_ptr<AnonymousFunctionData>(reinterpret_cast<AnonymousFunctionData*>(private_data));
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
 
   auto promise_resolver = ScriptPromiseResolver::Create(event_target->GetExecutingContext());
@@ -173,7 +173,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   std::vector<NativeValue> arguments;
   arguments.reserve(argc + 4);
 
-  arguments.emplace_back(NativeValueConverter<NativeTypeInt64>::ToNativeValue(id));
+  arguments.emplace_back(NativeValueConverter<NativeTypeString>::ToNativeValue(data->method_name));
   arguments.emplace_back(
       NativeValueConverter<NativeTypeInt64>::ToNativeValue(event_target->GetExecutingContext()->contextId()));
   arguments.emplace_back(

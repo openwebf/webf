@@ -27,9 +27,15 @@ class DartContext {
  void RemovePage(WebFPage* page);
  const std::unique_ptr<DartContextData>& EnsureData() const;
 
+ FORCE_INLINE JSRuntime* runtime() const { return runtime_; }
  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() const { return dart_method_ptr_; }
 
+ void InitializeJSRuntime();
+ void DisposeJSRuntime();
+
  private:
+  // One dart context have one corresponding JSRuntime.
+  JSRuntime* runtime_{nullptr};
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
   mutable std::unique_ptr<DartContextData> data_;

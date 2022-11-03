@@ -28,6 +28,14 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
 }
 
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+  auto tag_name = tagName();
+  bool is_shape_defined = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name);
+
+  if (is_shape_defined) {
+    auto shape = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[tag_name];
+    return shape.built_in_properties_.count(key) > 0 || shape.built_in_methods_.count(key) > 0;
+  }
+
   NativeValue result = GetBindingProperty(key, exception_state);
   return result.tag != NativeTag::TAG_NULL;
 }
@@ -82,13 +90,26 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
       return cached_methods_[key];
     }
 
-    return cached_methods_[key] = ScriptValue(ctx(), GetBindingProperty(key, exception_state));
+    auto func = CreateSyncMethodFunc(key);
+    cached_methods_[key] = func;
+    return func;
+  }
+
+  if (shape.built_in_async_methods_.count(key) > 0) {
+    if (async_cached_methods_.count(key) > 0) {
+      return async_cached_methods_[key];
+    }
+
+    auto func = CreateAsyncMethodFunc(key);
+    async_cached_methods_[key] = CreateAsyncMethodFunc(key);
+    return func;
   }
 
   return ScriptValue::Empty(ctx());
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
+  GetExecutingContext()->FlushUICommand();
   auto tag_name = tagName();
   bool is_shape_defined = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name);
 
@@ -99,7 +120,7 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
 
   auto shape = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[tag_name];
 
-  if (shape.built_in_methods_.count(key) > 0) {
+  if (shape.built_in_properties_.count(key) > 0) {
     NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
@@ -118,6 +139,10 @@ void WidgetElement::Trace(GCVisitor* visitor) const {
   }
 
   for (auto& entry : cached_methods_) {
+    entry.second.Trace(visitor);
+  }
+
+  for(auto& entry : async_cached_methods_) {
     entry.second.Trace(visitor);
   }
 }
@@ -154,6 +179,19 @@ NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, 
   GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[key] = shape;
 
   return Native_NewBool(true);
+}
+
+ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
+  auto* data = new BindingObject::AnonymousFunctionData();
+  data->method_name = method_name;
+  return ScriptValue(ctx(),
+                     QJSFunction::Create(ctx(), BindingObject::AnonymousFunctionCallback, 1, data)->ToQuickJSUnsafe());
+}
+
+ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
+  auto* data = new BindingObject::AnonymousFunctionData();
+  data->method_name = method_name;
+  return ScriptValue(ctx(), QJSFunction::Create(ctx(), BindingObject::AnonymousAsyncFunctionCallback, 4, data)->ToQuickJSUnsafe());
 }
 
 }  // namespace webf
