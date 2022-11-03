@@ -26,9 +26,9 @@ class Window extends EventTarget {
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     methods['scroll'] = methods['scrollTo'] =
-        BindingObjectMethod(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['scrollBy'] = BindingObjectMethod(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['open'] = BindingObjectMethod(call: (args) => open(castToType<String>(args[0])));
+        BindingObjectMethodSync(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['scrollBy'] = BindingObjectMethodSync(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['open'] = BindingObjectMethodSync(call: (args) => open(castToType<String>(args[0])));
   }
 
   @override

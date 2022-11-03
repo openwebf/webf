@@ -58,7 +58,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['arc'] = BindingObjectMethod(
+    methods['arc'] = BindingObjectMethodSync(
         call: (args) => arc(
             castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble(),
@@ -66,23 +66,23 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
             anticlockwise: (args.length > 5 && args[5] == 1) ? true : false));
-    methods['arcTo'] = BindingObjectMethod(
+    methods['arcTo'] = BindingObjectMethodSync(
         call: (args) => arcTo(
             castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble()));
-    methods['fillRect'] = BindingObjectMethod(
+    methods['fillRect'] = BindingObjectMethodSync(
         call: (args) => fillRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
-    methods['clearRect'] = BindingObjectMethod(
+    methods['clearRect'] = BindingObjectMethodSync(
         call: (args) => clearRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
-    methods['strokeRect'] = BindingObjectMethod(
+    methods['strokeRect'] = BindingObjectMethodSync(
         call: (args) => strokeRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
-    methods['fillText'] = BindingObjectMethod(call: (args) {
+    methods['fillText'] = BindingObjectMethodSync(call: (args) {
       if (args.length > 3) {
         double maxWidth = castToType<num>(args[3]).toDouble();
         if (!maxWidth.isNaN) {
@@ -97,7 +97,7 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
       }
     });
-    methods['strokeText'] = BindingObjectMethod(call: (args) {
+    methods['strokeText'] = BindingObjectMethodSync(call: (args) {
       if (args.length > 3) {
         double maxWidth = castToType<num>(args[3]).toDouble();
         if (!maxWidth.isNaN) {
@@ -112,10 +112,10 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
       }
     });
-    methods['save'] = BindingObjectMethod(call: (_) => save());
-    methods['restore'] = BindingObjectMethod(call: (_) => restore());
-    methods['beginPath'] = BindingObjectMethod(call: (_) => beginPath());
-    methods['bezierCurveTo'] = BindingObjectMethod(
+    methods['save'] = BindingObjectMethodSync(call: (_) => save());
+    methods['restore'] = BindingObjectMethodSync(call: (_) => restore());
+    methods['beginPath'] = BindingObjectMethodSync(call: (_) => beginPath());
+    methods['bezierCurveTo'] = BindingObjectMethodSync(
         call: (args) => bezierCurveTo(
             castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble(),
@@ -123,13 +123,13 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble()));
-    methods['clip'] = BindingObjectMethod(call: (args) {
+    methods['clip'] = BindingObjectMethodSync(call: (args) {
       PathFillType fillType =
           (args.isNotEmpty && castToType<String>(args[0]) == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
       return clip(fillType);
     });
-    methods['closePath'] = BindingObjectMethod(call: (_) => closePath());
-    methods['drawImage'] = BindingObjectMethod(call: (args) {
+    methods['closePath'] = BindingObjectMethodSync(call: (_) => closePath());
+    methods['drawImage'] = BindingObjectMethodSync(call: (args) {
       BindingObject imageElement = BindingBridge.getBindingObject(args[0]);
       if (imageElement is ImageElement) {
         double sx = 0.0, sy = 0.0, sWidth = 0.0, sHeight = 0.0, dx = 0.0, dy = 0.0, dWidth = 0.0, dHeight = 0.0;
@@ -156,26 +156,26 @@ class CanvasRenderingContext2D extends BindingObject {
         return drawImage(args.length, imageElement.image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
       }
     });
-    methods['fill'] = BindingObjectMethod(call: (args) {
+    methods['fill'] = BindingObjectMethodSync(call: (args) {
       PathFillType fillType = (args.isNotEmpty && args[0] == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
       return fill(fillType);
     });
-    methods['lineTo'] = BindingObjectMethod(
+    methods['lineTo'] = BindingObjectMethodSync(
         call: (args) => lineTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
-    methods['moveTo'] = BindingObjectMethod(
+    methods['moveTo'] = BindingObjectMethodSync(
         call: (args) => moveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
-    methods['quadraticCurveTo'] = BindingObjectMethod(
+    methods['quadraticCurveTo'] = BindingObjectMethodSync(
         call: (args) => quadraticCurveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
-    methods['rect'] = BindingObjectMethod(
+    methods['rect'] = BindingObjectMethodSync(
         call: (args) => rect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
-    methods['rotate'] = BindingObjectMethod(call: (args) => rotate(castToType<num>(args[0]).toDouble()));
-    methods['resetTransform'] = BindingObjectMethod(call: (_) => resetTransform());
-    methods['scale'] = BindingObjectMethod(
+    methods['rotate'] = BindingObjectMethodSync(call: (args) => rotate(castToType<num>(args[0]).toDouble()));
+    methods['resetTransform'] = BindingObjectMethodSync(call: (_) => resetTransform());
+    methods['scale'] = BindingObjectMethodSync(
         call: (args) => scale(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
-    methods['stroke'] = BindingObjectMethod(call: (args) => stroke());
-    methods['setTransform'] = BindingObjectMethod(
+    methods['stroke'] = BindingObjectMethodSync(call: (args) => stroke());
+    methods['setTransform'] = BindingObjectMethodSync(
         call: (args) => setTransform(
             castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble(),
@@ -183,16 +183,16 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble()));
-    methods['transform'] = BindingObjectMethod(call: (args) => transform(
+    methods['transform'] = BindingObjectMethodSync(call: (args) => transform(
         castToType<num>(args[0]).toDouble(),
         castToType<num>(args[1]).toDouble(),
         castToType<num>(args[2]).toDouble(),
         castToType<num>(args[3]).toDouble(),
         castToType<num>(args[4]).toDouble(),
         castToType<num>(args[5]).toDouble()));
-    methods['translate'] = BindingObjectMethod(
+    methods['translate'] = BindingObjectMethodSync(
         call: (args) => translate(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
-    methods['reset'] = BindingObjectMethod(call: (_) => reset());
+    methods['reset'] = BindingObjectMethodSync(call: (_) => reset());
   }
 
   @override

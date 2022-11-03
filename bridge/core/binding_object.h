@@ -66,7 +66,7 @@ struct BindingObjectPromiseContext : public DartReadable {
 class BindingObject {
  public:
   struct AnonymousFunctionData {
-    AtomicString method_name;
+    std::string method_name;
   };
 
   // This function were called when the anonymous function returned to the JS code has been called by users.

@@ -35,6 +35,7 @@ List<BindingCallFunc> bindingCallMethodDispatchTable = [
   setterBindingCall,
   getPropertyNamesBindingCall,
   invokeBindingMethodSync,
+  invokeBindingMethodAsync
 ];
 
 // Dispatch the event to the binding side.

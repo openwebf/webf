@@ -146,12 +146,12 @@ class Document extends Node {
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['querySelectorAll'] = BindingObjectMethod(call: (args) => querySelectorAll(args));
-    methods['querySelector'] = BindingObjectMethod(call: (args) => querySelector(args));
-    methods['getElementById'] = BindingObjectMethod(call: (args) => getElementById(args));
-    methods['getElementsByClassName'] = BindingObjectMethod(call: (args) => getElementsByClassName(args));
-    methods['getElementsByTagName'] = BindingObjectMethod(call: (args) => getElementsByTagName(args));
-    methods['getElementsByName'] = BindingObjectMethod(call: (args) => getElementsByName(args));
+    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
+    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
+    methods['getElementById'] = BindingObjectMethodSync(call: (args) => getElementById(args));
+    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
+    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
+    methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
   }
 
   dynamic querySelector(List<dynamic> args) {

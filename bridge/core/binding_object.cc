@@ -100,7 +100,7 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
                                                      uint32_t argc,
                                                      const ScriptValue* argv,
                                                      void* private_data) {
-  auto data = std::unique_ptr<AnonymousFunctionData>(reinterpret_cast<AnonymousFunctionData*>(private_data));
+  auto* data = reinterpret_cast<AnonymousFunctionData*>(private_data);
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
 
   std::vector<NativeValue> arguments;
@@ -161,7 +161,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
                                                           uint32_t argc,
                                                           const ScriptValue* argv,
                                                           void* private_data) {
-  auto data = std::unique_ptr<AnonymousFunctionData>(reinterpret_cast<AnonymousFunctionData*>(private_data));
+  auto* data = reinterpret_cast<AnonymousFunctionData*>(private_data);
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
 
   auto promise_resolver = ScriptPromiseResolver::Create(event_target->GetExecutingContext());

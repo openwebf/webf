@@ -65,16 +65,9 @@ NativeValue WidgetElement::HandleCallFromDartSide(const NativeValue* native_meth
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
+  GetExecutingContext()->FlushUICommand();
   auto tag_name = tagName();
-  bool is_shape_defined = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name);
-
-  if (!is_shape_defined) {
-    if (unimplemented_properties_.count(key) > 0) {
-      return unimplemented_properties_[key];
-    }
-
-    return ScriptValue::Empty(ctx());
-  }
+  assert(GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name) > 0);
 
   if (key == built_in_string::kSymbol_toStringTag) {
     return ScriptValue(ctx(), tagName().ToNativeString().release());
@@ -105,19 +98,17 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return func;
   }
 
+  if (unimplemented_properties_.count(key) > 0) {
+    return unimplemented_properties_[key];
+  }
+
   return ScriptValue::Empty(ctx());
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
   GetExecutingContext()->FlushUICommand();
   auto tag_name = tagName();
-  bool is_shape_defined = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name);
-
-  if (!is_shape_defined) {
-    unimplemented_properties_[key] = value;
-    return true;
-  }
-
+  assert(GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name) > 0);
   auto shape = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[tag_name];
 
   if (shape.built_in_properties_.count(key) > 0) {
@@ -125,7 +116,8 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
 
-  return false;
+  unimplemented_properties_[key] = value;
+  return true;
 }
 
 bool WidgetElement::IsWidgetElement() const {
@@ -159,21 +151,26 @@ bool WidgetElement::IsAttributeDefinedInternal(const AtomicString& key) const {
 }
 
 NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv) {
-  assert(argc == 2);
+  assert(argc == 3);
   AtomicString key = tagName();
   assert(GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(key) == 0);
 
   auto shape = WidgetElementShape();
 
   auto&& properties = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[0]);
-  auto&& methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[1]);
+  auto&& sync_methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[1]);
+  auto&& async_methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[2]);
 
   for (auto& property : properties) {
     shape.built_in_properties_.emplace(property);
   }
 
-  for (auto& method : methods) {
+  for (auto& method : sync_methods) {
     shape.built_in_methods_.emplace(method);
+  }
+
+  for(auto& method : async_methods) {
+    shape.built_in_async_methods_.emplace(method);
   }
 
   GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[key] = shape;
@@ -183,14 +180,14 @@ NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, 
 
 ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
   auto* data = new BindingObject::AnonymousFunctionData();
-  data->method_name = method_name;
+  data->method_name = method_name.ToStdString();
   return ScriptValue(ctx(),
                      QJSFunction::Create(ctx(), BindingObject::AnonymousFunctionCallback, 1, data)->ToQuickJSUnsafe());
 }
 
 ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
   auto* data = new BindingObject::AnonymousFunctionData();
-  data->method_name = method_name;
+  data->method_name = method_name.ToStdString();
   return ScriptValue(ctx(), QJSFunction::Create(ctx(), BindingObject::AnonymousAsyncFunctionCallback, 4, data)->ToQuickJSUnsafe());
 }
 

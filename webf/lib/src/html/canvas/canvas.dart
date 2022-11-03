@@ -57,7 +57,7 @@ class CanvasElement extends Element {
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeMethods(methods);
-    methods['getContext'] = BindingObjectMethod(call: (args) => getContext(castToType<String>(args[0])));
+    methods['getContext'] = BindingObjectMethodSync(call: (args) => getContext(castToType<String>(args[0])));
   }
 
   @override

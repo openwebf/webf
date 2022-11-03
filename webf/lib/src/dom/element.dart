@@ -288,16 +288,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['getBoundingClientRect'] = BindingObjectMethod(call: (_) => getBoundingClientRect());
+    methods['getBoundingClientRect'] = BindingObjectMethodSync(call: (_) => getBoundingClientRect());
     methods['scroll'] =
-        BindingObjectMethod(call: (args) => scroll(castToType<double>(args[0]), castToType<double>(args[1])));
+        BindingObjectMethodSync(call: (args) => scroll(castToType<double>(args[0]), castToType<double>(args[1])));
     methods['scrollBy'] =
-        BindingObjectMethod(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
+        BindingObjectMethodSync(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
     methods['scrollTo'] =
-        BindingObjectMethod(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['click'] = BindingObjectMethod(call: (_) => click());
-    methods['getElementsByClassName'] = BindingObjectMethod(call: (args) => getElementsByClassName(args));
-    methods['getElementsByTagName'] = BindingObjectMethod(call: (args) => getElementsByTagName(args));
+        BindingObjectMethodSync(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['click'] = BindingObjectMethodSync(call: (_) => click());
+    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
+    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {

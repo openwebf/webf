@@ -18,10 +18,10 @@ class SampleElement extends WidgetElement {
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeMethods(methods);
-    methods['fn'] = BindingObjectMethod(call: fn);
-    methods['asyncFn'] = BindingObjectMethod(asyncCall: asyncFn);
-    methods['asyncFnFailed'] = BindingObjectMethod(asyncCall: asyncFnFailed);
-    methods['asyncFnNotComplete'] = BindingObjectMethod(asyncCall: asyncFnNotComplete);
+    methods['fn'] = BindingObjectMethodSync(call: fn);
+    methods['asyncFn'] = AsyncBindingObjectMethod(call: asyncFn);
+    methods['asyncFnFailed'] = AsyncBindingObjectMethod(call: asyncFnFailed);
+    methods['asyncFnNotComplete'] = AsyncBindingObjectMethod(call: asyncFnNotComplete);
   }
 
   String get ping => 'pong';
