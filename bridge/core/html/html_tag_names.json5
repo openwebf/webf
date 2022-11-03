@@ -46,6 +46,10 @@
       "interfaceName": "HTMLTextareaElement",
       "interfaceHeaderDir": "core/html/forms"
     },
+    {
+      "name": "form",
+      "interfaceHeaderDir": "core/html/forms"
+    },
     "template",
     {
       "name": "img",

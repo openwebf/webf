@@ -5,17 +5,15 @@
 #ifndef BRIDGE_CORE_HTML_FORMS_HTML_TEXTAREA_ELEMENT_H_
 #define BRIDGE_CORE_HTML_FORMS_HTML_TEXTAREA_ELEMENT_H_
 
-#include "core/html/html_element.h"
+#include "core/html/custom/widget_element.h"
 
 namespace webf {
 
-class HTMLTextareaElement : public HTMLElement {
+class HTMLTextareaElement : public WidgetElement {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
   explicit HTMLTextareaElement(Document&);
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 };
 
 }  // namespace webf
