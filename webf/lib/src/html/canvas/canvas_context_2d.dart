@@ -183,6 +183,13 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble()));
+    methods['transform'] = BindingObjectMethod(call: (args) => transform(
+        castToType<num>(args[0]).toDouble(),
+        castToType<num>(args[1]).toDouble(),
+        castToType<num>(args[2]).toDouble(),
+        castToType<num>(args[3]).toDouble(),
+        castToType<num>(args[4]).toDouble(),
+        castToType<num>(args[5]).toDouble()));
     methods['translate'] = BindingObjectMethod(
         call: (args) => translate(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
     methods['reset'] = BindingObjectMethod(call: (_) => reset());
