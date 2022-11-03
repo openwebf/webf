@@ -1002,6 +1002,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
+    if (value.startsWith(';')) value = value.substring(1);
+    if (HIDDEN == qualifiedName) {
+      qualifiedName = _STYLE_PROPERTY;
+      value = '$DISPLAY:$NONE;';
+    }
     internalSetAttribute(qualifiedName, value);
     if (_STYLE_PROPERTY == qualifiedName) {
       final map = CSSParser(value).parseInlineStyle();
