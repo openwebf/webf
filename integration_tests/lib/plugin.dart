@@ -87,8 +87,7 @@ void main() async {
     String code = spec.readAsStringSync();
     evaluateTestScripts(contextId, code, url: 'assets://plugin.js');
     String result = await executeTest(testContext, contextId);
-    // Manual dispose context for memory leak check.
-    disposePage(webF.controller!.view.contextId);
+    webF.controller!.dispose();
     exit(result == 'failed' ? 1 : 0);
   });
 }

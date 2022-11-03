@@ -187,7 +187,9 @@ class NetworkBundle extends WebFBundle {
       WebFHttpOverrides.setContextHeader(request.headers, contextId);
     }
 
+    print('send re');
     final HttpClientResponse response = await request.close();
+    print(response);
     if (response.statusCode != HttpStatus.ok)
       throw FlutterError.fromParts(<DiagnosticsNode>[
         ErrorSummary('Unable to load asset: $url'),
