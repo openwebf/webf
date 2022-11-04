@@ -86,6 +86,7 @@ class Element : public ContainerNode {
  protected:
   const ElementData* GetElementData() const { return element_data_.get(); }
   ElementData& EnsureElementData() const;
+  AtomicString tag_name_ = AtomicString::Empty();
 
  private:
   // Clone is private so that non-virtual CloneElementWithChildren and
@@ -103,7 +104,6 @@ class Element : public ContainerNode {
   mutable std::unique_ptr<ElementData> element_data_;
   Member<ElementAttributes> attributes_;
   Member<CSSStyleDeclaration> cssom_wrapper_;
-  AtomicString tag_name_ = AtomicString::Empty();
 };
 
 template <typename T>

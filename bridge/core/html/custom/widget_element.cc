@@ -28,16 +28,7 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
 }
 
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  auto tag_name = tagName();
-  bool is_shape_defined = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name);
-
-  if (is_shape_defined) {
-    auto shape = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[tag_name];
-    return shape.built_in_properties_.count(key) > 0 || shape.built_in_methods_.count(key) > 0;
-  }
-
-  NativeValue result = GetBindingProperty(key, exception_state);
-  return result.tag != NativeTag::TAG_NULL;
+  return GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(key);
 }
 
 void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
@@ -65,20 +56,21 @@ NativeValue WidgetElement::HandleCallFromDartSide(const NativeValue* native_meth
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
-  auto tag_name = tagName();
-  assert(GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name) > 0);
+  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
+    GetExecutingContext()->FlushUICommand();
+    assert(GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_));
+  }
 
   if (key == built_in_string::kSymbol_toStringTag) {
     return ScriptValue(ctx(), tagName().ToNativeString().release());
   }
 
-  auto shape = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[tag_name];
-  if (shape.built_in_properties_.count(key) > 0) {
+  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
+  if (shape->built_in_properties_.count(key) > 0) {
     return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
   }
 
-  if (shape.built_in_methods_.count(key) > 0) {
+  if (shape->built_in_methods_.count(key) > 0) {
     if (cached_methods_.count(key) > 0) {
       return cached_methods_[key];
     }
@@ -88,7 +80,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return func;
   }
 
-  if (shape.built_in_async_methods_.count(key) > 0) {
+  if (shape->built_in_async_methods_.count(key) > 0) {
     if (async_cached_methods_.count(key) > 0) {
       return async_cached_methods_[key];
     }
@@ -106,12 +98,13 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
-  auto tag_name = tagName();
-  assert(GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(tag_name) > 0);
-  auto shape = GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[tag_name];
+  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
+    GetExecutingContext()->FlushUICommand();
+    assert(GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_));
+  }
+  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
 
-  if (shape.built_in_properties_.count(key) > 0) {
+  if (shape->built_in_properties_.count(key) > 0) {
     NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
@@ -152,28 +145,28 @@ bool WidgetElement::IsAttributeDefinedInternal(const AtomicString& key) const {
 
 NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv) {
   assert(argc == 3);
-  AtomicString key = tagName();
-  assert(GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes().count(key) == 0);
+  AtomicString key = tag_name_;
+  assert(!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(key));
 
-  auto shape = WidgetElementShape();
+  auto shape = std::make_shared<WidgetElementShape>();
 
   auto&& properties = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[0]);
   auto&& sync_methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[1]);
   auto&& async_methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[2]);
 
   for (auto& property : properties) {
-    shape.built_in_properties_.emplace(property);
+    shape->built_in_properties_.emplace(property);
   }
 
   for (auto& method : sync_methods) {
-    shape.built_in_methods_.emplace(method);
+    shape->built_in_methods_.emplace(method);
   }
 
   for (auto& method : async_methods) {
-    shape.built_in_async_methods_.emplace(method);
+    shape->built_in_async_methods_.emplace(method);
   }
 
-  GetExecutingContext()->dartContext()->EnsureData()->widgetElementShapes()[key] = shape;
+  GetExecutingContext()->dartContext()->EnsureData()->SetWidgetElementShape(key, shape);
 
   return Native_NewBool(true);
 }

@@ -19,16 +19,16 @@ struct WidgetElementShape {
 
 class DartContextData {
  public:
-  std::unordered_map<AtomicString, WidgetElementShape, AtomicString::KeyHasher>& widgetElementShapes() {
-    return widget_element_shapes_;
-  }
+  const WidgetElementShape* GetWidgetElementShape(const AtomicString& key);
+  bool HasWidgetElementShape(const AtomicString& key);
+  void SetWidgetElementShape(const AtomicString& key, const std::shared_ptr<WidgetElementShape>& shape);
 
  private:
   // WidgetElements' properties and methods are defined in the dart Side.
   // When a new kind of WidgetElement first created, Dart code will sync properties and methods to C++ code to generate
   // prop getter and setter and functions for JS code. This map store the properties and methods of WidgetElement which
   // already created.
-  std::unordered_map<AtomicString, WidgetElementShape, AtomicString::KeyHasher> widget_element_shapes_;
+  std::unordered_map<AtomicString, std::shared_ptr<WidgetElementShape>, AtomicString::KeyHasher> widget_element_shapes_;
 };
 
 }  // namespace webf
