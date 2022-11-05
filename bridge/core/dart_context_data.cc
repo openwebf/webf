@@ -18,4 +18,4 @@ void DartContextData::SetWidgetElementShape(const AtomicString& key, const std::
   widget_element_shapes_[key] = shape;
 }
 
-}
+}  // namespace webf

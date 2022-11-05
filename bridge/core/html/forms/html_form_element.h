@@ -1,7 +1,7 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 #ifndef BRIDGE_CORE_HTML_FORMS_HTML_FORM_ELEMENT_H_
 #define BRIDGE_CORE_HTML_FORMS_HTML_FORM_ELEMENT_H_
 
@@ -10,10 +10,10 @@
 namespace webf {
 
 class HTMLFormElement : public WidgetElement {
- DEFINE_WRAPPERTYPEINFO();
+  DEFINE_WRAPPERTYPEINFO();
 
-public:
- explicit HTMLFormElement(Document&);
+ public:
+  explicit HTMLFormElement(Document&);
 };
 
 }  // namespace webf
