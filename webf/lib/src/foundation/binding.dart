@@ -70,13 +70,16 @@ abstract class BindingObject {
     initializeMethods(_methods);
 
     if (this is WidgetElement && !_alreadySyncWidgetElements.containsKey(runtimeType)) {
-      _alreadySyncWidgetElements[runtimeType] = true;
-      _syncPropertiesAndMethodsToNativeSlow();
+      bool success = _syncPropertiesAndMethodsToNativeSlow();
+      if (success) {
+        _alreadySyncWidgetElements[runtimeType] = true;
+      }
     }
   }
 
-  void _syncPropertiesAndMethodsToNativeSlow() {
+  bool _syncPropertiesAndMethodsToNativeSlow() {
     assert(pointer != null);
+    if (pointer!.ref.invokeBindingMethodFromDart == nullptr) return false;
 
     List<String> properties = _properties.keys.toList(growable: false);
     List<String> syncMethods = [];
@@ -101,8 +104,7 @@ abstract class BindingObject {
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
     toNativeValue(method, 'syncPropertiesAndMethods');
     f(pointer!, returnValue, method, 3, arguments);
-    bool result = fromNativeValue(returnValue);
-    assert(result == true);
+    return fromNativeValue(returnValue) == true;
   }
 
   final Map<String, BindingObjectProperty> _properties = {};
