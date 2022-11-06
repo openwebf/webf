@@ -282,7 +282,7 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    await snapshot(0.5);
   });
 
   it('should works with percentage value and background-repeat of repeat', async () => {
@@ -306,7 +306,7 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    await snapshot(0.3);
   });
 
   it('should works with the height of background size bigger than the height of image container', async () => {
@@ -330,7 +330,7 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    await snapshot(0.3);
   });
 
   it('should works with the width of background size bigger than the width of image container', async () => {
@@ -354,7 +354,7 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    await snapshot(0.3);
   });
 
   it('should works with background size bigger than image container', async () => {
@@ -378,7 +378,7 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    await snapshot(0.3);
   });
   
   it('should not work with negative value', async () => {
@@ -402,7 +402,7 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    await snapshot(0.3);
   });
 
   it('should works with background-size value change', async (done) => {
@@ -427,7 +427,7 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    await snapshot(0.3);
 
     requestAnimationFrame(async () => {
       div1.style.backgroundSize = '80px';
