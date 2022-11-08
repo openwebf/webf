@@ -2,10 +2,13 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:core';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:flutter/painting.dart';
 import 'package:meta/meta.dart';
+import 'package:webf/css.dart';
 
 enum ImageSmoothingQuality { low, medium, high }
 
@@ -116,13 +119,49 @@ abstract class CanvasImageData {
 }
 
 // ignore: one_member_abstracts
-abstract class CanvasGradient {
+class CanvasGradient {
+  List<Color> colors = [];
+  List<double> stops = [];
+
   // opaque object
-  void addColorStop(double offset, String color);
+  void addColorStop(double offset, String color) {
+    Color? c = CSSColor.parseColor(color);
+    if (c != null) {
+      colors.add(c);
+      stops.add(offset);
+    }
+  }
 }
 
 // ignore: one_member_abstracts
-abstract class CanvasPattern {
+class CanvasPattern {
+  CanvasImageSource image;
+  String repetition;
+
+  CanvasPattern(this.image, this.repetition);
+
   // opaque object
-  void setTransform(String transform);
+  void setTransform(String transform) {
+
+  }
+}
+
+class CanvasLinearGradient extends CanvasGradient {
+  double x0;
+  double y0;
+  double x1;
+  double y1;
+
+  CanvasLinearGradient(this.x0, this.y0, this.x1, this.y1);
+}
+
+class CanvasRadialGradient extends CanvasGradient {
+  double x0;
+  double y0;
+  double r0;
+  double x1;
+  double y1;
+  double r1;
+
+  CanvasRadialGradient(this.x0, this.y0, this.r0, this.x1, this.y1, this.r1);
 }
