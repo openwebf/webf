@@ -12,6 +12,7 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/geometry.dart';
 import 'package:webf/foundation.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
@@ -69,15 +70,14 @@ List<BindingCallFunc> bindingCallMethodDispatchTable = [
 // This function receive calling from binding side.
 void _invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
-  dynamic method = fromNativeValue(nativeMethod);
-  List<dynamic> values = List.generate(argc, (i) {
-    Pointer<NativeValue> nativeValue = argv.elementAt(i);
-    return fromNativeValue(nativeValue);
-  });
-
-  BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
   var result = null;
+  BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
   try {
+    dynamic method = fromNativeValue(nativeMethod);
+    List<dynamic> values = List.generate(argc, (i) {
+      Pointer<NativeValue> nativeValue = argv.elementAt(i);
+      return fromNativeValue(nativeValue);
+    });
     // Method is binding call method operations from internal.
     if (method is int) {
       // Get and setter ops
@@ -189,6 +189,10 @@ void _dispatchEventToNative(Event event) {
   }
 }
 
+enum CreateBindingObjectType {
+  createDOMMatrix
+}
+
 abstract class BindingBridge {
   static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNative =
       Pointer.fromFunction(_invokeBindingMethodFromNativeImpl);
@@ -204,6 +208,19 @@ abstract class BindingBridge {
       throw FlutterError('Can not get binding object: $pointer');
     }
     return target;
+  }
+
+  static void createBindingObject(int contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
+    List<dynamic> arguments = List.generate(argc, (index) {
+      return fromNativeValue(args.elementAt(index));
+    });
+    switch(type) {
+      case CreateBindingObjectType.createDOMMatrix: {
+        DOMMatrix domMatrix = DOMMatrix(BindingContext(contextId, pointer), arguments);
+        _nativeObjects[pointer.address] = domMatrix;
+        return;
+      }
+    }
   }
 
   static void _bindObject(BindingObject object) {

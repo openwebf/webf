@@ -40,6 +40,11 @@ class CanvasRenderingContext2DSettings {
   bool desynchronized = false;
 }
 
+enum FillStyleType {
+  string,
+  canvasGradient
+}
+
 typedef CanvasAction = void Function(Canvas, Size);
 
 class CanvasRenderingContext2D extends BindingObject {
@@ -131,7 +136,7 @@ class CanvasRenderingContext2D extends BindingObject {
       case 'closePath':
         return closePath();
       case 'drawImage':
-        BindingObject imageElement = BindingBridge.getBindingObject(args[0]);
+        BindingObject imageElement = args[0];
         if (imageElement is ImageElement) {
           double sx = 0.0, sy = 0.0, sWidth = 0.0, sHeight = 0.0, dx = 0.0, dy = 0.0, dWidth = 0.0, dHeight = 0.0;
 
@@ -208,6 +213,13 @@ class CanvasRenderingContext2D extends BindingObject {
         return translate(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
       case 'reset':
         return reset();
+      case 'createLinearGradient':
+        return createLinearGradient(args[0], args[1], args[2], args[3]);
+      case 'createRadialGradient':
+        return createRadialGradient(args[0], args[1], args[2], args[3], args[4], args[5]);
+      case 'createPattern':
+        BindingObject dynamicSource = args[0];
+        return createPattern(CanvasImageSource(dynamicSource), args[1]);
       default:
         return super.invokeBindingMethod(method, args);
     }
@@ -217,8 +229,13 @@ class CanvasRenderingContext2D extends BindingObject {
   void setBindingProperty(String key, value) {
     switch (key) {
       case 'fillStyle':
-        Color? color = CSSColor.parseColor(castToType<String>(value));
-        if (color != null) fillStyle = color;
+        if (value is String) {
+          Color? color = CSSColor.parseColor(castToType<String>(value));
+          if (color != null) fillStyle = color;
+        } else if (value is CanvasGradient) {
+          print('value is canvasGraident: $value');
+        }
+
         break;
       case 'direction':
         direction = parseDirection(castToType<String>(value));
@@ -227,8 +244,13 @@ class CanvasRenderingContext2D extends BindingObject {
         font = castToType<String>(value);
         break;
       case 'strokeStyle':
-        Color? color = CSSColor.parseColor(castToType<String>(value));
-        if (color != null) strokeStyle = color;
+        if (value is String) {
+          Color? color = CSSColor.parseColor(castToType<String>(value));
+          if (color != null) strokeStyle = color;
+        } else if (value is CanvasGradient) {
+          print('value is canvasGradient: $value');
+        }
+
         break;
       case 'lineCap':
         lineCap = parseLineCap(castToType<String>(value));
@@ -260,14 +282,10 @@ class CanvasRenderingContext2D extends BindingObject {
   @override
   getBindingProperty(String key) {
     switch (key) {
-      case 'fillStyle':
-        return CSSColor.convertToHex(fillStyle);
       case 'direction':
         return _textDirectionInString;
       case 'font':
         return font;
-      case 'strokeStyle':
-        return CSSColor.convertToHex(strokeStyle);
       case 'lineCap':
         return lineCap;
       case 'lineDashOffset':
@@ -299,6 +317,7 @@ class CanvasRenderingContext2D extends BindingObject {
   CanvasRenderingContext2DSettings getContextAttributes() => _settings;
 
   CanvasElement canvas;
+
   // HACK: We need record the current matrix state because flutter canvas not export resetTransform now.
   // https://github.com/flutter/engine/pull/25449
   Matrix4 _matrix = Matrix4.identity();
@@ -391,6 +410,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   CanvasTextBaseline get textBaseline => _textBaseline;
+
   static TextDirection? parseDirection(String value) {
     switch (value) {
       case LTR:
@@ -413,6 +433,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   TextDirection get direction => _direction;
+
   String get _textDirectionInString {
     switch (_direction) {
       case TextDirection.ltr:
@@ -424,6 +445,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   Map<String, String?> _fontProperties = {};
   double? _fontSize;
+
   bool _parseFont(String newValue) {
     Map<String, String?> properties = {};
     CSSStyleProperty.setShorthandFont(properties, newValue);
@@ -459,6 +481,7 @@ class CanvasRenderingContext2D extends BindingObject {
   String get font => _font;
 
   final List _states = [];
+
   // push state on state stack
   void restore() {
     addAction((Canvas canvas, Size size) {
@@ -646,6 +669,7 @@ class CanvasRenderingContext2D extends BindingObject {
   StrokeCap get lineCap => _lineCap;
 
   double _lineDashOffset = 0.0;
+
   set lineDashOffset(double? value) {
     if (value == null) return;
     addAction((Canvas canvas, Size size) {
@@ -670,6 +694,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   // The lineJoin can effect the stroke(), strokeRect(), and strokeText() methods.
   StrokeJoin _lineJoin = StrokeJoin.miter;
+
   set lineJoin(StrokeJoin? value) {
     if (value == null) return;
     addAction((Canvas canvas, Size size) {
@@ -792,10 +817,10 @@ class CanvasRenderingContext2D extends BindingObject {
       _strokeStyle = newValue;
     });
   }
-
   Color get strokeStyle => _strokeStyle;
 
   Color _fillStyle = CSSColor.initial; // default black
+  Color get fillStyle => _fillStyle;
   set fillStyle(Color? newValue) {
     if (newValue == null) return;
     addAction((Canvas canvas, Size size) {
@@ -803,21 +828,20 @@ class CanvasRenderingContext2D extends BindingObject {
     });
   }
 
-  Color get fillStyle => _fillStyle;
-
   CanvasGradient createLinearGradient(double x0, double y0, double x1, double y1) {
-    // TODO: implement createLinearGradient
-    throw UnimplementedError();
+    print('create createLinearGradient $x0 $y0 $x1 $y1');
+    return CanvasGradient();
   }
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
     // TODO: implement createPattern
-    throw UnimplementedError();
+    return CanvasPattern(image, repetition);
   }
 
   CanvasGradient createRadialGradient(double x0, double y0, double r0, double x1, double y1, double r1) {
     // TODO: implement createRadialGradient
-    throw UnimplementedError();
+    print('create createLinearGradient $x0 $y0 $r0 $x1 $y1 $r1');
+    return CanvasGradient();
   }
 
   void clearRect(double x, double y, double w, double h) {

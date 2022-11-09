@@ -61,7 +61,7 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
     case JSValueType.TAG_FLOAT64:
       return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:
-      return Pointer.fromAddress(nativeValue.ref.u);
+      return BindingBridge.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
     case JSValueType.TAG_LIST:
       return List.generate(nativeValue.ref.uint32, (index) {
         Pointer<NativeValue> head = Pointer.fromAddress(nativeValue.ref.u).cast<NativeValue>();

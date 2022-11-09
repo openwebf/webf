@@ -183,6 +183,10 @@ void TEST_flushUICommand(int32_t contextId) {
   clearUICommandItems(contextId);
 }
 
+void TEST_CreateBindingObject(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc) {
+
+}
+
 void TEST_onJsLog(int32_t contextId, int32_t level, const char*) {}
 
 #if ENABLE_PROFILE
@@ -314,6 +318,7 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
       reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
       reinterpret_cast<uint64_t>(TEST_toBlob),
       reinterpret_cast<uint64_t>(TEST_flushUICommand),
+      reinterpret_cast<uint64_t>(TEST_CreateBindingObject)
   };
 
 #if ENABLE_PROFILE

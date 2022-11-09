@@ -152,6 +152,10 @@
     "id",
     "className",
     "cookie",
-    "class"
+    "class",
+    "addColorStop",
+    "createLinearGradient",
+    "createRadialGradient",
+    "createPattern"
   ]
 }
