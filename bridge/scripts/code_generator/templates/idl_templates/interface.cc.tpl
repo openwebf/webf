@@ -168,12 +168,11 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   ExceptionState exception_state;
+  MemberMutationScope scope{ExecutingContext::From(ctx)};
   auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }
-  MemberMutationScope scope{ExecutingContext::From(ctx)};
-
   <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
   <%= blob.filename %>->SetBindingProperty(binding_call_methods::k<%= prop.name %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(v),exception_state);
   <% } else {%>
@@ -203,11 +202,11 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   ExceptionState exception_state;
+  MemberMutationScope scope{ExecutingContext::From(ctx)};
   auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }
-  MemberMutationScope scope{ExecutingContext::From(ctx)};
 
   <%= object.name %>::set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(*<%= blob.filename %>, v, exception_state);
   if (exception_state.HasException()) {

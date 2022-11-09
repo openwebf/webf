@@ -1,4 +1,4 @@
-import {ParameterType} from "./analyzer";
+import {ParameterBaseType, ParameterType} from "./analyzer";
 
 export enum FunctionArgumentType {
   // Basic types
@@ -14,12 +14,11 @@ export enum FunctionArgumentType {
   any,
   null,
   undefined,
-  array,
 }
 
 export class FunctionArguments {
   name: string;
-  type: ParameterType[] = [];
+  type: ParameterType;
   typeMode: ParameterMode;
   required: boolean;
 }
@@ -31,7 +30,7 @@ export class ParameterMode {
 }
 
 export class PropsDeclaration {
-  type: ParameterType[] = [];
+  type: ParameterType;
   typeMode: ParameterMode;
   name: string;
   readonly: boolean;
@@ -44,7 +43,7 @@ export class IndexedPropertyDeclaration extends PropsDeclaration {
 
 export class FunctionDeclaration extends PropsDeclaration {
   args: FunctionArguments[] =  [];
-  returnType: ParameterType[] = [];
+  returnType: ParameterType;
   returnTypeMode?: ParameterMode;
 }
 
