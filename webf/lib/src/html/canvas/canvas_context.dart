@@ -2,10 +2,15 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:ffi' as ffi;
 
 import 'package:meta/meta.dart';
+import 'package:webf/geometry.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/webf.dart';
 
 enum ImageSmoothingQuality { low, medium, high }
 
@@ -76,9 +81,18 @@ abstract class CanvasImageSmoothing {
   ImageSmoothingQuality imageSmoothingQuality = ImageSmoothingQuality.low; // (default low)
 }
 
-abstract class CanvasImageSource {
-  String imageSource;
-  CanvasImageSource(this.imageSource);
+class CanvasImageSource {
+  CanvasImageSource(source) {
+    _fillCanvasImageSource(source);
+  }
+
+  void _fillCanvasImageSource(source) {
+    if (source is ImageElement) {
+      image_element = source;
+    }
+  }
+
+  ImageElement? image_element;
 }
 
 abstract class CanvasFillStrokeStyles {
@@ -116,13 +130,56 @@ abstract class CanvasImageData {
 }
 
 // ignore: one_member_abstracts
-abstract class CanvasGradient {
+class CanvasGradient extends BindingObject {
+  CanvasGradient()
+      : _pointer = allocateNewBindingObject(),
+        super();
+
+  final ffi.Pointer<NativeBindingObject> _pointer;
+
+  @override
+  get pointer => _pointer;
+
+  @override
+  invokeBindingMethod(String method, List args) {
+    switch (method) {
+      case 'addColorStop':
+        return addColorStop(castToType<num>(args[0]), castToType<String>(args[1]));
+    }
+  }
+
   // opaque object
-  void addColorStop(double offset, String color);
+  void addColorStop(num offset, String color) {
+    print('addColorStop: offset: $offset, color: $color');
+    // TODO: implement addColorStop
+  }
 }
 
 // ignore: one_member_abstracts
-abstract class CanvasPattern {
+class CanvasPattern extends BindingObject {
+  CanvasPattern(CanvasImageSource image, String repetition)
+      : _pointer = allocateNewBindingObject(),
+        super();
+
+  final ffi.Pointer<NativeBindingObject> _pointer;
+
+  @override
+  get pointer => _pointer;
+
+  @override
+  invokeBindingMethod(String method, List args) {
+    switch (method) {
+      case 'setTransform': {
+        BindingObject domMatrix = args[0];
+        if (domMatrix is DOMMatrix) {
+          return setTransform(domMatrix);
+        }
+      }
+    }
+  }
+
   // opaque object
-  void setTransform(String transform);
+  void setTransform(DOMMatrix domMatrix) {
+    print('setTransform: $domMatrix');
+  }
 }
