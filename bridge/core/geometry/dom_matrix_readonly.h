@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_CORE_GEOMETRY_DOM_MATRIX_READONLY_H_
@@ -13,16 +13,21 @@ namespace webf {
 
 class DOMMatrixReadonly : public ScriptWrappable, public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = DOMMatrixReadonly*;
-  static DOMMatrixReadonly* Create(ExecutingContext* context, const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init, ExceptionState& exception_state);
+  static DOMMatrixReadonly* Create(ExecutingContext* context,
+                                   const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
+                                   ExceptionState& exception_state);
 
   DOMMatrixReadonly() = delete;
-  explicit DOMMatrixReadonly(ExecutingContext* context, const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init, ExceptionState& exception_state);
+  explicit DOMMatrixReadonly(ExecutingContext* context,
+                             const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
+                             ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(const NativeValue *method, int32_t argc, const NativeValue *argv) override;
+  NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) override;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_GEOMETRY_DOM_MATRIX_READONLY_H_

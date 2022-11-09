@@ -8,8 +8,8 @@
 
 #include <type_traits>
 #include "atomic_string.h"
-#include "converter.h"
 #include "bindings/qjs/union_base.h"
+#include "converter.h"
 #include "core/dom/document.h"
 #include "core/dom/events/event.h"
 #include "core/dom/events/event_target.h"
@@ -426,9 +426,9 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<UnionBase, T>::val
     return T::Create(ctx, value, exception_state);
   }
   static typename T::ImplType ArgumentsValue(ExecutingContext* context,
-                           JSValue value,
-                           uint32_t argv_index,
-                           ExceptionState& exception_state) {
+                                             JSValue value,
+                                             uint32_t argv_index,
+                                             ExceptionState& exception_state) {
     assert(!JS_IsException(value));
     const WrapperTypeInfo* wrapper_type_info = Node::GetStaticWrapperTypeInfo();
     if (JS_IsInstanceOf(context->ctx(), value, context->contextData()->constructorForType(wrapper_type_info))) {
@@ -439,15 +439,18 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<UnionBase, T>::val
     return nullptr;
   }
   static JSValue ToValue(JSContext* ctx, typename T::ImplType value) {
-    if (value == nullptr) return JS_NULL;
+    if (value == nullptr)
+      return JS_NULL;
     return value->ToQuickJSValue(ctx, ASSERT_NO_EXCEPTION());
   }
 };
 
 template <typename T>
-struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<UnionBase, T>::value>>> : public ConverterBase<IDLNullable<T>> {
+struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<UnionBase, T>::value>>>
+    : public ConverterBase<IDLNullable<T>> {
   static typename T::ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
-    if (JS_IsNull(value)) return nullptr;
+    if (JS_IsNull(value))
+      return nullptr;
     assert(!JS_IsException(value));
     return T::Create(ctx, value, exception_state);
   }
@@ -456,11 +459,13 @@ struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<UnionB
                                              uint32_t argv_index,
                                              ExceptionState& exception_state) {
     assert(!JS_IsException(value));
-    if (JS_IsNull(value)) return nullptr;
+    if (JS_IsNull(value))
+      return nullptr;
     return FromValue(context->ctx(), value, exception_state);
   }
   static JSValue ToValue(JSContext* ctx, typename T::ImplType value) {
-    if (value == nullptr) return JS_NULL;
+    if (value == nullptr)
+      return JS_NULL;
     return value->ToQuickJSValue(ctx, ASSERT_NO_EXCEPTION());
   }
 };
