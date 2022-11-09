@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_CORE_HTML_CANVAS_DOM_MATRIX_H_
@@ -11,16 +11,20 @@ namespace webf {
 
 class DOMMatrix : public DOMMatrixReadonly {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
-  static DOMMatrix* Create(ExecutingContext* context, const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init, ExceptionState& exception_state);
+  static DOMMatrix* Create(ExecutingContext* context,
+                           const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
+                           ExceptionState& exception_state);
 
   DOMMatrix() = delete;
-  explicit DOMMatrix(ExecutingContext* context, const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init, ExceptionState& exception_state);
+  explicit DOMMatrix(ExecutingContext* context,
+                     const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
+                     ExceptionState& exception_state);
 
  private:
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_HTML_CANVAS_DOM_MATRIX_H_

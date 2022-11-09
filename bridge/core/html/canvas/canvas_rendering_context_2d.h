@@ -8,8 +8,8 @@
 #include "canvas_gradient.h"
 #include "canvas_pattern.h"
 #include "canvas_rendering_context.h"
-#include "qjs_unionhtml_image_elementhtml_canvas_element.h"
 #include "qjs_union_dom_stringcanvas_gradient.h"
+#include "qjs_unionhtml_image_elementhtml_canvas_element.h"
 
 namespace webf {
 
@@ -45,6 +45,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext, public BindingOb
   void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
 
   void Trace(GCVisitor* visitor) const override;
+
  private:
   std::shared_ptr<QJSUnionDomStringCanvasGradient> fill_style_ = nullptr;
   std::shared_ptr<QJSUnionDomStringCanvasGradient> stroke_style_ = nullptr;

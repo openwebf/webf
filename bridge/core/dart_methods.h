@@ -49,7 +49,8 @@ typedef void (*ToBlob)(void* callback_context,
 typedef void (*OnJSError)(int32_t context_id, const char*);
 typedef void (*OnJSLog)(int32_t context_id, int32_t level, const char*);
 typedef void (*FlushUICommand)(int32_t context_id);
-typedef void (*CreateBindingObject)(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
+typedef void (
+    *CreateBindingObject)(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
 
 using MatchImageSnapshotCallback = void (*)(void* callback_context, int32_t context_id, int8_t, const char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,

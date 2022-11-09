@@ -32,8 +32,8 @@ CanvasGradient* CanvasRenderingContext2D::createLinearGradient(double x0,
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(y0),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(x1),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(y1)};
-  NativeValue value =
-      InvokeBindingMethod(binding_call_methods::kcreateLinearGradient, sizeof(arguments) / sizeof(NativeValue), arguments, exception_state);
+  NativeValue value = InvokeBindingMethod(binding_call_methods::kcreateLinearGradient,
+                                          sizeof(arguments) / sizeof(NativeValue), arguments, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   return MakeGarbageCollected<CanvasGradient>(GetExecutingContext(), native_binding_object);
@@ -54,8 +54,8 @@ CanvasGradient* CanvasRenderingContext2D::createRadialGradient(double x0,
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y1),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(r1),
   };
-  NativeValue value =
-      InvokeBindingMethod(binding_call_methods::kcreateRadialGradient, sizeof(arguments) / sizeof(NativeValue), arguments, exception_state);
+  NativeValue value = InvokeBindingMethod(binding_call_methods::kcreateRadialGradient,
+                                          sizeof(arguments) / sizeof(NativeValue), arguments, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   return MakeGarbageCollected<CanvasGradient>(GetExecutingContext(), native_binding_object);
@@ -68,14 +68,16 @@ CanvasPattern* CanvasRenderingContext2D::createPattern(
   NativeValue arguments[2];
 
   if (init->IsHTMLImageElement()) {
-    arguments[0] = NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(init->GetAsHTMLImageElement());
+    arguments[0] =
+        NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(init->GetAsHTMLImageElement());
   } else if (init->IsHTMLCanvasElement()) {
-    arguments[0] = NativeValueConverter<NativeTypePointer<HTMLCanvasElement>>::ToNativeValue(init->GetAsHTMLCanvasElement());
+    arguments[0] =
+        NativeValueConverter<NativeTypePointer<HTMLCanvasElement>>::ToNativeValue(init->GetAsHTMLCanvasElement());
   }
 
   arguments[1] = NativeValueConverter<NativeTypeString>::ToNativeValue(repetition);
-  NativeValue value =
-      InvokeBindingMethod(binding_call_methods::kcreatePattern, sizeof(arguments) / sizeof(NativeValue), arguments, exception_state);
+  NativeValue value = InvokeBindingMethod(binding_call_methods::kcreatePattern, sizeof(arguments) / sizeof(NativeValue),
+                                          arguments, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   return MakeGarbageCollected<CanvasPattern>(GetExecutingContext(), native_binding_object);
@@ -85,7 +87,8 @@ std::shared_ptr<QJSUnionDomStringCanvasGradient> CanvasRenderingContext2D::fillS
   return fill_style_;
 }
 
-void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state) {
+void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+                                            ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
 
   if (style->IsDomString()) {
@@ -102,7 +105,8 @@ std::shared_ptr<QJSUnionDomStringCanvasGradient> CanvasRenderingContext2D::strok
   return stroke_style_;
 }
 
-void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state) {
+void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+                                              ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
 
   if (style->IsDomString()) {
@@ -117,8 +121,10 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
 }
 
 void CanvasRenderingContext2D::Trace(GCVisitor* visitor) const {
-  if (fill_style_ != nullptr) fill_style_->Trace(visitor);
-  if (stroke_style_ != nullptr) stroke_style_->Trace(visitor);
+  if (fill_style_ != nullptr)
+    fill_style_->Trace(visitor);
+  if (stroke_style_ != nullptr)
+    stroke_style_->Trace(visitor);
 }
 
 }  // namespace webf

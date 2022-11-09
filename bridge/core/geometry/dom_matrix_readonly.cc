@@ -25,9 +25,8 @@ DOMMatrixReadonly::DOMMatrixReadonly(ExecutingContext* context,
   } else if (init->IsSequenceDouble()) {
     arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(init->GetAsSequenceDouble());
   }
-  GetExecutingContext()->dartMethodPtr()->create_binding_object(GetExecutingContext()->contextId(), bindingObject(),
-                                                                CreateBindingObjectType::kCreateDOMMatrix, arguments,
-                                                                1);
+  GetExecutingContext()->dartMethodPtr()->create_binding_object(
+      GetExecutingContext()->contextId(), bindingObject(), CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
 }
 
 NativeValue DOMMatrixReadonly::HandleCallFromDartSide(const NativeValue* method,
