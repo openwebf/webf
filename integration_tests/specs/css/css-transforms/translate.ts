@@ -160,5 +160,35 @@ describe('Transform translate', () => {
        done();
     });
   });
+  
+  it('should be scrollWidth equal clientWidth', async (done) => {
+    let div2;
+    let div;
+    div = createElement(
+      'div',
+      {
+        style: {
+          width: '100%',
+          height: '100vh',
+          position: 'relative',
+        },
+      },
+      [
+        (div2 = createElement('div', {
+          style: {
+            position: 'fixed',
+            width: '300px',
+            height: '300px',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'green',
+          }
+        }))
+      ]
+    );
+    BODY.appendChild(div);
+    expect(div.scrollWidth).toBe(div.clientWidth);
 
+  });
 });
