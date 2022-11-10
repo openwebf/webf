@@ -112,7 +112,7 @@ describe('custom widget element', () => {
     await snapshot();
   });
 
-  it('flutter widget should be child of element and the element should be child of flutter widget', async () => {
+  it('flutter widget should be child of element and the element should be child of flutter widget', async (done) => {
     const container = document.createElement('flutter-container');
     document.body.appendChild(container);
 
@@ -123,7 +123,10 @@ describe('custom widget element', () => {
     fluttetText.setAttribute('value', 'text');
     childContainer.appendChild(fluttetText);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+      done();
+    });
   });
 
   it('flutter widget should work when text removed from this', async (done) => {
@@ -135,14 +138,18 @@ describe('custom widget element', () => {
     let textB = document.createTextNode('B');
     setTimeout(async () => {
       container.appendChild(textB);
+      await sleep(0.1);
       await snapshot();
       container.removeChild(textA);
+      await sleep(0.1);
       await snapshot();
       setTimeout(async () => {
         container.removeChild(textB);
         document.body.removeChild(container);
-        await snapshot();
-        done();
+        requestAnimationFrame(async () => {
+          await snapshot();
+          done();
+        });
       });
     });
   });
@@ -154,14 +161,17 @@ describe('custom widget element', () => {
     let textA = document.createTextNode('A');
     divA.appendChild(textA);
     container.appendChild(divA);
+    await sleep(0.1);
     await snapshot();
     let textB = document.createTextNode('B');
     let divB = document.createElement('div');
     divB.appendChild(textB);
     setTimeout(async () => {
       container.appendChild(divB);
+      await sleep(0.1);
       await snapshot();
       container.removeChild(divA);
+      await sleep(0.1);
       await snapshot();
       setTimeout(async () => {
         container.removeChild(divB);
