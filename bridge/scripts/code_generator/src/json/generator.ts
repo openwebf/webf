@@ -2,13 +2,14 @@ import {JSONBlob} from './JSONBlob';
 import {JSONTemplate} from './JSONTemplate';
 import _ from 'lodash';
 
-function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[]): string {
+function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {
   let compiled = _.template(template.raw);
   return compiled({
     _: _,
     name: blob.filename,
     template_path: blob.source,
     data: blob.json.data,
+    options,
     deps,
     upperCamelCase
   }).split('\n').filter(str => {
@@ -21,22 +22,27 @@ function upperCamelCase(name: string) {
   return _.upperFirst(_.camelCase(name));
 }
 
-function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[]): string {
+function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {
   let compiled = _.template(template.raw);
   return compiled({
     template_path: blob.source,
     name: blob.filename,
     data: blob.json.data,
     deps,
+    options,
     upperCamelCase,
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');
 }
 
-export function generateJSONTemplate(blob: JSONBlob, headerTemplate: JSONTemplate, bodyTemplate?: JSONTemplate, depsBlob?: JSONBlob[]) {
-  let header = generateHeader(blob, headerTemplate, depsBlob);
-  let body = bodyTemplate ? generateBody(blob, bodyTemplate, depsBlob) : '';
+type GenerateJSONOptions = {
+  add_atom_prefix?: boolean;
+};
+
+export function generateJSONTemplate(blob: JSONBlob, headerTemplate: JSONTemplate, bodyTemplate?: JSONTemplate, depsBlob?: JSONBlob[], options: GenerateJSONOptions = {}) {
+  let header = generateHeader(blob, headerTemplate, depsBlob, options);
+  let body = bodyTemplate ? generateBody(blob, bodyTemplate, depsBlob, options) : '';
 
   return {
     header: header,

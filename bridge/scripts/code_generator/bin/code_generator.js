@@ -112,7 +112,7 @@ function genCodeFromJSONData() {
       let targetTemplateHeaderData = templates.find(t => t.filename === targetTemplate.template + '.h');
       let targetTemplateBodyData = templates.find(t => t.filename === targetTemplate.template + '.cc');
       blob.filename = targetTemplate.filename;
-      let result = generateJSONTemplate(blobs[i], targetTemplateHeaderData, targetTemplateBodyData, depsBlob);
+      let result = generateJSONTemplate(blobs[i], targetTemplateHeaderData, targetTemplateBodyData, depsBlob, targetTemplate.options);
       let dist = blob.dist;
       let genFilePath = path.join(dist, targetTemplate.filename);
       fs.writeFileSync(genFilePath + '.h', result.header);
