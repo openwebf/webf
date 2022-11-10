@@ -118,13 +118,12 @@ void _simulatePointer(
   List<PointerData> data = [];
 
   for (int i = 0; i < length; i++) {
-    int contextId = mousePointerList.elementAt(i).ref.contextId;
     double x = mousePointerList.elementAt(i).ref.x;
     double y = mousePointerList.elementAt(i).ref.y;
     double change = mousePointerList.elementAt(i).ref.change;
     data.add(PointerData(
         // TODO: remove hardcode '360' width that for double testing in one flutter window
-        physicalX: (360 * contextId + x) * window.devicePixelRatio,
+        physicalX: x * window.devicePixelRatio,
         physicalY: (56.0 + y) * window.devicePixelRatio,
         // MouseEvent will trigger [RendererBinding.dispatchEvent] -> [BaseMouseTracker.updateWithEvent]
         // which handle extra mouse connection phase for [event.kind = PointerDeviceKind.mouse].
