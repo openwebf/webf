@@ -164,6 +164,8 @@ describe('Transform translate', () => {
   it('should be scrollWidth equal clientWidth', async (done) => {
     let div2;
     let div;
+    BODY.style.width = '100%';
+    BODY.style.height = '100vh';
     div = createElement(
       'div',
       {
