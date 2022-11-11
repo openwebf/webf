@@ -161,7 +161,7 @@ describe('Transform translate', () => {
     });
   });
   
-  it('should be scrollWidth equal clientWidth', async (done) => {
+  it('should be scrollWidth equal clientWidth', async () => {
     let div2;
     let div;
     BODY.style.width = '100%';
@@ -190,7 +190,7 @@ describe('Transform translate', () => {
       ]
     );
     BODY.appendChild(div);
-    expect(div.scrollWidth).toBe(div.clientWidth);
+    expect(div.clientWidth === div.scrollWidth).toBe(true);
 
   });
 });
