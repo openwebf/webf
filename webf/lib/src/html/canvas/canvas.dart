@@ -42,14 +42,18 @@ class CanvasElement extends Element {
   RenderCustomPaint? renderCustomPaint;
 
   CanvasElement([BindingContext? context])
-      : super(
-          context,
-          isReplacedElement: true,
-          isDefaultRepaintBoundary: true,
-          defaultStyle: _defaultStyle,
-        ) {
+      : super(context) {
     painter = CanvasPainter(repaint: repaintNotifier);
   }
+
+  @override
+  bool get isReplacedElement => true;
+
+  @override
+  bool get isDefaultRepaintBoundary => true;
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   // Currently only 2d rendering context for canvas is supported.
   CanvasRenderingContext2D? context2d;

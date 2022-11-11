@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/widget.dart';
@@ -16,12 +17,35 @@ enum InputSize {
   large,
 }
 
+const Map<String, dynamic> _inputDefaultStyle = {
+  BORDER: '2px solid rgb(118, 118, 118)'
+};
+
 class FlutterInputElement extends WidgetElement
     with BaseCheckBoxElement, BaseButtonElement, BaseInputElement, BaseTimeElement {
   BindingContext? buildContext;
 
   FlutterInputElement(BindingContext? context) : super(context) {
     buildContext = context;
+  }
+
+  @override
+  Map<String, dynamic> get defaultStyle {
+    if (type == 'text') {
+      return _inputDefaultStyle;
+    }
+    return super.defaultStyle;
+  }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeMethods(methods);
+    methods['blur'] = BindingObjectMethodSync(call: (List args) {
+      blur();
+    });
+    methods['focus'] = BindingObjectMethodSync(call: (List args) {
+      focus();
+    });
   }
 
   @override
@@ -147,11 +171,9 @@ mixin BaseInputElement on WidgetElement {
       });
     }
 
-    bool isInput = this is FlutterInputElement;
-
     InputDecoration decoration = InputDecoration(
         label: label != null ? Text(label!) : null,
-        border: isInput && borderSides == null ? UnderlineInputBorder() : InputBorder.none,
+        border: InputBorder.none,
         isDense: true,
         hintText: placeholder,
         suffix: isSearch && value.isNotEmpty && _isFocus
@@ -184,7 +206,7 @@ mixin BaseInputElement on WidgetElement {
         maxLength: maxLength,
         onChanged: onChanged,
         obscureText: isPassWord,
-        cursorColor: renderStyle.caretColor,
+        cursorColor: renderStyle.caretColor ?? renderStyle.color,
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
@@ -201,7 +223,8 @@ mixin BaseInputElement on WidgetElement {
         maxLength: maxLength,
         onChanged: onChanged,
         obscureText: isPassWord,
-        cursorColor: renderStyle.caretColor,
+        cursorColor: renderStyle.caretColor ?? renderStyle.color,
+        cursorRadius: Radius.circular(4),
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),

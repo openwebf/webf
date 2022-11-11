@@ -13,7 +13,7 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class BodyElement extends Element {
-  BodyElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  BodyElement([BindingContext? context]) : super(context);
 
   @override
   void addEventListener(String eventType, EventHandler eventHandler) {
@@ -22,6 +22,9 @@ class BodyElement extends Element {
 
     super.addEventListener(eventType, eventHandler);
   }
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
   void setRenderStyle(String property, String present) {

@@ -27,17 +27,13 @@ abstract class WidgetElement extends dom.Element {
   WebFWidgetElementToWidgetAdapter? attachedAdapter;
 
   WidgetElement(
-    BindingContext? context, {
-    Map<String, dynamic>? defaultStyle,
-  }) : super(
-          context,
-          defaultStyle: {
-            ..._defaultStyle,
-            ...?defaultStyle
-          }) {
+    BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
     _widget = WebFWidgetElementWidget(this);
   }
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   // State methods, proxy called from _state
   void initState() {}

@@ -16,5 +16,8 @@ class LabelElement extends Element {
 }
 
 class ButtonElement extends Element {
-  ButtonElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  ButtonElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }

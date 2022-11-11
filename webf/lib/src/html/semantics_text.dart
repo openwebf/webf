@@ -53,7 +53,10 @@ const Map<String, dynamic> _defaultStyle = {FONT_STYLE: ITALIC};
 class BRElement extends Element {
   RenderLineBreak? _renderLineBreak;
 
-  BRElement([BindingContext? context]) : super(context, isReplacedElement: true);
+  BRElement([BindingContext? context]) : super(context);
+
+  @override
+  bool get isReplacedElement => true;
 
   @override
   RenderBoxModel? get renderBoxModel => _renderLineBreak;
@@ -70,40 +73,67 @@ class BRElement extends Element {
 }
 
 class BringElement extends Element {
-  BringElement([BindingContext? context]) : super(context, defaultStyle: _boldDefaultStyle);
+  BringElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _boldDefaultStyle;
 }
 
 class AbbreviationElement extends Element {
-  AbbreviationElement([BindingContext? context]) : super(context, defaultStyle: _abbrDefaultStyle);
+  AbbreviationElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _abbrDefaultStyle;
 }
 
 class EmphasisElement extends Element {
-  EmphasisElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  EmphasisElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class CitationElement extends Element {
-  CitationElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  CitationElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class DefinitionElement extends Element {
-  DefinitionElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  DefinitionElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/i
 class IdiomaticElement extends Element {
-  IdiomaticElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  IdiomaticElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class CodeElement extends Element {
-  CodeElement([BindingContext? context]) : super(context, defaultStyle: _codeDefaultStyle);
+  CodeElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _codeDefaultStyle;
 }
 
 class SampleElement extends Element {
-  SampleElement([BindingContext? context]) : super(context, defaultStyle: _codeDefaultStyle);
+  SampleElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _codeDefaultStyle;
 }
 
 class KeyboardElement extends Element {
-  KeyboardElement([BindingContext? context]) : super(context, defaultStyle: _codeDefaultStyle);
+  KeyboardElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _codeDefaultStyle;
 }
 
 class SpanElement extends Element {
@@ -120,30 +150,51 @@ class QuoteElement extends Element {
 }
 
 class StrongElement extends Element {
-  StrongElement([BindingContext? context]) : super(context, defaultStyle: _boldDefaultStyle);
+  StrongElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _boldDefaultStyle;
 }
 
 class TimeElement extends Element {
-  TimeElement([BindingContext? context]) : super(context, defaultStyle: _boldDefaultStyle);
+  TimeElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _boldDefaultStyle;
 }
 
 class SmallElement extends Element {
-  SmallElement([BindingContext? context]) : super(context, defaultStyle: _smallDefaultStyle);
+  SmallElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _smallDefaultStyle;
 }
 
 class StrikethroughElement extends Element {
-  StrikethroughElement([BindingContext? context]) : super(context, defaultStyle: _sDefaultStyle);
+  StrikethroughElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _sDefaultStyle;
 }
 
 // https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-u-element
 class UnarticulatedElement extends Element {
-  UnarticulatedElement([BindingContext? context]) : super(context, defaultStyle: _uDefaultStyle);
+  UnarticulatedElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _uDefaultStyle;
 }
 
 class VariableElement extends Element {
-  VariableElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  VariableElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class MarkElement extends Element {
-  MarkElement([BindingContext? context]) : super(context, defaultStyle: _markDefaultStyle);
+  MarkElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _markDefaultStyle;
 }

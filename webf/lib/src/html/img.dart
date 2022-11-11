@@ -93,7 +93,13 @@ class ImageElement extends Element {
 
   ImageStreamCompleterHandle? _completerHandle;
 
-  ImageElement([BindingContext? context]) : super(context, isReplacedElement: true, defaultStyle: _defaultStyle) {}
+  ImageElement([BindingContext? context]) : super(context) {}
+
+  @override
+  bool get isReplacedElement => true;
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {

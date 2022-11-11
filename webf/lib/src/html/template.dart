@@ -13,5 +13,8 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class TemplateElement extends Element {
-  TemplateElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  TemplateElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }

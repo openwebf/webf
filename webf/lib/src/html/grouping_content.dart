@@ -45,7 +45,7 @@ const Map<String, dynamic> _ddDefaultStyle = {
   MARGIN_LEFT: '40px',
 };
 
-const Map<String, dynamic> _pDefaultStyle = {DISPLAY: BLOCK, MARGIN_TOP: '1em', MARGIN_BOTTOM: '1em'};
+Map<String, dynamic> _pDefaultStyle = {DISPLAY: BLOCK, MARGIN_TOP: '1em', MARGIN_BOTTOM: '1em'};
 
 const Map<String, dynamic> _lDefaultStyle = {
   DISPLAY: BLOCK,
@@ -55,56 +55,94 @@ const Map<String, dynamic> _lDefaultStyle = {
 };
 
 class DivElement extends Element {
-  DivElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  DivElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class FigureElement extends Element {
-  FigureElement([BindingContext? context]) : super(context, defaultStyle: _bDefaultStyle);
+  FigureElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _bDefaultStyle;
 }
 
 class FigureCaptionElement extends Element {
-  FigureCaptionElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  FigureCaptionElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class BlockQuotationElement extends Element {
-  BlockQuotationElement([BindingContext? context]) : super(context, defaultStyle: _bDefaultStyle);
+  BlockQuotationElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _bDefaultStyle;
 }
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlparagraphelement
 class ParagraphElement extends Element {
-  static Map<String, dynamic> defaultStyle = _pDefaultStyle;
-  ParagraphElement([BindingContext? context]) : super(context, defaultStyle: defaultStyle);
+  ParagraphElement([BindingContext? context]) : super(context);
+  @override
+  Map<String, dynamic> get defaultStyle => _pDefaultStyle;
+}
+
+void debugOverridePDefaultStyle(Map<String, dynamic> newStyle) {
+  _pDefaultStyle = newStyle;
 }
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlulistelement
 class UListElement extends Element {
-  UListElement([BindingContext? context]) : super(context, defaultStyle: _lDefaultStyle);
+  UListElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _lDefaultStyle;
 }
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlolistelement
 class OListElement extends Element {
-  OListElement([BindingContext? context]) : super(context, defaultStyle: _lDefaultStyle);
+  OListElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _lDefaultStyle;
 }
 
 class LIElement extends Element {
-  LIElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  LIElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlpreelement
 class PreElement extends Element {
-  PreElement([BindingContext? context]) : super(context, defaultStyle: _preDefaultStyle);
+  PreElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _preDefaultStyle;
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dd
 class DDElement extends Element {
-  DDElement([BindingContext? context]) : super(context, defaultStyle: _ddDefaultStyle);
+  DDElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _ddDefaultStyle;
 }
 
 class DTElement extends Element {
-  DTElement([BindingContext? context]) : super(context, defaultStyle: _defaultStyle);
+  DTElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmldlistelement
 class DListElement extends Element {
-  DListElement([BindingContext? context]) : super(context, defaultStyle: _pDefaultStyle);
+  DListElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _pDefaultStyle;
 }

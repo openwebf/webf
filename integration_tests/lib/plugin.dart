@@ -45,9 +45,7 @@ void main() async {
   WebFWebSocket.initialize();
 
   // FIXME: This is a workaround for testcase
-  ParagraphElement.defaultStyle = {
-    DISPLAY: BLOCK,
-  };
+  debugOverridePDefaultStyle({DISPLAY: BLOCK});
 
   // Set render font family AlibabaPuHuiTi to resolve rendering difference.
   CSSText.DEFAULT_FONT_FAMILY_FALLBACK = ['AlibabaPuHuiTi'];

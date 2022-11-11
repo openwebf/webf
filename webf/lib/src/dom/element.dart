@@ -113,7 +113,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
-  final bool _isReplacedElement;
+  bool get isReplacedElement => false;
 
   bool get isWidgetElement => false;
 
@@ -137,7 +137,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   late CSSStyleDeclaration style;
 
   /// The default user-agent style.
-  final Map<String, dynamic> _defaultStyle;
+  Map<String, dynamic> get defaultStyle => {};
 
   /// The inline style is a map of style property name to style property value.
   final Map<String, dynamic> inlineStyle = {};
@@ -158,13 +158,13 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   String get className => _classList.join(_ONE_SPACE);
 
-  final bool _isDefaultRepaintBoundary;
+  final bool isDefaultRepaintBoundary = false;
 
   /// Whether should as a repaintBoundary for this element when style changed
   bool get isRepaintBoundary {
     // Following cases should always convert to repaint boundary for performance consideration.
     // Intrinsic element such as <canvas>.
-    if (_isDefaultRepaintBoundary || _forceToRepaintBoundary) return true;
+    if (isDefaultRepaintBoundary || _forceToRepaintBoundary) return true;
 
     // Overflow style.
     bool hasOverflowScroll = renderStyle.overflowX == CSSOverflowType.scroll ||
@@ -189,14 +189,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     _updateRenderBoxModel();
   }
 
-  Element(BindingContext? context,
-      {Map<String, dynamic>? defaultStyle, bool isReplacedElement = false, bool isDefaultRepaintBoundary = false})
-      : _defaultStyle = defaultStyle ?? const {},
-        _isReplacedElement = isReplacedElement,
-        _isDefaultRepaintBoundary = isDefaultRepaintBoundary,
-        super(NodeType.ELEMENT_NODE, context) {
+  Element(BindingContext? context)
+      : super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
-    style = CSSStyleDeclaration.computedStyle(this, _defaultStyle, _onStyleChanged, _onStyleFlushed);
+    style = CSSStyleDeclaration.computedStyle(this, defaultStyle, _onStyleChanged, _onStyleFlushed);
 
     // Init render style.
     renderStyle = CSSRenderStyle(target: this);
@@ -312,7 +308,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget();
-    } else if (_isReplacedElement) {
+    } else if (isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
     } else {
@@ -1510,8 +1506,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void _applyDefaultStyle(CSSStyleDeclaration style) {
-    if (_defaultStyle.isNotEmpty) {
-      _defaultStyle.forEach((propertyName, value) {
+    if (defaultStyle.isNotEmpty) {
+      defaultStyle.forEach((propertyName, value) {
         style.setProperty(propertyName, value);
       });
     }

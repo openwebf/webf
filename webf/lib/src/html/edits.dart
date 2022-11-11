@@ -15,9 +15,15 @@ const Map<String, dynamic> _insDefaultStyle = {TEXT_DECORATION: UNDERLINE};
 const Map<String, dynamic> _delDefaultStyle = {TEXT_DECORATION: LINE_THROUGH};
 
 class DelElement extends Element {
-  DelElement([BindingContext? context]) : super(context, defaultStyle: _delDefaultStyle);
+  DelElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _delDefaultStyle;
 }
 
 class InsElement extends Element {
-  InsElement([BindingContext? context]) : super(context, defaultStyle: _insDefaultStyle);
+  InsElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _insDefaultStyle;
 }

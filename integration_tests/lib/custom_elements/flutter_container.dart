@@ -1,12 +1,16 @@
 import 'package:webf/webf.dart';
 import 'package:flutter/material.dart';
 
+const Map<String, dynamic> _flutterContainerDefaultStyle = {
+  'width': '200px',
+  'height': '200px',
+  'border': '5px solid red'
+};
+
 class FlutterContainerElement extends WidgetElement {
-  FlutterContainerElement(BindingContext? context) : super(context, defaultStyle: {
-    'width': '200px',
-    'height': '200px',
-    'border': '5px solid red'
-  });
+  FlutterContainerElement(BindingContext? context) : super(context);
+
+  Map<String, dynamic> get defaultStyle => _flutterContainerDefaultStyle;
 
   @override
   Widget build(BuildContext context, List<Widget> children) {

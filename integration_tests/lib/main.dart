@@ -35,7 +35,7 @@ void main() async {
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
 
   // FIXME: This is a workaround for testcases.
-  ParagraphElement.defaultStyle = {DISPLAY: BLOCK};
+  debugOverridePDefaultStyle({DISPLAY: BLOCK});
 
   // Start local HTTP server.
   var httpServer = LocalHttpServer.getInstance();

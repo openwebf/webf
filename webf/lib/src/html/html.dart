@@ -12,8 +12,10 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class HTMLElement extends Element {
-  static Map<String, dynamic> defaultStyle = _defaultStyle;
-  HTMLElement([BindingContext? context]) : super(context, defaultStyle: defaultStyle);
+  HTMLElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
   void dispatchEvent(Event event) {
