@@ -524,7 +524,12 @@ class RenderLayoutBox extends RenderBoxModel
     } else {
       childScrollableSize = child.boxSize;
     }
+
+    Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
     double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
+    if(transform!=null) {
+      maxScrollableX+= transform.getTranslation()[0];
+    }
 
     if (childRenderStyle.right.isNotAuto) {
       if (isScrollingContentBox && (parent as RenderBoxModel).widthSizeType == BoxSizeType.specified) {
@@ -541,6 +546,9 @@ class RenderLayoutBox extends RenderBoxModel
     }
 
     double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
+    if(transform!=null) {
+      maxScrollableY+= transform.getTranslation()[1];
+    }
     if (childRenderStyle.bottom.isNotAuto) {
       if (isScrollingContentBox && (parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
         RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
