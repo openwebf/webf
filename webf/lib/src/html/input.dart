@@ -17,9 +17,7 @@ enum InputSize {
   large,
 }
 
-const Map<String, dynamic> _inputDefaultStyle = {
-  BORDER: '2px solid rgb(118, 118, 118)'
-};
+const Map<String, dynamic> _inputDefaultStyle = {BORDER: '2px solid rgb(118, 118, 118)'};
 
 class FlutterInputElement extends WidgetElement
     with BaseCheckBoxElement, BaseButtonElement, BaseInputElement, BaseTimeElement {
@@ -46,6 +44,16 @@ class FlutterInputElement extends WidgetElement
     methods['focus'] = BindingObjectMethodSync(call: (List args) {
       focus();
     });
+  }
+
+  @override
+  void blur() {
+    _focusNode.unfocus();
+  }
+
+  @override
+  void focus() {
+    _focusNode.requestFocus();
   }
 
   @override
@@ -83,6 +91,13 @@ mixin BaseInputElement on WidgetElement {
         controller.value = TextEditingValue(text: value.toString());
       }
     }
+  }
+
+  @override
+  void initState() {
+    _focusNode.addListener(() {
+      handleFocusChange();
+    });
   }
 
   @override
@@ -135,7 +150,7 @@ mixin BaseInputElement on WidgetElement {
 
   bool get isPassWord => type == 'password';
 
-  bool _isFocus = false;
+  bool get _isFocus => _focusNode.hasFocus;
 
   int? get maxLength {
     String? value = getAttribute('maxLength');
@@ -205,6 +220,7 @@ mixin BaseInputElement on WidgetElement {
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
+        focusNode: _focusNode,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor ?? renderStyle.color,
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
@@ -222,6 +238,7 @@ mixin BaseInputElement on WidgetElement {
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
+        focusNode: _focusNode,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor ?? renderStyle.color,
         cursorRadius: Radius.circular(4),
@@ -247,32 +264,43 @@ mixin BaseInputElement on WidgetElement {
     );
   }
 
+  final FocusNode _focusNode = FocusNode();
+
+  void handleFocusChange() {
+    if (_isFocus) {
+      ownerDocument.focusedElement = this;
+      oldValue = value;
+      dispatchEvent(FocusEvent(EVENT_FOCUS, relatedTarget: this));
+    } else {
+      if (ownerDocument.focusedElement == this) {
+        ownerDocument.focusedElement = null;
+      }
+      if (oldValue != value) {
+        dispatchEvent(Event('change'));
+      }
+      dispatchEvent(FocusEvent(EVENT_BLUR, relatedTarget: this));
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _focusNode.dispose();
+  }
+
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
     switch (type) {
       case 'hidden':
         return SizedBox(width: 0, height: 0);
     }
-    return Focus(
-      onFocusChange: (bool isFocus) {
-        if (isSearch) {
-          setState(() {
-            _isFocus = isFocus;
-          });
-        }
-        if (isFocus) {
-          ownerDocument.focusedElement = this;
-          oldValue = value;
-        } else {
-          if (ownerDocument.focusedElement == this) {
-            ownerDocument.focusedElement = null;
-          }
-          if (oldValue != value) {
-            dispatchEvent(Event('change'));
-          }
-        }
-      },
-      child: _createInputWidget(context, minLines, maxLines),
-    );
+    // return Focus(
+    //   focusNode: _focusNode,
+    //   onFocusChange: (bool isFocus) {
+    //
+    //   },
+    //   child: ,
+    // );
+    return _createInputWidget(context, minLines, maxLines);
   }
 }
 
@@ -293,7 +321,8 @@ mixin BaseCheckBoxElement on WidgetElement {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
 
-    attributes['checked'] = ElementAttributeProperty(getter: () => checked.toString(), setter: (value) => checked = value == 'true');
+    attributes['checked'] =
+        ElementAttributeProperty(getter: () => checked.toString(), setter: (value) => checked = value == 'true');
   }
 
   double getCheckboxSize() {
@@ -362,19 +391,14 @@ mixin BaseButtonElement on WidgetElement {
   Widget createButton(BuildContext context) {
     return TextButton(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color?>(
-              (states) => renderStyle.backgroundColor),
+          backgroundColor: MaterialStateProperty.resolveWith<Color?>((states) => renderStyle.backgroundColor),
         ),
         onPressed: () {
           var box = context.findRenderObject() as RenderBox;
-          Offset globalOffset =
-              box.globalToLocal(Offset(Offset.zero.dx, Offset.zero.dy));
+          Offset globalOffset = box.globalToLocal(Offset(Offset.zero.dx, Offset.zero.dy));
           double clientX = globalOffset.dx;
           double clientY = globalOffset.dy;
-          Event event = MouseEvent(EVENT_CLICK,
-              clientX: clientX,
-              clientY: clientY,
-              view: ownerDocument.defaultView);
+          Event event = MouseEvent(EVENT_CLICK, clientX: clientX, clientY: clientY, view: ownerDocument.defaultView);
           dispatchEvent(event);
         },
         child: Text(_value, style: _style));

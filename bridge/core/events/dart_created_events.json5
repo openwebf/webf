@@ -23,7 +23,6 @@
 //    },
     "close",
 //    "error",
-//    "focus",
     {
       "class": "PopStateEvent",
       "types": [
@@ -39,6 +38,15 @@
       ]
     },
     "input",
+    {
+      "class": "FocusEvent",
+      "types": [
+        "focus",
+        "blur",
+        "focusin",
+        "focusout"
+      ]
+    },
     {
       "class": "IntersectionChangeEvent",
       "types": [

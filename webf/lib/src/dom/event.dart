@@ -262,14 +262,43 @@ class UIEvent extends Event {
     this.detail = 0.0,
     this.view,
     this.which = 0.0,
-    bool bubbles = false,
-    bool cancelable = false,
-    bool composed = false,
-  }) : super(type, bubbles: bubbles, cancelable: cancelable, composed: composed);
+    super.bubbles,
+    super.cancelable,
+    super.composed,
+  }) : super(type);
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
     List<int> methods = [doubleToUint64(detail), view?.pointer?.address ?? nullptr.address, doubleToUint64(which)];
+
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length + extraLength).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
+    bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
+
+    return rawEvent;
+  }
+}
+
+class FocusEvent extends UIEvent {
+  EventTarget? relatedTarget;
+
+  FocusEvent(String type, {
+    this.relatedTarget,
+    super.detail,
+    super.view,
+    super.which,
+    super.bubbles,
+    super.cancelable,
+    super.composed,
+  }): super(type);
+
+  @override
+  Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
+    List<int> methods = [
+      relatedTarget?.pointer?.address ?? nullptr.address
+    ];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length + extraLength).cast<RawEvent>();
     int currentStructSize = rawEvent.ref.length + methods.length;
@@ -297,8 +326,7 @@ class MouseEvent extends UIEvent {
     double detail = 0.0,
     EventTarget? view,
     double which = 0.0,
-  }) : super(type,
-            detail: detail, view: view, which: which, bubbles: true, cancelable: true, composed: false);
+  }) : super(type, detail: detail, view: view, which: which, bubbles: true, cancelable: true, composed: false);
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -340,10 +368,10 @@ class GestureEvent extends Event {
     this.velocityX = 0.0,
     this.velocityY = 0.0,
     this.scale = 0.0,
-    bool bubbles = false,
-    bool cancelable = false,
-    bool composed = false,
-  }) : super(type, bubbles: bubbles, cancelable: cancelable, composed: composed);
+    super.bubbles,
+    super.cancelable,
+    super.composed,
+  }) : super(type);
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -376,18 +404,16 @@ class CustomEvent extends Event {
   CustomEvent(
     String type, {
     this.detail = null,
-    bool bubbles = false,
-    bool cancelable = false,
-    bool composed = false,
-  }) : super(type, bubbles: bubbles, cancelable: cancelable, composed: composed);
+    super.bubbles,
+    super.cancelable,
+    super.composed,
+  }) : super(type);
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
     Pointer<NativeValue> detailValue = malloc.allocate(sizeOf<NativeValue>());
     toNativeValue(detailValue, detail);
-    List<int> methods = [
-      detailValue.address
-    ];
+    List<int> methods = [detailValue.address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length, true).cast<RawEvent>();
     int currentStructSize = rawEvent.ref.length + methods.length;
@@ -423,10 +449,10 @@ class InputEvent extends UIEvent {
   InputEvent({
     this.inputType = '',
     this.data = '',
-    bool bubbles = false,
-    bool cancelable = false,
-    bool composed = false,
-  }) : super(EVENT_INPUT, bubbles: bubbles, cancelable: cancelable, composed: composed);
+    super.bubbles,
+    super.cancelable,
+    super.composed,
+  }) : super(EVENT_INPUT);
 }
 
 class AppearEvent extends Event {
