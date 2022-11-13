@@ -67,12 +67,11 @@ TEST(ModuleManager, invokeModuleError) {
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-    EXPECT_STREQ(
-        message.c_str(),
-        "Error {columnNumber: 8, lineNumber: 9, message: 'webf://', stack: '    at __webf_invoke_module__ (native)\n"
-        "    at f (vm://:9:8)\n"
-        "    at <eval> (vm://:11:1)\n"
-        "'}");
+    EXPECT_STREQ(message.c_str(),
+                 "Error {columnNumber: 8, lineNumber: 9, message: 'webf://', stack: '    at __webf_invoke_module__ (native)\n"
+                 "    at f (vm://:9:8)\n"
+                 "    at <eval> (vm://:11:1)\n"
+                 "'}");
   };
 
   auto context = bridge->GetExecutingContext();
