@@ -129,6 +129,14 @@ static void __attribute((unused)) dump_token(JSParseState *s,
   }
 }
 
+static int calc_column_position(JSParseState *s) {
+  if(s->column_last_ptr > s->column_ptr) {
+    s->column_num_count += utf8_str_len(s->column_ptr, s->column_last_ptr);
+    s->column_ptr = s->column_last_ptr;
+  }
+  return s->column_num_count;
+}
+
 int __attribute__((format(printf, 2, 3))) js_parse_error(JSParseState *s, const char *fmt, ...)
 {
   JSContext *ctx = s->ctx;
@@ -141,7 +149,10 @@ int __attribute__((format(printf, 2, 3))) js_parse_error(JSParseState *s, const 
   backtrace_flags = 0;
   if (s->cur_func && s->cur_func->backtrace_barrier)
     backtrace_flags = JS_BACKTRACE_FLAG_SINGLE_LEVEL;
-  build_backtrace(ctx, ctx->rt->current_exception, s->filename, s->line_num,
+  int column_num = calc_column_position(s);
+  build_backtrace(ctx, ctx->rt->current_exception, 
+                  s->filename, s->line_num,
+                  column_num < 0 ? -1 : column_num, 
                   backtrace_flags);
   return -1;
 }
@@ -179,6 +190,7 @@ static __exception int js_parse_template_part(JSParseState *s, const uint8_t *p)
 {
   uint32_t c;
   StringBuffer b_s, *b = &b_s;
+  s->token.column_num = calc_column_position(s);
 
   /* p points to the first byte of the template part */
   if (string_buffer_init(s->ctx, b, 32))
@@ -211,6 +223,8 @@ static __exception int js_parse_template_part(JSParseState *s, const uint8_t *p)
     }
     if (c == '\n') {
       s->line_num++;
+      s->column_ptr = s->column_last_ptr = p;
+      s->column_num_count = 0;
     } else if (c >= 0x80) {
       const uint8_t *p_next;
       c = unicode_from_utf8(p - 1, UTF8_CHAR_LEN_MAX, &p_next);
@@ -243,6 +257,7 @@ static __exception int js_parse_string(JSParseState *s, int sep,
   int ret;
   uint32_t c;
   StringBuffer b_s, *b = &b_s;
+  s->token.column_num = calc_column_position(s);
 
   /* string */
   if (string_buffer_init(s->ctx, b, 32))
@@ -298,8 +313,11 @@ static __exception int js_parse_string(JSParseState *s, int sep,
         case '\n':
           /* ignore escaped newline sequence */
           p++;
-          if (sep != '`')
+          if (sep != '`') {
             s->line_num++;
+            s->column_ptr = s->column_last_ptr = p;
+            s->column_num_count = 0;
+          }
           continue;
         default:
           if (c >= '0' && c <= '9') {
@@ -554,7 +572,6 @@ done:
   return atom;
 }
 
-
 static __exception int next_token(JSParseState *s)
 {
   const uint8_t *p;
@@ -572,7 +589,9 @@ static __exception int next_token(JSParseState *s)
   s->got_lf = FALSE;
   s->last_line_num = s->token.line_num;
 redo:
+  s->column_last_ptr = p;
   s->token.line_num = s->line_num;
+  s->token.column_num = 0;
   s->token.ptr = p;
   c = *p;
   switch(c) {
@@ -603,6 +622,8 @@ redo:
     line_terminator:
       s->got_lf = TRUE;
       s->line_num++;
+      s->column_ptr = p;
+      s->column_num_count = 0;
       goto redo;
     case '\f':
     case '\v':
@@ -626,7 +647,8 @@ redo:
           if (*p == '\n') {
             s->line_num++;
             s->got_lf = TRUE; /* considered as LF for ASI */
-            p++;
+            s->column_ptr = ++p;
+            s->column_num_count = 0;
           } else if (*p == '\r') {
             s->got_lf = TRUE; /* considered as LF for ASI */
             p++;
@@ -1060,6 +1082,9 @@ redo:
       break;
   }
   s->buf_ptr = p;
+  if (!s->token.column_num) {
+    s->token.column_num = calc_column_position(s);
+  }
 
   //    dump_token(s, &s->token);
   return 0;
@@ -1118,7 +1143,9 @@ __exception int json_next_token(JSParseState *s)
   p = s->last_ptr = s->buf_ptr;
   s->last_line_num = s->token.line_num;
 redo:
+  s->column_last_ptr = p;
   s->token.line_num = s->line_num;
+  s->token.column_num = 0;
   s->token.ptr = p;
   c = *p;
   switch(c) {
@@ -1147,6 +1174,8 @@ redo:
     case '\n':
       p++;
       s->line_num++;
+      s->column_ptr = p;
+      s->column_num_count = 0;
       goto redo;
     case '\f':
     case '\v':
@@ -1178,7 +1207,8 @@ redo:
           }
           if (*p == '\n') {
             s->line_num++;
-            p++;
+            s->column_ptr = ++p;
+            s->column_num_count = 0;
           } else if (*p == '\r') {
             p++;
           } else if (*p >= 0x80) {
@@ -1288,6 +1318,9 @@ redo:
       break;
   }
   s->buf_ptr = p;
+  if (!s->token.column_num) {
+    s->token.column_num = calc_column_position(s);
+  }
 
   //    dump_token(s, &s->token);
   return 0;
@@ -1466,6 +1499,11 @@ static void emit_op(JSParseState *s, uint8_t val)
 static void emit_atom(JSParseState *s, JSAtom name)
 {
   emit_u32(s, JS_DupAtom(s->ctx, name));
+}
+
+static void emit_column(JSParseState *s, int column_num) {
+  emit_u8(s, OP_column_num);
+  emit_u32(s, column_num);
 }
 
 static int update_label(JSFunctionDef *s, int label, int delta)
@@ -2022,7 +2060,7 @@ static __exception int js_parse_function_decl(JSParseState *s,
                                               JSParseFunctionEnum func_type,
                                               JSFunctionKindEnum func_kind,
                                               JSAtom func_name, const uint8_t *ptr,
-                                              int start_line);
+                                              int start_line, int start_column);
 static JSFunctionDef *js_parse_function_class_fields_init(JSParseState *s);
 static __exception int js_parse_function_decl2(JSParseState *s,
                                                JSParseFunctionEnum func_type,
@@ -2030,6 +2068,7 @@ static __exception int js_parse_function_decl2(JSParseState *s,
                                                JSAtom func_name,
                                                const uint8_t *ptr,
                                                int function_line_num,
+                                               int function_column_num,
                                                JSParseExportEnum export_flag,
                                                JSFunctionDef **pfd);
 static __exception int js_parse_assign_expr2(JSParseState *s, int parse_flags);
@@ -2323,12 +2362,18 @@ typedef struct JSParsePos {
   int line_num;
   BOOL got_lf;
   const uint8_t *ptr;
+  const uint8_t *column_ptr;
+  const uint8_t *column_last_ptr;
+  int column_num_count;
 } JSParsePos;
 
 static int js_parse_get_pos(JSParseState *s, JSParsePos *sp)
 {
   sp->last_line_num = s->last_line_num;
   sp->line_num = s->token.line_num;
+  sp->column_ptr = s->column_ptr;
+  sp->column_last_ptr = s->column_last_ptr;
+  sp->column_num_count = s->column_num_count;
   sp->ptr = s->token.ptr;
   sp->got_lf = s->got_lf;
   return 0;
@@ -2338,6 +2383,9 @@ static __exception int js_parse_seek_token(JSParseState *s, const JSParsePos *sp
 {
   s->token.line_num = sp->last_line_num;
   s->line_num = sp->line_num;
+  s->column_ptr = sp->column_ptr;
+  s->column_last_ptr = sp->column_last_ptr;
+  s->column_num_count = sp->column_num_count;
   s->buf_ptr = sp->ptr;
   s->got_lf = sp->got_lf;
   return next_token(s);
@@ -2543,7 +2591,7 @@ static __exception int js_parse_object_literal(JSParseState *s)
 {
   JSAtom name = JS_ATOM_NULL;
   const uint8_t *start_ptr;
-  int start_line, prop_type;
+  int start_line, start_column, prop_type;
   BOOL has_proto;
 
   if (next_token(s))
@@ -2555,6 +2603,7 @@ static __exception int js_parse_object_literal(JSParseState *s)
     /* specific case for getter/setter */
     start_ptr = s->token.ptr;
     start_line = s->token.line_num;
+    start_column = s->token.column_num;
 
     if (s->token.val == TOK_ELLIPSIS) {
       if (next_token(s))
@@ -2599,8 +2648,10 @@ static __exception int js_parse_object_literal(JSParseState *s)
         else if (prop_type == PROP_TYPE_ASYNC_STAR)
           func_kind = JS_FUNC_ASYNC_GENERATOR;
       }
-      if (js_parse_function_decl(s, func_type, func_kind, JS_ATOM_NULL,
-                                 start_ptr, start_line))
+      if (js_parse_function_decl(s, func_type, 
+                                 func_kind, JS_ATOM_NULL,
+                                 start_ptr, start_line, 
+                                 start_column))
         goto fail;
       if (name == JS_ATOM_NULL) {
         emit_op(s, OP_define_method_computed);
@@ -2678,7 +2729,7 @@ static __exception int js_parse_class_default_ctor(JSParseState *s,
 {
   JSParsePos pos;
   const char *str;
-  int ret, line_num;
+  int ret, line_num, column_num;
   JSParseFunctionEnum func_type;
   const uint8_t *saved_buf_end;
 
@@ -2691,15 +2742,19 @@ static __exception int js_parse_class_default_ctor(JSParseState *s,
     str = "(){}";
     func_type = JS_PARSE_FUNC_CLASS_CONSTRUCTOR;
   }
+
   line_num = s->token.line_num;
+  column_num = s->token.column_num;
   saved_buf_end = s->buf_end;
   s->buf_ptr = (uint8_t *)str;
   s->buf_end = (uint8_t *)(str + strlen(str));
+  s->column_last_ptr = s->buf_ptr;
   ret = next_token(s);
   if (!ret) {
     ret = js_parse_function_decl2(s, func_type, JS_FUNC_NORMAL,
                                   JS_ATOM_NULL, (uint8_t *)str,
-                                  line_num, JS_PARSE_EXPORT_NONE, pfd);
+                                  line_num, column_num,
+                                  JS_PARSE_EXPORT_NONE, pfd);
   }
   s->buf_end = saved_buf_end;
   ret |= js_parse_seek_token(s, &pos);
@@ -2983,7 +3038,8 @@ static __exception int js_parse_class(JSParseState *s, BOOL is_class_expr,
       if (js_parse_function_decl2(s, JS_PARSE_FUNC_GETTER + is_set,
                                   JS_FUNC_NORMAL, JS_ATOM_NULL,
                                   start_ptr, s->token.line_num,
-                                  JS_PARSE_EXPORT_NONE, &method_fd))
+                                  s->token.column_num, JS_PARSE_EXPORT_NONE, 
+                                  &method_fd))
         goto fail;
       if (is_private) {
         method_fd->need_home_object = TRUE; /* needed for brand check */
@@ -3127,7 +3183,11 @@ static __exception int js_parse_class(JSParseState *s, BOOL is_class_expr,
         if (add_brand(s, &class_fields[is_static]) < 0)
           goto fail;
       }
-      if (js_parse_function_decl2(s, func_type, func_kind, JS_ATOM_NULL, start_ptr, s->token.line_num, JS_PARSE_EXPORT_NONE, &method_fd))
+      if (js_parse_function_decl2(s, func_type, 
+                                  func_kind, JS_ATOM_NULL, 
+                                  start_ptr, s->token.line_num, 
+                                  s->token.column_num, JS_PARSE_EXPORT_NONE, 
+                                  &method_fd))
         goto fail;
       if (func_type == JS_PARSE_FUNC_DERIVED_CLASS_CONSTRUCTOR ||
           func_type == JS_PARSE_FUNC_CLASS_CONSTRUCTOR) {
@@ -3793,6 +3853,8 @@ static int js_parse_destructuring_element(JSParseState *s, int tok, int is_arg,
   int opcode, scope, tok1, skip_bits;
   BOOL has_initializer;
 
+  emit_column(s, s->token.column_num);
+
   if (has_ellipsis < 0) {
     /* pre-parse destructuration target for spread detection */
     js_parse_skip_parens_token(s, &skip_bits, FALSE);
@@ -4229,10 +4291,12 @@ static void optional_chain_test(JSParseState *s, int *poptional_chaining_label,
 static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
 {
   FuncCallType call_type;
-  int optional_chaining_label;
+  int optional_chaining_label, column_num;
   BOOL accept_lparen = (parse_flags & PF_POSTFIX_CALL) != 0;
 
   call_type = FUNC_CALL_NORMAL;
+  column_num = s->token.column_num;
+  emit_column(s, column_num);
   switch(s->token.val) {
     case TOK_NUMBER:
     {
@@ -4312,7 +4376,7 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
           backtrace_flags = JS_BACKTRACE_FLAG_SINGLE_LEVEL;
         build_backtrace(s->ctx, s->ctx->rt->current_exception,
                         s->filename, s->token.line_num,
-                        backtrace_flags);
+                        s->token.column_num, backtrace_flags);
         return -1;
       }
       ret = emit_push_const(s, str, 0);
@@ -4332,7 +4396,8 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
           js_parse_skip_parens_token(s, NULL, TRUE) == TOK_ARROW) {
         if (js_parse_function_decl(s, JS_PARSE_FUNC_ARROW,
                                    JS_FUNC_NORMAL, JS_ATOM_NULL,
-                                   s->token.ptr, s->token.line_num))
+                                   s->token.ptr, s->token.line_num,
+                                   s->token.column_num))
           return -1;
       } else {
         if (js_parse_expr_paren(s))
@@ -4342,7 +4407,8 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
     case TOK_FUNCTION:
       if (js_parse_function_decl(s, JS_PARSE_FUNC_EXPR,
                                  JS_FUNC_NORMAL, JS_ATOM_NULL,
-                                 s->token.ptr, s->token.line_num))
+                                 s->token.ptr, s->token.line_num,
+                                 s->token.column_num))
         return -1;
       break;
     case TOK_CLASS:
@@ -4381,21 +4447,25 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
           peek_token(s, TRUE) == TOK_ARROW) {
         if (js_parse_function_decl(s, JS_PARSE_FUNC_ARROW,
                                    JS_FUNC_NORMAL, JS_ATOM_NULL,
-                                   s->token.ptr, s->token.line_num))
+                                   s->token.ptr, s->token.line_num,
+                                   s->token.column_num))
           return -1;
       } else if (token_is_pseudo_keyword(s, JS_ATOM_async) &&
                  peek_token(s, TRUE) != '\n') {
         const uint8_t *source_ptr;
         int source_line_num;
+        int source_column_num;
 
         source_ptr = s->token.ptr;
         source_line_num = s->token.line_num;
+        source_column_num = s->token.column_num;
         if (next_token(s))
           return -1;
         if (s->token.val == TOK_FUNCTION) {
           if (js_parse_function_decl(s, JS_PARSE_FUNC_EXPR,
                                      JS_FUNC_ASYNC, JS_ATOM_NULL,
-                                     source_ptr, source_line_num))
+                                     source_ptr, source_line_num,
+                                     source_column_num))
             return -1;
         } else if ((parse_flags & PF_ARROW_FUNC) &&
                    ((s->token.val == '(' &&
@@ -4404,7 +4474,8 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
                      peek_token(s, TRUE) == TOK_ARROW))) {
           if (js_parse_function_decl(s, JS_PARSE_FUNC_ARROW,
                                      JS_FUNC_ASYNC, JS_ATOM_NULL,
-                                     source_ptr, source_line_num))
+                                     source_ptr, source_line_num,
+                                     source_column_num))
             return -1;
         } else {
           name = JS_DupAtom(s->ctx, JS_ATOM_async);
@@ -4756,6 +4827,7 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
             break;
         }
       } else {
+        emit_column(s, column_num);
         if (next_token(s))
           return -1;
       emit_func_call:
@@ -4799,6 +4871,9 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
     } else if (s->token.val == '.') {
       if (next_token(s))
         return -1;
+    
+    column_num = s->token.column_num;
+    emit_column(s, column_num);
     parse_property:
       if (s->token.val == TOK_PRIVATE_NAME) {
         /* private class field */
@@ -4857,8 +4932,9 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags)
       break;
     }
   }
-  if (optional_chaining_label >= 0)
+  if (optional_chaining_label >= 0) {
     emit_label(s, optional_chaining_label);
+  }
   return 0;
 }
 
@@ -4868,6 +4944,7 @@ static __exception int js_parse_delete(JSParseState *s)
   JSAtom name;
   int opcode;
 
+  emit_column(s, s->token.column_num);
   if (next_token(s))
     return -1;
   if (js_parse_unary(s, PF_POW_FORBIDDEN))
@@ -5075,7 +5152,7 @@ static __exception int js_parse_expr_binary(JSParseState *s, int level,
                                             int parse_flags)
 {
   int op, opcode;
-
+  
   if (level == 0) {
     return js_parse_unary(s, (parse_flags & PF_ARROW_FUNC) |
                                  PF_POW_ALLOWED);
@@ -5241,6 +5318,7 @@ static __exception int js_parse_logical_and_or(JSParseState *s, int op,
       emit_op(s, OP_drop);
 
       if (op == TOK_LAND) {
+        emit_column(s, s->token.column_num);
         if (js_parse_expr_binary(s, 8, parse_flags & ~PF_ARROW_FUNC))
           return -1;
       } else {
@@ -5260,6 +5338,7 @@ static __exception int js_parse_logical_and_or(JSParseState *s, int op,
   return 0;
 }
 
+/** parse (expr ? expr : expr) and (expr ?? expr) or something */
 static __exception int js_parse_coalesce_expr(JSParseState *s, int parse_flags)
 {
   int label1;
@@ -5276,7 +5355,7 @@ static __exception int js_parse_coalesce_expr(JSParseState *s, int parse_flags)
       emit_op(s, OP_is_undefined_or_null);
       emit_goto(s, OP_if_false, label1);
       emit_op(s, OP_drop);
-
+      emit_column(s, s->token.column_num);
       if (js_parse_expr_binary(s, 8, parse_flags & ~PF_ARROW_FUNC))
         return -1;
       if (s->token.val != TOK_DOUBLE_QUESTION_MARK)
@@ -5325,6 +5404,7 @@ static __exception int js_parse_assign_expr2(JSParseState *s, int parse_flags)
   JSAtom name0 = JS_ATOM_NULL;
   JSAtom name;
 
+  emit_column(s, s->token.column_num);
   if (s->token.val == TOK_YIELD) {
     BOOL is_star = FALSE, is_async;
 
@@ -6182,13 +6262,13 @@ static void set_eval_ret_undefined(JSParseState *s)
   }
 }
 
-static __exception int js_parse_statement_or_decl(JSParseState *s,
-                                                  int decl_mask)
+static __exception int js_parse_statement_or_decl(JSParseState *s, int decl_mask)
 {
   JSContext *ctx = s->ctx;
   JSAtom label_name;
   int tok;
 
+  emit_column(s, s->token.column_num);
   /* specific label handling */
   /* XXX: support multiple labels on loop statements */
   label_name = JS_ATOM_NULL;
@@ -6872,7 +6952,8 @@ static __exception int js_parse_statement_or_decl(JSParseState *s,
       parse_func_var:
         if (js_parse_function_decl(s, JS_PARSE_FUNC_VAR,
                                    JS_FUNC_NORMAL, JS_ATOM_NULL,
-                                   s->token.ptr, s->token.line_num))
+                                   s->token.ptr, s->token.line_num,
+                                   s->token.column_num))
           goto fail;
         break;
       }
@@ -7024,7 +7105,8 @@ static __exception int js_parse_export(JSParseState *s)
     return js_parse_function_decl2(s, JS_PARSE_FUNC_STATEMENT,
                                    JS_FUNC_NORMAL, JS_ATOM_NULL,
                                    s->token.ptr, s->token.line_num,
-                                   JS_PARSE_EXPORT_NAMED, NULL);
+                                   s->token.column_num, JS_PARSE_EXPORT_NAMED, 
+                                   NULL);
   }
 
   if (next_token(s))
@@ -7134,7 +7216,8 @@ static __exception int js_parse_export(JSParseState *s)
         return js_parse_function_decl2(s, JS_PARSE_FUNC_STATEMENT,
                                        JS_FUNC_NORMAL, JS_ATOM_NULL,
                                        s->token.ptr, s->token.line_num,
-                                       JS_PARSE_EXPORT_DEFAULT, NULL);
+                                       s->token.column_num, JS_PARSE_EXPORT_DEFAULT, 
+                                       NULL);
       } else {
         if (js_parse_assign_expr(s))
           return -1;
@@ -7329,17 +7412,19 @@ static __exception int js_parse_source_element(JSParseState *s)
   if (s->token.val == TOK_FUNCTION ||
       (token_is_pseudo_keyword(s, JS_ATOM_async) &&
        peek_token(s, TRUE) == TOK_FUNCTION)) {
+    /* async function and function decal */
     if (js_parse_function_decl(s, JS_PARSE_FUNC_STATEMENT,
                                JS_FUNC_NORMAL, JS_ATOM_NULL,
-                               s->token.ptr, s->token.line_num))
+                               s->token.ptr, s->token.line_num,
+                               s->token.column_num))
       return -1;
   } else if (s->token.val == TOK_EXPORT && fd->module) {
+    /* export decal */
     if (js_parse_export(s))
       return -1;
   } else if (s->token.val == TOK_IMPORT && fd->module &&
              ((tok = peek_token(s, FALSE)) != '(' && tok != '.'))  {
-    /* the peek_token is needed to avoid confusion with ImportCall
-       (dynamic import) or import.meta */
+    /* import decal, but not includes import.meta and dynamic import */
     if (js_parse_import(s))
       return -1;
   } else {
@@ -7353,7 +7438,9 @@ JSFunctionDef *js_new_function_def(JSContext *ctx,
                                           JSFunctionDef *parent,
                                           BOOL is_eval,
                                           BOOL is_func_expr,
-                                          const char *filename, int line_num)
+                                          const char *filename, 
+                                          int line_num, 
+                                          int column_num)
 {
   JSFunctionDef *fd;
 
@@ -7401,8 +7488,10 @@ JSFunctionDef *js_new_function_def(JSContext *ctx,
 
   fd->filename = JS_NewAtom(ctx, filename);
   fd->line_num = line_num;
+  fd->column_num = column_num;
 
   js_dbuf_init(ctx, &fd->pc2line);
+  js_dbuf_init(ctx, &fd->pc2column);
   //fd->pc2line_last_line_num = line_num;
   //fd->pc2line_last_pc = 0;
   fd->last_opcode_line_num = line_num;
@@ -7428,6 +7517,7 @@ static void js_free_function_def(JSContext *ctx, JSFunctionDef *fd)
   js_free(ctx, fd->jump_slots);
   js_free(ctx, fd->label_slots);
   js_free(ctx, fd->line_number_slots);
+  js_free(ctx, fd->column_number_slots);
 
   for(i = 0; i < fd->cpool_count; i++) {
     JS_FreeValue(ctx, fd->cpool[i]);
@@ -7461,6 +7551,7 @@ static void js_free_function_def(JSContext *ctx, JSFunctionDef *fd)
 
   JS_FreeAtom(ctx, fd->filename);
   dbuf_free(&fd->pc2line);
+  dbuf_free(&fd->pc2column);
 
   js_free(ctx, fd->source);
 
@@ -9319,39 +9410,39 @@ static int skip_dead_code(JSFunctionDef *s, const uint8_t *bc_buf, int bc_len,
     if (op == OP_line_num) {
       *linep = get_u32(bc_buf + pos + 1);
     } else
-        if (op == OP_label) {
-      label = get_u32(bc_buf + pos + 1);
-      if (update_label(s, label, 0) > 0)
-        break;
+      if (op == OP_label) {
+        label = get_u32(bc_buf + pos + 1);
+        if (update_label(s, label, 0) > 0)
+          break;
 #if 0
             if (s->label_slots[label].first_reloc) {
                 printf("line %d: unreferenced label %d:%d has relocations\n",
                        *linep, label, s->label_slots[label].pos2);
             }
 #endif
-      assert(s->label_slots[label].first_reloc == NULL);
-    } else {
-      /* XXX: output a warning for unreachable code? */
-      JSAtom atom;
-      switch(opcode_info[op].fmt) {
-        case OP_FMT_label:
-        case OP_FMT_label_u16:
-          label = get_u32(bc_buf + pos + 1);
-          update_label(s, label, -1);
-          break;
-        case OP_FMT_atom_label_u8:
-        case OP_FMT_atom_label_u16:
-          label = get_u32(bc_buf + pos + 5);
-          update_label(s, label, -1);
-          /* fall thru */
-        case OP_FMT_atom:
-        case OP_FMT_atom_u8:
-        case OP_FMT_atom_u16:
-          atom = get_u32(bc_buf + pos + 1);
-          JS_FreeAtom(s->ctx, atom);
-          break;
-        default:
-          break;
+        assert(s->label_slots[label].first_reloc == NULL);
+      } else {
+        /* XXX: output a warning for unreachable code? */
+        JSAtom atom;
+        switch(opcode_info[op].fmt) {
+          case OP_FMT_label:
+          case OP_FMT_label_u16:
+            label = get_u32(bc_buf + pos + 1);
+            update_label(s, label, -1);
+            break;
+          case OP_FMT_atom_label_u8:
+          case OP_FMT_atom_label_u16:
+            label = get_u32(bc_buf + pos + 5);
+            update_label(s, label, -1);
+            /* fall thru */
+          case OP_FMT_atom:
+          case OP_FMT_atom_u8:
+          case OP_FMT_atom_u16:
+            atom = get_u32(bc_buf + pos + 1);
+            JS_FreeAtom(s->ctx, atom);
+            break;
+          default:
+            break;
       }
     }
   }
@@ -9385,7 +9476,7 @@ static int get_label_pos(JSFunctionDef *s, int label)
    variables when necessary */
 static __exception int resolve_variables(JSContext *ctx, JSFunctionDef *s)
 {
-  int pos, pos_next, bc_len, op, len, i, idx, line_num;
+  int pos, pos_next, bc_len, op, len, i, idx, line_num, column_num;
   uint8_t *bc_buf;
   JSAtom var_name;
   DynBuf bc_out;
@@ -9436,6 +9527,7 @@ static __exception int resolve_variables(JSContext *ctx, JSFunctionDef *s)
   }
 
   line_num = 0; /* avoid warning */
+  column_num = 0; /* avoid warning */
   for (pos = 0; pos < bc_len; pos = pos_next) {
     op = bc_buf[pos];
     len = opcode_info[op].size;
@@ -9444,6 +9536,11 @@ static __exception int resolve_variables(JSContext *ctx, JSFunctionDef *s)
       case OP_line_num:
         line_num = get_u32(bc_buf + pos + 1);
         s->line_number_size++;
+        goto no_change;
+
+      case OP_column_num:
+        column_num = get_u32(bc_buf + pos + 1);
+        s->column_number_size++;
         goto no_change;
 
       case OP_eval: /* convert scope index to adjusted variable index */
@@ -9747,6 +9844,21 @@ static void add_pc2line_info(JSFunctionDef *s, uint32_t pc, int line_num)
   }
 }
 
+/* the pc2col table gives a column number for each PC value */
+static void add_pc2col_info(JSFunctionDef *s, uint32_t pc, int column_num) 
+{
+  if(s->column_number_slots != NULL
+     &&  s->column_number_count < s->column_number_size
+     &&  pc >= s->column_number_last_pc
+     &&  column_num != s->column_number_last) {
+    s->column_number_slots[s->column_number_count].pc = pc;
+    s->column_number_slots[s->column_number_count].column_num = column_num;
+    s->column_number_count++;
+    s->column_number_last_pc = pc;
+    s->column_number_last = column_num;
+  }
+}
+
 static void compute_pc2line_info(JSFunctionDef *s)
 {
   if (!(s->js_mode & JS_MODE_STRIP) && s->line_number_slots) {
@@ -9779,8 +9891,48 @@ static void compute_pc2line_info(JSFunctionDef *s)
         dbuf_put_leb128(&s->pc2line, diff_pc);
         dbuf_put_sleb128(&s->pc2line, diff_line);
       }
+
       last_pc = pc;
       last_line_num = line_num;
+    }
+  }
+}
+
+static void compute_pc2column_info(JSFunctionDef *s) 
+{
+  if(!(s->js_mode & JS_MODE_STRIP) && s->column_number_slots) {
+    int last_column_num = s->column_num;
+    uint32_t last_pc = 0;
+    int i;
+
+    js_dbuf_init(s->ctx, &s->pc2column);
+    for(i = 0; i < s->column_number_count; i++) {
+      uint32_t pc = s->column_number_slots[i].pc;
+      int column_num = s->column_number_slots[i].column_num;
+      int diff_pc, diff_column;
+
+      if (column_num < 0)
+        continue;
+
+      diff_pc = pc - last_pc;
+      diff_column = column_num - last_column_num;
+      if (diff_column == 0 || diff_pc < 0)
+        continue;
+
+      if (diff_column >= PC2COLUMN_BASE &&
+          diff_column < PC2COLUMN_BASE + PC2COLUMN_RANGE &&
+          diff_pc <= PC2COLUMN_DIFF_PC_MAX) {
+        dbuf_putc(&s->pc2column, (diff_column - PC2COLUMN_BASE) +
+                                   diff_pc * PC2COLUMN_RANGE + PC2COLUMN_OP_FIRST);
+      } else {
+        /* longer encoding */
+        dbuf_putc(&s->pc2column, 0);
+        dbuf_put_leb128(&s->pc2column, diff_pc);
+        dbuf_put_sleb128(&s->pc2column, diff_column);
+      }
+
+      last_pc = pc;
+      last_column_num = column_num;
     }
   }
 }
@@ -9949,7 +10101,7 @@ static void put_short_code(DynBuf *bc_out, int op, int idx)
 /* peephole optimizations and resolve goto/labels */
 static __exception int resolve_labels(JSContext *ctx, JSFunctionDef *s)
 {
-  int pos, pos_next, bc_len, op, op1, len, i, line_num;
+  int pos, pos_next, bc_len, op, op1, len, i, line_num, column_num;
   const uint8_t *bc_buf;
   DynBuf bc_out;
   LabelSlot *label_slots, *ls;
@@ -9963,7 +10115,7 @@ static __exception int resolve_labels(JSContext *ctx, JSFunctionDef *s)
   label_slots = s->label_slots;
 
   line_num = s->line_num;
-
+  column_num = s->column_num;
   cc.bc_buf = bc_buf = s->byte_code.buf;
   cc.bc_len = bc_len = s->byte_code.size;
   js_dbuf_init(ctx, &bc_out);
@@ -9982,6 +10134,14 @@ static __exception int resolve_labels(JSContext *ctx, JSFunctionDef *s)
       return -1;
     s->line_number_last = s->line_num;
     s->line_number_last_pc = 0;
+  }
+
+  if(s->column_number_size && !(s->js_mode & JS_MODE_STRIP)) {
+    s->column_number_slots = js_mallocz(s->ctx, sizeof(*s->column_number_slots) * s->column_number_size);
+    if(s->column_number_slots == NULL)
+      return -1;
+    s->column_number_last = s->column_num;
+    s->column_number_last_pc = 0;
   }
 
   /* initialize the 'home_object' variable if needed */
@@ -10056,7 +10216,11 @@ static __exception int resolve_labels(JSContext *ctx, JSFunctionDef *s)
            performance */
         line_num = get_u32(bc_buf + pos + 1);
         break;
-
+      case OP_column_num:
+        /* same with OP_line_num */
+        column_num = get_u32(bc_buf + pos + 1);
+        add_pc2col_info(s, bc_out.size, column_num);
+        break;
       case OP_label:
       {
         label = get_u32(bc_buf + pos + 1);
@@ -10780,6 +10944,11 @@ static __exception int resolve_labels(JSContext *ctx, JSFunctionDef *s)
               if (s->line_number_slots[j].pc > pos)
                 s->line_number_slots[j].pc -= delta;
             }
+            for (j = 0; j < s->column_number_count; j++) {
+              if (s->column_number_slots[j].pc > pos) {
+                s->column_number_slots[j].pc -= delta;
+              }
+            }
             continue;
           }
           break;
@@ -10811,8 +10980,11 @@ static __exception int resolve_labels(JSContext *ctx, JSFunctionDef *s)
   s->label_slots = NULL;
   /* XXX: should delay until copying to runtime bytecode function */
   compute_pc2line_info(s);
+  compute_pc2column_info(s);
   js_free(ctx, s->line_number_slots);
+  js_free(ctx, s->column_number_slots);
   s->line_number_slots = NULL;
+  s->column_number_slots = NULL;
   /* set the new byte code */
   dbuf_free(&s->byte_code);
   s->byte_code = bc_out;
@@ -11218,7 +11390,8 @@ static JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
 
   if (fd->js_mode & JS_MODE_STRIP) {
     JS_FreeAtom(ctx, fd->filename);
-    dbuf_free(&fd->pc2line);    // probably useless
+    dbuf_free(&fd->pc2line);
+    dbuf_free(&fd->pc2column);
   } else {
     /* XXX: source and pc2line info should be packed at the end of the
        JSFunctionBytecode structure, avoiding allocation overhead
@@ -11226,14 +11399,23 @@ static JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
     b->has_debug = 1;
     b->debug.filename = fd->filename;
     b->debug.line_num = fd->line_num;
+    b->debug.column_num = fd->column_num;
 
     //DynBuf pc2line;
     //compute_pc2line_info(fd, &pc2line);
     //js_free(ctx, fd->line_number_slots)
     b->debug.pc2line_buf = js_realloc(ctx, fd->pc2line.buf, fd->pc2line.size);
-    if (!b->debug.pc2line_buf)
+    b->debug.pc2column_buf = js_realloc(ctx, fd->pc2column.buf, fd->pc2column.size);
+    if (!b->debug.pc2line_buf) {
       b->debug.pc2line_buf = fd->pc2line.buf;
+    }
+
+    if(!b->debug.pc2column_buf) {
+      b->debug.pc2column_buf = fd->pc2column.buf;
+    }
+
     b->debug.pc2line_len = fd->pc2line.size;
+    b->debug.pc2column_len = fd->pc2column.size;
     b->debug.source = fd->source;
     b->debug.source_len = fd->source_len;
   }
@@ -11433,8 +11615,9 @@ static JSFunctionDef *js_parse_function_class_fields_init(JSParseState *s)
 {
   JSFunctionDef *fd;
 
-  fd = js_new_function_def(s->ctx, s->cur_func, FALSE, FALSE,
-                           s->filename, 0);
+  fd = js_new_function_def(s->ctx, s->cur_func, 
+                           FALSE, FALSE, s->filename, 
+                           0, 0);
   if (!fd)
     return NULL;
   fd->func_name = JS_ATOM_NULL;
@@ -11462,6 +11645,7 @@ static __exception int js_parse_function_decl2(JSParseState *s,
                                                JSAtom func_name,
                                                const uint8_t *ptr,
                                                int function_line_num,
+                                               int function_column_num,
                                                JSParseExportEnum export_flag,
                                                JSFunctionDef **pfd)
 {
@@ -11575,7 +11759,8 @@ static __exception int js_parse_function_decl2(JSParseState *s,
   }
 
   fd = js_new_function_def(ctx, fd, FALSE, is_expr,
-                           s->filename, function_line_num);
+                           s->filename, function_line_num, 
+                           function_column_num);
   if (!fd) {
     JS_FreeAtom(ctx, func_name);
     return -1;
@@ -12009,11 +12194,12 @@ static __exception int js_parse_function_decl(JSParseState *s,
                                               JSFunctionKindEnum func_kind,
                                               JSAtom func_name,
                                               const uint8_t *ptr,
-                                              int function_line_num)
+                                              int function_line_num,
+                                              int function_column_num)
 {
   return js_parse_function_decl2(s, func_type, func_kind, func_name, ptr,
-                                 function_line_num, JS_PARSE_EXPORT_NONE,
-                                 NULL);
+                                 function_line_num, function_column_num, 
+                                 JS_PARSE_EXPORT_NONE, NULL);
 }
 
 static __exception int js_parse_program(JSParseState *s)
@@ -12064,10 +12250,14 @@ void js_parse_init(JSContext *ctx, JSParseState *s,
   s->ctx = ctx;
   s->filename = filename;
   s->line_num = 1;
+  s->column_ptr = (const uint8_t*)input;
+  s->column_last_ptr = s->column_ptr;
+  s->column_num_count = 0;
   s->buf_ptr = (const uint8_t *)input;
   s->buf_end = s->buf_ptr + input_len;
   s->token.val = ' ';
   s->token.line_num = 1;
+  s->token.column_num = 0;
 }
 
 
@@ -12144,7 +12334,8 @@ JSValue __JS_EvalInternal(JSContext *ctx, JSValueConst this_obj,
       js_mode |= JS_MODE_STRICT;
     }
   }
-  fd = js_new_function_def(ctx, NULL, TRUE, FALSE, filename, 1);
+
+  fd = js_new_function_def(ctx, NULL, TRUE, FALSE, filename, 1, 0);
   if (!fd)
     goto fail1;
   s->cur_func = fd;
