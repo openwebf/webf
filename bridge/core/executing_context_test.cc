@@ -28,7 +28,7 @@ TEST(Context, evalWithError) {
     errorHandlerExecuted = true;
     EXPECT_STREQ(errmsg,
                  "TypeError: cannot read property 'toString' of null\n"
-                 "    at <eval> (file://:1)\n");
+                 "    at <eval> (file://:1:27)\n");
   };
   auto bridge = TEST_init(errorHandler);
   const char* code = "let object = null; object.toString();";
@@ -56,9 +56,9 @@ TEST(Context, unrejectPromiseError) {
     errorHandlerExecuted = true;
     EXPECT_STREQ(errmsg,
                  "TypeError: cannot read property 'forceNullError' of null\n"
-                 "    at <anonymous> (file://:4)\n"
+                 "    at <anonymous> (file://:4:28)\n"
                  "    at Promise (native)\n"
-                 "    at <eval> (file://:6)\n");
+                 "    at <eval> (file://:6:10)\n");
   };
   auto bridge = TEST_init(errorHandler);
   const char* code =
@@ -101,9 +101,9 @@ TEST(Context, unrejectPromiseWillTriggerUnhandledRejectionEvent) {
     errorHandlerExecuted = true;
     EXPECT_STREQ(errmsg,
                  "TypeError: cannot read property 'forceNullError' of null\n"
-                 "    at <anonymous> (file://:12)\n"
+                 "    at <anonymous> (file://:12:22)\n"
                  "    at Promise (native)\n"
-                 "    at <eval> (file://:14)\n");
+                 "    at <eval> (file://:14:9)\n");
   };
   auto bridge = TEST_init(errorHandler);
   static int logIndex = 0;
@@ -250,9 +250,9 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
     errorCalledCount++;
     EXPECT_STREQ(errmsg,
                  "TypeError: cannot read property 'forceNullError' of null\n"
-                 "    at <anonymous> (file://:4)\n"
+                 "    at <anonymous> (file://:4:28)\n\n"
                  "    at Promise (native)\n"
-                 "    at <eval> (file://:6)\n");
+                 "    at <eval> (file://:6:10)\n");
   };
 
   auto bridge = TEST_init(errorHandler);
