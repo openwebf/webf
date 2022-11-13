@@ -9420,29 +9420,29 @@ static int skip_dead_code(JSFunctionDef *s, const uint8_t *bc_buf, int bc_len,
                        *linep, label, s->label_slots[label].pos2);
             }
 #endif
-        assert(s->label_slots[label].first_reloc == NULL);
-      } else {
-        /* XXX: output a warning for unreachable code? */
-        JSAtom atom;
-        switch(opcode_info[op].fmt) {
-          case OP_FMT_label:
-          case OP_FMT_label_u16:
-            label = get_u32(bc_buf + pos + 1);
-            update_label(s, label, -1);
-            break;
-          case OP_FMT_atom_label_u8:
-          case OP_FMT_atom_label_u16:
-            label = get_u32(bc_buf + pos + 5);
-            update_label(s, label, -1);
-            /* fall thru */
-          case OP_FMT_atom:
-          case OP_FMT_atom_u8:
-          case OP_FMT_atom_u16:
-            atom = get_u32(bc_buf + pos + 1);
-            JS_FreeAtom(s->ctx, atom);
-            break;
-          default:
-            break;
+      assert(s->label_slots[label].first_reloc == NULL);
+    } else {
+      /* XXX: output a warning for unreachable code? */
+      JSAtom atom;
+      switch(opcode_info[op].fmt) {
+        case OP_FMT_label:
+        case OP_FMT_label_u16:
+          label = get_u32(bc_buf + pos + 1);
+          update_label(s, label, -1);
+          break;
+        case OP_FMT_atom_label_u8:
+        case OP_FMT_atom_label_u16:
+          label = get_u32(bc_buf + pos + 5);
+          update_label(s, label, -1);
+          /* fall thru */
+        case OP_FMT_atom:
+        case OP_FMT_atom_u8:
+        case OP_FMT_atom_u16:
+          atom = get_u32(bc_buf + pos + 1);
+          JS_FreeAtom(s->ctx, atom);
+          break;
+        default:
+          break;
       }
     }
   }
