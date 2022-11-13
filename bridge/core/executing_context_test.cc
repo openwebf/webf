@@ -250,7 +250,7 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
     errorCalledCount++;
     EXPECT_STREQ(errmsg,
                  "TypeError: cannot read property 'forceNullError' of null\n"
-                 "    at <anonymous> (file://:4:28)\n\n"
+                 "    at <anonymous> (file://:4:28)\n"
                  "    at Promise (native)\n"
                  "    at <eval> (file://:6:10)\n");
   };
