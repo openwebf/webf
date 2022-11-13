@@ -15,7 +15,7 @@ function assert(actual, expected, message) {
 /** id not exists -> should be located at id */
 function test_line_column1() {
     try {
-        eval(`'銆?;A;`);
+        eval(`'【';A;`);
     } catch (e) {
         assert(e.lineNumber, 1, 'test_line_column1');
         assert(e.columnNumber, 5, 'test_line_column1');
@@ -67,7 +67,7 @@ function test_line_column4() {
 /** if id not exists -> should be located at id */
 function test_line_column5() {
     try {
-        eval(`'銆?;1+1;new A();`);
+        eval(`'【';1+1;new A();`);
     } catch (e) {
         assert(e.lineNumber, 1, 'test_line_column5');
         assert(e.columnNumber, 13, 'test_line_column5');
@@ -77,7 +77,7 @@ function test_line_column5() {
 /** new call should be located at 'new' */
 function test_line_column6() {
     try {
-        eval(`'銆?;1+1;throw new Error();`);
+        eval(`'【';1+1;throw new Error();`);
     } catch (e) {
         assert(e.lineNumber, 1, 'test_line_column6');
         assert(e.columnNumber, 15, 'test_line_column6');
@@ -120,7 +120,7 @@ function test_line_column8() {
 /** nest function call */
 function test_line_column9() {
     try {
-        eval(`(function(){'銆?(function(){'use strict';a;}())}())`);
+        eval(`(function(){'【'(function(){'use strict';a;}())}())`);
     } catch (e) {
         assert(e.lineNumber, 1, 'test_line_column9');
         assert(e.columnNumber, 41, 'test_line_column9');
