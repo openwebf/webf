@@ -34,8 +34,7 @@ enum JSValueType {
 }
 
 enum JSPointerType {
-  AsyncFunctionContext,
-  NativeFunctionContext,
+  NativeBindingObject,
   Others
 }
 
@@ -61,7 +60,12 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
     case JSValueType.TAG_FLOAT64:
       return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:
-      return BindingBridge.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
+      JSPointerType pointerType = JSPointerType.values[nativeValue.ref.uint32];
+      if (pointerType == JSPointerType.NativeBindingObject) {
+        return BindingBridge.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
+      }
+
+      return Pointer.fromAddress(nativeValue.ref.u);
     case JSValueType.TAG_LIST:
       return List.generate(nativeValue.ref.uint32, (index) {
         Pointer<NativeValue> head = Pointer.fromAddress(nativeValue.ref.u).cast<NativeValue>();
@@ -95,9 +99,11 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     target.ref.u = stringToNativeString(value).address;
   } else if (value is Pointer) {
     target.ref.tag = JSValueType.TAG_POINTER.index;
+    target.ref.uint32 = JSPointerType.Others.index;
     target.ref.u = value.address;
   } else if (value is BindingObject) {
     target.ref.tag = JSValueType.TAG_POINTER.index;
+    target.ref.uint32 = JSPointerType.NativeBindingObject.index;
     target.ref.u = (value.pointer)!.address;
   } else if (value is List) {
     target.ref.tag = JSValueType.TAG_LIST.index;
