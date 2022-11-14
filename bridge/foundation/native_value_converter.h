@@ -122,7 +122,9 @@ struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_
 template <typename T>
 struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_of_v<ScriptWrappable, T>>>
     : public NativeValueConverterBase<T> {
-  static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::NativeBindingObject, value->bindingObject()); }
+  static NativeValue ToNativeValue(T* value) {
+    return Native_NewPtr(JSPointerType::NativeBindingObject, value->bindingObject());
+  }
   static T* FromNativeValue(JSContext* ctx, NativeValue value) {
     if (value.tag == NativeTag::TAG_NULL) {
       return nullptr;
