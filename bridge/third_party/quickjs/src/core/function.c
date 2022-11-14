@@ -2509,7 +2509,7 @@ exception:
        before if the exception happens in a bytecode
        operation */
     sf->cur_pc = pc;
-    build_backtrace(ctx, rt->current_exception, NULL, 0, 0);
+    build_backtrace(ctx, rt->current_exception, NULL, 0, 0, 0);
   }
   if (!JS_IsUncatchableError(ctx, rt->current_exception)) {
     while (sp > stack_buf) {

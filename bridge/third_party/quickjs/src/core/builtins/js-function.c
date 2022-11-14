@@ -462,6 +462,14 @@ JSValue js_function_proto_lineNumber(JSContext* ctx, JSValueConst this_val) {
   return JS_UNDEFINED;
 }
 
+JSValue js_function_proto_columnNumber(JSContext *ctx, JSValueConst this_val) {
+  JSFunctionBytecode* b = JS_GetFunctionBytecode(this_val);
+  if (b && b->has_debug) {
+    return JS_NewInt32(ctx, b->debug.column_num);
+  }
+  return JS_UNDEFINED;
+}
+
 int js_arguments_define_own_property(JSContext* ctx,
                                             JSValueConst this_obj,
                                             JSAtom prop,

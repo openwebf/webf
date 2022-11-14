@@ -192,6 +192,11 @@ typedef struct LineNumberSlot {
   int line_num;
 } LineNumberSlot;
 
+typedef struct ColumnNumberSlot {
+  uint32_t pc;
+  int column_num;
+} ColumnNumberSlot;
+
 typedef enum JSParseFunctionEnum {
   JS_PARSE_FUNC_STATEMENT,
   JS_PARSE_FUNC_VAR,
@@ -310,10 +315,18 @@ typedef struct JSFunctionDef {
   int line_number_last;
   int line_number_last_pc;
 
+  ColumnNumberSlot* column_number_slots;
+  int column_number_size;
+  int column_number_count;
+  int column_number_last_pc;
+  int column_number_last;
+
   /* pc2line table */
   JSAtom filename;
   int line_num;
+  int column_num;
   DynBuf pc2line;
+  DynBuf pc2column;
 
   char* source; /* raw source, utf-8 encoded */
   int source_len;
@@ -323,8 +336,9 @@ typedef struct JSFunctionDef {
 
 typedef struct JSToken {
   int val;
-  int line_num; /* line number of token start */
-  const uint8_t* ptr;
+  int line_num;  /* line number of token start */
+  int column_num; /* colum number of token start */
+  const uint8_t *ptr;
   union {
     struct {
       JSValue str;
@@ -352,6 +366,9 @@ typedef struct JSParseState {
   JSContext *ctx;
   int last_line_num;  /* line number of last token */
   int line_num;       /* line number of current offset */
+  const uint8_t *column_ptr;
+  const uint8_t *column_last_ptr;
+  int column_num_count;
   const char *filename;
   JSToken token;
   BOOL got_lf; /* true if got line feed before the current token */
@@ -402,12 +419,11 @@ static const JSOpCode opcode_info[OP_COUNT + (OP_TEMP_END - OP_TEMP_START)] = {
 #define short_opcode_info(op) opcode_info[op]
 #endif
 
-JSExportEntry* add_export_entry2(JSContext* ctx, JSParseState* s, JSModuleDef* m, JSAtom local_name, JSAtom export_name, JSExportTypeEnum export_type);
-
 __exception int json_next_token(JSParseState *s);
 void free_token(JSParseState *s, JSToken *token);
 
-JSFunctionDef* js_new_function_def(JSContext* ctx, JSFunctionDef* parent, BOOL is_eval, BOOL is_func_expr, const char* filename, int line_num);
+JSExportEntry* add_export_entry2(JSContext* ctx, JSParseState* s, JSModuleDef* m, JSAtom local_name, JSAtom export_name, JSExportTypeEnum export_type);
+JSFunctionDef* js_new_function_def(JSContext* ctx, JSFunctionDef* parent, BOOL is_eval, BOOL is_func_expr, const char* filename, int line_num, int column_num);
 void js_parse_init(JSContext* ctx, JSParseState* s, const char* input, size_t input_len, const char* filename);
 int __attribute__((format(printf, 2, 3))) js_parse_error(JSParseState *s, const char *fmt, ...);
 void skip_shebang(JSParseState* s);

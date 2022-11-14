@@ -500,6 +500,10 @@ typedef struct JSVarDef {
 #define PC2LINE_RANGE    5
 #define PC2LINE_OP_FIRST 1
 #define PC2LINE_DIFF_PC_MAX ((255 - PC2LINE_OP_FIRST) / PC2LINE_RANGE)
+#define PC2COLUMN_BASE (-1)
+#define PC2COLUMN_RANGE 5
+#define PC2COLUMN_OP_FIRST 1
+#define PC2COLUMN_DIFF_PC_MAX ((255 - PC2COLUMN_OP_FIRST) / PC2COLUMN_RANGE)
 
 typedef enum JSFunctionKindEnum {
     JS_FUNC_NORMAL = 0,
@@ -542,9 +546,12 @@ typedef struct JSFunctionBytecode {
         /* debug info, move to separate structure to save memory? */
         JSAtom filename;
         int line_num;
+        int column_num;
         int source_len;
         int pc2line_len;
+        int pc2column_len;
         uint8_t *pc2line_buf;
+        uint8_t *pc2column_buf;
         char *source;
     } debug;
 } JSFunctionBytecode;

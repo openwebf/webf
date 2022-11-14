@@ -143,6 +143,7 @@ void dbuf_put_sleb128(DynBuf* s, int32_t v1);
 int get_leb128(uint32_t* pval, const uint8_t* buf, const uint8_t* buf_end);
 int get_sleb128(int32_t* pval, const uint8_t* buf, const uint8_t* buf_end);
 int find_line_num(JSContext* ctx, JSFunctionBytecode* b, uint32_t pc_value);
+int find_column_num(JSContext* ctx, JSFunctionBytecode* b, uint32_t pc_value);
 
 /* in order to avoid executing arbitrary code during the stack trace
    generation, we only look at simple 'name' properties containing a
@@ -151,7 +152,7 @@ const char* get_func_name(JSContext* ctx, JSValueConst func);
 
 /* if filename != NULL, an additional level is added with the filename
    and line number information (used for parse error). */
-void build_backtrace(JSContext* ctx, JSValueConst error_obj, const char* filename, int line_num, int backtrace_flags);
+void build_backtrace(JSContext* ctx, JSValueConst error_obj, const char* filename, int line_num, int column_num, int backtrace_flags);
 BOOL is_backtrace_needed(JSContext* ctx, JSValueConst obj);
 
 /* return -1 (exception) or TRUE/FALSE */
