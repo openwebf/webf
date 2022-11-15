@@ -105,6 +105,7 @@ mixin BaseInputElement on WidgetElement {
     super.initializeProperties(properties);
 
     properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
+    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = value);
   }
 
   @override
@@ -132,6 +133,9 @@ mixin BaseInputElement on WidgetElement {
   }
 
   String get type => getAttribute('type') ?? 'text';
+  void set type(value) {
+    internalSetAttribute('type', value.toString());
+  }
 
   String get placeholder => getAttribute('placeholder') ?? '';
 
@@ -293,13 +297,6 @@ mixin BaseInputElement on WidgetElement {
       case 'hidden':
         return SizedBox(width: 0, height: 0);
     }
-    // return Focus(
-    //   focusNode: _focusNode,
-    //   onFocusChange: (bool isFocus) {
-    //
-    //   },
-    //   child: ,
-    // );
     return _createInputWidget(context, minLines, maxLines);
   }
 }
