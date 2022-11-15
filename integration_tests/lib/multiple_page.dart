@@ -220,7 +220,7 @@ void main() {
 
       tearDownAll(() {
         print('test done');
-        // exit(0);
+        exit(0);
       });
     });
   });
