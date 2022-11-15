@@ -22,8 +22,8 @@ namespace webf {
 
 Element::Element(const AtomicString& tag_name, Document* document, Node::ConstructionType construction_type)
     : ContainerNode(document, construction_type), tag_name_(tag_name) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateElement,
-                                                       std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(
+      eventTargetId(), UICommand::kCreateElement, std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
 }
 
 ElementAttributes& Element::EnsureElementAttributes() {

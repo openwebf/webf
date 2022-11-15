@@ -16,7 +16,8 @@ void Console::__webf_print__(ExecutingContext* context,
   std::stringstream stream;
   std::string buffer = log.ToStdString(context->ctx());
   stream << buffer;
-  printLog(context, stream, level != built_in_string::kempty_string ? level.ToStdString(context->ctx()) : "info", nullptr);
+  printLog(context, stream, level != built_in_string::kempty_string ? level.ToStdString(context->ctx()) : "info",
+           nullptr);
 }
 
 void Console::__webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state) {
