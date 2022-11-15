@@ -56,9 +56,12 @@ NativeValue WidgetElement::HandleCallFromDartSide(const NativeValue* native_meth
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
+  if (unimplemented_properties_.count(key) > 0) {
+    return unimplemented_properties_[key];
+  }
+
   if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
     GetExecutingContext()->FlushUICommand();
-    assert(GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_));
   }
 
   if (key == built_in_string::kSymbol_toStringTag) {
@@ -66,32 +69,30 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
   }
 
   auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
-  if (shape->built_in_properties_.count(key) > 0) {
-    return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
-  }
-
-  if (shape->built_in_methods_.count(key) > 0) {
-    if (cached_methods_.count(key) > 0) {
-      return cached_methods_[key];
+  if (shape != nullptr) {
+    if (shape->built_in_properties_.count(key) > 0) {
+      return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
     }
 
-    auto func = CreateSyncMethodFunc(key);
-    cached_methods_[key] = func;
-    return func;
-  }
+    if (shape->built_in_methods_.count(key) > 0) {
+      if (cached_methods_.count(key) > 0) {
+        return cached_methods_[key];
+      }
 
-  if (shape->built_in_async_methods_.count(key) > 0) {
-    if (async_cached_methods_.count(key) > 0) {
-      return async_cached_methods_[key];
+      auto func = CreateSyncMethodFunc(key);
+      cached_methods_[key] = func;
+      return func;
     }
 
-    auto func = CreateAsyncMethodFunc(key);
-    async_cached_methods_[key] = CreateAsyncMethodFunc(key);
-    return func;
-  }
+    if (shape->built_in_async_methods_.count(key) > 0) {
+      if (async_cached_methods_.count(key) > 0) {
+        return async_cached_methods_[key];
+      }
 
-  if (unimplemented_properties_.count(key) > 0) {
-    return unimplemented_properties_[key];
+      auto func = CreateAsyncMethodFunc(key);
+      async_cached_methods_[key] = CreateAsyncMethodFunc(key);
+      return func;
+    }
   }
 
   return ScriptValue::Empty(ctx());
@@ -100,11 +101,10 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
   if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
     GetExecutingContext()->FlushUICommand();
-    assert(GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_));
   }
-  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
 
-  if (shape->built_in_properties_.count(key) > 0) {
+  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
+  if (shape != nullptr && shape->built_in_properties_.count(key) > 0) {
     NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
