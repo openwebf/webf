@@ -60,7 +60,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
   }
 
   if (key == built_in_string::kSymbol_toStringTag) {
-    return ScriptValue(ctx(), tagName().ToNativeString().release());
+    return ScriptValue(ctx(), tagName().ToNativeString(ctx()).release());
   }
 
   return ScriptValue(ctx(), GetBindingProperty(key, exception_state));

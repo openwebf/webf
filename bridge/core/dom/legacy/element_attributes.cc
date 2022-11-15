@@ -48,14 +48,14 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   if (numberIndex) {
     exception_state.ThrowException(
         ctx(), ErrorType::TypeError,
-        "Failed to execute 'kSetAttribute' on 'Element': '" + name.ToStdString() + "' is not a valid attribute name.");
+        "Failed to execute 'kSetAttribute' on 'Element': '" + name.ToStdString(ctx()) + "' is not a valid attribute name.");
     return false;
   }
 
   attributes_[name] = value;
 
-  std::unique_ptr<NativeString> args_01 = name.ToNativeString();
-  std::unique_ptr<NativeString> args_02 = value.ToNativeString();
+  std::unique_ptr<NativeString> args_01 = name.ToNativeString(ctx());
+  std::unique_ptr<NativeString> args_02 = value.ToNativeString(ctx());
 
   GetExecutingContext()->uiCommandBuffer()->addCommand(element_->eventTargetId(), UICommand::kSetAttribute,
                                                        std::move(args_01), std::move(args_02), nullptr);
@@ -76,7 +76,7 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
   attributes_.erase(name);
 
-  std::unique_ptr<NativeString> args_01 = name.ToNativeString();
+  std::unique_ptr<NativeString> args_01 = name.ToNativeString(ctx());
   GetExecutingContext()->uiCommandBuffer()->addCommand(element_->eventTargetId(), UICommand::kRemoveAttribute,
                                                        std::move(args_01), nullptr);
 }
@@ -91,8 +91,8 @@ std::string ElementAttributes::ToString() {
   std::string s;
 
   for (auto& attr : attributes_) {
-    s += attr.first.ToStdString() + "=";
-    s += "\"" + attr.second.ToStdString() + "\"";
+    s += attr.first.ToStdString(ctx()) + "=";
+    s += "\"" + attr.second.ToStdString(ctx()) + "\"";
   }
 
   return s;

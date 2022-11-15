@@ -218,7 +218,7 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
 
   if (added && listener_count == 1) {
     GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kAddEvent,
-                                                         std::move(event_type.ToNativeString()), nullptr);
+                                                         std::move(event_type.ToNativeString(ctx())), nullptr);
   }
 
   return added;
@@ -264,7 +264,7 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
 
   if (listener_count == 0) {
     GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kRemoveEvent,
-                                                         std::move(event_type.ToNativeString()), nullptr);
+                                                         std::move(event_type.ToNativeString(ctx())), nullptr);
   }
 
   return true;

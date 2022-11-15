@@ -59,7 +59,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   }
 
   NativeValue return_value = Native_NewNull();
-  NativeValue native_method = NativeValueConverter<NativeTypeString>::ToNativeValue(method);
+  NativeValue native_method = NativeValueConverter<NativeTypeString>::ToNativeValue(context_->ctx(), method);
   binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
   return return_value;
 }
@@ -83,7 +83,7 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 
 NativeValue BindingObject::GetBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const {
   context_->FlushUICommand();
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release())};
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(context_->ctx()).release())};
   return InvokeBindingMethod(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
 }
 
@@ -91,7 +91,7 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
                                               NativeValue value,
                                               ExceptionState& exception_state) const {
   context_->FlushUICommand();
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release()), value};
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(context_->ctx()).release()), value};
   return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv, exception_state);
 }
 

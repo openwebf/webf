@@ -33,7 +33,7 @@ struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<Na
 
 template <>
 struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
-  static NativeValue ToNativeValue(const ImplType& value) { return Native_NewString(value.ToNativeString().release()); }
+  static NativeValue ToNativeValue(JSContext* ctx, const ImplType& value) { return Native_NewString(value.ToNativeString(ctx).release()); }
 
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
     if (value.tag == NativeTag::TAG_NULL) {

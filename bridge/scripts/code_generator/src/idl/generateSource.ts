@@ -164,6 +164,10 @@ export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boo
   return returnValue;
 }
 
+function isDOMStringType(type: ParameterType[]) {
+  return type[0] == FunctionArgumentType.dom_string;
+}
+
 function generateNativeValueTypeConverter(type: ParameterType[]): string {
   let returnValue = '';
 
@@ -217,7 +221,7 @@ function generateCallMethodName(name: string) {
 
 function generateDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, args: FunctionArguments[]): string {
   let nativeArguments = args.map(i => {
-    return `NativeValueConverter<${generateNativeValueTypeConverter(i.type)}>::ToNativeValue(args_${i.name})`;
+    return `NativeValueConverter<${generateNativeValueTypeConverter(i.type)}>::ToNativeValue(${isDOMStringType(i.type) ? 'ctx, ' : ''}args_${i.name})`;
   });
 
   let returnValueAssignment = '';
@@ -520,7 +524,8 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
           overloadMethods,
           filtedMethods,
           generateIDLTypeConverter,
-          generateNativeValueTypeConverter
+          generateNativeValueTypeConverter,
+          isDOMStringType,
         });
       }
       case TemplateKind.Dictionary: {

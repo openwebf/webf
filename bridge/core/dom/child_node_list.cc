@@ -20,7 +20,7 @@ Node* ChildNodeList::item(unsigned index, ExceptionState& exception_state) const
 }
 
 bool ChildNodeList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  int32_t index = std::stoi(key.ToStdString());
+  int32_t index = std::stoi(key.ToStdString(ctx()));
   return collection_index_cache_.NodeAt(*this, index);
 }
 
