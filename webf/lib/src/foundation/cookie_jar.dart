@@ -25,7 +25,7 @@ class CookieJar {
     _cookieJar = PersistCookieJar(storage: FileStorage(path.join(appTemporaryPath, 'cookies')));
   }
 
-  void setCookie(String value) {
+  void setCookieString(String value) {
     if (value.isEmpty) {
       return;
     }
@@ -38,6 +38,12 @@ class CookieJar {
 
     if (uri.host.isNotEmpty && _cookieJar != null) {
       _cookieJar!.saveFromAPISync(uri, [cookie]);
+    }
+  }
+
+  void setCookie(Uri uri, List<Cookie> cookies) {
+    if (_cookieJar != null) {
+      _cookieJar!.saveFromAPISync(uri, cookies);
     }
   }
 
