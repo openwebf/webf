@@ -42,4 +42,79 @@ describe('Cookie', () => {
     const verifyResponse = await fetch('/verify_cookie?id=name&value=andycall');
     expect(await verifyResponse.text()).toBe('true');
   });
+
+  it('remote server set expired cookie should have no effect', async () => {
+    const queryString = qs.stringify({
+      key: 'ID',
+      value: '1234',
+      options: {
+        expires: 'Thu, 31 Oct 2021 07:28:00 GMT'
+      }
+    });
+    const setResponse = await fetch('/set_cookie?' + queryString);
+    await setResponse.text();
+    expect(document.cookie).toBe('');
+    const verityResponse = await fetch('/verify_cookie?id=ID&value=1234');
+    expect(await verityResponse.text()).toBe('invalid');
+  });
+
+  it('remote server set path and domain should work', async () => {
+    const queryString = qs.stringify({
+      key: 'ID',
+      value: '1234',
+      options: {
+        path: '/'
+      }
+    });
+    const setResponse = await fetch('/set_cookie?' + queryString);
+    await setResponse.text();
+    expect(document.cookie).toBe('ID=1234');
+    const verityResponse = await fetch('/verify_cookie?id=ID&value=1234');
+    expect(await verityResponse.text()).toBe('true');
+  });
+
+  it('remote server set invalid path should not work', async () => {
+    const queryString = qs.stringify({
+      key: 'ID',
+      value: '1234',
+      options: {
+        path: '/abc/1234'
+      }
+    });
+    const setResponse = await fetch('/set_cookie?' + queryString);
+    await setResponse.text();
+    expect(document.cookie).toBe('');
+    const verityResponse = await fetch('/verify_cookie?id=ID&value=1234');
+    expect(await verityResponse.text()).toBe('invalid');
+  });
+
+  it('remote server set invalid domain should not work', async () => {
+    const queryString = qs.stringify({
+      key: 'ID',
+      value: '1234',
+      options: {
+        path: 'www.baidu.com'
+      }
+    });
+    const setResponse = await fetch('/set_cookie?' + queryString);
+    await setResponse.text();
+    expect(document.cookie).toBe('');
+    const verityResponse = await fetch('/verify_cookie?id=ID&value=1234');
+    expect(await verityResponse.text()).toBe('invalid');
+  });
+
+  it('remote server set same domain should not work', async () => {
+    const queryString = qs.stringify({
+      key: 'ID',
+      value: '1234',
+      options: {
+        domain: 'localhost'
+      }
+    });
+    const setResponse = await fetch('/set_cookie?' + queryString);
+    await setResponse.text();
+    expect(document.cookie).toBe('ID=1234');
+    const verityResponse = await fetch('/verify_cookie?id=ID&value=1234');
+    expect(await verityResponse.text()).toBe('true');
+  });
 });

@@ -10,7 +10,13 @@ app.use('/public/assets', express.static(path.join(__dirname, '../assets/')))
 app.get('/set_cookie', (req, res) => {
     const query = req.query;
     const options = query.options || {};
-    res.cookie(query.key, query.value, options);
+    const cookieOptions = {
+        ...options
+    };
+    if (options.expires) {
+        cookieOptions['expires'] = new Date(options.expires);
+    }
+    res.cookie(query.key, query.value, cookieOptions);
     res.end();
 });
 
