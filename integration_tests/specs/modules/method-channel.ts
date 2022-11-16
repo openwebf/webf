@@ -15,9 +15,9 @@ describe('MethodChannel', () => {
   });
 
   it('invokeMethod return int64', async () => {
-        let result = await webf.methodChannel.invokeMethod('helloInt64');
-        expect(result).toBe(Math.round(1111111111111111));
-      });
+     let result = await webf.methodChannel.invokeMethod('helloInt64');
+     expect(result).toBe(Math.round(1111111111111111));
+  });
 
   it('addMethodCallHandler', async () => {
     webf.methodChannel.addMethodCallHandler('helloworld', (args: any[]) => {
