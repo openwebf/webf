@@ -69,6 +69,7 @@ void free_function_bytecode(JSRuntime* rt, JSFunctionBytecode* b) {
   if (b->has_debug) {
     JS_FreeAtomRT(rt, b->debug.filename);
     js_free_rt(rt, b->debug.pc2line_buf);
+    js_free_rt(rt, b->debug.pc2column_buf);
     js_free_rt(rt, b->debug.source);
   }
 
@@ -578,6 +579,18 @@ static int JS_WriteFunctionTag(BCWriterState* s, JSValueConst obj) {
     bc_put_leb128(s, b->debug.line_num);
     bc_put_leb128(s, b->debug.pc2line_len);
     dbuf_put(&s->dbuf, b->debug.pc2line_buf, b->debug.pc2line_len);
+    /** 
+     * purely for compatibility with WebF/Kraken V1 quickjs compiler (kbc1 file format).
+     * determination of whether a column number is available by 
+     * adding a special sequence of characters.
+     */
+    dbuf_putc(&s->dbuf, 255);
+    dbuf_putc(&s->dbuf, 67); // 'C'
+    dbuf_putc(&s->dbuf, 79); // 'O'
+    dbuf_putc(&s->dbuf, 76); // 'L'
+    bc_put_leb128(s, b->debug.column_num);
+    bc_put_leb128(s, b->debug.pc2column_len);
+    dbuf_put(&s->dbuf, b->debug.pc2column_buf, b->debug.pc2column_len);
   }
 
   for (i = 0; i < b->cpool_count; i++) {
@@ -1552,12 +1565,18 @@ static JSValue JS_ReadFunctionTag(BCReaderState* s) {
   if (b->has_debug) {
     /* read optional debug information */
     bc_read_trace(s, "debug {\n");
-    if (bc_get_atom(s, &b->debug.filename))
+    if (bc_get_atom(s, &b->debug.filename)) {
       goto fail;
-    if (bc_get_leb128_int(s, &b->debug.line_num))
+    }
+
+    if (bc_get_leb128_int(s, &b->debug.line_num)) {
       goto fail;
-    if (bc_get_leb128_int(s, &b->debug.pc2line_len))
+    }
+
+    if (bc_get_leb128_int(s, &b->debug.pc2line_len)) {
       goto fail;
+    }
+
     if (b->debug.pc2line_len) {
       b->debug.pc2line_buf = js_mallocz(ctx, b->debug.pc2line_len);
       if (!b->debug.pc2line_buf)
@@ -1565,6 +1584,30 @@ static JSValue JS_ReadFunctionTag(BCReaderState* s) {
       if (bc_get_buf(s, b->debug.pc2line_buf, b->debug.pc2line_len))
         goto fail;
     }
+
+    /** special column number check logic for V1(.kbc1 file) bytecode format. */
+    if (s->ptr[0] == 255 && s->ptr[1] == 67 && s->ptr[2] == 79 && s->ptr[3] == 76) {
+      s->ptr += 4;
+      if (bc_get_leb128_int(s, &b->debug.column_num)) {
+        goto fail;
+      }
+
+      if (bc_get_leb128_int(s, &b->debug.pc2column_len)) {
+        goto fail;
+      }
+
+      if (b->debug.pc2column_len) {
+        b->debug.pc2column_buf = js_mallocz(ctx, b->debug.pc2column_len);
+        if (!b->debug.pc2column_buf) {
+          goto fail;
+        }
+
+        if (bc_get_buf(s, b->debug.pc2column_buf, b->debug.pc2column_len)) {
+          goto fail;
+        }
+      }
+    }
+
 #ifdef DUMP_READ_OBJECT
     bc_read_trace(s, "filename: ");
     print_atom(s->ctx, b->debug.filename);

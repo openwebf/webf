@@ -54,6 +54,7 @@ JSValue js_function_hasInstance(JSContext* ctx, JSValueConst this_val, int argc,
 JSValue js_function_proto_caller(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 JSValue js_function_proto_fileName(JSContext* ctx, JSValueConst this_val);
 JSValue js_function_proto_lineNumber(JSContext* ctx, JSValueConst this_val);
+JSValue js_function_proto_columnNumber(JSContext *ctx, JSValueConst this_val);
 
 void js_c_function_finalizer(JSRuntime* rt, JSValue val);
 void js_c_function_mark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func);

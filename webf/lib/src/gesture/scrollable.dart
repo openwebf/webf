@@ -9,6 +9,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../css.dart';
 import 'gesture_detector.dart';
 import 'monodrag.dart';
 import 'scroll_activity.dart';
@@ -65,13 +66,16 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
   DragStartBehavior dragStartBehavior;
   ScrollListener? scrollListener;
   final Set<PointerDeviceKind> dragDevices;
+  late CSSOverflowType _overflowType;
 
   WebFScrollable(
       {AxisDirection axisDirection = AxisDirection.down,
-      this.dragStartBehavior = DragStartBehavior.start,
+        CSSOverflowType overflowType  = CSSOverflowType.scroll,
+        this.dragStartBehavior = DragStartBehavior.start,
       this.scrollListener,
       this.dragDevices = _kTouchLikeDeviceTypes}) {
     _axisDirection = axisDirection;
+    _overflowType = overflowType;
     position = ScrollPositionWithSingleContext(physics: _physics, context: this, oldPosition: null);
   }
 
@@ -79,6 +83,10 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
   ///
   /// Determined by the [axisDirection].
   Axis get axis => axisDirectionToAxis(_axisDirection);
+
+  void set overflowType(CSSOverflowType type) {
+    _overflowType = type;
+  }
 
   void handlePointerDown(PointerDownEvent event) {
     for (GestureRecognizer? recognizer in _recognizers.values) {
@@ -102,7 +110,7 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
   @override
   void setCanDrag(bool canDrag) {
     if (canDrag == _lastCanDrag && (!canDrag || axis == _lastAxisDirection)) return;
-    if (!canDrag) {
+    if (!canDrag && !(_overflowType != CSSOverflowType.hidden)) {
       _gestureRecognizers = const <Type, GestureRecognizerFactory>{};
     } else {
       switch (axis) {

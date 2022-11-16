@@ -45,7 +45,7 @@ JSValue JS_ThrowError2(JSContext* ctx, JSErrorEnum error_num, const char* fmt, v
     JS_DefinePropertyValue(ctx, obj, JS_ATOM_message, JS_NewString(ctx, buf), JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
   }
   if (add_backtrace) {
-    build_backtrace(ctx, obj, NULL, 0, 0);
+    build_backtrace(ctx, obj, NULL, 0, 0, 0);
   }
   ret = JS_Throw(ctx, obj);
   return ret;

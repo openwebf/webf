@@ -126,6 +126,7 @@ class SelectorEvaluator extends SelectorVisitor {
           combinator = s.combinator;
           break;
         case TokenKind.COMBINATOR_NONE:
+          combinator = null;
           break;
         default:
           throw _unsupported(node);
