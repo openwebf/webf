@@ -89,8 +89,7 @@ class DefaultCookieJar implements CookieJar {
     return list;
   }
 
-  @override
-  Future<void> saveFromResponse(Uri uri, List<Cookie> cookies) async {
+  void saveCookiesToMemory(Uri uri, List<Cookie> cookies) {
     for (final cookie in cookies) {
       var domain = cookie.domain;
       String path;
@@ -122,6 +121,11 @@ class DefaultCookieJar implements CookieJar {
     }
   }
 
+  @override
+  Future<void> saveFromResponse(Uri uri, List<Cookie> cookies) async {
+    saveCookiesToMemory(uri, cookies);
+  }
+
   /// Delete cookies for specified [uri].
   /// This API will delete all cookies for the `uri.host`, it will ignored the `uri.path`.
   ///
@@ -140,6 +144,11 @@ class DefaultCookieJar implements CookieJar {
   /// Delete all cookies in RAM
   @override
   Future<void> deleteAll() async {
+    domainCookies.clear();
+    hostCookies.clear();
+  }
+
+  void deleteAllSync() {
     domainCookies.clear();
     hostCookies.clear();
   }

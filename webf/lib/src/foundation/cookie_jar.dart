@@ -11,10 +11,18 @@ import 'cookie_jar/serializable_cookie.dart';
 class CookieJar {
   final String url;
   static PersistCookieJar? _cookieJar;
-  static late Future<void> _loadCookieJarFuture;
+  static Future<PersistCookieJar> get _loadCookieJarFuture async {
+    if (_cookieJar != null) return _cookieJar!;
+    await loadCookieFromStorage();
+    return _cookieJar!;
+  }
 
-  CookieJar(this.url) {
-    _loadCookieJarFuture = loadCookieFromStorage();
+  CookieJar(this.url);
+
+  static Future<void> loadCookieFromStorage() async {
+    assert(_cookieJar == null);
+    String appTemporaryPath = await getWebFTemporaryPath();
+    _cookieJar = PersistCookieJar(storage: FileStorage(path.join(appTemporaryPath, 'cookies')));
   }
 
   void setCookie(String value) {
@@ -23,8 +31,13 @@ class CookieJar {
     }
     Cookie cookie = Cookie.fromSetCookieValue(value);
     Uri uri = Uri.parse(url);
+    List<String> pathSegements = uri.pathSegments;
+
+    cookie.path ??= '/' + pathSegements.sublist(0, pathSegements.length - 1).join('/');
+    cookie.domain ??= uri.host;
+
     if (uri.host.isNotEmpty && _cookieJar != null) {
-      _cookieJar!.saveFromResponse(uri, [cookie]);
+      _cookieJar!.saveFromAPISync(uri, [cookie]);
     }
   }
 
@@ -32,6 +45,12 @@ class CookieJar {
     Uri uri = Uri.parse(url);
     if (uri.host.isNotEmpty && _cookieJar != null) {
       _cookieJar!.delete(uri);
+    }
+  }
+
+  void clearAllCookies() {
+    if (_cookieJar != null) {
+      _cookieJar!.deleteAllSync();
     }
   }
 
@@ -56,12 +75,6 @@ class CookieJar {
       }
     });
     return cookiePairs.join('; ');
-  }
-
-  Future<void> loadCookieFromStorage() async {
-    assert(_cookieJar == null);
-    String appTemporaryPath = await getWebFTemporaryPath();
-    _cookieJar = PersistCookieJar(storage: FileStorage(path.join(appTemporaryPath, 'cookies')));
   }
 
   static Future<void> saveFromResponse(Uri uri, List<Cookie> cookies) async {

@@ -169,6 +169,18 @@ class PersistCookieJar extends DefaultCookieJar {
     }
   }
 
+  void saveFromAPISync(Uri uri, List<Cookie> cookies) {
+    _checkInitializedSync();
+    if (cookies.isNotEmpty) {
+      saveCookiesToMemory(uri, cookies);
+      if (cookies.every((Cookie e) => e.domain == null)) {
+        _saveSync(uri);
+      } else {
+        _saveSync(uri, true);
+      }
+    }
+  }
+
   Map<String, Map<String, SerializableCookie>> _filter(
     Map<String, Map<String, SerializableCookie>> domain,
   ) {
@@ -224,6 +236,15 @@ class PersistCookieJar extends DefaultCookieJar {
     _hostSet.clear();
   }
 
+  @override
+  void deleteAllSync() {
+    _checkInitializedSync();
+    super.deleteAllSync();
+    var keys = _hostSet.toList(growable: true)..addAll([IndexKey, DomainsKey]);
+    storage.deleteAllSync(keys);
+    _hostSet.clear();
+  }
+
   Future<void> _save(Uri uri, [bool withDomainSharedCookie = false]) async {
     final host = uri.host;
 
@@ -241,6 +262,26 @@ class PersistCookieJar extends DefaultCookieJar {
       var filterDomainCookies =
           domainCookies.map((key, value) => MapEntry(key, _filter(value)));
       await storage.write(DomainsKey, json.encode(filterDomainCookies));
+    }
+  }
+
+  void _saveSync(Uri uri, [bool withDomainSharedCookie = false]) {
+    final host = uri.host;
+
+    if (!_hostSet.contains(host)) {
+      _hostSet.add(host);
+      storage.writeSync(IndexKey, json.encode(_hostSet.toList()));
+    }
+    final cookies = hostCookies[host];
+
+    if (cookies != null) {
+      storage.writeSync(host, json.encode(_filter(cookies)));
+    }
+
+    if (withDomainSharedCookie) {
+      var filterDomainCookies =
+      domainCookies.map((key, value) => MapEntry(key, _filter(value)));
+      storage.writeSync(DomainsKey, json.encode(filterDomainCookies));
     }
   }
 

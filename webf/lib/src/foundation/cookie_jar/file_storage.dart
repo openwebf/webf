@@ -43,7 +43,10 @@ class FileStorage implements Storage {
 
   @override
   void deleteAllSync(List<String> keys) {
-    Directory(_curDir!).deleteSync(recursive: true);
+    Directory dir = Directory(_curDir!);
+    if (dir.existsSync()) {
+      dir.deleteSync(recursive: true);
+    }
   }
 
   void _initCurDir(bool persistSession, bool ignoreExpires) {
