@@ -31,7 +31,7 @@ const MOCK_SERVER_PORT = 4567;
 Future<void> startHttpMockServer() async {
   await Process.start('node', [__dirname + '/scripts/mock_http_server.js'], environment: {
     'PORT': MOCK_SERVER_PORT.toString()
-  });
+  }, mode: ProcessStartMode.inheritStdio);
 }
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
@@ -86,6 +86,7 @@ void main() async {
       testContext = initTestFramework(contextId);
       registerDartTestMethodsToCpp(contextId);
       addJSErrorListener(contextId, print);
+      webF.controller!.view.evaluateJavaScripts(codeInjection);
     },
     onLoad: (controller) async {
       // Preload load test cases
