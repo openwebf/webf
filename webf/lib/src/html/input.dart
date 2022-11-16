@@ -17,7 +17,11 @@ enum InputSize {
   large,
 }
 
-const Map<String, dynamic> _inputDefaultStyle = {BORDER: '2px solid rgb(118, 118, 118)'};
+const Map<String, dynamic> _inputDefaultStyle = {
+  BORDER: '2px solid rgb(118, 118, 118)',
+  DISPLAY: INLINE_BLOCK,
+  WIDTH: '140px',
+};
 
 class FlutterInputElement extends WidgetElement
     with BaseCheckBoxElement, BaseButtonElement, BaseInputElement, BaseTimeElement {
@@ -257,15 +261,7 @@ mixin BaseInputElement on WidgetElement {
         decoration: decoration,
       );
     }
-    return _wrapperBorder(widget);
-  }
-
-  // set default border and border radius
-  Widget _wrapperBorder(Widget child) {
-    return Container(
-      alignment: height != null ? Alignment.center : null,
-      child: child,
-    );
+    return widget;
   }
 
   final FocusNode _focusNode = FocusNode();
