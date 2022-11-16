@@ -101,7 +101,7 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
       height = attempingSize.height;
     }
 
-    size = Size(width, height);
+    size = constraints.constrain(Size(width, height));
     assert(size.isFinite);
   }
 
