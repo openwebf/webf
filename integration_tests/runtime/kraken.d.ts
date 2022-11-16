@@ -38,7 +38,14 @@ declare enum PointerChange {
   up
 }
 
-type SimulatePointer = (list: [number, number, number][], pointer: number) => void;
+
+declare enum PointerSignalKind {
+  none,
+  scroll,
+  unknown
+}
+
+type SimulatePointer = (list: [number, number, number, number?, number?, number?][], pointer: number) => void;
 type SimulateInputText = (chars: string) => void;
 declare const simulatePointer: SimulatePointer;
 declare const simulateInputText: SimulateInputText;

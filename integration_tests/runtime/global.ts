@@ -178,27 +178,34 @@ const ease = new Cubic(0.25, 0.1, 0.25, 1.0);
 // Simulate an mouse click action
 async function simulateClick(x: number, y: number, pointer: number = 0) {
   await simulatePointer([
+    [x, y, PointerChange.add],
     [x, y, PointerChange.down],
-    [x, y, PointerChange.up]
+    [x, y, PointerChange.up],
+    [x, y, PointerChange.remove]
   ], pointer);
 }
 
 // Simulate an mouse swipe action.
 async function simulateSwipe(startX: number, startY: number, endX: number, endY: number, duration: number, pointer: number = 0) {
-  let params: [number, number, number][] = [[startX, startY, PointerChange.down]];
-  let pointerMoveDelay = 0.001;
+  let params: [number, number, number, number, number, number][] = [];
+  let pointerMoveDelay = 0.016;
   let totalCount = duration / pointerMoveDelay;
-  let diffXPerSecond = (endX - startX) / totalCount;
-  let diffYPerSecond = (endY - startY) / totalCount;
+  let diffXPerFrame = (endX - startX) / totalCount;
+  let diffYPerFrame = (endY - startY) / totalCount;
 
+  let previousX = startX;
+  let previousY = startY;
   for (let i = 0; i < totalCount; i ++) {
     let progress = i / totalCount;
-    let diffX = diffXPerSecond * 100 * ease.transformInternal(progress);
-    let diffY = diffYPerSecond * 100 * ease.transformInternal(progress);
-    params.push([startX + diffX, startY + diffY, PointerChange.move])
+    let diffX = diffXPerFrame * 100 * ease.transformInternal(progress);
+    let diffY = diffYPerFrame * 100 * ease.transformInternal(progress);
+
+    params.push([startX + diffX, startY + diffY, PointerChange.move, PointerSignalKind.scroll, startX + diffX - previousX, startY + diffY - previousY])
+
+    previousX = startX + diffX;
+    previousY = startY + diffY;
   }
 
-  params.push([endX, endY, PointerChange.up]);
   await simulatePointer(params, pointer);
 }
 
@@ -209,10 +216,30 @@ async function simulatePointDown(x: number, y: number, pointer: number = 0) {
   ], pointer);
 }
 
+async function simulatePointMove(x: number, y: number, pointer: number = 0) {
+  await simulatePointer([
+    [x, y, PointerChange.move],
+  ], pointer);
+}
+
+async function simulatePointAdd(x: number, y: number, pointer: number = 0) {
+  await simulatePointer([
+    [x, y, PointerChange.add],
+  ], pointer);
+}
+
+
+async function simulatePointRemove(x: number, y: number, pointer: number = 0) {
+  await simulatePointer([
+    [x, y, PointerChange.remove],
+  ], pointer);
+}
+
+
 // Simulate an point up action.
 async function simulatePointUp(x: number, y: number, pointer: number = 0) {
   await simulatePointer([
-    [x, y, PointerChange.up],
+    [x, y, PointerChange.up]
   ], pointer);
 }
 
@@ -248,4 +275,7 @@ Object.assign(global, {
   snapshot,
   simulatePointDown,
   simulatePointUp,
+  simulatePointRemove,
+  simulatePointAdd,
+  simulatePointMove
 });

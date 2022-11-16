@@ -15,6 +15,15 @@
 
 namespace webf {
 
+struct ExecuteCallbackContext {
+  ExecuteCallbackContext() = delete;
+
+  explicit ExecuteCallbackContext(ExecutingContext* context, ExecuteCallback executeCallback)
+      : executeCallback(executeCallback), context(context){};
+  ExecuteCallback executeCallback;
+  ExecutingContext* context;
+};
+
 static JSValue executeTest(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   JSValue& callback = argv[0];
   auto context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
@@ -110,6 +119,21 @@ static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 #endif
 }
 
+struct SimulatePointerCallbackContext {
+  ExecutingContext* context{nullptr};
+  JSValue callbackValue{JS_NULL};
+};
+
+static void handleSimulatePointerCallback(void* p, int32_t contextId, const char* errmsg) {
+  auto* simulate_context = static_cast<SimulatePointerCallbackContext*>(p);
+  JSValue return_value =
+      JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
+  JS_FreeValue(simulate_context->context->ctx(), return_value);
+  JS_FreeValue(simulate_context->context->ctx(), simulate_context->callbackValue);
+  simulate_context->context->DrainPendingPromiseJobs();
+  delete simulate_context;
+}
+
 static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
   if (context->dartMethodPtr()->simulatePointer == nullptr) {
@@ -127,6 +151,7 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
     return JS_ThrowTypeError(ctx,
                              "Failed to execute '__webf_simulate_pointer__': second arguments should be an number.");
   }
+  JSValue callbackValue = argv[2];
 
   uint32_t length;
   JSValue lengthValue = JS_GetPropertyStr(ctx, inputArrayValue, "length");
@@ -138,6 +163,10 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   for (int i = 0; i < length; i++) {
     MousePointer* mouse = &mousePointerList[i];
     JSValue params = JS_GetPropertyUint32(ctx, inputArrayValue, i);
+    JSValue paramsLengthValue = JS_GetPropertyStr(ctx, params, "length");
+    uint32_t params_length;
+    JS_ToUint32(ctx, &params_length, paramsLengthValue);
+
     mouse->contextId = context->contextId();
     JSValue xValue = JS_GetPropertyUint32(ctx, params, 0);
     JSValue yValue = JS_GetPropertyUint32(ctx, params, 1);
@@ -146,6 +175,27 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
     double x;
     double y;
     double change;
+    double delta_x = 0.0;
+    double delta_y = 0.0;
+    int32_t signal_kind = 0;
+
+    if (params_length > 2) {
+      JSValue signalKindValue = JS_GetPropertyUint32(ctx, params, 3);
+      JSValue delayXValue = JS_GetPropertyUint32(ctx, params, 4);
+      JSValue delayYValue = JS_GetPropertyUint32(ctx, params, 5);
+
+      JS_ToInt32(ctx, &signal_kind, signalKindValue);
+      JS_ToFloat64(ctx, &delta_x, delayXValue);
+      JS_ToFloat64(ctx, &delta_y, delayYValue);
+
+      mouse->signal_kind = signal_kind;
+      mouse->delta_x = delta_x;
+      mouse->delta_y = delta_y;
+
+      JS_FreeValue(ctx, signalKindValue);
+      JS_FreeValue(ctx, delayXValue);
+      JS_FreeValue(ctx, delayYValue);
+    }
 
     JS_ToFloat64(ctx, &x, xValue);
     JS_ToFloat64(ctx, &y, yValue);
@@ -159,12 +209,17 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
     JS_FreeValue(ctx, xValue);
     JS_FreeValue(ctx, yValue);
     JS_FreeValue(ctx, changeValue);
+    JS_FreeValue(ctx, paramsLengthValue);
   }
 
   uint32_t pointer;
   JS_ToUint32(ctx, &pointer, pointerValue);
 
-  context->dartMethodPtr()->simulatePointer(mousePointerList, length, pointer);
+  auto* simulate_context = new SimulatePointerCallbackContext();
+  simulate_context->context = context;
+  simulate_context->callbackValue = JS_DupValue(ctx, callbackValue);
+  context->dartMethodPtr()->simulatePointer(simulate_context, mousePointerList, length, pointer,
+                                            handleSimulatePointerCallback);
 
   delete[] mousePointerList;
 
@@ -216,15 +271,6 @@ static JSValue triggerGlobalError(JSContext* ctx, JSValueConst this_val, int arg
   return JS_NULL;
 }
 
-struct ExecuteCallbackContext {
-  ExecuteCallbackContext() = delete;
-
-  explicit ExecuteCallbackContext(ExecutingContext* context, ExecuteCallback executeCallback)
-      : executeCallback(executeCallback), context(context){};
-  ExecuteCallback executeCallback;
-  ExecutingContext* context;
-};
-
 void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
   if (execute_test_callback_ == nullptr) {
     return;
@@ -271,7 +317,7 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
       {"__webf_execute_test__", executeTest, 1},
       {"__webf_match_image_snapshot__", matchImageSnapshot, 3},
       {"__webf_environment__", environment, 0},
-      {"__webf_simulate_pointer__", simulatePointer, 1},
+      {"__webf_simulate_pointer__", simulatePointer, 3},
       {"__webf_simulate_inputtext__", simulateInputText, 1},
       {"__webf_trigger_global_error__", triggerGlobalError, 0},
       {"__webf_parse_html__", parseHTML, 1},

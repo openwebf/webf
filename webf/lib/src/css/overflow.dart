@@ -134,12 +134,13 @@ mixin ElementOverflowMixin on ElementBase {
         case CSSOverflowType.scroll:
           // If the render has been offset when previous overflow is auto or scroll, _scrollableX should not reset.
           if (_scrollableX == null) {
-            _scrollableX = WebFScrollable(axisDirection: AxisDirection.right, scrollListener: scrollListener);
+            _scrollableX = WebFScrollable(axisDirection: AxisDirection.right, scrollListener: scrollListener, overflowType: overflowX);
             renderBoxModel.scrollOffsetX = _scrollableX!.position;
           }
           // Reset canDrag by overflow because hidden is can't drag.
           bool canDrag = overflowX != CSSOverflowType.hidden;
           _scrollableX!.setCanDrag(canDrag);
+          _scrollableX!.overflowType = overflowX;
           break;
         case CSSOverflowType.visible:
         default:
@@ -168,12 +169,13 @@ mixin ElementOverflowMixin on ElementBase {
         case CSSOverflowType.scroll:
           // If the render has been offset when previous overflow is auto or scroll, _scrollableY should not reset.
           if (_scrollableY == null) {
-            _scrollableY = WebFScrollable(axisDirection: AxisDirection.down, scrollListener: scrollListener);
+            _scrollableY = WebFScrollable(axisDirection: AxisDirection.down, scrollListener: scrollListener, overflowType: overflowY);
             renderBoxModel.scrollOffsetY = _scrollableY!.position;
           }
           // Reset canDrag by overflow because hidden is can't drag.
           bool canDrag = overflowY != CSSOverflowType.hidden;
           _scrollableY!.setCanDrag(canDrag);
+          _scrollableY!.overflowType = overflowY;
           break;
         case CSSOverflowType.visible:
         default:
