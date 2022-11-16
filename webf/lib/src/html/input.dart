@@ -23,6 +23,12 @@ const Map<String, dynamic> _inputDefaultStyle = {
   WIDTH: '140px',
 };
 
+const Map<String, dynamic> _checkboxDefaultStyle = {
+  MARGIN: '3px 3px 3px 4px',
+  PADDING: INITIAL,
+  BORDER: '0'
+};
+
 class FlutterInputElement extends WidgetElement
     with BaseCheckBoxElement, BaseButtonElement, BaseInputElement, BaseTimeElement {
   BindingContext? buildContext;
@@ -110,6 +116,10 @@ mixin BaseInputElement on WidgetElement {
 
     properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = value);
+    properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
+    properties['placeholder'] = BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
+    properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
+    properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
   }
 
   @override
@@ -138,18 +148,51 @@ mixin BaseInputElement on WidgetElement {
 
   String get type => getAttribute('type') ?? 'text';
   void set type(value) {
-    internalSetAttribute('type', value.toString());
+    internalSetAttribute('type', value?.toString() ?? '');
+    resetInputDefaultStyle();
+  }
+
+  void resetInputDefaultStyle() {
+    switch(type) {
+      case 'checkbox': {
+        _checkboxDefaultStyle.forEach((key, value) {
+          style.setProperty(key, value);
+        });
+        break;
+      }
+      default:
+        _inputDefaultStyle.forEach((key, value) {
+          style.setProperty(key, value);
+        });
+        break;
+    }
+    style.flushPendingProperties();
   }
 
   String get placeholder => getAttribute('placeholder') ?? '';
+  set placeholder(value) {
+    internalSetAttribute('placeholder', value?.toString() ?? '');
+  }
 
   String? get label => getAttribute('label');
+  set label(value) {
+    internalSetAttribute('label', value?.toString() ?? '');
+  }
 
   bool get disabled => getAttribute('disabled') != null;
+  set disabled(value) {
+    internalSetAttribute('disabled', value?.toString() ?? '');
+  }
 
   bool get autofocus => getAttribute('autofocus') != null;
+  set autofocus(value) {
+    internalSetAttribute('autofocus', value?.toString() ?? '');
+  }
 
   bool get readonly => getAttribute('readonly') != null;
+  set readonly(value) {
+    internalSetAttribute('readonly', value?.toString() ?? '');
+  }
 
   List<BorderSide>? get borderSides => renderStyle.borderSides;
 
