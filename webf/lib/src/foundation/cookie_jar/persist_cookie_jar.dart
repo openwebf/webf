@@ -54,10 +54,10 @@ class PersistCookieJar extends DefaultCookieJar {
         try {
           final Map<String, dynamic> jsonData = json.decode(str);
 
-          final cookies = jsonData.map((String domain, dynamic _cookies) {
+          final cookies = jsonData.map((String domain, _cookies) {
             final Map<String, dynamic> cookies =
                 _cookies.cast<String, dynamic>();
-            final domainCookies = cookies.map((String path, dynamic map) {
+            final domainCookies = cookies.map((String path, map) {
               final Map<String, String> cookieForPath =
                   map.cast<String, String>();
               final realCookies = cookieForPath.map(
@@ -103,10 +103,10 @@ class PersistCookieJar extends DefaultCookieJar {
         try {
           final Map<String, dynamic> jsonData = json.decode(str);
 
-          final cookies = jsonData.map((String domain, dynamic _cookies) {
+          final cookies = jsonData.map((String domain, _cookies) {
             final Map<String, dynamic> cookies =
             _cookies.cast<String, dynamic>();
-            final domainCookies = cookies.map((String path, dynamic map) {
+            final domainCookies = cookies.map((String path, map) {
               final Map<String, String> cookieForPath =
               map.cast<String, String>();
               final realCookies = cookieForPath.map(
@@ -187,7 +187,7 @@ class PersistCookieJar extends DefaultCookieJar {
     return domain
         .cast<String, Map<String, dynamic>>()
         .map((String path, Map<String, dynamic> _cookies) {
-      final cookies = _cookies.map((String cookieName, dynamic cookie) {
+      final cookies = _cookies.map((String cookieName, cookie) {
         if (((cookie.cookie.expires == null && cookie.cookie.maxAge == null) &&
                 persistSession) ||
             (persistSession && !cookie.isExpired())) {
@@ -296,7 +296,7 @@ class PersistCookieJar extends DefaultCookieJar {
           cookies = json.decode(str).cast<String, Map<String, dynamic>>();
 
           cookies!.forEach((String path, Map<String, dynamic> map) {
-            map.forEach((String k, dynamic v) {
+            map.forEach((String k, v) {
               map[k] = SerializableCookie.fromJson(v);
             });
           });
@@ -321,7 +321,7 @@ class PersistCookieJar extends DefaultCookieJar {
           cookies = json.decode(str).cast<String, Map<String, dynamic>>();
 
           cookies!.forEach((String path, Map<String, dynamic> map) {
-            map.forEach((String k, dynamic v) {
+            map.forEach((String k, v) {
               map[k] = SerializableCookie.fromJson(v);
             });
           });
