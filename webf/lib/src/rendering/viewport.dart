@@ -57,7 +57,7 @@ class RenderViewportBox extends RenderProxyBox with RenderObjectWithControllerMi
     size = constraints.constrain(Size(width, height));
     if (child != null) {
       RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
-      child!.layout(rootRenderLayoutBox.getConstraints());
+      child!.layout(rootRenderLayoutBox.getConstraints().tighten(width: width, height: height));
     }
   }
 
