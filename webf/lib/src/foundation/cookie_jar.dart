@@ -89,8 +89,10 @@ class CookieJar {
 
   static Future<void> saveFromResponseRaw(Uri uri, List<String>? cookieStr) async {
     final list = <Cookie>[];
-    cookieStr?.forEach((element) {
-      list.add(Cookie.fromSetCookieValue(element));
+    cookieStr?.forEach((str) {
+      Cookie cookie = Cookie.fromSetCookieValue(str);
+      cookie.domain ??= uri.host;
+      list.add(cookie);
     });
     await _cookieJar!.saveFromResponse(uri, list);
   }
