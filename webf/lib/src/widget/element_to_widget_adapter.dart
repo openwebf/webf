@@ -11,26 +11,26 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/webf.dart';
 
-class WebFElementWidget extends StatefulWidget {
+class WebFHTMLElementToWidgetAdaptor extends StatefulWidget {
   final dom.Element _webFElement;
-  WebFElementWidget(this._webFElement, {Key? key}): super(key: key) {
+  WebFHTMLElementToWidgetAdaptor(this._webFElement, {Key? key}): super(key: key) {
     _webFElement.flutterWidget = this;
     _webFElement.managedByFlutterWidget = true;
   }
 
   @override
   State<StatefulWidget> createState() {
-    return WebFElementState(_webFElement);
+    return HTMLElementState(_webFElement);
   }
 }
 
-class WebFElementState extends State<WebFElementWidget> {
+class HTMLElementState extends State<WebFHTMLElementToWidgetAdaptor> {
   final Set<Widget> customElementWidgets = HashSet();
   final dom.Element _webFElement;
 
   bool _disposed = false;
 
-  WebFElementState(this._webFElement);
+  HTMLElementState(this._webFElement);
   dom.Node get webFElement => _webFElement;
 
   void addWidgetChild(Widget widget) {

@@ -17,8 +17,8 @@ const Map<String, dynamic> _defaultStyle = {
 // WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
 abstract class WidgetElement extends dom.Element {
   // An state
-  late WebFWidgetElementWidget _widget;
-  WebFWidgetElementWidget get widget => _widget;
+  late WebFWidgetElementStatefulWidget _widget;
+  WebFWidgetElementStatefulWidget get widget => _widget;
 
   WebFWidgetElementState? _state;
   set state(WebFWidgetElementState? newState) {
@@ -29,7 +29,7 @@ abstract class WidgetElement extends dom.Element {
   WidgetElement(
     BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
-    _widget = WebFWidgetElementWidget(this);
+    _widget = WebFWidgetElementStatefulWidget(this);
   }
 
   @override

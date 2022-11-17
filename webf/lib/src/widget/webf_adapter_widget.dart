@@ -8,10 +8,10 @@ import 'package:webf/dom.dart' as dom;
 import 'package:webf/widget.dart';
 
 
-class WebFWidgetElementWidget extends StatefulWidget {
+class WebFWidgetElementStatefulWidget extends StatefulWidget {
   final WidgetElement widgetElement;
 
-  WebFWidgetElementWidget(this.widgetElement, {Key? key}): super(key: key);
+  WebFWidgetElementStatefulWidget(this.widgetElement, {Key? key}): super(key: key);
 
   @override
   StatefulElement createElement() {
@@ -30,7 +30,7 @@ class WebFWidgetElementElement extends StatefulElement {
   WebFWidgetElementElement(super.widget);
 
   @override
-  WebFWidgetElementWidget get widget => super.widget as WebFWidgetElementWidget;
+  WebFWidgetElementStatefulWidget get widget => super.widget as WebFWidgetElementStatefulWidget;
 
   @override
   void mount(Element? parent, Object? newSlot) {
@@ -42,7 +42,7 @@ class WebFWidgetElementElement extends StatefulElement {
   }
 }
 
-class WebFWidgetElementState extends State<WebFWidgetElementWidget> {
+class WebFWidgetElementState extends State<WebFWidgetElementStatefulWidget> {
   final WidgetElement widgetElement;
 
   WebFWidgetElementState(this.widgetElement);
@@ -63,7 +63,7 @@ class WebFWidgetElementState extends State<WebFWidgetElementWidget> {
     if (node is dom.CharacterData) {
       return WebFCharacterDataToWidgetAdaptor(node, key: key);
     }
-    return WebFElementWidget(node as dom.Element, key: key);
+    return WebFHTMLElementToWidgetAdaptor(node as dom.Element, key: key);
   }
 
   List<Widget> convertNodeListToWidgetList(List<dom.Node> childNodes) {
