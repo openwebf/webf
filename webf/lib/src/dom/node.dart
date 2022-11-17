@@ -90,9 +90,11 @@ abstract class LifecycleCallbacks {
 
 abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCallbacks {
   Widget? get flutterWidget => null;
-  /// WebF node could be wrapped by [WebFElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
+  /// WebF nodes could be wrapped by [WebFElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
   /// So if managedByFlutterWidget is true, WebF DOM can not disposed Node's renderObject directly.
   bool managedByFlutterWidget = false;
+  /// true if node are created by Flutter widgets.
+  bool createdByFlutterWidget = false;
   List<Node> childNodes = [];
 
   /// The Node.parentNode read-only property returns the parent of the specified node in the DOM tree.

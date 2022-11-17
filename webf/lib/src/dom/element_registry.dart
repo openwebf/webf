@@ -95,7 +95,7 @@ void defineBuiltInElements() {
   defineElement(LABEL, (context) => LabelElement(context));
   defineElement(BUTTON, (context) => ButtonElement(context));
   defineElement(INPUT, (context) => FlutterInputElement(context));
-  // defineElement(FORM, (context) => FlutterFormElement(context));
+  defineElement(FORM, (context) => FlutterFormElement(context));
   defineElement(TEXTAREA, (context) => FlutterTextAreaElement(context));
   // Edits
   defineElement(DEL, (context) => DelElement(context));

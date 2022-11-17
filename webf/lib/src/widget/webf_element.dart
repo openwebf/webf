@@ -14,6 +14,7 @@ class WebFElement extends MultiChildRenderObjectWidget {
         super(key: key, children: children) {
     element.createRenderer();
     element.managedByFlutterWidget = true;
+    element.createdByFlutterWidget = true;
     element.ownerDocument = parentElement.ownerDocument;
     parentElement.appendChild(element);
 
