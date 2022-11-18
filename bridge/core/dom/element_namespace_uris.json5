@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "element_namespace_uris"
+      }
+    ]
+  },
+  "data": [
+    ["html", "http://www.w3.org/1999/xhtml"],
+    ["svg", "http://www.w3.org/2000/svg"],
+    ["mathml", "http://www.w3.org/1998/Math/MathML"]
+  ]
+}

@@ -19,6 +19,8 @@ interface Document extends Node {
   readonly location: any;
 
   createElement(tagName: string, options?: any): Element;
+  // Chrome&Safari Supports pass undefined/null for uri/tagName, but in spec which is not allowed.
+  createElementNS(uri: string | null, tagName: string, options?: any): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
   createComment(data?: string): Comment;

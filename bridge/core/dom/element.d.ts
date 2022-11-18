@@ -23,6 +23,7 @@ interface Element extends Node, ParentNode {
   scrollTop: DartImpl<number>;
   readonly scrollWidth: DartImpl<number>;
   readonly scrollHeight: DartImpl<number>;
+  readonly namespaceURI: string;
   /**
    * Returns the HTML-uppercased qualified name.
    */

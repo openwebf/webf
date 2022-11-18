@@ -79,11 +79,15 @@ AtomicString::AtomicString(JSContext* ctx, const NativeString* native_string)
       length_(native_string->length()) {}
 
 AtomicString::AtomicString(JSContext* ctx, JSValue value)
-    : runtime_(JS_GetRuntime(ctx)),
-      atom_(JS_IsNull(value) ? built_in_string::kempty_string.atom_ : JS_ValueToAtom(ctx, value)) {
+    : runtime_(JS_GetRuntime(ctx)), atom_(JS_ValueToAtom(ctx, value)) {
   if (JS_IsString(value)) {
     kind_ = GetStringKind(value);
     length_ = JS_VALUE_GET_STRING(value)->len;
+  } else if (atom_ != JS_ATOM_NULL) {
+    auto atom_str = JS_AtomToString(ctx, atom_);
+    kind_ = GetStringKind(atom_str);
+    length_ = JS_VALUE_GET_STRING(atom_str)->len;
+    JS_FreeValue(ctx, atom_str);
   }
 }
 

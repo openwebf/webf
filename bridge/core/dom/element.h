@@ -22,7 +22,10 @@ class Element : public ContainerNode {
 
  public:
   using ImplType = Element*;
-  Element(const AtomicString& tag_name, Document* document, ConstructionType = kCreateElement);
+  Element(const AtomicString& namespace_uri,
+          const AtomicString& tag_name,
+          Document* document,
+          ConstructionType = kCreateElement);
 
   ElementAttributes* attributes() { return &EnsureElementAttributes(); }
   ElementAttributes& EnsureElementAttributes();
@@ -56,7 +59,8 @@ class Element : public ContainerNode {
 
   bool HasTagName(const AtomicString&) const;
   std::string nodeValue() const override;
-  AtomicString tagName() const { return tag_name_.ToUpperSlow(ctx()); }
+  AtomicString tagName() const { return tag_name_; }
+  AtomicString namespaceURI() const { return namespace_uri_; }
   std::string nodeName() const override;
   std::string nodeNameLowerCase() const;
 
@@ -104,6 +108,7 @@ class Element : public ContainerNode {
   mutable std::unique_ptr<ElementData> element_data_;
   Member<ElementAttributes> attributes_;
   Member<CSSStyleDeclaration> cssom_wrapper_;
+  AtomicString namespace_uri_ = AtomicString::Empty();
 };
 
 template <typename T>

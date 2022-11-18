@@ -13,6 +13,7 @@
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
 #include "element_attribute_names.h"
+#include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
 #include "qjs_element.h"
@@ -20,10 +21,24 @@
 
 namespace webf {
 
-Element::Element(const AtomicString& tag_name, Document* document, Node::ConstructionType construction_type)
-    : ContainerNode(document, construction_type), tag_name_(tag_name) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(
-      eventTargetId(), UICommand::kCreateElement, std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
+Element::Element(const AtomicString& namespace_uri,
+                 const AtomicString& tag_name,
+                 Document* document,
+                 Node::ConstructionType construction_type)
+    : ContainerNode(document, construction_type), tag_name_(tag_name), namespace_uri_(namespace_uri) {
+  auto buffer = GetExecutingContext()->uiCommandBuffer();
+  if (namespace_uri == element_namespace_uris::khtml) {
+    buffer->addCommand(eventTargetId(), UICommand::kCreateElement, std::move(tag_name.ToNativeString(ctx())),
+                       (void*)bindingObject());
+  } else if (namespace_uri == element_namespace_uris::ksvg) {
+    // TODO: SVG element
+    buffer->addCommand(eventTargetId(), UICommand::kCreateSVGElement, std::move(tag_name.ToNativeString(ctx())),
+                       (void*)bindingObject());
+  } else {
+    // TODO: Unknown namespace uri
+    buffer->addCommand(eventTargetId(), UICommand::kCreateElementNS, std::move(namespace_uri.ToNativeString(ctx())),
+                       std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
+  }
 }
 
 ElementAttributes& Element::EnsureElementAttributes() {
