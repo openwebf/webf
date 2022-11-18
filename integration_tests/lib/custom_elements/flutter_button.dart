@@ -8,6 +8,11 @@ class FlutterButtonElement extends WidgetElement {
     dispatchEvent(Event(EVENT_CLICK));
   }
 
+  @override
+  Map<String, dynamic> get defaultStyle => {
+    'display': 'inline-block'
+  };
+
   Widget buildButton(BuildContext context, String type, Widget child) {
     switch (type) {
       case 'primary':

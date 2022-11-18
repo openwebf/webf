@@ -7,6 +7,12 @@ class FlutterListViewElement extends WidgetElement {
 
   late ScrollController controller;
 
+
+  @override
+  Map<String, dynamic> get defaultStyle => {
+    'display': 'block'
+  };
+
   @override
   void initState() {
     super.initState();

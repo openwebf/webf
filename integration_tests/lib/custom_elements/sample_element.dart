@@ -16,6 +16,11 @@ class SampleElement extends WidgetElement {
   }
 
   @override
+  Map<String, dynamic> get defaultStyle => {
+    'display': 'block'
+  };
+
+  @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeMethods(methods);
     methods['fn'] = BindingObjectMethodSync(call: fn);

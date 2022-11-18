@@ -9,6 +9,11 @@ class TextWidgetElement extends WidgetElement {
   TextWidgetElement(BindingContext? context) : super(context);
 
   @override
+  Map<String, dynamic> get defaultStyle => {
+    'display': 'inline-block'
+  };
+
+  @override
   Widget build(BuildContext context, List<Widget> children) {
     return Text(getAttribute('value') ?? '',
         textDirection: TextDirection.ltr,
