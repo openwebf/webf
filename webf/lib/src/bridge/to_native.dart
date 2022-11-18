@@ -265,6 +265,9 @@ enum UICommandType {
   cloneNode,
   removeEvent,
   createDocumentFragment,
+  // perf optimize
+  createSVGElement,
+  createElementNS,
 }
 
 class UICommandItem extends Struct {
@@ -492,6 +495,12 @@ void flushUICommand(WebFViewController view) {
           break;
         case UICommandType.createDocumentFragment:
           view.createDocumentFragment(id, nativePtr.cast<NativeBindingObject>());
+          break;
+        case UICommandType.createSVGElement:
+          view.createElementNS(id, nativePtr.cast<NativeBindingObject>(), SVG_ELEMENT_URI, command.args[0]);
+          break;
+        case UICommandType.createElementNS:
+          view.createElementNS(id, nativePtr.cast<NativeBindingObject>(), command.args[0], command.args[1]);
           break;
         default:
           break;

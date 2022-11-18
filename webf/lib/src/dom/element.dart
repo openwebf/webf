@@ -148,6 +148,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   /// The Element.classList is a read-only property that returns a collection of the class attributes of the element.
   final List<String> _classList = [];
 
+  String namespaceURI = '';
+
   List<String> get classList => _classList;
 
   set className(String className) {

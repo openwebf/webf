@@ -296,6 +296,12 @@ class Document extends Node {
     return element;
   }
 
+  Element createElementNS(String uri, String type, [BindingContext? context]) {
+    Element element = element_registry.createElementNS(uri, type, context);
+    element.ownerDocument = this;
+    return element;
+  }
+
   TextNode createTextNode(String data, [BindingContext? context]) {
     TextNode textNode = TextNode(data, context);
     textNode.ownerDocument = this;

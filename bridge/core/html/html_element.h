@@ -16,17 +16,12 @@ class HTMLElement : public Element {
 
  public:
   using ImplType = HTMLElement*;
-  HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType);
+  HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType = kCreateHTMLElement);
 
   bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
  private:
 };
-
-inline HTMLElement::HTMLElement(const AtomicString& tag_name,
-                                Document* document,
-                                ConstructionType type = kCreateHTMLElement)
-    : Element(tag_name, document, type) {}
 
 template <typename T>
 bool IsElementOfType(const HTMLElement&);
