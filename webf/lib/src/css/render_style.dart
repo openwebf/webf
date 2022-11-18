@@ -446,21 +446,49 @@ class CSSRenderStyle extends RenderStyle
       case BOTTOM:
       case RIGHT:
       case FLEX_BASIS:
-      case PADDING_TOP:
-      case PADDING_RIGHT:
-      case PADDING_BOTTOM:
-      case PADDING_LEFT:
       case WIDTH:
       case MIN_WIDTH:
       case MAX_WIDTH:
       case HEIGHT:
       case MIN_HEIGHT:
       case MAX_HEIGHT:
-      case MARGIN_LEFT:
-      case MARGIN_TOP:
-      case MARGIN_RIGHT:
-      case MARGIN_BOTTOM:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        break;
+      case PADDING_TOP:
+      case MARGIN_TOP:
+        List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
+        if (values != null && values[0] != null) {
+          value = CSSLength.resolveLength(values[0]!, renderStyle, propertyName);
+        } else {
+          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        }
+        break;
+      case MARGIN_RIGHT:
+      case PADDING_RIGHT:
+        List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
+        if (values != null && values[1] != null) {
+          value = CSSLength.resolveLength(values[1]!, renderStyle, propertyName);
+        } else {
+          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        }
+        break;
+      case PADDING_BOTTOM:
+      case MARGIN_BOTTOM:
+        List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
+        if (values != null && values[2] != null) {
+          value = CSSLength.resolveLength(values[2]!, renderStyle, propertyName);
+        } else {
+          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        }
+        break;
+      case PADDING_LEFT:
+      case MARGIN_LEFT:
+        List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
+        if (values != null && values[3] != null) {
+          value = CSSLength.resolveLength(values[3]!, renderStyle, propertyName);
+        } else {
+          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        }
         break;
       case FLEX_DIRECTION:
         value = CSSFlexboxMixin.resolveFlexDirection(propertyValue);

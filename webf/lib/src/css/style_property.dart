@@ -83,7 +83,7 @@ List<String> _splitBySpace(String value) {
 
 class CSSStyleProperty {
   static void setShorthandPadding(Map<String, String?> properties, String shorthandValue) {
-    List<String?>? values = _getEdgeValues(shorthandValue, isNonNegativeLengthOrPercentage: true);
+    List<String?>? values = getEdgeValues(shorthandValue, isNonNegativeLengthOrPercentage: true);
     if (values == null) return;
 
     properties[PADDING_TOP] = values[0];
@@ -100,7 +100,7 @@ class CSSStyleProperty {
   }
 
   static void setShorthandMargin(Map<String, String?> properties, String shorthandValue) {
-    List<String?>? values = _getEdgeValues(shorthandValue);
+    List<String?>? values = getEdgeValues(shorthandValue);
     if (values == null) return;
 
     properties[MARGIN_TOP] = values[0];
@@ -305,7 +305,7 @@ class CSSStyleProperty {
         borderLeftColor = values[2];
       }
     } else if (property == BORDER_WIDTH) {
-      List<String?>? values = _getEdgeValues(shorthandValue, isNonNegativeLength: true);
+      List<String?>? values = getEdgeValues(shorthandValue, isNonNegativeLength: true);
       if (values == null) return;
 
       borderTopWidth = values[0];
@@ -314,7 +314,7 @@ class CSSStyleProperty {
       borderLeftWidth = values[3];
     } else if (property == BORDER_STYLE) {
       // @TODO: validate value
-      List<String?>? values = _getEdgeValues(shorthandValue);
+      List<String?>? values = getEdgeValues(shorthandValue);
       if (values == null) return;
 
       borderTopStyle = values[0];
@@ -323,7 +323,7 @@ class CSSStyleProperty {
       borderLeftStyle = values[3];
     } else if (property == BORDER_COLOR) {
       // @TODO: validate value
-      List<String?>? values = _getEdgeValues(shorthandValue);
+      List<String?>? values = getEdgeValues(shorthandValue);
       if (values == null) return;
 
       borderTopColor = values[0];
@@ -445,7 +445,7 @@ class CSSStyleProperty {
 
   static List<String?>? _getBorderRaidusValues(String shorthandProperty) {
     if (!shorthandProperty.contains('/')) {
-      return _getEdgeValues(shorthandProperty, isNonNegativeLengthOrPercentage: true);
+      return getEdgeValues(shorthandProperty, isNonNegativeLengthOrPercentage: true);
     }
 
     List radius = shorthandProperty.split(_slashRegExp);
@@ -462,8 +462,8 @@ class CSSStyleProperty {
     String firstRadius = radius[0];
     String secondRadius = radius[1];
 
-    List<String?> firstValues = _getEdgeValues(firstRadius, isNonNegativeLengthOrPercentage: true)!;
-    List<String?> secondValues = _getEdgeValues(secondRadius, isNonNegativeLengthOrPercentage: true)!;
+    List<String?> firstValues = getEdgeValues(firstRadius, isNonNegativeLengthOrPercentage: true)!;
+    List<String?> secondValues = getEdgeValues(secondRadius, isNonNegativeLengthOrPercentage: true)!;
 
     return [
       '${firstValues[0]} ${secondValues[0]}',
@@ -771,7 +771,7 @@ class CSSStyleProperty {
     return [width, style, color];
   }
 
-  static List<String?>? _getEdgeValues(
+  static List<String?>? getEdgeValues(
     String shorthandProperty, {
     bool isLengthOrPercentage = false,
     bool isNonNegativeLengthOrPercentage = false,
