@@ -221,7 +221,7 @@ mixin BaseInputElement on WidgetElement {
 
   double? get width => renderStyle.width.value;
 
-  TextStyle get _style => TextStyle(
+  TextStyle get _textStyle => TextStyle(
         color: renderStyle.color,
         fontSize: renderStyle.fontSize.computedValue,
         fontWeight: renderStyle.fontWeight,
@@ -265,7 +265,7 @@ mixin BaseInputElement on WidgetElement {
       widget = TextFormField(
         controller: controller,
         enabled: !disabled && !readonly,
-        style: _style,
+        style: _textStyle,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
@@ -283,7 +283,7 @@ mixin BaseInputElement on WidgetElement {
       widget = TextField(
         controller: controller,
         enabled: !disabled && !readonly,
-        style: _style,
+        style: _textStyle,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,

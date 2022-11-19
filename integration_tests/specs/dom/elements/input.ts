@@ -1,4 +1,4 @@
-xdescribe('Tags input', () => {
+describe('Tags input', () => {
   it('basic', async () => {
     const input = document.createElement('input');
     input.style.width = '60px';
@@ -142,7 +142,7 @@ xdescribe('Tags input', () => {
     await snapshot();
   });
 
-  it('line-height set and is bigger than text size', async () => {
+  fit('line-height set and is bigger than text size', async () => {
     let input;
     input = createElement(
       'input',

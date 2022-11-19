@@ -1,4 +1,4 @@
-xdescribe('Tags textarea', () => {
+describe('Tags textarea', () => {
   it('basic', async () => {
     const textarea = document.createElement('textarea');
     textarea.style.width = '60px';
