@@ -307,7 +307,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   void _updateRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
-      nextRenderBoxModel = _createRenderWidget();
+      nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget);
     } else if (isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
