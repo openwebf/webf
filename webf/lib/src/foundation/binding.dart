@@ -3,11 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:ffi';
+import 'dart:collection';
 import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/webf.dart';
 import 'package:webf/widget.dart';
 
 typedef BindingObjectOperation = void Function(BindingObject bindingObject);
@@ -107,8 +107,8 @@ abstract class BindingObject {
     return fromNativeValue(returnValue) == true;
   }
 
-  final Map<String, BindingObjectProperty> _properties = {};
-  final Map<String, BindingObjectMethod> _methods = {};
+  final SplayTreeMap<String, BindingObjectProperty> _properties = SplayTreeMap();
+  final SplayTreeMap<String, BindingObjectMethod> _methods = SplayTreeMap();
 
   @mustCallSuper
   void initializeProperties(Map<String, BindingObjectProperty> properties);

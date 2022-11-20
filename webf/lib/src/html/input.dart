@@ -26,6 +26,7 @@ const Map<String, dynamic> _inputDefaultStyle = {
 const Map<String, dynamic> _checkboxDefaultStyle = {
   MARGIN: '3px 3px 3px 4px',
   PADDING: INITIAL,
+  DISPLAY: INLINE_BLOCK,
   BORDER: '0'
 };
 
@@ -39,8 +40,12 @@ class FlutterInputElement extends WidgetElement
 
   @override
   Map<String, dynamic> get defaultStyle {
-    if (type == 'text') {
-      return _inputDefaultStyle;
+    switch(type) {
+      case 'text':
+      case 'time':
+        return _inputDefaultStyle;
+      case 'checkbox':
+        return _checkboxDefaultStyle;
     }
     return super.defaultStyle;
   }
