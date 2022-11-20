@@ -1425,6 +1425,13 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void setRenderStyle(String property, String present) {
+    if (tagName == BODY) {
+      if (parentElement?.tagName == HTML) {
+        setRenderStyleProperty(OVERFLOW_X, parentElement?.renderStyle.overflowX);
+        setRenderStyleProperty(OVERFLOW_Y, parentElement?.renderStyle.overflowY);
+      }
+    }
+
     dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present);
     setRenderStyleProperty(property, value);
   }
