@@ -1586,7 +1586,7 @@ static JSValue JS_ReadFunctionTag(BCReaderState* s) {
     }
 
     /** special column number check logic for V1(.kbc1 file) bytecode format. */
-    if (s->ptr[0] == 255 && s->ptr[1] == 67 && s->ptr[2] == 79 && s->ptr[3] == 76) {
+    if (s->buf_end - s->ptr > 4 && s->ptr[0] == 255 && s->ptr[1] == 67 && s->ptr[2] == 79 && s->ptr[3] == 76) {
       s->ptr += 4;
       if (bc_get_leb128_int(s, &b->debug.column_num)) {
         goto fail;
