@@ -115,8 +115,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
   late Document ownerDocument;
 
-  // bool needsStyleRecalculate = true;
-
   /// The Node.parentElement read-only property returns the DOM node's parent Element,
   /// or null if the node either has no parent, or its parent isn't a DOM Element.
   Element? get parentElement {

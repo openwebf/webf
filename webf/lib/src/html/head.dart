@@ -150,7 +150,6 @@ class LinkElement extends Element {
         _styleSheet = CSSParser(cssString).parse();
         _styleSheet?.href = href;
         ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
-        // ownerDocument.needsStyleRecalculate = true;
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
 

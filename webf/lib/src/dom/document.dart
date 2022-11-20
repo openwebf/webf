@@ -353,8 +353,6 @@ class Document extends Node {
       }
     }
     styleDirtyElements.clear();
-    // documentElement?.recalculateStyle();
-    // needsStyleRecalculate = false;
     _recalculating = false;
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_END);
