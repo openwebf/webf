@@ -142,7 +142,7 @@ describe('Tags input', () => {
     await snapshot();
   });
 
-  fit('line-height set and is bigger than text size', async () => {
+  it('line-height set and is bigger than text size', async () => {
     let input;
     input = createElement(
       'input',
@@ -256,7 +256,9 @@ describe('Tags input', () => {
 
     requestAnimationFrame(() => {
       input1.focus();
-      input2.focus();
+      requestAnimationFrame(() => {
+        input2.focus();
+      });
     });
   });
 
@@ -276,9 +278,10 @@ describe('Tags input', () => {
 
     requestAnimationFrame(() => {
       input1.focus();
-      input2.focus();
+      requestAnimationFrame(() => {
+        input2.focus();
+      });
     });
-
   });
 
   it('event input', (done) => {
@@ -298,7 +301,9 @@ describe('Tags input', () => {
     document.body.appendChild(input);
     input.focus();
     requestAnimationFrame(() => {
-      simulateInputText(VALUE);
+      requestAnimationFrame(() => {
+        simulateInputText(VALUE);
+      });
     });
   });
 

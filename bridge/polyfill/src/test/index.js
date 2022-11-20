@@ -57,10 +57,24 @@ class JasmineTracker {
 
   specDone(result) {
     clearAllTimer();
+    resetFocusState(document.body);
     resetDocumentElement();
     webf.methodChannel.clearMethodCallHandler();
   }
   specStarted(result) {
+  }
+}
+
+function resetFocusState(node) {
+  if (!node) return;
+  if (node._clearFocus__) {
+    node._clearFocus__();
+  }
+
+  if (node.childNodes && node.childNodes.length > 0) {
+    for(let i = 0; i < node.childNodes.length; i ++) {
+      resetFocusState(node.childNodes[i]);
+    }
   }
 }
 

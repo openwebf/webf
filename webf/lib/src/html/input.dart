@@ -54,6 +54,11 @@ class FlutterInputElement extends WidgetElement
     methods['focus'] = BindingObjectMethodSync(call: (List args) {
       focus();
     });
+    if (kDebugMode) {
+      methods['_clearFocus__'] = BindingObjectMethodSync(call: (args) {
+        _focusNode.unfocus();
+      });
+    }
   }
 
   @override
@@ -318,9 +323,12 @@ mixin BaseInputElement on WidgetElement {
       if (ownerDocument.focusedElement == this) {
         ownerDocument.focusedElement = null;
       }
+      // When the element loses focus after its value was changed: for elements where the user's interaction is typing rather than selection,
+      // such as a <textarea> or the text, search, url, tel, email, or password types of the <input> element
       if (oldValue != value) {
         dispatchEvent(Event('change'));
       }
+
       dispatchEvent(FocusEvent(EVENT_BLUR, relatedTarget: this));
     }
   }

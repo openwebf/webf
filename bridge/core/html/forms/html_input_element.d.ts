@@ -26,5 +26,6 @@ interface HTMLInputElement extends HTMLElement {
   inputMode: DartImpl<string>;
   focus(): DartImpl<void>;
   blur(): DartImpl<void>;
+  _clearFocus__(): DartImpl<void>;
   new(): void;
 }

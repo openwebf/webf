@@ -73,7 +73,7 @@ class RenderViewportBox extends RenderBox
       final ContainerBoxParentData<RenderObject> childParentData = child.parentData as ContainerBoxParentData<RenderObject>;
 
       RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
-      child!.layout(rootRenderLayoutBox.getConstraints().tighten(width: width, height: height));
+      child.layout(rootRenderLayoutBox.getConstraints().tighten(width: width, height: height));
 
       assert(child.parentData == childParentData);
       child = childParentData.nextSibling;
