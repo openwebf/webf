@@ -53,8 +53,12 @@ void main() async {
   final File spec = File(path.join(testDirectory, specTarget));
   WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
   javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
-    dynamic returnedValue = await javaScriptChannel.invokeMethod(method, arguments);
-    return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
+    if(method == 'helloInt64'){
+      return Future.value(1111111111111111);
+    } else {
+      dynamic returnedValue = await javaScriptChannel.invokeMethod(method, arguments);
+      return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
+    }
   };
 
   // This is a virtual location for test program to test [Location] functionality.

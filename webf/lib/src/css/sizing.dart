@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 
@@ -209,6 +210,11 @@ mixin CSSSizingMixin on RenderStyle {
         // prevent the _needsLayout flag to bubble up the renderObject tree.
         placeholderParent.markNeedsLayout();
       }
+    }
+
+    // Should notify to window's renderObject.
+    if (boxModel.parent is RenderViewportBox) {
+      (boxModel.parent as RenderBox).markNeedsLayout();
     }
   }
 }

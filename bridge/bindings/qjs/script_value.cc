@@ -27,7 +27,7 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
       return returnedValue;
     }
     case NativeTag::TAG_INT: {
-      return JS_NewUint32(context->ctx(), native_value.u.int64);
+      return JS_NewInt64(context->ctx(), native_value.u.int64);
     }
     case NativeTag::TAG_BOOL: {
       return JS_NewBool(context->ctx(), native_value.u.int64 == 1);
