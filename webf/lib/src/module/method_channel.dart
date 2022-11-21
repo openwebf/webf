@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:webf/webf.dart';
 
+// ignore: avoid_annotating_with_dynamic
 typedef MethodCallCallback = Future<dynamic> Function(String method, dynamic args);
 const String METHOD_CHANNEL_NOT_INITIALIZED = 'MethodChannel not initialized.';
 const String CONTROLLER_NOT_INITIALIZED = 'WebF controller not initialized.';

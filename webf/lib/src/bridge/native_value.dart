@@ -73,6 +73,7 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
 }
 
 typedef ToNativeValueCallback = void Function(Pointer<NativeValue> target,
+    // ignore: avoid_annotating_with_dynamic
     {dynamic value, BindingObject? ownerBindingObject});
 
 final HashMap<Type, ToNativeValueCallback> _nativeToValueMap = HashMap();

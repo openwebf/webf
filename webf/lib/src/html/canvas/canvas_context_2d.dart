@@ -14,7 +14,6 @@ import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-import 'canvas.dart';
 import 'canvas_context.dart';
 import 'canvas_path_2d.dart';
 
@@ -221,8 +220,8 @@ class CanvasRenderingContext2D extends BindingObject {
     properties['lineWidth'] = BindingObjectProperty(
         getter: () => lineWidth, setter: (value) => lineWidth = castToType<num>(value).toDouble());
     properties['miterLimit'] = BindingObjectProperty(getter: () => miterLimit, setter: (value) => miterLimit = castToType<num>(value).toDouble());
-    properties['textAlign'] = BindingObjectProperty(getter: () => textAlign.toString(), setter: (value) => textAlign = parseTextAlign(castToType<String>(value)));;
-    properties['textBaseline'] = BindingObjectProperty(getter: () => textBaseline.toString(), setter: (value) => textBaseline = parseTextBaseline(castToType<String>(value)));;
+    properties['textAlign'] = BindingObjectProperty(getter: () => textAlign.toString(), setter: (value) => textAlign = parseTextAlign(castToType<String>(value)));
+    properties['textBaseline'] = BindingObjectProperty(getter: () => textBaseline.toString(), setter: (value) => textBaseline = parseTextBaseline(castToType<String>(value)));
   }
 
   @override

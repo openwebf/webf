@@ -20,6 +20,7 @@ class BindingContext {
 }
 
 typedef BindingPropertyGetter = dynamic Function();
+// ignore: avoid_annotating_with_dynamic
 typedef BindingPropertySetter = void Function(dynamic value);
 typedef BindingMethodCallback = dynamic Function(List args);
 typedef AsyncBindingMethodCallback = Future<dynamic> Function(List args);
