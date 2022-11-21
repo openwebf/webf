@@ -173,14 +173,14 @@ NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, 
 
 ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
   auto* data = new BindingObject::AnonymousFunctionData();
-  data->method_name = method_name.ToStdString();
+  data->method_name = method_name.ToStdString(ctx());
   return ScriptValue(ctx(),
                      QJSFunction::Create(ctx(), BindingObject::AnonymousFunctionCallback, 1, data)->ToQuickJSUnsafe());
 }
 
 ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
   auto* data = new BindingObject::AnonymousFunctionData();
-  data->method_name = method_name.ToStdString();
+  data->method_name = method_name.ToStdString(ctx());
   return ScriptValue(
       ctx(), QJSFunction::Create(ctx(), BindingObject::AnonymousAsyncFunctionCallback, 4, data)->ToQuickJSUnsafe());
 }
