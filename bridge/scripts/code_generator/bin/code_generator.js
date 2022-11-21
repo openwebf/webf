@@ -30,6 +30,17 @@ if (!path.isAbsolute(dist)) {
   dist = path.join(process.cwd(), dist);
 }
 
+function wirteFileIfChanged(filePath, content) {
+  if (fs.existsSync(filePath)) {
+    const oldContent = fs.readFileSync(filePath, 'utf-8')
+    if (oldContent === content) {
+      return;
+    }
+  }
+
+  fs.writeFileSync(filePath, content, 'utf-8');
+}
+
 function genCodeFromTypeDefine() {
   // Generate code from type defines.
   let typeFiles = glob.sync("**/*.d.ts", {
@@ -58,8 +69,8 @@ function genCodeFromTypeDefine() {
 
     let genFilePath = path.join(b.dist, b.filename);
 
-    fs.writeFileSync(genFilePath + '.h', result.header);
-    fs.writeFileSync(genFilePath + '.cc', result.source);
+    wirteFileIfChanged(genFilePath + '.h', result.header);
+    wirteFileIfChanged(genFilePath + '.cc', result.source);
   }
 }
 
@@ -115,8 +126,8 @@ function genCodeFromJSONData() {
       let result = generateJSONTemplate(blobs[i], targetTemplateHeaderData, targetTemplateBodyData, depsBlob, targetTemplate.options);
       let dist = blob.dist;
       let genFilePath = path.join(dist, targetTemplate.filename);
-      fs.writeFileSync(genFilePath + '.h', result.header);
-      result.source && fs.writeFileSync(genFilePath + '.cc', result.source);
+      wirteFileIfChanged(genFilePath + '.h', result.header);
+      result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
     });
   }
 
@@ -125,8 +136,8 @@ function genCodeFromJSONData() {
   let targetTemplateBody = templates.find(t => t.filename === 'names_installer.cc');
   let result = generateNamesInstaller(targetTemplateHeader, targetTemplateBody, names_needs_install);
   let genFilePath = path.join(dist, 'names_installer');
-  fs.writeFileSync(genFilePath + '.h', result.header);
-  result.source && fs.writeFileSync(genFilePath + '.cc', result.source);
+  wirteFileIfChanged(genFilePath + '.h', result.header);
+  result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
 }
 
 class DefinedPropertyCollector {
