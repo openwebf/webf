@@ -14,14 +14,15 @@ void Console::__webf_print__(ExecutingContext* context,
                              const AtomicString& level,
                              ExceptionState& exception) {
   std::stringstream stream;
-  std::string buffer = log.ToStdString();
+  std::string buffer = log.ToStdString(context->ctx());
   stream << buffer;
-  printLog(context, stream, level != built_in_string::kempty_string ? level.ToStdString() : "info", nullptr);
+  printLog(context, stream, level != built_in_string::kempty_string ? level.ToStdString(context->ctx()) : "info",
+           nullptr);
 }
 
 void Console::__webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state) {
   std::stringstream stream;
-  std::string buffer = log.ToStdString();
+  std::string buffer = log.ToStdString(context->ctx());
   stream << buffer;
   printLog(context, stream, "info", nullptr);
 }

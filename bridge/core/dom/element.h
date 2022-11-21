@@ -56,7 +56,7 @@ class Element : public ContainerNode {
 
   bool HasTagName(const AtomicString&) const;
   std::string nodeValue() const override;
-  AtomicString tagName() const { return tag_name_.ToUpperSlow(); }
+  AtomicString tagName() const { return tag_name_.ToUpperSlow(ctx()); }
   std::string nodeName() const override;
   std::string nodeNameLowerCase() const;
 

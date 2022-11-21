@@ -35,6 +35,10 @@
 #include "quickjs/libbf.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum {
     /* classid tag        */    /* union usage   | properties */
     JS_CLASS_OBJECT = 1,        /* must be first */
@@ -933,5 +937,9 @@ enum OPCodeEnum {
 #define ATOD_MODE_BIGINT      (1 << 9)
 /* accept -0x1 */
 #define ATOD_ACCEPT_PREFIX_AFTER_SIGN (1 << 10)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

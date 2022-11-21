@@ -439,6 +439,7 @@ JSAtom JS_NewAtomLen(JSContext *ctx, const char *str, size_t len);
 JSAtom JS_NewAtom(JSContext *ctx, const char *str);
 JSAtom JS_NewAtomUInt32(JSContext *ctx, uint32_t n);
 JSAtom JS_DupAtom(JSContext *ctx, JSAtom v);
+JSAtom JS_DupAtomRT(JSRuntime *runtime, JSAtom v);
 void JS_FreeAtom(JSContext *ctx, JSAtom v);
 void JS_FreeAtomRT(JSRuntime *rt, JSAtom v);
 JSValue JS_AtomToValue(JSContext *ctx, JSAtom atom);

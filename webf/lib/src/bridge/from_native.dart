@@ -94,6 +94,7 @@ typedef NativeInvokeModule = Pointer<NativeValue> Function(
 dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String moduleName, String method, params,
     DartAsyncModuleCallback callback) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFViewController currentView = controller.view;
   dynamic result;
 
   try {
@@ -102,8 +103,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
       // To make sure Promise then() and catch() executed before Promise callback called at JavaScript side.
       // We should make callback always async.
       Future.microtask(() {
-        if (controller.view.disposed) return;
-
+        if (controller.view != currentView || currentView.disposed) return;
         Pointer<NativeValue> callbackResult = nullptr;
         if (error != null) {
           Pointer<Utf8> errmsgPtr = error.toNativeUtf8();
@@ -196,11 +196,13 @@ typedef NativeSetTimeout = Int32 Function(
 int _setTimeout(
     Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFViewController currentView = controller.view;
 
   return controller.module.setTimeout(timeout, () {
     DartAsyncCallback func = callback.asFunction();
-
     void _runCallback() {
+      if (controller.view != currentView || currentView.disposed) return;
+
       try {
         func(callbackContext, contextId, nullptr);
       } catch (e, stack) {
@@ -230,8 +232,11 @@ typedef NativeSetInterval = Int32 Function(
 int _setInterval(
     Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFViewController currentView = controller.view;
   return controller.module.setInterval(timeout, () {
     void _runCallbacks() {
+      if (controller.view != currentView || currentView.disposed) return;
+
       DartAsyncCallback func = callback.asFunction();
       try {
         func(callbackContext, contextId, nullptr);
@@ -272,8 +277,10 @@ typedef NativeRequestAnimationFrame = Int32 Function(
 int _requestAnimationFrame(
     Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>> callback) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFViewController currentView = controller.view;
   return controller.module.requestAnimationFrame((double highResTimeStamp) {
     void _runCallback() {
+      if (controller.view != currentView || currentView.disposed) return;
       DartRAFAsyncCallback func = callback.asFunction();
       try {
         func(callbackContext, contextId, highResTimeStamp, nullptr);

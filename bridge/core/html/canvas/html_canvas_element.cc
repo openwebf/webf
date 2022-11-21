@@ -15,7 +15,7 @@ namespace webf {
 HTMLCanvasElement::HTMLCanvasElement(Document& document) : HTMLElement(html_names::kcanvas, &document) {}
 
 CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, ExceptionState& exception_state) const {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(type)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), type)};
   NativeValue value = InvokeBindingMethod(binding_call_methods::kgetContext, 1, arguments, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);

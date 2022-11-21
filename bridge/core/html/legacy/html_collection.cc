@@ -41,7 +41,7 @@ Element* HTMLCollection::item(unsigned int offset, ExceptionState& exception_sta
 }
 
 bool HTMLCollection::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {
-  int32_t index = std::stoi(key.ToStdString());
+  int32_t index = std::stoi(key.ToStdString(ctx()));
   return index >= 0 && index < nodes_.size();
 }
 

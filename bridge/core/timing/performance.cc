@@ -223,7 +223,7 @@ void Performance::measure(const AtomicString& measure_name,
   if (start_mark_count == 0) {
     exception_state.ThrowException(
         ctx(), ErrorType::TypeError,
-        "Failed to execute 'measure' on 'Performance': The mark " + start_mark.ToStdString() + " does not exist.");
+        "Failed to execute 'measure' on 'Performance': The mark " + start_mark.ToStdString(ctx()) + " does not exist.");
     return;
   }
 
@@ -233,14 +233,14 @@ void Performance::measure(const AtomicString& measure_name,
   if (end_mark_count == 0) {
     exception_state.ThrowException(
         ctx(), ErrorType::TypeError,
-        "Failed to execute 'measure' on 'Performance': The mark " + end_mark.ToStdString() + " does not exist.");
+        "Failed to execute 'measure' on 'Performance': The mark " + end_mark.ToStdString(ctx()) + " does not exist.");
     return;
   }
 
   if (start_mark_count != end_mark_count) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
                                    "Failed to execute 'measure' on 'Performance': The mark " +
-                                       start_mark.ToStdString() + " and " + end_mark.ToStdString() +
+                                       start_mark.ToStdString(ctx()) + " and " + end_mark.ToStdString(ctx()) +
                                        " does not appear the same number of times");
     return;
   }
@@ -263,7 +263,7 @@ void Performance::measure(const AtomicString& measure_name,
     if (end_entry == entries_.end()) {
       size_t startIndex = start_entry - entries_.begin();
       assert_m(false, ("Can not get endEntry. startIndex: " + std::to_string(startIndex) +
-                       " startMark: " + start_mark.ToStdString() + " endMark: " + end_mark.ToStdString()));
+                       " startMark: " + start_mark.ToStdString(ctx()) + " endMark: " + end_mark.ToStdString(ctx())));
     }
 
     int64_t duration = (*end_entry)->startTime() - (*start_entry)->startTime();

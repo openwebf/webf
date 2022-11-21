@@ -68,8 +68,7 @@ NativeValue Native_NewJSON(const ScriptValue& value, ExceptionState& exception_s
     return Native_NewNull();
   }
 
-  AtomicString str = json.ToString();
-  auto native_string = str.ToNativeString();
+  auto native_string = json.ToNativeString();
   NativeValue result = (NativeValue){
       .u = {.ptr = static_cast<void*>(native_string.release())},
       .uint32 = 0,

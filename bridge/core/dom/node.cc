@@ -232,7 +232,7 @@ AtomicString Node::textContent(bool convert_brs_to_newlines) const {
   std::string content;
   for (const Node& node : NodeTraversal::InclusiveDescendantsOf(*this)) {
     if (auto* text_node = DynamicTo<Text>(node)) {
-      content.append(text_node->data().ToStdString());
+      content.append(text_node->data().ToStdString(ctx()));
     }
   }
   return AtomicString(ctx(), content);

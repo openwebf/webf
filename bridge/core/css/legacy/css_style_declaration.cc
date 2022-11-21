@@ -59,12 +59,12 @@ CSSStyleDeclaration::CSSStyleDeclaration(ExecutingContext* context, int64_t owne
     : ScriptWrappable(context->ctx()), owner_element_target_id_(owner_element_target_id) {}
 
 AtomicString CSSStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToStdString(ctx());
   return InternalGetPropertyValue(propertyName);
 }
 
 bool CSSStyleDeclaration::SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToStdString(ctx());
   return InternalSetProperty(propertyName, value);
 }
 
@@ -73,19 +73,19 @@ int64_t CSSStyleDeclaration::length() const {
 }
 
 AtomicString CSSStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToStdString(ctx());
   return InternalGetPropertyValue(propertyName);
 }
 
 void CSSStyleDeclaration::setProperty(const AtomicString& key,
                                       const AtomicString& value,
                                       ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToStdString(ctx());
   InternalSetProperty(propertyName, value);
 }
 
 AtomicString CSSStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToStdString(ctx());
   return InternalRemoveProperty(propertyName);
 }
 
@@ -102,7 +102,7 @@ std::string CSSStyleDeclaration::ToString() const {
   std::string s;
 
   for (auto& attr : properties_) {
-    s += attr.first + ": " + attr.second.ToStdString() + ";";
+    s += attr.first + ": " + attr.second.ToStdString(ctx()) + ";";
   }
 
   s += "\"";
@@ -110,7 +110,7 @@ std::string CSSStyleDeclaration::ToString() const {
 }
 
 bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {
-  return cssPropertyList.count(key.ToStdString()) > 0;
+  return cssPropertyList.count(key.ToStdString(ctx())) > 0;
 }
 
 void CSSStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {
@@ -139,7 +139,7 @@ bool CSSStyleDeclaration::InternalSetProperty(std::string& name, const AtomicStr
   properties_[name] = value;
 
   std::unique_ptr<NativeString> args_01 = stringToNativeString(name);
-  std::unique_ptr<NativeString> args_02 = value.ToNativeString();
+  std::unique_ptr<NativeString> args_02 = value.ToNativeString(ctx());
   GetExecutingContext()->uiCommandBuffer()->addCommand(owner_element_target_id_, UICommand::kSetStyle,
                                                        std::move(args_01), std::move(args_02), nullptr);
 

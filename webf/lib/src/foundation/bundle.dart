@@ -18,10 +18,11 @@ const String UTF_8 = 'utf-8';
 
 final ContentType _cssContentType = ContentType('text', 'css', charset: UTF_8);
 // MIME types suits JavaScript: https://mathiasbynens.be/demo/javascript-mime-type
-final ContentType _javascriptContentType = ContentType('text', 'javascript', charset: UTF_8);
+final ContentType javascriptContentType = ContentType('text', 'javascript', charset: UTF_8);
+final ContentType htmlContentType = ContentType('text', 'html', charset: UTF_8);
 final ContentType _javascriptApplicationContentType = ContentType('application', 'javascript', charset: UTF_8);
 final ContentType _xJavascriptContentType = ContentType('application', 'x-javascript', charset: UTF_8);
-final ContentType _webfBc1ContentType = ContentType('application', 'vnd.webf.bc1');
+final ContentType webfBc1ContentType = ContentType('application', 'vnd.webf.bc1');
 
 const List<String> _supportedByteCodeVersions = ['1'];
 
@@ -118,24 +119,24 @@ abstract class WebFBundle {
     } else if (_isDataScheme(url)) {
       return DataBundle.fromDataUrl(url);
     } else if (_isDefaultUrl(url)) {
-      return DataBundle.fromString('', url, contentType: _javascriptContentType);
+      return DataBundle.fromString('', url, contentType: javascriptContentType);
     } else {
       throw FlutterError('Unsupported url. $url');
     }
   }
 
-  static WebFBundle fromContent(String content, {String url = DEFAULT_URL}) {
-    return DataBundle.fromString(content, url, contentType: _javascriptContentType);
+  static WebFBundle fromContent(String content, {String url = DEFAULT_URL, ContentType? contentType}) {
+    return DataBundle.fromString(content, url, contentType: contentType ?? javascriptContentType);
   }
 
   static WebFBundle fromBytecode(Uint8List data, {String url = DEFAULT_URL}) {
-    return DataBundle(data, url, contentType: _webfBc1ContentType);
+    return DataBundle(data, url, contentType: webfBc1ContentType);
   }
 
   bool get isHTML => contentType.mimeType == ContentType.html.mimeType;
   bool get isCSS => contentType.mimeType == _cssContentType.mimeType;
   bool get isJavascript =>
-      contentType.mimeType == _javascriptContentType.mimeType ||
+      contentType.mimeType == javascriptContentType.mimeType ||
       contentType.mimeType == _javascriptApplicationContentType.mimeType ||
       contentType.mimeType == _xJavascriptContentType.mimeType;
   bool get isBytecode => _isSupportedBytecode(contentType.mimeType, _uri);
@@ -265,7 +266,7 @@ mixin _ExtensionContentTypeResolver on WebFBundle {
     } else if (_isUriExt(uri, '.html')) {
       return ContentType.html;
     } else if (_isSupportedBytecode('', uri)) {
-      return _webfBc1ContentType;
+      return webfBc1ContentType;
     } else if (_isUriExt(uri, '.css')) {
       return _cssContentType;
     }
