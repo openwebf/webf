@@ -6,11 +6,11 @@
 #include "container_node.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "child_node_list.h"
 #include "core/html/html_all_collection.h"
 #include "document.h"
 #include "document_fragment.h"
 #include "node_traversal.h"
-#include "child_node_list.h"
 
 namespace webf {
 
