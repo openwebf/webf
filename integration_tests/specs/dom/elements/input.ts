@@ -492,7 +492,7 @@ describe('Tags input', () => {
     expect(input.value).toBe('');
   });
 
-  it('input attribute and property value priority', (done) => {
+  xit('input attribute and property value priority', (done) => {
     const input = createElement('input', {
       placeholder: 'hello world',
       style: {

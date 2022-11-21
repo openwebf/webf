@@ -414,7 +414,7 @@ describe('custom html element', () => {
   it('dart implements getAllBindingPropertyNames works', async () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
-    expect(attributes).toEqual(['offsetTop', 'offsetLeft', 'offsetWidth', 'offsetHeight', 'scrollTop', 'scrollLeft', 'scrollWidth', 'scrollHeight', 'clientTop', 'clientLeft', 'clientWidth', 'clientHeight', 'className', 'classList', 'ping', 'fake', 'getBoundingClientRect', 'scroll', 'scrollBy', 'scrollTo', 'click', 'getElementsByClassName', 'getElementsByTagName', 'fn', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete']);
+    expect(attributes).toEqual(['classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'fake', 'offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth', 'ping', 'scrollHeight', 'scrollLeft', 'scrollTop', 'scrollWidth', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete', 'click', 'fn', 'getBoundingClientRect', 'getElementsByClassName', 'getElementsByTagName', 'scroll', 'scrollBy', 'scrollTo']);
   });
 
   it('support custom properties in dart directly', () => {
