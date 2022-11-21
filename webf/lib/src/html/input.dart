@@ -130,6 +130,7 @@ mixin BaseInputElement on WidgetElement {
     properties['placeholder'] = BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
     properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
+    properties['defaultValue'] = BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
   }
 
   @override
@@ -187,6 +188,11 @@ mixin BaseInputElement on WidgetElement {
   String? get label => getAttribute('label');
   set label(value) {
     internalSetAttribute('label', value?.toString() ?? '');
+  }
+
+  String? get defaultValue => getAttribute('defaultValue') ?? getAttribute('value') ?? '';
+  set defaultValue(value) {
+    internalSetAttribute('defaultValue', value?.toString() ?? '');
   }
 
   bool get disabled => getAttribute('disabled') != null;
