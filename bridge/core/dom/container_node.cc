@@ -10,6 +10,7 @@
 #include "document.h"
 #include "document_fragment.h"
 #include "node_traversal.h"
+#include "child_node_list.h"
 
 namespace webf {
 
@@ -334,6 +335,10 @@ void ContainerNode::RemoveChildren() {
     RemoveBetween(nullptr, child->nextSibling(), *child);
     NotifyNodeRemoved(*child);
   }
+
+  auto* this_node = DynamicTo<ContainerNode>(this);
+  if (this_node)
+    EnsureNodeData().EnsureChildNodeList(*this_node)->InvalidateCache();
 }
 
 void ContainerNode::CloneChildNodesFrom(const ContainerNode& node, CloneChildrenFlag flag) {
