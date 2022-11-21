@@ -44,11 +44,11 @@ class AtomicString {
 
   // Return the undefined string value from atom key.
   JSValue ToQuickJS(JSContext* ctx) const {
-    if (ctx_ == nullptr) {
+    if (ctx == nullptr) {
       return JS_NULL;
     }
 
-    assert(ctx_ != nullptr);
+    assert(ctx != nullptr);
     return JS_AtomToValue(ctx, atom_);
   };
 
@@ -58,16 +58,16 @@ class AtomicString {
 
   int64_t length() const { return length_; }
 
-  [[nodiscard]] std::string ToStdString() const;
-  [[nodiscard]] std::unique_ptr<NativeString> ToNativeString() const;
+  [[nodiscard]] std::string ToStdString(JSContext* ctx) const;
+  [[nodiscard]] std::unique_ptr<NativeString> ToNativeString(JSContext* ctx) const;
 
   StringView ToStringView() const;
 
-  AtomicString ToUpperIfNecessary() const;
-  const AtomicString ToUpperSlow() const;
+  AtomicString ToUpperIfNecessary(JSContext* ctx) const;
+  const AtomicString ToUpperSlow(JSContext* ctx) const;
 
-  const AtomicString ToLowerIfNecessary() const;
-  const AtomicString ToLowerSlow() const;
+  const AtomicString ToLowerIfNecessary(JSContext* ctx) const;
+  const AtomicString ToLowerSlow(JSContext* ctx) const;
 
   // Copy assignment
   AtomicString(AtomicString const& value);
@@ -83,7 +83,6 @@ class AtomicString {
   bool operator<(const AtomicString& other) const { return other.atom_ < this->atom_; };
 
  protected:
-  JSContext* ctx_{nullptr};
   JSRuntime* runtime_{nullptr};
   int64_t length_{0};
   JSAtom atom_{JS_ATOM_empty_string};

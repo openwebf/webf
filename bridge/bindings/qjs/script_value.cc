@@ -141,6 +141,10 @@ AtomicString ScriptValue::ToString() const {
   return {ctx_, value_};
 }
 
+std::unique_ptr<NativeString> ScriptValue::ToNativeString() const {
+  return ToString().ToNativeString(ctx_);
+}
+
 NativeValue ScriptValue::ToNative(ExceptionState& exception_state) const {
   int8_t tag = JS_VALUE_GET_TAG(value_);
 
@@ -162,7 +166,7 @@ NativeValue ScriptValue::ToNative(ExceptionState& exception_state) const {
     }
     case JS_TAG_STRING:
       // NativeString owned by NativeValue will be freed by users.
-      return NativeValueConverter<NativeTypeString>::ToNativeValue(ToString());
+      return NativeValueConverter<NativeTypeString>::ToNativeValue(ctx_, ToString());
     case JS_TAG_OBJECT: {
       if (JS_IsArray(ctx_, value_)) {
         std::vector<ScriptValue> values =

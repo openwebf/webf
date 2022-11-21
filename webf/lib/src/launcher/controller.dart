@@ -1067,6 +1067,8 @@ class WebFController {
     _controllerMap[_view.contextId] = null;
     _controllerMap.remove(_view.contextId);
     _nameIdMap.remove(name);
+    // To release entrypoint bundle memory.
+    _entrypoint?.dispose();
 
     devToolsService?.dispose();
   }
@@ -1179,9 +1181,6 @@ class WebFController {
       if (kProfileMode) {
         PerformanceTiming.instance().mark(PERF_JS_BUNDLE_EVAL_END);
       }
-
-      // To release entrypoint bundle memory.
-      entrypoint.dispose();
 
       // trigger DOMContentLoaded event
       SchedulerBinding.instance.addPostFrameCallback((_) {

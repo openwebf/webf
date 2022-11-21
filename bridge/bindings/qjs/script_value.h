@@ -60,6 +60,7 @@ class ScriptValue final {
   // Create a new ScriptValue from call JSON.stringify to current value.
   ScriptValue ToJSONStringify(ExceptionState* exception) const;
   AtomicString ToString() const;
+  std::unique_ptr<NativeString> ToNativeString() const;
   NativeValue ToNative(ExceptionState& exception_state) const;
 
   bool IsException() const;

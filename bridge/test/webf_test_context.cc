@@ -241,7 +241,7 @@ static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValu
   MemberMutationScope scope(context);
 
   if (argc == 1) {
-    std::string strHTML = AtomicString(ctx, argv[0]).ToStdString();
+    std::string strHTML = AtomicString(ctx, argv[0]).ToStdString(ctx);
     HTMLParser::parseHTML(strHTML, context->document()->documentElement());
   }
 

@@ -24,7 +24,7 @@ Window* Window::open(ExceptionState& exception_state) {
 
 Window* Window::open(const AtomicString& url, ExceptionState& exception_state) {
   const NativeValue args[] = {
-      NativeValueConverter<NativeTypeString>::ToNativeValue(url),
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), url),
   };
   InvokeBindingMethod(binding_call_methods::kopen, 1, args, exception_state);
   return this;

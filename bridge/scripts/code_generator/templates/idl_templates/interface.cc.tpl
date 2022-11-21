@@ -175,7 +175,7 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
   MemberMutationScope scope{ExecutingContext::From(ctx)};
 
   <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
-  <%= blob.filename %>->SetBindingProperty(binding_call_methods::k<%= prop.name %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(v),exception_state);
+  <%= blob.filename %>->SetBindingProperty(binding_call_methods::k<%= prop.name %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(<% if (isDOMStringType(prop.type)) { %>ctx, <% } %>v),exception_state);
   <% } else {%>
   <%= blob.filename %>->set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(v, exception_state);
   <% } %>

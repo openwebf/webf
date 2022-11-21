@@ -22,8 +22,8 @@ namespace webf {
 
 Element::Element(const AtomicString& tag_name, Document* document, Node::ConstructionType construction_type)
     : ContainerNode(document, construction_type), tag_name_(tag_name) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateElement,
-                                                       std::move(tag_name.ToNativeString()), (void*)bindingObject());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(
+      eventTargetId(), UICommand::kCreateElement, std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
 }
 
 ElementAttributes& Element::EnsureElementAttributes() {
@@ -142,15 +142,15 @@ std::string Element::nodeValue() const {
 }
 
 std::string Element::nodeName() const {
-  return tag_name_.ToUpperIfNecessary().ToStdString();
+  return tag_name_.ToUpperIfNecessary(ctx()).ToStdString(ctx());
 }
 
 std::string Element::nodeNameLowerCase() const {
-  return tag_name_.ToStdString();
+  return tag_name_.ToStdString(ctx());
 }
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(class_name)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), class_name)};
   NativeValue result =
       InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
@@ -160,7 +160,7 @@ std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_
 }
 
 std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(tag_name)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), tag_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
@@ -357,7 +357,7 @@ std::string Element::innerHTML() {
     if (auto* element = DynamicTo<Element>(child)) {
       s += element->outerHTML();
     } else if (auto* text = DynamicTo<Text>(child)) {
-      s += text->data().ToStdString();
+      s += text->data().ToStdString(ctx());
     }
     child = child->nextSibling();
   }
@@ -366,7 +366,7 @@ std::string Element::innerHTML() {
 }
 
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
-  auto html = value.ToStdString();
+  auto html = value.ToStdString(ctx());
   if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
     HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
   } else {

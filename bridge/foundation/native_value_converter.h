@@ -33,7 +33,9 @@ struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<Na
 
 template <>
 struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
-  static NativeValue ToNativeValue(const ImplType& value) { return Native_NewString(value.ToNativeString().release()); }
+  static NativeValue ToNativeValue(JSContext* ctx, const ImplType& value) {
+    return Native_NewString(value.ToNativeString(ctx).release());
+  }
   static NativeValue ToNativeValue(const std::string& value) { return Native_NewCString(value); }
 
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
