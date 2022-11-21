@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+eTag: "foo"
+Content-Length: 10
+Set-Cookie: name=1234;
+
+{
+    "method": "GET",
+    "data": {
+        "userName": "12345"
+    }
+}
