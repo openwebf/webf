@@ -57,7 +57,7 @@ class JasmineTracker {
 
   specDone(result) {
     clearAllTimer();
-    resetFocusState(document.body);
+    // resetFocusState(document.body);
     resetDocumentElement();
     webf.methodChannel.clearMethodCallHandler();
   }
