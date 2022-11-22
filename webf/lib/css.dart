@@ -45,6 +45,7 @@ export 'src/css/keywords.dart';
 export 'src/css/input.dart';
 
 export 'src/css/element_rule_collector.dart';
+export 'src/css/css_property_name.dart';
 
 // CSS Values
 // ignore: directives_ordering

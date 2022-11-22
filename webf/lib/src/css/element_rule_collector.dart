@@ -8,10 +8,10 @@ import 'package:webf/src/css/query_selector.dart';
 
 class ElementRuleCollector {
   bool matchedAnyRule(RuleSet ruleSet, Element element) {
-    return _matchedRules(ruleSet, element).isNotEmpty;
+    return matchedRules(ruleSet, element).isNotEmpty;
   }
 
-  List<CSSRule> _matchedRules(RuleSet ruleSet, Element element) {
+  List<CSSRule> matchedRules(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
 
     if (ruleSet.isEmpty) {
@@ -44,14 +44,14 @@ class ElementRuleCollector {
   }
 
   CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
-    final matchedRules = _matchedRules(ruleSet, element);
+    final rules = matchedRules(ruleSet, element);
     CSSStyleDeclaration declaration = CSSStyleDeclaration();
-    if (matchedRules.isEmpty) {
+    if (rules.isEmpty) {
       return declaration;
     }
 
     // sort selector
-    matchedRules.sort((leftRule, rightRule) {
+    rules.sort((leftRule, rightRule) {
       if (leftRule is! CSSStyleRule || rightRule is! CSSStyleRule) {
         return 0;
       }
@@ -63,7 +63,7 @@ class ElementRuleCollector {
     });
 
     // Merge all the rules
-    for (CSSRule rule in matchedRules) {
+    for (CSSRule rule in rules) {
       if (rule is CSSStyleRule) {
         declaration.union(rule.declaration);
       }

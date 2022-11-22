@@ -24,6 +24,7 @@ const String _ONE_SPACE = ' ';
 const String _STYLE_PROPERTY = 'style';
 const String _ID = 'id';
 const String _CLASS_NAME = 'class';
+const String _NAME = 'name';
 
 /// Defined by W3C Standard,
 /// Most element's default width is 300 in pixel,
@@ -107,8 +108,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   String? get id => _id;
 
   set id(String? id) {
+    final isNeedRecalculate = _checkRecalculateStyle([id, _id], ownerDocument.ruleSet.idRules);
     _id = id;
-    recalculateStyle();
+    _updateIDMap();
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   // Is element an replaced element.
@@ -148,12 +151,14 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   List<String> get classList => _classList;
 
   set className(String className) {
-    _classList.clear();
     List<String> classList = className.split(classNameSplitRegExp);
+    final checkKeys = (_classList + classList).where((key) => !_classList.contains(key) || !classList.contains(key));
+    final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys), ownerDocument.ruleSet.classRules);
+    _classList.clear();
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
-    recalculateStyle();
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   String get className => _classList.join(_ONE_SPACE);
@@ -252,6 +257,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     });
     attributes[_ID] = ElementAttributeProperty(setter: (value) => id = value, deleter: () {
       id = EMPTY_STRING;
+    });
+    attributes[_NAME] = ElementAttributeProperty(setter: (value) {
+      _updateNameMap();
+    } , deleter: () {
+      _updateNameMap();
     });
   }
 
@@ -996,6 +1006,58 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return super.replaceChild(newNode, oldNode);
   }
 
+  @override
+  void connectedCallback() {
+    super.connectedCallback();
+    _updateIDMap();
+    _updateNameMap();
+  }
+
+  void _updateIDMap() {
+    if (id?.isNotEmpty == true) {
+      final elements = ownerDocument.elementsByID[id!] ?? [];
+      if (!elements.contains(this)) {
+        elements.add(this);
+      }
+      ownerDocument.elementsByID[id!] = elements;
+    } else {
+      ownerDocument.elementsByID.removeWhere((key, value) => value == this);
+    }
+  }
+
+  void _updateNameMap() {
+    final name = getAttribute('name');
+    if (name != null && name.isNotEmpty) {
+      final elements = ownerDocument.elementsByName[name] ?? [];
+      if (!elements.contains(this)) {
+        elements.add(this);
+      }
+      ownerDocument.elementsByName[name] = elements;
+    } else {
+      ownerDocument.elementsByName.removeWhere((key, value) => value == this);
+    }
+  }
+
+  @override
+  void disconnectedCallback() {
+    super.disconnectedCallback();
+    if (id?.isNotEmpty == true) {
+      final elements = ownerDocument.elementsByID[id!];
+      if (elements != null) {
+        elements.remove(this);
+        ownerDocument.elementsByID[id!] = elements;
+      }
+    }
+    final name = getAttribute('name');
+    if (name != null) {
+      final elements = ownerDocument.elementsByName[name];
+      if (elements != null) {
+        elements.remove(this);
+        ownerDocument.elementsByName[name] = elements;
+      }
+    }
+  }
+
   RenderBox? getContainingBlockRenderBox() {
     RenderBox? containingBlockRenderBox;
     CSSPositionType positionType = renderStyle.position;
@@ -1041,6 +1103,18 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
+// =======
+//     if (_STYLE_PROPERTY == qualifiedName) {
+//       final map = CSSParser(value).parseInlineStyle();
+//       inlineStyle.addAll(map);
+//       recalculateStyle();
+//     } else if (_CLASS_NAME == qualifiedName) {
+//       className = value;
+//     } else if (_ID == qualifiedName) {
+//       id = value;
+//     } else if (_NAME == qualifiedName) {
+//       _updateNameMap();
+// >>>>>>> 39777b351 (perf: Improved element matching styles)
     }
   }
 
@@ -1578,26 +1652,24 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     _applySheetStyle(style);
   }
 
-  void recalculateStyle() {
+  void recalculateStyle({bool rebuildNested = false}) {
     if (renderBoxModel != null) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
+      var hasInheritedPendingProperty = false;
       if (style.merge(newStyle)) {
+        hasInheritedPendingProperty = style.hasInheritedPendingProperty;
         style.flushPendingProperties();
       }
-    }
-  }
 
-  void recalculateNestedStyle() {
-    if (!needsStyleRecalculate) {
-      return;
+      if (rebuildNested == true || hasInheritedPendingProperty) {
+        // Update children style.
+        children.forEach((Element child) {
+          child.recalculateStyle(rebuildNested: rebuildNested);
+        });
+      }
     }
-    recalculateStyle();
-    // Update children style.
-    children.forEach((Element child) {
-      child.recalculateNestedStyle();
-    });
   }
 
   void _removeInlineStyle() {
@@ -1777,6 +1849,24 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     );
     scrollingContentLayoutBox.isScrollingContentBox = true;
     return scrollingContentLayoutBox;
+  }
+
+  bool _checkRecalculateStyle(List<String?> keys, CSSMap cssMap) {
+    if (keys.isEmpty || cssMap.values.isEmpty) {
+      return false;
+    }
+    final rules = cssMap.values.reduce((value, element) => value + element);
+    for (CSSRule rule in rules) {
+      if (rule is! CSSStyleRule) {
+        continue;
+      }
+      for (Selector selector in rule.selectorGroup.selectors) {
+        if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }
 
