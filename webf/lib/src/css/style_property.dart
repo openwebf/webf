@@ -8,7 +8,6 @@ import 'package:webf/src/css/css_animation.dart';
 
 // a-b to aB
 final RegExp _camelCaseReg = RegExp(r'-(\w)');
-final RegExp _spaceRegExp = RegExp(r'\s+(?![^(]*\))');
 final RegExp _commaRegExp = RegExp(r',(?![^\(]*\))');
 final RegExp _slashRegExp = RegExp(r'\/(?![^(]*\))');
 final RegExp _replaceCommaRegExp = RegExp(r'\s*,\s*');
@@ -477,7 +476,7 @@ class CSSStyleProperty {
   static List<String?>? _getBackgroundValues(String shorthandProperty) {
     // Convert 40%/10em -> 40% / 10em
     shorthandProperty = shorthandProperty.replaceAll(_slashRegExp, ' / ');
-    List<String> values = shorthandProperty.split(_spaceRegExp);
+    List<String> values = _splitBySpace(shorthandProperty);
 
     String? color;
     String? image;
@@ -487,7 +486,7 @@ class CSSStyleProperty {
     String? positionY;
     String? sizeWidth;
     String? sizeHeight;
-
+    
     String? position;
     String? size;
     bool isPositionEndAndSizeStart = false;
@@ -519,7 +518,7 @@ class CSSStyleProperty {
       } else if (sizeHeight == null && (isValueVariableFunction || CSSBackground.isValidBackgroundSizeValue(value))) {
         sizeHeight = value;
       } else {
-        return null;
+        break;
       }
     }
 
