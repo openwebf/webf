@@ -38,11 +38,6 @@ class HTMLAnchorElement extends Element {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-  }
-
-  @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
     properties['href'] = BindingObjectProperty(getter: () => href, setter: (value) => href = castToType<String>(value));

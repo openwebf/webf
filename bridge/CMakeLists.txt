@@ -18,7 +18,7 @@ else ()
 endif ()
 
 execute_process(
-  COMMAND bash "-c" "if [ ! -d \"node_modules\" ]; then npm install; fi"
+  COMMAND bash "-c" "npm install"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
 ) # install code_generator deps
 
