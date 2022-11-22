@@ -110,6 +110,7 @@ mixin BaseInputElement on WidgetElement {
 
   @override
   void initState() {
+    _focusNode = FocusNode();
     _focusNode.addListener(() {
       handleFocusChange();
     });
@@ -124,6 +125,7 @@ mixin BaseInputElement on WidgetElement {
     properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
     properties['placeholder'] = BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
     properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
+    properties['readonly'] = BindingObjectProperty(getter: () => readonly, setter: (value) => readonly = value);
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
     properties['defaultValue'] = BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
   }
@@ -133,6 +135,7 @@ mixin BaseInputElement on WidgetElement {
     super.initializeAttributes(attributes);
 
     attributes['value'] = ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
+    attributes['disabled'] = ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
   }
 
   TextInputType? getKeyboardType() {
@@ -190,9 +193,14 @@ mixin BaseInputElement on WidgetElement {
     internalSetAttribute('defaultValue', value?.toString() ?? '');
   }
 
-  bool get disabled => getAttribute('disabled') != null;
+  bool _disabled = false;
+  bool get disabled => _disabled;
   set disabled(value) {
-    internalSetAttribute('disabled', value?.toString() ?? '');
+    if (value is String) {
+      _disabled = value == 'true';
+      return;
+    }
+    _disabled = value == true;
   }
 
   bool get autofocus => getAttribute('autofocus') != null;
@@ -320,7 +328,7 @@ mixin BaseInputElement on WidgetElement {
     return widget;
   }
 
-  final FocusNode _focusNode = FocusNode();
+  late FocusNode _focusNode;
 
   void handleFocusChange() {
     if (_isFocus) {
