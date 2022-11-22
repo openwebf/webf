@@ -100,7 +100,7 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     COMPONENT Runtime)
 endif()
 
-set(KRAKEN_TEST_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../../bridge/build/linux/lib/libkraken_test.so")
+set(KRAKEN_TEST_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../../bridge/build/linux/lib/libwebf_test.so")
 install(FILES "${KRAKEN_TEST_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
 
 # Fully re-copy the assets directory on each build to avoid having stale files
