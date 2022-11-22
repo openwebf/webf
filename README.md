@@ -10,7 +10,7 @@ WebF (Web on the Flutter) is a W3C standard compliant Web rendering engine based
 
 ## Join the community (Beta)
 
-![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=shield)
+[![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=banner1)](https://discord.gg/DvUBtXZ5rK)
 
 ## Version requirement
 
