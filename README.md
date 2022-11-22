@@ -8,6 +8,10 @@ WebF (Web on the Flutter) is a W3C standard compliant Web rendering engine based
 + **Web Development Experience:** WebF support inspect your HTML structure, CSS style and Debugging JavaScript with Chrome Developer Tools, just like the web development experience of your browser.
 + **Write Once, Run AnyWhere:** By the power of WebF, You can write your web application and run it on any device flutter supports, and you can still run your apps in Node.js and Web Browser with the same code base.
 
+## Join the community (Beta)
+
+![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=shield)
+
 ## Version requirement
 
 | WebF  | Flutter |
