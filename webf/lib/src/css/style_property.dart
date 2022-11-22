@@ -486,7 +486,7 @@ class CSSStyleProperty {
     String? positionY;
     String? sizeWidth;
     String? sizeHeight;
-    
+
     String? position;
     String? size;
     bool isPositionEndAndSizeStart = false;
@@ -799,36 +799,29 @@ class CSSStyleProperty {
       leftValue = properties[3];
     }
 
-    if (topValue != null &&
-        CSSFunction.isFunction(topValue) &&
-        rightValue != null &&
-        CSSFunction.isFunction(rightValue) &&
-        bottomValue != null &&
-        CSSFunction.isFunction(bottomValue) &&
-        leftValue != null &&
-        CSSFunction.isFunction(leftValue)) {
-      return [topValue, rightValue, bottomValue, leftValue];
+    if (topValue == null || rightValue == null || bottomValue == null || leftValue == null) {
+      return null;
     }
 
     if (isLengthOrPercentage) {
-      if ((!CSSLength.isLength(topValue) && !CSSPercentage.isPercentage(topValue)) ||
-          (!CSSLength.isLength(rightValue) && !CSSPercentage.isPercentage(rightValue)) ||
-          (!CSSLength.isLength(bottomValue) && !CSSPercentage.isPercentage(bottomValue)) ||
-          (!CSSLength.isLength(leftValue) && !CSSPercentage.isPercentage(leftValue))) {
+      if ((!CSSLength.isLength(topValue) && !CSSPercentage.isPercentage(topValue) && !CSSFunction.isFunction(topValue)) ||
+          (!CSSLength.isLength(rightValue) && !CSSPercentage.isPercentage(rightValue)  && !CSSFunction.isFunction(rightValue)) ||
+          (!CSSLength.isLength(bottomValue) && !CSSPercentage.isPercentage(bottomValue) && !CSSFunction.isFunction(bottomValue)) ||
+          (!CSSLength.isLength(leftValue) && !CSSPercentage.isPercentage(leftValue)) && !CSSFunction.isFunction(leftValue)) {
         return null;
       }
     } else if (isNonNegativeLengthOrPercentage) {
-      if ((!CSSLength.isNonNegativeLength(topValue) && !CSSPercentage.isNonNegativePercentage(topValue)) ||
-          (!CSSLength.isNonNegativeLength(rightValue) && !CSSPercentage.isNonNegativePercentage(rightValue)) ||
-          (!CSSLength.isNonNegativeLength(bottomValue) && !CSSPercentage.isNonNegativePercentage(bottomValue)) ||
-          (!CSSLength.isNonNegativeLength(leftValue) && !CSSPercentage.isNonNegativePercentage(leftValue))) {
+      if ((!CSSLength.isNonNegativeLength(topValue) && !CSSPercentage.isNonNegativePercentage(topValue) && !CSSFunction.isFunction(topValue)) ||
+          (!CSSLength.isNonNegativeLength(rightValue) && !CSSPercentage.isNonNegativePercentage(rightValue) && !CSSFunction.isFunction(rightValue)) ||
+          (!CSSLength.isNonNegativeLength(bottomValue) && !CSSPercentage.isNonNegativePercentage(bottomValue) && !CSSFunction.isFunction(bottomValue)) ||
+          (!CSSLength.isNonNegativeLength(leftValue) && !CSSPercentage.isNonNegativePercentage(leftValue) && !CSSFunction.isFunction(leftValue))) {
         return null;
       }
     } else if (isNonNegativeLength) {
-      if ((!CSSLength.isNonNegativeLength(topValue)) ||
-          (!CSSLength.isNonNegativeLength(rightValue)) ||
-          (!CSSLength.isNonNegativeLength(bottomValue)) ||
-          (!CSSLength.isNonNegativeLength(leftValue))) {
+      if ((!CSSLength.isNonNegativeLength(topValue) && !CSSFunction.isFunction(topValue)) ||
+          (!CSSLength.isNonNegativeLength(rightValue) && !CSSFunction.isFunction(rightValue)) ||
+          (!CSSLength.isNonNegativeLength(bottomValue) && !CSSFunction.isFunction(bottomValue)) ||
+          (!CSSLength.isNonNegativeLength(leftValue) && !CSSFunction.isFunction(leftValue))) {
         return null;
       }
     }
