@@ -109,8 +109,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   set id(String? id) {
     final isNeedRecalculate = _checkRecalculateStyle([id, _id], ownerDocument.ruleSet.idRules);
+    _updateIDMap(id, oldID: _id);
     _id = id;
-    _updateIDMap();
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
@@ -259,9 +259,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       id = EMPTY_STRING;
     });
     attributes[_NAME] = ElementAttributeProperty(setter: (value) {
-      _updateNameMap();
+      _updateNameMap(value, oldName: getAttribute(_NAME));
     } , deleter: () {
-      _updateNameMap();
+      _updateNameMap(null, oldName: getAttribute(_NAME));
     });
   }
 
@@ -1006,56 +1006,52 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return super.replaceChild(newNode, oldNode);
   }
 
+  void _updateIDMap(String? newID, {String? oldID}) {
+    if (oldID != null && oldID.isNotEmpty) {
+      final elements = ownerDocument.elementsByID[oldID];
+      if (elements != null) {
+        elements.remove(this);
+        ownerDocument.elementsByID[oldID] = elements;
+      }
+    }
+    if (newID?.isNotEmpty == true && isConnected) {
+      final elements = ownerDocument.elementsByID[newID!] ?? [];
+      if (!elements.contains(this)) {
+        elements.add(this);
+      }
+      ownerDocument.elementsByID[newID] = elements;
+    }
+  }
+
+  void _updateNameMap(String? newName, {String? oldName}) {
+    if (oldName != null && oldName.isNotEmpty) {
+      final elements = ownerDocument.elementsByName[oldName];
+      if (elements != null) {
+        elements.remove(this);
+        ownerDocument.elementsByName[oldName] = elements;
+      }
+    }
+    if (newName != null && newName.isNotEmpty && isConnected) {
+      final elements = ownerDocument.elementsByName[newName] ?? [];
+      if (!elements.contains(this)) {
+        elements.add(this);
+      }
+      ownerDocument.elementsByName[newName] = elements;
+    }
+  }
+
   @override
   void connectedCallback() {
     super.connectedCallback();
-    _updateIDMap();
-    _updateNameMap();
-  }
-
-  void _updateIDMap() {
-    if (id?.isNotEmpty == true) {
-      final elements = ownerDocument.elementsByID[id!] ?? [];
-      if (!elements.contains(this)) {
-        elements.add(this);
-      }
-      ownerDocument.elementsByID[id!] = elements;
-    } else {
-      ownerDocument.elementsByID.removeWhere((key, value) => value == this);
-    }
-  }
-
-  void _updateNameMap() {
-    final name = getAttribute('name');
-    if (name != null && name.isNotEmpty) {
-      final elements = ownerDocument.elementsByName[name] ?? [];
-      if (!elements.contains(this)) {
-        elements.add(this);
-      }
-      ownerDocument.elementsByName[name] = elements;
-    } else {
-      ownerDocument.elementsByName.removeWhere((key, value) => value == this);
-    }
+    _updateNameMap(getAttribute(_NAME));
+    _updateIDMap(_id);
   }
 
   @override
   void disconnectedCallback() {
     super.disconnectedCallback();
-    if (id?.isNotEmpty == true) {
-      final elements = ownerDocument.elementsByID[id!];
-      if (elements != null) {
-        elements.remove(this);
-        ownerDocument.elementsByID[id!] = elements;
-      }
-    }
-    final name = getAttribute('name');
-    if (name != null) {
-      final elements = ownerDocument.elementsByName[name];
-      if (elements != null) {
-        elements.remove(this);
-        ownerDocument.elementsByName[name] = elements;
-      }
-    }
+    _updateIDMap(null, oldID: _id);
+    _updateNameMap(null, oldName: getAttribute(_NAME));
   }
 
   RenderBox? getContainingBlockRenderBox() {
@@ -1103,18 +1099,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
-// =======
-//     if (_STYLE_PROPERTY == qualifiedName) {
-//       final map = CSSParser(value).parseInlineStyle();
-//       inlineStyle.addAll(map);
-//       recalculateStyle();
-//     } else if (_CLASS_NAME == qualifiedName) {
-//       className = value;
-//     } else if (_ID == qualifiedName) {
-//       id = value;
-//     } else if (_NAME == qualifiedName) {
-//       _updateNameMap();
-// >>>>>>> 39777b351 (perf: Improved element matching styles)
     }
   }
 

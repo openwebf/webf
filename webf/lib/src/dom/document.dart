@@ -172,7 +172,7 @@ class Document extends Node {
   dynamic getElementById(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
     final elements = elementsByID[args.first];
-    if (elements == null) {
+    if (elements == null || elements.isEmpty) {
       return null;
     }
     if (elements.length == 1) {
