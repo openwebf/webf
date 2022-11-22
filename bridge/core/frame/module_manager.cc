@@ -98,7 +98,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   const AtomicString& module_name,
                                                   const AtomicString& method,
                                                   ScriptValue& params_value,
-                                                  std::shared_ptr<QJSFunction> callback,
+                                                  const std::shared_ptr<QJSFunction>& callback,
                                                   ExceptionState& exception) {
   NativeValue params = params_value.ToNative(exception);
 

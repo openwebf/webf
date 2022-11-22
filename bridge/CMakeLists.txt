@@ -200,6 +200,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
+    core/dart_context.cc
+    core/dart_context_data.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc
@@ -284,6 +286,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_rendering_context_2d.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
+    core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
     # Legacy implements, should remove them in the future.
     core/dom/legacy/space_split_string.cc
@@ -377,6 +380,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/canvas_types.cc
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc
+    out/qjs_html_form_element.cc
     out/qjs_html_textarea_element.cc
     out/qjs_html_script_element.cc
     out/qjs_promise_rejection_event.cc

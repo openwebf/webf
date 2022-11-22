@@ -100,6 +100,9 @@ abstract class RenderStyle {
   CSSLengthValue? get letterSpacing;
   CSSLengthValue? get wordSpacing;
 
+  // input
+  Color? get caretColor;
+
   // BoxModel
   double? get borderBoxLogicalWidth;
   double? get borderBoxLogicalHeight;
@@ -201,6 +204,7 @@ class CSSRenderStyle extends RenderStyle
         CSSBoxShadowMixin,
         CSSBoxMixin,
         CSSTextMixin,
+        CSSInputMixin,
         CSSPositionMixin,
         CSSTransformMixin,
         CSSVisibilityMixin,
@@ -526,6 +530,7 @@ class CSSRenderStyle extends RenderStyle
         value = CSSBorderSide.resolveBorderStyle(propertyValue);
         break;
       case COLOR:
+      case CARETCOLOR:
       case BACKGROUND_COLOR:
       case TEXT_DECORATION_COLOR:
       case BORDER_LEFT_COLOR:
@@ -667,22 +672,7 @@ class CSSRenderStyle extends RenderStyle
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
-            // If parentElement is WidgetElement, should not search for ancestors and get maxWidth of constraints for logicalWidth.
-            RenderObject? renderObject = renderBoxModel!.parent as RenderObject;
-
-            if (ancestorRenderStyle.target.renderObjectManagerType == RenderObjectManagerType.FLUTTER_ELEMENT &&
-                renderObject is RenderBox) {
-              try {
-                // When renderObject has not layouted, get constraints will trigger assert.
-                // Such as image resize will get _styleWidth and call this function before layout.
-                logicalWidth = renderObject.constraints.maxWidth;
-              } catch (e) {
-                logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
-              }
-            } else {
-              logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
-            }
-
+            logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
             // Should subtract horizontal margin of own from its parent content width.
             if (logicalWidth != null) {
               logicalWidth -= renderStyle.margin.horizontal;

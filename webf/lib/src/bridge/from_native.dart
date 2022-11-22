@@ -14,14 +14,6 @@ import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
 import 'package:webf/src/module/performance_timing.dart';
 
-// An native struct can be directly convert to javaScript String without any conversion cost.
-class NativeString extends Struct {
-  external Pointer<Uint16> string;
-
-  @Uint32()
-  external int length;
-}
-
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
 }

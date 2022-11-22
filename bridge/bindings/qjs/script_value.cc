@@ -67,12 +67,6 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
 
       return JS_NULL;
     }
-    case NativeTag::TAG_FUNCTION: {
-      return NativeValueConverter<NativeTypeFunction>::FromNativeValue(context->ctx(), native_value)->ToQuickJS();
-    }
-    case NativeTag::TAG_ASYNC_FUNCTION: {
-      return NativeValueConverter<NativeTypeAsyncFunction>::FromNativeValue(context->ctx(), native_value)->ToQuickJS();
-    }
   }
   return JS_NULL;
 }

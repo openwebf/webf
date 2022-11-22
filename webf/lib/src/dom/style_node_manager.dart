@@ -7,6 +7,7 @@ import 'package:collection/collection.dart';
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 
 /*
   Handling element style updates

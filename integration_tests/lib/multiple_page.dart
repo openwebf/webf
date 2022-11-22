@@ -11,7 +11,7 @@ import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:test/test.dart';
 
-import 'custom/custom_element.dart';
+import 'custom_elements/main.dart';
 import 'local_http_server.dart';
 import 'plugin.dart';
 import 'modules/unresponsive_module.dart';

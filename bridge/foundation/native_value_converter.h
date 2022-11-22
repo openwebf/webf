@@ -36,6 +36,7 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
   static NativeValue ToNativeValue(JSContext* ctx, const ImplType& value) {
     return Native_NewString(value.ToNativeString(ctx).release());
   }
+  static NativeValue ToNativeValue(const std::string& value) { return Native_NewCString(value); }
 
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
     if (value.tag == NativeTag::TAG_NULL) {

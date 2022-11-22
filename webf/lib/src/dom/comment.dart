@@ -5,7 +5,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 
-class Comment extends Node {
+class Comment extends CharacterData {
   Comment([context]) : super(NodeType.COMMENT_NODE, context);
 
   @override

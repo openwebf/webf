@@ -4,13 +4,15 @@
  */
 #include "module_callback.h"
 
+#include <utility>
+
 namespace webf {
 
-std::shared_ptr<ModuleCallback> ModuleCallback::Create(std::shared_ptr<QJSFunction> function) {
+std::shared_ptr<ModuleCallback> ModuleCallback::Create(const std::shared_ptr<QJSFunction>& function) {
   return std::make_shared<ModuleCallback>(function);
 }
 
-ModuleCallback::ModuleCallback(std::shared_ptr<QJSFunction> function) : function_(function) {}
+ModuleCallback::ModuleCallback(std::shared_ptr<QJSFunction> function) : function_(std::move(function)) {}
 
 std::shared_ptr<QJSFunction> ModuleCallback::value() {
   return function_;

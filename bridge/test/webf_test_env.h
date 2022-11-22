@@ -30,7 +30,7 @@ std::unique_ptr<WebFPage> TEST_init();
 std::unique_ptr<WebFPage> TEST_allocateNewPage(OnJSError onJsError);
 void TEST_runLoop(ExecutingContext* context);
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError);
-void TEST_mockTestEnvDartMethods(int32_t contextId, OnJSError onJSError);
+void TEST_mockTestEnvDartMethods(void* testContext, OnJSError onJSError);
 void TEST_registerEventTargetDisposedCallback(int32_t context_unique_id, TEST_OnEventTargetDisposed callback);
 std::shared_ptr<UnitTestEnv> TEST_getEnv(int32_t context_unique_id);
 }  // namespace webf

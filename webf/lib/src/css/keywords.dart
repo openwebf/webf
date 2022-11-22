@@ -12,6 +12,7 @@ const String VISIBILITY = 'visibility';
 const String CONTENT_VISIBILITY = 'contentVisibility';
 const String BOX_SHADOW = 'boxShadow';
 const String COLOR = 'color';
+const String CARETCOLOR = 'caretColor';
 
 const String WIDTH = 'width';
 const String HEIGHT = 'height';

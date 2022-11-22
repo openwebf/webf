@@ -3,6 +3,7 @@
  */
 import 'dart:async';
 import 'dart:io';
+import 'dart:ffi';
 
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/material.dart';
@@ -12,11 +13,11 @@ import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 
+import 'custom_elements/main.dart';
 import 'test_module.dart';
 import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'bridge/to_native.dart';
-import 'custom/custom_element.dart';
 import 'local_http_server.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
@@ -34,7 +35,7 @@ void main() async {
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
 
   // FIXME: This is a workaround for testcases.
-  ParagraphElement.defaultStyle = {DISPLAY: BLOCK};
+  debugOverridePDefaultStyle({DISPLAY: BLOCK});
 
   // Start local HTTP server.
   var httpServer = LocalHttpServer.getInstance();
@@ -104,16 +105,14 @@ void main() async {
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     int contextId = webF.controller!.view.contextId;
-    initTestFramework(contextId);
+    Pointer<Void> testContext = initTestFramework(contextId);
     registerDartTestMethodsToCpp(contextId);
     addJSErrorListener(contextId, print);
     // Preload load test cases
     String code = spec.readAsStringSync();
     evaluateTestScripts(contextId, codeInjection + code, url: specUrl);
-    String result = await executeTest(contextId);
-    // Manual dispose context for memory leak check.
-    disposePage(webF.controller!.view.contextId);
-
+    String result = await executeTest(testContext, contextId);
+    webF.controller!.dispose();
     exit(result == 'failed' ? 1 : 0);
   });
 }

@@ -75,9 +75,7 @@ jobs:
     - uses: nttld/setup-ndk@v1
       id: setup-ndk
       with:
-        ndk-version: r23c
-      env:
-        ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        ndk-version: r22b
     - uses: jwlawson/actions-setup-cmake@v1.11
       with:
         cmake-version: ${{ env.cmakeVersion }}
@@ -85,6 +83,8 @@ jobs:
       run: npm install
     - name: Build bridge binary
       run: npm run build:bridge:android:release
+      env:
+        ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
     - uses: actions/upload-artifact@v2
       with:
         name: android_binary

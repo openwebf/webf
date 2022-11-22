@@ -189,6 +189,8 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void scrollingContentBoxStyleListener(String property, String? original, String present) {
+    if (renderBoxModel == null) return;
+
     RenderLayoutBox? scrollingContentBox = (renderBoxModel as RenderLayoutBox).renderScrollingContent;
     // Sliver content has no multi scroll content box.
     if (scrollingContentBox == null) return;
@@ -355,16 +357,16 @@ mixin ElementOverflowMixin on ElementBase {
     _scrollTo(y: value);
   }
 
-  void scroll(double x, double y) {
-    _scrollTo(x: x, y: y, withAnimation: false);
+  void scroll(double x, double y, [bool withAnimation = false]) {
+    _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
-  void scrollBy(double x, double y) {
-    _scrollBy(dx: x, dy: y, withAnimation: false);
+  void scrollBy(double x, double y, [bool withAnimation = false]) {
+    _scrollBy(dx: x, dy: y, withAnimation: withAnimation);
   }
 
-  void scrollTo(double x, double y) {
-    _scrollTo(x: x, y: y, withAnimation: false);
+  void scrollTo(double x, double y, [bool withAnimation = false]) {
+    _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
   double get scrollLeft {
@@ -380,6 +382,10 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollHeight {
+    if (!isRendererAttached) {
+      return 0.0;
+    }
+
     WebFScrollable? scrollable = _getScrollable(Axis.vertical);
     if (scrollable?.position?.maxScrollExtent != null) {
       // Viewport height + maxScrollExtent
@@ -391,6 +397,9 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollWidth {
+    if (!isRendererAttached) {
+      return 0.0;
+    }
     WebFScrollable? scrollable = _getScrollable(Axis.horizontal);
     if (scrollable?.position?.maxScrollExtent != null) {
       return renderBoxModel!.clientWidth + scrollable!.position!.maxScrollExtent;

@@ -7,7 +7,6 @@ import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
 import 'package:flutter/rendering.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
 
 typedef ConnectedCallback = void Function();

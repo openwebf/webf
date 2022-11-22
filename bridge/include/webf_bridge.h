@@ -26,28 +26,20 @@ struct WebFInfo {
 };
 
 typedef void (*Task)(void*);
-typedef void (*ConsoleMessageHandler)(void* ctx, const std::string& message, int logLevel);
-
 WEBF_EXPORT_C
-void initJSPagePool(int poolSize, uint64_t* dart_methods, int32_t dart_methods_len);
+void initDartContext(uint64_t* dart_methods, int32_t dart_methods_len);
 WEBF_EXPORT_C
-void disposePage(int32_t contextId);
+void* allocateNewPage(int32_t targetContextId);
 WEBF_EXPORT_C
-int32_t allocateNewPage(int32_t targetContextId, uint64_t* dart_methods, int32_t dart_methods_len);
+void disposePage(void* page);
 WEBF_EXPORT_C
-void* getPage(int32_t contextId);
-bool checkPage(int32_t contextId);
-bool checkPage(int32_t contextId, void* context);
+void evaluateScripts(void* page, NativeString* code, const char* bundleFilename, int32_t startLine);
 WEBF_EXPORT_C
-void evaluateScripts(int32_t contextId, NativeString* code, const char* bundleFilename, int32_t startLine);
+void evaluateQuickjsByteCode(void* page, uint8_t* bytes, int32_t byteLen);
 WEBF_EXPORT_C
-void evaluateQuickjsByteCode(int32_t contextId, uint8_t* bytes, int32_t byteLen);
+void parseHTML(void* page, const char* code, int32_t length);
 WEBF_EXPORT_C
-void parseHTML(int32_t contextId, const char* code, int32_t length);
-WEBF_EXPORT_C
-void reloadJsContext(int32_t contextId, uint64_t* dart_methods, int32_t dart_methods_len);
-WEBF_EXPORT_C
-NativeValue* invokeModuleEvent(int32_t contextId,
+NativeValue* invokeModuleEvent(void* page,
                                NativeString* module,
                                const char* eventType,
                                void* event,
@@ -55,25 +47,18 @@ NativeValue* invokeModuleEvent(int32_t contextId,
 WEBF_EXPORT_C
 WebFInfo* getWebFInfo();
 WEBF_EXPORT_C
-void dispatchUITask(int32_t contextId, void* context, void* callback);
+void dispatchUITask(void* page, void* context, void* callback);
 WEBF_EXPORT_C
-void flushUITask(int32_t contextId);
+void* getUICommandItems(void* page);
 WEBF_EXPORT_C
-void registerUITask(int32_t contextId, Task task, void* data);
+int64_t getUICommandItemSize(void* page);
 WEBF_EXPORT_C
-void* getUICommandItems(int32_t contextId);
-WEBF_EXPORT_C
-int64_t getUICommandItemSize(int32_t contextId);
-WEBF_EXPORT_C
-void clearUICommandItems(int32_t contextId);
-WEBF_EXPORT_C
-void registerContextDisposedCallbacks(int32_t contextId, Task task, void* data);
+void clearUICommandItems(void* page);
 WEBF_EXPORT_C
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName);
 WEBF_EXPORT_C
+void registerPluginCode(const char* code, int32_t length, const char* pluginName);
+WEBF_EXPORT_C
 int32_t profileModeEnabled();
-
-WEBF_EXPORT
-void setConsoleMessageHandler(ConsoleMessageHandler handler);
 
 #endif  // WEBF_BRIDGE_EXPORT_H

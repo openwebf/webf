@@ -77,7 +77,7 @@ jobs:
     - uses: nttld/setup-ndk@v1
       id: setup-ndk
       with:
-        ndk-version: r23c
+        ndk-version: r22b
       env:
         ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
     - uses: jwlawson/actions-setup-cmake@v1.11

@@ -79,6 +79,8 @@ class AtomicString {
 
   bool operator==(const AtomicString& other) const { return other.atom_ == this->atom_; }
   bool operator!=(const AtomicString& other) const { return other.atom_ != this->atom_; };
+  bool operator>(const AtomicString& other) const { return other.atom_ > this->atom_; };
+  bool operator<(const AtomicString& other) const { return other.atom_ < this->atom_; };
 
  protected:
   JSRuntime* runtime_{nullptr};

@@ -17,32 +17,32 @@ import 'package:webf/bridge.dart';
 // 6. Call the C function.
 
 // Init Test Framework
-typedef NativeInitTestFramework = Void Function(Int32 contextId);
-typedef DartInitTestFramework = void Function(int contextId);
+typedef NativeInitTestFramework = Pointer<Void> Function(Pointer<Void> page);
+typedef DartInitTestFramework = Pointer<Void> Function(Pointer<Void> page);
 
 final DartInitTestFramework _initTestFramework =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitTestFramework>>('initTestFramework').asFunction();
 
-void initTestFramework(int contextId) {
-  _initTestFramework(contextId);
+Pointer<Void> initTestFramework(int contextId) {
+  return _initTestFramework(getAllocatedPage(contextId)!);
 }
 
 // Register evaluteTestScripts
-typedef NativeEvaluateTestScripts = Int8 Function(Int32 contextId, Pointer<NativeString>, Pointer<Utf8>, Int32);
-typedef DartEvaluateTestScripts = int Function(int contextId, Pointer<NativeString>, Pointer<Utf8>, int);
+typedef NativeEvaluateTestScripts = Int8 Function(Pointer<Void> testContext, Pointer<NativeString>, Pointer<Utf8>, Int32);
+typedef DartEvaluateTestScripts = int Function(Pointer<Void> testContext, Pointer<NativeString>, Pointer<Utf8>, int);
 
 final DartEvaluateTestScripts _evaluateTestScripts =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateTestScripts>>('evaluateTestScripts').asFunction();
 
 void evaluateTestScripts(int contextId, String code, {String url = 'test://', int line = 0}) {
   Pointer<Utf8> _url = (url).toNativeUtf8();
-  _evaluateTestScripts(contextId, stringToNativeString(code), _url, line);
+  _evaluateTestScripts(getAllocatedPage(contextId)!, stringToNativeString(code), _url, line);
 }
 
 typedef NativeExecuteCallback = Void Function(Int32 contextId, Pointer<NativeString> status);
 typedef DartExecuteCallback = void Function(int);
-typedef NativeExecuteTest = Void Function(Int32 contextId, Pointer<NativeFunction<NativeExecuteCallback>>);
-typedef DartExecuteTest = void Function(int contextId, Pointer<NativeFunction<NativeExecuteCallback>>);
+typedef NativeExecuteTest = Void Function(Pointer<Void>, Pointer<NativeFunction<NativeExecuteCallback>>);
+typedef DartExecuteTest = void Function(Pointer<Void>, Pointer<NativeFunction<NativeExecuteCallback>>);
 
 final DartExecuteTest _executeTest =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeExecuteTest>>('executeTest').asFunction();
@@ -55,9 +55,9 @@ void _executeTestCallback(int contextId, Pointer<NativeString> status) {
   completerList[contextId] = null;
 }
 
-Future<String> executeTest(int contextId) async {
+Future<String> executeTest(Pointer<Void> testContext, int contextId) async {
   completerList[contextId] = Completer();
   Pointer<NativeFunction<NativeExecuteCallback>> callback = Pointer.fromFunction(_executeTestCallback);
-  _executeTest(contextId, callback);
+  _executeTest(testContext, callback);
   return completerList[contextId]!.future;
 }

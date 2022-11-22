@@ -5,7 +5,6 @@
 
 export 'src/rendering/box_decoration.dart';
 export 'src/rendering/box_decoration_painter.dart';
-export 'src/dom/elements/canvas/canvas_painter.dart';
 export 'src/rendering/fallback_view.dart';
 export 'src/rendering/flex.dart';
 export 'src/rendering/flow.dart';
@@ -20,7 +19,9 @@ export 'src/rendering/content_visibility.dart';
 export 'src/rendering/event.dart';
 export 'src/rendering/opacity.dart';
 export 'src/rendering/overflow.dart';
+export 'src/rendering/portal.dart';
 export 'src/rendering/transform.dart';
+export 'src/rendering/widget.dart';
 export 'src/rendering/viewport.dart';
 export 'src/rendering/paragraph.dart';
 export 'src/rendering/line_break.dart';

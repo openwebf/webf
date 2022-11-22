@@ -2,10 +2,12 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
@@ -14,14 +16,53 @@ import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
 import 'package:webf/src/foundation/cookie_jar.dart';
-import 'package:webf/widget.dart';
+
+/// In the document tree, there may contains WidgetElement which connected to a Flutter Elements.
+/// And these flutter element will be unmounted in the end of this frame and their renderObject will call dispose() too.
+/// So we can't dispose WebF Element's renderObject immediately if the WebF element are removed from document tree.
+/// This class will buffering all the renderObjects who's element are removed from the document tree, and they will be disposed
+/// in the end of this frame.
+class _InactiveRenderObjects {
+  final Set<RenderObject> _renderObjects = HashSet<RenderObject>();
+
+  bool _isScheduled = false;
+
+  void add(RenderObject? renderObject) {
+    if (renderObject == null) return;
+
+    if (_renderObjects.isEmpty && !_isScheduled) {
+      _isScheduled = true;
+      /// We needs to wait at least 2 frames to dispose all webf managed renderObjects.
+      /// All renderObjects managed by WebF should be disposed after Flutter managed renderObjects dispose.
+      RendererBinding.instance.addPostFrameCallback((timeStamp) {
+        /// The Flutter framework will move all deactivated elements into _InactiveElement list.
+        /// They will be disposed in the next frame.
+        RendererBinding.instance.addPostFrameCallback((timeStamp) {
+          /// Now the renderObjects managed by Flutter framework are disposed, it's safe to dispose renderObject by our own.
+          finalizeInactiveRenderObjects();
+          _isScheduled = false;
+        });
+      });
+    }
+
+    assert(!renderObject.debugDisposed!);
+    assert(!_renderObjects.contains(renderObject));
+    _renderObjects.add(renderObject);
+  }
+
+  void finalizeInactiveRenderObjects() {
+    for(RenderObject object in _renderObjects) {
+      object.dispose();
+    }
+    _renderObjects.clear();
+  }
+}
 
 class Document extends Node {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
   RenderViewportBox? _viewport;
   GestureListener? gestureListener;
-  WidgetDelegate? widgetDelegate;
 
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
@@ -33,7 +74,6 @@ class Document extends Node {
     required this.controller,
     required RenderViewportBox viewport,
     this.gestureListener,
-    this.widgetDelegate,
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
     _styleNodeManager = StyleNodeManager(this);
@@ -43,6 +83,8 @@ class Document extends Node {
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
   late ScriptRunner _scriptRunner;
   ScriptRunner get scriptRunner => _scriptRunner;
+
+  _InactiveRenderObjects inactiveRenderObjects = _InactiveRenderObjects();
 
   @override
   EventTarget? get parentEventTarget => defaultView;
@@ -98,43 +140,18 @@ class Document extends Node {
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch(key) {
-      case 'cookie':
-        cookie_.setCookie(value);
-        break;
-    }
-
-    super.setBindingProperty(key, value);
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    properties['cookie'] = BindingObjectProperty(getter: () => cookie_.cookie(), setter: (value) => cookie_.setCookie(value));
   }
 
   @override
-  getBindingProperty(String key) {
-    switch(key) {
-      case 'cookie':
-        return cookie_.cookie();
-    }
-
-    return super.getBindingProperty(key);
-  }
-
-  @override
-  invokeBindingMethod(String method, List args) {
-    switch (method) {
-      case 'querySelectorAll':
-        return querySelectorAll(args);
-      case 'querySelector':
-        return querySelector(args);
-      case 'getElementById':
-        return getElementById(args);
-      case 'getElementsByClassName':
-        return getElementsByClassName(args);
-      case 'getElementsByTagName':
-        return getElementsByTagName(args);
-      case 'getElementsByName':
-        return getElementsByName(args);
-    }
-    return super.invokeBindingMethod(method, args);
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
+    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
+    methods['getElementById'] = BindingObjectMethodSync(call: (args) => getElementById(args));
+    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
+    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
+    methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
   }
 
   dynamic querySelector(List<dynamic> args) {
@@ -188,7 +205,7 @@ class Document extends Node {
         element.renderStyle.height = CSSLengthValue(viewport.viewportSize.height, CSSLengthType.PX);
       } else {
         // Detach document element.
-        viewport.child = null;
+        viewport.removeAll();
       }
     }
 
@@ -312,7 +329,6 @@ class Document extends Node {
   void dispose() {
     _viewport = null;
     gestureListener = null;
-    widgetDelegate = null;
     styleSheets.clear();
     adoptedStyleSheets.clear();
     super.dispose();

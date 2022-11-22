@@ -8,7 +8,6 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 

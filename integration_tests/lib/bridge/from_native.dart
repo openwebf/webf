@@ -131,7 +131,6 @@ void _simulatePointer(Pointer<Void> context, Pointer<MousePointer> mousePointerL
 
   for (int i = 0; i < length; i++) {
     List<PointerData> data = [];
-    int contextId = _contextId = mousePointerList.elementAt(i).ref.contextId;
     double x = mousePointerList.elementAt(i).ref.x;
     double y = mousePointerList.elementAt(i).ref.y;
     PointerSignalKind signalKind = PointerSignalKind.values[mousePointerList.elementAt(i).ref.signalKind];
@@ -139,7 +138,7 @@ void _simulatePointer(Pointer<Void> context, Pointer<MousePointer> mousePointerL
 
     if (signalKind == PointerSignalKind.none) {
       data.add(PointerData(
-          physicalX: (360 * contextId + x) * window.devicePixelRatio,
+          physicalX: (x) * window.devicePixelRatio,
           physicalY: (56.0 + y) * window.devicePixelRatio,
           // MouseEvent will trigger [RendererBinding.dispatchEvent] -> [BaseMouseTracker.updateWithEvent]
           // which handle extra mouse connection phase for [event.kind = PointerDeviceKind.mouse].
@@ -149,7 +148,7 @@ void _simulatePointer(Pointer<Void> context, Pointer<MousePointer> mousePointerL
           pointerIdentifier: pointer));
     } else if (signalKind == PointerSignalKind.scroll) {
       data.add(PointerData(
-          physicalX: (360 * contextId + x) * window.devicePixelRatio,
+          physicalX: (x) * window.devicePixelRatio,
           physicalY: (56.0 + y) * window.devicePixelRatio,
           kind: PointerDeviceKind.mouse,
           signalKind: signalKind,
@@ -186,8 +185,10 @@ final List<int> _dartNativeMethods = [
   _nativeSimulateInputText.address
 ];
 
-typedef Native_RegisterTestEnvDartMethods = Void Function(Int32 contextId, Pointer<Uint64> methodBytes, Int32 length);
-typedef Dart_RegisterTestEnvDartMethods = void Function(int contextId, Pointer<Uint64> methodBytes, int length);
+typedef Native_RegisterTestEnvDartMethods = Void Function(
+    Pointer<Void>, Pointer<Uint64> methodBytes, Int32 length);
+typedef Dart_RegisterTestEnvDartMethods = void Function(
+    Pointer<Void>, Pointer<Uint64> methodBytes, int length);
 
 final Dart_RegisterTestEnvDartMethods _registerTestEnvDartMethods = WebFDynamicLibrary.ref
     .lookup<NativeFunction<Native_RegisterTestEnvDartMethods>>('registerTestEnvDartMethods')
@@ -197,5 +198,5 @@ void registerDartTestMethodsToCpp(int contextId) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * _dartNativeMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
   nativeMethodList.setAll(0, _dartNativeMethods);
-  _registerTestEnvDartMethods(contextId, bytes, _dartNativeMethods.length);
+  _registerTestEnvDartMethods(getAllocatedPage(contextId)!, bytes, _dartNativeMethods.length);
 }

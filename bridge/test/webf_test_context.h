@@ -23,12 +23,15 @@ class WebFTestContext final {
  public:
   explicit WebFTestContext() = delete;
   explicit WebFTestContext(ExecutingContext* context);
+  ~WebFTestContext();
 
   /// Evaluate JavaScript source code with build-in test frameworks, use in test only.
   bool evaluateTestScripts(const uint16_t* code, size_t codeLength, const char* sourceURL, int startLine);
   bool parseTestHTML(const uint16_t* code, size_t codeLength);
   void invokeExecuteTest(ExecuteCallback executeCallback);
   void registerTestEnvDartMethods(uint64_t* methodBytes, int32_t length);
+
+  WebFPage* page() const { return page_; }
 
   std::shared_ptr<QJSFunction> execute_test_callback_{nullptr};
   JSValue execute_test_proxy_object_{JS_NULL};

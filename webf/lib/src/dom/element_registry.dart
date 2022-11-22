@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
@@ -59,7 +60,7 @@ void defineBuiltInElements() {
   defineElement(KBD, (context) => KeyboardElement(context));
   defineElement(DFN, (context) => DefinitionElement(context));
   defineElement(SPAN, (context) => SpanElement(context));
-  defineElement(ANCHOR, (context) => AnchorElement(context));
+  defineElement(ANCHOR, (context) => HTMLAnchorElement(context));
   // Content
   defineElement(PRE, (context) => PreElement(context));
   defineElement(PARAGRAPH, (context) => ParagraphElement(context));
@@ -93,8 +94,9 @@ void defineBuiltInElements() {
   // Forms
   defineElement(LABEL, (context) => LabelElement(context));
   defineElement(BUTTON, (context) => ButtonElement(context));
-  defineElement(INPUT, (context) => InputElement(context));
-  defineElement(TEXTAREA, (context) => TextareaElement(context));
+  defineElement(INPUT, (context) => FlutterInputElement(context));
+  defineElement(FORM, (context) => FlutterFormElement(context));
+  defineElement(TEXTAREA, (context) => FlutterTextAreaElement(context));
   // Edits
   defineElement(DEL, (context) => DelElement(context));
   defineElement(INS, (context) => InsElement(context));
@@ -106,12 +108,10 @@ void defineBuiltInElements() {
   defineElement(STYLE, (context) => StyleElement(context));
   defineElement(NOSCRIPT, (context) => NoScriptElement(context));
   defineElement(SCRIPT, (context) => ScriptElement(context));
-  // Object
-  defineElement(OBJECT, (context) => ObjectElement(context));
-  defineElement(PARAM, (context) => ParamElement(context));
   // Others
   defineElement(HTML, (context) => HTMLElement(context));
   defineElement(BODY, (context) => BodyElement(context));
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
+  defineElement(LISTVIEW, (context) => FlutterListViewElement(context));
 }

@@ -18,6 +18,7 @@
 namespace webf {
 
 class WebFPage;
+class DartContext;
 
 using JSBridgeDisposeCallback = void (*)(WebFPage* bridge);
 using ConsoleMessageHandler = std::function<void(void* ctx, const std::string& message, int logLevel)>;
@@ -29,13 +30,9 @@ using ConsoleMessageHandler = std::function<void(void* ctx, const std::string& m
 /// thread can enter to WebFPage at the same time.
 class WebFPage final {
  public:
-  static webf::WebFPage** pageContextPool;
   static ConsoleMessageHandler consoleMessageHandler;
   WebFPage() = delete;
-  WebFPage(int32_t jsContext,
-           const JSExceptionHandler& handler,
-           const uint64_t* dart_methods,
-           int32_t dart_methods_length);
+  WebFPage(DartContext* dart_context, int32_t jsContext, const JSExceptionHandler& handler);
   ~WebFPage();
 
   // Bytecodes which registered by webf plugins.

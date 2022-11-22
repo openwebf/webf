@@ -254,7 +254,7 @@ Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
 }
 
 Element& Element::CloneWithoutAttributesAndChildren(Document& factory) const {
-  return *(factory.createElement(tagName(), ASSERT_NO_EXCEPTION()));
+  return *(factory.createElement(tag_name_, ASSERT_NO_EXCEPTION()));
 }
 
 class ElementSnapshotReader {

@@ -152,6 +152,7 @@
     "id",
     "className",
     "cookie",
-    "class"
+    "class",
+    "syncPropertiesAndMethods"
   ]
 }

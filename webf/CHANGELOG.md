@@ -1,3 +1,30 @@
+## 0.13.0-beta.9
+
+* fix input border style.
+
+## 0.13.0-beta.8
+
+* fix macOS arm64 build error.
+
+## 0.13.0-beta.7
+
+* fix github action ndk path.
+
+## 0.13.0-beta.6
+
+* downgrade android NDK version requirement to r22b.
+
+## 0.13.0-beta.5
+
+* fix: request body should be UTF-8 encoded string.
+* fix: fix onLoad didn't not trigger when reload.
+* fix: fix rendering empty if window size is not ready.
+* fix: should dispose webf managed renderObject after flutter framework does.
+
+## 0.13.0-beta.4
+
+* Test for new custom elements system.
+
 ## 0.13.0-beta.3
 
 * Fix reload crash.

@@ -10,7 +10,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
@@ -1404,11 +1403,7 @@ class RenderBoxModel extends RenderBox
   @override
   @mustCallSuper
   void dispose() {
-    // Ensure pending layout/compositeBitsUpdate/paint render object to be finished.
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      // Call dispose method of renderBoxModel when it is detached from tree.
-      super.dispose();
-    });
+    super.dispose();
 
     // Dispose scroll behavior
     disposeScrollable();
@@ -1423,7 +1418,7 @@ class RenderBoxModel extends RenderBox
     // Dispose box decoration painter.
     disposePainter();
     // Evict render decoration image cache.
-    renderStyle.decoration?.image?.image.evict();
+    renderStyle.backgroundImage?.image?.evict();
   }
 
   Offset getTotalScrollOffset() {

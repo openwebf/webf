@@ -10,13 +10,16 @@
 
 namespace webf {
 
+class DartContext;
+
 // ScriptState is an abstraction class that holds all information about script
 // execution (e.g., JSContext etc). If you need any info about the script execution, you're expected to
 // pass around ScriptState in the code base. ScriptState is in a 1:1
 // relationship with JSContext.
 class ScriptState {
  public:
-  ScriptState();
+  ScriptState() = delete;
+  ScriptState(DartContext* dart_context);
   ~ScriptState();
 
   inline bool Invalid() const { return !ctx_invalid_; }
@@ -24,11 +27,12 @@ class ScriptState {
     assert(!ctx_invalid_ && "GetExecutingContext has been released");
     return ctx_;
   }
-  static JSRuntime* runtime();
+  JSRuntime* runtime();
 
  private:
   bool ctx_invalid_{false};
   JSContext* ctx_{nullptr};
+  DartContext* dart_context_{nullptr};
 };
 
 }  // namespace webf

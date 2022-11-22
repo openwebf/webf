@@ -237,9 +237,10 @@ mixin CSSAnimationMixin on RenderStyle {
 
   void cancelRunningAnimation() {
     if (_runningAnimation.isNotEmpty) {
-      for (Animation animation in _runningAnimation.values) {
+      List<Animation> animations = _runningAnimation.values.toList();
+      animations.forEach((animation) {
         animation.cancel();
-      }
+      });
       _runningAnimation.clear();
     }
   }

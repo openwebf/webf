@@ -4,6 +4,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "include/webf_bridge.h"
 #include "page.h"
 #include "webf_test_env.h"
 
@@ -271,24 +272,14 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
   EXPECT_EQ(errorCalledCount, 2);
 }
 
-TEST(Context, accessGetUICommandItemsAfterDisposed) {
-  int32_t contextId;
-  {
-    auto bridge = TEST_init();
-    contextId = bridge->GetExecutingContext()->contextId();
-  }
-
-  EXPECT_EQ(getUICommandItems(contextId), nullptr);
-}
-
 TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
-  initJSPagePool(1024 * 1024, mockedDartMethods.data(), mockedDartMethods.size());
+  initDartContext(mockedDartMethods.data(), mockedDartMethods.size());
   uint32_t contextId = 0;
-  auto bridge = static_cast<webf::WebFPage*>(getPage(contextId));
+  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPage(contextId));
   static bool disposed = false;
-  bridge->disposeCallback = [](webf::WebFPage* bridge) { disposed = true; };
-  disposePage(bridge->GetExecutingContext()->contextId());
+  page->disposeCallback = [](webf::WebFPage* bridge) { disposed = true; };
+  disposePage(page);
   EXPECT_EQ(disposed, true);
 }
 

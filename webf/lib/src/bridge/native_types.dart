@@ -20,6 +20,14 @@ class NativeWebFInfo extends Struct {
   external Pointer<Utf8> system_name;
 }
 
+// An native struct can be directly convert to javaScript String without any conversion cost.
+class NativeString extends Struct {
+  external Pointer<Uint16> string;
+
+  @Uint32()
+  external int length;
+}
+
 // For memory compatibility between NativeEvent and other struct which inherit NativeEvent(exp: NativeTouchEvent, NativeGestureEvent),
 // We choose to make all this structs have same memory layout. But dart lang did't provide semantically syntax to achieve this (like inheritance a class which extends Struct
 // or declare struct memory by value).

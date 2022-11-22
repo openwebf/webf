@@ -362,8 +362,10 @@ task(`build-ios-webf-lib`, (done) => {
     }
   });
 
+  let cpus = os.cpus();
+
   // build for simulator
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-x64 --target webf webf_static -- -j 12`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-x64 --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
@@ -387,7 +389,7 @@ task(`build-ios-webf-lib`, (done) => {
   });
 
   // Build for ARMv7, ARMv7s
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm --target webf webf_static -- -j 12`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
@@ -410,7 +412,7 @@ task(`build-ios-webf-lib`, (done) => {
   });
 
   // Build for ARM64
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm64 --target webf webf_static -- -j 12`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm64 --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
@@ -539,11 +541,11 @@ task('build-android-webf-lib', (done) => {
     } else if (platform == 'linux') {
       androidHome = path.join(process.env.HOME, 'Android/Sdk');
     }
-    const ndkVersion = '23.2.8568313';
+    const ndkVersion = '22.1.7171670';
     ndkDir = path.join(androidHome, 'ndk', ndkVersion);
 
     if (!fs.existsSync(ndkDir)) {
-      throw new Error('Android NDK version (23.2.8568313) not installed.');
+      throw new Error('Android NDK version (22.1.7171670) not installed.');
     }
   }
 
@@ -691,7 +693,7 @@ task('run-benchmark', async (done) => {
     const err = new Error('The IP address was not found.');
     done(err);
   }
-  
+
   let androidDevices = getDevicesInfo();
 
   let performanceInfos = execSync(
@@ -711,7 +713,7 @@ task('run-benchmark', async (done) => {
         let performanceDatas = JSON.parse(match[0]);
         // Remove the top and the bottom five from the final numbers to eliminate fluctuations, and calculate the average.
         performanceDatas = performanceDatas.sort().slice(5, performanceDatas.length - 5);
-        
+
         // Save performance list to file and upload to OSS.
         const listFile = path.join(__dirname, `${viewType}-load-time-list.js`);
         fs.writeFileSync(listFile, `performanceCallback('${viewType}LoadtimeList', [${performanceDatas.toString()}]);`);
@@ -731,9 +733,9 @@ task('run-benchmark', async (done) => {
       }
     }
   }
-  
+
   execSync('adb uninstall com.example.performance_tests');
-  
+
   done();
 });
 

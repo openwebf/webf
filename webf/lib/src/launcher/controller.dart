@@ -13,20 +13,16 @@ import 'dart:ui' as ui;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
-import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
     show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
-import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/widget.dart';
+import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
 typedef LoadHandler = void Function(WebFController controller);
@@ -34,6 +30,8 @@ typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
+typedef OnCustomElementAttached = void Function(WebFWidgetElementToWidgetAdapter newWidget);
+typedef OnCustomElementDetached = void Function(WebFWidgetElementToWidgetAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -93,8 +91,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   Color? background;
 
-  WidgetDelegate? widgetDelegate;
-
   WebFViewController(this._viewportWidth, this._viewportHeight,
       {this.background,
       this.enableDebug = false,
@@ -102,7 +98,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       required this.rootController,
       this.navigationDelegate,
       this.gestureListener,
-      this.widgetDelegate,
       // Viewport won't change when kraken page reload, should reuse previous page's viewportBox.
       RenderViewportBox? originalViewport}) {
     if (enableDebug) {
@@ -180,7 +175,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       viewport: viewport,
       controller: rootController,
       gestureListener: gestureListener,
-      widgetDelegate: widgetDelegate,
     );
     _setEventTarget(targetId, document);
 
@@ -206,9 +200,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   void initWindow(int targetId, Pointer<NativeBindingObject> pointer) {
-    window = Window(
-        BindingContext(_contextId, pointer),
-        document);
+    window = Window(BindingContext(_contextId, pointer), document);
     _registerPlatformBrightnessChange();
     _setEventTarget(targetId, window);
 
@@ -314,23 +306,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     return null;
   }
 
-  // Save all WidgetElement to manager life cycle.
-  final List<WidgetElement> _widgetElements = [];
-
-  void deactivateWidgetElements() {
-    _widgetElements.forEach((element) {
-      element.deactivate();
-    });
-  }
-
-  void addWidgetElement(WidgetElement widgetElement) {
-    _widgetElements.add(widgetElement);
-  }
-
-  void _removeWidgetElement(WidgetElement widgetElement) {
-    _widgetElements.remove(widgetElement);
-  }
-
   T? _getEventTargetById<T>(int targetId) {
     EventTarget? target = _eventTargets[targetId];
     if (target is T)
@@ -345,11 +320,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   void _removeTarget(int targetId) {
     if (_eventTargets.containsKey(targetId)) {
-      EventTarget? target = _eventTargets.remove(targetId);
-
-      if (target is WidgetElement) {
-        _removeWidgetElement(target);
-      }
+      _eventTargets.remove(targetId);
     }
   }
 
@@ -360,7 +331,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   void _clearTargets() {
     // Set current eventTargets to a new object, clean old targets by gc.
     _eventTargets = <int, EventTarget>{};
-    _widgetElements.clear();
   }
 
   // export Uint8List bytes from rendered result.
@@ -733,22 +703,23 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     } else {
       bool shouldScrollByToCenter = false;
       Element? focusedElement = document.focusedElement;
+      double scrollOffset = 0;
       if (focusedElement != null) {
         RenderBox? renderer = focusedElement.renderer;
-        if (renderer != null && renderer.hasSize) {
+        if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
           if (focusOffset.dy > viewportHeight - bottomInset - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
+            scrollOffset =
+                focusOffset.dy - (viewportHeight - bottomInset) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }
       // Show keyboard
       viewport.bottomInset = bottomInset;
       if (shouldScrollByToCenter) {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          window.scrollBy(0, bottomInset);
-        });
+        window.scrollBy(0, scrollOffset, true);
       }
     }
     _prevViewInsets = ui.window.viewInsets;
@@ -810,8 +781,6 @@ class WebFController {
 
   UriParser? uriParser;
 
-  late RenderObjectElement rootFlutterElement;
-
   static WebFController? getControllerOfJSContextId(int? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
       return null;
@@ -831,8 +800,6 @@ class WebFController {
   }
 
   GestureDispatcher gestureDispatcher = GestureDispatcher();
-
-  WidgetDelegate? widgetDelegate;
 
   LoadHandler? onLoad;
 
@@ -854,6 +821,10 @@ class WebFController {
   set onJSLog(JSLogHandler? jsLogHandler) {
     _onJSLog = jsLogHandler;
   }
+
+  // Internal usable. Notifications to WebF widget when custom element had changed.
+  OnCustomElementAttached? onCustomElementAttached;
+  OnCustomElementDetached? onCustomElementDetached;
 
   String? _name;
   String? get name => _name;
@@ -884,7 +855,8 @@ class WebFController {
     WebFNavigationDelegate? navigationDelegate,
     WebFMethodChannel? methodChannel,
     WebFBundle? entrypoint,
-    this.widgetDelegate,
+    this.onCustomElementAttached,
+    this.onCustomElementDetached,
     this.onLoad,
     this.onLoadError,
     this.onJSError,
@@ -910,7 +882,6 @@ class WebFController {
       rootController: this,
       navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
       gestureListener: _gestureListener,
-      widgetDelegate: widgetDelegate,
     );
 
     if (kProfileMode) {
@@ -961,6 +932,8 @@ class WebFController {
   final Queue<HistoryItem> previousHistoryStack = Queue();
   final Queue<HistoryItem> nextHistoryStack = Queue();
 
+  HistoryModule get history => _module.moduleManager.getModule('History')!;
+
   static Uri fallbackBundleUri([int? id]) {
     // The fallback origin uri, like `vm://bundle/0`
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
@@ -980,9 +953,10 @@ class WebFController {
     Future.microtask(() {
       _module.dispose();
       _view.dispose();
+      // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
+      _view.viewport.reload();
 
-      List<int> methodBytes = makeDartMethodsData();
-      allocateNewPage(methodBytes, _view.contextId);
+      allocateNewPage(_view.contextId);
 
       _view = WebFViewController(view.viewportWidth, view.viewportHeight,
           background: _view.background,
@@ -991,7 +965,6 @@ class WebFController {
           rootController: this,
           navigationDelegate: _view.navigationDelegate,
           gestureListener: _view.gestureListener,
-          widgetDelegate: _view.widgetDelegate,
           originalViewport: _view.viewport);
 
       _module = WebFModuleController(this, _view.contextId);
@@ -1020,6 +993,8 @@ class WebFController {
     if (devToolsService != null) {
       devToolsService!.willReload();
     }
+
+    _isComplete = false;
 
     await unload();
     await executeEntrypoint();

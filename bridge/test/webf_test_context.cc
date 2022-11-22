@@ -15,15 +15,6 @@
 
 namespace webf {
 
-struct ExecuteCallbackContext {
-  ExecuteCallbackContext() = delete;
-
-  explicit ExecuteCallbackContext(ExecutingContext* context, ExecuteCallback executeCallback)
-      : executeCallback(executeCallback), context(context){};
-  ExecuteCallback executeCallback;
-  ExecutingContext* context;
-};
-
 static JSValue executeTest(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   JSValue& callback = argv[0];
   auto context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
@@ -271,6 +262,18 @@ static JSValue triggerGlobalError(JSContext* ctx, JSValueConst this_val, int arg
   return JS_NULL;
 }
 
+struct ExecuteCallbackContext {
+  ExecuteCallbackContext() = delete;
+
+  explicit ExecuteCallbackContext(ExecutingContext* context,
+                                  ExecuteCallback executeCallback,
+                                  WebFTestContext* webf_context)
+      : executeCallback(executeCallback), context(context), webf_context(webf_context){};
+  ExecuteCallback executeCallback;
+  ExecutingContext* context;
+  WebFTestContext* webf_context;
+};
+
 void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
   if (execute_test_callback_ == nullptr) {
     return;
@@ -291,9 +294,10 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
     std::unique_ptr<NativeString> status = webf::jsValueToNativeString(ctx, statusValue);
     callbackContext->executeCallback(callbackContext->context->contextId(), status.get());
     JS_FreeValue(ctx, proxyObject);
+    callbackContext->webf_context->execute_test_proxy_object_ = JS_NULL;
     return JS_NULL;
   };
-  auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback);
+  auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback, this);
   execute_test_proxy_object_ = JS_NewObject(context_->ctx());
   JS_SetOpaque(execute_test_proxy_object_, callbackContext);
   JSValue callbackData[]{execute_test_proxy_object_};
@@ -325,6 +329,10 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
 
   MemberInstaller::InstallFunctions(context, context->Global(), functionConfig);
   initWebFTestFramework(context);
+}
+
+WebFTestContext::~WebFTestContext() {
+  JS_FreeValue(context_->ctx(), execute_test_proxy_object_);
 }
 
 bool WebFTestContext::evaluateTestScripts(const uint16_t* code,

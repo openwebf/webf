@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:webf/bridge.dart' as bridge;
-import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
 
 abstract class BaseModule {
@@ -14,6 +13,7 @@ abstract class BaseModule {
   dynamic dispatchEvent({Event? event, data}) {
     return moduleManager!.emitModuleEvent(name, event: event, data: data);
   }
+
   void dispose();
 }
 
