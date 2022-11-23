@@ -27,7 +27,6 @@ mixin CSSOpacityMixin on RenderStyle {
 
     _opacity = value;
     int alpha = ui.Color.getAlphaFromOpacity(opacity);
-    renderBoxModel!.alpha = alpha;
 
     // Mark the compositing state for this render object as dirty
     // cause it will create new layer when opacity is valid.
