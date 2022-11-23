@@ -73,7 +73,6 @@ void main() async {
   late WebF webF;
 
   Pointer<Void>? testContext;
-
   webF = WebF(
     viewportWidth: 360,
     viewportHeight: 640,
