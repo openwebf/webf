@@ -61,6 +61,9 @@ class CookieJar {
   }
 
   String cookie() {
+    if (_cookieJar == null) {
+      return '';
+    }
     final cookiePairs = <String>[];
     Uri uri = Uri.parse(url);
     String scheme = uri.scheme;
