@@ -102,6 +102,10 @@ class CSSStyleDeclaration with IterableMixin {
     return css;
   }
 
+  bool get hasInheritedPendingProperty {
+    return _pendingProperties.keys.any((key) => isInheritedPropertyString(key));
+  }
+
   // @TODO: Impl the cssText setter.
 
   /// The number of properties.

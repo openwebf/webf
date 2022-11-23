@@ -64,6 +64,11 @@ class Document extends Node {
   RenderViewportBox? _viewport;
   GestureListener? gestureListener;
 
+  Map<String, List<Element>> elementsByID = {};
+  Map<String, List<Element>> elementsByName = {};
+
+  Set<Element> styleDirtyElements = {};
+
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
 
@@ -166,7 +171,28 @@ class Document extends Node {
 
   dynamic getElementById(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
-    return QuerySelector.querySelector(this, '#' + args.first);
+    final elements = elementsByID[args.first];
+    if (elements == null || elements.isEmpty) {
+      return null;
+    }
+    if (elements.length == 1) {
+      return elements.last;
+    } else if (elements.length > 1) {
+      Queue<Node> queue = Queue();
+      queue.add(this);
+      while (queue.isNotEmpty) {
+        Node node = queue.removeFirst();
+        if (elements.contains(node)) {
+          return node;
+        }
+        if (node.childNodes.isNotEmpty) {
+          for (Node child in node.childNodes) {
+            queue.add(child);
+          }
+        }
+      }
+    }
+    return null;
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
@@ -182,7 +208,7 @@ class Document extends Node {
 
   dynamic getElementsByName(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return QuerySelector.querySelectorAll(this, '[name="${args.first}"]');
+    return elementsByName[args.first];
   }
 
   Element? _documentElement;
@@ -305,7 +331,7 @@ class Document extends Node {
   }
 
   void flushStyle({bool rebuild = false}) {
-    if (!needsStyleRecalculate) {
+    if (styleDirtyElements.isEmpty) {
       _recalculating = false;
       return;
     }
@@ -316,9 +342,17 @@ class Document extends Node {
       _recalculating = false;
       return;
     }
-    // Recalculate style for all nodes sync.
-    documentElement?.recalculateNestedStyle();
-    needsStyleRecalculate = false;
+    if (styleDirtyElements.any((element) {
+          return element is HeadElement || element is HTMLElement;
+        }) ||
+        rebuild) {
+      documentElement?.recalculateStyle(rebuildNested: true);
+    } else {
+      for (Element element in styleDirtyElements) {
+        element.recalculateStyle();
+      }
+    }
+    styleDirtyElements.clear();
     _recalculating = false;
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_END);

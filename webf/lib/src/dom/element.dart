@@ -24,6 +24,7 @@ const String _ONE_SPACE = ' ';
 const String _STYLE_PROPERTY = 'style';
 const String _ID = 'id';
 const String _CLASS_NAME = 'class';
+const String _NAME = 'name';
 
 /// Defined by W3C Standard,
 /// Most element's default width is 300 in pixel,
@@ -107,8 +108,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   String? get id => _id;
 
   set id(String? id) {
+    final isNeedRecalculate = _checkRecalculateStyle([id, _id], ownerDocument.ruleSet.idRules);
+    _updateIDMap(id, oldID: _id);
     _id = id;
-    recalculateStyle();
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   // Is element an replaced element.
@@ -148,12 +151,14 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   List<String> get classList => _classList;
 
   set className(String className) {
-    _classList.clear();
     List<String> classList = className.split(classNameSplitRegExp);
+    final checkKeys = (_classList + classList).where((key) => !_classList.contains(key) || !classList.contains(key));
+    final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys), ownerDocument.ruleSet.classRules);
+    _classList.clear();
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
-    recalculateStyle();
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   String get className => _classList.join(_ONE_SPACE);
@@ -252,6 +257,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     });
     attributes[_ID] = ElementAttributeProperty(setter: (value) => id = value, deleter: () {
       id = EMPTY_STRING;
+    });
+    attributes[_NAME] = ElementAttributeProperty(setter: (value) {
+      _updateNameMap(value, oldName: getAttribute(_NAME));
+    } , deleter: () {
+      _updateNameMap(null, oldName: getAttribute(_NAME));
     });
   }
 
@@ -996,6 +1006,54 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return super.replaceChild(newNode, oldNode);
   }
 
+  void _updateIDMap(String? newID, {String? oldID}) {
+    if (oldID != null && oldID.isNotEmpty) {
+      final elements = ownerDocument.elementsByID[oldID];
+      if (elements != null) {
+        elements.remove(this);
+        ownerDocument.elementsByID[oldID] = elements;
+      }
+    }
+    if (newID?.isNotEmpty == true && isConnected) {
+      final elements = ownerDocument.elementsByID[newID!] ?? [];
+      if (!elements.contains(this)) {
+        elements.add(this);
+      }
+      ownerDocument.elementsByID[newID] = elements;
+    }
+  }
+
+  void _updateNameMap(String? newName, {String? oldName}) {
+    if (oldName != null && oldName.isNotEmpty) {
+      final elements = ownerDocument.elementsByName[oldName];
+      if (elements != null) {
+        elements.remove(this);
+        ownerDocument.elementsByName[oldName] = elements;
+      }
+    }
+    if (newName != null && newName.isNotEmpty && isConnected) {
+      final elements = ownerDocument.elementsByName[newName] ?? [];
+      if (!elements.contains(this)) {
+        elements.add(this);
+      }
+      ownerDocument.elementsByName[newName] = elements;
+    }
+  }
+
+  @override
+  void connectedCallback() {
+    super.connectedCallback();
+    _updateNameMap(getAttribute(_NAME));
+    _updateIDMap(_id);
+  }
+
+  @override
+  void disconnectedCallback() {
+    super.disconnectedCallback();
+    _updateIDMap(null, oldID: _id);
+    _updateNameMap(null, oldName: getAttribute(_NAME));
+  }
+
   RenderBox? getContainingBlockRenderBox() {
     RenderBox? containingBlockRenderBox;
     CSSPositionType positionType = renderStyle.position;
@@ -1578,26 +1636,24 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     _applySheetStyle(style);
   }
 
-  void recalculateStyle() {
+  void recalculateStyle({bool rebuildNested = false}) {
     if (renderBoxModel != null) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
+      var hasInheritedPendingProperty = false;
       if (style.merge(newStyle)) {
+        hasInheritedPendingProperty = style.hasInheritedPendingProperty;
         style.flushPendingProperties();
       }
-    }
-  }
 
-  void recalculateNestedStyle() {
-    if (!needsStyleRecalculate) {
-      return;
+      if (rebuildNested == true || hasInheritedPendingProperty) {
+        // Update children style.
+        children.forEach((Element child) {
+          child.recalculateStyle(rebuildNested: rebuildNested);
+        });
+      }
     }
-    recalculateStyle();
-    // Update children style.
-    children.forEach((Element child) {
-      child.recalculateNestedStyle();
-    });
   }
 
   void _removeInlineStyle() {
@@ -1777,6 +1833,24 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     );
     scrollingContentLayoutBox.isScrollingContentBox = true;
     return scrollingContentLayoutBox;
+  }
+
+  bool _checkRecalculateStyle(List<String?> keys, CSSMap cssMap) {
+    if (keys.isEmpty || cssMap.values.isEmpty) {
+      return false;
+    }
+    final rules = cssMap.values.reduce((value, element) => value + element);
+    for (CSSRule rule in rules) {
+      if (rule is! CSSStyleRule) {
+        continue;
+      }
+      for (Selector selector in rule.selectorGroup.selectors) {
+        if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }
 

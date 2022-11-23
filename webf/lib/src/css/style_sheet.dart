@@ -23,8 +23,6 @@ class CSSStyleSheet implements StyleSheet, Comparable {
 
   CSSStyleSheet(this.cssRules, {this.disabled = false, this.href});
 
-  // CSSStyleSheet(this.content, {this.disabled = false, this.href}) : cssRules = CSSParser(content).parseRules();
-
   insertRule(String text, int index) {
     List<CSSRule> rules = CSSParser(text).parseRules();
     cssRules.addAll(rules);
