@@ -382,6 +382,16 @@ describe('custom widget element', () => {
     await snapshot();
   });
 
+  it('HTMLElement can be create and mutated in widgets', async () => {
+    const layoutBox = document.createElement('flutter-layout-box');
+    layoutBox.style.height = '300px';
+    layoutBox.style.border = '2px solid yellow';
+    layoutBox.appendChild(document.createTextNode('AAA'));
+    layoutBox.appendChild(document.createTextNode('BBB'));
+    document.body.appendChild(layoutBox);
+    await snapshot();
+  });
+
   it('flutter widgets should inserted at correct location with other DOM elements', async () => {
     const form = document.createElement('form');
     form.style.height = '300px';
