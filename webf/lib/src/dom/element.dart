@@ -62,6 +62,7 @@ mixin ElementBase on Node {
     if (value == null) {
       _renderReplaced = null;
       _renderLayoutBox = null;
+      _renderWidget = null;
     } else if (value is RenderReplaced) {
       _renderReplaced = value;
     } else if (value is RenderLayoutBox) {

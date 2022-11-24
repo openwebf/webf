@@ -78,7 +78,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void willAttachRenderer() {
     super.willAttachRenderer();
-    attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!);
+    attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
   }
   @mustCallSuper
   @override
