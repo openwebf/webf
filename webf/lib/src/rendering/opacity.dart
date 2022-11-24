@@ -10,8 +10,15 @@ import 'package:webf/rendering.dart';
 mixin RenderOpacityMixin on RenderBoxModelBase {
   bool opacityAlwaysNeedsCompositing() => alpha != 0 && alpha != 255;
 
+  int? _alpha;
+
   int get alpha {
-    return ui.Color.getAlphaFromOpacity(renderStyle.opacity);
+    _alpha ??= ui.Color.getAlphaFromOpacity(renderStyle.opacity);
+    return _alpha ?? ui.Color.getAlphaFromOpacity(1.0);
+  }
+
+  set alpha(int? value) {
+    _alpha = value;
   }
 
   final LayerHandle<OpacityLayer> _opacityLayer = LayerHandle<OpacityLayer>();
