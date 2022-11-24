@@ -193,11 +193,13 @@ class _WebFState extends State<WebF> with RouteAware {
     }
 
     return RepaintBoundary(
-      child: WebFRootRenderObjectWidget(
-        widget,
-        onCustomElementAttached: onCustomElementWidgetAdd,
-        onCustomElementDetached: onCustomElementWidgetRemove,
-        children: customElementWidgets.toList(),
+      child: WebFContext(
+        child: WebFRootRenderObjectWidget(
+          widget,
+          onCustomElementAttached: onCustomElementWidgetAdd,
+          onCustomElementDetached: onCustomElementWidgetRemove,
+          children: customElementWidgets.toList(),
+        ),
       ),
     );
   }
@@ -236,6 +238,26 @@ class _WebFState extends State<WebF> with RouteAware {
   void deactivate() {
     super.deactivate();
   }
+}
+
+class WebFContext extends InheritedWidget {
+  WebFContext({required super.child});
+
+  @override
+  bool updateShouldNotify(covariant InheritedWidget oldWidget) {
+    return false;
+  }
+
+  @override
+  InheritedElement createElement() {
+    return WebFContextInheritElement(this);
+  }
+}
+
+class WebFContextInheritElement extends InheritedElement {
+  WebFContextInheritElement(super.widget);
+
+  WebFController? controller;
 }
 
 class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
@@ -285,13 +307,15 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
       PerformanceTiming.instance().mark(PERF_CONTROLLER_INIT_END);
     }
 
+    (context as _WebFRenderObjectElement).controller = controller;
+
     return controller.view.getRootRenderObject();
   }
 
   @override
   void updateRenderObject(BuildContext context, covariant RenderObject renderObject) {
     super.updateRenderObject(context, renderObject);
-    WebFController controller = (renderObject as RenderObjectWithControllerMixin).controller!;
+    WebFController controller = (context as _WebFRenderObjectElement).controller!;
     controller.name = shortHash(_webfWidget.hashCode);
 
     bool viewportWidthHasChanged = controller.view.viewportWidth != _webfWidget.viewportWidth;
@@ -314,12 +338,6 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
   }
 
   @override
-  void didUnmountRenderObject(covariant RenderObject renderObject) {
-    WebFController controller = (renderObject as RenderObjectWithControllerMixin).controller!;
-    controller.dispose();
-  }
-
-  @override
   _WebFRenderObjectElement createElement() {
     return _WebFRenderObjectElement(this);
   }
@@ -328,12 +346,15 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
 class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
   _WebFRenderObjectElement(WebFRootRenderObjectWidget widget) : super(widget);
 
+  WebFController? controller;
+
   @override
   void mount(Element? parent, Object? newSlot) async {
     super.mount(parent, newSlot);
-
-    WebFController controller = (renderObject as RenderObjectWithControllerMixin).controller!;
-    await controller.executeEntrypoint(animationController: widget._webfWidget.animationController);
+    assert(parent is WebFContextInheritElement);
+    assert(controller != null);
+    (parent as WebFContextInheritElement).controller = controller;
+    await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
   }
 
   @override
@@ -354,6 +375,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
   @override
   void unmount() {
     super.unmount();
+    controller?.dispose();
   }
 
   // RenderObjects created by webf are manager by webf itself. There are no needs to operate renderObjects on _WebFRenderObjectElement.

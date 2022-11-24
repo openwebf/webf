@@ -11,20 +11,20 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/webf.dart';
 
-class WebFHTMLElementToWidgetAdaptor extends StatefulWidget {
-  final dom.Element _webFElement;
-  WebFHTMLElementToWidgetAdaptor(this._webFElement, {Key? key}): super(key: key) {
-    _webFElement.flutterWidget = this;
-    _webFElement.managedByFlutterWidget = true;
+class WebFHTMLElementStatefulWidget extends StatefulWidget {
+  final dom.Element webFElement;
+  WebFHTMLElementStatefulWidget(this.webFElement, {Key? key}): super(key: key) {
+    webFElement.flutterWidget = this;
+    webFElement.managedByFlutterWidget = true;
   }
 
   @override
   State<StatefulWidget> createState() {
-    return HTMLElementState(_webFElement);
+    return HTMLElementState(webFElement);
   }
 }
 
-class HTMLElementState extends State<WebFHTMLElementToWidgetAdaptor> {
+class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
   final Set<Widget> customElementWidgets = HashSet();
   final dom.Element _webFElement;
 
@@ -64,12 +64,12 @@ class HTMLElementState extends State<WebFHTMLElementToWidgetAdaptor> {
 
   @override
   Widget build(BuildContext context) {
-    return WebFElementToWidgetAdaptor(_webFElement, children: customElementWidgets.toList());
+    return WebFHTMLElementToWidgetAdaptor(_webFElement, children: customElementWidgets.toList());
   }
 }
 
-class WebFElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
-  WebFElementToWidgetAdaptor(this._webFElement, {Key? key, required List<Widget> children})
+class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
+  WebFHTMLElementToWidgetAdaptor(this._webFElement, {Key? key, required List<Widget> children})
       : super(key: key, children: children) {
   }
 
@@ -77,9 +77,8 @@ class WebFElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
   dom.Element get webFElement => _webFElement;
 
   @override
-  WebFElementToFlutterElementAdaptor createElement() {
-    _webFElement.flutterElement = WebFElementToFlutterElementAdaptor(this);
-    return _webFElement.flutterElement!;
+  WebFHTMLElementToFlutterElementAdaptor createElement() {
+    return WebFHTMLElementToFlutterElementAdaptor(this);
   }
 
   @override

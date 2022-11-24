@@ -124,7 +124,8 @@ abstract class WidgetElement extends dom.Element {
   dom.Node appendChild(dom.Node child) {
     super.appendChild(child);
 
-    if (_state != null) {
+    // Only trigger update if the child are created by JS. If it's created on Flutter widgets, the flutter framework will handle this.
+    if (_state != null && !child.createdByFlutterWidget) {
       _state!.requestUpdateState();
     }
 

@@ -6,11 +6,11 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/widget.dart';
 
-class WebFElementToFlutterElementAdaptor extends MultiChildRenderObjectElement {
-  WebFElementToFlutterElementAdaptor(WebFElementToWidgetAdaptor widget) : super(widget);
+class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectElement {
+  WebFHTMLElementToFlutterElementAdaptor(WebFHTMLElementToWidgetAdaptor widget) : super(widget);
 
   @override
-  WebFElementToWidgetAdaptor get widget => super.widget as WebFElementToWidgetAdaptor;
+  WebFHTMLElementToWidgetAdaptor get widget => super.widget as WebFHTMLElementToWidgetAdaptor;
 
   dom.Element get webFElement => widget.webFElement;
 
