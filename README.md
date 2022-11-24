@@ -2,11 +2,11 @@
 
 WebF (Web on the Flutter) is a W3C standard compliant Web rendering engine based on Flutter, it can run web application on Flutter natively.
 
-+ **W3C Standard Compliant:** WebF use HTML/CSS and JavaScript to rendering contents on the flutter. It can achieve 100% consistency with browser rendering.
-+ **Front-End Framework Support:** WebF is W3C standard compliant, so it can be used by many Front-End frameworks, including [React](https://reactjs.org/), [Vue](https://vuejs.org/).
-+ **Expand your Web with Flutter:** WebF is fully customizable. You can define a customized HTML element with Flutter Widget and used it in your application. Or add a JavaScript API with any Dart library from pub.dev registry.
-+ **Web Development Experience:** WebF support inspect your HTML structure, CSS style and Debugging JavaScript with Chrome Developer Tools, just like the web development experience of your browser.
-+ **Write Once, Run AnyWhere:** By the power of WebF, You can write your web application and run it on any device flutter supports, and you can still run your apps in Node.js and Web Browser with the same code base.
+- **W3C Standard Compliant:** WebF use HTML/CSS and JavaScript to rendering contents on the flutter. It can achieve 100% consistency with browser rendering.
+- **Front-End Framework Support:** WebF is W3C standard compliant, so it can be used by many Front-End frameworks, including [React](https://reactjs.org/), [Vue](https://vuejs.org/).
+- **Expand your Web with Flutter:** WebF is fully customizable. You can define a customized HTML element with Flutter Widget and used it in your application. Or add a JavaScript API with any Dart library from pub.dev registry.
+- **Web Development Experience:** WebF support inspect your HTML structure, CSS style and Debugging JavaScript with Chrome Developer Tools, just like the web development experience of your browser.
+- **Write Once, Run AnyWhere:** By the power of WebF, You can write your web application and run it on any device flutter supports, and you can still run your apps in Node.js and Web Browser with the same code base.
 
 ## Join the community (Beta)
 
@@ -14,9 +14,9 @@ WebF (Web on the Flutter) is a W3C standard compliant Web rendering engine based
 
 ## Version requirement
 
-| WebF  | Flutter |
-| ------------- | ------------- |
-| >= 0.12.0 < 0.13.0 | 3.0.5 |
+| WebF               | Flutter |
+| ------------------ | ------- |
+| >= 0.12.0 < 0.13.0 | 3.0.5   |
 
 ## How to use
 
@@ -34,7 +34,6 @@ import 'package:webf/webf.dart';
 ```
 
 **Use WebF Widget**
-
 
 ```Dart
 @override
@@ -75,4 +74,3 @@ Read our [contributing guide](https://github.com/openwebf/webf/blob/main/.github
 Thank you to all the people who already contributed to [OpenWebF](https://github.com/openwebf) and [OpenKraken](https://github.com/openkraken)!
 
 Copyright (c) 2022-present, The OpenWebF authors.
-
