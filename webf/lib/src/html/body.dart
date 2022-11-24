@@ -10,6 +10,8 @@ const String BODY = 'BODY';
 
 const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,
+  HEIGHT: '100%',
+  WIDTH: '100%'
 };
 
 class BodyElement extends Element {
