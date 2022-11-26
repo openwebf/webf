@@ -47,7 +47,9 @@ TEST(CSSStyleDeclaration, supportCSSVaraible) {
     errorCalled = true;
   });
   auto context = bridge->GetExecutingContext();
-  const char* code = "document.body.style.setProperty('--blue', 'lightblue'); console.assert(document.body.style['--blue'] === 'lightblue')";
+  const char* code =
+      "document.body.style.setProperty('--blue', 'lightblue'); console.assert(document.body.style['--blue'] === "
+      "'lightblue')";
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
