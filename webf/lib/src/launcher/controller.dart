@@ -117,8 +117,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
 
     if (originalViewport != null) {
-      // Should update to new controller.
-      originalViewport.controller = rootController;
       viewport = originalViewport;
     } else {
       viewport = RenderViewportBox(
@@ -248,9 +246,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   // Dispose controller and recycle all resources.
   void dispose() {
-    // FIXME: for break circle reference
-    viewport.controller = null;
-
     debugDOMTreeChanged = null;
 
     _teardownObserver();
@@ -1229,9 +1224,4 @@ class WebFController {
     });
     SchedulerBinding.instance.scheduleFrame();
   }
-}
-
-mixin RenderObjectWithControllerMixin {
-  // Kraken controller reference which control all kraken created renderObjects.
-  WebFController? controller;
 }

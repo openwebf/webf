@@ -63,7 +63,7 @@ class WebFWidgetElementState extends State<WebFWidgetElementStatefulWidget> {
     if (node is dom.CharacterData) {
       return WebFCharacterDataToWidgetAdaptor(node, key: key);
     }
-    return WebFHTMLElementToWidgetAdaptor(node as dom.Element, key: key);
+    return WebFHTMLElementStatefulWidget(node as dom.Element, key: key);
   }
 
   List<Widget> convertNodeListToWidgetList(List<dom.Node> childNodes) {

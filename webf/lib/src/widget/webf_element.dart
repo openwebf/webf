@@ -1,37 +1,21 @@
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/webf.dart';
 
-class WebFElement extends MultiChildRenderObjectWidget {
-  final dom.Element element;
-
-  WebFElement({
-    required String tagName,
-    required dom.Element parentElement, Key? key,
+class WebFHTMLElement extends MultiChildRenderObjectWidget {
+  final String tagName;
+  final Map<String, String>? inlineStyle;
+  WebFHTMLElement({
+    required this.tagName,
+    Key? key,
     required List<Widget> children,
-    Map<String, String>? inlineStyle
-  })
-      : element = dom.createElement(tagName),
-        super(key: key, children: children) {
-    element.createRenderer();
-    element.managedByFlutterWidget = true;
-    element.createdByFlutterWidget = true;
-    element.ownerDocument = parentElement.ownerDocument;
-    parentElement.appendChild(element);
-
-    if (inlineStyle != null) {
-      fullFillInlineStyle(inlineStyle);
-    }
-  }
-
-  void fullFillInlineStyle(Map<String, String> inlineStyle) {
-    inlineStyle.forEach((key, value) {
-      element.setInlineStyle(key, value);
-    });
-  }
+    this.inlineStyle,
+  }) : super(key: key, children: children);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return element.renderer!;
+    _WebFElement webfElement = context as _WebFElement;
+    return webfElement.htmlElement.createRenderer();
   }
 
   @override
@@ -41,26 +25,65 @@ class WebFElement extends MultiChildRenderObjectWidget {
 }
 
 class _WebFElement extends MultiChildRenderObjectElement {
-  _WebFElement(super.widget);
+  final dom.Element htmlElement;
+
+  _WebFElement(WebFHTMLElement widget): htmlElement = dom.createElement(widget.tagName), super(widget);
 
   @override
-  WebFElement get widget => super.widget as WebFElement;
+  WebFHTMLElement get widget => super.widget as WebFHTMLElement;
+
+  void fullFillInlineStyle(Map<String, String> inlineStyle) {
+    inlineStyle.forEach((key, value) {
+      htmlElement.setInlineStyle(key, value);
+    });
+  }
 
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
+    htmlElement.managedByFlutterWidget = true;
+    htmlElement.createdByFlutterWidget = true;
+    WebFContextInheritElement webfContext = getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
+    dom.Element? parentElement = findClosestAncestorHTMLElement(this);
+    if (parentElement != null) {
+      htmlElement.ownerDocument = webfContext.controller!.view.document;
+      parentElement.ownerDocument = webfContext.controller!.view.document;
+      parentElement.appendChild(htmlElement);
 
-    widget.element.ensureChildAttached();
-    widget.element.applyStyle(widget.element.style);
-    // Flush pending style before child attached.
-    widget.element.style.flushPendingProperties();
+      if (widget.inlineStyle != null) {
+        fullFillInlineStyle(widget.inlineStyle!);
+      }
+
+      htmlElement.ensureChildAttached();
+      htmlElement.applyStyle(htmlElement.style);
+      // Flush pending style before child attached.
+      htmlElement.style.flushPendingProperties();
+    }
+  }
+
+  dom.Element? findClosestAncestorHTMLElement(Element? parent) {
+    if (parent == null) return null;
+    dom.Element? target;
+    parent.visitAncestorElements((Element element) {
+      if (element is WebFWidgetElementElement) {
+        target = element.widget.widgetElement;
+        return false;
+      } else if (element is _WebFElement) {
+        target = element.htmlElement;
+        return false;
+      } else if (element is WebFHTMLElementToFlutterElementAdaptor) {
+        target = element.webFElement;
+        return false;
+      }
+      return true;
+    });
+    return target;
   }
 
   @override
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
-    dom.Element element = widget.element;
     super.unmount();
-    element.unmountRenderObject(dispose: false, fromFlutterWidget: true);
+    htmlElement.unmountRenderObject(dispose: false, fromFlutterWidget: true);
   }
 }

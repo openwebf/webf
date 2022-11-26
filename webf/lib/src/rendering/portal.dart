@@ -11,15 +11,14 @@ class RenderPortalsParentData extends ContainerBoxParentData<RenderPortal> {}
 
 class RenderPortal extends RenderBox
     with
-        RenderObjectWithControllerMixin,
         RenderEventListenerMixin,
         RenderObjectWithChildMixin<RenderBox>,
         RenderProxyBoxMixin<RenderBox> {
   RenderPortal({
-    required WebFController controller,
-  }) {
-    this.controller = controller;
-  }
+    required this.controller
+  });
+
+  WebFController controller;
 
   final GestureDispatcher _gestureDispatcher = GestureDispatcher();
 

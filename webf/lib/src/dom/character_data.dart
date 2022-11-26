@@ -9,7 +9,6 @@ import 'package:webf/widget.dart';
 class CharacterData extends Node {
   CharacterData(NodeType type, [context]) : super(type, context);
 
-  WebFCharacterDataToFlutterElementAdapter? flutterElement;
   WebFCharacterDataToWidgetAdaptor? _flutterWidget;
   @override
   WebFCharacterDataToWidgetAdaptor? get flutterWidget => _flutterWidget;
@@ -26,8 +25,6 @@ class CharacterData extends Node {
   @override
   void dispose() {
     super.dispose();
-
-    flutterElement = null;
     flutterWidget = null;
   }
 
