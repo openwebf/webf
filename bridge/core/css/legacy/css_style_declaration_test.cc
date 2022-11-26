@@ -37,3 +37,19 @@ TEST(CSSStyleDeclaration, enumerateStyles) {
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
+
+TEST(CSSStyleDeclaration, supportCSSVaraible) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
+  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+  auto context = bridge->GetExecutingContext();
+  const char* code =
+      "document.body.style.setProperty('--blue', 'lightblue'); console.assert(document.body.style['--blue'] === "
+      "'lightblue')";
+  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  EXPECT_EQ(errorCalled, false);
+}
