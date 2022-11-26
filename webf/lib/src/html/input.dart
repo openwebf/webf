@@ -256,10 +256,12 @@ mixin BaseInputElement on WidgetElement {
       });
     }
 
+
     InputDecoration decoration = InputDecoration(
         label: label != null ? Text(label!) : null,
         border: InputBorder.none,
         isDense: true,
+        contentPadding: EdgeInsets.zero,
         hintText: placeholder,
         suffix: isSearch && value.isNotEmpty && _isFocus
             ? SizedBox(
