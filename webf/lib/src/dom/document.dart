@@ -148,7 +148,7 @@ class Document extends Node {
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookie(value););
+    properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
   }
 
   @override
