@@ -161,7 +161,7 @@ class Document extends Node {
     methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
 
     if (kDebugMode) {
-      methods['__clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
+      methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
     }
   }
 
