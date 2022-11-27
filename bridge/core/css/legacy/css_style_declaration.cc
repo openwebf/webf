@@ -34,7 +34,12 @@ static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
     char c = propertyName[i + hyphen];
     if (!c)
       break;
-    buffer[i] = c;
+    if (c == '-') {
+      hyphen++;
+      buffer[i] = toASCIIUpper(propertyName[i + hyphen]);
+    } else {
+      buffer[i] = c;
+    }
   }
 
   buffer.emplace_back('\0');
