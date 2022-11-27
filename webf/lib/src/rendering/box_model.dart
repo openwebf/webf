@@ -1034,6 +1034,8 @@ class RenderBoxModel extends RenderBox
 
   @override
   set size(Size value) {
+    // renderStyle.width = CSSLengthValue(value.width, CSSLengthType.PX);
+    // renderStyle.height = CSSLengthValue(value.height, CSSLengthType.PX);
     _boxSize = value;
     super.size = value;
   }
