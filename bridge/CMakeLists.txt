@@ -26,21 +26,6 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelW
 endif()
 
 execute_process(
-  COMMAND bash "-c" "npm install"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
-) # install code_generator deps
-
-execute_process(
-  COMMAND bash "-c" "npm run build"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
-) # g
-
-execute_process(
-  COMMAND bash "-c" "node bin/code_generator -s ../../core -d ../../out"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
-) # generate elements code
-
-execute_process(
   COMMAND bash "-c" "read dart_sdk < <(type -p dart) && echo $\{dart_sdk%/*\}/cache/dart-sdk/include | xargs"
   OUTPUT_VARIABLE DART_SDK
 )
@@ -556,11 +541,17 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
   set_target_properties(webf
     PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-    )
-  set_target_properties(webf_static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}")
+    RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+  )
+  set_target_properties(webf_static
+    PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}")
 
   if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
-    set_target_properties(quickjs PROPERTIES LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}")
+    set_target_properties(quickjs
+      PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+    )
   endif ()
 elseif (IS_ANDROID)
   # android do nothing
