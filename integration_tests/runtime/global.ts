@@ -248,14 +248,23 @@ function append(parent: HTMLElement, child: Node) {
 }
 
 async function snapshot(target?: any, filename?: String, postfix?: boolean | string) {
-  if (target && target.toBlob) {
-    await expectAsync(target.toBlob(1.0)).toMatchSnapshot(filename, postfix);
-  } else {
-    if (typeof target == 'number') {
-      await sleep(target);
-    }
-    await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
-  }
+  return new Promise((resolve, reject) => {
+    requestAnimationFrame(async () => {
+      try {
+        if (target && target.toBlob) {
+          await expectAsync(target.toBlob(1.0)).toMatchSnapshot(filename, postfix);
+        } else {
+          if (typeof target == 'number') {
+            await sleep(target);
+          }
+          await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
+          resolve();
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
 }
 
 // Compatible to tests that use global variables.

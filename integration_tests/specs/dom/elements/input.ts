@@ -1,3 +1,14 @@
+describe('Tempoary Tags input', () => {
+  it('input text can set height', async () => {
+    const input = document.createElement('input');
+    input.value = 'helloworld';
+    document.body.appendChild(input);
+    await snapshot();
+    input.style.height = '100px';
+    await snapshot();
+  });
+});
+
 xdescribe('Tags input', () => {
   it('basic', async () => {
     const input = document.createElement('input');
