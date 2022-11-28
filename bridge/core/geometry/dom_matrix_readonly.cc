@@ -21,7 +21,7 @@ DOMMatrixReadonly::DOMMatrixReadonly(ExecutingContext* context,
 
   NativeValue arguments[1];
   if (init->IsDomString()) {
-    arguments[0] = NativeValueConverter<NativeTypeString>::ToNativeValue(init->GetAsDomString());
+    arguments[0] = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), init->GetAsDomString());
   } else if (init->IsSequenceDouble()) {
     arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(init->GetAsSequenceDouble());
   }

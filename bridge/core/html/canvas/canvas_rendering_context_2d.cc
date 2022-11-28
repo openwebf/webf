@@ -75,7 +75,7 @@ CanvasPattern* CanvasRenderingContext2D::createPattern(
         NativeValueConverter<NativeTypePointer<HTMLCanvasElement>>::ToNativeValue(init->GetAsHTMLCanvasElement());
   }
 
-  arguments[1] = NativeValueConverter<NativeTypeString>::ToNativeValue(repetition);
+  arguments[1] = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), repetition);
   NativeValue value = InvokeBindingMethod(binding_call_methods::kcreatePattern, sizeof(arguments) / sizeof(NativeValue),
                                           arguments, exception_state);
   NativeBindingObject* native_binding_object =
@@ -92,7 +92,7 @@ void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStr
   NativeValue value = Native_NewNull();
 
   if (style->IsDomString()) {
-    value = NativeValueConverter<NativeTypeString>::ToNativeValue(style->GetAsDomString());
+    value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), style->GetAsDomString());
   } else if (style->IsCanvasGradient()) {
     value = NativeValueConverter<NativeTypePointer<CanvasGradient>>::ToNativeValue(style->GetAsCanvasGradient());
   }
@@ -110,7 +110,7 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
   NativeValue value = Native_NewNull();
 
   if (style->IsDomString()) {
-    value = NativeValueConverter<NativeTypeString>::ToNativeValue(style->GetAsDomString());
+    value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), style->GetAsDomString());
   } else if (style->IsCanvasGradient()) {
     value = NativeValueConverter<NativeTypePointer<CanvasGradient>>::ToNativeValue(style->GetAsCanvasGradient());
   }

@@ -140,18 +140,18 @@ class CanvasGradient extends BindingObject {
   @override
   get pointer => _pointer;
 
-  @override
-  invokeBindingMethod(String method, List args) {
-    switch (method) {
-      case 'addColorStop':
-        return addColorStop(castToType<num>(args[0]), castToType<String>(args[1]));
-    }
-  }
-
   // opaque object
   void addColorStop(num offset, String color) {
     print('addColorStop: offset: $offset, color: $color');
-    // TODO: implement addColorStop
+  }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['addColorStop'] = BindingObjectMethodSync(call: (args) => addColorStop(castToType<num>(args[0]), castToType<String>(args[1])));
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
   }
 }
 
@@ -166,20 +166,22 @@ class CanvasPattern extends BindingObject {
   @override
   get pointer => _pointer;
 
-  @override
-  invokeBindingMethod(String method, List args) {
-    switch (method) {
-      case 'setTransform': {
-        BindingObject domMatrix = args[0];
-        if (domMatrix is DOMMatrix) {
-          return setTransform(domMatrix);
-        }
-      }
-    }
-  }
-
   // opaque object
   void setTransform(DOMMatrix domMatrix) {
     print('setTransform: $domMatrix');
+  }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['setTransform'] = BindingObjectMethodSync(call: (args) {
+      BindingObject domMatrix = args[0];
+      if (domMatrix is DOMMatrix) {
+        return setTransform(domMatrix);
+      }
+    });
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
   }
 }
