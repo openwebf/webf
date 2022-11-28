@@ -10,6 +10,7 @@ require('./tasks');
 series(
   'macos-dylib-clean',
   'compile-polyfill',
+  'generate-bindings-code',
   'build-darwin-webf-lib',
 )((err) => {
   if (err) {

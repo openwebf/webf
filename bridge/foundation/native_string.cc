@@ -14,7 +14,7 @@ NativeString::NativeString(const uint16_t* string, uint32_t length) : length_(le
 
 NativeString::NativeString(const NativeString* source) : length_(source->length()) {
   string_ = static_cast<const uint16_t*>(malloc(source->length() * sizeof(uint16_t)));
-  memcpy((void*)string_, source->string_, source->length() * sizeof(u_int16_t));
+  memcpy((void*)string_, source->string_, source->length() * sizeof(uint16_t));
 }
 
 NativeString::~NativeString() {
