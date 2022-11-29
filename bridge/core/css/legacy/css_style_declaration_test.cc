@@ -58,7 +58,7 @@ document.body.style.setProperty('--main-color', 'lightblue'); console.assert(doc
   UICommandItem& last = data[commandSize - 1];
 
   EXPECT_EQ(last.type, (int32_t)UICommand::kSetStyle);
-  uint16_t* last_key = (uint16_t*) last.string_01;
+  uint16_t* last_key = (uint16_t*)last.string_01;
 
   auto native_str = NativeString(last_key, last.args_01_length);
   EXPECT_STREQ(AtomicString(context->ctx(), &native_str).ToStdString(context->ctx()).c_str(), "--main-color");
@@ -76,8 +76,10 @@ TEST(CSSStyleDeclaration, supportHyphen) {
   });
   auto context = bridge->GetExecutingContext();
   const char* code =
-      "document.body.style.setProperty('background-color', 'lightblue'); console.assert(document.body.style.backgroundColor == 'lightblue');"
-      "document.body.style.setProperty('border-top-right-radius', '100%'); console.assert(document.body.style.borderTopRightRadius, '100%')";
+      "document.body.style.setProperty('background-color', 'lightblue'); "
+      "console.assert(document.body.style.backgroundColor == 'lightblue');"
+      "document.body.style.setProperty('border-top-right-radius', '100%'); "
+      "console.assert(document.body.style.borderTopRightRadius, '100%')";
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
