@@ -1716,7 +1716,7 @@ static int find_lexical_decl(JSContext *ctx, JSFunctionDef *fd, JSAtom name,
   return -1;
 }
 
-static int push_scope(JSParseState *s) {
+int push_scope(JSParseState *s) {
   if (s->cur_func) {
     JSFunctionDef *fd = s->cur_func;
     int scope = fd->scope_count;
@@ -7519,7 +7519,7 @@ JSFunctionDef *js_new_function_def(JSContext *ctx,
   return fd;
 }
 
-static void js_free_function_def(JSContext *ctx, JSFunctionDef *fd)
+void js_free_function_def(JSContext *ctx, JSFunctionDef *fd)
 {
   int i;
   struct list_head *el, *el1;
@@ -9074,7 +9074,7 @@ static void set_closure_from_var(JSContext *ctx, JSClosureVar *cv,
 
 /* for direct eval compilation: add references to the variables of the
    calling function */
-static __exception int add_closure_variables(JSContext *ctx, JSFunctionDef *s,
+__exception int add_closure_variables(JSContext *ctx, JSFunctionDef *s,
                                              JSFunctionBytecode *b, int scope_idx)
 {
   int i, count;
@@ -11249,7 +11249,7 @@ static int add_module_variables(JSContext *ctx, JSFunctionDef *fd)
 /* create a function object from a function definition. The function
    definition is freed. All the child functions are also created. It
    must be done this way to resolve all the variables. */
-static JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
+JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
 {
   JSValue func_obj;
   JSFunctionBytecode *b;
@@ -12229,7 +12229,7 @@ static __exception int js_parse_function_decl(JSParseState *s,
                                  JS_PARSE_EXPORT_NONE, NULL);
 }
 
-static __exception int js_parse_program(JSParseState *s)
+__exception int js_parse_program(JSParseState *s)
 {
   JSFunctionDef *fd = s->cur_func;
   int idx;

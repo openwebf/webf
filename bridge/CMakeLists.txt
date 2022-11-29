@@ -38,6 +38,10 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+if (${ENABLE_DEBUGGER})
+  add_definitions(-DENABLE_DEBUGGER=1)
+endif()
+
 if(NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
     include(CheckIPOSupported)
@@ -165,6 +169,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/runtime.c
     third_party/quickjs/src/core/module.c
     third_party/quickjs/src/core/ic.c
+    third_party/quickjs/src/core/debugger.c
     third_party/quickjs/src/core/builtins/js-array.c
     third_party/quickjs/src/core/builtins/js-async-function.c
     third_party/quickjs/src/core/builtins/js-async-generator.c
