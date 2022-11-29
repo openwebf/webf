@@ -578,7 +578,7 @@ JSValue js_object_hasOwnProperty(JSContext* ctx, JSValueConst this_val, int argc
     return JS_NewBool(ctx, ret);
 }
 
-static JSValue js_object_hasOwn(JSContext *ctx, JSValueConst this_val,
+JSValue js_object_hasOwn(JSContext *ctx, JSValueConst this_val,
                                 int argc, JSValueConst *argv)
 {
   JSValue obj;
