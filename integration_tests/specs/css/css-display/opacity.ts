@@ -1,4 +1,5 @@
 describe('Opacity', () => {
+  
   it('opacity', done => {
     const container1 = document.createElement('div');
     document.body.appendChild(container1);
@@ -105,6 +106,21 @@ describe('Opacity', () => {
       await snapshot();
       done();
     });
+  });
+
+  it('on before transform', async done => {
+    const container1 = document.createElement('div');
+    document.body.appendChild(container1);
+    setElementStyle(container1, {
+      backgroundColor: '#f40',
+      width: '200px',
+      height: '200px',
+      opacity: 0,
+			transform: 'scale(0.9)'
+    });
+
+    await snapshot();
+    done();
   });
 
 });
