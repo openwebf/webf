@@ -667,8 +667,7 @@ class RenderBoxModel extends RenderBox
         RenderOpacityMixin,
         RenderIntersectionObserverMixin,
         RenderContentVisibilityMixin,
-        RenderEventListenerMixin,
-        RenderObjectWithControllerMixin {
+        RenderEventListenerMixin {
   RenderBoxModel({
     required this.renderStyle,
   }) : super();

@@ -7,6 +7,7 @@ import 'flutter_listview.dart';
 import 'flutter_text.dart';
 import 'flutter_container.dart';
 import 'sample_element.dart';
+import 'flutter_layout_box.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -19,6 +20,7 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-text', (BindingContext? context) {
     return TextWidgetElement(context);
   });
+  WebF.defineCustomElement('flutter-layout-box', (context) => FlutterLayoutBox(context));
   WebF.defineCustomElement('flutter-asset-image', (BindingContext? context) {
     return ImageWidgetElement(context);
   });

@@ -11,18 +11,17 @@ class RenderViewportParentData extends ContainerBoxParentData<RenderViewportBox>
 
 class RenderViewportBox extends RenderBox
     with
-        RenderObjectWithControllerMixin,
         RenderEventListenerMixin,
         ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
         RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderViewportBox({
     required Size viewportSize,
     this.background,
-    required WebFController controller,
+    required this.controller
   })  : _viewportSize = viewportSize,
-        super() {
-    this.controller = controller;
-  }
+        super();
+
+  WebFController controller;
 
   // Cache all the fixed children of renderBoxModel of root element.
   List<RenderBoxModel> fixedChildren = [];
@@ -81,7 +80,7 @@ class RenderViewportBox extends RenderBox
   }
 
   @override
-  GestureDispatcher? get gestureDispatcher => controller!.gestureDispatcher;
+  GestureDispatcher? get gestureDispatcher => controller.gestureDispatcher;
 
   @override
   bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
@@ -93,11 +92,11 @@ class RenderViewportBox extends RenderBox
     super.handleEvent(event, entry as BoxHitTestEntry);
 
     // Add pointer to gesture dispatcher.
-    controller?.gestureDispatcher.handlePointerEvent(event);
+    controller.gestureDispatcher.handlePointerEvent(event);
 
     if (event is PointerDownEvent) {
       // Set event path at begin stage and reset it at end stage on viewport render box.
-      controller?.gestureDispatcher.resetEventPath();
+      controller.gestureDispatcher.resetEventPath();
     }
   }
 
