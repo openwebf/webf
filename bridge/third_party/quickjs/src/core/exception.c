@@ -116,7 +116,9 @@ JSValue JS_Throw(JSContext *ctx, JSValue obj)
   JSRuntime *rt = ctx->rt;
   JS_FreeValue(ctx, rt->current_exception);
   rt->current_exception = obj;
+#if ENABLE_DEBUGGER
   js_debugger_exception(ctx);
+#endif
   return JS_EXCEPTION;
 }
 

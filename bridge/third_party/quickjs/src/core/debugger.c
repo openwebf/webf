@@ -9,6 +9,8 @@
 #include "runtime.h"
 #include "types.h"
 
+#if ENABLE_DEBUGGER
+
 typedef struct DebuggerSuspendedState {
   uint32_t variable_reference_count;
   JSValue variable_references;
@@ -1164,3 +1166,5 @@ JSValue js_debugger_evaluate(JSContext* ctx, int stack_index, JSValue expression
   }
   return JS_UNDEFINED;
 }
+
+#endif

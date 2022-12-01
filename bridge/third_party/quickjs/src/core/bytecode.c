@@ -74,8 +74,10 @@ void free_function_bytecode(JSRuntime* rt, JSFunctionBytecode* b) {
     js_free_rt(rt, b->debug.pc2column_buf);
     js_free_rt(rt, b->debug.source);
 
+#if ENABLE_DEBUGGER
     if (b->debugger.breakpoints)
       js_free_rt(rt, b->debugger.breakpoints);
+#endif
   }
 
   remove_gc_object(&b->header);

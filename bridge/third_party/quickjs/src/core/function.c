@@ -357,7 +357,9 @@ restart:
     int call_argc;
     JSValue* call_argv;
 
+#if ENABLE_DEBUGGER
     js_debugger_check(ctx, NULL);
+#endif
 
     SWITCH(pc) {
       CASE(OP_push_i32) : * sp++ = JS_NewInt32(ctx, get_u32(pc));
