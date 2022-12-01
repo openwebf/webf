@@ -40,6 +40,7 @@
 #include "parser.h"
 #include "runtime.h"
 #include "string.h"
+#include "base.h"
 
 JSValue js_call_c_function(JSContext* ctx,
                                   JSValueConst func_obj,
@@ -229,7 +230,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
 
 #if !DIRECT_DISPATCH
 #define SWITCH(pc) switch (opcode = *pc++)
-#define CASE(op) case op
+#define CASE(op) case op if (unlikely(caller_ctx->rt->debugger_info.transport_close)) js_debugger_check(ctx, pc); stub_ ## op
 #define DEFAULT default
 #define BREAK break
 #else
@@ -243,10 +244,29 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
 #include "quickjs/quickjs-opcode.h"
     [OP_COUNT... 255] = &&case_default
   };
-#define SWITCH(pc) goto* dispatch_table[opcode = *pc++];
+#if ENABLE_DEBUGGER
+  static const void* const debugger_dispatch_table[256] = {
+#define DEF(id, size, n_pop, n_push, f) && case_debugger_OP_ ## id,
+#if SHORT_OPCODES
+#define def(id, size, n_pop, n_push, f)
+#else
+#define def(id, size, n_pop, n_push, f) && case_default,
+#endif
+#include "quickjs/quickjs-opcode.h"
+    [ OP_COUNT ... 255 ] = &&case_default
+  };
+#define SWITCH(pc) goto* active_dispatch_table[opcode = *(pc)++];
+#define CASE(op) case_debugger_ ## op: js_debugger_check(ctx, pc); case_ ## op
+#define DEFAULT case_default
+#define BREAK SWITCH(pc)
+  const void* const *active_dispatch_table = caller_ctx->rt->debugger_info.transport_close
+                                                 ? debugger_dispatch_table : dispatch_table;
+#else
+#define SWITCH(pc) goto* dispatch_table[opcode = *(pc)++];
 #define CASE(op) case_##op
 #define DEFAULT case_default
 #define BREAK SWITCH(pc)
+#endif
 #endif
 
   if (js_poll_interrupts(caller_ctx))
@@ -336,6 +356,8 @@ restart:
   for (;;) {
     int call_argc;
     JSValue* call_argv;
+
+    js_debugger_check(ctx, NULL);
 
     SWITCH(pc) {
       CASE(OP_push_i32) : * sp++ = JS_NewInt32(ctx, get_u32(pc));
