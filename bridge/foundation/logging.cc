@@ -17,13 +17,6 @@
 #include <iostream>
 #endif
 
-#if ENABLE_DEBUGGER
-#include <JavaScriptCore/APICast.h>
-#include <JavaScriptCore/ConsoleTypes.h>
-#include <JavaScriptCore/JSGlobalObject.h>
-#include "inspector/impl/jsc_console_client_impl.h"
-#endif
-
 namespace webf {
 namespace {
 
@@ -84,16 +77,16 @@ LogMessage::~LogMessage() {
 #endif
 }
 
-#ifdef ENABLE_DEBUGGER
-void pipeMessageToInspector(JSGlobalContextRef ctx, const std::string message, const JSC::MessageLevel logLevel) {
-  JSObjectRef globalObjectRef = JSContextGetGlobalObject(ctx);
-  auto client = JSObjectGetPrivate(globalObjectRef);
-  if (client && client != ((void*)0x1)) {
-    auto client_impl = reinterpret_cast<webf::debugger::JSCConsoleClientImpl*>(client);
-    client_impl->sendMessageToConsole(logLevel, message);
-  }
-};
-#endif
+//#ifdef ENABLE_DEBUGGER
+//void pipeMessageToInspector(JSGlobalContextRef ctx, const std::string message, const JSC::MessageLevel logLevel) {
+//  JSObjectRef globalObjectRef = JSContextGetGlobalObject(ctx);
+//  auto client = JSObjectGetPrivate(globalObjectRef);
+//  if (client && client != ((void*)0x1)) {
+//    auto client_impl = reinterpret_cast<webf::debugger::JSCConsoleClientImpl*>(client);
+//    client_impl->sendMessageToConsole(logLevel, message);
+//  }
+//};
+//#endif
 
 void printLog(ExecutingContext* context, std::stringstream& stream, std::string level, void* ctx) {
   MessageLevel _log_level = MessageLevel::Info;
