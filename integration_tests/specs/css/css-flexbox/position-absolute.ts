@@ -280,13 +280,13 @@ describe('flexbox-position-absolute', () => {
     );
     document.body.appendChild(div);
 
+    await snapshot();
+
     requestAnimationFrame(async () => {
       child.style.width = '50px';
       await snapshot();
       done();
     });
-
-    await snapshot();
   });
 
   it('positioned image of no left and right should reposition when its size changed', async (done) => {

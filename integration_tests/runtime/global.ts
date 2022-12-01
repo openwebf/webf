@@ -258,8 +258,8 @@ async function snapshot(target?: any, filename?: String, postfix?: boolean | str
             await sleep(target);
           }
           await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
-          resolve();
         }
+        resolve();
       } catch (e) {
         reject(e);
       }
