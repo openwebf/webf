@@ -78,7 +78,7 @@ LogMessage::~LogMessage() {
 }
 
 //#ifdef ENABLE_DEBUGGER
-//void pipeMessageToInspector(JSGlobalContextRef ctx, const std::string message, const JSC::MessageLevel logLevel) {
+// void pipeMessageToInspector(JSGlobalContextRef ctx, const std::string message, const JSC::MessageLevel logLevel) {
 //  JSObjectRef globalObjectRef = JSContextGetGlobalObject(ctx);
 //  auto client = JSObjectGetPrivate(globalObjectRef);
 //  if (client && client != ((void*)0x1)) {
