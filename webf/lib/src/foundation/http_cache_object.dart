@@ -15,6 +15,7 @@ import 'http_client_response.dart';
 
 class HttpCacheObject {
   static const _httpHeaderCacheHits = 'cache-hits';
+  static const _setCookie = 'set-cookie';
   static const _httpCacheHit = 'HIT';
 
   // The cached url of resource.
@@ -326,6 +327,8 @@ class HttpCacheObject {
 
           // Ignoring cache hit header.
           if (key == _httpHeaderCacheHits) continue;
+          // Ignoring cached set cookie header.
+          if (key == _setCookie) continue;
 
           String value;
           if (kvTuple == 2) {
