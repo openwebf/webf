@@ -63,12 +63,12 @@ class FlutterInputElement extends WidgetElement
 
   @override
   void blur() {
-    _focusNode.unfocus();
+    _focusNode?.unfocus();
   }
 
   @override
   void focus() {
-    _focusNode.requestFocus();
+    _focusNode?.requestFocus();
   }
 
   @override
@@ -110,8 +110,8 @@ mixin BaseInputElement on WidgetElement {
 
   @override
   void initState() {
-    _focusNode = FocusNode();
-    _focusNode.addListener(() {
+    _focusNode ??= FocusNode();
+    _focusNode!.addListener(() {
       handleFocusChange();
     });
   }
@@ -220,7 +220,7 @@ mixin BaseInputElement on WidgetElement {
 
   bool get isPassWord => type == 'password';
 
-  bool get _isFocus => _focusNode.hasFocus;
+  bool get _isFocus => _focusNode?.hasFocus ?? false;
 
   int? get maxLength {
     String? value = getAttribute('maxLength');
@@ -331,7 +331,7 @@ mixin BaseInputElement on WidgetElement {
     return widget;
   }
 
-  late FocusNode _focusNode;
+  FocusNode? _focusNode;
 
   void handleFocusChange() {
     if (_isFocus) {
@@ -352,7 +352,7 @@ mixin BaseInputElement on WidgetElement {
   @override
   void dispose() {
     super.dispose();
-    _focusNode.dispose();
+    _focusNode?.dispose();
   }
 
   Widget _wrapInputHeight(Widget widget) {

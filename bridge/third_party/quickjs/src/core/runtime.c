@@ -2102,6 +2102,7 @@ static const JSCFunctionListEntry js_object_funcs[] = {
     // JS_CFUNC_DEF("__getObjectData", 1, js_object___getObjectData ),
     // JS_CFUNC_DEF("__setObjectData", 2, js_object___setObjectData ),
     JS_CFUNC_DEF("fromEntries", 1, js_object_fromEntries),
+    JS_CFUNC_DEF("hasOwn", 2, js_object_hasOwn),
 };
 
 static const JSCFunctionListEntry js_object_proto_funcs[] = {
