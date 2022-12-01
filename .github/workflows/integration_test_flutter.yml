@@ -164,3 +164,9 @@ jobs:
     - name: Check on failures
       if: steps.test.outcome != 'success'
       run: exit 1
+   quickjs_test262:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt install -y libcppunit-dev cmake
+      - uses: actions/checkout@v2
+      - run: cd bridge/third_party/quickjs/scripts && bash test.sh
