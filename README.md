@@ -16,7 +16,7 @@ WebF (Web on Flutter) is a W3C standards compliant Web rendering engine based on
 
 | WebF                 | Flutter |
 | -------------------- | ------- |
-| `>= 0.12.0 < 0.13.0` | `3.0.5` |
+| `>= 0.12.0 < 0.14.0` | `3.0.5` |
 
 ## How to use
 
