@@ -61,7 +61,7 @@ describe('border_radius', () => {
 
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(0.5);
   });
 
   it('works with overflow and child image of no transform', async () => {
