@@ -579,6 +579,8 @@ class CSSLength {
             return parseLength(notations[0].args[1], renderStyle, propertyName, axisType);
         }
       }
+    } else {
+      value = double.tryParse(text);
     }
 
     if (value == 0 && unit != CSSLengthType.PERCENTAGE) {

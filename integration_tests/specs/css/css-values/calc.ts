@@ -62,4 +62,32 @@ describe("calc", () => {
     BODY.appendChild(div);
     await snapshot();
   });
+
+  it("005", async () => {
+    document.head.appendChild(
+      createStyle(`
+      :root {
+        --num1: 20px;
+        --num2: 20px;
+      }
+      .container {
+        transform: translate(calc(var(--num1) + var(--num2)), 20px);
+        background: green;
+      }
+    `)
+    );
+    
+    document.body.appendChild(
+      <div class='container'>
+          <h2>The text should be green.</h2>
+      </div>
+    );
+    await snapshot();
+  });
+
+  function createStyle(text) {
+    const style = document.createElement('style');
+    style.appendChild(document.createTextNode(text));
+    return style;
+  }
 });

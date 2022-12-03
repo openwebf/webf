@@ -134,6 +134,7 @@ class _CSSCalcParser {
           _next();
           name += _peekToken.text;
         }
+        _maybeEat(TokenKind.RPAREN);
         CSSVariable? variable = CSSVariable.tryParse(_renderStyle, name);
         if (variable != null) {
           return CalcVariableNode(variable, _renderStyle);
