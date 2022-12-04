@@ -240,12 +240,25 @@ mixin BaseInputElement on WidgetElement {
 
   double? get width => renderStyle.width.value;
 
+  double get fontSize => renderStyle.fontSize.computedValue;
+
+  double get lineHeight => renderStyle.lineHeight.computedValue;
+
+  /// Use leading to support line height.
+  double get leading => lineHeight > fontSize
+    ? (lineHeight - fontSize) / fontSize
+    : 0;
+
   TextStyle get _textStyle => TextStyle(
         color: renderStyle.color,
-        fontSize: renderStyle.fontSize.computedValue,
+        fontSize: fontSize,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),
       );
+
+  StrutStyle get _textStruct => StrutStyle(
+    leading: leading,
+  );
 
   Widget _createInputWidget(BuildContext context, int minLines, int maxLines) {
     FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
@@ -288,6 +301,7 @@ mixin BaseInputElement on WidgetElement {
         controller: controller,
         enabled: !disabled && !readonly,
         style: _textStyle,
+        strutStyle: _textStruct,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
@@ -307,6 +321,7 @@ mixin BaseInputElement on WidgetElement {
         controller: controller,
         enabled: !disabled && !readonly,
         style: _textStyle,
+        strutStyle: _textStruct,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
