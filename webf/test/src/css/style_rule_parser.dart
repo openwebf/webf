@@ -181,7 +181,6 @@ void main() {
           background: linear-gradient(270deg, #00cf37 0, #45dc6d 100%);
           }''').parse();
       CSSStyleRule styleRule = sheet.cssRules[0] as CSSStyleRule;
-      final visitor = SelectorTextVisitor();
       expect(styleRule.declaration.getPropertyValue('backgroundImage'),
           'linear-gradient(270deg, #00cf37 0, #45dc6d 100%)');
     });
