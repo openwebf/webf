@@ -101,7 +101,9 @@ jobs:
       - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}
-
+      - run: |
+          sudo apt-get update
+          sudo apt-get install chrpath ninja-build pkg-config libgtk-3-dev -y
       - run: npm i
       - run: npm run build:bridge:linux:release
 
@@ -109,9 +111,6 @@ jobs:
         with:
           flutter-version: ${{ env.flutterVersion }}
       - run: flutter config --enable-linux-desktop
-      - run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build pkg-config libgtk-3-dev -y
       - run: flutter doctor -v
       - name: linux app build
         run: |

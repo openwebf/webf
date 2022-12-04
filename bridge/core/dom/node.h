@@ -73,7 +73,7 @@ class Node : public EventTarget {
 
   // DOM methods & attributes for Node
   virtual std::string nodeName() const = 0;
-  virtual std::string nodeValue() const = 0;
+  virtual AtomicString nodeValue() const = 0;
   virtual void setNodeValue(const AtomicString&, ExceptionState&);
   virtual NodeType nodeType() const = 0;
 

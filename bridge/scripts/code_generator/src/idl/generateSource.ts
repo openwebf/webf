@@ -61,7 +61,8 @@ export function generateCoreTypeValue(type: ParameterType[]): string {
     case FunctionArgumentType.boolean: {
       return 'bool';
     }
-    case FunctionArgumentType.dom_string: {
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string: {
       return 'AtomicString';
     }
     case FunctionArgumentType.any: {
@@ -90,7 +91,8 @@ export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = f
     case FunctionArgumentType.boolean: {
       return 'int64_t';
     }
-    case FunctionArgumentType.dom_string: {
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string: {
       if (is32Bit) {
         return 'int64_t';
       }
@@ -148,6 +150,10 @@ export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boo
       case FunctionArgumentType.promise:
         returnValue = 'IDLPromise';
         break;
+      case FunctionArgumentType.legacy_dom_string:
+        // TODO: legacy is now allowed with nullable
+        returnValue = 'IDLLegacyDOMString'
+        break;
       default:
       case FunctionArgumentType.any:
         returnValue = `IDLAny`;
@@ -165,7 +171,7 @@ export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boo
 }
 
 function isDOMStringType(type: ParameterType[]) {
-  return type[0] == FunctionArgumentType.dom_string;
+  return type[0] === FunctionArgumentType.dom_string || type[0] === FunctionArgumentType.legacy_dom_string;
 }
 
 function generateNativeValueTypeConverter(type: ParameterType[]): string {
@@ -189,6 +195,7 @@ function generateNativeValueTypeConverter(type: ParameterType[]): string {
       returnValue = `NativeTypeBool`;
       break;
     case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string:
       returnValue = `NativeTypeString`;
       break;
   }

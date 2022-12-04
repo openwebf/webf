@@ -348,8 +348,8 @@ void ContainerNode::CloneChildNodesFrom(const ContainerNode& node, CloneChildren
   }
 }
 
-std::string ContainerNode::nodeValue() const {
-  return "";
+AtomicString ContainerNode::nodeValue() const {
+  return AtomicString::Null();
 }
 
 ContainerNode::ContainerNode(TreeScope* tree_scope, ConstructionType type)

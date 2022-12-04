@@ -46,6 +46,9 @@ jobs:
     - uses: jwlawson/actions-setup-cmake@v1.11
       with:
         cmake-version: ${{ env.cmakeVersion }}
+    - run: |
+        sudo apt-get update
+        sudo apt-get install chrpath ninja-build pkg-config -y
     - run: npm i
     - run: ENABLE_ASAN=true npm run build:bridge:linux
     - run: node scripts/run_bridge_unit_test.js

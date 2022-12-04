@@ -8,6 +8,8 @@ declare interface BlobPropertyBag {}
 declare function Dictionary() : any;
 declare type JSEventListener = void;
 
+declare type LegacyNullToEmptyString = string | null;
+
 // This property is implemented by Dart side
 type DartImpl<T> = T;
 type StaticMember<T> = T;
