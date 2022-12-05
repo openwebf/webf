@@ -30,7 +30,16 @@ mixin CSSSizingMixin on RenderStyle {
   CSSLengthValue? _width;
 
   @override
-  CSSLengthValue get width => _width ?? CSSLengthValue.auto;
+  CSSLengthValue get width {
+    if (_width != null) {
+      return _width!;
+    }
+    final boxWidth = renderBoxModel?.size.width;
+    if (boxWidth != null) {
+      return CSSLengthValue(boxWidth, CSSLengthType.PX);
+    }
+    return CSSLengthValue.auto;
+  }
 
   set width(CSSLengthValue? value) {
     // Negative value is invalid, auto value is parsed at layout stage.
@@ -44,7 +53,16 @@ mixin CSSSizingMixin on RenderStyle {
   CSSLengthValue? _height;
 
   @override
-  CSSLengthValue get height => _height ?? CSSLengthValue.auto;
+  CSSLengthValue get height {
+    if (_height != null) {
+      return _height!;
+    }
+    final boxHeight = renderBoxModel?.size.height;
+    if (boxHeight != null) {
+      return CSSLengthValue(boxHeight, CSSLengthType.PX);
+    }
+    return CSSLengthValue.auto;
+  }
 
   set height(CSSLengthValue? value) {
     // Negative value is invalid, auto value is parsed at layout stage.

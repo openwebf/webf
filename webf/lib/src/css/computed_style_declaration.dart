@@ -11,6 +11,27 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
   CSSComputedStyleDeclaration(this._element, this._pseudoElementName);
 
   @override
+  String get cssText {
+    return "";
+  }
+
+//   String CSSComputedStyleDeclaration::cssText() const
+//   {
+//   StringBuilder result;
+//
+//   for (unsigned i = 0; i < numComputedProperties; i++) {
+//   if (i)
+//   result.append(' ');
+//   result.append(getPropertyName(computedProperties[i]));
+//   result.append(": ", 2);
+//   result.append(getPropertyValue(computedProperties[i]));
+//   result.append(';');
+//   }
+//
+//   return result.toString();
+// }
+
+  @override
   String getPropertyValue(String propertyName) {
     CSSPropertyID? propertyID = CSSPropertyNameMap[propertyName];
     if (propertyID == null) {
@@ -31,8 +52,10 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Invalid:
       case CSSPropertyID.Variable:
         break;
+      case CSSPropertyID.Background:
+        break;
       case CSSPropertyID.BackgroundColor:
-        return style.backgroundColor;
+        return style.backgroundColor.toString();
       case CSSPropertyID.BackgroundImage:
         return style.backgroundImage;
       case CSSPropertyID.BackgroundRepeat:
@@ -181,7 +204,7 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Outline:
         break;
       case CSSPropertyID.Padding:
-        return style.paddingTop;
+        break;
       case CSSPropertyID.ListStyle:
       case CSSPropertyID.Widows:
       case CSSPropertyID.UnicodeBidi:
@@ -197,7 +220,6 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Content:
       case CSSPropertyID.CounterIncrement:
       case CSSPropertyID.CounterReset:
-      case CSSPropertyID.Background:
       case CSSPropertyID.TextDecoration:
       case CSSPropertyID.TextIndent:
       case CSSPropertyID.TextRendering:
