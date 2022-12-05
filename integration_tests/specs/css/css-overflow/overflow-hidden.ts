@@ -10,7 +10,7 @@ describe('hidden', () => {
       }
     }, [
       (image = createElement('img', {
-          src: 'assets/100x100-green.png',
+        src: 'assets/100x100-green.png',
       }))
     ]);
 
@@ -30,11 +30,11 @@ describe('hidden', () => {
       }
     }, [
       (image = createElement('img', {
-          src: 'assets/100x100-green.png',
+        src: 'assets/100x100-green.png',
       }))
     ]);
 
-    image.addEventListener('appear', function onAppear() {});
+    image.addEventListener('appear', function onAppear() { });
 
     document.body.appendChild(container);
 
@@ -50,11 +50,11 @@ describe('hidden', () => {
         },
       },
       [createText(`There should be a text for test scroll logic to uset.`),
-        createText(`There should be a text for test scroll logic to uset.`),
-        createText(`There should be a text for test scroll logic to uset.`),
-        createText(`There should be a text for test scroll logic to uset.`),
-        createText(`There should be a text for test scroll logic to uset.`),
-        createText(`There should be a text for test scroll logic to uset.`)]
+      createText(`There should be a text for test scroll logic to uset.`),
+      createText(`There should be a text for test scroll logic to uset.`),
+      createText(`There should be a text for test scroll logic to uset.`),
+      createText(`There should be a text for test scroll logic to uset.`),
+      createText(`There should be a text for test scroll logic to uset.`)]
 
     );
     let container = createElement('div', {
@@ -158,6 +158,48 @@ describe('hidden', () => {
     document.body.appendChild(container);
     requestAnimationFrame(async () => {
       container.style.overflow = 'hidden';
+      await simulateSwipe(0, 60, 50, 0, 0.5);
+      await snapshot(0.6);
+      done();
+    });
+  });
+
+  it('should can not scroll with overflow hidden body', async (done) => {
+    document.body.style.width = '100%';
+    document.body.style.height = '100vh';
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'relative';
+
+    let p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [createText(`There should be a body`)]
+    );
+
+    let container = createElement('div', {
+      style: {
+        width: '100%',
+        height: '500px',
+        bottom: '-500px',
+        background: 'color',
+        position: 'fixed',
+      }
+    }, [
+    ]);
+
+    let box = createElement('div', {
+      style: {
+      }
+    }, [
+      p, container
+    ]);
+
+    document.body.appendChild(box);
+    requestAnimationFrame(async () => {
       await simulateSwipe(0, 60, 50, 0, 0.5);
       await snapshot(0.6);
       done();

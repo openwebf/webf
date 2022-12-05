@@ -139,8 +139,8 @@ mixin ElementOverflowMixin on ElementBase {
           }
           // Reset canDrag by overflow because hidden is can't drag.
           bool canDrag = overflowX != CSSOverflowType.hidden;
-          _scrollableX!.setCanDrag(canDrag);
           _scrollableX!.overflowType = overflowX;
+          _scrollableX!.setCanDrag(canDrag);
           break;
         case CSSOverflowType.visible:
         default:
@@ -174,8 +174,8 @@ mixin ElementOverflowMixin on ElementBase {
           }
           // Reset canDrag by overflow because hidden is can't drag.
           bool canDrag = overflowY != CSSOverflowType.hidden;
-          _scrollableY!.setCanDrag(canDrag);
           _scrollableY!.overflowType = overflowY;
+          _scrollableY!.setCanDrag(canDrag);
           break;
         case CSSOverflowType.visible:
         default:
