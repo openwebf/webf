@@ -52,29 +52,12 @@ static uint32_t handle_client_read(void* ptr, DebuggerMessage* message) {
     return 0;
   }
 
-  // Sum the total length of buffer.
-  size_t bufferLength = 0;
-  struct list_head* el;
-  list_for_each(el, &info->backend_message) {
-    MessageItem* message_item = list_entry(el, MessageItem, link);
-    bufferLength += message_item->length + 3;
-  }
-
-  char* buffer = js_malloc_rt(info->runtime, bufferLength);
-  size_t index = 0;
-  list_for_each(el, &info->backend_message) {
-    MessageItem* message_item = list_entry(el, MessageItem, link);
-    memcpy(buffer + index, message_item->buf, message_item->length);
-    // Set the magic separator between commands.
-    memset(buffer + index + message_item->length, '%', 1);
-    memset(buffer + index + message_item->length + 1, '@', 1);
-    memset(buffer + index + message_item->length + 2, '!', 1);
-
-    index += message_item->length + 3;
-  }
-
-  message->length = bufferLength;
-  message->buf = buffer;
+  // Calculate the head through byte offset.
+  struct list_head* el = info->backend_message.next;
+  MessageItem* head = list_entry(el, MessageItem, link);
+  message->buf = head->buf;
+  message->length = head->length;
+  list_del(&head->link);
 
   // Release the lock, so the JS Main thread can read front-end messages.
   pthread_mutex_unlock(&info->backend_message_access);
@@ -92,8 +75,8 @@ static uint32_t read_frontend_messages(JSDebuggerInfo* info, MessageItem* item) 
   };
 
   // Calculate the head through byte offset.
-  MessageItem* head = (MessageItem*)(&info->frontend_messages - offsetof(MessageItem, link));
-
+  struct list_head* el = info->frontend_messages.next;
+  MessageItem* head = list_entry(el, MessageItem, link);
   item->buf = head->buf;
   item->length = head->length;
 
