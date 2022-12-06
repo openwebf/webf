@@ -18,6 +18,7 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
+#include "element_namespace_uris.h"
 #include "element_traversal.h"
 #include "event_factory.h"
 #include "foundation/ascii_types.h"
@@ -52,13 +53,38 @@ Element* Document::createElement(const AtomicString& name, ExceptionState& excep
     return MakeGarbageCollected<WidgetElement>(name, this);
   }
 
-  return MakeGarbageCollected<HTMLUnknownElement>(name, *this);
+  return MakeGarbageCollected<HTMLUnknownElement>(name, this);
 }
 
 Element* Document::createElement(const AtomicString& name,
                                  const ScriptValue& options,
                                  ExceptionState& exception_state) {
   return createElement(name, exception_state);
+}
+
+Element* Document::createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state) {
+  if (uri == element_namespace_uris::khtml) {
+    return createElement(name, exception_state);
+  }
+
+  if (!IsValidName(name)) {
+    exception_state.ThrowException(ctx(), ErrorType::InternalError,
+                                   "The tag name provided ('" + name.ToStdString(ctx()) + "') is not a valid name.");
+    return nullptr;
+  }
+
+  if (uri == element_namespace_uris::ksvg) {
+    // TODO
+  }
+
+  return MakeGarbageCollected<Element>(uri, name, this);
+}
+
+Element* Document::createElementNS(const AtomicString& uri,
+                                   const AtomicString& name,
+                                   const ScriptValue& options,
+                                   ExceptionState& exception_state) {
+  return createElementNS(uri, name, exception_state);
 }
 
 Text* Document::createTextNode(const AtomicString& value, ExceptionState& exception_state) {
