@@ -259,7 +259,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
 #define CASE(op) case_debugger_ ## op: js_debugger_check(ctx, pc); case_ ## op
 #define DEFAULT case_default
 #define BREAK SWITCH(pc)
-  const void* const *active_dispatch_table = caller_ctx->rt->debugger_info.transport_close
+  const void* const *active_dispatch_table = caller_ctx->rt->debugger_info.is_connected
                                                  ? debugger_dispatch_table : dispatch_table;
 #else
 #define SWITCH(pc) goto* dispatch_table[opcode = *(pc)++];

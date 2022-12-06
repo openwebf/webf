@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include <pthread.h>
 #include "debugger.h"
 #include "base.h"
 #include "parser.h"
@@ -18,52 +19,122 @@ typedef struct DebuggerSuspendedState {
   const uint8_t* cur_pc;
 } DebuggerSuspendedState;
 
-static int js_transport_read_fully(JSDebuggerInfo* info, char* buffer, size_t length) {
-  int offset = 0;
-  while (offset < length) {
-    int received = info->transport_read(info->transport_udata, buffer + offset, length - offset);
-    if (received <= 0)
-      return 0;
-    offset += received;
-  }
+static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
+  JSDebuggerInfo* info = (JSDebuggerInfo*)ptr;
+  // Gain access to front_message.
+  pthread_mutex_lock(&info->frontend_message_access);
+
+  char* buf = js_malloc_rt(info->runtime, message->length);
+  memcpy(buf, message->buf, message->length);
+
+  MessageItem* item = js_malloc_rt(info->runtime, sizeof(MessageItem));
+  item->buf = buf;
+  item->length = message->length;
+
+  // Push this item to the queue.
+  list_add_tail(&item->link, &info->frontend_messages);
+
+  // Release the lock, so the JS Main thread can read front-end messages.
+  pthread_mutex_unlock(&info->frontend_message_access);
 
   return 1;
 }
 
-static int js_transport_write_fully(JSDebuggerInfo* info, const char* buffer, size_t length) {
-  int offset = 0;
-  while (offset < length) {
-    int sent = info->transport_write(info->transport_udata, buffer + offset, length - offset);
-    if (sent <= 0)
-      return 0;
-    offset += sent;
-  }
+// Handler for read backend messages from Dart Client.
+static uint32_t handle_client_read(void* ptr, DebuggerMessage* message) {
+  JSDebuggerInfo* info = (JSDebuggerInfo*)ptr;
 
-  return 1;
-}
+  // Gain access to back_end_message
+  pthread_mutex_lock(&info->backend_message_access);
 
-static int js_transport_write_message_newline(JSDebuggerInfo* info, const char* value, size_t len) {
-  // length prefix is 8 hex followed by newline = 012345678\n
-  // not efficient, but protocol is then human readable.
-  char message_length[10];
-  message_length[9] = '\0';
-  sprintf(message_length, "%08x\n", (int)len + 1);
-  if (!js_transport_write_fully(info, message_length, 9))
+  if (list_empty(&info->backend_message)) {
+    pthread_mutex_unlock(&info->backend_message_access);
     return 0;
-  int ret = js_transport_write_fully(info, value, len);
-  if (!ret)
-    return ret;
-  char newline[2] = {'\n', '\0'};
-  return js_transport_write_fully(info, newline, 1);
+  }
+
+  // Sum the total length of buffer.
+  size_t bufferLength = 0;
+  struct list_head* el;
+  list_for_each(el, &info->backend_message) {
+    MessageItem* message_item = list_entry(el, MessageItem, link);
+    bufferLength += message_item->length + 3;
+  }
+
+  char* buffer = js_malloc_rt(info->runtime, bufferLength);
+  size_t index = 0;
+  list_for_each(el, &info->backend_message) {
+    MessageItem* message_item = list_entry(el, MessageItem, link);
+    memcpy(buffer + index, message_item->buf, message_item->length);
+    // Set the magic separator between commands.
+    memset(buffer + index + message_item->length, '%', 1);
+    memset(buffer + index + message_item->length + 1, '@', 1);
+    memset(buffer + index + message_item->length + 2, '!', 1);
+
+    index += message_item->length + 3;
+  }
+
+  message->length = bufferLength;
+  message->buf = buffer;
+
+  // Release the lock, so the JS Main thread can read front-end messages.
+  pthread_mutex_unlock(&info->backend_message_access);
+
+  return 1;
 }
 
-static int js_transport_write_value(JSDebuggerInfo* info, JSValue value) {
+static uint32_t read_frontend_messages(JSDebuggerInfo* info, MessageItem* item) {
+  // Gain access to front_message.
+  pthread_mutex_lock(&info->frontend_message_access);
+
+  if (list_empty(&info->frontend_messages)) {
+    pthread_mutex_unlock(&info->frontend_message_access);
+    return 0;
+  };
+
+  // Calculate the head through byte offset.
+  MessageItem* head = (MessageItem*)(&info->frontend_messages - offsetof(MessageItem, link));
+
+  item->buf = head->buf;
+  item->length = head->length;
+
+  list_del(&head->link);
+
+  // Release the lock, so the dart isolate thread can read front-end messages.
+  pthread_mutex_unlock(&info->frontend_message_access);
+
+  return 1;
+}
+
+static uint32_t write_backend_message(JSDebuggerInfo* info, const char* buffer, size_t length) {
+  // Gain access to backend_message.
+  pthread_mutex_lock(&info->backend_message_access);
+
+  MessageItem* item = js_malloc_rt(info->runtime, sizeof(MessageItem));
+  char* buf = js_malloc_rt(info->runtime, length);
+  memcpy(buf, buffer, length);
+
+  item->buf = buf;
+  item->length = length;
+
+  list_add_tail(&item->link, &info->backend_message);
+
+  // Release the lock, so the dart isolate thread can read back-end messages.
+  pthread_mutex_unlock(&info->backend_message_access);
+
+  return 1;
+}
+
+static uint32_t js_transport_write_fully(JSDebuggerInfo* info, const char* buffer, size_t length) {
+  return write_backend_message(info, buffer, length);
+}
+
+static uint32_t js_transport_write_value(JSDebuggerInfo* info, JSValue value) {
   JSValue stringified = JS_JSONStringify(info->ctx, value, JS_UNDEFINED, JS_UNDEFINED);
   size_t len;
   const char* str = JS_ToCStringLen(info->ctx, &len, stringified);
-  int ret = 0;
+  uint32_t ret = 0;
   if (len)
-    ret = js_transport_write_message_newline(info, str, len);
+    ret = js_transport_write_fully(info, str, len);
   // else send error somewhere?
   JS_FreeCString(info->ctx, str);
   JS_FreeValue(info->ctx, stringified);
@@ -77,13 +148,13 @@ static JSValue js_transport_new_envelope(JSDebuggerInfo* info, const char* type)
   return ret;
 }
 
-static int js_transport_send_event(JSDebuggerInfo* info, JSValue event) {
+static uint32_t js_transport_send_event(JSDebuggerInfo* info, JSValue event) {
   JSValue envelope = js_transport_new_envelope(info, "event");
   JS_SetPropertyStr(info->ctx, envelope, "event", event);
   return js_transport_write_value(info, envelope);
 }
 
-static int js_transport_send_response(JSDebuggerInfo* info, JSValue request, JSValue body) {
+static uint32_t js_transport_send_response(JSDebuggerInfo* info, JSValue request, JSValue body) {
   JSContext* ctx = info->ctx;
   JSValue envelope = js_transport_new_envelope(info, "response");
   JS_SetPropertyStr(ctx, envelope, "body", body);
@@ -427,38 +498,14 @@ static int js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur
   state.variable_references = JS_NewObject(ctx);
   state.cur_pc = cur_pc;
   int ret = 0;
-  char message_length_buf[10];
 
   do {
-    fflush(stdout);
-    fflush(stderr);
-
-    // length prefix is 8 hex followed by newline = 012345678\n
-    // not efficient, but protocol is then human readable.
-    if (!js_transport_read_fully(info, message_length_buf, 9))
+    MessageItem item;
+    if (!read_frontend_messages(info, &item)) {
       goto done;
-
-    message_length_buf[8] = '\0';
-    int message_length = strtol(message_length_buf, NULL, 16);
-    assert(message_length > 0);
-    if (message_length > info->message_buffer_length) {
-      if (info->message_buffer) {
-        js_free(ctx, info->message_buffer);
-        info->message_buffer = NULL;
-        info->message_buffer_length = 0;
-      }
-
-      // extra for null termination (debugger inspect, etc)
-      info->message_buffer = js_malloc_rt(JS_GetRuntime(ctx), message_length + 1);
-      info->message_buffer_length = message_length;
     }
 
-    if (!js_transport_read_fully(info, info->message_buffer, message_length))
-      goto done;
-
-    info->message_buffer[message_length] = '\0';
-
-    JSValue message = JS_ParseJSON(ctx, info->message_buffer, message_length, "<debugger>");
+    JSValue message = JS_ParseJSON(ctx, item.buf, item.length, "<debugger>");
     JSValue vtype = JS_GetPropertyStr(ctx, message, "type");
     const char* type = JS_ToCString(ctx, vtype);
     if (strcmp("request", type) == 0) {
@@ -536,26 +583,14 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc) {
     return;
   if (info->debugging_ctx == ctx)
     return;
-  info->is_debugging = 1;
+  info->is_debugging = TRUE;
   info->ctx = ctx;
 
-  if (!info->attempted_connect) {
-    info->attempted_connect = 1;
-    char* address = getenv("QUICKJS_DEBUG_ADDRESS");
-    if (address != NULL && !info->transport_close)
-      js_debugger_connect(ctx, address);
-  } else if (!info->attempted_wait) {
-    info->attempted_wait = 1;
-    char* address = getenv("QUICKJS_DEBUG_LISTEN_ADDRESS");
-    if (address != NULL && !info->transport_close)
-      js_debugger_wait_connection(ctx, address);
-  }
-
-  if (info->transport_close == NULL)
+  if (info->is_connected != TRUE)
     goto done;
 
   struct JSDebuggerLocation location;
-  int depth;
+  uint32_t depth;
 
   // perform stepping checks prior to the breakpoint check
   // as those need to preempt breakpoint behavior to skip their last
@@ -584,34 +619,34 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc) {
       // turn off stepping.
       info->stepping = 0;
     } else if (info->stepping == JS_DEBUGGER_STEP_IN) {
-      int depth = js_debugger_stack_depth(ctx);
+      uint32_t current_depth = js_debugger_stack_depth(ctx);
       // break if the stack is deeper
       // or
       // break if the depth is the same, but the location has changed
       // or
       // break if the stack unwinds
-      if (info->step_depth == depth) {
-        struct JSDebuggerLocation location = js_debugger_current_location(ctx, cur_pc);
-        if (location.filename == info->step_over.filename && location.line == info->step_over.line &&
-            location.column == info->step_over.column)
+      if (info->step_depth == current_depth) {
+        struct JSDebuggerLocation current_location = js_debugger_current_location(ctx, cur_pc);
+        if (current_location.filename == info->step_over.filename && current_location.line == info->step_over.line &&
+            current_location.column == info->step_over.column)
           goto done;
       }
       info->stepping = 0;
       info->is_paused = 1;
       js_send_stopped_event(info, "stepIn");
     } else if (info->stepping == JS_DEBUGGER_STEP_OUT) {
-      int depth = js_debugger_stack_depth(ctx);
-      if (depth >= info->step_depth)
+      uint32_t current_depth = js_debugger_stack_depth(ctx);
+      if (current_depth >= info->step_depth)
         goto done;
       info->stepping = 0;
       info->is_paused = 1;
       js_send_stopped_event(info, "stepOut");
     } else if (info->stepping == JS_DEBUGGER_STEP) {
-      struct JSDebuggerLocation location = js_debugger_current_location(ctx, cur_pc);
+      struct JSDebuggerLocation current_location = js_debugger_current_location(ctx, cur_pc);
       // to step over, need to make sure the location changes,
       // and that the location change isn't into a function call (deeper stack).
-      if ((location.filename == info->step_over.filename && location.line == info->step_over.line &&
-           location.column == info->step_over.column) ||
+      if ((current_location.filename == info->step_over.filename && current_location.line == info->step_over.line &&
+           current_location.column == info->step_over.column) ||
           js_debugger_stack_depth(ctx) > info->step_depth)
         goto done;
       info->stepping = 0;
@@ -623,83 +658,55 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc) {
     }
   }
 
-  // if not paused, we ought to peek at the stream
-  // and read it without blocking until all data is consumed.
-  if (!info->is_paused) {
-    // only peek at the stream every now and then.
-    if (info->peek_ticks++ < 10000 && !info->should_peek)
-      goto done;
-
-    info->peek_ticks = 0;
-    info->should_peek = 0;
-
-    // continue peek/reading until there's nothing left.
-    // breakpoints may arrive outside of a debugger pause.
-    // once paused, fall through to handle the pause.
-    while (!info->is_paused) {
-      int peek = info->transport_peek(info->transport_udata);
-      if (peek < 0)
-        goto fail;
-      if (peek == 0)
-        goto done;
-      if (!js_process_debugger_messages(info, cur_pc))
-        goto fail;
-    }
-  }
-
   if (js_process_debugger_messages(info, cur_pc))
     goto done;
-
-fail:
-  js_debugger_free(JS_GetRuntime(ctx), info);
 done:
   info->is_debugging = 0;
   info->ctx = NULL;
 }
 
 void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info) {
-  if (!info->transport_close)
+  if (!info->is_connected)
     return;
 
   // don't use the JSContext because it might be in a funky state during teardown.
   const char* terminated = "{\"type\":\"event\",\"event\":{\"type\":\"terminated\"}}";
-  js_transport_write_message_newline(info, terminated, strlen(terminated));
+  js_transport_write_fully(info, terminated, strlen(terminated));
 
-  info->transport_close(rt, info->transport_udata);
+  struct list_head* el;
 
-  info->transport_read = NULL;
-  info->transport_write = NULL;
-  info->transport_peek = NULL;
-  info->transport_close = NULL;
-
-  if (info->message_buffer) {
-    js_free_rt(rt, info->message_buffer);
-    info->message_buffer = NULL;
-    info->message_buffer_length = 0;
+  list_for_each(el, &info->backend_message) {
+    MessageItem* message_item = list_entry(el, MessageItem, link);
+    list_del(&message_item->link);
   }
 
-  JS_FreeValue(info->debugging_ctx, info->breakpoints);
+  list_for_each(el, &info->frontend_messages) {
+    MessageItem* message_item = list_entry(el, MessageItem, link);
+    list_del(&message_item->link);
+    js_free(info->ctx, message_item->buf);
+  }
 
+  info->is_connected = FALSE;
+  JS_FreeValue(info->debugging_ctx, info->breakpoints);
   JS_FreeContext(info->debugging_ctx);
   info->debugging_ctx = NULL;
 }
 
-void js_debugger_attach(JSContext* ctx,
-                        size_t (*transport_read)(void* udata, char* buffer, size_t length),
-                        size_t (*transport_write)(void* udata, const char* buffer, size_t length),
-                        size_t (*transport_peek)(void* udata),
-                        void (*transport_close)(JSRuntime* rt, void* udata),
-                        void* udata) {
+
+void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   JSRuntime* rt = JS_GetRuntime(ctx);
   JSDebuggerInfo* info = js_debugger_info(rt);
   js_debugger_free(rt, info);
 
+  init_list_head(&info->frontend_messages);
+  init_list_head(&info->backend_message);
+
+  // Attach native methods and export to Dart.
+  methods->write_frontend_commands = handle_client_write;
+  methods->read_backend_commands = handle_client_read;
+
   info->debugging_ctx = JS_NewContext(rt);
-  info->transport_read = transport_read;
-  info->transport_write = transport_write;
-  info->transport_peek = transport_peek;
-  info->transport_close = transport_close;
-  info->transport_udata = udata;
+  info->is_connected = TRUE;
 
   JSContext* original_ctx = info->ctx;
   info->ctx = ctx;
@@ -712,53 +719,12 @@ void js_debugger_attach(JSContext* ctx,
   js_process_debugger_messages(info, NULL);
 
   info->ctx = original_ctx;
-}
 
-void js_debugger_connect(JSContext* ctx, const char* address) {
-  //  struct sockaddr_in addr = js_debugger_parse_sockaddr(address);
-  //
-  //  int client = socket(AF_INET, SOCK_STREAM, 0);
-  //  assert(client > 0);
-  //
-  //  assert(!connect(client, (const struct sockaddr *)&addr, sizeof(addr)));
-  //
-  //  struct js_transport_data *data = (struct js_transport_data *)malloc(sizeof(struct js_transport_data));
-  //  memset(data, 0, sizeof(js_transport_data));
-  //  data->handle = client;
-  //  js_debugger_attach(ctx, js_transport_read, js_transport_write, js_transport_peek, js_transport_close, data);
-}
-
-void js_debugger_wait_connection(JSContext* ctx, const char* address) {
-  //  struct sockaddr_in addr = js_debugger_parse_sockaddr(address);
-  //
-  //  int server = socket(AF_INET, SOCK_STREAM, 0);
-  //  assert(server >= 0);
-  //
-  //  int reuseAddress = 1;
-  //  assert(setsockopt(server, SOL_SOCKET, SO_REUSEADDR, (const char *) &reuseAddress, sizeof(reuseAddress)) >= 0);
-  //
-  //  assert(bind(server, (struct sockaddr *) &addr, sizeof(addr)) >= 0);
-  //
-  //  listen(server, 1);
-  //
-  //  struct sockaddr_in client_addr;
-  //  socklen_t client_addr_size = (socklen_t) sizeof(addr);
-  //  int client = accept(server, (struct sockaddr *) &client_addr, &client_addr_size);
-  //  close(server);
-  //  assert(client >= 0);
-  //
-  //  struct js_transport_data *data = (struct js_transport_data *)malloc(sizeof(struct js_transport_data));
-  //  memset(data, 0, sizeof(js_transport_data));
-  //  data->handle = client;
-  //  js_debugger_attach(ctx, js_transport_read, js_transport_write, js_transport_peek, js_transport_close, data);
+  return info;
 }
 
 int js_debugger_is_transport_connected(JSRuntime* rt) {
-  return js_debugger_info(rt)->transport_close != NULL;
-}
-
-void js_debugger_cooperate(JSContext* ctx) {
-  js_debugger_info(JS_GetRuntime(ctx))->should_peek = 1;
+  return js_debugger_info(rt)->is_connected;
 }
 
 JSDebuggerLocation js_debugger_current_location(JSContext* ctx, const uint8_t* cur_pc) {
@@ -777,9 +743,8 @@ JSDebuggerLocation js_debugger_current_location(JSContext* ctx, const uint8_t* c
     return location;
 
   location.line = find_line_num(ctx, b, (cur_pc ? cur_pc : sf->cur_pc) - b->byte_code_buf - 1);
+  location.column = find_column_num(ctx, b, (cur_pc ? cur_pc : sf->cur_pc) - b->byte_code_buf - 1);
   location.filename = b->debug.filename;
-  // quickjs has no column info.
-  location.column = 0;
   return location;
 }
 
@@ -1166,5 +1131,13 @@ JSValue js_debugger_evaluate(JSContext* ctx, int stack_index, JSValue expression
   }
   return JS_UNDEFINED;
 }
+
+#else
+
+void JS_AttachDebugger(JSContext* ctx,
+                       uint32_t (*transport_read)(void* udata, char* buffer, uint32_t* length),
+                       uint32_t (*transport_write)(void* udata, const char* buffer, uint32_t length),
+                       void (*transport_close)(void* rt, void* udata),
+                       void* udata) {}
 
 #endif

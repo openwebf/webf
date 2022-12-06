@@ -8,11 +8,16 @@
 #define QUICKJS_DEBUGGER_H
 
 #include <quickjs/quickjs.h>
+#include <quickjs/list.h>
 #include "base.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct JSDebuggerFunctionInfo {
   // same length as byte_code_buf.
-  uint8_t *breakpoints;
+  uint8_t* breakpoints;
   uint32_t dirty;
   int last_line_num;
 } JSDebuggerFunctionInfo;
@@ -28,25 +33,30 @@ typedef struct JSDebuggerLocation {
 #define JS_DEBUGGER_STEP_OUT 3
 #define JS_DEBUGGER_STEP_CONTINUE 4
 
+typedef struct MessageItem {
+  char* buf;
+  uint32_t length;
+  struct list_head link;
+} MessageItem;
+
 typedef struct JSDebuggerInfo {
   // JSContext that is used to for the JSON transport and debugger state.
-  JSContext *ctx;
-  JSContext *debugging_ctx;
+  JSContext* ctx;
+  JSRuntime* runtime;
+  JSContext* debugging_ctx;
 
-  int attempted_connect;
-  int attempted_wait;
-  int peek_ticks;
-  int should_peek;
-  char *message_buffer;
-  int message_buffer_length;
   int is_debugging;
   int is_paused;
+  int is_connected;
 
-  size_t (*transport_read)(void *udata, char* buffer, size_t length);
-  size_t (*transport_write)(void *udata, const char* buffer, size_t length);
-  size_t (*transport_peek)(void *udata);
-  void (*transport_close)(JSRuntime* rt, void *udata);
-  void *transport_udata;
+  // Message cache and shared between JS main thread and dart isolate thread.
+  struct list_head frontend_messages;
+  struct list_head backend_message;
+
+  // Locks when dart isolate thread write new commands to debugger info, the JS main thread should wait for the writing operation complete.
+  pthread_mutex_t frontend_message_access;
+  // Locks when dart JS main thread write new commands to the client. The dart isolate thread should wait for the writing operation complete.
+  pthread_mutex_t backend_message_access;
 
   JSValue breakpoints;
   int exception_breakpoint;
@@ -56,47 +66,38 @@ typedef struct JSDebuggerInfo {
   int step_depth;
 } JSDebuggerInfo;
 
-
-void js_debugger_new_context(JSContext *ctx);
-void js_debugger_free_context(JSContext *ctx);
-void js_debugger_check(JSContext *ctx, const uint8_t *pc);
+void js_debugger_new_context(JSContext* ctx);
+void js_debugger_free_context(JSContext* ctx);
+void js_debugger_check(JSContext* ctx, const uint8_t* pc);
 void js_debugger_exception(JSContext* ctx);
-void js_debugger_free(JSRuntime *rt, JSDebuggerInfo *info);
-
-void js_debugger_attach(
-    JSContext* ctx,
-    size_t (*transport_read)(void *udata, char* buffer, size_t length),
-    size_t (*transport_write)(void *udata, const char* buffer, size_t length),
-    size_t (*transport_peek)(void *udata),
-    void (*transport_close)(JSRuntime* rt, void *udata),
-    void *udata
-);
-void js_debugger_connect(JSContext *ctx, const char *address);
-void js_debugger_wait_connection(JSContext *ctx, const char* address);
+void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info);
 int js_debugger_is_transport_connected(JSRuntime* rt);
 
-JSValue js_debugger_file_breakpoints(JSContext *ctx, const char *path);
-void js_debugger_cooperate(JSContext *ctx);
+JSValue js_debugger_file_breakpoints(JSContext* ctx, const char* path);
 
 // begin internal api functions
 // these functions all require access to quickjs internal structures.
 
-JSDebuggerInfo *js_debugger_info(JSRuntime *rt);
+JSDebuggerInfo* js_debugger_info(JSRuntime* rt);
 
 // this may be able to be done with an Error backtrace,
 // but would be clunky and require stack string parsing.
-uint32_t js_debugger_stack_depth(JSContext *ctx);
-JSValue js_debugger_build_backtrace(JSContext *ctx, const uint8_t *cur_pc);
-JSDebuggerLocation js_debugger_current_location(JSContext *ctx, const uint8_t *cur_pc);
+uint32_t js_debugger_stack_depth(JSContext* ctx);
+JSValue js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc);
+JSDebuggerLocation js_debugger_current_location(JSContext* ctx, const uint8_t* cur_pc);
 
 // checks to see if a breakpoint exists on the current pc.
 // calls back into js_debugger_file_breakpoints.
-int js_debugger_check_breakpoint(JSContext *ctx, uint32_t current_dirty, const uint8_t *cur_pc);
+int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const uint8_t* cur_pc);
 
-JSValue js_debugger_local_variables(JSContext *ctx, int stack_index);
-JSValue js_debugger_closure_variables(JSContext *ctx, int stack_index);
+JSValue js_debugger_local_variables(JSContext* ctx, int stack_index);
+JSValue js_debugger_closure_variables(JSContext* ctx, int stack_index);
 
 // evaluates an expression at any stack frame. JS_Evaluate* only evaluates at the top frame.
-JSValue js_debugger_evaluate(JSContext *ctx, int stack_index, JSValue expression);
+JSValue js_debugger_evaluate(JSContext* ctx, int stack_index, JSValue expression);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

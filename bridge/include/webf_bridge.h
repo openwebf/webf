@@ -77,4 +77,8 @@ void init_dart_dynamic_linking(void* data);
 WEBF_EXPORT_C
 void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context);
 
+// Debugger API
+WEBF_EXPORT_C
+void* attachDebugger(void* page, void* methods);
+
 #endif  // WEBF_BRIDGE_EXPORT_H

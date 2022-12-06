@@ -64,6 +64,7 @@ list(APPEND QUICK_JS_SOURCE
     src/core/builtins/js-symbol.c
     src/core/builtins/js-typed-array.c
 )
+
 if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
 else()
@@ -88,3 +89,7 @@ set_target_properties(run-test262
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin
 )
+
+add_executable(qjs_debugger_test src/core/debugger_test.cc)
+target_link_libraries(qjs_debugger_test quickjs gtest gtest_main ${LINK_LIBRARIES})
+target_include_directories(qjs_debugger_test PUBLIC ../googletest/googletest/include ${CMAKE_CURRENT_SOURCE_DIR}/include)
