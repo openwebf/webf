@@ -1176,7 +1176,13 @@ class CSSParser {
 
     if (!TokenKind.isIdentifier(tok.kind) && !TokenKind.isKindIdentifier(tok.kind)) {
       if (isChecked) {
-        _warning('expected identifier, but found $tok', location: tok.span);
+        String message;
+        try {
+          message = 'expected identifier, but found $tok';
+        } catch (e) {
+          message = 'parsing error expected identifier';
+        }
+        _warning(message, location: tok.span);
       }
       return Identifier('');
     }

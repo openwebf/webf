@@ -114,4 +114,18 @@ describe('css attribute selector', () => {
         document.body.appendChild(div4);
         await snapshot();
     });
+
+    it('012', async () => {
+        const style = <style>{`
+          [d] {
+            display: block;
+          }
+          p {
+            display: none;
+          }`
+        }</style>;
+        const div = <div class="a">The text should be visible</div>
+        document.body.appendChild(div);
+        await snapshot();
+    });
 });
