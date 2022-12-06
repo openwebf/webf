@@ -167,6 +167,6 @@ void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate
 }
 
 void* attachDebugger(void* page_, void* debugger_methods) {
-  auto page = reinterpret_cast<webf::WebFPage *>(page_);
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
   return JS_AttachDebugger(page->GetExecutingContext()->ctx(), static_cast<DebuggerMethods*>(debugger_methods));
 }
