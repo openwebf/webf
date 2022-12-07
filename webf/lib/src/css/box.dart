@@ -59,7 +59,7 @@ mixin CSSBoxMixin on RenderStyle {
 
     return CSSBoxDecoration(
       boxShadow: shadows,
-      color: gradient != null ? null : backgroundColor, // FIXME: chrome will work with gradient and color.
+      color: gradient != null ? null : backgroundColor?.value, // FIXME: chrome will work with gradient and color.
       image: decorationImage,
       border: border,
       borderRadius: borderRadius,

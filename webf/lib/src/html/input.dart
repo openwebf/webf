@@ -40,7 +40,7 @@ class FlutterInputElement extends WidgetElement
 
   @override
   Map<String, dynamic> get defaultStyle {
-    switch(type) {
+    switch (type) {
       case 'text':
       case 'time':
         return _inputDefaultStyle;
@@ -123,11 +123,13 @@ mixin BaseInputElement on WidgetElement {
     properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = value);
     properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
-    properties['placeholder'] = BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
+    properties['placeholder'] =
+        BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
     properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
     properties['readonly'] = BindingObjectProperty(getter: () => readonly, setter: (value) => readonly = value);
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
-    properties['defaultValue'] = BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
+    properties['defaultValue'] =
+        BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
   }
 
   @override
@@ -135,7 +137,8 @@ mixin BaseInputElement on WidgetElement {
     super.initializeAttributes(attributes);
 
     attributes['value'] = ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
-    attributes['disabled'] = ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
+    attributes['disabled'] =
+        ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
   }
 
   TextInputType? getKeyboardType() {
@@ -162,13 +165,14 @@ mixin BaseInputElement on WidgetElement {
   }
 
   void resetInputDefaultStyle() {
-    switch(type) {
-      case 'checkbox': {
-        _checkboxDefaultStyle.forEach((key, value) {
-          style.setProperty(key, value);
-        });
-        break;
-      }
+    switch (type) {
+      case 'checkbox':
+        {
+          _checkboxDefaultStyle.forEach((key, value) {
+            style.setProperty(key, value);
+          });
+          break;
+        }
       default:
         _inputDefaultStyle.forEach((key, value) {
           style.setProperty(key, value);
@@ -255,7 +259,6 @@ mixin BaseInputElement on WidgetElement {
         dispatchEvent(inputEvent);
       });
     }
-
 
     InputDecoration decoration = InputDecoration(
         label: label != null ? Text(label!) : null,
@@ -361,11 +364,10 @@ mixin BaseInputElement on WidgetElement {
     if (height == null) return widget;
 
     return SizedBox(
-      child: Center(
-        child: widget,
-      ),
-      height: height
-    );
+        child: Center(
+          child: widget,
+        ),
+        height: height);
   }
 
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
@@ -464,7 +466,7 @@ mixin BaseButtonElement on WidgetElement {
   Widget createButton(BuildContext context) {
     return TextButton(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color?>((states) => renderStyle.backgroundColor),
+          backgroundColor: MaterialStateProperty.resolveWith<Color?>((states) => renderStyle.backgroundColor?.value),
         ),
         onPressed: () {
           var box = context.findRenderObject() as RenderBox;

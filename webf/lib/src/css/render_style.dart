@@ -80,7 +80,7 @@ abstract class RenderStyle {
   List<WebFBoxShadow>? get shadows;
 
   // Decorations
-  Color? get backgroundColor;
+  CSSColor? get backgroundColor;
   CSSBackgroundImage? get backgroundImage;
   ImageRepeat get backgroundRepeat;
   CSSBackgroundPosition get backgroundPositionX;

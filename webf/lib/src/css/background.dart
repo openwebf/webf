@@ -102,9 +102,9 @@ mixin CSSBackgroundMixin on RenderStyle {
   }
 
   @override
-  Color? get backgroundColor => _backgroundColor;
-  Color? _backgroundColor;
-  set backgroundColor(Color? value) {
+  CSSColor? get backgroundColor => _backgroundColor;
+  CSSColor? _backgroundColor;
+  set backgroundColor(CSSColor? value) {
     if (value == _backgroundColor) return;
     _backgroundColor = value;
     renderBoxModel?.markNeedsPaint();
