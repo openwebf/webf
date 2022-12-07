@@ -12,7 +12,7 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
 
   @override
   String get cssText {
-    return "";
+    return '';
   }
 
 //   String CSSComputedStyleDeclaration::cssText() const

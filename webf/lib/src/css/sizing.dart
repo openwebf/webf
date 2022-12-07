@@ -34,9 +34,11 @@ mixin CSSSizingMixin on RenderStyle {
     if (_width != null) {
       return _width!;
     }
-    final boxWidth = renderBoxModel?.size.width;
-    if (boxWidth != null) {
-      return CSSLengthValue(boxWidth, CSSLengthType.PX);
+    if (renderBoxModel?.hasSize == true) {
+      final boxWidth = renderBoxModel?.size.width;
+      if (boxWidth != null) {
+        return CSSLengthValue(boxWidth, CSSLengthType.PX);
+      }
     }
     return CSSLengthValue.auto;
   }
@@ -57,9 +59,11 @@ mixin CSSSizingMixin on RenderStyle {
     if (_height != null) {
       return _height!;
     }
-    final boxHeight = renderBoxModel?.size.height;
-    if (boxHeight != null) {
-      return CSSLengthValue(boxHeight, CSSLengthType.PX);
+    if (renderBoxModel?.hasSize == true) {
+      final boxHeight = renderBoxModel?.size.height;
+      if (boxHeight != null) {
+        return CSSLengthValue(boxHeight, CSSLengthType.PX);
+      }
     }
     return CSSLengthValue.auto;
   }
