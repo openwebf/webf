@@ -564,6 +564,10 @@ class CSSMatrix {
     // Compute rotation and renormalize matrix.
     double angle = atan2(row0y, row0x);
 
+    // fix animation transform: rotate(360deg);
+    if (angle.toString() == '-2.4492935982947064e-16') {
+      angle = 360 * pi / 180;
+    }
     if (angle != 0) {
       // Rotate(-angle) = [cos(angle), sin(angle), -sin(angle), cos(angle)]
       //                = [row0x, -row0y, row0y, row0x]
