@@ -1642,7 +1642,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void recalculateStyle({bool rebuildNested = false}) {
-    if (renderBoxModel != null || rebuildNested) {
+    if (renderBoxModel != null && rebuildNested) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
