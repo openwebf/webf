@@ -16,12 +16,11 @@ mixin CSSTextMixin on RenderStyle {
   bool get hasColor => _color != null;
 
   @override
-  Color get currentColor => color;
+  CSSColor get currentColor => color;
 
   Color? _color;
-
   @override
-  Color get color {
+  CSSColor get color {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
     if (_color == null && parent != null) {
@@ -29,12 +28,12 @@ mixin CSSTextMixin on RenderStyle {
     }
 
     // The root element has no color, and the color is initial.
-    return _color ?? CSSColor.initial;
+    return CSSColor(_color ?? CSSColor.initial);
   }
 
-  set color(Color? value) {
+  set color(CSSColor? value) {
     if (_color == value) return;
-    _color = value;
+    _color = value?.value;
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsPaint(renderBoxModel!, COLOR);
   }
@@ -492,7 +491,7 @@ mixin CSSTextMixin on RenderStyle {
     //   background: The paint drawn as a background for the text.
     //   foreground: The paint used to draw the text. If this is specified, color must be null.
     TextStyle textStyle = TextStyle(
-        color: color ?? renderStyle.color,
+        color: color ?? renderStyle.color.value,
         decoration: renderStyle.textDecorationLine,
         decorationColor: renderStyle.textDecorationColor,
         decorationStyle: renderStyle.textDecorationStyle,

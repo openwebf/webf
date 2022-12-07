@@ -11,9 +11,7 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
   CSSComputedStyleDeclaration(this._element, this._pseudoElementName);
 
   @override
-  String get cssText {
-    return '';
-  }
+  String get cssText => '';
 
 //   String CSSComputedStyleDeclaration::cssText() const
 //   {
@@ -40,12 +38,12 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
     return valueForPropertyInStyle(propertyID);
   }
 
-  dynamic valueForPropertyInStyle(CSSPropertyID propertyID) {
+  String valueForPropertyInStyle(CSSPropertyID propertyID) {
     _element.ownerDocument.updateStyleIfNeeded();
     RenderStyle? style = _element.computedStyle(_pseudoElementName);
 
     if (style == null) {
-      return null;
+      return '';
     }
 
     switch (propertyID) {
@@ -57,106 +55,106 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundColor:
         return style.backgroundColor.toString();
       case CSSPropertyID.BackgroundImage:
-        return style.backgroundImage;
+        // return style.backgroundImage;
       case CSSPropertyID.BackgroundRepeat:
-        return style.backgroundRepeat;
+        // return style.backgroundRepeat;
       case CSSPropertyID.BackgroundPositionX:
-        return style.backgroundPositionX;
+        // return style.backgroundPositionX;
       case CSSPropertyID.BackgroundPositionY:
-        return style.backgroundPositionY;
+        // return style.backgroundPositionY;
       case CSSPropertyID.BorderTopColor:
-        return style.borderTopColor;
+        // return style.borderTopColor;
       case CSSPropertyID.BorderRightColor:
-        return style.borderRightColor;
+        // return style.borderRightColor;
       case CSSPropertyID.BorderBottomColor:
-        return style.borderBottomColor;
+        // return style.borderBottomColor;
       case CSSPropertyID.BorderLeftColor:
-        return style.borderLeftColor;
+        // return style.borderLeftColor;
       case CSSPropertyID.BorderTopStyle:
-        return style.borderTopStyle;
+        // return style.borderTopStyle;
       case CSSPropertyID.BorderRightStyle:
-        return style.borderRightStyle;
+        // return style.borderRightStyle;
       case CSSPropertyID.BorderBottomStyle:
-        return style.borderBottomStyle;
+        // return style.borderBottomStyle;
       case CSSPropertyID.BorderLeftStyle:
-        return style.borderLeftStyle;
+        // return style.borderLeftStyle ?;
       case CSSPropertyID.BorderTopWidth:
-        return style.borderTopWidth;
+        return style.borderTopWidth?.cssText() ?? '';
       case CSSPropertyID.BorderRightWidth:
-        return style.borderRightWidth;
+        return style.borderRightWidth?.cssText() ?? '';
       case CSSPropertyID.BorderBottomWidth:
-        return style.borderBottomWidth;
+        return style.borderBottomWidth?.cssText() ?? '';
       case CSSPropertyID.BorderLeftWidth:
-        return style.borderLeftWidth;
+        return style.borderLeftWidth?.cssText() ?? '';
       case CSSPropertyID.Bottom:
-        return style.bottom;
+        return style.bottom.cssText() ?? '';
       case CSSPropertyID.Color:
-        return style.color;
+        return style.color.cssText();
       case CSSPropertyID.Display:
-        return style.display;
+        return style.display.toString();
       case CSSPropertyID.Font:
         break;
       case CSSPropertyID.FontFamily:
-        return style.fontFamily;
+        return style.fontFamily?.join(',') ?? '';
       case CSSPropertyID.FontSize:
-        return style.fontSize;
+        return '${style.fontSize.computedValue}px';
       case CSSPropertyID.FontStyle:
-        return style.fontStyle;
+        return style.fontStyle.toString();
       case CSSPropertyID.FontWeight:
-        return style.fontWeight;
+        return style.fontWeight.index.toString();
       case CSSPropertyID.Height:
-        return style.height;
-      case CSSPropertyID.Left:
-        return style.left;
-      case CSSPropertyID.LetterSpacing:
-        return style.letterSpacing;
-      case CSSPropertyID.LineHeight:
-        return style.lineHeight;
-      case CSSPropertyID.MarginTop:
-        return style.marginTop;
-      case CSSPropertyID.MarginRight:
-        return style.marginRight;
-      case CSSPropertyID.MarginBottom:
-        return style.marginBottom;
-      case CSSPropertyID.MarginLeft:
-        return style.marginLeft;
-      case CSSPropertyID.MaxHeight:
-        return style.maxHeight;
-      case CSSPropertyID.MaxWidth:
-        return style.maxHeight;
-      case CSSPropertyID.MinHeight:
-        return style.minHeight;
-      case CSSPropertyID.MinWidth:
-        return style.minWidth;
-      case CSSPropertyID.ObjectFit:
-        return style.objectFit;
-      case CSSPropertyID.Opacity:
-        return style.opacity;
-      case CSSPropertyID.OverflowX:
-        return style.overflowX;
-      case CSSPropertyID.OverflowY:
-        return style.overflowY;
-      case CSSPropertyID.PaddingTop:
-        return style.paddingTop;
-      case CSSPropertyID.PaddingRight:
-        return style.paddingRight;
-      case CSSPropertyID.PaddingBottom:
-        return style.paddingBottom;
-      case CSSPropertyID.PaddingLeft:
-        return style.paddingLeft;
-      case CSSPropertyID.Position:
-        return style.position;
-      case CSSPropertyID.Right:
-        return style.right;
-      case CSSPropertyID.TableLayout:
-      case CSSPropertyID.TextAlign:
-        return style.textAlign;
-      case CSSPropertyID.TextShadow:
-        return style.textShadow;
-      case CSSPropertyID.TextOverflow:
-        return style.textShadow;
-      case CSSPropertyID.Top:
-        return style.top;
+        return '${style.height.computedValue}px';
+      // case CSSPropertyID.Left:
+      //   return style.left;
+      // case CSSPropertyID.LetterSpacing:
+      //   return style.letterSpacing;
+      // case CSSPropertyID.LineHeight:
+      //   return style.lineHeight;
+      // case CSSPropertyID.MarginTop:
+      //   return style.marginTop;
+      // case CSSPropertyID.MarginRight:
+      //   return style.marginRight;
+      // case CSSPropertyID.MarginBottom:
+      //   return style.marginBottom;
+      // case CSSPropertyID.MarginLeft:
+      //   return style.marginLeft;
+      // case CSSPropertyID.MaxHeight:
+      //   return style.maxHeight;
+      // case CSSPropertyID.MaxWidth:
+      //   return style.maxHeight;
+      // case CSSPropertyID.MinHeight:
+      //   return style.minHeight;
+      // case CSSPropertyID.MinWidth:
+      //   return style.minWidth;
+      // case CSSPropertyID.ObjectFit:
+      //   return style.objectFit;
+      // case CSSPropertyID.Opacity:
+      //   return style.opacity;
+      // case CSSPropertyID.OverflowX:
+      //   return style.overflowX;
+      // case CSSPropertyID.OverflowY:
+      //   return style.overflowY;
+      // case CSSPropertyID.PaddingTop:
+      //   return style.paddingTop;
+      // case CSSPropertyID.PaddingRight:
+      //   return style.paddingRight;
+      // case CSSPropertyID.PaddingBottom:
+      //   return style.paddingBottom;
+      // case CSSPropertyID.PaddingLeft:
+      //   return style.paddingLeft;
+      // case CSSPropertyID.Position:
+      //   return style.position;
+      // case CSSPropertyID.Right:
+      //   return style.right;
+      // case CSSPropertyID.TableLayout:
+      // case CSSPropertyID.TextAlign:
+      //   return style.textAlign;
+      // case CSSPropertyID.TextShadow:
+      //   return style.textShadow;
+      // case CSSPropertyID.TextOverflow:
+      //   return style.textShadow;
+      // case CSSPropertyID.Top:
+      //   return style.top;
       case CSSPropertyID.VerticalAlign:
         switch (style.verticalAlign) {
           case VerticalAlign.baseline:
@@ -166,32 +164,32 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
           case VerticalAlign.bottom:
             return 'bottom';
         }
-      case CSSPropertyID.Visibility:
-        return style.visibility;
-      case CSSPropertyID.WhiteSpace:
-        return style.whiteSpace;
-      case CSSPropertyID.Width:
-        return style.width;
-      case CSSPropertyID.ZIndex:
-        return style.zIndex;
-      case CSSPropertyID.TransitionDelay:
-        return style.transitionDelay;
-      case CSSPropertyID.TransitionDuration:
-        return style.transitionDuration;
-      case CSSPropertyID.TransitionProperty:
-        return style.transitionProperty;
-      case CSSPropertyID.TransitionTimingFunction:
-        return style.transitionTimingFunction;
-      case CSSPropertyID.Border:
-        return style.border;
-      case CSSPropertyID.BorderBottom:
-        break;
-      case CSSPropertyID.BorderColor:
-        return style.borderTopColor;
-      case CSSPropertyID.BorderLeft:
-        return style.borderLeftStyle;
-      case CSSPropertyID.BorderRadius:
-        return style.borderRadius;
+      // case CSSPropertyID.Visibility:
+      //   return style.visibility;
+      // case CSSPropertyID.WhiteSpace:
+      //   return style.whiteSpace;
+      // case CSSPropertyID.Width:
+      //   return style.width;
+      // case CSSPropertyID.ZIndex:
+      //   return style.zIndex;
+      // case CSSPropertyID.TransitionDelay:
+      //   return style.transitionDelay;
+      // case CSSPropertyID.TransitionDuration:
+      //   return style.transitionDuration;
+      // case CSSPropertyID.TransitionProperty:
+      //   return style.transitionProperty;
+      // case CSSPropertyID.TransitionTimingFunction:
+      //   return style.transitionTimingFunction;
+      // case CSSPropertyID.Border:
+      //   return style.border;
+      // case CSSPropertyID.BorderBottom:
+      //   break;
+      // case CSSPropertyID.BorderColor:
+      //   return style.borderTopColor;
+      // case CSSPropertyID.BorderLeft:
+      //   return style.borderLeftStyle;
+      // case CSSPropertyID.BorderRadius:
+      //   return style.borderRadius;
       case CSSPropertyID.BorderImage:
       case CSSPropertyID.BorderRight:
       case CSSPropertyID.BorderStyle:
@@ -199,8 +197,8 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BorderWidth:
         break;
 
-      case CSSPropertyID.Margin:
-        return style.margin;
+      // case CSSPropertyID.Margin:
+      //   return style.margin;
       case CSSPropertyID.Outline:
         break;
       case CSSPropertyID.Padding:
@@ -337,9 +335,11 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.TextAnchor:
       case CSSPropertyID.VectorEffect:
       case CSSPropertyID.WritingMode:
+      case CSSPropertyID.BorderSpacing:
+      case CSSPropertyID.BoxShadow:
         break;
     }
-    return null;
+    return '';
   }
 
   @override

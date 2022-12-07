@@ -241,7 +241,7 @@ mixin BaseInputElement on WidgetElement {
   double? get width => renderStyle.width.value;
 
   TextStyle get _textStyle => TextStyle(
-        color: renderStyle.color,
+        color: renderStyle.color.value,
         fontSize: renderStyle.fontSize.computedValue,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),
@@ -296,7 +296,7 @@ mixin BaseInputElement on WidgetElement {
         textAlign: renderStyle.textAlign,
         focusNode: _focusNode,
         obscureText: isPassWord,
-        cursorColor: renderStyle.caretColor ?? renderStyle.color,
+        cursorColor: renderStyle.caretColor ?? renderStyle.color.value,
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
@@ -315,7 +315,7 @@ mixin BaseInputElement on WidgetElement {
         textAlign: renderStyle.textAlign,
         focusNode: _focusNode,
         obscureText: isPassWord,
-        cursorColor: renderStyle.caretColor ?? renderStyle.color,
+        cursorColor: renderStyle.caretColor ?? renderStyle.color.value,
         cursorRadius: Radius.circular(4),
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
@@ -455,7 +455,7 @@ mixin BaseButtonElement on WidgetElement {
   }
 
   TextStyle get _style => TextStyle(
-        color: renderStyle.color,
+        color: renderStyle.color.value,
         fontSize: renderStyle.fontSize.computedValue,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),

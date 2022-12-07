@@ -180,6 +180,8 @@ final LinkedLruHashMap<String, Color> _cachedParsedColor = LinkedLruHashMap(maxi
 /// rgb(r,g,b)
 /// rgba(r,g,b,a)
 class CSSColor {
+  CSSColor(this.value);
+
   static const Color transparent = Color(0x00000000);
   static const Color initial = Color(0xFF000000);
   static const String INITIAL_COLOR = 'black';
@@ -235,7 +237,7 @@ class CSSColor {
       }
       // Update property that deps current color.
       renderStyle.addColorRelativeProperty(propertyName);
-      return renderStyle.color;
+      return renderStyle.color.value;
     }
     return parseColor(color, renderStyle: renderStyle);
   }
@@ -305,6 +307,11 @@ class CSSColor {
     }
 
     return parsed;
+  }
+
+  String cssText() {
+    if (value == null) return '';
+    return 'rgba(${value!.red}, ${value!.green}, ${value!.blue}, ${value!.alpha})';
   }
 
   Color? value;
