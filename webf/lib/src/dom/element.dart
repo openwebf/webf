@@ -1108,7 +1108,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   void internalSetAttribute(String qualifiedName, String value) {
     final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
     attributes[qualifiedName] = value;
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+    recalculateStyle(forceRecalculate: isNeedRecalculate);
   }
 
   @mustCallSuper
@@ -1641,8 +1641,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     _applySheetStyle(style);
   }
 
-  void recalculateStyle({bool rebuildNested = false}) {
-    if (renderBoxModel != null || rebuildNested) {
+  void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
+    if (renderBoxModel != null || forceRecalculate) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
