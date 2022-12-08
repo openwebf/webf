@@ -7,11 +7,10 @@
 
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/wrapper_type_info.h"
-#include "core/dom/events/event_target.h"
 #include "core/css/computed_css_style_declaration.h"
+#include "core/dom/events/event_target.h"
 #include "qjs_scroll_to_options.h"
 #include "screen.h"
-
 
 namespace webf {
 
@@ -47,7 +46,9 @@ class Window : public EventTargetWithInlineData {
   void postMessage(const ScriptValue& message, const AtomicString& target_origin, ExceptionState& exception_state);
 
   ComputedCssStyleDeclaration* getComputedStyle(Element* element, ExceptionState& exception_state);
-  ComputedCssStyleDeclaration* getComputedStyle(Element* element, const AtomicString& pseudo_elt, ExceptionState& exception_state);
+  ComputedCssStyleDeclaration* getComputedStyle(Element* element,
+                                                const AtomicString& pseudo_elt,
+                                                ExceptionState& exception_state);
 
   double requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState);
   void cancelAnimationFrame(double request_id, ExceptionState& exception_state);

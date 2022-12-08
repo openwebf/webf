@@ -19,6 +19,7 @@ class Element;
 
 class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = InlineCssStyleDeclaration*;
   static InlineCssStyleDeclaration* Create(ExecutingContext* context, ExceptionState& exception_state);
@@ -39,10 +40,10 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
 
   void CopyWith(InlineCssStyleDeclaration* inline_style);
 
-//  AtomicString cssText() const override;
-//  void setCssText(const AtomicString &value, ExceptionState &exception_state) override;
+  //  AtomicString cssText() const override;
+  //  void setCssText(const AtomicString &value, ExceptionState &exception_state) override;
 
-private:
+ private:
   AtomicString InternalGetPropertyValue(std::string& name);
   bool InternalSetProperty(std::string& name, const AtomicString& value);
   AtomicString InternalRemoveProperty(std::string& name);

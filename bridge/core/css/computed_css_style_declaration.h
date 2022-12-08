@@ -1,12 +1,12 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_CORE_CSS_COMPUTED_CSS_STYLE_DECLARATION_H_
 #define WEBF_CORE_CSS_COMPUTED_CSS_STYLE_DECLARATION_H_
 
-#include "core/binding_object.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "core/binding_object.h"
 #include "css_style_declaration.h"
 
 namespace webf {
@@ -15,6 +15,7 @@ class Element;
 
 class ComputedCssStyleDeclaration : public CSSStyleDeclaration, public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = ComputedCssStyleDeclaration;
   ComputedCssStyleDeclaration() = delete;
@@ -34,7 +35,7 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration, public BindingOb
 
   bool IsComputedCssStyleDeclaration() const override;
 
-  NativeValue HandleCallFromDartSide(const NativeValue *method, int32_t argc, const NativeValue *argv) override;
+  NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) override;
 
  private:
   Member<Element> owner_element_;
@@ -45,7 +46,6 @@ struct DowncastTraits<ComputedCssStyleDeclaration> {
   static bool AllowFrom(const BindingObject& binding_object) { return binding_object.IsComputedCssStyleDeclaration(); }
 };
 
-}
-
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_COMPUTED_CSS_STYLE_DECLARATION_H_

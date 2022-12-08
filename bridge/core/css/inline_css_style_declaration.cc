@@ -61,7 +61,8 @@ static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
   return result;
 }
 
-InlineCssStyleDeclaration* InlineCssStyleDeclaration::Create(ExecutingContext* context, ExceptionState& exception_state) {
+InlineCssStyleDeclaration* InlineCssStyleDeclaration::Create(ExecutingContext* context,
+                                                             ExceptionState& exception_state) {
   exception_state.ThrowException(context->ctx(), ErrorType::TypeError, "Illegal constructor.");
   return nullptr;
 }
@@ -74,7 +75,9 @@ AtomicString InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionS
   return InternalGetPropertyValue(propertyName);
 }
 
-bool InlineCssStyleDeclaration::SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) {
+bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
+                                        const AtomicString& value,
+                                        ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   return InternalSetProperty(propertyName, value);
 }
@@ -89,8 +92,8 @@ AtomicString InlineCssStyleDeclaration::getPropertyValue(const AtomicString& key
 }
 
 void InlineCssStyleDeclaration::setProperty(const AtomicString& key,
-                                      const AtomicString& value,
-                                      ExceptionState& exception_state) {
+                                            const AtomicString& value,
+                                            ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   InternalSetProperty(propertyName, value);
 }

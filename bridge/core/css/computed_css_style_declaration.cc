@@ -9,7 +9,8 @@
 
 namespace webf {
 
-ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* context, NativeBindingObject* native_binding_object)
+ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* context,
+                                                         NativeBindingObject* native_binding_object)
     : CSSStyleDeclaration(context->ctx()), BindingObject(context, native_binding_object) {}
 
 AtomicString ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
@@ -68,7 +69,9 @@ bool ComputedCssStyleDeclaration::IsComputedCssStyleDeclaration() const {
   return true;
 }
 
-NativeValue ComputedCssStyleDeclaration::HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) {
+NativeValue ComputedCssStyleDeclaration::HandleCallFromDartSide(const NativeValue* method,
+                                                                int32_t argc,
+                                                                const NativeValue* argv) {
   return Native_NewNull();
 }
 
