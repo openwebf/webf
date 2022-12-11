@@ -50,3 +50,5 @@ flutter:
         pluginClass: WebFPlugin
       linux:
         pluginClass: WebfPlugin
+      windows:
+        pluginClass: WebfPlugin
