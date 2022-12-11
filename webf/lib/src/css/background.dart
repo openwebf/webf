@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/painting.dart';
@@ -39,6 +40,34 @@ enum CSSBackgroundRepeatType {
   repeatX,
   repeatY,
   noRepeat,
+}
+
+extension CSSRepeatType on CSSBackgroundRepeatType {
+  String cssText() {
+    switch (this) {
+      case CSSBackgroundRepeatType.repeat:
+        return 'repeat';
+      case CSSBackgroundRepeatType.repeatX:
+        return 'repeat-x';
+      case CSSBackgroundRepeatType.repeatY:
+        return 'repeat-y';
+      case CSSBackgroundRepeatType.noRepeat:
+        return 'no-repeat';
+    }
+  }
+
+  ImageRepeat imageRepeat() {
+    switch (this) {
+      case CSSBackgroundRepeatType.repeat:
+        return ImageRepeat.repeat;
+      case CSSBackgroundRepeatType.repeatX:
+        return ImageRepeat.repeatX;
+      case CSSBackgroundRepeatType.repeatY:
+        return ImageRepeat.repeatY;
+      case CSSBackgroundRepeatType.noRepeat:
+        return ImageRepeat.noRepeat;
+    }
+  }
 }
 
 enum CSSBackgroundSizeType {
@@ -160,9 +189,9 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-repeat
   @override
-  ImageRepeat get backgroundRepeat => _backgroundRepeat ?? ImageRepeat.repeat;
-  ImageRepeat? _backgroundRepeat;
-  set backgroundRepeat(ImageRepeat? value) {
+  CSSBackgroundRepeatType get backgroundRepeat => _backgroundRepeat ?? CSSBackgroundRepeatType.repeat;
+  CSSBackgroundRepeatType? _backgroundRepeat;
+  set backgroundRepeat(CSSBackgroundRepeatType? value) {
     if (value == _backgroundRepeat) return;
     _backgroundRepeat = value;
     renderBoxModel?.markNeedsPaint();
@@ -181,7 +210,9 @@ class CSSBackgroundImage {
   WebFController controller;
   CSSBackgroundImage(this.functions, this.renderStyle, this.controller);
 
+  ImageProvider? _image;
   ImageProvider? get image {
+    if (_image != null) return _image;
     for (CSSFunctionalNotation method in functions) {
       if (method.name == 'url') {
         String url = method.args.isNotEmpty ? method.args[0] : '';
@@ -194,13 +225,15 @@ class CSSBackgroundImage {
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
           uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
-          return getImageProvider(uri, contextId: controller.view.contextId);
+          _image = getImageProvider(uri, contextId: controller.view.contextId);
+          return _image;
         }
       }
     }
     return null;
   }
 
+  Gradient? _gradient;
   Gradient? get gradient {
     List<Color> colors = [];
     List<double> stops = [];
@@ -288,13 +321,14 @@ class CSSBackgroundImage {
           }
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE, gradientLength);
           if (colors.length >= 2) {
-            return CSSLinearGradient(
+            _gradient = CSSLinearGradient(
                 begin: begin,
                 end: end,
                 angle: linearAngle,
                 colors: colors,
                 stops: stops,
                 tileMode: method.name == 'linear-gradient' ? TileMode.clamp : TileMode.repeated);
+            return _gradient;
           }
           break;
         // @TODO just support circle radial
@@ -324,13 +358,14 @@ class CSSBackgroundImage {
           }
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
           if (colors.length >= 2) {
-            return CSSRadialGradient(
+            _gradient = CSSRadialGradient(
               center: FractionalOffset(atX!, atY!),
               radius: radius,
               colors: colors,
               stops: stops,
               tileMode: method.name == 'radial-gradient' ? TileMode.clamp : TileMode.repeated,
             );
+            return _gradient;
           }
           break;
         case 'conic-gradient':
@@ -356,16 +391,49 @@ class CSSBackgroundImage {
           }
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
           if (colors.length >= 2) {
-            return CSSConicGradient(
+            _gradient = CSSConicGradient(
                 center: FractionalOffset(atX!, atY!),
                 colors: colors,
                 stops: stops,
                 transform: GradientRotation(-math.pi / 2 + from!));
+            return _gradient;
           }
           break;
       }
     }
     return null;
+  }
+
+  String cssText() {
+    if (_image != null) {
+      switch (_image.runtimeType) {
+        case NetworkImage:
+          return (_image as NetworkImage).url;
+        case CachedNetworkImage:
+          return (_image as CachedNetworkImage).url;
+        case FileImage:
+          return (_image as FileImage).file.uri.path;
+        case MemoryImage:
+          return 'data:image/png;base64, ${base64Encode((_image as MemoryImage).bytes)}';
+        case AssetImage:
+          return 'assets://${(_image as AssetImage).assetName}';
+        default:
+          return '';
+      }
+    }
+    if (_gradient != null) {
+      switch (_gradient!.runtimeType) {
+        case CSSLinearGradient:
+          return (_gradient as CSSLinearGradient).cssText();
+        case CSSRadialGradient:
+          return (_gradient as CSSRadialGradient).cssText();
+        case CSSConicGradient:
+          return (_gradient as CSSConicGradient).cssText();
+        default:
+          return '';
+      }
+    }
+    return '';
   }
 }
 
@@ -384,6 +452,19 @@ class CSSBackgroundPosition {
 
   /// Relative position to image container when keyword or calcValue type is set.
   CSSCalcValue? calcValue;
+
+  String cssText() {
+    if (length != null) {
+      return '${length!.computedValue}px';
+    }
+    if (percentage != null) {
+      return '${percentage!}%';
+    }
+    if (calcValue != null) {
+      return '${calcValue!.computedValue}px';
+    }
+    return '';
+  }
 }
 
 class CSSBackgroundSize {

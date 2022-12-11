@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:ffi' as ffi;
+import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -92,29 +93,37 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundColor:
         return style.backgroundColor?.cssText() ?? '';
       case CSSPropertyID.BackgroundImage:
-      // return style.backgroundImage;
+        return style.backgroundImage?.cssText() ?? '';
       case CSSPropertyID.BackgroundRepeat:
-      // return style.backgroundRepeat;
+        return style.backgroundRepeat.cssText();
+      case CSSPropertyID.BackgroundPosition:
+        return style.backgroundPositionX.cssText() + ' ' + style.backgroundPositionY.cssText();
       case CSSPropertyID.BackgroundPositionX:
-      // return style.backgroundPositionX;
+        return style.backgroundPositionX.cssText();
       case CSSPropertyID.BackgroundPositionY:
-      // return style.backgroundPositionY;
+        return style.backgroundPositionY.cssText();
+      case CSSPropertyID.BackgroundAttachment:
+      case CSSPropertyID.BackgroundSize:
+      case CSSPropertyID.BackgroundClip:
+      case CSSPropertyID.BackgroundOrigin:
+        break;
+
       case CSSPropertyID.BorderTopColor:
-        return style.borderTopColor.cssText() ?? '';
+        return style.borderTopColor.cssText();
       case CSSPropertyID.BorderRightColor:
-        return style.borderRightColor.cssText() ?? '';
+        return style.borderRightColor.cssText();
       case CSSPropertyID.BorderBottomColor:
-        return style.borderBottomColor.cssText() ?? '';
+        return style.borderBottomColor.cssText();
       case CSSPropertyID.BorderLeftColor:
-        return style.borderLeftColor.cssText() ?? '';
+        return style.borderLeftColor.cssText();
       case CSSPropertyID.BorderTopStyle:
-      // return style.borderTopStyle;
+        return style.borderTopStyle.toString();
       case CSSPropertyID.BorderRightStyle:
-      // return style.borderRightStyle;
+        return style.borderRightStyle.toString();
       case CSSPropertyID.BorderBottomStyle:
-      // return style.borderBottomStyle;
+        return style.borderBottomStyle.toString();
       case CSSPropertyID.BorderLeftStyle:
-      // return style.borderLeftStyle ?;
+        return style.borderLeftStyle.toString();
       case CSSPropertyID.BorderTopWidth:
         return '${style.borderTopWidth?.computedValue}px';
       case CSSPropertyID.BorderRightWidth:
@@ -157,6 +166,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return '${style.minHeight.computedValue}px';
       case CSSPropertyID.MinWidth:
         return '${style.minWidth.computedValue}px';
+      case CSSPropertyID.Margin:
+        return style.margin.cssText();
       case CSSPropertyID.MarginTop:
         return '${style.marginTop.computedValue}px';
       case CSSPropertyID.MarginRight:
@@ -165,6 +176,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return '${style.marginBottom.computedValue}px';
       case CSSPropertyID.MarginLeft:
         return '${style.marginLeft.computedValue}px';
+      case CSSPropertyID.Padding:
+        return style.padding.cssText();
       case CSSPropertyID.PaddingTop:
         return '${style.paddingTop.computedValue}px';
       case CSSPropertyID.PaddingRight:
@@ -178,7 +191,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.LineHeight:
         return '${style.lineHeight.computedValue}px';
       case CSSPropertyID.ObjectFit:
-      // return style.objectFit;
+        return style.objectFit.toString();
       case CSSPropertyID.Opacity:
         return style.opacity.toString();
       case CSSPropertyID.OverflowX:
@@ -187,7 +200,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.overflowY.toString();
       case CSSPropertyID.Position:
         return style.position.toString();
-      // case CSSPropertyID.TableLayout:
       case CSSPropertyID.TextAlign:
         return style.textAlign.toString();
       case CSSPropertyID.TextShadow:
@@ -211,8 +223,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       //   return style.transitionProperty;
       // case CSSPropertyID.TransitionTimingFunction:
       //   return style.transitionTimingFunction;
-      // case CSSPropertyID.Border:
-      //   return style.border;
+      case CSSPropertyID.Border:
+        return style.border.cssText();
       // case CSSPropertyID.BorderBottom:
       //   break;
       // case CSSPropertyID.BorderColor:
@@ -227,13 +239,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BorderTop:
       case CSSPropertyID.BorderWidth:
         break;
-
-      // case CSSPropertyID.Margin:
-      //   return style.margin;
+      // case CSSPropertyID.TableLayout:
       case CSSPropertyID.Outline:
-        break;
-      case CSSPropertyID.Padding:
-        break;
       case CSSPropertyID.ListStyle:
       case CSSPropertyID.Widows:
       case CSSPropertyID.UnicodeBidi:
@@ -271,11 +278,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Cursor:
       case CSSPropertyID.EmptyCells:
       case CSSPropertyID.Direction:
-      case CSSPropertyID.BackgroundSize:
-      case CSSPropertyID.BackgroundAttachment:
-      case CSSPropertyID.BackgroundClip:
-      case CSSPropertyID.BackgroundOrigin:
-      case CSSPropertyID.BackgroundPosition:
+
       case CSSPropertyID.BorderCollapse:
       case CSSPropertyID.BorderImageSource:
       case CSSPropertyID.CaptionSide:
@@ -295,7 +298,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundRepeatX:
       case CSSPropertyID.BackgroundRepeatY:
         break;
-
       case CSSPropertyID.TextLineThrough:
       case CSSPropertyID.TextLineThroughColor:
       case CSSPropertyID.TextLineThroughMode:
@@ -381,5 +383,29 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   @override
   String removeProperty(String propertyName, [bool? isImportant]) {
     throw UnimplementedError('Not implemented');
+  }
+}
+
+extension CSSEdgeInsetsText on EdgeInsets {
+  String cssText() {
+    if (left == 0 && right == 0 && top == 0 && bottom == 0) {
+      return '0px';
+    }
+    final showLeft = left != right;
+    final showBottom = (top != bottom) || showLeft;
+    final showRight = (top != right) || showBottom;
+
+    List<String> list = [];
+    list.add('${top}px');
+    if (showRight) {
+      list.add('${right}px');
+    }
+    if (showBottom) {
+      list.add('${bottom}px');
+    }
+    if (showLeft) {
+      list.add('${left}px');
+    }
+    return list.join(' ');
   }
 }

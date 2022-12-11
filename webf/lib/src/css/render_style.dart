@@ -82,7 +82,7 @@ abstract class RenderStyle {
   // Decorations
   CSSColor? get backgroundColor;
   CSSBackgroundImage? get backgroundImage;
-  ImageRepeat get backgroundRepeat;
+  CSSBackgroundRepeatType get backgroundRepeat;
   CSSBackgroundPosition get backgroundPositionX;
   CSSBackgroundPosition get backgroundPositionY;
 

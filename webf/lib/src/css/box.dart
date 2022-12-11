@@ -53,7 +53,7 @@ mixin CSSBoxMixin on RenderStyle {
     if (image != null) {
       decorationImage = DecorationImage(
         image: image,
-        repeat: backgroundRepeat,
+        repeat: backgroundRepeat.imageRepeat(),
       );
     }
 
