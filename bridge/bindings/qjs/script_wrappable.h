@@ -76,6 +76,10 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
 // Converts a QuickJS object back to a ScriptWrappable.
 template <typename ScriptWrappable>
 inline ScriptWrappable* toScriptWrappable(JSValue object) {
+  // If object is proxy object, should get the rel target of this proxy.
+  if (JS_IsProxy(object)) {
+    object = JS_GetProxyTarget(object);
+  }
   return static_cast<ScriptWrappable*>(JS_GetOpaque(object, JSValueGetClassId(object)));
 }
 
