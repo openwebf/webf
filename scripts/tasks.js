@@ -84,6 +84,7 @@ const libOutputPath = join(TARGET_PATH, platform, 'lib');
 
 task('build-darwin-webf-lib', done => {
   let externCmakeArgs = [];
+  const appVersion = getAppVersion();
   let buildType = 'Debug';
   if (process.env.WEBF_BUILD === 'Release') {
     buildType = 'RelWithDebInfo';

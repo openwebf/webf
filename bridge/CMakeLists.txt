@@ -514,16 +514,7 @@ target_include_directories(webf_static PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 target_link_libraries(webf_static ${BRIDGE_LINK_LIBS})
 
-execute_process(
-  COMMAND grep version: ./pubspec.yaml
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../webf
-  OUTPUT_VARIABLE APP_VER
-)
-string(SUBSTRING ${APP_VER} 9 30 APP_VER)
-string(REGEX REPLACE "\n$" "" APP_VER "${APP_VER}")
-
-string(REPLACE \n "" APP_VER ${APP_VER}) # Remove last \n
-add_definitions(-DAPP_VERSION="${APP_VER}") # Read from dartfm version
+add_definitions(-DAPP_VERSION="${APP_VERSION}") # Read from dartfm version
 execute_process(
   COMMAND git rev-parse --short HEAD
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
