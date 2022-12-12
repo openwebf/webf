@@ -124,8 +124,8 @@ describe('css attribute selector', () => {
             display: none;
           }`
         }</style>;
-        const div = <div class="a">The text should be visible</div>
-        document.body.appendChild(div);
+        const p = <p d>The text should be visible</p>
+        document.body.appendChild(p);
         await snapshot();
     });
 });
