@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:collection';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -79,9 +80,10 @@ class Document extends Node {
     required this.controller,
     required RenderViewportBox viewport,
     this.gestureListener,
+    List<Cookie>? initialCookies
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
-    cookie_ = CookieJar(controller.url);
+    cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
   }

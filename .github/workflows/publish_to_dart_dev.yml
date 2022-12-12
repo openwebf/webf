@@ -22,7 +22,9 @@ jobs:
       - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: "3.22.x"
-
+      - run: |
+          sudo apt-get update
+          sudo apt-get install chrpath ninja-build pkg-config -y
       - run: npm i
       - run: npm run build:bridge:linux:release
       - uses: actions/upload-artifact@v2
