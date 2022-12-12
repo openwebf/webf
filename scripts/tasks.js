@@ -89,6 +89,10 @@ task('build-darwin-webf-lib', done => {
     buildType = 'RelWithDebInfo';
   }
 
+  if (!process.env.DISABLE_JAVASCRIPT_DEBUGGER) {
+    externCmakeArgs.push('-DENABLE_DEBUGGER=true');
+  }
+
   if (isProfile) {
     externCmakeArgs.push('-DENABLE_PROFILE=TRUE');
   }
@@ -345,6 +349,10 @@ task(`build-ios-webf-lib`, (done) => {
     externCmakeArgs.push('-DENABLE_ASAN=true');
   }
 
+  if (!process.env.DISABLE_JAVASCRIPT_DEBUGGER) {
+    externCmakeArgs.push('-DENABLE_DEBUGGER=true');
+  }
+
   // Bundle quickjs into webf.
   if (program.staticQuickjs) {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
@@ -501,11 +509,19 @@ task('build-linux-webf-lib', (done) => {
 
   const soBinaryDirectory = path.join(paths.bridge, `build/linux/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-linux');
+
+  let externCmakeArgs = [];
+
+  if (!process.env.DISABLE_JAVASCRIPT_DEBUGGER) {
+    externCmakeArgs.push('-DENABLE_DEBUGGER=true');
+  }
+
   // generate project
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
   ${externCmakeArgs.join(' ')} \
   ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
   ${'-DENABLE_TEST=true \\'}
+  ${externCmakeArgs.join(' ')} \
   -G "${cmakeGeneratorTemplate}" \
   -B ${paths.bridge}/cmake-build-linux -S ${paths.bridge}`,
     {
@@ -645,6 +661,10 @@ task('build-android-webf-lib', (done) => {
   };
   const buildType = (buildMode === 'Release' || buildMode == 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
   let externCmakeArgs = [];
+
+  if (!process.env.DISABLE_JAVASCRIPT_DEBUGGER) {
+    externCmakeArgs.push('-DENABLE_DEBUGGER=true');
+  }
 
   if (process.env.ENABLE_ASAN === 'true') {
     externCmakeArgs.push('-DENABLE_ASAN=true');

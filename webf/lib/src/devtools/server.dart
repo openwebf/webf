@@ -93,14 +93,21 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
       server!.readDebuggerBackendMessage();
     } else if (server != null && server!.connected) {
       if (data is InspectorEvent) {
-        inspector!.sendEventToFrontend(data);
+        server!.sendEventToChromeDevTools(data);
       } else if (data is InspectorMethodResult) {
-        server!.sendToFrontend(data.id, data.result);
+        server!.sendMessageToChromeDevTools(data.id, data.result);
       } else if (data is InspectorReload) {
         // attachInspector(data.contextId);
       }
     }
   });
+}
+
+enum ConnectionClientKind {
+  // The client is WebF vscode extension. DOM/CSS/Network debug features are disabled.
+  vscode,
+  // The client is Chrome devtools, all features are enabled.
+  chromeDevTools
 }
 
 class IsolateInspectorServer {
@@ -114,23 +121,14 @@ class IsolateInspectorServer {
     _isolateServerMap[server.debuggerContext] = server;
   }
 
+  ConnectionClientKind? clientKind;
+
   static void _initDebuggerMethods(IsolateInspectorServer server, Pointer<JavaScriptDebuggerMethods> debuggerMethods) {
     // Set to nullptr and waiting for debugger backend to rewrite this methods.
     debuggerMethods.ref.writeFrontEndCommands = nullptr;
     debuggerMethods.ref.readBackendCommands = nullptr;
     debuggerMethods.ref.onBackendShutdown = nullptr;
-    // debuggerMethods.ref.readBackendCommands = Pointer.fromFunction(_readBackendCommands, 0);
-    // debuggerMethods.ref.onBackendShutdown = Pointer.fromFunction(_onDebuggerBackendShutdown);
   }
-
-  // static int _readBackendCommands(Pointer<Void> debuggerContext, Pointer<DebuggerMessageBuffer> message) {
-  //   if (!_isolateServerMap.containsKey(debuggerContext)) return 0;
-  //
-  //   IsolateInspectorServer server = _isolateServerMap[debuggerContext]!;
-  //
-  //
-  //   return 0;
-  // }
 
   static void _onDebuggerBackendShutdown(Pointer<Void> runtime, Pointer<Void> debuggerContext) {
 
@@ -150,6 +148,8 @@ class IsolateInspectorServer {
   VoidCallback? onStarted;
   MessageCallback? onChromeDevToolsMessage;
   MessageCallback? onVsCodeExtensionMessage;
+
+  final Queue<String> _pendingDebuggerMessages = Queue();
 
   // Native methods shared between client and debugger backend.
   Pointer<JavaScriptDebuggerMethods> debuggerMethods = malloc.allocate(sizeOf<JavaScriptDebuggerMethods>());
@@ -199,11 +199,27 @@ class IsolateInspectorServer {
         return;
       }
       String str = buffer.ref.buffer.toDartString(length: buffer.ref.length);
-      print('read backend message $str');
+      if (_ws != null) {
+        if (clientKind == ConnectionClientKind.vscode) {
+          _ws?.add(str);
+        } else {
+          // TODO: Add adaptor from DAP to CDP..
+        }
+      } else {
+        _pendingDebuggerMessages.add(str);
+      }
       malloc.free(buffer);
     }
 
     Timer.run(readDebuggerBackendMessage);
+  }
+
+  void _flushPendingDebuggerMessage() {
+    assert(_ws != null);
+    while(_pendingDebuggerMessages.isNotEmpty) {
+      String first = _pendingDebuggerMessages.removeFirst();
+      _ws!.add(first);
+    }
   }
 
   void registerModule(IsolateInspectorModule module) {
@@ -294,12 +310,14 @@ class IsolateInspectorServer extends IsolateInspector {
       if (WebSocketTransformer.isUpgradeRequest(request)) {
         WebSocketTransformer.upgrade(request, compression: CompressionOptions.compressionOff)
             .then((WebSocket webSocket) {
+              print('upgraded to websocket ');
           _ws = webSocket;
           webSocket.listen(onWebSocketRequest, onDone: () {
             _ws = null;
           }, onError: (obj, stack) {
             _ws = null;
           });
+          _flushPendingDebuggerMessage();
         });
       } else {
         onHTTPRequest(request);
@@ -307,21 +325,21 @@ class IsolateInspectorServer extends IsolateInspector {
     });
   }
 
-  void sendToFrontend(int? id, Map? result) {
-    String data = jsonEncode({
-      if (id != null) 'id': id,
-      // Give an empty object for response.
-      'result': result ?? {},
-    });
-    _ws?.add(data);
+  void sendMessageToChromeDevTools(int? id, Map? result) {
+    if (clientKind == ConnectionClientKind.chromeDevTools) {
+      String data = jsonEncode({
+        if (id != null) 'id': id,
+        // Give an empty object for response.
+        'result': result ?? {},
+      });
+      _ws?.add(data);
+    }
   }
 
-  void sendEventToFrontend(InspectorEvent event) {
-    _ws?.add(jsonEncode(event));
-  }
-
-  void sendRawJSONToFrontend(String message) {
-    _ws?.add(message);
+  void sendEventToChromeDevTools(InspectorEvent event) {
+    if (clientKind == ConnectionClientKind.chromeDevTools) {
+      _ws?.add(jsonEncode(event));
+    }
   }
 
   Map<String, dynamic>? _parseMessage(message) {
@@ -339,10 +357,12 @@ class IsolateInspectorServer extends IsolateInspector {
       Map<String, dynamic>? data = _parseMessage(message);
       // Handle messages from WebF Vscode plugin.
       if (data != null && data['vscode'] && onVsCodeExtensionMessage != null) {
+        clientKind = ConnectionClientKind.vscode;
         onVsCodeExtensionMessage!(data['data']);
         // Handle message from Chrome DevTools.
       } else if (onChromeDevToolsMessage != null) {
         onChromeDevToolsMessage!(data);
+        clientKind = ConnectionClientKind.chromeDevTools;
       }
     }
   }
