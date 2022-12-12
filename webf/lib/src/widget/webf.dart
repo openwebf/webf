@@ -63,6 +63,9 @@ class WebF extends StatefulWidget {
 
   final UriParser? uriParser;
 
+  /// The initial cookies to set.
+  final List<Cookie>? initialCookies;
+
   WebFController? get controller {
     return WebFController.getControllerOfName(shortHash(this));
   }
@@ -99,6 +102,7 @@ class WebF extends StatefulWidget {
       this.viewportWidth,
       this.viewportHeight,
       this.bundle,
+      this.onControllerCreated,
       this.onLoad,
       this.navigationDelegate,
       this.javaScriptChannel,
@@ -109,7 +113,7 @@ class WebF extends StatefulWidget {
       this.httpClientInterceptor,
       this.uriParser,
       this.routeObserver,
-      this.onControllerCreated,
+      this.initialCookies,
       // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
       // Maybe got unexpected error when change to other values, use this at your own risk!
       // We will fixed this on next version released. (v0.6.0)
@@ -307,6 +311,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         httpClientInterceptor: _webfWidget.httpClientInterceptor,
         onCustomElementAttached: onCustomElementAttached,
         onCustomElementDetached: onCustomElementDetached,
+        initialCookies: _webfWidget.initialCookies,
         uriParser: _webfWidget.uriParser);
 
     if (kProfileMode) {

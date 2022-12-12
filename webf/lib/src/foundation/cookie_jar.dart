@@ -11,18 +11,27 @@ import 'cookie_jar/serializable_cookie.dart';
 class CookieJar {
   final String url;
   static PersistCookieJar? _cookieJar;
-  static Future<PersistCookieJar> get _loadCookieJarFuture async {
-    if (_cookieJar != null) return _cookieJar!;
-    await loadCookieFromStorage();
-    return _cookieJar!;
+  static Future<PersistCookieJar>? _cookieJarFuture;
+
+  final List<Cookie>? initialCookies;
+  CookieJar(this.url, { this.initialCookies }) {
+    _cookieJarFuture ??= initCookieFromStorage().then((cookieJar) {
+      return afterCookieJarLoaded(cookieJar, uri: Uri.parse(url), initialCookies: initialCookies);
+    });
   }
 
-  CookieJar(this.url);
+  static Future<PersistCookieJar> afterCookieJarLoaded(PersistCookieJar cookieJar, { Uri? uri, List<Cookie>? initialCookies }) async {
+    if (initialCookies != null && uri != null) {
+      cookieJar.saveFromAPISync(uri, initialCookies);
+    }
+    _cookieJar = cookieJar;
+    return cookieJar;
+  }
 
-  static Future<void> loadCookieFromStorage() async {
+  static Future<PersistCookieJar> initCookieFromStorage() async {
     assert(_cookieJar == null);
     String appTemporaryPath = await getWebFTemporaryPath();
-    _cookieJar = PersistCookieJar(storage: FileStorage(path.join(appTemporaryPath, 'cookies')));
+    return PersistCookieJar(storage: FileStorage(path.join(appTemporaryPath, 'cookies')));
   }
 
   void setCookieString(String value) {
@@ -41,8 +50,9 @@ class CookieJar {
     }
   }
 
-  void setCookie(Uri uri, List<Cookie> cookies) {
+  void setCookie(List<Cookie> cookies, [Uri? uri]) {
     if (_cookieJar != null) {
+      uri = uri ?? Uri.parse(url);
       _cookieJar!.saveFromAPISync(uri, cookies);
     }
   }
@@ -61,9 +71,6 @@ class CookieJar {
   }
 
   String cookie() {
-    if (_cookieJar == null) {
-      return '';
-    }
     final cookiePairs = <String>[];
     Uri uri = Uri.parse(url);
     String scheme = uri.scheme;
@@ -103,7 +110,8 @@ class CookieJar {
   static Future<void> loadForRequest(Uri uri, List<Cookie> requestCookies) async {
     if (_cookieJar == null) {
       Completer completer = Completer();
-      _loadCookieJarFuture.whenComplete(() async {
+      _cookieJarFuture ??= initCookieFromStorage().then(afterCookieJarLoaded);
+      _cookieJarFuture!.whenComplete(() async {
         await loadForRequest(uri, requestCookies);
         completer.complete();
       });
