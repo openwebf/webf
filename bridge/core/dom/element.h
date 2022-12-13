@@ -55,7 +55,7 @@ class Element : public ContainerNode {
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
 
   bool HasTagName(const AtomicString&) const;
-  std::string nodeValue() const override;
+  AtomicString nodeValue() const override;
   AtomicString tagName() const { return tag_name_.ToUpperSlow(ctx()); }
   std::string nodeName() const override;
   std::string nodeNameLowerCase() const;

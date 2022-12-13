@@ -244,9 +244,22 @@ struct Converter<IDLOptional<IDLDOMString>> : public ConverterBase<IDLDOMString>
 template <>
 struct Converter<IDLNullable<IDLDOMString>> : public ConverterBase<IDLDOMString> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
-    if (JS_IsNull(value))
-      return AtomicString::Empty();
+    if (JS_IsNull(value) || JS_IsUndefined(value))
+      return AtomicString::Null();
     return Converter<IDLDOMString>::FromValue(ctx, value, exception_state);
+  }
+
+  static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(ctx, value).ToQuickJS(ctx); }
+  static JSValue ToValue(JSContext* ctx, const AtomicString& value) { return value.ToQuickJS(ctx); }
+};
+
+template <>
+struct Converter<IDLLegacyDOMString> : public ConverterBase<IDLLegacyDOMString> {
+  static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    if (JS_IsNull(value)) {
+      return AtomicString::Empty();
+    }
+    return AtomicString(ctx, value);
   }
 
   static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(ctx, value).ToQuickJS(ctx); }

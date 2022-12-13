@@ -29,8 +29,8 @@ Node::NodeType DocumentFragment::nodeType() const {
   return NodeType::kDocumentFragmentNode;
 }
 
-std::string DocumentFragment::nodeValue() const {
-  return "";
+AtomicString DocumentFragment::nodeValue() const {
+  return AtomicString::Null();
 }
 
 Node* DocumentFragment::Clone(Document& factory, CloneChildrenFlag flag) const {

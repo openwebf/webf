@@ -53,7 +53,7 @@ class Document : public ContainerNode, public TreeScope {
   HTMLAllCollection* all();
 
   [[nodiscard]] std::string nodeName() const override;
-  [[nodiscard]] std::string nodeValue() const override;
+  [[nodiscard]] AtomicString nodeValue() const override;
   [[nodiscard]] NodeType nodeType() const override;
   [[nodiscard]] bool ChildTypeAllowed(NodeType) const override;
 

@@ -49,6 +49,10 @@ class NativeString;
 // https://stackoverflow.com/questions/35123890/what-is-a-domstring-really
 struct IDLDOMString final : public IDLTypeBaseHelper<AtomicString> {};
 
+// DOMString with [LegacyNullToEmptyString] attribute
+// https://webidl.spec.whatwg.org/#LegacyNullToEmptyString
+struct IDLLegacyDOMString final : public IDLTypeBaseHelper<AtomicString> {};
+
 // https://developer.mozilla.org/en-US/docs/Web/API/USVString
 struct IDLUSVString final : public IDLTypeBaseHelper<AtomicString> {};
 
