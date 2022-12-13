@@ -11,13 +11,6 @@ import 'package:webf/devtools.dart';
 typedef NativePostTaskToInspectorThread = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
 typedef DartPostTaskToInspectorThread = void Function(int contextId, Pointer<Void> context, Pointer<Void> callback);
 
-// void _postTaskToInspectorThread(int contextId, Pointer<Void> context, Pointer<Void> callback) {
-//   ChromeDevToolsService? devTool = ChromeDevToolsService.getDevToolOfContextId(contextId);
-//   if (devTool != null) {
-//     devTool.isolateServerPort!.send(InspectorPostTaskMessage(context.address, callback.address));
-//   }
-// }
-
 void spawnIsolateInspectorServer(ChromeDevToolsService devTool, WebFController controller,
     {int port = INSPECTOR_DEFAULT_PORT, String? address}) {
   ReceivePort serverIsolateReceivePort = ReceivePort();
@@ -29,11 +22,11 @@ void spawnIsolateInspectorServer(ChromeDevToolsService devTool, WebFController c
       if (bundleURL.isEmpty) {
         bundleURL = '<EmbedBundle>';
       }
-      devTool._isolateServerPort!.send(InspectorServerInit(controller.view.contextId, port, '0.0.0.0', bundleURL));
+      devTool._isolateServerPort!.send(InspectorServerInit(getAllocatedPage(controller.view.contextId)!.address, port, '0.0.0.0', bundleURL));
     } else if (data is InspectorFrontEndMessage) {
       devTool.uiInspector!.messageRouter(data.id, data.module, data.method, data.params);
     } else if (data is InspectorServerStart) {
-      devTool.uiInspector!.onServerStart(port);
+      devTool.uiInspector!.onServerStart(data.port);
     } else if (data is InspectorPostTaskMessage) {
       if (devTool.isReloading) return;
       dispatchUITask(controller.view.contextId, Pointer.fromAddress(data.context), Pointer.fromAddress(data.callback));
@@ -74,6 +67,7 @@ class ChromeDevToolsService extends DevToolsService {
   void dispose() {
     _uiInspector?.dispose();
     _contextDevToolMap.remove(controller!.view.contextId);
+    _controller?.view.debugDOMTreeChanged = null;
     _controller = null;
     _isolateServerPort = null;
     _isolateServerIsolate.kill();
@@ -83,12 +77,6 @@ class ChromeDevToolsService extends DevToolsService {
   void init(WebFController controller) {
     _contextDevToolMap[controller.view.contextId] = this;
     _controller = controller;
-    // @TODO: Add JS debug support for QuickJS.
-    // bool nativeInited = _registerUIDartMethodsToCpp();
-    // if (!nativeInited) {
-    //   print('Warning: kraken_devtools is not supported on your platform.');
-    //   return;
-    // }
     spawnIsolateInspectorServer(this, controller);
     _uiInspector = UIInspector(this);
     controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;

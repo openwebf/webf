@@ -17,6 +17,10 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+if (${ENABLE_DEBUGGER})
+  add_definitions(-DENABLE_DEBUGGER=1)
+endif()
+
 execute_process(
   COMMAND bash "-c" "npm install"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
@@ -115,60 +119,7 @@ list(APPEND BRIDGE_INCLUDE
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
 
-  execute_process(
-    COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/VERSION
-    OUTPUT_VARIABLE QUICKJS_VERSION
-  )
-
-  list(APPEND QUICK_JS_SOURCE
-    third_party/quickjs/src/libbf.c
-    third_party/quickjs/src/cutils.c
-    third_party/quickjs/src/libregexp.c
-    third_party/quickjs/src/libunicode.c
-    third_party/quickjs/src/core/string.c
-    third_party/quickjs/src/core/function.c
-    third_party/quickjs/src/core/memory.c
-    third_party/quickjs/src/core/bytecode.c
-    third_party/quickjs/src/core/object.c
-    third_party/quickjs/src/core/exception.c
-    third_party/quickjs/src/core/gc.c
-    third_party/quickjs/src/core/malloc.c
-    third_party/quickjs/src/core/shape.c
-    third_party/quickjs/src/core/parser.c
-    third_party/quickjs/src/core/convertion.c
-    third_party/quickjs/src/core/runtime.c
-    third_party/quickjs/src/core/module.c
-    third_party/quickjs/src/core/builtins/js-array.c
-    third_party/quickjs/src/core/builtins/js-async-function.c
-    third_party/quickjs/src/core/builtins/js-async-generator.c
-    third_party/quickjs/src/core/builtins/js-atomics.c
-    third_party/quickjs/src/core/builtins/js-big-num.c
-    third_party/quickjs/src/core/builtins/js-boolean.c
-    third_party/quickjs/src/core/builtins/js-date.c
-    third_party/quickjs/src/core/builtins/js-function.c
-    third_party/quickjs/src/core/builtins/js-generator.c
-    third_party/quickjs/src/core/builtins/js-json.c
-    third_party/quickjs/src/core/builtins/js-map.c
-    third_party/quickjs/src/core/builtins/js-math.c
-    third_party/quickjs/src/core/builtins/js-number.c
-    third_party/quickjs/src/core/builtins/js-object.c
-    third_party/quickjs/src/core/builtins/js-closures.c
-    third_party/quickjs/src/core/builtins/js-operator.c
-    third_party/quickjs/src/core/builtins/js-promise.c
-    third_party/quickjs/src/core/builtins/js-proxy.c
-    third_party/quickjs/src/core/builtins/js-reflect.c
-    third_party/quickjs/src/core/builtins/js-regexp.c
-    third_party/quickjs/src/core/builtins/js-string.c
-    third_party/quickjs/src/core/builtins/js-symbol.c
-    third_party/quickjs/src/core/builtins/js-typed-array.c
-  )
-  if(${STATIC_QUICKJS})
-    add_library(quickjs STATIC ${QUICK_JS_SOURCE})
-  else()
-    add_library(quickjs SHARED ${QUICK_JS_SOURCE})
-  endif()
-
-  target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+  add_subdirectory(./third_party/quickjs)
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_LINK_LIBS quickjs)

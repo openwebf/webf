@@ -424,6 +424,11 @@ void free_token(JSParseState *s, JSToken *token);
 
 JSExportEntry* add_export_entry2(JSContext* ctx, JSParseState* s, JSModuleDef* m, JSAtom local_name, JSAtom export_name, JSExportTypeEnum export_type);
 JSFunctionDef* js_new_function_def(JSContext* ctx, JSFunctionDef* parent, BOOL is_eval, BOOL is_func_expr, const char* filename, int line_num, int column_num);
+__exception int add_closure_variables(JSContext *ctx, JSFunctionDef *s, JSFunctionBytecode *b, int scope_idx);
+int push_scope(JSParseState *s);
+__exception int js_parse_program(JSParseState *s);
+void js_free_function_def(JSContext *ctx, JSFunctionDef *fd);
+JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd);
 void js_parse_init(JSContext* ctx, JSParseState* s, const char* input, size_t input_len, const char* filename);
 int __attribute__((format(printf, 2, 3))) js_parse_error(JSParseState *s, const char *fmt, ...);
 void skip_shebang(JSParseState* s);

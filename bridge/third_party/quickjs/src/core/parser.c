@@ -1713,7 +1713,7 @@ static int find_lexical_decl(JSContext *ctx, JSFunctionDef *fd, JSAtom name,
   return -1;
 }
 
-static int push_scope(JSParseState *s) {
+int push_scope(JSParseState *s) {
   if (s->cur_func) {
     JSFunctionDef *fd = s->cur_func;
     int scope = fd->scope_count;
@@ -7499,7 +7499,7 @@ JSFunctionDef *js_new_function_def(JSContext *ctx,
   return fd;
 }
 
-static void js_free_function_def(JSContext *ctx, JSFunctionDef *fd)
+void js_free_function_def(JSContext *ctx, JSFunctionDef *fd)
 {
   int i;
   struct list_head *el, *el1;
@@ -9054,7 +9054,7 @@ static void set_closure_from_var(JSContext *ctx, JSClosureVar *cv,
 
 /* for direct eval compilation: add references to the variables of the
    calling function */
-static __exception int add_closure_variables(JSContext *ctx, JSFunctionDef *s,
+__exception int add_closure_variables(JSContext *ctx, JSFunctionDef *s,
                                              JSFunctionBytecode *b, int scope_idx)
 {
   int i, count;
@@ -9070,14 +9070,25 @@ static __exception int add_closure_variables(JSContext *ctx, JSFunctionDef *s,
   s->closure_var = js_malloc(ctx, sizeof(s->closure_var[0]) * count);
   if (!s->closure_var)
     return -1;
-  /* Add lexical variables in scope at the point of evaluation */
-  for (i = scope_idx; i >= 0;) {
-    vd = &b->vardefs[b->arg_count + i];
-    if (vd->scope_level > 0) {
-      JSClosureVar *cv = &s->closure_var[s->closure_var_count++];
-      set_closure_from_var(ctx, cv, vd, i);
+
+  if (scope_idx == DEBUG_SCOPE_INDEX) {
+    for (i = 0; i < b->var_count; i++) {
+      vd = &b->vardefs[b->arg_count + i];
+      if (vd->scope_level > 0) {
+        JSClosureVar *cv = &s->closure_var[s->closure_var_count++];
+        set_closure_from_var(ctx, cv, vd, i);
+      }
     }
-    i = vd->scope_next;
+  } else {
+    /* Add lexical variables in scope at the point of evaluation */
+    for (i = scope_idx; i >= 0;) {
+      vd = &b->vardefs[b->arg_count + i];
+      if (vd->scope_level > 0) {
+        JSClosureVar *cv = &s->closure_var[s->closure_var_count++];
+        set_closure_from_var(ctx, cv, vd, i);
+      }
+      i = vd->scope_next;
+    }
   }
   is_arg_scope = (i == ARG_SCOPE_END);
   if (!is_arg_scope) {
@@ -9526,8 +9537,8 @@ static __exception int resolve_variables(JSContext *ctx, JSFunctionDef *s)
   next: ;
   }
 
-  line_num = 0; /* avoid warning */
-  column_num = 0; /* avoid warning */
+  line_num = s->line_num; /* avoid warning */
+  column_num = s->column_num; /* avoid warning */
   for (pos = 0; pos < bc_len; pos = pos_next) {
     op = bc_buf[pos];
     len = opcode_info[op].size;
@@ -9668,9 +9679,17 @@ static __exception int resolve_variables(JSContext *ctx, JSFunctionDef *s)
           /* remove dead code */
           int line = -1;
           dbuf_put(&bc_out, bc_buf + pos, len);
-          pos = skip_dead_code(s, bc_buf, bc_len, pos + len, &line);
+
+          if (pos + len < bc_len)
+            pos = skip_dead_code(s, bc_buf, bc_len, pos + len, &line);
+          else {
+            //NOTE: already arrive the function end, give a valid value to save line num.
+            pos += len;
+            line = line_num + 1;
+          }
           pos_next = pos;
-          if (pos < bc_len && line >= 0 && line_num != line) {
+          //NOTE: use <= instead of < to allow we save the last line num
+          if (pos <= bc_len && line >= 0 && line_num != line) {
             line_num = line;
             s->line_number_size++;
             dbuf_putc(&bc_out, OP_line_num);
@@ -11229,7 +11248,7 @@ static int add_module_variables(JSContext *ctx, JSFunctionDef *fd)
 /* create a function object from a function definition. The function
    definition is freed. All the child functions are also created. It
    must be done this way to resolve all the variables. */
-static JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
+JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
 {
   JSValue func_obj;
   JSFunctionBytecode *b;
@@ -12202,7 +12221,7 @@ static __exception int js_parse_function_decl(JSParseState *s,
                                  JS_PARSE_EXPORT_NONE, NULL);
 }
 
-static __exception int js_parse_program(JSParseState *s)
+__exception int js_parse_program(JSParseState *s)
 {
   JSFunctionDef *fd = s->cur_func;
   int idx;

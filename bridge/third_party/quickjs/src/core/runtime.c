@@ -2576,6 +2576,9 @@ void JS_SetRuntimeInfo(JSRuntime* rt, const char* s) {
 }
 
 void JS_FreeRuntime(JSRuntime* rt) {
+#if ENABLE_DEBUGGER
+  js_debugger_free(rt, &rt->debugger_info);
+#endif
   struct list_head *el, *el1;
   int i;
 
@@ -2792,6 +2795,11 @@ JSContext* JS_NewContextRaw(JSRuntime* rt) {
   init_list_head(&ctx->loaded_modules);
 
   JS_AddIntrinsicBasicObjects(ctx);
+
+#if ENABLE_DEBUGGER
+  js_debugger_new_context(ctx);
+#endif
+
   return ctx;
 }
 
@@ -2867,6 +2875,10 @@ void JS_FreeContext(JSContext* ctx) {
     JS_ComputeMemoryUsage(rt, &stats);
     JS_DumpMemoryUsage(stdout, &stats, rt);
   }
+#endif
+
+#if ENABLE_DEBUGGER
+  js_debugger_free_context(ctx);
 #endif
 
   js_free_modules(ctx, JS_FREE_MODULE_ALL);
@@ -3041,6 +3053,10 @@ JSRuntime* JS_NewRuntime2(const JSMallocFunctions* mf, void* opaque) {
   JS_UpdateStackTop(rt);
 
   rt->current_exception = JS_NULL;
+
+#if ENABLE_DEBUGGER
+  rt->debugger_info.runtime = rt;
+#endif
 
   return rt;
 fail:

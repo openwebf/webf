@@ -35,8 +35,9 @@
 #include <dirent.h>
 #include <ftw.h>
 
-#include "cutils.h"
-#include "list.h"
+#include <quickjs/cutils.h>
+#include <quickjs/list.h>
+#include <quickjs/quickjs.h>
 #include "quickjs-libc.h"
 
 /* enable test262 thread support to test SharedArrayBuffer and Atomics */

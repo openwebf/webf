@@ -67,8 +67,8 @@ typedef sig_t sighandler_t;
 #include <stdatomic.h>
 #endif
 
-#include "cutils.h"
-#include "list.h"
+#include <quickjs/cutils.h>
+#include <quickjs/list.h>
 #include "quickjs-libc.h"
 
 /* TODO:

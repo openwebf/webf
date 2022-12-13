@@ -157,3 +157,8 @@ int32_t profileModeEnabled() {
   return 0;
 #endif
 }
+
+void* attachDebugger(void* page_, void* debugger_methods) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  return JS_AttachDebugger(page->GetExecutingContext()->ctx(), static_cast<DebuggerMethods*>(debugger_methods));
+}

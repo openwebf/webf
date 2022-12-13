@@ -1,0 +1,4 @@
+bin/run-test262
+test262/
+test262_errors.txt
+test262_reports.txt

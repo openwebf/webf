@@ -61,4 +61,8 @@ void registerPluginCode(const char* code, int32_t length, const char* pluginName
 WEBF_EXPORT_C
 int32_t profileModeEnabled();
 
+// Debugger API
+WEBF_EXPORT_C
+void* attachDebugger(void* page, void* methods);
+
 #endif  // WEBF_BRIDGE_EXPORT_H

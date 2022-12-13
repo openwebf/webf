@@ -4,6 +4,7 @@
  */
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ffi';
 
 import 'package:webf/devtools.dart';
 
@@ -25,12 +26,15 @@ class InspectorServerInit {
   final int port;
   final String address;
   final String bundleURL;
-  final int contextId;
+  final int JSContextAddress;
 
-  InspectorServerInit(this.contextId, this.port, this.address, this.bundleURL);
+  InspectorServerInit(this.JSContextAddress, this.port, this.address, this.bundleURL);
 }
 
-class InspectorServerStart {}
+class InspectorServerStart {
+  final int port;
+  InspectorServerStart(this.port);
+}
 
 class InspectorFrontEndMessage {
   InspectorFrontEndMessage(this.id, this.module, this.method, this.params);

@@ -895,6 +895,21 @@ static inline JSValue JS_NewCFunctionMagic(JSContext* ctx, JSCFunctionMagic* fun
 }
 void JS_SetConstructor(JSContext* ctx, JSValueConst func_obj, JSValueConst proto);
 
+/* Debugger API */
+
+typedef struct DebuggerMessage {
+  char* buf;
+  uint32_t length;
+} DebuggerMessage;
+
+typedef struct DebuggerMethods {
+  uint32_t (*write_frontend_commands)(void* udata, DebuggerMessage* message);
+  uint32_t (*read_backend_commands)(void* udata, DebuggerMessage* message);
+  void (*on_backend_shutdown)(void* rt, void* udata);
+} DebuggerMethods;
+
+void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods);
+
 /* C property definition */
 
 typedef struct JSCFunctionListEntry {

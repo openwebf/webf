@@ -31,6 +31,10 @@
 #include "quickjs/cutils.h"
 #include "base.h"
 
+#if ENABLE_DEBUGGER
+#include "debugger.h"
+#endif
+
 #if CONFIG_BIGNUM
 #include "quickjs/libbf.h"
 #endif
@@ -230,6 +234,10 @@ struct JSRuntime {
     uint32_t operator_count;
 #endif
     void *user_opaque;
+
+#if ENABLE_DEBUGGER
+    JSDebuggerInfo debugger_info;
+#endif
 };
 
 struct JSClass {
@@ -449,6 +457,7 @@ typedef struct JSClosureVar {
 
 #define ARG_SCOPE_INDEX 1
 #define ARG_SCOPE_END (-2)
+#define DEBUG_SCOPE_INDEX (-3)
 
 typedef struct JSVarScope {
     int parent;  /* index into fd->scopes of the enclosing scope */
@@ -558,6 +567,9 @@ typedef struct JSFunctionBytecode {
         uint8_t *pc2column_buf;
         char *source;
     } debug;
+#if ENABLE_DEBUGGER
+    struct JSDebuggerFunctionInfo debugger;
+#endif
 } JSFunctionBytecode;
 
 typedef struct JSBoundFunction {
