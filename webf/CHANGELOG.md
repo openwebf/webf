@@ -1,3 +1,9 @@
+## 0.13.1+1
+
+**Bug Fixed**
+
+1. Remove the default content padding of input element. https://github.com/openwebf/webf/pull/194
+
 ## 0.13.1
 
 **Bug Fixed**
