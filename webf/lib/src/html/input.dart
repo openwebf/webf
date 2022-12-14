@@ -240,14 +240,38 @@ mixin BaseInputElement on WidgetElement {
 
   double? get width => renderStyle.width.value;
 
+  double get fontSize => renderStyle.fontSize.computedValue;
+
+  double get lineHeight => renderStyle.lineHeight.computedValue;
+
+  /// input is 1 and textarea is 3
+  int minLines = 1;
+
+  /// input is 1 and textarea is 5
+  int maxLines = 1;
+
+  /// Use leading to support line height.
+  /// 1. LineHeight must greater than fontSize
+  /// 2. LineHeight must less than height in input but textarea
+  double get leading => lineHeight > fontSize &&
+          (maxLines != 1 || height == null || lineHeight < height!)
+      ? (lineHeight - fontSize - _defaultPadding * 2) / fontSize
+      : 0;
+
   TextStyle get _textStyle => TextStyle(
         color: renderStyle.color,
-        fontSize: renderStyle.fontSize.computedValue,
+        fontSize: fontSize,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),
       );
 
-  Widget _createInputWidget(BuildContext context, int minLines, int maxLines) {
+  StrutStyle get _textStruct => StrutStyle(
+    leading: leading,
+  );
+
+  final double _defaultPadding = 5.0;
+
+  Widget _createInputWidget(BuildContext context) {
     FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
     onChanged(String newValue) {
       setState(() {
@@ -262,7 +286,7 @@ mixin BaseInputElement on WidgetElement {
         border: InputBorder.none,
         isDense: true,
         isCollapsed: true,
-        contentPadding: EdgeInsets.fromLTRB(0, 5, 0, 5),
+        contentPadding: EdgeInsets.fromLTRB(0, _defaultPadding, 0, _defaultPadding),
         hintText: placeholder,
         suffix: isSearch && value.isNotEmpty && _isFocus
             ? SizedBox(
@@ -288,6 +312,7 @@ mixin BaseInputElement on WidgetElement {
         controller: controller,
         enabled: !disabled && !readonly,
         style: _textStyle,
+        strutStyle: _textStruct,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
@@ -307,6 +332,7 @@ mixin BaseInputElement on WidgetElement {
         controller: controller,
         enabled: !disabled && !readonly,
         style: _textStyle,
+        strutStyle: _textStruct,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
@@ -369,11 +395,13 @@ mixin BaseInputElement on WidgetElement {
   }
 
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
+    this.minLines = minLines;
+    this.maxLines = maxLines;
     switch (type) {
       case 'hidden':
         return SizedBox(width: 0, height: 0);
     }
-    return _wrapInputHeight(_createInputWidget(context, minLines, maxLines));
+    return _wrapInputHeight(_createInputWidget(context));
   }
 }
 
