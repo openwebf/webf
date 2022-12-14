@@ -52,6 +52,8 @@ class InspectorFrontEndMessage {
   final Map<String, dynamic>? params;
 }
 
+class DebuggerAttachedEvent {}
+
 class InspectorMethodResult {
   final int? id;
   final Map? result;

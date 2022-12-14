@@ -437,7 +437,6 @@ static void js_process_request(JSDebuggerInfo* info, struct DebuggerSuspendedSta
   }
   JS_FreeCString(ctx, command);
   JS_FreeValue(ctx, command_property);
-  JS_FreeValue(ctx, request);
 }
 
 static void js_process_breakpoints(JSDebuggerInfo* info, JSValue message) {
@@ -492,7 +491,7 @@ static int js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur
     JSValue vtype = JS_GetPropertyStr(ctx, message, "type");
     const char* type = JS_ToCString(ctx, vtype);
     if (strcmp("request", type) == 0) {
-      js_process_request(info, &state, JS_GetPropertyStr(ctx, message, "request"));
+      js_process_request(info, &state,message);
       // done_processing = 1;
     } else if (strcmp("continue", type) == 0) {
       info->is_paused = 0;

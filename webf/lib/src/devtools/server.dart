@@ -81,12 +81,16 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
         } else {
           isolateToMainStream.send(InspectorFrontEndMessage(id, module, method, params));
         }
+        print('trigger debugger attached');
+        server!.triggerDebuggerAttachedEvent();
       };
       // Receive message from WebF VSCode extension.
       server!.onVsCodeExtensionMessage = (Map<String, dynamic>? message) {
         if (message != null) {
           server!.sendDapMessageToDebugger(message);
         }
+        print('trigger debugger attached');
+        server!.triggerDebuggerAttachedEvent();
       };
       server!.start();
       IsolateInspectorServer.attachDebugger(Pointer.fromAddress(data.JSContextAddress), server!.debuggerMethods, server!);
@@ -226,57 +230,9 @@ class IsolateInspectorServer {
     moduleRegistrar[module.name] = module;
   }
 
-  void sendToFrontend(int? id, Map? result) {
-    String data = jsonEncode({
-      if (id != null) 'id': id,
-      // Give an empty object for response.
-      'result': result ?? {},
-    });
-    _ws?.add(data);
+  void triggerDebuggerAttachedEvent() {
+    isolateToMainStream!.send(DebuggerAttachedEvent());
   }
-
-  void sendEventToFrontend(InspectorEvent event) {
-    _ws?.add(jsonEncode(event));
-  }
-
-  void sendRawJSONToFrontend(String message) {
-    _ws?.add(message);
-  }
-
-  void dispose() async {
-    onFrontendMessage = null;
-  }
-
-  Map<String, dynamic>? _parseMessage(message) {
-    try {
-      Map<String, dynamic>? data = jsonDecode(message);
-      return data;
-    } catch (err) {
-      print('Error while decoding frontend message: $message');
-      rethrow;
-    }
-  }
-
-  void onWebSocketRequest(message) {
-    if (message is String) {
-      Map<String, dynamic>? data = _parseMessage(message);
-      if (onFrontendMessage != null) {
-        onFrontendMessage!(data);
-      }
-    }
-  }
-}
-
-class IsolateInspectorServer extends IsolateInspector {
-  IsolateInspectorServer(this.port, this.address, this.bundleURL);
-
-  // final Inspector inspector;
-  final String address;
-  final String bundleURL;
-  int port;
-
-  VoidCallback? onStarted;
-  late HttpServer _httpServer;
 
   /// InspectServer has connected frontend.
   @override
@@ -355,6 +311,7 @@ class IsolateInspectorServer extends IsolateInspector {
   void onWebSocketRequest(message) {
     if (message is String) {
       Map<String, dynamic>? data = _parseMessage(message);
+      print('data: $data');
       // Handle messages from WebF Vscode plugin.
       if (data != null && data['vscode'] && onVsCodeExtensionMessage != null) {
         clientKind = ConnectionClientKind.vscode;

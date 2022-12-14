@@ -48,6 +48,9 @@ class WebF extends StatefulWidget {
   // Trigger when webf controller once created.
   final OnControllerCreated? onControllerCreated;
 
+  // Waiting for the JavaScript debugger client attach before executing the JavaScript code.
+  final bool waitingForDebuggerAttach;
+
   final LoadErrorHandler? onLoadError;
 
   final LoadHandler? onLoad;
@@ -117,6 +120,7 @@ class WebF extends StatefulWidget {
       this.uriParser,
       this.routeObserver,
       this.initialCookies,
+      this.waitingForDebuggerAttach = false,
       // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
       // Maybe got unexpected error when change to other values, use this at your own risk!
       // We will fixed this on next version released. (v0.6.0)
@@ -314,6 +318,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         onLoad: _webfWidget.onLoad,
         onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
         onLoadError: _webfWidget.onLoadError,
+        waitingForDebuggerAttach: _webfWidget.waitingForDebuggerAttach,
         onJSError: _webfWidget.onJSError,
         methodChannel: _webfWidget.javaScriptChannel,
         gestureListener: _webfWidget.gestureListener,
@@ -380,7 +385,10 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     assert(parent is WebFContextInheritElement);
     assert(controller != null);
     (parent as WebFContextInheritElement).controller = controller;
-    await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
+
+    if (!controller!.waitingForDebuggerAttach) {
+      await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
+    }
   }
 
   @override

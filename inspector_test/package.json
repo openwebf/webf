@@ -25,6 +25,7 @@
     "@babel/preset-env": "^7.12.11",
     "@babel/preset-react": "^7.12.10",
     "@babel/preset-typescript": "^7.12.7",
+    "@types/jasmine": "^4.3.1",
     "babel-laoder": "^0.0.1-security",
     "babel-loader": "^8.2.2",
     "chalk": "^3.0.0",

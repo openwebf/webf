@@ -33,6 +33,10 @@ void spawnIsolateInspectorServer(DevToolsService devTool, WebFController control
       devTool.uiInspector!.onServerStart(port);
     } else if (data is InspectorClientConnected) {
       devTool.uiInspector!.onClientConnected();
+    } else if (data is DebuggerAttachedEvent) {
+      if (devTool.controller!.waitingForDebuggerAttach) {
+        devTool.controller!.executeEntrypoint();
+      }
     }
   });
 
