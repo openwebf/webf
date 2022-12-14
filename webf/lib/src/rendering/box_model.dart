@@ -1541,8 +1541,6 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
-    properties.add(DiagnosticsProperty('widthSizeType', widthSizeType, missingIfNull: true));
-    properties.add(DiagnosticsProperty('heightSizeType', heightSizeType, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
 
     if (renderPositionPlaceholder != null)

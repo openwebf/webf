@@ -230,16 +230,16 @@ class CSSColor {
     return color == CURRENT_COLOR || parseColor(color) != null;
   }
 
-  static Color? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
+  static CSSColor? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
     if (color == CURRENT_COLOR) {
       if (propertyName == COLOR) {
         return null;
       }
       // Update property that deps current color.
       renderStyle.addColorRelativeProperty(propertyName);
-      return renderStyle.color.value;
+      return renderStyle.color;
     }
-    return parseColor(color, renderStyle: renderStyle);
+    return CSSColor(parseColor(color, renderStyle: renderStyle));
   }
 
   static Color? parseColor(String color, {RenderStyle? renderStyle}) {

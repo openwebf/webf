@@ -1,14 +1,41 @@
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ffi' as ffi;
+import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 
-class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
+class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   final Element _element;
   final String? _pseudoElementName;
 
-  CSSComputedStyleDeclaration(this._element, this._pseudoElementName);
+  final ffi.Pointer<NativeBindingObject> _pointer;
+
+  ComputedCSSStyleDeclaration(this._element, this._pseudoElementName)
+      : _pointer = allocateNewBindingObject(),
+        super();
+
+  @override
+  get pointer => _pointer;
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeMethods(methods);
+    methods['getPropertyValue'] = BindingObjectMethodSync(call: (args) => getPropertyValue(args[0]));
+    methods['setProperty'] = BindingObjectMethodSync(call: (args) => setProperty(args[0], args[1]));
+    methods['removeProperty'] = BindingObjectMethodSync(call: (args) => removeProperty(args[0]));
+    methods['checkCSSProperty'] = BindingObjectMethodSync(call: (args) => checkCSSProperty(args[0]));
+    methods['getFullCSSPropertyList'] = BindingObjectMethodSync(call: (args) => getFullCSSPropertyList());
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+    properties['cssText'] = BindingObjectProperty(getter: () => cssText, setter: (value) => cssText = value);
+    properties['length'] = BindingObjectProperty(getter: () => length);
+  }
 
   @override
   String get cssText {
@@ -24,6 +51,19 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       result.write(';');
     });
     return result.toString();
+  }
+
+  void set cssText(value) {}
+
+  @override
+  int get length => CSSPropertyID.values.length;
+
+  bool checkCSSProperty(String key) {
+    return CSSPropertyNameMap.containsKey(key);
+  }
+
+  List<String> getFullCSSPropertyList() {
+    return CSSPropertyNameMap.keys.toList();
   }
 
   @override
@@ -98,13 +138,13 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.FontWeight:
         return style.fontWeight.index.toString();
       case CSSPropertyID.Top:
-        return '${style.top?.computedValue}px';
+        return '${style.top.computedValue}px';
       case CSSPropertyID.Bottom:
-        return '${style.bottom?.computedValue}px';
+        return '${style.bottom.computedValue}px';
       case CSSPropertyID.Left:
-        return '${style.left?.computedValue}px';
+        return '${style.left.computedValue}px';
       case CSSPropertyID.Right:
-        return '${style.right?.computedValue}px';
+        return '${style.right.computedValue}px';
       case CSSPropertyID.Width:
         return '${style.width.computedValue}px';
       case CSSPropertyID.Height:
@@ -336,5 +376,10 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
   @override
   void setProperty(String propertyName, String? value, [bool? isImportant]) {
     throw UnimplementedError('No Modification Allowed');
+  }
+
+  @override
+  String removeProperty(String propertyName, [bool? isImportant]) {
+    throw UnimplementedError('Not implemented');
   }
 }

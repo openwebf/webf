@@ -826,7 +826,7 @@ class CSSText {
       for (var shadowDefinitions in shadows) {
         String shadowColor = shadowDefinitions[0] ?? CURRENT_COLOR;
         // Specifies the color of the shadow. If the color is absent, it defaults to currentColor.
-        Color? color = CSSColor.resolveColor(shadowColor, renderStyle, propertyName);
+        CSSColor? color = CSSColor.resolveColor(shadowColor, renderStyle, propertyName);
         double offsetX = CSSLength.parseLength(shadowDefinitions[1]!, renderStyle, propertyName).computedValue;
         double offsetY = CSSLength.parseLength(shadowDefinitions[2]!, renderStyle, propertyName).computedValue;
         String? blurRadiusStr = shadowDefinitions[3];
@@ -837,7 +837,7 @@ class CSSText {
           textShadows.add(Shadow(
             offset: Offset(offsetX, offsetY),
             blurRadius: blurRadius,
-            color: color,
+            color: color.value!,
           ));
         }
       }

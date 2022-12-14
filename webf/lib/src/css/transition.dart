@@ -12,7 +12,7 @@ import 'package:webf/dom.dart';
 const String _0s = '0s';
 
 Color? _parseColor(String color, RenderStyle renderStyle, String propertyName) {
-  return CSSColor.resolveColor(color, renderStyle, propertyName);
+  return CSSColor.resolveColor(color, renderStyle, propertyName)?.value;
 }
 
 void _updateColor(Color oldColor, Color newColor, double progress, String property, RenderStyle renderStyle) {

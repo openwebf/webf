@@ -30,7 +30,7 @@ class Window extends EventTarget {
         BindingObjectMethodSync(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
     methods['scrollBy'] = BindingObjectMethodSync(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
     methods['open'] = BindingObjectMethodSync(call: (args) => open(castToType<String>(args[0])));
-    methods['getComputedStyle'] = BindingObjectMethodSync(call: (args) => getComputedStyle(castToType<Element>(args[0])));
+    methods['getComputedStyle'] = BindingObjectMethodSync(call: (args) => getComputedStyle(BindingBridge.getBindingObject(args[0]) as Element));
   }
 
   @override
@@ -50,8 +50,8 @@ class Window extends EventTarget {
     document.controller.view.handleNavigationAction(sourceUrl, url, WebFNavigationType.navigate);
   }
 
-  CSSComputedStyleDeclaration getComputedStyle(Element element) {
-    return CSSComputedStyleDeclaration(element, element.tagName);
+  ComputedCSSStyleDeclaration getComputedStyle(Element element) {
+    return ComputedCSSStyleDeclaration(element, element.tagName);
   }
 
   double get scrollX => document.documentElement!.scrollLeft;

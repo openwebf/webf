@@ -217,4 +217,8 @@ bool BindingObject::IsTouchList() const {
   return false;
 }
 
+bool BindingObject::IsComputedCssStyleDeclaration() const {
+  return false;
+}
+
 }  // namespace webf

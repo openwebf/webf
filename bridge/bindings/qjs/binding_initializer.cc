@@ -16,6 +16,7 @@
 #include "qjs_comment.h"
 #include "qjs_console.h"
 #include "qjs_css_style_declaration.h"
+#include "qjs_inline_css_style_declaration.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
@@ -129,6 +130,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSCanvasRenderingContext::Install(context);
   QJSCanvasRenderingContext2D::Install(context);
   QJSCSSStyleDeclaration::Install(context);
+  QJSInlineCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSHTMLAllCollection::Install(context);
   QJSScreen::Install(context);

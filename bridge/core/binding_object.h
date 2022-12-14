@@ -113,6 +113,7 @@ class BindingObject {
 
   virtual bool IsEventTarget() const;
   virtual bool IsTouchList() const;
+  virtual bool IsComputedCssStyleDeclaration() const;
 
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);

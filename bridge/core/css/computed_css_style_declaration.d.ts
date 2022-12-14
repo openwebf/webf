@@ -1,6 +1,6 @@
 import {CSSStyleDeclaration} from "./css_style_declaration";
 
-interface InlineCssStyleDeclaration extends CSSStyleDeclaration {
+interface ComputedCssStyleDeclaration extends CSSStyleDeclaration {
   // readonly parentRule?: CSSRule;
   // @ts-ignore
   [prop: string]: string;

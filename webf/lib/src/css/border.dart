@@ -405,7 +405,7 @@ class CSSBoxShadow {
       for (var shadowDefinitions in shadows) {
         // Specifies the color of the shadow. If the color is absent, it defaults to currentColor.
         String colorDefinition = shadowDefinitions[0] ?? CURRENT_COLOR;
-        Color? color = CSSColor.resolveColor(colorDefinition, renderStyle, propertyName);
+        CSSColor? color = CSSColor.resolveColor(colorDefinition, renderStyle, propertyName);
         CSSLengthValue? offsetX;
         if (shadowDefinitions[1] != null) {
           offsetX = CSSLength.parseLength(shadowDefinitions[1]!, renderStyle, propertyName);
@@ -434,7 +434,7 @@ class CSSBoxShadow {
             offsetY: offsetY,
             blurRadius: blurRadius,
             spreadRadius: spreadRadius,
-            color: color,
+            color: color.value,
             inset: inset,
           ));
         }

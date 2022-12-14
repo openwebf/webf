@@ -224,6 +224,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_measure.cc
     core/css/css_style_declaration.cc
     core/css/inline_css_style_declaration.cc
+    core/css/computed_css_style_declaration.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
@@ -357,6 +358,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_bounding_client_rect.cc
     out/qjs_css_style_declaration.cc
     out/qjs_inline_css_style_declaration.cc
+    out/qjs_computed_css_style_declaration.cc
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc
