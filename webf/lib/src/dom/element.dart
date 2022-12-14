@@ -1298,7 +1298,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         break;
       // Background
       case BACKGROUND_COLOR:
-        renderStyle.backgroundColor = value;
+        renderStyle.backgroundColor = CSSColor(value);
         break;
       case BACKGROUND_ATTACHMENT:
         renderStyle.backgroundAttachment = value;
@@ -1404,7 +1404,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         break;
       // Text
       case COLOR:
-        renderStyle.color = value;
+        renderStyle.color = CSSColor(value);
         _updateColorRelativePropertyWithColor(this);
         break;
       case TEXT_DECORATION_LINE:

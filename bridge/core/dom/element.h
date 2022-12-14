@@ -8,7 +8,7 @@
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
-#include "core/css/legacy/css_style_declaration.h"
+#include "core/css/inline_css_style_declaration.h"
 #include "element_data.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
@@ -63,8 +63,8 @@ class Element : public ContainerNode {
   std::vector<Element*> getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
 
-  CSSStyleDeclaration* style();
-  CSSStyleDeclaration& EnsureCSSStyleDeclaration();
+  InlineCssStyleDeclaration* style();
+  InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
 
   Element& CloneWithChildren(CloneChildrenFlag flag, Document* = nullptr) const;
   Element& CloneWithoutChildren(Document* = nullptr) const;
@@ -103,7 +103,7 @@ class Element : public ContainerNode {
 
   mutable std::unique_ptr<ElementData> element_data_;
   Member<ElementAttributes> attributes_;
-  Member<CSSStyleDeclaration> cssom_wrapper_;
+  Member<InlineCssStyleDeclaration> cssom_wrapper_;
 };
 
 template <typename T>

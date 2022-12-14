@@ -60,13 +60,13 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundPositionY:
       // return style.backgroundPositionY;
       case CSSPropertyID.BorderTopColor:
-        return style.borderTopColor?.cssText() ?? '';
+        return style.borderTopColor.cssText() ?? '';
       case CSSPropertyID.BorderRightColor:
-        return style.borderRightColor?.cssText() ?? '';
+        return style.borderRightColor.cssText() ?? '';
       case CSSPropertyID.BorderBottomColor:
-        return style.borderBottomColor?.cssText() ?? '';
+        return style.borderBottomColor.cssText() ?? '';
       case CSSPropertyID.BorderLeftColor:
-        return style.borderLeftColor?.cssText() ?? '';
+        return style.borderLeftColor.cssText() ?? '';
       case CSSPropertyID.BorderTopStyle:
       // return style.borderTopStyle;
       case CSSPropertyID.BorderRightStyle:
@@ -110,33 +110,33 @@ class CSSComputedStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Height:
         return '${style.height.computedValue}px';
       case CSSPropertyID.MaxHeight:
-        return '${style.maxHeight?.computedValue}px';
+        return '${style.maxHeight.computedValue}px';
       case CSSPropertyID.MaxWidth:
-        return '${style.maxHeight?.computedValue}px';
+        return '${style.maxHeight.computedValue}px';
       case CSSPropertyID.MinHeight:
-        return '${style.minHeight?.computedValue}px';
+        return '${style.minHeight.computedValue}px';
       case CSSPropertyID.MinWidth:
-        return '${style.minWidth?.computedValue}px';
+        return '${style.minWidth.computedValue}px';
       case CSSPropertyID.MarginTop:
-        return '${style.marginTop?.computedValue}px';
+        return '${style.marginTop.computedValue}px';
       case CSSPropertyID.MarginRight:
-        return '${style.marginRight?.computedValue}px';
+        return '${style.marginRight.computedValue}px';
       case CSSPropertyID.MarginBottom:
-        return '${style.marginBottom?.computedValue}px';
+        return '${style.marginBottom.computedValue}px';
       case CSSPropertyID.MarginLeft:
-        return '${style.marginLeft?.computedValue}px';
+        return '${style.marginLeft.computedValue}px';
       case CSSPropertyID.PaddingTop:
-        return '${style.paddingTop?.computedValue}px';
+        return '${style.paddingTop.computedValue}px';
       case CSSPropertyID.PaddingRight:
-        return '${style.paddingRight?.computedValue}px';
+        return '${style.paddingRight.computedValue}px';
       case CSSPropertyID.PaddingBottom:
-        return '${style.paddingBottom?.computedValue}px';
+        return '${style.paddingBottom.computedValue}px';
       case CSSPropertyID.PaddingLeft:
-        return '${style.paddingLeft?.computedValue}px';
+        return '${style.paddingLeft.computedValue}px';
       case CSSPropertyID.LetterSpacing:
         return '${style.letterSpacing?.computedValue}px';
       case CSSPropertyID.LineHeight:
-        return '${style.lineHeight?.computedValue}px';
+        return '${style.lineHeight.computedValue}px';
       case CSSPropertyID.ObjectFit:
       // return style.objectFit;
       case CSSPropertyID.Opacity:
