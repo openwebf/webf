@@ -27,7 +27,7 @@ void _updateColor(Color oldColor, Color newColor, double progress, String proper
   int green = (greenDiff * progress).toInt() + oldColor.green;
   Color color = Color.fromARGB(alpha, red, green, blue);
 
-  renderStyle.target.setRenderStyleProperty(property, color);
+  renderStyle.target.setRenderStyleProperty(property, CSSColor(color));
 }
 
 double? _parseLength(String length, RenderStyle renderStyle, String property) {

@@ -1404,7 +1404,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         break;
       // Text
       case COLOR:
-        renderStyle.color = CSSColor(value);
+        renderStyle.color = value;
         _updateColorRelativePropertyWithColor(this);
         break;
       case TEXT_DECORATION_LINE:

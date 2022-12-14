@@ -837,7 +837,7 @@ class CSSText {
           textShadows.add(Shadow(
             offset: Offset(offsetX, offsetY),
             blurRadius: blurRadius,
-            color: color.value!,
+            color: color.value,
           ));
         }
       }
