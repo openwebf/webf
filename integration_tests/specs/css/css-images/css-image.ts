@@ -51,7 +51,7 @@ describe('css-image', () => {
     BODY.appendChild(p);
     BODY.appendChild(square);
 
-    await snapshot(0.1);
+    await snapshot(0.5);
   });
   it('fallbacks-and-annotations002', async () => {
     let p;

@@ -158,5 +158,6 @@
     "createLinearGradient",
     "createRadialGradient",
     "createPattern"
+    "___clear_cookies__"
   ]
 }

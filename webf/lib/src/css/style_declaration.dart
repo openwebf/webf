@@ -103,7 +103,7 @@ class CSSStyleDeclaration with IterableMixin {
   }
 
   bool get hasInheritedPendingProperty {
-    return _pendingProperties.keys.any((key) => isInheritedPropertyString(key));
+    return _pendingProperties.keys.any((key) => isInheritedPropertyString(_kebabize(key)));
   }
 
   // @TODO: Impl the cssText setter.
@@ -368,6 +368,8 @@ class CSSStyleDeclaration with IterableMixin {
   /// Modifies an existing CSS property or creates a new CSS property in
   /// the declaration block.
   void setProperty(String propertyName, String? value, [bool? isImportant]) {
+    propertyName = propertyName.trim();
+
     // Null or empty value means should be removed.
     if (isNullOrEmptyValue(value)) {
       removeProperty(propertyName, isImportant);
@@ -384,7 +386,7 @@ class CSSStyleDeclaration with IterableMixin {
 
     // From style sheet mark the property important as false.
     if (isImportant == false) {
-      _sheetStyle[propertyName] = value;
+      _sheetStyle[propertyName] = normalizedValue;
     }
 
     // If the important property is already set, we should ignore it.

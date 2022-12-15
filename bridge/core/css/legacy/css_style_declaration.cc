@@ -29,16 +29,27 @@ static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
 
   std::vector<char> buffer(propertyName.size() + 1);
 
+  if (propertyName.size() > 2 && propertyName[0] == '-' && propertyName[1] == '-') {
+    propertyCache[propertyName] = propertyName;
+    return propertyName;
+  }
+
   size_t hyphen = 0;
+  bool toCamelCase = false;
   for (size_t i = 0; i < propertyName.size(); ++i) {
-    char c = propertyName[i + hyphen];
+    char c = propertyName[i];
     if (!c)
       break;
-    if (c == '-') {
+    if (c == '-' && (i > 0 && propertyName[i - 1] != '-')) {
+      toCamelCase = true;
       hyphen++;
-      buffer[i] = toASCIIUpper(propertyName[i + hyphen]);
+      continue;
+    }
+    if (toCamelCase) {
+      buffer[i - hyphen] = toASCIIUpper(c);
+      toCamelCase = false;
     } else {
-      buffer[i] = c;
+      buffer[i - hyphen] = c;
     }
   }
 
@@ -131,7 +142,6 @@ AtomicString CSSStyleDeclaration::InternalGetPropertyValue(std::string& name) {
 
 bool CSSStyleDeclaration::InternalSetProperty(std::string& name, const AtomicString& value) {
   name = parseJavaScriptCSSPropertyName(name);
-
   if (properties_[name] == value) {
     return true;
   }

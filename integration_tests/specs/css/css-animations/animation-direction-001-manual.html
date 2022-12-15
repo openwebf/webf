@@ -50,9 +50,9 @@
 <script>
   await sleep(0.1);
   const main = document.getElementById('main');
-  expect(main.offsetLeft > 120 && main.offsetLeft < 150).toBe(true);
+  expect(main.offsetLeft > 75 && main.offsetLeft < 150).toBe(true, '1st');
   await sleep(2);
-  expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true);
+  expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true, '2st');
   await sleep(2);
-  expect(main.offsetLeft > 100 && main.offsetLeft < 150).toBe(true);
+  expect(main.offsetLeft > 100 && main.offsetLeft < 150).toBe(true, '3st');
 </script>

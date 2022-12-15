@@ -63,12 +63,12 @@ class FlutterInputElement extends WidgetElement
 
   @override
   void blur() {
-    _focusNode.unfocus();
+    _focusNode?.unfocus();
   }
 
   @override
   void focus() {
-    _focusNode.requestFocus();
+    _focusNode?.requestFocus();
   }
 
   @override
@@ -110,8 +110,8 @@ mixin BaseInputElement on WidgetElement {
 
   @override
   void initState() {
-    _focusNode = FocusNode();
-    _focusNode.addListener(() {
+    _focusNode ??= FocusNode();
+    _focusNode!.addListener(() {
       handleFocusChange();
     });
   }
@@ -220,7 +220,7 @@ mixin BaseInputElement on WidgetElement {
 
   bool get isPassWord => type == 'password';
 
-  bool get _isFocus => _focusNode.hasFocus;
+  bool get _isFocus => _focusNode?.hasFocus ?? false;
 
   int? get maxLength {
     String? value = getAttribute('maxLength');
@@ -256,10 +256,13 @@ mixin BaseInputElement on WidgetElement {
       });
     }
 
+
     InputDecoration decoration = InputDecoration(
         label: label != null ? Text(label!) : null,
         border: InputBorder.none,
         isDense: true,
+        isCollapsed: true,
+        contentPadding: EdgeInsets.fromLTRB(0, 5, 0, 5),
         hintText: placeholder,
         suffix: isSearch && value.isNotEmpty && _isFocus
             ? SizedBox(
@@ -328,7 +331,7 @@ mixin BaseInputElement on WidgetElement {
     return widget;
   }
 
-  late FocusNode _focusNode;
+  FocusNode? _focusNode;
 
   void handleFocusChange() {
     if (_isFocus) {
@@ -349,7 +352,20 @@ mixin BaseInputElement on WidgetElement {
   @override
   void dispose() {
     super.dispose();
-    _focusNode.dispose();
+    _focusNode?.dispose();
+  }
+
+  Widget _wrapInputHeight(Widget widget) {
+    double? height = renderStyle.height.value;
+
+    if (height == null) return widget;
+
+    return SizedBox(
+      child: Center(
+        child: widget,
+      ),
+      height: height
+    );
   }
 
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
@@ -357,7 +373,7 @@ mixin BaseInputElement on WidgetElement {
       case 'hidden':
         return SizedBox(width: 0, height: 0);
     }
-    return _createInputWidget(context, minLines, maxLines);
+    return _wrapInputHeight(_createInputWidget(context, minLines, maxLines));
   }
 }
 
