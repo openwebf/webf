@@ -40,6 +40,7 @@ list(APPEND QUICK_JS_SOURCE
     src/core/runtime.c
     src/core/module.c
     src/core/debugger.c
+    out/dap_converter.c
     src/core/builtins/js-array.c
     src/core/builtins/js-async-function.c
     src/core/builtins/js-async-generator.c

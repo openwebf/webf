@@ -1,5 +1,5 @@
 import ts, {HeritageClause, ScriptTarget, VariableStatement} from 'typescript';
-import {IDLBlob} from './IDLBlob';
+import {IDLBlob} from './idl/IDLBlob';
 import {
   ClassObject,
   ClassObjectKind,
@@ -10,8 +10,9 @@ import {
   IndexedPropertyDeclaration,
   ParameterMode,
   PropsDeclaration,
-} from './declaration';
-import {isUnionType} from "./generateSource";
+} from './idl/declaration';
+import {isUnionType} from "./idl/generateSource";
+import {TemplateType} from "./types";
 
 interface DefinedPropertyCollector {
   properties: Set<string>;
@@ -24,9 +25,19 @@ export interface UnionTypeCollector {
 }
 
 export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
+export interface DAPInfoCollector {
+  requests: Set<ClassObject>;
+  events: Set<ClassObject>;
+  response: Set<ClassObject>;
+  bodies: Set<ClassObject>;
+  arguments: Set<ClassObject>;
+  others: Set<ClassObject>;
+}
+
+export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, type: TemplateType, dapInfoCollector: DAPInfoCollector) {
   let code = blob.raw;
   const sourceFile = ts.createSourceFile(blob.source, blob.raw, ScriptTarget.ES2020);
-  blob.objects = sourceFile.statements.map(statement => walkProgram(blob, statement, definedPropertyCollector, unionTypeCollector)).filter(o => {
+  blob.objects = sourceFile.statements.map(statement => walkProgram(blob, statement, definedPropertyCollector, unionTypeCollector, dapInfoCollector)).filter(o => {
     return o instanceof ClassObject || o instanceof FunctionObject;
   }) as (FunctionObject | ClassObject)[];
 }
@@ -104,6 +115,10 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
     return FunctionArgumentType.null;
   } else if (type.kind === ts.SyntaxKind.UndefinedKeyword) {
     return FunctionArgumentType.undefined;
+  } else if (type.kind == ts.SyntaxKind.StringLiteral) {
+    if (mode) mode.keyword = true;
+    // @ts-ignore
+    return type.text;
   } else if (type.kind === ts.SyntaxKind.TypeReference) {
     let typeReference: ts.TypeReference = type as unknown as ts.TypeReference;
     // @ts-ignore
@@ -194,7 +209,7 @@ function isParamsReadOnly(m: ts.PropertySignature): boolean {
   return m.modifiers.some(k => k.kind === ts.SyntaxKind.ReadonlyKeyword);
 }
 
-function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
+function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector, type: TemplateType, dapInfoCollector: DAPInfoCollector) {
   switch(statement.kind) {
     case ts.SyntaxKind.InterfaceDeclaration: {
       let interfaceName = getInterfaceName(statement) as string;
@@ -309,8 +324,25 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
         }
       });
 
-      if (!constructorDefined && obj.kind === ClassObjectKind.interface) {
+      if (type == TemplateType.IDL && !constructorDefined && obj.kind === ClassObjectKind.interface) {
         throw new Error(`Interface: ${interfaceName} didn't have constructor defined.`);
+      }
+
+      // Collect dap types info
+      if (type == TemplateType.DAP) {
+       if (obj.name.indexOf('Argument') >= 0) {
+          dapInfoCollector.arguments.add(obj);
+        } else if (obj.name.indexOf('Body') >= 0) {
+          dapInfoCollector.bodies.add(obj);
+        } else if (obj.name.indexOf('Event') >= 0) {
+          dapInfoCollector.events.add(obj);
+        } else if (obj.name.indexOf('Response') >= 0) {
+          dapInfoCollector.response.add(obj);
+        } else if (obj.name.indexOf('Request') >= 0) {
+          dapInfoCollector.requests.add(obj);
+        } else {
+          dapInfoCollector.others.add(obj);
+        }
       }
 
       ClassObject.globalClassMap[interfaceName] = obj;

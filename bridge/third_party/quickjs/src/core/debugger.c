@@ -24,13 +24,14 @@ static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
   // Gain access to front_message.
   pthread_mutex_lock(&info->frontend_message_access);
 
-  char* buf = js_malloc_rt(info->runtime, message->length);
-  memcpy(buf, message->buf, message->length);
+  char* buf = js_malloc_rt(info->runtime, message->length + 1);
+  strcpy(buf, message->buf);
 
   MessageItem* item = js_malloc_rt(info->runtime, sizeof(MessageItem));
   item->buf = buf;
   item->length = message->length;
 
+  printf("client write item, buffer: %p len: %d\n", item->buf, item->length);
   // Push this item to the queue.
   list_add_tail(&item->link, &info->frontend_messages);
 
@@ -77,6 +78,9 @@ static uint32_t read_frontend_messages(JSDebuggerInfo* info, MessageItem* item) 
   // Calculate the head through byte offset.
   struct list_head* el = info->frontend_messages.next;
   MessageItem* head = list_entry(el, MessageItem, link);
+
+  printf("debugger read item, buffer %p len: %d\n", head->buf, head->length);
+
   item->buf = head->buf;
   item->length = head->length;
 
@@ -488,23 +492,27 @@ static int js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur
     }
 
     JSValue message = JS_ParseJSON(ctx, item.buf, item.length, "<debugger>");
-    JSValue vtype = JS_GetPropertyStr(ctx, message, "type");
-    const char* type = JS_ToCString(ctx, vtype);
-    if (strcmp("request", type) == 0) {
-      js_process_request(info, &state,message);
-      // done_processing = 1;
-    } else if (strcmp("continue", type) == 0) {
-      info->is_paused = 0;
-    } else if (strcmp("breakpoints", type) == 0) {
-      js_process_breakpoints(info, JS_GetPropertyStr(ctx, message, "breakpoints"));
-    } else if (strcmp("stopOnException", type) == 0) {
-      JSValue stop = JS_GetPropertyStr(ctx, message, "stopOnException");
-      info->exception_breakpoint = JS_ToBool(ctx, stop);
-      JS_FreeValue(ctx, stop);
+    if (JS_IsException(message)) {
+      printf("item message error %s", item.buf);
     }
 
-    JS_FreeCString(ctx, type);
-    JS_FreeValue(ctx, vtype);
+//    JSValue vtype = JS_GetPropertyStr(ctx, message, "type");
+//    const char* type = JS_ToCString(ctx, vtype);
+//    if (strcmp("request", type) == 0) {
+//      js_process_request(info, &state,message);
+//      // done_processing = 1;
+//    } else if (strcmp("continue", type) == 0) {
+//      info->is_paused = 0;
+//    } else if (strcmp("breakpoints", type) == 0) {
+//      js_process_breakpoints(info, JS_GetPropertyStr(ctx, message, "breakpoints"));
+//    } else if (strcmp("stopOnException", type) == 0) {
+//      JSValue stop = JS_GetPropertyStr(ctx, message, "stopOnException");
+//      info->exception_breakpoint = JS_ToBool(ctx, stop);
+//      JS_FreeValue(ctx, stop);
+//    }
+
+//    JS_FreeCString(ctx, type);
+//    JS_FreeValue(ctx, vtype);
     JS_FreeValue(ctx, message);
   } while (info->is_paused);
 

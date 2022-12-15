@@ -42,11 +42,11 @@ export function getTemplateKind(object: ClassObject | FunctionObject | null): Te
 }
 
 function readTemplate(name: string) {
-  return fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/' + name + '.h.tpl'), {encoding: 'utf-8'});
+  return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/' + name + '.h.tpl'), {encoding: 'utf-8'});
 }
 
 export function generateCppHeader(blob: IDLBlob, options: GenerateOptions) {
-  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/base.h.tpl'), {encoding: 'utf-8'});
+  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/base.h.tpl'), {encoding: 'utf-8'});
   let headerOptions = {
     interface: false,
     dictionary: false,

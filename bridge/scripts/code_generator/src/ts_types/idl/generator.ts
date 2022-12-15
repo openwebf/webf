@@ -29,7 +29,7 @@ export type GenerateOptions = {
   indexedProperty: string;
 };
 
-export function generatorSource(blob: IDLBlob) {
+export function generatorIDLSource(blob: IDLBlob) {
   let options = generateSupportedOptions();
 
   let source = generateCppSource(blob, options);

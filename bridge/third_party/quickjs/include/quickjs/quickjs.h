@@ -758,6 +758,9 @@ int JS_SetPropertyUint32(JSContext* ctx, JSValueConst this_obj, uint32_t idx, JS
 int JS_SetPropertyInt64(JSContext* ctx, JSValueConst this_obj, int64_t idx, JSValue val);
 int JS_SetPropertyStr(JSContext* ctx, JSValueConst this_obj, const char* prop, JSValue val);
 int JS_HasProperty(JSContext* ctx, JSValueConst this_obj, JSAtom prop);
+/* return -1 if exception otherwise TRUE or FALSE */
+int JS_HasProperty(JSContext *ctx, JSValueConst obj, JSAtom prop);
+int JS_HasPropertyStr(JSContext* ctx, JSValueConst obj, const char* prop);
 int JS_IsExtensible(JSContext *ctx, JSValueConst obj);
 int JS_PreventExtensions(JSContext *ctx, JSValueConst obj);
 int JS_DeleteProperty(JSContext *ctx, JSValueConst obj, JSAtom prop, int flags);

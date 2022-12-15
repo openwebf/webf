@@ -1,4 +1,4 @@
-import {ClassObject, FunctionObject} from "../idl/declaration";
+import {ClassObject, FunctionObject} from "../ts_types/idl/declaration";
 import fs from "fs";
 import JSON5 from 'json5';
 

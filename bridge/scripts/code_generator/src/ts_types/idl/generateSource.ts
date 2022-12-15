@@ -545,7 +545,7 @@ ${addIndent(callBody, 4)}
 }
 
 function readTemplate(name: string) {
-  return fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/' + name + '.cc.tpl'), {encoding: 'utf-8'});
+  return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/' + name + '.cc.tpl'), {encoding: 'utf-8'});
 }
 
 export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {

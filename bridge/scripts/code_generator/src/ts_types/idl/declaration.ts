@@ -1,4 +1,4 @@
-import {ParameterBaseType, ParameterType} from "./analyzer";
+import {ParameterBaseType, ParameterType} from "../analyzer";
 
 export enum FunctionArgumentType {
   // Basic types
@@ -14,6 +14,7 @@ export enum FunctionArgumentType {
   any,
   null,
   undefined,
+  keywords,
   array,
   js_array_proto_methods,
   // enable LegacyNullToEmpty attribute for dom_string
@@ -33,6 +34,7 @@ export class ParameterMode {
   newObject?: boolean;
   dartImpl?: boolean;
   static?: boolean;
+  keyword?: boolean;
 }
 
 export class PropsDeclaration {

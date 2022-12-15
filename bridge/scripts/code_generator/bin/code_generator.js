@@ -5,11 +5,14 @@ const packageJSON = require('../package.json');
 const path = require('path');
 const glob = require('glob');
 const fs = require('fs');
-const { IDLBlob } = require('../dist/idl/IDLBlob');
+const { IDLBlob } = require('../dist/ts_types/idl/IDLBlob');
 const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
-const { analyzer } = require('../dist/idl/analyzer');
-const { generatorSource } = require('../dist/idl/generator')
+const { analyzer } = require('../dist/ts_types/analyzer');
+const { TemplateType } = require('../dist/ts_types/types');
+const { generatorIDLSource } = require('../dist/ts_types/idl/generator');
+const { generatorDAP } = require('../dist/ts_types/dap/generator');
+const { generateDAPSource } = require('../dist/ts_types/dap/generateSource');
 const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
@@ -19,11 +22,16 @@ program
   .version(packageJSON.version)
   .description('WebF code generator.')
   .requiredOption('-s, --source <path>', 'source directory.')
+  .requiredOption('--type [IDL,DAP,DART]', 'the template type')
   .requiredOption('-d, --dist <path>', 'destionation directory.')
 
 program.parse(process.argv);
 
-let {source, dist} = program.opts();
+let {source, dist, type} = program.opts();
+
+if (!TemplateType.hasOwnProperty(type.toUpperCase())) {
+  throw new Error(`The template of type: [${type}] is not one of IDL,DAP,DART`);
+}
 
 if (!path.isAbsolute(source)) {
   source = path.join(process.cwd(), source);
@@ -32,7 +40,7 @@ if (!path.isAbsolute(dist)) {
   dist = path.join(process.cwd(), dist);
 }
 
-function wirteFileIfChanged(filePath, content) {
+function writeFileIfChanged(filePath, content) {
   if (fs.existsSync(filePath)) {
     const oldContent = fs.readFileSync(filePath, 'utf-8')
     if (oldContent === content) {
@@ -50,7 +58,9 @@ function genCodeFromTypeDefine() {
   });
 
   let blobs = typeFiles.map(file => {
-    let filename = 'qjs_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
+    let prefix = type.toUpperCase() === 'IDL' ? 'qjsc_' : ''
+
+    let filename = prefix + file.split('/').slice(-1)[0].replace('.d.ts', '');
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
     return new IDLBlob(path.join(source, file), dist, filename, implement);
   });
@@ -58,12 +68,21 @@ function genCodeFromTypeDefine() {
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
-    analyzer(b, definedPropertyCollector, unionTypeCollector);
+    analyzer(b, definedPropertyCollector, TemplateType[type.toUpperCase()], dapInfoCollector, unionTypeCollector);
   }
 
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
-    let result = generatorSource(b);
+
+    let result = '';
+    switch(type.toUpperCase()) {
+      case 'IDL':
+        result = generatorIDLSource(b, TemplateType[type.toUpperCase()]);
+        break;
+      case 'DAP':
+        result = generatorDAP(b, TemplateType[type.toUpperCase()]);
+        break;
+    }
 
     if (!fs.existsSync(b.dist)) {
       fs.mkdirSync(b.dist, {recursive: true});
@@ -71,8 +90,8 @@ function genCodeFromTypeDefine() {
 
     let genFilePath = path.join(b.dist, b.filename);
 
-    wirteFileIfChanged(genFilePath + '.h', result.header);
-    wirteFileIfChanged(genFilePath + '.cc', result.source);
+    writeFileIfChanged(genFilePath + '.h', result.header);
+    writeFileIfChanged(genFilePath + '.cc', result.source);
   }
 
   let unionTypes = Array.from(unionTypeCollector.types);
@@ -142,8 +161,8 @@ function genCodeFromJSONData() {
       let result = generateJSONTemplate(blobs[i], targetTemplateHeaderData, targetTemplateBodyData, depsBlob, targetTemplate.options);
       let dist = blob.dist;
       let genFilePath = path.join(dist, targetTemplate.filename);
-      wirteFileIfChanged(genFilePath + '.h', result.header);
-      result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
+      writeFileIfChanged(genFilePath + '.h', result.header);
+      result.source && writeFileIfChanged(genFilePath + '.cc', result.source);
     });
   }
 
@@ -152,8 +171,18 @@ function genCodeFromJSONData() {
   let targetTemplateBody = templates.find(t => t.filename === 'names_installer.cc');
   let result = generateNamesInstaller(targetTemplateHeader, targetTemplateBody, names_needs_install);
   let genFilePath = path.join(dist, 'names_installer');
-  wirteFileIfChanged(genFilePath + '.h', result.header);
-  result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
+  writeFileIfChanged(genFilePath + '.h', result.header);
+  result.source && writeFileIfChanged(genFilePath + '.cc', result.source);
+}
+
+function genDapConverterCodes() {
+  const dapConverterHeaderTemplate = fs.readFileSync(path.join(__dirname, '../templates/dap_templates/dap_converter.h.tpl'), {encoding: 'utf-8'});
+
+  const converterSource = generateDAPSource(dapInfoCollector);
+
+  const genFilePath = path.join(dist, 'dap_converter');
+  writeFileIfChanged(genFilePath + '.h', dapConverterHeaderTemplate);
+  writeFileIfChanged(genFilePath + '.c', converterSource);
 }
 
 class DefinedPropertyCollector {
@@ -162,13 +191,24 @@ class DefinedPropertyCollector {
   interfaces = new Set();
 }
 
+class DAPInfoCollector {
+  requests = new Set();
+  arguments = new Set();
+  response = new Set();
+  bodies = new Set();
+  events = new Set();
+  others = new Set();
+}
+
 class UnionTypeCollector {
   types = new Set()
 }
 
 let definedPropertyCollector = new DefinedPropertyCollector();
+let dapInfoCollector = new DAPInfoCollector();
 let unionTypeCollector = new UnionTypeCollector();
 let names_needs_install = new Set();
 
 genCodeFromTypeDefine();
-genCodeFromJSONData();
+if (type.toUpperCase() === 'IDL') genCodeFromJSONData();
+if (type.toUpperCase() === 'DAP') genDapConverterCodes();

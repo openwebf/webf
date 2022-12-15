@@ -817,6 +817,13 @@ int JS_PreventExtensions(JSContext* ctx, JSValueConst obj) {
   return TRUE;
 }
 
+int JS_HasPropertyStr(JSContext* ctx, JSValueConst obj, const char* prop) {
+  JSAtom p = JS_NewAtom(ctx, prop);
+  int result = JS_HasProperty(ctx, obj, p);
+  JS_FreeAtom(ctx, p);
+  return result;
+}
+
 /* return -1 if exception otherwise TRUE or FALSE */
 int JS_HasProperty(JSContext* ctx, JSValueConst obj, JSAtom prop) {
   JSObject* p;
