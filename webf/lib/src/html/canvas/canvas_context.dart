@@ -8,8 +8,6 @@ import 'dart:ui';
 import 'dart:ffi' as ffi;
 
 import 'package:meta/meta.dart';
-import 'package:webf/geometry.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
 
 enum ImageSmoothingQuality { low, medium, high }
@@ -20,7 +18,14 @@ enum CanvasLineJoin { round, bevel, miter }
 
 enum CanvasTextAlign { start, end, left, right, center }
 
-enum CanvasTextBaseline { top, hanging, middle, alphabetic, ideographic, bottom }
+enum CanvasTextBaseline {
+  top,
+  hanging,
+  middle,
+  alphabetic,
+  ideographic,
+  bottom
+}
 
 enum CanvasDirection { ltr, rtl, inherit }
 
@@ -78,7 +83,8 @@ abstract class CanvasCompositing {
 abstract class CanvasImageSmoothing {
   // image smoothing
   bool imageSmoothingEnabled = true; // (default true)
-  ImageSmoothingQuality imageSmoothingQuality = ImageSmoothingQuality.low; // (default low)
+  ImageSmoothingQuality imageSmoothingQuality =
+      ImageSmoothingQuality.low; // (default low)
 }
 
 class CanvasImageSource {
@@ -99,9 +105,11 @@ abstract class CanvasFillStrokeStyles {
   // colors and styles (see also the CanvasPathDrawingStyles and CanvasTextDrawingStyles
   Color strokeStyle = Color(0xFF000000); // (default black)
   Color fillStyle = Color(0xFF000000); // (default black)
-  CanvasGradient createLinearGradient(double x0, double y0, double x1, double y1);
+  CanvasGradient createLinearGradient(
+      double x0, double y0, double x1, double y1);
 
-  CanvasGradient createRadialGradient(double x0, double y0, double r0, double x1, double y1, double r1);
+  CanvasGradient createRadialGradient(
+      double x0, double y0, double r0, double x1, double y1, double r1);
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition);
 }
@@ -147,12 +155,13 @@ class CanvasGradient extends BindingObject {
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['addColorStop'] = BindingObjectMethodSync(call: (args) => addColorStop(castToType<num>(args[0]), castToType<String>(args[1])));
+    methods['addColorStop'] = BindingObjectMethodSync(
+        call: (args) => addColorStop(
+            castToType<num>(args[0]), castToType<String>(args[1])));
   }
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-  }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 // ignore: one_member_abstracts
@@ -182,6 +191,5 @@ class CanvasPattern extends BindingObject {
   }
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-  }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
