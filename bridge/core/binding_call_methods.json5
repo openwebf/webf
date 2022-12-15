@@ -157,7 +157,7 @@
     "addColorStop",
     "createLinearGradient",
     "createRadialGradient",
-    "createPattern"
+    "createPattern",
     "___clear_cookies__"
   ]
 }

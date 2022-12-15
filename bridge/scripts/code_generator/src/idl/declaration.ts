@@ -14,6 +14,8 @@ export enum FunctionArgumentType {
   any,
   null,
   undefined,
+  // enable LegacyNullToEmpty attribute for dom_string
+  legacy_dom_string,
 }
 
 export class FunctionArguments {

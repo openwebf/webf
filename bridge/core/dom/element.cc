@@ -137,8 +137,8 @@ bool Element::HasTagName(const AtomicString& name) const {
   return name == tag_name_;
 }
 
-std::string Element::nodeValue() const {
-  return "";
+AtomicString Element::nodeValue() const {
+  return AtomicString::Null();
 }
 
 std::string Element::nodeName() const {

@@ -89,8 +89,8 @@ std::string Document::nodeName() const {
   return "#document";
 }
 
-std::string Document::nodeValue() const {
-  return "";
+AtomicString Document::nodeValue() const {
+  return AtomicString::Null();
 }
 
 Node::NodeType Document::nodeType() const {

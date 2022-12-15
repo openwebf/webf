@@ -20,8 +20,8 @@ void CharacterData::setData(const AtomicString& data, ExceptionState& exception_
                                                        std::move(args_02), (void*)bindingObject());
 }
 
-std::string CharacterData::nodeValue() const {
-  return data_.ToStdString(ctx());
+AtomicString CharacterData::nodeValue() const {
+  return data_;
 }
 
 bool CharacterData::IsCharacterDataNode() const {
