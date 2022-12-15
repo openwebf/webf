@@ -316,7 +316,6 @@ class CSSColor {
   }
 
   String cssText() {
-    if (value == null) return '';
     return 'rgba(${value.red}, ${value.green}, ${value.blue}, ${value.alpha})';
   }
 }

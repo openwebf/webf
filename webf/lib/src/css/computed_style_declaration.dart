@@ -93,7 +93,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundColor:
         return style.backgroundColor?.cssText() ?? '';
       case CSSPropertyID.BackgroundImage:
-        return style.backgroundImage?.cssText() ?? '';
+        return style.backgroundImage?.cssText() ?? 'none';
       case CSSPropertyID.BackgroundRepeat:
         return style.backgroundRepeat.cssText();
       case CSSPropertyID.BackgroundPosition:

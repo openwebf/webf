@@ -418,7 +418,7 @@ class CSSBackgroundImage {
         case AssetImage:
           return 'assets://${(_image as AssetImage).assetName}';
         default:
-          return '';
+          return 'none';
       }
     }
     if (_gradient != null) {
@@ -430,10 +430,10 @@ class CSSBackgroundImage {
         case CSSConicGradient:
           return (_gradient as CSSConicGradient).cssText();
         default:
-          return '';
+          return 'none';
       }
     }
-    return '';
+    return 'none';
   }
 }
 

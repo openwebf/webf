@@ -575,7 +575,9 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     _sheetStyle.clear();
   }
 
+  @override
   void dispose() {
+    super.dispose();
     target = null;
     _styleChangeListeners.clear();
     reset();
@@ -602,12 +604,10 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  }
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-  }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 // aB to a-b
