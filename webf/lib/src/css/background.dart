@@ -458,6 +458,9 @@ class CSSBackgroundPosition {
       return '${length!.computedValue}px';
     }
     if (percentage != null) {
+      if (percentage! <= 0) {
+        return '0%';
+      }
       return '${percentage!}%';
     }
     if (calcValue != null) {

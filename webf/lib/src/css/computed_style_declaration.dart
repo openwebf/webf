@@ -89,7 +89,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Variable:
         break;
       case CSSPropertyID.Background:
-        break;
+        return _getBackgroundShorthandValue();
       case CSSPropertyID.BackgroundColor:
         return style.backgroundColor?.cssText() ?? '';
       case CSSPropertyID.BackgroundImage:
@@ -102,12 +102,11 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.backgroundPositionX.cssText();
       case CSSPropertyID.BackgroundPositionY:
         return style.backgroundPositionY.cssText();
-      case CSSPropertyID.BackgroundAttachment:
       case CSSPropertyID.BackgroundSize:
+      case CSSPropertyID.BackgroundAttachment:
       case CSSPropertyID.BackgroundClip:
       case CSSPropertyID.BackgroundOrigin:
         break;
-
       case CSSPropertyID.BorderTopColor:
         return style.borderTopColor.cssText();
       case CSSPropertyID.BorderRightColor:
@@ -383,6 +382,22 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   @override
   String removeProperty(String propertyName, [bool? isImportant]) {
     throw UnimplementedError('Not implemented');
+  }
+
+  String _getBackgroundShorthandValue() {
+    // Before Slash { CSSPropertyBackgroundImage,
+    //                CSSPropertyBackgroundRepeat,
+    //          *TODO CSSPropertyBackgroundAttachment,
+    //                CSSPropertyBackgroundPosition };
+    // After Slash { *TODO CSSPropertyBackgroundSize,
+    //               *TODO CSSPropertyBackgroundOrigin,
+    //               *TODO CSSPropertyBackgroundClip };
+    List<CSSPropertyID> beforeSlashSeparator = [CSSPropertyID.BackgroundImage,
+                                                CSSPropertyID.BackgroundRepeat,
+                                                CSSPropertyID.BackgroundPosition];
+    final backgroundColor = valueForPropertyInStyle(CSSPropertyID.BackgroundColor);
+    final value = beforeSlashSeparator.map((e) => valueForPropertyInStyle(e)).join(' ');
+    return backgroundColor + ' ' + value;
   }
 }
 
