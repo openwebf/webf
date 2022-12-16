@@ -53,9 +53,6 @@ class HistoryModule extends BaseModule {
       HistoryItem currentItem = _previousStack.first;
       _previousStack.removeFirst();
       _nextStack.addFirst(currentItem);
-
-      await goTo(_previousStack.first.bundle.url);
-
       dynamic state = _previousStack.first.state;
       _dispatchPopStateEvent(state);
     }
@@ -66,8 +63,6 @@ class HistoryModule extends BaseModule {
       HistoryItem currentItem = _nextStack.first;
       _nextStack.removeFirst();
       _previousStack.addFirst(currentItem);
-
-      goTo(currentItem.bundle.url);
       _dispatchPopStateEvent(currentItem.state);
     }
   }
@@ -96,13 +91,7 @@ class HistoryModule extends BaseModule {
       }
     }
 
-    goTo(_previousStack.first.bundle.url);
     _dispatchPopStateEvent(_previousStack.first.state);
-  }
-
-  Future<void> goTo(String targetUrl) async {
-    NavigationModule navigationModule = moduleManager!.getModule<NavigationModule>('Navigation')!;
-    await navigationModule.goTo(targetUrl);
   }
 
   void _dispatchPopStateEvent(state) {
