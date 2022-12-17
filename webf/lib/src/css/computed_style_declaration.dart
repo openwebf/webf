@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:ffi' as ffi;
+import 'package:collection/collection.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
@@ -73,11 +74,23 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     if (propertyID == null) {
       return '';
     }
-    return valueForPropertyInStyle(propertyID);
+    return _valueForPropertyInStyle(propertyID, needUpdateStyle: true);
   }
 
-  String valueForPropertyInStyle(CSSPropertyID propertyID) {
-    _element.ownerDocument.updateStyleIfNeeded();
+  @override
+  void setProperty(String propertyName, String? value, [bool? isImportant]) {
+    throw UnimplementedError('No Modification Allowed');
+  }
+
+  @override
+  String removeProperty(String propertyName, [bool? isImportant]) {
+    throw UnimplementedError('Not implemented');
+  }
+
+  String _valueForPropertyInStyle(CSSPropertyID propertyID, {bool needUpdateStyle = false}) {
+    if (needUpdateStyle) {
+      _element.ownerDocument.updateStyleIfNeeded();
+    }
     RenderStyle? style = _element.computedStyle(_pseudoElementName);
 
     if (style == null) {
@@ -88,6 +101,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Invalid:
       case CSSPropertyID.Variable:
         break;
+      case CSSPropertyID.Display:
+        return style.display.toString();
       case CSSPropertyID.Background:
         return _getBackgroundShorthandValue();
       case CSSPropertyID.BackgroundColor:
@@ -103,10 +118,22 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundPositionY:
         return style.backgroundPositionY.cssText();
       case CSSPropertyID.BackgroundSize:
+        return style.backgroundSize.cssText();
       case CSSPropertyID.BackgroundAttachment:
+        return (style.backgroundAttachment ?? CSSBackgroundAttachmentType.scroll).toString();
       case CSSPropertyID.BackgroundClip:
+        return (style.backgroundClip ?? CSSBackgroundClipType.borderBox).toString();
       case CSSPropertyID.BackgroundOrigin:
-        break;
+        return (style.backgroundOrigin ?? CSSBackgroundClipType.paddingBox).toString();
+      case CSSPropertyID.Border:
+        final value = _valueForPropertyInStyle(CSSPropertyID.BorderTop);
+        final ids = [CSSPropertyID.BorderRight, CSSPropertyID.BorderBottom, CSSPropertyID.BorderLeft];
+        for (CSSPropertyID propertyID in ids) {
+           if (_valueForPropertyInStyle(propertyID) != value) {
+             return '';
+           }
+        }
+        return value;
       case CSSPropertyID.BorderTopColor:
         return style.borderTopColor.cssText();
       case CSSPropertyID.BorderRightColor:
@@ -124,17 +151,66 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BorderLeftStyle:
         return style.borderLeftStyle.toString();
       case CSSPropertyID.BorderTopWidth:
-        return '${style.borderTopWidth?.computedValue}px';
+        return '${style.effectiveBorderTopWidth.computedValue}px';
       case CSSPropertyID.BorderRightWidth:
-        return '${style.borderRightWidth?.computedValue}px';
+        return '${style.effectiveBorderRightWidth.computedValue}px';
       case CSSPropertyID.BorderBottomWidth:
-        return '${style.borderRightWidth?.computedValue}px';
+        return '${style.effectiveBorderBottomWidth.computedValue}px';
       case CSSPropertyID.BorderLeftWidth:
-        return '${style.borderLeftWidth?.computedValue}px';
+        return '${style.effectiveBorderLeftWidth.computedValue}px';
+      case CSSPropertyID.BorderTop:
+        final properties = [CSSPropertyID.BorderTopWidth,
+                            CSSPropertyID.BorderTopStyle,
+                            CSSPropertyID.BorderTopColor];
+        return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
+      case CSSPropertyID.BorderLeft:
+        final properties = [CSSPropertyID.BorderLeftWidth,
+                            CSSPropertyID.BorderLeftStyle,
+                            CSSPropertyID.BorderLeftColor];
+        return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
+      case CSSPropertyID.BorderRight:
+        final properties = [CSSPropertyID.BorderRightWidth,
+                            CSSPropertyID.BorderRightStyle,
+                            CSSPropertyID.BorderRightColor];
+        return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
+      case CSSPropertyID.BorderBottom:
+        final properties = [CSSPropertyID.BorderBottomWidth,
+                            CSSPropertyID.BorderBottomStyle,
+                            CSSPropertyID.BorderBottomColor];
+        return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
+      case CSSPropertyID.BorderColor:
+        return _getCSSPropertyValuesForSidesShorthand([CSSPropertyID.BorderTopColor,
+                                                      CSSPropertyID.BorderRightColor,
+                                                      CSSPropertyID.BorderBottomColor,
+                                                      CSSPropertyID.BorderLeftColor])?.join(' ') ?? '';
+      case CSSPropertyID.BorderStyle:
+        return _getCSSPropertyValuesForSidesShorthand([CSSPropertyID.BorderTopStyle,
+                                                      CSSPropertyID.BorderRightStyle,
+                                                      CSSPropertyID.BorderBottomStyle,
+                                                      CSSPropertyID.BorderLeftStyle])?.join(' ') ?? '';
+      case CSSPropertyID.BorderWidth:
+        return _getCSSPropertyValuesForSidesShorthand([CSSPropertyID.BorderTopWidth,
+                                                      CSSPropertyID.BorderRightWidth,
+                                                      CSSPropertyID.BorderBottomWidth,
+                                                      CSSPropertyID.BorderLeftWidth])?.join(' ') ?? '';
+      case CSSPropertyID.BorderTopLeftRadius:
+        return style.borderTopLeftRadius.cssText();
+      case CSSPropertyID.BorderTopRightRadius:
+        return style.borderTopRightRadius.cssText();
+      case CSSPropertyID.BorderBottomLeftRadius:
+        return style.borderBottomLeftRadius.cssText();
+      case CSSPropertyID.BorderBottomRightRadius:
+        return style.borderBottomRightRadius.cssText();
+      case CSSPropertyID.BorderRadius:
+        return _borderRadiusShorthandValue(style);
+      case CSSPropertyID.BorderImage:
+      case CSSPropertyID.BorderImageOutset:
+      case CSSPropertyID.BorderImageRepeat:
+      case CSSPropertyID.BorderImageSlice:
+      case CSSPropertyID.BorderImageWidth:
+        break;
       case CSSPropertyID.Color:
         return style.color.cssText();
-      case CSSPropertyID.Display:
-        return style.display.toString();
       case CSSPropertyID.Font:
         break;
       case CSSPropertyID.FontFamily:
@@ -213,7 +289,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.WhiteSpace:
         return style.whiteSpace.toString();
       case CSSPropertyID.ZIndex:
-        return style.zIndex?.toString() ?? '';
+        return style.zIndex?.toString() ?? 'auto';
       // case CSSPropertyID.TransitionDelay:
       //   return style.transitionDelay;
       // case CSSPropertyID.TransitionDuration:
@@ -222,22 +298,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       //   return style.transitionProperty;
       // case CSSPropertyID.TransitionTimingFunction:
       //   return style.transitionTimingFunction;
-      case CSSPropertyID.Border:
-        return style.border.cssText();
-      // case CSSPropertyID.BorderBottom:
-      //   break;
-      // case CSSPropertyID.BorderColor:
-      //   break;
-      // case CSSPropertyID.BorderLeft:
-      //   return style.borderLeftStyle;
-      // case CSSPropertyID.BorderRadius:
-      //   return style.borderRadius;
-      case CSSPropertyID.BorderImage:
-      case CSSPropertyID.BorderRight:
-      case CSSPropertyID.BorderStyle:
-      case CSSPropertyID.BorderTop:
-      case CSSPropertyID.BorderWidth:
-        break;
       // case CSSPropertyID.TableLayout:
       case CSSPropertyID.Outline:
       case CSSPropertyID.ListStyle:
@@ -277,19 +337,10 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Cursor:
       case CSSPropertyID.EmptyCells:
       case CSSPropertyID.Direction:
-
       case CSSPropertyID.BorderCollapse:
       case CSSPropertyID.BorderImageSource:
       case CSSPropertyID.CaptionSide:
       case CSSPropertyID.Clear:
-      case CSSPropertyID.BorderImageOutset:
-      case CSSPropertyID.BorderImageRepeat:
-      case CSSPropertyID.BorderImageSlice:
-      case CSSPropertyID.BorderImageWidth:
-      case CSSPropertyID.BorderBottomLeftRadius:
-      case CSSPropertyID.BorderBottomRightRadius:
-      case CSSPropertyID.BorderTopLeftRadius:
-      case CSSPropertyID.BorderTopRightRadius:
       case CSSPropertyID.Clip:
       case CSSPropertyID.Speak:
         break;
@@ -374,53 +425,102 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     return '';
   }
 
-  @override
-  void setProperty(String propertyName, String? value, [bool? isImportant]) {
-    throw UnimplementedError('No Modification Allowed');
+  String _borderRadiusShorthandValue(RenderStyle style) {
+    final showHorizontalBottomLeft = style.borderTopRightRadius.x != style.borderBottomLeftRadius.x;
+    final showHorizontalBottomRight = showHorizontalBottomLeft || (style.borderBottomRightRadius.x != style.borderTopLeftRadius.x);
+    final showHorizontalTopRight = showHorizontalBottomRight || (style.borderTopRightRadius.x != style.borderTopLeftRadius.x);
+
+    final showVerticalBottomLeft = style.borderTopRightRadius.y != style.borderBottomLeftRadius.y;
+    final showVerticalBottomRight = showVerticalBottomLeft || (style.borderBottomRightRadius.y != style.borderTopLeftRadius.y);
+    final showVerticalTopRight = showVerticalBottomRight || (style.borderTopRightRadius.y != style.borderTopLeftRadius.y);
+
+    final topLeftRadius = style.borderTopLeftRadius;
+    final topRightRadius = style.borderTopRightRadius;
+    final bottomRightRadius = style.borderBottomRightRadius;
+    final bottomLeftRadius = style.borderBottomLeftRadius;
+
+    List<CSSLengthValue> horizontalRadii = [topLeftRadius.x];
+    if (showHorizontalTopRight) {
+      horizontalRadii.add(topRightRadius.x);
+    }
+    if (showHorizontalBottomRight) {
+      horizontalRadii.add(bottomRightRadius.x);
+    }
+    if (showHorizontalBottomLeft) {
+      horizontalRadii.add(bottomLeftRadius.x);
+    }
+
+    List<CSSLengthValue> verticalRadii = [topLeftRadius.y];
+    if (showVerticalTopRight) {
+      verticalRadii.add(topRightRadius.y);
+    }
+    if (showVerticalBottomRight) {
+      verticalRadii.add(bottomRightRadius.y);
+    }
+    if (showVerticalBottomLeft) {
+      verticalRadii.add(bottomLeftRadius.y);
+    }
+
+    if (!horizontalRadii.equals(verticalRadii)) {
+      return horizontalRadii.join(' ') + ' / ' + verticalRadii.join(' ');
+    }
+    return horizontalRadii.join(' ');
   }
 
-  @override
-  String removeProperty(String propertyName, [bool? isImportant]) {
-    throw UnimplementedError('Not implemented');
+  // top -> right -> bottom -> left
+  List<String>? _getCSSPropertyValuesForSidesShorthand(List<CSSPropertyID> propertyIDs) {
+     assert(propertyIDs.length == 4, 'The sides dose not include top | right | bottom | left');
+     final top = _valueForPropertyInStyle(propertyIDs[0]);
+     final right = _valueForPropertyInStyle(propertyIDs[1]);
+     final bottom = _valueForPropertyInStyle(propertyIDs[2]);
+     final left = _valueForPropertyInStyle(propertyIDs[3]);
+     return _compressSlidesValue<String>([top, right, bottom, left]);
   }
 
   String _getBackgroundShorthandValue() {
-    // Before Slash { CSSPropertyBackgroundImage,
-    //                CSSPropertyBackgroundRepeat,
-    //          *TODO CSSPropertyBackgroundAttachment,
-    //                CSSPropertyBackgroundPosition };
-    // After Slash { *TODO CSSPropertyBackgroundSize,
-    //               *TODO CSSPropertyBackgroundOrigin,
-    //               *TODO CSSPropertyBackgroundClip };
     List<CSSPropertyID> beforeSlashSeparator = [CSSPropertyID.BackgroundImage,
                                                 CSSPropertyID.BackgroundRepeat,
+                                                CSSPropertyID.BackgroundAttachment,
                                                 CSSPropertyID.BackgroundPosition];
-    final backgroundColor = valueForPropertyInStyle(CSSPropertyID.BackgroundColor);
-    final value = beforeSlashSeparator.map((e) => valueForPropertyInStyle(e)).join(' ');
-    return backgroundColor + ' ' + value;
+    List<CSSPropertyID> afterSlashSeparator = [CSSPropertyID.BackgroundSize,
+                                              CSSPropertyID.BackgroundOrigin,
+                                              CSSPropertyID.BackgroundClip];
+    final backgroundColor = _valueForPropertyInStyle(CSSPropertyID.BackgroundColor);
+    final beforeValue = beforeSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
+    final afterValue = afterSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
+    return backgroundColor + ' ' + beforeValue + ' / ' + afterValue;
   }
+}
+
+List<T>? _compressSlidesValue<T>(List<T> values) {
+  assert(values.length == 4, 'The sides dose not include top | right | bottom | left');
+  final top = values[0];
+  final right = values[1];
+  final bottom = values[2];
+  final left = values[3];
+  if (left == null || right == null || top == null || bottom == null) {
+    return null;
+  }
+  final showLeft = left != right;
+  final showBottom = (top != bottom) || showLeft;
+  final showRight = (top != right) || showBottom;
+
+  List<T> list = [];
+  list.add(top);
+  if (showRight) {
+    list.add(right);
+  }
+  if (showBottom) {
+    list.add(bottom);
+  }
+  if (showLeft) {
+    list.add(left);
+  }
+  return list;
 }
 
 extension CSSEdgeInsetsText on EdgeInsets {
   String cssText() {
-    if (left == 0 && right == 0 && top == 0 && bottom == 0) {
-      return '0px';
-    }
-    final showLeft = left != right;
-    final showBottom = (top != bottom) || showLeft;
-    final showRight = (top != right) || showBottom;
-
-    List<String> list = [];
-    list.add('${top}px');
-    if (showRight) {
-      list.add('${right}px');
-    }
-    if (showBottom) {
-      list.add('${bottom}px');
-    }
-    if (showLeft) {
-      list.add('${left}px');
-    }
-    return list.join(' ');
+    return _compressSlidesValue<double>([top,right,bottom,left])?.map((e) => '${e}px').join(' ') ?? '0px';
   }
 }

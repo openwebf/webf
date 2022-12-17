@@ -347,6 +347,13 @@ class CSSBorderRadius {
     }
     return null;
   }
+
+  String cssText() {
+    if (x == y) {
+      return '${x.computedValue}px';
+    }
+    return '${x.computedValue}px ${y.computedValue}px';
+  }
 }
 
 class WebFBoxShadow extends BoxShadow {

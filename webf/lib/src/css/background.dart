@@ -100,6 +100,19 @@ enum CSSBackgroundClipType {
   contentBox,
 }
 
+extension ClipRawValue on CSSBackgroundClipType {
+  String cssText() {
+    switch (this) {
+      case CSSBackgroundClipType.borderBox:
+        return 'border-box';
+      case CSSBackgroundClipType.paddingBox:
+        return 'padding-box';
+      case CSSBackgroundClipType.contentBox:
+        return 'content-box';
+    }
+  }
+}
+
 enum CSSBackgroundImageType {
   none,
   gradient,
@@ -113,6 +126,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   static CSSBackgroundSize DEFAULT_BACKGROUND_SIZE = CSSBackgroundSize(fit: BoxFit.none);
 
   /// Background-clip
+  @override
   BackgroundBoundary? get backgroundClip => _backgroundClip;
   BackgroundBoundary? _backgroundClip;
   set backgroundClip(BackgroundBoundary? value) {
@@ -122,6 +136,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   }
 
   /// Background-origin
+  @override
   BackgroundBoundary? get backgroundOrigin => _backgroundOrigin;
   BackgroundBoundary? _backgroundOrigin;
   set backgroundOrigin(BackgroundBoundary? value) {
@@ -170,6 +185,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   }
 
   /// Background-size
+  @override
   CSSBackgroundSize get backgroundSize => _backgroundSize ?? DEFAULT_BACKGROUND_SIZE;
   CSSBackgroundSize? _backgroundSize;
   set backgroundSize(CSSBackgroundSize? value) {
@@ -179,6 +195,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   }
 
   /// Background-attachment
+  @override
   CSSBackgroundAttachmentType? get backgroundAttachment => _backgroundAttachment;
   CSSBackgroundAttachmentType? _backgroundAttachment;
   set backgroundAttachment(CSSBackgroundAttachmentType? value) {
@@ -486,6 +503,25 @@ class CSSBackgroundSize {
 
   @override
   String toString() => 'CSSBackgroundSize(fit: $fit, width: $width, height: $height)';
+
+  String cssText() {
+    if (fit == BoxFit.contain) {
+      return 'contain';
+    }
+    if (fit == BoxFit.cover) {
+      return 'cover';
+    }
+
+    if (width == null || height == null) {
+      return 'none';
+    }
+
+    if (width == height) {
+      return '${width!.computedValue}px';
+    }
+
+    return '${width!.computedValue}px ${height!.computedValue}px';
+  }
 }
 
 class CSSBackground {
