@@ -204,13 +204,15 @@ function generateNativeValueTypeConverter(type: ParameterType[]): string {
 }
 
 function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number) {
-  let type = generateIDLTypeConverter(argument.type);
+  let type = generateIDLTypeConverter(argument.type, !argument.required);
 
   let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget';
 
   let body = '';
   if (hasArgumentCheck) {
     body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`
+  } else if (argument.isDotDotDot) {
+    body = `Converter<${type}>::FromValue(ctx, argv + ${argsIndex}, argc - ${argsIndex}, exception_state)`
   } else {
     body = `Converter<${type}>::FromValue(ctx, argv[${argsIndex}], exception_state)`;
   }

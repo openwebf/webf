@@ -147,6 +147,7 @@ function paramsNodeToArguments(parameter: ts.ParameterDeclaration): FunctionArgu
   let args = new FunctionArguments();
   args.name = getParameterName(parameter.name);
   let typeMode = new ParameterMode();
+  args.isDotDotDot = !!parameter.dotDotDotToken;
   args.type = getParameterType(parameter.type!, typeMode);
   args.typeMode = typeMode;
   args.required = !parameter.questionToken;

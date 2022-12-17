@@ -22,6 +22,7 @@ export enum FunctionArgumentType {
 export class FunctionArguments {
   name: string;
   type: ParameterType[] = [];
+  isDotDotDot: boolean;
   typeMode: ParameterMode;
   required: boolean;
 }
