@@ -15,6 +15,7 @@
 #include "qjs_close_event.h"
 #include "qjs_comment.h"
 #include "qjs_console.h"
+#include "qjs_dom_token_list.h"
 #include "qjs_css_style_declaration.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
@@ -135,6 +136,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSBlob::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);
+  QJSDOMTokenList::Install(context);
   QJSPerformance::Install(context);
   QJSPerformanceEntry::Install(context);
   QJSPerformanceMark::Install(context);

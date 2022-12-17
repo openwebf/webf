@@ -243,6 +243,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/parent_node.cc
     core/dom/element_data.cc
     core/dom/document.cc
+    core/dom/dom_token_list.cc
+    core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
     core/dom/node_data.cc
     core/dom/document_fragment.cc
@@ -289,7 +291,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
     # Legacy implements, should remove them in the future.
-    core/dom/legacy/space_split_string.cc
     core/dom/legacy/element_attributes.cc
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
@@ -349,6 +350,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_node.cc
     out/qjs_document.cc
     out/qjs_element.cc
+    out/qjs_dom_token_list.cc
     out/qjs_element_attributes.cc
     out/qjs_character_data.cc
     out/qjs_comment.cc

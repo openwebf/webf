@@ -38,7 +38,9 @@ class AtomicString {
 
   AtomicString() = default;
   AtomicString(JSContext* ctx, const std::string& string);
+  AtomicString(JSContext* ctx, const char* str, size_t length);
   AtomicString(JSContext* ctx, const NativeString* native_string);
+  AtomicString(JSContext* ctx, const uint16_t* str, size_t length);
   AtomicString(JSContext* ctx, JSValue value);
   AtomicString(JSContext* ctx, JSAtom atom);
   ~AtomicString() { JS_FreeAtomRT(runtime_, atom_); };
@@ -59,6 +61,13 @@ class AtomicString {
   JSAtom Impl() const { return atom_; }
 
   int64_t length() const { return length_; }
+
+  bool Is8Bit() const;
+  const uint8_t* Character8() const;
+  const uint16_t* Character16() const;
+
+  int Find(bool (*CharacterMatchFunction)(char)) const;
+  int Find(bool (*CharacterMatchFunction)(uint16_t)) const;
 
   [[nodiscard]] std::string ToStdString(JSContext* ctx) const;
   [[nodiscard]] std::unique_ptr<NativeString> ToNativeString(JSContext* ctx) const;

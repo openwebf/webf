@@ -5,6 +5,7 @@
 
 #include "atomic_string.h"
 #include "built_in_string.h"
+#include "qjs_engine_patch.h"
 
 namespace webf {
 
@@ -76,6 +77,21 @@ AtomicString::AtomicString(JSContext* ctx, const std::string& string)
       kind_(GetStringKind(string)),
       length_(string.size()) {}
 
+AtomicString::AtomicString(JSContext* ctx, const char* str, size_t length)
+    : runtime_(JS_GetRuntime(ctx)),
+      atom_(JS_NewAtomLen(ctx, str, length)),
+      kind_(GetStringKind(str)),
+      length_(length) {}
+
+AtomicString::AtomicString(JSContext* ctx, const uint16_t* str, size_t length)
+    : runtime_(JS_GetRuntime(ctx)) {
+  JSValue string = JS_NewUnicodeString(ctx, str, length);
+  atom_ = JS_ValueToAtom(ctx, string);
+  kind_ = GetStringKind(string);
+  length_ = length;
+  JS_FreeValue(ctx, string);
+}
+
 AtomicString::AtomicString(JSContext* ctx, const NativeString* native_string)
     : runtime_(JS_GetRuntime(ctx)),
       atom_(JS_NewUnicodeAtom(ctx, native_string->string(), native_string->length())),
@@ -116,6 +132,26 @@ bool AtomicString::IsEmpty() const {
 
 bool AtomicString::IsNull() const {
   return atom_ == JS_ATOM_NULL;
+}
+
+bool AtomicString::Is8Bit() const {
+  return JS_AtomIs8Bit(runtime_, atom_);
+}
+
+const uint8_t* AtomicString::Character8() const {
+  return JS_AtomRawCharacter8(runtime_, atom_);
+}
+
+const uint16_t* AtomicString::Character16() const {
+  return JS_AtomRawCharacter16(runtime_, atom_);
+}
+
+int AtomicString::Find(bool (*CharacterMatchFunction)(char)) const {
+  return JS_FindCharacterInAtom(runtime_, atom_, CharacterMatchFunction);
+}
+
+int AtomicString::Find(bool (*CharacterMatchFunction)(uint16_t)) const {
+  return JS_FindWCharacterInAtom(runtime_, atom_, CharacterMatchFunction);
 }
 
 std::string AtomicString::ToStdString(JSContext* ctx) const {

@@ -65,6 +65,7 @@ class Element : public ContainerNode {
 
   CSSStyleDeclaration* style();
   CSSStyleDeclaration& EnsureCSSStyleDeclaration();
+  DOMTokenList* classList();
 
   Element& CloneWithChildren(CloneChildrenFlag flag, Document* = nullptr) const;
   Element& CloneWithoutChildren(Document* = nullptr) const;

@@ -4,6 +4,7 @@
  */
 #include "element.h"
 #include <utility>
+#include "built_in_string.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
@@ -179,6 +180,16 @@ CSSStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
     cssom_wrapper_ = MakeGarbageCollected<CSSStyleDeclaration>(GetExecutingContext(), eventTargetId());
   }
   return *cssom_wrapper_;
+}
+
+DOMTokenList* Element::classList() {
+  ElementData& element_data = EnsureElementData();
+  if (element_data.GetClassList() == nullptr) {
+    auto* class_list = MakeGarbageCollected<DOMTokenList>(this, html_names::kClassAttr);
+    class_list->DidUpdateAttributeValue(built_in_string::kNULL, getAttribute(html_names::kClassAttr, ASSERT_NO_EXCEPTION()));
+    element_data.SetClassList(class_list);
+  }
+  return element_data.GetClassList();
 }
 
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {
