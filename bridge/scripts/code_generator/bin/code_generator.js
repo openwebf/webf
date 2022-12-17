@@ -13,7 +13,7 @@ const { generatorSource } = require('../dist/idl/generator')
 const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
-const {union} = require("lodash");
+const { union } = require("lodash");
 
 program
   .version(packageJSON.version)
@@ -76,11 +76,12 @@ function genCodeFromTypeDefine() {
   }
 
   let unionTypes = Array.from(unionTypeCollector.types);
+  unionTypes.sort();
   for(let i = 0; i < unionTypes.length; i ++) {
     let result = generateUnionTypes(unionTypes[i]);
     let filename = generateUnionTypeFileName(unionTypes[i]);
-    fs.writeFileSync(path.join(dist, filename) + '.h', result.header);
-    fs.writeFileSync(path.join(dist, filename) + '.cc', result.source);
+    wirteFileIfChanged(path.join(dist, filename) + '.h', result.header);
+    wirteFileIfChanged(path.join(dist, filename) + '.cc', result.source);
   }
 }
 
