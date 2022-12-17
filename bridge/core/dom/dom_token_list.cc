@@ -111,6 +111,10 @@ void DOMTokenList::Remove(const AtomicString& token) {
   remove(std::vector<AtomicString>({token}), ASSERT_NO_EXCEPTION());
 }
 
+void DOMTokenList::Trace(GCVisitor* visitor) const {
+  visitor->Trace(element_);
+}
+
 // https://dom.spec.whatwg.org/#dom-domtokenlist-remove
 // Optimally, this should take a Vector<AtomicString> const ref in argument but
 // the bindings generator does not handle that.
@@ -125,7 +129,6 @@ void DOMTokenList::remove(const std::vector<AtomicString>& tokens,
     return;
   RemoveTokens(tokens);
 }
-
 
 // https://dom.spec.whatwg.org/#dom-domtokenlist-toggle
 bool DOMTokenList::toggle(const AtomicString& token,

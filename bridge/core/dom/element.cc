@@ -239,6 +239,9 @@ bool Element::IsAttributeDefinedInternal(const AtomicString& key) const {
 void Element::Trace(GCVisitor* visitor) const {
   visitor->Trace(attributes_);
   visitor->Trace(cssom_wrapper_);
+  if (element_data_ != nullptr) {
+    element_data_->Trace(visitor);
+  }
   ContainerNode::Trace(visitor);
 }
 

@@ -42,6 +42,9 @@ class DOMTokenList : public ScriptWrappable {
   // Add() and Remove() have DCHECK for syntax of the specified token.
   void Add(const AtomicString&);
   void Remove(const AtomicString&);
+
+  void Trace(GCVisitor* visitor) const override;
+
  protected:
   Element& GetElement() const { return *element_.Get(); }
   virtual bool ValidateTokenValue(const AtomicString&, ExceptionState&) const;
