@@ -154,6 +154,10 @@
     "cookie",
     "class",
     "syncPropertiesAndMethods",
+    "addColorStop",
+    "createLinearGradient",
+    "createRadialGradient",
+    "createPattern",
     "___clear_cookies__"
   ]
 }

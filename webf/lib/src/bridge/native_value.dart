@@ -4,7 +4,6 @@
  */
 import 'dart:convert';
 import 'dart:ffi';
-import 'dart:collection';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
@@ -34,7 +33,13 @@ enum JSValueType {
   TAG_ASYNC_FUNCTION
 }
 
-enum JSPointerType { AsyncFunctionContext, NativeFunctionContext, Others }
+enum JSPointerType {
+  NativeBindingObject,
+  Others
+}
+
+typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);
+typedef AsyncAnonymousNativeFunction = Future<dynamic> Function(List<dynamic> args);
 
 dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
   if (nativeValue == nullptr) return null;
@@ -55,6 +60,11 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
     case JSValueType.TAG_FLOAT64:
       return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:
+      JSPointerType pointerType = JSPointerType.values[nativeValue.ref.uint32];
+      if (pointerType == JSPointerType.NativeBindingObject) {
+        return BindingBridge.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
+      }
+
       return Pointer.fromAddress(nativeValue.ref.u);
     case JSValueType.TAG_LIST:
       return List.generate(nativeValue.ref.uint32, (index) {
@@ -72,65 +82,41 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
   }
 }
 
-typedef ToNativeValueCallback = void Function(Pointer<NativeValue> target,
-    // ignore: avoid_annotating_with_dynamic
-    {dynamic value, BindingObject? ownerBindingObject});
-
-final HashMap<Type, ToNativeValueCallback> _nativeToValueMap = HashMap();
-bool _nativeToNativeValueMapInit = false;
-
-void _initNativeToValueMap() {
-  _nativeToValueMap[null.runtimeType] = (target, {value, ownerBindingObject}) {
+void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBindingObject]) {
+  if (value == null) {
     target.ref.tag = JSValueType.TAG_NULL.index;
-  };
-  _nativeToValueMap[int] = (target, {ownerBindingObject, value}) {
+  } else if (value is int) {
     target.ref.tag = JSValueType.TAG_INT.index;
     target.ref.u = value;
-  };
-  _nativeToValueMap[bool] = (target, {ownerBindingObject, value}) {
+  } else if (value is bool) {
     target.ref.tag = JSValueType.TAG_BOOL.index;
     target.ref.u = value ? 1 : 0;
-  };
-  _nativeToValueMap[double] = (target, {ownerBindingObject, value}) {
+  } else if (value is double) {
     target.ref.tag = JSValueType.TAG_FLOAT64.index;
     target.ref.u = doubleToInt64(value);
-  };
-  _nativeToValueMap[String] = (target, {ownerBindingObject, value}) {
+  } else if (value is String) {
     target.ref.tag = JSValueType.TAG_STRING.index;
     target.ref.u = stringToNativeString(value).address;
-  };
-}
-
-void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBindingObject]) {
-  if (!_nativeToNativeValueMapInit) {
-    _initNativeToValueMap();
-    _nativeToNativeValueMapInit = true;
-  }
-
-  ToNativeValueCallback? fn = _nativeToValueMap[value.runtimeType];
-  bool isComplexTypes = fn == null;
-  if (isComplexTypes) {
-    if (value is Pointer) {
-      target.ref.tag = JSValueType.TAG_POINTER.index;
-      target.ref.u = value.address;
-    } else if (value is BindingObject) {
-      target.ref.tag = JSValueType.TAG_POINTER.index;
-      target.ref.u = (value.pointer)!.address;
-    } else if (value is List) {
-      target.ref.tag = JSValueType.TAG_LIST.index;
-      target.ref.uint32 = value.length;
-      Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
-      target.ref.u = lists.address;
-      for(int i = 0; i < value.length; i ++) {
-        toNativeValue(lists.elementAt(i), value[i], ownerBindingObject);
-      }
-    } else if (value is Object) {
-      String str = jsonEncode(value);
-      target.ref.tag = JSValueType.TAG_JSON.index;
-      target.ref.u = str.toNativeUtf8().address;
+  } else if (value is Pointer) {
+    target.ref.tag = JSValueType.TAG_POINTER.index;
+    target.ref.uint32 = JSPointerType.Others.index;
+    target.ref.u = value.address;
+  } else if (value is BindingObject) {
+    target.ref.tag = JSValueType.TAG_POINTER.index;
+    target.ref.uint32 = JSPointerType.NativeBindingObject.index;
+    target.ref.u = (value.pointer)!.address;
+  } else if (value is List) {
+    target.ref.tag = JSValueType.TAG_LIST.index;
+    target.ref.uint32 = value.length;
+    Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
+    target.ref.u = lists.address;
+    for(int i = 0; i < value.length; i ++) {
+      toNativeValue(lists.elementAt(i), value[i], ownerBindingObject);
     }
-  } else {
-    fn(target, value: value, ownerBindingObject: ownerBindingObject);
+  } else if (value is Object) {
+    String str = jsonEncode(value);
+    target.ref.tag = JSValueType.TAG_JSON.index;
+    target.ref.u = str.toNativeUtf8().address;
   }
 }
 

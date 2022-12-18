@@ -188,6 +188,10 @@ void TEST_flushUICommand(int32_t contextId) {
   clearUICommandItems(reinterpret_cast<void*>(page));
 }
 
+void TEST_CreateBindingObject(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc) {
+
+}
+
 void TEST_onJsLog(int32_t contextId, int32_t level, const char*) {}
 
 #if ENABLE_PROFILE
@@ -306,18 +310,17 @@ void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 void TEST_simulateInputText(NativeString* nativeString) {}
 
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
-  std::vector<uint64_t> mockMethods{
-      reinterpret_cast<uint64_t>(TEST_invokeModule),
-      reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
-      reinterpret_cast<uint64_t>(TEST_reloadApp),
-      reinterpret_cast<uint64_t>(TEST_setTimeout),
-      reinterpret_cast<uint64_t>(TEST_setInterval),
-      reinterpret_cast<uint64_t>(TEST_clearTimeout),
-      reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
-      reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
-      reinterpret_cast<uint64_t>(TEST_toBlob),
-      reinterpret_cast<uint64_t>(TEST_flushUICommand),
-  };
+  std::vector<uint64_t> mockMethods{reinterpret_cast<uint64_t>(TEST_invokeModule),
+                                    reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
+                                    reinterpret_cast<uint64_t>(TEST_reloadApp),
+                                    reinterpret_cast<uint64_t>(TEST_setTimeout),
+                                    reinterpret_cast<uint64_t>(TEST_setInterval),
+                                    reinterpret_cast<uint64_t>(TEST_clearTimeout),
+                                    reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_toBlob),
+                                    reinterpret_cast<uint64_t>(TEST_flushUICommand),
+                                    reinterpret_cast<uint64_t>(TEST_CreateBindingObject)};
 
 #if ENABLE_PROFILE
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_getPerformanceEntries));

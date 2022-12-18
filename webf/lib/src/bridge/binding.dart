@@ -12,6 +12,7 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/geometry.dart';
 import 'package:webf/foundation.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
@@ -73,6 +74,10 @@ void _dispatchEventToNative(Event event) {
   }
 }
 
+enum CreateBindingObjectType {
+  createDOMMatrix
+}
+
 abstract class BindingBridge {
   static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNative =
       Pointer.fromFunction(invokeBindingMethodFromNativeImpl);
@@ -88,6 +93,19 @@ abstract class BindingBridge {
       throw FlutterError('Can not get binding object: $pointer');
     }
     return target;
+  }
+
+  static void createBindingObject(int contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
+    List<dynamic> arguments = List.generate(argc, (index) {
+      return fromNativeValue(args.elementAt(index));
+    });
+    switch(type) {
+      case CreateBindingObjectType.createDOMMatrix: {
+        DOMMatrix domMatrix = DOMMatrix(BindingContext(contextId, pointer), arguments);
+        _nativeObjects[pointer.address] = domMatrix;
+        return;
+      }
+    }
   }
 
   static void _bindObject(BindingObject object) {

@@ -49,9 +49,16 @@ class Member {
   void Clear() const {
     if (raw_ == nullptr)
       return;
-    auto* wrappable = To<ScriptWrappable>(raw_);
-    // Record the free operation to avoid JSObject had been freed immediately.
-    wrappable->GetExecutingContext()->mutationScope()->RecordFree(wrappable);
+    JSGCPhaseEnum phase = JS_GetEnginePhase(runtime_);
+
+    if (phase == JS_GC_PHASE_REMOVE_CYCLES) {
+      // Free the pointer immediately if parent object are removed by GC.
+      JS_FreeValueRT(runtime_, raw_->ToQuickJSUnsafe());
+    } else {
+      auto* wrappable = To<ScriptWrappable>(raw_);
+      // Record the free operation to avoid JSObject had been freed immediately.
+      wrappable->GetExecutingContext()->mutationScope()->RecordFree(wrappable);
+    }
     raw_ = nullptr;
   }
 

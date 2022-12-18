@@ -40,6 +40,11 @@ class CanvasRenderingContext2DSettings {
   bool desynchronized = false;
 }
 
+enum FillStyleType {
+  string,
+  canvasGradient
+}
+
 typedef CanvasAction = void Function(Canvas, Size);
 
 class CanvasRenderingContext2D extends BindingObject {
@@ -129,7 +134,7 @@ class CanvasRenderingContext2D extends BindingObject {
     });
     methods['closePath'] = BindingObjectMethodSync(call: (_) => closePath());
     methods['drawImage'] = BindingObjectMethodSync(call: (args) {
-      BindingObject imageElement = BindingBridge.getBindingObject(args[0]);
+      BindingObject imageElement = args[0];
       if (imageElement is ImageElement) {
         double sx = 0.0, sy = 0.0, sWidth = 0.0, sHeight = 0.0, dx = 0.0, dy = 0.0, dWidth = 0.0, dHeight = 0.0;
 
@@ -199,8 +204,12 @@ class CanvasRenderingContext2D extends BindingObject {
     properties['fillStyle'] = BindingObjectProperty(
         getter: () => CSSColor.convertToHex(fillStyle),
         setter: (value) {
-          Color? color = CSSColor.parseColor(castToType<String>(value));
-          if (color != null) fillStyle = color;
+          if (value is String) {
+            Color? color = CSSColor.parseColor(castToType<String>(value));
+            if (color != null) fillStyle = color;
+          } else if (value is CanvasGradient) {
+            print('Warning: value which type is CanvasGradient are not implemented.');
+          }
         });
     properties['direction'] = BindingObjectProperty(
         getter: () => _textDirectionInString, setter: (value) => direction = parseDirection(castToType<String>(value)));
@@ -208,8 +217,12 @@ class CanvasRenderingContext2D extends BindingObject {
     properties['strokeStyle'] = BindingObjectProperty(
         getter: () => CSSColor.convertToHex(strokeStyle),
         setter: (value) {
-          Color? color = CSSColor.parseColor(castToType<String>(value));
-          if (color != null) strokeStyle = color;
+          if (value is String) {
+            Color? color = CSSColor.parseColor(castToType<String>(value));
+            if (color != null) strokeStyle = color;
+          } else if (value is CanvasGradient) {
+            print('Warning: value which type is CanvasGradient are not implemented.');
+          }
         });
     properties['lineCap'] = BindingObjectProperty(
         getter: () => lineCap, setter: (value) => lineCap = parseLineCap(castToType<String>(value)));
@@ -736,10 +749,10 @@ class CanvasRenderingContext2D extends BindingObject {
       _strokeStyle = newValue;
     });
   }
-
   Color get strokeStyle => _strokeStyle;
 
   Color _fillStyle = CSSColor.initial; // default black
+  Color get fillStyle => _fillStyle;
   set fillStyle(Color? newValue) {
     if (newValue == null) return;
     addAction((Canvas canvas, Size size) {
@@ -747,21 +760,20 @@ class CanvasRenderingContext2D extends BindingObject {
     });
   }
 
-  Color get fillStyle => _fillStyle;
-
   CanvasGradient createLinearGradient(double x0, double y0, double x1, double y1) {
-    // TODO: implement createLinearGradient
-    throw UnimplementedError();
+    print('create createLinearGradient $x0 $y0 $x1 $y1');
+    return CanvasGradient();
   }
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
     // TODO: implement createPattern
-    throw UnimplementedError();
+    return CanvasPattern(image, repetition);
   }
 
   CanvasGradient createRadialGradient(double x0, double y0, double r0, double x1, double y1, double r1) {
     // TODO: implement createRadialGradient
-    throw UnimplementedError();
+    print('create createLinearGradient $x0 $y0 $r0 $x1 $y1 $r1');
+    return CanvasGradient();
   }
 
   void clearRect(double x, double y, double w, double h) {

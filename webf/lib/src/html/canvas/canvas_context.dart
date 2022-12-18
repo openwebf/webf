@@ -2,10 +2,13 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:ffi' as ffi;
 
 import 'package:meta/meta.dart';
+import 'package:webf/webf.dart';
 
 enum ImageSmoothingQuality { low, medium, high }
 
@@ -15,7 +18,14 @@ enum CanvasLineJoin { round, bevel, miter }
 
 enum CanvasTextAlign { start, end, left, right, center }
 
-enum CanvasTextBaseline { top, hanging, middle, alphabetic, ideographic, bottom }
+enum CanvasTextBaseline {
+  top,
+  hanging,
+  middle,
+  alphabetic,
+  ideographic,
+  bottom
+}
 
 enum CanvasDirection { ltr, rtl, inherit }
 
@@ -73,21 +83,33 @@ abstract class CanvasCompositing {
 abstract class CanvasImageSmoothing {
   // image smoothing
   bool imageSmoothingEnabled = true; // (default true)
-  ImageSmoothingQuality imageSmoothingQuality = ImageSmoothingQuality.low; // (default low)
+  ImageSmoothingQuality imageSmoothingQuality =
+      ImageSmoothingQuality.low; // (default low)
 }
 
-abstract class CanvasImageSource {
-  String imageSource;
-  CanvasImageSource(this.imageSource);
+class CanvasImageSource {
+  CanvasImageSource(source) {
+    _fillCanvasImageSource(source);
+  }
+
+  void _fillCanvasImageSource(source) {
+    if (source is ImageElement) {
+      image_element = source;
+    }
+  }
+
+  ImageElement? image_element;
 }
 
 abstract class CanvasFillStrokeStyles {
   // colors and styles (see also the CanvasPathDrawingStyles and CanvasTextDrawingStyles
   Color strokeStyle = Color(0xFF000000); // (default black)
   Color fillStyle = Color(0xFF000000); // (default black)
-  CanvasGradient createLinearGradient(double x0, double y0, double x1, double y1);
+  CanvasGradient createLinearGradient(
+      double x0, double y0, double x1, double y1);
 
-  CanvasGradient createRadialGradient(double x0, double y0, double r0, double x1, double y1, double r1);
+  CanvasGradient createRadialGradient(
+      double x0, double y0, double r0, double x1, double y1, double r1);
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition);
 }
@@ -116,13 +138,58 @@ abstract class CanvasImageData {
 }
 
 // ignore: one_member_abstracts
-abstract class CanvasGradient {
+class CanvasGradient extends BindingObject {
+  CanvasGradient()
+      : _pointer = allocateNewBindingObject(),
+        super();
+
+  final ffi.Pointer<NativeBindingObject> _pointer;
+
+  @override
+  get pointer => _pointer;
+
   // opaque object
-  void addColorStop(double offset, String color);
+  void addColorStop(num offset, String color) {
+    print('addColorStop: offset: $offset, color: $color');
+  }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['addColorStop'] = BindingObjectMethodSync(
+        call: (args) => addColorStop(
+            castToType<num>(args[0]), castToType<String>(args[1])));
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 // ignore: one_member_abstracts
-abstract class CanvasPattern {
+class CanvasPattern extends BindingObject {
+  CanvasPattern(CanvasImageSource image, String repetition)
+      : _pointer = allocateNewBindingObject(),
+        super();
+
+  final ffi.Pointer<NativeBindingObject> _pointer;
+
+  @override
+  get pointer => _pointer;
+
   // opaque object
-  void setTransform(String transform);
+  void setTransform(DOMMatrix domMatrix) {
+    print('setTransform: $domMatrix');
+  }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['setTransform'] = BindingObjectMethodSync(call: (args) {
+      BindingObject domMatrix = args[0];
+      if (domMatrix is DOMMatrix) {
+        return setTransform(domMatrix);
+      }
+    });
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }

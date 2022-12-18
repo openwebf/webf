@@ -12,3 +12,4 @@ export 'module.dart';
 export 'widget.dart';
 export 'dom.dart' hide Element;
 export 'html.dart';
+export 'geometry.dart';
