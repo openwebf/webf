@@ -1,13 +1,13 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_DOM_DOM_TOKEN_LIST_H_
 #define WEBF_CORE_DOM_DOM_TOKEN_LIST_H_
 
-#include "bindings/qjs/script_wrappable.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "bindings/qjs/script_wrappable.h"
 #include "space_split_string.h"
 
 namespace webf {
@@ -16,6 +16,7 @@ class Element;
 
 class DOMTokenList : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = DOMTokenList*;
 
@@ -29,9 +30,7 @@ class DOMTokenList : public ScriptWrappable {
   void remove(const std::vector<AtomicString>&, ExceptionState&);
   bool toggle(const AtomicString&, ExceptionState&);
   bool toggle(const AtomicString&, bool force, ExceptionState&);
-  bool replace(const AtomicString& token,
-               const AtomicString& new_token,
-               ExceptionState&);
+  bool replace(const AtomicString& token, const AtomicString& new_token, ExceptionState&);
   bool supports(const AtomicString&, ExceptionState&);
   AtomicString value() const;
   void setValue(const AtomicString&, ExceptionState& exception_state);
@@ -51,6 +50,7 @@ class DOMTokenList : public ScriptWrappable {
  protected:
   Element& GetElement() const { return *element_.Get(); }
   virtual bool ValidateTokenValue(const AtomicString&, ExceptionState&) const;
+
  private:
   void AddTokens(const std::vector<AtomicString>&);
   void RemoveTokens(const std::vector<AtomicString>&);
@@ -62,6 +62,6 @@ class DOMTokenList : public ScriptWrappable {
   SpaceSplitString token_set_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_DOM_DOM_TOKEN_LIST_H_

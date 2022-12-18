@@ -1,16 +1,15 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_DOM_SPACE_SPLIT_STRING_H_
 #define WEBF_CORE_DOM_SPACE_SPLIT_STRING_H_
 
-#include <vector>
 #include <unordered_map>
+#include <vector>
 #include "bindings/qjs/atomic_string.h"
 
 namespace webf {
-
 
 template <typename CharType>
 inline bool IsHTMLSpace(CharType character) {
@@ -26,8 +25,7 @@ inline bool IsHTMLSpace(CharType character) {
   // characters. Accordingly, we check for non-spaces first, then space, then
   // newline, then tab, then the other characters.
   return character <= ' ' &&
-         (character == ' ' || character == '\n' || character == '\t' ||
-          character == '\r' || character == '\f');
+         (character == ' ' || character == '\n' || character == '\t' || character == '\r' || character == '\f');
 }
 
 template <typename CharType>
@@ -38,20 +36,14 @@ inline bool IsNotHTMLSpace(CharType character) {
 class SpaceSplitString {
  public:
   SpaceSplitString() = default;
-  explicit SpaceSplitString(JSContext* ctx, const AtomicString& string) {
-    Set(ctx, string);
-  };
+  explicit SpaceSplitString(JSContext* ctx, const AtomicString& string) { Set(ctx, string); };
 
-  bool operator!=(const SpaceSplitString& other) const {
-    return data_ != other.data_;
-  }
+  bool operator!=(const SpaceSplitString& other) const { return data_ != other.data_; }
 
   void Set(JSContext* ctx, const AtomicString& value);
   void Clear();
 
-  bool Contains(const AtomicString& string) const {
-    return data_ && data_->Contains(string);
-  }
+  bool Contains(const AtomicString& string) const { return data_ && data_->Contains(string); }
 
   bool ContainsAll(const SpaceSplitString& names) const {
     return !names.data_ || (data_ && data_->ContainsAll(*names.data_));
@@ -71,6 +63,7 @@ class SpaceSplitString {
   size_t size() const { return data_ ? data_->size() : 0; }
   bool IsNull() const { return !data_; }
   const AtomicString& operator[](size_t i) const { return (*data_)[i]; }
+
  private:
   class Data {
    public:
@@ -89,8 +82,8 @@ class SpaceSplitString {
     size_t size() const { return vector_.size(); }
     const AtomicString& operator[](size_t i) const { return vector_[i]; }
     AtomicString& operator[](size_t i) { return vector_[i]; }
-   private:
 
+   private:
     void CreateVector(JSContext* ctx, const AtomicString&);
     template <typename CharacterType>
     inline void CreateVector(JSContext* ctx, const AtomicString&, const CharacterType*, unsigned);
@@ -109,6 +102,6 @@ class SpaceSplitString {
   std::unique_ptr<Data> data_ = nullptr;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_DOM_SPACE_SPLIT_STRING_H_

@@ -83,8 +83,7 @@ AtomicString::AtomicString(JSContext* ctx, const char* str, size_t length)
       kind_(GetStringKind(str)),
       length_(length) {}
 
-AtomicString::AtomicString(JSContext* ctx, const uint16_t* str, size_t length)
-    : runtime_(JS_GetRuntime(ctx)) {
+AtomicString::AtomicString(JSContext* ctx, const uint16_t* str, size_t length) : runtime_(JS_GetRuntime(ctx)) {
   JSValue string = JS_NewUnicodeString(ctx, str, length);
   atom_ = JS_ValueToAtom(ctx, string);
   kind_ = GetStringKind(string);

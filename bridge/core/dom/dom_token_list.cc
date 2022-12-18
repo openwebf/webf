@@ -1,26 +1,26 @@
 /*
-* Copyright (C) 2010 Google Inc. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-* 1.  Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-* 2.  Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in the
-*     documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS'' AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2010 Google Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1.  Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ * 2.  Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
@@ -38,8 +38,7 @@ bool CheckEmptyToken(JSContext* ctx, const AtomicString& token, ExceptionState& 
   return false;
 }
 
-bool CheckTokenWithWhitespace(JSContext* ctx, const AtomicString& token,
-                              ExceptionState& exception_state) {
+bool CheckTokenWithWhitespace(JSContext* ctx, const AtomicString& token, ExceptionState& exception_state) {
   if (token.Is8Bit() && token.Find(IsHTMLSpace<char>) == -1) {
     return true;
   }
@@ -48,12 +47,11 @@ bool CheckTokenWithWhitespace(JSContext* ctx, const AtomicString& token,
   }
 
   exception_state.ThrowException(ctx, ErrorType::TypeError,
-                                    "The token provided ('" + token.ToStdString(ctx) +
-                                        "') contains HTML space characters, "
-                                        "which are not valid in tokens.");
+                                 "The token provided ('" + token.ToStdString(ctx) +
+                                     "') contains HTML space characters, "
+                                     "which are not valid in tokens.");
   return false;
 }
-
 
 // This implements the common part of the following operations:
 // https://dom.spec.whatwg.org/#dom-domtokenlist-add
@@ -70,8 +68,7 @@ bool CheckTokenSyntax(JSContext* ctx, const AtomicString& token, ExceptionState&
   return CheckTokenWithWhitespace(ctx, token, exception_state);
 }
 
-bool CheckTokensSyntax(JSContext* ctx, const std::vector<AtomicString>& tokens,
-                       ExceptionState& exception_state) {
+bool CheckTokensSyntax(JSContext* ctx, const std::vector<AtomicString>& tokens, ExceptionState& exception_state) {
   for (const auto& token : tokens) {
     if (!CheckTokenSyntax(ctx, token, exception_state))
       return false;
@@ -100,8 +97,7 @@ void DOMTokenList::Add(const AtomicString& token) {
 // https://dom.spec.whatwg.org/#dom-domtokenlist-add
 // Optimally, this should take a Vector<AtomicString> const ref in argument but
 // the bindings generator does not handle that.
-void DOMTokenList::add(const std::vector<AtomicString>& tokens,
-                       ExceptionState& exception_state) {
+void DOMTokenList::add(const std::vector<AtomicString>& tokens, ExceptionState& exception_state) {
   if (!CheckTokensSyntax(element_->ctx(), tokens, exception_state))
     return;
   AddTokens(tokens);
@@ -124,7 +120,7 @@ bool DOMTokenList::NamedPropertyQuery(const AtomicString& key, ExceptionState& e
 }
 
 void DOMTokenList::NamedPropertyEnumerator(std::vector<AtomicString>& props, ExceptionState& exception_state) {
-  for(int i = 0; i < length(); i ++) {
+  for (int i = 0; i < length(); i++) {
     props.push_back(token_set_[i]);
   }
 }
@@ -132,8 +128,7 @@ void DOMTokenList::NamedPropertyEnumerator(std::vector<AtomicString>& props, Exc
 // https://dom.spec.whatwg.org/#dom-domtokenlist-remove
 // Optimally, this should take a Vector<AtomicString> const ref in argument but
 // the bindings generator does not handle that.
-void DOMTokenList::remove(const std::vector<AtomicString>& tokens,
-                          ExceptionState& exception_state) {
+void DOMTokenList::remove(const std::vector<AtomicString>& tokens, ExceptionState& exception_state) {
   if (!CheckTokensSyntax(element_->ctx(), tokens, exception_state))
     return;
 
@@ -145,8 +140,7 @@ void DOMTokenList::remove(const std::vector<AtomicString>& tokens,
 }
 
 // https://dom.spec.whatwg.org/#dom-domtokenlist-toggle
-bool DOMTokenList::toggle(const AtomicString& token,
-                          ExceptionState& exception_state) {
+bool DOMTokenList::toggle(const AtomicString& token, ExceptionState& exception_state) {
   if (!CheckTokenSyntax(element_->ctx(), token, exception_state))
     return false;
 
@@ -163,11 +157,8 @@ bool DOMTokenList::toggle(const AtomicString& token,
   return true;
 }
 
-
 // https://dom.spec.whatwg.org/#dom-domtokenlist-toggle
-bool DOMTokenList::toggle(const AtomicString& token,
-                          bool force,
-                          ExceptionState& exception_state) {
+bool DOMTokenList::toggle(const AtomicString& token, bool force, ExceptionState& exception_state) {
   if (!CheckTokenSyntax(element_->ctx(), token, exception_state))
     return false;
 
@@ -187,11 +178,8 @@ bool DOMTokenList::toggle(const AtomicString& token,
   return force;
 }
 
-
 // https://dom.spec.whatwg.org/#dom-domtokenlist-replace
-bool DOMTokenList::replace(const AtomicString& token,
-                           const AtomicString& new_token,
-                           ExceptionState& exception_state) {
+bool DOMTokenList::replace(const AtomicString& token, const AtomicString& new_token, ExceptionState& exception_state) {
   // 1. If either token or newToken is the empty string, then throw a
   // SyntaxError.
   if (!CheckEmptyToken(element_->ctx(), token, exception_state) ||
@@ -243,8 +231,7 @@ bool DOMTokenList::replace(const AtomicString& token,
   return true;
 }
 
-bool DOMTokenList::supports(const AtomicString& token,
-                            ExceptionState& exception_state) {
+bool DOMTokenList::supports(const AtomicString& token, ExceptionState& exception_state) {
   return ValidateTokenValue(token.ToLowerIfNecessary(element_->ctx()), exception_state);
 }
 
@@ -256,7 +243,6 @@ void DOMTokenList::AddTokens(const std::vector<AtomicString>& tokens) {
   // 3. Run the update steps.
   UpdateWithTokenSet(token_set_);
 }
-
 
 // https://dom.spec.whatwg.org/#dom-domtokenlist-remove
 void DOMTokenList::RemoveTokens(const std::vector<AtomicString>& tokens) {
@@ -285,8 +271,7 @@ void DOMTokenList::setValue(const AtomicString& new_value, ExceptionState& excep
 }
 
 // https://dom.spec.whatwg.org/#concept-domtokenlist-validation
-bool DOMTokenList::ValidateTokenValue(const AtomicString&,
-                                      ExceptionState& exception_state) const {
+bool DOMTokenList::ValidateTokenValue(const AtomicString&, ExceptionState& exception_state) const {
   exception_state.ThrowException(element_->ctx(), ErrorType::TypeError, "DOMTokenList has no supported tokens.");
   return false;
 }

@@ -1,26 +1,26 @@
 /*
-* Copyright (C) 2010 Apple Inc. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-* 1.  Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-* 2.  Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in the
-*     documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS'' AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2010 Apple Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1.  Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ * 2.  Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 /*
  * Copyright (C) 2007 David Smith (catfish.man@gmail.com)
@@ -43,12 +43,12 @@
  */
 
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
+#include "space_split_string.h"
 #include <set>
 #include <sstream>
-#include "space_split_string.h"
 #include "built_in_string.h"
 
 namespace webf {
@@ -115,7 +115,7 @@ AtomicString SpaceSplitString::SerializeToString(JSContext* ctx) const {
 
   std::stringstream ss;
   ss << (*data_)[0].Character8();
-  for(size_t i = 1; i < size; ++i) {
+  for (size_t i = 1; i < size; ++i) {
     ss << " ";
     ss << (*data_)[i].Character8();
   }
@@ -123,8 +123,11 @@ AtomicString SpaceSplitString::SerializeToString(JSContext* ctx) const {
   return {ctx, ss.str()};
 }
 
-template<typename CharacterType>
-inline void SpaceSplitString::Data::CreateVector(JSContext* ctx, const AtomicString& source, const CharacterType* characters, unsigned int length) {
+template <typename CharacterType>
+inline void SpaceSplitString::Data::CreateVector(JSContext* ctx,
+                                                 const AtomicString& source,
+                                                 const CharacterType* characters,
+                                                 unsigned int length) {
   assert(vector_.empty());
   std::set<JSAtom> token_set;
   unsigned start = 0;
@@ -163,12 +166,12 @@ inline void SpaceSplitString::Data::CreateVector(JSContext* ctx, const AtomicStr
   }
 }
 
-SpaceSplitString::Data::Data(JSContext* ctx, const AtomicString& string): key_string_(string) {
+SpaceSplitString::Data::Data(JSContext* ctx, const AtomicString& string) : key_string_(string) {
   assert(!string.IsNull());
   CreateVector(ctx, string);
 }
 
-SpaceSplitString::Data::Data(const Data& other): vector_(other.vector_) {}
+SpaceSplitString::Data::Data(const Data& other) : vector_(other.vector_) {}
 
 bool SpaceSplitString::Data::ContainsAll(Data& other) {
   if (this == &other)
@@ -213,5 +216,4 @@ std::unordered_map<JSAtom, SpaceSplitString::Data*>& SpaceSplitString::SharedDat
   return map;
 }
 
-
-}
+}  // namespace webf

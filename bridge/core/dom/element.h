@@ -25,7 +25,7 @@ class Element : public ContainerNode {
   Element(const AtomicString& tag_name, Document* document, ConstructionType = kCreateElement);
 
   ElementAttributes* attributes() const { return &EnsureElementAttributes(); }
-  ElementAttributes& EnsureElementAttributes() const ;
+  ElementAttributes& EnsureElementAttributes() const;
 
   bool hasAttribute(const AtomicString&, ExceptionState& exception_state);
   AtomicString getAttribute(const AtomicString&, ExceptionState& exception_state) const;

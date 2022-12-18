@@ -4,11 +4,11 @@
  */
 #include "element.h"
 #include <utility>
-#include "built_in_string.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "built_in_string.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
