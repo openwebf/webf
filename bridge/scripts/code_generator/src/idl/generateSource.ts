@@ -349,6 +349,10 @@ return ${overloadMethods[0].name}_overload_${0}(ctx, this_val, argc, argv);
 `;
 }
 
+function isJSArrayBuiltInProps(prop: PropsDeclaration) {
+  return prop.type[0] == FunctionArgumentType.js_array_proto_methods;
+}
+
 function generateDictionaryInit(blob: IDLBlob, props: PropsDeclaration[]) {
   let initExpression = props.map(prop => {
     switch (prop.type[0]) {
@@ -531,6 +535,7 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
           generateOverLoadSwitchBody,
           isTypeNeedAllocate,
           overloadMethods,
+          isJSArrayBuiltInProps,
           filtedMethods,
           generateIDLTypeConverter,
           generateNativeValueTypeConverter,

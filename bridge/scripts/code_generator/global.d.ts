@@ -1,5 +1,6 @@
 declare type int64 = number;
 declare type double = number;
+declare type JSArrayProtoMethod = void;
 
 declare interface Dictionary {}
 

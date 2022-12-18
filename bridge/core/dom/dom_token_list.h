@@ -45,6 +45,9 @@ class DOMTokenList : public ScriptWrappable {
 
   void Trace(GCVisitor* visitor) const override;
 
+  bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
+  void NamedPropertyEnumerator(std::vector<AtomicString>& props, ExceptionState& exception_state);
+
  protected:
   Element& GetElement() const { return *element_.Get(); }
   virtual bool ValidateTokenValue(const AtomicString&, ExceptionState&) const;

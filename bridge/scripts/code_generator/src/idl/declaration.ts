@@ -15,6 +15,7 @@ export enum FunctionArgumentType {
   null,
   undefined,
   array,
+  js_array_proto_methods,
   // enable LegacyNullToEmpty attribute for dom_string
   legacy_dom_string,
 }

@@ -115,6 +115,20 @@ void DOMTokenList::Trace(GCVisitor* visitor) const {
   visitor->Trace(element_);
 }
 
+bool DOMTokenList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+  if (JS_AtomIsTaggedInt(key.Impl())) {
+    int64_t index = JS_AtomToUInt32(key.Impl());
+    return index < length();
+  }
+  return false;
+}
+
+void DOMTokenList::NamedPropertyEnumerator(std::vector<AtomicString>& props, ExceptionState& exception_state) {
+  for(int i = 0; i < length(); i ++) {
+    props.push_back(token_set_[i]);
+  }
+}
+
 // https://dom.spec.whatwg.org/#dom-domtokenlist-remove
 // Optimally, this should take a Vector<AtomicString> const ref in argument but
 // the bindings generator does not handle that.
@@ -281,7 +295,7 @@ void DOMTokenList::DidUpdateAttributeValue(const AtomicString& old_value, const 
   if (is_in_update_step_)
     return;
   if (old_value != new_value)
-    token_set_.Set(new_value);
+    token_set_.Set(element_->ctx(), new_value);
 }
 
 }  // namespace webf

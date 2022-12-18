@@ -53,11 +53,12 @@
 
 namespace webf {
 
-void SpaceSplitString::Set(const AtomicString& value) {
+void SpaceSplitString::Set(JSContext* ctx, const AtomicString& value) {
   if (value.IsNull()) {
     Clear();
     return;
   }
+  data_ = std::make_unique<Data>(ctx, value);
 }
 
 void SpaceSplitString::Clear() {
@@ -124,7 +125,7 @@ AtomicString SpaceSplitString::SerializeToString(JSContext* ctx) const {
 
 template<typename CharacterType>
 inline void SpaceSplitString::Data::CreateVector(JSContext* ctx, const AtomicString& source, const CharacterType* characters, unsigned int length) {
-  assert(!vector_.empty());
+  assert(vector_.empty());
   std::set<JSAtom> token_set;
   unsigned start = 0;
   while (true) {

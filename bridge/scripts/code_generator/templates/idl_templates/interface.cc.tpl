@@ -142,6 +142,11 @@ static JSValue <%= overloadMethod.name %>_overload_<%= index %>(JSContext* ctx, 
 
 <% _.forEach(object.props, function(prop, index) { %>
 static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+<% if (isJSArrayBuiltInProps(prop)) { %>
+  JSValue classProto = JS_GetClassProto(ctx, JS_CLASS_ARRAY);
+  return JS_GetPropertyStr(ctx, classProto, "<%= prop.name %>");
+<% } else { %>
+
   auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   assert(<%= blob.filename %> != nullptr);
   MemberMutationScope scope{ExecutingContext::From(ctx)};
@@ -163,6 +168,8 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   <% } else { %>
   return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>());
   <% } %>
+
+<% } %>
 }
 <% if (!prop.readonly) { %>
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {

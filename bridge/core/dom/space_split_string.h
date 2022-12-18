@@ -38,15 +38,15 @@ inline bool IsNotHTMLSpace(CharType character) {
 class SpaceSplitString {
  public:
   SpaceSplitString() = default;
-  explicit SpaceSplitString(const AtomicString& string) {
-    Set(string);
+  explicit SpaceSplitString(JSContext* ctx, const AtomicString& string) {
+    Set(ctx, string);
   };
 
   bool operator!=(const SpaceSplitString& other) const {
     return data_ != other.data_;
   }
 
-  void Set(const AtomicString& value);
+  void Set(JSContext* ctx, const AtomicString& value);
   void Clear();
 
   bool Contains(const AtomicString& string) const {

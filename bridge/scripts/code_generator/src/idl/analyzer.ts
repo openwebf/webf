@@ -96,8 +96,10 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       return FunctionArgumentType.function;
     } else if (identifier === 'Promise') {
       return FunctionArgumentType.promise;
-    }else if (identifier === 'int32') {
+    } else if (identifier === 'int32') {
       return FunctionArgumentType.int32;
+    } else if (identifier === 'JSArrayProtoMethod') {
+      return FunctionArgumentType.js_array_proto_methods;
     } else if (identifier === 'int64') {
       return FunctionArgumentType.int64;
     } else if (identifier === 'double') {

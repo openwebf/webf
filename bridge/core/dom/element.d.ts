@@ -6,9 +6,8 @@ import {CSSStyleDeclaration} from "../css/legacy/css_style_declaration";
 import {ParentNode} from "./parent_node";
 
 interface Element extends Node, ParentNode {
-  id: DartImpl<string>;
-  className: DartImpl<string>;
-  class: DartImpl<string>;
+  id: string;
+  className: string;
   readonly classList: DOMTokenList;
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;
