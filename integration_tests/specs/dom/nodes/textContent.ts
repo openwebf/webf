@@ -91,8 +91,7 @@ describe('Node.textContent', () => {
             "abc")
     }, "For a ProcessingInstruction with data, textContent should be that data")
 
-    // fix it later
-    xtest(function () {
+    test(function () {
         assert_equals(document.createComment("abc").textContent, "abc")
     }, "For a Comment with data, textContent should be that data")
 
