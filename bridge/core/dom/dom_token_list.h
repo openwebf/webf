@@ -34,7 +34,7 @@ class DOMTokenList : public ScriptWrappable {
   bool supports(const AtomicString&, ExceptionState&);
   AtomicString value() const;
   void setValue(const AtomicString&, ExceptionState& exception_state);
-  AtomicString toString() const { return value(); }
+  AtomicString toString(ExceptionState& exception_state) const { return value(); }
   void DidUpdateAttributeValue(const AtomicString& old_value, const AtomicString& new_value);
 
   const SpaceSplitString& TokenSet() const { return token_set_; }

@@ -7,11 +7,13 @@ interface DOMTokenList {
   toggle(token: string, force?: boolean): boolean;
   replace(token: string, newToken: string): boolean;
   supports(token: string): boolean;
+  toString(): string;
   readonly [key: number]: string | null;
   value: string;
   readonly forEach: JSArrayProtoMethod;
   readonly keys: JSArrayProtoMethod;
   readonly entries: JSArrayProtoMethod;
   readonly values: JSArrayProtoMethod;
+  readonly [Symbol.iterator]: JSArrayProtoMethod;
   new(): void;
 }

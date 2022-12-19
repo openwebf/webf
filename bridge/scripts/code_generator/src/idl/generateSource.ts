@@ -454,7 +454,11 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object = object as ClassObject;
 
         function addObjectProps(prop: PropsDeclaration) {
-          options.classMethodsInstallList.push(`{"${prop.name}", ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          if (prop.isSymbol) {
+            options.classMethodsInstallList.push(`{JS_ATOM_${prop.name}, ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          } else {
+            options.classMethodsInstallList.push(`{defined_properties::k${prop.name}.Impl(), ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          }
         }
         function addObjectMethods(method: FunctionDeclaration, i: number) {
           if (overloadMethods.hasOwnProperty(method.name)) {
@@ -473,7 +477,7 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object.methods.forEach(addObjectMethods);
 
         if (object.construct) {
-          options.constructorInstallList.push(`{"${getClassName(blob)}", nullptr, nullptr, constructor}`)
+          options.constructorInstallList.push(`{defined_properties::k${getClassName(blob)}.Impl(), nullptr, nullptr, constructor}`)
         }
 
         let wrapperTypeRegisterList = [

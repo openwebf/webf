@@ -24,6 +24,7 @@ export class FunctionArguments {
   name: string;
   type: ParameterType[] = [];
   isDotDotDot: boolean;
+  isSymbolKey: boolean;
   typeMode: ParameterMode;
   required: boolean;
 }
@@ -38,6 +39,7 @@ export class PropsDeclaration {
   type: ParameterType[] = [];
   typeMode: ParameterMode;
   name: string;
+  isSymbol?: boolean;
   readonly: boolean;
   optional: boolean;
 }

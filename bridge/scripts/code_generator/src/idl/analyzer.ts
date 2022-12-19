@@ -50,13 +50,20 @@ function getMixins(hertage: HeritageClause): string[] | null {
   return mixins;
 }
 
-function getPropName(propName: ts.PropertyName) {
+function getPropName(propName: ts.PropertyName, prop?: PropsDeclaration) {
   if (propName.kind == ts.SyntaxKind.Identifier) {
     return propName.escapedText.toString();
   } else if (propName.kind === ts.SyntaxKind.StringLiteral) {
     return propName.text;
   } else if (propName.kind === ts.SyntaxKind.NumericLiteral) {
     return propName.text;
+    // @ts-ignore
+  } else if (propName.kind === ts.SyntaxKind.ComputedPropertyName && propName.expression.kind === ts.SyntaxKind.PropertyAccessExpression) {
+    prop!.isSymbol = true;
+    // @ts-ignore
+    let expression = propName.expression;
+    // @ts-ignore
+    return `${expression.expression.text}_${expression.name.text}`;
   }
   throw new Error(`prop name: ${ts.SyntaxKind[propName.kind]} is not supported`);
 }
@@ -65,6 +72,10 @@ function getParameterName(name: ts.BindingName) : string {
   if (name.kind === ts.SyntaxKind.Identifier) {
     return name.escapedText.toString();
   }
+  // @ts-ignore
+  // if (name.kind === ts.SyntaxKind.ComputedPropertyName) {
+  //   console.log(name);
+  // }
   return  '';
 }
 
@@ -192,6 +203,7 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
       if (obj.kind === ClassObjectKind.interface) {
         definedPropertyCollector.interfaces.add('QJS' + interfaceName);
         definedPropertyCollector.files.add(blob.filename);
+        definedPropertyCollector.properties.add(interfaceName);
       }
 
       s.members.forEach(member => {
@@ -199,13 +211,10 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
           case ts.SyntaxKind.PropertySignature: {
             let prop = new PropsDeclaration();
             let m = (member as ts.PropertySignature);
-            prop.name = getPropName(m.name);
+            prop.name = getPropName(m.name, prop);
             prop.readonly = isParamsReadOnly(m);
 
-            if (obj.kind === ClassObjectKind.interface) {
-              definedPropertyCollector.properties.add(prop.name);
-            }
-
+            definedPropertyCollector.properties.add(prop.name);
             let propKind = m.type;
             if (propKind) {
               let mode = new ParameterMode();
