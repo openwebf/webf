@@ -351,6 +351,41 @@ bool JS_HasClassId(JSRuntime* runtime, JSClassID classId) {
   return runtime->class_array[classId].class_id == classId;
 }
 
+int JS_AtomIs8Bit(JSRuntime* runtime, JSAtom atom) {
+  JSString* string = runtime->atom_array[atom];
+  return string->is_wide_char == 0;
+}
+
+const uint8_t* JS_AtomRawCharacter8(JSRuntime* runtime, JSAtom atom) {
+  JSString* string = runtime->atom_array[atom];
+  return string->u.str8;
+}
+
+const uint16_t* JS_AtomRawCharacter16(JSRuntime* runtime, JSAtom atom) {
+  JSString* string = runtime->atom_array[atom];
+  return string->u.str16;
+}
+
+int JS_FindCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(char)) {
+  JSString* string = runtime->atom_array[atom];
+  for (int i = 0; i < string->len; i++) {
+    if (CharacterMatchFunction(static_cast<char>(string->u.str8[i]))) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int JS_FindWCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(uint16_t)) {
+  JSString* string = runtime->atom_array[atom];
+  for (int i = 0; i < string->len; i++) {
+    if (CharacterMatchFunction(string->u.str16[i])) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 JSValue JS_GetProxyTarget(JSValue value) {
   JSObject* p = JS_VALUE_GET_OBJ(value);
   return p->u.proxy_data->target;

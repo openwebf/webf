@@ -10,7 +10,6 @@
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
-#include "space_split_string.h"
 
 namespace webf {
 

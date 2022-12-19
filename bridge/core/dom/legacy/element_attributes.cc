@@ -23,7 +23,7 @@ ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element
 AtomicString ElementAttributes::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
   bool numberIndex = IsNumberIndex(name.ToStringView());
 
-  if (numberIndex) {
+  if (numberIndex || attributes_.count(name) == 0) {
     return AtomicString::Empty();
   }
 
