@@ -22,7 +22,7 @@ interface Document extends Node {
   createElement(tagName: string, options?: any): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
-  createComment(data?: string): Comment;
+  createComment(data: string): Comment;
   createEvent(event_type: string): Event;
 
   getElementById(id: string): Element | null;
