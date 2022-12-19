@@ -5,13 +5,14 @@
 
 import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/launcher.dart';
 
 class InspectOverlayModule extends UIInspectorModule {
   @override
   String get name => 'Overlay';
 
   Document get document => devtoolsService.controller!.view.document;
-  InspectOverlayModule(ChromeDevToolsService devtoolsService) : super(devtoolsService);
+  InspectOverlayModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {

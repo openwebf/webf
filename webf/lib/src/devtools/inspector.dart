@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:webf/devtools.dart';
+import 'package:webf/launcher.dart';
 
 const String INSPECTOR_URL = 'devtools://devtools/bundled/inspector.html';
 const int INSPECTOR_DEFAULT_PORT = 9222;
@@ -30,6 +31,13 @@ class InspectorServerInit {
   InspectorServerInit(this.contextId, this.port, this.address, this.bundleURL);
 }
 
+class InspectorServerConnect {
+  final String url;
+  InspectorServerConnect(this.url);
+}
+
+class InspectorClientConnected {}
+
 class InspectorServerStart {}
 
 class InspectorFrontEndMessage {
@@ -46,19 +54,13 @@ class InspectorMethodResult {
   InspectorMethodResult(this.id, this.result);
 }
 
-class InspectorPostTaskMessage {
-  int context;
-  int callback;
-  InspectorPostTaskMessage(this.context, this.callback);
-}
-
 class InspectorReload {
   int contextId;
   InspectorReload(this.contextId);
 }
 
 class UIInspector {
-  final ChromeDevToolsService devtoolsService;
+  final DevToolsService devtoolsService;
   final Map<String, UIInspectorModule> moduleRegistrar = {};
 
   UIInspector(this.devtoolsService) {
@@ -81,6 +83,13 @@ class UIInspector {
     print('WebF DevTool listening at ws://$remoteAddress:$port');
     print('Open Chrome/Edge and enter following url to your navigator:');
     print('    $inspectorURL');
+  }
+
+  void onClientConnected() {
+    assert(devtoolsService is RemoteDevServerService);
+    String remoteUrl = (devtoolsService as RemoteDevServerService).url;
+    print('WebF DevTool Connected to $remoteUrl');
+    print('Open Chrome/Edge and connect to $remoteUrl to see the inspector.');
   }
 
   void messageRouter(int? id, String module, String method, Map<String, dynamic>? params) {

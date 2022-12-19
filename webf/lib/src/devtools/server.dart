@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ffi';
-import 'dart:typed_data';
 
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
@@ -18,8 +17,6 @@ const String CONTENT_LENGTH = 'Content-Length';
 const String FAVICON = 'https://gw.alicdn.com/tfs/TB1tTwGAAL0gK0jSZFxXXXWHVXa-144-144.png';
 
 typedef MessageCallback = void Function(Map<String, dynamic>?);
-
-Map<int, IsolateInspectorServer?> _inspectorServerMap = {};
 
 typedef NativeInspectorMessageCallback = Void Function(Pointer<Void> rpcSession, Pointer<Utf8> message);
 typedef DartInspectorMessageCallback = void Function(Pointer<Void> rpcSession, Pointer<Utf8> message);
@@ -32,140 +29,63 @@ typedef NativePostTaskToUIThread = Void Function(Int32 contextId, Pointer<Void> 
 typedef NativeDispatchInspectorTask = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
 typedef DartDispatchInspectorTask = void Function(int? contextId, Pointer<Void> context, Pointer<Void> callback);
 
-void _registerInspectorMessageCallback(int contextId, Pointer<Void> rpcSession,
-    Pointer<NativeFunction<NativeInspectorMessageCallback>> inspectorMessageCallback) {
-  IsolateInspectorServer? server = _inspectorServerMap[contextId];
-  if (server == null) {
-    print('Internal error: can not get inspector server from contextId: $contextId');
-    return;
-  }
-  DartInspectorMessageCallback nativeCallback = inspectorMessageCallback.asFunction();
-  server.nativeInspectorMessageHandler = (String message) {
-    nativeCallback(rpcSession, (message).toNativeUtf8());
-  };
-}
-
-void _onInspectorMessage(int contextId, Pointer<Utf8> message) {
-  IsolateInspectorServer? server = _inspectorServerMap[contextId];
-  if (server == null) {
-    print('Internal error: can not get inspector server from contextId: $contextId');
-    return;
-  }
-  String data = (message).toDartString();
-  server.sendRawJSONToFrontend(data);
-}
-
-void _postTaskToUIThread(int contextId, Pointer<Void> context, Pointer<Void> callback) {
-  IsolateInspectorServer? server = _inspectorServerMap[contextId];
-  if (server == null) {
-    print('Internal error: can not get inspector server from contextId: $contextId');
-    return;
-  }
-  server.isolateToMainStream!.send(InspectorPostTaskMessage(context.address, callback.address));
-}
-
-void attachInspector(int contextId) {
-  final DartAttachInspector _attachInspector =
-      WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAttachInspector>>('attachInspector').asFunction();
-  _attachInspector(contextId);
-}
-
-void initInspectorServerNativeBinding(int contextId) {
-  final Pointer<NativeFunction<NativeInspectorMessage>> _nativeInspectorMessage =
-      Pointer.fromFunction(_onInspectorMessage);
-  final Pointer<NativeFunction<NativeRegisterInspectorMessageCallback>> _nativeRegisterInspectorMessageCallback =
-      Pointer.fromFunction(_registerInspectorMessageCallback);
-  final Pointer<NativeFunction<NativePostTaskToUIThread>> _nativePostTaskToUIThread =
-      Pointer.fromFunction(_postTaskToUIThread);
-
-  final List<int> _dartNativeMethods = [
-    _nativeInspectorMessage.address,
-    _nativeRegisterInspectorMessageCallback.address,
-    _nativePostTaskToUIThread.address
-  ];
-
-  Pointer<Uint64> bytes = malloc.allocate<Uint64>(_dartNativeMethods.length * sizeOf<Uint64>());
-  Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
-  nativeMethodList.setAll(0, _dartNativeMethods);
-}
-
 void serverIsolateEntryPoint(SendPort isolateToMainStream) {
   ReceivePort mainToIsolateStream = ReceivePort();
   isolateToMainStream.send(mainToIsolateStream.sendPort);
-  IsolateInspectorServer? server;
-  int? mainIsolateJSContextId;
-
+  IsolateInspector? inspector;
   mainToIsolateStream.listen((data) {
+    handleFrontEndMessage(Map<String, dynamic>? frontEndMessage) {
+      int? id = frontEndMessage!['id'];
+      String _method = frontEndMessage['method'];
+      Map<String, dynamic>? params = frontEndMessage['params'];
+
+      List<String> moduleMethod = _method.split('.');
+      String module = moduleMethod[0];
+      String method = moduleMethod[1];
+
+      // Runtime、Log、Debugger methods should handled on inspector isolate.
+      if (module == 'Runtime' || module == 'Log' || module == 'Debugger') {
+        inspector!.messageRouter(id, module, method, params);
+      } else {
+        isolateToMainStream.send(InspectorFrontEndMessage(id, module, method, params));
+      }
+    }
+
     if (data is InspectorServerInit) {
-      server = IsolateInspectorServer(data.port, data.address, data.bundleURL);
-      server!._isolateToMainStream = isolateToMainStream;
-      server!.onStarted = () {
+      IsolateInspectorServer server = IsolateInspectorServer(data.port, data.address, data.bundleURL);
+      server.onStarted = () {
         isolateToMainStream.send(InspectorServerStart());
       };
-      server!.onFrontendMessage = (Map<String, dynamic>? frontEndMessage) {
-        int? id = frontEndMessage!['id'];
-        String _method = frontEndMessage['method'];
-        Map<String, dynamic>? params = frontEndMessage['params'];
-
-        List<String> moduleMethod = _method.split('.');
-        String module = moduleMethod[0];
-        String method = moduleMethod[1];
-
-        // Runtime、Log、Debugger methods should handled on inspector isolate.
-        if (module == 'Runtime' || module == 'Log' || module == 'Debugger') {
-          server!.messageRouter(id, module, method, params);
-        } else {
-          isolateToMainStream.send(InspectorFrontEndMessage(id, module, method, params));
-        }
+      server.onFrontendMessage = handleFrontEndMessage;
+      server.start();
+      inspector = server;
+    } else if (data is InspectorServerConnect) {
+      IsolateInspectorClient client = IsolateInspectorClient(data.url);
+      client.onStarted = () {
+        isolateToMainStream.send(InspectorClientConnected());
       };
-      server!.start();
-      _inspectorServerMap[data.contextId] = server;
-      mainIsolateJSContextId = data.contextId;
-      // @TODO
-      // initInspectorServerNativeBinding(data.contextId);
-      // attachInspector(data.contextId);
-    } else if (server != null && server!.connected) {
+      client.onFrontendMessage = handleFrontEndMessage;
+      client.start();
+      inspector = client;
+    } else if (inspector != null && inspector!.connected) {
       if (data is InspectorEvent) {
-        server!.sendEventToFrontend(data);
+        inspector!.sendEventToFrontend(data);
       } else if (data is InspectorMethodResult) {
-        server!.sendToFrontend(data.id, data.result);
-      } else if (data is InspectorPostTaskMessage) {
-        final DartDispatchInspectorTask _dispatchInspectorTask = WebFDynamicLibrary.ref
-            .lookup<NativeFunction<NativeDispatchInspectorTask>>('dispatchInspectorTask')
-            .asFunction();
-        _dispatchInspectorTask(
-            mainIsolateJSContextId, Pointer.fromAddress(data.context), Pointer.fromAddress(data.callback));
-      } else if (data is InspectorReload) {
-        // @TODO
-        // attachInspector(data.contextId);
+        inspector!.sendToFrontend(data.id, data.result);
       }
     }
   });
 }
 
-class IsolateInspectorServer {
-  IsolateInspectorServer(this.port, this.address, this.bundleURL) {
-    // registerModule(InspectRuntimeModule(this));
-    // registerModule(InspectDebuggerModule(this));
-    // registerModule(InspectorLogModule(this));
-  }
-
-  // final Inspector inspector;
-  final String address;
-  final String bundleURL;
-  int port;
-
-  VoidCallback? onStarted;
+class IsolateInspector {
+  final Map<String, IsolateInspectorModule> moduleRegistrar = {};
   MessageCallback? onFrontendMessage;
-  late HttpServer _httpServer;
+
   WebSocket? _ws;
 
-  SendPort? _isolateToMainStream;
-  SendPort? get isolateToMainStream => _isolateToMainStream;
+  WebSocket? get ws => _ws;
 
-  NativeInspectorMessageHandler? nativeInspectorMessageHandler;
-
-  final Map<String, IsolateInspectorModule> moduleRegistrar = {};
+  bool get connected => false;
 
   void messageRouter(int? id, String module, String method, Map<String, dynamic>? params) {
     if (moduleRegistrar.containsKey(module)) {
@@ -177,7 +97,60 @@ class IsolateInspectorServer {
     moduleRegistrar[module.name] = module;
   }
 
+  void sendToFrontend(int? id, Map? result) {
+    String data = jsonEncode({
+      if (id != null) 'id': id,
+      // Give an empty object for response.
+      'result': result ?? {},
+    });
+    _ws?.add(data);
+  }
+
+  void sendEventToFrontend(InspectorEvent event) {
+    _ws?.add(jsonEncode(event));
+  }
+
+  void sendRawJSONToFrontend(String message) {
+    _ws?.add(message);
+  }
+
+  void dispose() async {
+    onFrontendMessage = null;
+  }
+
+  Map<String, dynamic>? _parseMessage(message) {
+    try {
+      Map<String, dynamic>? data = jsonDecode(message);
+      return data;
+    } catch (err) {
+      print('Error while decoding frontend message: $message');
+      rethrow;
+    }
+  }
+
+  void onWebSocketRequest(message) {
+    if (message is String) {
+      Map<String, dynamic>? data = _parseMessage(message);
+      if (onFrontendMessage != null) {
+        onFrontendMessage!(data);
+      }
+    }
+  }
+}
+
+class IsolateInspectorServer extends IsolateInspector {
+  IsolateInspectorServer(this.port, this.address, this.bundleURL);
+
+  // final Inspector inspector;
+  final String address;
+  final String bundleURL;
+  int port;
+
+  VoidCallback? onStarted;
+  late HttpServer _httpServer;
+
   /// InspectServer has connected frontend.
+  @override
   bool get connected => _ws?.readyState == WebSocket.open;
 
   int _bindServerRetryTime = 0;
@@ -218,42 +191,6 @@ class IsolateInspectorServer {
         onHTTPRequest(request);
       }
     });
-  }
-
-  void sendToFrontend(int? id, Map? result) {
-    String data = jsonEncode({
-      if (id != null) 'id': id,
-      // Give an empty object for response.
-      'result': result ?? {},
-    });
-    _ws?.add(data);
-  }
-
-  void sendEventToFrontend(InspectorEvent event) {
-    _ws?.add(jsonEncode(event));
-  }
-
-  void sendRawJSONToFrontend(String message) {
-    _ws?.add(message);
-  }
-
-  Map<String, dynamic>? _parseMessage(message) {
-    try {
-      Map<String, dynamic>? data = jsonDecode(message);
-      return data;
-    } catch (err) {
-      print('Error while decoding frontend message: $message');
-      rethrow;
-    }
-  }
-
-  void onWebSocketRequest(message) {
-    if (message is String) {
-      Map<String, dynamic>? data = _parseMessage(message);
-      if (onFrontendMessage != null) {
-        onFrontendMessage!(data);
-      }
-    }
   }
 
   Future<void> onHTTPRequest(HttpRequest request) async {
@@ -341,11 +278,30 @@ class IsolateInspectorServer {
     request.response.write('Unknown request.');
   }
 
+  @override
   void dispose() async {
+    super.dispose();
     onStarted = null;
-    onFrontendMessage = null;
 
     await _ws?.close();
     await _httpServer.close();
+  }
+}
+
+class IsolateInspectorClient extends IsolateInspector {
+  final String url;
+
+  IsolateInspectorClient(this.url);
+
+  @override
+  bool get connected => _ws?.readyState == WebSocket.open;
+
+  VoidCallback? onStarted;
+
+  void start() async {
+    _ws = await WebSocket.connect(url, protocols: ['echo-protocol']);
+    _ws!.listen((data) {
+      onWebSocketRequest(data);
+    });
   }
 }

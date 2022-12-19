@@ -3,9 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:convert';
-
 import 'package:webf/devtools.dart';
+import 'package:webf/webf.dart';
 
 abstract class _InspectorModule {
   String get name;
@@ -35,7 +34,7 @@ abstract class _InspectorModule {
 
 // Inspector modules working on flutter.ui thread.
 abstract class UIInspectorModule extends _InspectorModule {
-  final ChromeDevToolsService devtoolsService;
+  final DevToolsService devtoolsService;
   UIInspectorModule(this.devtoolsService);
 
   @override
@@ -57,16 +56,12 @@ abstract class IsolateInspectorModule extends _InspectorModule {
 
   @override
   void sendToFrontend(int? id, JSONEncodable? result) {
+    print('send to front end $id $result');
     server.sendToFrontend(id, result?.toJson());
   }
 
   @override
   void sendEventToFrontend(InspectorEvent event) {
     server.sendEventToFrontend(event);
-  }
-
-  void callNativeInspectorMethod(int? id, String method, Map<String, dynamic>? params) {
-    assert(server.nativeInspectorMessageHandler != null);
-    server.nativeInspectorMessageHandler!(jsonEncode({'id': id, 'method': name + '.' + method, 'params': params}));
   }
 }

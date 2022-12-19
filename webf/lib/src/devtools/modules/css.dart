@@ -6,6 +6,7 @@
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/launcher.dart';
 
 const int INLINED_STYLESHEET_ID = 1;
 const String ZERO_PX = '0px';
@@ -14,7 +15,7 @@ RegExp _camelCaseReg = RegExp(r'-(\w)');
 
 class InspectCSSModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
-  InspectCSSModule(ChromeDevToolsService devtoolsService) : super(devtoolsService);
+  InspectCSSModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
   String get name => 'CSS';

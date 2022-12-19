@@ -4,9 +4,10 @@
  */
 
 import 'package:webf/devtools.dart';
+import 'package:webf/launcher.dart';
 
 class InspectLogModule extends UIInspectorModule {
-  InspectLogModule(ChromeDevToolsService server) : super(server) {
+  InspectLogModule(DevToolsService server) : super(server) {
     devtoolsService.controller!.onJSLog = (level, message) {
       handleMessage(level, message);
     };

@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/launcher.dart';
 import 'package:webf/devtools.dart';
 
 String enumKey(String key) {
@@ -177,7 +178,7 @@ enum ResourceType {
 class InspectPageModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
 
-  InspectPageModule(ChromeDevToolsService devtoolsService) : super(devtoolsService);
+  InspectPageModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
   String get name => 'Page';
