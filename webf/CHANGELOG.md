@@ -1,3 +1,7 @@
+## 0.13.2-beta.1
+
+* fix page reload when history.back().
+
 ## 0.13.1
 
 **Bug Fixed**
