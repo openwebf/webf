@@ -29,7 +29,7 @@ final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 const MOCK_SERVER_PORT = 4567;
 
 Future<void> startHttpMockServer() async {
-  await Process.start('node', [__dirname + '/scripts/mock_http_server.js'], environment: {
+  await Process.start('node', [testDirectory + '/scripts/mock_http_server.js'], environment: {
     'PORT': MOCK_SERVER_PORT.toString()
   }, mode: ProcessStartMode.inheritStdio);
 }
