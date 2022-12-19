@@ -44,6 +44,7 @@
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
 #include "qjs_image.h"
+#include "qjs_inline_css_style_declaration.h"
 #include "qjs_input_event.h"
 #include "qjs_intersection_change_event.h"
 #include "qjs_keyboard_event.h"
@@ -129,6 +130,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSCanvasRenderingContext::Install(context);
   QJSCanvasRenderingContext2D::Install(context);
   QJSCSSStyleDeclaration::Install(context);
+  QJSInlineCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSHTMLAllCollection::Install(context);
   QJSScreen::Install(context);

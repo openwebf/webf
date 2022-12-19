@@ -135,36 +135,36 @@ mixin CSSBorderMixin on RenderStyle {
 
   /// Border-color
   @override
-  Color get borderTopColor => _borderTopColor ?? currentColor;
-  Color? _borderTopColor;
-  set borderTopColor(Color? value) {
+  CSSColor get borderTopColor => _borderTopColor ?? currentColor;
+  CSSColor? _borderTopColor;
+  set borderTopColor(CSSColor? value) {
     if (value == _borderTopColor) return;
     _borderTopColor = value;
     renderBoxModel?.markNeedsPaint();
   }
 
   @override
-  Color get borderRightColor => _borderRightColor ?? currentColor;
-  Color? _borderRightColor;
-  set borderRightColor(Color? value) {
+  CSSColor get borderRightColor => _borderRightColor ?? currentColor;
+  CSSColor? _borderRightColor;
+  set borderRightColor(CSSColor? value) {
     if (value == _borderRightColor) return;
     _borderRightColor = value;
     renderBoxModel?.markNeedsPaint();
   }
 
   @override
-  Color get borderBottomColor => _borderBottomColor ?? currentColor;
-  Color? _borderBottomColor;
-  set borderBottomColor(Color? value) {
+  CSSColor get borderBottomColor => _borderBottomColor ?? currentColor;
+  CSSColor? _borderBottomColor;
+  set borderBottomColor(CSSColor? value) {
     if (value == _borderBottomColor) return;
     _borderBottomColor = value;
     renderBoxModel?.markNeedsPaint();
   }
 
   @override
-  Color get borderLeftColor => _borderLeftColor ?? currentColor;
-  Color? _borderLeftColor;
-  set borderLeftColor(Color? value) {
+  CSSColor get borderLeftColor => _borderLeftColor ?? currentColor;
+  CSSColor? _borderLeftColor;
+  set borderLeftColor(CSSColor? value) {
     if (value == _borderLeftColor) return;
     _borderLeftColor = value;
     renderBoxModel?.markNeedsPaint();
@@ -277,22 +277,22 @@ class CSSBorderSide {
       case LEFT:
         borderStyle = renderStyle.borderLeftStyle;
         borderWidth = renderStyle.effectiveBorderLeftWidth;
-        borderColor = renderStyle.borderLeftColor;
+        borderColor = renderStyle.borderLeftColor.value;
         break;
       case RIGHT:
         borderStyle = renderStyle.borderRightStyle;
         borderWidth = renderStyle.effectiveBorderRightWidth;
-        borderColor = renderStyle.borderRightColor;
+        borderColor = renderStyle.borderRightColor.value;
         break;
       case TOP:
         borderStyle = renderStyle.borderTopStyle;
         borderWidth = renderStyle.effectiveBorderTopWidth;
-        borderColor = renderStyle.borderTopColor;
+        borderColor = renderStyle.borderTopColor.value;
         break;
       case BOTTOM:
         borderStyle = renderStyle.borderBottomStyle;
         borderWidth = renderStyle.effectiveBorderBottomWidth;
-        borderColor = renderStyle.borderBottomColor;
+        borderColor = renderStyle.borderBottomColor.value;
         break;
     }
     // Flutter will print border event if width is 0.0. So we needs to set borderStyle to none to prevent this.
@@ -346,6 +346,13 @@ class CSSBorderRadius {
       }
     }
     return null;
+  }
+
+  String cssText() {
+    if (x == y) {
+      return '${x.computedValue}px';
+    }
+    return '${x.computedValue}px ${y.computedValue}px';
   }
 }
 
@@ -405,7 +412,7 @@ class CSSBoxShadow {
       for (var shadowDefinitions in shadows) {
         // Specifies the color of the shadow. If the color is absent, it defaults to currentColor.
         String colorDefinition = shadowDefinitions[0] ?? CURRENT_COLOR;
-        Color? color = CSSColor.resolveColor(colorDefinition, renderStyle, propertyName);
+        CSSColor? color = CSSColor.resolveColor(colorDefinition, renderStyle, propertyName);
         CSSLengthValue? offsetX;
         if (shadowDefinitions[1] != null) {
           offsetX = CSSLength.parseLength(shadowDefinitions[1]!, renderStyle, propertyName);
@@ -434,7 +441,7 @@ class CSSBoxShadow {
             offsetY: offsetY,
             blurRadius: blurRadius,
             spreadRadius: spreadRadius,
-            color: color,
+            color: color.value,
             inset: inset,
           ));
         }

@@ -67,10 +67,10 @@ abstract class RenderStyle {
   CSSLengthValue get effectiveBorderTopWidth;
   CSSLengthValue get effectiveBorderBottomWidth;
   double get contentMaxConstraintsWidth;
-  Color get borderLeftColor;
-  Color get borderRightColor;
-  Color get borderTopColor;
-  Color get borderBottomColor;
+  CSSColor get borderLeftColor;
+  CSSColor get borderRightColor;
+  CSSColor get borderTopColor;
+  CSSColor get borderBottomColor;
   List<Radius>? get borderRadius;
   CSSBorderRadius get borderTopLeftRadius;
   CSSBorderRadius get borderTopRightRadius;
@@ -80,11 +80,15 @@ abstract class RenderStyle {
   List<WebFBoxShadow>? get shadows;
 
   // Decorations
-  Color? get backgroundColor;
+  CSSColor? get backgroundColor;
   CSSBackgroundImage? get backgroundImage;
-  ImageRepeat get backgroundRepeat;
+  CSSBackgroundRepeatType get backgroundRepeat;
   CSSBackgroundPosition get backgroundPositionX;
   CSSBackgroundPosition get backgroundPositionY;
+  CSSBackgroundSize get backgroundSize;
+  CSSBackgroundAttachmentType? get backgroundAttachment;
+  BackgroundBoundary? get backgroundClip;
+  BackgroundBoundary? get backgroundOrigin;
 
   // Text
   CSSLengthValue get fontSize;
@@ -140,8 +144,8 @@ abstract class RenderStyle {
   double get flexShrink;
 
   // Color
-  Color get color;
-  Color get currentColor;
+  CSSColor get color;
+  CSSColor get currentColor;
 
   // Filter
   ColorFilter? get colorFilter;

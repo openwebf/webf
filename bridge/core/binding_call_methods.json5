@@ -154,6 +154,14 @@
     "cookie",
     "class",
     "syncPropertiesAndMethods",
-    "___clear_cookies__"
+    "___clear_cookies__",
+    "getComputedStyle",
+    "getPropertyValue",
+    "setProperty",
+    "checkCSSProperty",
+    "getFullCSSPropertyList",
+    "removeProperty",
+    "cssText",
+    "length"
   ]
 }

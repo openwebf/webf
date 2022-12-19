@@ -2,7 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#include "css_style_declaration.h"
+#include "inline_css_style_declaration.h"
 #include <vector>
 #include "core/dom/element.h"
 #include "core/executing_context.h"
@@ -61,52 +61,55 @@ static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
   return result;
 }
 
-CSSStyleDeclaration* CSSStyleDeclaration::Create(ExecutingContext* context, ExceptionState& exception_state) {
+InlineCssStyleDeclaration* InlineCssStyleDeclaration::Create(ExecutingContext* context,
+                                                             ExceptionState& exception_state) {
   exception_state.ThrowException(context->ctx(), ErrorType::TypeError, "Illegal constructor.");
   return nullptr;
 }
 
-CSSStyleDeclaration::CSSStyleDeclaration(ExecutingContext* context, int64_t owner_element_target_id)
-    : ScriptWrappable(context->ctx()), owner_element_target_id_(owner_element_target_id) {}
+InlineCssStyleDeclaration::InlineCssStyleDeclaration(ExecutingContext* context, int64_t owner_element_target_id)
+    : CSSStyleDeclaration(context->ctx()), owner_element_target_id_(owner_element_target_id) {}
 
-AtomicString CSSStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
+AtomicString InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   return InternalGetPropertyValue(propertyName);
 }
 
-bool CSSStyleDeclaration::SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) {
+bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
+                                        const AtomicString& value,
+                                        ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   return InternalSetProperty(propertyName, value);
 }
 
-int64_t CSSStyleDeclaration::length() const {
+int64_t InlineCssStyleDeclaration::length() const {
   return properties_.size();
 }
 
-AtomicString CSSStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
+AtomicString InlineCssStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   return InternalGetPropertyValue(propertyName);
 }
 
-void CSSStyleDeclaration::setProperty(const AtomicString& key,
-                                      const AtomicString& value,
-                                      ExceptionState& exception_state) {
+void InlineCssStyleDeclaration::setProperty(const AtomicString& key,
+                                            const AtomicString& value,
+                                            ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   InternalSetProperty(propertyName, value);
 }
 
-AtomicString CSSStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
+AtomicString InlineCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   return InternalRemoveProperty(propertyName);
 }
 
-void CSSStyleDeclaration::CopyWith(CSSStyleDeclaration* inline_style) {
+void InlineCssStyleDeclaration::CopyWith(InlineCssStyleDeclaration* inline_style) {
   for (auto& attr : inline_style->properties_) {
     properties_[attr.first] = attr.second;
   }
 }
 
-std::string CSSStyleDeclaration::ToString() const {
+std::string InlineCssStyleDeclaration::ToString() const {
   if (properties_.empty())
     return "";
 
@@ -120,17 +123,17 @@ std::string CSSStyleDeclaration::ToString() const {
   return s;
 }
 
-bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {
+bool InlineCssStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {
   return cssPropertyList.count(key.ToStdString(ctx())) > 0;
 }
 
-void CSSStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {
+void InlineCssStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {
   for (auto& entry : cssPropertyList) {
     names.emplace_back(AtomicString(ctx(), entry.first));
   }
 }
 
-AtomicString CSSStyleDeclaration::InternalGetPropertyValue(std::string& name) {
+AtomicString InlineCssStyleDeclaration::InternalGetPropertyValue(std::string& name) {
   name = parseJavaScriptCSSPropertyName(name);
 
   if (LIKELY(properties_.count(name) > 0)) {
@@ -140,7 +143,7 @@ AtomicString CSSStyleDeclaration::InternalGetPropertyValue(std::string& name) {
   return AtomicString::Empty();
 }
 
-bool CSSStyleDeclaration::InternalSetProperty(std::string& name, const AtomicString& value) {
+bool InlineCssStyleDeclaration::InternalSetProperty(std::string& name, const AtomicString& value) {
   name = parseJavaScriptCSSPropertyName(name);
   if (properties_[name] == value) {
     return true;
@@ -156,7 +159,7 @@ bool CSSStyleDeclaration::InternalSetProperty(std::string& name, const AtomicStr
   return true;
 }
 
-AtomicString CSSStyleDeclaration::InternalRemoveProperty(std::string& name) {
+AtomicString InlineCssStyleDeclaration::InternalRemoveProperty(std::string& name) {
   name = parseJavaScriptCSSPropertyName(name);
 
   if (UNLIKELY(properties_.count(name) == 0)) {

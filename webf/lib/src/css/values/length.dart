@@ -59,6 +59,35 @@ class CSSLengthValue {
     }
   }
 
+  String cssText() {
+    switch(type) {
+      case CSSLengthType.PX:
+        return '${value}px';
+      case CSSLengthType.EM:
+        return '${value}em';
+      case CSSLengthType.REM:
+        return '${value}rem';
+      case CSSLengthType.VH:
+        return '${value}vh';
+      case CSSLengthType.VW:
+        return '${value}vw';
+      case CSSLengthType.VMIN:
+        return '${value}vmin';
+      case CSSLengthType.VMAX:
+        return '${value}vmax';
+      case CSSLengthType.PERCENTAGE:
+        return '$value%';
+      case CSSLengthType.UNKNOWN:
+      case CSSLengthType.AUTO:
+        return 'auto';
+      case CSSLengthType.NONE:
+      case CSSLengthType.NORMAL:
+      case CSSLengthType.INITIAL:
+        break;
+    }
+    return '';
+  }
+
   static final CSSLengthValue zero = CSSLengthValue(0, CSSLengthType.PX);
   static final CSSLengthValue auto = CSSLengthValue(null, CSSLengthType.AUTO);
   static final CSSLengthValue initial = CSSLengthValue(null, CSSLengthType.INITIAL);
