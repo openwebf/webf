@@ -269,7 +269,7 @@ mixin BaseInputElement on WidgetElement {
     leading: leading,
   );
 
-  final double _defaultPadding = 5.0;
+  final double _defaultPadding = 0;
 
   Widget _createInputWidget(BuildContext context) {
     FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
@@ -279,7 +279,6 @@ mixin BaseInputElement on WidgetElement {
         dispatchEvent(inputEvent);
       });
     }
-
 
     InputDecoration decoration = InputDecoration(
         label: label != null ? Text(label!) : null,

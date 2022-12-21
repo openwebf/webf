@@ -109,18 +109,26 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
 
   @override
   void setCanDrag(bool canDrag) {
-    if (canDrag == _lastCanDrag && (!canDrag || axis == _lastAxisDirection)) return;
-    if (!canDrag && !(_overflowType != CSSOverflowType.hidden)) {
-      _gestureRecognizers = const <Type, GestureRecognizerFactory>{};
-    } else {
+    // Break no use update drag logic
+    if(canDrag == _lastCanDrag && axis == _lastAxisDirection &&
+        (canDrag && _gestureRecognizers.keys.isNotEmpty ||
+            !canDrag && _gestureRecognizers.keys.isEmpty)) {
+      return;
+    }
+    // Only this case can update to scroll mode,
+    // else no scroll mode
+    if(canDrag && _overflowType != CSSOverflowType.hidden) {
       switch (axis) {
         case Axis.vertical:
-          // Vertical drag gesture recognizer to trigger vertical scroll.
+        // Vertical drag gesture recognizer to trigger vertical scroll.
           _gestureRecognizers = <Type, GestureRecognizerFactory>{
             ScrollVerticalDragGestureRecognizer:
-                GestureRecognizerFactoryWithHandlers<ScrollVerticalDragGestureRecognizer>(
-              () => ScrollVerticalDragGestureRecognizer(supportedDevices: dragDevices),
-              (ScrollVerticalDragGestureRecognizer instance) {
+            GestureRecognizerFactoryWithHandlers<
+                ScrollVerticalDragGestureRecognizer>(
+                  () =>
+                  ScrollVerticalDragGestureRecognizer(
+                      supportedDevices: dragDevices),
+                  (ScrollVerticalDragGestureRecognizer instance) {
                 instance
                   ..isAcceptedDrag = _isAcceptedVerticalDrag
                   ..onDown = _handleDragDown
@@ -137,12 +145,15 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
           };
           break;
         case Axis.horizontal:
-          // Horizontal drag gesture recognizer to horizontal vertical scroll.
+        // Horizontal drag gesture recognizer to horizontal vertical scroll.
           _gestureRecognizers = <Type, GestureRecognizerFactory>{
             ScrollHorizontalDragGestureRecognizer:
-                GestureRecognizerFactoryWithHandlers<ScrollHorizontalDragGestureRecognizer>(
-              () => ScrollHorizontalDragGestureRecognizer(supportedDevices: dragDevices),
-              (ScrollHorizontalDragGestureRecognizer instance) {
+            GestureRecognizerFactoryWithHandlers<
+                ScrollHorizontalDragGestureRecognizer>(
+                  () =>
+                  ScrollHorizontalDragGestureRecognizer(
+                      supportedDevices: dragDevices),
+                  (ScrollHorizontalDragGestureRecognizer instance) {
                 instance
                   ..isAcceptedDrag = _isAcceptedHorizontalDrag
                   ..onDown = _handleDragDown
@@ -159,7 +170,10 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
           };
           break;
       }
+    } else {
+      _gestureRecognizers = const <Type, GestureRecognizerFactory>{};
     }
+
     _lastCanDrag = canDrag;
     _lastAxisDirection = axis;
     _syncAll(_gestureRecognizers);

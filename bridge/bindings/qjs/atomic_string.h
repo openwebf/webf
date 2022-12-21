@@ -33,6 +33,7 @@ class AtomicString {
   };
 
   static AtomicString Empty();
+  static AtomicString Null();
   static AtomicString From(JSContext* ctx, NativeString* native_string);
 
   AtomicString() = default;
@@ -44,7 +45,7 @@ class AtomicString {
 
   // Return the undefined string value from atom key.
   JSValue ToQuickJS(JSContext* ctx) const {
-    if (ctx == nullptr) {
+    if (ctx == nullptr || IsNull()) {
       return JS_NULL;
     }
 
@@ -53,6 +54,7 @@ class AtomicString {
   };
 
   bool IsEmpty() const;
+  bool IsNull() const;
 
   JSAtom Impl() const { return atom_; }
 
@@ -64,10 +66,10 @@ class AtomicString {
   StringView ToStringView() const;
 
   AtomicString ToUpperIfNecessary(JSContext* ctx) const;
-  const AtomicString ToUpperSlow(JSContext* ctx) const;
+  AtomicString ToUpperSlow(JSContext* ctx) const;
 
-  const AtomicString ToLowerIfNecessary(JSContext* ctx) const;
-  const AtomicString ToLowerSlow(JSContext* ctx) const;
+  AtomicString ToLowerIfNecessary(JSContext* ctx) const;
+  AtomicString ToLowerSlow(JSContext* ctx) const;
 
   // Copy assignment
   AtomicString(AtomicString const& value);
@@ -86,9 +88,12 @@ class AtomicString {
   JSRuntime* runtime_{nullptr};
   int64_t length_{0};
   JSAtom atom_{JS_ATOM_empty_string};
-  mutable JSAtom atom_upper_{JS_ATOM_empty_string};
-  mutable JSAtom atom_lower_{JS_ATOM_empty_string};
+  mutable JSAtom atom_upper_{JS_ATOM_NULL};
+  mutable JSAtom atom_lower_{JS_ATOM_NULL};
   StringKind kind_;
+
+ private:
+  void initFromAtom(JSContext* ctx);
 };
 
 }  // namespace webf

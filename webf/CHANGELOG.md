@@ -1,3 +1,21 @@
+## 0.13.1
+
+**Bug Fixed**
+
+1. Fix renderBoxModel is null cause performLayout error. https://github.com/openwebf/webf/pull/187
+2. Fix position absolute cause mistake overflow. https://github.com/openwebf/webf/pull/167
+3. Fix var in keyframes not work. https://github.com/openwebf/webf/issues/147
+4. Fix var in translate not work. https://github.com/openwebf/webf/issues/154
+5. Fix unexpected token in linear-graident. https://github.com/openwebf/webf/issues/119
+6. Fix tag element selector. https://github.com/openwebf/webf/issues/169
+7. Fix var attribute dynamic modification exception. https://github.com/openwebf/webf/issues/144
+
+
+**Feature**
+
+1. Add `initialCookies` params on WebF widget. https://github.com/openwebf/webf/pull/186
+
+
 ## 0.13.0
 
 The biggest update since the `webf/kraken` release.

@@ -609,21 +609,37 @@ class CSSMatrix {
 
   static Matrix4? _computeMatrix(CSSFunctionalNotation method, RenderStyle renderStyle) {
     final methodName = method.name.toLowerCase();
+
+    // resolve var arg
+    var methodArgs = method.args;
+    for (int i = 0; i < methodArgs.length; i++) {
+      String arg = methodArgs[i];
+      final calcValue = CSSCalcValue.tryParse(renderStyle, '', arg)?.computedValue('').toString();
+      if (calcValue != null) {
+        methodArgs[i] = calcValue;
+      } else {
+        final varValue = CSSVariable.tryParse(renderStyle, arg)?.computedValue('').toString();
+        if (varValue != null) {
+          methodArgs[i] = varValue;
+        }
+      }
+    }
+
     switch (methodName) {
       case MATRIX:
         if (method.args.length == 6) {
           List<double?> args = List.filled(6, 0);
           for (int i = 0; i < 6; i++) {
-            args[i] = double.tryParse(method.args[i].trim()) ?? 1.0;
+            args[i] = double.tryParse(methodArgs[i].trim()) ?? 1.0;
           }
           return Matrix4(args[0]!, args[1]!, 0, 0, args[2]!, args[3]!, 0, 0, 0, 0, 1, 0, args[4]!, args[5]!, 0, 1);
         }
         break;
       case MATRIX_3D:
-        if (method.args.length == 16) {
+        if (methodArgs.length == 16) {
           List<double?> args = List.filled(16, 0);
           for (int i = 0; i < 16; i++) {
-            args[i] = double.tryParse(method.args[i].trim()) ?? 1.0;
+            args[i] = double.tryParse(methodArgs[i].trim()) ?? 1.0;
           }
           return Matrix4(args[0]!, args[1]!, args[2]!, args[3]!, args[4]!, args[5]!, args[6]!, args[7]!, args[8]!,
               args[9]!, args[10]!, args[11]!, args[12]!, args[13]!, args[14]!, args[15]!);
@@ -640,14 +656,14 @@ class CSSMatrix {
       // Canonical order: per grammar
       // Animation type: by computed value, but see below for none
       case TRANSLATE:
-        if (method.args.isNotEmpty && method.args.length <= 2) {
+        if (methodArgs.isNotEmpty && methodArgs.length <= 2) {
           CSSLengthValue y;
-          if (method.args.length == 2) {
-            y = CSSLength.parseLength(method.args[1].trim(), renderStyle, TRANSLATE, Axis.vertical);
+          if (methodArgs.length == 2) {
+            y = CSSLength.parseLength(methodArgs[1].trim(), renderStyle, TRANSLATE, Axis.vertical);
           } else {
             y = CSSLengthValue.zero;
           }
-          CSSLengthValue x = CSSLength.parseLength(method.args[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
+          CSSLengthValue x = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
           x.renderStyle = y.renderStyle = renderStyle;
           return Matrix4.identity()..translate(x.computedValue, y.computedValue);
         }
@@ -657,23 +673,23 @@ class CSSMatrix {
         //   0, 1, 0, 0,
         //   0, 0, 1, 0,
         //   x, y, z, 1]
-        if (method.args.isNotEmpty && method.args.length <= 3) {
+        if (methodArgs.isNotEmpty && methodArgs.length <= 3) {
           CSSLengthValue y = CSSLengthValue.zero, z = CSSLengthValue.zero;
-          if (method.args.length == 2) {
-            y = CSSLength.parseLength(method.args[1].trim(), renderStyle, TRANSLATE, Axis.vertical);
+          if (methodArgs.length == 2) {
+            y = CSSLength.parseLength(methodArgs[1].trim(), renderStyle, TRANSLATE, Axis.vertical);
           }
-          if (method.args.length == 3) {
-            y = CSSLength.parseLength(method.args[1].trim(), renderStyle, TRANSLATE, Axis.vertical);
-            z = CSSLength.parseLength(method.args[2].trim(), renderStyle, TRANSLATE);
+          if (methodArgs.length == 3) {
+            y = CSSLength.parseLength(methodArgs[1].trim(), renderStyle, TRANSLATE, Axis.vertical);
+            z = CSSLength.parseLength(methodArgs[2].trim(), renderStyle, TRANSLATE);
           }
-          CSSLengthValue x = CSSLength.parseLength(method.args[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
+          CSSLengthValue x = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
           x.renderStyle = y.renderStyle = z.renderStyle = renderStyle;
           return Matrix4.identity()..translate(x.computedValue, y.computedValue, z.computedValue);
         }
         break;
       case TRANSLATE_X:
-        if (method.args.length == 1) {
-          CSSLengthValue x = CSSLength.parseLength(method.args[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
+        if (methodArgs.length == 1) {
+          CSSLengthValue x = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
           x.renderStyle = renderStyle;
           double computedValue = x.computedValue;
           // Double.infinity indicates translate not resolved due to renderBox not layout yet
@@ -683,8 +699,8 @@ class CSSMatrix {
         }
         break;
       case TRANSLATE_Y:
-        if (method.args.length == 1) {
-          CSSLengthValue y = CSSLength.parseLength(method.args[0].trim(), renderStyle, TRANSLATE, Axis.vertical);
+        if (methodArgs.length == 1) {
+          CSSLengthValue y = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.vertical);
           y.renderStyle = renderStyle;
           double computedValue = y.computedValue;
           // Double.infinity indicates translate not resolved due to renderBox not layout yet
@@ -694,8 +710,8 @@ class CSSMatrix {
         }
         break;
       case TRANSLATE_Z:
-        if (method.args.length == 1) {
-          CSSLengthValue z = CSSLength.parseLength(method.args[0].trim(), renderStyle, TRANSLATE);
+        if (methodArgs.length == 1) {
+          CSSLengthValue z = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE);
           double computedValue = z.computedValue;
           // Double.infinity indicates translate not resolved due to renderBox not layout yet
           // in percentage case.
@@ -715,30 +731,30 @@ class CSSMatrix {
       // Animation type: as SLERP, but see below for none
       case ROTATE:
       case ROTATE_Z:
-        if (method.args.length == 1) {
-          double angle = CSSAngle.parseAngle(method.args[0].trim()) ?? 0;
+        if (methodArgs.length == 1) {
+          double angle = CSSAngle.parseAngle(methodArgs[0].trim()) ?? 0;
           return Matrix4.rotationZ(angle);
         }
         break;
       case ROTATE_3D:
-        if (method.args.length == 4) {
-          double x = double.tryParse(method.args[0].trim()) ?? 0.0;
-          double y = double.tryParse(method.args[1].trim()) ?? 0.0;
-          double z = double.tryParse(method.args[2].trim()) ?? 0.0;
-          double angle = CSSAngle.parseAngle(method.args[3].trim()) ?? 0;
+        if (methodArgs.length == 4) {
+          double x = double.tryParse(methodArgs[0].trim()) ?? 0.0;
+          double y = double.tryParse(methodArgs[1].trim()) ?? 0.0;
+          double z = double.tryParse(methodArgs[2].trim()) ?? 0.0;
+          double angle = CSSAngle.parseAngle(methodArgs[3].trim()) ?? 0;
           Vector3 vector3 = Vector3(x, y, z);
           return Matrix4.identity()..rotate(vector3, angle);
         }
         break;
       case ROTATE_X:
-        if (method.args.length == 1) {
-          double x = CSSAngle.parseAngle(method.args[0].trim()) ?? 0;
+        if (methodArgs.length == 1) {
+          double x = CSSAngle.parseAngle(methodArgs[0].trim()) ?? 0;
           return Matrix4.rotationX(x);
         }
         break;
       case ROTATE_Y:
-        if (method.args.length == 1) {
-          double y = CSSAngle.parseAngle(method.args[0].trim()) ?? 0;
+        if (methodArgs.length == 1) {
+          double y = CSSAngle.parseAngle(methodArgs[0].trim()) ?? 0;
           return Matrix4.rotationY(y);
         }
         break;
@@ -753,11 +769,11 @@ class CSSMatrix {
       // Canonical order: per grammar
       // Animation type: by computed value, but see below for none
       case SCALE:
-        if (method.args.isNotEmpty && method.args.length <= 2) {
-          double x = double.tryParse(method.args[0].trim()) ?? 1.0;
+        if (methodArgs.isNotEmpty && methodArgs.length <= 2) {
+          double x = double.tryParse(methodArgs[0].trim()) ?? 1.0;
           double y = x;
-          if (method.args.length == 2) {
-            y = double.tryParse(method.args[1].trim()) ?? x;
+          if (methodArgs.length == 2) {
+            y = double.tryParse(methodArgs[1].trim()) ?? x;
           }
           return Matrix4.identity()..scale(x, y, 1);
         }
@@ -767,18 +783,18 @@ class CSSMatrix {
         //   0, scaleY, 0, 0,
         //   0, 0, scaleY, 0,
         //   0, 0, 0, 1]
-        if (method.args.length == 3) {
-          double x = double.tryParse(method.args[0].trim()) ?? 1.0;
-          double y = double.tryParse(method.args[1].trim()) ?? 1.0;
-          double z = double.tryParse(method.args[2].trim()) ?? 1.0;
+        if (methodArgs.length == 3) {
+          double x = double.tryParse(methodArgs[0].trim()) ?? 1.0;
+          double y = double.tryParse(methodArgs[1].trim()) ?? 1.0;
+          double z = double.tryParse(methodArgs[2].trim()) ?? 1.0;
           return Matrix4.identity()..scale(x, y, z);
         }
         break;
       case SCALE_X:
       case SCALE_Y:
       case SCALE_Z:
-        if (method.args.length == 1) {
-          double scale = double.tryParse(method.args[0].trim()) ?? 1.0;
+        if (methodArgs.length == 1) {
+          double scale = double.tryParse(methodArgs[0].trim()) ?? 1.0;
           double x = 1.0, y = 1.0, z = 1.0;
           if (method.name == SCALE_X) {
             x = scale;
@@ -791,19 +807,19 @@ class CSSMatrix {
         }
         break;
       case SKEW:
-        if (method.args.length == 1 || method.args.length == 2) {
-          double alpha = CSSAngle.parseAngle(method.args[0].trim()) ?? 0;
+        if (methodArgs.length == 1 || methodArgs.length == 2) {
+          double alpha = CSSAngle.parseAngle(methodArgs[0].trim()) ?? 0;
           double beta = 0.0;
-          if (method.args.length == 2) {
-            beta = CSSAngle.parseAngle(method.args[1].trim()) ?? 0;
+          if (methodArgs.length == 2) {
+            beta = CSSAngle.parseAngle(methodArgs[1].trim()) ?? 0;
           }
           return Matrix4.skew(alpha, beta);
         }
         break;
       case SKEW_X:
       case SKEW_Y:
-        if (method.args.length == 1) {
-          double angle = CSSAngle.parseAngle(method.args[0].trim()) ?? 0;
+        if (methodArgs.length == 1) {
+          double angle = CSSAngle.parseAngle(methodArgs[0].trim()) ?? 0;
           if (method.name == SKEW_X) {
             return Matrix4.skewX(angle);
           } else {
@@ -827,8 +843,8 @@ class CSSMatrix {
         //   0, 1, 0, 0,
         //   0, 0, 1, perspective,
         //   0, 0, 0, 1]
-        if (method.args.length == 1) {
-          CSSLengthValue length = CSSLength.parseLength(method.args[0].trim(), renderStyle, TRANSFORM);
+        if (methodArgs.length == 1) {
+          CSSLengthValue length = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSFORM);
           length.renderStyle = renderStyle;
           double p = length.computedValue;
           p = (-1 / p);
