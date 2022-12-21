@@ -6,13 +6,14 @@ const os = require('os');
 let buildTasks = [
   'sdk-clean',
   'compile-polyfill',
+  'generate-bindings-code',
   'build-android-webf-lib',
 ];
 
 if (os.platform() == 'win32') {
   // TODO: add windows support
   buildTasks.push(
-
+    'build-window-webf-lib'
   );
 } else if (os.platform() == 'darwin') {
   buildTasks.push(
