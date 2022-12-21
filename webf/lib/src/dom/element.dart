@@ -1098,6 +1098,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
+    if (value.startsWith(';')) value = value.substring(1);
+    if (HIDDEN == qualifiedName) {
+      qualifiedName = _STYLE_PROPERTY;
+      value = '$DISPLAY:$NONE;';
+    }
     internalSetAttribute(qualifiedName, value);
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
