@@ -76,7 +76,12 @@ function genCodeFromTypeDefine() {
   }
 
   let unionTypes = Array.from(unionTypeCollector.types);
-  unionTypes.sort();
+  unionTypes.forEach(union => {
+    union.sort((p, n) => {
+      if (typeof p.value === 'string') return -1;
+      return n.value - p.value;
+    })
+  });
   for(let i = 0; i < unionTypes.length; i ++) {
     let result = generateUnionTypes(unionTypes[i]);
     let filename = generateUnionTypeFileName(unionTypes[i]);
