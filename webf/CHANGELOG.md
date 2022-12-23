@@ -1,3 +1,7 @@
+## 0.13.2-beta.3
+
+* Fix img.width infinity cause layout breaks.
+
 ## 0.13.2-beta.2
 
 * Fix location.href didn't get changed when history changes.
