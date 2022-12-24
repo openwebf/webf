@@ -347,6 +347,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         }
       }
       renderBoxModel = nextRenderBoxModel;
+      assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
 
       // Ensure that the event responder is bound.
       ensureEventResponderBound();
