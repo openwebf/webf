@@ -1,3 +1,7 @@
+## 0.13.2-beta.5
+
+* fix replaced element didn't render with toggle display.
+
 ## 0.13.2-beta.4
 
 * fix unconstrained inline-block can't calculate content box size.
