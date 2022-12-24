@@ -838,6 +838,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel.attachRenderBox(parent.renderer!, renderer!, after: after);
+        if (renderStyle.position != CSSPositionType.static) {
+          _updateRenderBoxModelWithPosition(CSSPositionType.static);
+        }
       }
 
       // Flush pending style before child attached.
