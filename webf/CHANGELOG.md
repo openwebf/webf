@@ -1,3 +1,8 @@
+## 0.13.2-beta.4
+
+* fix unconstrained inline-block can't calculate content box size.
+* fix positioned elements should be reapply when toggle display.
+
 ## 0.13.2-beta.3
 
 * Fix img.width infinity cause layout breaks.
