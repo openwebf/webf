@@ -243,13 +243,15 @@ class ImageElement extends Element {
   int get width {
     // Width calc priority: style > attr > intrinsic.
     final double borderBoxWidth = _styleWidth ?? _attrWidth ?? renderStyle.getWidthByAspectRatio();
-    return borderBoxWidth.round();
+
+    return borderBoxWidth.isFinite ? borderBoxWidth.round() : 0;
   }
 
   int get height {
     // Height calc priority: style > attr > intrinsic.
     final double borderBoxHeight = _styleHeight ?? _attrHeight ?? renderStyle.getHeightByAspectRatio();
-    return borderBoxHeight.round();
+
+    return borderBoxHeight.isFinite ? borderBoxHeight.round() : 0;
   }
 
   // Read the original image width of loaded image.

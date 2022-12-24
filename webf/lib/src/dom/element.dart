@@ -1148,6 +1148,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       return;
     }
 
+    willAttachRenderer();
+
     // Update renderBoxModel.
     _updateRenderBoxModel();
     // Attach renderBoxModel to parent if change from `display: none` to other values.
@@ -1163,8 +1165,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         RenderBox parentRenderBox = parentNode!.renderer!;
         _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: preSibling);
       }
-      ensureChildAttached();
     }
+
+    didAttachRenderer();
   }
 
   void setRenderStyleProperty(String name, value) {
