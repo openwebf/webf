@@ -347,6 +347,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         }
       }
       renderBoxModel = nextRenderBoxModel;
+      assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
 
       // Ensure that the event responder is bound.
       ensureEventResponderBound();
@@ -837,6 +838,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel.attachRenderBox(parent.renderer!, renderer!, after: after);
+        if (renderStyle.position != CSSPositionType.static) {
+          _updateRenderBoxModelWithPosition(CSSPositionType.static);
+        }
       }
 
       // Flush pending style before child attached.
@@ -1144,6 +1148,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       return;
     }
 
+    willAttachRenderer();
+
     // Update renderBoxModel.
     _updateRenderBoxModel();
     // Attach renderBoxModel to parent if change from `display: none` to other values.
@@ -1159,8 +1165,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         RenderBox parentRenderBox = parentNode!.renderer!;
         _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: preSibling);
       }
-      ensureChildAttached();
     }
+
+    didAttachRenderer();
   }
 
   void setRenderStyleProperty(String name, value) {
