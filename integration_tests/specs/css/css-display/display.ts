@@ -108,4 +108,18 @@ describe('display', () => {
         done();
     });
   });
+
+  it('should work with toggle replaced element', async (done) => {
+    let img = document.createElement('img');
+    img.src = 'assets/cat.png';
+    img.onload = async () => {
+      await snapshot();
+      img.style.display = 'none';
+      await snapshot();
+      img.style.display = 'block';
+      await snapshot();
+      done();
+    };
+    document.body.appendChild(img);
+  });
 });
