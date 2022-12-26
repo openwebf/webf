@@ -75,4 +75,88 @@ describe('background-331', () => {
     await snapshot(1);
     done();
   });
+
+  it("computed", async () => {
+    let target;
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        'background-image': 'none',
+        'font-size': '40px',
+        'box-sizing': 'border-box',
+      },
+    });
+    BODY.appendChild(target);
+
+    test_computed_value('background-attachment', 'local', 'local');
+    test_computed_value('background-attachment', 'scroll', 'scroll');
+    test_computed_value('background-attachment', 'fixed', 'fixed');
+
+    test_computed_value(
+      'background-clip',
+      'border-box'
+    );
+    test_computed_value(
+      'background-clip',
+      'content-box'
+    );
+    test_computed_value(
+      'background-clip',
+      'padding-box'
+    );
+    
+    // background-color always computes as a single color.
+    test_computed_value('background-color', 'rgb(255, 0, 0)');
+
+    test_computed_value(
+      'background-origin',
+      'border-box'
+    );
+    test_computed_value(
+      'background-origin',
+      'content-box'
+    );
+    test_computed_value(
+      'background-origin',
+      'padding-box'
+    );
+
+    test_computed_value(
+      'background-position',
+      '50% 6px'
+    );
+    test_computed_value(
+      'background-position',
+      '12px 13px'
+    );
+    test_computed_value('background-position', '12px 13px');
+    test_computed_value(
+      'background-position',
+      '30px -10px'
+    );
+
+    test_computed_value('background-position-x', '0.5em', '20px');
+    test_computed_value('background-position-x', '-20%', '-20%');
+
+    test_computed_value('background-position-x', 'center', '50%');
+    test_computed_value('background-position-x', 'left', '0%');
+    test_computed_value('background-position-x', 'right', '100%');
+    test_computed_value('background-position-x', 'calc(10px - 0.5em)', '-10px');
+
+    test_computed_value('background-position-y', '0.5em', '20px');
+    test_computed_value('background-position-y', '-20%', '-20%');
+    test_computed_value('background-position-y', 'center', '50%');
+    test_computed_value('background-position-y', 'top', '0%');
+    test_computed_value('background-position-y', 'bottom', '100%');
+    test_computed_value('background-position-y', 'calc(10px - 0.5em)', '-10px');
+
+    test_computed_value('background-repeat', 'repeat-x');
+    test_computed_value('background-repeat', 'repeat');
+    test_computed_value('background-repeat', 'repeat-y');
+    test_computed_value('background-repeat', 'no-repeat');
+    
+    test_computed_value('background-size', 'contain');
+    test_computed_value('background-size', 'auto 1px');
+    test_computed_value('background-size', '2% 3%');
+  })
 });

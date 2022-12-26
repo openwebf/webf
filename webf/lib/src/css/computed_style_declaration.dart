@@ -556,6 +556,18 @@ extension CSSFontWeightText on FontWeight {
   }
 }
 
+
+extension DoubleText on double {
+  String cssText() {
+    var result = '$this';
+    if (result.endsWith('.0') == true) {
+      result = result.replaceAll('.0', '');
+    }
+    return result;
+  }
+}
+
+
 extension BorderStyleText on BorderStyle {
   String cssText() {
     switch (this) {

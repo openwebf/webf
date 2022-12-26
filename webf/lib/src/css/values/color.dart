@@ -317,11 +317,10 @@ class CSSColor {
 
   String cssText() {
     if (value.opacity < 1) {
-      return 'rgba(${value.red}, ${value.green}, ${value.blue}, ${value.opacity})';
+      return 'rgba(${value.red}, ${value.green}, ${value.blue}, ${value.opacity.cssText()})';
     } else {
       return 'rgb(${value.red}, ${value.green}, ${value.blue})';
     }
-
   }
 }
 

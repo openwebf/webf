@@ -60,54 +60,32 @@ class CSSLengthValue {
   }
 
   String cssText() {
-    String? result;
-    String? unit;
     switch(type) {
       case CSSLengthType.PX:
-        result = '$value';
-        unit = 'px';
-        break;
+        return '${value?.cssText()}px';
       case CSSLengthType.EM:
-        result = '$computedValue';
-        unit = 'px';
-        break;
+        return '${computedValue.cssText()}px';
       case CSSLengthType.REM:
-        result = '$value}';
-        unit = 'rem';
-        break;
+        return '${value?.cssText()}rem';
       case CSSLengthType.VH:
-        result = '$value}';
-        unit = 'vh';
-        break;
-      case CSSLengthType.VW:
-        result = '$value}';
-        unit = 'vw';
-        break;
+        return '${value?.cssText()}vh';
+     case CSSLengthType.VW:
+        return '${value?.cssText()}vw';
       case CSSLengthType.VMIN:
-        result = '$value}';
-        unit = 'vmin';
-        break;
+        return '${value?.cssText()}vmin';
       case CSSLengthType.VMAX:
-        result = '$value}';
-        unit = 'vmax';
-        break;
+        return '${value?.cssText()}vmax';
       case CSSLengthType.PERCENTAGE:
-        result = '${value! * 100}';
-        unit = '%';
-        break;
+        return '${(value! * 100).cssText()}%';
       case CSSLengthType.UNKNOWN:
       case CSSLengthType.AUTO:
-        result = 'auto';
-        break;
+        return 'auto';
       case CSSLengthType.NONE:
       case CSSLengthType.NORMAL:
       case CSSLengthType.INITIAL:
         break;
     }
-    if (result?.endsWith('.0') == true) {
-      result = result?.replaceAll('.0', '');
-    }
-    return '${result}${unit}';
+    return '';
   }
 
   static final CSSLengthValue zero = CSSLengthValue(0, CSSLengthType.PX);

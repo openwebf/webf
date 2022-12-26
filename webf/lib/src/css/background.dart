@@ -38,7 +38,7 @@ extension CSSBackgroundAttachmentTypeText on CSSBackgroundAttachmentType {
   String cssText() {
     switch (this) {
       case CSSBackgroundAttachmentType.scroll:
-        return 'local';
+        return 'scroll';
       case CSSBackgroundAttachmentType.fixed:
         return 'fixed';
       case CSSBackgroundAttachmentType.local:
@@ -516,16 +516,13 @@ class CSSBackgroundPosition {
 
   String cssText() {
     if (length != null) {
-      return '${length!.computedValue}px';
+      return length!.cssText();
     }
     if (percentage != null) {
-      if (percentage! <= 0) {
-        return '0%';
-      }
-      return '${percentage!}%';
+      return '${((percentage! * 100 + 100) / 100 * 50).cssText()}%';
     }
     if (calcValue != null) {
-      return '${calcValue!.computedValue}px';
+      return '${(calcValue!.computedValue('') as double).cssText()}px';
     }
     return '';
   }
@@ -561,10 +558,10 @@ class CSSBackgroundSize {
     }
 
     if (width == height) {
-      return '${width!.computedValue}px';
+      return '${width!.cssText()}px';
     }
 
-    return '${width!.computedValue}px ${height!.computedValue}px';
+    return '${width!.cssText()} ${height!.cssText()}';
   }
 }
 
@@ -656,17 +653,17 @@ class CSSBackground {
     return CSSBackgroundImage(functions, renderStyle, controller);
   }
 
-  static ImageRepeat resolveBackgroundRepeat(String value) {
+  static CSSBackgroundRepeatType resolveBackgroundRepeat(String value) {
     switch (value) {
       case REPEAT_X:
-        return ImageRepeat.repeatX;
+        return CSSBackgroundRepeatType.repeatX;
       case REPEAT_Y:
-        return ImageRepeat.repeatY;
+        return CSSBackgroundRepeatType.repeatY;
       case NO_REPEAT:
-        return ImageRepeat.noRepeat;
+        return CSSBackgroundRepeatType.noRepeat;
       case REPEAT:
       default:
-        return ImageRepeat.repeat;
+        return CSSBackgroundRepeatType.repeat;
     }
   }
 
