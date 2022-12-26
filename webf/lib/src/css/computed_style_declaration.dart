@@ -120,11 +120,11 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundSize:
         return style.backgroundSize.cssText();
       case CSSPropertyID.BackgroundAttachment:
-        return (style.backgroundAttachment ?? CSSBackgroundAttachmentType.scroll).toString();
+        return (style.backgroundAttachment ?? CSSBackgroundAttachmentType.scroll).cssText();
       case CSSPropertyID.BackgroundClip:
-        return (style.backgroundClip ?? CSSBackgroundClipType.borderBox).toString();
+        return (style.backgroundClip ?? CSSBackgroundBoundary.borderBox).cssText();
       case CSSPropertyID.BackgroundOrigin:
-        return (style.backgroundOrigin ?? CSSBackgroundClipType.paddingBox).toString();
+        return (style.backgroundOrigin ?? CSSBackgroundBoundary.paddingBox).cssText();
       case CSSPropertyID.Border:
         final value = _valueForPropertyInStyle(CSSPropertyID.BorderTop);
         final ids = [CSSPropertyID.BorderRight, CSSPropertyID.BorderBottom, CSSPropertyID.BorderLeft];
@@ -194,7 +194,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
                                                       CSSPropertyID.BorderBottomWidth,
                                                       CSSPropertyID.BorderLeftWidth])?.join(' ') ?? '';
       case CSSPropertyID.BorderTopLeftRadius:
-        return style.borderTopLeftRadius.cssText();
+         return style.borderTopLeftRadius.cssText();
       case CSSPropertyID.BorderTopRightRadius:
         return style.borderTopRightRadius.cssText();
       case CSSPropertyID.BorderBottomLeftRadius:
@@ -208,19 +208,30 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BorderImageRepeat:
       case CSSPropertyID.BorderImageSlice:
       case CSSPropertyID.BorderImageWidth:
+      case CSSPropertyID.BorderSpacing:
         break;
       case CSSPropertyID.Color:
         return style.color.cssText();
       case CSSPropertyID.Font:
-        break;
+        List<String> value = [];
+        value.add(_valueForPropertyInStyle(CSSPropertyID.FontStyle));
+        value.add(_valueForPropertyInStyle(CSSPropertyID.FontWeight));
+        value.add(_valueForPropertyInStyle(CSSPropertyID.FontSize));
+        value.add(_valueForPropertyInStyle(CSSPropertyID.LineHeight));
+        value.add(_valueForPropertyInStyle(CSSPropertyID.FontFamily));
+        return value.join(' ');
       case CSSPropertyID.FontFamily:
-        return style.fontFamily?.join(',') ?? '';
+        return style.fontFamily?.join(', ') ?? '';
       case CSSPropertyID.FontSize:
         return '${style.fontSize.computedValue}px';
       case CSSPropertyID.FontStyle:
         return style.fontStyle.toString();
       case CSSPropertyID.FontWeight:
-        return style.fontWeight.index.toString();
+        return style.fontWeight.cssText();
+      case CSSPropertyID.LineHeight:
+        return '${style.lineHeight.computedValue}px';
+      case CSSPropertyID.FontVariant:
+          break;
       case CSSPropertyID.Top:
         return '${style.top.computedValue}px';
       case CSSPropertyID.Bottom:
@@ -263,8 +274,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return '${style.paddingLeft.computedValue}px';
       case CSSPropertyID.LetterSpacing:
         return '${style.letterSpacing?.computedValue}px';
-      case CSSPropertyID.LineHeight:
-        return '${style.lineHeight.computedValue}px';
       case CSSPropertyID.ObjectFit:
         return style.objectFit.toString();
       case CSSPropertyID.Opacity:
@@ -273,13 +282,18 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.overflowX.toString();
       case CSSPropertyID.OverflowY:
         return style.overflowY.toString();
+      case CSSPropertyID.Overflow:
+        if (style.overflowX.index > style.overflowY.index) {
+          return _valueForPropertyInStyle(CSSPropertyID.OverflowX);
+        } else {
+          return _valueForPropertyInStyle(CSSPropertyID.OverflowY);
+        }
       case CSSPropertyID.Position:
         return style.position.toString();
       case CSSPropertyID.TextAlign:
         return style.textAlign.toString();
       case CSSPropertyID.TextShadow:
-        // return style.textShadow;
-        break;
+        return style.textShadow?.map((e) => e.cssText()).join(', ') ?? 'none';
       case CSSPropertyID.TextOverflow:
         return style.textOverflow.toString();
       case CSSPropertyID.VerticalAlign:
@@ -290,15 +304,14 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.whiteSpace.toString();
       case CSSPropertyID.ZIndex:
         return style.zIndex?.toString() ?? 'auto';
-      // case CSSPropertyID.TransitionDelay:
-      //   return style.transitionDelay;
-      // case CSSPropertyID.TransitionDuration:
-      //   return style.transitionDuration;
-      // case CSSPropertyID.TransitionProperty:
-      //   return style.transitionProperty;
-      // case CSSPropertyID.TransitionTimingFunction:
-      //   return style.transitionTimingFunction;
-      // case CSSPropertyID.TableLayout:
+      case CSSPropertyID.TransitionDelay:
+        return style.transitionDelay.join(', ');
+      case CSSPropertyID.TransitionDuration:
+        return style.transitionDuration.join(', ');
+      case CSSPropertyID.TransitionProperty:
+        return style.transitionProperty.join(', ');
+      case CSSPropertyID.TransitionTimingFunction:
+        return style.transitionTimingFunction.join(', ');
       case CSSPropertyID.Outline:
       case CSSPropertyID.ListStyle:
       case CSSPropertyID.Widows:
@@ -321,7 +334,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.PageBreakAfter:
       case CSSPropertyID.PageBreakBefore:
       case CSSPropertyID.PageBreakInside:
-      case CSSPropertyID.Overflow:
       case CSSPropertyID.OverflowWrap:
       case CSSPropertyID.Orphans:
       case CSSPropertyID.OutlineColor:
@@ -332,7 +344,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.ListStylePosition:
       case CSSPropertyID.ListStyleType:
       case CSSPropertyID.ImageRendering:
-      case CSSPropertyID.FontVariant:
       case CSSPropertyID.TabSize:
       case CSSPropertyID.Cursor:
       case CSSPropertyID.EmptyCells:
@@ -347,7 +358,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       /* Individual properties not part of the spec */
       case CSSPropertyID.BackgroundRepeatX:
       case CSSPropertyID.BackgroundRepeatY:
-        break;
       case CSSPropertyID.TextLineThrough:
       case CSSPropertyID.TextLineThroughColor:
       case CSSPropertyID.TextLineThroughMode:
@@ -418,7 +428,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.TextAnchor:
       case CSSPropertyID.VectorEffect:
       case CSSPropertyID.WritingMode:
-      case CSSPropertyID.BorderSpacing:
       case CSSPropertyID.BoxShadow:
         break;
     }
@@ -439,26 +448,26 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     final bottomRightRadius = style.borderBottomRightRadius;
     final bottomLeftRadius = style.borderBottomLeftRadius;
 
-    List<CSSLengthValue> horizontalRadii = [topLeftRadius.x];
+    List<String> horizontalRadii = [topLeftRadius.x.cssText()];
     if (showHorizontalTopRight) {
-      horizontalRadii.add(topRightRadius.x);
+      horizontalRadii.add(topRightRadius.x.cssText());
     }
     if (showHorizontalBottomRight) {
-      horizontalRadii.add(bottomRightRadius.x);
+      horizontalRadii.add(bottomRightRadius.x.cssText());
     }
     if (showHorizontalBottomLeft) {
-      horizontalRadii.add(bottomLeftRadius.x);
+      horizontalRadii.add(bottomLeftRadius.x.cssText());
     }
 
-    List<CSSLengthValue> verticalRadii = [topLeftRadius.y];
+    List<String> verticalRadii = [topLeftRadius.y.cssText()];
     if (showVerticalTopRight) {
-      verticalRadii.add(topRightRadius.y);
+      verticalRadii.add(topRightRadius.y.cssText());
     }
     if (showVerticalBottomRight) {
-      verticalRadii.add(bottomRightRadius.y);
+      verticalRadii.add(bottomRightRadius.y.cssText());
     }
     if (showVerticalBottomLeft) {
-      verticalRadii.add(bottomLeftRadius.y);
+      verticalRadii.add(bottomLeftRadius.y.cssText());
     }
 
     if (!horizontalRadii.equals(verticalRadii)) {
@@ -522,5 +531,38 @@ List<T>? _compressSlidesValue<T>(List<T> values) {
 extension CSSEdgeInsetsText on EdgeInsets {
   String cssText() {
     return _compressSlidesValue<double>([top,right,bottom,left])?.map((e) => '${e}px').join(' ') ?? '0px';
+  }
+}
+
+extension CSSShadowText on Shadow {
+  String cssText() {
+    return '${offset.dx}px ${offset.dy}px ${blurRadius}px ${CSSColor(color).cssText()}';
+  }
+}
+
+extension CSSFontWeightText on FontWeight {
+  String cssText() {
+    return const <int, String>{
+      0: '100',
+      1: '200',
+      2: '300',
+      3: '400',
+      4: '500',
+      5: '600',
+      6: '700',
+      7: '800',
+      8: '900',
+    }[index]!;
+  }
+}
+
+extension BorderStyleText on BorderStyle {
+  String cssText() {
+    switch (this) {
+      case BorderStyle.none:
+        return 'none';
+      case BorderStyle.solid:
+        return 'solid';
+    }
   }
 }

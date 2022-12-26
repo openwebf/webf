@@ -7,7 +7,7 @@ import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
 import 'package:quiver/collection.dart';
 
-final RegExp _splitRegExp = RegExp(r'(?<!\+|-|\*|\/)\s+(?!\+\s|-\s|\*\s|\/\s)');
+final RegExp splitRegExp = RegExp(r'(?<!\+|-|\*|\/)\s+(?!\+\s|-\s|\*\s|\/\s)');
 final LinkedLruHashMap<String, List<String>> _cachedParsedPosition = LinkedLruHashMap(maximumSize: 100);
 
 /// CSS Values and Units: https://drafts.csswg.org/css-values-3/#position
@@ -25,7 +25,7 @@ class CSSPosition {
       return _cachedParsedPosition[input]!;
     }
     List<String> positions = [];
-    List<String> split = input.split(_splitRegExp);
+    List<String> split = input.split(splitRegExp);
     if (split.length == 1) {
       switch (split.first) {
         case TOP:

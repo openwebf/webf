@@ -1378,16 +1378,33 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         renderStyle.boxShadow = value;
         break;
       case BORDER_TOP_LEFT_RADIUS:
-        renderStyle.borderTopLeftRadius = value;
+        if (value is CSSLengthValue) {
+          renderStyle.borderTopLeftRadius = CSSBorderRadius(value, value);
+        } else {
+          renderStyle.borderTopLeftRadius = value;
+        }
         break;
       case BORDER_TOP_RIGHT_RADIUS:
-        renderStyle.borderTopRightRadius = value;
+        if (value is CSSLengthValue) {
+          renderStyle.borderTopRightRadius = CSSBorderRadius(value, value);
+        } else {
+          renderStyle.borderTopRightRadius = value;
+        }
         break;
       case BORDER_BOTTOM_LEFT_RADIUS:
+        if (value is CSSLengthValue) {
+          renderStyle.borderBottomLeftRadius = CSSBorderRadius(value, value);
+        } else {
+          renderStyle.borderBottomLeftRadius = value;
+        }
         renderStyle.borderBottomLeftRadius = value;
         break;
       case BORDER_BOTTOM_RIGHT_RADIUS:
-        renderStyle.borderBottomRightRadius = value;
+        if (value is CSSLengthValue) {
+          renderStyle.borderBottomRightRadius = CSSBorderRadius(value, value);
+        } else {
+          renderStyle.borderBottomRightRadius = value;
+        }
         break;
       // Margin
       case MARGIN_LEFT:

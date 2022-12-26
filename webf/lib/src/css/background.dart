@@ -11,7 +11,6 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/rendering.dart';
 
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
@@ -35,6 +34,19 @@ enum CSSBackgroundAttachmentType {
   local,
 }
 
+extension CSSBackgroundAttachmentTypeText on CSSBackgroundAttachmentType {
+  String cssText() {
+    switch (this) {
+      case CSSBackgroundAttachmentType.scroll:
+        return 'local';
+      case CSSBackgroundAttachmentType.fixed:
+        return 'fixed';
+      case CSSBackgroundAttachmentType.local:
+        return 'local';
+    }
+  }
+}
+
 enum CSSBackgroundRepeatType {
   repeat,
   repeatX,
@@ -42,7 +54,7 @@ enum CSSBackgroundRepeatType {
   noRepeat,
 }
 
-extension CSSRepeatType on CSSBackgroundRepeatType {
+extension CSSBackgroundRepeatTypeText on CSSBackgroundRepeatType {
   String cssText() {
     switch (this) {
       case CSSBackgroundRepeatType.repeat:
@@ -88,30 +100,62 @@ enum CSSBackgroundPositionType {
   bottomRight,
 }
 
-enum CSSBackgroundOriginType {
+enum CSSBackgroundBoundary {
   borderBox,
   paddingBox,
   contentBox,
 }
 
-enum CSSBackgroundClipType {
-  borderBox,
-  paddingBox,
-  contentBox,
-}
-
-extension ClipRawValue on CSSBackgroundClipType {
+extension CSSBackgroundBoundaryText on CSSBackgroundBoundary {
   String cssText() {
     switch (this) {
-      case CSSBackgroundClipType.borderBox:
+      case CSSBackgroundBoundary.borderBox:
         return 'border-box';
-      case CSSBackgroundClipType.paddingBox:
+      case CSSBackgroundBoundary.paddingBox:
         return 'padding-box';
-      case CSSBackgroundClipType.contentBox:
+      case CSSBackgroundBoundary.contentBox:
         return 'content-box';
     }
   }
 }
+//
+// enum CSSBackgroundOriginType {
+//   borderBox,
+//   paddingBox,
+//   contentBox,
+// }
+//
+// enum CSSBackgroundClipType {
+//   borderBox,
+//   paddingBox,
+//   contentBox,
+// }
+//
+// extension CSSBackgroundOriginTypeText on CSSBackgroundOriginType {
+//   String cssText() {
+//     switch (this) {
+//       case CSSBackgroundOriginType.borderBox:
+//         return 'border-box';
+//       case CSSBackgroundOriginType.paddingBox:
+//         return 'padding-box';
+//       case CSSBackgroundOriginType.contentBox:
+//         return 'content-box';
+//     }
+//   }
+// }
+//
+// extension CSSBackgroundClipTypeText on CSSBackgroundClipType {
+//   String cssText() {
+//     switch (this) {
+//       case CSSBackgroundClipType.borderBox:
+//         return 'border-box';
+//       case CSSBackgroundClipType.paddingBox:
+//         return 'padding-box';
+//       case CSSBackgroundClipType.contentBox:
+//         return 'content-box';
+//     }
+//   }
+// }
 
 enum CSSBackgroundImageType {
   none,
@@ -127,9 +171,9 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-clip
   @override
-  BackgroundBoundary? get backgroundClip => _backgroundClip;
-  BackgroundBoundary? _backgroundClip;
-  set backgroundClip(BackgroundBoundary? value) {
+  CSSBackgroundBoundary? get backgroundClip => _backgroundClip;
+  CSSBackgroundBoundary? _backgroundClip;
+  set backgroundClip(CSSBackgroundBoundary? value) {
     if (value == _backgroundClip) return;
     _backgroundClip = value;
     renderBoxModel?.markNeedsPaint();
@@ -137,9 +181,9 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-origin
   @override
-  BackgroundBoundary? get backgroundOrigin => _backgroundOrigin;
-  BackgroundBoundary? _backgroundOrigin;
-  set backgroundOrigin(BackgroundBoundary? value) {
+  CSSBackgroundBoundary? get backgroundOrigin => _backgroundOrigin;
+  CSSBackgroundBoundary? _backgroundOrigin;
+  set backgroundOrigin(CSSBackgroundBoundary? value) {
     if (value == _backgroundOrigin) return;
     _backgroundOrigin = value;
     renderBoxModel?.markNeedsPaint();
@@ -626,27 +670,27 @@ class CSSBackground {
     }
   }
 
-  static BackgroundBoundary resolveBackgroundClip(String value) {
+  static CSSBackgroundBoundary resolveBackgroundClip(String value) {
     switch (value) {
       case 'padding-box':
-        return BackgroundBoundary.paddingBox;
+        return CSSBackgroundBoundary.paddingBox;
       case 'content-box':
-        return BackgroundBoundary.contentBox;
+        return CSSBackgroundBoundary.contentBox;
       case 'border-box':
       default:
-        return BackgroundBoundary.borderBox;
+        return CSSBackgroundBoundary.borderBox;
     }
   }
 
-  static BackgroundBoundary resolveBackgroundOrigin(String value) {
+  static CSSBackgroundBoundary resolveBackgroundOrigin(String value) {
     switch (value) {
       case 'border-box':
-        return BackgroundBoundary.borderBox;
+        return CSSBackgroundBoundary.borderBox;
       case 'content-box':
-        return BackgroundBoundary.contentBox;
+        return CSSBackgroundBoundary.contentBox;
       case 'padding-box':
       default:
-        return BackgroundBoundary.paddingBox;
+        return CSSBackgroundBoundary.paddingBox;
     }
   }
 }

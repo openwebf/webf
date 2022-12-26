@@ -7,8 +7,6 @@ import 'dart:core';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 
-final RegExp _splitRegExp = RegExp(r'\s+');
-
 // Initial border value: medium
 final CSSLengthValue _mediumWidth = CSSLengthValue(3, CSSLengthType.PX);
 
@@ -333,7 +331,16 @@ class CSSBorderRadius {
   static CSSBorderRadius? parseBorderRadius(String radius, RenderStyle renderStyle, String propertyName) {
     if (radius.isNotEmpty) {
       // border-top-left-radius: horizontal vertical
-      List<String> values = radius.split(_splitRegExp);
+      List<String> values = radius.split(splitRegExp);
+
+      for (int i = 0; i < values.length; i++) {
+        String value = values[i];
+        CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName, value);
+        if (calcValue != null) {
+          values[i] = '${calcValue.computedValue(propertyName)}px';
+        }
+      }
+
       if (values.length == 1 || values.length == 2) {
         String horizontalRadius = values[0];
         // The first value is the horizontal radius, the second the vertical radius.
@@ -350,9 +357,9 @@ class CSSBorderRadius {
 
   String cssText() {
     if (x == y) {
-      return '${x.computedValue}px';
+      return x.cssText();
     }
-    return '${x.computedValue}px ${y.computedValue}px';
+    return '${x.cssText()} ${y.cssText()}';
   }
 }
 

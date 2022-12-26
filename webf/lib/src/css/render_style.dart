@@ -87,8 +87,8 @@ abstract class RenderStyle {
   CSSBackgroundPosition get backgroundPositionY;
   CSSBackgroundSize get backgroundSize;
   CSSBackgroundAttachmentType? get backgroundAttachment;
-  BackgroundBoundary? get backgroundClip;
-  BackgroundBoundary? get backgroundOrigin;
+  CSSBackgroundBoundary? get backgroundClip;
+  CSSBackgroundBoundary? get backgroundOrigin;
 
   // Text
   CSSLengthValue get fontSize;

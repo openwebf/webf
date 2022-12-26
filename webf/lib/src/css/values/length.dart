@@ -60,32 +60,54 @@ class CSSLengthValue {
   }
 
   String cssText() {
+    String? result;
+    String? unit;
     switch(type) {
       case CSSLengthType.PX:
-        return '${value}px';
+        result = '$value';
+        unit = 'px';
+        break;
       case CSSLengthType.EM:
-        return '${value}em';
+        result = '$computedValue';
+        unit = 'px';
+        break;
       case CSSLengthType.REM:
-        return '${value}rem';
+        result = '$value}';
+        unit = 'rem';
+        break;
       case CSSLengthType.VH:
-        return '${value}vh';
+        result = '$value}';
+        unit = 'vh';
+        break;
       case CSSLengthType.VW:
-        return '${value}vw';
+        result = '$value}';
+        unit = 'vw';
+        break;
       case CSSLengthType.VMIN:
-        return '${value}vmin';
+        result = '$value}';
+        unit = 'vmin';
+        break;
       case CSSLengthType.VMAX:
-        return '${value}vmax';
+        result = '$value}';
+        unit = 'vmax';
+        break;
       case CSSLengthType.PERCENTAGE:
-        return '$value%';
+        result = '${value! * 100}';
+        unit = '%';
+        break;
       case CSSLengthType.UNKNOWN:
       case CSSLengthType.AUTO:
-        return 'auto';
+        result = 'auto';
+        break;
       case CSSLengthType.NONE:
       case CSSLengthType.NORMAL:
       case CSSLengthType.INITIAL:
         break;
     }
-    return '';
+    if (result?.endsWith('.0') == true) {
+      result = result?.replaceAll('.0', '');
+    }
+    return '${result}${unit}';
   }
 
   static final CSSLengthValue zero = CSSLengthValue(0, CSSLengthType.PX);
