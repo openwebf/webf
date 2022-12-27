@@ -437,7 +437,7 @@ describe('Background-size', () => {
     });
   });
 
-  fit("computed", async () => {
+  it("computed", async () => {
     let target;
     target = createElement('div', {
       id: 'target',

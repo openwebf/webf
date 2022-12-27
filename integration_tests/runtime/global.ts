@@ -285,7 +285,6 @@ function test_computed_value(property: string, specified: string, computed: stri
     target?.style?.setProperty(property, specified);
 
     let readValue = getComputedStyle(target!)[property];
-    console.log(readValue);
     expect(readValue).toBe(computed);
 
     if (readValue !== specified) {

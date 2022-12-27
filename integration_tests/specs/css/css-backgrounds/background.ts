@@ -7,7 +7,7 @@ describe('background-331', () => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
     let cs = window.getComputedStyle(div, null);
-    expect(cs.getPropertyValue('background')).toBe('rgb(255, 0, 0) none repeat 0% 0% ');
+    expect(cs.getPropertyValue('background')).toBe('rgb(255, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box');
   });
 
   it('background initial value for background-image', async () => {
@@ -63,7 +63,7 @@ describe('background-331', () => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
     let cs = window.getComputedStyle(div, null);
-    expect(cs.getPropertyValue('background-color')).toBe('rgba(255, 0, 0, 1.0)');
+    expect(cs.getPropertyValue('background-color')).toBe('rgb(255, 0, 0)');
   });
 
   it('background url should distinguish word capitalize', async (done) => {
