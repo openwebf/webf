@@ -44,8 +44,14 @@ class CSSPosition {
           break;
       }
     } else if (split.length == 2) {
-      positions.add(split.first);
-      positions.add(split.last);
+      if ((split.first == CENTER || split.first == TOP || split.first == BOTTOM)  &&
+          (split.last == CENTER || split.last == LEFT || split.last == RIGHT)) {
+        positions.add(split.last);
+        positions.add(split.first);
+      } else {
+        positions.add(split.first);
+        positions.add(split.last);
+      }
     }
     return _cachedParsedPosition[input] = positions;
   }

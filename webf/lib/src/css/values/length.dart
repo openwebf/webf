@@ -525,6 +525,14 @@ class CSSLength {
   }
 
   static CSSLengthValue parseLength(String text, RenderStyle? renderStyle, [String? propertyName, Axis? axisType]) {
+    if (renderStyle != null) {
+      dynamic calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', text);
+      if (calcValue != null && calcValue is CSSCalcValue) {
+        final value = calcValue.computedValue(propertyName ?? '');
+        return CSSLengthValue(value, CSSLengthType.PX);
+      }
+    }
+
     double? value;
     CSSLengthType unit = CSSLengthType.PX;
     if (text == ZERO) {

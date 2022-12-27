@@ -15,7 +15,6 @@ import 'package:webf/launcher.dart';
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
 
-final RegExp _splitRegExp = RegExp(r'\s+');
 const String _singleQuote = '\'';
 const String _doubleQuote = '"';
 
@@ -309,7 +308,7 @@ class CSSBackgroundImage {
           String arg0 = method.args[0].trim();
           double? gradientLength;
           if (arg0.startsWith('to ')) {
-            List<String> parts = arg0.split(_splitRegExp);
+            List<String> parts = arg0.split(splitRegExp);
             if (parts.length >= 2) {
               switch (parts[1]) {
                 case LEFT:
@@ -552,13 +551,12 @@ class CSSBackgroundSize {
     if (fit == BoxFit.cover) {
       return 'cover';
     }
-
-    if (width == null || height == null) {
-      return 'none';
+    if (width == null && height == null) {
+      return 'auto';
     }
 
-    if (width == height) {
-      return '${width!.cssText()}px';
+    if (width != null && (width == height || height == null)) {
+      return width!.cssText();
     }
 
     return '${width!.cssText()} ${height!.cssText()}';
@@ -627,7 +625,16 @@ class CSSBackground {
       case AUTO:
         return CSSBackgroundSize(fit: BoxFit.none);
       default:
-        List<String> values = value.split(_splitRegExp);
+        List<String> values = value.split(splitRegExp);
+
+        for (int i = 0; i < values.length; i++) {
+          String value = values[i];
+          CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName, value);
+          if (calcValue != null) {
+            values[i] = '${calcValue.computedValue(propertyName)}px';
+          }
+        }
+
         if (values.length == 1 && values[0].isNotEmpty) {
           CSSLengthValue width = CSSLength.parseLength(values[0], renderStyle, propertyName, Axis.horizontal);
           return CSSBackgroundSize(

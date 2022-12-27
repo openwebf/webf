@@ -419,14 +419,15 @@ class CSSRenderStyle extends RenderStyle
   dynamic resolveValue(String propertyName, String propertyValue) {
     RenderStyle renderStyle = this;
 
+    // TODO baijiangzhou
     // Process CSSCalcValue.
-    dynamic value = CSSCalcValue.tryParse(renderStyle, propertyName, propertyValue);
-    if (value != null && value is CSSCalcValue) {
-      return value;
-    }
+    // dynamic value = CSSCalcValue.tryParse(renderStyle, propertyName, propertyValue);
+    // if (value != null && value is CSSCalcValue) {
+    //   return value;
+    // }
 
     // Process CSSVariable.
-    value = CSSVariable.tryParse(renderStyle, propertyValue);
+    dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
       return value;
     }

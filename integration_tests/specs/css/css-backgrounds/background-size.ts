@@ -437,7 +437,7 @@ describe('Background-size', () => {
     });
   });
 
-  it("computed", async () => {
+  fit("computed", async () => {
     let target;
     target = createElement('div', {
       id: 'target',
@@ -449,7 +449,7 @@ describe('Background-size', () => {
     BODY.appendChild(target);
 
     test_computed_value('background-size', '1px', '1px');
-    test_computed_value('background-size', '1px auto', '1px');
+    test_computed_value('background-size', '1px auto', '1px auto');
     test_computed_value('background-size', '2% 3%');
     test_computed_value('background-size', 'auto');
     test_computed_value('background-size', 'auto auto', 'auto');
@@ -459,12 +459,12 @@ describe('Background-size', () => {
     test_computed_value(
       'background-size',
       'calc(10px + 0.5em) calc(10px - 0.5em)',
-      '30px 0px'
+      '30px -10px'
     );
     test_computed_value(
       'background-size',
       'calc(10px - 0.5em) calc(10px + 0.5em)',
-      '0px 30px'
+      '-10px 30px'
     );
 
     // See background-computed.html for a test with multiple background images.
