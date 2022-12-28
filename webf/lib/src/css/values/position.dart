@@ -59,9 +59,9 @@ class CSSPosition {
   /// Parse background-position-x/background-position-y from string to CSSBackgroundPosition type.
   static CSSBackgroundPosition resolveBackgroundPosition(
       String input, RenderStyle renderStyle, String propertyName, bool isHorizontal) {
-    dynamic calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', input);
+    dynamic calcValue = CSSCalcValue.tryParse(renderStyle, propertyName, input);
     if (calcValue != null && calcValue is CSSCalcValue) {
-      final value = calcValue.computedValue(propertyName ?? '');
+      final value = calcValue.computedValue(propertyName);
       return CSSBackgroundPosition(length: CSSLengthValue(value, CSSLengthType.PX));
     }
     if (CSSPercentage.isPercentage(input)) {

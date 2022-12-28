@@ -295,6 +295,7 @@ class CSSBackgroundImage {
 
   Gradient? _gradient;
   Gradient? get gradient {
+    if (_gradient != null) return _gradient;
     List<Color> colors = [];
     List<double> stops = [];
     int start = 0;
@@ -465,30 +466,30 @@ class CSSBackgroundImage {
   }
 
   String cssText() {
-    if (_image != null) {
-      switch (_image.runtimeType) {
+    if (image != null) {
+      switch (image.runtimeType) {
         case NetworkImage:
-          return (_image as NetworkImage).url;
+          return (image as NetworkImage).url;
         case CachedNetworkImage:
-          return (_image as CachedNetworkImage).url;
+          return (image as CachedNetworkImage).url;
         case FileImage:
-          return (_image as FileImage).file.uri.path;
+          return (image as FileImage).file.uri.path;
         case MemoryImage:
-          return 'data:image/png;base64, ${base64Encode((_image as MemoryImage).bytes)}';
+          return 'data:image/png;base64, ${base64Encode((image as MemoryImage).bytes)}';
         case AssetImage:
-          return 'assets://${(_image as AssetImage).assetName}';
+          return 'assets://${(image as AssetImage).assetName}';
         default:
           return 'none';
       }
     }
-    if (_gradient != null) {
-      switch (_gradient!.runtimeType) {
+    if (gradient != null) {
+      switch (gradient!.runtimeType) {
         case CSSLinearGradient:
-          return (_gradient as CSSLinearGradient).cssText();
+          return (gradient as CSSLinearGradient).cssText();
         case CSSRadialGradient:
-          return (_gradient as CSSRadialGradient).cssText();
+          return (gradient as CSSRadialGradient).cssText();
         case CSSConicGradient:
-          return (_gradient as CSSConicGradient).cssText();
+          return (gradient as CSSConicGradient).cssText();
         default:
           return 'none';
       }

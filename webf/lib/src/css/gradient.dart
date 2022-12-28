@@ -78,23 +78,24 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
       to = '${_angle! / (2 * math.pi / 360)}deg';
     } else {
       if (end == Alignment.topLeft) {
-        to = 'to top left';
+        to = 'to left top';
       } else if (end == Alignment.topRight) {
-        to = 'to top right';
+        to = 'to right top';
       } else if (end == Alignment.topCenter) {
         to = 'to top';
       } else if (end == Alignment.bottomLeft) {
-        to = 'to bottom left';
+        to = 'to left bottom';
       } else if (end == Alignment.bottomRight) {
-        to = 'to bottom right';
+        to = 'to right bottom';
       } else if (end == Alignment.bottomCenter) {
         to = 'to bottom';
       }
     }
     final colorTexts = [];
+    final includeStop = !(stops?.length == 2 && stops?[0] == 0 && stops?[1] == 1);
     for (int i = 0; i < colors.length; i++) {
       var text = CSSColor(colors[i]).cssText();
-      if (stops != null && stops![i] >= 0) {
+      if (stops != null && stops![i] >= 0 && includeStop) {
         text += ' ${stops![i] * 100}%';
       }
       colorTexts.add(text);
