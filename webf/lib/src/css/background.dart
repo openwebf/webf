@@ -406,14 +406,15 @@ class CSSBackgroundImage {
                 radius = CSSPercentage.parsePercentage(positionAndRadius[0])! * 0.5;
                 start = 1;
               }
-              if (positionAndRadius.length > 2 && positionAndRadius[1] == 'at') {
+
+              if ((positionAndRadius.length - start) >= 2 && positionAndRadius[start] == 'at') {
+                if (CSSPercentage.isPercentage(positionAndRadius[start + 1])) {
+                  atX = CSSPercentage.parsePercentage(positionAndRadius[start + 1]);
+                }
+                if (positionAndRadius.length >= 3 && CSSPercentage.isPercentage(positionAndRadius[start + 2])) {
+                  atY = CSSPercentage.parsePercentage(positionAndRadius[start + 2]);
+                }
                 start = 1;
-                if (CSSPercentage.isPercentage(positionAndRadius[2])) {
-                  atX = CSSPercentage.parsePercentage(positionAndRadius[2]);
-                }
-                if (positionAndRadius.length == 4 && CSSPercentage.isPercentage(positionAndRadius[3])) {
-                  atY = CSSPercentage.parsePercentage(positionAndRadius[3]);
-                }
               }
             }
           }
@@ -722,7 +723,7 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
   List<String> strings = [];
   List<CSSColorStop> colorGradients = [];
   // rgba may contain space, color should handle special
-  if (src.startsWith('rgba(')) {
+  if (src.startsWith('rgba(') || src.startsWith('rgb(')) {
     int indexOfRgbaEnd = src.indexOf(')');
     if (indexOfRgbaEnd == -1) {
       // rgba parse error

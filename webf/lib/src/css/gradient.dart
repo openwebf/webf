@@ -161,21 +161,24 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
 
   String cssText() {
     final function = tileMode == TileMode.clamp ? 'radial-gradient' : 'repeating-radial-gradient';
-    var radiusText = '${radius * 100 * 2}%';
+    var radiusText = radius != 0.5 ? '${radius * 100 * 2}% ' : '';
     if (center is FractionalOffset) {
       final offset = center as FractionalOffset;
-      radiusText += 'at ${offset.dx * 100}% ${offset.dy * 100}%';
+      if (offset.dx != 0.5 || offset.dy != 0.5) {
+        radiusText += 'at ${offset.dx * 100}% ${offset.dy * 100}%, ';
+      }
     }
 
     final colorTexts = [];
+    final includeStop = !(stops?.length == 2 && stops?[0] == 0 && stops?[1] == 1);
     for (int i = 0; i < colors.length; i++) {
       var text = CSSColor(colors[i]).cssText();
-      if (stops != null && stops![i] >= 0) {
+      if (stops != null && stops![i] >= 0 && includeStop) {
         text += ' ${stops![i] * 100}%';
       }
       colorTexts.add(text);
     }
-    return '$function($radiusText, ${colorTexts.join(', ')})';
+    return '$function($radiusText${colorTexts.join(', ')})';
   }
 }
 
@@ -205,23 +208,29 @@ class CSSConicGradient extends SweepGradient with BorderGradientMixin {
     final function = 'conic-gradient';
     var from = '';
     if (transform is GradientRotation) {
-      from = '${(transform as GradientRotation).radians + math.pi / 2}';
+      final deg = (((transform as GradientRotation).radians + math.pi / 2) * 360 / 2 / math.pi);
+      if (deg != 0) {
+         from = 'from ${deg.cssText()}deg, ';
+      }
     }
     var at = '';
     if (center is FractionalOffset) {
       final offset = center as FractionalOffset;
-      at = 'at ${offset.dx * 100}% ${offset.dy * 100}%';
+      if (offset.dx != 0.5 || offset.dy != 0.5) {
+        at += 'at ${offset.dx * 100}% ${offset.dy * 100}%, ';
+      }
     }
 
     final colorTexts = [];
+    final includeStop = !(stops?.length == 2 && stops?[0] == 0 && stops?[1] == 1);
     for (int i = 0; i < colors.length; i++) {
       var text = CSSColor(colors[i]).cssText();
-      if (stops != null && stops![i] >= 0) {
+      if (stops != null && stops![i] >= 0 && includeStop) {
         text += ' ${stops![i] * 100}%';
       }
       colorTexts.add(text);
     }
-    return '$function($from $at, ${colorTexts.join(', ')})';
+    return '$function($from$at${colorTexts.join(', ')})';
   }
 }
 
