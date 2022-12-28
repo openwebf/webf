@@ -15,7 +15,7 @@ The WebF project is a community support version of [Alibaba's Kraken Project](ht
 
 The core developer and core architecture: [andycall](https://github.com/andycall), who is from the original Kraken Team. Leave the Alibaba Group and launch this project, to keep following the original ambition of the Kraken project. 
 
-For more details: https://www.zhihu.com/question/534811524/answer/2595510449
+For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510449
 
 ## Join the community (Beta)
 
