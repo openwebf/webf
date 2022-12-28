@@ -94,7 +94,7 @@ JSValue js_debugger_local_variables(JSContext* ctx, int stack_index);
 JSValue js_debugger_closure_variables(JSContext* ctx, int stack_index);
 
 // evaluates an expression at any stack frame. JS_Evaluate* only evaluates at the top frame.
-JSValue js_debugger_evaluate(JSContext* ctx, int stack_index, JSValue expression);
+JSValue js_debugger_evaluate(JSContext* ctx, int stack_index, const char* expression);
 
 #ifdef __cplusplus
 }

@@ -12,7 +12,7 @@
 
 <% _.forEach(blob.objects, (object) => { %>
 typedef struct <%= object.name %> {
-<%= generateProtocolMembers(object) %>
+<%= generateProtocolMembers(object, dapInfoCollector) %>
 } <%= object.name %>;
 <% }) %>
 #endif

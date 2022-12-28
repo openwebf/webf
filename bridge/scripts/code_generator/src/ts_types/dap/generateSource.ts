@@ -15,6 +15,24 @@ function getLists(set: Set<ClassObject>): string[] {
   });
 }
 
+function generateTypeStringify(object: ClassObject, propName: string, info: DAPInfoCollector, externalInitialize: string[]): void {
+  let stringifyCode : string[] = [];
+  if (object.props) {
+    object.props.forEach(prop => {
+      let code = generateMemberStringifyCode(prop, propName, externalInitialize, info);
+      if (code) {
+        stringifyCode.push(code);
+      }
+    })
+  }
+
+  externalInitialize.push(`static JSValue stringify_property_${object.name}(JSContext* ctx, ${object.name}* ${propName}) {
+  JSValue object = JS_NewObject(ctx);
+  ${stringifyCode.join('\n')}
+  return object;
+  }`)
+}
+
 function generateTypeInitialize(object: ClassObject, propName: string, info: DAPInfoCollector, externalInitialize: string[]): void {
   let parserCode: string[] = [];
   if (object.props) {
@@ -26,9 +44,9 @@ function generateTypeInitialize(object: ClassObject, propName: string, info: DAP
     });
   }
 
-  externalInitialize.push(`static ValueFormat* get_property_${propName}(JSContext* ctx, JSValue this_object, const char* prop) {
+  externalInitialize.push(`static ${object.name}* get_property_${propName}(JSContext* ctx, JSValue this_object, const char* prop) {
   JSValue arguments = JS_GetPropertyStr(ctx, this_object, prop);
-  ValueFormat* args = js_malloc(ctx, sizeof(ValueFormat));
+  ${object.name}* args = js_malloc(ctx, sizeof(${object.name}));
   ${parserCode.join('\n')}
   JS_FreeValue(ctx, arguments);
   return args;
@@ -37,8 +55,25 @@ function generateTypeInitialize(object: ClassObject, propName: string, info: DAP
 
 function generatePropParser(prop: PropsDeclaration, externalInitialize: string[], info: DAPInfoCollector): string | null {
   function wrapOptional(code: string) {
+    function generateUnInitializeValue(): string {
+      if (prop.type[0] === FunctionArgumentType.dom_string) {
+        callCode = `args->${prop.name} = NULL;`;
+      } else if (prop.type[0] === FunctionArgumentType.double) {
+        callCode = `args->${prop.name} = 0.0;`;
+      } else if (prop.type[0] === FunctionArgumentType.int64) {
+        callCode = `args->${prop.name} = 0;`
+      } else if (prop.type[0] === FunctionArgumentType.boolean) {
+        callCode = `args->${prop.name} = 0;`
+      } else {
+        callCode = `args->${prop.name} = NULL;`;
+      }
+      return callCode;
+    }
+
     return addIndent(`if (JS_HasPropertyStr(ctx, arguments, "${prop.name}")) {
   ${code}    
+} else {
+  ${generateUnInitializeValue()}
 }`, 2);
   }
 
@@ -77,7 +112,7 @@ function generateMemberInit(prop: PropsDeclaration, externalInitialize: string[]
 
 function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, externalInitialize: string[], info: DAPInfoCollector): string {
   function wrapIf(code: string) {
-    if (prop.type[0] === FunctionArgumentType.dom_string) {
+    if (prop.type[0] === FunctionArgumentType.dom_string || typeof prop.type[0] === 'string') {
       return `if (${bodyName}->${prop.name} != NULL) {
   ${code}
 }`;
@@ -111,10 +146,17 @@ function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, e
     } else {
       if (type === FunctionArgumentType.array) {
         callCode = `JSValue arr = JS_NewArray(ctx);
-for(int i = 0; i < stopped_event_body->${prop.name}Len; i ++) {
-  JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type[1])}(ctx, stopped_event_body->${prop.name}[i]));
+for(int i = 0; i <  ${bodyName}->${prop.name}Len; i ++) {
+  JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type[1])}(ctx, ${bodyName}->${prop.name}[i]));
 }
 JS_SetPropertyStr(ctx, object, "${prop.name}", arr);`
+      } else {
+        let targetTypes = Array.from(info.others).find(o => o.name === type);
+
+        if (targetTypes) {
+          generateTypeStringify(targetTypes, prop.name, info, externalInitialize);
+          callCode = `JS_SetPropertyStr(ctx, object, "${prop.name}", stringify_property_${type}(ctx, ${bodyName}->${prop.name}));`
+        }
       }
     }
     return callCode;
@@ -122,22 +164,6 @@ JS_SetPropertyStr(ctx, object, "${prop.name}", arr);`
 
   let callCode = genCallCode(prop.type[0], prop);
 
-
-//   if (stopped_event_body->threadId != 0) {
-//     JS_SetPropertyStr(ctx, object, "threadId", JS_NewInt64(ctx, stopped_event_body->threadId));
-//   }
-//   JS_SetPropertyStr(ctx, object, "preserveFocusHint", JS_NewBool(ctx, stopped_event_body->preserveFocusHint == 1));
-//   if (stopped_event_body->text != NULL) {
-//     JS_SetPropertyStr(ctx, object, "text", JS_NewString(ctx, stopped_event_body->text));
-//   }
-//   JS_SetPropertyStr(ctx, object, "allThreadsStopped", JS_NewBool(ctx, stopped_event_body->allThreadsStopped == 1));
-//   if (stopped_event_body->hitBreakpointIds != NULL) {
-//     JSValue arr = JS_NewArray(ctx);;
-//     for(int i = 0; i < stopped_event_body->hitBreakpointIdLen; i ++) {
-//       JS_SetPropertyUint32(ctx, object, i, JS_NewInt64(ctx, stopped_event_body->hitBreakpointIds[i]));
-//     }
-//     JS_SetPropertyStr(ctx, object, "hitBreakpointIds", arr);
-//   }
   return addIndent(prop.optional ? wrapIf(callCode) : callCode, 2);
 }
 
@@ -202,6 +228,42 @@ ${addIndent(bodyInitCode.join('\n'), 2)}
   }).join('\n');
 }
 
+function generateResponseInitializer(info: DAPInfoCollector, responses: string[], externalInitialize: string[]) {
+  return responses.map(response => {
+    let targetBody = Array.from(info.bodies).find((ag) => {
+      const prefix = ag.name.replace('Body', '');
+      return response.indexOf(prefix) >= 0;
+    });
+
+    if (!targetBody) {
+      return '';
+    }
+    let bodyInitCode: string[] = [];
+    if (targetBody.props) {
+      targetBody.props.forEach(prop => {
+        let code = generateMemberInit(prop, externalInitialize, info);
+        if (code) {
+          bodyInitCode.push(code);
+        }
+      });
+    }
+    return addIndent(`if (strcmp(response, "${response.replace('Response', '').toLowerCase()}") == 0) {
+  ${response}* result = js_malloc(ctx, sizeof(${response}));
+  result->type = "response";
+  result->seq = response_seq++;
+  result->request_seq = corresponding_request->seq;
+  result->command = corresponding_request->command;
+  result->success = 1;
+  result->message = NULL;
+  ${response}Body* body = js_malloc(ctx, sizeof(${response}Body));
+${addIndent(bodyInitCode.join('\n'), 2)}
+  result->body = body;
+  return result;
+}`, 2);
+
+  }).join('\n');
+}
+
 function generateEventBodyStringifyCode(info: DAPInfoCollector, events: string[], externalInitialize: string[]) {
   return events.map(event => {
     let targetBody = Array.from(info.bodies).find((ag) => {
@@ -229,21 +291,53 @@ function generateEventBodyStringifyCode(info: DAPInfoCollector, events: string[]
   }).join('\n');
 }
 
+function generateResponseBodyStringifyCode(info: DAPInfoCollector, responses: string[], externalInitialize: string[]) {
+  return responses.map(response => {
+    let targetBody = Array.from(info.bodies).find((ag) => {
+      const prefix = ag.name.replace('Body', '');
+      return response.indexOf(prefix) >= 0;
+    });
+
+    if (!targetBody) {
+      return '';
+    }
+
+    let bodyStringifyCode: string[] = [];
+    if (targetBody.props) {
+      targetBody.props.forEach(prop => {
+        let code = generateMemberStringifyCode(prop, `${_.snakeCase(response)}_body`, externalInitialize, info);
+        if (code) {
+          bodyStringifyCode.push(code);
+        }
+      });
+    }
+    return addIndent(`if (strcmp(command, "${response.replace('Response', '').toLowerCase()}") == 0) {
+  ${response}Body* ${_.snakeCase(response)}_body = (${response}Body*) body;
+  ${bodyStringifyCode.join('\n')}
+}`, 2);
+  }).join('\n');
+}
+
 
 export function generateDAPSource(info: DAPInfoCollector) {
   const requests: string[] = getLists(info.requests);
   const events: string[] = getLists(info.events);
+  const responses: string[] = getLists(info.response);
   const externalInitialize: string[] = [];
 
   const requestParser = generateRequestParser(info, requests, externalInitialize);
-  const bodyInitCode = generateEventInitializer(info, events, externalInitialize);
-  const bodyStringifyCode = generateEventBodyStringifyCode(info, events, externalInitialize);
+  const eventInit = generateEventInitializer(info, events, externalInitialize);
+  const responseInit = generateResponseInitializer(info, responses, externalInitialize);
+  const eventBodyStringifyCode = generateEventBodyStringifyCode(info, events, externalInitialize);
+  const responseBodyStringifyCode = generateResponseBodyStringifyCode(info, responses, externalInitialize);
   return _.template(readConverterTemplate())({
     info,
     requests,
     requestParser,
-    bodyInitCode,
-    bodyStringifyCode,
+    eventInit,
+    responseInit,
+    eventBodyStringifyCode,
+    responseBodyStringifyCode,
     externalInitialize
   }).split('\n').filter(str => {
     return str.trim().length > 0;

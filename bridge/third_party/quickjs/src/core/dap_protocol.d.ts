@@ -51,7 +51,7 @@ interface EvaluateArguments {
    * Evaluate the expression in the scope of this stack frame. If not specified,
    * the expression is evaluated in the global scope.
    */
-  frameId?: number;
+  frameId?: int64;
 
   /**
    * The context in which the evaluate request is used.
@@ -245,9 +245,7 @@ interface VariablePresentationHint {
    * generally be used instead.
    * etc.
    */
-  kind?: 'property' | 'method' | 'class' | 'data' | 'event' | 'baseClass'
-    | 'innerClass' | 'interface' | 'mostDerivedClass' | 'virtual'
-    | 'dataBreakpoint' | string;
+  kind?: string;
 
   /**
    * Set of attributes represented as an array of strings. Before introducing
@@ -266,15 +264,14 @@ interface VariablePresentationHint {
    * data breakpoint.
    * etc.
    */
-  attributes?: ('static' | 'constant' | 'readOnly' | 'rawString' | 'hasObjectId'
-    | 'canHaveObjectId' | 'hasSideEffects' | 'hasDataBreakpoint' | string)[];
+  attributes?: string[];
 
   /**
    * Visibility of variable. Before introducing additional values, try to use
    * the listed values.
    * Values: 'public', 'private', 'protected', 'internal', 'final', etc.
    */
-  visibility?: 'public' | 'private' | 'protected' | 'internal' | 'final' | string;
+  visibility?:  string;
 
   /**
    * If true, clients can present the variable with a UI that supports a

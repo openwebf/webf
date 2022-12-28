@@ -58,7 +58,7 @@ function genCodeFromTypeDefine() {
   });
 
   let blobs = typeFiles.map(file => {
-    let prefix = type.toUpperCase() === 'IDL' ? 'qjsc_' : ''
+    let prefix = type.toUpperCase() === 'IDL' ? 'qjs_' : ''
 
     let filename = prefix + file.split('/').slice(-1)[0].replace('.d.ts', '');
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
@@ -80,7 +80,7 @@ function genCodeFromTypeDefine() {
         result = generatorIDLSource(b, TemplateType[type.toUpperCase()]);
         break;
       case 'DAP':
-        result = generatorDAP(b, TemplateType[type.toUpperCase()]);
+        result = generatorDAP(b, dapInfoCollector);
         break;
     }
 

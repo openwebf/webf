@@ -72,7 +72,7 @@ else()
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
 endif()
 
-target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/out)
 
 add_executable(qjsc qjsc.c quickjs-libc.c)
 target_link_libraries(qjsc quickjs ${LINK_LIBRARIES})

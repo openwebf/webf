@@ -77,7 +77,7 @@ jasmine.configureDefaultReporter({
   showColors: true
 });
 
-startIntegrationTest().then((url) => {
-  globalThis.DEBUG_HOST_SERVER = url;
+// startIntegrationTest().then((url) => {
+  globalThis.DEBUG_HOST_SERVER = 'ws://192.168.50.33:9222';
   jasmine.execute([path.join(__dirname, '../.specs/bundle.build.js')]);
-});
+// });

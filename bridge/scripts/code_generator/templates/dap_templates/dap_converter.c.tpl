@@ -7,17 +7,20 @@
 #include <string.h>
 #include "dap_protocol.h"
 #if ENABLE_DEBUGGER
-static const char* copy_string(const char* string) {
- size_t len = strlen(string);
- char* buf = (char*)malloc(len + 1);
- memcpy(buf, string, len);
- return buf;
+static int64_t response_seq = 0;
+
+const char* copy_string(const char* string, size_t len) {
+  char* buf = (char*)malloc(len + 1);
+  memcpy(buf, string, len);
+  buf[len] = 0;
+  return buf;
 }
 
 static const char* get_property_string_copy(JSContext* ctx, JSValue this_object, const char* prop) {
  JSValue vp = JS_GetPropertyStr(ctx, this_object, prop);
- const char* tmp = JS_ToCString(ctx, vp);
- const char* result = copy_string(tmp);
+ size_t len;
+ const char* tmp = JS_ToCStringLen(ctx, &len, vp);
+ const char* result = copy_string(tmp, len);
  JS_FreeCString(ctx, tmp);
  JS_FreeValue(ctx, vp);
  return result;
@@ -61,7 +64,7 @@ int parse_request(JSContext* ctx, Request* request, const char* buf, size_t leng
  assert(strcmp(type, "request") == 0);
  request->seq = get_property_int64(ctx, json, "seq");
  request->command = get_property_string_copy(ctx, json, "command");
-
+ request->type = type;
  JSValue varguments = JS_GetPropertyStr(ctx, json, "arguments");
  request->arguments = parse_request_arguments(ctx, request->command, varguments);
  JS_FreeValue(ctx, varguments);
@@ -70,55 +73,42 @@ int parse_request(JSContext* ctx, Request* request, const char* buf, size_t leng
 static JSValue stringify_event_body(JSContext* ctx, const char* event, void* body) {
  JSValue object = JS_NewObject(ctx);
  if (body == NULL) return object;
-<%= bodyStringifyCode %>
+<%= eventBodyStringifyCode %>
  return object;
 }
 void* initialize_event(JSContext* ctx, const char* event) {
-  <%= bodyInitCode %>
+  <%= eventInit %>
+  return NULL;
 }
+
+void* initialize_response(JSContext* ctx, const Request* corresponding_request, const char* response) {
+  <%= responseInit %>
+  return NULL;
+}
+
 const char* stringify_event(JSContext* ctx, Event* event, size_t* length) {
- JSValue object = JS_NewObject(ctx);
- JS_SetPropertyStr(ctx, object, "seq", JS_NewInt64(ctx, event->seq));
- JS_SetPropertyStr(ctx, object, "type", JS_NewString(ctx, "event"));
- JS_SetPropertyStr(ctx, object, "event", JS_NewString(ctx, event->event));
- JS_SetPropertyStr(ctx, object, "body",  stringify_event_body(ctx, event->event, event->body));
- JSValue jsonString = JS_JSONStringify(ctx, object, JS_NULL, JS_NULL);
- const char* tmp = JS_ToCString(ctx, jsonString);
- const char* result = copy_string(tmp);
- JS_FreeCString(ctx, tmp);
- JS_FreeValue(ctx, jsonString);
- JS_FreeValue(ctx, object);
- return result;
-}
-static JSValue stringify_presentation_hint(JSContext* ctx, VariablePresentationHint* presentation_hint) {
- JSValue object = JS_NewObject(ctx);
- if (presentation_hint->kind != NULL) {
-   JS_SetPropertyStr(ctx, object, "kind", JS_NewString(ctx, presentation_hint->kind));
- }
- if (presentation_hint->attributes != NULL) {
-   JS_SetPropertyStr(ctx, object, "attributes", JS_NewString(ctx, presentation_hint->attributes));
- }
- if (presentation_hint->visibility != NULL) {
-   JS_SetPropertyStr(ctx, object, "visibility", JS_NewString(ctx, presentation_hint->visibility));
- }
- return object;
+  JSValue object = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, object, "seq", JS_NewInt64(ctx, event->seq));
+  JS_SetPropertyStr(ctx, object, "type", JS_NewString(ctx, "event"));
+  JS_SetPropertyStr(ctx, object, "event", JS_NewString(ctx, event->event));
+  JS_SetPropertyStr(ctx, object, "body",  stringify_event_body(ctx, event->event, event->body));
+  JSValue jsonString = JS_JSONStringify(ctx, object, JS_NULL, JS_NULL);
+  size_t len;
+  const char* tmp = JS_ToCStringLen(ctx, &len, jsonString);
+  const char* result = copy_string(tmp, len);
+  JS_FreeCString(ctx, tmp);
+  JS_FreeValue(ctx, jsonString);
+  JS_FreeValue(ctx, object);
+  return result;
 }
 static JSValue stringify_response_body(JSContext* ctx, const char* command, void* body) {
  JSValue object = JS_NewObject(ctx);
- if (strcmp(command, "evaluate") == 0) {
-   EvaluateResponseBody* evaluate_response_body = (EvaluateResponseBody*) body;
-   JS_SetPropertyStr(ctx, object, "result", JS_NewString(ctx, evaluate_response_body->result));
-   if (evaluate_response_body->type != NULL) {
-     JS_SetPropertyStr(ctx, object, "type", JS_NewString(ctx, evaluate_response_body->type));
-   }
-   if (evaluate_response_body->presentationHint != NULL) {
-     JS_SetPropertyStr(ctx, object, "presentationHint", stringify_presentation_hint(ctx, evaluate_response_body->presentationHint));
-   }
- }
- // TODO: add response body
+ <%= responseBodyStringifyCode %>
+ return object;
 }
-const char* stringify_response(JSContext* ctx, Response* response, size_t* length) {
+const char* stringify_response(JSContext* ctx, Response* response) {
  JSValue object = JS_NewObject(ctx);
+ printf("response command %s", response->command);
  JS_SetPropertyStr(ctx, object, "type", JS_NewString(ctx, "response"));
  JS_SetPropertyStr(ctx, object, "request_seq", JS_NewInt64(ctx, response->seq));
  JS_SetPropertyStr(ctx, object, "success", JS_NewBool(ctx, response->success == 1));
@@ -126,9 +116,11 @@ const char* stringify_response(JSContext* ctx, Response* response, size_t* lengt
  if (response->message != NULL) {
    JS_SetPropertyStr(ctx, object, "message", JS_NewString(ctx, response->message));
  }
+ JS_SetPropertyStr(ctx, object, "body", stringify_response_body(ctx, response->command, response->body));
  JSValue jsonString = JS_JSONStringify(ctx, object, JS_NULL, JS_NULL);
- const char* tmp = JS_ToCString(ctx, jsonString);
- const char* result = copy_string(tmp);
+ size_t len;
+ const char* tmp = JS_ToCStringLen(ctx,  &len,jsonString);
+ const char* result = copy_string(tmp, len);
  JS_FreeCString(ctx, tmp);
  JS_FreeValue(ctx, jsonString);
  JS_FreeValue(ctx, object);

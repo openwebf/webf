@@ -1,6 +1,7 @@
 import {generateDAPSource} from "./generateSource";
 import {generateDAPHeader} from "./generateHeader";
 import {DAPBlob} from "./DAPBlob";
+import {DAPInfoCollector} from "../analyzer";
 
 export enum TemplateType {
   // Generate C++ Binding codes for JavaScript API
@@ -11,8 +12,8 @@ export enum TemplateType {
   Dart,
 }
 
-export function generatorDAP(blob: DAPBlob, type: TemplateType) {
-  let header = generateDAPHeader(blob);
+export function generatorDAP(blob: DAPBlob, dapInfoCollector: DAPInfoCollector) {
+  let header = generateDAPHeader(blob, dapInfoCollector);
 
   return {
     header,

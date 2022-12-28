@@ -203,6 +203,7 @@ class IsolateInspectorServer {
         return;
       }
       String str = buffer.ref.buffer.toDartString(length: buffer.ref.length);
+      print('backend $str');
       if (_ws != null) {
         if (clientKind == ConnectionClientKind.vscode) {
           _ws?.add(str);
