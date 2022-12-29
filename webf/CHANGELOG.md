@@ -1,3 +1,8 @@
+## 0.13.2-beta.6
+
+* fix initializeCookie not working when reload pages.
+* fix view module value changed by scroll offset.
+
 ## 0.13.2-beta.5
 
 * fix replaced element didn't render with toggle display.

@@ -1,6 +1,6 @@
 name: webf
 description: A W3C standard compliant Web rendering engine based on Flutter.
-version: 0.13.2-beta.5
+version: 0.13.2-beta.6
 homepage: https://openwebf.com
 
 environment:
