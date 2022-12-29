@@ -223,57 +223,57 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.FontFamily:
         return style.fontFamily?.join(', ') ?? '';
       case CSSPropertyID.FontSize:
-        return '${style.fontSize.computedValue}px';
+        return style.fontSize.cssText();
       case CSSPropertyID.FontStyle:
-        return style.fontStyle.toString();
+        return style.fontStyle.cssText();
       case CSSPropertyID.FontWeight:
         return style.fontWeight.cssText();
       case CSSPropertyID.LineHeight:
-        return '${style.lineHeight.computedValue}px';
+        return style.lineHeight.cssText();
       case CSSPropertyID.FontVariant:
           break;
       case CSSPropertyID.Top:
-        return '${style.top.computedValue}px';
+        return style.top.cssText();
       case CSSPropertyID.Bottom:
-        return '${style.bottom.computedValue}px';
+        return style.bottom.cssText();
       case CSSPropertyID.Left:
-        return '${style.left.computedValue}px';
+        return style.left.cssText();
       case CSSPropertyID.Right:
-        return '${style.right.computedValue}px';
+        return style.right.cssText();
       case CSSPropertyID.Width:
-        return '${style.width.computedValue}px';
+        return style.width.cssText();
       case CSSPropertyID.Height:
-        return '${style.height.computedValue}px';
+        return style.height.cssText();
       case CSSPropertyID.MaxHeight:
-        return '${style.maxHeight.computedValue}px';
+        return style.maxHeight.cssText();
       case CSSPropertyID.MaxWidth:
-        return '${style.maxHeight.computedValue}px';
+        return style.maxHeight.cssText();
       case CSSPropertyID.MinHeight:
-        return '${style.minHeight.computedValue}px';
+        return style.minHeight.cssText();
       case CSSPropertyID.MinWidth:
-        return '${style.minWidth.computedValue}px';
+        return style.minWidth.cssText();
       case CSSPropertyID.Margin:
         return style.margin.cssText();
       case CSSPropertyID.MarginTop:
-        return '${style.marginTop.computedValue}px';
+        return style.marginTop.cssText();
       case CSSPropertyID.MarginRight:
-        return '${style.marginRight.computedValue}px';
+        return style.marginRight.cssText();
       case CSSPropertyID.MarginBottom:
-        return '${style.marginBottom.computedValue}px';
+        return style.marginBottom.cssText();
       case CSSPropertyID.MarginLeft:
-        return '${style.marginLeft.computedValue}px';
+        return style.marginLeft.cssText();
       case CSSPropertyID.Padding:
         return style.padding.cssText();
       case CSSPropertyID.PaddingTop:
-        return '${style.paddingTop.computedValue}px';
+        return style.paddingTop.cssText();
       case CSSPropertyID.PaddingRight:
-        return '${style.paddingRight.computedValue}px';
+        return style.paddingRight.cssText();
       case CSSPropertyID.PaddingBottom:
-        return '${style.paddingBottom.computedValue}px';
+        return style.paddingBottom.cssText();
       case CSSPropertyID.PaddingLeft:
-        return '${style.paddingLeft.computedValue}px';
+        return style.paddingLeft.cssText();
       case CSSPropertyID.LetterSpacing:
-        return '${style.letterSpacing?.computedValue}px';
+        return style.letterSpacing?.cssText();
       case CSSPropertyID.ObjectFit:
         return style.objectFit.toString();
       case CSSPropertyID.Opacity:
@@ -567,6 +567,16 @@ extension DoubleText on double {
   }
 }
 
+extension FontStyleText on FontStyle {
+  String cssText() {
+    switch (this) {
+      case FontStyle.italic:
+        return 'italic';
+      case FontStyle.normal:
+        return 'normal';
+    }
+  }
+}
 
 extension BorderStyleText on BorderStyle {
   String cssText() {

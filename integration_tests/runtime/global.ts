@@ -285,13 +285,7 @@ function test_computed_value(property: string, specified: string, computed: stri
     target?.style?.setProperty(property, specified);
 
     let readValue = getComputedStyle(target!)[property];
-    expect(readValue).toBe(computed);
-
-    if (readValue !== specified) {
-      target!.style[property] = '';
-      target!.style[property] = readValue;
-      expect(getComputedStyle(target!)[property]).toBe(readValue);
-    }
+    expect(readValue).toEqual(computed);
 }
 
 // Compatible to tests that use global variables.
