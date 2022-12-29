@@ -223,7 +223,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   void clearCookie() {
-    document.cookie.deleteCookies();
+    document.cookie.clearCookie();
   }
 
   void evaluateJavaScripts(String code) {
