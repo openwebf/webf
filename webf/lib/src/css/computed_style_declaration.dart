@@ -273,7 +273,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.PaddingLeft:
         return style.paddingLeft.cssText();
       case CSSPropertyID.LetterSpacing:
-        return style.letterSpacing?.cssText();
+        return style.letterSpacing?.cssText() ?? '';
       case CSSPropertyID.ObjectFit:
         return style.objectFit.toString();
       case CSSPropertyID.Opacity:
