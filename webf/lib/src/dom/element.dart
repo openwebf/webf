@@ -1695,10 +1695,17 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       }
 
       if (sizedBox.hasSize) {
-        Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement);
+        Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
-        boundingClientRect = BoundingClientRect(offset.dx, offset.dy, size.width, size.height, offset.dy,
-            offset.dx + size.width, offset.dy + size.height, offset.dx);
+        boundingClientRect = BoundingClientRect(
+            x: offset.dx,
+            y: offset.dy,
+            width: size.width,
+            height: size.height,
+            top: offset.dy,
+            right: offset.dx + size.width,
+            bottom: offset.dy + size.height,
+            left: offset.dx);
       }
     }
 
@@ -1757,7 +1764,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   // Get the offset of current element relative to specified ancestor element.
-  Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor}) {
+  Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor, bool excludeScrollOffset = false}) {
     // Need to flush layout to get correct size.
     flushLayout();
 
@@ -1765,7 +1772,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (ancestor == null || ancestor.renderBoxModel == null) {
       return Offset.zero;
     }
-    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!);
+    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!, excludeScrollOffset: excludeScrollOffset);
   }
 
   void click() {
