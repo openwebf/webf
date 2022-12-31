@@ -1,3 +1,7 @@
+## 0.13.2-beta.7
+
+* sync gesture settings from window.
+
 ## 0.13.2-beta.6
 
 * fix initializeCookie not working when reload pages.
