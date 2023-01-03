@@ -1365,14 +1365,16 @@ class RenderBoxModel extends RenderBox
     // It needs to find the previous sibling of the previous sibling if the placeholder of
     // positioned element exists and follows renderObject at the same time, eg.
     // <div style="position: relative"><div style="position: absolute" /></div>
-    if (renderPositionPlaceholder != null) {
+    if (renderPositionPlaceholder != null && renderPositionPlaceholder.parentData != null) {
       previousSibling = (renderPositionPlaceholder.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
       // The placeholder's previousSibling maybe the origin renderBox.
       if (previousSibling == renderBoxModel) {
         previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
       }
     } else {
-      previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
+      if (renderBoxModel.parentData != null) {
+        previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
+      }
     }
     return previousSibling;
   }
