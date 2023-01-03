@@ -190,6 +190,25 @@ describe('Overflow', () => {
     await snapshot();
   });
 
+  it('child can stretch to inline-block container with overflow auto', async () => {
+    let container = createElement('div', {
+      style: {
+        'display': 'inline-block',
+        'overflow': 'scroll'
+      }
+    }, [
+      createElement('div', {
+        style: {
+          backgroundColor: 'red',
+          padding: '10px'
+        }
+      }, [ createText('1234')])
+    ]);
+
+    BODY.appendChild(container);
+    await snapshot();
+  });
+
   it('overflow with absolute positioned elements', async (done) => {
     let scroller;
     let div1;

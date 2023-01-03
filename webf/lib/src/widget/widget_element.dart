@@ -38,6 +38,8 @@ abstract class WidgetElement extends dom.Element {
   // State methods, proxy called from _state
   void initState() {}
 
+  bool get mounted => _state?.mounted ?? false;
+
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}
   bool shouldElementRebuild(String key, previousValue, nextValue) {

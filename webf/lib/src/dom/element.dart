@@ -347,6 +347,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         }
       }
       renderBoxModel = nextRenderBoxModel;
+      assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
 
       // Ensure that the event responder is bound.
       ensureEventResponderBound();
@@ -837,6 +838,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel.attachRenderBox(parent.renderer!, renderer!, after: after);
+        if (renderStyle.position != CSSPositionType.static) {
+          _updateRenderBoxModelWithPosition(CSSPositionType.static);
+        }
       }
 
       // Flush pending style before child attached.
@@ -1144,6 +1148,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       return;
     }
 
+    willAttachRenderer();
+
     // Update renderBoxModel.
     _updateRenderBoxModel();
     // Attach renderBoxModel to parent if change from `display: none` to other values.
@@ -1159,8 +1165,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         RenderBox parentRenderBox = parentNode!.renderer!;
         _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: preSibling);
       }
-      ensureChildAttached();
     }
+
+    didAttachRenderer();
   }
 
   void setRenderStyleProperty(String name, value) {
@@ -1688,10 +1695,17 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       }
 
       if (sizedBox.hasSize) {
-        Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement);
+        Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
-        boundingClientRect = BoundingClientRect(offset.dx, offset.dy, size.width, size.height, offset.dy,
-            offset.dx + size.width, offset.dy + size.height, offset.dx);
+        boundingClientRect = BoundingClientRect(
+            x: offset.dx,
+            y: offset.dy,
+            width: size.width,
+            height: size.height,
+            top: offset.dy,
+            right: offset.dx + size.width,
+            bottom: offset.dy + size.height,
+            left: offset.dx);
       }
     }
 
@@ -1750,7 +1764,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   // Get the offset of current element relative to specified ancestor element.
-  Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor}) {
+  Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor, bool excludeScrollOffset = false}) {
     // Need to flush layout to get correct size.
     flushLayout();
 
@@ -1758,7 +1772,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (ancestor == null || ancestor.renderBoxModel == null) {
       return Offset.zero;
     }
-    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!);
+    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!, excludeScrollOffset: excludeScrollOffset);
   }
 
   void click() {
