@@ -78,8 +78,8 @@ function genCodeFromTypeDefine() {
   let unionTypes = Array.from(unionTypeCollector.types);
   unionTypes.forEach(union => {
     union.sort((p, n) => {
-      if (typeof p.value === 'string') return -1;
-      return n.value - p.value;
+      if (typeof p.value === 'string') return 1;
+      return -(n.value - p.value);
     })
   });
   for(let i = 0; i < unionTypes.length; i ++) {
