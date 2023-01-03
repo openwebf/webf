@@ -39,9 +39,9 @@
 <script>
   const main = document.getElementById('main');
   await sleep(0.1);
-  expect(main.offsetLeft > 120).toBe(true);
+  expect(main.offsetLeft > 120).toBe(true, `animation 0% ${main.offsetLeft}`);
   await sleep(1);
-  expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true);
+  expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true, `animation 50% ${main.offsetLeft}`);
   await sleep(1);
-  expect(main.offsetLeft === 0).toBe(true);
+  expect(main.offsetLeft === 0).toBe(true, `animation 100% ${main.offsetLeft}`);
 </script>
