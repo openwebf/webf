@@ -161,6 +161,15 @@ enum CSSPropertyID {
   WordSpacing,
   WordWrap,
   ZIndex,
+  Animation,
+  AnimationDelay,
+  AnimationDirection,
+  AnimationDuration,
+  AnimationFillMode,
+  AnimationIterationCount,
+  AnimationName,
+  AnimationPlayState,
+  AnimationTimingFunction,
   BufferedRendering,
   ClipPath,
   ClipRule,
@@ -328,6 +337,15 @@ const Map<String, CSSPropertyID> CSSPropertyNameMap = {
   'enable-background': CSSPropertyID.EnableBackground,
   'margin-left': CSSPropertyID.MarginLeft,
   'background-position': CSSPropertyID.BackgroundPosition,
+  'animation': CSSPropertyID.Animation,
+  'animation-delay': CSSPropertyID.AnimationDelay,
+  'animation-direction': CSSPropertyID.AnimationDirection,
+  'animation-duration': CSSPropertyID.AnimationDuration,
+  'animation-fill-mode': CSSPropertyID.AnimationFillMode,
+  'animation-iteration-count': CSSPropertyID.AnimationIterationCount,
+  'animation-name': CSSPropertyID.AnimationName,
+  'animation-play-state': CSSPropertyID.AnimationPlayState,
+  'animation-timing-function': CSSPropertyID.AnimationTimingFunction,
   'buffered-rendering': CSSPropertyID.BufferedRendering,
   'box-sizing': CSSPropertyID.BoxSizing,
   'background-repeat-x': CSSPropertyID.BackgroundRepeatX,
@@ -721,6 +739,15 @@ const List<bool> _isInheritedPropertyTable = [
   true, // CSSPropertyWordSpacing
   true, // CSSPropertyWordWrap
   false, // CSSPropertyZIndex
+  false, // CSSPropertyAnimation
+  false, // CSSPropertyAnimationDelay
+  false, // CSSPropertyAnimationDirection
+  false, // CSSPropertyAnimationDuration
+  false, // CSSPropertyAnimationFillMode
+  false, // CSSPropertyAnimationIterationCount
+  false, // CSSPropertyAnimationName
+  false, // CSSPropertyAnimationPlayState
+  false, // CSSPropertyAnimationTimingFunction
   false, // CSSPropertyBufferedRendering
   false, // CSSPropertyClipPath
   true, // CSSPropertyClipRule

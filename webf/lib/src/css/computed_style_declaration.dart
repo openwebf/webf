@@ -312,6 +312,24 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.transitionProperty.join(', ');
       case CSSPropertyID.TransitionTimingFunction:
         return style.transitionTimingFunction.join(', ');
+      case CSSPropertyID.Animation:
+        break;
+      case CSSPropertyID.AnimationName:
+        return style.animationName.join(', ');
+      case CSSPropertyID.AnimationDelay:
+        return style.animationDelay.join(', ');
+      case CSSPropertyID.AnimationIterationCount:
+        return style.animationIterationCount.join(', ');
+      case CSSPropertyID.AnimationDirection:
+        return style.animationDirection.join(', ');
+      case CSSPropertyID.AnimationDuration:
+        return style.animationDuration.join(', ');
+      case CSSPropertyID.AnimationTimingFunction:
+        return style.animationTimingFunction.join(', ');
+      case CSSPropertyID.AnimationFillMode:
+        return style.animationFillMode.join(', ');
+      case CSSPropertyID.AnimationPlayState:
+        return style.animationPlayState.join(', ');
       case CSSPropertyID.Outline:
       case CSSPropertyID.ListStyle:
       case CSSPropertyID.Widows:
