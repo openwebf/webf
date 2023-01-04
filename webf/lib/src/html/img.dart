@@ -209,7 +209,7 @@ class ImageElement extends Element {
   // Width and height set through style declaration.
   double? get _styleWidth {
     String width = style.getPropertyValue(WIDTH);
-    if (width.isNotEmpty) {
+    if (width.isNotEmpty && isRendererAttached) {
       CSSLengthValue len = CSSLength.parseLength(width, renderStyle, WIDTH);
       return len.computedValue;
     }
@@ -218,7 +218,7 @@ class ImageElement extends Element {
 
   double? get _styleHeight {
     String height = style.getPropertyValue(HEIGHT);
-    if (height.isNotEmpty) {
+    if (height.isNotEmpty && isRendererAttached) {
       CSSLengthValue len = CSSLength.parseLength(height, renderStyle, HEIGHT);
       return len.computedValue;
     }
@@ -243,15 +243,13 @@ class ImageElement extends Element {
   int get width {
     // Width calc priority: style > attr > intrinsic.
     final double borderBoxWidth = _styleWidth ?? _attrWidth ?? renderStyle.getWidthByAspectRatio();
-
-    return borderBoxWidth.round();
+    return borderBoxWidth.isFinite ? borderBoxWidth.round() : 0;
   }
 
   int get height {
     // Height calc priority: style > attr > intrinsic.
     final double borderBoxHeight = _styleHeight ?? _attrHeight ?? renderStyle.getHeightByAspectRatio();
-
-    return borderBoxHeight.round();
+    return borderBoxHeight.isFinite ? borderBoxHeight.round() : 0;
   }
 
   // Read the original image width of loaded image.

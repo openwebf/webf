@@ -49,6 +49,10 @@ function genCodeFromTypeDefine() {
     cwd: source,
   });
 
+  // typeFiles = [
+  //     'dom/dom_token_list.d.ts'
+  // ];
+  console.log(typeFiles);
   let blobs = typeFiles.map(file => {
     let filename = 'qjs_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');

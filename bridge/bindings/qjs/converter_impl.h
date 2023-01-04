@@ -298,6 +298,22 @@ struct Converter<IDLSequence<T>> : public ConverterBase<IDLSequence<T>> {
 
     return v;
   }
+
+  static ImplType FromValue(JSContext* ctx, JSValue* array, size_t length, ExceptionState& exception_state) {
+    ImplType v;
+    v.reserve(length);
+    for (uint32_t i = 0; i < length; i++) {
+      JSValue iv = array[i];
+      auto&& item = Converter<T>::FromValue(ctx, iv, exception_state);
+      if (exception_state.HasException()) {
+        return {};
+      }
+      v.emplace_back(item);
+    }
+
+    return v;
+  };
+
   static JSValue ToValue(JSContext* ctx, ImplType value) {
     JSValue array = JS_NewArray(ctx);
     JS_SetPropertyStr(ctx, array, "length", Converter<IDLInt64>::ToValue(ctx, value.size()));

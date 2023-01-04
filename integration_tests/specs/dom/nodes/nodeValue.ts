@@ -25,8 +25,7 @@ describe('Node.nodeValue', () => {
         assert_equals(the_text.data, "");
     }, "Text.nodeValue");
 
-    // fix it later
-    xtest(function () {
+    test(function () {
         var the_comment = document.createComment("A comment!");
         assert_equals(the_comment.nodeValue, "A comment!");
         assert_equals(the_comment.data, "A comment!");

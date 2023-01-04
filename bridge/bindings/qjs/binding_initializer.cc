@@ -21,6 +21,7 @@
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
+#include "qjs_dom_token_list.h"
 #include "qjs_dom_matrix.h"
 #include "qjs_dom_matrix_readonly.h"
 #include "qjs_element.h"
@@ -143,6 +144,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSBlob::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);
+  QJSDOMTokenList::Install(context);
   QJSPerformance::Install(context);
   QJSPerformanceEntry::Install(context);
   QJSPerformanceMark::Install(context);

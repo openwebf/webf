@@ -1,27 +1,6 @@
 // test from https://github.com/web-platform-tests/wpt/blob/master/dom/nodes/Node-textContent.html
 
 describe('Node.textContent', () => {
-    function test(fn, title) {
-        it(title, fn);
-    }
-
-    function xtest(fn, title) {
-        xit(title, fn)
-    }
-
-    function assert_equals(a: any, b: any, message?: string) {
-        // TODO message
-        expect(a).toBe(b)
-    }
-
-    function assert_true(value: any, message?: string) {
-        expect(value).toBe(true)
-    }
-
-    function format_value(v: any) {
-        return JSON.stringify(v)
-    }
-
     // Getting
     // DocumentFragment, Element:
     test(function () {
@@ -91,8 +70,7 @@ describe('Node.textContent', () => {
             "abc")
     }, "For a ProcessingInstruction with data, textContent should be that data")
 
-    // fix it later
-    xtest(function () {
+    test(function () {
         assert_equals(document.createComment("abc").textContent, "abc")
     }, "For a Comment with data, textContent should be that data")
 

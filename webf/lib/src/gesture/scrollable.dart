@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ui';
+
 import 'package:flutter/gestures.dart';
 import 'dart:math' as math;
 import 'package:flutter/physics.dart';
@@ -109,6 +111,8 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
 
   @override
   void setCanDrag(bool canDrag) {
+    DeviceGestureSettings gestureSettings = DeviceGestureSettings.fromWindow(window);
+
     // Break no use update drag logic
     if(canDrag == _lastCanDrag && axis == _lastAxisDirection &&
         (canDrag && _gestureRecognizers.keys.isNotEmpty ||
@@ -139,6 +143,7 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
                   ..minFlingDistance = _physics.minFlingDistance
                   ..minFlingVelocity = _physics.minFlingVelocity
                   ..maxFlingVelocity = _physics.maxFlingVelocity
+                  ..gestureSettings = gestureSettings
                   ..dragStartBehavior = dragStartBehavior;
               },
             ),
@@ -164,6 +169,7 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
                   ..minFlingDistance = _physics.minFlingDistance
                   ..minFlingVelocity = _physics.minFlingVelocity
                   ..maxFlingVelocity = _physics.maxFlingVelocity
+                  ..gestureSettings = gestureSettings
                   ..dragStartBehavior = dragStartBehavior;
               },
             ),
