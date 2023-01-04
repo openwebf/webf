@@ -15,6 +15,7 @@ export enum FunctionArgumentType {
   null,
   undefined,
   array,
+  js_array_proto_methods,
   // enable LegacyNullToEmpty attribute for dom_string
   legacy_dom_string,
 }
@@ -22,6 +23,8 @@ export enum FunctionArgumentType {
 export class FunctionArguments {
   name: string;
   type: ParameterType[] = [];
+  isDotDotDot: boolean;
+  isSymbolKey: boolean;
   typeMode: ParameterMode;
   required: boolean;
 }
@@ -36,6 +39,7 @@ export class PropsDeclaration {
   type: ParameterType[] = [];
   typeMode: ParameterMode;
   name: string;
+  isSymbol?: boolean;
   readonly: boolean;
   optional: boolean;
 }
