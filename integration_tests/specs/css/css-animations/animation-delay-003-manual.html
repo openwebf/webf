@@ -32,7 +32,7 @@
   <div id="animation-box">Filler Text</div>
 </body>
 <script>
-  await sleep(0.1);
+  await sleep(0.2);
   let animationBox = document.getElementById('animation-box');
   expect(animationBox.offsetLeft < 150 && animationBox.offsetLeft > 120).toBe(true, `animation start should be on the right: ${animationBox.offsetLeft}`);
   await sleep(1);

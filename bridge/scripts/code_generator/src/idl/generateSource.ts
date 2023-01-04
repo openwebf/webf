@@ -204,13 +204,15 @@ function generateNativeValueTypeConverter(type: ParameterType[]): string {
 }
 
 function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number) {
-  let type = generateIDLTypeConverter(argument.type);
+  let type = generateIDLTypeConverter(argument.type, !argument.required);
 
   let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget';
 
   let body = '';
   if (hasArgumentCheck) {
     body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`
+  } else if (argument.isDotDotDot) {
+    body = `Converter<${type}>::FromValue(ctx, argv + ${argsIndex}, argc - ${argsIndex}, exception_state)`
   } else {
     body = `Converter<${type}>::FromValue(ctx, argv[${argsIndex}], exception_state)`;
   }
@@ -347,6 +349,10 @@ return ${overloadMethods[0].name}_overload_${0}(ctx, this_val, argc, argv);
 `;
 }
 
+function isJSArrayBuiltInProps(prop: PropsDeclaration) {
+  return prop.type[0] == FunctionArgumentType.js_array_proto_methods;
+}
+
 function generateDictionaryInit(blob: IDLBlob, props: PropsDeclaration[]) {
   let initExpression = props.map(prop => {
     switch (prop.type[0]) {
@@ -448,7 +454,11 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object = object as ClassObject;
 
         function addObjectProps(prop: PropsDeclaration) {
-          options.classMethodsInstallList.push(`{"${prop.name}", ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          if (prop.isSymbol) {
+            options.classMethodsInstallList.push(`{JS_ATOM_${prop.name}, ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          } else {
+            options.classMethodsInstallList.push(`{defined_properties::k${prop.name}.Impl(), ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          }
         }
         function addObjectMethods(method: FunctionDeclaration, i: number) {
           if (overloadMethods.hasOwnProperty(method.name)) {
@@ -467,7 +477,7 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object.methods.forEach(addObjectMethods);
 
         if (object.construct) {
-          options.constructorInstallList.push(`{"${getClassName(blob)}", nullptr, nullptr, constructor}`)
+          options.constructorInstallList.push(`{defined_properties::k${getClassName(blob)}.Impl(), nullptr, nullptr, constructor}`)
         }
 
         let wrapperTypeRegisterList = [
@@ -529,6 +539,7 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
           generateOverLoadSwitchBody,
           isTypeNeedAllocate,
           overloadMethods,
+          isJSArrayBuiltInProps,
           filtedMethods,
           generateIDLTypeConverter,
           generateNativeValueTypeConverter,

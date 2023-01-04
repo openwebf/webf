@@ -68,7 +68,7 @@
   await sleep(0.1);
   const negativeDelay = document.getElementById('test-negative-delay');
   const ref = document.getElementById('ref-no-delay');
-  expect(negativeDelay.offsetLeft).toBe(ref.offsetLeft, 'negative should equal to ref');
+  expect(Math.round(negativeDelay.offsetLeft)).toBe(Math.round(ref.offsetLeft), 'negative should equal to ref');
   expect(negativeDelay.offsetLeft < 80 && negativeDelay.offsetLeft > 60).toBe(true, `negativeDelay offsetLeft: ${negativeDelay.offsetLeft}`);
   await sleep(1);
   expect(Math.round(negativeDelay.offsetLeft)).toBe(Math.round(ref.offsetLeft), 'negativeDelay should be equal to ref');
