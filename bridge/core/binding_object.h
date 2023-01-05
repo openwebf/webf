@@ -57,6 +57,8 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
+enum CreateBindingObjectType { kCreateDOMMatrix = 0 };
+
 struct BindingObjectPromiseContext : public DartReadable {
   ExecutingContext* context;
   BindingObject* binding_object;
@@ -113,6 +115,7 @@ class BindingObject {
 
   virtual bool IsEventTarget() const;
   virtual bool IsTouchList() const;
+  virtual bool IsCanvasGradient() const;
 
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);

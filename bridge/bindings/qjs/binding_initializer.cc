@@ -9,6 +9,8 @@
 #include "qjs_animation_event.h"
 #include "qjs_blob.h"
 #include "qjs_bounding_client_rect.h"
+#include "qjs_canvas_gradient.h"
+#include "qjs_canvas_pattern.h"
 #include "qjs_canvas_rendering_context.h"
 #include "qjs_canvas_rendering_context_2d.h"
 #include "qjs_character_data.h"
@@ -19,6 +21,9 @@
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
+#include "qjs_dom_matrix.h"
+#include "qjs_dom_matrix_readonly.h"
+#include "qjs_dom_token_list.h"
 #include "qjs_element.h"
 #include "qjs_element_attributes.h"
 #include "qjs_error_event.h"
@@ -128,6 +133,10 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLCanvasElement::Install(context);
   QJSCanvasRenderingContext::Install(context);
   QJSCanvasRenderingContext2D::Install(context);
+  QJSCanvasPattern::Install(context);
+  QJSCanvasGradient::Install(context);
+  QJSDOMMatrixReadonly::Install(context);
+  QJSDOMMatrix::Install(context);
   QJSCSSStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSHTMLAllCollection::Install(context);
@@ -135,6 +144,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSBlob::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);
+  QJSDOMTokenList::Install(context);
   QJSPerformance::Install(context);
   QJSPerformanceEntry::Install(context);
   QJSPerformanceMark::Install(context);

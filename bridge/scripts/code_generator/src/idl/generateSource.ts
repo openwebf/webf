@@ -15,6 +15,16 @@ import fs from 'fs';
 import path from 'path';
 import {getTemplateKind, TemplateKind} from "./generateHeader";
 import {GenerateOptions} from "./generator";
+import {
+  generateTypeRawChecker,
+  generateUnionConstructorImpl,
+  generateUnionMemberName,
+  generateUnionTypeClassName,
+  generateUnionTypeClear,
+  generateUnionTypeFileName,
+  generateUnionTypeSetter,
+  getUnionTypeName
+} from "./generateUnionTypes";
 
 function generateMethodArgumentsCheck(m: FunctionDeclaration) {
   if (m.args.length == 0) return '';
@@ -30,8 +40,8 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
 `;
 }
 
-export function isTypeNeedAllocate(type: ParameterType[]) {
-  switch(type[0]) {
+export function isTypeNeedAllocate(type: ParameterType) {
+  switch (type.value) {
     case FunctionArgumentType.undefined:
     case FunctionArgumentType.null:
     case FunctionArgumentType.int32:
@@ -44,8 +54,8 @@ export function isTypeNeedAllocate(type: ParameterType[]) {
   }
 }
 
-export function generateCoreTypeValue(type: ParameterType[]): string {
-  switch (type[0]) {
+export function generateCoreTypeValue(type: ParameterType): string {
+  switch (type.value) {
     case FunctionArgumentType.int64: {
       return 'int64_t';
     }
@@ -61,7 +71,8 @@ export function generateCoreTypeValue(type: ParameterType[]): string {
     case FunctionArgumentType.boolean: {
       return 'bool';
     }
-    case FunctionArgumentType.dom_string: {
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string: {
       return 'AtomicString';
     }
     case FunctionArgumentType.any: {
@@ -69,15 +80,19 @@ export function generateCoreTypeValue(type: ParameterType[]): string {
     }
   }
 
-  if (typeof type[0] == 'string') {
-    return type[0] + '*';
+  if (isPointerType(type)) {
+    return getPointerType(type) + '*';
+  }
+
+  if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
+    return `std::vector<${generateCoreTypeValue(type.value)}>`;
   }
 
   return '';
 }
 
-export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = false): string {
-  switch (type[0]) {
+export function generateRawTypeValue(type: ParameterType, is32Bit: boolean = false): string {
+  switch (type.value) {
     case FunctionArgumentType.int64: {
       return 'int64_t';
     }
@@ -90,7 +105,8 @@ export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = f
     case FunctionArgumentType.boolean: {
       return 'int64_t';
     }
-    case FunctionArgumentType.dom_string: {
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string: {
       if (is32Bit) {
         return 'int64_t';
       }
@@ -104,7 +120,7 @@ export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = f
       return 'void*';
   }
 
-  if (typeof type[0] == 'string') {
+  if (isPointerType(type)) {
     if (is32Bit) {
       return 'int64_t';
     }
@@ -114,16 +130,80 @@ export function generateRawTypeValue(type: ParameterType[], is32Bit: boolean = f
   return '';
 }
 
-export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boolean): string {
-  let haveNull = type.some(t => t === FunctionArgumentType.null);
+export function isTypeHaveNull(type: ParameterType): boolean {
+  if (type.isArray) return false;
+  if (!Array.isArray(type.value)) {
+    return type.value === FunctionArgumentType.null;
+  }
+  return type.value.some(t => t.value === FunctionArgumentType.null);
+}
+
+export function isPointerType(type: ParameterType): boolean {
+  if (type.isArray) return false;
+  if (typeof type.value === 'string') {
+    return true;
+  }
+  if (Array.isArray(type.value)) {
+    return type.value.some(t => typeof t.value === 'string');
+  }
+  return false;
+}
+
+function getPointerType(type: ParameterType): string {
+  if (typeof type.value === 'string') {
+    return type.value;
+  }
+  if (Array.isArray(type.value)) {
+    for (let i = 0; i < type.value.length; i++) {
+      let childValue = type.value[i];
+      if (typeof childValue.value === 'string') {
+        return childValue.value;
+      }
+    }
+  }
+  return '';
+}
+
+export function isUnionType(type: ParameterType): boolean {
+  if (type.isArray || !Array.isArray(type.value)) {
+    return false;
+  }
+
+  const trimedType = trimNullTypeFromType(type);
+  return Array.isArray(trimedType.value);
+}
+
+export function trimNullTypeFromType(type: ParameterType): ParameterType {
+  let types = type.value;
+  if (!Array.isArray(types)) return type;
+  let trimed = types.filter(t => t.value != FunctionArgumentType.null);
+
+  if (trimed.length === 1) {
+    return {
+      isArray: false,
+      value: trimed[0].value
+    }
+  }
+
+  return {
+    isArray: type.isArray,
+    value: trimed
+  };
+}
+
+export function generateIDLTypeConverter(type: ParameterType, isOptional?: boolean): string {
+  let haveNull = isTypeHaveNull(type);
   let returnValue = '';
 
-  if (type[0] === FunctionArgumentType.array) {
-    returnValue = `IDLSequence<${generateIDLTypeConverter(type.slice(1), isOptional)}>`;
-  } else if (typeof type[0] === 'string') {
-    returnValue = type[0];
+  if (type.isArray) {
+    returnValue = `IDLSequence<${generateIDLTypeConverter(type.value as ParameterType, isOptional)}>`;
+  } else if (isUnionType(type) && Array.isArray(type.value)) {
+    returnValue = generateUnionTypeClassName(type.value);
+  } else if (isPointerType(type)) {
+    returnValue = getPointerType(type);
   } else {
-    switch (type[0]) {
+    type = trimNullTypeFromType(type);
+    switch (type.value) {
       case FunctionArgumentType.int32:
         returnValue = `IDLInt32`;
         break;
@@ -148,6 +228,10 @@ export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boo
       case FunctionArgumentType.promise:
         returnValue = 'IDLPromise';
         break;
+      case FunctionArgumentType.legacy_dom_string:
+        // TODO: legacy is now allowed with nullable
+        returnValue = 'IDLLegacyDOMString'
+        break;
       default:
       case FunctionArgumentType.any:
         returnValue = `IDLAny`;
@@ -164,18 +248,18 @@ export function generateIDLTypeConverter(type: ParameterType[], isOptional?: boo
   return returnValue;
 }
 
-function isDOMStringType(type: ParameterType[]) {
-  return type[0] == FunctionArgumentType.dom_string;
+function isDOMStringType(type: ParameterType) {
+  return type.value == FunctionArgumentType.dom_string || type.value == FunctionArgumentType.legacy_dom_string;
 }
 
-function generateNativeValueTypeConverter(type: ParameterType[]): string {
+function generateNativeValueTypeConverter(type: ParameterType): string {
   let returnValue = '';
 
-  if (typeof type[0] === 'string') {
-    return `NativeTypePointer<${type[0]}>`;
+  if (isPointerType(type)) {
+    return `NativeTypePointer<${getPointerType(type)}>`;
   }
 
-  switch (type[0]) {
+  switch (type.value) {
     case FunctionArgumentType.int32:
       returnValue = `NativeTypeInt64`;
       break;
@@ -189,6 +273,7 @@ function generateNativeValueTypeConverter(type: ParameterType[]): string {
       returnValue = `NativeTypeBool`;
       break;
     case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string:
       returnValue = `NativeTypeString`;
       break;
   }
@@ -197,13 +282,15 @@ function generateNativeValueTypeConverter(type: ParameterType[]): string {
 }
 
 function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number) {
-  let type = generateIDLTypeConverter(argument.type);
+  let type = generateIDLTypeConverter(argument.type, !argument.required);
 
-  let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget';
+  let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0;
 
   let body = '';
   if (hasArgumentCheck) {
-    body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`
+    body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`;
+  } else if (argument.isDotDotDot) {
+    body = `Converter<${type}>::FromValue(ctx, argv + ${argsIndex}, argc - ${argsIndex}, exception_state)`
   } else {
     body = `Converter<${type}>::FromValue(ctx, argv[${argsIndex}], exception_state)`;
   }
@@ -226,7 +313,7 @@ function generateDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, a
 
   let returnValueAssignment = '';
 
-  if (declare.returnType[0] != FunctionArgumentType.void) {
+  if (declare.returnType.value != FunctionArgumentType.void) {
     returnValueAssignment = 'auto&& native_value =';
   }
 
@@ -243,7 +330,7 @@ ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverte
 function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, previousArguments: string[], options: GenFunctionBodyOptions) {
   let call = '';
   let returnValueAssignment = '';
-  if (declare.returnType[0] != FunctionArgumentType.void) {
+  if (declare.returnType.value != FunctionArgumentType.void) {
     returnValueAssignment = 'return_value =';
   }
   if (declare.returnTypeMode?.dartImpl) {
@@ -271,7 +358,7 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   isConstructor: false,
   isInstanceMethod: false
 }) {
-  if (options.isConstructor && declaration.returnType[0] == FunctionArgumentType.void) {
+  if (options.isConstructor && declaration.returnType.value == FunctionArgumentType.void) {
     return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
   }
 
@@ -301,7 +388,7 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
 
   let call = '';
   let returnValueAssignment = '';
-  if (declaration.returnType[0] != FunctionArgumentType.void) {
+  if (declaration.returnType.value != FunctionArgumentType.void) {
     returnValueAssignment = 'return_value =';
   }
   if (declaration.returnTypeMode?.dartImpl) {
@@ -340,9 +427,13 @@ return ${overloadMethods[0].name}_overload_${0}(ctx, this_val, argc, argv);
 `;
 }
 
+function isJSArrayBuiltInProps(prop: PropsDeclaration) {
+  return prop.type.value == FunctionArgumentType.js_array_proto_methods;
+}
+
 function generateDictionaryInit(blob: IDLBlob, props: PropsDeclaration[]) {
   let initExpression = props.map(prop => {
-    switch (prop.type[0]) {
+    switch (prop.type.value) {
       case FunctionArgumentType.boolean: {
         return `${prop.name}_(false)`;
       }
@@ -358,30 +449,30 @@ function generateDictionaryInit(blob: IDLBlob, props: PropsDeclaration[]) {
   return ': ' + initExpression.join(',');
 }
 
-function generateReturnValueInit(blob: IDLBlob, type: ParameterType[], options: GenFunctionBodyOptions = {
+function generateReturnValueInit(blob: IDLBlob, type: ParameterType, options: GenFunctionBodyOptions = {
   isConstructor: false,
   isInstanceMethod: false
 }) {
-  if (type[0] == FunctionArgumentType.void) return '';
+  if (type.value == FunctionArgumentType.void) return '';
 
   if (options.isConstructor) {
     return `${getClassName(blob)}* return_value = nullptr;`
   }
-  if (typeof type[0] === 'string') {
-    if (type[0] === 'Promise') {
+  if (isPointerType(type)) {
+    if (getPointerType(type) === 'Promise') {
       return 'ScriptPromise return_value;';
     } else {
-      return `${type[0]}* return_value = nullptr;`;
+      return `${getPointerType(type)}* return_value = nullptr;`;
     }
   }
   return `Converter<${generateIDLTypeConverter(type)}>::ImplType return_value;`;
 }
 
-function generateReturnValueResult(blob: IDLBlob, type: ParameterType[], mode?: ParameterMode, options: GenFunctionBodyOptions = {
+function generateReturnValueResult(blob: IDLBlob, type: ParameterType, mode?: ParameterMode, options: GenFunctionBodyOptions = {
   isConstructor: false,
   isInstanceMethod: false
 }): string {
-  if (type[0] == FunctionArgumentType.void) return 'JS_NULL';
+  if (type.value == FunctionArgumentType.void) return 'JS_NULL';
   let method = 'ToQuickJS';
 
   if (options.isConstructor) {
@@ -409,9 +500,9 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
   return `${paramCheck}
 
   ExceptionState exception_state;
-  ${returnValueInit}
   ExecutingContext* context = ExecutingContext::From(ctx);
   MemberMutationScope scope{ExecutingContext::From(ctx)};
+  ${returnValueInit}
 
   do {  // Dummy loop for use of 'break'.
 ${addIndent(callBody, 4)}
@@ -441,7 +532,11 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object = object as ClassObject;
 
         function addObjectProps(prop: PropsDeclaration) {
-          options.classMethodsInstallList.push(`{"${prop.name}", ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          if (prop.isSymbol) {
+            options.classMethodsInstallList.push(`{JS_ATOM_${prop.name}, ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          } else {
+            options.classMethodsInstallList.push(`{defined_properties::k${prop.name}.Impl(), ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+          }
         }
         function addObjectMethods(method: FunctionDeclaration, i: number) {
           if (overloadMethods.hasOwnProperty(method.name)) {
@@ -460,7 +555,7 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object.methods.forEach(addObjectMethods);
 
         if (object.construct) {
-          options.constructorInstallList.push(`{"${getClassName(blob)}", nullptr, nullptr, constructor}`)
+          options.constructorInstallList.push(`{defined_properties::k${getClassName(blob)}.Impl(), nullptr, nullptr, constructor}`)
         }
 
         let wrapperTypeRegisterList = [
@@ -522,6 +617,7 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
           generateOverLoadSwitchBody,
           isTypeNeedAllocate,
           overloadMethods,
+          isJSArrayBuiltInProps,
           filtedMethods,
           generateIDLTypeConverter,
           generateNativeValueTypeConverter,
@@ -558,6 +654,24 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
     className: getClassName(blob),
     blob: blob,
     ...options
+  }).split('\n').filter(str => {
+    return str.trim().length > 0;
+  }).join('\n');
+}
+
+export function generateUnionTypeSource(unionType: ParameterType): string {
+  return _.template(readTemplate('union'))({
+    unionType,
+    generateUnionTypeClassName,
+    generateUnionTypeFileName,
+    generateTypeRawChecker,
+    generateUnionMemberName,
+    generateUnionTypeClear,
+    generateIDLTypeConverter,
+    generateUnionConstructorImpl,
+    generateUnionTypeSetter,
+    getUnionTypeName,
+    isTypeHaveNull
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

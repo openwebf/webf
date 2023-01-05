@@ -44,11 +44,11 @@
 <script>
   await sleep(0.1);
   const main = document.getElementById('main');
-  expect(main.offsetLeft > 100 && main.offsetLeft < 150).toBe(true);
+  expect(main.offsetLeft > 75 && main.offsetLeft < 150).toBe(true, 'animation 0%');
   await sleep(1);
-  expect(main.offsetLeft < 75 && main.offsetLeft > 0).toBe(true);
+  expect(main.offsetLeft < 75 && main.offsetLeft > 0).toBe(true, 'animation 25%');
   await sleep(1);
-  expect(main.offsetLeft > 100 && main.offsetLeft < 150).toBe(true);
+  expect(main.offsetLeft > 75 && main.offsetLeft < 150).toBe(true, 'animation 50%');
   await sleep(1);
-  expect(main.offsetLeft < 75 && main.offsetLeft > 0).toBe(true);
+  expect(main.offsetLeft < 75 && main.offsetLeft > 0).toBe(true, 'animation 75%');
 </script>

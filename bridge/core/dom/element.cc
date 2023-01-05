@@ -8,6 +8,7 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "built_in_string.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
@@ -26,9 +27,9 @@ Element::Element(const AtomicString& tag_name, Document* document, Node::Constru
       eventTargetId(), UICommand::kCreateElement, std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
 }
 
-ElementAttributes& Element::EnsureElementAttributes() {
+ElementAttributes& Element::EnsureElementAttributes() const {
   if (attributes_ == nullptr) {
-    attributes_ = ElementAttributes::Create(this);
+    attributes_ = ElementAttributes::Create(const_cast<Element*>(this));
   }
   return *attributes_;
 }
@@ -37,7 +38,7 @@ bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_s
   return EnsureElementAttributes().hasAttribute(name, exception_state);
 }
 
-AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
+AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) const {
   return EnsureElementAttributes().getAttribute(name, exception_state);
 }
 
@@ -137,8 +138,8 @@ bool Element::HasTagName(const AtomicString& name) const {
   return name == tag_name_;
 }
 
-std::string Element::nodeValue() const {
-  return "";
+AtomicString Element::nodeValue() const {
+  return AtomicString::Null();
 }
 
 std::string Element::nodeName() const {
@@ -147,6 +148,22 @@ std::string Element::nodeName() const {
 
 std::string Element::nodeNameLowerCase() const {
   return tag_name_.ToStdString(ctx());
+}
+
+AtomicString Element::className() const {
+  return getAttribute(binding_call_methods::kclass, ASSERT_NO_EXCEPTION());
+}
+
+void Element::setClassName(const AtomicString& value, ExceptionState& exception_state) {
+  setAttribute(html_names::kClassAttr, value, exception_state);
+}
+
+AtomicString Element::id() const {
+  return getAttribute(binding_call_methods::kid, ASSERT_NO_EXCEPTION());
+}
+
+void Element::setId(const AtomicString& value, ExceptionState& exception_state) {
+  setAttribute(html_names::kIdAttr, value, exception_state);
 }
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
@@ -179,6 +196,17 @@ CSSStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
     cssom_wrapper_ = MakeGarbageCollected<CSSStyleDeclaration>(GetExecutingContext(), eventTargetId());
   }
   return *cssom_wrapper_;
+}
+
+DOMTokenList* Element::classList() {
+  ElementData& element_data = EnsureElementData();
+  if (element_data.GetClassList() == nullptr) {
+    auto* class_list = MakeGarbageCollected<DOMTokenList>(this, html_names::kClassAttr);
+    AtomicString classValue = getAttribute(html_names::kClassAttr, ASSERT_NO_EXCEPTION());
+    class_list->DidUpdateAttributeValue(built_in_string::kNULL, classValue);
+    element_data.SetClassList(class_list);
+  }
+  return element_data.GetClassList();
 }
 
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {
@@ -228,6 +256,9 @@ bool Element::IsAttributeDefinedInternal(const AtomicString& key) const {
 void Element::Trace(GCVisitor* visitor) const {
   visitor->Trace(attributes_);
   visitor->Trace(cssom_wrapper_);
+  if (element_data_ != nullptr) {
+    element_data_->Trace(visitor);
+  }
   ContainerNode::Trace(visitor);
 }
 

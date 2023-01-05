@@ -69,12 +69,8 @@ DocumentFragment* Document::createDocumentFragment(ExceptionState& exception_sta
   return DocumentFragment::Create(*this);
 }
 
-Comment* Document::createComment(ExceptionState& exception_state) {
-  return Comment::Create(*this);
-}
-
 Comment* Document::createComment(const AtomicString& data, ExceptionState& exception_state) {
-  return Comment::Create(*this);
+  return Comment::Create(*this, data);
 }
 
 Event* Document::createEvent(const AtomicString& type, ExceptionState& exception_state) {
@@ -89,8 +85,8 @@ std::string Document::nodeName() const {
   return "#document";
 }
 
-std::string Document::nodeValue() const {
-  return "";
+AtomicString Document::nodeValue() const {
+  return AtomicString::Null();
 }
 
 Node::NodeType Document::nodeType() const {

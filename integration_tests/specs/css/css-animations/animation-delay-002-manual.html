@@ -35,11 +35,11 @@
 <script>
   await sleep(0.1);
   const main = document.getElementById('main');
-  expect(main.offsetLeft).toBe(0);
+  expect(main.offsetLeft).toBe(0, 'start offset left should be zero.');
 
   await sleep(1);
-  expect(main.offsetLeft <= 150 && main.offsetLeft > 100).toBe(true);
+  expect(main.offsetLeft <= 150 && main.offsetLeft > 100).toBe(true, `offsetLeft: ${main.offsetLeft}`);
 
   await sleep(3);
-  expect(main.offsetLeft === 0).toBe(true);
+  expect(main.offsetLeft === 0).toBe(true, 'animation should be ended');
 </script>

@@ -24,11 +24,11 @@ class Element : public ContainerNode {
   using ImplType = Element*;
   Element(const AtomicString& tag_name, Document* document, ConstructionType = kCreateElement);
 
-  ElementAttributes* attributes() { return &EnsureElementAttributes(); }
-  ElementAttributes& EnsureElementAttributes();
+  ElementAttributes* attributes() const { return &EnsureElementAttributes(); }
+  ElementAttributes& EnsureElementAttributes() const;
 
   bool hasAttribute(const AtomicString&, ExceptionState& exception_state);
-  AtomicString getAttribute(const AtomicString&, ExceptionState& exception_state);
+  AtomicString getAttribute(const AtomicString&, ExceptionState& exception_state) const;
 
   // Passing null as the second parameter removes the attribute when
   // calling either of these set methods.
@@ -55,16 +55,23 @@ class Element : public ContainerNode {
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
 
   bool HasTagName(const AtomicString&) const;
-  std::string nodeValue() const override;
+  AtomicString nodeValue() const override;
   AtomicString tagName() const { return tag_name_.ToUpperSlow(ctx()); }
   std::string nodeName() const override;
   std::string nodeNameLowerCase() const;
+
+  AtomicString className() const;
+  void setClassName(const AtomicString& value, ExceptionState& exception_state);
+
+  AtomicString id() const;
+  void setId(const AtomicString& value, ExceptionState& exception_state);
 
   std::vector<Element*> getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
 
   CSSStyleDeclaration* style();
   CSSStyleDeclaration& EnsureCSSStyleDeclaration();
+  DOMTokenList* classList();
 
   Element& CloneWithChildren(CloneChildrenFlag flag, Document* = nullptr) const;
   Element& CloneWithoutChildren(Document* = nullptr) const;
@@ -102,7 +109,7 @@ class Element : public ContainerNode {
   void _beforeUpdateId(JSValue oldIdValue, JSValue newIdValue);
 
   mutable std::unique_ptr<ElementData> element_data_;
-  Member<ElementAttributes> attributes_;
+  mutable Member<ElementAttributes> attributes_;
   Member<CSSStyleDeclaration> cssom_wrapper_;
 };
 
