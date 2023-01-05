@@ -37,6 +37,38 @@ function setAttributes(dom: any, object: any) {
   }
 }
 
+function test(fn, title) {
+  it(title, fn);
+}
+
+function xtest(fn, title) {
+  xit(title, fn)
+}
+
+function assert_equals(a: any, b: any, message?: string) {
+  expect(a).toBe(b, message)
+}
+
+function assert_class_string(classObject: any, result: string) {
+  expect(classObject.constructor.name).toBe(result);
+}
+
+function assert_true(value: any, message?: string) {
+  expect(value).toBe(true, message)
+}
+
+function assert_false(value: any, message?: string) {
+  expect(value).toBe(false, message)
+}
+
+function format_value(v: any) {
+  return JSON.stringify(v)
+}
+
+function assert_array_equals(value, result, message?: string) {
+  expect(value).toEqual(result, message);
+}
+
 // Avoid overwrited by jasmine.
 const originalTimeout = global.setTimeout;
 function sleep(second: number) {
@@ -303,6 +335,14 @@ Object.assign(global, {
   sleep,
   nextFrames,
   snapshot,
+  test,
+  xtest,
+  assert_equals,
+  assert_true,
+  format_value,
+  assert_array_equals,
+  assert_false,
+  assert_class_string,
   simulatePointDown,
   simulatePointUp,
   simulatePointRemove,

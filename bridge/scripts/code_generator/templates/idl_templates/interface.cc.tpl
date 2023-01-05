@@ -8,7 +8,11 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
   bool QJS<%= className %>::PropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
     auto* self = toScriptWrappable<<%= className %>>(obj);
     ExceptionState exception_state;
-    MemberMutationScope scope{ExecutingContext::From(ctx)};
+    ExecutingContext* context = ExecutingContext::From(ctx);
+    auto* wrapper_type_info = DOMTokenList::GetStaticWrapperTypeInfo();
+    MemberMutationScope scope{context};
+    JSValue prototype = context->contextData()->prototypeForType(wrapper_type_info);
+    if (JS_HasProperty(ctx, prototype, key)) return true;
     bool result = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return false;
@@ -142,6 +146,20 @@ static JSValue <%= overloadMethod.name %>_overload_<%= index %>(JSContext* ctx, 
 
 <% _.forEach(object.props, function(prop, index) { %>
 static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+<% if (isJSArrayBuiltInProps(prop)) { %>
+  JSValue classProto = JS_GetClassProto(ctx, JS_CLASS_ARRAY);
+  <% if (prop.isSymbol) { %>
+  JSValue result = JS_GetProperty(ctx, classProto, JS_ATOM_<%= prop.name %>);
+  JS_FreeValue(ctx, classProto);
+  return result;
+  <% } else { %>
+  JSValue result = JS_GetPropertyStr(ctx, classProto, "<%= prop.name %>");
+  JS_FreeValue(ctx, classProto);
+  return result;
+  <% } %>
+
+<% } else { %>
+
   auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   assert(<%= blob.filename %> != nullptr);
   MemberMutationScope scope{ExecutingContext::From(ctx)};
@@ -163,17 +181,18 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   <% } else { %>
   return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>());
   <% } %>
+
+<% } %>
 }
 <% if (!prop.readonly) { %>
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   ExceptionState exception_state;
+  MemberMutationScope scope{ExecutingContext::From(ctx)};
   auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }
-  MemberMutationScope scope{ExecutingContext::From(ctx)};
-
   <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
   <%= blob.filename %>->SetBindingProperty(binding_call_methods::k<%= prop.name %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(<% if (isDOMStringType(prop.type)) { %>ctx, <% } %>v),exception_state);
   <% } else {%>
@@ -203,11 +222,11 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   ExceptionState exception_state;
+  MemberMutationScope scope{ExecutingContext::From(ctx)};
   auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }
-  MemberMutationScope scope{ExecutingContext::From(ctx)};
 
   <%= object.name %>::set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(*<%= blob.filename %>, v, exception_state);
   if (exception_state.HasException()) {

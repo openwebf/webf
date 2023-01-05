@@ -162,6 +162,10 @@
     "getFullCSSPropertyList",
     "removeProperty",
     "cssText",
-    "length"
+    "length",
+    "addColorStop",
+    "createLinearGradient",
+    "createRadialGradient",
+    "createPattern"
   ]
 }

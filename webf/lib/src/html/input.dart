@@ -265,7 +265,7 @@ mixin BaseInputElement on WidgetElement {
         border: InputBorder.none,
         isDense: true,
         isCollapsed: true,
-        contentPadding: EdgeInsets.fromLTRB(0, 5, 0, 5),
+        contentPadding: EdgeInsets.fromLTRB(0, 0, 0, 0),
         hintText: placeholder,
         suffix: isSearch && value.isNotEmpty && _isFocus
             ? SizedBox(

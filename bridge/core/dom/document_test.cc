@@ -97,7 +97,7 @@ TEST(Document, createComment) {
       "let div = document.createElement('div');"
       "div.setAttribute('hello', 1234);"
       "document.body.appendChild(div);"
-      "let comment = document.createComment();"
+      "let comment = document.createComment('');"
       "div.appendChild(comment);"
       "console.log(div);";
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
