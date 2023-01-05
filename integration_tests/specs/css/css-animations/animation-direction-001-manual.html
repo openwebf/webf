@@ -50,6 +50,13 @@
 <script>
   await sleep(0.1);
   const main = document.getElementById('main');
+  const style = window.getComputedStyle(main);
+  expect(style['animation-name']).toBe('sample');
+  expect(style['animation-delay']).toBe('0s');
+  expect(style['animation-direction']).toBe('alternate');
+  expect(style['animation-iteration-count']).toBe('infinite');
+  expect(style['animation-fill-mode']).toBe('none');
+
   expect(main.offsetLeft > 75 && main.offsetLeft < 150).toBe(true, '1st');
   await sleep(2);
   expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true, '2st');

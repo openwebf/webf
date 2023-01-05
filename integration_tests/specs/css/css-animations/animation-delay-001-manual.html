@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html fit>
 <meta charset="utf-8">
 <title>CSS Animations Test: animation-delay - negative value</title>
 <link rel="author" title="Nokia Inc." href="http://www.nokia.com">
@@ -67,6 +67,12 @@
 <script>
   await sleep(0.1);
   const negativeDelay = document.getElementById('test-negative-delay');
+  const style = window.getComputedStyle(negativeDelay);
+  expect(style['animation-delay']).toBe('-3s');
+  expect(style['animation-duration']).toBe('6s');
+  expect(style['animation-name']).toBe('test-negative-delay');
+  expect(style['animation-fill-mode']).toBe('none');
+
   const ref = document.getElementById('ref-no-delay');
   expect(negativeDelay.offsetLeft).toBe(ref.offsetLeft);
   expect(negativeDelay.offsetLeft < 80 && negativeDelay.offsetLeft > 60).toBe(true);
