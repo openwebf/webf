@@ -8,7 +8,7 @@ interface DOMTokenList {
   replace(token: string, newToken: string): boolean;
   supports(token: string): boolean;
   toString(): string;
-  readonly [key: number]: string | null;
+  readonly [key: number]: string;
   value: string;
   readonly forEach: JSArrayProtoMethod;
   readonly keys: JSArrayProtoMethod;

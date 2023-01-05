@@ -10,8 +10,10 @@ const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
 const { analyzer } = require('../dist/idl/analyzer');
 const { generatorSource } = require('../dist/idl/generator')
+const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
+const { union } = require("lodash");
 
 program
   .version(packageJSON.version)
@@ -47,6 +49,10 @@ function genCodeFromTypeDefine() {
     cwd: source,
   });
 
+  // typeFiles = [
+  //     'dom/dom_token_list.d.ts'
+  // ];
+  console.log(typeFiles);
   let blobs = typeFiles.map(file => {
     let filename = 'qjs_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
@@ -56,7 +62,7 @@ function genCodeFromTypeDefine() {
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
-    analyzer(b, definedPropertyCollector);
+    analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
 
   for (let i = 0; i < blobs.length; i ++) {
@@ -71,6 +77,20 @@ function genCodeFromTypeDefine() {
 
     wirteFileIfChanged(genFilePath + '.h', result.header);
     wirteFileIfChanged(genFilePath + '.cc', result.source);
+  }
+
+  let unionTypes = Array.from(unionTypeCollector.types);
+  unionTypes.forEach(union => {
+    union.sort((p, n) => {
+      if (typeof p.value === 'string') return 1;
+      return -(n.value - p.value);
+    })
+  });
+  for(let i = 0; i < unionTypes.length; i ++) {
+    let result = generateUnionTypes(unionTypes[i]);
+    let filename = generateUnionTypeFileName(unionTypes[i]);
+    wirteFileIfChanged(path.join(dist, filename) + '.h', result.header);
+    wirteFileIfChanged(path.join(dist, filename) + '.cc', result.source);
   }
 }
 
@@ -146,7 +166,12 @@ class DefinedPropertyCollector {
   interfaces = new Set();
 }
 
+class UnionTypeCollector {
+  types = new Set()
+}
+
 let definedPropertyCollector = new DefinedPropertyCollector();
+let unionTypeCollector = new UnionTypeCollector();
 let names_needs_install = new Set();
 
 genCodeFromTypeDefine();
