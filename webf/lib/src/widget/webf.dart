@@ -138,12 +138,11 @@ class WebF extends StatefulWidget {
   }
 
   @override
-  _WebFState createState() => _WebFState();
+  WebFState createState() => WebFState();
 }
 
-class _WebFState extends State<WebF> with RouteAware {
+class WebFState extends State<WebF> with RouteAware {
   final Set<WebFWidgetElementToWidgetAdapter> customElementWidgets = {};
-
   void onCustomElementWidgetAdd(WebFWidgetElementToWidgetAdapter adapter) {
     Future.microtask(() {
       setState(() {

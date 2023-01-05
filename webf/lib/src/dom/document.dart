@@ -377,7 +377,7 @@ class Document extends Node {
     gestureListener = null;
     styleSheets.clear();
     adoptedStyleSheets.clear();
-    cookie.deleteCookies();
+    cookie.clearCookie();
     super.dispose();
   }
 }
