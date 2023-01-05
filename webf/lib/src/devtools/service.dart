@@ -5,6 +5,7 @@
 
 import 'dart:isolate';
 import 'dart:ffi';
+import 'dart:io';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 
@@ -14,6 +15,10 @@ typedef DartPostTaskToInspectorThread = void Function(int contextId, Pointer<Voi
 void spawnIsolateInspectorServer(DevToolsService devTool, WebFController controller,
     {int port = INSPECTOR_DEFAULT_PORT, String? address}) {
   ReceivePort serverIsolateReceivePort = ReceivePort();
+
+  if (Platform.environment.containsKey('WEBF_REMOTE_DEBUGGING_PORT')) {
+    port = int.parse(Platform.environment['WEBF_REMOTE_DEBUGGING_PORT']!);
+  }
 
   serverIsolateReceivePort.listen((data) {
     if (data is SendPort) {
