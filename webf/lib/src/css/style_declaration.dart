@@ -342,9 +342,6 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
       case BORDER_TOP_WIDTH:
       case BORDER_LEFT_WIDTH:
       case BORDER_RIGHT_WIDTH:
-        if (!CSSLength.isNonNegativeLength(normalizedValue)) {
-          return false;
-        }
         break;
       case COLOR:
       case BACKGROUND_COLOR:

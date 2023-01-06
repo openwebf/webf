@@ -58,10 +58,10 @@ abstract class RenderStyle {
   CSSLengthValue? get borderRightWidth;
   CSSLengthValue? get borderBottomWidth;
   CSSLengthValue? get borderLeftWidth;
-  BorderStyle get borderLeftStyle;
-  BorderStyle get borderRightStyle;
-  BorderStyle get borderTopStyle;
-  BorderStyle get borderBottomStyle;
+  CSSBorderStyleType get borderLeftStyle;
+  CSSBorderStyleType get borderRightStyle;
+  CSSBorderStyleType get borderTopStyle;
+  CSSBorderStyleType get borderBottomStyle;
   CSSLengthValue get effectiveBorderLeftWidth;
   CSSLengthValue get effectiveBorderRightWidth;
   CSSLengthValue get effectiveBorderTopWidth;

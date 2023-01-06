@@ -143,21 +143,21 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BorderLeftColor:
         return style.borderLeftColor.cssText();
       case CSSPropertyID.BorderTopStyle:
-        return style.borderTopStyle.toString();
+        return style.borderTopStyle.cssText();
       case CSSPropertyID.BorderRightStyle:
-        return style.borderRightStyle.toString();
+        return style.borderRightStyle.cssText();
       case CSSPropertyID.BorderBottomStyle:
-        return style.borderBottomStyle.toString();
+        return style.borderBottomStyle.cssText();
       case CSSPropertyID.BorderLeftStyle:
-        return style.borderLeftStyle.toString();
+        return style.borderLeftStyle.cssText();
       case CSSPropertyID.BorderTopWidth:
-        return '${style.effectiveBorderTopWidth.computedValue}px';
+        return '${style.effectiveBorderTopWidth.computedValue.cssText()}px';
       case CSSPropertyID.BorderRightWidth:
-        return '${style.effectiveBorderRightWidth.computedValue}px';
+        return '${style.effectiveBorderRightWidth.computedValue.cssText()}px';
       case CSSPropertyID.BorderBottomWidth:
-        return '${style.effectiveBorderBottomWidth.computedValue}px';
+        return '${style.effectiveBorderBottomWidth.computedValue.cssText()}px';
       case CSSPropertyID.BorderLeftWidth:
-        return '${style.effectiveBorderLeftWidth.computedValue}px';
+        return '${style.effectiveBorderLeftWidth.computedValue.cssText()}px';
       case CSSPropertyID.BorderTop:
         final properties = [CSSPropertyID.BorderTopWidth,
                             CSSPropertyID.BorderTopStyle,
@@ -596,13 +596,3 @@ extension FontStyleText on FontStyle {
   }
 }
 
-extension BorderStyleText on BorderStyle {
-  String cssText() {
-    switch (this) {
-      case BorderStyle.none:
-        return 'none';
-      case BorderStyle.solid:
-        return 'solid';
-    }
-  }
-}

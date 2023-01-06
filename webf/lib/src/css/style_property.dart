@@ -304,7 +304,7 @@ class CSSStyleProperty {
         borderLeftColor = values[2];
       }
     } else if (property == BORDER_WIDTH) {
-      List<String?>? values = getEdgeValues(shorthandValue, isNonNegativeLength: true);
+      List<String?>? values = getEdgeValues(shorthandValue);
       if (values == null) return;
 
       borderTopWidth = values[0];
