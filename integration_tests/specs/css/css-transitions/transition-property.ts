@@ -1,5 +1,5 @@
 describe('Transition property', () => {
-  fit('backgroundColor', async (done) => {
+  it('backgroundColor', async (done) => {
     const container1 = document.createElement('div');
     document.body.appendChild(container1);
     setElementStyle(container1, {

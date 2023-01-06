@@ -20,6 +20,7 @@
     animation-duration: 2s;
     animation-direction: alternate;
     animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
 
     background-color: blue;
     height: 100px;
@@ -56,6 +57,7 @@
   expect(style['animation-direction']).toBe('alternate');
   expect(style['animation-iteration-count']).toBe('infinite');
   expect(style['animation-fill-mode']).toBe('none');
+  expect(style['animation-timing-function']).toBe('ease-in-out');
 
   expect(main.offsetLeft > 75 && main.offsetLeft < 150).toBe(true, `animation 0% ${main.offsetLeft}`);
   await sleep(2);
