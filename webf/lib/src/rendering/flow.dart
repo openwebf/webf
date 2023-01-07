@@ -716,6 +716,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (_lineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
         // Flex item baseline does not includes margin-bottom.
+        Size? boxSize = isScrollingContentBox ? (parent as RenderBoxModel).boxSize : this.boxSize;
         lineDistance = isParentFlowLayout ? marginTop + boxSize!.height + marginBottom : marginTop + boxSize!.height;
         return lineDistance;
       } else {
