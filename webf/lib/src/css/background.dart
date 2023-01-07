@@ -117,44 +117,6 @@ extension CSSBackgroundBoundaryText on CSSBackgroundBoundary {
     }
   }
 }
-//
-// enum CSSBackgroundOriginType {
-//   borderBox,
-//   paddingBox,
-//   contentBox,
-// }
-//
-// enum CSSBackgroundClipType {
-//   borderBox,
-//   paddingBox,
-//   contentBox,
-// }
-//
-// extension CSSBackgroundOriginTypeText on CSSBackgroundOriginType {
-//   String cssText() {
-//     switch (this) {
-//       case CSSBackgroundOriginType.borderBox:
-//         return 'border-box';
-//       case CSSBackgroundOriginType.paddingBox:
-//         return 'padding-box';
-//       case CSSBackgroundOriginType.contentBox:
-//         return 'content-box';
-//     }
-//   }
-// }
-//
-// extension CSSBackgroundClipTypeText on CSSBackgroundClipType {
-//   String cssText() {
-//     switch (this) {
-//       case CSSBackgroundClipType.borderBox:
-//         return 'border-box';
-//       case CSSBackgroundClipType.paddingBox:
-//         return 'padding-box';
-//       case CSSBackgroundClipType.contentBox:
-//         return 'content-box';
-//     }
-//   }
-// }
 
 enum CSSBackgroundImageType {
   none,

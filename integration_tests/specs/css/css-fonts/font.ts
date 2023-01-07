@@ -240,7 +240,7 @@ describe('Font', () => {
     return snapshot();
   });
 
-  xit("computed", async () => {
+  it("computed", async () => {
     let target;
     let container;
     container = createElement(
@@ -263,6 +263,6 @@ describe('Font', () => {
       ]
     );
     BODY.appendChild(container);
-    test_computed_value('font', 'normal 800 12px 14.0px Helvetica, Roboto, PingFang SC, PingFang TC');
+    test_computed_value('font', 'italic 800 12px 14px helvetica');
   })
 });
