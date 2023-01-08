@@ -447,6 +447,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.VectorEffect:
       case CSSPropertyID.WritingMode:
       case CSSPropertyID.BoxShadow:
+      case CSSPropertyID.TableLayout:
         break;
     }
     return '';

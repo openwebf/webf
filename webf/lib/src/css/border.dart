@@ -131,7 +131,7 @@ mixin CSSBorderMixin on RenderStyle {
 
   @override
   CSSLengthValue get effectiveBorderTopWidth =>
-      borderTopStyle == BorderStyle.none ? CSSLengthValue.zero : (_borderTopWidth ?? _mediumWidth);
+      borderTopStyle == CSSBorderStyleType.none ? CSSLengthValue.zero : (_borderTopWidth ?? _mediumWidth);
 
   CSSLengthValue? _borderRightWidth;
   set borderRightWidth(CSSLengthValue? value) {
@@ -145,7 +145,7 @@ mixin CSSBorderMixin on RenderStyle {
 
   @override
   CSSLengthValue get effectiveBorderRightWidth =>
-      borderRightStyle == BorderStyle.none ? CSSLengthValue.zero : (_borderRightWidth ?? _mediumWidth);
+      borderRightStyle == CSSBorderStyleType.none ? CSSLengthValue.zero : (_borderRightWidth ?? _mediumWidth);
 
   CSSLengthValue? _borderBottomWidth;
   set borderBottomWidth(CSSLengthValue? value) {
@@ -159,7 +159,7 @@ mixin CSSBorderMixin on RenderStyle {
 
   @override
   CSSLengthValue get effectiveBorderBottomWidth =>
-      borderBottomStyle == BorderStyle.none ? CSSLengthValue.zero : (_borderBottomWidth ?? _mediumWidth);
+      borderBottomStyle == CSSBorderStyleType.none ? CSSLengthValue.zero : (_borderBottomWidth ?? _mediumWidth);
 
   CSSLengthValue? _borderLeftWidth;
   set borderLeftWidth(CSSLengthValue? value) {
@@ -173,7 +173,7 @@ mixin CSSBorderMixin on RenderStyle {
 
   @override
   CSSLengthValue get effectiveBorderLeftWidth =>
-      borderLeftStyle == BorderStyle.none ? CSSLengthValue.zero : (_borderLeftWidth ?? _mediumWidth);
+      borderLeftStyle == CSSBorderStyleType.none ? CSSLengthValue.zero : (_borderLeftWidth ?? _mediumWidth);
 
   /// Border-color
   @override
@@ -336,7 +336,7 @@ class CSSBorderSide {
         break;
     }
     // Flutter will print border event if width is 0.0. So we needs to set borderStyle to none to prevent this.
-    if (borderStyle == BorderStyle.none || borderWidth!.isZero) {
+    if (borderStyle == CSSBorderStyleType.none || borderWidth!.isZero) {
       return null;
     } else {
       return BorderSide(width: borderWidth.computedValue, style: borderStyle!.borderStyle(), color: borderColor!);

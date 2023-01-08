@@ -36,7 +36,7 @@ mixin CSSSizingMixin on RenderStyle {
     }
     if (renderBoxModel?.hasSize == true) {
       final boxWidth = renderBoxModel?.boxSize?.width;
-      if (boxWidth != null) {
+      if (boxWidth != null && boxWidth > 0) {
         return CSSLengthValue(boxWidth, CSSLengthType.PX);
       }
     }
@@ -61,7 +61,7 @@ mixin CSSSizingMixin on RenderStyle {
     }
     if (renderBoxModel?.hasSize == true) {
       final boxHeight = renderBoxModel?.boxSize?.height;
-      if (boxHeight != null) {
+      if (boxHeight != null && boxHeight > 0) {
         return CSSLengthValue(boxHeight, CSSLengthType.PX);
       }
     }
