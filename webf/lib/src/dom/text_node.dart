@@ -87,6 +87,9 @@ class TextNode extends CharacterData {
       RenderLayoutBox parentRenderLayoutBox = parent.renderBoxModel as RenderLayoutBox;
       parentRenderLayoutBox = parentRenderLayoutBox.renderScrollingContent ?? parentRenderLayoutBox;
       parentRenderLayoutBox.insert(_renderTextBox!, after: after);
+      if (parentRenderLayoutBox.hasSize) {
+        parentRenderLayoutBox.markParentNeedsRelayout();
+      }
     }
 
     _applyTextStyle();
