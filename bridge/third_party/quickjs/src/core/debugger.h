@@ -10,6 +10,7 @@
 #include <quickjs/quickjs.h>
 #include <quickjs/list.h>
 #include "base.h"
+#include "dap_protocol.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,7 +64,7 @@ typedef struct JSDebuggerInfo {
   uint32_t breakpoints_dirty_counter;
   int stepping;
   JSDebuggerLocation step_over;
-  int step_depth;
+  uint32_t step_depth;
 } JSDebuggerInfo;
 
 void js_debugger_new_context(JSContext* ctx);
@@ -83,18 +84,18 @@ JSDebuggerInfo* js_debugger_info(JSRuntime* rt);
 // this may be able to be done with an Error backtrace,
 // but would be clunky and require stack string parsing.
 uint32_t js_debugger_stack_depth(JSContext* ctx);
-JSValue js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc);
+void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTraceResponseBody* body);
 JSDebuggerLocation js_debugger_current_location(JSContext* ctx, const uint8_t* cur_pc);
 
 // checks to see if a breakpoint exists on the current pc.
 // calls back into js_debugger_file_breakpoints.
 int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const uint8_t* cur_pc);
 
-JSValue js_debugger_local_variables(JSContext* ctx, int stack_index);
-JSValue js_debugger_closure_variables(JSContext* ctx, int stack_index);
+JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index);
+JSValue js_debugger_closure_variables(JSContext* ctx, int64_t stack_index);
 
 // evaluates an expression at any stack frame. JS_Evaluate* only evaluates at the top frame.
-JSValue js_debugger_evaluate(JSContext* ctx, int stack_index, const char* expression);
+JSValue js_debugger_evaluate(JSContext* ctx, int64_t stack_index, const char* expression);
 
 #ifdef __cplusplus
 }

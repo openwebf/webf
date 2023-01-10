@@ -43,10 +43,17 @@ export function generateDAPMembersTypes(type: ParameterType[], mode: ParameterMo
       return 'const char*';
     }
 
-    return type[0] + '*';
+    return 'struct ' + type.value + '*';
   }
+
   if (type.length > 1) {
     return `size_t ${typeName}Len;\n ${generateCTypeFromType(type[1])}*`
+  }
+
+  if (type.isArray) {
+    let arrayType = generateDAPMembersTypes(type.value as ParameterType, mode, typeName);
+
+    return `size_t ${typeName}Len;\n ${arrayType}${arrayType.indexOf('*') >= 0 ? '' : '*'}`
   }
 
   return 'void*';

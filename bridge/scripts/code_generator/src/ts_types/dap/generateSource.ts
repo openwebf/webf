@@ -33,7 +33,7 @@ function generateTypeStringify(object: ClassObject, propName: string, info: DAPI
   }`)
 }
 
-function generateTypeInitialize(object: ClassObject, propName: string, info: DAPInfoCollector, externalInitialize: string[]): void {
+function generateTypeInitialize(object: ClassObject, propTypeName: ParameterType, info: DAPInfoCollector, externalInitialize: string[]): void {
   let parserCode: string[] = [];
   if (object.props) {
     object.props.forEach(prop => {
@@ -44,7 +44,7 @@ function generateTypeInitialize(object: ClassObject, propName: string, info: DAP
     });
   }
 
-  externalInitialize.push(`static ${object.name}* get_property_${propName}(JSContext* ctx, JSValue this_object, const char* prop) {
+  externalInitialize.push(`static ${object.name}* get_property_${propTypeName.value}(JSContext* ctx, JSValue this_object, const char* prop) {
   JSValue arguments = JS_GetPropertyStr(ctx, this_object, prop);
   ${object.name}* args = js_malloc(ctx, sizeof(${object.name}));
   ${parserCode.join('\n')}
@@ -90,8 +90,8 @@ function generatePropParser(prop: PropsDeclaration, externalInitialize: string[]
     let targetTypes = Array.from(info.others).find(o => o.name === prop.type[0]);
 
     if (targetTypes) {
-      generateTypeInitialize(targetTypes, prop.name, info, externalInitialize);
-      callCode = `args->${prop.name} = get_property_${prop.name}(ctx, arguments, "${prop.name}");`
+      generateTypeInitialize(targetTypes, prop.type, info, externalInitialize);
+      callCode = `args->${prop.name} = get_property_${prop.type.value}(ctx, arguments, "${prop.name}");`
     }
   }
 
@@ -147,12 +147,11 @@ function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, e
       if (type === FunctionArgumentType.array) {
         callCode = `JSValue arr = JS_NewArray(ctx);
 for(int i = 0; i <  ${bodyName}->${prop.name}Len; i ++) {
-  JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type[1])}(ctx, ${bodyName}->${prop.name}[i]));
+  JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type.value as ParameterType)}(ctx, ${bodyName}->${prop.name}[i]));
 }
 JS_SetPropertyStr(ctx, object, "${prop.name}", arr);`
       } else {
         let targetTypes = Array.from(info.others).find(o => o.name === type);
-
         if (targetTypes) {
           generateTypeStringify(targetTypes, prop.name, info, externalInitialize);
           callCode = `JS_SetPropertyStr(ctx, object, "${prop.name}", stringify_property_${type}(ctx, ${bodyName}->${prop.name}));`
@@ -187,8 +186,9 @@ function generateRequestParser(info: DAPInfoCollector, requests: string[], exter
         }
       });
     }
-    return addIndent(`if (strcmp(command, "${request.replace('Request', '').toLowerCase()}") == 0) {
-  EvaluateArguments* args = js_malloc(ctx, sizeof(EvaluateArguments));
+    const name = request.replace('Request', '');
+    return addIndent(`if (strcmp(command, "${_.camelCase(name)}") == 0) {
+  ${name}Arguments* args = js_malloc(ctx, sizeof(${name}Arguments));
   ${parserCode.join('\n')}
   return args;
 }`, 2);
@@ -216,7 +216,7 @@ function generateEventInitializer(info: DAPInfoCollector, events: string[], exte
         }
       });
     }
-    return addIndent(`if (strcmp(event, "${event.replace('Event', '').toLowerCase()}") == 0) {
+    return addIndent(`if (strcmp(event, "${_.camelCase(event.replace('Event', ''))}") == 0) {
   ${event}* result = js_malloc(ctx, sizeof(${event}));
   result->event = event;
   ${event}Body* body = js_malloc(ctx, sizeof(${event}Body));
@@ -247,7 +247,7 @@ function generateResponseInitializer(info: DAPInfoCollector, responses: string[]
         }
       });
     }
-    return addIndent(`if (strcmp(response, "${response.replace('Response', '').toLowerCase()}") == 0) {
+    return addIndent(`if (strcmp(response, "${_.camelCase(response.replace('Response', ''))}") == 0) {
   ${response}* result = js_malloc(ctx, sizeof(${response}));
   result->type = "response";
   result->seq = response_seq++;
@@ -284,7 +284,7 @@ function generateEventBodyStringifyCode(info: DAPInfoCollector, events: string[]
         }
       });
     }
-    return addIndent(`if (strcmp(event, "${event.replace('Event', '').toLowerCase()}") == 0) {
+    return addIndent(`if (strcmp(event, "${_.camelCase(event.replace('Event', ''))}") == 0) {
   ${event}Body* ${_.snakeCase(event)}_body = (${event}Body*) body;
   ${bodyStringifyCode.join('\n')}
 }`, 2);
@@ -311,7 +311,7 @@ function generateResponseBodyStringifyCode(info: DAPInfoCollector, responses: st
         }
       });
     }
-    return addIndent(`if (strcmp(command, "${response.replace('Response', '').toLowerCase()}") == 0) {
+    return addIndent(`if (strcmp(command, "${_.camelCase(response.replace('Response', ''))}") == 0) {
   ${response}Body* ${_.snakeCase(response)}_body = (${response}Body*) body;
   ${bodyStringifyCode.join('\n')}
 }`, 2);

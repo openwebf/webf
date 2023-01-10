@@ -78,6 +78,6 @@ jasmine.configureDefaultReporter({
 });
 
 // startIntegrationTest().then((url) => {
-  globalThis.DEBUG_HOST_SERVER = 'ws://192.168.50.33:9222';
+  globalThis.DEBUG_HOST_SERVER = 'ws://127.0.0.1:9222';
   jasmine.execute([path.join(__dirname, '../.specs/bundle.build.js')]);
 // });

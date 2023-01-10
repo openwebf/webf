@@ -21,6 +21,29 @@ typedef struct DebuggerSuspendedState {
   const uint8_t* cur_pc;
 } DebuggerSuspendedState;
 
+typedef struct VariableType {
+  const char* type;
+  int64_t variablesReference;
+} VariableType;
+
+const char* to_json_string(JSContext* ctx, JSValue value) {
+  JSValue stringify_value = JS_JSONStringify(ctx, value, JS_UNDEFINED, JS_UNDEFINED);
+  const char* value_str = JS_ToCString(ctx, stringify_value);
+  const char* result = copy_string(value_str, strlen(value_str));
+  JS_FreeCString(ctx, value_str);
+  JS_FreeValue(ctx, stringify_value);
+  return result;
+}
+
+const char* atom_to_string(JSContext* ctx, JSAtom atom) {
+  JSValue name_value = JS_AtomToString(ctx, atom);
+  const char* value_str = JS_ToCString(ctx, name_value);
+  const char* result = copy_string(value_str, strlen(value_str));
+  JS_FreeCString(ctx, value_str);
+  JS_FreeValue(ctx, name_value);
+  return result;
+}
+
 static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
   JSDebuggerInfo* info = (JSDebuggerInfo*)ptr;
   // Gain access to front_message.
@@ -39,10 +62,6 @@ static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
 
   // Release the lock, so the JS Main thread can read front-end messages.
   pthread_mutex_unlock(&info->frontend_message_access);
-
-//  Request* request = js_malloc(info->ctx, sizeof(Request));
-//  parse_request(info->ctx, request, item->buf, item->length);
-//  process_request(info, &state, request);
 
   return 1;
 }
@@ -121,6 +140,11 @@ static uint32_t js_transport_write_fully(JSDebuggerInfo* info, const char* buffe
   return write_backend_message(info, buffer, length);
 }
 
+static void js_transport_send_response(JSDebuggerInfo* info, JSContext* ctx, Response* response) {
+  const char* buf = stringify_response(ctx, (Response*) response);
+  write_backend_message(info, buf, strlen(buf));
+}
+
 static uint32_t js_transport_write_value(JSDebuggerInfo* info, JSValue value) {
   JSValue stringified = JS_JSONStringify(info->ctx, value, JS_UNDEFINED, JS_UNDEFINED);
   size_t len;
@@ -141,47 +165,42 @@ static JSValue js_transport_new_envelope(JSDebuggerInfo* info, const char* type)
   return ret;
 }
 
-static uint32_t js_transport_send_event(JSDebuggerInfo* info, JSValue event) {
-  JSValue envelope = js_transport_new_envelope(info, "event");
-  JS_SetPropertyStr(info->ctx, envelope, "event", event);
-  return js_transport_write_value(info, envelope);
+static uint32_t js_transport_send_event(JSDebuggerInfo* info, Event* event) {
+  size_t length;
+  const char* buf = stringify_event(info->ctx, event, &length);
+  write_backend_message(info, buf, length);
 }
 
-static uint32_t js_transport_send_response(JSDebuggerInfo* info, JSValue request, JSValue body) {
-  JSContext* ctx = info->ctx;
-  JSValue envelope = js_transport_new_envelope(info, "response");
-  JS_SetPropertyStr(ctx, envelope, "body", body);
-  JS_SetPropertyStr(ctx, envelope, "request_seq", JS_GetPropertyStr(ctx, request, "request_seq"));
-  return js_transport_write_value(info, envelope);
+static void js_send_stopped_event(JSDebuggerInfo* info, const char* reason) {
+  JSContext* ctx = info->debugging_ctx;
+
+  StoppedEvent* event = initialize_event(ctx, "stopped");
+  event->body->reason = reason;
+  event->body->threadId = (int64_t)info->ctx;
+  js_transport_send_event(info, (Event*) event);
 }
 
-static JSValue js_get_scopes(JSContext* ctx, int frame) {
+static Scope* js_get_scopes(JSContext* ctx, int64_t frame) {
   // for now this is always the same.
   // global, local, closure. may change in the future. can check if closure is empty.
+  Scope* scope = js_malloc(ctx, sizeof(Scope) * 3);
 
-  JSValue scopes = JS_NewArray(ctx);
+  // Get local scope
+  scope[0].name = "Local";
+  scope[0].variablesReference = (frame << 2) + 1;
+  scope[0].expensive = 0;
 
-  int scope_count = 0;
+  // Get closure
+  scope[1].name = "Closure";
+  scope[1].variablesReference = (frame << 2) + 2;
+  scope[1].expensive = 0;
 
-  JSValue local = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, local, "name", JS_NewString(ctx, "Local"));
-  JS_SetPropertyStr(ctx, local, "reference", JS_NewInt32(ctx, (frame << 2) + 1));
-  JS_SetPropertyStr(ctx, local, "expensive", JS_FALSE);
-  JS_SetPropertyUint32(ctx, scopes, scope_count++, local);
+  // Get global
+  scope[2].name = "Global";
+  scope[2].variablesReference = (frame << 2) + 0;
+  scope[2].expensive = 0;
 
-  JSValue closure = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, closure, "name", JS_NewString(ctx, "Closure"));
-  JS_SetPropertyStr(ctx, closure, "reference", JS_NewInt32(ctx, (frame << 2) + 2));
-  JS_SetPropertyStr(ctx, closure, "expensive", JS_FALSE);
-  JS_SetPropertyUint32(ctx, scopes, scope_count++, closure);
-
-  JSValue global = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, global, "name", JS_NewString(ctx, "Global"));
-  JS_SetPropertyStr(ctx, global, "reference", JS_NewInt32(ctx, (frame << 2) + 0));
-  JS_SetPropertyStr(ctx, global, "expensive", JS_TRUE);
-  JS_SetPropertyUint32(ctx, scopes, scope_count++, global);
-
-  return scopes;
+  return scope;
 }
 
 static inline JS_BOOL JS_IsInteger(JSValueConst v) {
@@ -191,24 +210,24 @@ static inline JS_BOOL JS_IsInteger(JSValueConst v) {
 
 static void js_debugger_get_variable_type(JSContext* ctx,
                                           struct DebuggerSuspendedState* state,
-                                          EvaluateResponseBody* body,
+                                          VariableType* variable_type,
                                           JSValue var_val) {
   // 0 means not expandible
   uint32_t reference = 0;
   if (JS_IsString(var_val))
-    body->type = "string";
+    variable_type->type = "string";
   else if (JS_IsInteger(var_val))
-    body->type = "integer";
+    variable_type->type = "integer";
   else if (JS_IsNumber(var_val) || JS_IsBigFloat(var_val))
-    body->type = "float";
+    variable_type->type = "float";
   else if (JS_IsBool(var_val))
-    body->type = "boolean";
+    variable_type->type = "boolean";
   else if (JS_IsNull(var_val))
-    body->type = "null";
+    variable_type->type = "null";
   else if (JS_IsUndefined(var_val))
-    body->type = "undefined";
+    variable_type->type = "undefined";
   else if (JS_IsObject(var_val)) {
-    body->type = "object";
+    variable_type->type = "object";
 
     JSObject* p = JS_VALUE_GET_OBJ(var_val);
     // todo: xor the the two dwords to get a better hash?
@@ -223,34 +242,34 @@ static void js_debugger_get_variable_type(JSContext* ctx,
     }
     JS_FreeValue(ctx, found);
   }
-  body->variablesReference = reference;
+  variable_type->variablesReference = reference;
 }
 
-static void js_debugger_get_value(JSContext* ctx, JSValue var_val, JSValue var, const char* value_property) {
-  // do not toString on Arrays, since that makes a giant string of all the elements.
-  // todo: typed arrays?
-  if (JS_IsArray(ctx, var_val)) {
-    JSValue length = JS_GetPropertyStr(ctx, var_val, "length");
-    uint32_t len;
-    JS_ToUint32(ctx, &len, length);
-    JS_FreeValue(ctx, length);
-    char lenBuf[64];
-    sprintf(lenBuf, "Array (%d)", len);
-    JS_SetPropertyStr(ctx, var, value_property, JS_NewString(ctx, lenBuf));
-    JS_SetPropertyStr(ctx, var, "indexedVariables", JS_NewInt32(ctx, len));
-  } else {
-    JS_SetPropertyStr(ctx, var, value_property, JS_ToString(ctx, var_val));
-  }
-}
+//static void js_debugger_get_value(JSContext* ctx, JSValue var_val, JSValue var, const char* value_property) {
+//  // do not toString on Arrays, since that makes a giant string of all the elements.
+//  // todo: typed arrays?
+//  if (JS_IsArray(ctx, var_val)) {
+//    JSValue length = JS_GetPropertyStr(ctx, var_val, "length");
+//    uint32_t len;
+//    JS_ToUint32(ctx, &len, length);
+//    JS_FreeValue(ctx, length);
+//    char lenBuf[64];
+//    sprintf(lenBuf, "Array (%d)", len);
+//    JS_SetPropertyStr(ctx, var, value_property, JS_NewString(ctx, lenBuf));
+//    JS_SetPropertyStr(ctx, var, "indexedVariables", JS_NewInt32(ctx, len));
+//  } else {
+//    JS_SetPropertyStr(ctx, var, value_property, JS_ToString(ctx, var_val));
+//  }
+//}
 
 //static JSValue js_debugger_get_variable(JSContext* ctx,
 //                                        struct DebuggerSuspendedState* state,
 //                                        JSValue var_name,
 //                                        JSValue var_val) {
-//  JSValue var = JS_NewObject(ctx);
-//  JS_SetPropertyStr(ctx, var, "name", var_name);
-//  js_debugger_get_value(ctx, var_val, var, "value");
-//  js_debugger_get_variable_type(ctx, state, var, var_val);
+////  JSValue var = JS_NewObject(ctx);
+////  JS_SetPropertyStr(ctx, var, "name", var_name);
+////  js_debugger_get_value(ctx, var_val, var, "value");
+////  js_debugger_get_variable_type(ctx, state, var, var_val);
 //  return var;
 //}
 
@@ -261,18 +280,6 @@ static int js_debugger_get_frame(JSContext* ctx, JSValue args) {
   JS_FreeValue(ctx, reference_property);
 
   return frame;
-}
-
-static void js_send_stopped_event(JSDebuggerInfo* info, const char* reason) {
-  JSContext* ctx = info->debugging_ctx;
-
-  JSValue event = JS_NewObject(ctx);
-  // better thread id?
-  JS_SetPropertyStr(ctx, event, "type", JS_NewString(ctx, "StoppedEvent"));
-  JS_SetPropertyStr(ctx, event, "reason", JS_NewString(ctx, reason));
-  int64_t id = (int64_t)info->ctx;
-  JS_SetPropertyStr(ctx, event, "thread", JS_NewInt64(ctx, id));
-  js_transport_send_event(info, event);
 }
 
 static void js_free_prop_enum(JSContext* ctx, JSPropertyEnum* tab, uint32_t len) {
@@ -310,183 +317,167 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     size_t len;
     const char* evaluate_result = JS_ToCStringLen(ctx, &len, result);
     response->body->result = copy_string(evaluate_result, len);
-    js_debugger_get_variable_type(ctx, state, response->body, result);
+    VariableType variable_type;
+    js_debugger_get_variable_type(ctx, state, &variable_type, result);
+    response->body->type = variable_type.type;
+    response->body->variablesReference = variable_type.variablesReference;
 
     const char* buf = stringify_response(ctx, (Response*)response);
     write_backend_message(info, buf, strlen(buf));
 
     JS_FreeCString(ctx, evaluate_result);
     JS_FreeValue(ctx, result);
+  } else if (strcmp(command, "continue") == 0) {
+    info->stepping = JS_DEBUGGER_STEP_CONTINUE;
+    info->step_over = js_debugger_current_location(ctx, state->cur_pc);
+    info->step_depth = js_debugger_stack_depth(ctx);
+    ContinueResponse* response = (ContinueResponse*) initialize_response(ctx, request, "continue");
+    js_transport_send_response(info, ctx, (Response*) response);
+    info->is_paused = 0;
+  } else if (strcmp(command, "pause") == 0) {
+    PauseResponse* response = (PauseResponse*)initialize_response(ctx, request, "pause");
+    js_transport_send_response(info, ctx, (Response*) response);
+    js_send_stopped_event(info, "pause");
+    info->is_paused = 1;
+  } else if (strcmp(command, "next") == 0) {
+    info->stepping = JS_DEBUGGER_STEP;
+    info->step_over = js_debugger_current_location(ctx, state->cur_pc);
+    info->step_depth = js_debugger_stack_depth(ctx);
+    NextResponse* response = initialize_response(ctx, request, "next");
+    js_transport_send_response(info, ctx, (Response*) response);
+    info->is_paused = 0;
+  } else if (strcmp(command, "stepIn") == 0) {
+    info->stepping = JS_DEBUGGER_STEP_IN;
+    info->step_over = js_debugger_current_location(ctx, state->cur_pc);
+    info->step_depth = js_debugger_stack_depth(ctx);
+    StepInResponse* response = initialize_response(ctx, request, "stepIn");
+    js_transport_send_response(info, ctx, (Response*) response);
+    info->is_paused = 0;
+  } else if (strcmp(command, "stepOut") == 0) {
+    info->stepping = JS_DEBUGGER_STEP_OUT;
+    info->step_over = js_debugger_current_location(ctx, state->cur_pc);
+    info->step_depth = js_debugger_stack_depth(ctx);
+    StepOutResponse* response = initialize_response(ctx, request, "stepOut");
+    js_transport_send_response(info, ctx, (Response*) response);
+    info->is_paused = 0;
+  } else if (strcmp(command, "stackTrace") == 0) {
+    StackTraceResponse* response = initialize_response(ctx, request, "stackTrace");
+    js_debugger_build_backtrace(ctx, state->cur_pc, response->body);
+    js_transport_send_response(info, ctx, (Response*) response);
+  } else if (strcmp(command, "scopes") == 0) {
+    ScopesArguments* arguments = (ScopesArguments*) request->arguments;
+    int64_t frame = arguments->frameId;
+    ScopeResponse* response = initialize_response(ctx, request, "scopes");
+    response->body->scopes = js_get_scopes(ctx, frame);
+    js_transport_send_response(info, ctx, (Response*) response);
+  } else if (strcmp(command, "variables") == 0) {
+    VariablesArguments* arguments = (VariablesArguments*) request->arguments;
+    int64_t reference = arguments->variablesReference;
+    JSValue variable = JS_GetPropertyUint32(ctx, state->variable_references, reference);
+    Variable* variables;
+    size_t variableLen = 0;
+
+    int skip_proto = 0;
+    // if the variable reference was not found,
+    // then it must be a frame locals, frame closures, or the global
+    if (JS_IsUndefined(variable)) {
+      skip_proto = 1;
+      int64_t frame = reference >> 2;
+      int64_t scope = reference % 4;
+
+      assert(frame < js_debugger_stack_depth(ctx));
+
+      if (scope == 0)
+        variable = JS_GetGlobalObject(ctx);
+      else if (scope == 1)
+        variable = js_debugger_local_variables(ctx, frame);
+      else if (scope == 2)
+        variable = js_debugger_closure_variables(ctx, frame);
+      else
+        assert(0);
+
+      // need to dupe the variable, as it's used below as well.
+      JS_SetPropertyUint32(ctx, state->variable_references, reference, JS_DupValue(ctx, variable));
+    }
+
+    JSPropertyEnum* tab_atom;
+    uint32_t tab_atom_count;
+
+    const char* filter = arguments->filter;
+    if (filter != NULL) {
+      // only index filtering is supported by this server.
+      // name filtering exists in VS Code, but is not implemented here.
+      int indexed = strcmp(filter, "indexed") == 0;
+      if (!indexed)
+        goto unfiltered;
+
+      int64_t start = arguments->start;
+      int64_t count = arguments->count;
+
+      variables = js_malloc(ctx, sizeof(Variable) * count);
+      variableLen = count;
+
+      char name_buf[64];
+      for (uint32_t i = 0; i < count; i++) {
+        JSValue value = JS_GetPropertyUint32(ctx, variable, start + i);
+        VariableType variable_type;
+        js_debugger_get_variable_type(ctx, state, &variable_type, value);
+
+        sprintf(name_buf, "%d", i);
+        variables[i].name = copy_string(name_buf, strlen(name_buf));
+        variables[i].type = variable_type.type;
+        variables[i].variablesReference = variable_type.variablesReference;
+        variables[i].value = to_json_string(ctx, value);
+
+        JS_FreeValue(ctx, value);
+      }
+      goto done;
+    }
+
+  unfiltered:
+    if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, variable, JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK)) {
+      int offset = 0;
+
+      if (!skip_proto) {
+        const JSValue proto = JS_GetPrototype(ctx, variable);
+        if (!JS_IsException(proto)) {
+          JSValue value = JS_GetPropertyStr(ctx, state->variable_references, "__proto__");
+
+          VariableType variable_type;
+          js_debugger_get_variable_type(ctx, state, &variable_type, value);
+
+          variables[offset++].name = "__proto__";
+          variables[offset++].value = to_json_string(ctx, value);
+          variables[offset++].type = variable_type.type;
+          variables[offset++].variablesReference = variable_type.variablesReference;
+          JS_FreeValue(ctx, value);
+        }
+        JS_FreeValue(ctx, proto);
+      }
+
+      for (int i = 0; i < tab_atom_count; i++) {
+        JSValue value = JS_GetProperty(ctx, variable, tab_atom[i].atom);
+
+        VariableType variable_type;
+        js_debugger_get_variable_type(ctx, state, &variable_type, value);
+        variables[i + offset].name = atom_to_string(ctx, tab_atom[i].atom);
+        variables[i + offset].type = variable_type.type;
+        variables[i + offset].variablesReference = variable_type.variablesReference;
+        variables[i + offset].value = to_json_string(ctx, value);
+        JS_FreeValue(ctx, value);
+      }
+
+      variableLen = offset + tab_atom_count;
+      js_free_prop_enum(ctx, tab_atom, tab_atom_count);
+    }
+
+  done:
+    JS_FreeValue(ctx, variable);
+    VariablesResponse* response = initialize_response(ctx, request, "variable");
+    response->body->variables = variables;
+    response->body->variablesLen = variableLen;
+    js_transport_send_response(info, ctx, response);
   }
-
-  //    JSValue args = JS_GetPropertyStr(ctx, request, "args");
-  //    int frame = js_debugger_get_frame(ctx, args);
-  //    JSValue expression = JS_GetPropertyStr(ctx, args, "expression");
-  //    JS_FreeValue(ctx, args);
-  //    JSValue result = js_debugger_evaluate(ctx, frame, expression);
-  //    if (JS_IsException(result)) {
-  //      JS_FreeValue(ctx, result);
-  //      result = JS_GetException(ctx);
-  //    }
-  //    JS_FreeValue(ctx, expression);
-  //
-  //    JSValue body = JS_NewObject(ctx);
-  //    js_debugger_get_value(ctx, result, body, "result");
-  //    js_debugger_get_variable_type(ctx, state, body, result);
-  //    JS_FreeValue(ctx, result);
-  //    js_transport_send_response(info, request, body);
-
-//  if (strcmp("continue", command) == 0) {
-//    info->stepping = JS_DEBUGGER_STEP_CONTINUE;
-//    info->step_over = js_debugger_current_location(ctx, state->cur_pc);
-//    info->step_depth = js_debugger_stack_depth(ctx);
-//    js_transport_send_response(info, request, JS_UNDEFINED);
-//    info->is_paused = 0;
-//  }
-//  if (strcmp("pause", command) == 0) {
-//    js_transport_send_response(info, request, JS_UNDEFINED);
-//    js_send_stopped_event(info, "pause");
-//    info->is_paused = 1;
-//  } else if (strcmp("next", command) == 0) {
-//    info->stepping = JS_DEBUGGER_STEP;
-//    info->step_over = js_debugger_current_location(ctx, state->cur_pc);
-//    info->step_depth = js_debugger_stack_depth(ctx);
-//    js_transport_send_response(info, request, JS_UNDEFINED);
-//    info->is_paused = 0;
-//  } else if (strcmp("stepIn", command) == 0) {
-//    info->stepping = JS_DEBUGGER_STEP_IN;
-//    info->step_over = js_debugger_current_location(ctx, state->cur_pc);
-//    info->step_depth = js_debugger_stack_depth(ctx);
-//    js_transport_send_response(info, request, JS_UNDEFINED);
-//    info->is_paused = 0;
-//  } else if (strcmp("stepOut", command) == 0) {
-//    info->stepping = JS_DEBUGGER_STEP_OUT;
-//    info->step_over = js_debugger_current_location(ctx, state->cur_pc);
-//    info->step_depth = js_debugger_stack_depth(ctx);
-//    js_transport_send_response(info, request, JS_UNDEFINED);
-//    info->is_paused = 0;
-//  } else if (strcmp("evaluate", command) == 0) {
-//    JSValue args = JS_GetPropertyStr(ctx, request, "args");
-//    int frame = js_debugger_get_frame(ctx, args);
-//    JSValue expression = JS_GetPropertyStr(ctx, args, "expression");
-//    JS_FreeValue(ctx, args);
-//    JSValue result = js_debugger_evaluate(ctx, frame, expression);
-//    if (JS_IsException(result)) {
-//      JS_FreeValue(ctx, result);
-//      result = JS_GetException(ctx);
-//    }
-//    JS_FreeValue(ctx, expression);
-//
-//    JSValue body = JS_NewObject(ctx);
-//    js_debugger_get_value(ctx, result, body, "result");
-//    js_debugger_get_variable_type(ctx, state, body, result);
-//    JS_FreeValue(ctx, result);
-//    js_transport_send_response(info, request, body);
-//  } else if (strcmp("stackTrace", command) == 0) {
-//    JSValue stack_trace = js_debugger_build_backtrace(ctx, state->cur_pc);
-//    js_transport_send_response(info, request, stack_trace);
-//  } else if (strcmp("scopes", command) == 0) {
-//    JSValue args = JS_GetPropertyStr(ctx, request, "args");
-//    int frame = js_debugger_get_frame(ctx, args);
-//    JS_FreeValue(ctx, args);
-//    JSValue scopes = js_get_scopes(ctx, frame);
-//    js_transport_send_response(info, request, scopes);
-//  } else if (strcmp("variables", command) == 0) {
-//    JSValue args = JS_GetPropertyStr(ctx, request, "args");
-//    JSValue reference_property = JS_GetPropertyStr(ctx, args, "variablesReference");
-//    JS_FreeValue(ctx, args);
-//    uint32_t reference;
-//    JS_ToUint32(ctx, &reference, reference_property);
-//    JS_FreeValue(ctx, reference_property);
-//
-//    JSValue properties = JS_NewArray(ctx);
-//
-//    JSValue variable = JS_GetPropertyUint32(ctx, state->variable_references, reference);
-//
-//    int skip_proto = 0;
-//    // if the variable reference was not found,
-//    // then it must be a frame locals, frame closures, or the global
-//    if (JS_IsUndefined(variable)) {
-//      skip_proto = 1;
-//      int frame = reference >> 2;
-//      int scope = reference % 4;
-//
-//      assert(frame < js_debugger_stack_depth(ctx));
-//
-//      if (scope == 0)
-//        variable = JS_GetGlobalObject(ctx);
-//      else if (scope == 1)
-//        variable = js_debugger_local_variables(ctx, frame);
-//      else if (scope == 2)
-//        variable = js_debugger_closure_variables(ctx, frame);
-//      else
-//        assert(0);
-//
-//      // need to dupe the variable, as it's used below as well.
-//      JS_SetPropertyUint32(ctx, state->variable_references, reference, JS_DupValue(ctx, variable));
-//    }
-//
-//    JSPropertyEnum* tab_atom;
-//    uint32_t tab_atom_count;
-//
-//    JSValue filter = JS_GetPropertyStr(ctx, args, "filter");
-//    if (!JS_IsUndefined(filter)) {
-//      const char* filter_str = JS_ToCString(ctx, filter);
-//      JS_FreeValue(ctx, filter);
-//      // only index filtering is supported by this server.
-//      // name filtering exists in VS Code, but is not implemented here.
-//      int indexed = strcmp(filter_str, "indexed") == 0;
-//      JS_FreeCString(ctx, filter_str);
-//      if (!indexed)
-//        goto unfiltered;
-//
-//      uint32_t start = js_get_property_as_uint32(ctx, args, "start");
-//      uint32_t count = js_get_property_as_uint32(ctx, args, "count");
-//
-//      char name_buf[64];
-//      for (uint32_t i = 0; i < count; i++) {
-//        JSValue value = JS_GetPropertyUint32(ctx, variable, start + i);
-//        sprintf(name_buf, "%d", i);
-//        JSValue variable_json = js_debugger_get_variable(ctx, state, JS_NewString(ctx, name_buf), value);
-//        JS_FreeValue(ctx, value);
-//        JS_SetPropertyUint32(ctx, properties, i, variable_json);
-//      }
-//      goto done;
-//    }
-//
-//  unfiltered:
-//
-//    if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, variable, JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK)) {
-//      int offset = 0;
-//
-//      if (!skip_proto) {
-//        const JSValue proto = JS_GetPrototype(ctx, variable);
-//        if (!JS_IsException(proto)) {
-//          JSValue variable_json = js_debugger_get_variable(ctx, state, JS_NewString(ctx, "__proto__"), proto);
-//          JS_FreeValue(ctx, proto);
-//          JS_SetPropertyUint32(ctx, properties, offset++, variable_json);
-//        } else {
-//          JS_FreeValue(ctx, proto);
-//        }
-//      }
-//
-//      for (int i = 0; i < tab_atom_count; i++) {
-//        JSValue value = JS_GetProperty(ctx, variable, tab_atom[i].atom);
-//        JSValue variable_json = js_debugger_get_variable(ctx, state, JS_AtomToString(ctx, tab_atom[i].atom), value);
-//        JS_FreeValue(ctx, value);
-//        JS_SetPropertyUint32(ctx, properties, i + offset, variable_json);
-//      }
-//
-//      js_free_prop_enum(ctx, tab_atom, tab_atom_count);
-//    }
-//
-//  done:
-//    JS_FreeValue(ctx, variable);
-//
-//    js_transport_send_response(info, request, properties);
-//  }
-//  JS_FreeCString(ctx, command);
-//  JS_FreeValue(ctx, command_property);
 }
 
 static void js_process_breakpoints(JSDebuggerInfo* info, JSValue message) {
@@ -599,12 +590,10 @@ static void js_debugger_context_event(JSContext* caller_ctx, const char* reason)
 
   JSContext* ctx = info->debugging_ctx;
 
-  JSValue event = JS_NewObject(ctx);
-  // better thread id?
-  JS_SetPropertyStr(ctx, event, "type", JS_NewString(ctx, "ThreadEvent"));
-  JS_SetPropertyStr(ctx, event, "reason", JS_NewString(ctx, reason));
-  JS_SetPropertyStr(ctx, event, "thread", JS_NewInt64(ctx, (int64_t)caller_ctx));
-  js_transport_send_event(info, event);
+  ThreadEvent* event = initialize_event(ctx, "thread");
+  event->body->reason = reason;
+  event->body->threadId = (int64_t)caller_ctx;
+  js_transport_send_event(info, (Event*) event);
 }
 
 void js_debugger_new_context(JSContext* ctx) {
@@ -802,45 +791,52 @@ uint32_t js_debugger_stack_depth(JSContext* ctx) {
   return stack_index;
 }
 
-JSValue js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc) {
+void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTraceResponseBody* body) {
   JSStackFrame* sf;
   const char* func_name_str;
   JSObject* p;
-  JSValue ret = JS_NewArray(ctx);
   uint32_t stack_index = 0;
 
+  int MAX_STACK_FRAME = 30;
+  StackFrame* stack_frames = js_malloc(ctx, sizeof(StackFrame) * MAX_STACK_FRAME);
+
   for (sf = ctx->rt->current_stack_frame; sf != NULL; sf = sf->prev_frame) {
-    JSValue current_frame = JS_NewObject(ctx);
-
     uint32_t id = stack_index++;
-    JS_SetPropertyStr(ctx, current_frame, "id", JS_NewUint32(ctx, id));
-
+    stack_frames[id].id = id;
     func_name_str = get_func_name(ctx, sf->cur_func);
-    if (!func_name_str || func_name_str[0] == '\0')
-      JS_SetPropertyStr(ctx, current_frame, "name", JS_NewString(ctx, "<anonymous>"));
-    else
-      JS_SetPropertyStr(ctx, current_frame, "name", JS_NewString(ctx, func_name_str));
+    if (!func_name_str || func_name_str[0] == '\0') {
+      stack_frames[id].name = "<anonymous>";
+    } else {
+      stack_frames[id].name = copy_string(func_name_str, strlen(func_name_str));
+    }
     JS_FreeCString(ctx, func_name_str);
 
     p = JS_VALUE_GET_OBJ(sf->cur_func);
     if (p && js_class_has_bytecode(p->class_id)) {
       JSFunctionBytecode* b;
       int line_num1;
+      int column_num1;
 
       b = p->u.func.function_bytecode;
       if (b->has_debug) {
         const uint8_t* pc = sf != ctx->rt->current_stack_frame || !cur_pc ? sf->cur_pc : cur_pc;
         line_num1 = find_line_num(ctx, b, pc - b->byte_code_buf - 1);
-        JS_SetPropertyStr(ctx, current_frame, "filename", JS_AtomToString(ctx, b->debug.filename));
-        if (line_num1 != -1)
-          JS_SetPropertyStr(ctx, current_frame, "line", JS_NewUint32(ctx, line_num1));
+        column_num1 = find_column_num(ctx, b, pc - b->byte_code_buf - 1);
+        if (line_num1 != -1) {
+          stack_frames[id].line = line_num1;
+        }
+        if (column_num1 != -1) {
+          stack_frames[id].column = column_num1;
+        }
       }
     } else {
-      JS_SetPropertyStr(ctx, current_frame, "name", JS_NewString(ctx, "(native)"));
+      stack_frames[id].name = "(native)";
     }
-    JS_SetPropertyUint32(ctx, ret, id, current_frame);
   }
-  return ret;
+
+  body->totalFrames = stack_index;
+  body->stackFramesLen = stack_index;
+  body->stackFrames = stack_frames;
 }
 
 int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const uint8_t* cur_pc) {
@@ -973,7 +969,7 @@ done:
   return b->debugger.breakpoints[pc];
 }
 
-JSValue js_debugger_local_variables(JSContext* ctx, int stack_index) {
+JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index) {
   JSValue ret = JS_NewObject(ctx);
 
   // put exceptions on the top stack frame
@@ -1028,7 +1024,7 @@ done:
   return ret;
 }
 
-JSValue js_debugger_closure_variables(JSContext* ctx, int stack_index) {
+JSValue js_debugger_closure_variables(JSContext* ctx, int64_t stack_index) {
   JSValue ret = JS_NewObject(ctx);
 
   JSStackFrame* sf;
@@ -1146,7 +1142,7 @@ fail1:
   return JS_EXCEPTION;
 }
 
-JSValue js_debugger_evaluate(JSContext* ctx, int stack_index, const char* expression) {
+JSValue js_debugger_evaluate(JSContext* ctx, int64_t stack_index, const char* expression) {
   JSStackFrame* sf;
   int cur_index = 0;
 
