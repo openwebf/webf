@@ -940,7 +940,7 @@ interface Variable {
 }
 
 
-interface VariablesBody {
+interface VariablesResponseBody {
   /**
    * All (or a range) of variables for the given variable reference.
    */
@@ -948,7 +948,7 @@ interface VariablesBody {
 }
 
 interface VariablesResponse extends Response {
-  body: VariablesBody;
+  body: VariablesResponseBody;
 }
 
 interface ThreadEventBody {

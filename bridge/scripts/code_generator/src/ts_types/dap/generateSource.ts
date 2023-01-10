@@ -15,13 +15,19 @@ function getLists(set: Set<ClassObject>): string[] {
   });
 }
 
+const generatedTypes = {};
+
 function generateTypeStringify(object: ClassObject, propName: string, info: DAPInfoCollector, externalInitialize: string[]): void {
+  if (generatedTypes[object.name]) return;
+
+  generatedTypes[object.name] = true;
+
   let stringifyCode : string[] = [];
   if (object.props) {
     object.props.forEach(prop => {
       let code = generateMemberStringifyCode(prop, propName, externalInitialize, info);
       if (code) {
-        stringifyCode.push(code);
+        stringifyCode.push(`{\n ${code} \n }`);
       }
     })
   }
@@ -34,6 +40,8 @@ function generateTypeStringify(object: ClassObject, propName: string, info: DAPI
 }
 
 function generateTypeInitialize(object: ClassObject, propTypeName: ParameterType, info: DAPInfoCollector, externalInitialize: string[]): void {
+  if (generatedTypes[object.name]) return;
+  generatedTypes[object.name] = true;
   let parserCode: string[] = [];
   if (object.props) {
     object.props.forEach(prop => {
@@ -129,6 +137,12 @@ function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, e
       return `JS_NewInt64`;
     } else if (type === FunctionArgumentType.boolean) {
       return `JS_NewBool`;
+    } else {
+      let targetTypes = Array.from(info.others).find(o => o.name === type.value);
+      if (targetTypes) {
+        generateTypeStringify(targetTypes, prop.name, info, externalInitialize);
+        return `stringify_property_${targetTypes.name}`;
+      }
     }
     return '';
   }
@@ -147,7 +161,7 @@ function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, e
       if (type === FunctionArgumentType.array) {
         callCode = `JSValue arr = JS_NewArray(ctx);
 for(int i = 0; i <  ${bodyName}->${prop.name}Len; i ++) {
-  JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type.value as ParameterType)}(ctx, ${bodyName}->${prop.name}[i]));
+  JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type.value as ParameterType)}(ctx, ${isReference ? '&' : ''}${bodyName}->${prop.name}[i]));
 }
 JS_SetPropertyStr(ctx, object, "${prop.name}", arr);`
       } else {
