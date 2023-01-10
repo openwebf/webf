@@ -23,6 +23,14 @@ describe('history API', () => {
     });
   });
 
+  it('pushState with no url will default to current url', () => {
+    expect(location.pathname).toBe('/public/core.build.js');
+    history.pushState({name: 1}, '');
+    expect(location.pathname).toBe('/public/core.build.js');
+    expect(history.state).toEqual({name: 1});
+    history.back();
+  });
+
   it('replaceState should work', (done) => {
     expect(location.pathname).toBe('/public/core.build.js');
     history.replaceState({name: 0}, '');
