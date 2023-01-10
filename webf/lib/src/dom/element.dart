@@ -582,6 +582,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
       // Clear pointer listener
       clearEventResponder(renderBoxModel);
+
+      // Remove scrollable
+      renderBoxModel.disposeScrollable();
+      disposeScrollable();
     }
   }
 
@@ -1168,6 +1172,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
 
     didAttachRenderer();
+
+    // Reconfigure scrollable contents.
+    if (renderStyle.overflowX != CSSOverflowType.visible) {
+      updateRenderBoxModelWithOverflowX(_handleScroll);
+      updateOverflowRenderBox();
+    }
+    if (renderStyle.overflowY != CSSOverflowType.visible) {
+      updateRenderBoxModelWithOverflowY(_handleScroll);
+      updateOverflowRenderBox();
+    }
   }
 
   void setRenderStyleProperty(String name, value) {
