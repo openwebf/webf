@@ -51,7 +51,7 @@ class CustomEvent final : public Event {
 
   bool IsCustomEvent() const override;
 
-  void Trace(GCVisitor *visitor) const override;
+  void Trace(GCVisitor* visitor) const override;
 
  private:
   ScriptValue detail_;
