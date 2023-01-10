@@ -123,7 +123,6 @@ class CookieJar {
     }
 
     List<Cookie> cookies = await _cookieJar!.loadForRequest(uri);
-    print('load cookie: $cookies');
     if (cookies.isNotEmpty) {
       requestCookies.addAll(cookies);
     }
