@@ -195,6 +195,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/exception_state.cc
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
+    bindings/qjs/union_base.cc
     # Core sources
     core/executing_context.cc
     core/script_state.cc
@@ -243,6 +244,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/parent_node.cc
     core/dom/element_data.cc
     core/dom/document.cc
+    core/dom/dom_token_list.cc
+    core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
     core/dom/node_data.cc
     core/dom/document_fragment.cc
@@ -284,12 +287,15 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/html_canvas_element.cc
     core/html/canvas/canvas_rendering_context.cc
     core/html/canvas/canvas_rendering_context_2d.cc
+    core/html/canvas/canvas_gradient.cc
+    core/html/canvas/canvas_pattern.cc
+    core/geometry/dom_matrix.cc
+    core/geometry/dom_matrix_readonly.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
     # Legacy implements, should remove them in the future.
-    core/dom/legacy/space_split_string.cc
     core/dom/legacy/element_attributes.cc
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
@@ -349,6 +355,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_node.cc
     out/qjs_document.cc
     out/qjs_element.cc
+    out/qjs_dom_token_list.cc
     out/qjs_element_attributes.cc
     out/qjs_character_data.cc
     out/qjs_comment.cc
@@ -377,6 +384,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc
     out/qjs_canvas_rendering_context.cc
+    out/qjs_canvas_gradient.cc
+    out/qjs_canvas_pattern.cc
+    out/qjs_dom_matrix.cc
+    out/qjs_dom_matrix_readonly.cc
+    out/qjs_union_dom_string_sequencedouble.cc
+    out/qjs_unionhtml_image_elementhtml_canvas_element.cc
+    out/qjs_union_dom_stringcanvas_gradient.cc
     out/canvas_types.cc
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc

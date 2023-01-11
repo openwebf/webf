@@ -24,11 +24,13 @@
     from {
       left: 150px;
     }
+
     to {
       left: 0px;
     }
   }
 </style>
+
 <body>
   <p>
     Test passes if there is a filled blue square with 'Filler Text',
@@ -37,11 +39,13 @@
   <div id="main">Filler Text</div>
 </body>
 <script>
-  const main = document.getElementById('main');
-  await sleep(0.1);
-  expect(main.offsetLeft > 120).toBe(true);
-  await sleep(1);
-  expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true);
-  await sleep(1);
-  expect(main.offsetLeft === 0).toBe(true);
+  requestAnimationFrame(async () => {
+    const main = document.getElementById('main');
+    await sleep(0.1);
+    expect(main.offsetLeft > 120).toBe(true, `animation 0% ${main.offsetLeft}`);
+    await sleep(1);
+    expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true, `animation 50% ${main.offsetLeft}`);
+    await sleep(1);
+    expect(main.offsetLeft === 0).toBe(true, `animation 100% ${main.offsetLeft}`);
+  });
 </script>

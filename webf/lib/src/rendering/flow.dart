@@ -510,7 +510,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             // Element of display block will stretch to the width of its container
             // when its width is not specified.
             if (isChildBlockLevel && child.constraints.maxWidth.isInfinite) {
-              double contentBoxWidth = renderStyle.contentBoxWidth!;
+              double contentBoxWidth = isScrollingContentBox ? boxSize!.width : renderStyle.contentBoxWidth!;
               // No need to layout child when its width is identical to parent's width.
               if (child.renderStyle.borderBoxWidth == contentBoxWidth) {
                 continue;

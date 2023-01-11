@@ -1,3 +1,37 @@
+## 0.13.2+1
+
+* remove logs
+
+## 0.13.2
+
+**Features**
+
+* Add Element.classList API support. https://github.com/openwebf/webf/pull/196
+* Add RemoteDevServerService() for remote debugging. https://github.com/openwebf/webf/pull/198
+
+**Bug Fixed**
+
+* Fix fix call binding methods on proxies objects. https://github.com/openwebf/webf/pull/193
+* Fix input have default content padding. https://github.com/openwebf/webf/pull/194
+* Fix history.back() cause page reload. https://github.com/openwebf/webf/pull/195
+* Fix location.href never changed. https://github.com/openwebf/webf/pull/195
+* Fix CommentNode always return empty string of nodeValue. https://github.com/openwebf/webf/pull/197
+* Fix fix img width become infinity when not attached. https://github.com/openwebf/webf/pull/200/files
+* Fix unconstrained inline-block can't calculate content box size. https://github.com/openwebf/webf/pull/201
+* Fix positioned elements should be reapply when toggle display. https://github.com/openwebf/webf/pull/202
+* Fix replaced element didn't render with toggle display. https://github.com/openwebf/webf/pull/203
+* Fix view module value changed by scroll offset. https://github.com/openwebf/webf/pull/207
+* Fix initializeCookie API when twice load. https://github.com/openwebf/webf/pull/208
+* Fix gesture conflict on Android devices. https://github.com/openwebf/webf/pull/210
+
+## 0.13.2-beta.2
+
+* Fix location.href didn't get changed when history changes.
+
+## 0.13.2-beta.1
+
+* fix page reload when history.back().
+
 ## 0.13.1
 
 **Bug Fixed**

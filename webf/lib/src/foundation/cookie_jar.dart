@@ -15,9 +15,13 @@ class CookieJar {
 
   final List<Cookie>? initialCookies;
   CookieJar(this.url, { this.initialCookies }) {
-    _cookieJarFuture ??= initCookieFromStorage().then((cookieJar) {
-      return afterCookieJarLoaded(cookieJar, uri: Uri.parse(url), initialCookies: initialCookies);
-    });
+    if (_cookieJar == null) {
+      _cookieJarFuture = initCookieFromStorage().then((cookieJar) {
+        return afterCookieJarLoaded(cookieJar, uri: Uri.parse(url), initialCookies: initialCookies);
+      });
+    } else {
+      afterCookieJarLoaded(_cookieJar!, uri: Uri.parse(url), initialCookies: initialCookies);
+    }
   }
 
   static Future<PersistCookieJar> afterCookieJarLoaded(PersistCookieJar cookieJar, { Uri? uri, List<Cookie>? initialCookies }) async {
@@ -57,10 +61,10 @@ class CookieJar {
     }
   }
 
-  void deleteCookies() {
+  void clearCookie() {
     Uri uri = Uri.parse(url);
     if (uri.host.isNotEmpty && _cookieJar != null) {
-      _cookieJar!.delete(uri);
+      _cookieJar!.delete(uri, true);
     }
   }
 

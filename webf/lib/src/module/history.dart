@@ -2,7 +2,6 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
@@ -38,8 +37,6 @@ class HistoryModule extends BaseModule {
   }
 
   void _addItem(HistoryItem historyItem) {
-    if (_previousStack.isNotEmpty && historyItem.bundle.url == _previousStack.first.bundle.url) return;
-
     _previousStack.addFirst(historyItem);
 
     // Clear.
@@ -53,9 +50,6 @@ class HistoryModule extends BaseModule {
       HistoryItem currentItem = _previousStack.first;
       _previousStack.removeFirst();
       _nextStack.addFirst(currentItem);
-
-      await goTo(_previousStack.first.bundle.url);
-
       dynamic state = _previousStack.first.state;
       _dispatchPopStateEvent(state);
     }
@@ -66,8 +60,6 @@ class HistoryModule extends BaseModule {
       HistoryItem currentItem = _nextStack.first;
       _nextStack.removeFirst();
       _previousStack.addFirst(currentItem);
-
-      goTo(currentItem.bundle.url);
       _dispatchPopStateEvent(currentItem.state);
     }
   }
@@ -96,13 +88,7 @@ class HistoryModule extends BaseModule {
       }
     }
 
-    goTo(_previousStack.first.bundle.url);
     _dispatchPopStateEvent(_previousStack.first.state);
-  }
-
-  Future<void> goTo(String targetUrl) async {
-    NavigationModule navigationModule = moduleManager!.getModule<NavigationModule>('Navigation')!;
-    await navigationModule.goTo(targetUrl);
   }
 
   void _dispatchPopStateEvent(state) {
@@ -112,46 +98,43 @@ class HistoryModule extends BaseModule {
 
   void pushState(state, {String? url, String? title}) {
     WebFController controller = moduleManager!.controller;
-    if (url != null) {
-      String currentUrl = _previousStack.first.bundle.url;
-      Uri currentUri = Uri.parse(currentUrl);
+    String currentUrl = _previousStack.first.bundle.url;
+    url = url ?? currentUrl;
+    Uri uri = Uri.parse(url);
+    Uri currentUri = Uri.parse(currentUrl);
+    uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
-      Uri uri = Uri.parse(url);
-      uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
-
-      if (uri.host.isNotEmpty && uri.host != currentUri.host) {
-        print('Failed to execute \'pushState\' on \'History\': '
-            'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
-        return;
-      }
-
-      WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
-      HistoryItem history = HistoryItem(bundle, state, false);
-      _addItem(history);
+    if (uri.host.isNotEmpty && uri.host != currentUri.host) {
+      print('Failed to execute \'pushState\' on \'History\': '
+          'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
+      return;
     }
+
+    WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
+    HistoryItem history = HistoryItem(bundle, state, false);
+    _addItem(history);
   }
 
   void replaceState(state, {String? url, String? title}) {
     WebFController controller = moduleManager!.controller;
-    if (url != null) {
-      String currentUrl = _previousStack.first.bundle.url;
-      Uri currentUri = Uri.parse(currentUrl);
+    url = url ?? _previousStack.first.bundle.url;
+    String currentUrl = _previousStack.first.bundle.url;
+    Uri currentUri = Uri.parse(currentUrl);
 
-      Uri uri = Uri.parse(url);
-      uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
+    Uri uri = Uri.parse(url);
+    uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
-      if (uri.host.isNotEmpty && uri.host != currentUri.host) {
-        print('Failed to execute \'pushState\' on \'History\': '
-            'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
-        return;
-      }
-
-      WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
-      HistoryItem history = HistoryItem(bundle, state, false);
-
-      _previousStack.removeFirst();
-      _previousStack.addFirst(history);
+    if (uri.host.isNotEmpty && uri.host != currentUri.host) {
+      print('Failed to execute \'pushState\' on \'History\': '
+          'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
+      return;
     }
+
+    WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
+    HistoryItem history = HistoryItem(bundle, state, false);
+
+    _previousStack.removeFirst();
+    _previousStack.addFirst(history);
   }
 
   @override
