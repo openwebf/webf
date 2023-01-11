@@ -556,6 +556,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
     // Ensure that the child is attached.
     ensureChildAttached();
+
+    // Reconfigure scrollable contents.
+    if (renderStyle.overflowX != CSSOverflowType.visible) {
+      updateRenderBoxModelWithOverflowX(_handleScroll);
+      updateOverflowRenderBox();
+    }
+    if (renderStyle.overflowY != CSSOverflowType.visible) {
+      updateRenderBoxModelWithOverflowY(_handleScroll);
+      updateOverflowRenderBox();
+    }
   }
 
   @override
@@ -1172,16 +1182,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
 
     didAttachRenderer();
-
-    // Reconfigure scrollable contents.
-    if (renderStyle.overflowX != CSSOverflowType.visible) {
-      updateRenderBoxModelWithOverflowX(_handleScroll);
-      updateOverflowRenderBox();
-    }
-    if (renderStyle.overflowY != CSSOverflowType.visible) {
-      updateRenderBoxModelWithOverflowY(_handleScroll);
-      updateOverflowRenderBox();
-    }
   }
 
   void setRenderStyleProperty(String name, value) {
