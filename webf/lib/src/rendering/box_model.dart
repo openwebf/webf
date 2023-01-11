@@ -1331,6 +1331,10 @@ class RenderBoxModel extends RenderBox
     if (positionType == CSSPositionType.relative ||
         positionType == CSSPositionType.static ||
         positionType == CSSPositionType.sticky) {
+      // If the previousSibling is positioned element, should relative to positionHolder.
+      if (after is RenderBoxModel) {
+        after = after.renderPositionPlaceholder ?? after;
+      }
       // If the element's position is 'relative' or 'static',
       // the containing block is formed by the content edge of the nearest block container ancestor box.
       attachRenderBox(containingBlockRenderBox, renderBoxModel, after: after);
