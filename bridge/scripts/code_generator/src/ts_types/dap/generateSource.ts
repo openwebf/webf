@@ -116,6 +116,9 @@ function generateMemberInit(prop: PropsDeclaration, externalInitialize: string[]
   } else {
     initCode = `body->${prop.name} = NULL;`;
   }
+  if (prop.type.isArray) {
+    initCode += `\nbody->${prop.name}Len = 0;`;
+  }
   return initCode;
 }
 

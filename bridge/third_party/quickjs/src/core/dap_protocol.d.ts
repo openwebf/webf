@@ -1108,3 +1108,25 @@ interface SetBreakpointsResponseBody {
 interface SetBreakpointsResponse extends Response {
   body: SetBreakpointsResponseBody;
 }
+
+interface SetExceptionBreakpointsArguments {
+  /**
+   * Set of exception filters specified by their ID. The set of all possible
+   * exception filters is defined by the `exceptionBreakpointFilters`
+   * capability. The `filter` and `filterOptions` sets are additive.
+   */
+  filters: string[];
+}
+
+interface SetExceptionBreakpointsRequest extends Request {
+  command: 'setExceptionBreakpoints';
+  arguments: SetExceptionBreakpointsArguments;
+}
+
+interface SetExceptionBreakpointsResponseBody {
+
+}
+
+interface SetExceptionBreakpointsResponse extends Response {
+  body?: SetExceptionBreakpointsResponseBody;
+}

@@ -375,9 +375,16 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     ScopeResponse* response = initialize_response(ctx, request, "scopes");
     response->body->scopes = js_get_scopes(ctx, frame);
     js_transport_send_response(info, ctx, (Response*)response);
-  } else if (strcmp(command, "setBreakpoints")) {
+  } else if (strcmp(command, "setBreakpoints") == 0) {
     SetBreakpointsArguments* arguments = (SetBreakpointsArguments*)request->arguments;
     js_process_breakpoints(info, arguments->source, arguments->breakpoints, arguments->breakpointsLen);
+    SetBreakpointsResponse* response = initialize_response(ctx, request, "setBreakpoints");
+    js_transport_send_response(info, ctx, (Response*) response);
+  } else if (strcmp(command, "setExceptionBreakpoints") == 0) {
+    SetExceptionBreakpointsArguments* arguments = (SetExceptionBreakpointsArguments*) request->arguments;
+    info->exception_breakpoint = arguments->filtersLen > 0;
+    SetExceptionBreakpointsResponse* response = initialize_response(ctx, request, "setExceptionBreakpoints");
+    js_transport_send_response(info, ctx, (Response*) response);
   } else if (strcmp(command, "variables") == 0) {
     VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;

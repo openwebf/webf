@@ -96,6 +96,7 @@ const char* stringify_event(JSContext* ctx, Event* event, size_t* length) {
   size_t len;
   const char* tmp = JS_ToCStringLen(ctx, &len, jsonString);
   const char* result = copy_string(tmp, len);
+  *length = len;
   JS_FreeCString(ctx, tmp);
   JS_FreeValue(ctx, jsonString);
   JS_FreeValue(ctx, object);
