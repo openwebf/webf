@@ -164,4 +164,37 @@ describe('display', () => {
 
     document.body.appendChild(container);
   });
+
+  it('should work when previous sibiling is positioned element', async (done) => {
+    let positioned = createElement('div', {
+      style: {
+        'position': 'absolute',
+        'background': 'red'
+      }
+    }, [
+      createText('Click Me')
+    ]);
+    let showup = createElement('div', {
+      style: {
+        marginTop: '30px',
+        display: 'none'
+      }
+    }, [
+      createText('Show!')
+    ]);
+
+    positioned.onclick = async () => {
+      showup.style.display = 'block';
+
+      await snapshot();
+      done();
+    };
+
+    document.body.appendChild(positioned);
+    document.body.appendChild(showup);
+
+    await snapshot();
+
+    positioned.click();
+  });
 });
