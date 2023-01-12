@@ -15,12 +15,13 @@ function getLists(set: Set<ClassObject>): string[] {
   });
 }
 
-const generatedTypes = {};
+const stringifyTypes = {};
+const getTypes = {};
 
 function generateTypeStringify(object: ClassObject, propName: string, info: DAPInfoCollector, externalInitialize: string[]): void {
-  if (generatedTypes[object.name]) return;
+  if (stringifyTypes[object.name]) return;
 
-  generatedTypes[object.name] = true;
+  stringifyTypes[object.name] = true;
 
   let stringifyCode : string[] = [];
   if (object.props) {
@@ -29,7 +30,7 @@ function generateTypeStringify(object: ClassObject, propName: string, info: DAPI
       if (code) {
         stringifyCode.push(`{\n ${code} \n }`);
       }
-    })
+    });
   }
 
   externalInitialize.push(`static JSValue stringify_property_${object.name}(JSContext* ctx, ${object.name}* ${propName}) {
@@ -40,8 +41,8 @@ function generateTypeStringify(object: ClassObject, propName: string, info: DAPI
 }
 
 function generateTypeInitialize(object: ClassObject, propTypeName: ParameterType, info: DAPInfoCollector, externalInitialize: string[]): void {
-  if (generatedTypes[object.name]) return;
-  generatedTypes[object.name] = true;
+  if (getTypes[object.name]) return;
+  getTypes[object.name] = true;
   let parserCode: string[] = [];
   if (object.props) {
     object.props.forEach(prop => {

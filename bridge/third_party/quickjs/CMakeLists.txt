@@ -24,6 +24,7 @@ endif()
 list(APPEND QUICK_JS_SOURCE
     src/libbf.c
     src/cutils.c
+    src/hashmap.c
     src/libregexp.c
     src/libunicode.c
     src/core/string.c

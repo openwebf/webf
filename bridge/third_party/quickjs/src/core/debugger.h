@@ -9,6 +9,7 @@
 
 #include <quickjs/quickjs.h>
 #include <quickjs/list.h>
+#include <quickjs/hashmap.h>
 #include "base.h"
 #include "dap_protocol.h"
 
@@ -40,6 +41,13 @@ typedef struct MessageItem {
   struct list_head link;
 } MessageItem;
 
+typedef struct BreakPointMapItem {
+  const char* key;
+  SourceBreakpoint* breakpoints;
+  size_t breakpointLen;
+  size_t dirty;
+} BreakPointMapItem;
+
 typedef struct JSDebuggerInfo {
   // JSContext that is used to for the JSON transport and debugger state.
   JSContext* ctx;
@@ -59,7 +67,7 @@ typedef struct JSDebuggerInfo {
   // Locks when dart JS main thread write new commands to the client. The dart isolate thread should wait for the writing operation complete.
   pthread_mutex_t backend_message_access;
 
-  JSValue breakpoints;
+  struct hashmap* breakpoints;
   int exception_breakpoint;
   uint32_t breakpoints_dirty_counter;
   int stepping;
@@ -74,7 +82,7 @@ void js_debugger_exception(JSContext* ctx);
 void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info);
 int js_debugger_is_transport_connected(JSRuntime* rt);
 
-JSValue js_debugger_file_breakpoints(JSContext* ctx, const char* path);
+BreakPointMapItem* js_debugger_file_breakpoints(JSContext* ctx, const char* path);
 
 // begin internal api functions
 // these functions all require access to quickjs internal structures.

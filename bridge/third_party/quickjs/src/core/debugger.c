@@ -3,16 +3,21 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <pthread.h>
 #include "debugger.h"
+#include <pthread.h>
 #include "base.h"
+#include "dap_converter.h"
+#include "dap_protocol.h"
 #include "parser.h"
 #include "runtime.h"
 #include "types.h"
-#include "dap_converter.h"
-#include "dap_protocol.h"
 
 #if ENABLE_DEBUGGER
+
+static void js_process_breakpoints(JSDebuggerInfo* info,
+                                   Source* source,
+                                   SourceBreakpoint* breakpoints,
+                                   size_t breakpointsLen);
 
 typedef struct DebuggerSuspendedState {
   uint32_t variable_reference_count;
@@ -365,13 +370,16 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     js_debugger_build_backtrace(ctx, state->cur_pc, response->body);
     js_transport_send_response(info, ctx, (Response*) response);
   } else if (strcmp(command, "scopes") == 0) {
-    ScopesArguments* arguments = (ScopesArguments*) request->arguments;
+    ScopesArguments* arguments = (ScopesArguments*)request->arguments;
     int64_t frame = arguments->frameId;
     ScopeResponse* response = initialize_response(ctx, request, "scopes");
     response->body->scopes = js_get_scopes(ctx, frame);
-    js_transport_send_response(info, ctx, (Response*) response);
+    js_transport_send_response(info, ctx, (Response*)response);
+  } else if (strcmp(command, "setBreakpoints")) {
+    SetBreakpointsArguments* arguments = (SetBreakpointsArguments*)request->arguments;
+    js_process_breakpoints(info, arguments->source, arguments->breakpoints, arguments->breakpointsLen);
   } else if (strcmp(command, "variables") == 0) {
-    VariablesArguments* arguments = (VariablesArguments*) request->arguments;
+    VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;
     JSValue variable = JS_GetPropertyUint32(ctx, state->variable_references, reference);
     Variable* variables;
@@ -480,36 +488,30 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
   }
 }
 
-static void js_process_breakpoints(JSDebuggerInfo* info, JSValue message) {
+static void js_process_breakpoints(JSDebuggerInfo* info,
+                                   Source* source,
+                                   SourceBreakpoint* breakpoints,
+                                   size_t breakpointsLen) {
   JSContext* ctx = info->ctx;
 
   // force all functions to reprocess their breakpoints.
   info->breakpoints_dirty_counter++;
 
-  JSValue path_property = JS_GetPropertyStr(ctx, message, "path");
-  const char* path = JS_ToCString(ctx, path_property);
-  JSValue path_data = JS_GetPropertyStr(ctx, info->breakpoints, path);
+  const char* path = source->path;
+  SourceBreakpoint* breakpoint = hashmap_get(info->breakpoints, &(struct BreakPointMapItem){.key = path});
+  if (breakpoints != NULL) {
+    js_free(ctx, breakpoint);
+  }
 
-  if (!JS_IsUndefined(path_data))
-    JS_FreeValue(ctx, path_data);
-  // use an object to store the breakpoints as a sparse array, basically.
-  // this will get resolved into a pc array mirror when its detected as dirty.
-  path_data = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, info->breakpoints, path, path_data);
-  JS_FreeCString(ctx, path);
-  JS_FreeValue(ctx, path_property);
-
-  JSValue breakpoints = JS_GetPropertyStr(ctx, message, "breakpoints");
-  JS_SetPropertyStr(ctx, path_data, "breakpoints", breakpoints);
-  JS_SetPropertyStr(ctx, path_data, "dirty", JS_NewInt32(ctx, info->breakpoints_dirty_counter));
-
-  JS_FreeValue(ctx, message);
+  hashmap_set(info->breakpoints, &(struct BreakPointMapItem){.key = path,
+                                                             .breakpoints = breakpoints,
+                                                             .breakpointLen = breakpointsLen,
+                                                             .dirty = info->breakpoints_dirty_counter});
 }
 
-JSValue js_debugger_file_breakpoints(JSContext* ctx, const char* path) {
+BreakPointMapItem* js_debugger_file_breakpoints(JSContext* ctx, const char* path) {
   JSDebuggerInfo* info = js_debugger_info(JS_GetRuntime(ctx));
-  JSValue path_data = JS_GetPropertyStr(ctx, info->breakpoints, path);
-  return path_data;
+  return hashmap_get(info->breakpoints, &(struct BreakPointMapItem){ .key = path });
 }
 
 static int js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur_pc) {
@@ -716,11 +718,20 @@ void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info) {
   }
 
   info->is_connected = FALSE;
-  JS_FreeValue(info->debugging_ctx, info->breakpoints);
   JS_FreeContext(info->debugging_ctx);
   info->debugging_ctx = NULL;
 }
 
+int breakpoint_compare(const void* a, const void* b, void* udata) {
+  const struct BreakPointMapItem* ua = a;
+  const struct BreakPointMapItem* ub = b;
+  return strcmp(ua->key, ub->key);
+}
+
+uint64_t breakpoint_hash(const void* item, uint64_t seed0, uint64_t seed1) {
+  const struct BreakPointMapItem* user = item;
+  return hashmap_sip(user->key, strlen(user->key), seed0, seed1);
+}
 
 void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   JSRuntime* rt = JS_GetRuntime(ctx);
@@ -729,6 +740,9 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
 
   init_list_head(&info->frontend_messages);
   init_list_head(&info->backend_message);
+
+  info->breakpoints =
+      hashmap_new(sizeof(struct BreakPointMapItem), 0, 0, 0, breakpoint_hash, breakpoint_compare, NULL, NULL);
 
   // Attach native methods and export to Dart.
   methods->write_frontend_commands = handle_client_write;
@@ -742,7 +756,6 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
 
   js_send_stopped_event(info, "entry");
 
-  info->breakpoints = JS_NewObject(info->debugging_ctx);
   info->is_paused = 1;
 
   js_process_debugger_messages(info, NULL);
@@ -840,7 +853,6 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
 }
 
 int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const uint8_t* cur_pc) {
-  JSValue path_data = JS_UNDEFINED;
   if (!ctx->rt->current_stack_frame)
     return 0;
   JSObject* f = JS_VALUE_GET_OBJ(ctx->rt->current_stack_frame->cur_func);
@@ -859,15 +871,12 @@ int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const u
   b->debugger.dirty = current_dirty;
 
   const char* filename = JS_AtomToCString(ctx, b->debug.filename);
-  path_data = js_debugger_file_breakpoints(ctx, filename);
+  BreakPointMapItem* path_data = js_debugger_file_breakpoints(ctx, filename);
   JS_FreeCString(ctx, filename);
-  if (JS_IsUndefined(path_data))
+  if (path_data == NULL)
     goto done;
 
-  JSValue path_dirty_value = JS_GetPropertyStr(ctx, path_data, "dirty");
-  uint32_t path_dirty;
-  JS_ToUint32(ctx, &path_dirty, path_dirty_value);
-  JS_FreeValue(ctx, path_dirty_value);
+  uint32_t path_dirty = path_data->dirty;
   // check the dirty value on this source file specifically
   if (path_dirty == dirty)
     goto done;
@@ -878,12 +887,8 @@ int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const u
     b->debugger.breakpoints = js_malloc_rt(ctx->rt, b->byte_code_len);
   memset(b->debugger.breakpoints, 0, b->byte_code_len);
 
-  JSValue breakpoints = JS_GetPropertyStr(ctx, path_data, "breakpoints");
-
-  JSValue breakpoints_length_property = JS_GetPropertyStr(ctx, breakpoints, "length");
-  uint32_t breakpoints_length;
-  JS_ToUint32(ctx, &breakpoints_length, breakpoints_length_property);
-  JS_FreeValue(ctx, breakpoints_length_property);
+  SourceBreakpoint* breakpoints = path_data->breakpoints;
+  size_t breakpoints_length = path_data->breakpointLen;
 
   const uint8_t *p_end, *p;
   int new_line_num, line_num, pc, v, ret;
@@ -895,12 +900,8 @@ int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const u
   line_num = b->debug.line_num;
 
   for (uint32_t i = 0; i < breakpoints_length; i++) {
-    JSValue breakpoint = JS_GetPropertyUint32(ctx, breakpoints, i);
-    JSValue breakpoint_line_prop = JS_GetPropertyStr(ctx, breakpoint, "line");
-    uint32_t breakpoint_line;
-    JS_ToUint32(ctx, &breakpoint_line, breakpoint_line_prop);
-    JS_FreeValue(ctx, breakpoint_line_prop);
-    JS_FreeValue(ctx, breakpoint);
+    SourceBreakpoint breakpoint = breakpoints[i];
+    uint32_t breakpoint_line = breakpoint.line;
 
     // breakpoint is before the current line.
     // todo: this may be an invalid breakpoint if it's inside the function, but got
@@ -955,11 +956,8 @@ int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const u
   }
 
 fail:
-  JS_FreeValue(ctx, breakpoints);
 
 done:
-  JS_FreeValue(ctx, path_data);
-
   if (!b->debugger.breakpoints)
     return 0;
 

@@ -492,7 +492,7 @@ interface StepOutRequest extends Request {
 interface StepOutResponseBody {}
 
 interface StepOutResponse extends Response {
-  body: StepInResponseBody;
+  body: StepOutResponseBody;
 }
 
 interface StackFrameFormat extends ValueFormat {
@@ -968,4 +968,143 @@ interface ThreadEvent extends Event {
   event: 'thread';
 
   body: ThreadEventBody;
+}
+
+interface SourceBreakpoint {
+  /**
+   * The source line of the breakpoint or logpoint.
+   */
+  line: int64;
+
+  /**
+   * Start position within source line of the breakpoint or logpoint. It is
+   * measured in UTF-16 code units and the client capability `columnsStartAt1`
+   * determines whether it is 0- or 1-based.
+   */
+  column?: int64;
+
+  /**
+   * The expression for conditional breakpoints.
+   * It is only honored by a debug adapter if the corresponding capability
+   * `supportsConditionalBreakpoints` is true.
+   */
+  condition?: string;
+
+  /**
+   * The expression that controls how many hits of the breakpoint are ignored.
+   * The debug adapter is expected to interpret the expression as needed.
+   * The attribute is only honored by a debug adapter if the corresponding
+   * capability `supportsHitConditionalBreakpoints` is true.
+   */
+  hitCondition?: string;
+
+  /**
+   * If this attribute exists and is non-empty, the debug adapter must not
+   * 'break' (stop)
+   * but log the message instead. Expressions within `{}` are interpolated.
+   * The attribute is only honored by a debug adapter if the corresponding
+   * capability `supportsLogPoints` is true.
+   */
+  logMessage?: string;
+}
+
+interface SetBreakpointsArguments {
+  /**
+   * The source location of the breakpoints; either `source.path` or
+   * `source.sourceReference` must be specified.
+   */
+  source: Source;
+
+  /**
+   * The code locations of the breakpoints.
+   */
+  breakpoints?: SourceBreakpoint[];
+
+  /**
+   * A value of true indicates that the underlying source has been modified
+   * which results in new breakpoint locations.
+   */
+  sourceModified?: boolean;
+}
+
+interface SetBreakpointsRequest extends Request {
+  command: 'setBreakpoints';
+
+  arguments: SetBreakpointsArguments;
+}
+
+interface Breakpoint {
+  /**
+   * The identifier for the breakpoint. It is needed if breakpoint events are
+   * used to update or remove breakpoints.
+   */
+  id?: int64;
+
+  /**
+   * If true, the breakpoint could be set (but not necessarily at the desired
+   * location).
+   */
+  verified: boolean;
+
+  /**
+   * A message about the state of the breakpoint.
+   * This is shown to the user and can be used to explain why a breakpoint could
+   * not be verified.
+   */
+  message?: string;
+
+  /**
+   * The source where the breakpoint is located.
+   */
+  source?: Source;
+
+  /**
+   * The start line of the actual range covered by the breakpoint.
+   */
+  line?: int64;
+
+  /**
+   * Start position of the source range covered by the breakpoint. It is
+   * measured in UTF-16 code units and the client capability `columnsStartAt1`
+   * determines whether it is 0- or 1-based.
+   */
+  column?: int64;
+
+  /**
+   * The end line of the actual range covered by the breakpoint.
+   */
+  endLine?: int64;
+
+  /**
+   * End position of the source range covered by the breakpoint. It is measured
+   * in UTF-16 code units and the client capability `columnsStartAt1` determines
+   * whether it is 0- or 1-based.
+   * If no end line is given, then the end column is assumed to be in the start
+   * line.
+   */
+  endColumn?: int64;
+
+  /**
+   * A memory reference to where the breakpoint is set.
+   */
+  instructionReference?: string;
+
+  /**
+   * The offset from the instruction reference.
+   * This can be negative.
+   */
+  offset?: int64;
+}
+
+interface SetBreakpointsResponseBody {
+  /**
+   * Information about the breakpoints.
+   * The array elements are in the same order as the elements of the
+   * `breakpoints` (or the deprecated `lines`) array in the arguments.
+   */
+  breakpoints: Breakpoint[];
+}
+
+interface SetBreakpointsResponse extends Response {
+  body: SetBreakpointsResponseBody;
 }
