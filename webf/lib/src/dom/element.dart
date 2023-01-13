@@ -556,6 +556,20 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
     // Ensure that the child is attached.
     ensureChildAttached();
+
+    // Reconfigure scrollable contents.
+    bool needUpdateOverflowRenderBox = false;
+    if (renderStyle.overflowX != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowX(_handleScroll);
+    }
+    if (renderStyle.overflowY != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowY(_handleScroll);
+    }
+    if (needUpdateOverflowRenderBox) {
+      updateOverflowRenderBox();
+    }
   }
 
   @override
@@ -582,6 +596,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
       // Clear pointer listener
       clearEventResponder(renderBoxModel);
+
+      // Remove scrollable
+      renderBoxModel.disposeScrollable();
+      disposeScrollable();
     }
   }
 
