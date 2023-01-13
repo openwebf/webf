@@ -558,12 +558,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     ensureChildAttached();
 
     // Reconfigure scrollable contents.
+    bool needUpdateOverflowRenderBox = false;
     if (renderStyle.overflowX != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
       updateRenderBoxModelWithOverflowX(_handleScroll);
-      updateOverflowRenderBox();
     }
     if (renderStyle.overflowY != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
       updateRenderBoxModelWithOverflowY(_handleScroll);
+    }
+    if (needUpdateOverflowRenderBox) {
       updateOverflowRenderBox();
     }
   }
