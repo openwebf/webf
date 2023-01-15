@@ -9,7 +9,6 @@
 
 #include <quickjs/quickjs.h>
 #include <quickjs/list.h>
-#include <quickjs/hashmap.h>
 #include "base.h"
 #include "dap_protocol.h"
 
@@ -42,7 +41,6 @@ typedef struct MessageItem {
 } MessageItem;
 
 typedef struct BreakPointMapItem {
-  const char* key;
   SourceBreakpoint* breakpoints;
   size_t breakpointLen;
   size_t dirty;
@@ -67,7 +65,7 @@ typedef struct JSDebuggerInfo {
   // Locks when dart JS main thread write new commands to the client. The dart isolate thread should wait for the writing operation complete.
   pthread_mutex_t backend_message_access;
 
-  struct hashmap* breakpoints;
+  JSValue breakpoints;
   int exception_breakpoint;
   uint32_t breakpoints_dirty_counter;
   int stepping;

@@ -512,20 +512,29 @@ static void js_process_breakpoints(JSDebuggerInfo* info,
   info->breakpoints_dirty_counter++;
 
   const char* path = source->path;
-  SourceBreakpoint* breakpoint = hashmap_get(info->breakpoints, &(struct BreakPointMapItem){.key = path});
-  if (breakpoints != NULL) {
-    js_free(ctx, breakpoint);
+  if (JS_HasPropertyStr(ctx, info->breakpoints, path)) {
+    JSAtom k = JS_NewAtom(ctx, path);
+    JS_DeleteProperty(ctx, info->breakpoints, k, 0);
+    JS_FreeAtom(ctx, k);
   }
 
-  hashmap_set(info->breakpoints, &(struct BreakPointMapItem){.key = path,
-                                                             .breakpoints = breakpoints,
-                                                             .breakpointLen = breakpointsLen,
-                                                             .dirty = info->breakpoints_dirty_counter});
+  JSValue object = JS_NewObject(ctx);
+  BreakPointMapItem* item = js_malloc(ctx, sizeof(BreakPointMapItem));
+  item->breakpoints = breakpoints;
+  item->breakpointLen = breakpointsLen;
+  item->dirty = info->breakpoints_dirty_counter;
+  JS_SetOpaque(object, item);
+
+  printf("SET BREAKPOINT: %s\n", path);
+  JS_SetPropertyStr(ctx, info->breakpoints, path, object);
 }
 
 BreakPointMapItem* js_debugger_file_breakpoints(JSContext* ctx, const char* path) {
   JSDebuggerInfo* info = js_debugger_info(JS_GetRuntime(ctx));
-  return hashmap_get(info->breakpoints, &(struct BreakPointMapItem){ .key = path });
+  JSValue object = JS_GetPropertyStr(ctx, info->breakpoints, path);
+  BreakPointMapItem* item = JS_GetOpaque(object, JS_CLASS_OBJECT);
+  JS_FreeValue(ctx, object);
+  return item;
 }
 
 static int js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur_pc) {
@@ -543,34 +552,9 @@ static int js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur
     if (!read_frontend_messages(info, &item)) {
       goto done;
     }
-
-//    JSValue message = JS_ParseJSON(ctx, item.buf, item.length, "<debugger>");
-//    if (JS_IsException(message)) {
-//      printf("item message error %s", item.buf);
-//    }
-
     Request* request = js_malloc(ctx, sizeof(Request));
     parse_request(ctx, request, item.buf, item.length);
     process_request(info, &state, request);
-    info->is_paused = 0;
-
-//    JSValue vtype = JS_GetPropertyStr(ctx, message, "type");
-//    const char* type = JS_ToCString(ctx, vtype);
-//    if (strcmp("request", type) == 0) {
-//      js_process_request(info, &state,message);
-//      // done_processing = 1;
-//    } else if (strcmp("continue", type) == 0) {
-//      info->is_paused = 0;
-//    } else if (strcmp("breakpoints", type) == 0) {
-//      js_process_breakpoints(info, JS_GetPropertyStr(ctx, message, "breakpoints"));
-//    } else if (strcmp("stopOnException", type) == 0) {
-//      JSValue stop = JS_GetPropertyStr(ctx, message, "stopOnException");
-//      info->exception_breakpoint = JS_ToBool(ctx, stop);
-//      JS_FreeValue(ctx, stop);
-//    }
-
-//    JS_FreeCString(ctx, type);
-//    JS_FreeValue(ctx, vtype);
   } while (info->is_paused);
 
   ret = 1;
@@ -732,19 +716,9 @@ void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info) {
   }
 
   info->is_connected = FALSE;
+  JS_FreeValue(info->debugging_ctx, info->breakpoints);
   JS_FreeContext(info->debugging_ctx);
   info->debugging_ctx = NULL;
-}
-
-int breakpoint_compare(const void* a, const void* b, void* udata) {
-  const struct BreakPointMapItem* ua = a;
-  const struct BreakPointMapItem* ub = b;
-  return strcmp(ua->key, ub->key);
-}
-
-uint64_t breakpoint_hash(const void* item, uint64_t seed0, uint64_t seed1) {
-  const struct BreakPointMapItem* user = item;
-  return hashmap_sip(user->key, strlen(user->key), seed0, seed1);
 }
 
 void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
@@ -755,8 +729,7 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   init_list_head(&info->frontend_messages);
   init_list_head(&info->backend_message);
 
-  info->breakpoints =
-      hashmap_new(sizeof(struct BreakPointMapItem), 0, 0, 0, breakpoint_hash, breakpoint_compare, NULL, NULL);
+  info->breakpoints = JS_NewObject(ctx);
 
   // Attach native methods and export to Dart.
   methods->write_frontend_commands = handle_client_write;
