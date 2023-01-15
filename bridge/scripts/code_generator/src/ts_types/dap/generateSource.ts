@@ -16,7 +16,12 @@ function getLists(set: Set<ClassObject>): string[] {
 }
 
 const stringifyTypes = {};
-const getTypes = {};
+const initializeTypes: {
+  [key: string]: {
+    normal: boolean;
+    array: boolean
+  }
+} = {};
 
 function generateTypeStringify(object: ClassObject, propName: string, info: DAPInfoCollector, externalInitialize: string[]): void {
   if (stringifyTypes[object.name]) return;
@@ -40,9 +45,21 @@ function generateTypeStringify(object: ClassObject, propName: string, info: DAPI
   }`)
 }
 
-function generateTypeInitialize(object: ClassObject, propTypeName: ParameterType, info: DAPInfoCollector, externalInitialize: string[]): void {
-  if (getTypes[object.name]) return;
-  getTypes[object.name] = true;
+function generateTypeInitialize(object: ClassObject, propType: ParameterType, info: DAPInfoCollector, externalInitialize: string[], isArray?: boolean): void {
+  if (initializeTypes[object.name]) {
+    const type = initializeTypes[object.name];
+    if (isArray) {
+      if (type.array) {
+        return;
+      }
+    } else {
+      if (type.normal) return;
+    }
+  }
+  initializeTypes[object.name] = {
+    normal: !isArray,
+    array: !!isArray
+  };
   let parserCode: string[] = [];
   if (object.props) {
     object.props.forEach(prop => {
@@ -53,13 +70,60 @@ function generateTypeInitialize(object: ClassObject, propTypeName: ParameterType
     });
   }
 
-  externalInitialize.push(`static ${object.name}* get_property_${propTypeName.value}(JSContext* ctx, JSValue this_object, const char* prop) {
+  let initCode = '';
+
+  if (isArray) {
+    initCode = `
+  JSValue arr = JS_GetPropertyStr(ctx, this_object, prop);
+  int64_t len = get_property_int64(ctx, arr, "length");
+  *length = len;
+  ${object.name}* return_value = js_malloc(ctx, sizeof(${object.name}) * len);
+  for(int i = 0; i < len; i ++) {
+    JSValue arguments = JS_GetPropertyUint32(ctx, arr, i);
+    ${object.name}* args = &return_value[i];
+    ${parserCode.join('\n')}
+    JS_FreeValue(ctx, arguments);
+  }
+  
+  JS_FreeValue(ctx, arr);
+  return return_value;
+`;
+  } else {
+    initCode = `
   JSValue arguments = JS_GetPropertyStr(ctx, this_object, prop);
   ${object.name}* args = js_malloc(ctx, sizeof(${object.name}));
   ${parserCode.join('\n')}
   JS_FreeValue(ctx, arguments);
-  return args;
+  return args;`;
+  }
+
+  externalInitialize.push(`static ${object.name}* get_property_${getTypeName(propType)}${isArray ? '_1' : ''}(JSContext* ctx, JSValue this_object, const char* prop${isArray ? ', size_t* length' : ''}) {
+${initCode}
 }`);
+}
+
+enum PropTypeKind {
+  normal,
+  reference,
+  referenceArray,
+  normalArray
+}
+
+function getTypeKind(type: ParameterType): PropTypeKind {
+  if (type.isArray) {
+    const value = (type.value as ParameterType).value;
+    if (typeof value === 'number') return PropTypeKind.normalArray;
+    return PropTypeKind.referenceArray;
+  }
+  if (typeof type.value === 'string') return PropTypeKind.reference;
+  return PropTypeKind.normal
+}
+
+function getTypeName(type: ParameterType) {
+  if (typeof type.value === 'object') {
+    return (type.value as ParameterType).value;
+  }
+  return type.value;
 }
 
 function generatePropParser(prop: PropsDeclaration, externalInitialize: string[], info: DAPInfoCollector): string | null {
@@ -86,6 +150,7 @@ function generatePropParser(prop: PropsDeclaration, externalInitialize: string[]
 }`, 2);
   }
 
+  const typeKind = getTypeKind(prop.type);
   let callCode = '';
   if (prop.type[0] === FunctionArgumentType.dom_string) {
     callCode = `args->${prop.name} = get_property_string_copy(ctx, arguments, "${prop.name}");`;
@@ -98,9 +163,38 @@ function generatePropParser(prop: PropsDeclaration, externalInitialize: string[]
   } else {
     let targetTypes = Array.from(info.others).find(o => o.name === prop.type[0]);
 
+    let value = prop.type.value;
+    if (isArray) {
+      value = (value as ParameterType).value;
+      callCode += 'size_t length;\n'
+    }
+
+    if (value === FunctionArgumentType.dom_string) {
+      callCode += `args->${prop.name} = get_property_string_copy${isArray ? '_1' : ''}(ctx, arguments, "${prop.name}"${isArray ? ', &length' : ''});\n`;
+    } else if (value === FunctionArgumentType.double) {
+      callCode += `args->${prop.name} = get_property_float64${isArray ? '_1' : ''}(ctx, arguments, "${prop.name}");\n`;
+    } else if (value === FunctionArgumentType.int64) {
+      callCode += `args->${prop.name} = get_property_int64${isArray ? '_1' : ''}(ctx, arguments, "${prop.name}");\n`
+    } else if (value === FunctionArgumentType.boolean) {
+      callCode += `args->${prop.name} = get_property_boolean${isArray ? '_1' : ''}(ctx, arguments, "${prop.name}");\n`
+    }
+    if (isArray) {
+      callCode += `args->${prop.name}Len = length;\n`;
+    }
+  } else if (typeKind === PropTypeKind.reference || typeKind === PropTypeKind.referenceArray) {
+    let targetTypes = Array.from(info.others).find(o => {
+      return o.name === getTypeName(prop.type)
+    });
     if (targetTypes) {
-      generateTypeInitialize(targetTypes, prop.type, info, externalInitialize);
-      callCode = `args->${prop.name} = get_property_${prop.type.value}(ctx, arguments, "${prop.name}");`
+      const isArray = prop.type.isArray;
+      generateTypeInitialize(targetTypes, prop.type, info, externalInitialize, isArray);
+      if (isArray) {
+        callCode += `size_t length;\n`
+      }
+      callCode += `args->${prop.name} = get_property_${getTypeName(prop.type)}${isArray ? '_1' : ''}(ctx, arguments, "${prop.name}"${isArray ? ', &length' : ''});\n`;
+      if (isArray) {
+        callCode += `args->${prop.name}Len = length;\n`;
+      }
     }
   }
 

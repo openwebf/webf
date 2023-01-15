@@ -9,6 +9,8 @@
 #if ENABLE_DEBUGGER
 static int64_t response_seq = 0;
 
+static int64_t get_property_int64(JSContext* ctx, JSValue this_object, const char* prop);
+
 const char* copy_string(const char* string, size_t len) {
   char* buf = (char*)malloc(len + 1);
   memcpy(buf, string, len);
@@ -24,6 +26,27 @@ static const char* get_property_string_copy(JSContext* ctx, JSValue this_object,
  JS_FreeCString(ctx, tmp);
  JS_FreeValue(ctx, vp);
  return result;
+}
+static const char** get_property_string_copy_1(JSContext* ctx, JSValue this_object, const char* prop, size_t* arr_len) {
+  JSValue arr = JS_GetPropertyStr(ctx, this_object, prop);
+  int64_t length = get_property_int64(ctx, arr, "length");
+  *arr_len = length;
+
+  if (length == 0) return NULL;
+
+  const char** return_value = js_malloc(ctx, sizeof(char*) * length);
+
+  for(int i = 0; i < length; i ++) {
+    JSValue vp = JS_GetPropertyUint32(ctx, arr, i);
+    size_t len;
+    const char* tmp = JS_ToCStringLen(ctx, &len, vp);
+    return_value[i] = copy_string(tmp, len);
+    JS_FreeCString(ctx, tmp);
+    JS_FreeValue(ctx, vp);
+    JS_FreeValue(ctx, vp);
+  }
+
+  return return_value;
 }
 static int64_t get_property_int64(JSContext* ctx, JSValue this_object, const char* prop) {
  JSValue vp = JS_GetPropertyStr(ctx, this_object, prop);

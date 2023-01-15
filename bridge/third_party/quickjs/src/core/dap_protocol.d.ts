@@ -615,13 +615,6 @@ interface Source {
   sources?: Source[];
 
   /**
-   * Additional data that a debug adapter might want to loop through the client.
-   * The client should leave the data intact and persist it across sessions. The
-   * client should not interpret the data.
-   */
-  adapterData?: any;
-
-  /**
    * The checksums associated with this file.
    */
   checksums?: Checksum[];
@@ -1124,9 +1117,45 @@ interface SetExceptionBreakpointsRequest extends Request {
 }
 
 interface SetExceptionBreakpointsResponseBody {
-
+  /**
+   * Information about the exception breakpoints or filters.
+   * The breakpoints returned are in the same order as the elements of the
+   * `filters`, `filterOptions`, `exceptionOptions` arrays in the arguments.
+   * If both `filters` and `filterOptions` are given, the returned array must
+   * start with `filters` information first, followed by `filterOptions`
+   * information.
+   */
+  breakpoints?: Breakpoint[];
 }
 
 interface SetExceptionBreakpointsResponse extends Response {
   body?: SetExceptionBreakpointsResponseBody;
+}
+
+interface ThreadsRequest extends Request {
+  command: 'threads';
+}
+
+interface Thread {
+  /**
+   * Unique identifier for the thread.
+   */
+  id: int64;
+
+  /**
+   * The name of the thread.
+   */
+  name: string;
+}
+
+
+interface ThreadsResponseBody {
+  /**
+   * All threads.
+   */
+  threads: Thread[];
+}
+
+interface ThreadsResponse extends Response {
+  body: ThreadsResponseBody;
 }

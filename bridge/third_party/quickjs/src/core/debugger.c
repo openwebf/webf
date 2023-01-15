@@ -385,6 +385,13 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     info->exception_breakpoint = arguments->filtersLen > 0;
     SetExceptionBreakpointsResponse* response = initialize_response(ctx, request, "setExceptionBreakpoints");
     js_transport_send_response(info, ctx, (Response*) response);
+  } else if (strcmp(command, "threads") == 0) {
+    ThreadsResponse* response = initialize_response(ctx, request, "threads");
+    response->body->threads = js_malloc(ctx, sizeof(Thread));
+    response->body->threads->name = "main";
+    response->body->threads->id = (int64_t)ctx;
+    response->body->threadsLen = 1;
+    js_transport_send_response(info, ctx, (Response*) response);
   } else if (strcmp(command, "variables") == 0) {
     VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;
