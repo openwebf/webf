@@ -241,8 +241,28 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Right:
         return style.right.cssText();
       case CSSPropertyID.Width:
+        if (style.width.isAuto) {
+          if (style.renderBoxModel?.hasSize == true) {
+            final boxWidth = style.renderBoxModel?.boxSize?.width;
+            if (boxWidth != null && boxWidth > 0) {
+              return '${boxWidth.cssText()}px';
+            }
+          } else {
+            return 'auto';
+          }
+        }
         return style.width.cssText();
       case CSSPropertyID.Height:
+        if (style.height.isAuto) {
+          if (style.renderBoxModel?.hasSize == true) {
+            final boxHeight = style.renderBoxModel?.boxSize?.height;
+            if (boxHeight != null && boxHeight > 0) {
+              return '${boxHeight.cssText()}px';
+            }
+          } else {
+            return 'auto';
+          }
+        }
         return style.height.cssText();
       case CSSPropertyID.MaxHeight:
         return style.maxHeight.cssText();

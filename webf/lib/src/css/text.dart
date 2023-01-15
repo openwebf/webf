@@ -63,12 +63,12 @@ mixin CSSTextMixin on RenderStyle {
     renderBoxModel?.markNeedsLayout();
   }
 
-  Color? _textDecorationColor;
-  Color? get textDecorationColor {
+  CSSColor? _textDecorationColor;
+  CSSColor? get textDecorationColor {
     return _textDecorationColor;
   }
 
-  set textDecorationColor(Color? value) {
+  set textDecorationColor(CSSColor? value) {
     if (_textDecorationColor == value) return;
     _textDecorationColor = value;
     // Non inheritable style change should only update text node in direct children.
@@ -493,7 +493,7 @@ mixin CSSTextMixin on RenderStyle {
     TextStyle textStyle = TextStyle(
         color: color ?? renderStyle.color.value,
         decoration: renderStyle.textDecorationLine,
-        decorationColor: renderStyle.textDecorationColor,
+        decorationColor: renderStyle.textDecorationColor?.value,
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
