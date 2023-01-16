@@ -300,9 +300,9 @@ function generateRequestParser(info: DAPInfoCollector, requests: string[], exter
     }
     const name = request.replace('Request', '');
     return addIndent(`if (strcmp(command, "${_.camelCase(name)}") == 0) {
-  ${name}Arguments* args = js_malloc(ctx, sizeof(${name}Arguments));
+    ${targetArgument.props.length > 0 ? `${name}Arguments* args = js_malloc(ctx, sizeof(${name}Arguments));
   ${parserCode.join('\n')}
-  return args;
+  return args;` : ''}  
 }`, 2);
 
   }).join('\n');
@@ -331,6 +331,7 @@ function generateEventInitializer(info: DAPInfoCollector, events: string[], exte
     return addIndent(`if (strcmp(event, "${_.camelCase(event.replace('Event', ''))}") == 0) {
   ${event}* result = js_malloc(ctx, sizeof(${event}));
   result->event = event;
+  result->seq = _seq++;
   ${event}Body* body = js_malloc(ctx, sizeof(${event}Body));
 ${addIndent(bodyInitCode.join('\n'), 2)}
   result->body = body;
@@ -362,14 +363,16 @@ function generateResponseInitializer(info: DAPInfoCollector, responses: string[]
     return addIndent(`if (strcmp(response, "${_.camelCase(response.replace('Response', ''))}") == 0) {
   ${response}* result = js_malloc(ctx, sizeof(${response}));
   result->type = "response";
-  result->seq = response_seq++;
+  result->seq = _seq++;
   result->request_seq = corresponding_request->seq;
   result->command = corresponding_request->command;
   result->success = 1;
   result->message = NULL;
-  ${response}Body* body = js_malloc(ctx, sizeof(${response}Body));
+  ${targetBody.props.length > 0 ? `
+ ${response}Body* body = js_malloc(ctx, sizeof(${response}Body));
 ${addIndent(bodyInitCode.join('\n'), 2)}
-  result->body = body;
+  result->body = body;` : 'result->body = NULL;'}
+  
   return result;
 }`, 2);
 

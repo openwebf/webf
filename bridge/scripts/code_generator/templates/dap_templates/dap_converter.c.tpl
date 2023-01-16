@@ -7,7 +7,7 @@
 #include <string.h>
 #include "dap_protocol.h"
 #if ENABLE_DEBUGGER
-static int64_t response_seq = 0;
+static int64_t _seq = 0;
 
 static int64_t get_property_int64(JSContext* ctx, JSValue this_object, const char* prop);
 
@@ -134,8 +134,9 @@ const char* stringify_response(JSContext* ctx, Response* response) {
  JSValue object = JS_NewObject(ctx);
  printf("response command %s", response->command);
  JS_SetPropertyStr(ctx, object, "type", JS_NewString(ctx, "response"));
- JS_SetPropertyStr(ctx, object, "request_seq", JS_NewInt64(ctx, response->seq));
+ JS_SetPropertyStr(ctx, object, "request_seq", JS_NewInt64(ctx, response->request_seq));
  JS_SetPropertyStr(ctx, object, "success", JS_NewBool(ctx, response->success == 1));
+ JS_SetPropertyStr(ctx, object, "seq", JS_NewInt64(ctx, response->seq));
  JS_SetPropertyStr(ctx, object, "command", JS_NewString(ctx, response->command));
  if (response->message != NULL) {
    JS_SetPropertyStr(ctx, object, "message", JS_NewString(ctx, response->message));
