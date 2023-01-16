@@ -1159,3 +1159,18 @@ interface ThreadsResponseBody {
 interface ThreadsResponse extends Response {
   body: ThreadsResponseBody;
 }
+
+interface ConfigurationDoneArguments {
+}
+
+interface ConfigurationDoneRequest extends Request {
+  command: 'configurationDone';
+
+  arguments?: ConfigurationDoneArguments;
+}
+
+interface ConfigurationDoneResponseBody {}
+
+interface ConfigurationDoneResponse extends Response {
+  body: ConfigurationDoneResponseBody
+}

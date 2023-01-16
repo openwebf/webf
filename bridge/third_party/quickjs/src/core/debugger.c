@@ -170,7 +170,7 @@ static JSValue js_transport_new_envelope(JSDebuggerInfo* info, const char* type)
   return ret;
 }
 
-static uint32_t js_transport_send_event(JSDebuggerInfo* info, Event* event) {
+static void js_transport_send_event(JSDebuggerInfo* info, Event* event) {
   size_t length;
   const char* buf = stringify_event(info->ctx, event, &length);
   write_backend_message(info, buf, length);
@@ -392,6 +392,10 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     response->body->threads->id = (int64_t)ctx;
     response->body->threadsLen = 1;
     js_transport_send_response(info, ctx, (Response*) response);
+  } else if (strcmp(command, "configurationDone") == 0) {
+    info->is_paused = 0;
+    ConfigurationDoneResponse* response = initialize_response(ctx, request, "threads");
+    js_transport_send_response(info, ctx, (Response*) response);
   } else if (strcmp(command, "variables") == 0) {
     VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;
@@ -498,7 +502,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     VariablesResponse* response = initialize_response(ctx, request, "variable");
     response->body->variables = variables;
     response->body->variablesLen = variableLen;
-    js_transport_send_response(info, ctx, response);
+    js_transport_send_response(info, ctx, (Response*) response);
   }
 }
 
@@ -537,7 +541,7 @@ BreakPointMapItem* js_debugger_file_breakpoints(JSContext* ctx, const char* path
   return item;
 }
 
-static int js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur_pc) {
+static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur_pc) {
   // continue processing messages until the continue message is received.
   JSContext* ctx = info->ctx;
   struct DebuggerSuspendedState state;
@@ -545,24 +549,20 @@ static int js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur
   state.variable_pointers = JS_NewObject(ctx);
   state.variable_references = JS_NewObject(ctx);
   state.cur_pc = cur_pc;
-  int ret = 0;
 
   do {
     MessageItem item;
     if (!read_frontend_messages(info, &item)) {
-      goto done;
+      continue;
     }
     Request* request = js_malloc(ctx, sizeof(Request));
     parse_request(ctx, request, item.buf, item.length);
     process_request(info, &state, request);
   } while (info->is_paused);
 
-  ret = 1;
-
 done:
   JS_FreeValue(ctx, state.variable_references);
   JS_FreeValue(ctx, state.variable_pointers);
-  return ret;
 }
 
 void js_debugger_exception(JSContext* ctx) {
@@ -687,8 +687,8 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc) {
     }
   }
 
-  if (js_process_debugger_messages(info, cur_pc))
-    goto done;
+  js_process_debugger_messages(info, cur_pc);
+
 done:
   info->is_debugging = 0;
   info->ctx = NULL;
@@ -744,8 +744,6 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   js_send_stopped_event(info, "entry");
 
   info->is_paused = 1;
-
-  js_process_debugger_messages(info, NULL);
 
   info->ctx = original_ctx;
 
@@ -828,6 +826,8 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
         if (column_num1 != -1) {
           stack_frames[id].column = column_num1;
         }
+        stack_frames[id].source = js_malloc(ctx, sizeof(Source));
+        stack_frames[id].source->path = atom_to_string(ctx, b->debug.filename);
       }
     } else {
       stack_frames[id].name = "(native)";
