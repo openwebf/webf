@@ -1198,7 +1198,7 @@ class RenderBoxModel extends RenderBox
     ));
   }
 
-  // Reaint native EngineLayer sources with LayerHandle.
+  // Repaint native EngineLayer sources with LayerHandle.
   final LayerHandle<ColorFilterLayer> _colorFilterLayer = LayerHandle<ColorFilterLayer>();
 
   void paintColorFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {

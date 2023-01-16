@@ -53,6 +53,11 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
     // If renderer is not created, use an empty RenderBox to occupy the position, but not do layout or paint.
     RenderBox child = childNode.renderer ?? _createEmptyRenderObject();
 
+    if(!child.isRepaintBoundary) {
+      _RenderSliverRepaintProxy? repaintBoundary = _createRepaintRenderObject(child);
+      child = repaintBoundary;
+    }
+
     if (_hasLayout) {
       _sliverListLayout.insertSliverChild(child, after: after);
     }
@@ -68,6 +73,10 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
     return _RenderSliverItemProxy();
   }
 
+  _RenderSliverRepaintProxy _createRepaintRenderObject(RenderBox? child) {
+    return _RenderSliverRepaintProxy(child);
+  }
+
   @override
   bool debugAssertChildListLocked() => true;
 
@@ -79,7 +88,8 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
 
   @override
   void removeChild(RenderBox child) {
-    if (child is RenderBoxModel) {
+    if (child is RenderBoxModel || child is _RenderSliverRepaintProxy &&
+        child.parentData is SliverMultiBoxAdaptorParentData) {
       SliverMultiBoxAdaptorParentData parentData = child.parentData as SliverMultiBoxAdaptorParentData;
       // The index of sliver list.
       int index = parentData.index!;
@@ -87,6 +97,9 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
       Iterable<Node> renderNodes = _renderNodes;
       if (index < renderNodes.length) {
         renderNodes.elementAt(index).unmountRenderObject(deep: true, keepFixedAlive: true);
+        if(child is _RenderSliverRepaintProxy && child.parent is ContainerRenderObjectMixin) {
+          (child.parent as ContainerRenderObjectMixin).remove(child);
+        }
         return;
       }
     }
@@ -132,3 +145,11 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
 
 /// Used for the placeholder for empty sliver item.
 class _RenderSliverItemProxy extends RenderProxyBox {}
+
+/// Used for the sliver item which is not RepaintBoundary
+class _RenderSliverRepaintProxy extends RenderProxyBox {
+  _RenderSliverRepaintProxy(RenderBox? child):super(child);
+
+  @override
+  bool get isRepaintBoundary => true;
+}
