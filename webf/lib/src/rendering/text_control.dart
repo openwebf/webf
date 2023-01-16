@@ -108,4 +108,8 @@ class RenderTextControlLeaderLayer extends RenderLeaderLayer {
     final Offset transformedOffset = offset.translate(_offset!.dx, _offset!.dy);
     super.paint(context, transformedOffset);
   }
+
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
+  }
 }

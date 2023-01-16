@@ -7,8 +7,16 @@ import 'dart:ui' as ui show LineMetrics, Gradient, Shader, TextBox, TextHeightBe
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/src/rendering/text_span.dart';
 
 const String _kEllipsis = '\u2026';
+class WebFRenderTextLine {
+  late Rect lineRect = Rect.zero;
+  late TextPainter textPainter;
+
+  WebFRenderTextLine();
+}
+
 
 /// Forked from Flutter RenderParagraph
 /// Flutter's paragraph line-height calculation logic differs from web's
@@ -69,8 +77,9 @@ class WebFRenderParagraph extends RenderBox
   // The line mertics of paragraph
   late List<ui.LineMetrics> _lineMetrics;
 
-  // The vertical offset of each line
-  late List<double> _lineOffset;
+  late List<WebFRenderTextLine> _lineRenders;
+
+  List<WebFRenderTextLine> get lineRenderList => _lineRenders;
 
   // The line height of paragraph
   double? _lineHeight;
@@ -79,6 +88,8 @@ class WebFRenderParagraph extends RenderBox
     if (lineHeight == value) return;
     _lineHeight = value;
   }
+
+  List<ui.LineMetrics> get lineMetrics => _lineMetrics;
 
   // The text to display.
   TextSpan get text => _textPainter.text as TextSpan;
@@ -102,6 +113,10 @@ class WebFRenderParagraph extends RenderBox
   set textAlign(TextAlign value) {
     if (_textPainter.textAlign == value) return;
     _textPainter.textAlign = value;
+  }
+
+  ui.LineMetrics getLineMetricsByLineNum(int index) {
+    return _lineMetrics[index];
   }
 
   /// The directionality of the text.
@@ -227,7 +242,9 @@ class WebFRenderParagraph extends RenderBox
 
   /// Compute distance to baseline of first text line
   double computeDistanceToFirstLineBaseline() {
-    double firstLineOffset = _lineOffset[0];
+    // double firstLineOffset = _lineVerticalOffset[0];
+    double firstLineOffset = _lineRenders[0].lineRect.top;
+
     ui.LineMetrics firstLineMetrics = _lineMetrics[0];
 
     // Use the baseline of the last line as paragraph baseline.
@@ -236,11 +253,15 @@ class WebFRenderParagraph extends RenderBox
 
   /// Compute distance to baseline of last text line
   double computeDistanceToLastLineBaseline() {
-    double lastLineOffset = _lineOffset[_lineOffset.length - 1];
+    double lastLineOffset = _lineRenders[_lineRenders.length - 1].lineRect.top;
     ui.LineMetrics lastLineMetrics = _lineMetrics[_lineMetrics.length - 1];
 
     // Use the baseline of the last line as paragraph baseline.
     return text.text == '' ? 0.0 : (lastLineOffset + lastLineMetrics.ascent);
+  }
+
+  void setPlaceholderDimensions(List<PlaceholderDimensions>? value) {
+    _textPainter.setPlaceholderDimensions(value);
   }
 
   @override
@@ -325,37 +346,30 @@ class WebFRenderParagraph extends RenderBox
     _layoutText(minWidth: constraints.minWidth, maxWidth: constraints.maxWidth);
   }
 
-  // Get text of each line in the paragraph.
-  List<String> _getLineTexts(TextPainter textPainter, TextSpan textSpan) {
-    TextSelection selection = TextSelection(baseOffset: 0, extentOffset: textSpan.text!.length);
-    List<TextBox> boxes = textPainter.getBoxesForSelection(selection);
+  List<String> _getLineTextByLineMetrics(TextPainter textPainter, TextSpan textSpan) {
     List<String> lineTexts = [];
-    int start = 0;
-    int end;
-    int index = -1;
-    // Loop through each text box
-    for (TextBox box in boxes) {
-      // Text include ideographic characters such as Chinese may be counted as seperated text box
-      // if font-family not specified, it needs to filter text box not started from 0 such as following:
-      // TextBox.fromLTRBD(14.0, 1.7, 39.1, 18.2, TextDirection.ltr)
-      if (box.left != 0) {
-        continue;
+    int checkOffset = 0;
+    for (int i = 0; i < _lineMetrics.length; i++) {
+      TextRange range = _textPainter.getLineBoundary(TextPosition(offset: checkOffset));
+
+      List<Object> content = (textSpan as WebFTextSpan).subContent(range.start, range.end);
+      List<WebFTextPlaceHolderSpan> placeHolder = content.whereType<WebFTextPlaceHolderSpan>().toList();
+      List<String> stringContent = content.whereType<String>().toList();
+
+      double totalLeft = 0;
+      if (placeHolder.isNotEmpty) {
+        totalLeft = placeHolder
+            .map((element) => element.lastDimensions?.size.width ?? 0)
+            .reduce((value, element) => value + element);
       }
 
-      index += 1;
-      if (index == 0) continue;
-      // Go one logical pixel within the box and get the position
-      // of the character in the string.
-      end = textPainter.getPositionForOffset(Offset(box.left + 1, box.top + 1)).offset;
-      // add the substring to the list of lines
-      final line = textSpan.text!.substring(start, end);
-      lineTexts.add(line);
-      start = end;
+      Rect old = _lineRenders[i].lineRect;
+      _lineRenders[i].lineRect =
+          Rect.fromLTWH(totalLeft + _lineMetrics[i].left, old.top,
+              _lineMetrics[i].width - totalLeft, old.height);
+      lineTexts.add(stringContent[0]);
+      checkOffset = range.end + 1;
     }
-    // get the last substring
-    final extra = textSpan.text!.substring(start);
-    lineTexts.add(extra);
-
     return lineTexts;
   }
 
@@ -366,17 +380,24 @@ class WebFRenderParagraph extends RenderBox
     // Leading of each line
     List<double> _lineLeading = [];
 
-    _lineOffset = [];
+    _lineRenders = _lineMetrics.map((element) => WebFRenderTextLine()).toList();
     for (int i = 0; i < _lineMetrics.length; i++) {
       ui.LineMetrics lineMetric = _lineMetrics[i];
       // Do not add line height in the case of textOverflow ellipsis
       // cause height of line metric equals to 0.
-      double leading = lineHeight != null && lineMetric.height != 0 ? lineHeight! - lineMetric.height : 0;
+      double leading = 0;
+      if (lineHeight != null && lineMetric.height != 0) {
+        leading = lineHeight! - lineMetric.height;
+      }
       _lineLeading.add(leading);
       // Offset of previous line
-      double preLineBottom = i > 0 ? _lineOffset[i - 1] + _lineMetrics[i - 1].height + _lineLeading[i - 1] / 2 : 0;
+      double preLineBottom = 0;
+      if (i > 0) {
+        preLineBottom = _lineRenders[i - 1].lineRect.top + _lineMetrics[i - 1].height + _lineLeading[i - 1] / 2;
+      }
       double offset = preLineBottom + leading / 2;
-      _lineOffset.add(offset);
+      Rect old = _lineRenders[i].lineRect;
+      _lineRenders[i].lineRect = Rect.fromLTWH(old.left, offset, old.width, lineHeight!);
     }
   }
 
@@ -401,9 +422,8 @@ class WebFRenderParagraph extends RenderBox
   void _relayoutMultiLineText() {
     final BoxConstraints constraints = this.constraints;
     // Get text of each line
-    List<String> lineTexts = _getLineTexts(_textPainter, _textPainter.text as TextSpan);
+    List<String> lineTexts = _getLineTextByLineMetrics(_textPainter, _textPainter.text as TextSpan);
 
-    _lineTextPainters = [];
     // Create text painter of each line and layout
     for (int i = 0; i < lineTexts.length; i++) {
       String lineText = lineTexts[i];
@@ -422,7 +442,8 @@ class WebFRenderParagraph extends RenderBox
           strutStyle: strutStyle,
           textWidthBasis: textWidthBasis,
           textHeightBehavior: textHeightBehavior);
-      _lineTextPainters.add(_lineTextPainter);
+      _lineRenders[i].textPainter = _lineTextPainter;
+
 
       final bool widthMatters = softWrap || overflow == TextOverflow.ellipsis;
       _lineTextPainter.layout(
@@ -548,15 +569,9 @@ class WebFRenderParagraph extends RenderBox
 
     if (lineHeight != null) {
       // Adjust text paint offset of each line according to line-height.
-      for (int i = 0; i < _lineTextPainters.length; i++) {
-        // _lineTextPainters and _lineOffset may not have the same length in some edge cases
-        // cause _lineTextPainters is computed from [getBoxesForSelection] api while
-        // _lineOffset is computed from [computeLineMetrics] api.
-        // Add protection here to prevent access the overflow index of _lineOffset list.
-        if (i >= _lineOffset.length) continue;
-
-        TextPainter _lineTextPainter = _lineTextPainters[i];
-        Offset lineOffset = Offset(offset.dx, offset.dy + _lineOffset[i]);
+      for (int i = 0; i < _lineRenders.length; i++) {
+        TextPainter _lineTextPainter = _lineRenders[i].textPainter;
+        Offset lineOffset = Offset(offset.dx + _lineRenders[i].lineRect.left, offset.dy + _lineRenders[i].lineRect.top);
         _lineTextPainter.paint(context.canvas, lineOffset);
       }
     } else {

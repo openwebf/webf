@@ -6,6 +6,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/rendering/text_span.dart';
 
 final RegExp _commaRegExp = RegExp(r'\s*,\s*');
 
@@ -509,10 +510,7 @@ mixin CSSTextMixin on RenderStyle {
         background: CSSText.getBackground(),
         foreground: CSSText.getForeground(),
         height: height);
-    return TextSpan(
-      text: text,
-      style: textStyle,
-    );
+    return WebFTextSpan(text: CSSText.toCharacterBreakStr(text), style: textStyle, children: []);
   }
 }
 
@@ -726,6 +724,18 @@ class CSSText {
       default:
         return FontStyle.normal;
     }
+  }
+
+  static String? toCharacterBreakStr(String? word) {
+    if (word == null || word.isEmpty) {
+      return null;
+    }
+    String breakWord = '';
+    word.runes.forEach((element) {
+      breakWord += String.fromCharCode(element);
+      breakWord += '\u200B';
+    });
+    return breakWord;
   }
 
   static TextBaseline getTextBaseLine() {

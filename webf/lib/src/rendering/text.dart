@@ -2,12 +2,13 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ui';
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
-
+import 'dart:ui' as ui show PlaceholderAlignment;
 // White space processing in CSS affects only the document white space characters:
 // spaces (U+0020), tabs (U+0009), and segment breaks.
 // Carriage returns (U+000D) are treated identically to spaces (U+0020) in all respects.
@@ -32,6 +33,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       textDirection: TextDirection.ltr,
     );
   }
+  RenderTextLineBoxes textInLineBoxes = RenderTextLineBoxes();
 
   String _data;
 
@@ -122,6 +124,10 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   double minContentWidth = 0;
   double minContentHeight = 0;
 
+  double firstLineLeftExtent = 0;
+
+  LogicTextInlineBox get firstTextInlineBox => textInLineBoxes.firstChild;
+
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;
 
@@ -167,8 +173,32 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   TextSpan get textSpan {
     String clippedText = _getClippedText(_trimmedData);
     // FIXME(yuanyan): do not create text span every time.
-    return CSSTextMixin.createTextSpan(clippedText, renderStyle);
+    //
+    WebFTextSpan textSpan = CSSTextMixin.createTextSpan(clippedText, renderStyle) as WebFTextSpan;
+    return textSpan;
   }
+
+  int get lines => _renderParagraph.lineMetrics.length;
+
+  bool happenLineArticulate() {
+    if(firstLineLeftExtent > 0 && textInLineBoxes.firstChild.logicRect.left >= firstLineLeftExtent)
+    {
+      return true;
+    }
+    return false;
+  }
+
+
+  List<double>? getLineAscent(int lineNum){
+    LineMetrics lineMetrics = _renderParagraph.getLineMetricsByLineNum(lineNum);
+    double lineHeight = _lineHeight ?? 0;
+    double leading = 0;
+    if(lineHeight>0) {
+      leading = lineHeight - lineMetrics.height;
+    }
+    return [lineMetrics.ascent + leading/2, lineMetrics.descent + leading/2];
+  }
+
 
   // Mirror debugNeedsLayout flag in Flutter to use in layout performance optimization
   bool needsLayout = false;
@@ -320,11 +350,21 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     if (paragraph != null) {
       paragraph.overflow = renderStyle.effectiveTextOverflow;
       paragraph.textAlign = renderStyle.textAlign;
-      paragraph.text = textSpan;
+
+      WebFTextSpan text = (paragraph.text as WebFTextSpan);
+      if (firstLineLeftExtent > 0) {
+        WebFTextPlaceHolderSpan placeHolderSpan = WebFTextPlaceHolderSpan();
+        text.children!.add(placeHolderSpan);
+        text.textSpanPosition.putIfAbsent(placeHolderSpan, () => true);
+        paragraph.setPlaceholderDimensions(
+            [PlaceholderDimensions(size: Size(firstLineLeftExtent, 18), alignment: ui.PlaceholderAlignment.bottom)]);
+      }
       paragraph.maxLines = _maxLines;
       paragraph.lineHeight = _lineHeight;
       paragraph.layout(constraints, parentUsesSize: true);
-
+      paragraph.lineRenderList.forEach((element) {
+        textInLineBoxes.createAndAppendTextBox(this, element.lineRect);
+      });
       size = paragraph.size;
 
       // @FIXME: Minimum size of text equals to single word in browser
@@ -372,11 +412,20 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 }
 
 class RenderTextLineBoxes {
-  LogicTextInlineBox? firstChild;
-  LogicTextInlineBox? lastChild;
-  RenderTextLineBoxes({this.firstChild,this.lastChild});
+  List<LogicTextInlineBox> inlineBoxList = [];
+  LogicTextInlineBox get firstChild => inlineBoxList.first;
+  LogicTextInlineBox createAndAppendTextBox(RenderTextBox renderObject,Rect rect) {
+    inlineBoxList.add(LogicTextInlineBox(logicRect: rect,renderObject: renderObject));
+    return inlineBoxList.last;
+  }
+  clear(){
+    inlineBoxList.clear();
+  }
+  get(int index) {
+    return inlineBoxList[index];
+  }
 
-  LogicTextInlineBox createAndAppendTextBox(RenderTextBox renderObject){
-    return LogicTextInlineBox(renderObject: renderObject);
+  int findIndex(LogicTextInlineBox box) {
+    return inlineBoxList.indexOf(box);
   }
 }

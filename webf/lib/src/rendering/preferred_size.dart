@@ -41,6 +41,10 @@ class RenderPreferredSize extends RenderProxyBox {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Size>('preferredSize', _preferredSize, missingIfNull: true));
   }
+
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
+  }
 }
 
 /// A placeholder for positioned RenderBox
