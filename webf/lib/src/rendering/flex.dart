@@ -2370,6 +2370,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     properties.add(DiagnosticsProperty<FlexWrap>('flexWrap', renderStyle.flexWrap));
   }
 
+
+  @override
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
+  }
+
   static bool _isPlaceholderPositioned(RenderObject child) {
     if (child is RenderPositionPlaceholder) {
       RenderBoxModel realDisplayedBox = child.positioned!;

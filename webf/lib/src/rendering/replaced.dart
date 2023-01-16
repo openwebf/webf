@@ -187,6 +187,11 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     }
     return super.hitTestChildren(result, position: position!);
   }
+
+  @override
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
+  }
 }
 
 class RenderRepaintBoundaryReplaced extends RenderReplaced {

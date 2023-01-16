@@ -370,3 +370,13 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return hasSize && size.contains(position!);
   }
 }
+
+class RenderTextLineBoxes {
+  LogicTextInlineBox? firstChild;
+  LogicTextInlineBox? lastChild;
+  RenderTextLineBoxes({this.firstChild,this.lastChild});
+
+  LogicTextInlineBox createAndAppendTextBox(RenderTextBox renderObject){
+    return LogicTextInlineBox(renderObject: renderObject);
+  }
+}

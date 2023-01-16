@@ -877,6 +877,10 @@ class RenderBoxModel extends RenderBox
     }
   }
 
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
+  }
+
   @override
   void layout(Constraints newConstraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);

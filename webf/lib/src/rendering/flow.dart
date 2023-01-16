@@ -58,6 +58,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   // Line boxes of flow layout.
   // https://www.w3.org/TR/css-inline-3/#line-boxes
   List<_RunMetrics> _lineBoxMetrics = <_RunMetrics>[];
+  RenderLineBoxes lineBoxes = RenderLineBoxes();
 
   @override
   void dispose() {
@@ -251,6 +252,28 @@ class RenderFlowLayout extends RenderLayoutBox {
     _setMaxScrollableSize(_runMetrics);
   }
 
+  bool isLineBreak(RenderBox child,
+      RenderBox? preChild,
+      double mainAxisExtent,
+      double mainAxisExtentLimit,
+      double childExtent) {
+
+    // Previous is block or current is block.
+    if(_isChildBlockLevel(child) || _isChildBlockLevel(preChild) || preChild is RenderLineBreak) {
+      return true;
+    }
+
+    // Line length is exceed container.
+    // The white-space property not only specifies whether and how white space is collapsed
+    // but only specifies whether lines may wrap at unforced soft wrap opportunities
+    // https://www.w3.org/TR/css-text-3/#line-breaking
+    if(renderStyle.whiteSpace != WhiteSpace.nowrap && mainAxisExtent + childExtent > mainAxisExtentLimit) {
+      return true;
+    }
+
+    return false;
+  }
+
   // Layout children in normal flow order to calculate metrics of lines according to its constraints
   // and alignment properties.
   List<_RunMetrics> _computeRunMetrics(
@@ -332,24 +355,23 @@ class RenderFlowLayout extends RenderLayoutBox {
           }
         }
       }
-      if (runChildren.isNotEmpty &&
-          // Current is block.
-          (_isChildBlockLevel(child) ||
-              // Previous is block.
-              _isChildBlockLevel(preChild) ||
-              // Line length is exceed container.
-              // The white-space property not only specifies whether and how white space is collapsed
-              // but only specifies whether lines may wrap at unforced soft wrap opportunities
-              // https://www.w3.org/TR/css-text-3/#line-breaking
-              (whiteSpace != WhiteSpace.nowrap && (runMainAxisExtent + childMainAxisExtent > mainAxisLimit)) ||
-              // Previous is linebreak.
-              preChild is RenderLineBreak)) {
+      if (runChildren.isNotEmpty && isLineBreak(child, preChild, runMainAxisExtent, mainAxisLimit, childMainAxisExtent)
+      ) {
+        if(child is RenderTextBox) {
+
+        }
         _runMetrics.add(_RunMetrics(
           runMainAxisExtent,
           runCrossAxisExtent,
           maxSizeAboveBaseline,
           runChildren,
         ));
+
+        lineBoxes.addLineBox(LogicLineBox(
+            renderObject: this,
+            baselineExtent: maxSizeAboveBaseline,
+            crossAxisExtent: runCrossAxisExtent,
+            mainAxisExtent: runMainAxisExtent));
         runChildren = {};
         runMainAxisExtent = 0.0;
         runCrossAxisExtent = 0.0;
@@ -402,6 +424,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       runChildren[childNodeId] = child;
+      lineBoxes.appendInlineBox((child as RenderBoxModel).createLogicInlineBox());
 
       childParentData.runIndex = _runMetrics.length;
       preChild = child;
@@ -414,6 +437,12 @@ class RenderFlowLayout extends RenderLayoutBox {
         maxSizeAboveBaseline,
         runChildren,
       ));
+
+      lineBoxes.addLineBox(LogicLineBox(
+          renderObject: this,
+          baselineExtent: maxSizeAboveBaseline,
+          crossAxisExtent: runCrossAxisExtent,
+          mainAxisExtent: runMainAxisExtent));
     }
 
     _lineBoxMetrics = _runMetrics;
@@ -1069,6 +1098,30 @@ class RenderFlowLayout extends RenderLayoutBox {
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
     return defaultHitTestChildren(result, position: position);
+  }
+}
+
+class RenderLineBoxes {
+  LogicLineBox? firstLineBox;
+  LogicLineBox? lastLineBox;
+
+  RenderLineBoxes({this.firstLineBox,this.lastLineBox});
+
+  addLineBox(LogicLineBox lineBox) {
+
+  }
+  appendInlineBox(LogicInlineBox box) {
+    assert(lastLineBox!=null && firstLineBox!=null,'flow add inline box failed, line not exit');
+    lastLineBox!.appendInlineBox(box);
+  }
+
+  deleteLineBoxes() {
+
+  }
+
+  dispose() {
+    firstLineBox = null;
+    lastLineBox = null;
   }
 }
 
