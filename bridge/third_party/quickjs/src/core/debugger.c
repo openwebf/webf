@@ -71,6 +71,47 @@ static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
   return 1;
 }
 
+static void init_source(Source* source) {
+  source->path = NULL;
+  source->name = NULL;
+  source->presentationHint = NULL;
+  source->origin = NULL;
+  source->checksums = NULL;
+  source->checksumsLen = 0;
+  source->sourceReference = NAN;
+  source->sources = 0;
+  source->sourcesLen = 0;
+}
+
+static void init_stackframe(StackFrame* stack_frame) {
+  stack_frame->id = NAN;
+  stack_frame->name = NULL;
+  stack_frame->source = NULL;
+  stack_frame->line = NAN;
+  stack_frame->column = NAN;
+  stack_frame->endColumn = NAN;
+  stack_frame->endLine = NAN;
+  stack_frame->canRestart = 0;
+  stack_frame->presentationHint = NULL;
+  stack_frame->instructionPointerReference = NULL;
+  stack_frame->moduleId = NULL;
+}
+
+static void init_scope(Scope* scope) {
+  scope->name = NULL;
+  scope->presentationHint = NULL;
+  scope->variablesReference = NAN;
+  scope->namedVariables = NAN;
+  scope->indexedVariables = NAN;
+  scope->expensive = 0;
+  scope->source = NULL;
+  scope->line = NAN;
+  scope->column = NAN;
+  scope->endLine = NAN;
+  scope->endColumn = NAN;
+}
+
+
 // Handler for read backend messages from Dart Client.
 static uint32_t handle_client_read(void* ptr, DebuggerMessage* message) {
   JSDebuggerInfo* info = (JSDebuggerInfo*)ptr;
@@ -189,6 +230,11 @@ static Scope* js_get_scopes(JSContext* ctx, int64_t frame) {
   // for now this is always the same.
   // global, local, closure. may change in the future. can check if closure is empty.
   Scope* scope = js_malloc(ctx, sizeof(Scope) * 3);
+
+  // Init scopes
+  for(int i = 0; i < 3; i ++) {
+    init_scope(&scope[i]);
+  }
 
   // Get local scope
   scope[0].name = "Local";
@@ -372,7 +418,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
   } else if (strcmp(command, "scopes") == 0) {
     ScopesArguments* arguments = (ScopesArguments*)request->arguments;
     int64_t frame = arguments->frameId;
-    ScopeResponse* response = initialize_response(ctx, request, "scopes");
+    ScopesResponse* response = initialize_response(ctx, request, "scopes");
     response->body->scopes = js_get_scopes(ctx, frame);
     js_transport_send_response(info, ctx, (Response*)response);
   } else if (strcmp(command, "setBreakpoints") == 0) {
@@ -800,6 +846,9 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
 
   for (sf = ctx->rt->current_stack_frame; sf != NULL; sf = sf->prev_frame) {
     uint32_t id = stack_index++;
+
+    init_stackframe(&stack_frames[id]);
+
     stack_frames[id].id = id;
     func_name_str = get_func_name(ctx, sf->cur_func);
     if (!func_name_str || func_name_str[0] == '\0') {
@@ -826,7 +875,9 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
         if (column_num1 != -1) {
           stack_frames[id].column = column_num1;
         }
+
         stack_frames[id].source = js_malloc(ctx, sizeof(Source));
+        init_source(stack_frames[id].source);
         stack_frames[id].source->path = atom_to_string(ctx, b->debug.filename);
       }
     } else {

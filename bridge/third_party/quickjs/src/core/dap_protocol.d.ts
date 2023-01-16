@@ -812,7 +812,7 @@ interface Scope {
   endColumn?: number;
 }
 
-interface ScopeResponseBody {
+interface ScopesResponseBody {
   /**
    * The scopes of the stack frame. If the array has length zero, there are no
    * scopes available.
@@ -820,8 +820,8 @@ interface ScopeResponseBody {
   scopes: Scope[];
 }
 
-interface ScopeResponse extends Response {
-  body: ScopeResponseBody;
+interface ScopesResponse extends Response {
+  body: ScopesResponseBody;
 }
 
 interface VariablesArguments {
