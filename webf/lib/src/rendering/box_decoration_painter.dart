@@ -626,12 +626,12 @@ void _paintImage({
 
   // Use position as length type if specified in positionX/ positionY, otherwise use as percentage type.
   final double dx = positionX.calcValue != null
-      ? positionX.calcValue!.computedValue(BACKGROUND_POSITION_X)
+      ? positionX.calcValue!.computedValue(BACKGROUND_POSITION_X) ?? 0
       : positionX.length != null
           ? positionX.length!.computedValue
           : halfWidthDelta + (flipHorizontally ? -positionX.percentage! : positionX.percentage!) * halfWidthDelta;
   final double dy = positionY.calcValue != null
-      ? positionY.calcValue!.computedValue(BACKGROUND_POSITION_Y)
+      ? positionY.calcValue!.computedValue(BACKGROUND_POSITION_Y) ?? 0
       : positionY.length != null
           ? positionY.length!.computedValue
           : halfHeightDelta + positionY.percentage! * halfHeightDelta;

@@ -591,14 +591,6 @@ class CSSBackground {
       default:
         List<String> values = value.split(splitRegExp);
 
-        for (int i = 0; i < values.length; i++) {
-          String value = values[i];
-          CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName, value);
-          if (calcValue != null) {
-            values[i] = '${calcValue.computedValue(propertyName)}px';
-          }
-        }
-
         if (values.length == 1 && values[0].isNotEmpty) {
           CSSLengthValue width = CSSLength.parseLength(values[0], renderStyle, propertyName, Axis.horizontal);
           return CSSBackgroundSize(

@@ -247,8 +247,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
             if (boxWidth != null && boxWidth > 0) {
               return '${boxWidth.cssText()}px';
             }
-          } else {
-            return 'auto';
           }
         }
         return style.width.cssText();
@@ -259,8 +257,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
             if (boxHeight != null && boxHeight > 0) {
               return '${boxHeight.cssText()}px';
             }
-          } else {
-            return 'auto';
           }
         }
         return style.height.cssText();

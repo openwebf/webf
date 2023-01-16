@@ -46,10 +46,13 @@ enum CSSLengthType {
 }
 
 class CSSLengthValue {
+  final CSSCalcValue? calcValue;
   final double? value;
   final CSSLengthType type;
 
-  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]) {
+  CSSLengthValue.calc(this.calcValue, RenderStyle? renderStyle, String? propertyName): value = null, type = CSSLengthType.PX;
+
+  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]): calcValue = null {
     if (propertyName != null) {
       if (type == CSSLengthType.EM) {
         renderStyle!.addFontRelativeProperty(propertyName!);
@@ -62,7 +65,6 @@ class CSSLengthValue {
   String cssText() {
     switch(type) {
       case CSSLengthType.PX:
-        return '${value?.cssText()}px';
       case CSSLengthType.EM:
         return '${computedValue.cssText()}px';
       case CSSLengthType.REM:
@@ -107,6 +109,11 @@ class CSSLengthValue {
   // which can not be computed to a specific value, eg. percentage height is sometimes parsed
   // to be auto due to parent height not defined.
   double get computedValue {
+    if (calcValue != null) {
+      _computedValue = calcValue!.computedValue(propertyName ?? '') ?? 0;
+      return _computedValue!;
+    }
+
     // Use cached value if type is not percentage which may needs 2 layout passes to resolve the
     // final computed value.
     if (renderStyle?.renderBoxModel != null && propertyName != null && type != CSSLengthType.PERCENTAGE) {
@@ -116,7 +123,6 @@ class CSSLengthValue {
         return cachedValue;
       }
     }
-
     switch (type) {
       case CSSLengthType.PX:
         _computedValue = value;
@@ -375,6 +381,11 @@ class CSSLengthValue {
   }
 
   bool get isAuto {
+    if (calcValue != null) {
+      if (calcValue!.expression == null) {
+        return true;
+      }
+    }
     switch (propertyName) {
       // Length is considered as auto of following properties
       // if it computes to double.infinity in cases of percentage.
@@ -515,7 +526,7 @@ class CSSLength {
             _nonNegativeLengthRegExp.hasMatch(value));
   }
 
-  static CSSLengthValue? resolveLength(String text, RenderStyle? renderStyle, String propertyName) {
+  static dynamic resolveLength(String text, RenderStyle? renderStyle, String propertyName) {
     if (text.isEmpty) {
       // Empty string means delete value.
       return null;
@@ -525,14 +536,6 @@ class CSSLength {
   }
 
   static CSSLengthValue parseLength(String text, RenderStyle? renderStyle, [String? propertyName, Axis? axisType]) {
-    if (renderStyle != null) {
-      dynamic calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', text);
-      if (calcValue != null && calcValue is CSSCalcValue) {
-        final value = calcValue.computedValue(propertyName ?? '');
-        return CSSLengthValue(value, CSSLengthType.PX);
-      }
-    }
-
     double? value;
     CSSLengthType unit = CSSLengthType.PX;
     if (text == ZERO) {
@@ -594,6 +597,14 @@ class CSSLength {
       if (value != null) value = value / 100;
       unit = CSSLengthType.PERCENTAGE;
     } else if (CSSFunction.isFunction(text)) {
+
+      if (renderStyle != null) {
+        CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', text);
+        if (calcValue != null) {
+          return CSSLengthValue.calc(calcValue, renderStyle, propertyName);
+        }
+      }
+
       List<CSSFunctionalNotation> notations = CSSFunction.parseFunction(text);
       // https://drafts.csswg.org/css-env/#env-function
       // Using Environment Variables: the env() notation
