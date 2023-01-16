@@ -61,8 +61,7 @@ class CSSPosition {
       String input, RenderStyle renderStyle, String propertyName, bool isHorizontal) {
     dynamic calcValue = CSSCalcValue.tryParse(renderStyle, propertyName, input);
     if (calcValue != null && calcValue is CSSCalcValue) {
-      final value = calcValue.computedValue(propertyName);
-      return CSSBackgroundPosition(length: CSSLengthValue(value, CSSLengthType.PX));
+      return CSSBackgroundPosition(calcValue: calcValue);
     }
     if (CSSPercentage.isPercentage(input)) {
       return CSSBackgroundPosition(percentage: _gatValuePercentage(input));
