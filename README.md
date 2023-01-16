@@ -13,7 +13,7 @@ WebF (Web on Flutter) is a W3C standards compliant Web rendering engine based on
 
 The WebF project is a community support version of [Alibaba's Kraken Project](https://github.com/openkraken/kraken). On May 10, 2022, The Kraken Dev Team was dismissed and the project itself are discontinued. 
 
-The core developer and core architecture: [andycall](https://github.com/andycall), who is from the original Kraken Team. Leave the Alibaba Group and launch this project, to keep following the original ambition of the Kraken project. 
+The core developer and architector: [andycall](https://github.com/andycall), who is from the original Kraken Team. Leave the Alibaba Group and launch this project, to keep following the original ambition of the Kraken project. 
 
 For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510449
 
