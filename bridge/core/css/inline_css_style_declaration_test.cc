@@ -84,7 +84,6 @@ TEST(CSSStyleDeclaration, supportHyphen) {
   EXPECT_EQ(errorCalled, false);
 }
 
-
 TEST(InlineCSSStyleDeclaration, setNullValue) {
   bool static errorCalled = false;
   bool static logCalled = false;
