@@ -51,7 +51,7 @@ static JSValue HandleJSPropertyGetterCallback(JSContext* ctx, JSValueConst obj, 
 
   JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
   if (JS_HasProperty(ctx, prototypeObject, atom)) {
-    JSValue ret = JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, 0);
+    JSValue ret = JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
     return ret;
   }
 
