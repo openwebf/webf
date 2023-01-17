@@ -87,6 +87,27 @@ static force_inline JSShapeProperty* find_own_property(JSProperty** ppr, JSObjec
   *ppr = NULL;
   return NULL;
 };
+static force_inline JSShapeProperty* find_own_property_ic(JSProperty** ppr, JSObject* p, JSAtom atom, uint32_t* offset) {
+  JSShape* sh;
+  JSShapeProperty *pr, *prop;
+  intptr_t h;
+  sh = p->shape;
+  h = (uintptr_t)atom & sh->prop_hash_mask;
+  h = prop_hash_end(sh)[-h - 1];
+  prop = get_shape_prop(sh);
+  while (h) {
+    pr = &prop[h - 1];
+    if (likely(pr->atom == atom)) {
+      *ppr = &p->prop[h - 1];
+      *offset = h - 1;
+      /* the compiler should be able to assume that pr != NULL here */
+      return pr;
+    }
+    h = pr->hash_next;
+  }
+  *ppr = NULL;
+  return NULL;
+}
 
 /* return FALSE if not OK */
 BOOL check_define_prop_flags(int prop_flags, int flags);;

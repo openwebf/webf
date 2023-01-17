@@ -286,7 +286,7 @@ JSValue js_proxy_get(JSContext *ctx, JSValueConst obj, JSAtom atom,
     return JS_EXCEPTION;
   /* Note: recursion is possible thru the prototype of s->target */
   if (JS_IsUndefined(method))
-    return JS_GetPropertyInternal(ctx, s->target, atom, receiver, FALSE);
+    return JS_GetPropertyInternal(ctx, s->target, atom, receiver, NULL, FALSE);
   atom_val = JS_AtomToValue(ctx, atom);
   if (JS_IsException(atom_val)) {
     JS_FreeValue(ctx, method);
