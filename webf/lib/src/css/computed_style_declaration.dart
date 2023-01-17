@@ -8,6 +8,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
 
 class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   final Element _element;
@@ -102,7 +103,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Variable:
         break;
       case CSSPropertyID.Display:
-        return style.display.toString();
+        return style.display.cssText();
       case CSSPropertyID.Background:
         return _getBackgroundShorthandValue();
       case CSSPropertyID.BackgroundColor:
@@ -295,9 +296,9 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Opacity:
         return style.opacity.toString();
       case CSSPropertyID.OverflowX:
-        return style.overflowX.toString();
+        return style.overflowX.cssText();
       case CSSPropertyID.OverflowY:
-        return style.overflowY.toString();
+        return style.overflowY.cssText();
       case CSSPropertyID.Overflow:
         if (style.overflowX.index > style.overflowY.index) {
           return _valueForPropertyInStyle(CSSPropertyID.OverflowX);
@@ -305,19 +306,19 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
           return _valueForPropertyInStyle(CSSPropertyID.OverflowY);
         }
       case CSSPropertyID.Position:
-        return style.position.toString();
+        return style.position.cssText();
       case CSSPropertyID.TextAlign:
-        return style.textAlign.toString();
+        return style.textAlign.cssText();
       case CSSPropertyID.TextShadow:
         return style.textShadow?.map((e) => e.cssText()).join(', ') ?? 'none';
       case CSSPropertyID.TextOverflow:
-        return style.textOverflow.toString();
+        return style.textOverflow.cssText();
       case CSSPropertyID.VerticalAlign:
-        return style.verticalAlign.toString();
+        return style.verticalAlign.cssText();
       case CSSPropertyID.Visibility:
-        return style.visibility.toString();
+        return style.visibility.cssText();
       case CSSPropertyID.WhiteSpace:
-        return style.whiteSpace.toString();
+        return style.whiteSpace.cssText();
       case CSSPropertyID.ZIndex:
         return style.zIndex?.toString() ?? 'auto';
       case CSSPropertyID.TransitionDelay:
@@ -613,3 +614,135 @@ extension FontStyleText on FontStyle {
   }
 }
 
+extension CSSDisplayText on CSSDisplay {
+  String cssText() {
+    switch (this) {
+      case CSSDisplay.none:
+        return 'none';
+      case CSSDisplay.sliver:
+        return 'sliver';
+      case CSSDisplay.block:
+        return 'block';
+      case CSSDisplay.inlineBlock:
+        return 'inline-block';
+      case CSSDisplay.flex:
+        return 'flex';
+      case CSSDisplay.inlineFlex:
+        return 'inline-flex';
+      case CSSDisplay.inline:
+      default:
+        return 'inline';
+    }
+  }
+}
+
+extension CSSOverflowTypeText on CSSOverflowType {
+  String cssText() {
+    switch (this) {
+      case CSSOverflowType.clip:
+        return 'clip';
+      case CSSOverflowType.auto:
+        return 'auto';
+      case CSSOverflowType.visible:
+        return 'visible';
+      case CSSOverflowType.hidden:
+        return 'hidden';
+      case CSSOverflowType.scroll:
+        return 'scroll';
+    }
+  }
+}
+
+extension CSSPositionTypeText on CSSPositionType {
+  String cssText() {
+    switch (this) {
+      case CSSPositionType.static:
+        return 'static';
+      case CSSPositionType.relative:
+        return 'relative';
+      case CSSPositionType.absolute:
+        return 'absolute';
+      case CSSPositionType.fixed:
+        return 'fixed';
+      case CSSPositionType.sticky:
+        return 'sticky';
+    }
+  }
+}
+
+extension TextOverflowText on TextOverflow {
+  String cssText() {
+    switch (this) {
+      case TextOverflow.clip:
+        return 'clip';
+      case TextOverflow.fade:
+        return 'fade';
+      case TextOverflow.ellipsis:
+        return 'ellipsis';
+      case TextOverflow.visible:
+        return 'visible';
+    }
+  }
+}
+
+extension TextAlignText on TextAlign {
+  String cssText() {
+    switch (this) {
+      case TextAlign.left:
+        return 'left';
+      case TextAlign.right:
+        return 'right';
+      case TextAlign.center:
+        return 'center';
+      case TextAlign.justify:
+        return 'justify';
+      case TextAlign.start:
+        return 'start';
+      case TextAlign.end:
+        return 'end';
+    }
+  }
+}
+
+extension VerticalAlignText on VerticalAlign {
+  String cssText() {
+    switch (this) {
+      case VerticalAlign.baseline:
+        return 'baseline';
+      case VerticalAlign.top:
+        return 'top';
+      case VerticalAlign.bottom:
+        return 'bottom';
+    }
+  }
+}
+
+extension VisibilityText on Visibility {
+  String cssText() {
+    switch (this) {
+      case Visibility.visible:
+        return 'visible';
+      case Visibility.hidden:
+        return 'hidden';
+    }
+  }
+}
+
+extension WhiteSpaceText on WhiteSpace {
+  String cssText() {
+    switch (this) {
+      case WhiteSpace.normal:
+        return 'normal';
+      case WhiteSpace.nowrap:
+        return 'nowrap';
+      case WhiteSpace.pre:
+        return 'pre';
+      case WhiteSpace.preWrap:
+        return 'pre-wrap';
+      case WhiteSpace.preLine:
+        return 'pre-line';
+      case WhiteSpace.breakSpaces:
+        return 'break-spaces';
+    }
+  }
+}
