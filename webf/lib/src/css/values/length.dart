@@ -50,7 +50,7 @@ class CSSLengthValue {
   final double? value;
   final CSSLengthType type;
 
-  CSSLengthValue.calc(this.calcValue, RenderStyle? renderStyle, String? propertyName): value = null, type = CSSLengthType.PX;
+  CSSLengthValue.calc(this.calcValue, this.renderStyle, this.propertyName): value = null, type = CSSLengthType.PX;
 
   CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]): calcValue = null {
     if (propertyName != null) {
@@ -435,7 +435,7 @@ class CSSLengthValue {
   @override
   bool operator ==(Object? other) {
     return (other == null && (type == CSSLengthType.UNKNOWN || type == CSSLengthType.INITIAL)) ||
-        (other is CSSLengthValue && other.value == value && (isZero || other.type == type));
+        (other is CSSLengthValue && other.value == value && other.calcValue == calcValue && (isZero || other.type == type));
   }
 
   @override
@@ -526,7 +526,7 @@ class CSSLength {
             _nonNegativeLengthRegExp.hasMatch(value));
   }
 
-  static dynamic resolveLength(String text, RenderStyle? renderStyle, String propertyName) {
+  static CSSLengthValue? resolveLength(String text, RenderStyle? renderStyle, String propertyName) {
     if (text.isEmpty) {
       // Empty string means delete value.
       return null;
