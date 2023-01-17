@@ -138,6 +138,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/convertion.c
     third_party/quickjs/src/core/runtime.c
     third_party/quickjs/src/core/module.c
+    third_party/quickjs/src/core/ic.c
     third_party/quickjs/src/core/builtins/js-array.c
     third_party/quickjs/src/core/builtins/js-async-function.c
     third_party/quickjs/src/core/builtins/js-async-generator.c
