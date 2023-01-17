@@ -83,3 +83,19 @@ TEST(CSSStyleDeclaration, supportHyphen) {
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
+
+TEST(InlineCSSStyleDeclaration, setNullValue) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
+  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+  auto context = bridge->GetExecutingContext();
+  const char* code =
+      "document.body.style.height = null;"
+      "console.assert(document.body.style.height === '')";
+  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  EXPECT_EQ(errorCalled, false);
+}
