@@ -226,32 +226,33 @@ static void js_send_stopped_event(JSDebuggerInfo* info, const char* reason) {
   js_transport_send_event(info, (Event*) event);
 }
 
-static Scope* js_get_scopes(JSContext* ctx, int64_t frame) {
+static void js_get_scopes(JSContext* ctx, int64_t frame, ScopesResponseBody* body) {
   // for now this is always the same.
   // global, local, closure. may change in the future. can check if closure is empty.
-  Scope* scope = js_malloc(ctx, sizeof(Scope) * 3);
+  Scope* scopes = js_malloc(ctx, sizeof(Scope) * 3);
 
   // Init scopes
   for(int i = 0; i < 3; i ++) {
-    init_scope(&scope[i]);
+    init_scope(&scopes[i]);
   }
 
   // Get local scope
-  scope[0].name = "Local";
-  scope[0].variablesReference = (frame << 2) + 1;
-  scope[0].expensive = 0;
+  scopes[0].name = "Local";
+  scopes[0].variablesReference = (frame << 2) + 1;
+  scopes[0].expensive = 0;
 
   // Get closure
-  scope[1].name = "Closure";
-  scope[1].variablesReference = (frame << 2) + 2;
-  scope[1].expensive = 0;
+  scopes[1].name = "Closure";
+  scopes[1].variablesReference = (frame << 2) + 2;
+  scopes[1].expensive = 0;
 
   // Get global
-  scope[2].name = "Global";
-  scope[2].variablesReference = (frame << 2) + 0;
-  scope[2].expensive = 0;
+  scopes[2].name = "Global";
+  scopes[2].variablesReference = (frame << 2) + 0;
+  scopes[2].expensive = 0;
 
-  return scope;
+  body->scopes = scopes;
+  body->scopesLen = 3;
 }
 
 static inline JS_BOOL JS_IsInteger(JSValueConst v) {
@@ -419,7 +420,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     ScopesArguments* arguments = (ScopesArguments*)request->arguments;
     int64_t frame = arguments->frameId;
     ScopesResponse* response = initialize_response(ctx, request, "scopes");
-    response->body->scopes = js_get_scopes(ctx, frame);
+    js_get_scopes(ctx, frame, response->body);
     js_transport_send_response(info, ctx, (Response*)response);
   } else if (strcmp(command, "setBreakpoints") == 0) {
     SetBreakpointsArguments* arguments = (SetBreakpointsArguments*)request->arguments;
