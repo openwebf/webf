@@ -442,7 +442,7 @@ class CSSLengthValue {
   int get hashCode => hashValues(value, type);
 
   @override
-  String toString() => 'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue)';
+  String toString() => 'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue, calcValue: $calcValue)';
 }
 
 // Cache computed length value during perform layout.
