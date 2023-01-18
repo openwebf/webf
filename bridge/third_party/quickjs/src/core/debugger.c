@@ -14,6 +14,8 @@
 
 #if ENABLE_DEBUGGER
 
+#define STACK_FRAME_INDEX_START 1
+
 static void js_process_breakpoints(JSDebuggerInfo* info,
                                    Source* source,
                                    SourceBreakpoint* breakpoints,
@@ -21,6 +23,7 @@ static void js_process_breakpoints(JSDebuggerInfo* info,
 
 typedef struct VariableType {
   const char* type;
+  const char* value;
   int64_t variablesReference;
 } VariableType;
 
@@ -35,6 +38,15 @@ const char* to_json_string(JSContext* ctx, JSValue value) {
 
 const char* atom_to_string(JSContext* ctx, JSAtom atom) {
   JSValue name_value = JS_AtomToString(ctx, atom);
+  const char* value_str = JS_ToCString(ctx, name_value);
+  const char* result = copy_string(value_str, strlen(value_str));
+  JS_FreeCString(ctx, value_str);
+  JS_FreeValue(ctx, name_value);
+  return result;
+}
+
+const char* value_to_string(JSContext* ctx, JSValue value) {
+  JSValue name_value = JS_ToString(ctx, value);
   const char* value_str = JS_ToCString(ctx, name_value);
   const char* result = copy_string(value_str, strlen(value_str));
   JS_FreeCString(ctx, value_str);
@@ -271,20 +283,51 @@ static void js_debugger_get_variable_type(JSContext* ctx,
                                           JSValue var_val) {
   // 0 means not expandible
   uint32_t reference = 0;
-  if (JS_IsString(var_val))
+  if (JS_IsString(var_val)) {
     variable_type->type = "string";
-  else if (JS_IsInteger(var_val))
+    const char* s = value_to_string(ctx, var_val);
+    char* buffer = js_malloc(ctx, sizeof(char) * (strlen(s) + 3));
+    sprintf(buffer, "\"%s\"", s);
+    variable_type->value = buffer;
+    js_free(ctx, (void*)s);
+  }
+  else if (JS_IsInteger(var_val)) {
     variable_type->type = "integer";
-  else if (JS_IsNumber(var_val) || JS_IsBigFloat(var_val))
+    variable_type->value = to_json_string(ctx, var_val);
+  }
+  else if (JS_IsNumber(var_val) || JS_IsBigFloat(var_val)) {
     variable_type->type = "float";
-  else if (JS_IsBool(var_val))
+    variable_type->value = to_json_string(ctx, var_val);
+  }
+  else if (JS_IsBool(var_val)) {
     variable_type->type = "boolean";
-  else if (JS_IsNull(var_val))
+    variable_type->value = to_json_string(ctx, var_val);
+  }
+  else if (JS_IsNull(var_val)) {
     variable_type->type = "null";
-  else if (JS_IsUndefined(var_val))
+    variable_type->value = "null";
+  }
+  else if (JS_IsUndefined(var_val)) {
     variable_type->type = "undefined";
+    variable_type->value = "undefined";
+  }
   else if (JS_IsObject(var_val)) {
     variable_type->type = "object";
+    if (JS_IsFunction(ctx, var_val)) {
+      const char* func_name = get_func_name(ctx, var_val);
+      char buffer[64];
+      sprintf(buffer, "ƒ %s ()", func_name);
+      variable_type->value = copy_string(buffer, strlen(buffer));
+      JS_FreeCString(ctx, func_name);
+    } else {
+      JSValue object_proto = JS_GetPrototype(ctx, var_val);
+      JSValue constructor_func = JS_GetPropertyStr(ctx, object_proto, "constructor");
+      char buffer[64];
+      sprintf(buffer, "%s", get_func_name(ctx, constructor_func));
+      variable_type->value = copy_string(buffer, strlen(buffer));
+      JS_FreeValue(ctx, object_proto);
+      JS_FreeValue(ctx, constructor_func);
+    }
 
     JSObject* p = JS_VALUE_GET_OBJ(var_val);
     // todo: xor the the two dwords to get a better hash?
@@ -301,34 +344,6 @@ static void js_debugger_get_variable_type(JSContext* ctx,
   }
   variable_type->variablesReference = reference;
 }
-
-//static void js_debugger_get_value(JSContext* ctx, JSValue var_val, JSValue var, const char* value_property) {
-//  // do not toString on Arrays, since that makes a giant string of all the elements.
-//  // todo: typed arrays?
-//  if (JS_IsArray(ctx, var_val)) {
-//    JSValue length = JS_GetPropertyStr(ctx, var_val, "length");
-//    uint32_t len;
-//    JS_ToUint32(ctx, &len, length);
-//    JS_FreeValue(ctx, length);
-//    char lenBuf[64];
-//    sprintf(lenBuf, "Array (%d)", len);
-//    JS_SetPropertyStr(ctx, var, value_property, JS_NewString(ctx, lenBuf));
-//    JS_SetPropertyStr(ctx, var, "indexedVariables", JS_NewInt32(ctx, len));
-//  } else {
-//    JS_SetPropertyStr(ctx, var, value_property, JS_ToString(ctx, var_val));
-//  }
-//}
-
-//static JSValue js_debugger_get_variable(JSContext* ctx,
-//                                        struct DebuggerSuspendedState* state,
-//                                        JSValue var_name,
-//                                        JSValue var_val) {
-////  JSValue var = JS_NewObject(ctx);
-////  JS_SetPropertyStr(ctx, var, "name", var_name);
-////  js_debugger_get_value(ctx, var_val, var, "value");
-////  js_debugger_get_variable_type(ctx, state, var, var_val);
-//  return var;
-//}
 
 static int js_debugger_get_frame(JSContext* ctx, JSValue args) {
   JSValue reference_property = JS_GetPropertyStr(ctx, args, "frameId");
@@ -460,7 +475,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     // then it must be a frame locals, frame closures, or the global
     if (JS_IsUndefined(variable)) {
       skip_proto = 1;
-      int64_t frame = (reference >> 2) - 1;
+      int64_t frame = (reference >> 2) - STACK_FRAME_INDEX_START;
       int64_t scope = reference % 4;
 
       assert(frame < js_debugger_stack_depth(ctx));
@@ -506,7 +521,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
         variables[i].name = copy_string(name_buf, strlen(name_buf));
         variables[i].type = variable_type.type;
         variables[i].variablesReference = variable_type.variablesReference;
-        variables[i].value = to_json_string(ctx, value);
+        variables[i].value = variable_type.value;
 
         assert(variables[i].name != NULL);
         assert(variables[i].value != NULL);
@@ -517,6 +532,12 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
 
   unfiltered:
     if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, variable,  JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK)) {
+      if (tab_atom_count == 0) {
+        variables = NULL;
+        variableLen = 0;
+        goto done;
+      }
+
       int offset = 0;
       variables = js_malloc(ctx, sizeof(Variable) * (tab_atom_count + (skip_proto ? 0 : 1)));
 
@@ -528,8 +549,8 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
           int i = offset++;
           init_variable(&variables[i]);
           variables[i].name = "[[Prototype]]";
-          variables[i].value = to_json_string(ctx, proto);
-          variables[i].type = variable_type.type;
+          variables[i].value = variable_type.type;
+          variables[i].type = variable_type.value;
           variables[i].variablesReference = variable_type.variablesReference;
           assert(variables[i].name != NULL);
           assert(variables[i].value != NULL);
@@ -546,7 +567,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
         variables[i + offset].name = atom_to_string(ctx, tab_atom[i].atom);
         variables[i + offset].type = variable_type.type;
         variables[i + offset].variablesReference = variable_type.variablesReference;
-        variables[i + offset].value = to_json_string(ctx, value);
+        variables[i + offset].value = variable_type.value;
         assert(variables[i + offset].name != NULL);
         assert(variables[i + offset].value != NULL);
         JS_FreeValue(ctx, value);
@@ -863,7 +884,7 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
 
     init_stackframe(&stack_frames[id]);
 
-    stack_frames[id].id = id + 1;
+    stack_frames[id].id = id + STACK_FRAME_INDEX_START;
     func_name_str = get_func_name(ctx, sf->cur_func);
     if (!func_name_str || func_name_str[0] == '\0') {
       stack_frames[id].name = "<anonymous>";
