@@ -626,7 +626,7 @@ interface StackFrame {
    * This id can be used to retrieve the scopes of the frame with the `scopes`
    * request or to restart the execution of a stack frame.
    */
-  id: number;
+  id: int64;
 
   /**
    * The name of the stack frame, typically a method name.

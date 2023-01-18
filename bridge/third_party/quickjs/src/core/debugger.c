@@ -19,13 +19,6 @@ static void js_process_breakpoints(JSDebuggerInfo* info,
                                    SourceBreakpoint* breakpoints,
                                    size_t breakpointsLen);
 
-typedef struct DebuggerSuspendedState {
-  uint32_t variable_reference_count;
-  JSValue variable_references;
-  JSValue variable_pointers;
-  const uint8_t* cur_pc;
-} DebuggerSuspendedState;
-
 typedef struct VariableType {
   const char* type;
   int64_t variablesReference;
@@ -109,6 +102,18 @@ static void init_scope(Scope* scope) {
   scope->column = NAN;
   scope->endLine = NAN;
   scope->endColumn = NAN;
+}
+
+static void init_variable(Variable* variable) {
+  variable->name = NULL;
+  variable->value = NULL;
+  variable->type = NULL;
+  variable->presentationHint = NULL;
+  variable->evaluateName = NULL;
+  variable->variablesReference = NAN;
+  variable->namedVariables = NAN;
+  variable->indexedVariables = NAN;
+  variable->memoryReference = NULL;
 }
 
 
@@ -249,7 +254,7 @@ static void js_get_scopes(JSContext* ctx, int64_t frame, ScopesResponseBody* bod
   // Get global
   scopes[2].name = "Global";
   scopes[2].variablesReference = (frame << 2) + 0;
-  scopes[2].expensive = 0;
+  scopes[2].expensive = 1;
 
   body->scopes = scopes;
   body->scopesLen = 3;
@@ -447,7 +452,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;
     JSValue variable = JS_GetPropertyUint32(ctx, state->variable_references, reference);
-    Variable* variables;
+    Variable* variables = NULL;
     size_t variableLen = 0;
 
     int skip_proto = 0;
@@ -455,7 +460,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     // then it must be a frame locals, frame closures, or the global
     if (JS_IsUndefined(variable)) {
       skip_proto = 1;
-      int64_t frame = reference >> 2;
+      int64_t frame = (reference >> 2) - 1;
       int64_t scope = reference % 4;
 
       assert(frame < js_debugger_stack_depth(ctx));
@@ -463,7 +468,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
       if (scope == 0)
         variable = JS_GetGlobalObject(ctx);
       else if (scope == 1)
-        variable = js_debugger_local_variables(ctx, frame);
+        variable = js_debugger_local_variables(ctx, frame, state);
       else if (scope == 2)
         variable = js_debugger_closure_variables(ctx, frame);
       else
@@ -497,46 +502,53 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
         js_debugger_get_variable_type(ctx, state, &variable_type, value);
 
         sprintf(name_buf, "%d", i);
+        init_variable(&variables[i]);
         variables[i].name = copy_string(name_buf, strlen(name_buf));
         variables[i].type = variable_type.type;
         variables[i].variablesReference = variable_type.variablesReference;
         variables[i].value = to_json_string(ctx, value);
 
+        assert(variables[i].name != NULL);
+        assert(variables[i].value != NULL);
         JS_FreeValue(ctx, value);
       }
       goto done;
     }
 
   unfiltered:
-    if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, variable, JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK)) {
+    if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, variable,  JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK)) {
       int offset = 0;
+      variables = js_malloc(ctx, sizeof(Variable) * (tab_atom_count + (skip_proto ? 0 : 1)));
 
       if (!skip_proto) {
         const JSValue proto = JS_GetPrototype(ctx, variable);
         if (!JS_IsException(proto)) {
-          JSValue value = JS_GetPropertyStr(ctx, state->variable_references, "__proto__");
-
           VariableType variable_type;
-          js_debugger_get_variable_type(ctx, state, &variable_type, value);
-
-          variables[offset++].name = "__proto__";
-          variables[offset++].value = to_json_string(ctx, value);
-          variables[offset++].type = variable_type.type;
-          variables[offset++].variablesReference = variable_type.variablesReference;
-          JS_FreeValue(ctx, value);
+          js_debugger_get_variable_type(ctx, state, &variable_type, proto);
+          int i = offset++;
+          init_variable(&variables[i]);
+          variables[i].name = "[[Prototype]]";
+          variables[i].value = to_json_string(ctx, proto);
+          variables[i].type = variable_type.type;
+          variables[i].variablesReference = variable_type.variablesReference;
+          assert(variables[i].name != NULL);
+          assert(variables[i].value != NULL);
         }
         JS_FreeValue(ctx, proto);
       }
 
       for (int i = 0; i < tab_atom_count; i++) {
         JSValue value = JS_GetProperty(ctx, variable, tab_atom[i].atom);
-
+        printf("atom %s %p\n", info->runtime->atom_array[tab_atom[i].atom]->u.str8, JS_VALUE_GET_PTR(value));
         VariableType variable_type;
         js_debugger_get_variable_type(ctx, state, &variable_type, value);
+        init_variable(&variables[i + offset]);
         variables[i + offset].name = atom_to_string(ctx, tab_atom[i].atom);
         variables[i + offset].type = variable_type.type;
         variables[i + offset].variablesReference = variable_type.variablesReference;
         variables[i + offset].value = to_json_string(ctx, value);
+        assert(variables[i + offset].name != NULL);
+        assert(variables[i + offset].value != NULL);
         JS_FreeValue(ctx, value);
       }
 
@@ -546,7 +558,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
 
   done:
     JS_FreeValue(ctx, variable);
-    VariablesResponse* response = initialize_response(ctx, request, "variable");
+    VariablesResponse* response = initialize_response(ctx, request, "variables");
     response->body->variables = variables;
     response->body->variablesLen = variableLen;
     js_transport_send_response(info, ctx, (Response*) response);
@@ -588,7 +600,7 @@ BreakPointMapItem* js_debugger_file_breakpoints(JSContext* ctx, const char* path
   return item;
 }
 
-static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur_pc) {
+static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur_pc, JSValue this_object) {
   // continue processing messages until the continue message is received.
   JSContext* ctx = info->ctx;
   struct DebuggerSuspendedState state;
@@ -596,6 +608,7 @@ static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cu
   state.variable_pointers = JS_NewObject(ctx);
   state.variable_references = JS_NewObject(ctx);
   state.cur_pc = cur_pc;
+  state.this_object = this_object;
 
   do {
     MessageItem item;
@@ -622,7 +635,7 @@ void js_debugger_exception(JSContext* ctx) {
   info->ctx = ctx;
   js_send_stopped_event(info, "exception");
   info->is_paused = 1;
-  js_process_debugger_messages(info, NULL);
+  js_process_debugger_messages(info, NULL, JS_NULL);
   info->is_debugging = 0;
   info->ctx = NULL;
 }
@@ -653,7 +666,7 @@ void js_debugger_free_context(JSContext* ctx) {
 
 // in thread check request/response of pending commands.
 // todo: background thread that reads the socket.
-void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc) {
+void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_object) {
   JSDebuggerInfo* info = js_debugger_info(JS_GetRuntime(ctx));
   if (info->is_debugging)
     return;
@@ -734,7 +747,7 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc) {
     }
   }
 
-  js_process_debugger_messages(info, cur_pc);
+  js_process_debugger_messages(info, cur_pc, this_object);
 
 done:
   info->is_debugging = 0;
@@ -850,7 +863,7 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
 
     init_stackframe(&stack_frames[id]);
 
-    stack_frames[id].id = id;
+    stack_frames[id].id = id + 1;
     func_name_str = get_func_name(ctx, sf->cur_func);
     if (!func_name_str || func_name_str[0] == '\0') {
       stack_frames[id].name = "<anonymous>";
@@ -869,7 +882,7 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
       if (b->has_debug) {
         const uint8_t* pc = sf != ctx->rt->current_stack_frame || !cur_pc ? sf->cur_pc : cur_pc;
         line_num1 = find_line_num(ctx, b, pc - b->byte_code_buf - 1);
-        column_num1 = find_column_num(ctx, b, pc - b->byte_code_buf - 1);
+        column_num1 = find_column_num(ctx, b, pc - b->byte_code_buf - 1) + 1;
         if (line_num1 != -1) {
           stack_frames[id].line = line_num1;
         }
@@ -1006,7 +1019,7 @@ done:
   return b->debugger.breakpoints[pc];
 }
 
-JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index) {
+JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index, struct DebuggerSuspendedState* state) {
   JSValue ret = JS_NewObject(ctx);
 
   // put exceptions on the top stack frame
@@ -1017,17 +1030,11 @@ JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index) {
   int cur_index = 0;
 
   for (sf = ctx->rt->current_stack_frame; sf != NULL; sf = sf->prev_frame) {
-    // this val is one frame up
-    if (cur_index == stack_index - 1) {
-      JSObject* f = JS_VALUE_GET_OBJ(sf->cur_func);
-      if (f && js_class_has_bytecode(f->class_id)) {
-        JSFunctionBytecode* b = f->u.func.function_bytecode;
-
-        JSValue this_obj = sf->var_buf[b->var_count];
-        // only provide a this if it is not the global object.
-        if (JS_VALUE_GET_OBJ(this_obj) != JS_VALUE_GET_OBJ(ctx->global_obj))
-          JS_SetPropertyStr(ctx, ret, "this", JS_DupValue(ctx, this_obj));
-      }
+    JSObject* f = JS_VALUE_GET_OBJ(sf->cur_func);
+    if (f && js_class_has_bytecode(f->class_id)) {
+      // only provide a this if it is not the global object.
+      if (JS_VALUE_GET_OBJ(state->this_object) != JS_VALUE_GET_OBJ(ctx->global_obj))
+        JS_SetPropertyStr(ctx, ret, "this", JS_DupValue(ctx, state->this_object));
     }
 
     if (cur_index < stack_index) {
@@ -1035,7 +1042,6 @@ JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index) {
       continue;
     }
 
-    JSObject* f = JS_VALUE_GET_OBJ(sf->cur_func);
     if (!f || !js_class_has_bytecode(f->class_id))
       goto done;
     JSFunctionBytecode* b = f->u.func.function_bytecode;

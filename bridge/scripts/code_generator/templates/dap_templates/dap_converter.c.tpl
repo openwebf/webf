@@ -4,6 +4,7 @@
 #include "dap_converter.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include "dap_protocol.h"
 #if ENABLE_DEBUGGER

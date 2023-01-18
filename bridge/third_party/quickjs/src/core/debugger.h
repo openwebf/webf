@@ -16,6 +16,14 @@
 extern "C" {
 #endif
 
+typedef struct DebuggerSuspendedState {
+  uint32_t variable_reference_count;
+  JSValue variable_references;
+  JSValue variable_pointers;
+  JSValue this_object;
+  const uint8_t* cur_pc;
+} DebuggerSuspendedState;
+
 typedef struct JSDebuggerFunctionInfo {
   // same length as byte_code_buf.
   uint8_t* breakpoints;
@@ -75,7 +83,7 @@ typedef struct JSDebuggerInfo {
 
 void js_debugger_new_context(JSContext* ctx);
 void js_debugger_free_context(JSContext* ctx);
-void js_debugger_check(JSContext* ctx, const uint8_t* pc);
+void js_debugger_check(JSContext* ctx, const uint8_t* pc, JSValue this_object);
 void js_debugger_exception(JSContext* ctx);
 void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info);
 int js_debugger_is_transport_connected(JSRuntime* rt);
@@ -97,7 +105,7 @@ JSDebuggerLocation js_debugger_current_location(JSContext* ctx, const uint8_t* c
 // calls back into js_debugger_file_breakpoints.
 int js_debugger_check_breakpoint(JSContext* ctx, uint32_t current_dirty, const uint8_t* cur_pc);
 
-JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index);
+JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index, DebuggerSuspendedState* state);
 JSValue js_debugger_closure_variables(JSContext* ctx, int64_t stack_index);
 
 // evaluates an expression at any stack frame. JS_Evaluate* only evaluates at the top frame.

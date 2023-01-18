@@ -222,6 +222,10 @@ function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, e
       return `if (${bodyName}->${prop.name} != NULL) {
   ${code}
 }`;
+    } else if (prop.type.value === FunctionArgumentType.double || prop.type.value === FunctionArgumentType.int64) {
+      return `if (!isnan(${bodyName}->${prop.name})) {
+  ${code}
+}`
     }
     return code;
   }
