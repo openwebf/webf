@@ -256,7 +256,9 @@ static inline JS_BOOL JS_IsInteger(JSValueConst v) {
 static void js_debugger_get_variable_type(JSContext* ctx,
                                           struct DebuggerSuspendedState* state,
                                           VariableType* variable_type,
-                                          JSValue var_val) {
+                                          JSValue var_val,
+                                          size_t depth,
+                                          int8_t is_short) {
   // 0 means not expandible
   uint32_t reference = 0;
   if (JS_IsString(var_val)) {
@@ -295,12 +297,63 @@ static void js_debugger_get_variable_type(JSContext* ctx,
       sprintf(buffer, "ƒ %s ()", func_name);
       variable_type->value = copy_string(buffer, strlen(buffer));
       JS_FreeCString(ctx, func_name);
+    } else if (JS_IsArray(ctx, var_val)) {
+      variable_type->type = "array";
+      char buf[12];
+      int64_t length;
+      js_get_length64(ctx, &length, var_val);
+      sprintf(buf, "Array(%lld)", length);
+      variable_type->value = copy_string(buf, strlen(buf));
     } else {
       JSValue object_proto = JS_GetPrototype(ctx, var_val);
       JSValue constructor_func = JS_GetPropertyStr(ctx, object_proto, "constructor");
       char buffer[64];
       sprintf(buffer, "%s", get_func_name(ctx, constructor_func));
-      variable_type->value = copy_string(buffer, strlen(buffer));
+
+      if (strcmp(buffer, "Object") == 0) {
+        if (is_short) {
+          variable_type->value = "{..}";
+        } else {
+          JSPropertyEnum* property_enum;
+          uint32_t property_len;
+          if (!JS_GetOwnPropertyNames(ctx,  &property_enum, &property_len, var_val, JS_GPN_SYMBOL_MASK | JS_GPN_STRING_MASK)) {
+            size_t buf_len = 256;
+            char* buf = js_malloc(ctx, 256);
+            buf[0] = '{';
+            size_t index = 1;
+            for(int i = 0; i < property_len; i ++) {
+              JSValue v = JS_GetProperty(ctx, var_val, property_enum[i].atom);
+              const char* key = atom_to_string(ctx, property_enum[i].atom);
+              VariableType object_var_type;
+              js_debugger_get_variable_type(ctx, state, &object_var_type, v, depth + 1, 1);
+              const char* tmp = object_var_type.value;
+              size_t tmp_len = strlen(tmp);
+              if (index + tmp_len > buf_len) {
+                buf_len = buf_len * 2;
+                js_realloc(ctx, buf, buf_len);
+              }
+              strcpy(buf + index, key);
+              index += strlen(key);
+              strcpy(buf + index, ": ");
+              index += 2;
+              strcpy(buf + index, tmp);
+              index += tmp_len;
+
+              if (i + 1 < property_len) {
+                strcpy(buf + index, ", ");
+                index += 2;
+              }
+              JS_FreeValue(ctx, v);
+            }
+            buf[index] = '}';
+            buf[index + 1] = 0;
+            variable_type->value = buf;
+          }
+        }
+      } else {
+        variable_type->value = copy_string(buffer, strlen(buffer));
+      }
+
       JS_FreeValue(ctx, object_proto);
       JS_FreeValue(ctx, constructor_func);
     }
@@ -366,7 +419,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     const char* evaluate_result = JS_ToCStringLen(ctx, &len, result);
     response->body->result = copy_string(evaluate_result, len);
     VariableType variable_type;
-    js_debugger_get_variable_type(ctx, state, &variable_type, result);
+    js_debugger_get_variable_type(ctx, state, &variable_type, result, 0, 0);
     response->body->type = variable_type.type;
     response->body->variablesReference = variable_type.variablesReference;
 
@@ -489,7 +542,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
       for (uint32_t i = 0; i < count; i++) {
         JSValue value = JS_GetPropertyUint32(ctx, variable, start + i);
         VariableType variable_type;
-        js_debugger_get_variable_type(ctx, state, &variable_type, value);
+        js_debugger_get_variable_type(ctx, state, &variable_type, value, 0, 0);
 
         sprintf(name_buf, "%d", i);
         init_variable(&variables[i]);
@@ -506,49 +559,50 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     }
 
   unfiltered:
-    if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, variable,  JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK)) {
+    if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, variable,  JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK)) {
       if (tab_atom_count == 0) {
         variables = NULL;
         variableLen = 0;
         goto done;
       }
 
-      int offset = 0;
       variables = js_malloc(ctx, sizeof(Variable) * (tab_atom_count + (skip_proto ? 0 : 1)));
+
+      for (int i = 0; i < tab_atom_count; i++) {
+        JSValue value = JS_GetProperty(ctx, variable, tab_atom[i].atom);
+        VariableType variable_type;
+        js_debugger_get_variable_type(ctx, state, &variable_type, value, 0, 0);
+        init_variable(&variables[i]);
+        variables[i].name = atom_to_string(ctx, tab_atom[i].atom);
+        variables[i].type = variable_type.type;
+        variables[i].variablesReference = variable_type.variablesReference;
+        variables[i].value = variable_type.value;
+        assert(variables[i].name != NULL);
+        assert(variables[i].value != NULL);
+        JS_FreeValue(ctx, value);
+      }
 
       if (!skip_proto) {
         const JSValue proto = JS_GetPrototype(ctx, variable);
         if (!JS_IsException(proto)) {
           VariableType variable_type;
-          js_debugger_get_variable_type(ctx, state, &variable_type, proto);
-          int i = offset++;
-          init_variable(&variables[i]);
-          variables[i].name = "[[Prototype]]";
-          variables[i].value = variable_type.type;
-          variables[i].type = variable_type.value;
-          variables[i].variablesReference = variable_type.variablesReference;
-          assert(variables[i].name != NULL);
-          assert(variables[i].value != NULL);
+          js_debugger_get_variable_type(ctx, state, &variable_type, proto, 0, 0);
+          init_variable(&variables[tab_atom_count]);
+          variables[tab_atom_count].name = "[[Prototype]]";
+          variables[tab_atom_count].value = variable_type.type;
+          variables[tab_atom_count].type = variable_type.value;
+          variables[tab_atom_count].variablesReference = variable_type.variablesReference;
+          VariablePresentationHint* presentation_hint = js_malloc(ctx, sizeof(VariablePresentationHint));
+          presentation_hint->visibility = "internal";
+          presentation_hint->lazy = 0;
+          variables[tab_atom_count].presentationHint = presentation_hint;
+          assert(variables[tab_atom_count].name != NULL);
+          assert(variables[tab_atom_count].value != NULL);
         }
         JS_FreeValue(ctx, proto);
       }
 
-      for (int i = 0; i < tab_atom_count; i++) {
-        JSValue value = JS_GetProperty(ctx, variable, tab_atom[i].atom);
-        printf("atom %s %p\n", info->runtime->atom_array[tab_atom[i].atom]->u.str8, JS_VALUE_GET_PTR(value));
-        VariableType variable_type;
-        js_debugger_get_variable_type(ctx, state, &variable_type, value);
-        init_variable(&variables[i + offset]);
-        variables[i + offset].name = atom_to_string(ctx, tab_atom[i].atom);
-        variables[i + offset].type = variable_type.type;
-        variables[i + offset].variablesReference = variable_type.variablesReference;
-        variables[i + offset].value = variable_type.value;
-        assert(variables[i + offset].name != NULL);
-        assert(variables[i + offset].value != NULL);
-        JS_FreeValue(ctx, value);
-      }
-
-      variableLen = offset + tab_atom_count;
+      variableLen = tab_atom_count + (skip_proto ? 0 : 1);
       js_free_prop_enum(ctx, tab_atom, tab_atom_count);
     }
 
@@ -614,7 +668,7 @@ static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cu
     Request* request = js_malloc(ctx, sizeof(Request));
     parse_request(ctx, request, item.buf, item.length);
     process_request(info, &state, request);
-    free_request(ctx, request);
+//    free_request(ctx, request);
 
     js_free(ctx, item.buf);
   } while (info->is_paused);
