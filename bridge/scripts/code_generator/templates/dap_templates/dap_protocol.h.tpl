@@ -1,3 +1,5 @@
+// Generated from template:
+//   code_generator/templates/dap_templates/dap_protocol.h.tpl
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */

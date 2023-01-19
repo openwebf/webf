@@ -1,3 +1,6 @@
+// Generated from template:
+//   code_generator/templates/dap_templates/dap_converter.h.tpl
+
 /*
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
@@ -48,6 +51,15 @@ static const char** get_property_string_copy_1(JSContext* ctx, JSValue this_obje
   }
 
   return return_value;
+}
+static void free_property_string(JSContext* ctx, const char* str) {
+  js_free(ctx, (void*) str);
+}
+
+static void free_property_string_1(JSContext* ctx, const char** str, size_t length) {
+  for(int i = 0; i < length; i ++) {
+    js_free(ctx, (void*) str[i]);
+  }
 }
 static int64_t get_property_int64(JSContext* ctx, JSValue this_object, const char* prop) {
  JSValue vp = JS_GetPropertyStr(ctx, this_object, prop);
@@ -152,4 +164,23 @@ const char* stringify_response(JSContext* ctx, Response* response) {
  JS_FreeValue(ctx, object);
  return result;
 }
+
+static void free_request_arguments(JSContext* ctx, void* arguments, const char* command) {
+  <%= freeEventArgument %>
+}
+
+void free_request(JSContext* ctx, Request* request) {
+  const char* command = request->command;
+  free_request_arguments(ctx, request->arguments, command);
+  js_free(ctx, request);
+}
+
+void free_response(JSContext* ctx, Response* response) {
+
+}
+
+void free_event(JSContext* const, Event* event) {
+
+}
+
 #endif

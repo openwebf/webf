@@ -164,6 +164,22 @@ interface StoppedEventBody {
   hitBreakpointIds?: number[];
 }
 
+interface TerminatedEventBody {
+  /**
+   * A debug adapter may set `restart` to true (or to an arbitrary object) to
+   * request that the client restarts the session.
+   * The value is not interpreted by the client and passed unmodified as an
+   * attribute `__restart` to the `launch` and `attach` requests.
+   */
+  restart?: any;
+}
+
+interface TerminatedEvent extends Event {
+  event: 'terminated';
+
+  body?: TerminatedEventBody;
+}
+
 interface StoppedEvent extends Event {
   event: 'stopped';
   body: StoppedEventBody;

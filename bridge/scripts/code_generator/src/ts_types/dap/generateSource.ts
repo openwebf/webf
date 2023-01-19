@@ -22,6 +22,12 @@ const initializeTypes: {
     array: boolean
   }
 } = {};
+const freeTypes: {
+  [key: string]: {
+    normal: boolean;
+    array: boolean
+  }
+} = {};
 
 function generateTypeStringify(object: ClassObject, propName: string, info: DAPInfoCollector, externalInitialize: string[]): void {
   if (stringifyTypes[object.name]) return;
@@ -438,6 +444,106 @@ function generateResponseBodyStringifyCode(info: DAPInfoCollector, responses: st
 }
 
 
+function generateTypeFree(object: ClassObject, propType: ParameterType, info: DAPInfoCollector, externalInitialize: string[], isArray?: boolean) {
+  if (freeTypes[object.name]) {
+    const type = freeTypes[object.name];
+    if (isArray) {
+      if (type.array) {
+        return;
+      }
+    } else {
+      if (type.normal) return;
+    }
+  }
+  freeTypes[object.name] = {
+    normal: !isArray,
+    array: !!isArray
+  };
+  let freeCode: string[] = [];
+  if (object.props) {
+    object.props.forEach(prop => {
+      let code = generatePropFree(prop, externalInitialize, info);
+      if (code) {
+        freeCode.push(code);
+      }
+    });
+  }
+
+  let initCode = '';
+
+  if (isArray) {
+    initCode = `
+  for(int i = 0; i < length; i ++) {   
+    ${freeCode.join('\n')}
+  }
+  js_free(ctx, args);
+`;
+  } else {
+    initCode = `
+    ${freeCode.join('\n')}
+    js_free(ctx, args);
+    `;
+  }
+
+  externalInitialize.push(`static ${object.name}* free_property_${getTypeName(propType)}${isArray ? '_1' : ''}(JSContext* ctx, ${object.name}* args${isArray ? ', size_t length' : ''}) {
+${initCode}
+}`);
+}
+
+function generatePropFree(prop: PropsDeclaration, externalInitialize: string[], info: DAPInfoCollector): string | null {
+  const typeKind = getTypeKind(prop.type);
+  let callCode = '';
+  if (typeKind === PropTypeKind.normal || typeKind === PropTypeKind.normalArray) {
+    let value = prop.type.value;
+    const isArray = prop.type.isArray;
+
+    if (value === FunctionArgumentType.dom_string) {
+      callCode += `free_property_string${isArray ? '_1' : ''}(ctx, args->${prop.name}${isArray ? `, args->${prop.name}Len` : ''});`
+    }
+  } else if (typeKind === PropTypeKind.reference || typeKind === PropTypeKind.referenceArray) {
+    let targetTypes = Array.from(info.others).find(o => {
+      return o.name === getTypeName(prop.type)
+    });
+    if (targetTypes) {
+      const isArray = prop.type.isArray;
+      generateTypeFree(targetTypes, prop.type, info, externalInitialize, isArray);
+      callCode += `free_property_${getTypeName(prop.type)}${isArray ? '_1' : ''}(ctx, args->${prop.name}${isArray ? `, args->${prop.name}Len` : ''});\n`;
+    }
+  }
+
+  return callCode;
+}
+
+function generateRequestArgumentFreeCode(info: DAPInfoCollector, requests: string[], externalInitialize: string[]) {
+  return requests.map(request => {
+    let targetArgument = Array.from(info.arguments).find((ag) => {
+      const prefix = ag.name.replace('Arguments', '');
+      return request.indexOf(prefix) >= 0;
+    });
+
+    if (!targetArgument) {
+      return '';
+    }
+
+    let freeCode: string[] = [];
+    if (targetArgument.props) {
+      targetArgument.props.forEach(prop => {
+        let code = generatePropFree(prop, externalInitialize, info);
+        if (code) {
+          freeCode.push(code);
+        }
+      });
+    }
+    const name = request.replace('Request', '');
+    return addIndent(`if (strcmp(command, "${_.camelCase(name)}") == 0) {
+    ${name}Arguments* args = (${name}Arguments*) arguments;
+    ${freeCode.join('\n')}  
+    js_free(ctx, args);
+}`, 2);
+
+  }).join('\n');
+}
+
 export function generateDAPSource(info: DAPInfoCollector) {
   const requests: string[] = getLists(info.requests);
   const events: string[] = getLists(info.events);
@@ -449,6 +555,7 @@ export function generateDAPSource(info: DAPInfoCollector) {
   const responseInit = generateResponseInitializer(info, responses, externalInitialize);
   const eventBodyStringifyCode = generateEventBodyStringifyCode(info, events, externalInitialize);
   const responseBodyStringifyCode = generateResponseBodyStringifyCode(info, responses, externalInitialize);
+  const freeEventArgument = generateRequestArgumentFreeCode(info, requests, externalInitialize);
   return _.template(readConverterTemplate())({
     info,
     requests,
@@ -457,7 +564,8 @@ export function generateDAPSource(info: DAPInfoCollector) {
     responseInit,
     eventBodyStringifyCode,
     responseBodyStringifyCode,
-    externalInitialize
+    externalInitialize,
+    freeEventArgument
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

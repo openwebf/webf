@@ -199,33 +199,9 @@ static uint32_t write_backend_message(JSDebuggerInfo* info, const char* buffer, 
   return 1;
 }
 
-static uint32_t js_transport_write_fully(JSDebuggerInfo* info, const char* buffer, size_t length) {
-  return write_backend_message(info, buffer, length);
-}
-
 static void js_transport_send_response(JSDebuggerInfo* info, JSContext* ctx, Response* response) {
   const char* buf = stringify_response(ctx, (Response*) response);
   write_backend_message(info, buf, strlen(buf));
-}
-
-static uint32_t js_transport_write_value(JSDebuggerInfo* info, JSValue value) {
-  JSValue stringified = JS_JSONStringify(info->ctx, value, JS_UNDEFINED, JS_UNDEFINED);
-  size_t len;
-  const char* str = JS_ToCStringLen(info->ctx, &len, stringified);
-  uint32_t ret = 0;
-  if (len)
-    ret = js_transport_write_fully(info, str, len);
-  // else send error somewhere?
-  JS_FreeCString(info->ctx, str);
-  JS_FreeValue(info->ctx, stringified);
-  JS_FreeValue(info->ctx, value);
-  return ret;
-}
-
-static JSValue js_transport_new_envelope(JSDebuggerInfo* info, const char* type) {
-  JSValue ret = JS_NewObject(info->ctx);
-  JS_SetPropertyStr(info->ctx, ret, "type", JS_NewString(info->ctx, type));
-  return ret;
 }
 
 static void js_transport_send_event(JSDebuggerInfo* info, Event* event) {
@@ -394,8 +370,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     response->body->type = variable_type.type;
     response->body->variablesReference = variable_type.variablesReference;
 
-    const char* buf = stringify_response(ctx, (Response*)response);
-    write_backend_message(info, buf, strlen(buf));
+    js_transport_send_response(info, ctx, (Response*) response);
 
     JS_FreeCString(ctx, evaluate_result);
     JS_FreeValue(ctx, result);
@@ -639,6 +614,9 @@ static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cu
     Request* request = js_malloc(ctx, sizeof(Request));
     parse_request(ctx, request, item.buf, item.length);
     process_request(info, &state, request);
+    free_request(ctx, request);
+
+    js_free(ctx, item.buf);
   } while (info->is_paused);
 
 done:
@@ -780,8 +758,8 @@ void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info) {
     return;
 
   // don't use the JSContext because it might be in a funky state during teardown.
-  const char* terminated = "{\"type\":\"event\",\"event\":{\"type\":\"terminated\"}}";
-  js_transport_write_fully(info, terminated, strlen(terminated));
+  TerminatedEvent* event = initialize_event(info->ctx, "terminated");
+  js_transport_send_event(info, (Event*) event);
 
   struct list_head* el;
 

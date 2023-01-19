@@ -6,7 +6,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ffi';
@@ -196,13 +195,15 @@ class IsolateInspectorServer {
 
     DartDebuggerReadBackendCommands fn = debuggerMethods.ref.readBackendCommands.asFunction();
     if (fn != nullptr) {
-      Pointer<DebuggerMessageBuffer> buffer = malloc.allocate(sizeOf<DebuggerMessageBuffer>());
-      int result = fn(debuggerContext, buffer);
+      Pointer<DebuggerMessageBuffer> message = malloc.allocate(sizeOf<DebuggerMessageBuffer>());
+      int result = fn(debuggerContext, message);
       if (result == 0) {
-        Timer.run(readDebuggerBackendMessage);
+        malloc.free(message.ref.buffer);
+        malloc.free(message);
+        Timer(Duration(milliseconds: 1), readDebuggerBackendMessage);
         return;
       }
-      String str = buffer.ref.buffer.toDartString(length: buffer.ref.length);
+      String str = message.ref.buffer.toDartString(length: message.ref.length);
       print('backend $str');
       if (_ws != null) {
         if (clientKind == ConnectionClientKind.vscode) {
@@ -211,12 +212,13 @@ class IsolateInspectorServer {
           // TODO: Add adaptor from DAP to CDP..
         }
       } else {
-        _pendingDebuggerMessages.add(str);
+        // _pendingDebuggerMessages.add(str);
       }
-      malloc.free(buffer);
+      malloc.free(message.ref.buffer);
+      malloc.free(message);
     }
 
-    Timer.run(readDebuggerBackendMessage);
+    Timer(Duration(seconds: 1), readDebuggerBackendMessage);
   }
 
   void _flushPendingDebuggerMessage() {
