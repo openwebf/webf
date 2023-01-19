@@ -145,7 +145,6 @@ static JSValue stringify_response_body(JSContext* ctx, const char* command, void
 }
 const char* stringify_response(JSContext* ctx, Response* response) {
  JSValue object = JS_NewObject(ctx);
- printf("response command %s", response->command);
  JS_SetPropertyStr(ctx, object, "type", JS_NewString(ctx, "response"));
  JS_SetPropertyStr(ctx, object, "request_seq", JS_NewInt64(ctx, response->request_seq));
  JS_SetPropertyStr(ctx, object, "success", JS_NewBool(ctx, response->success == 1));

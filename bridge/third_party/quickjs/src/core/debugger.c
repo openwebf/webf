@@ -128,7 +128,6 @@ static void init_variable(Variable* variable) {
   variable->memoryReference = NULL;
 }
 
-
 // Handler for read backend messages from Dart Client.
 static uint32_t handle_client_read(void* ptr, DebuggerMessage* message) {
   JSDebuggerInfo* info = (JSDebuggerInfo*)ptr;
@@ -594,6 +593,8 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
           variables[tab_atom_count].variablesReference = variable_type.variablesReference;
           VariablePresentationHint* presentation_hint = js_malloc(ctx, sizeof(VariablePresentationHint));
           presentation_hint->visibility = "internal";
+          presentation_hint->attributes = NULL;
+          presentation_hint->attributesLen = 0;
           presentation_hint->lazy = 0;
           variables[tab_atom_count].presentationHint = presentation_hint;
           assert(variables[tab_atom_count].name != NULL);
