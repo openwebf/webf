@@ -14,7 +14,7 @@
 
 #if ENABLE_DEBUGGER
 
-#define STACK_FRAME_INDEX_START 1
+#define STACK_FRAME_INDEX_START INT32_MAX
 
 static void js_process_breakpoints(JSDebuggerInfo* info,
                                    Source* source,
@@ -1099,7 +1099,7 @@ JSValue js_debugger_local_variables(JSContext* ctx, int64_t stack_index, struct 
     JSObject* f = JS_VALUE_GET_OBJ(sf->cur_func);
     if (f && js_class_has_bytecode(f->class_id)) {
       // only provide a this if it is not the global object.
-      if (JS_VALUE_GET_OBJ(state->this_object) != JS_VALUE_GET_OBJ(ctx->global_obj))
+      if (stack_index == 0 && JS_VALUE_GET_OBJ(state->this_object) != JS_VALUE_GET_OBJ(ctx->global_obj) && !JS_IsUndefined(state->this_object))
         JS_SetPropertyStr(ctx, ret, "this", JS_DupValue(ctx, state->this_object));
     }
 

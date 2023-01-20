@@ -178,7 +178,7 @@ void free_response(JSContext* ctx, Response* response) {
 
 }
 
-void free_event(JSContext* const, Event* event) {
+void free_event(JSContext* ctx, Event* event) {
 
 }
 

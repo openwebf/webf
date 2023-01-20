@@ -83,6 +83,9 @@ function generateTypeInitialize(object: ClassObject, propType: ParameterType, in
   JSValue arr = JS_GetPropertyStr(ctx, this_object, prop);
   int64_t len = get_property_int64(ctx, arr, "length");
   *length = len;
+  
+  if (len == 0) return NULL;
+  
   ${object.name}* return_value = js_malloc(ctx, sizeof(${object.name}) * len);
   for(int i = 0; i < len; i ++) {
     JSValue arguments = JS_GetPropertyUint32(ctx, arr, i);
@@ -487,7 +490,7 @@ function generateTypeFree(object: ClassObject, propType: ParameterType, info: DA
     `;
   }
 
-  externalInitialize.push(`static ${object.name}* free_property_${getTypeName(propType)}${isArray ? '_1' : ''}(JSContext* ctx, ${object.name}* args${isArray ? ', size_t length' : ''}) {
+  externalInitialize.push(`static void free_property_${getTypeName(propType)}${isArray ? '_1' : ''}(JSContext* ctx, ${object.name}* args${isArray ? ', size_t length' : ''}) {
 ${initCode}
 }`);
 }
