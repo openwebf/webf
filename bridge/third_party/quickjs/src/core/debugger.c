@@ -54,27 +54,6 @@ const char* value_to_string(JSContext* ctx, JSValue value) {
   return result;
 }
 
-static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
-  JSDebuggerInfo* info = (JSDebuggerInfo*)ptr;
-  // Gain access to front_message.
-  pthread_mutex_lock(&info->frontend_message_access);
-
-  char* buf = js_malloc_rt(info->runtime, message->length + 1);
-  strcpy(buf, message->buf);
-
-  MessageItem* item = js_malloc_rt(info->runtime, sizeof(MessageItem));
-  item->buf = buf;
-  item->length = message->length;
-
-  printf("client write item, buffer: %p len: %d\n", item->buf, item->length);
-  // Push this item to the queue.
-  list_add_tail(&item->link, &info->frontend_messages);
-
-  // Release the lock, so the JS Main thread can read front-end messages.
-  pthread_mutex_unlock(&info->frontend_message_access);
-
-  return 1;
-}
 
 static void init_source(Source* source) {
   source->path = NULL;
@@ -128,6 +107,28 @@ static void init_variable(Variable* variable) {
   variable->memoryReference = NULL;
 }
 
+static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
+  JSDebuggerInfo* info = (JSDebuggerInfo*)ptr;
+  // Gain access to front_message.
+  pthread_mutex_lock(&info->frontend_message_access);
+
+  char* buf = js_malloc_rt(info->runtime, message->length + 1);
+  strcpy(buf, message->buf);
+
+  MessageItem* item = js_malloc_rt(info->runtime, sizeof(MessageItem));
+  item->buf = buf;
+  item->length = message->length;
+
+  printf("client write item, buffer: %p len: %d\n", item->buf, item->length);
+  // Push this item to the queue.
+  list_add_tail(&item->link, &info->frontend_messages);
+
+  // Release the lock, so the JS Main thread can read front-end messages.
+  pthread_mutex_unlock(&info->frontend_message_access);
+
+  return 1;
+}
+
 // Handler for read backend messages from Dart Client.
 static uint32_t handle_client_read(void* ptr, DebuggerMessage* message) {
   JSDebuggerInfo* info = (JSDebuggerInfo*)ptr;
@@ -137,6 +138,8 @@ static uint32_t handle_client_read(void* ptr, DebuggerMessage* message) {
 
   if (list_empty(&info->backend_message)) {
     pthread_mutex_unlock(&info->backend_message_access);
+    message->buf = NULL;
+    message->length = 0;
     return 0;
   }
 
@@ -186,6 +189,8 @@ static uint32_t write_backend_message(JSDebuggerInfo* info, const char* buffer, 
   MessageItem* item = js_malloc_rt(info->runtime, sizeof(MessageItem));
   char* buf = js_malloc_rt(info->runtime, length);
   memcpy(buf, buffer, length);
+
+  printf("Write backend message %p \n", buffer);
 
   item->buf = buf;
   item->length = length;
@@ -306,8 +311,14 @@ static void js_debugger_get_variable_type(JSContext* ctx,
     } else {
       JSValue object_proto = JS_GetPrototype(ctx, var_val);
       JSValue constructor_func = JS_GetPropertyStr(ctx, object_proto, "constructor");
+      const char* func_name = get_func_name(ctx, constructor_func);
+
       char buffer[64];
-      sprintf(buffer, "%s", get_func_name(ctx, constructor_func));
+      if (func_name != NULL) {
+        sprintf(buffer, "%s", func_name);
+      } else {
+        buffer[0] = '\0';
+      }
 
       if (strcmp(buffer, "Object") == 0) {
         if (is_short) {
@@ -316,7 +327,7 @@ static void js_debugger_get_variable_type(JSContext* ctx,
           JSPropertyEnum* property_enum;
           uint32_t property_len;
           if (!JS_GetOwnPropertyNames(ctx,  &property_enum, &property_len, var_val, JS_GPN_SYMBOL_MASK | JS_GPN_STRING_MASK)) {
-            size_t buf_len = 256;
+            size_t buf_len = 48;
             char* buf = js_malloc(ctx, 256);
             buf[0] = '{';
             size_t index = 1;
@@ -327,9 +338,9 @@ static void js_debugger_get_variable_type(JSContext* ctx,
               js_debugger_get_variable_type(ctx, state, &object_var_type, v, depth + 1, 1);
               const char* tmp = object_var_type.value;
               size_t tmp_len = strlen(tmp);
-              if (index + tmp_len > buf_len) {
-                buf_len = buf_len * 2;
-                js_realloc(ctx, buf, buf_len);
+              if (index + tmp_len + strlen(key) + 4 > buf_len) {
+                buf_len = (buf_len + tmp_len) * 2;
+                buf = js_realloc(ctx, buf, buf_len);
               }
               strcpy(buf + index, key);
               index += strlen(key);
@@ -596,6 +607,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
           presentation_hint->attributes = NULL;
           presentation_hint->attributesLen = 0;
           presentation_hint->lazy = 0;
+          presentation_hint->kind = NULL;
           variables[tab_atom_count].presentationHint = presentation_hint;
           assert(variables[tab_atom_count].name != NULL);
           assert(variables[tab_atom_count].value != NULL);
