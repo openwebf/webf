@@ -327,8 +327,8 @@ static void js_debugger_get_variable_type(JSContext* ctx,
           JSPropertyEnum* property_enum;
           uint32_t property_len;
           if (!JS_GetOwnPropertyNames(ctx,  &property_enum, &property_len, var_val, JS_GPN_SYMBOL_MASK | JS_GPN_STRING_MASK)) {
-            size_t buf_len = 48;
-            char* buf = js_malloc(ctx, 256);
+            size_t buf_len = 256;
+            char* buf = js_malloc(ctx, buf_len);
             buf[0] = '{';
             size_t index = 1;
             for(int i = 0; i < property_len; i ++) {
