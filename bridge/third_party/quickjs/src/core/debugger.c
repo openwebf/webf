@@ -275,15 +275,15 @@ static void js_debugger_get_variable_type(JSContext* ctx,
   }
   else if (JS_IsInteger(var_val)) {
     variable_type->type = "integer";
-    variable_type->value = to_json_string(ctx, var_val);
+    variable_type->value = value_to_string(ctx, var_val);
   }
   else if (JS_IsNumber(var_val) || JS_IsBigFloat(var_val)) {
     variable_type->type = "float";
-    variable_type->value = to_json_string(ctx, var_val);
+    variable_type->value = value_to_string(ctx, var_val);
   }
   else if (JS_IsBool(var_val)) {
     variable_type->type = "boolean";
-    variable_type->value = to_json_string(ctx, var_val);
+    variable_type->value = value_to_string(ctx, var_val);
   }
   else if (JS_IsNull(var_val)) {
     variable_type->type = "null";
