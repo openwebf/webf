@@ -416,7 +416,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
 
   if (strcmp(command, "evaluate") == 0) {
     EvaluateArguments* arguments = (EvaluateArguments*) request->arguments;
-    int frame = arguments->frameId;
+    int64_t frame = arguments->frameId - STACK_FRAME_INDEX_START;
     const char* expression = arguments->expression;
     JSValue result = js_debugger_evaluate(ctx, frame, expression);
     if (JS_IsException(result)) {
