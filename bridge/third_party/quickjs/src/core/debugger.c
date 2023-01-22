@@ -16,6 +16,25 @@
 
 #define STACK_FRAME_INDEX_START INT32_MAX
 
+static Variable* js_debugger_get_variables(JSContext* ctx,
+                                           JSValue reference_value,
+                                           struct DebuggerSuspendedState* state,
+                                           int64_t* variable_len,
+                                           int8_t skip_proto,
+                                           const char* filter,
+                                           int64_t filter_start,
+                                           int64_t filter_count);
+static JSValue js_debugger_get_scope_variable(JSContext* ctx,
+                                              int64_t reference,
+                                              struct DebuggerSuspendedState* state,
+                                              int8_t* skip_proto);
+static CompletionItem* js_debugger_get_completions(JSContext* ctx,
+                                                   struct DebuggerSuspendedState* state,
+                                                   int64_t* completions_len,
+                                                   int64_t frame,
+                                                   const char* text,
+                                                   int64_t completions_column,
+                                                   int64_t completion_line);
 static void js_process_breakpoints(JSDebuggerInfo* info,
                                    Source* source,
                                    SourceBreakpoint* breakpoints,
@@ -500,132 +519,214 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
   } else if (strcmp(command, "variables") == 0) {
     VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;
-    JSValue variable = JS_GetPropertyUint32(ctx, state->variable_references, reference);
-    Variable* variables = NULL;
-    size_t variableLen = 0;
+    int8_t skip_proto;
+    JSValue reference_value = js_debugger_get_scope_variable(ctx, reference, state, &skip_proto);
+    int64_t variable_len = 0;
+    Variable* variables = js_debugger_get_variables(ctx, reference_value, state, &variable_len, skip_proto,
+                                                    arguments->filter, arguments->start, arguments->count);
+    VariablesResponse* response = initialize_response(ctx, request, "variables");
+    response->body->variables = variables;
+    response->body->variablesLen = variable_len;
+    js_transport_send_response(info, ctx, (Response*)response);
+  } else if (strcmp(command, "completions") == 0) {
+    CompletionsArguments* arguments = (CompletionsArguments*)request->arguments;
+    int64_t frame = arguments->frameId - STACK_FRAME_INDEX_START;
+    int64_t target_item_len = 0;
+    CompletionItem* target_items = js_debugger_get_completions(ctx, state, &target_item_len, frame, arguments->text,
+                                                               arguments->column, arguments->line);
+    CompletionsResponse* response = initialize_response(ctx, request, "completions");
+    response->body->targets = target_items;
+    response->body->targetsLen = target_item_len;
+    js_transport_send_response(info, ctx, (Response*)response);
+  }
+}
 
-    int skip_proto = 0;
-    // if the variable reference was not found,
-    // then it must be a frame locals, frame closures, or the global
-    if (JS_IsUndefined(variable)) {
-      skip_proto = 1;
-      int64_t frame = (reference >> 2) - STACK_FRAME_INDEX_START;
-      int64_t scope = reference % 4;
+static JSValue js_debugger_get_scope_variable(JSContext* ctx,
+                                              int64_t reference,
+                                              struct DebuggerSuspendedState* state,
+                                              int8_t* skip_proto) {
+  JSValue variable = JS_GetPropertyUint32(ctx, state->variable_references, reference);
+  // if the variable reference was not found,
+  // then it must be a frame locals, frame closures, or the global
+  if (JS_IsUndefined(variable)) {
+    *skip_proto = 1;
+    int64_t frame = (reference >> 2) - STACK_FRAME_INDEX_START;
+    int64_t scope = reference % 4;
 
-      assert(frame < js_debugger_stack_depth(ctx));
+    assert(frame < js_debugger_stack_depth(ctx));
 
-      if (scope == 0)
-        variable = JS_GetGlobalObject(ctx);
-      else if (scope == 1)
-        variable = js_debugger_local_variables(ctx, frame, state);
-      else if (scope == 2)
-        variable = js_debugger_closure_variables(ctx, frame);
-      else
-        assert(0);
+    if (scope == 0)
+      variable = JS_GetGlobalObject(ctx);
+    else if (scope == 1)
+      variable = js_debugger_local_variables(ctx, frame, state);
+    else if (scope == 2)
+      variable = js_debugger_closure_variables(ctx, frame);
+    else
+      assert(0);
 
-      // need to dupe the variable, as it's used below as well.
-      JS_SetPropertyUint32(ctx, state->variable_references, reference, JS_DupValue(ctx, variable));
+    // need to dupe the variable, as it's used below as well.
+    JS_SetPropertyUint32(ctx, state->variable_references, reference, JS_DupValue(ctx, variable));
+  }
+
+  return variable;
+}
+
+static Variable* js_debugger_get_variables(JSContext* ctx,
+                                           JSValue reference_value,
+                                           struct DebuggerSuspendedState* state,
+                                           int64_t* variable_len,
+                                           int8_t skip_proto,
+                                           const char* filter,
+                                           int64_t filter_start,
+                                           int64_t filter_count) {
+  Variable* variables = NULL;
+
+  JSPropertyEnum* tab_atom;
+  uint32_t tab_atom_count;
+
+  if (filter != NULL) {
+    // only index filtering is supported by this server.
+    // name filtering exists in VS Code, but is not implemented here.
+    int indexed = strcmp(filter, "indexed") == 0;
+    if (!indexed)
+      goto unfiltered;
+
+    int64_t start = filter_start;
+    int64_t count = filter_count;
+
+    variables = js_malloc(ctx, sizeof(Variable) * count);
+    *variable_len = count;
+
+    char name_buf[64];
+    for (uint32_t i = 0; i < count; i++) {
+      JSValue value = JS_GetPropertyUint32(ctx, reference_value, start + i);
+      VariableType variable_type;
+      js_debugger_get_variable_type(ctx, state, &variable_type, value, 0, 0);
+
+      sprintf(name_buf, "%d", i);
+      init_variable(&variables[i]);
+      variables[i].name = copy_string(name_buf, strlen(name_buf));
+      variables[i].type = variable_type.type;
+      variables[i].variablesReference = variable_type.variablesReference;
+      variables[i].value = variable_type.value;
+
+      assert(variables[i].name != NULL);
+      assert(variables[i].value != NULL);
+      JS_FreeValue(ctx, value);
     }
+    goto done;
+  }
 
-    JSPropertyEnum* tab_atom;
-    uint32_t tab_atom_count;
-
-    const char* filter = arguments->filter;
-    if (filter != NULL) {
-      // only index filtering is supported by this server.
-      // name filtering exists in VS Code, but is not implemented here.
-      int indexed = strcmp(filter, "indexed") == 0;
-      if (!indexed)
-        goto unfiltered;
-
-      int64_t start = arguments->start;
-      int64_t count = arguments->count;
-
-      variables = js_malloc(ctx, sizeof(Variable) * count);
-      variableLen = count;
-
-      char name_buf[64];
-      for (uint32_t i = 0; i < count; i++) {
-        JSValue value = JS_GetPropertyUint32(ctx, variable, start + i);
-        VariableType variable_type;
-        js_debugger_get_variable_type(ctx, state, &variable_type, value, 0, 0);
-
-        sprintf(name_buf, "%d", i);
-        init_variable(&variables[i]);
-        variables[i].name = copy_string(name_buf, strlen(name_buf));
-        variables[i].type = variable_type.type;
-        variables[i].variablesReference = variable_type.variablesReference;
-        variables[i].value = variable_type.value;
-
-        assert(variables[i].name != NULL);
-        assert(variables[i].value != NULL);
-        JS_FreeValue(ctx, value);
-      }
+unfiltered:
+  if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, reference_value,
+                              JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK)) {
+    if (tab_atom_count == 0) {
+      variables = NULL;
+      *variable_len = 0;
       goto done;
     }
 
-  unfiltered:
-    if (!JS_GetOwnPropertyNames(ctx, &tab_atom, &tab_atom_count, variable,  JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK)) {
-      if (tab_atom_count == 0) {
-        variables = NULL;
-        variableLen = 0;
-        goto done;
-      }
+    variables = js_malloc(ctx, sizeof(Variable) * (tab_atom_count + (skip_proto ? 0 : 1)));
 
-      variables = js_malloc(ctx, sizeof(Variable) * (tab_atom_count + (skip_proto ? 0 : 1)));
-
-      for (int i = 0; i < tab_atom_count; i++) {
-        JSValue value = JS_GetProperty(ctx, variable, tab_atom[i].atom);
-        VariableType variable_type;
-        js_debugger_get_variable_type(ctx, state, &variable_type, value, 0, 0);
-        init_variable(&variables[i]);
-        variables[i].name = atom_to_string(ctx, tab_atom[i].atom);
-        variables[i].type = variable_type.type;
-        variables[i].variablesReference = variable_type.variablesReference;
-        variables[i].value = variable_type.value;
-        assert(variables[i].name != NULL);
-        assert(variables[i].value != NULL);
-        JS_FreeValue(ctx, value);
-      }
-
-      if (!skip_proto) {
-        const JSValue proto = JS_GetPrototype(ctx, variable);
-        if (!JS_IsException(proto)) {
-          VariableType variable_type;
-          js_debugger_get_variable_type(ctx, state, &variable_type, proto, 0, 0);
-          init_variable(&variables[tab_atom_count]);
-          variables[tab_atom_count].name = "[[Prototype]]";
-          variables[tab_atom_count].value = variable_type.type;
-          variables[tab_atom_count].type = variable_type.value;
-          variables[tab_atom_count].variablesReference = variable_type.variablesReference;
-          VariablePresentationHint* presentation_hint = js_malloc(ctx, sizeof(VariablePresentationHint));
-          presentation_hint->visibility = "internal";
-          presentation_hint->attributes = NULL;
-          presentation_hint->attributesLen = 0;
-          presentation_hint->lazy = 0;
-          presentation_hint->kind = NULL;
-          variables[tab_atom_count].presentationHint = presentation_hint;
-          assert(variables[tab_atom_count].name != NULL);
-          assert(variables[tab_atom_count].value != NULL);
-        }
-        JS_FreeValue(ctx, proto);
-      }
-
-      variableLen = tab_atom_count + (skip_proto ? 0 : 1);
-      js_free_prop_enum(ctx, tab_atom, tab_atom_count);
+    for (int i = 0; i < tab_atom_count; i++) {
+      JSValue value = JS_GetProperty(ctx, reference_value, tab_atom[i].atom);
+      VariableType variable_type;
+      js_debugger_get_variable_type(ctx, state, &variable_type, value, 0, 0);
+      init_variable(&variables[i]);
+      variables[i].name = atom_to_string(ctx, tab_atom[i].atom);
+      variables[i].type = variable_type.type;
+      variables[i].variablesReference = variable_type.variablesReference;
+      variables[i].value = variable_type.value;
+      assert(variables[i].name != NULL);
+      assert(variables[i].value != NULL);
+      JS_FreeValue(ctx, value);
     }
 
-  done:
-    JS_FreeValue(ctx, variable);
-    VariablesResponse* response = initialize_response(ctx, request, "variables");
-    response->body->variables = variables;
-    response->body->variablesLen = variableLen;
-    js_transport_send_response(info, ctx, (Response*) response);
-  } else if (strcmp(command, "completions") == 0) {
-    CompletionsArguments* arguments = (CompletionsArguments*) request->arguments;
-    int64_t frame = arguments->frameId - STACK_FRAME_INDEX_START;
-    arguments->text;
+    if (!skip_proto) {
+      const JSValue proto = JS_GetPrototype(ctx, reference_value);
+      if (!JS_IsException(proto)) {
+        VariableType variable_type;
+        js_debugger_get_variable_type(ctx, state, &variable_type, proto, 0, 0);
+        init_variable(&variables[tab_atom_count]);
+        variables[tab_atom_count].name = "[[Prototype]]";
+        variables[tab_atom_count].value = variable_type.type;
+        variables[tab_atom_count].type = variable_type.value;
+        variables[tab_atom_count].variablesReference = variable_type.variablesReference;
+        VariablePresentationHint* presentation_hint = js_malloc(ctx, sizeof(VariablePresentationHint));
+        presentation_hint->visibility = "internal";
+        presentation_hint->attributes = NULL;
+        presentation_hint->attributesLen = 0;
+        presentation_hint->lazy = 0;
+        presentation_hint->kind = NULL;
+        variables[tab_atom_count].presentationHint = presentation_hint;
+        assert(variables[tab_atom_count].name != NULL);
+        assert(variables[tab_atom_count].value != NULL);
+      }
+      JS_FreeValue(ctx, proto);
+    }
+
+    *variable_len = tab_atom_count + (skip_proto ? 0 : 1);
+    js_free_prop_enum(ctx, tab_atom, tab_atom_count);
   }
+
+done:
+  JS_FreeValue(ctx, reference_value);
+  return variables;
+}
+
+static const char* js_debugger_get_completion_type() {
+
+}
+
+static CompletionItem* js_debugger_get_completions(JSContext* ctx,
+                                                   struct DebuggerSuspendedState* state,
+                                                   int64_t* completions_len,
+                                                   int64_t frame,
+                                                   const char* text,
+                                                   int64_t completions_column,
+                                                   int64_t completion_line) {
+  if (text == NULL || strlen(text) == 0) {
+    *completions_len = 0;
+    return NULL;
+  };
+
+  CompletionItem* completion_items = NULL;
+
+  JSValue global_reference_value = JS_GetGlobalObject(ctx);
+  JSValue local_reference_value = js_debugger_local_variables(ctx, frame, state);
+  JSValue closure_reference_value = js_debugger_closure_variables(ctx, frame);
+
+  // Collect all variables
+  int64_t global_vars_len;
+  Variable* global_vars =
+      js_debugger_get_variables(ctx, global_reference_value, state, &global_vars_len, 1, NULL, 0, 0);
+  int64_t local_vars_len;
+  Variable* local_vars = js_debugger_get_variables(ctx, local_reference_value, state, &local_vars_len, 1, NULL, 0, 0);
+  int64_t closure_vars_len;
+  Variable* closure_vars = js_debugger_get_variables(ctx, closure_reference_value, state, &closure_vars_len, 1, NULL, 0, 0);
+
+  // Concat all variables into a array.
+  size_t total_var_len = global_vars_len + local_vars_len + closure_vars_len;
+
+  completion_items = js_malloc(ctx, sizeof(CompletionItem) * total_var_len);
+
+#define CHECK_COMPLETIONS(LIST) \
+  for(int i = 0; i < LIST##_len; i ++) { \
+    if (strlen((LIST)[i].name) > 0 && strstr((LIST)[i].name, text)) { \
+     CompletionItem* item = &completion_items[completions_index++]; \
+     item->label = (LIST)[i].name; \
+     item->type = "variable"; \
+    } \
+  }
+
+  int64_t completions_index = 0;
+
+  CHECK_COMPLETIONS(global_vars);
+  CHECK_COMPLETIONS(local_vars);
+  CHECK_COMPLETIONS(closure_vars);
+  *completions_len = completions_index;
+
+  return completion_items;
 }
 
 static void js_process_breakpoints(JSDebuggerInfo* info,
