@@ -72,16 +72,30 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
       String module = moduleMethod[0];
       String method = moduleMethod[1];
 
-        // Runtime、Log、Debugger methods should handled on inspector isolate.
-        if (module == 'Runtime' || module == 'Log' || module == 'Debugger') {
-          // Convert CDP Protocol message to DAP
-          // Send DAP Protocol message to Debugger
-          // server!.messageRouter(id, module, method, params);
-        } else {
-          isolateToMainStream.send(InspectorFrontEndMessage(id, module, method, params));
-        }
-        print('trigger debugger attached');
-        server!.triggerDebuggerAttachedEvent();
+      // Runtime、Log、Debugger methods should handled on inspector isolate.
+      if (module == 'Runtime' || module == 'Log' || module == 'Debugger') {
+        // Convert CDP Protocol message to DAP
+        // Send DAP Protocol message to Debugger
+        // server!.messageRouter(id, module, method, params);
+      } else {
+        isolateToMainStream.send(InspectorFrontEndMessage(id, module, method, params));
+      }
+      isolateToMainStream.send(DebuggerAttachedEvent());
+    }
+
+    handleVsCodeExtensionMessage (Map<String, dynamic>? message) {
+      if (message != null) {
+        inspector!.sendDapMessageToDebugger(message);
+      }
+      isolateToMainStream.send(DebuggerAttachedEvent());
+    }
+
+    // Init the dev server
+    if (data is InspectorServerInit) {
+      IsolateInspectorServer server = IsolateInspectorServer(data.port, data.address, data.bundleURL);
+      server.onStarted = () {
+        // Tell the main thread the dev server started.
+        isolateToMainStream.send(InspectorServerStart(server.port));
       };
       // Receive message from WebF VSCode extension.
       server!.onVsCodeExtensionMessage = (Map<String, dynamic>? message) {
@@ -198,7 +212,6 @@ class IsolateInspectorServer {
       Pointer<DebuggerMessageBuffer> message = malloc.allocate(sizeOf<DebuggerMessageBuffer>());
       int result = fn(debuggerContext, message);
       if (result == 0) {
-        malloc.free(message.ref.buffer);
         malloc.free(message);
         Timer(Duration(milliseconds: 1), readDebuggerBackendMessage);
         return;
@@ -212,13 +225,13 @@ class IsolateInspectorServer {
           // TODO: Add adaptor from DAP to CDP..
         }
       } else {
-        // _pendingDebuggerMessages.add(str);
+        _pendingDebuggerMessages.add(str);
       }
       malloc.free(message.ref.buffer);
       malloc.free(message);
     }
 
-    Timer(Duration(seconds: 1), readDebuggerBackendMessage);
+    Timer(Duration(milliseconds: 1), readDebuggerBackendMessage);
   }
 
   void _flushPendingDebuggerMessage() {

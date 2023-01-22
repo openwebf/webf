@@ -7,17 +7,18 @@ const os = require('os');
 const Jasmine = require('jasmine');
 const jasmine = new Jasmine();
 
-// Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
-function startIntegrationTest() {
-  return new Promise((resolve, reject) => {
-    const shouldSkipBuild = /skip\-build/.test(process.argv);
-    if (!shouldSkipBuild) {
-      console.log('Building integration tests macOS application from "lib/main.dart"...');
-      spawnSync('flutter', ['build', 'macos', '--debug'], {
-        stdio: 'inherit'
-      });
-    }
+let tester;
 
+function buildRunner() {
+  console.log('Building integration tests macOS application from "lib/main.dart"...');
+  spawnSync('flutter', ['build', 'macos', '--debug'], {
+    stdio: 'inherit'
+  });
+}
+
+// Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
+function startIntegrationTest(skipBuild = false) {
+  return new Promise((resolve, reject) => {
     const platform = os.platform();
     let testExecutable;
     if (platform === 'linux') {
@@ -28,7 +29,7 @@ function startIntegrationTest() {
       throw new Error('Unsupported platform:' + platform);
     }
 
-    const tester = spawn(testExecutable, [], {
+    tester = spawn(testExecutable, [], {
       env: {
         ...process.env,
       },
@@ -45,20 +46,22 @@ function startIntegrationTest() {
     });
     tester.stdout.pipe(process.stdout);
 
-    tester.on('close', (code) => {});
+    tester.on('close', (code) => {
+
+    });
     tester.on('error', (error) => {
       console.error('integration failed', error);
       process.exit(1);
     });
-    tester.on('exit', (code, signal) => {
-      if (signal) {
-        console.log('Process exit with ' + signal);
-        process.exit(1);
-      }
-      if (code != 0) {
-        process.exit(1);
-      }
-    });
+    // tester.on('exit', (code, signal) => {
+    //   if (signal) {
+    //     console.log('Process exit with ' + signal);
+    //     process.exit(1);
+    //   }
+    //   if (code != 0) {
+    //     process.exit(1);
+    //   }
+    // });
 
     process.on('exit', () => {
       tester.kill();
@@ -77,7 +80,15 @@ jasmine.configureDefaultReporter({
   showColors: true
 });
 
-// startIntegrationTest().then((url) => {
-  globalThis.DEBUG_HOST_SERVER = 'ws://127.0.0.1:9222';
-  jasmine.execute([path.join(__dirname, '../.specs/bundle.build.js')]);
-// });
+
+buildRunner();
+
+globalThis.DEBUG_HOST_SERVER = 'ws://127.0.0.1:9222';
+jasmine.execute([path.join(__dirname, '../.specs/bundle.build.js')]);
+
+globalThis.reRestartApp = async () => {
+  if (tester) {
+    tester.kill();
+  }
+  await startIntegrationTest(true);
+}
