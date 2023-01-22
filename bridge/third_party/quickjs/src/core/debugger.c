@@ -418,24 +418,20 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     EvaluateArguments* arguments = (EvaluateArguments*) request->arguments;
     int64_t frame = arguments->frameId - STACK_FRAME_INDEX_START;
     const char* expression = arguments->expression;
-    JSValue result = js_debugger_evaluate(ctx, frame, expression);
+    JSValue result = js_debugger_evaluate(ctx, frame, state, expression);
     if (JS_IsException(result)) {
       JS_FreeValue(ctx, result);
       result = JS_GetException(ctx);
     }
 
     EvaluateResponse* response = (EvaluateResponse*) initialize_response(ctx, request, "evaluate");
-    size_t len;
-    const char* evaluate_result = JS_ToCStringLen(ctx, &len, result);
-    response->body->result = copy_string(evaluate_result, len);
-    VariableType variable_type;
-    js_debugger_get_variable_type(ctx, state, &variable_type, result, 0, 0);
-    response->body->type = variable_type.type;
-    response->body->variablesReference = variable_type.variablesReference;
+    VariableType result_variable_type;
+    js_debugger_get_variable_type(ctx, state, &result_variable_type, result, 0, 0);
+    response->body->result = result_variable_type.value;
+    response->body->type = result_variable_type.type;
+    response->body->variablesReference = result_variable_type.variablesReference;
 
     js_transport_send_response(info, ctx, (Response*) response);
-
-    JS_FreeCString(ctx, evaluate_result);
     JS_FreeValue(ctx, result);
   } else if (strcmp(command, "continue") == 0) {
     info->stepping = JS_DEBUGGER_STEP_CONTINUE;
@@ -625,6 +621,10 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     response->body->variables = variables;
     response->body->variablesLen = variableLen;
     js_transport_send_response(info, ctx, (Response*) response);
+  } else if (strcmp(command, "completions") == 0) {
+    CompletionsArguments* arguments = (CompletionsArguments*) request->arguments;
+    int64_t frame = arguments->frameId - STACK_FRAME_INDEX_START;
+    arguments->text;
   }
 }
 
@@ -1206,7 +1206,7 @@ static JSValue js_debugger_eval(JSContext* ctx,
     goto fail1;
   s->cur_func = fd;
   fd->eval_type = JS_EVAL_TYPE_DIRECT;
-  fd->has_this_binding = 0;
+  fd->has_this_binding = 1;
   fd->new_target_allowed = b->new_target_allowed;
   fd->super_call_allowed = b->super_call_allowed;
   fd->super_allowed = b->super_allowed;
@@ -1251,7 +1251,7 @@ fail1:
   return JS_EXCEPTION;
 }
 
-JSValue js_debugger_evaluate(JSContext* ctx, int64_t stack_index, const char* expression) {
+JSValue js_debugger_evaluate(JSContext* ctx, int64_t stack_index, DebuggerSuspendedState* state, const char* expression) {
   JSStackFrame* sf;
   int cur_index = 0;
 
@@ -1267,8 +1267,9 @@ JSValue js_debugger_evaluate(JSContext* ctx, int64_t stack_index, const char* ex
     JSFunctionBytecode* b = f->u.func.function_bytecode;
 
     int scope_idx = b->vardefs ? 0 : -1;
+    JSValue this_object = stack_index == 0 ? state->this_object : sf->var_buf[b->var_count];
     JSValue ret =
-        js_debugger_eval(ctx, sf->var_buf[b->var_count], sf, expression, strlen(expression), "<debugger>", JS_EVAL_TYPE_DIRECT, scope_idx);
+        js_debugger_eval(ctx, this_object, sf, expression, strlen(expression), "<debugger>", JS_EVAL_TYPE_DIRECT, scope_idx);
     return ret;
   }
   return JS_UNDEFINED;

@@ -1190,3 +1190,111 @@ interface ConfigurationDoneResponseBody {}
 interface ConfigurationDoneResponse extends Response {
   body: ConfigurationDoneResponseBody
 }
+
+interface CompletionItem {
+  /**
+   * The label of this completion item. By default this is also the text that is
+   * inserted when selecting this completion.
+   */
+  label: string;
+
+  /**
+   * If text is returned and not an empty string, then it is inserted instead of
+   * the label.
+   */
+  text?: string;
+
+  /**
+   * A string that should be used when comparing this item with other items. If
+   * not returned or an empty string, the `label` is used instead.
+   */
+  sortText?: string;
+
+  /**
+   * A human-readable string with additional information about this item, like
+   * type or symbol information.
+   */
+  detail?: string;
+
+  /**
+   * The item's type. Typically the client uses this information to render the
+   * item in the UI with an icon.
+   */
+  type?: string;
+
+  /**
+   * Start position (within the `text` attribute of the `completions` request)
+   * where the completion text is added. The position is measured in UTF-16 code
+   * units and the client capability `columnsStartAt1` determines whether it is
+   * 0- or 1-based. If the start position is omitted the text is added at the
+   * location specified by the `column` attribute of the `completions` request.
+   */
+  start?: int64;
+
+  /**
+   * Length determines how many characters are overwritten by the completion
+   * text and it is measured in UTF-16 code units. If missing the value 0 is
+   * assumed which results in the completion text being inserted.
+   */
+  length?: int64;
+
+  /**
+   * Determines the start of the new selection after the text has been inserted
+   * (or replaced). `selectionStart` is measured in UTF-16 code units and must
+   * be in the range 0 and length of the completion text. If omitted the
+   * selection starts at the end of the completion text.
+   */
+  selectionStart?: int64;
+
+  /**
+   * Determines the length of the new selection after the text has been inserted
+   * (or replaced) and it is measured in UTF-16 code units. The selection can
+   * not extend beyond the bounds of the completion text. If omitted the length
+   * is assumed to be 0.
+   */
+  selectionLength?: int64;
+}
+
+interface CompletionsArguments {
+  /**
+   * Returns completions in the scope of this stack frame. If not specified, the
+   * completions are returned for the global scope.
+   */
+  frameId?: int64;
+
+  /**
+   * One or more source lines. Typically this is the text users have typed into
+   * the debug console before they asked for completion.
+   */
+  text: string;
+
+  /**
+   * The position within `text` for which to determine the completion proposals.
+   * It is measured in UTF-16 code units and the client capability
+   * `columnsStartAt1` determines whether it is 0- or 1-based.
+   */
+  column: int64;
+
+  /**
+   * A line for which to determine the completion proposals. If missing the
+   * first line of the text is assumed.
+   */
+  line?: int64;
+}
+
+interface CompletionsResponseBody {
+  /**
+   * The possible completions for .
+   */
+  targets: CompletionItem[];
+}
+
+interface CompletionsRequest extends Request {
+  command: 'completions';
+
+  arguments: CompletionsArguments;
+}
+
+interface CompletionsResponse extends Response {
+  body: CompletionsResponseBody;
+}
