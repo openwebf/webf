@@ -81,6 +81,9 @@ typedef struct JSDebuggerInfo {
   uint32_t step_depth;
 } JSDebuggerInfo;
 
+void init_source(Source* source);
+void init_source_breakpoint(SourceBreakpoint* breakpoint);
+
 void js_debugger_new_context(JSContext* ctx);
 void js_debugger_free_context(JSContext* ctx);
 void js_debugger_check(JSContext* ctx, const uint8_t* pc, JSValue this_object);
@@ -99,6 +102,7 @@ JSDebuggerInfo* js_debugger_info(JSRuntime* rt);
 // but would be clunky and require stack string parsing.
 uint32_t js_debugger_stack_depth(JSContext* ctx);
 void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTraceResponseBody* body);
+void js_debugger_set_breakpoints(JSDebuggerInfo* info, Source* source, SourceBreakpoint* breakpoints, size_t breakpointsLen);
 JSDebuggerLocation js_debugger_current_location(JSContext* ctx, const uint8_t* cur_pc);
 
 // checks to see if a breakpoint exists on the current pc.

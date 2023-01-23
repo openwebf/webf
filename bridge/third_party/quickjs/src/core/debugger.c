@@ -35,10 +35,6 @@ static CompletionItem* js_debugger_get_completions(JSContext* ctx,
                                                    const char* text,
                                                    int64_t completions_column,
                                                    int64_t completion_line);
-static void js_process_breakpoints(JSDebuggerInfo* info,
-                                   Source* source,
-                                   SourceBreakpoint* breakpoints,
-                                   size_t breakpointsLen);
 
 typedef struct VariableType {
   const char* type;
@@ -74,7 +70,7 @@ const char* value_to_string(JSContext* ctx, JSValue value) {
 }
 
 
-static void init_source(Source* source) {
+void init_source(Source* source) {
   source->path = NULL;
   source->name = NULL;
   source->presentationHint = NULL;
@@ -84,6 +80,14 @@ static void init_source(Source* source) {
   source->sourceReference = NAN;
   source->sources = 0;
   source->sourcesLen = 0;
+}
+
+void init_source_breakpoint(SourceBreakpoint* breakpoint) {
+  breakpoint->line = NAN;
+  breakpoint->column = NAN;
+  breakpoint->condition = NULL;
+  breakpoint->hitCondition = NULL;
+  breakpoint->logMessage = NULL;
 }
 
 static void init_stackframe(StackFrame* stack_frame) {
@@ -403,15 +407,6 @@ static void js_debugger_get_variable_type(JSContext* ctx,
   variable_type->variablesReference = reference;
 }
 
-static int js_debugger_get_frame(JSContext* ctx, JSValue args) {
-  JSValue reference_property = JS_GetPropertyStr(ctx, args, "frameId");
-  int frame;
-  JS_ToInt32(ctx, &frame, reference_property);
-  JS_FreeValue(ctx, reference_property);
-
-  return frame;
-}
-
 static void js_free_prop_enum(JSContext* ctx, JSPropertyEnum* tab, uint32_t len) {
   uint32_t i;
   if (tab) {
@@ -419,14 +414,6 @@ static void js_free_prop_enum(JSContext* ctx, JSPropertyEnum* tab, uint32_t len)
       JS_FreeAtom(ctx, tab[i].atom);
     js_free(ctx, tab);
   }
-}
-
-static uint32_t js_get_property_as_uint32(JSContext* ctx, JSValue obj, const char* property) {
-  JSValue prop = JS_GetPropertyStr(ctx, obj, property);
-  uint32_t ret;
-  JS_ToUint32(ctx, &ret, prop);
-  JS_FreeValue(ctx, prop);
-  return ret;
 }
 
 static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState* state, const Request* request) {
@@ -497,7 +484,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     js_transport_send_response(info, ctx, (Response*)response);
   } else if (strcmp(command, "setBreakpoints") == 0) {
     SetBreakpointsArguments* arguments = (SetBreakpointsArguments*)request->arguments;
-    js_process_breakpoints(info, arguments->source, arguments->breakpoints, arguments->breakpointsLen);
+    js_debugger_set_breakpoints(info, arguments->source, arguments->breakpoints, arguments->breakpointsLen);
     SetBreakpointsResponse* response = initialize_response(ctx, request, "setBreakpoints");
     js_transport_send_response(info, ctx, (Response*) response);
   } else if (strcmp(command, "setExceptionBreakpoints") == 0) {
@@ -674,10 +661,6 @@ done:
   return variables;
 }
 
-static const char* js_debugger_get_completion_type() {
-
-}
-
 static CompletionItem* js_debugger_get_completions(JSContext* ctx,
                                                    struct DebuggerSuspendedState* state,
                                                    int64_t* completions_len,
@@ -729,11 +712,11 @@ static CompletionItem* js_debugger_get_completions(JSContext* ctx,
   return completion_items;
 }
 
-static void js_process_breakpoints(JSDebuggerInfo* info,
+void js_debugger_set_breakpoints(JSDebuggerInfo* info,
                                    Source* source,
                                    SourceBreakpoint* breakpoints,
                                    size_t breakpointsLen) {
-  JSContext* ctx = info->ctx;
+  JSContext* ctx = info->debugging_ctx;
 
   // force all functions to reprocess their breakpoints.
   info->breakpoints_dirty_counter++;
@@ -752,7 +735,6 @@ static void js_process_breakpoints(JSDebuggerInfo* info,
   item->dirty = info->breakpoints_dirty_counter;
   JS_SetOpaque(object, item);
 
-  printf("SET BREAKPOINT: %s\n", path);
   JS_SetPropertyStr(ctx, info->breakpoints, path, object);
 }
 

@@ -6993,6 +6993,19 @@ static __exception int js_parse_statement_or_decl(JSParseState *s, int decl_mask
         goto fail;
       if (js_parse_expect_semi(s))
         goto fail;
+
+      // set the breakpoints when debugger is connected.
+      if (js_debugger_is_transport_connected(ctx->rt)) {
+        JSDebuggerInfo* debugger_info = js_debugger_info(JS_GetRuntime(ctx));
+        Source* source = js_malloc(ctx, sizeof(Source));
+        init_source(source);
+        source->path = s->filename;
+        SourceBreakpoint* breakpoint = js_malloc(ctx, sizeof(SourceBreakpoint));
+        init_source_breakpoint(breakpoint);
+        breakpoint->line = s->line_num;
+        breakpoint->column = 0;
+        js_debugger_set_breakpoints(debugger_info, source, breakpoint, 1);
+      }
       break;
 
     case TOK_ENUM:
