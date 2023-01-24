@@ -26,14 +26,12 @@
     animation-name: test-negative-delay;
     animation-duration: 6s;
     animation-delay: -3s;
-
     background-color: blue;
   }
 
   #ref-no-delay {
     animation-name: ref-no-delay;
     animation-duration: 3s;
-
     background-color: yellow;
   }
 
@@ -76,4 +74,11 @@
   await sleep(3);
   expect(Math.round(negativeDelay.offsetLeft)).toBe(Math.round(ref.offsetLeft), 'negative delay should be at the end');
   expect(negativeDelay.offsetLeft === 0).toBe(true);
+
+  const style = window.getComputedStyle(negativeDelay);
+  expect(style['animation-delay']).toBe('-3s');
+  expect(style['animation-duration']).toBe('6s');
+  expect(style['animation-name']).toBe('test-negative-delay');
+  expect(style['animation-fill-mode']).toBe('none');
+  expect(style['animation-timing-function']).toBe('linear');
 </script>

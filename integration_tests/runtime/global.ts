@@ -299,6 +299,27 @@ async function snapshot(target?: any, filename?: String, postfix?: boolean | str
   });
 }
 
+/**
+ * Create test that a CSS property computes to the expected value.
+ * The document element #target is used to perform the test.
+ *
+ * @param {string} property  The name of the CSS property being tested.
+ * @param {string} specified A specified value for the property.
+ * @param {string|array} computed  The expected computed value,
+ *                                 or an array of permitted computed value.
+ *                                 If omitted, defaults to specified.
+ */
+function test_computed_value(property: string, specified: string, computed: string = specified) {
+
+    const target = document.getElementById('target');
+    expect(target).not.toBeNull();
+    target?.style?.setProperty(property, '');
+    target?.style?.setProperty(property, specified);
+
+    let readValue = getComputedStyle(target!)[property];
+    expect(readValue).toEqual(computed);
+}
+
 // Compatible to tests that use global variables.
 Object.assign(global, {
   append,
@@ -326,5 +347,6 @@ Object.assign(global, {
   simulatePointUp,
   simulatePointRemove,
   simulatePointAdd,
-  simulatePointMove
+  simulatePointMove,
+  test_computed_value
 });

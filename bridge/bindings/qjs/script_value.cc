@@ -101,6 +101,7 @@ ScriptValue::ScriptValue(const ScriptValue& value) {
 }
 ScriptValue& ScriptValue::operator=(const ScriptValue& value) {
   if (&value != this) {
+    JS_FreeValue(ctx_, value_);
     value_ = JS_DupValue(ctx_, value.value_);
   }
   ctx_ = value.ctx_;
@@ -115,6 +116,7 @@ ScriptValue::ScriptValue(ScriptValue&& value) noexcept {
 }
 ScriptValue& ScriptValue::operator=(ScriptValue&& value) noexcept {
   if (&value != this) {
+    JS_FreeValue(ctx_, value_);
     value_ = JS_DupValue(ctx_, value.value_);
   }
   ctx_ = value.ctx_;

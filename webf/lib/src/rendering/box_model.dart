@@ -526,8 +526,8 @@ class RenderLayoutBox extends RenderBoxModel
 
     Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
     double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
-    if(transform!=null) {
-      maxScrollableX+= transform.getTranslation()[0];
+    if (transform != null) {
+      maxScrollableX += transform.getTranslation()[0];
     }
 
     if (childRenderStyle.right.isNotAuto) {
@@ -545,8 +545,8 @@ class RenderLayoutBox extends RenderBoxModel
     }
 
     double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
-    if(transform!=null) {
-      maxScrollableY+= transform.getTranslation()[1];
+    if (transform != null) {
+      maxScrollableY += transform.getTranslation()[1];
     }
     if (childRenderStyle.bottom.isNotAuto) {
       if (isScrollingContentBox && (parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
@@ -1545,8 +1545,6 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
-    properties.add(DiagnosticsProperty('widthSizeType', widthSizeType, missingIfNull: true));
-    properties.add(DiagnosticsProperty('heightSizeType', heightSizeType, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
 
     if (renderPositionPlaceholder != null)

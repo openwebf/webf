@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui show Gradient;
 
 import 'package:flutter/painting.dart';
+import 'package:webf/css.dart';
 
 // ignore: must_be_immutable
 class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
@@ -69,6 +70,38 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
     return ui.Gradient.linear(
         beginOffset, endOffset, colors, _impliedStops(), tileMode, _resolveTransform(rect, textDirection));
   }
+
+  String cssText() {
+    final function = tileMode == TileMode.clamp ? 'linear-gradient' : 'repeating-linear-gradient';
+    var to = '';
+    if (_angle != null) {
+      to = '${_angle! / (2 * math.pi / 360)}deg';
+    } else {
+      if (end == Alignment.topLeft) {
+        to = 'to left top';
+      } else if (end == Alignment.topRight) {
+        to = 'to right top';
+      } else if (end == Alignment.topCenter) {
+        to = 'to top';
+      } else if (end == Alignment.bottomLeft) {
+        to = 'to left bottom';
+      } else if (end == Alignment.bottomRight) {
+        to = 'to right bottom';
+      } else if (end == Alignment.bottomCenter) {
+        to = 'to bottom';
+      }
+    }
+    final colorTexts = [];
+    final includeStop = !(stops?.length == 2 && stops?[0] == 0 && stops?[1] == 1);
+    for (int i = 0; i < colors.length; i++) {
+      var text = CSSColor(colors[i]).cssText();
+      if (stops != null && stops![i] >= 0 && includeStop) {
+        text += ' ${stops![i] * 100}%';
+      }
+      colorTexts.add(text);
+    }
+    return '$function($to, ${colorTexts.join(', ')})';
+  }
 }
 
 // ignore: must_be_immutable
@@ -125,6 +158,28 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
       focalRadius * rect.shortestSide,
     );
   }
+
+  String cssText() {
+    final function = tileMode == TileMode.clamp ? 'radial-gradient' : 'repeating-radial-gradient';
+    var radiusText = radius != 0.5 ? '${radius * 100 * 2}% ' : '';
+    if (center is FractionalOffset) {
+      final offset = center as FractionalOffset;
+      if (offset.dx != 0.5 || offset.dy != 0.5) {
+        radiusText += 'at ${offset.dx * 100}% ${offset.dy * 100}%, ';
+      }
+    }
+
+    final colorTexts = [];
+    final includeStop = !(stops?.length == 2 && stops?[0] == 0 && stops?[1] == 1);
+    for (int i = 0; i < colors.length; i++) {
+      var text = CSSColor(colors[i]).cssText();
+      if (stops != null && stops![i] >= 0 && includeStop) {
+        text += ' ${stops![i] * 100}%';
+      }
+      colorTexts.add(text);
+    }
+    return '$function($radiusText${colorTexts.join(', ')})';
+  }
 }
 
 // ignore: must_be_immutable
@@ -147,6 +202,35 @@ class CSSConicGradient extends SweepGradient with BorderGradientMixin {
           rect.bottom - borderEdge!.bottom);
     }
     return super.createShader(rect, textDirection: textDirection);
+  }
+
+  String cssText() {
+    final function = 'conic-gradient';
+    var from = '';
+    if (transform is GradientRotation) {
+      final deg = (((transform as GradientRotation).radians + math.pi / 2) * 360 / 2 / math.pi);
+      if (deg != 0) {
+         from = 'from ${deg.cssText()}deg, ';
+      }
+    }
+    var at = '';
+    if (center is FractionalOffset) {
+      final offset = center as FractionalOffset;
+      if (offset.dx != 0.5 || offset.dy != 0.5) {
+        at += 'at ${offset.dx * 100}% ${offset.dy * 100}%, ';
+      }
+    }
+
+    final colorTexts = [];
+    final includeStop = !(stops?.length == 2 && stops?[0] == 0 && stops?[1] == 1);
+    for (int i = 0; i < colors.length; i++) {
+      var text = CSSColor(colors[i]).cssText();
+      if (stops != null && stops![i] >= 0 && includeStop) {
+        text += ' ${stops![i] * 100}%';
+      }
+      colorTexts.add(text);
+    }
+    return '$function($from$at${colorTexts.join(', ')})';
   }
 }
 

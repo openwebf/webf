@@ -1889,6 +1889,15 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
     return false;
   }
+
+  RenderStyle? computedStyle(String? pseudoElementSpecifier) {
+    RenderStyle? style = renderBoxModel?.renderStyle;
+    if (style == null) {
+      recalculateStyle();
+      style = renderBoxModel?.renderStyle;
+    }
+    return style;
+  }
 }
 
 // https://www.w3.org/TR/css-position-3/#def-cb

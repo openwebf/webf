@@ -299,4 +299,81 @@ describe('border', () => {
       done();
     });
   });
+
+  it('border-style-computed', async () => {
+    let target
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        'box-sizing': 'border-box',
+      },
+    })
+    BODY.appendChild(target)
+
+    test_computed_value('border-style', 'none')
+    // test_computed_value('border-style', 'inset outset')
+    // test_computed_value('border-style', 'hidden dotted dashed')
+    // test_computed_value('border-style', 'solid double groove ridge')
+
+    test_computed_value('border-top-style', 'solid')
+    // test_computed_value('border-right-style', 'double')
+    // test_computed_value('border-bottom-style', 'groove')
+    // test_computed_value('border-left-style', 'ridge')
+  })
+
+  it('border-width-computed', async () => {
+    let box
+    let target
+    box = createElement('div', {
+      id: 'box',
+      style: {
+        'border-style': 'solid',
+        'border-top-width': 'thin',
+        'border-right-width': 'medium',
+        'border-bottom-width': 'thick',
+        'box-sizing': 'border-box',
+      },
+    })
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        'border-style': 'solid',
+        'font-size': '40px',
+        'box-sizing': 'border-box',
+      },
+    })
+    BODY.appendChild(box)
+    BODY.appendChild(target)
+
+    const computedStyle = getComputedStyle(box);
+    const thinWidth = computedStyle['border-top-width'];
+    const mediumWidth = computedStyle['border-right-width'];
+    const thickWidth = computedStyle['border-bottom-width'];
+
+    test_computed_value('border-width', '1px')
+    // test_computed_value('border-width', '1px 2px')
+    // test_computed_value('border-width', '1px 2px 3px')
+    // test_computed_value('border-width', '1px 2px 3px 4px')
+
+    // test_computed_value('border-width', '0.5em', '20px')
+    // test_computed_value(
+    //   'border-width',
+    //   '2px thin medium thick',
+    //   '2px ' + thinWidth + ' ' + mediumWidth + ' ' + thickWidth,
+    // )
+
+    // test_computed_value('border-top-width', '0px')
+    // test_computed_value('border-right-width', '10px')
+    // test_computed_value('border-bottom-width', 'calc(-0.5em + 20px)', '0px')
+    // test_computed_value('border-left-width', 'calc(0.5em + 10px)', '30px')
+
+    // const thin = Number(thinWidth.replace('px', ''))
+    // const medium = Number(mediumWidth.replace('px', ''))
+    // const thick = Number(thickWidth.replace('px', ''))
+      
+    // console.log(thin, medium, thick);
+    // expect(0).toBeLessThanOrEqual(thin);
+    // expect(thin).toBeLessThanOrEqual(medium);
+    // expect(medium).toBeLessThanOrEqual(thick);
+  })
 });

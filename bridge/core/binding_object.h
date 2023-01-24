@@ -115,6 +115,7 @@ class BindingObject {
 
   virtual bool IsEventTarget() const;
   virtual bool IsTouchList() const;
+  virtual bool IsComputedCssStyleDeclaration() const;
   virtual bool IsCanvasGradient() const;
 
  protected:
