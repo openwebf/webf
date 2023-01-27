@@ -6997,6 +6997,7 @@ static __exception int js_parse_statement_or_decl(JSParseState *s, int decl_mask
       // set the breakpoints when debugger is connected.
       if (js_debugger_is_transport_connected(ctx->rt)) {
         JSDebuggerInfo* debugger_info = js_debugger_info(JS_GetRuntime(ctx));
+        debugger_info->ctx = ctx;
         Source* source = js_malloc(ctx, sizeof(Source));
         init_source(source);
         source->path = s->filename;
@@ -7005,6 +7006,7 @@ static __exception int js_parse_statement_or_decl(JSParseState *s, int decl_mask
         breakpoint->line = s->line_num;
         breakpoint->column = 0;
         js_debugger_set_breakpoints(debugger_info, source, breakpoint, 1);
+        debugger_info->ctx = NULL;
       }
       break;
 

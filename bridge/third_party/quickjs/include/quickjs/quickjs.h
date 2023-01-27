@@ -939,6 +939,7 @@ typedef struct DebuggerMethods {
 } DebuggerMethods;
 
 void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods);
+void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath, const char* filename, int64_t lineno, int64_t column);
 
 /* C property definition */
 

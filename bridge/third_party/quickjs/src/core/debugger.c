@@ -15,6 +15,7 @@
 #if ENABLE_DEBUGGER
 
 #define STACK_FRAME_INDEX_START INT32_MAX
+#define LOGGING_VAR_REFERENCE_MAX INT16_MAX
 
 static Variable* js_debugger_get_variables(JSContext* ctx,
                                            JSValue reference_value,
@@ -233,12 +234,13 @@ static void js_transport_send_response(JSDebuggerInfo* info, JSContext* ctx, Res
 
 static void js_transport_send_event(JSDebuggerInfo* info, Event* event) {
   size_t length;
+  printf("ctx %p\n", info->ctx);
   const char* buf = stringify_event(info->ctx, event, &length);
   write_backend_message(info, buf, length);
 }
 
 static void js_send_stopped_event(JSDebuggerInfo* info, const char* reason) {
-  JSContext* ctx = info->debugging_ctx;
+  JSContext* ctx = info->ctx;
 
   StoppedEvent* event = initialize_event(ctx, "stopped");
   event->body->reason = reason;
@@ -507,6 +509,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;
     int8_t skip_proto;
+    //    int8_t is_logging = reference > LOGGING_VAR_REFERENCE_MAX ? 1 : 0;
     JSValue reference_value = js_debugger_get_scope_variable(ctx, reference, state, &skip_proto);
     int64_t variable_len = 0;
     Variable* variables = js_debugger_get_variables(ctx, reference_value, state, &variable_len, skip_proto,
@@ -716,7 +719,7 @@ void js_debugger_set_breakpoints(JSDebuggerInfo* info,
                                    Source* source,
                                    SourceBreakpoint* breakpoints,
                                    size_t breakpointsLen) {
-  JSContext* ctx = info->debugging_ctx;
+  JSContext* ctx = info->ctx;
 
   // force all functions to reprocess their breakpoints.
   info->breakpoints_dirty_counter++;
@@ -750,7 +753,7 @@ static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cu
   // continue processing messages until the continue message is received.
   JSContext* ctx = info->ctx;
   struct DebuggerSuspendedState state;
-  state.variable_reference_count = js_debugger_stack_depth(ctx) << 2;
+  state.variable_reference_count = LOGGING_VAR_REFERENCE_MAX + 1;
   state.variable_pointers = JS_NewObject(ctx);
   state.variable_references = JS_NewObject(ctx);
   state.cur_pc = cur_pc;
@@ -947,6 +950,10 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   info->debugging_ctx = JS_NewContext(rt);
   info->is_connected = TRUE;
 
+  rt->debugger_info.logging_state.variable_reference_count = 1;
+  rt->debugger_info.logging_state.variable_pointers = JS_NewObject(ctx);
+  rt->debugger_info.logging_state.variable_references = JS_NewObject(ctx);
+
   JSContext* original_ctx = info->ctx;
   info->ctx = ctx;
 
@@ -957,6 +964,39 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   info->ctx = original_ctx;
 
   return info;
+}
+
+void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath, const char* filename, int64_t lineno, int64_t column) {
+  if (!js_debugger_is_transport_connected(ctx->rt)) {
+    return;
+  }
+
+  JSDebuggerInfo* info = js_debugger_info(ctx->rt);
+
+  VariableType value_type;
+  js_debugger_get_variable_type(ctx, &info->logging_state, &value_type, value, 0, 1);
+info->ctx = ctx;
+  assert(info->ctx != NULL);
+  OutputEvent* event = initialize_event(ctx, "output");
+  event->body->category = "stdout";
+
+  uint32_t buf_len;
+  char* buf = js_malloc(ctx, buf_len = (strlen(value_type.value) + 2));
+  sprintf(buf, "%s\n", value_type.value);
+  buf[buf_len - 1] = 0x00;
+  event->body->output = buf;
+  event->body->variablesReference = value_type.variablesReference;
+
+  event->body->line = lineno;
+  event->body->column = column;
+  Source* source = js_malloc(ctx, sizeof(Source));
+  init_source(source);
+  source->name = filename;
+  source->path = filepath;
+  event->body->source = source;
+
+  js_transport_send_event(info, (Event*)event);
+  info->ctx = NULL;
 }
 
 int js_debugger_is_transport_connected(JSRuntime* rt) {

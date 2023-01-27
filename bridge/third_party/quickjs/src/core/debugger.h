@@ -79,6 +79,8 @@ typedef struct JSDebuggerInfo {
   int stepping;
   JSDebuggerLocation step_over;
   uint32_t step_depth;
+
+  DebuggerSuspendedState logging_state;
 } JSDebuggerInfo;
 
 void init_source(Source* source);

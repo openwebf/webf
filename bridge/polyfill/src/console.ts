@@ -6,6 +6,8 @@
 // https://console.spec.whatwg.org/
 import { webfPrint } from './bridge';
 
+declare const __webf_debug_inspect_vars__: (value: any, funcName?: string, filename?: string, lineno?: number, column?: number) => void;
+
 const SEPARATOR = ' ';
 const INTERPOLATE = /%[sdifoO]/g;
 const DIMENSIONS = 3;
@@ -182,40 +184,93 @@ function inspect(obj: any, within?: boolean): string {
   }
 }
 
-function logger(allArgs: any) {
+function getCallStack() {
+  try {
+    throw new Error('1');
+  } catch (e) {
+    return e.stack;
+  }
+}
+
+function debuggerInspectValue(val: any, additionalStack: number) {
+  const callStacks = getCallStack().split('\n');
+  let filepath, column, lineno, filename;
+
+  function matchStack(stack: string) {
+    const regex = /^at\s([<>\w]+)\s\(([\w\:\/\.]+):(\d+):(\d+)\)$/;
+    printer(`${stack}`);
+    let pattern = regex.exec(stack.trim());
+    if (pattern) {
+      return {
+        funcName: pattern[1],
+        filename: pattern[2],
+        lineno: Number(pattern[3]),
+        column: Number(pattern[4])
+      };
+    }
+    return null;
+  }
+
+  for(let i = 0; i < callStacks.length; i ++) {
+    let s = callStacks[i];
+    let info = matchStack(s);
+    if (info && info.funcName === __webf__logger.name) {
+      let targetStack = callStacks[i + 2 + additionalStack];
+      let targetStackInfo = matchStack(targetStack);
+      if (targetStackInfo) {
+        filepath = targetStackInfo.filename;
+        column = targetStackInfo.column;
+        lineno = targetStackInfo.lineno;
+        break;
+      }
+    }
+  }
+
+  if (filepath) {
+    filename = filepath.split('/').slice(-1)[0];
+  }
+
+  __webf_debug_inspect_vars__(val, filepath, filename, lineno, column);
+}
+
+function __webf__logger(allArgs: any) {
   var args = Array.prototype.slice.call(allArgs, 0);
   var firstArg = args[0];
   var result = [];
   if (typeof firstArg === 'string' && INTERPOLATE.test(firstArg)) {
     args.shift();
     result.push(firstArg.replace(INTERPOLATE, function () {
-      return inspect(args.shift());
+      const val = args.shift();
+      debuggerInspectValue(val, 1);
+      return inspect(val);
     }));
   }
   for (var i = 0; i < args.length; i++) {
-    result.push(inspect(args[i]));
+    const val = args[i];
+    debuggerInspectValue(val, 0);
+    result.push(inspect(val));
   }
   return result.join(SEPARATOR);
 }
 
 export const console = {
   log(...args: any) {
-    printer(logger(arguments));
+    printer(__webf__logger(arguments));
   },
   info(...args: any) {
-    printer(logger(arguments), 'info');
+    printer(__webf__logger(arguments), 'info');
   },
   warn(...args: any) {
-    printer(logger(arguments), 'warn');
+    printer(__webf__logger(arguments), 'warn');
   },
   debug(...args: any) {
-    printer(logger(arguments), 'debug');
+    printer(__webf__logger(arguments), 'debug');
   },
   error(...args: any) {
-    printer(logger(arguments), 'error');
+    printer(__webf__logger(arguments), 'error');
   },
   dirxml(...args: any) {
-    printer(logger(arguments));
+    printer(__webf__logger(arguments));
   },
   dir(...args: any) {
     var result = [];
@@ -272,8 +327,8 @@ export const console = {
         let cellString: string;
 
         if (columnName === INDEX) cellString = index[rowIndex];
-        else if (row[columnName] !== undefined) cellString = logger([row[columnName]]);
-        else if (columnName === VALUE && (row === null || typeof row !== 'object')) cellString = logger([row]);
+        else if (row[columnName] !== undefined) cellString = __webf__logger([row[columnName]]);
+        else if (columnName === VALUE && (row === null || typeof row !== 'object')) cellString = __webf__logger([row]);
         else cellString = PLACEHOLDER; // empty
 
         stringRows[rowIndex] = stringRows[rowIndex] || [];
@@ -312,7 +367,7 @@ export const console = {
   },
   trace(...args: any) {
     var traceStack = 'Trace:';
-    var argsInfo = logger(arguments);
+    var argsInfo = __webf__logger(arguments);
     if (argsInfo) {
       traceStack += (' ' + argsInfo);
     }
