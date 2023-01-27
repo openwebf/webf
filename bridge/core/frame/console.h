@@ -19,11 +19,31 @@ class Console final {
                              ExceptionState& exception);
   static void __webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state);
 
-  static void __webf_debug_inspect_vars__(ExecutingContext* context, const ScriptValue& value, ExceptionState& exception_state);
-  static void __webf_debug_inspect_vars__(ExecutingContext* context, const ScriptValue& value, const AtomicString& file_path, ExceptionState& exception_state);
-  static void __webf_debug_inspect_vars__(ExecutingContext* context, const ScriptValue& value, const AtomicString& file_path, const AtomicString& filename, ExceptionState& exception_state);
-  static void __webf_debug_inspect_vars__(ExecutingContext* context, const ScriptValue& value, const AtomicString& file_path, const AtomicString& filename, int64_t lineno, ExceptionState& exception_state);
-  static void __webf_debug_inspect_vars__(ExecutingContext* context, const ScriptValue& value, const AtomicString& file_path, const AtomicString& filename, int64_t lineno, int64_t column, ExceptionState& exception_state);
+  static void __webf_debug_inspect_vars__(ExecutingContext* context,
+                                          const ScriptValue& value,
+                                          ExceptionState& exception_state);
+  static void __webf_debug_inspect_vars__(ExecutingContext* context,
+                                          const ScriptValue& value,
+                                          const AtomicString& file_path,
+                                          ExceptionState& exception_state);
+  static void __webf_debug_inspect_vars__(ExecutingContext* context,
+                                          const ScriptValue& value,
+                                          const AtomicString& file_path,
+                                          const AtomicString& filename,
+                                          ExceptionState& exception_state);
+  static void __webf_debug_inspect_vars__(ExecutingContext* context,
+                                          const ScriptValue& value,
+                                          const AtomicString& file_path,
+                                          const AtomicString& filename,
+                                          int64_t lineno,
+                                          ExceptionState& exception_state);
+  static void __webf_debug_inspect_vars__(ExecutingContext* context,
+                                          const ScriptValue& value,
+                                          const AtomicString& file_path,
+                                          const AtomicString& filename,
+                                          int64_t lineno,
+                                          int64_t column,
+                                          ExceptionState& exception_state);
 };
 
 }  // namespace webf

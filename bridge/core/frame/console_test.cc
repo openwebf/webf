@@ -23,14 +23,14 @@ TEST(Console, rawPrintShouldWork) {
 
 TEST(Console, debugInspect) {
   static bool logExecuted = false;
-//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-//    logExecuted = true;
-////    EXPECT_STREQ(message.c_str(), "123");
-//  };
+  //  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+  //    logExecuted = true;
+  ////    EXPECT_STREQ(message.c_str(), "123");
+  //  };
   auto bridge = TEST_init();
   const char* code = "function f() { console.log(123); } f();";
   bridge->evaluateScript(code, strlen(code), "/tmp/index.js", 0);
-//  EXPECT_EQ(logExecuted, true);
+  //  EXPECT_EQ(logExecuted, true);
 }
 
 TEST(Console, log) {

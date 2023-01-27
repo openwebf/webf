@@ -31,7 +31,8 @@ void Console::__webf_print__(ExecutingContext* context, const AtomicString& log,
 void Console::__webf_debug_inspect_vars__(ExecutingContext* context,
                                           const ScriptValue& value,
                                           ExceptionState& exception_state) {
-  __webf_debug_inspect_vars__(context, value, built_in_string::kempty_string, built_in_string::kempty_string, 0, 0, exception_state);
+  __webf_debug_inspect_vars__(context, value, built_in_string::kempty_string, built_in_string::kempty_string, 0, 0,
+                              exception_state);
 }
 void Console::__webf_debug_inspect_vars__(ExecutingContext* context,
                                           const ScriptValue& value,
@@ -62,7 +63,8 @@ void Console::__webf_debug_inspect_vars__(ExecutingContext* context,
                                           int64_t lineno,
                                           int64_t column,
                                           ExceptionState& exception_state) {
-  JS_DebuggerInspectValue(context->ctx(), value.QJSValue(), filepath.ToStdString(context->ctx()).c_str(), file_name.ToStdString(context->ctx()).c_str(), lineno, column);
+  JS_DebuggerInspectValue(context->ctx(), value.QJSValue(), filepath.ToStdString(context->ctx()).c_str(),
+                          file_name.ToStdString(context->ctx()).c_str(), lineno, column);
 }
 
 }  // namespace webf
