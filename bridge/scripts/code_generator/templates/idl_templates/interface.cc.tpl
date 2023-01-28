@@ -149,7 +149,7 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 <% } else { %>
 
   auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
-  assert(<%= blob.filename %> != nullptr);
+  if (<%= blob.filename %> == nullptr) return JS_NULL;
   MemberMutationScope scope{ExecutingContext::From(ctx)};
 
   <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
@@ -201,7 +201,7 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
 <% _.forEach(object.props, function(prop, index) { %>
 static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
-  assert(<%= blob.filename %> != nullptr);
+  if(<%= blob.filename %> == nullptr) return JS_NULL;
   MemberMutationScope scope{ExecutingContext::From(ctx)};
   return Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= object.name %>::<%= prop.name %>(*<%= blob.filename %>));
 }

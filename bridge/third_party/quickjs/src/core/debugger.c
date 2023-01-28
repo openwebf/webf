@@ -277,6 +277,15 @@ static void js_get_scopes(JSContext* ctx, int64_t frame, ScopesResponseBody* bod
   body->scopesLen = 3;
 }
 
+const char* js_get_object_proto_name(JSContext* ctx, JSValue value) {
+  JSValue object_proto = JS_GetPrototype(ctx, value);
+  JSValue constructor_func = JS_GetPropertyStr(ctx, object_proto, "constructor");
+  const char* func_name = get_func_name(ctx, constructor_func);
+  JS_FreeValue(ctx, object_proto);
+  JS_FreeValue(ctx, constructor_func);
+  return func_name;
+}
+
 static inline JS_BOOL JS_IsInteger(JSValueConst v) {
   int tag = JS_VALUE_GET_TAG(v);
   return tag == JS_TAG_INT || tag == JS_TAG_BIG_INT;
@@ -286,6 +295,7 @@ static void js_debugger_get_variable_type(JSContext* ctx,
                                           struct DebuggerSuspendedState* state,
                                           VariableType* variable_type,
                                           JSValue var_val,
+                                          JSValue this_val,
                                           size_t depth,
                                           int8_t is_short) {
   // 0 means not expandible
@@ -325,6 +335,7 @@ static void js_debugger_get_variable_type(JSContext* ctx,
       char buffer[64];
       sprintf(buffer, "ƒ %s ()", func_name);
       variable_type->value = copy_string(buffer, strlen(buffer));
+      variable_type->type = "function";
       JS_FreeCString(ctx, func_name);
     } else if (JS_IsArray(ctx, var_val)) {
       variable_type->type = "array";
@@ -334,9 +345,7 @@ static void js_debugger_get_variable_type(JSContext* ctx,
       sprintf(buf, "Array(%lld)", length);
       variable_type->value = copy_string(buf, strlen(buf));
     } else {
-      JSValue object_proto = JS_GetPrototype(ctx, var_val);
-      JSValue constructor_func = JS_GetPropertyStr(ctx, object_proto, "constructor");
-      const char* func_name = get_func_name(ctx, constructor_func);
+      const char* func_name = js_get_object_proto_name(ctx, var_val);
 
       char buffer[64];
       if (func_name != NULL) {
@@ -351,19 +360,26 @@ static void js_debugger_get_variable_type(JSContext* ctx,
         } else {
           JSPropertyEnum* property_enum;
           uint32_t property_len;
+          int8_t have_ellipse = FALSE;
           if (!JS_GetOwnPropertyNames(ctx,  &property_enum, &property_len, var_val, JS_GPN_SYMBOL_MASK | JS_GPN_STRING_MASK)) {
             size_t buf_len = 256;
             char* buf = js_malloc(ctx, buf_len);
             buf[0] = '{';
             size_t index = 1;
+
+            if (property_len > 5) {
+              property_len = 5;
+              have_ellipse = TRUE;
+            }
+
             for(int i = 0; i < property_len; i ++) {
-              JSValue v = JS_GetProperty(ctx, var_val, property_enum[i].atom);
+              JSValue v = JS_GetProperty(ctx, this_val, property_enum[i].atom);
               const char* key = atom_to_string(ctx, property_enum[i].atom);
               VariableType object_var_type;
-              js_debugger_get_variable_type(ctx, state, &object_var_type, v, depth + 1, 1);
+              js_debugger_get_variable_type(ctx, state, &object_var_type, v, v, depth + 1, 1);
               const char* tmp = object_var_type.value;
               size_t tmp_len = strlen(tmp);
-              if (index + tmp_len + strlen(key) + 4 > buf_len) {
+              if (index + tmp_len + strlen(key) + 8 > buf_len) {
                 buf_len = (buf_len + tmp_len) * 2;
                 buf = js_realloc(ctx, buf, buf_len);
               }
@@ -380,6 +396,12 @@ static void js_debugger_get_variable_type(JSContext* ctx,
               }
               JS_FreeValue(ctx, v);
             }
+
+            if (have_ellipse) {
+              strcpy(buf + index, "...");
+              index += 3;
+            }
+
             buf[index] = '}';
             buf[index + 1] = 0;
             variable_type->value = buf;
@@ -388,9 +410,6 @@ static void js_debugger_get_variable_type(JSContext* ctx,
       } else {
         variable_type->value = copy_string(buffer, strlen(buffer));
       }
-
-      JS_FreeValue(ctx, object_proto);
-      JS_FreeValue(ctx, constructor_func);
     }
 
     JSObject* p = JS_VALUE_GET_OBJ(var_val);
@@ -434,7 +453,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
 
     EvaluateResponse* response = (EvaluateResponse*) initialize_response(ctx, request, "evaluate");
     VariableType result_variable_type;
-    js_debugger_get_variable_type(ctx, state, &result_variable_type, result, 0, 0);
+    js_debugger_get_variable_type(ctx, state, &result_variable_type, result, result, 0, 0);
     response->body->result = result_variable_type.value;
     response->body->type = result_variable_type.type;
     response->body->variablesReference = result_variable_type.variablesReference;
@@ -509,11 +528,28 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;
     int8_t skip_proto;
-    //    int8_t is_logging = reference > LOGGING_VAR_REFERENCE_MAX ? 1 : 0;
-    JSValue reference_value = js_debugger_get_scope_variable(ctx, reference, state, &skip_proto);
+    JSValue variable = JS_GetPropertyUint32(ctx, state->variable_references, reference);
     int64_t variable_len = 0;
-    Variable* variables = js_debugger_get_variables(ctx, reference_value, state, &variable_len, skip_proto,
-                                                    arguments->filter, arguments->start, arguments->count);
+    Variable* variables = NULL;
+    if (JS_IsUndefined(variable) && reference < LOGGING_VAR_REFERENCE_MAX) {
+      JSValue reference_value = js_debugger_get_scope_variable(ctx, reference, &info->logging_state, &skip_proto);
+      variables = js_malloc(ctx, sizeof(Variable));
+      init_variable(&variables[0]);
+      variable_len = 1;
+
+      VariableType variable_type;
+      js_debugger_get_variable_type(ctx, state, &variable_type, reference_value, reference_value,  0, 0);
+
+      variables[0].name = "";
+      variables[0].value = variable_type.value;
+      variables[0].variablesReference = variable_type.variablesReference;
+      variables[0].type = variable_type.type;
+    } else {
+      JSValue reference_value = js_debugger_get_scope_variable(ctx, reference, state, &skip_proto);
+      variables = js_debugger_get_variables(ctx, reference_value, state, &variable_len, skip_proto,
+                                                      arguments->filter, arguments->start, arguments->count);
+    }
+
     VariablesResponse* response = initialize_response(ctx, request, "variables");
     response->body->variables = variables;
     response->body->variablesLen = variable_len;
@@ -591,7 +627,7 @@ static Variable* js_debugger_get_variables(JSContext* ctx,
     for (uint32_t i = 0; i < count; i++) {
       JSValue value = JS_GetPropertyUint32(ctx, reference_value, start + i);
       VariableType variable_type;
-      js_debugger_get_variable_type(ctx, state, &variable_type, value, 0, 0);
+      js_debugger_get_variable_type(ctx, state, &variable_type, value, value, 0, 0);
 
       sprintf(name_buf, "%d", i);
       init_variable(&variables[i]);
@@ -621,7 +657,7 @@ unfiltered:
     for (int i = 0; i < tab_atom_count; i++) {
       JSValue value = JS_GetProperty(ctx, reference_value, tab_atom[i].atom);
       VariableType variable_type;
-      js_debugger_get_variable_type(ctx, state, &variable_type, value, 0, 0);
+      js_debugger_get_variable_type(ctx, state, &variable_type, value, value, 0, 0);
       init_variable(&variables[i]);
       variables[i].name = atom_to_string(ctx, tab_atom[i].atom);
       variables[i].type = variable_type.type;
@@ -636,7 +672,7 @@ unfiltered:
       const JSValue proto = JS_GetPrototype(ctx, reference_value);
       if (!JS_IsException(proto)) {
         VariableType variable_type;
-        js_debugger_get_variable_type(ctx, state, &variable_type, proto, 0, 0);
+        js_debugger_get_variable_type(ctx, state, &variable_type, proto, reference_value, 0, 0);
         init_variable(&variables[tab_atom_count]);
         variables[tab_atom_count].name = "[[Prototype]]";
         variables[tab_atom_count].value = variable_type.type;
@@ -974,7 +1010,7 @@ void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath
   JSDebuggerInfo* info = js_debugger_info(ctx->rt);
 
   VariableType value_type;
-  js_debugger_get_variable_type(ctx, &info->logging_state, &value_type, value, 0, 1);
+  js_debugger_get_variable_type(ctx, &info->logging_state, &value_type, value, value, 0, 1);
 info->ctx = ctx;
   assert(info->ctx != NULL);
   OutputEvent* event = initialize_event(ctx, "output");

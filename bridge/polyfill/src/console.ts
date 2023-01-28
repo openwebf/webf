@@ -198,7 +198,6 @@ function debuggerInspectValue(val: any, additionalStack: number) {
 
   function matchStack(stack: string) {
     const regex = /^at\s([<>\w]+)\s\(([\w\:\/\.]+):(\d+):(\d+)\)$/;
-    printer(`${stack}`);
     let pattern = regex.exec(stack.trim());
     if (pattern) {
       return {
