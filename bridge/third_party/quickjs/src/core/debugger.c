@@ -696,7 +696,6 @@ unfiltered:
   }
 
 done:
-  JS_FreeValue(ctx, reference_value);
   return variables;
 }
 
@@ -707,30 +706,76 @@ static CompletionItem* js_debugger_get_completions(JSContext* ctx,
                                                    const char* text,
                                                    int64_t completions_column,
                                                    int64_t completion_line) {
-  if (text == NULL || strlen(text) == 0) {
+  size_t text_len = strlen(text);
+  if (text == NULL || text_len == 0) {
     *completions_len = 0;
     return NULL;
   };
 
+  char try_script[text_len];
+  memcpy(try_script, text, strlen(text) - 1);
+  try_script[text_len - 1] = 0x00;
+
+  JSValue evaluate_result = js_debugger_evaluate(ctx, frame, state, try_script);
+
   CompletionItem* completion_items = NULL;
+  int64_t completions_index = 0;
+  if (JS_IsObject(evaluate_result)) {
+    int64_t object_property_variables_len;
+    Variable* object_property_variables =
+        js_debugger_get_variables(ctx, evaluate_result, state, &object_property_variables_len, 1, NULL, 0, 0);
 
-  JSValue global_reference_value = JS_GetGlobalObject(ctx);
-  JSValue local_reference_value = js_debugger_local_variables(ctx, frame, state);
-  JSValue closure_reference_value = js_debugger_closure_variables(ctx, frame);
+    completion_items = js_malloc(ctx, sizeof(CompletionItem) * object_property_variables_len);
+    for (int i = 0; i < object_property_variables_len; i++) {
+      CompletionItem* item = &completion_items[completions_index++];
+      item->label = (object_property_variables)[i].name;
+      if (strcmp(object_property_variables[i].type, "function") == 0) {
+        item->type = "method";
+      } else {
+        item->type = "variable";
+      }
+    }
 
-  // Collect all variables
-  int64_t global_vars_len;
-  Variable* global_vars =
-      js_debugger_get_variables(ctx, global_reference_value, state, &global_vars_len, 1, NULL, 0, 0);
-  int64_t local_vars_len;
-  Variable* local_vars = js_debugger_get_variables(ctx, local_reference_value, state, &local_vars_len, 1, NULL, 0, 0);
-  int64_t closure_vars_len;
-  Variable* closure_vars = js_debugger_get_variables(ctx, closure_reference_value, state, &closure_vars_len, 1, NULL, 0, 0);
+    int64_t object_proto_property_variables_len = 0;
+    JSValue proto = JS_GetPrototype(ctx, evaluate_result);
+    while(!JS_IsNull(proto)) {
+      int64_t proto_vars_len;
+      Variable* proto_property_variables =
+          js_debugger_get_variables(ctx, proto, state, &proto_vars_len, 1, NULL, 0, 0);
 
-  // Concat all variables into a array.
-  size_t total_var_len = global_vars_len + local_vars_len + closure_vars_len;
+      object_property_variables_len += proto_vars_len;
+      completion_items = js_realloc(ctx, completion_items, sizeof(CompletionItem) * (object_property_variables_len + object_proto_property_variables_len));
 
-  completion_items = js_malloc(ctx, sizeof(CompletionItem) * total_var_len);
+      for (int i = 0; i < proto_vars_len; i++) {
+        CompletionItem* item = &completion_items[completions_index++];
+        item->label = (proto_property_variables)[i].name;
+        if (strcmp(proto_property_variables[i].type, "function") == 0) {
+          item->type = "method";
+        } else {
+          item->type = "variable";
+        }
+      }
+
+      JS_FreeValue(ctx, proto);
+      proto = JS_GetPrototype(ctx, proto);
+    }
+  } else {
+    JSValue global_reference_value = JS_GetGlobalObject(ctx);
+    JSValue local_reference_value = js_debugger_local_variables(ctx, frame, state);
+    JSValue closure_reference_value = js_debugger_closure_variables(ctx, frame);
+
+    // Collect all variables
+    int64_t global_vars_len;
+    Variable* global_vars =
+        js_debugger_get_variables(ctx, global_reference_value, state, &global_vars_len, 1, NULL, 0, 0);
+    int64_t local_vars_len;
+    Variable* local_vars = js_debugger_get_variables(ctx, local_reference_value, state, &local_vars_len, 1, NULL, 0, 0);
+    int64_t closure_vars_len;
+    Variable* closure_vars = js_debugger_get_variables(ctx, closure_reference_value, state, &closure_vars_len, 1, NULL, 0, 0);
+
+    // Concat all variables into a array.
+    size_t total_var_len = global_vars_len + local_vars_len + closure_vars_len;
+    completion_items = js_malloc(ctx, sizeof(CompletionItem) * total_var_len);
 
 #define CHECK_COMPLETIONS(LIST) \
   for(int i = 0; i < LIST##_len; i ++) { \
@@ -741,13 +786,12 @@ static CompletionItem* js_debugger_get_completions(JSContext* ctx,
     } \
   }
 
-  int64_t completions_index = 0;
+    CHECK_COMPLETIONS(global_vars);
+    CHECK_COMPLETIONS(local_vars);
+    CHECK_COMPLETIONS(closure_vars);
+  }
 
-  CHECK_COMPLETIONS(global_vars);
-  CHECK_COMPLETIONS(local_vars);
-  CHECK_COMPLETIONS(closure_vars);
   *completions_len = completions_index;
-
   return completion_items;
 }
 
