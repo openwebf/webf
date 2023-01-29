@@ -142,20 +142,26 @@ class WebF extends StatefulWidget {
 }
 
 class WebFState extends State<WebF> with RouteAware {
+  bool _disposed = false;
+
   final Set<WebFWidgetElementToWidgetAdapter> customElementWidgets = {};
   void onCustomElementWidgetAdd(WebFWidgetElementToWidgetAdapter adapter) {
     Future.microtask(() {
-      setState(() {
-        customElementWidgets.add(adapter);
-      });
+      if (_disposed) {
+        setState(() {
+          customElementWidgets.add(adapter);
+        });
+      }
     });
   }
 
   void onCustomElementWidgetRemove(WebFWidgetElementToWidgetAdapter adapter) {
     Future.microtask(() {
-      setState(() {
-        customElementWidgets.remove(adapter);
-      });
+      if (!_disposed) {
+        setState(() {
+          customElementWidgets.remove(adapter);
+        });
+      }
     });
   }
 
@@ -241,6 +247,7 @@ class WebFState extends State<WebF> with RouteAware {
       widget.routeObserver!.unsubscribe(this);
     }
     super.dispose();
+    _disposed = true;
   }
 
   @override
