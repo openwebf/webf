@@ -922,7 +922,7 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_objec
     location = js_debugger_current_location(ctx, cur_pc);
     depth = js_debugger_stack_depth(ctx);
     if (info->step_depth == depth && location.filename == info->step_over.filename &&
-        location.line == info->step_over.line && location.column == info->step_over.column)
+        location.line == info->step_over.line)
       goto done;
   }
 
@@ -966,8 +966,7 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_objec
       struct JSDebuggerLocation current_location = js_debugger_current_location(ctx, cur_pc);
       // to step over, need to make sure the location changes,
       // and that the location change isn't into a function call (deeper stack).
-      if ((current_location.filename == info->step_over.filename && current_location.line == info->step_over.line &&
-           current_location.column == info->step_over.column) ||
+      if ((current_location.filename == info->step_over.filename && current_location.line == info->step_over.line) ||
           js_debugger_stack_depth(ctx) > info->step_depth)
         goto done;
       info->stepping = 0;
