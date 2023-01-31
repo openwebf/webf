@@ -10,8 +10,10 @@ const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
 const { analyzer } = require('../dist/idl/analyzer');
 const { generatorSource } = require('../dist/idl/generator')
+const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
+const { union } = require("lodash");
 
 program
   .version(packageJSON.version)
@@ -30,6 +32,17 @@ if (!path.isAbsolute(dist)) {
   dist = path.join(process.cwd(), dist);
 }
 
+function wirteFileIfChanged(filePath, content) {
+  if (fs.existsSync(filePath)) {
+    const oldContent = fs.readFileSync(filePath, 'utf-8')
+    if (oldContent === content) {
+      return;
+    }
+  }
+
+  fs.writeFileSync(filePath, content, 'utf-8');
+}
+
 function genCodeFromTypeDefine() {
   // Generate code from type defines.
   let typeFiles = glob.sync("**/*.d.ts", {
@@ -45,7 +58,7 @@ function genCodeFromTypeDefine() {
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
-    analyzer(b, definedPropertyCollector);
+    analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
 
   for (let i = 0; i < blobs.length; i ++) {
@@ -58,8 +71,22 @@ function genCodeFromTypeDefine() {
 
     let genFilePath = path.join(b.dist, b.filename);
 
-    fs.writeFileSync(genFilePath + '.h', result.header);
-    fs.writeFileSync(genFilePath + '.cc', result.source);
+    wirteFileIfChanged(genFilePath + '.h', result.header);
+    wirteFileIfChanged(genFilePath + '.cc', result.source);
+  }
+
+  let unionTypes = Array.from(unionTypeCollector.types);
+  unionTypes.forEach(union => {
+    union.sort((p, n) => {
+      if (typeof p.value === 'string') return 1;
+      return -(n.value - p.value);
+    })
+  });
+  for(let i = 0; i < unionTypes.length; i ++) {
+    let result = generateUnionTypes(unionTypes[i]);
+    let filename = generateUnionTypeFileName(unionTypes[i]);
+    wirteFileIfChanged(path.join(dist, filename) + '.h', result.header);
+    wirteFileIfChanged(path.join(dist, filename) + '.cc', result.source);
   }
 }
 
@@ -115,8 +142,8 @@ function genCodeFromJSONData() {
       let result = generateJSONTemplate(blobs[i], targetTemplateHeaderData, targetTemplateBodyData, depsBlob, targetTemplate.options);
       let dist = blob.dist;
       let genFilePath = path.join(dist, targetTemplate.filename);
-      fs.writeFileSync(genFilePath + '.h', result.header);
-      result.source && fs.writeFileSync(genFilePath + '.cc', result.source);
+      wirteFileIfChanged(genFilePath + '.h', result.header);
+      result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
     });
   }
 
@@ -125,8 +152,8 @@ function genCodeFromJSONData() {
   let targetTemplateBody = templates.find(t => t.filename === 'names_installer.cc');
   let result = generateNamesInstaller(targetTemplateHeader, targetTemplateBody, names_needs_install);
   let genFilePath = path.join(dist, 'names_installer');
-  fs.writeFileSync(genFilePath + '.h', result.header);
-  result.source && fs.writeFileSync(genFilePath + '.cc', result.source);
+  wirteFileIfChanged(genFilePath + '.h', result.header);
+  result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
 }
 
 class DefinedPropertyCollector {
@@ -135,7 +162,12 @@ class DefinedPropertyCollector {
   interfaces = new Set();
 }
 
+class UnionTypeCollector {
+  types = new Set()
+}
+
 let definedPropertyCollector = new DefinedPropertyCollector();
+let unionTypeCollector = new UnionTypeCollector();
 let names_needs_install = new Set();
 
 genCodeFromTypeDefine();

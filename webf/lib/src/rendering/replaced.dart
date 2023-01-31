@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -67,7 +68,20 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
         childLayoutStart = DateTime.now();
       }
 
-      child!.layout(contentConstraints!, parentUsesSize: true);
+      // To maximum compact with Flutter, We needs to limit the maxWidth and maxHeight constraints to
+      // the viewportSize, as same as the MaterialApp does.
+      Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
+      BoxConstraints childConstraints = contentConstraints!;
+      if (renderStyle.target.renderObjectManagerType == RenderObjectManagerType.FLUTTER_ELEMENT) {
+        childConstraints = BoxConstraints(
+          minWidth: childConstraints.minWidth,
+          maxWidth: math.min(viewportSize.width, childConstraints.maxWidth),
+          minHeight: childConstraints.minHeight,
+          maxHeight: math.min(viewportSize.height, childConstraints.maxHeight)
+        );
+      }
+
+      child!.layout(childConstraints, parentUsesSize: true);
 
       if (kProfileMode && PerformanceTiming.enabled()) {
         DateTime childLayoutEnd = DateTime.now();

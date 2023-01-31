@@ -4,6 +4,7 @@
  */
 
 #include "widget_element.h"
+#include "binding_call_methods.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
 #include "foundation/native_value_converter.h"
@@ -26,16 +27,8 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
   return false;
 }
 
-bool WidgetElement::IsUnderScoreProperty(const AtomicString& name) {
-  StringView string_view = name.ToStringView();
-
-  const char* string = string_view.Characters8();
-  return string_view.length() > 0 && string[0] == '_';
-}
-
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  NativeValue result = GetBindingProperty(key, exception_state);
-  return result.tag != NativeTag::TAG_NULL;
+  return GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(key);
 }
 
 void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
@@ -49,31 +42,75 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
   }
 }
 
-ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
-  // Properties with underscore are taken as raw javascript property.
-  if (IsUnderScoreProperty(key)) {
-    if (unimplemented_properties_.count(key) > 0) {
-      return unimplemented_properties_[key];
-    }
+NativeValue WidgetElement::HandleCallFromDartSide(const NativeValue* native_method,
+                                                  int32_t argc,
+                                                  const NativeValue* argv) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  AtomicString method = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), *native_method);
 
-    return ScriptValue::Empty(ctx());
+  if (method == binding_call_methods::ksyncPropertiesAndMethods) {
+    return HandleSyncPropertiesAndMethodsFromDart(argc, argv);
+  }
+
+  return Element::HandleCallFromDartSide(native_method, argc, argv);
+}
+
+ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
+  if (unimplemented_properties_.count(key) > 0) {
+    return unimplemented_properties_[key];
+  }
+
+  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
+    GetExecutingContext()->FlushUICommand();
   }
 
   if (key == built_in_string::kSymbol_toStringTag) {
-    return ScriptValue(ctx(), tagName().ToNativeString().release());
+    return ScriptValue(ctx(), tagName().ToNativeString(ctx()).release());
   }
 
-  return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
+  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
+  if (shape != nullptr) {
+    if (shape->built_in_properties_.count(key) > 0) {
+      return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
+    }
+
+    if (shape->built_in_methods_.count(key) > 0) {
+      if (cached_methods_.count(key) > 0) {
+        return cached_methods_[key];
+      }
+
+      auto func = CreateSyncMethodFunc(key);
+      cached_methods_[key] = func;
+      return func;
+    }
+
+    if (shape->built_in_async_methods_.count(key) > 0) {
+      if (async_cached_methods_.count(key) > 0) {
+        return async_cached_methods_[key];
+      }
+
+      auto func = CreateAsyncMethodFunc(key);
+      async_cached_methods_[key] = CreateAsyncMethodFunc(key);
+      return func;
+    }
+  }
+
+  return ScriptValue::Empty(ctx());
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
-  if (IsUnderScoreProperty(key)) {
-    unimplemented_properties_[key] = value;
-    return true;
+  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
+    GetExecutingContext()->FlushUICommand();
   }
 
-  NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
-  return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
+  if (shape != nullptr && shape->built_in_properties_.count(key) > 0) {
+    NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
+    return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+  }
+
+  unimplemented_properties_[key] = value;
+  return true;
 }
 
 bool WidgetElement::IsWidgetElement() const {
@@ -83,6 +120,14 @@ bool WidgetElement::IsWidgetElement() const {
 void WidgetElement::Trace(GCVisitor* visitor) const {
   HTMLElement::Trace(visitor);
   for (auto& entry : unimplemented_properties_) {
+    entry.second.Trace(visitor);
+  }
+
+  for (auto& entry : cached_methods_) {
+    entry.second.Trace(visitor);
+  }
+
+  for (auto& entry : async_cached_methods_) {
     entry.second.Trace(visitor);
   }
 }
@@ -96,6 +141,48 @@ void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneC
 
 bool WidgetElement::IsAttributeDefinedInternal(const AtomicString& key) const {
   return true;
+}
+
+NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv) {
+  assert(argc == 3);
+  AtomicString key = tag_name_;
+  assert(!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(key));
+
+  auto shape = std::make_shared<WidgetElementShape>();
+
+  auto&& properties = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[0]);
+  auto&& sync_methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[1]);
+  auto&& async_methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[2]);
+
+  for (auto& property : properties) {
+    shape->built_in_properties_.emplace(property);
+  }
+
+  for (auto& method : sync_methods) {
+    shape->built_in_methods_.emplace(method);
+  }
+
+  for (auto& method : async_methods) {
+    shape->built_in_async_methods_.emplace(method);
+  }
+
+  GetExecutingContext()->dartContext()->EnsureData()->SetWidgetElementShape(key, shape);
+
+  return Native_NewBool(true);
+}
+
+ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
+  auto* data = new BindingObject::AnonymousFunctionData();
+  data->method_name = method_name.ToStdString(ctx());
+  return ScriptValue(ctx(),
+                     QJSFunction::Create(ctx(), BindingObject::AnonymousFunctionCallback, 1, data)->ToQuickJSUnsafe());
+}
+
+ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
+  auto* data = new BindingObject::AnonymousFunctionData();
+  data->method_name = method_name.ToStdString(ctx());
+  return ScriptValue(
+      ctx(), QJSFunction::Create(ctx(), BindingObject::AnonymousAsyncFunctionCallback, 4, data)->ToQuickJSUnsafe());
 }
 
 }  // namespace webf

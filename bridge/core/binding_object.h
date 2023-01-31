@@ -57,6 +57,8 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
+enum CreateBindingObjectType { kCreateDOMMatrix = 0 };
+
 struct BindingObjectPromiseContext : public DartReadable {
   ExecutingContext* context;
   BindingObject* binding_object;
@@ -65,6 +67,10 @@ struct BindingObjectPromiseContext : public DartReadable {
 
 class BindingObject {
  public:
+  struct AnonymousFunctionData {
+    std::string method_name;
+  };
+
   // This function were called when the anonymous function returned to the JS code has been called by users.
   static ScriptValue AnonymousFunctionCallback(JSContext* ctx,
                                                const ScriptValue& this_val,
@@ -109,12 +115,14 @@ class BindingObject {
 
   virtual bool IsEventTarget() const;
   virtual bool IsTouchList() const;
+  virtual bool IsComputedCssStyleDeclaration() const;
+  virtual bool IsCanvasGradient() const;
 
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);
   void FullFillPendingPromise(BindingObjectPromiseContext* binding_object_promise_context);
   NativeValue InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
-                                  int32_t argc,
+                                  size_t argc,
                                   const NativeValue* args,
                                   ExceptionState& exception_state) const;
 

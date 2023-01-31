@@ -14,6 +14,12 @@ describe('Tags img', () => {
     document.body.appendChild(img);
   });
 
+  it('should have not size when img not mounted', () => {
+    const img = document.createElement('img');
+    expect(img.width).toBe(0);
+    expect(img.height).toBe(0);
+  });
+
   it('don\'t error when append child on img element', async (done) => {
     let img = document.createElement('img');
     img.src = 'https://gw.alicdn.com/tfs/TB1MRC_cvb2gK0jSZK9XXaEgFXa-1701-1535.png';
@@ -128,13 +134,13 @@ describe('Tags img', () => {
     }) as HTMLImageElement;
     BODY.appendChild(img);
     let src = img.src;
-    expect(src).toBe('assets:///assets/rabbit.png');
+    expect(src).toBe('http://localhost:4567/public/assets/rabbit.png');
     // have to wait for asset load?
     await snapshot(0.1);
     img.src = 'assets/solidblue.png';
     await snapshot(0.1);
     src = img.src;
-    expect(src).toBe('assets:///assets/solidblue.png');
+    expect(src).toBe('http://localhost:4567/public/assets/solidblue.png');
     done();
   });
 

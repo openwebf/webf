@@ -2,11 +2,9 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
 
 class HistoryItem {
@@ -39,8 +37,6 @@ class HistoryModule extends BaseModule {
   }
 
   void _addItem(HistoryItem historyItem) {
-    if (_previousStack.isNotEmpty && historyItem.bundle.url == _previousStack.first.bundle.url) return;
-
     _previousStack.addFirst(historyItem);
 
     // Clear.
@@ -49,31 +45,26 @@ class HistoryModule extends BaseModule {
     }
   }
 
-  void _back() async {
+  void back() async {
     if (_previousStack.length > 1) {
       HistoryItem currentItem = _previousStack.first;
       _previousStack.removeFirst();
       _nextStack.addFirst(currentItem);
-
-      await _goTo(_previousStack.first.bundle.url);
-
       dynamic state = _previousStack.first.state;
       _dispatchPopStateEvent(state);
     }
   }
 
-  void _forward() {
+  void forward() {
     if (_nextStack.isNotEmpty) {
       HistoryItem currentItem = _nextStack.first;
       _nextStack.removeFirst();
       _previousStack.addFirst(currentItem);
-
-      _goTo(currentItem.bundle.url);
       _dispatchPopStateEvent(currentItem.state);
     }
   }
 
-  void _go(num? num) {
+  void go(num? num) {
     num ??= 0;
     if (num >= 0) {
       if (_nextStack.length < num) {
@@ -97,13 +88,7 @@ class HistoryModule extends BaseModule {
       }
     }
 
-    _goTo(_previousStack.first.bundle.url);
     _dispatchPopStateEvent(_previousStack.first.state);
-  }
-
-  Future<void> _goTo(String targetUrl) async {
-    NavigationModule navigationModule = moduleManager!.getModule<NavigationModule>('Navigation')!;
-    await navigationModule.goTo(targetUrl);
   }
 
   void _dispatchPopStateEvent(state) {
@@ -111,58 +96,45 @@ class HistoryModule extends BaseModule {
     moduleManager!.controller.view.window.dispatchEvent(popStateEvent);
   }
 
-  void _pushState(List<dynamic> params) {
+  void pushState(state, {String? url, String? title}) {
     WebFController controller = moduleManager!.controller;
-    dynamic state = params[0];
-    String? url = null;
+    String currentUrl = _previousStack.first.bundle.url;
+    url = url ?? currentUrl;
+    Uri uri = Uri.parse(url);
+    Uri currentUri = Uri.parse(currentUrl);
+    uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
-    if (params[2] != null) {
-      url = params[2];
-
-      String currentUrl = _previousStack.first.bundle.url;
-      Uri currentUri = Uri.parse(currentUrl);
-
-      Uri uri = Uri.parse(url!);
-      uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
-
-      if (uri.host.isNotEmpty && uri.host != currentUri.host) {
-        print('Failed to execute \'pushState\' on \'History\': '
-            'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
-        return;
-      }
-
-      WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
-      HistoryItem history = HistoryItem(bundle, state, false);
-      _addItem(history);
+    if (uri.host.isNotEmpty && uri.host != currentUri.host) {
+      print('Failed to execute \'pushState\' on \'History\': '
+          'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
+      return;
     }
+
+    WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
+    HistoryItem history = HistoryItem(bundle, state, false);
+    _addItem(history);
   }
 
-  void _replaceState(List<dynamic> params) {
+  void replaceState(state, {String? url, String? title}) {
     WebFController controller = moduleManager!.controller;
-    dynamic state = params[0];
-    String? url = null;
+    url = url ?? _previousStack.first.bundle.url;
+    String currentUrl = _previousStack.first.bundle.url;
+    Uri currentUri = Uri.parse(currentUrl);
 
-    if (params[2] != null) {
-      url = params[2];
+    Uri uri = Uri.parse(url);
+    uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
-      String currentUrl = _previousStack.first.bundle.url;
-      Uri currentUri = Uri.parse(currentUrl);
-
-      Uri uri = Uri.parse(url!);
-      uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
-
-      if (uri.host.isNotEmpty && uri.host != currentUri.host) {
-        print('Failed to execute \'pushState\' on \'History\': '
-            'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
-        return;
-      }
-
-      WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
-      HistoryItem history = HistoryItem(bundle, state, false);
-
-      _previousStack.removeFirst();
-      _previousStack.addFirst(history);
+    if (uri.host.isNotEmpty && uri.host != currentUri.host) {
+      print('Failed to execute \'pushState\' on \'History\': '
+          'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
+      return;
     }
+
+    WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
+    HistoryItem history = HistoryItem(bundle, state, false);
+
+    _previousStack.removeFirst();
+    _previousStack.addFirst(history);
   }
 
   @override
@@ -177,19 +149,19 @@ class HistoryModule extends BaseModule {
         HistoryItem history = _previousStack.first;
         return jsonEncode(history.state);
       case 'back':
-        _back();
+        back();
         break;
       case 'forward':
-        _forward();
+        forward();
         break;
       case 'pushState':
-        _pushState(params);
+        pushState(params[0], title: params[1], url: params[2]);
         break;
       case 'replaceState':
-        _replaceState(params);
+        replaceState(params[0], title: params[1], url: params[2]);
         break;
       case 'go':
-        _go(params);
+        go(params);
         break;
     }
     return EMPTY_STRING;

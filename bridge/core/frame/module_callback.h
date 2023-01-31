@@ -15,7 +15,7 @@ namespace webf {
 // executing environment.
 class ModuleCallback {
  public:
-  static std::shared_ptr<ModuleCallback> Create(std::shared_ptr<QJSFunction> function);
+  static std::shared_ptr<ModuleCallback> Create(const std::shared_ptr<QJSFunction>& function);
   explicit ModuleCallback(std::shared_ptr<QJSFunction> function);
 
   std::shared_ptr<QJSFunction> value();

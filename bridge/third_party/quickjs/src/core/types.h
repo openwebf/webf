@@ -35,6 +35,10 @@
 #include "quickjs/libbf.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum {
     /* classid tag        */    /* union usage   | properties */
     JS_CLASS_OBJECT = 1,        /* must be first */
@@ -248,7 +252,7 @@ typedef struct JSStackFrame {
     JSValue *arg_buf; /* arguments */
     JSValue *var_buf; /* variables */
     struct list_head var_ref_list; /* list of JSVarRef.link */
-    const uint8_t *cur_pc; /* only used in bytecode functions : PC of the
+    uint8_t *cur_pc; /* only used in bytecode functions : PC of the
                         instruction after the call */
     int arg_count;
     int js_mode; /* 0 or JS_MODE_MATH for C functions */
@@ -504,6 +508,7 @@ typedef struct JSVarDef {
 #define PC2COLUMN_RANGE 5
 #define PC2COLUMN_OP_FIRST 1
 #define PC2COLUMN_DIFF_PC_MAX ((255 - PC2COLUMN_OP_FIRST) / PC2COLUMN_RANGE)
+#define IC_CACHE_ITEM_CAPACITY 8
 
 typedef enum JSFunctionKindEnum {
     JS_FUNC_NORMAL = 0,
@@ -511,6 +516,34 @@ typedef enum JSFunctionKindEnum {
     JS_FUNC_ASYNC = (1 << 1),
     JS_FUNC_ASYNC_GENERATOR = (JS_FUNC_GENERATOR | JS_FUNC_ASYNC),
 } JSFunctionKindEnum;
+
+typedef struct InlineCacheRingItem {
+    JSShape* shape;
+    uint32_t prop_offset;
+} InlineCacheRingItem;
+
+typedef struct InlineCacheRingSlot {
+    JSAtom atom;
+    InlineCacheRingItem buffer[IC_CACHE_ITEM_CAPACITY];
+    uint8_t index;
+} InlineCacheRingSlot;
+
+typedef struct InlineCacheHashSlot {
+    JSAtom atom;
+    uint32_t index;
+    struct InlineCacheHashSlot *next;
+} InlineCacheHashSlot;
+
+typedef struct InlineCache {
+    uint32_t count;
+    uint32_t capacity;
+    uint32_t hash_bits;
+    JSRuntime* rt;
+    InlineCacheHashSlot **hash;
+    InlineCacheRingSlot *cache;
+    uint32_t updated_offset;
+    BOOL updated;
+} InlineCache;
 
 typedef struct JSFunctionBytecode {
     JSGCObjectHeader header; /* must come first */
@@ -542,6 +575,7 @@ typedef struct JSFunctionBytecode {
     JSValue *cpool; /* constant pool (self pointer) */
     int cpool_count;
     int closure_var_count;
+    InlineCache *ic;
     struct {
         /* debug info, move to separate structure to save memory? */
         JSAtom filename;
@@ -933,5 +967,9 @@ enum OPCodeEnum {
 #define ATOD_MODE_BIGINT      (1 << 9)
 /* accept -0x1 */
 #define ATOD_ACCEPT_PREFIX_AFTER_SIGN (1 << 10)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

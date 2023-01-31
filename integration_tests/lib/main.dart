@@ -3,6 +3,7 @@
  */
 import 'dart:async';
 import 'dart:io';
+import 'dart:ffi';
 
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/material.dart';
@@ -12,11 +13,11 @@ import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 
+import 'custom_elements/main.dart';
 import 'test_module.dart';
 import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'bridge/to_native.dart';
-import 'custom/custom_element.dart';
 import 'local_http_server.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
@@ -25,6 +26,14 @@ String? err = (AnsiPen()..red())('[TEST FAILED]');
 final String __dirname = path.dirname(Platform.script.path);
 final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
+const MOCK_SERVER_PORT = 4567;
+
+Future<void> startHttpMockServer() async {
+  await Process.start('node', [testDirectory + '/scripts/mock_http_server.js'], environment: {
+    'PORT': MOCK_SERVER_PORT.toString()
+  }, mode: ProcessStartMode.inheritStdio);
+}
+
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
   // Overrides library name.
@@ -32,9 +41,10 @@ void main() async {
   defineWebFCustomElements();
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
+  await startHttpMockServer();
 
   // FIXME: This is a workaround for testcases.
-  ParagraphElement.defaultStyle = {DISPLAY: BLOCK};
+  debugOverridePDefaultStyle({DISPLAY: BLOCK});
 
   // Start local HTTP server.
   var httpServer = LocalHttpServer.getInstance();
@@ -48,8 +58,6 @@ void main() async {
   // Set render font family AlibabaPuHuiTi to resolve rendering difference.
   CSSText.DEFAULT_FONT_FAMILY_FALLBACK = ['AlibabaPuHuiTi'];
 
-  final String specTarget = '.specs/core.build.js';
-  final File spec = File(path.join(testDirectory, specTarget));
   WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
   javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
     if(method == 'helloInt64'){
@@ -64,15 +72,29 @@ void main() async {
   final String specUrl = 'assets:///test.js';
   late WebF webF;
 
+  Pointer<Void>? testContext;
   webF = WebF(
     viewportWidth: 360,
     viewportHeight: 640,
-    bundle: WebFBundle.fromContent(
-        'console.log("Starting integration tests...")',
-        url: specUrl),
+    bundle: WebFBundle.fromUrl('http://localhost:$MOCK_SERVER_PORT/public/core.build.js'),
     disableViewportWidthAssertion: true,
     disableViewportHeightAssertion: true,
     javaScriptChannel: javaScriptChannel,
+    onControllerCreated: (_) async {
+      int contextId = webF.controller!.view.contextId;
+      testContext = initTestFramework(contextId);
+      registerDartTestMethodsToCpp(contextId);
+      addJSErrorListener(contextId, print);
+      webF.controller!.view.evaluateJavaScripts(codeInjection);
+    },
+    onLoad: (controller) async {
+      // Preload load test cases
+      String result = await executeTest(testContext!, controller.view.contextId);
+      // Manual dispose context for memory leak check.
+      webF.controller!.dispose();
+
+      exit(result == 'failed' ? 1 : 0);
+    },
     gestureListener: GestureListener(
       onDrag: (GestureEvent gestureEvent) {
         if (gestureEvent.state == EVENT_STATE_START) {
@@ -101,19 +123,4 @@ void main() async {
   });
 
   testTextInput = TestTextInput();
-
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    int contextId = webF.controller!.view.contextId;
-    initTestFramework(contextId);
-    registerDartTestMethodsToCpp(contextId);
-    addJSErrorListener(contextId, print);
-    // Preload load test cases
-    String code = spec.readAsStringSync();
-    evaluateTestScripts(contextId, codeInjection + code, url: specUrl);
-    String result = await executeTest(contextId);
-    // Manual dispose context for memory leak check.
-    disposePage(webF.controller!.view.contextId);
-
-    exit(result == 'failed' ? 1 : 0);
-  });
 }

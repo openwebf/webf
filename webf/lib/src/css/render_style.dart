@@ -58,19 +58,19 @@ abstract class RenderStyle {
   CSSLengthValue? get borderRightWidth;
   CSSLengthValue? get borderBottomWidth;
   CSSLengthValue? get borderLeftWidth;
-  BorderStyle get borderLeftStyle;
-  BorderStyle get borderRightStyle;
-  BorderStyle get borderTopStyle;
-  BorderStyle get borderBottomStyle;
+  CSSBorderStyleType get borderLeftStyle;
+  CSSBorderStyleType get borderRightStyle;
+  CSSBorderStyleType get borderTopStyle;
+  CSSBorderStyleType get borderBottomStyle;
   CSSLengthValue get effectiveBorderLeftWidth;
   CSSLengthValue get effectiveBorderRightWidth;
   CSSLengthValue get effectiveBorderTopWidth;
   CSSLengthValue get effectiveBorderBottomWidth;
   double get contentMaxConstraintsWidth;
-  Color get borderLeftColor;
-  Color get borderRightColor;
-  Color get borderTopColor;
-  Color get borderBottomColor;
+  CSSColor get borderLeftColor;
+  CSSColor get borderRightColor;
+  CSSColor get borderTopColor;
+  CSSColor get borderBottomColor;
   List<Radius>? get borderRadius;
   CSSBorderRadius get borderTopLeftRadius;
   CSSBorderRadius get borderTopRightRadius;
@@ -80,11 +80,15 @@ abstract class RenderStyle {
   List<WebFBoxShadow>? get shadows;
 
   // Decorations
-  Color? get backgroundColor;
+  CSSColor? get backgroundColor;
   CSSBackgroundImage? get backgroundImage;
-  ImageRepeat get backgroundRepeat;
+  CSSBackgroundRepeatType get backgroundRepeat;
   CSSBackgroundPosition get backgroundPositionX;
   CSSBackgroundPosition get backgroundPositionY;
+  CSSBackgroundSize get backgroundSize;
+  CSSBackgroundAttachmentType? get backgroundAttachment;
+  CSSBackgroundBoundary? get backgroundClip;
+  CSSBackgroundBoundary? get backgroundOrigin;
 
   // Text
   CSSLengthValue get fontSize;
@@ -99,6 +103,9 @@ abstract class RenderStyle {
   CSSLengthValue get lineHeight;
   CSSLengthValue? get letterSpacing;
   CSSLengthValue? get wordSpacing;
+
+  // input
+  Color? get caretColor;
 
   // BoxModel
   double? get borderBoxLogicalWidth;
@@ -137,8 +144,8 @@ abstract class RenderStyle {
   double get flexShrink;
 
   // Color
-  Color get color;
-  Color get currentColor;
+  CSSColor get color;
+  CSSColor get currentColor;
 
   // Filter
   ColorFilter? get colorFilter;
@@ -201,6 +208,7 @@ class CSSRenderStyle extends RenderStyle
         CSSBoxShadowMixin,
         CSSBoxMixin,
         CSSTextMixin,
+        CSSInputMixin,
         CSSPositionMixin,
         CSSTransformMixin,
         CSSVisibilityMixin,
@@ -411,14 +419,8 @@ class CSSRenderStyle extends RenderStyle
   dynamic resolveValue(String propertyName, String propertyValue) {
     RenderStyle renderStyle = this;
 
-    // Process CSSCalcValue.
-    dynamic value = CSSCalcValue.tryParse(renderStyle, propertyName, propertyValue);
-    if (value != null && value is CSSCalcValue) {
-      return value;
-    }
-
     // Process CSSVariable.
-    value = CSSVariable.tryParse(renderStyle, propertyValue);
+    dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
       return value;
     }
@@ -442,21 +444,49 @@ class CSSRenderStyle extends RenderStyle
       case BOTTOM:
       case RIGHT:
       case FLEX_BASIS:
-      case PADDING_TOP:
-      case PADDING_RIGHT:
-      case PADDING_BOTTOM:
-      case PADDING_LEFT:
       case WIDTH:
       case MIN_WIDTH:
       case MAX_WIDTH:
       case HEIGHT:
       case MIN_HEIGHT:
       case MAX_HEIGHT:
-      case MARGIN_LEFT:
-      case MARGIN_TOP:
-      case MARGIN_RIGHT:
-      case MARGIN_BOTTOM:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        break;
+      case PADDING_TOP:
+      case MARGIN_TOP:
+        List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
+        if (values != null && values[0] != null) {
+          value = CSSLength.resolveLength(values[0]!, renderStyle, propertyName);
+        } else {
+          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        }
+        break;
+      case MARGIN_RIGHT:
+      case PADDING_RIGHT:
+        List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
+        if (values != null && values[1] != null) {
+          value = CSSLength.resolveLength(values[1]!, renderStyle, propertyName);
+        } else {
+          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        }
+        break;
+      case PADDING_BOTTOM:
+      case MARGIN_BOTTOM:
+        List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
+        if (values != null && values[2] != null) {
+          value = CSSLength.resolveLength(values[2]!, renderStyle, propertyName);
+        } else {
+          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        }
+        break;
+      case PADDING_LEFT:
+      case MARGIN_LEFT:
+        List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
+        if (values != null && values[3] != null) {
+          value = CSSLength.resolveLength(values[3]!, renderStyle, propertyName);
+        } else {
+          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        }
         break;
       case FLEX_DIRECTION:
         value = CSSFlexboxMixin.resolveFlexDirection(propertyValue);
@@ -526,6 +556,7 @@ class CSSRenderStyle extends RenderStyle
         value = CSSBorderSide.resolveBorderStyle(propertyValue);
         break;
       case COLOR:
+      case CARETCOLOR:
       case BACKGROUND_COLOR:
       case TEXT_DECORATION_COLOR:
       case BORDER_LEFT_COLOR:
@@ -667,22 +698,7 @@ class CSSRenderStyle extends RenderStyle
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
-            // If parentElement is WidgetElement, should not search for ancestors and get maxWidth of constraints for logicalWidth.
-            RenderObject? renderObject = renderBoxModel!.parent as RenderObject;
-
-            if (ancestorRenderStyle.target.renderObjectManagerType == RenderObjectManagerType.FLUTTER_ELEMENT &&
-                renderObject is RenderBox) {
-              try {
-                // When renderObject has not layouted, get constraints will trigger assert.
-                // Such as image resize will get _styleWidth and call this function before layout.
-                logicalWidth = renderObject.constraints.maxWidth;
-              } catch (e) {
-                logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
-              }
-            } else {
-              logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
-            }
-
+            logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
             // Should subtract horizontal margin of own from its parent content width.
             if (logicalWidth != null) {
               logicalWidth -= renderStyle.margin.horizontal;

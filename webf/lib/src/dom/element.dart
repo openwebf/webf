@@ -12,9 +12,11 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
@@ -22,6 +24,7 @@ const String _ONE_SPACE = ' ';
 const String _STYLE_PROPERTY = 'style';
 const String _ID = 'id';
 const String _CLASS_NAME = 'class';
+const String _NAME = 'name';
 
 /// Defined by W3C Standard,
 /// Most element's default width is 300 in pixel,
@@ -51,17 +54,21 @@ enum BoxSizeType {
 mixin ElementBase on Node {
   RenderLayoutBox? _renderLayoutBox;
   RenderReplaced? _renderReplaced;
+  RenderWidget? _renderWidget;
 
-  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced;
+  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget;
 
   set renderBoxModel(RenderBoxModel? value) {
     if (value == null) {
       _renderReplaced = null;
       _renderLayoutBox = null;
+      _renderWidget = null;
     } else if (value is RenderReplaced) {
       _renderReplaced = value;
     } else if (value is RenderLayoutBox) {
       _renderLayoutBox = value;
+    } else if (value is RenderWidget) {
+      _renderWidget = value;
     } else {
       if (!kReleaseMode) throw FlutterError('Unknown RenderBoxModel value.');
     }
@@ -81,20 +88,50 @@ typedef GetViewportSize = Size Function();
 /// Get the render box model of current element.
 typedef GetRenderBoxModel = RenderBoxModel? Function();
 
+typedef ElementAttributeGetter = String? Function();
+typedef ElementAttributeSetter = void Function(String value);
+typedef ElementAttributeDeleter = void Function();
+
+class ElementAttributeProperty {
+  ElementAttributeProperty({this.getter, this.setter, this.deleter});
+
+  final ElementAttributeGetter? getter;
+  final ElementAttributeSetter? setter;
+  final ElementAttributeDeleter? deleter;
+}
+
 abstract class Element extends Node with ElementBase, ElementEventMixin, ElementOverflowMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
   String? _id;
+
   String? get id => _id;
+
   set id(String? id) {
+    final isNeedRecalculate = _checkRecalculateStyle([id, _id], ownerDocument.ruleSet.idRules);
+    _updateIDMap(id, oldID: _id);
     _id = id;
-    recalculateStyle();
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
-  final bool _isReplacedElement;
+  bool get isReplacedElement => false;
+
+  bool get isWidgetElement => false;
+
+  // Holding reference if this element are managed by Flutter framework.
+  WebFHTMLElementStatefulWidget? flutterWidget_;
+
+  @override
+  WebFHTMLElementStatefulWidget? get flutterWidget => flutterWidget_;
+
+  set flutterWidget(WebFHTMLElementStatefulWidget? value) {
+    flutterWidget_ = value;
+  }
+
+  HTMLElementState? flutterWidgetState;
 
   // The attrs.
   final Map<String, String> attributes = <String, String>{};
@@ -103,7 +140,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   late CSSStyleDeclaration style;
 
   /// The default user-agent style.
-  final Map<String, dynamic> _defaultStyle;
+  Map<String, dynamic> get defaultStyle => {};
 
   /// The inline style is a map of style property name to style property value.
   final Map<String, dynamic> inlineStyle = {};
@@ -114,23 +151,25 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   List<String> get classList => _classList;
 
   set className(String className) {
-    _classList.clear();
     List<String> classList = className.split(classNameSplitRegExp);
+    final checkKeys = (_classList + classList).where((key) => !_classList.contains(key) || !classList.contains(key));
+    final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys), ownerDocument.ruleSet.classRules);
+    _classList.clear();
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
-    recalculateStyle();
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   String get className => _classList.join(_ONE_SPACE);
 
-  final bool _isDefaultRepaintBoundary;
+  final bool isDefaultRepaintBoundary = false;
 
   /// Whether should as a repaintBoundary for this element when style changed
   bool get isRepaintBoundary {
     // Following cases should always convert to repaint boundary for performance consideration.
     // Intrinsic element such as <canvas>.
-    if (_isDefaultRepaintBoundary || _forceToRepaintBoundary) return true;
+    if (isDefaultRepaintBoundary || _forceToRepaintBoundary) return true;
 
     // Overflow style.
     bool hasOverflowScroll = renderStyle.overflowX == CSSOverflowType.scroll ||
@@ -155,17 +194,15 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     _updateRenderBoxModel();
   }
 
-  Element(BindingContext? context,
-      {Map<String, dynamic>? defaultStyle, bool isReplacedElement = false, bool isDefaultRepaintBoundary = false})
-      : _defaultStyle = defaultStyle ?? const {},
-        _isReplacedElement = isReplacedElement,
-        _isDefaultRepaintBoundary = isDefaultRepaintBoundary,
-        super(NodeType.ELEMENT_NODE, context) {
+  Element(BindingContext? context) : super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
-    style = CSSStyleDeclaration.computedStyle(this, _defaultStyle, _onStyleChanged, _onStyleFlushed);
+    style = CSSStyleDeclaration.computedStyle(this, defaultStyle, _onStyleChanged, _onStyleFlushed);
 
     // Init render style.
     renderStyle = CSSRenderStyle(target: this);
+
+    // Init attribute getter and setter.
+    initializeAttributes(_attributeProperties);
   }
 
   @override
@@ -186,9 +223,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @override
   RenderBox createRenderer() {
-    if (renderBoxModel != null) {
-      return renderBoxModel!;
-    }
     _updateRenderBoxModel();
     return renderBoxModel!;
   }
@@ -207,92 +241,72 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
+  final Map<String, ElementAttributeProperty> _attributeProperties = {};
+  @mustCallSuper
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    attributes[_STYLE_PROPERTY] = ElementAttributeProperty(setter: (value) {
+      final map = CSSParser(value).parseInlineStyle();
+      inlineStyle.addAll(map);
+      recalculateStyle();
+    }, deleter: () {
+      _removeInlineStyle();
+    });
+    attributes[_CLASS_NAME] = ElementAttributeProperty(
+        setter: (value) => className = value,
+        deleter: () {
+          className = EMPTY_STRING;
+        });
+    attributes[_ID] = ElementAttributeProperty(
+        setter: (value) => id = value,
+        deleter: () {
+          id = EMPTY_STRING;
+        });
+    attributes[_NAME] = ElementAttributeProperty(setter: (value) {
+      _updateNameMap(value, oldName: getAttribute(_NAME));
+    }, deleter: () {
+      _updateNameMap(null, oldName: getAttribute(_NAME));
+    });
+  }
+
   // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-htmlelement-interface
   // https://www.w3.org/TR/cssom-view-1/#extension-to-the-element-interface
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'offsetTop':
-        return offsetTop;
-      case 'offsetLeft':
-        return offsetLeft;
-      case 'offsetWidth':
-        return offsetWidth;
-      case 'offsetHeight':
-        return offsetHeight;
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    properties['offsetTop'] = BindingObjectProperty(getter: () => offsetTop);
+    properties['offsetLeft'] = BindingObjectProperty(getter: () => offsetLeft);
+    properties['offsetWidth'] = BindingObjectProperty(getter: () => offsetWidth);
+    properties['offsetHeight'] = BindingObjectProperty(getter: () => offsetHeight);
 
-      case 'scrollTop':
-        return scrollTop;
-      case 'scrollLeft':
-        return scrollLeft;
-      case 'scrollWidth':
-        return scrollWidth;
-      case 'scrollHeight':
-        return scrollHeight;
+    properties['scrollTop'] =
+        BindingObjectProperty(getter: () => scrollTop, setter: (value) => scrollTop = castToType<double>(value));
+    properties['scrollLeft'] =
+        BindingObjectProperty(getter: () => scrollLeft, setter: (value) => scrollLeft = castToType<double>(value));
+    properties['scrollWidth'] = BindingObjectProperty(getter: () => scrollWidth);
+    properties['scrollHeight'] = BindingObjectProperty(getter: () => scrollHeight);
 
-      case 'clientTop':
-        return clientTop;
-      case 'clientLeft':
-        return clientLeft;
-      case 'clientWidth':
-        return clientWidth;
-      case 'clientHeight':
-        return clientHeight;
+    properties['clientTop'] = BindingObjectProperty(getter: () => clientTop);
+    properties['clientLeft'] = BindingObjectProperty(getter: () => clientLeft);
+    properties['clientWidth'] = BindingObjectProperty(getter: () => clientWidth);
+    properties['clientHeight'] = BindingObjectProperty(getter: () => clientHeight);
 
-      case 'id':
-        return id;
-      case 'className':
-        return className;
-      case 'classList':
-        return classList;
-
-      default:
-        return super.getBindingProperty(key);
-    }
+    properties['id'] = BindingObjectProperty(getter: () => id, setter: (value) => id = castToType<String>(value));
+    properties['className'] =
+        BindingObjectProperty(getter: () => className, setter: (value) => className = castToType<String>(value));
+    properties['classList'] = BindingObjectProperty(getter: () => classList);
   }
 
   @override
-  void setBindingProperty(String key, value) {
-    switch (key) {
-      case 'scrollTop':
-        scrollTop = castToType<double>(value);
-        break;
-      case 'scrollLeft':
-        scrollLeft = castToType<double>(value);
-        break;
-
-      case 'className':
-        className = castToType<String>(value);
-        break;
-      case 'id':
-        id = castToType<String>(value);
-        break;
-      default:
-        super.setBindingProperty(key, value);
-    }
-  }
-
-  @override
-  invokeBindingMethod(String method, List args) {
-    switch (method) {
-      case 'getBoundingClientRect':
-        return getBoundingClientRect();
-      case 'scroll':
-        return scroll(castToType<double>(args[0]), castToType<double>(args[1]));
-      case 'scrollBy':
-        return scrollBy(castToType<double>(args[0]), castToType<double>(args[1]));
-      case 'scrollTo':
-        return scrollTo(castToType<double>(args[0]), castToType<double>(args[1]));
-      case 'click':
-        return click();
-      case 'getElementsByClassName':
-        return getElementsByClassName(args);
-      case 'getElementsByTagName':
-        return getElementsByTagName(args);
-
-      default:
-        super.invokeBindingMethod(method, args);
-    }
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['getBoundingClientRect'] = BindingObjectMethodSync(call: (_) => getBoundingClientRect());
+    methods['scroll'] =
+        BindingObjectMethodSync(call: (args) => scroll(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['scrollBy'] =
+        BindingObjectMethodSync(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['scrollTo'] =
+        BindingObjectMethodSync(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['click'] = BindingObjectMethodSync(call: (_) => click());
+    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
+    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
@@ -305,7 +319,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   void _updateRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
-    if (_isReplacedElement) {
+    if (isWidgetElement) {
+      nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget);
+    } else if (isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
     } else {
@@ -326,11 +342,12 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
         RenderBoxModel.detachRenderBox(previousRenderBoxModel);
 
-        if (parentRenderObject != null) {
+        if (parentRenderObject != null && parentRenderObject.attached) {
           RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
         }
       }
       renderBoxModel = nextRenderBoxModel;
+      assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
 
       // Ensure that the event responder is bound.
       ensureEventResponderBound();
@@ -368,6 +385,19 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
           nextReplaced = previousReplaced;
         }
       }
+    }
+    return nextReplaced;
+  }
+
+  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget}) {
+    RenderWidget nextReplaced;
+
+    if (previousRenderWidget == null) {
+      nextReplaced = RenderWidget(
+        renderStyle: renderStyle,
+      );
+    } else {
+      nextReplaced = previousRenderWidget;
     }
     return nextReplaced;
   }
@@ -526,6 +556,20 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
     // Ensure that the child is attached.
     ensureChildAttached();
+
+    // Reconfigure scrollable contents.
+    bool needUpdateOverflowRenderBox = false;
+    if (renderStyle.overflowX != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowX(_handleScroll);
+    }
+    if (renderStyle.overflowY != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowY(_handleScroll);
+    }
+    if (needUpdateOverflowRenderBox) {
+      updateOverflowRenderBox();
+    }
   }
 
   @override
@@ -540,9 +584,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     RenderBoxModel? renderBoxModel = this.renderBoxModel;
     if (renderBoxModel != null) {
-      // The node detach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
-      renderBoxModel.markAdjacentRenderParagraphNeedsLayout();
-
       // Remove all intersection change listeners.
       renderBoxModel.clearIntersectionChangeListeners();
 
@@ -555,6 +596,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
       // Clear pointer listener
       clearEventResponder(renderBoxModel);
+
+      // Remove scrollable
+      renderBoxModel.disposeScrollable();
+      disposeScrollable();
     }
   }
 
@@ -772,6 +817,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     style.dispose();
     attributes.clear();
     disposeScrollable();
+    _attributeProperties.clear();
     super.dispose();
   }
 
@@ -806,9 +852,13 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
 
     if (renderer != null) {
+      assert(parent.renderer!.attached);
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel.attachRenderBox(parent.renderer!, renderer!, after: after);
+        if (renderStyle.position != CSSPositionType.static) {
+          _updateRenderBoxModelWithPosition(CSSPositionType.static);
+        }
       }
 
       // Flush pending style before child attached.
@@ -818,9 +868,20 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
+  static bool isRenderObjectOwnedByFlutterFramework(Element element) {
+    return element is WidgetElement || element.managedByFlutterWidget;
+  }
+
   /// Unmount [renderBoxModel].
   @override
-  void unmountRenderObject({bool deep = true, bool keepFixedAlive = false, bool dispose = true}) {
+  void unmountRenderObject(
+      {bool deep = true, bool keepFixedAlive = false, bool dispose = true, bool fromFlutterWidget = false}) {
+    /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
+    /// So we do nothing here.
+    if (!fromFlutterWidget && managedByFlutterWidget) {
+      return;
+    }
+
     // Ignore the fixed element to unmount render object.
     // It's useful for sliver manager to unmount child render object, but excluding fixed elements.
     if (keepFixedAlive && renderStyle.position == CSSPositionType.fixed) {
@@ -838,7 +899,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     didDetachRenderer();
     if (dispose) {
-      renderBoxModel?.dispose();
+      // RenderObjects could be owned by Flutter Widget Frameworks.
+      if (!isRenderObjectOwnedByFlutterFramework(this)) {
+        ownerDocument.inactiveRenderObjects.add(renderer);
+      }
     }
 
     renderBoxModel = null;
@@ -967,6 +1031,54 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return super.replaceChild(newNode, oldNode);
   }
 
+  void _updateIDMap(String? newID, {String? oldID}) {
+    if (oldID != null && oldID.isNotEmpty) {
+      final elements = ownerDocument.elementsByID[oldID];
+      if (elements != null) {
+        elements.remove(this);
+        ownerDocument.elementsByID[oldID] = elements;
+      }
+    }
+    if (newID?.isNotEmpty == true && isConnected) {
+      final elements = ownerDocument.elementsByID[newID!] ?? [];
+      if (!elements.contains(this)) {
+        elements.add(this);
+      }
+      ownerDocument.elementsByID[newID] = elements;
+    }
+  }
+
+  void _updateNameMap(String? newName, {String? oldName}) {
+    if (oldName != null && oldName.isNotEmpty) {
+      final elements = ownerDocument.elementsByName[oldName];
+      if (elements != null) {
+        elements.remove(this);
+        ownerDocument.elementsByName[oldName] = elements;
+      }
+    }
+    if (newName != null && newName.isNotEmpty && isConnected) {
+      final elements = ownerDocument.elementsByName[newName] ?? [];
+      if (!elements.contains(this)) {
+        elements.add(this);
+      }
+      ownerDocument.elementsByName[newName] = elements;
+    }
+  }
+
+  @override
+  void connectedCallback() {
+    super.connectedCallback();
+    _updateNameMap(getAttribute(_NAME));
+    _updateIDMap(_id);
+  }
+
+  @override
+  void disconnectedCallback() {
+    super.disconnectedCallback();
+    _updateIDMap(null, oldID: _id);
+    _updateNameMap(null, oldName: getAttribute(_NAME));
+  }
+
   RenderBox? getContainingBlockRenderBox() {
     RenderBox? containingBlockRenderBox;
     CSSPositionType positionType = renderStyle.position;
@@ -997,36 +1109,38 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   @mustCallSuper
   String? getAttribute(String qualifiedName) {
+    ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
+
+    if (propertyHandler != null && propertyHandler.getter != null) {
+      return propertyHandler.getter!();
+    }
+
     return attributes[qualifiedName];
   }
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
     internalSetAttribute(qualifiedName, value);
-    if (_STYLE_PROPERTY == qualifiedName) {
-      final map = CSSParser(value).parseInlineStyle();
-      inlineStyle.addAll(map);
-      recalculateStyle();
-    } else if (_CLASS_NAME == qualifiedName) {
-      className = value;
-    } else if (_ID == qualifiedName) {
-      id = value;
+    ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
+    if (propertyHandler != null && propertyHandler.setter != null) {
+      propertyHandler.setter!(value);
     }
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
+    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
     attributes[qualifiedName] = value;
+    recalculateStyle(forceRecalculate: isNeedRecalculate);
   }
 
   @mustCallSuper
   void removeAttribute(String qualifiedName) {
-    if (qualifiedName == _STYLE_PROPERTY) {
-      _removeInlineStyle();
-    } else if (qualifiedName == _CLASS_NAME) {
-      className = EMPTY_STRING;
-    } else if (qualifiedName == _ID) {
-      id = EMPTY_STRING;
+    ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
+
+    if (propertyHandler != null && propertyHandler.deleter != null) {
+      propertyHandler.deleter!();
     }
+
     attributes.remove(qualifiedName);
   }
 
@@ -1052,6 +1166,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       return;
     }
 
+    willAttachRenderer();
+
     // Update renderBoxModel.
     _updateRenderBoxModel();
     // Attach renderBoxModel to parent if change from `display: none` to other values.
@@ -1067,8 +1183,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         RenderBox parentRenderBox = parentNode!.renderer!;
         _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: preSibling);
       }
-      ensureChildAttached();
     }
+
+    didAttachRenderer();
   }
 
   void setRenderStyleProperty(String name, value) {
@@ -1096,8 +1213,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     switch (name) {
       case DISPLAY:
+        bool displayChanged = renderStyle.display != value;
         renderStyle.display = value;
-        _updateRenderBoxModelWithDisplay();
+        if (displayChanged) {
+          _updateRenderBoxModelWithDisplay();
+        }
         break;
       case Z_INDEX:
         renderStyle.zIndex = value;
@@ -1421,6 +1541,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       case SLIVER_DIRECTION:
         renderStyle.sliverDirection = value;
         break;
+      case CARETCOLOR:
+        renderStyle.caretColor = value;
+        break;
     }
   }
 
@@ -1478,8 +1601,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void _applyDefaultStyle(CSSStyleDeclaration style) {
-    if (_defaultStyle.isNotEmpty) {
-      _defaultStyle.forEach((propertyName, value) {
+    if (defaultStyle.isNotEmpty) {
+      defaultStyle.forEach((propertyName, value) {
         style.setProperty(propertyName, value);
       });
     }
@@ -1550,26 +1673,24 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     _applySheetStyle(style);
   }
 
-  void recalculateStyle() {
-    if (renderBoxModel != null) {
+  void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
+    if (renderBoxModel != null || forceRecalculate) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
+      var hasInheritedPendingProperty = false;
       if (style.merge(newStyle)) {
+        hasInheritedPendingProperty = style.hasInheritedPendingProperty;
         style.flushPendingProperties();
       }
-    }
-  }
 
-  void recalculateNestedStyle() {
-    if (!needsStyleRecalculate) {
-      return;
+      if (rebuildNested == true || hasInheritedPendingProperty) {
+        // Update children style.
+        children.forEach((Element child) {
+          child.recalculateStyle(rebuildNested: rebuildNested);
+        });
+      }
     }
-    recalculateStyle();
-    // Update children style.
-    children.forEach((Element child) {
-      child.recalculateNestedStyle();
-    });
   }
 
   void _removeInlineStyle() {
@@ -1599,10 +1720,17 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       }
 
       if (sizedBox.hasSize) {
-        Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement);
+        Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
-        boundingClientRect = BoundingClientRect(offset.dx, offset.dy, size.width, size.height, offset.dy,
-            offset.dx + size.width, offset.dy + size.height, offset.dx);
+        boundingClientRect = BoundingClientRect(
+            x: offset.dx,
+            y: offset.dy,
+            width: size.width,
+            height: size.height,
+            top: offset.dy,
+            right: offset.dx + size.width,
+            bottom: offset.dy + size.height,
+            left: offset.dx);
       }
     }
 
@@ -1661,7 +1789,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   // Get the offset of current element relative to specified ancestor element.
-  Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor}) {
+  Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor, bool excludeScrollOffset = false}) {
     // Need to flush layout to get correct size.
     flushLayout();
 
@@ -1669,7 +1797,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (ancestor == null || ancestor.renderBoxModel == null) {
       return Offset.zero;
     }
-    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!);
+    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!, excludeScrollOffset: excludeScrollOffset);
   }
 
   void click() {
@@ -1749,6 +1877,33 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     );
     scrollingContentLayoutBox.isScrollingContentBox = true;
     return scrollingContentLayoutBox;
+  }
+
+  bool _checkRecalculateStyle(List<String?> keys, CSSMap cssMap) {
+    if (keys.isEmpty || cssMap.values.isEmpty) {
+      return false;
+    }
+    final rules = cssMap.values.reduce((value, element) => value + element);
+    for (CSSRule rule in rules) {
+      if (rule is! CSSStyleRule) {
+        continue;
+      }
+      for (Selector selector in rule.selectorGroup.selectors) {
+        if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  RenderStyle? computedStyle(String? pseudoElementSpecifier) {
+    RenderStyle? style = renderBoxModel?.renderStyle;
+    if (style == null) {
+      recalculateStyle();
+      style = renderBoxModel?.renderStyle;
+    }
+    return style;
   }
 }
 

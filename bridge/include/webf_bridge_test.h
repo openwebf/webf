@@ -9,16 +9,16 @@
 #include "webf_bridge.h"
 
 WEBF_EXPORT_C
-void initTestFramework(int32_t contextId);
+void* initTestFramework(void* page);
 WEBF_EXPORT_C
-int8_t evaluateTestScripts(int32_t contextId, void* code, const char* bundleFilename, int startLine);
+int8_t evaluateTestScripts(void* testContext, void* code, const char* bundleFilename, int startLine);
 
 using ExecuteCallback = void* (*)(int32_t contextId, void* status);
 
 WEBF_EXPORT_C
-void executeTest(int32_t contextId, ExecuteCallback executeCallback);
+void executeTest(void* testContext, ExecuteCallback executeCallback);
 
 WEBF_EXPORT_C
-void registerTestEnvDartMethods(int32_t contextId, uint64_t* methodBytes, int32_t length);
+void registerTestEnvDartMethods(void* testContext, uint64_t* methodBytes, int32_t length);
 
 #endif

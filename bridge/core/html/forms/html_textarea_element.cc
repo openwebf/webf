@@ -8,10 +8,6 @@
 
 namespace webf {
 
-HTMLTextareaElement::HTMLTextareaElement(Document& document) : HTMLElement(html_names::ktextarea, &document) {}
-
-bool HTMLTextareaElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLTextareaElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
+HTMLTextareaElement::HTMLTextareaElement(Document& document) : WidgetElement(html_names::ktextarea, &document) {}
 
 }  // namespace webf

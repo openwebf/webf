@@ -24,17 +24,16 @@ static std::atomic<int32_t> context_unique_id{0};
 bool valid_contexts[MAX_JS_CONTEXT];
 std::atomic<uint32_t> running_context_list{0};
 
-ExecutingContext::ExecutingContext(int32_t contextId,
+ExecutingContext::ExecutingContext(DartContext* dart_context,
+                                   int32_t contextId,
                                    JSExceptionHandler handler,
-                                   void* owner,
-                                   const uint64_t* dart_methods,
-                                   int32_t dart_methods_length)
-    : context_id_(contextId),
+                                   void* owner)
+    : dart_context_(dart_context),
+      context_id_(contextId),
       handler_(std::move(handler)),
       owner_(owner),
       unique_id_(context_unique_id++),
-      is_context_valid_(true),
-      dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {
+      is_context_valid_(true) {
   //  #if ENABLE_PROFILE
   //    auto jsContextStartTime =
   //        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
@@ -77,8 +76,12 @@ ExecutingContext::ExecutingContext(int32_t contextId,
 
   initWebFPolyFill(this);
 
-  for (auto& p : pluginByteCode) {
+  for (auto& p : plugin_byte_code) {
     EvaluateByteCode(p.second.bytes, p.second.length);
+  }
+
+  for (auto& p : plugin_string_code) {
+    EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
   }
 
   //#if ENABLE_PROFILE
@@ -346,7 +349,8 @@ void ExecutingContext::DispatchGlobalRejectionHandledEvent(ExecutingContext* con
   DispatchPromiseRejectionEvent(event_type_names::krejectionhandled, context, promise, error);
 }
 
-std::unordered_map<std::string, NativeByteCode> ExecutingContext::pluginByteCode{};
+std::unordered_map<std::string, NativeByteCode> ExecutingContext::plugin_byte_code{};
+std::unordered_map<std::string, std::string> ExecutingContext::plugin_string_code{};
 
 void ExecutingContext::promiseRejectTracker(JSContext* ctx,
                                             JSValue promise,

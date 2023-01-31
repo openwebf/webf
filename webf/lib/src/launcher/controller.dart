@@ -8,25 +8,23 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
-import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
     show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
-import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/widget.dart';
+import 'package:webf/devtools.dart';
+import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
 typedef LoadHandler = void Function(WebFController controller);
@@ -34,6 +32,8 @@ typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
+typedef OnCustomElementAttached = void Function(WebFWidgetElementToWidgetAdapter newWidget);
+typedef OnCustomElementDetached = void Function(WebFWidgetElementToWidgetAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -57,10 +57,63 @@ void setTargetPlatformForDesktop() {
 }
 
 abstract class DevToolsService {
-  void init(WebFController controller);
-  void willReload();
-  void didReload();
-  void dispose();
+  /// Design prevDevTool for reload page,
+  /// do not use it in any other place.
+  /// More detail see [InspectPageModule.handleReloadPage].
+  static DevToolsService? prevDevTools;
+
+  static final Map<int, DevToolsService> _contextDevToolMap = {};
+  static DevToolsService? getDevToolOfContextId(int contextId) {
+    return _contextDevToolMap[contextId];
+  }
+
+  /// Used for debugger inspector.
+  UIInspector? _uiInspector;
+  UIInspector? get uiInspector => _uiInspector;
+
+  late Isolate _isolateServer;
+  Isolate get isolateServer => _isolateServer;
+  set isolateServer(Isolate isolate) {
+    _isolateServer = isolate;
+  }
+
+  SendPort? _isolateServerPort;
+  SendPort? get isolateServerPort => _isolateServerPort;
+  set isolateServerPort(SendPort? value) {
+    _isolateServerPort = value;
+  }
+
+  WebFController? _controller;
+  WebFController? get controller => _controller;
+
+  void init(WebFController controller) {
+    _contextDevToolMap[controller.view.contextId] = this;
+    _controller = controller;
+    spawnIsolateInspectorServer(this, controller);
+    _uiInspector = UIInspector(this);
+    controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;
+  }
+
+  bool get isReloading => _reloading;
+  bool _reloading = false;
+
+  void willReload() {
+    _reloading = true;
+  }
+
+  void didReload() {
+    _reloading = false;
+    controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
+    _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
+  }
+
+  void dispose() {
+    _uiInspector?.dispose();
+    _contextDevToolMap.remove(controller!.view.contextId);
+    _controller = null;
+    _isolateServerPort = null;
+    _isolateServer.kill();
+  }
 }
 
 // An kraken View Controller designed for multiple kraken view control.
@@ -72,6 +125,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   WebFNavigationDelegate? navigationDelegate;
 
   GestureListener? gestureListener;
+
+  List<Cookie>? initialCookies;
 
   double _viewportWidth;
   double get viewportWidth => _viewportWidth;
@@ -93,8 +148,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   Color? background;
 
-  WidgetDelegate? widgetDelegate;
-
   WebFViewController(this._viewportWidth, this._viewportHeight,
       {this.background,
       this.enableDebug = false,
@@ -102,7 +155,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       required this.rootController,
       this.navigationDelegate,
       this.gestureListener,
-      this.widgetDelegate,
+      this.initialCookies,
       // Viewport won't change when kraken page reload, should reuse previous page's viewportBox.
       RenderViewportBox? originalViewport}) {
     if (enableDebug) {
@@ -122,8 +175,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
 
     if (originalViewport != null) {
-      // Should update to new controller.
-      originalViewport.controller = rootController;
       viewport = originalViewport;
     } else {
       viewport = RenderViewportBox(
@@ -180,7 +231,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       viewport: viewport,
       controller: rootController,
       gestureListener: gestureListener,
-      widgetDelegate: widgetDelegate,
+      initialCookies: initialCookies,
     );
     _setEventTarget(targetId, document);
 
@@ -206,9 +257,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   void initWindow(int targetId, Pointer<NativeBindingObject> pointer) {
-    window = Window(
-        BindingContext(_contextId, pointer),
-        document);
+    window = Window(BindingContext(_contextId, pointer), document);
     _registerPlatformBrightnessChange();
     _setEventTarget(targetId, window);
 
@@ -222,6 +271,14 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         (event.target as Element).focus();
       }
     });
+  }
+
+  void setCookie(List<Cookie> cookies, [Uri? uri]) {
+    document.cookie.setCookie(cookies, uri);
+  }
+
+  void clearCookie() {
+    document.cookie.clearCookie();
   }
 
   void evaluateJavaScripts(String code) {
@@ -256,9 +313,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   // Dispose controller and recycle all resources.
   void dispose() {
-    // FIXME: for break circle reference
-    viewport.controller = null;
-
     debugDOMTreeChanged = null;
 
     _teardownObserver();
@@ -314,23 +368,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     return null;
   }
 
-  // Save all WidgetElement to manager life cycle.
-  final List<WidgetElement> _widgetElements = [];
-
-  void deactivateWidgetElements() {
-    _widgetElements.forEach((element) {
-      element.deactivate();
-    });
-  }
-
-  void addWidgetElement(WidgetElement widgetElement) {
-    _widgetElements.add(widgetElement);
-  }
-
-  void _removeWidgetElement(WidgetElement widgetElement) {
-    _widgetElements.remove(widgetElement);
-  }
-
   T? _getEventTargetById<T>(int targetId) {
     EventTarget? target = _eventTargets[targetId];
     if (target is T)
@@ -345,11 +382,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   void _removeTarget(int targetId) {
     if (_eventTargets.containsKey(targetId)) {
-      EventTarget? target = _eventTargets.remove(targetId);
-
-      if (target is WidgetElement) {
-        _removeWidgetElement(target);
-      }
+      _eventTargets.remove(targetId);
     }
   }
 
@@ -360,7 +393,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   void _clearTargets() {
     // Set current eventTargets to a new object, clean old targets by gc.
     _eventTargets = <int, EventTarget>{};
-    _widgetElements.clear();
   }
 
   // export Uint8List bytes from rendered result.
@@ -733,22 +765,23 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     } else {
       bool shouldScrollByToCenter = false;
       Element? focusedElement = document.focusedElement;
+      double scrollOffset = 0;
       if (focusedElement != null) {
         RenderBox? renderer = focusedElement.renderer;
-        if (renderer != null && renderer.hasSize) {
+        if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
           if (focusOffset.dy > viewportHeight - bottomInset - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
+            scrollOffset =
+                focusOffset.dy - (viewportHeight - bottomInset) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }
       // Show keyboard
       viewport.bottomInset = bottomInset;
       if (shouldScrollByToCenter) {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          window.scrollBy(0, bottomInset);
-        });
+        window.scrollBy(0, scrollOffset, true);
       }
     }
     _prevViewInsets = ui.window.viewInsets;
@@ -810,8 +843,6 @@ class WebFController {
 
   UriParser? uriParser;
 
-  late RenderObjectElement rootFlutterElement;
-
   static WebFController? getControllerOfJSContextId(int? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
       return null;
@@ -831,8 +862,6 @@ class WebFController {
   }
 
   GestureDispatcher gestureDispatcher = GestureDispatcher();
-
-  WidgetDelegate? widgetDelegate;
 
   LoadHandler? onLoad;
 
@@ -854,6 +883,12 @@ class WebFController {
   set onJSLog(JSLogHandler? jsLogHandler) {
     _onJSLog = jsLogHandler;
   }
+
+  // Internal usable. Notifications to WebF widget when custom element had changed.
+  OnCustomElementAttached? onCustomElementAttached;
+  OnCustomElementDetached? onCustomElementDetached;
+
+  final List<Cookie>? initialCookies;
 
   String? _name;
   String? get name => _name;
@@ -884,13 +919,15 @@ class WebFController {
     WebFNavigationDelegate? navigationDelegate,
     WebFMethodChannel? methodChannel,
     WebFBundle? entrypoint,
-    this.widgetDelegate,
+    this.onCustomElementAttached,
+    this.onCustomElementDetached,
     this.onLoad,
     this.onLoadError,
     this.onJSError,
     this.httpClientInterceptor,
     this.devToolsService,
     this.uriParser,
+    this.initialCookies,
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {
@@ -910,7 +947,7 @@ class WebFController {
       rootController: this,
       navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
       gestureListener: _gestureListener,
-      widgetDelegate: widgetDelegate,
+      initialCookies: initialCookies
     );
 
     if (kProfileMode) {
@@ -961,6 +998,8 @@ class WebFController {
   final Queue<HistoryItem> previousHistoryStack = Queue();
   final Queue<HistoryItem> nextHistoryStack = Queue();
 
+  HistoryModule get history => _module.moduleManager.getModule('History')!;
+
   static Uri fallbackBundleUri([int? id]) {
     // The fallback origin uri, like `vm://bundle/0`
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
@@ -980,9 +1019,10 @@ class WebFController {
     Future.microtask(() {
       _module.dispose();
       _view.dispose();
+      // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
+      _view.viewport.reload();
 
-      List<int> methodBytes = makeDartMethodsData();
-      allocateNewPage(methodBytes, _view.contextId);
+      allocateNewPage(_view.contextId);
 
       _view = WebFViewController(view.viewportWidth, view.viewportHeight,
           background: _view.background,
@@ -991,7 +1031,6 @@ class WebFController {
           rootController: this,
           navigationDelegate: _view.navigationDelegate,
           gestureListener: _view.gestureListener,
-          widgetDelegate: _view.widgetDelegate,
           originalViewport: _view.viewport);
 
       _module = WebFModuleController(this, _view.contextId);
@@ -1020,6 +1059,8 @@ class WebFController {
     if (devToolsService != null) {
       devToolsService!.willReload();
     }
+
+    _isComplete = false;
 
     await unload();
     await executeEntrypoint();
@@ -1092,6 +1133,8 @@ class WebFController {
     _controllerMap[_view.contextId] = null;
     _controllerMap.remove(_view.contextId);
     _nameIdMap.remove(name);
+    // To release entrypoint bundle memory.
+    _entrypoint?.dispose();
 
     devToolsService?.dispose();
   }
@@ -1205,9 +1248,6 @@ class WebFController {
         PerformanceTiming.instance().mark(PERF_JS_BUNDLE_EVAL_END);
       }
 
-      // To release entrypoint bundle memory.
-      entrypoint.dispose();
-
       // trigger DOMContentLoaded event
       SchedulerBinding.instance.addPostFrameCallback((_) {
         Event event = Event(EVENT_DOM_CONTENT_LOADED);
@@ -1255,9 +1295,4 @@ class WebFController {
     });
     SchedulerBinding.instance.scheduleFrame();
   }
-}
-
-mixin RenderObjectWithControllerMixin {
-  // Kraken controller reference which control all kraken created renderObjects.
-  WebFController? controller;
 }

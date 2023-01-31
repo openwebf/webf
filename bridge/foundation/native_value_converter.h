@@ -33,7 +33,10 @@ struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<Na
 
 template <>
 struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
-  static NativeValue ToNativeValue(const ImplType& value) { return Native_NewString(value.ToNativeString().release()); }
+  static NativeValue ToNativeValue(JSContext* ctx, const ImplType& value) {
+    return Native_NewString(value.ToNativeString(ctx).release());
+  }
+  static NativeValue ToNativeValue(const std::string& value) { return Native_NewCString(value); }
 
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
     if (value.tag == NativeTag::TAG_NULL) {
@@ -122,12 +125,15 @@ struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_
 template <typename T>
 struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_of_v<ScriptWrappable, T>>>
     : public NativeValueConverterBase<T> {
-  static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::Others, value->bindingObject()); }
+  static NativeValue ToNativeValue(T* value) {
+    return Native_NewPtr(JSPointerType::NativeBindingObject, value->bindingObject());
+  }
   static T* FromNativeValue(JSContext* ctx, NativeValue value) {
     if (value.tag == NativeTag::TAG_NULL) {
       return nullptr;
     }
     assert(value.tag == NativeTag::TAG_POINTER);
+    assert(value.uint32 == static_cast<int32_t>(JSPointerType::NativeBindingObject));
     return DynamicTo<T>(BindingObject::From(static_cast<NativeBindingObject*>(value.u.ptr)));
   }
 };

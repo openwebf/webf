@@ -108,4 +108,93 @@ describe('display', () => {
         done();
     });
   });
+
+  it('should work with toggle replaced element', async (done) => {
+    let img = document.createElement('img');
+    img.src = 'assets/cat.png';
+    img.onload = async () => {
+      await snapshot();
+      img.style.display = 'none';
+      await snapshot();
+      img.style.display = 'block';
+      await snapshot();
+      done();
+    };
+    document.body.appendChild(img);
+  });
+
+  it('should work with scrollable content', async (done) => {
+    let container = createElement('div', {
+      style: {
+        width: '100px',
+        height: '100px',
+        overflow: 'auto'
+      }
+    }, [
+      createElement('p', {}, [
+        createText(' 11111111111111111')
+      ]),
+      createElement('p', {}, [
+        createText(' 222222222222222222222222')
+      ]),
+      createElement('p', {}, [
+        createText(' 333333333333333333333333')
+      ]),
+      createElement('p', {}, [
+        createText(' 444444444444444444444444444444')
+      ]),
+      createElement('p', {}, [
+        createText(' 55555555555555555555555555555555555')
+      ]),
+      createElement('p', {}, [
+        createText(' 6666666666666666666666666')
+      ]),
+    ]);
+
+    requestAnimationFrame(() => {
+      container.style.display = 'none';
+      requestAnimationFrame(async () => {
+        container.style.display = 'block';
+        await snapshot();
+        await simulateSwipe(0, 0, 30, 30, 0.1);
+        await snapshot();
+        done();
+      });
+    });
+
+    document.body.appendChild(container);
+  });
+
+  it('should work when previous sibiling is positioned element', async (done) => {
+    let positioned = createElement('div', {
+      style: {
+        'position': 'absolute',
+        'background': 'red'
+      }
+    }, [
+      createText('Click Me')
+    ]);
+    let showup = createElement('div', {
+      style: {
+        marginTop: '30px',
+        display: 'none'
+      }
+    }, [
+      createText('Show!')
+    ]);
+
+    positioned.onclick = async () => {
+      showup.style.display = 'block';
+
+      await snapshot();
+      done();
+    };
+
+    document.body.appendChild(positioned);
+    document.body.appendChild(showup);
+
+    await snapshot();
+
+    positioned.click();
+  });
 });

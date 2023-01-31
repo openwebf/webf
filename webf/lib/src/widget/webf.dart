@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
@@ -12,7 +13,8 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/dom/element_registry.dart';
+
+typedef OnControllerCreated = void Function(WebFController controller);
 
 class WebF extends StatefulWidget {
   // The background color for viewport, default to transparent.
@@ -61,6 +63,9 @@ class WebF extends StatefulWidget {
 
   final UriParser? uriParser;
 
+  /// The initial cookies to set.
+  final List<Cookie>? initialCookies;
+
   WebFController? get controller {
     return WebFController.getControllerOfName(shortHash(this));
   }
@@ -108,6 +113,7 @@ class WebF extends StatefulWidget {
       this.httpClientInterceptor,
       this.uriParser,
       this.routeObserver,
+      this.initialCookies,
       // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
       // Maybe got unexpected error when change to other values, use this at your own risk!
       // We will fixed this on next version released. (v0.6.0)
@@ -132,13 +138,79 @@ class WebF extends StatefulWidget {
   }
 
   @override
-  _WebFState createState() => _WebFState();
+  WebFState createState() => WebFState();
 }
 
-class _WebFState extends State<WebF> with RouteAware {
+class WebFState extends State<WebF> with RouteAware {
+  final Set<WebFWidgetElementToWidgetAdapter> customElementWidgets = {};
+  void onCustomElementWidgetAdd(WebFWidgetElementToWidgetAdapter adapter) {
+    Future.microtask(() {
+      setState(() {
+        customElementWidgets.add(adapter);
+      });
+    });
+  }
+
+  void onCustomElementWidgetRemove(WebFWidgetElementToWidgetAdapter adapter) {
+    Future.microtask(() {
+      setState(() {
+        customElementWidgets.remove(adapter);
+      });
+    });
+  }
+
+  bool _flutterScreenIsReady = false;
+
+  watchWindowIsReady() {
+    double viewportWidth = window.physicalSize.width / window.devicePixelRatio;
+    double viewportHeight = window.physicalSize.height / window.devicePixelRatio;
+
+    if (viewportWidth == 0.0 && viewportHeight == 0.0) {
+      // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
+      // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
+      VoidCallback? _ordinaryOnMetricsChanged = window.onMetricsChanged;
+      window.onMetricsChanged = () async {
+        if (window.physicalSize == Size.zero) {
+          return;
+        }
+        setState(() {
+          _flutterScreenIsReady = true;
+        });
+
+        // Should proxy to ordinary window.onMetricsChanged callbacks.
+        if (_ordinaryOnMetricsChanged != null) {
+          _ordinaryOnMetricsChanged();
+          // Recover ordinary callback to window.onMetricsChanged
+          window.onMetricsChanged = _ordinaryOnMetricsChanged;
+        }
+      };
+    } else {
+      _flutterScreenIsReady = true;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    watchWindowIsReady();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WebFTextControl(context);
+    if (!_flutterScreenIsReady) {
+      return SizedBox(width: 0, height: 0);
+    }
+
+    return RepaintBoundary(
+      child: WebFContext(
+        child: WebFRootRenderObjectWidget(
+          widget,
+          onCustomElementAttached: onCustomElementWidgetAdd,
+          onCustomElementDetached: onCustomElementWidgetRemove,
+          children: customElementWidgets.toList(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -173,22 +245,45 @@ class _WebFState extends State<WebF> with RouteAware {
 
   @override
   void deactivate() {
-    // Deactivate all WidgetElements in webf when webf Widget is deactivated.
-    widget.controller!.view.deactivateWidgetElements();
-
     super.deactivate();
   }
 }
 
-class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
+class WebFContext extends InheritedWidget {
+  WebFContext({required super.child});
+
+  @override
+  bool updateShouldNotify(covariant InheritedWidget oldWidget) {
+    return false;
+  }
+
+  @override
+  InheritedElement createElement() {
+    return WebFContextInheritElement(this);
+  }
+}
+
+class WebFContextInheritElement extends InheritedElement {
+  WebFContextInheritElement(super.widget);
+
+  WebFController? controller;
+}
+
+class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
+  final OnCustomElementAttached onCustomElementAttached;
+  final OnCustomElementDetached onCustomElementDetached;
+
   // Creates a widget that visually hides its child.
-  const WebFRenderObjectWidget(WebF widget, WidgetDelegate widgetDelegate, {Key? key})
-      : _webfWidget = widget,
-        _widgetDelegate = widgetDelegate,
-        super(key: key);
+  WebFRootRenderObjectWidget(
+    WebF widget, {
+    Key? key,
+    required List<Widget> children,
+    required this.onCustomElementAttached,
+    required this.onCustomElementDetached,
+  })  : _webfWidget = widget,
+        super(key: key, children: children);
 
   final WebF _webfWidget;
-  final WidgetDelegate _widgetDelegate;
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -213,43 +308,20 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
         navigationDelegate: _webfWidget.navigationDelegate,
         devToolsService: _webfWidget.devToolsService,
         httpClientInterceptor: _webfWidget.httpClientInterceptor,
-        widgetDelegate: _widgetDelegate,
+        onCustomElementAttached: onCustomElementAttached,
+        onCustomElementDetached: onCustomElementDetached,
+        initialCookies: _webfWidget.initialCookies,
         uriParser: _webfWidget.uriParser);
+
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_CONTROLLER_INIT_END);
+    }
+
+    (context as _WebFRenderObjectElement).controller = controller;
 
     OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
     if (onControllerCreated != null) {
       onControllerCreated(controller);
-    }
-
-    if (viewportWidth == 0.0 && viewportHeight == 0.0) {
-      // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
-      // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
-      VoidCallback? _ordinaryOnMetricsChanged = window.onMetricsChanged;
-      window.onMetricsChanged = () async {
-        if (window.physicalSize == Size.zero) {
-          return;
-        }
-
-        double viewportWidth = _webfWidget.viewportWidth ?? window.physicalSize.width / window.devicePixelRatio;
-        double viewportHeight = _webfWidget.viewportHeight ?? window.physicalSize.height / window.devicePixelRatio;
-
-        controller.view.viewportWidth = viewportWidth;
-        controller.view.document.documentElement!.renderStyle.width = CSSLengthValue(viewportWidth, CSSLengthType.PX);
-
-        controller.view.viewportHeight = viewportHeight;
-        controller.view.document.documentElement!.renderStyle.height = CSSLengthValue(viewportHeight, CSSLengthType.PX);
-
-        // Should proxy to ordinary window.onMetricsChanged callbacks.
-        if (_ordinaryOnMetricsChanged != null) {
-          _ordinaryOnMetricsChanged();
-          // Recover ordinary callback to window.onMetricsChanged
-          window.onMetricsChanged = _ordinaryOnMetricsChanged;
-        }
-      };
-    }
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CONTROLLER_INIT_END);
     }
 
     return controller.view.getRootRenderObject();
@@ -258,7 +330,7 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
   @override
   void updateRenderObject(BuildContext context, covariant RenderObject renderObject) {
     super.updateRenderObject(context, renderObject);
-    WebFController controller = (renderObject as RenderObjectWithControllerMixin).controller!;
+    WebFController controller = (context as _WebFRenderObjectElement).controller!;
     controller.name = shortHash(_webfWidget.hashCode);
 
     bool viewportWidthHasChanged = controller.view.viewportWidth != _webfWidget.viewportWidth;
@@ -281,40 +353,56 @@ class WebFRenderObjectWidget extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void didUnmountRenderObject(covariant RenderObject renderObject) {
-    WebFController controller = (renderObject as RenderObjectWithControllerMixin).controller!;
-    controller.dispose();
-  }
-
-  @override
   _WebFRenderObjectElement createElement() {
     return _WebFRenderObjectElement(this);
   }
 }
 
-class _WebFRenderObjectElement extends SingleChildRenderObjectElement {
-  _WebFRenderObjectElement(WebFRenderObjectWidget widget) : super(widget);
+class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
+  _WebFRenderObjectElement(WebFRootRenderObjectWidget widget) : super(widget);
+
+  WebFController? controller;
 
   @override
   void mount(Element? parent, Object? newSlot) async {
     super.mount(parent, newSlot);
+    assert(parent is WebFContextInheritElement);
+    assert(controller != null);
+    (parent as WebFContextInheritElement).controller = controller;
+    await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
+  }
 
-    WebFController controller = (renderObject as RenderObjectWithControllerMixin).controller!;
+  @override
+  void performRebuild() {
+    super.performRebuild();
+  }
 
-    // We should make sure every flutter elements created under webf can be walk up to the root.
-    // So we bind _WebFRenderObjectElement into WebFController, and widgetElements created by controller can follow this to the root.
-    controller.rootFlutterElement = this;
-    await controller.executeEntrypoint(animationController: widget._webfWidget.animationController);
+  @override
+  void rebuild() {
+    super.rebuild();
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+  }
+
+  @override
+  void unmount() {
+    super.unmount();
+    controller?.dispose();
   }
 
   // RenderObjects created by webf are manager by webf itself. There are no needs to operate renderObjects on _WebFRenderObjectElement.
   @override
   void insertRenderObjectChild(RenderObject child, Object? slot) {}
+
   @override
   void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {}
+
   @override
   void removeRenderObjectChild(RenderObject child, Object? slot) {}
 
   @override
-  WebFRenderObjectWidget get widget => super.widget as WebFRenderObjectWidget;
+  WebFRootRenderObjectWidget get widget => super.widget as WebFRootRenderObjectWidget;
 }

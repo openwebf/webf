@@ -40,7 +40,7 @@ Document::Document(ExecutingContext* context)
 Element* Document::createElement(const AtomicString& name, ExceptionState& exception_state) {
   if (!IsValidName(name)) {
     exception_state.ThrowException(ctx(), ErrorType::InternalError,
-                                   "The tag name provided ('" + name.ToStdString() + "') is not a valid name.");
+                                   "The tag name provided ('" + name.ToStdString(ctx()) + "') is not a valid name.");
     return nullptr;
   }
 
@@ -69,12 +69,8 @@ DocumentFragment* Document::createDocumentFragment(ExceptionState& exception_sta
   return DocumentFragment::Create(*this);
 }
 
-Comment* Document::createComment(ExceptionState& exception_state) {
-  return Comment::Create(*this);
-}
-
 Comment* Document::createComment(const AtomicString& data, ExceptionState& exception_state) {
-  return Comment::Create(*this);
+  return Comment::Create(*this, data);
 }
 
 Event* Document::createEvent(const AtomicString& type, ExceptionState& exception_state) {
@@ -89,8 +85,8 @@ std::string Document::nodeName() const {
   return "#document";
 }
 
-std::string Document::nodeValue() const {
-  return "";
+AtomicString Document::nodeValue() const {
+  return AtomicString::Null();
 }
 
 Node::NodeType Document::nodeType() const {
@@ -120,7 +116,7 @@ bool Document::ChildTypeAllowed(NodeType type) const {
 }
 
 Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(selectors)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
@@ -129,7 +125,7 @@ Element* Document::querySelector(const AtomicString& selectors, ExceptionState& 
 }
 
 std::vector<Element*> Document::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(selectors)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
@@ -138,7 +134,7 @@ std::vector<Element*> Document::querySelectorAll(const AtomicString& selectors, 
 }
 
 Element* Document::getElementById(const AtomicString& id, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(id)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), id)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementById, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
@@ -148,7 +144,7 @@ Element* Document::getElementById(const AtomicString& id, ExceptionState& except
 
 std::vector<Element*> Document::getElementsByClassName(const AtomicString& class_name,
                                                        ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(class_name)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), class_name)};
   NativeValue result =
       InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
@@ -158,7 +154,7 @@ std::vector<Element*> Document::getElementsByClassName(const AtomicString& class
 }
 
 std::vector<Element*> Document::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(tag_name)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), tag_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
@@ -167,7 +163,7 @@ std::vector<Element*> Document::getElementsByTagName(const AtomicString& tag_nam
 }
 
 std::vector<Element*> Document::getElementsByName(const AtomicString& name, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(name)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
@@ -263,7 +259,7 @@ void Document::setBody(HTMLBodyElement* new_body, ExceptionState& exception_stat
 
   if (!IsA<HTMLBodyElement>(*new_body)) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
-                                   "The new body element is of type '" + new_body->tagName().ToStdString() +
+                                   "The new body element is of type '" + new_body->tagName().ToStdString(ctx()) +
                                        "'. It must be either a 'BODY' element.");
     return;
   }

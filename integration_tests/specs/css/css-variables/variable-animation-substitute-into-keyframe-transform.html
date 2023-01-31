@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSS Variables - Animation - Substitute Into Keyframe - transform property</title>
+    <meta rel="author" title="Kevin Babbitt">
+    <meta rel="author" title="Greg Whitworth">
+    <link rel="author" title="Microsoft Corporation" href="http://microsoft.com" />
+    <link rel="help" href="http://www.w3.org/TR/css-variables-1/#syntax">
+
+    <style>
+        @keyframes transformanim
+        {
+            from { transform: scale(0.5); }
+            to { transform: scale(var(--finalScale)); }
+        }
+
+        /* Start the animation in the paused state and fill at both ends so we can inspect values from both keyframes. */
+        #target
+        {
+            animation-name: transformanim;
+            animation-duration: 1s;
+            animation-fill-mode: both;
+            transform-origin: 0 0;
+            --finalScale: 2;
+        }
+    </style>
+</head>
+<body>
+    <div id="target">This text should scale from half size to double size over a period of 1 second.</div>
+</body>
+</html>
+<script>
+    await sleep(1.1);
+    await snapshotAction();
+</script>
+  

@@ -8,6 +8,7 @@
 #include <thread>
 
 #include "bindings/qjs/native_string_utils.h"
+#include "core/dart_context.h"
 #include "core/page.h"
 #include "foundation/inspector_task_queue.h"
 #include "foundation/logging.h"
@@ -39,31 +40,8 @@
 #endif
 
 // this is not thread safe
-std::atomic<bool> inited{false};
-std::atomic<bool> is_dart_hot_restart{false};
-std::atomic<int32_t> poolIndex{0};
-int maxPoolSize = 0;
-
-namespace {
-
-void disposeAllPages() {
-  for (int i = 0; i <= poolIndex && i < maxPoolSize; i++) {
-    disposePage(i);
-  }
-  poolIndex = 0;
-  inited = false;
-}
-
-int32_t searchForAvailableContextId() {
-  for (int i = 0; i < maxPoolSize; i++) {
-    if (webf::WebFPage::pageContextPool[i] == nullptr) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-}  // namespace
+thread_local std::atomic<bool> is_dart_hot_restart{false};
+thread_local webf::DartContext* dart_context{nullptr};
 
 namespace webf {
 bool isDartHotRestart() {
@@ -71,104 +49,58 @@ bool isDartHotRestart() {
 }
 }  // namespace webf
 
-void initJSPagePool(int poolSize, uint64_t* dart_methods, int32_t dart_methods_len) {
-  // When dart hot restarted, should dispose previous bridge and clear task message queue.
-  if (inited) {
+void initDartContext(uint64_t* dart_methods, int32_t dart_methods_len) {
+  // These could only be Happened with dart hot restart.
+  if (dart_context != nullptr) {
     is_dart_hot_restart = true;
-    disposeAllPages();
+    delete dart_context;
+    dart_context = nullptr;
     is_dart_hot_restart = false;
-  };
-  webf::WebFPage::pageContextPool = new webf::WebFPage*[poolSize];
-  for (int i = 1; i < poolSize; i++) {
-    webf::WebFPage::pageContextPool[i] = nullptr;
   }
-
-  webf::WebFPage::pageContextPool[0] = new webf::WebFPage(0, nullptr, dart_methods, dart_methods_len);
-  inited = true;
-  maxPoolSize = poolSize;
+  dart_context = new webf::DartContext(dart_methods, dart_methods_len);
 }
 
-void disposePage(int32_t contextId) {
-  assert(contextId < maxPoolSize);
-  if (webf::WebFPage::pageContextPool[contextId] == nullptr)
-    return;
+void* allocateNewPage(int32_t targetContextId) {
+  assert(dart_context != nullptr);
+  auto* page = new webf::WebFPage(dart_context, targetContextId, nullptr);
+  dart_context->AddNewPage(page);
+  return reinterpret_cast<void*>(page);
+}
 
-  auto* page = static_cast<webf::WebFPage*>(webf::WebFPage::pageContextPool[contextId]);
+void disposePage(void* page_) {
+  auto* page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+  dart_context->RemovePage(page);
   delete page;
-  webf::WebFPage::pageContextPool[contextId] = nullptr;
 }
 
-int32_t allocateNewPage(int32_t targetContextId, uint64_t* dart_methods, int32_t dart_methods_len) {
-  if (targetContextId == -1) {
-    targetContextId = ++poolIndex;
-  }
-
-  if (targetContextId >= maxPoolSize) {
-    targetContextId = searchForAvailableContextId();
-  }
-
-  assert(webf::WebFPage::pageContextPool[targetContextId] == nullptr &&
-         (std::string("can not Allocate page at index") + std::to_string(targetContextId) +
-          std::string(": page have already exist."))
-             .c_str());
-  auto* page = new webf::WebFPage(targetContextId, nullptr, dart_methods, dart_methods_len);
-  webf::WebFPage::pageContextPool[targetContextId] = page;
-  return targetContextId;
+void evaluateScripts(void* page_, NativeString* code, const char* bundleFilename, int32_t startLine) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+  page->evaluateScript(reinterpret_cast<webf::NativeString*>(code), bundleFilename, startLine);
 }
 
-void* getPage(int32_t contextId) {
-  if (!checkPage(contextId))
-    return nullptr;
-  return webf::WebFPage::pageContextPool[contextId];
+void evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+  page->evaluateByteCode(bytes, byteLen);
 }
 
-bool checkPage(int32_t contextId) {
-  return inited && contextId < maxPoolSize && webf::WebFPage::pageContextPool[contextId] != nullptr;
+void parseHTML(void* page_, const char* code, int32_t length) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+  page->parseHTML(code, length);
 }
 
-bool checkPage(int32_t contextId, void* context) {
-  if (webf::WebFPage::pageContextPool[contextId] == nullptr)
-    return false;
-  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
-  return page->GetExecutingContext() == context;
-}
-
-void evaluateScripts(int32_t contextId, NativeString* code, const char* bundleFilename, int startLine) {
-  assert(checkPage(contextId) && "evaluateScripts: contextId is not valid");
-  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
-  context->evaluateScript(reinterpret_cast<webf::NativeString*>(code), bundleFilename, startLine);
-}
-
-void evaluateQuickjsByteCode(int32_t contextId, uint8_t* bytes, int32_t byteLen) {
-  assert(checkPage(contextId) && "evaluateScripts: contextId is not valid");
-  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
-  context->evaluateByteCode(bytes, byteLen);
-}
-
-void parseHTML(int32_t contextId, const char* code, int32_t length) {
-  assert(checkPage(contextId) && "parseHTML: contextId is not valid");
-  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
-  context->parseHTML(code, length);
-}
-
-void reloadJsContext(int32_t contextId, uint64_t* dart_methods, int32_t dart_methods_len) {
-  assert(checkPage(contextId) && "reloadJSContext: contextId is not valid");
-  auto bridgePtr = getPage(contextId);
-  auto context = static_cast<webf::WebFPage*>(bridgePtr);
-  auto newContext = new webf::WebFPage(contextId, nullptr, dart_methods, dart_methods_len);
-  delete context;
-  webf::WebFPage::pageContextPool[contextId] = newContext;
-}
-
-NativeValue* invokeModuleEvent(int32_t contextId,
-                               NativeString* moduleName,
+NativeValue* invokeModuleEvent(void* page_,
+                               NativeString* module_name,
                                const char* eventType,
                                void* event,
                                NativeValue* extra) {
-  assert(checkPage(contextId) && "invokeEventListener: contextId is not valid");
-  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
-  auto* result = context->invokeModuleEvent(reinterpret_cast<webf::NativeString*>(moduleName), eventType, event,
-                                            reinterpret_cast<webf::NativeValue*>(extra));
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+  auto* result = page->invokeModuleEvent(reinterpret_cast<webf::NativeString*>(module_name), eventType, event,
+                                         reinterpret_cast<webf::NativeValue*>(extra));
   return reinterpret_cast<NativeValue*>(result);
 }
 
@@ -186,52 +118,36 @@ WebFInfo* getWebFInfo() {
   return webfInfo;
 }
 
-void setConsoleMessageHandler(ConsoleMessageHandler handler) {
-  webf::WebFPage::consoleMessageHandler = handler;
-}
-
-void dispatchUITask(int32_t contextId, void* context, void* callback) {
-  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
+void dispatchUITask(void* page_, void* context, void* callback) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   reinterpret_cast<void (*)(void*)>(callback)(context);
 }
 
-void flushUITask(int32_t contextId) {
-  webf::UITaskQueue::instance(contextId)->flushTask();
-}
-
-void registerUITask(int32_t contextId, Task task, void* data) {
-  webf::UITaskQueue::instance(contextId)->registerTask(task, data);
-};
-
-void* getUICommandItems(int32_t contextId) {
-  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
-  if (page == nullptr)
-    return nullptr;
+void* getUICommandItems(void* page_) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
   return page->GetExecutingContext()->uiCommandBuffer()->data();
 }
 
-int64_t getUICommandItemSize(int32_t contextId) {
-  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
-  if (page == nullptr)
-    return 0;
+int64_t getUICommandItemSize(void* page_) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
   return page->GetExecutingContext()->uiCommandBuffer()->size();
 }
 
-void clearUICommandItems(int32_t contextId) {
-  auto* page = static_cast<webf::WebFPage*>(getPage(contextId));
-  if (page == nullptr)
-    return;
+void clearUICommandItems(void* page_) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
   page->GetExecutingContext()->uiCommandBuffer()->clear();
 }
 
-void registerContextDisposedCallbacks(int32_t contextId, Task task, void* data) {
-  assert(checkPage(contextId));
-  auto context = static_cast<webf::WebFPage*>(getPage(contextId));
+void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
+  webf::ExecutingContext::plugin_byte_code[pluginName] = webf::NativeByteCode{bytes, length};
 }
 
-void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
-  webf::ExecutingContext::pluginByteCode[pluginName] = webf::NativeByteCode{bytes, length};
+void registerPluginCode(const char* code, int32_t length, const char* pluginName) {
+  webf::ExecutingContext::plugin_string_code[pluginName] = std::string(code, length);
 }
 
 int32_t profileModeEnabled() {

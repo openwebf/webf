@@ -91,7 +91,7 @@ Blob* Blob::slice(int64_t start, int64_t end, const AtomicString& content_type, 
   newData.reserve(_data.size() - (end - start));
   newData.insert(newData.begin(), _data.begin() + start, _data.end() - (_data.size() - end));
   newBlob->_data = newData;
-  newBlob->mime_type_ = content_type != built_in_string::kempty_string ? content_type.ToStdString() : mime_type_;
+  newBlob->mime_type_ = content_type != built_in_string::kempty_string ? content_type.ToStdString(ctx()) : mime_type_;
   return newBlob;
 }
 

@@ -7,6 +7,7 @@ import 'dart:collection';
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
@@ -66,7 +67,7 @@ final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = 
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration with IterableMixin {
+class CSSStyleDeclaration extends BindingObject with IterableMixin {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -74,7 +75,7 @@ class CSSStyleDeclaration with IterableMixin {
   StyleChangeListener? onStyleChanged;
   StyleFlushedListener? onStyleFlushed;
 
-  CSSStyleDeclaration();
+  CSSStyleDeclaration([BindingContext? context]);
 
   // ignore: prefer_initializing_formals
   CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
@@ -100,6 +101,10 @@ class CSSStyleDeclaration with IterableMixin {
       css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
     return css;
+  }
+
+  bool get hasInheritedPendingProperty {
+    return _pendingProperties.keys.any((key) => isInheritedPropertyString(_kebabize(key)));
   }
 
   // @TODO: Impl the cssText setter.
@@ -337,9 +342,6 @@ class CSSStyleDeclaration with IterableMixin {
       case BORDER_TOP_WIDTH:
       case BORDER_LEFT_WIDTH:
       case BORDER_RIGHT_WIDTH:
-        if (!CSSLength.isNonNegativeLength(normalizedValue)) {
-          return false;
-        }
         break;
       case COLOR:
       case BACKGROUND_COLOR:
@@ -364,6 +366,8 @@ class CSSStyleDeclaration with IterableMixin {
   /// Modifies an existing CSS property or creates a new CSS property in
   /// the declaration block.
   void setProperty(String propertyName, String? value, [bool? isImportant]) {
+    propertyName = propertyName.trim();
+
     // Null or empty value means should be removed.
     if (isNullOrEmptyValue(value)) {
       removeProperty(propertyName, isImportant);
@@ -380,7 +384,7 @@ class CSSStyleDeclaration with IterableMixin {
 
     // From style sheet mark the property important as false.
     if (isImportant == false) {
-      _sheetStyle[propertyName] = value;
+      _sheetStyle[propertyName] = normalizedValue;
     }
 
     // If the important property is already set, we should ignore it.
@@ -568,7 +572,9 @@ class CSSStyleDeclaration with IterableMixin {
     _sheetStyle.clear();
   }
 
+  @override
   void dispose() {
+    super.dispose();
     target = null;
     _styleChangeListeners.clear();
     reset();
@@ -593,6 +599,12 @@ class CSSStyleDeclaration with IterableMixin {
   Iterator<MapEntry<String, String>> get iterator {
     return _properties.entries.followedBy(_pendingProperties.entries).iterator;
   }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 // aB to a-b

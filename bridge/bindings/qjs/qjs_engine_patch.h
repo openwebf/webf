@@ -8,6 +8,7 @@
 
 #include <quickjs/list.h>
 #include <quickjs/quickjs.h>
+#include "foundation/string_view.h"
 
 struct JSString {
   JSRefCountHeader header; /* must come first, 32-bit */
@@ -122,8 +123,14 @@ bool JS_IsPromise(JSValue value);
 bool JS_IsArrayBuffer(JSValue value);
 bool JS_IsArrayBufferView(JSValue value);
 bool JS_HasClassId(JSRuntime* runtime, JSClassID classId);
+int JS_AtomIs8Bit(JSRuntime* runtime, JSAtom atom);
+const uint8_t* JS_AtomRawCharacter8(JSRuntime* runtime, JSAtom atom);
+const uint16_t* JS_AtomRawCharacter16(JSRuntime* runtime, JSAtom atom);
+int JS_FindCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(char));
+int JS_FindWCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(uint16_t));
 JSValue JS_GetProxyTarget(JSValue value);
 JSGCPhaseEnum JS_GetEnginePhase(JSRuntime* runtime);
+webf::StringView JSAtomToStringView(JSRuntime* runtime, JSAtom atom);
 
 static inline bool JS_AtomIsTaggedInt(JSAtom v) {
   return (v & JS_ATOM_TAG_INT) != 0;

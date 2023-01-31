@@ -4,6 +4,8 @@ import {ScrollToOptions} from "../dom/scroll_to_options";
 import {Screen} from "./screen";
 import {WindowEventHandlers} from "./window_event_handlers";
 import {GlobalEventHandlers} from "../dom/global_event_handlers";
+import {ComputedCssStyleDeclaration} from "../css/computed_css_style_declaration";
+import {Element} from "../dom/element";
 
 interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   open(url?: string): Window | null;
@@ -19,6 +21,8 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
 
   requestAnimationFrame(callback: Function): double;
   cancelAnimationFrame(request_id: double): void;
+
+  getComputedStyle(element: Element, pseudoElt?: string): ComputedCssStyleDeclaration;
 
   readonly window: Window;
   readonly parent: Window;

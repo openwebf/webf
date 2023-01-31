@@ -1,3 +1,146 @@
+## 0.13.2+1
+
+* remove logs
+
+## 0.13.2
+
+**Features**
+
+* Add Element.classList API support. https://github.com/openwebf/webf/pull/196
+* Add RemoteDevServerService() for remote debugging. https://github.com/openwebf/webf/pull/198
+
+**Bug Fixed**
+
+* Fix fix call binding methods on proxies objects. https://github.com/openwebf/webf/pull/193
+* Fix input have default content padding. https://github.com/openwebf/webf/pull/194
+* Fix history.back() cause page reload. https://github.com/openwebf/webf/pull/195
+* Fix location.href never changed. https://github.com/openwebf/webf/pull/195
+* Fix CommentNode always return empty string of nodeValue. https://github.com/openwebf/webf/pull/197
+* Fix fix img width become infinity when not attached. https://github.com/openwebf/webf/pull/200/files
+* Fix unconstrained inline-block can't calculate content box size. https://github.com/openwebf/webf/pull/201
+* Fix positioned elements should be reapply when toggle display. https://github.com/openwebf/webf/pull/202
+* Fix replaced element didn't render with toggle display. https://github.com/openwebf/webf/pull/203
+* Fix view module value changed by scroll offset. https://github.com/openwebf/webf/pull/207
+* Fix initializeCookie API when twice load. https://github.com/openwebf/webf/pull/208
+* Fix gesture conflict on Android devices. https://github.com/openwebf/webf/pull/210
+
+## 0.13.2-beta.2
+
+* Fix location.href didn't get changed when history changes.
+
+## 0.13.2-beta.1
+
+* fix page reload when history.back().
+
+## 0.13.1
+
+**Bug Fixed**
+
+1. Fix renderBoxModel is null cause performLayout error. https://github.com/openwebf/webf/pull/187
+2. Fix position absolute cause mistake overflow. https://github.com/openwebf/webf/pull/167
+3. Fix var in keyframes not work. https://github.com/openwebf/webf/issues/147
+4. Fix var in translate not work. https://github.com/openwebf/webf/issues/154
+5. Fix unexpected token in linear-graident. https://github.com/openwebf/webf/issues/119
+6. Fix tag element selector. https://github.com/openwebf/webf/issues/169
+7. Fix var attribute dynamic modification exception. https://github.com/openwebf/webf/issues/144
+
+
+**Feature**
+
+1. Add `initialCookies` params on WebF widget. https://github.com/openwebf/webf/pull/186
+
+
+## 0.13.0
+
+The biggest update since the `webf/kraken` release.
+
+1. The DOM API and C++ bindings had been redesigned and refactored.  https://github.com/openwebf/webf/pull/18
+    1. DOM node operations methods such as `Node.appendChild` and `Node.insertBefore` are 2x - 5x faster than 0.12.0.
+    2. The new C++ bindings system can keep the bridge code safer to avoid crashes.
+2. Add CSS StyleSheets support.  https://github.com/openwebf/webf/pull/11
+    1. Support load CSS with  `<link />` element.
+    2. Support load CSS with `<style />` element.
+4. Flutter Widgets System had been redesigned and refactored, now all flutter widgets can be used to define your HTMLElements, including from Flutter material design, pub.dev, and yours. https://github.com/openwebf/webf/pull/58
+5. Add CSS animation support. https://github.com/openwebf/webf/pull/41
+6. Sync the latest features from quickjs offical. https://github.com/openwebf/webf/pull/165
+
+
+Others:
+
+## Features
+
++ Add cookie support. https://github.com/openwebf/webf/pull/65
++ Add Quickjs column number support.  https://github.com/openwebf/webf/pull/116
++ Support return value from `webf. invokeModule` API. https://github.com/openwebf/webf/pull/54
+
+  **Upgrade from 0.12.0**
+
+  This feature could lead to the following error if you using `web.addWebfModuleListener` API in 0.12.0.
+  ```
+  TypeError: Failed to execute '__webf_add_module_listener__' : 2 argument required, but 1 present.
+          at __webf_add_module_listener__ (native)
+          at <anonymous> (internal://:127)
+          at <eval> (internal://:135)
+  ```
+
+   Please add the target module name to the first arguments:
+
+    **before**
+    ```javascript
+    webf.addWebfModuleListener(function(moduleName, event, data) {
+      if (moduleName == 'AlarmClock') {
+         // ...
+      }
+    });
+    ```
+
+    **After**
+    ```javascript
+    webf.addWebfModuleListener('AlarmClock', function(event, data) {
+     // ...
+    });
+    ```
+**Bug Fixed**
++ CSS `hsl()` not works. https://github.com/openwebf/webf/issues/23
++ flex:1 failed when the parent node style has minHeight/minWidth property. https://github.com/openwebf/webf/pull/28
++ Fix overflow not works with transform. https://github.com/openwebf/webf/pull/48
++ Fix memory leaks caused by CSSLengthValue and ModuleManager. https://github.com/openwebf/webf/pull/57
++ Fix animation shaking when controlling the animation with touch events. https://github.com/openwebf/webf/pull/67
++ Fix webf_bridge.xcframework and quickjs.xcframework did not product when run `flutter build ios-frameworks` command. https://github.com/openwebf/webf/pull/71
++ Fix dynamic library not found in some android devices. https://github.com/openwebf/webf/pull/91
++ Fix position and transform to cause a more scrollable area. https://github.com/openwebf/webf/issues/112
++ Fix the size of HTMLElement is not always equal to the viewport. https://github.com/openwebf/webf/pull/122
++ Fix collapsedMarginBottom seems work incorrectly. https://github.com/openwebf/webf/issues/132
++ Fix opacity after transform not work. https://github.com/openwebf/webf/issues/142
++ Fix set attribute with CSS vars not work. https://github.com/openwebf/webf/pull/155
+
+## 0.13.0-beta.9
+
+* fix input border style.
+
+## 0.13.0-beta.8
+
+* fix macOS arm64 build error.
+
+## 0.13.0-beta.7
+
+* fix github action ndk path.
+
+## 0.13.0-beta.6
+
+* downgrade android NDK version requirement to r22b.
+
+## 0.13.0-beta.5
+
+* fix: request body should be UTF-8 encoded string.
+* fix: fix onLoad didn't not trigger when reload.
+* fix: fix rendering empty if window size is not ready.
+* fix: should dispose webf managed renderObject after flutter framework does.
+
+## 0.13.0-beta.4
+
+* Test for new custom elements system.
+
 ## 0.13.0-beta.3
 
 * Fix reload crash.

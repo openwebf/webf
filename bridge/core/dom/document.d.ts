@@ -13,6 +13,7 @@ interface Document extends Node {
   readonly all: HTMLAllCollection;
   body: HTMLBodyElement | null;
   cookie: DartImpl<string>;
+  __clear_cookies__(): DartImpl<void>;
   readonly head: HTMLHeadElement | null;
   readonly documentElement: HTMLHtmlElement | null;
   // Legacy impl: get the polyfill implements from global object.
@@ -21,7 +22,7 @@ interface Document extends Node {
   createElement(tagName: string, options?: any): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
-  createComment(data?: string): Comment;
+  createComment(data: string): Comment;
   createEvent(event_type: string): Event;
 
   getElementById(id: string): Element | null;

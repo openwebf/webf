@@ -39,7 +39,7 @@ bool TouchList::SetItem(uint32_t index, Touch* touch, ExceptionState& exception_
 }
 
 bool TouchList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  uint32_t index = std::stoi(key.ToStdString());
+  uint32_t index = std::stoi(key.ToStdString(ctx()));
   return index >= 0 && index < values_.size();
 }
 

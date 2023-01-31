@@ -12,7 +12,7 @@ const String NEW_LINE_CHAR = '\n';
 const String RETURN_CHAR = '\r';
 const String TAB_CHAR = '\t';
 
-class TextNode extends Node {
+class TextNode extends CharacterData {
   static const String NORMAL_SPACE = '\u0020';
 
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
@@ -104,15 +104,17 @@ class TextNode extends Node {
   // Detach renderObject of current node from parent
   @override
   void unmountRenderObject({bool deep = false, bool keepFixedAlive = false}) {
+    /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
+    /// So we do nothing here.
+    if (managedByFlutterWidget) {
+      return;
+    }
     _detachRenderTextBox();
     _renderTextBox = null;
   }
 
   @override
   RenderBox createRenderer() {
-    if (_renderTextBox != null) {
-      return _renderTextBox!;
-    }
     return _renderTextBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
   }
 
@@ -121,7 +123,5 @@ class TextNode extends Node {
     super.dispose();
 
     unmountRenderObject();
-
-    assert(_renderTextBox == null);
   }
 }

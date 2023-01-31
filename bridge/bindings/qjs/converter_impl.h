@@ -8,6 +8,7 @@
 
 #include <type_traits>
 #include "atomic_string.h"
+#include "bindings/qjs/union_base.h"
 #include "converter.h"
 #include "core/dom/document.h"
 #include "core/dom/events/event.h"
@@ -244,9 +245,22 @@ struct Converter<IDLOptional<IDLDOMString>> : public ConverterBase<IDLDOMString>
 template <>
 struct Converter<IDLNullable<IDLDOMString>> : public ConverterBase<IDLDOMString> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
-    if (JS_IsNull(value))
-      return AtomicString::Empty();
+    if (JS_IsNull(value) || JS_IsUndefined(value))
+      return AtomicString::Null();
     return Converter<IDLDOMString>::FromValue(ctx, value, exception_state);
+  }
+
+  static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(ctx, value).ToQuickJS(ctx); }
+  static JSValue ToValue(JSContext* ctx, const AtomicString& value) { return value.ToQuickJS(ctx); }
+};
+
+template <>
+struct Converter<IDLLegacyDOMString> : public ConverterBase<IDLLegacyDOMString> {
+  static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    if (JS_IsNull(value)) {
+      return AtomicString::Empty();
+    }
+    return AtomicString(ctx, value);
   }
 
   static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(ctx, value).ToQuickJS(ctx); }
@@ -284,6 +298,22 @@ struct Converter<IDLSequence<T>> : public ConverterBase<IDLSequence<T>> {
 
     return v;
   }
+
+  static ImplType FromValue(JSContext* ctx, JSValue* array, size_t length, ExceptionState& exception_state) {
+    ImplType v;
+    v.reserve(length);
+    for (uint32_t i = 0; i < length; i++) {
+      JSValue iv = array[i];
+      auto&& item = Converter<T>::FromValue(ctx, iv, exception_state);
+      if (exception_state.HasException()) {
+        return {};
+      }
+      v.emplace_back(item);
+    }
+
+    return v;
+  };
+
   static JSValue ToValue(JSContext* ctx, ImplType value) {
     JSValue array = JS_NewArray(ctx);
     JS_SetPropertyStr(ctx, array, "length", Converter<IDLInt64>::ToValue(ctx, value.size()));
@@ -418,6 +448,57 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<DictionaryBase, T>
   }
 };
 
+template <typename T>
+struct Converter<T, typename std::enable_if_t<std::is_base_of<UnionBase, T>::value>> : public ConverterBase<T> {
+  static typename T::ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    assert(!JS_IsException(value));
+    return T::Create(ctx, value, exception_state);
+  }
+  static typename T::ImplType ArgumentsValue(ExecutingContext* context,
+                                             JSValue value,
+                                             uint32_t argv_index,
+                                             ExceptionState& exception_state) {
+    assert(!JS_IsException(value));
+    const WrapperTypeInfo* wrapper_type_info = Node::GetStaticWrapperTypeInfo();
+    if (JS_IsInstanceOf(context->ctx(), value, context->contextData()->constructorForType(wrapper_type_info))) {
+      return FromValue(context->ctx(), value, exception_state);
+    }
+    exception_state.ThrowException(context->ctx(), ErrorType::TypeError,
+                                   ExceptionMessage::ArgumentNotOfType(argv_index, wrapper_type_info->className));
+    return nullptr;
+  }
+  static JSValue ToValue(JSContext* ctx, typename T::ImplType value) {
+    if (value == nullptr)
+      return JS_NULL;
+    return value->ToQuickJSValue(ctx, ASSERT_NO_EXCEPTION());
+  }
+};
+
+template <typename T>
+struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<UnionBase, T>::value>>>
+    : public ConverterBase<IDLNullable<T>> {
+  static typename T::ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    if (JS_IsNull(value))
+      return nullptr;
+    assert(!JS_IsException(value));
+    return T::Create(ctx, value, exception_state);
+  }
+  static typename T::ImplType ArgumentsValue(ExecutingContext* context,
+                                             JSValue value,
+                                             uint32_t argv_index,
+                                             ExceptionState& exception_state) {
+    assert(!JS_IsException(value));
+    if (JS_IsNull(value))
+      return nullptr;
+    return FromValue(context->ctx(), value, exception_state);
+  }
+  static JSValue ToValue(JSContext* ctx, typename T::ImplType value) {
+    if (value == nullptr)
+      return JS_NULL;
+    return value->ToQuickJSValue(ctx, ASSERT_NO_EXCEPTION());
+  }
+};
+
 // ScriptWrappable and Derived class.
 template <typename T>
 struct Converter<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T>::value>> : public ConverterBase<T> {
@@ -430,7 +511,7 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T
                            uint32_t argv_index,
                            ExceptionState& exception_state) {
     assert(!JS_IsException(value));
-    const WrapperTypeInfo* wrapper_type_info = Node::GetStaticWrapperTypeInfo();
+    const WrapperTypeInfo* wrapper_type_info = T::GetStaticWrapperTypeInfo();
     if (JS_IsInstanceOf(context->ctx(), value, context->contextData()->constructorForType(wrapper_type_info))) {
       return FromValue(context->ctx(), value, exception_state);
     }

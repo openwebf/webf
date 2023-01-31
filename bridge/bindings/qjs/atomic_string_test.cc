@@ -33,7 +33,7 @@ void TestAtomicString(TestCallback callback) {
 TEST(AtomicString, Empty) {
   TestAtomicString([](JSContext* ctx) {
     AtomicString atomic_string = AtomicString::Empty();
-    EXPECT_STREQ(atomic_string.ToStdString().c_str(), "");
+    EXPECT_STREQ(atomic_string.ToStdString(ctx).c_str(), "");
   });
 }
 
@@ -42,14 +42,14 @@ TEST(AtomicString, FromNativeString) {
     auto nativeString = stringToNativeString("helloworld");
     AtomicString value = AtomicString::From(ctx, nativeString.get());
 
-    EXPECT_STREQ(value.ToStdString().c_str(), "helloworld");
+    EXPECT_STREQ(value.ToStdString(ctx).c_str(), "helloworld");
   });
 }
 
 TEST(AtomicString, CreateFromStdString) {
   TestAtomicString([](JSContext* ctx) {
     AtomicString&& value = AtomicString(ctx, "helloworld");
-    EXPECT_STREQ(value.ToStdString().c_str(), "helloworld");
+    EXPECT_STREQ(value.ToStdString(ctx).c_str(), "helloworld");
   });
 }
 
@@ -57,7 +57,7 @@ TEST(AtomicString, CreateFromJSValue) {
   TestAtomicString([](JSContext* ctx) {
     JSValue string = JS_NewString(ctx, "helloworld");
     AtomicString&& value = AtomicString(ctx, string);
-    EXPECT_STREQ(value.ToStdString().c_str(), "helloworld");
+    EXPECT_STREQ(value.ToStdString(ctx).c_str(), "helloworld");
     JS_FreeValue(ctx, string);
   });
 }
@@ -76,7 +76,7 @@ TEST(AtomicString, ToQuickJS) {
 TEST(AtomicString, ToNativeString) {
   TestAtomicString([](JSContext* ctx) {
     AtomicString&& value = AtomicString(ctx, "helloworld");
-    auto native_string = value.ToNativeString();
+    auto native_string = value.ToNativeString(ctx);
     const uint16_t* p = native_string->string();
     EXPECT_EQ(native_string->length(), 10);
 
@@ -103,7 +103,7 @@ TEST(AtomicString, MoveAssignment) {
   TestAtomicString([](JSContext* ctx) {
     auto&& str = AtomicString(ctx, "helloworld");
     auto&& str2 = AtomicString(std::move(str));
-    EXPECT_STREQ(str2.ToStdString().c_str(), "helloworld");
+    EXPECT_STREQ(str2.ToStdString(ctx).c_str(), "helloworld");
   });
 }
 
@@ -113,6 +113,6 @@ TEST(AtomicString, CopyToRightReference) {
     if (1 + 1 == 2) {
       str = AtomicString(ctx, "helloworld");
     }
-    EXPECT_STREQ(str.ToStdString().c_str(), "helloworld");
+    EXPECT_STREQ(str.ToStdString(ctx).c_str(), "helloworld");
   });
 }

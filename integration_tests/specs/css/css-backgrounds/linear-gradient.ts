@@ -65,7 +65,9 @@ describe('Background linear-gradient', () => {
     });
 
     append(BODY, div3);
-    await snapshot(div3);
+    requestAnimationFrame(async () => {
+      await snapshot(div3);
+    });
   });
 
   it('linear-gradient-rotate', async () => {
@@ -77,7 +79,9 @@ describe('Background linear-gradient', () => {
       'linear-gradient(135deg, red, red 10%, blue 75%, yellow 75%)',
     });
     append(BODY, div4);
-    await snapshot(div4);
+    requestAnimationFrame(async () => {
+      await snapshot(div4);
+    });
   });
 
   it("linear-gradient to right with color stop of px", async () => {
@@ -101,7 +105,9 @@ describe('Background linear-gradient', () => {
     );
     BODY.appendChild(flexbox);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+    });
   });
 
   it("linear-gradient to right with color stop of px and width not set", async () => {
@@ -124,7 +130,9 @@ describe('Background linear-gradient', () => {
     );
     BODY.appendChild(flexbox);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+    });
   });
 
   it("linear-gradient to bottom with color stop of px", async () => {
@@ -148,7 +156,9 @@ describe('Background linear-gradient', () => {
     );
     BODY.appendChild(flexbox);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+    });
   });
 
   it("linear-gradient to bottom with color stop of px and height not set", async () => {
@@ -180,7 +190,9 @@ describe('Background linear-gradient', () => {
     container.appendChild(flexbox);
     BODY.appendChild(container);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+});
   });
 
   it("linear-gradient to right with color stop not set", async () => {
@@ -202,7 +214,9 @@ describe('Background linear-gradient', () => {
     );
     BODY.appendChild(flexbox);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+});
   });
 
   it("linear-gradient to bottom with color stop not set", async () => {
@@ -224,6 +238,8 @@ describe('Background linear-gradient', () => {
     );
     BODY.appendChild(flexbox);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+});
   });
 });

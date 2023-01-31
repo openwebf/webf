@@ -6,6 +6,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' show Widget;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
@@ -30,7 +31,7 @@ enum DocumentPosition {
 
 enum RenderObjectManagerType { FLUTTER_ELEMENT, WEBF_NODE }
 
-typedef NoteVisitor = void Function(Node node);
+typedef NodeVisitor = void Function(Node node);
 
 /// [RenderObjectNode] provide the renderObject related abstract life cycle for
 /// [Node] or [Element]s, which wrap [RenderObject]s, which provide the actual
@@ -88,8 +89,14 @@ abstract class LifecycleCallbacks {
 }
 
 abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCallbacks {
-  WebFElementToFlutterElementAdaptor? flutterElement;
-  WebFElementToWidgetAdaptor? flutterWidget;
+  Widget? get flutterWidget => null;
+
+  /// WebF nodes could be wrapped by [WebFHTMLElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
+  /// So if managedByFlutterWidget is true, WebF DOM can not disposed Node's renderObject directly.
+  bool managedByFlutterWidget = false;
+
+  /// true if node are created by Flutter widgets.
+  bool createdByFlutterWidget = false;
   List<Node> childNodes = [];
 
   /// The Node.parentNode read-only property returns the parent of the specified node in the DOM tree.
@@ -103,21 +110,12 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     if (!isConnected) {
       return;
     }
-    Node parent = this;
-    // invalidate
-    while (parent.parentNode != null) {
-      parent.needsStyleRecalculate = true;
-      parent = parent.parentNode!;
-    }
-    ownerDocument.needsStyleRecalculate = true;
     ownerDocument.updateStyleIfNeeded();
   }
 
   // FIXME: The ownerDocument getter steps are to return null, if this is a document; otherwise this’s node document.
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
   late Document ownerDocument;
-
-  bool needsStyleRecalculate = true;
 
   /// The Node.parentElement read-only property returns the DOM node's parent Element,
   /// or null if the node either has no parent, or its parent isn't a DOM Element.
@@ -210,10 +208,10 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   @override
   void didDetachRenderer() {}
 
-  void visitChild(NoteVisitor visitor) {
+  void visitChild(NodeVisitor visitor) {
     childNodes.forEach((node) {
-      node.visitChild(visitor);
       visitor(node);
+      node.visitChild(visitor);
     });
   }
 
@@ -223,22 +221,18 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     child.parentNode = this;
     childNodes.add(child);
 
-    // To insert a node into a parent before a child, run step 9 from the spec:
-    // 9. Run the children changed steps for parent when inserting a node into a parent.
-    // https://dom.spec.whatwg.org/#concept-node-insert
-    childrenChanged();
+    if (this is Element) {
+      ownerDocument.styleDirtyElements.add(this as Element);
+    }
 
     if (child.isConnected) {
       child.connectedCallback();
     }
 
-    // invalid style
-    Node parent = this;
-    while (parent.parentNode != null) {
-      parent.needsStyleRecalculate = true;
-      parent = parent.parentNode!;
-    }
-    ownerDocument.needsStyleRecalculate = true;
+    // To insert a node into a parent before a child, run step 9 from the spec:
+    // 9. Run the children changed steps for parent when inserting a node into a parent.
+    // https://dom.spec.whatwg.org/#concept-node-insert
+    childrenChanged();
     return child;
   }
 
@@ -251,15 +245,23 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     } else {
       child.parentNode = this;
       childNodes.insert(referenceIndex, child);
+      if (this is Element) {
+        ownerDocument.styleDirtyElements.add(this as Element);
+      }
+
+      if (child.isConnected) {
+        child.connectedCallback();
+      }
+
+      if (child.isConnected) {
+        child.connectedCallback();
+      }
 
       // To insert a node into a parent before a child, run step 9 from the spec:
       // 9. Run the children changed steps for parent when inserting a node into a parent.
       // https://dom.spec.whatwg.org/#concept-node-insert
       childrenChanged();
 
-      if (child.isConnected) {
-        child.connectedCallback();
-      }
       return child;
     }
   }
@@ -277,7 +279,9 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       bool isConnected = child.isConnected;
       childNodes.remove(child);
       child.parentNode = null;
-
+      if (this is Element) {
+        ownerDocument.styleDirtyElements.add(this as Element);
+      }
       if (isConnected) {
         child.disconnectedCallback();
       }
@@ -302,15 +306,15 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       replacedNode = oldNode;
       childNodes[referenceIndex] = newNode;
 
-      // To insert a node into a parent before a child, run step 9 from the spec:
-      // 9. Run the children changed steps for parent when inserting a node into a parent.
-      // https://dom.spec.whatwg.org/#concept-node-insert
-      childrenChanged();
-
       if (isOldNodeConnected) {
         oldNode.disconnectedCallback();
         newNode.connectedCallback();
       }
+
+      // To insert a node into a parent before a child, run step 9 from the spec:
+      // 9. Run the children changed steps for parent when inserting a node into a parent.
+      // https://dom.spec.whatwg.org/#concept-node-insert
+      childrenChanged();
     }
     return replacedNode;
   }

@@ -7,6 +7,7 @@ import 'package:collection/collection.dart';
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 
 /*
   Handling element style updates
@@ -79,11 +80,11 @@ class StyleNodeManager {
       }
       invalidateElementStyle(changedRuleSet);
     } else {
-      document.visitChild((node) {
-        node.needsStyleRecalculate = true;
-      });
+      final root = document.documentElement;
+      if (root != null) {
+        document.styleDirtyElements.add(root);
+      }
     }
-    document.needsStyleRecalculate = true;
     document.handleStyleSheets(newSheets);
     _pendingStyleSheets.clear();
     _isStyleSheetCandidateNodeChanged = false;
@@ -104,15 +105,20 @@ class StyleNodeManager {
 
   void invalidateElementStyle(RuleSet changedRuleSet) {
     ElementRuleCollector collector = ElementRuleCollector();
-    document.visitChild((node) {
-      if (node.childNodes.where((node) => node.needsStyleRecalculate).isNotEmpty) {
-        node.needsStyleRecalculate = true;
-      } else if (node is Element && node.isConnected) {
-        if (collector.matchedAnyRule(changedRuleSet, node)) {
-          node.needsStyleRecalculate = true;
-        }
+    List<Node> stack = [document];
+    while (stack.isNotEmpty) {
+      Node node = stack.removeLast();
+      if (node is! Element) {
+        continue;
       }
-    });
+      final rules = collector.matchedRules(changedRuleSet, node);
+      if (rules.isNotEmpty) {
+        document.styleDirtyElements.add(node);
+      }
+      if (node.childNodes.isNotEmpty) {
+        stack.addAll(node.childNodes.reversed);
+      }
+    }
   }
 
   RuleSet analyzeStyleSheetChangeRuleSet(List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets) {

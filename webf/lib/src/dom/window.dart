@@ -9,6 +9,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/module.dart';
+import 'package:webf/src/css/computed_style_declaration.dart';
 
 const String WINDOW = 'WINDOW';
 
@@ -23,42 +24,25 @@ class Window extends EventTarget {
   @override
   EventTarget? get parentEventTarget => null;
 
-  // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-window-interface
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'innerWidth':
-        return innerWidth;
-      case 'innerHeight':
-        return innerHeight;
-      case 'scrollX':
-        return scrollX;
-      case 'scrollY':
-        return scrollY;
-      case 'screen':
-        return screen;
-      case 'colorScheme':
-        return colorScheme;
-      case 'devicePixelRatio':
-        return devicePixelRatio;
-      default:
-        return super.getBindingProperty(key);
-    }
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['scroll'] = methods['scrollTo'] =
+        BindingObjectMethodSync(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['scrollBy'] = BindingObjectMethodSync(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['open'] = BindingObjectMethodSync(call: (args) => open(castToType<String>(args[0])));
+    methods['getComputedStyle'] = BindingObjectMethodSync(call: (args) => getComputedStyle(args[0] as Element));
   }
 
   @override
-  invokeBindingMethod(String method, List args) {
-    switch (method) {
-      case 'scroll':
-      case 'scrollTo':
-        return scrollTo(castToType<double>(args[0]), castToType<double>(args[1]));
-      case 'scrollBy':
-        return scrollBy(castToType<double>(args[0]), castToType<double>(args[1]));
-      case 'open':
-        return open(castToType<String>(args[0]));
-      default:
-        return super.invokeBindingMethod(method, args);
-    }
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-window-interface
+    properties['innerWidth'] = BindingObjectProperty(getter: () => innerWidth);
+    properties['innerHeight'] = BindingObjectProperty(getter: () => innerHeight);
+    properties['scrollX'] = BindingObjectProperty(getter: () => scrollX);
+    properties['scrollY'] = BindingObjectProperty(getter: () => scrollY);
+    properties['screen'] = BindingObjectProperty(getter: () => screen);
+    properties['colorScheme'] = BindingObjectProperty(getter: () => colorScheme);
+    properties['devicePixelRatio'] = BindingObjectProperty(getter: () => devicePixelRatio);
   }
 
   void open(String url) {
@@ -66,22 +50,26 @@ class Window extends EventTarget {
     document.controller.view.handleNavigationAction(sourceUrl, url, WebFNavigationType.navigate);
   }
 
+  ComputedCSSStyleDeclaration getComputedStyle(Element element) {
+    return ComputedCSSStyleDeclaration(element, element.tagName);
+  }
+
   double get scrollX => document.documentElement!.scrollLeft;
 
   double get scrollY => document.documentElement!.scrollTop;
 
-  void scrollTo(double x, double y) {
+  void scrollTo(double x, double y, [bool withAnimation = false]) {
     document.flushStyle();
     document.documentElement!
       ..flushLayout()
-      ..scrollTo(x, y);
+      ..scrollTo(x, y, withAnimation);
   }
 
-  void scrollBy(double x, double y) {
+  void scrollBy(double x, double y, [bool withAnimation = false]) {
     document.flushStyle();
     document.documentElement!
       ..flushLayout()
-      ..scrollBy(x, y);
+      ..scrollBy(x, y, withAnimation);
   }
 
   String get colorScheme => window.platformBrightness == Brightness.light ? 'light' : 'dark';
@@ -93,6 +81,7 @@ class Window extends EventTarget {
   // https://drafts.csswg.org/cssom-view/#dom-window-innerwidth
   // This is a read only idl attribute.
   double get innerWidth => _viewportSize.width;
+
   double get innerHeight => _viewportSize.height;
 
   Size get _viewportSize {

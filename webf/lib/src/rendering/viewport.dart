@@ -3,22 +3,33 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:flutter/rendering.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/rendering.dart';
+import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
-class RenderViewportBox extends RenderProxyBox with RenderObjectWithControllerMixin, RenderEventListenerMixin {
+class RenderViewportParentData extends ContainerBoxParentData<RenderViewportBox> {}
+
+class RenderViewportBox extends RenderBox
+    with
+        RenderEventListenerMixin,
+        ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
+        RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderViewportBox({
     required Size viewportSize,
-    RenderBox? child,
     this.background,
-    required WebFController controller,
+    required this.controller
   })  : _viewportSize = viewportSize,
-        super(child) {
-    this.controller = controller;
-  }
+        super();
+
+  WebFController controller;
 
   // Cache all the fixed children of renderBoxModel of root element.
   List<RenderBoxModel> fixedChildren = [];
+
+  @override
+  void setupParentData(covariant RenderObject child) {
+    child.parentData = RenderViewportParentData();
+  }
 
   @override
   bool get isRepaintBoundary => true;
@@ -55,10 +66,25 @@ class RenderViewportBox extends RenderProxyBox with RenderObjectWithControllerMi
       height = _viewportSize.height;
     }
     size = constraints.constrain(Size(width, height));
-    if (child != null) {
+
+    RenderObject? child = firstChild;
+    while (child != null) {
+      final ContainerBoxParentData<RenderObject> childParentData = child.parentData as ContainerBoxParentData<RenderObject>;
+
       RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
-      child!.layout(rootRenderLayoutBox.getConstraints().tighten(width: width, height: height));
+      child.layout(rootRenderLayoutBox.getConstraints().tighten(width: width, height: height));
+
+      assert(child.parentData == childParentData);
+      child = childParentData.nextSibling;
     }
+  }
+
+  @override
+  GestureDispatcher? get gestureDispatcher => controller.gestureDispatcher;
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
+    return defaultHitTestChildren(result, position: position);
   }
 
   @override
@@ -66,11 +92,11 @@ class RenderViewportBox extends RenderProxyBox with RenderObjectWithControllerMi
     super.handleEvent(event, entry as BoxHitTestEntry);
 
     // Add pointer to gesture dispatcher.
-    controller?.gestureDispatcher.handlePointerEvent(event);
+    controller.gestureDispatcher.handlePointerEvent(event);
 
     if (event is PointerDownEvent) {
       // Set event path at begin stage and reset it at end stage on viewport render box.
-      controller?.gestureDispatcher.resetEventPath();
+      controller.gestureDispatcher.resetEventPath();
     }
   }
 
@@ -89,16 +115,18 @@ class RenderViewportBox extends RenderProxyBox with RenderObjectWithControllerMi
       );
     }
 
-    if (child != null) {
-      context.paintChild(child!, offset);
-    }
+    defaultPaint(context, offset);
+  }
+
+  // WebF page can reload the whole page.
+  void reload() {
+    removeAll();
+    fixedChildren.clear();
   }
 
   @override
   void dispose() {
-    if (child != null) {
-      dropChild(child!);
-    }
+    removeAll();
     fixedChildren.clear();
     super.dispose();
   }

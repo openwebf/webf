@@ -1,10 +1,11 @@
 import {HTMLImageElement} from "../html_image_element";
+import {HTMLCanvasElement} from "./html_canvas_element";
 
 interface CanvasRenderingContext2D extends CanvasRenderingContext {
-    fillStyle: DartImpl<string>;
+    fillStyle: string | CanvasGradient | null;
     direction: DartImpl<string>;
     font: DartImpl<string>;
-    strokeStyle: DartImpl<string>;
+    strokeStyle: string | CanvasGradient | null;
     lineCap: DartImpl<string>;
     lineDashOffset: DartImpl<double>;
     lineJoin: DartImpl<string>;
@@ -43,6 +44,9 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     setTransform(a: number, b: number, c: number, d: number, e: number, f: number): DartImpl<void>;
     transform(a: number, b: number, c: number, d: number, e: number, f: number): DartImpl<void>;
     translate(x: number, y: number): DartImpl<void>;
+    createLinearGradient(x0: number, y0: number, x1: number, y1: number): CanvasGradient;
+    createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): CanvasGradient;
+    createPattern(image: HTMLImageElement | HTMLCanvasElement, repetition: string): CanvasPattern;
     reset(): DartImpl<void>;
     new(): void;
 }

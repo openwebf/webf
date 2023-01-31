@@ -138,6 +138,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/convertion.c
     third_party/quickjs/src/core/runtime.c
     third_party/quickjs/src/core/module.c
+    third_party/quickjs/src/core/ic.c
     third_party/quickjs/src/core/builtins/js-array.c
     third_party/quickjs/src/core/builtins/js-async-function.c
     third_party/quickjs/src/core/builtins/js-async-generator.c
@@ -195,11 +196,14 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/exception_state.cc
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
+    bindings/qjs/union_base.cc
     # Core sources
     core/executing_context.cc
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
+    core/dart_context.cc
+    core/dart_context_data.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc
@@ -220,7 +224,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_mark.cc
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
-    core/css/legacy/css_style_declaration.cc
+    core/css/css_style_declaration.cc
+    core/css/inline_css_style_declaration.cc
+    core/css/computed_css_style_declaration.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
@@ -241,6 +247,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/parent_node.cc
     core/dom/element_data.cc
     core/dom/document.cc
+    core/dom/dom_token_list.cc
+    core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
     core/dom/node_data.cc
     core/dom/document_fragment.cc
@@ -282,11 +290,15 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/html_canvas_element.cc
     core/html/canvas/canvas_rendering_context.cc
     core/html/canvas/canvas_rendering_context_2d.cc
+    core/html/canvas/canvas_gradient.cc
+    core/html/canvas/canvas_pattern.cc
+    core/geometry/dom_matrix.cc
+    core/geometry/dom_matrix_readonly.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
+    core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
     # Legacy implements, should remove them in the future.
-    core/dom/legacy/space_split_string.cc
     core/dom/legacy/element_attributes.cc
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
@@ -346,12 +358,15 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_node.cc
     out/qjs_document.cc
     out/qjs_element.cc
+    out/qjs_dom_token_list.cc
     out/qjs_element_attributes.cc
     out/qjs_character_data.cc
     out/qjs_comment.cc
     out/qjs_document_fragment.cc
     out/qjs_bounding_client_rect.cc
     out/qjs_css_style_declaration.cc
+    out/qjs_inline_css_style_declaration.cc
+    out/qjs_computed_css_style_declaration.cc
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc
@@ -374,9 +389,17 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc
     out/qjs_canvas_rendering_context.cc
+    out/qjs_canvas_gradient.cc
+    out/qjs_canvas_pattern.cc
+    out/qjs_dom_matrix.cc
+    out/qjs_dom_matrix_readonly.cc
+    out/qjs_union_dom_string_sequencedouble.cc
+    out/qjs_unionhtml_image_elementhtml_canvas_element.cc
+    out/qjs_union_dom_stringcanvas_gradient.cc
     out/canvas_types.cc
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc
+    out/qjs_html_form_element.cc
     out/qjs_html_textarea_element.cc
     out/qjs_html_script_element.cc
     out/qjs_promise_rejection_event.cc

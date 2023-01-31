@@ -10,7 +10,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
@@ -527,8 +526,8 @@ class RenderLayoutBox extends RenderBoxModel
 
     Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
     double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
-    if(transform!=null) {
-      maxScrollableX+= transform.getTranslation()[0];
+    if (transform != null) {
+      maxScrollableX += transform.getTranslation()[0];
     }
 
     if (childRenderStyle.right.isNotAuto) {
@@ -546,8 +545,8 @@ class RenderLayoutBox extends RenderBoxModel
     }
 
     double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
-    if(transform!=null) {
-      maxScrollableY+= transform.getTranslation()[1];
+    if (transform != null) {
+      maxScrollableY += transform.getTranslation()[1];
     }
     if (childRenderStyle.bottom.isNotAuto) {
       if (isScrollingContentBox && (parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
@@ -668,8 +667,7 @@ class RenderBoxModel extends RenderBox
         RenderOpacityMixin,
         RenderIntersectionObserverMixin,
         RenderContentVisibilityMixin,
-        RenderEventListenerMixin,
-        RenderObjectWithControllerMixin {
+        RenderEventListenerMixin {
   RenderBoxModel({
     required this.renderStyle,
   }) : super();
@@ -1120,8 +1118,6 @@ class RenderBoxModel extends RenderBox
     final BoxParentData childParentData = child.parentData! as BoxParentData;
     Offset offset = childParentData.offset;
     if (excludeScrollOffset) {
-      offset += Offset(scrollLeft, scrollTop);
-    } else {
       offset -= Offset(scrollLeft, scrollTop);
     }
     transform.translate(offset.dx, offset.dy);
@@ -1335,6 +1331,10 @@ class RenderBoxModel extends RenderBox
     if (positionType == CSSPositionType.relative ||
         positionType == CSSPositionType.static ||
         positionType == CSSPositionType.sticky) {
+      // If the previousSibling is positioned element, should relative to positionHolder.
+      if (after is RenderBoxModel) {
+        after = after.renderPositionPlaceholder ?? after;
+      }
       // If the element's position is 'relative' or 'static',
       // the containing block is formed by the content edge of the nearest block container ancestor box.
       attachRenderBox(containingBlockRenderBox, renderBoxModel, after: after);
@@ -1369,14 +1369,16 @@ class RenderBoxModel extends RenderBox
     // It needs to find the previous sibling of the previous sibling if the placeholder of
     // positioned element exists and follows renderObject at the same time, eg.
     // <div style="position: relative"><div style="position: absolute" /></div>
-    if (renderPositionPlaceholder != null) {
+    if (renderPositionPlaceholder != null && renderPositionPlaceholder.parentData != null) {
       previousSibling = (renderPositionPlaceholder.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
       // The placeholder's previousSibling maybe the origin renderBox.
       if (previousSibling == renderBoxModel) {
         previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
       }
     } else {
-      previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
+      if (renderBoxModel.parentData != null) {
+        previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
+      }
     }
     return previousSibling;
   }
@@ -1404,11 +1406,7 @@ class RenderBoxModel extends RenderBox
   @override
   @mustCallSuper
   void dispose() {
-    // Ensure pending layout/compositeBitsUpdate/paint render object to be finished.
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      // Call dispose method of renderBoxModel when it is detached from tree.
-      super.dispose();
-    });
+    super.dispose();
 
     // Dispose scroll behavior
     disposeScrollable();
@@ -1423,7 +1421,7 @@ class RenderBoxModel extends RenderBox
     // Dispose box decoration painter.
     disposePainter();
     // Evict render decoration image cache.
-    renderStyle.decoration?.image?.image.evict();
+    renderStyle.backgroundImage?.image?.evict();
   }
 
   Offset getTotalScrollOffset() {
@@ -1547,8 +1545,6 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
-    properties.add(DiagnosticsProperty('widthSizeType', widthSizeType, missingIfNull: true));
-    properties.add(DiagnosticsProperty('heightSizeType', heightSizeType, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
 
     if (renderPositionPlaceholder != null)

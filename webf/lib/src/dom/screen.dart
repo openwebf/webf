@@ -12,19 +12,15 @@ class Screen extends BindingObject {
   Screen(int contextId) : super(BindingContext(contextId, allocateNewBindingObject()));
 
   @override
-  getBindingProperty(String key) {
-    switch (key) {
-      case 'availWidth':
-        return availWidth;
-      case 'availHeight':
-        return availHeight;
-      case 'width':
-        return width;
-      case 'height':
-        return height;
-      default:
-        return super.getBindingProperty(key);
-    }
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    properties['availWidth'] = BindingObjectProperty(getter: () => availWidth);
+    properties['availHeight'] = BindingObjectProperty(getter: () => availHeight);
+    properties['width'] = BindingObjectProperty(getter: () => width);
+    properties['height'] = BindingObjectProperty(getter: () => height);
   }
 
   // The availWidth attribute must return the width of the Web-exposed available screen area.

@@ -9,16 +9,22 @@
 #include "qjs_animation_event.h"
 #include "qjs_blob.h"
 #include "qjs_bounding_client_rect.h"
+#include "qjs_canvas_gradient.h"
+#include "qjs_canvas_pattern.h"
 #include "qjs_canvas_rendering_context.h"
 #include "qjs_canvas_rendering_context_2d.h"
 #include "qjs_character_data.h"
 #include "qjs_close_event.h"
 #include "qjs_comment.h"
+#include "qjs_computed_css_style_declaration.h"
 #include "qjs_console.h"
 #include "qjs_css_style_declaration.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
+#include "qjs_dom_matrix.h"
+#include "qjs_dom_matrix_readonly.h"
+#include "qjs_dom_token_list.h"
 #include "qjs_element.h"
 #include "qjs_element_attributes.h"
 #include "qjs_error_event.h"
@@ -33,6 +39,7 @@
 #include "qjs_html_canvas_element.h"
 #include "qjs_html_div_element.h"
 #include "qjs_html_element.h"
+#include "qjs_html_form_element.h"
 #include "qjs_html_head_element.h"
 #include "qjs_html_html_element.h"
 #include "qjs_html_image_element.h"
@@ -43,6 +50,7 @@
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
 #include "qjs_image.h"
+#include "qjs_inline_css_style_declaration.h"
 #include "qjs_input_event.h"
 #include "qjs_intersection_change_event.h"
 #include "qjs_keyboard_event.h"
@@ -118,6 +126,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLInputElement::Install(context);
   QJSHTMLTextareaElement::Install(context);
   QJSHTMLButtonElement::Install(context);
+  QJSHTMLFormElement::Install(context);
   QJSImage::Install(context);
   QJSHTMLScriptElement::Install(context);
   QJSHTMLLinkElement::Install(context);
@@ -126,13 +135,20 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLCanvasElement::Install(context);
   QJSCanvasRenderingContext::Install(context);
   QJSCanvasRenderingContext2D::Install(context);
+  QJSCanvasPattern::Install(context);
+  QJSCanvasGradient::Install(context);
+  QJSDOMMatrixReadonly::Install(context);
+  QJSDOMMatrix::Install(context);
   QJSCSSStyleDeclaration::Install(context);
+  QJSInlineCssStyleDeclaration::Install(context);
+  QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSHTMLAllCollection::Install(context);
   QJSScreen::Install(context);
   QJSBlob::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);
+  QJSDOMTokenList::Install(context);
   QJSPerformance::Install(context);
   QJSPerformanceEntry::Install(context);
   QJSPerformanceMark::Install(context);

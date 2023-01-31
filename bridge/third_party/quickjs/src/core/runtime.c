@@ -73,8 +73,6 @@ void dbuf_put_leb128(DynBuf* s, uint32_t v) {
   }
 }
 
-
-
 void dbuf_put_sleb128(DynBuf* s, int32_t v1) {
   uint32_t v = v1;
   dbuf_put_leb128(s, (2 * v) ^ -(v >> 31));
@@ -436,7 +434,7 @@ JSValue JS_GetGlobalVar(JSContext* ctx, JSAtom prop, BOOL throw_ref_error) {
       return JS_ThrowReferenceErrorUninitialized(ctx, prs->atom);
     return JS_DupValue(ctx, pr->u.value);
   }
-  return JS_GetPropertyInternal(ctx, ctx->global_obj, prop, ctx->global_obj, throw_ref_error);
+  return JS_GetPropertyInternal(ctx, ctx->global_obj, prop, ctx->global_obj, NULL, throw_ref_error);
 }
 
 /* construct a reference to a global variable */
@@ -526,7 +524,7 @@ int JS_SetGlobalVar(JSContext* ctx, JSAtom prop, JSValue val, int flag) {
   flags = JS_PROP_THROW_STRICT;
   if (is_strict_mode(ctx))
     flags |= JS_PROP_NO_ADD;
-  return JS_SetPropertyInternal(ctx, ctx->global_obj, prop, val, flags);
+  return JS_SetPropertyInternal(ctx, ctx->global_obj, prop, val, flags, NULL);
 }
 
 /* return -1, FALSE or TRUE. return FALSE if not configurable or
@@ -2102,6 +2100,7 @@ static const JSCFunctionListEntry js_object_funcs[] = {
     // JS_CFUNC_DEF("__getObjectData", 1, js_object___getObjectData ),
     // JS_CFUNC_DEF("__setObjectData", 2, js_object___setObjectData ),
     JS_CFUNC_DEF("fromEntries", 1, js_object_fromEntries),
+    JS_CFUNC_DEF("hasOwn", 2, js_object_hasOwn),
 };
 
 static const JSCFunctionListEntry js_object_proto_funcs[] = {

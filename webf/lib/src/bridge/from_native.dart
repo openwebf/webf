@@ -14,14 +14,6 @@ import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
 import 'package:webf/src/module/performance_timing.dart';
 
-// An native struct can be directly convert to javaScript String without any conversion cost.
-class NativeString extends Struct {
-  external Pointer<Uint16> string;
-
-  @Uint32()
-  external int length;
-}
-
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
 }
@@ -94,6 +86,7 @@ typedef NativeInvokeModule = Pointer<NativeValue> Function(
 dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String moduleName, String method, params,
     DartAsyncModuleCallback callback) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFViewController currentView = controller.view;
   dynamic result;
 
   try {
@@ -102,8 +95,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
       // To make sure Promise then() and catch() executed before Promise callback called at JavaScript side.
       // We should make callback always async.
       Future.microtask(() {
-        if (controller.view.disposed) return;
-
+        if (controller.view != currentView || currentView.disposed) return;
         Pointer<NativeValue> callbackResult = nullptr;
         if (error != null) {
           Pointer<Utf8> errmsgPtr = error.toNativeUtf8();
@@ -196,11 +188,13 @@ typedef NativeSetTimeout = Int32 Function(
 int _setTimeout(
     Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFViewController currentView = controller.view;
 
   return controller.module.setTimeout(timeout, () {
     DartAsyncCallback func = callback.asFunction();
-
     void _runCallback() {
+      if (controller.view != currentView || currentView.disposed) return;
+
       try {
         func(callbackContext, contextId, nullptr);
       } catch (e, stack) {
@@ -230,8 +224,11 @@ typedef NativeSetInterval = Int32 Function(
 int _setInterval(
     Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFViewController currentView = controller.view;
   return controller.module.setInterval(timeout, () {
     void _runCallbacks() {
+      if (controller.view != currentView || currentView.disposed) return;
+
       DartAsyncCallback func = callback.asFunction();
       try {
         func(callbackContext, contextId, nullptr);
@@ -272,8 +269,10 @@ typedef NativeRequestAnimationFrame = Int32 Function(
 int _requestAnimationFrame(
     Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>> callback) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFViewController currentView = controller.view;
   return controller.module.requestAnimationFrame((double highResTimeStamp) {
     void _runCallback() {
+      if (controller.view != currentView || currentView.disposed) return;
       DartRAFAsyncCallback func = callback.asFunction();
       try {
         func(callbackContext, contextId, highResTimeStamp, nullptr);
@@ -351,6 +350,15 @@ final Pointer<NativeFunction<NativeFlushUICommand>> _nativeFlushUICommand = Poin
 typedef NativePerformanceGetEntries = Pointer<NativePerformanceEntryList> Function(Int32 contextId);
 typedef DartPerformanceGetEntries = Pointer<NativePerformanceEntryList> Function(int contextId);
 
+typedef NativeCreateBindingObject = Void Function(Int32 contextId, Pointer<NativeBindingObject> nativeBindingObject, Int32 type, Pointer<NativeValue> args, Int32 argc);
+typedef DartCreateBindingObject = void Function(int contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc);
+
+void _createBindingObject(int contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc) {
+  BindingBridge.createBindingObject(contextId, nativeBindingObject, CreateBindingObjectType.values[type], args, argc);
+}
+
+final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject = Pointer.fromFunction(_createBindingObject);
+
 Pointer<NativePerformanceEntryList> _performanceGetEntries(int contextId) {
   if (kProfileMode) {
     return PerformanceTiming.instance().toNative();
@@ -400,6 +408,7 @@ final List<int> _dartNativeMethods = [
   _nativeCancelAnimationFrame.address,
   _nativeToBlob.address,
   _nativeFlushUICommand.address,
+  _nativeCreateBindingObject.address,
   _nativeGetEntries.address,
   _nativeOnJsError.address,
   _nativeOnJsLog.address,

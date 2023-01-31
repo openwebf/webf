@@ -8,6 +8,7 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "built_in_string.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
@@ -22,13 +23,13 @@ namespace webf {
 
 Element::Element(const AtomicString& tag_name, Document* document, Node::ConstructionType construction_type)
     : ContainerNode(document, construction_type), tag_name_(tag_name) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateElement,
-                                                       std::move(tag_name.ToNativeString()), (void*)bindingObject());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(
+      eventTargetId(), UICommand::kCreateElement, std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
 }
 
-ElementAttributes& Element::EnsureElementAttributes() {
+ElementAttributes& Element::EnsureElementAttributes() const {
   if (attributes_ == nullptr) {
-    attributes_ = ElementAttributes::Create(this);
+    attributes_ = ElementAttributes::Create(const_cast<Element*>(this));
   }
   return *attributes_;
 }
@@ -37,7 +38,7 @@ bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_s
   return EnsureElementAttributes().hasAttribute(name, exception_state);
 }
 
-AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
+AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) const {
   return EnsureElementAttributes().getAttribute(name, exception_state);
 }
 
@@ -137,20 +138,36 @@ bool Element::HasTagName(const AtomicString& name) const {
   return name == tag_name_;
 }
 
-std::string Element::nodeValue() const {
-  return "";
+AtomicString Element::nodeValue() const {
+  return AtomicString::Null();
 }
 
 std::string Element::nodeName() const {
-  return tag_name_.ToUpperIfNecessary().ToStdString();
+  return tag_name_.ToUpperIfNecessary(ctx()).ToStdString(ctx());
 }
 
 std::string Element::nodeNameLowerCase() const {
-  return tag_name_.ToStdString();
+  return tag_name_.ToStdString(ctx());
+}
+
+AtomicString Element::className() const {
+  return getAttribute(binding_call_methods::kclass, ASSERT_NO_EXCEPTION());
+}
+
+void Element::setClassName(const AtomicString& value, ExceptionState& exception_state) {
+  setAttribute(html_names::kClassAttr, value, exception_state);
+}
+
+AtomicString Element::id() const {
+  return getAttribute(binding_call_methods::kid, ASSERT_NO_EXCEPTION());
+}
+
+void Element::setId(const AtomicString& value, ExceptionState& exception_state) {
+  setAttribute(html_names::kIdAttr, value, exception_state);
 }
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(class_name)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), class_name)};
   NativeValue result =
       InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
@@ -160,7 +177,7 @@ std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_
 }
 
 std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(tag_name)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), tag_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return {};
@@ -168,17 +185,28 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
 
-CSSStyleDeclaration* Element::style() {
+InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
   return &EnsureCSSStyleDeclaration();
 }
 
-CSSStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
+InlineCssStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
   if (cssom_wrapper_ == nullptr) {
-    cssom_wrapper_ = MakeGarbageCollected<CSSStyleDeclaration>(GetExecutingContext(), eventTargetId());
+    cssom_wrapper_ = MakeGarbageCollected<InlineCssStyleDeclaration>(GetExecutingContext(), eventTargetId());
   }
   return *cssom_wrapper_;
+}
+
+DOMTokenList* Element::classList() {
+  ElementData& element_data = EnsureElementData();
+  if (element_data.GetClassList() == nullptr) {
+    auto* class_list = MakeGarbageCollected<DOMTokenList>(this, html_names::kClassAttr);
+    AtomicString classValue = getAttribute(html_names::kClassAttr, ASSERT_NO_EXCEPTION());
+    class_list->DidUpdateAttributeValue(built_in_string::kNULL, classValue);
+    element_data.SetClassList(class_list);
+  }
+  return element_data.GetClassList();
 }
 
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {
@@ -228,6 +256,9 @@ bool Element::IsAttributeDefinedInternal(const AtomicString& key) const {
 void Element::Trace(GCVisitor* visitor) const {
   visitor->Trace(attributes_);
   visitor->Trace(cssom_wrapper_);
+  if (element_data_ != nullptr) {
+    element_data_->Trace(visitor);
+  }
   ContainerNode::Trace(visitor);
 }
 
@@ -254,7 +285,7 @@ Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
 }
 
 Element& Element::CloneWithoutAttributesAndChildren(Document& factory) const {
-  return *(factory.createElement(tagName(), ASSERT_NO_EXCEPTION()));
+  return *(factory.createElement(tag_name_, ASSERT_NO_EXCEPTION()));
 }
 
 class ElementSnapshotReader {
@@ -357,7 +388,7 @@ std::string Element::innerHTML() {
     if (auto* element = DynamicTo<Element>(child)) {
       s += element->outerHTML();
     } else if (auto* text = DynamicTo<Text>(child)) {
-      s += text->data().ToStdString();
+      s += text->data().ToStdString(ctx());
     }
     child = child->nextSibling();
   }
@@ -366,7 +397,7 @@ std::string Element::innerHTML() {
 }
 
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
-  auto html = value.ToStdString();
+  auto html = value.ToStdString(ctx());
   if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
     HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
   } else {

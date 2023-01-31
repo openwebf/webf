@@ -67,12 +67,6 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
 
       return JS_NULL;
     }
-    case NativeTag::TAG_FUNCTION: {
-      return NativeValueConverter<NativeTypeFunction>::FromNativeValue(context->ctx(), native_value)->ToQuickJS();
-    }
-    case NativeTag::TAG_ASYNC_FUNCTION: {
-      return NativeValueConverter<NativeTypeAsyncFunction>::FromNativeValue(context->ctx(), native_value)->ToQuickJS();
-    }
   }
   return JS_NULL;
 }
@@ -107,6 +101,7 @@ ScriptValue::ScriptValue(const ScriptValue& value) {
 }
 ScriptValue& ScriptValue::operator=(const ScriptValue& value) {
   if (&value != this) {
+    JS_FreeValue(ctx_, value_);
     value_ = JS_DupValue(ctx_, value.value_);
   }
   ctx_ = value.ctx_;
@@ -121,6 +116,7 @@ ScriptValue::ScriptValue(ScriptValue&& value) noexcept {
 }
 ScriptValue& ScriptValue::operator=(ScriptValue&& value) noexcept {
   if (&value != this) {
+    JS_FreeValue(ctx_, value_);
     value_ = JS_DupValue(ctx_, value.value_);
   }
   ctx_ = value.ctx_;
@@ -147,6 +143,10 @@ AtomicString ScriptValue::ToString() const {
   return {ctx_, value_};
 }
 
+std::unique_ptr<NativeString> ScriptValue::ToNativeString() const {
+  return ToString().ToNativeString(ctx_);
+}
+
 NativeValue ScriptValue::ToNative(ExceptionState& exception_state) const {
   int8_t tag = JS_VALUE_GET_TAG(value_);
 
@@ -168,7 +168,7 @@ NativeValue ScriptValue::ToNative(ExceptionState& exception_state) const {
     }
     case JS_TAG_STRING:
       // NativeString owned by NativeValue will be freed by users.
-      return NativeValueConverter<NativeTypeString>::ToNativeValue(ToString());
+      return NativeValueConverter<NativeTypeString>::ToNativeValue(ctx_, ToString());
     case JS_TAG_OBJECT: {
       if (JS_IsArray(ctx_, value_)) {
         std::vector<ScriptValue> values =

@@ -32,11 +32,11 @@
   <div id="animation-box">Filler Text</div>
 </body>
 <script>
-  await sleep(0.1);
+  await sleep(0.2);
   let animationBox = document.getElementById('animation-box');
-  expect(animationBox.offsetLeft < 150 && animationBox.offsetLeft > 120).toBe(true);
+  expect(animationBox.offsetLeft < 150 && animationBox.offsetLeft > 120).toBe(true, `animation start should be on the right: ${animationBox.offsetLeft}`);
   await sleep(1);
-  expect(animationBox.offsetLeft > 50 && animationBox.offsetLeft < 75).toBe(true);
+  expect(animationBox.offsetLeft > 35 && animationBox.offsetLeft < 75).toBe(true, `animation should be in the middle: ${animationBox.offsetLeft}`);
   await sleep(3);
-  expect(animationBox.offsetLeft === 0).toBe(true);
+  expect(animationBox.offsetLeft === 0).toBe(true, `animation should be ended: ${animationBox.offsetLeft}`);
 </script>

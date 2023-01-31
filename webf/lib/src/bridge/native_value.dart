@@ -34,8 +34,7 @@ enum JSValueType {
 }
 
 enum JSPointerType {
-  AsyncFunctionContext,
-  NativeFunctionContext,
+  NativeBindingObject,
   Others
 }
 
@@ -61,6 +60,11 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
     case JSValueType.TAG_FLOAT64:
       return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:
+      JSPointerType pointerType = JSPointerType.values[nativeValue.ref.uint32];
+      if (pointerType == JSPointerType.NativeBindingObject) {
+        return BindingBridge.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
+      }
+
       return Pointer.fromAddress(nativeValue.ref.u);
     case JSValueType.TAG_LIST:
       return List.generate(nativeValue.ref.uint32, (index) {
@@ -95,9 +99,11 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     target.ref.u = stringToNativeString(value).address;
   } else if (value is Pointer) {
     target.ref.tag = JSValueType.TAG_POINTER.index;
+    target.ref.uint32 = JSPointerType.Others.index;
     target.ref.u = value.address;
   } else if (value is BindingObject) {
     target.ref.tag = JSValueType.TAG_POINTER.index;
+    target.ref.uint32 = JSPointerType.NativeBindingObject.index;
     target.ref.u = (value.pointer)!.address;
   } else if (value is List) {
     target.ref.tag = JSValueType.TAG_LIST.index;
@@ -107,14 +113,6 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     for(int i = 0; i < value.length; i ++) {
       toNativeValue(lists.elementAt(i), value[i], ownerBindingObject);
     }
-  } else if (value is AsyncAnonymousNativeFunction && ownerBindingObject != null) {
-    int id = ownerBindingObject.setAsyncAnonymousNativeFunction(value);
-    target.ref.tag = JSValueType.TAG_ASYNC_FUNCTION.index;
-    target.ref.u = id;
-  } else if (value is AnonymousNativeFunction && ownerBindingObject != null) {
-    int id = ownerBindingObject.setAnonymousNativeFunction(value);
-    target.ref.tag = JSValueType.TAG_FUNCTION.index;
-    target.ref.u = id;
   } else if (value is Object) {
     String str = jsonEncode(value);
     target.ref.tag = JSValueType.TAG_JSON.index;

@@ -1,13 +1,12 @@
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'dart:async';
 import 'dart:io';
-
+import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:ansicolor/ansicolor.dart';
@@ -46,9 +45,7 @@ void main() async {
   WebFWebSocket.initialize();
 
   // FIXME: This is a workaround for testcase
-  ParagraphElement.defaultStyle = {
-    DISPLAY: BLOCK,
-  };
+  debugOverridePDefaultStyle({DISPLAY: BLOCK});
 
   // Set render font family AlibabaPuHuiTi to resolve rendering difference.
   CSSText.DEFAULT_FONT_FAMILY_FALLBACK = ['AlibabaPuHuiTi'];
@@ -80,16 +77,15 @@ void main() async {
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     int contextId = webF.controller!.view.contextId;
-    initTestFramework(contextId);
+    Pointer<Void> testContext = initTestFramework(contextId);
     registerDartTestMethodsToCpp(contextId);
     addJSErrorListener(contextId, print);
 
     // Preload load test cases
     String code = spec.readAsStringSync();
     evaluateTestScripts(contextId, code, url: 'assets://plugin.js');
-    String result = await executeTest(contextId);
-    // Manual dispose context for memory leak check.
-    disposePage(webF.controller!.view.contextId);
+    String result = await executeTest(testContext, contextId);
+    webF.controller!.dispose();
     exit(result == 'failed' ? 1 : 0);
   });
 }

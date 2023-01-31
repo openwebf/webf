@@ -112,7 +112,7 @@ describe('custom widget element', () => {
     await snapshot();
   });
 
-  it('flutter widget should be child of element and the element should be child of flutter widget', async () => {
+  it('flutter widget should be child of element and the element should be child of flutter widget', async (done) => {
     const container = document.createElement('flutter-container');
     document.body.appendChild(container);
 
@@ -123,17 +123,144 @@ describe('custom widget element', () => {
     fluttetText.setAttribute('value', 'text');
     childContainer.appendChild(fluttetText);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+      done();
+    });
   });
 
-  it('should work with waterfall-flow', async () => {
-    const flutterContainer = document.createElement('waterfall-flow');
+  it('flutter widget should work when text removed from this', async (done) => {
+    const container = document.createElement('flutter-container');
+    document.body.appendChild(container);
+    let textA = document.createTextNode('A');
+    container.appendChild(textA);
+    await snapshot();
+    let textB = document.createTextNode('B');
+    setTimeout(async () => {
+      container.appendChild(textB);
+      await sleep(0.1);
+      await snapshot();
+      container.removeChild(textA);
+      await sleep(0.1);
+      await snapshot();
+      setTimeout(async () => {
+        container.removeChild(textB);
+        document.body.removeChild(container);
+        requestAnimationFrame(async () => {
+          await snapshot();
+          done();
+        });
+      });
+    });
+  });
+
+  it('flutter widget should work when div and text removed from this', async (done) => {
+    const container = document.createElement('flutter-container');
+    document.body.appendChild(container);
+    let divA = document.createElement('div');
+    let textA = document.createTextNode('A');
+    divA.appendChild(textA);
+    container.appendChild(divA);
+    await sleep(0.1);
+    await snapshot();
+    let textB = document.createTextNode('B');
+    let divB = document.createElement('div');
+    divB.appendChild(textB);
+    setTimeout(async () => {
+      container.appendChild(divB);
+      await sleep(0.1);
+      await snapshot();
+      container.removeChild(divA);
+      await sleep(0.1);
+      await snapshot();
+      setTimeout(async () => {
+        container.removeChild(divB);
+        document.body.removeChild(container);
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it('flutter widget should work when wrap div and flutter widgets from this', async done => {
+    const container = document.createElement('flutter-container');
+    document.body.appendChild(container);
+    let buttonA = document.createElement('flutter-button');
+    let divA = document.createElement('div');
+    let textA = document.createTextNode('A');
+    divA.appendChild(textA);
+    buttonA.appendChild(divA);
+    container.appendChild(buttonA);
+    await snapshot();
+    let buttonB = document.createElement('flutter-button');
+    buttonB.style.height = '100px';
+    let textB = document.createTextNode('B');
+    let divB = document.createElement('div');
+    divB.appendChild(textB);
+    buttonB.appendChild(divB);
+    setTimeout(async () => {
+      container.appendChild(buttonB);
+      await snapshot();
+      container.removeChild(buttonA);
+      await snapshot();
+      setTimeout(async () => {
+        container.removeChild(buttonB);
+        document.body.removeChild(container);
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it('flutter widget should work when wrap div and the div wrap another flutter widgets and this flutter widget also wrap div and text', async done => {
+    const container = document.createElement('flutter-container');
+    document.body.appendChild(container);
+    let buttonWrapperA = document.createElement('div');
+    let buttonA = document.createElement("flutter-button");
+    let divA = document.createElement('div');
+    let textA = document.createTextNode('A');
+    divA.appendChild(textA);
+    buttonA.appendChild(divA);
+    buttonWrapperA.appendChild(buttonA);
+    buttonWrapperA.style.border = '2px solid #000';
+    container.appendChild(buttonWrapperA);
+
+    requestAnimationFrame(async () => {
+      await snapshot();
+      let buttonB = document.createElement('flutter-button');
+      let buttonWrapperB = document.createElement('div');
+      let textB = document.createTextNode('B');
+      let divB = document.createElement('div');
+      divB.appendChild(textB);
+      buttonB.appendChild(divB);
+      buttonWrapperB.appendChild(buttonB);
+      setTimeout(async () => {
+        container.appendChild(buttonWrapperB);
+        requestAnimationFrame(async () => {
+          await snapshot();
+          container.removeChild(buttonWrapperA);
+          await snapshot();
+          setTimeout(async () => {
+            container.removeChild(buttonWrapperB);
+            document.body.removeChild(container);
+            await snapshot();
+            done();
+          });
+        })
+      });
+    });
+  });
+
+  it('should work with flutter-listview', async () => {
+    const flutterContainer = document.createElement('flutter-listview');
     flutterContainer.style.height = '100vh';
     flutterContainer.style.display = 'block';
 
     document.body.appendChild(flutterContainer);
 
     const colors = ['red', 'yellow', 'black', 'blue', 'green'];
+
+    const promise_loading: Promise<void>[] = [];
 
     for (let i = 0; i < 10; i++) {
       const div = document.createElement('div');
@@ -145,15 +272,19 @@ describe('custom widget element', () => {
       img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
       div.appendChild(img);
       img.style.width = '100px';
+      promise_loading.push(new Promise((resolve, reject) => {
+        img.onload = () => {resolve();}
+      }));
 
       flutterContainer.appendChild(div);
     }
+    await Promise.all(promise_loading);
 
     await snapshot();
   });
 
-  it('getBoundingClientRect should work with items in waterfall-flow', async (done) => {
-    const flutterContainer = document.createElement('waterfall-flow');
+  it('getBoundingClientRect should work with items in listview', async (done) => {
+    const flutterContainer = document.createElement('flutter-listview');
     flutterContainer.style.height = '100vh';
     flutterContainer.style.display = 'block';
 
@@ -234,6 +365,51 @@ describe('custom widget element', () => {
 
     await snapshot();
   });
+
+  it('flutter widgets should works when append widget element inside of widget element m', async () => {
+    const form = document.createElement('form');
+    form.style.height = '300px';
+    for(let i = 0; i < 2; i ++) {
+      let div = document.createElement('div');
+      let input = document.createElement('input');
+      input.value = i.toString();
+      div.appendChild(input);
+      form.appendChild(div);
+    }
+    document.body.appendChild(form);
+
+    await sleep(0.1);
+    await snapshot();
+  });
+
+  it('HTMLElement can be create and mutated in widgets', async () => {
+    const layoutBox = document.createElement('flutter-layout-box');
+    layoutBox.style.height = '300px';
+    layoutBox.style.border = '2px solid yellow';
+    layoutBox.appendChild(document.createTextNode('AAA'));
+    layoutBox.appendChild(document.createTextNode('BBB'));
+    document.body.appendChild(layoutBox);
+    await snapshot();
+  });
+
+  it('flutter widgets should inserted at correct location with other DOM elements', async () => {
+    const form = document.createElement('form');
+    form.style.height = '300px';
+    form.appendChild(document.createTextNode('BEFORE CONTAINER.'));
+    for(let i = 0; i < 2; i ++) {
+      let div = document.createElement('div');
+      div.appendChild(document.createTextNode('BEFORE INPUT.'));
+      const input = document.createElement('input') as HTMLInputElement;
+      input.value = i.toString();
+      div.appendChild(input);
+      div.appendChild(document.createTextNode('AFTER INPUT.'));
+      form.appendChild(div);
+    }
+    form.appendChild(document.createTextNode('AFTER CONTAINER.'));
+    document.body.appendChild(form);
+    await sleep(0.1);
+    await snapshot();
+  });
 });
 
 describe('custom html element', () => {
@@ -248,7 +424,7 @@ describe('custom html element', () => {
   it('dart implements getAllBindingPropertyNames works', async () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
-    expect(attributes).toEqual(['ping', 'fake', 'fn', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete']);
+    expect(attributes).toEqual(['classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'fake', 'offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth', 'ping', 'scrollHeight', 'scrollLeft', 'scrollTop', 'scrollWidth', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete', 'click', 'fn', 'getBoundingClientRect', 'getElementsByClassName', 'getElementsByTagName', 'scroll', 'scrollBy', 'scrollTo']);
   });
 
   it('support custom properties in dart directly', () => {
@@ -270,7 +446,6 @@ describe('custom html element', () => {
     let arrs = [1, 2, 4, 8, 16];
     // @ts-ignore
     let fn = sampleElement.fn;
-
     expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
     // @ts-ignore
     expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
@@ -386,5 +561,37 @@ describe('custom html element', () => {
     expect(clone._fn()).toEqual(1);
     // @ts-ignore
     expect(clone._self).toBe(sampleElement);
+  });
+
+  it('should work with checkbox', async (done) => {
+    let checkbox = document.createElement('input');
+    checkbox.setAttribute('type', 'checkbox');
+    document.body.appendChild(checkbox);
+    await snapshot();
+
+    await simulateClick(10, 10);
+
+    setTimeout(async () => {
+      await snapshot();
+      done();
+    }, 800);
+  });
+
+  it('unmount widgetElements should works when contains image', async (done) => {
+    let container = document.createElement('flutter-container');
+    let img = document.createElement('img');
+    img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
+    let wrapper = createElement('div', {}, [
+      img
+    ]);
+    container.appendChild(wrapper);
+    document.body.appendChild(container);
+
+    img.onload = async () => {
+      requestAnimationFrame(() => {
+        document.body.removeChild(container);
+        done();
+      });
+    };
   });
 });

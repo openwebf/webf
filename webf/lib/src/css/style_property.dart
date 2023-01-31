@@ -8,7 +8,6 @@ import 'package:webf/src/css/css_animation.dart';
 
 // a-b to aB
 final RegExp _camelCaseReg = RegExp(r'-(\w)');
-final RegExp _spaceRegExp = RegExp(r'\s+(?![^(]*\))');
 final RegExp _commaRegExp = RegExp(r',(?![^\(]*\))');
 final RegExp _slashRegExp = RegExp(r'\/(?![^(]*\))');
 final RegExp _replaceCommaRegExp = RegExp(r'\s*,\s*');
@@ -83,7 +82,7 @@ List<String> _splitBySpace(String value) {
 
 class CSSStyleProperty {
   static void setShorthandPadding(Map<String, String?> properties, String shorthandValue) {
-    List<String?>? values = _getEdgeValues(shorthandValue, isNonNegativeLengthOrPercentage: true);
+    List<String?>? values = getEdgeValues(shorthandValue, isNonNegativeLengthOrPercentage: true);
     if (values == null) return;
 
     properties[PADDING_TOP] = values[0];
@@ -100,7 +99,7 @@ class CSSStyleProperty {
   }
 
   static void setShorthandMargin(Map<String, String?> properties, String shorthandValue) {
-    List<String?>? values = _getEdgeValues(shorthandValue);
+    List<String?>? values = getEdgeValues(shorthandValue);
     if (values == null) return;
 
     properties[MARGIN_TOP] = values[0];
@@ -305,7 +304,7 @@ class CSSStyleProperty {
         borderLeftColor = values[2];
       }
     } else if (property == BORDER_WIDTH) {
-      List<String?>? values = _getEdgeValues(shorthandValue, isNonNegativeLength: true);
+      List<String?>? values = getEdgeValues(shorthandValue);
       if (values == null) return;
 
       borderTopWidth = values[0];
@@ -314,7 +313,7 @@ class CSSStyleProperty {
       borderLeftWidth = values[3];
     } else if (property == BORDER_STYLE) {
       // @TODO: validate value
-      List<String?>? values = _getEdgeValues(shorthandValue);
+      List<String?>? values = getEdgeValues(shorthandValue);
       if (values == null) return;
 
       borderTopStyle = values[0];
@@ -323,7 +322,7 @@ class CSSStyleProperty {
       borderLeftStyle = values[3];
     } else if (property == BORDER_COLOR) {
       // @TODO: validate value
-      List<String?>? values = _getEdgeValues(shorthandValue);
+      List<String?>? values = getEdgeValues(shorthandValue);
       if (values == null) return;
 
       borderTopColor = values[0];
@@ -445,7 +444,7 @@ class CSSStyleProperty {
 
   static List<String?>? _getBorderRaidusValues(String shorthandProperty) {
     if (!shorthandProperty.contains('/')) {
-      return _getEdgeValues(shorthandProperty, isNonNegativeLengthOrPercentage: true);
+      return getEdgeValues(shorthandProperty, isNonNegativeLengthOrPercentage: true);
     }
 
     List radius = shorthandProperty.split(_slashRegExp);
@@ -462,8 +461,8 @@ class CSSStyleProperty {
     String firstRadius = radius[0];
     String secondRadius = radius[1];
 
-    List<String?> firstValues = _getEdgeValues(firstRadius, isNonNegativeLengthOrPercentage: true)!;
-    List<String?> secondValues = _getEdgeValues(secondRadius, isNonNegativeLengthOrPercentage: true)!;
+    List<String?> firstValues = getEdgeValues(firstRadius, isNonNegativeLengthOrPercentage: true)!;
+    List<String?> secondValues = getEdgeValues(secondRadius, isNonNegativeLengthOrPercentage: true)!;
 
     return [
       '${firstValues[0]} ${secondValues[0]}',
@@ -477,7 +476,7 @@ class CSSStyleProperty {
   static List<String?>? _getBackgroundValues(String shorthandProperty) {
     // Convert 40%/10em -> 40% / 10em
     shorthandProperty = shorthandProperty.replaceAll(_slashRegExp, ' / ');
-    List<String> values = shorthandProperty.split(_spaceRegExp);
+    List<String> values = _splitBySpace(shorthandProperty);
 
     String? color;
     String? image;
@@ -519,7 +518,7 @@ class CSSStyleProperty {
       } else if (sizeHeight == null && (isValueVariableFunction || CSSBackground.isValidBackgroundSizeValue(value))) {
         sizeHeight = value;
       } else {
-        return null;
+        break;
       }
     }
 
@@ -771,7 +770,7 @@ class CSSStyleProperty {
     return [width, style, color];
   }
 
-  static List<String?>? _getEdgeValues(
+  static List<String?>? getEdgeValues(
     String shorthandProperty, {
     bool isLengthOrPercentage = false,
     bool isNonNegativeLengthOrPercentage = false,
@@ -800,36 +799,29 @@ class CSSStyleProperty {
       leftValue = properties[3];
     }
 
-    if (topValue != null &&
-        CSSFunction.isFunction(topValue) &&
-        rightValue != null &&
-        CSSFunction.isFunction(rightValue) &&
-        bottomValue != null &&
-        CSSFunction.isFunction(bottomValue) &&
-        leftValue != null &&
-        CSSFunction.isFunction(leftValue)) {
-      return [topValue, rightValue, bottomValue, leftValue];
+    if (topValue == null || rightValue == null || bottomValue == null || leftValue == null) {
+      return null;
     }
 
     if (isLengthOrPercentage) {
-      if ((!CSSLength.isLength(topValue) && !CSSPercentage.isPercentage(topValue)) ||
-          (!CSSLength.isLength(rightValue) && !CSSPercentage.isPercentage(rightValue)) ||
-          (!CSSLength.isLength(bottomValue) && !CSSPercentage.isPercentage(bottomValue)) ||
-          (!CSSLength.isLength(leftValue) && !CSSPercentage.isPercentage(leftValue))) {
+      if ((!CSSLength.isLength(topValue) && !CSSPercentage.isPercentage(topValue) && !CSSFunction.isFunction(topValue)) ||
+          (!CSSLength.isLength(rightValue) && !CSSPercentage.isPercentage(rightValue)  && !CSSFunction.isFunction(rightValue)) ||
+          (!CSSLength.isLength(bottomValue) && !CSSPercentage.isPercentage(bottomValue) && !CSSFunction.isFunction(bottomValue)) ||
+          (!CSSLength.isLength(leftValue) && !CSSPercentage.isPercentage(leftValue)) && !CSSFunction.isFunction(leftValue)) {
         return null;
       }
     } else if (isNonNegativeLengthOrPercentage) {
-      if ((!CSSLength.isNonNegativeLength(topValue) && !CSSPercentage.isNonNegativePercentage(topValue)) ||
-          (!CSSLength.isNonNegativeLength(rightValue) && !CSSPercentage.isNonNegativePercentage(rightValue)) ||
-          (!CSSLength.isNonNegativeLength(bottomValue) && !CSSPercentage.isNonNegativePercentage(bottomValue)) ||
-          (!CSSLength.isNonNegativeLength(leftValue) && !CSSPercentage.isNonNegativePercentage(leftValue))) {
+      if ((!CSSLength.isNonNegativeLength(topValue) && !CSSPercentage.isNonNegativePercentage(topValue) && !CSSFunction.isFunction(topValue)) ||
+          (!CSSLength.isNonNegativeLength(rightValue) && !CSSPercentage.isNonNegativePercentage(rightValue) && !CSSFunction.isFunction(rightValue)) ||
+          (!CSSLength.isNonNegativeLength(bottomValue) && !CSSPercentage.isNonNegativePercentage(bottomValue) && !CSSFunction.isFunction(bottomValue)) ||
+          (!CSSLength.isNonNegativeLength(leftValue) && !CSSPercentage.isNonNegativePercentage(leftValue) && !CSSFunction.isFunction(leftValue))) {
         return null;
       }
     } else if (isNonNegativeLength) {
-      if ((!CSSLength.isNonNegativeLength(topValue)) ||
-          (!CSSLength.isNonNegativeLength(rightValue)) ||
-          (!CSSLength.isNonNegativeLength(bottomValue)) ||
-          (!CSSLength.isNonNegativeLength(leftValue))) {
+      if ((!CSSLength.isNonNegativeLength(topValue) && !CSSFunction.isFunction(topValue)) ||
+          (!CSSLength.isNonNegativeLength(rightValue) && !CSSFunction.isFunction(rightValue)) ||
+          (!CSSLength.isNonNegativeLength(bottomValue) && !CSSFunction.isFunction(bottomValue)) ||
+          (!CSSLength.isNonNegativeLength(leftValue) && !CSSFunction.isFunction(leftValue))) {
         return null;
       }
     }

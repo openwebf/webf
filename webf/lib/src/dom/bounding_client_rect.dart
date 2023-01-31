@@ -8,7 +8,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 
 class BoundingClientRect extends BindingObject {
-  static BoundingClientRect zero = BoundingClientRect(0, 0, 0, 0, 0, 0, 0, 0);
+  static BoundingClientRect zero = BoundingClientRect(x: 0, y: 0, width: 0, height: 0, top: 0, right: 0, bottom: 0, left: 0);
 
   final double x;
   final double y;
@@ -19,7 +19,16 @@ class BoundingClientRect extends BindingObject {
   final double bottom;
   final double left;
 
-  BoundingClientRect(this.x, this.y, this.width, this.height, this.top, this.right, this.bottom, this.left)
+  BoundingClientRect({
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+    required this.top,
+    required this.right,
+    required this.bottom,
+    required this.left
+  })
       : _pointer = allocateNewBindingObject(),
         super();
 
@@ -29,25 +38,18 @@ class BoundingClientRect extends BindingObject {
   get pointer => _pointer;
 
   @override
-  dynamic getBindingProperty(String key) {
-    switch(key) {
-      case 'x':
-        return x;
-      case 'y':
-        return y;
-      case 'width':
-        return width;
-      case 'height':
-        return height;
-      case 'left':
-        return left;
-      case 'right':
-        return right;
-      case 'top':
-        return top;
-      case 'bottom':
-        return bottom;
-    }
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    properties['x'] = BindingObjectProperty(getter: () => x);
+    properties['y'] = BindingObjectProperty(getter: () => y);
+    properties['width'] = BindingObjectProperty(getter: () => width);
+    properties['height'] = BindingObjectProperty(getter: () => height);
+    properties['left'] = BindingObjectProperty(getter: () => left);
+    properties['right'] = BindingObjectProperty(getter: () => right);
+    properties['top'] = BindingObjectProperty(getter: () => top);
+    properties['bottom'] = BindingObjectProperty(getter: () => bottom);
   }
 
   Map<String, double> toJSON() {

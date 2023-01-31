@@ -44,14 +44,14 @@ describe('css-image', () => {
         width: '200px',
         height: '200px',
         'background-color': 'red',
-        background: 'image("green.png", green)',
+        'background': 'url("assets:assets/green.png")',
         'box-sizing': 'border-box',
       },
     });
     BODY.appendChild(p);
     BODY.appendChild(square);
 
-    await snapshot();
+    await snapshot(0.5);
   });
   it('fallbacks-and-annotations002', async () => {
     let p;
@@ -72,14 +72,14 @@ describe('css-image', () => {
         height: '200px',
         color: 'white',
         'background-color': 'red',
-        'background-image': 'image("assets/1x1-green.png")',
+        'background-image': 'url("assets:assets/1x1-green.png")',
         'box-sizing': 'border-box',
       },
     });
     BODY.appendChild(p);
     BODY.appendChild(square);
 
-    await snapshot();
+    await snapshot(0.1);
   });
   it('fallbacks-and-annotations003', async () => {
     let p;
@@ -99,15 +99,14 @@ describe('css-image', () => {
         width: '200px',
         height: '200px',
         'background-color': 'red',
-        'background-image':
-          'image("1x1-green.svg", "assets/1x1-green.png","assets/1x1-green.gif")',
+        'background-image': 'url("assets:1x1-green.svg")',
         'box-sizing': 'border-box',
       },
     });
     BODY.appendChild(p);
     BODY.appendChild(square);
 
-    await snapshot();
+    await snapshot(0.1);
   });
   it('fallbacks-and-annotations004', async () => {
     let p;
@@ -127,15 +126,14 @@ describe('css-image', () => {
         width: '200px',
         height: '200px',
         'background-color': 'red',
-        'background-image':
-          'image("1x1-green.svg", "1x1-green.png", "assets/1x1-green.gif")',
+        'background-image': 'url("assets:1x1-green.svg")',
         'box-sizing': 'border-box',
       },
     });
     BODY.appendChild(p);
     BODY.appendChild(square);
 
-    await snapshot();
+    await snapshot(0.1);
   });
 
   // @TODO: background-image parse error.
@@ -169,7 +167,7 @@ describe('css-image', () => {
     BODY.appendChild(p);
     BODY.appendChild(square);
 
-    await snapshot();
+    await snapshot(0.1);
   });
 
  it('size works width position absolute' , async (done) => {
