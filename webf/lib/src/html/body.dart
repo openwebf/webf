@@ -36,6 +36,16 @@ class BodyElement extends Element {
       case OVERFLOW_Y:
         ownerDocument.documentElement?.setRenderStyle(property, present);
         break;
+      // The background of body should apply to html.
+      // https://www.w3.org/TR/css-backgrounds-3/#body-background
+      case BACKGROUND_COLOR:
+      case BACKGROUND_IMAGE:
+        if (ownerDocument.documentElement?.renderStyle.backgroundImage == null &&
+            (ownerDocument.documentElement?.renderStyle.backgroundColor == null || ownerDocument.documentElement?.renderStyle.backgroundColor?.value == CSSColor.transparent)) {
+          ownerDocument.documentElement?.setRenderStyle(property, present);
+        }
+        super.setRenderStyle(property, present);
+        break;
       default:
         super.setRenderStyle(property, present);
     }
