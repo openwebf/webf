@@ -185,15 +185,15 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
 
-CSSStyleDeclaration* Element::style() {
+InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
   return &EnsureCSSStyleDeclaration();
 }
 
-CSSStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
+InlineCssStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
   if (cssom_wrapper_ == nullptr) {
-    cssom_wrapper_ = MakeGarbageCollected<CSSStyleDeclaration>(GetExecutingContext(), eventTargetId());
+    cssom_wrapper_ = MakeGarbageCollected<InlineCssStyleDeclaration>(GetExecutingContext(), eventTargetId());
   }
   return *cssom_wrapper_;
 }

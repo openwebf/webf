@@ -222,6 +222,7 @@ AtomicString::AtomicString(AtomicString&& value) noexcept {
 
 AtomicString& AtomicString::operator=(AtomicString&& value) noexcept {
   if (&value != this && !value.IsNull()) {
+    JS_FreeAtomRT(value.runtime_, atom_);
     atom_ = JS_DupAtomRT(value.runtime_, value.atom_);
   }
   runtime_ = value.runtime_;

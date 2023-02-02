@@ -16,6 +16,7 @@
 #include "qjs_character_data.h"
 #include "qjs_close_event.h"
 #include "qjs_comment.h"
+#include "qjs_computed_css_style_declaration.h"
 #include "qjs_console.h"
 #include "qjs_css_style_declaration.h"
 #include "qjs_custom_event.h"
@@ -49,6 +50,7 @@
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
 #include "qjs_image.h"
+#include "qjs_inline_css_style_declaration.h"
 #include "qjs_input_event.h"
 #include "qjs_intersection_change_event.h"
 #include "qjs_keyboard_event.h"
@@ -138,6 +140,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSDOMMatrixReadonly::Install(context);
   QJSDOMMatrix::Install(context);
   QJSCSSStyleDeclaration::Install(context);
+  QJSInlineCssStyleDeclaration::Install(context);
+  QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSHTMLAllCollection::Install(context);
   QJSScreen::Install(context);

@@ -9,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 
 enum _BorderDirection { top, bottom, left, right }
 
@@ -304,12 +303,12 @@ class BoxDecorationPainter extends BoxPainter {
     }
     // Background origin moves background image from specified origin
     Rect backgroundOriginRect;
-    BackgroundBoundary? backgroundOrigin = renderStyle.backgroundOrigin;
+    CSSBackgroundBoundary? backgroundOrigin = renderStyle.backgroundOrigin;
     switch (backgroundOrigin) {
-      case BackgroundBoundary.borderBox:
+      case CSSBackgroundBoundary.borderBox:
         backgroundOriginRect = offset & size!;
         break;
-      case BackgroundBoundary.contentBox:
+      case CSSBackgroundBoundary.contentBox:
         backgroundOriginRect = offset.translate(borderLeft + paddingLeft, borderTop + paddingTop) & size!;
         break;
       default:
@@ -338,16 +337,16 @@ class BoxDecorationPainter extends BoxPainter {
       paddingRight = padding!.right;
     }
     Rect backgroundClipRect;
-    BackgroundBoundary? backgroundClip = renderStyle.backgroundClip;
+    CSSBackgroundBoundary? backgroundClip = renderStyle.backgroundClip;
     switch (backgroundClip) {
-      case BackgroundBoundary.paddingBox:
+      case CSSBackgroundBoundary.paddingBox:
         backgroundClipRect = offset.translate(borderLeft, borderTop) &
             Size(
               size!.width - borderRight - borderLeft,
               size.height - borderBottom - borderTop,
             );
         break;
-      case BackgroundBoundary.contentBox:
+      case CSSBackgroundBoundary.contentBox:
         backgroundClipRect = offset.translate(borderLeft + paddingLeft, borderTop + paddingTop) &
             Size(
               size!.width - borderRight - borderLeft - paddingRight - paddingLeft,
@@ -627,12 +626,12 @@ void _paintImage({
 
   // Use position as length type if specified in positionX/ positionY, otherwise use as percentage type.
   final double dx = positionX.calcValue != null
-      ? positionX.calcValue!.computedValue(BACKGROUND_POSITION_X)
+      ? positionX.calcValue!.computedValue(BACKGROUND_POSITION_X) ?? 0
       : positionX.length != null
           ? positionX.length!.computedValue
           : halfWidthDelta + (flipHorizontally ? -positionX.percentage! : positionX.percentage!) * halfWidthDelta;
   final double dy = positionY.calcValue != null
-      ? positionY.calcValue!.computedValue(BACKGROUND_POSITION_Y)
+      ? positionY.calcValue!.computedValue(BACKGROUND_POSITION_Y) ?? 0
       : positionY.length != null
           ? positionY.length!.computedValue
           : halfHeightDelta + positionY.percentage! * halfHeightDelta;

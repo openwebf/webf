@@ -99,7 +99,7 @@ JSValue js_reflect_get(JSContext *ctx, JSValueConst this_val,
   atom = JS_ValueToAtom(ctx, prop);
   if (unlikely(atom == JS_ATOM_NULL))
     return JS_EXCEPTION;
-  ret = JS_GetPropertyInternal(ctx, obj, atom, receiver, FALSE);
+  ret = JS_GetPropertyInternal(ctx, obj, atom, receiver, NULL, FALSE);
   JS_FreeAtom(ctx, atom);
   return ret;
 }

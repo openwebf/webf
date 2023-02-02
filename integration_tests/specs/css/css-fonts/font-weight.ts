@@ -97,4 +97,67 @@ describe('FontWeight', () => {
       done();
     });
   });
+
+  it("computed", async () => {
+    let target;
+    let container;
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        (target = createElement('div', {
+          id: 'target',
+          style: {
+            'box-sizing': 'border-box',
+          },
+        })),
+      ]
+    );
+    BODY.appendChild(container);
+
+    test_computed_value('font-weight', 'normal', '400');
+    test_computed_value('font-weight', 'bold', '700');
+    test_computed_value('font-weight', '100');
+    test_computed_value('font-weight', '200');
+    test_computed_value('font-weight', '300');
+    test_computed_value('font-weight', '400');
+    test_computed_value('font-weight', '500');
+    test_computed_value('font-weight', '600');
+    test_computed_value('font-weight', '700');
+    test_computed_value('font-weight', '800');
+    test_computed_value('font-weight', '900');
+
+    // function test_relative(specified, inherited, computed) {
+    //     const container = document.getElementById('container');
+    //     const target = document.getElementById('target');
+    //     container!.style.fontWeight = inherited;
+    //     target!.style.fontWeight = specified;
+    //     expect(getComputedStyle(target!).fontWeight).toEqual(computed);
+    // }
+
+    // test_relative('bolder', '100', '400');
+    // test_relative('bolder', '200', '400');
+    // test_relative('bolder', '300', '400');
+    // test_relative('bolder', '400', '700');
+    // test_relative('bolder', '500', '700');
+    // test_relative('bolder', '600', '900');
+    // test_relative('bolder', '700', '900');
+    // test_relative('bolder', '800', '900');
+    // test_relative('bolder', '900', '900');
+
+    // test_relative('lighter', '100', '100');
+    // test_relative('lighter', '200', '100');
+    // test_relative('lighter', '300', '100');
+    // test_relative('lighter', '400', '100');
+    // test_relative('lighter', '500', '100');
+    // test_relative('lighter', '600', '400');
+    // test_relative('lighter', '700', '400');
+    // test_relative('lighter', '800', '700');
+    // test_relative('lighter', '900', '700');
+  })
 });

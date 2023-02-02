@@ -6,7 +6,9 @@
 #include "window.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "core/css/computed_css_style_declaration.h"
 #include "core/dom/document.h"
+#include "core/dom/element.h"
 #include "core/events/message_event.h"
 #include "core/executing_context.h"
 #include "event_type_names.h"
@@ -108,6 +110,19 @@ void Window::postMessage(const ScriptValue& message,
   auto* message_event =
       MessageEvent::Create(GetExecutingContext(), event_type_names::kmessage, event_init, exception_state);
   dispatchEvent(message_event, exception_state);
+}
+
+ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Element>>::ToNativeValue(element)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetComputedStyle, 1, arguments, exception_state);
+  return MakeGarbageCollected<ComputedCssStyleDeclaration>(
+      GetExecutingContext(), NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
+}
+
+ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
+                                                      const AtomicString& pseudo_elt,
+                                                      ExceptionState& exception_state) {
+  return getComputedStyle(element, exception_state);
 }
 
 double Window::requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState) {

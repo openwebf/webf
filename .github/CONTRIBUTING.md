@@ -16,6 +16,10 @@
 2. Building bridge
 
     Building bridge for all supported platform (macOS, linux, iOS, Android)
+    
+    > Debug is the default build type, if you want to have a release build, please add `:release` after your command.
+    > 
+    > Exp: Execute `npm run build:bridge:macos:release` to build a release bridge for the macOS platform.
 
     ```shell
     $ npm run build:bridge:all

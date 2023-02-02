@@ -173,103 +173,26 @@ class InspectCSSModule extends UIInspectorModule {
         range: SourceRange(startLine: 0, startColumn: 0, endLine: 0, endColumn: cssText.length));
   }
 
-  static String resolveCSSDisplayString(CSSDisplay display) {
-    switch (display) {
-      case CSSDisplay.none:
-        return 'none';
-      case CSSDisplay.sliver:
-        return 'sliver';
-      case CSSDisplay.block:
-        return 'block';
-      case CSSDisplay.inlineBlock:
-        return 'inline-block';
-      case CSSDisplay.flex:
-        return 'flex';
-      case CSSDisplay.inlineFlex:
-        return 'inline-flex';
-      case CSSDisplay.inline:
-      default:
-        return 'inline';
-    }
-  }
-
-  static String _resolveCSSLengthType(CSSLengthType type) {
-    switch (type) {
-      case CSSLengthType.PX:
-        return 'px';
-      case CSSLengthType.EM:
-        return 'em';
-      case CSSLengthType.REM:
-        return 'rem';
-      case CSSLengthType.VH:
-        return 'vh';
-      case CSSLengthType.VW:
-        return 'vw';
-      case CSSLengthType.VMIN:
-        return 'vmin';
-      case CSSLengthType.VMAX:
-        return 'vmax';
-      case CSSLengthType.PERCENTAGE:
-        return '%';
-      case CSSLengthType.UNKNOWN:
-        return '';
-      case CSSLengthType.AUTO:
-        return 'auto';
-      case CSSLengthType.NONE:
-        return 'none';
-      case CSSLengthType.NORMAL:
-        return 'normal';
-      case CSSLengthType.INITIAL:
-        return 'initial';
-    }
-  }
-
   static List<CSSComputedStyleProperty> buildComputedStyle(Element element) {
     List<CSSComputedStyleProperty> computedStyle = [];
-    CSSStyleDeclaration style = element.style;
-    RenderStyle? renderStyle = element.renderStyle;
-
-    for (int i = 0; i < style.length; i++) {
-      String propertyName = style.item(i);
-      String propertyValue = style.getPropertyValue(propertyName);
-      propertyName = _kebabize(propertyName);
-
-      if (CSSLength.isLength(propertyValue)) {
-        CSSLengthValue? len = CSSLength.resolveLength(
-          propertyValue,
-          renderStyle,
-          propertyName,
-        );
-
-        propertyValue = len == null ? '0' : '${len.computedValue}${_resolveCSSLengthType(len.type)}';
+    Map<CSSPropertyID, String> reverse(Map map) => {for (var e in map.entries) e.value: e.key};
+    final propertyMap = reverse(CSSPropertyNameMap);
+    ComputedCSSStyleDeclaration computedStyleDeclaration = ComputedCSSStyleDeclaration(element, null);
+    for (CSSPropertyID id in ComputedProperties) {
+      final propertyName = propertyMap[id];
+      if (propertyName != null) {
+        final value = computedStyleDeclaration.getPropertyValue(propertyName);
+        if (value.isEmpty) {
+          continue;
+        }
+        computedStyle.add(CSSComputedStyleProperty(name: propertyName, value:value));
+        if (id == CSSPropertyID.Top) {
+          computedStyle.add(CSSComputedStyleProperty(name: 'y', value:value));
+        } else if (id == CSSPropertyID.Left) {
+          computedStyle.add(CSSComputedStyleProperty(name: 'x', value:value));
+        }
       }
-
-      if (propertyName == DISPLAY) {
-        propertyValue = resolveCSSDisplayString(element.renderStyle.display);
-      }
-
-      computedStyle.add(CSSComputedStyleProperty(name: propertyName, value: propertyValue));
     }
-
-    if (!style.contains(BORDER_TOP_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_TOP_STYLE), value: ZERO_PX));
-    }
-    if (!style.contains(BORDER_RIGHT_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_RIGHT_STYLE), value: ZERO_PX));
-    }
-    if (!style.contains(BORDER_BOTTOM_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_BOTTOM_STYLE), value: ZERO_PX));
-    }
-    if (!style.contains(BORDER_LEFT_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_LEFT_STYLE), value: ZERO_PX));
-    }
-
-    // Calc computed size.
-    Map<String, dynamic> boundingClientRect = element.boundingClientRect.toJSON();
-    boundingClientRect.forEach((String name, value) {
-      computedStyle.add(CSSComputedStyleProperty(name: name, value: '${value}px'));
-    });
-
     return computedStyle;
   }
 

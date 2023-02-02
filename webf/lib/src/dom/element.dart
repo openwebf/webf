@@ -556,6 +556,20 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
     // Ensure that the child is attached.
     ensureChildAttached();
+
+    // Reconfigure scrollable contents.
+    bool needUpdateOverflowRenderBox = false;
+    if (renderStyle.overflowX != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowX(_handleScroll);
+    }
+    if (renderStyle.overflowY != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowY(_handleScroll);
+    }
+    if (needUpdateOverflowRenderBox) {
+      updateOverflowRenderBox();
+    }
   }
 
   @override
@@ -574,7 +588,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       renderBoxModel.clearIntersectionChangeListeners();
 
       // Remove fixed children from root when element disposed.
-      if (ownerDocument.viewport != null) {
+      if (ownerDocument.viewport != null && renderStyle.position == CSSPositionType.fixed) {
         _removeFixedChild(renderBoxModel, ownerDocument.viewport!);
       }
       // Remove renderBox.
@@ -582,6 +596,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
       // Clear pointer listener
       clearEventResponder(renderBoxModel);
+
+      // Remove scrollable
+      renderBoxModel.disposeScrollable();
+      disposeScrollable();
     }
   }
 
@@ -1131,7 +1149,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return attributes.containsKey(qualifiedName);
   }
 
-  // FIXME: only compatible with kraken plugins
   @deprecated
   void setStyle(String property, value) {
     setRenderStyle(property, value);
@@ -1870,6 +1887,15 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       }
     }
     return false;
+  }
+
+  RenderStyle? computedStyle(String? pseudoElementSpecifier) {
+    RenderStyle? style = renderBoxModel?.renderStyle;
+    if (style == null) {
+      recalculateStyle();
+      style = renderBoxModel?.renderStyle;
+    }
+    return style;
   }
 }
 

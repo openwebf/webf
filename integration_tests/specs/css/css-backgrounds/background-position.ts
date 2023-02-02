@@ -250,4 +250,63 @@ describe('Background-position', () => {
     append(BODY, position1);
     await snapshot(0.1);
   });
+
+  it("computed", async () => {
+    let target;
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        'font-size': '40px',
+        'box-sizing': 'border-box',
+      },
+    });
+    BODY.appendChild(target);
+
+    test_computed_value('background-position', '1px', '1px 50%');
+    test_computed_value('background-position', '1px center', '1px 50%');
+    test_computed_value('background-position', '-2% -3%');
+    test_computed_value('background-position', '5% top', '5% 0%');
+    test_computed_value('background-position', 'center', '50% 50%');
+    test_computed_value('background-position', 'center center', '50% 50%');
+    test_computed_value('background-position', 'center 6px', '50% 6px');
+    test_computed_value('background-position', 'center left', '0% 50%');
+    // test_computed_value('background-position', 'center right 7%', '93% 50%');
+    test_computed_value('background-position', 'center bottom', '50% 100%');
+    // test_computed_value('background-position', 'center top 8px', '50% 8px');
+    test_computed_value('background-position', 'left', '0% 50%');
+    test_computed_value('background-position', 'right 9%', '100% 9%');
+    // test_computed_value('background-position', 'left 10px center', '10px 50%');
+    // test_computed_value('background-position', 'right 11% bottom', '89% 100%');
+    // test_computed_value('background-position', 'left 12px top 13px', '12px 13px');
+    test_computed_value('background-position', 'right center', '100% 50%');
+    test_computed_value('background-position', 'left bottom', '0% 100%');
+    // test_computed_value('background-position', 'right top 14%', '100% 14%');
+    test_computed_value('background-position', 'bottom', '50% 100%');
+    // test_computed_value('background-position', 'top 15px center', '50% 15px');
+    // test_computed_value('background-position', 'bottom 16% left', '0% 84%');
+    // test_computed_value(
+    //   'background-position',
+    //   'top 17px right -18px',
+    //   'calc(100% + 18px) 17px'
+    // );
+    test_computed_value('background-position', 'bottom center', '50% 100%');
+    test_computed_value('background-position', 'top left', '0% 0%');
+    // test_computed_value('background-position', 'bottom right 19%', '81% 100%');
+    test_computed_value(
+      'background-position',
+      'calc(10px + 0.5em) calc(10px - 0.5em)',
+      '30px -10px'
+    );
+    test_computed_value(
+      'background-position',
+      'calc(10px - 0.5em) calc(10px + 0.5em)',
+      '-10px 30px'
+    );
+
+    // See background-computed.html for a test with multiple background images.
+    test_computed_value(
+      'background-position',
+      '12px 13px'
+    );
+  })
 });

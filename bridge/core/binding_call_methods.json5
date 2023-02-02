@@ -154,10 +154,18 @@
     "cookie",
     "class",
     "syncPropertiesAndMethods",
+    "___clear_cookies__",
+    "getComputedStyle",
+    "getPropertyValue",
+    "setProperty",
+    "checkCSSProperty",
+    "getFullCSSPropertyList",
+    "removeProperty",
+    "cssText",
+    "length",
     "addColorStop",
     "createLinearGradient",
     "createRadialGradient",
-    "createPattern",
-    "___clear_cookies__"
+    "createPattern"
   ]
 }

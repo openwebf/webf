@@ -44,6 +44,7 @@ export 'src/css/variable.dart';
 export 'src/css/keywords.dart';
 export 'src/css/input.dart';
 
+export 'src/css/computed_style_declaration.dart';
 export 'src/css/element_rule_collector.dart';
 export 'src/css/css_property_name.dart';
 

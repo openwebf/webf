@@ -59,6 +59,17 @@ describe('Background-color', () => {
     await snapshot();
   });
 
+  it('can propagate to html from body element', async () => {
+    document.documentElement.style.backgroundColor = 'transparent';
+    document.body.style.width = '200px';
+    document.body.style.height = '300px';
+    document.body.style.backgroundColor = 'red';
+    await snapshot();
+
+    document.documentElement.style.backgroundColor = 'green';
+    await snapshot();
+  });
+
   it('red and remove', async (done) => {
     const div = document.createElement('div');
     setElementStyle(div, {
@@ -75,4 +86,35 @@ describe('Background-color', () => {
     });
   });
 
+it("computed", async () => {
+  let target;
+  target = createElement('div', {
+    id: 'target',
+    style: {
+      color: 'lime',
+      'box-sizing': 'border-box',
+    },
+  });
+  BODY.appendChild(target);
+
+  test_computed_value('background-color', 'currentcolor', 'rgb(0, 255, 0)');
+
+  test_computed_value('background-color', 'red', 'rgb(255, 0, 0)');
+  test_computed_value('background-color', '#00FF00', 'rgb(0, 255, 0)');
+  test_computed_value('background-color', 'rgb(0, 0, 255)');
+  test_computed_value(
+    'background-color',
+    'rgb(100%, 100%, 0%)',
+  'rgb(255, 255, 0)'
+);
+test_computed_value(
+  'background-color',
+  'hsl(120, 100%, 50%)',
+  'rgb(0, 255, 0)'
+);
+test_computed_value('background-color', 'transparent', 'rgba(0, 0, 0, 0)');
+
+
+
+})
 });
