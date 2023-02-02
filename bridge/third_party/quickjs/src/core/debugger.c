@@ -143,7 +143,7 @@ static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
   item->buf = buf;
   item->length = message->length;
 
-  printf("client write item, buffer: %p len: %d\n", item->buf, item->length);
+//  printf("client write item, buffer: %p len: %d\n", item->buf, item->length);
   // Push this item to the queue.
   list_add_tail(&item->link, &info->frontend_messages);
 
@@ -193,7 +193,7 @@ static uint32_t read_frontend_messages(JSDebuggerInfo* info, MessageItem* item) 
   struct list_head* el = info->frontend_messages.next;
   MessageItem* head = list_entry(el, MessageItem, link);
 
-  printf("debugger read item, buffer %p len: %d\n", head->buf, head->length);
+//  printf("debugger read item, buffer %p len: %d\n", head->buf, head->length);
 
   item->buf = head->buf;
   item->length = head->length;
@@ -214,7 +214,7 @@ static uint32_t write_backend_message(JSDebuggerInfo* info, const char* buffer, 
   char* buf = js_malloc_rt(info->runtime, length);
   memcpy(buf, buffer, length);
 
-  printf("Write backend message %p \n", buffer);
+//  printf("Write backend message %p \n", buffer);
 
   item->buf = buf;
   item->length = length;
@@ -234,7 +234,6 @@ static void js_transport_send_response(JSDebuggerInfo* info, JSContext* ctx, Res
 
 static void js_transport_send_event(JSDebuggerInfo* info, Event* event) {
   size_t length;
-  printf("ctx %p\n", info->ctx);
   const char* buf = stringify_event(info->ctx, event, &length);
   write_backend_message(info, buf, length);
 }
@@ -725,7 +724,7 @@ static CompletionItem* js_debugger_get_completions(JSContext* ctx,
     Variable* object_property_variables =
         js_debugger_get_variables(ctx, evaluate_result, state, &object_property_variables_len, 1, NULL, 0, 0);
 
-    completion_items = js_malloc(ctx, sizeof(CompletionItem) * object_property_variables_len);
+    completion_items = js_malloc(ctx, sizeof(CompletionItem) * (object_property_variables_len + 1));
     for (int i = 0; i < object_property_variables_len; i++) {
       CompletionItem* item = &completion_items[completions_index++];
       item->label = (object_property_variables)[i].name;
@@ -896,9 +895,51 @@ void js_debugger_free_context(JSContext* ctx) {
   js_debugger_context_event(ctx, "exited");
 }
 
+static int is_opcode_stoppable(int opcode) {
+  switch(opcode) {
+    case OP_get_loc_check:
+    case OP_get_loc:
+    case OP_get_loc0:
+    case OP_get_loc1:
+    case OP_get_loc2:
+    case OP_get_loc3:
+    case OP_get_loc8:
+    case OP_get_field:
+    case OP_get_field2:
+    case OP_get_var_ref0:
+    case OP_get_var_ref1:
+    case OP_get_var_ref2:
+    case OP_get_var_ref3:
+    case OP_get_var_ref_check:
+    case OP_get_var_undef:
+    case OP_get_var:
+    case OP_push_atom_value:
+    case OP_push_0:
+    case OP_push_1:
+    case OP_push_2:
+    case OP_push_3:
+    case OP_push_4:
+    case OP_push_5:
+    case OP_push_6:
+    case OP_push_7:
+    case OP_push_const:
+    case OP_push_const8:
+    case OP_push_empty_string:
+    case OP_push_false:
+    case OP_push_true:
+    case OP_push_i16:
+    case OP_push_i32:
+    case OP_push_i8:
+    case OP_push_this:
+      return 0;
+    default:
+      return 1;
+  }
+}
+
 // in thread check request/response of pending commands.
 // todo: background thread that reads the socket.
-void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_object) {
+void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_object, int opcode) {
   JSDebuggerInfo* info = js_debugger_info(JS_GetRuntime(ctx));
   if (info->is_debugging)
     return;
@@ -922,13 +963,15 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_objec
     location = js_debugger_current_location(ctx, cur_pc);
     depth = js_debugger_stack_depth(ctx);
     if (info->step_depth == depth && location.filename == info->step_over.filename &&
-        location.line == info->step_over.line)
+        location.line == info->step_over.line && location.column == info->step_over.column)
       goto done;
   }
 
   int at_breakpoint = js_debugger_check_breakpoint(ctx, info->breakpoints_dirty_counter, cur_pc);
   if (at_breakpoint) {
-    // reaching a breakpoint resets any existing stepping.
+    if (!is_opcode_stoppable(opcode)) {
+      goto done;
+    }
     info->stepping = 0;
     info->is_paused = 1;
     js_send_stopped_event(info, "breakpoint");
@@ -941,17 +984,24 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_objec
       info->stepping = 0;
     } else if (info->stepping == JS_DEBUGGER_STEP_IN) {
       uint32_t current_depth = js_debugger_stack_depth(ctx);
+      struct JSDebuggerLocation current_location = js_debugger_current_location(ctx, cur_pc);
       // break if the stack is deeper
       // or
       // break if the depth is the same, but the location has changed
       // or
       // break if the stack unwinds
       if (info->step_depth == current_depth) {
-        struct JSDebuggerLocation current_location = js_debugger_current_location(ctx, cur_pc);
         if (current_location.filename == info->step_over.filename && current_location.line == info->step_over.line &&
             current_location.column == info->step_over.column)
           goto done;
       }
+
+      // skip webf built-in polyfill source.
+      const char* filename = atom_to_string(ctx, current_location.filename);
+      if (strstr(filename, "vm://")) {
+        goto done;
+      }
+
       info->stepping = 0;
       info->is_paused = 1;
       js_send_stopped_event(info, "stepIn");
@@ -966,9 +1016,16 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_objec
       struct JSDebuggerLocation current_location = js_debugger_current_location(ctx, cur_pc);
       // to step over, need to make sure the location changes,
       // and that the location change isn't into a function call (deeper stack).
-      if ((current_location.filename == info->step_over.filename && current_location.line == info->step_over.line) ||
+      if ((current_location.filename == info->step_over.filename && current_location.line == info->step_over.line &&
+           current_location.column == info->step_over.column) ||
           js_debugger_stack_depth(ctx) > info->step_depth)
         goto done;
+
+      if (!is_opcode_stoppable(opcode)) {
+        goto done;
+      }
+
+      printf("OPCode: %d\n", opcode);
       info->stepping = 0;
       info->is_paused = 1;
       js_send_stopped_event(info, "step");
@@ -1054,7 +1111,7 @@ void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath
 
   VariableType value_type;
   js_debugger_get_variable_type(ctx, &info->logging_state, &value_type, value, value, 0, 1);
-info->ctx = ctx;
+  info->ctx = ctx;
   assert(info->ctx != NULL);
   OutputEvent* event = initialize_event(ctx, "output");
   event->body->category = "stdout";

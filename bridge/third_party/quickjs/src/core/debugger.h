@@ -88,7 +88,7 @@ void init_source_breakpoint(SourceBreakpoint* breakpoint);
 
 void js_debugger_new_context(JSContext* ctx);
 void js_debugger_free_context(JSContext* ctx);
-void js_debugger_check(JSContext* ctx, const uint8_t* pc, JSValue this_object);
+void js_debugger_check(JSContext* ctx, const uint8_t* pc, JSValue this_object, int opcode);
 void js_debugger_exception(JSContext* ctx);
 void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info);
 int js_debugger_is_transport_connected(JSRuntime* rt);

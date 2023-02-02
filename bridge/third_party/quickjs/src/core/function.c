@@ -256,7 +256,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
     [ OP_COUNT ... 255 ] = &&case_default
   };
 #define SWITCH(pc) goto* active_dispatch_table[opcode = *(pc)++];
-#define CASE(op) case_debugger_ ## op: js_debugger_check(ctx, pc, this_obj); case_ ## op
+#define CASE(op) case_debugger_ ## op: js_debugger_check(ctx, pc, this_obj, opcode); case_ ## op
 #define DEFAULT case_default
 #define BREAK SWITCH(pc)
   const void* const *active_dispatch_table = caller_ctx->rt->debugger_info.is_connected
@@ -358,7 +358,7 @@ restart:
     JSValue* call_argv;
 
 #if ENABLE_DEBUGGER
-    js_debugger_check(ctx, NULL, this_obj);
+    js_debugger_check(ctx, NULL, this_obj, -1);
 #endif
 
     SWITCH(pc) {

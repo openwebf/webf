@@ -257,7 +257,7 @@ class IsolateInspectorServer {
   int _bindServerRetryTime = 0;
 
   Future<void> _bindServer(int port) async {
-    print('bind server: $address $port');
+    // print('bind server: $address $port');
     try {
       _httpServer = await HttpServer.bind(address, port);
       this.port = port;
