@@ -897,6 +897,7 @@ void js_debugger_free_context(JSContext* ctx) {
 
 static int is_opcode_stoppable(int opcode) {
   switch(opcode) {
+    case -1:
     case OP_get_loc_check:
     case OP_get_loc:
     case OP_get_loc0:
@@ -931,6 +932,8 @@ static int is_opcode_stoppable(int opcode) {
     case OP_push_i32:
     case OP_push_i8:
     case OP_push_this:
+    case OP_fclosure:
+    case OP_fclosure8:
       return 0;
     default:
       return 1;
@@ -999,6 +1002,10 @@ void js_debugger_check(JSContext* ctx, const uint8_t* cur_pc, JSValue this_objec
       // skip webf built-in polyfill source.
       const char* filename = atom_to_string(ctx, current_location.filename);
       if (strstr(filename, "vm://")) {
+        goto done;
+      }
+
+      if (!is_opcode_stoppable(opcode)) {
         goto done;
       }
 
