@@ -355,3 +355,16 @@ TEST(jsValueToNativeString, utf8String) {
   }
   JS_FreeValue(env->page()->GetExecutingContext()->ctx(), str);
 }
+
+TEST(ContextData, constructorName) {
+  static bool errorHandlerExecuted = false;
+  static bool logCalled = false;
+  auto errorHandler = [](int32_t contextId, const char* errmsg) {
+    errorHandlerExecuted = true;
+    WEBF_LOG(VERBOSE) << errmsg;
+  };
+  auto bridge = TEST_init(errorHandler);
+  const char* code = "console.assert(Object.getPrototypeOf(window).constructor.name === 'Window')";
+  bridge->evaluateScript(code, strlen(code), "file://", 0);
+  EXPECT_EQ(errorHandlerExecuted, false);
+}
