@@ -43,7 +43,9 @@ class _InactiveRenderObjects {
           finalizeInactiveRenderObjects();
           _isScheduled = false;
         });
+        RendererBinding.instance.scheduleFrame();
       });
+      RendererBinding.instance.scheduleFrame();
     }
 
     assert(!renderObject.debugDisposed!);

@@ -588,7 +588,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       renderBoxModel.clearIntersectionChangeListeners();
 
       // Remove fixed children from root when element disposed.
-      if (ownerDocument.viewport != null) {
+      if (ownerDocument.viewport != null && renderStyle.position == CSSPositionType.fixed) {
         _removeFixedChild(renderBoxModel, ownerDocument.viewport!);
       }
       // Remove renderBox.
