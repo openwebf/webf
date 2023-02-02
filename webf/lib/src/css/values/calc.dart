@@ -299,7 +299,7 @@ class _CSSCalcParser {
       return CalcNumberNode(numberValue);
     }
     value += unit;
-    CSSLengthValue lengthValue = CSSLength.parseLength(value, _renderStyle, propertyName);
+    CSSLengthValue lengthValue = CSSLength.parseLength(value, _renderStyle, '${propertyName}_$value');
     _next();
     return CalcLengthNode(lengthValue);
   }
