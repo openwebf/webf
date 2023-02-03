@@ -934,6 +934,11 @@ static int is_opcode_stoppable(int opcode) {
     case OP_push_this:
     case OP_fclosure:
     case OP_fclosure8:
+    case OP_drop:
+    case OP_dup:
+    case OP_dup1:
+    case OP_dup2:
+    case OP_dup3:
       return 0;
     default:
       return 1;
