@@ -54,6 +54,8 @@ class InspectorFrontEndMessage {
 
 class DebuggerAttachedEvent {}
 
+class NewFrontEndMessageEvent {}
+
 class InspectorMethodResult {
   final int? id;
   final Map? result;

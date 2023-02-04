@@ -43,6 +43,8 @@ void spawnIsolateInspectorServer(DevToolsService devTool, WebFController control
         devTool.debuggerAttached = true;
         devTool.controller!.executeEntrypoint();
       }
+    } else if (data is NewFrontEndMessageEvent) {
+      devTool.flushPendingDebuggerCommands(getAllocatedPage(controller.view.contextId)!);
     }
   });
 

@@ -88,6 +88,7 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
         inspector!.sendDapMessageToDebugger(message);
       }
       isolateToMainStream.send(DebuggerAttachedEvent());
+      isolateToMainStream.send(NewFrontEndMessageEvent());
     }
 
     // Init the dev server

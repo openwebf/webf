@@ -170,3 +170,8 @@ void* attachDebugger(void* page_, void* debugger_methods) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   return JS_AttachDebugger(page->GetExecutingContext()->ctx(), static_cast<DebuggerMethods*>(debugger_methods));
 }
+
+void flushDebuggerCommands(void* page_) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  JS_DebuggerFlushFrontendCommands(page->GetExecutingContext()->ctx());
+}

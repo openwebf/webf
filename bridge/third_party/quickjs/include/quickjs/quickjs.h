@@ -926,20 +926,29 @@ static inline JSValue JS_NewCFunctionMagic(JSContext* ctx, JSCFunctionMagic* fun
 void JS_SetConstructor(JSContext* ctx, JSValueConst func_obj, JSValueConst proto);
 
 /* Debugger API */
-
+// When the program is paused by the breakpoint, the main JS thread will be blocked by an infinite loop and will be
+// waiting to execute the debugger command.
+// So we need to move the debug server to a standalone thread to handling incoming requests and send responses.
+// The following definitions and methods are running on the debugger thread and cannot be called from the main JavaScript thread.
+// >>>>>>>>>>>>>>>>>> Debugger Thread Only API >>>>>>>>>>>>>>
 typedef struct DebuggerMessage {
   char* buf;
   uint32_t length;
 } DebuggerMessage;
-
 typedef struct DebuggerMethods {
+  // Send dap protocol message to debugger from client.
   uint32_t (*write_frontend_commands)(void* udata, DebuggerMessage* message);
+  // Read the debugger's pending message to the client.
   uint32_t (*read_backend_commands)(void* udata, DebuggerMessage* message);
   void (*on_backend_shutdown)(void* rt, void* udata);
 } DebuggerMethods;
-
 void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods);
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// >>>>>>>>>>>>>>>>> Main JavaScript Thread Only API >>>>>>>>>>
 void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath, const char* filename, int64_t lineno, int64_t column);
+void JS_DebuggerFlushFrontendCommands(JSContext* ctx);
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 /* C property definition */
 

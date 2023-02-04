@@ -55,6 +55,9 @@ void setTargetPlatformForDesktop() {
   }
 }
 
+typedef NativeFlushDebuggerCommands = Void Function(Pointer<Void>);
+typedef DartFlushDebuggerCommands = void Function(Pointer<Void>);
+
 abstract class DevToolsService {
   /// Design prevDevTool for reload page,
   /// do not use it in any other place.
@@ -91,6 +94,12 @@ abstract class DevToolsService {
     spawnIsolateInspectorServer(this, controller);
     _uiInspector = UIInspector(this);
     controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;
+  }
+
+  final DartFlushDebuggerCommands _flushPendingDebuggerCommands =
+  WebFDynamicLibrary.ref.lookup<NativeFunction<NativeFlushDebuggerCommands>>('flushDebuggerCommands').asFunction();
+  void flushPendingDebuggerCommands(Pointer<Void> context) {
+    _flushPendingDebuggerCommands(context);
   }
 
   bool get isReloading => _reloading;

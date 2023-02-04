@@ -80,5 +80,7 @@ void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate
 // Debugger API
 WEBF_EXPORT_C
 void* attachDebugger(void* page, void* methods);
+WEBF_EXPORT_C
+void flushDebuggerCommands(void* page);
 
 #endif  // WEBF_BRIDGE_EXPORT_H

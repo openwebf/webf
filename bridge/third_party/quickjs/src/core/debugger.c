@@ -37,6 +37,7 @@ static CompletionItem* js_debugger_get_completions(JSContext* ctx,
                                                    int64_t completions_column,
                                                    int64_t completion_line);
 
+static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cur_pc, JSValue this_object);
 typedef struct VariableType {
   const char* type;
   const char* value;
@@ -1147,6 +1148,13 @@ void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath
   info->ctx = NULL;
 }
 
+void JS_DebuggerFlushFrontendCommands(JSContext* ctx) {
+  JSDebuggerInfo* info = js_debugger_info(ctx->rt);
+  if (!info->is_debugging) {
+    js_debugger_check(ctx, NULL, JS_UNDEFINED, -1);
+  }
+}
+
 int js_debugger_is_transport_connected(JSRuntime* rt) {
   return js_debugger_info(rt)->is_connected;
 }
@@ -1525,6 +1533,11 @@ fail1:
 JSValue js_debugger_evaluate(JSContext* ctx, int64_t stack_index, DebuggerSuspendedState* state, const char* expression) {
   JSStackFrame* sf;
   int cur_index = 0;
+
+  if (ctx->rt->current_stack_frame == NULL) {
+    JSValue ret = JS_Eval(ctx, expression, strlen(expression), "<debugger>", JS_EVAL_TYPE_GLOBAL);
+    return ret;
+  }
 
   for (sf = ctx->rt->current_stack_frame; sf != NULL; sf = sf->prev_frame) {
     if (cur_index < stack_index) {
