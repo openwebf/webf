@@ -2213,7 +2213,7 @@ static const JSCFunctionListEntry js_global_funcs[] = {
     JS_CFUNC_DEF("parseInt", 2, js_parseInt), JS_CFUNC_DEF("parseFloat", 1, js_parseFloat), JS_CFUNC_DEF("isNaN", 1, js_global_isNaN), JS_CFUNC_DEF("isFinite", 1, js_global_isFinite),
     JS_CFUNC_MAGIC_DEF("decodeURI", 1, js_global_decodeURI, 0), JS_CFUNC_MAGIC_DEF("decodeURIComponent", 1, js_global_decodeURI, 1), JS_CFUNC_MAGIC_DEF("encodeURI", 1, js_global_encodeURI, 0),
     JS_CFUNC_MAGIC_DEF("encodeURIComponent", 1, js_global_encodeURI, 1), JS_CFUNC_DEF("escape", 1, js_global_escape), JS_CFUNC_DEF("unescape", 1, js_global_unescape),
-    JS_PROP_DOUBLE_DEF("Infinity", 1.0 / 0.0, 0), JS_PROP_DOUBLE_DEF("NaN", NAN, 0), JS_PROP_UNDEFINED_DEF("undefined", 0),
+    JS_PROP_DOUBLE_DEF("Infinity", INFINITY, 0), JS_PROP_DOUBLE_DEF("NaN", NAN, 0), JS_PROP_UNDEFINED_DEF("undefined", 0),
 
     /* for the 'Date' implementation */
     JS_CFUNC_DEF("__date_clock", 0, js___date_clock),

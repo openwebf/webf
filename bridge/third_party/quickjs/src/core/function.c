@@ -79,7 +79,7 @@ JSValue js_call_c_function(JSContext* ctx,
 #else
   sf->js_mode = 0;
 #endif
-  sf->cur_func = (JSValue)func_obj;
+  sf->cur_func = func_obj;
   sf->arg_count = argc;
   arg_buf = argv;
 
@@ -303,7 +303,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
   sf->js_mode = b->js_mode;
   arg_buf = argv;
   sf->arg_count = argc;
-  sf->cur_func = (JSValue)func_obj;
+  sf->cur_func = func_obj;
   init_list_head(&sf->var_ref_list);
   var_refs = p->u.func.var_refs;
 

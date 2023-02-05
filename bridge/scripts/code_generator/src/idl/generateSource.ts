@@ -319,9 +319,9 @@ function generateDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, a
 
   return `
 auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
-NativeValue arguments[] = {
+${nativeArguments.length > 0 ? `NativeValue arguments[] = {
   ${nativeArguments.join(',\n')}
-};
+}` : 'NativeValue* arguments = nullptr;'};
 ${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${nativeArguments.length}, arguments, exception_state);
 ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverter(declare.returnType)}>::ToValue(NativeValueConverter<${generateNativeValueTypeConverter(declare.returnType)}>::FromNativeValue(native_value))` : ''};
   `.trim();

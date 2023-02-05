@@ -1501,8 +1501,8 @@ int js_TA_cmp_generic(const void* a, const void* b, void* opaque) {
       psc->exception = 1;
     }
   done:
-    JS_FreeValue(ctx, (JSValue)argv[0]);
-    JS_FreeValue(ctx, (JSValue)argv[1]);
+    JS_FreeValue(ctx, argv[0]);
+    JS_FreeValue(ctx, argv[1]);
   }
   return cmp;
 }

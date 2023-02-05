@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include <algorithm>
 #include "atomic_string.h"
 #include <vector>
 #include "built_in_string.h"

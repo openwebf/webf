@@ -1388,8 +1388,8 @@ int64_t JS_FlattenIntoArray(JSContext* ctx, JSValueConst target, JSValueConst so
     if (!JS_IsUndefined(mapperFunction)) {
       JSValueConst args[3] = {element, JS_NewInt64(ctx, sourceIndex), source};
       element = JS_Call(ctx, mapperFunction, thisArg, 3, args);
-      JS_FreeValue(ctx, (JSValue)args[0]);
-      JS_FreeValue(ctx, (JSValue)args[1]);
+      JS_FreeValue(ctx, args[0]);
+      JS_FreeValue(ctx, args[1]);
       if (JS_IsException(element))
         return -1;
     }

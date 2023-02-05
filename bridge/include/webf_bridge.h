@@ -8,8 +8,14 @@
 
 #include <thread>
 
+#if defined(_WIN32)
+#define WEBF_EXPORT_C extern "C" __declspec(dllexport)
+#define WEBF_EXPORT __declspec(dllexport)
+#else
 #define WEBF_EXPORT_C extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
+#endif
+
 
 typedef struct SharedNativeString SharedNativeString;
 typedef struct NativeValue NativeValue;
