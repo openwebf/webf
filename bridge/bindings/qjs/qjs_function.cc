@@ -51,7 +51,7 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
   // 'm_function' might be destroyed when calling itself (if it frees the handler), so must take extra care.
   JS_DupValue(ctx, function_);
 
-  JSValue argv[std::max(1, argc)];
+  auto* argv = new JSValue[std::max(1, argc)];
 
   for (int i = 0; i < argc; i++) {
     argv[0 + i] = arguments[i].QJSValue();

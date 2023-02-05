@@ -118,7 +118,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   )
 
   list(APPEND QUICK_JS_SOURCE
-    third_party/quickjs/src/libbf.c
+    # third_party/quickjs/src/libbf.c
     third_party/quickjs/src/cutils.c
     third_party/quickjs/src/libregexp.c
     third_party/quickjs/src/libunicode.c
@@ -160,7 +160,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-symbol.c
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
-
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
@@ -173,6 +172,16 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   target_link_libraries(quickjs mimalloc-static)
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+
+  if (MSVC)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+    target_link_libraries(quickjs PUBLIC pthread)
+    target_include_directories(pthread PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+    target_include_directories(pthread PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)
+    target_compile_definitions(pthread PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
+  endif()
+
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)

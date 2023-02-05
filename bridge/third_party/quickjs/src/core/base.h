@@ -32,11 +32,36 @@
 #include <inttypes.h>
 #include <string.h>
 #include <assert.h>
-#include <sys/time.h>
 #include <time.h>
 #include <fenv.h>
 #include <math.h>
 #include "mimalloc.h"
+
+#ifdef _MSC_VER
+
+#pragma function (ceil)
+#pragma function (floor)
+
+#include <WinSock2.h>
+
+// From: https://stackoverflow.com/a/26085827
+int gettimeofday(struct timeval * tp, struct timezone * tzp);
+
+// From https://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows
+#define CLOCK_REALTIME 0
+
+LARGE_INTEGER getFILETIMEoffset();
+
+int clock_gettime(int X, struct timeval *tv);
+
+
+#else
+#include <sys/time.h>
+#ifndef INFINITY
+#define INFINITY 1.0 / 0.0
+#endif
+#endif
+
 
 #ifdef CONFIG_BIGNUM
 #include "quickjs/libbf.h"
@@ -44,7 +69,7 @@
 
 #define OPTIMIZE         1
 #define SHORT_OPCODES    1
-#if defined(EMSCRIPTEN)
+#if defined(EMSCRIPTEN) || defined(_MSC_VER)
 #define DIRECT_DISPATCH  0
 #else
 #define DIRECT_DISPATCH  1
