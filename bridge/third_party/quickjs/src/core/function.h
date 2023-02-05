@@ -79,7 +79,11 @@ static inline BOOL js_check_stack_overflow(JSRuntime* rt, size_t alloca_size) {
 #else
 /* Note: OS and CPU dependent */
 static inline uintptr_t js_get_stack_pointer(void) {
-  return (uintptr_t)__builtin_frame_address(0);
+  #ifdef _MSC_VER
+    return _AddressOfReturnAddress();
+  #else
+    return (uintptr_t)__builtin_frame_address(0);
+  #endif
 }
 
 static inline BOOL js_check_stack_overflow(JSRuntime* rt, size_t alloca_size) {

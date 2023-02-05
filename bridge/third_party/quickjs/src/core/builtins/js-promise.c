@@ -700,7 +700,7 @@ JSValue js_promise_all(JSContext *ctx, JSValueConst this_val,
         goto fail_reject;
       }
       resolve_element_data[0] = JS_NewBool(ctx, FALSE);
-      resolve_element_data[1] = (JSValueConst)JS_NewInt32(ctx, index);
+      resolve_element_data[1] = JS_NewInt32(ctx, index);
       resolve_element_data[2] = values;
       resolve_element_data[3] = resolving_funcs[is_promise_any];
       resolve_element_data[4] = resolve_element_env;
@@ -1060,7 +1060,7 @@ JSValue js_async_from_sync_iterator_unwrap_func_create(JSContext *ctx,
 {
   JSValueConst func_data[1];
 
-  func_data[0] = (JSValueConst)JS_NewBool(ctx, done);
+  func_data[0] = JS_NewBool(ctx, done);
   return JS_NewCFunctionData(ctx, js_async_from_sync_iterator_unwrap,
                              1, 0, 1, func_data);
 }

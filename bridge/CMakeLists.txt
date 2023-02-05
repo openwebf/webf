@@ -106,7 +106,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   )
 
   list(APPEND QUICK_JS_SOURCE
-    third_party/quickjs/src/libbf.c
+    # third_party/quickjs/src/libbf.c
     third_party/quickjs/src/cutils.c
     third_party/quickjs/src/libregexp.c
     third_party/quickjs/src/libunicode.c
@@ -147,6 +147,35 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-symbol.c
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
+
+  if (MSVC)
+    add_library(pthread SHARED
+      third_party/quickjs/compat/win32/pthreads/attr.c
+      third_party/quickjs/compat/win32/pthreads/barrier.c
+      third_party/quickjs/compat/win32/pthreads/cancel.c
+      third_party/quickjs/compat/win32/pthreads/cleanup.c
+      third_party/quickjs/compat/win32/pthreads/condvar.c
+      third_party/quickjs/compat/win32/pthreads/create.c
+      third_party/quickjs/compat/win32/pthreads/dll.c
+      third_party/quickjs/compat/win32/pthreads/exit.c
+      third_party/quickjs/compat/win32/pthreads/fork.c
+      third_party/quickjs/compat/win32/pthreads/global.c
+      third_party/quickjs/compat/win32/pthreads/misc.c
+      third_party/quickjs/compat/win32/pthreads/mutex.c
+      third_party/quickjs/compat/win32/pthreads/private.c
+      third_party/quickjs/compat/win32/pthreads/rwlock.c
+      third_party/quickjs/compat/win32/pthreads/sched.c
+      third_party/quickjs/compat/win32/pthreads/semaphore.c
+      third_party/quickjs/compat/win32/pthreads/spin.c
+      third_party/quickjs/compat/win32/pthreads/sync.c
+      third_party/quickjs/compat/win32/pthreads/tsd.c
+      third_party/quickjs/compat/win32/pthreads/nonportable.c
+      third_party/quickjs/compat/win32/pthreads/errno.c
+      third_party/quickjs/compat/win32/pthreads/signal.c
+      third_party/quickjs/compat/win32/pthreads/autostatic.c
+    )
+  endif()
+
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
@@ -154,6 +183,15 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+
+  if (MSVC)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+    target_link_libraries(quickjs PUBLIC pthread)
+    target_include_directories(pthread PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+    target_include_directories(pthread PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)
+    target_compile_definitions(pthread PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
+  endif()
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_LINK_LIBS quickjs)

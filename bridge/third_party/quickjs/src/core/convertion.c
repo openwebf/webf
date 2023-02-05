@@ -955,7 +955,7 @@ JSValue js_atof(JSContext* ctx, const char* str, const char** pp, int radix, int
       } else
 #endif
       {
-        double d = 1.0 / 0.0;
+        double d = INFINITY;
         if (is_neg)
           d = -d;
         val = JS_NewFloat64(ctx, d);

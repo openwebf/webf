@@ -285,7 +285,7 @@ JSMapRecord *map_add_record(JSContext *ctx, JSMapState *s,
   } else {
     JS_DupValue(ctx, key);
   }
-  mr->key = (JSValue)key;
+  mr->key = key;
   h = map_hash_key(ctx, key) & (s->hash_size - 1);
   list_add_tail(&mr->hash_link, &s->hash_table[h]);
   list_add_tail(&mr->link, &s->records);
@@ -507,7 +507,7 @@ JSValue js_map_forEach(JSContext *ctx, JSValueConst this_val,
         args[0] = args[1];
       else
         args[0] = JS_DupValue(ctx, mr->value);
-      args[2] = (JSValue)this_val;
+      args[2] = this_val;
       ret = JS_Call(ctx, func, this_arg, 3, (JSValueConst *)args);
       JS_FreeValue(ctx, args[0]);
       if (!magic)

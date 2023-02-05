@@ -67,7 +67,7 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
     event = EventFactory::Create(context_, AtomicString(ctx, type), rawEvent);
   }
 
-  ScriptValue extraObject = ScriptValue(ctx, *extra);
+  ScriptValue extraObject = ScriptValue(ctx, const_cast<const NativeValue&>(*extra));
   AtomicString module_name = AtomicString(ctx, native_module_name);
   auto listener = context_->ModuleListeners()->listener(module_name);
 
