@@ -545,6 +545,8 @@ class CSSLength {
       return CSSLengthValue.zero;
     } else if (text == INITIAL) {
       return CSSLengthValue.initial;
+    } else if (text == INHERIT) {
+      return renderStyle?.fontSize ?? CSSLengthValue(1, CSSLengthType.EM);
     } else if (text == AUTO) {
       return CSSLengthValue.auto;
     } else if (text == NONE) {

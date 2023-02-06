@@ -71,7 +71,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   @override
   String getPropertyValue(String propertyName) {
-    CSSPropertyID? propertyID = CSSPropertyNameMap[propertyName];
+    CSSPropertyID? propertyID = CSSPropertyNameMap[propertyName] ?? CSSPropertyNameMap[kebabize(propertyName)];
     if (propertyID == null) {
       return '';
     }

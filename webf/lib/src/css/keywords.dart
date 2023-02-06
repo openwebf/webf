@@ -161,6 +161,7 @@ const String INITIAL = 'initial';
 const String NORMAL = 'normal';
 const String NONE = 'none';
 const String AUTO = 'auto';
+const String INHERIT = 'inherit';
 
 // CSS Content Visibility: https://www.w3.org/TR/css-contain-2/#content-visibility
 const String VISIBLE = 'visible';
