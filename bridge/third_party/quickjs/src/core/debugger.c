@@ -528,24 +528,31 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     VariablesArguments* arguments = (VariablesArguments*)request->arguments;
     int64_t reference = arguments->variablesReference;
     int8_t skip_proto;
-    JSValue variable = JS_GetPropertyUint32(ctx, state->variable_references, reference);
+    JSValue reference_value = JS_GetPropertyUint32(ctx, info->logging_state.variable_references, reference);
     int64_t variable_len = 0;
     Variable* variables = NULL;
-    if (JS_IsUndefined(variable) && reference < LOGGING_VAR_REFERENCE_MAX) {
-      JSValue reference_value = js_debugger_get_scope_variable(ctx, reference, &info->logging_state, &skip_proto);
+    if (!JS_IsUndefined(reference_value) && reference < LOGGING_VAR_REFERENCE_MAX) {
       variables = js_malloc(ctx, sizeof(Variable));
       init_variable(&variables[0]);
       variable_len = 1;
 
-      VariableType variable_type;
-      js_debugger_get_variable_type(ctx, state, &variable_type, reference_value, reference_value,  0, 0);
-
-      variables[0].name = "";
-      variables[0].value = variable_type.value;
-      variables[0].variablesReference = variable_type.variablesReference;
-      variables[0].type = variable_type.type;
+      JSAtom is_logged_key = JS_NewAtom(ctx, "__is_logged__");
+      JSValue is_logged_value = JS_GetProperty(ctx, reference_value, is_logged_key);
+      if (JS_ToBool(ctx, is_logged_value)) {
+        variables = js_debugger_get_variables(ctx, reference_value, &info->logging_state, &variable_len, 0,
+                                              arguments->filter, arguments->start, arguments->count);
+      } else {
+        VariableType variable_type;
+        js_debugger_get_variable_type(ctx, &info->logging_state, &variable_type, reference_value, reference_value,  0, 0);
+        variables[0].name = "";
+        variables[0].value = variable_type.value;
+        variables[0].variablesReference = variable_type.variablesReference;
+        variables[0].type = variable_type.type;
+        JS_DefinePropertyValue(ctx, reference_value, is_logged_key, JS_NewBool(ctx, 1), JS_PROP_NORMAL);
+      }
+      JS_FreeAtom(ctx, is_logged_key);
     } else {
-      JSValue reference_value = js_debugger_get_scope_variable(ctx, reference, state, &skip_proto);
+      reference_value = js_debugger_get_scope_variable(ctx, reference, state, &skip_proto);
       variables = js_debugger_get_variables(ctx, reference_value, state, &variable_len, skip_proto,
                                                       arguments->filter, arguments->start, arguments->count);
     }
