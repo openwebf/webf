@@ -536,7 +536,8 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
       init_variable(&variables[0]);
       variable_len = 1;
 
-      JSAtom is_logged_key = JS_NewAtom(ctx, "__is_logged__");
+      // Detect this value are printed in the console panel.
+      JSAtom is_logged_key = JS_NewAtom(ctx, "[[L]]");
       JSValue is_logged_value = JS_GetProperty(ctx, reference_value, is_logged_key);
       if (JS_ToBool(ctx, is_logged_value)) {
         variables = js_debugger_get_variables(ctx, reference_value, &info->logging_state, &variable_len, 0,
@@ -586,7 +587,7 @@ static JSValue js_debugger_get_scope_variable(JSContext* ctx,
     int64_t frame = (reference >> 2) - STACK_FRAME_INDEX_START;
     int64_t scope = reference % 4;
 
-    assert(frame < js_debugger_stack_depth(ctx));
+    if (frame < js_debugger_stack_depth(ctx)) return JS_NULL;
 
     if (scope == 0)
       variable = JS_GetGlobalObject(ctx);
@@ -615,7 +616,7 @@ static Variable* js_debugger_get_variables(JSContext* ctx,
   Variable* variables = NULL;
 
   JSPropertyEnum* tab_atom;
-  uint32_t tab_atom_count;
+  int tab_atom_count;
 
   if (filter != NULL) {
     // only index filtering is supported by this server.
@@ -669,6 +670,16 @@ unfiltered:
       variables[i].name = atom_to_string(ctx, tab_atom[i].atom);
       variables[i].type = variable_type.type;
       variables[i].variablesReference = variable_type.variablesReference;
+      // Skip private property.
+      if (strcmp(variables[i].name, "[[L]]") == 0) {
+        VariablePresentationHint* presentation_hint = js_malloc(ctx, sizeof(VariablePresentationHint));
+        presentation_hint->visibility = "internal";
+        presentation_hint->attributes = NULL;
+        presentation_hint->attributesLen = 0;
+        presentation_hint->lazy = 0;
+        presentation_hint->kind = NULL;
+        variables[i].presentationHint = presentation_hint;
+      }
       variables[i].value = variable_type.value;
       assert(variables[i].name != NULL);
       assert(variables[i].value != NULL);
@@ -1157,7 +1168,7 @@ void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath
 
 void JS_DebuggerFlushFrontendCommands(JSContext* ctx) {
   JSDebuggerInfo* info = js_debugger_info(ctx->rt);
-  if (!info->is_debugging) {
+  if (!info->is_debugging && !info->is_paused) {
     js_debugger_check(ctx, NULL, JS_UNDEFINED, -1);
   }
 }
