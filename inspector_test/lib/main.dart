@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
         home: WebF(
           background: Colors.white,
           devToolsService: ChromeDevToolsService(),
-          bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'),
+          bundle: WebFBundle.fromUrl('assets:///assets/bundle.js'),
           waitingForDebuggerAttach: true,
         ));
   }

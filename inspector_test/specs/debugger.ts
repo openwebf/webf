@@ -1,54 +1,239 @@
 import { InitializedEvent } from '@vscode/debugadapter';
-import { client as WebSocketClient } from 'websocket';
-import { wrapVScodeExtension, Request, Event, EvaluateRequest, EvaluateResponse } from './utils';
+import { client as WebSocketClient, connection } from 'websocket';
+import { ConfigurationDoneRequest, EvaluateRequest, ScopesRequest, SetBreakpointsRequest, StackTraceRequest, VariablesRequest, wrapVScodeExtension } from './utils';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebuggerTestRunner } from './test_runner';
+
+async function sendRequest(connection: connection) {
+  return new Promise((resolve, reject) => {
+
+  });
+  const request = wrapVScodeExtension(new InitializedEvent());
+  connection.send(JSON.stringify(request));
+}
 
 describe('Debugger Test', () => {
   beforeEach(async () => {
     await globalThis.reRestartApp();
   });
 
-  it('test debug server connection', (done) => {
-    const client = new WebSocketClient();
-    client.on('connect', connection => {
-      console.log('Debug Server connected');
-      connection.on('message', (message) => {
-        if (message.type === 'utf8') {
-          console.log('msg', message.utf8Data);
-          let event = JSON.parse(message.utf8Data);
-          connection.close();
-          console.log('call done1..');
-          done();
-        }
-      });
-      const request = wrapVScodeExtension(new InitializedEvent());
-      connection.send(JSON.stringify(request));
+  it('evaluate scripts and return int', async () => {
+    const runner = new DebuggerTestRunner();
+    await runner.createConnection();
+    const request = new EvaluateRequest({
+      expression: '1 + 1'
     });
-    client.connect(globalThis.DEBUG_HOST_SERVER);
+    const response = await runner.sendRequest(request);
+    expect(response.success).toBe(true);
+    expect(response.body.result).toBe('2');
+    expect(response.body.type).toBe('integer');
+    expect(response.body.variablesReference).toBe(0);
   });
 
-  it('evaluate scripts and return int', (done) => {
-    const client = new WebSocketClient();
-    client.on('connect', connection => {
-      console.log('Debug Server connected');
-      let sended = false;
-      connection.on('message', (message) => {
-        if (message.type === 'utf8') {
-          let response: EvaluateResponse = JSON.parse(message.utf8Data);
-          if (sended && response.type === 'response') {
-            expect(response.request_seq).toBe(request.data.seq);
-            expect(response.success).toBe(true);
-            expect(response.body.result).toBe('2');
-            expect(response.body.type).toBe('integer');
-            done();
-          }
+  it('set breakpoint before run should be stopped at the breakpoint', async () => {
+    return new Promise<void>(async (resolve) => {
+      const runner = new DebuggerTestRunner();
+      await runner.createConnection();
+      const setBreakPointRequest = new SetBreakpointsRequest({
+        source: {
+          name: 'bundle.js',
+          path: '/assets/bundle.js'
+        },
+        breakpoints: [{
+          line: 70,
+          column: 0
+        }]
+      });
+      runner.on('stopped', (event: DebugProtocol.StoppedEvent) => {
+        if (event.body.reason === 'breakpoint') {
+          resolve();
         }
       });
-      const request = wrapVScodeExtension(new EvaluateRequest({
-        expression: '1 + 1'
-      }));
-      connection.send(JSON.stringify(request));
-      sended = true;
+      await runner.sendRequest(setBreakPointRequest);
+      await runner.sendRequest(new ConfigurationDoneRequest());
     });
-    client.connect(globalThis.DEBUG_HOST_SERVER);
+  });
+
+  it('should support get stack frame when paused', async () => {
+    return new Promise<void>(async (resolve) => {
+      const runner = new DebuggerTestRunner();
+      await runner.createConnection();
+      const setBreakPointRequest = new SetBreakpointsRequest({
+        source: {
+          name: 'bundle.js',
+          path: '/assets/bundle.js'
+        },
+        breakpoints: [{
+          line: 70,
+          column: 0
+        }]
+      });
+      runner.on('stopped', async(event: DebugProtocol.StoppedEvent) => {
+        if (event.body.reason === 'breakpoint') {
+          const threadId = event.body.threadId;
+          const stackTraceResponse = await runner.sendRequest(new StackTraceRequest({
+            threadId: threadId!
+          })) as DebugProtocol.StackTraceResponse;
+          const body = stackTraceResponse.body!;
+          expect(body!.totalFrames).toBe(3);
+
+          expect(body.stackFrames).toEqual([
+            {
+              id: 2147483647,
+              name: 'jib',
+              source: { path: '/assets/bundle.js', sources: [], checksums: [] },
+              line: 70,
+              column: 11,
+              canRestart: false
+            },
+            {
+              id: 2147483648,
+              name: '<anonymous>',
+              source: { path: '/assets/bundle.js', sources: [], checksums: [] },
+              line: 78,
+              column: 8,
+              canRestart: false
+            },
+            {
+              id: 2147483649,
+              name: '<eval>',
+              source: { path: '/assets/bundle.js', sources: [], checksums: [] },
+              line: 79,
+              column: 1,
+              canRestart: false
+            }
+          ]);
+          resolve();
+        }
+      });
+      await runner.sendRequest(setBreakPointRequest);
+      await runner.sendRequest(new ConfigurationDoneRequest());
+    });
+  });
+
+  it('should support get scopes when paused', async () => {
+    return new Promise<void>(async (resolve) => {
+      const runner = new DebuggerTestRunner();
+      await runner.createConnection();
+      const setBreakPointRequest = new SetBreakpointsRequest({
+        source: {
+          name: 'bundle.js',
+          path: '/assets/bundle.js'
+        },
+        breakpoints: [{
+          line: 70,
+          column: 0
+        }]
+      });
+      runner.on('stopped', async(event: DebugProtocol.StoppedEvent) => {
+        if (event.body.reason === 'breakpoint') {
+          const threadId = event.body.threadId;
+          const stackTraceResponse = await runner.sendRequest(new StackTraceRequest({
+            threadId: threadId!
+          })) as DebugProtocol.StackTraceResponse;
+          const body = stackTraceResponse.body!;
+          runner.setStackFrames(body.stackFrames);
+          const scopesResponse = await runner.sendRequest(new ScopesRequest({
+            frameId: body.stackFrames[0].id
+          })) as DebugProtocol.ScopesResponse;
+          expect(scopesResponse.success).toBe(true);
+          const scopeBody = scopesResponse.body;
+          expect(scopeBody.scopes).toEqual([
+            { name: 'Local', variablesReference: 8589934589, expensive: false },
+            { name: 'Closure', variablesReference: 8589934590, expensive: false },
+            { name: 'Global', variablesReference: 8589934588, expensive: true }
+          ]);
+          resolve();
+        }
+      });
+      await runner.sendRequest(setBreakPointRequest);
+      await runner.sendRequest(new ConfigurationDoneRequest());
+    });
+  });
+
+  it('should support inspect local variables when paused', async () => {
+    return new Promise<void>(async (resolve) => {
+      const runner = new DebuggerTestRunner();
+      await runner.createConnection();
+      const setBreakPointRequest = new SetBreakpointsRequest({
+        source: {
+          name: 'bundle.js',
+          path: '/assets/bundle.js'
+        },
+        breakpoints: [{
+          line: 72,
+          column: 0
+        }]
+      });
+      runner.on('stopped', async(event: DebugProtocol.StoppedEvent) => {
+        if (event.body.reason === 'breakpoint') {
+          const threadId = event.body.threadId;
+          const stackTraceResponse = await runner.sendRequest(new StackTraceRequest({
+            threadId: threadId!
+          })) as DebugProtocol.StackTraceResponse;
+          const body = stackTraceResponse.body!;
+          runner.setStackFrames(body.stackFrames);
+          const scopesResponse = await runner.sendRequest(new ScopesRequest({
+            frameId: body.stackFrames[0].id
+          })) as DebugProtocol.ScopesResponse;
+          const vars = await runner.sendRequest(new VariablesRequest({
+            variablesReference: scopesResponse.body.scopes[0].variablesReference
+          })) as DebugProtocol.VariablesResponse;
+          expect(vars.body.variables).toEqual([
+            {
+              name: 'this',
+              value: 'Blub',
+              type: 'object',
+              variablesReference: 32768
+            },
+            { name: 'bbbb', value: 'NaN', type: 'float', variablesReference: 0 }
+          ]);
+          resolve();
+        }
+      });
+      await runner.sendRequest(setBreakPointRequest);
+      await runner.sendRequest(new ConfigurationDoneRequest());
+    });
+  });
+
+  fit('should support expand objects by variableReference when paused', async () => {
+    return new Promise<void>(async (resolve) => {
+      const runner = new DebuggerTestRunner();
+      await runner.createConnection();
+      const setBreakPointRequest = new SetBreakpointsRequest({
+        source: {
+          name: 'bundle.js',
+          path: '/assets/bundle.js'
+        },
+        breakpoints: [{
+          line: 72,
+          column: 0
+        }]
+      });
+      runner.on('stopped', async(event: DebugProtocol.StoppedEvent) => {
+        if (event.body.reason === 'breakpoint') {
+          const threadId = event.body.threadId;
+          const stackTraceResponse = await runner.sendRequest(new StackTraceRequest({
+            threadId: threadId!
+          })) as DebugProtocol.StackTraceResponse;
+          const body = stackTraceResponse.body!;
+          runner.setStackFrames(body.stackFrames);
+          const scopesResponse = await runner.sendRequest(new ScopesRequest({
+            frameId: body.stackFrames[0].id
+          })) as DebugProtocol.ScopesResponse;
+          const vars = await runner.sendRequest(new VariablesRequest({
+            variablesReference: scopesResponse.body.scopes[0].variablesReference
+          })) as DebugProtocol.VariablesResponse;
+          const thisObject = vars.body.variables[0];
+          const thisProps = await runner.sendRequest(new VariablesRequest({
+            variablesReference: thisObject.variablesReference
+          })) as DebugProtocol.VariablesResponse;
+          console.log(thisProps)
+          resolve();
+        }
+      });
+      await runner.sendRequest(setBreakPointRequest);
+      await runner.sendRequest(new ConfigurationDoneRequest());
+    });
   });
 });
