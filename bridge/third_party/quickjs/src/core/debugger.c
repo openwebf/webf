@@ -587,7 +587,9 @@ static JSValue js_debugger_get_scope_variable(JSContext* ctx,
     int64_t frame = (reference >> 2) - STACK_FRAME_INDEX_START;
     int64_t scope = reference % 4;
 
-    if (frame < js_debugger_stack_depth(ctx)) return JS_NULL;
+    if (frame >= js_debugger_stack_depth(ctx)) {
+      return JS_NULL;
+    }
 
     if (scope == 0)
       variable = JS_GetGlobalObject(ctx);
@@ -616,7 +618,7 @@ static Variable* js_debugger_get_variables(JSContext* ctx,
   Variable* variables = NULL;
 
   JSPropertyEnum* tab_atom;
-  int tab_atom_count;
+  uint32_t tab_atom_count;
 
   if (filter != NULL) {
     // only index filtering is supported by this server.
