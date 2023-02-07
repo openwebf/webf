@@ -123,6 +123,8 @@ class CSSLengthValue {
         return cachedValue;
       }
     }
+
+    final realPropertyName = propertyName?.split('_').first ?? propertyName;
     switch (type) {
       case CSSLengthType.PX:
         _computedValue = value;
@@ -130,7 +132,7 @@ class CSSLengthValue {
       case CSSLengthType.EM:
         // Font size of the parent, in the case of typographical properties like font-size,
         // and font size of the element itself, in the case of other properties like width.
-        if (propertyName == FONT_SIZE) {
+        if (realPropertyName == FONT_SIZE) {
           // If root element set fontSize as em unit.
           if (renderStyle!.parent == null) {
             _computedValue = value! * 16;
@@ -196,7 +198,7 @@ class CSSLengthValue {
         double? relativeParentWidth = isPositioned ? parentPaddingBoxWidth : parentContentBoxWidth;
         double? relativeParentHeight = isPositioned ? parentPaddingBoxHeight : parentContentBoxHeight;
 
-        switch (propertyName) {
+        switch (realPropertyName) {
           case FONT_SIZE:
             // Relative to the parent font size.
             if (renderStyle!.parent == null) {

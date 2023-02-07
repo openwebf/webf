@@ -85,6 +85,20 @@ describe("calc", () => {
     await snapshot();
   });
 
+  it('should works when clac same kind of length value', async () => {
+    let box = createElement('div', {
+      style: {
+        width: 'calc(100vw - 50vw)',
+        height: 'calc(100vh - 50vh)',
+        background: 'green'
+      }
+    }, [
+      createText('AAAAA')
+    ]);
+    document.body.appendChild(box);
+    await snapshot();
+  });
+
   function createStyle(text) {
     const style = document.createElement('style');
     style.appendChild(document.createTextNode(text));
