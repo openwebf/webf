@@ -280,6 +280,8 @@ class IsolateInspectorServer {
     }
 
     _httpServer.listen((HttpRequest request) {
+      IsolateInspector.attachDebugger(Pointer.fromAddress(jsContextAddress), debuggerMethods, this);
+      readDebuggerBackendMessage();
       if (WebSocketTransformer.isUpgradeRequest(request)) {
         WebSocketTransformer.upgrade(request, compression: CompressionOptions.compressionOff)
             .then((WebSocket webSocket) {
@@ -443,7 +445,7 @@ class IsolateInspectorServer {
 class IsolateInspectorClient extends IsolateInspector {
   final String url;
 
-  IsolateInspectorClient(this.url);
+  IsolateInspectorClient(this.url, super.jsContextAddress);
 
   @override
   bool get connected => _ws?.readyState == WebSocket.open;
