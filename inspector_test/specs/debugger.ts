@@ -40,7 +40,7 @@ describe('Debugger Test', () => {
           path: '/assets/bundle.js'
         },
         breakpoints: [{
-          line: 70,
+          line: 72,
           column: 0
         }]
       });
@@ -64,7 +64,7 @@ describe('Debugger Test', () => {
           path: '/assets/bundle.js'
         },
         breakpoints: [{
-          line: 70,
+          line: 72,
           column: 0
         }]
       });
@@ -74,23 +74,23 @@ describe('Debugger Test', () => {
           const stackTraceResponse = await runner.sendRequest(new StackTraceRequest({
             threadId: threadId!
           })) as DebugProtocol.StackTraceResponse;
+
           const body = stackTraceResponse.body!;
           expect(body!.totalFrames).toBe(3);
-
           expect(body.stackFrames).toEqual([
             {
               id: 2147483647,
               name: 'jib',
               source: { path: '/assets/bundle.js', sources: [], checksums: [] },
-              line: 70,
-              column: 11,
+              line: 72,
+              column: 19,
               canRestart: false
             },
             {
               id: 2147483648,
               name: '<anonymous>',
               source: { path: '/assets/bundle.js', sources: [], checksums: [] },
-              line: 78,
+              line: 77,
               column: 8,
               canRestart: false
             },
@@ -98,7 +98,7 @@ describe('Debugger Test', () => {
               id: 2147483649,
               name: '<eval>',
               source: { path: '/assets/bundle.js', sources: [], checksums: [] },
-              line: 79,
+              line: 78,
               column: 1,
               canRestart: false
             }
@@ -121,7 +121,7 @@ describe('Debugger Test', () => {
           path: '/assets/bundle.js'
         },
         breakpoints: [{
-          line: 70,
+          line: 72,
           column: 0
         }]
       });
@@ -196,7 +196,7 @@ describe('Debugger Test', () => {
     });
   });
 
-  fit('should support expand objects by variableReference when paused', async () => {
+  it('should support expand objects by variableReference when paused', async () => {
     return new Promise<void>(async (resolve) => {
       const runner = new DebuggerTestRunner();
       await runner.createConnection();
@@ -228,7 +228,23 @@ describe('Debugger Test', () => {
           const thisProps = await runner.sendRequest(new VariablesRequest({
             variablesReference: thisObject.variablesReference
           })) as DebugProtocol.VariablesResponse;
-          console.log(thisProps)
+          expect(thisProps.body.variables).toEqual([
+            { name: 'peeps', value: '3', type: 'integer', variablesReference: 0 },
+            {
+              name: 'data',
+              value: '{arr: Array(10), f: {..}}',
+              type: 'object',
+              variablesReference: 32771
+            },
+            {
+              name: '[[Prototype]]',
+              value: 'object',
+              type: '{constructor: ƒ Blub (), jib: ƒ jib ()}',
+              // @ts-ignore
+              presentationHint: { attributes: [], visibility: 'internal', lazy: false },
+              variablesReference: 32774
+            }
+          ]);
           resolve();
         }
       });
