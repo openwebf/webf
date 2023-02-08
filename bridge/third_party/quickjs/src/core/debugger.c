@@ -375,6 +375,17 @@ static void js_debugger_get_variable_type(JSContext* ctx,
             for(int i = 0; i < property_len; i ++) {
               JSValue v = JS_GetProperty(ctx, this_val, property_enum[i].atom);
               const char* key = atom_to_string(ctx, property_enum[i].atom);
+
+              if (strcmp(key, "[[L]]") == 0) {
+                JS_FreeValue(ctx, v);
+                continue;
+              }
+
+              if (i > 0) {
+                strcpy(buf + index, ", ");
+                index += 2;
+              }
+
               VariableType object_var_type;
               js_debugger_get_variable_type(ctx, state, &object_var_type, v, v, depth + 1, 1);
               const char* tmp = object_var_type.value;
@@ -390,10 +401,6 @@ static void js_debugger_get_variable_type(JSContext* ctx,
               strcpy(buf + index, tmp);
               index += tmp_len;
 
-              if (i + 1 < property_len) {
-                strcpy(buf + index, ", ");
-                index += 2;
-              }
               JS_FreeValue(ctx, v);
             }
 
@@ -451,9 +458,15 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
       result = JS_GetException(ctx);
     }
 
+    if (JS_IsObject(result)) {
+      JSAtom is_logged_key = JS_NewAtom(ctx, "[[L]]");
+      JS_DefinePropertyValue(ctx, result, is_logged_key, JS_NewBool(ctx, 1), JS_PROP_NORMAL);
+      JS_FreeAtom(ctx, is_logged_key);
+    }
+
     EvaluateResponse* response = (EvaluateResponse*) initialize_response(ctx, request, "evaluate");
     VariableType result_variable_type;
-    js_debugger_get_variable_type(ctx, state, &result_variable_type, result, result, 0, 0);
+    js_debugger_get_variable_type(ctx, info->is_paused ? state : &info->logging_state, &result_variable_type, result, result, 0, 0);
     response->body->result = result_variable_type.value;
     response->body->type = result_variable_type.type;
     response->body->variablesReference = result_variable_type.variablesReference;
@@ -664,27 +677,26 @@ unfiltered:
 
     variables = js_malloc(ctx, sizeof(Variable) * (tab_atom_count + (skip_proto ? 0 : 1)));
 
+    int skipped_property_count = 0;
     for (int i = 0; i < tab_atom_count; i++) {
-      JSValue value = JS_GetProperty(ctx, reference_value, tab_atom[i].atom);
+      // Skip private property.
+      if (strcmp(atom_to_string(ctx, tab_atom[i].atom), "[[L]]") == 0) {
+        skipped_property_count++;
+        continue;
+      }
+
+      JSAtom name_atom = tab_atom[i].atom;
+      JSValue value = JS_GetProperty(ctx, reference_value, name_atom);
       VariableType variable_type;
       js_debugger_get_variable_type(ctx, state, &variable_type, value, value, 0, 0);
-      init_variable(&variables[i]);
-      variables[i].name = atom_to_string(ctx, tab_atom[i].atom);
-      variables[i].type = variable_type.type;
-      variables[i].variablesReference = variable_type.variablesReference;
-      // Skip private property.
-      if (strcmp(variables[i].name, "[[L]]") == 0) {
-        VariablePresentationHint* presentation_hint = js_malloc(ctx, sizeof(VariablePresentationHint));
-        presentation_hint->visibility = "internal";
-        presentation_hint->attributes = NULL;
-        presentation_hint->attributesLen = 0;
-        presentation_hint->lazy = 0;
-        presentation_hint->kind = NULL;
-        variables[i].presentationHint = presentation_hint;
-      }
-      variables[i].value = variable_type.value;
-      assert(variables[i].name != NULL);
-      assert(variables[i].value != NULL);
+      init_variable(&variables[i - skipped_property_count]);
+      Variable* var = &variables[i - skipped_property_count];
+      var->name = atom_to_string(ctx, name_atom);
+      var->type = variable_type.type;
+      var->variablesReference = variable_type.variablesReference;
+      var->value = variable_type.value;
+      assert(var->name != NULL);
+      assert(var->value != NULL);
       JS_FreeValue(ctx, value);
     }
 
@@ -693,6 +705,7 @@ unfiltered:
       if (!JS_IsException(proto)) {
         VariableType variable_type;
         js_debugger_get_variable_type(ctx, state, &variable_type, proto, reference_value, 0, 0);
+        tab_atom_count -= skipped_property_count;
         init_variable(&variables[tab_atom_count]);
         variables[tab_atom_count].name = "[[Prototype]]";
         variables[tab_atom_count].value = variable_type.type;
@@ -711,7 +724,7 @@ unfiltered:
       JS_FreeValue(ctx, proto);
     }
 
-    *variable_len = tab_atom_count + (skip_proto ? 0 : 1);
+    *variable_len = tab_atom_count + (skip_proto ? 0 : 1) - skipped_property_count;
     js_free_prop_enum(ctx, tab_atom, tab_atom_count);
   }
 
