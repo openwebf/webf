@@ -34,6 +34,20 @@ export class SetBreakpointsRequest extends Request {
   }
 }
 
+export class ContinueRequest extends Request {
+  constructor(args: DebugProtocol.ContinueArguments) {
+    super('continue');
+    this.arguments = args;
+  }
+}
+
+export class NextRequest extends Request {
+  constructor(args: DebugProtocol.NextArguments) {
+    super('next');
+    this.arguments = args;
+  }
+}
+
 export class StackTraceRequest extends Request {
   constructor(args: DebugProtocol.StackTraceArguments) {
     super('stackTrace');
@@ -60,6 +74,26 @@ export class ConfigurationDoneRequest extends Request {
     super('configurationDone');
     this.arguments = {};
   }
+}
+
+export class StepInRequest extends Request {
+  constructor(args: DebugProtocol.StepInArguments) {
+    super('stepIn');
+    this.arguments = args;
+  }
+}
+
+export class StepOutRequest extends Request {
+  constructor(args: DebugProtocol.StepOutArguments) {
+    super('stepOut');
+    this.arguments = args;
+  }
+}
+
+export function sleep(seconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, seconds);
+  });
 }
 
 export class Event extends ProtocolMessage {

@@ -10,13 +10,30 @@ interface PendingResponse {
   reject: Function;
 }
 
+type StoppedEventHandler = (event: DebugProtocol.StoppedEvent) => Promise<void>;
+
 export class DebuggerTestRunner extends EventEmitter {
   public connection: connection;
   public pendingRequests: Map<number, PendingResponse>;
   private stackFrames: DebugProtocol.StackFrame[];
+  private breakpoint_index: number;
+  private breakpoint_handlers: StoppedEventHandler[];
   constructor() {
     super();
     this.pendingRequests = new Map();
+    this.breakpoint_index = 0;
+    this.breakpoint_handlers = [];
+    this.stackFrames = [];
+    this.on('stopped', this._handleStoppedEvent);
+  }
+
+  private _handleStoppedEvent(event: DebugProtocol.StoppedEvent) {
+    if (event.body.reason !== 'entry') {
+      
+      console.assert(!!this.breakpoint_handlers[this.breakpoint_index], `Stopped event handler at index ${this.breakpoint_index} does not exist.`);
+      this.breakpoint_handlers[this.breakpoint_index](event);
+      this.breakpoint_index++;
+    }
   }
 
   async handleResponse(response: DebugProtocol.Response) {
@@ -66,6 +83,10 @@ export class DebuggerTestRunner extends EventEmitter {
 
   async setStackFrames(stackFrames: DebugProtocol.StackFrame[]) {
     this.stackFrames = stackFrames;
+  }
+
+  async listenerForEventAtBreakpoints(breakPointHitIndex: number, handler: StoppedEventHandler) {
+    this.breakpoint_handlers[breakPointHitIndex] = handler;
   }
 
 }

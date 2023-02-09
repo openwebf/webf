@@ -67,8 +67,8 @@
       }
       jib() {
           let bbbb = NaN;
-          // bar();
-          // aaaaa();
+          bar();
+          aaaaa();
           console.log(bbbb);
       }
   }

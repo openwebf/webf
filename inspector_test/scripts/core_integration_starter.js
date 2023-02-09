@@ -16,6 +16,8 @@ function buildRunner() {
   });
 }
 
+const orignalEnv = Object.assign(process.env);
+
 // Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
 function startIntegrationTest(skipBuild = false) {
   return new Promise((resolve, reject) => {
@@ -82,4 +84,5 @@ globalThis.reRestartApp = async () => {
     tester.kill();
   }
   await startIntegrationTest(true);
+  process.env = orignalEnv;
 }

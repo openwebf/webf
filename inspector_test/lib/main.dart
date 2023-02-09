@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/webf.dart';
+import 'dart:io';
 
 void main() {
   runApp(const MyApp());
@@ -29,7 +30,8 @@ class MyApp extends StatelessWidget {
         home: WebF(
           background: Colors.white,
           devToolsService: ChromeDevToolsService(),
-          bundle: WebFBundle.fromUrl('assets:///assets/bundle.js'),
+          bundle: WebFBundle.fromUrl(Platform.environment['ENTRY_PATH'] ??
+              'assets:///assets/bundle.js'),
           waitingForDebuggerAttach: true,
         ));
   }

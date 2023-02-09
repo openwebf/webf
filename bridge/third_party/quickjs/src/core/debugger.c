@@ -1555,7 +1555,7 @@ JSValue js_debugger_evaluate(JSContext* ctx, int64_t stack_index, DebuggerSuspen
   JSStackFrame* sf;
   int cur_index = 0;
 
-  if (ctx->rt->current_stack_frame == NULL) {
+  if (ctx->rt->current_stack_frame == NULL || stack_index < 0) {
     JSValue ret = JS_Eval(ctx, expression, strlen(expression), "<debugger>", JS_EVAL_TYPE_GLOBAL);
     return ret;
   }
