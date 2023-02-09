@@ -14,10 +14,9 @@ final MATHML_ELEMENT_URI = 'http://www.w3.org/1998/Math/MathML';
 
 final Map<String, ElementCreator> _htmlRegistry = {};
 
-final Map<String, ElementCreator> _svgRegistry = {};
+// final Map<String, ElementCreator> _svgRegistry = {};
 
 final Map<String, Map<String, ElementCreator>> _registries = {};
-
 
 class _UnknownHTMLElement extends HTMLElement {
   _UnknownHTMLElement([BindingContext? context]) : super(context);
@@ -38,7 +37,8 @@ defineElementNS(String uri, String name, ElementCreator creator) {
   _registries[uri] ??= {};
   final registry = _registries[uri]!;
   if (registry.containsKey(name)) {
-    throw Exception('An element with uri "$uri" and name "$name" has already been defined.');
+    throw Exception(
+        'An element with uri "$uri" and name "$name" has already been defined.');
   }
 
   registry[name] = creator;
