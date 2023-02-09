@@ -29,7 +29,7 @@ For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510
 
 ## How to use
 
-> All front-end frameworks based on the DOM can run; this time, we are using Vue as an example.
+> All front-end frameworks based on the WhatWG DOM standard are supported; this time, we are using Vue as an example.
 
 ### 1. Use vue-cli to generate your front-end project
 
