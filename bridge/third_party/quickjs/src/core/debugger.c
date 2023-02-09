@@ -376,11 +376,6 @@ static void js_debugger_get_variable_type(JSContext* ctx,
               JSValue v = JS_GetProperty(ctx, this_val, property_enum[i].atom);
               const char* key = atom_to_string(ctx, property_enum[i].atom);
 
-              if (strcmp(key, "[[L]]") == 0) {
-                JS_FreeValue(ctx, v);
-                continue;
-              }
-
               if (i > 0) {
                 strcpy(buf + index, ", ");
                 index += 2;
@@ -456,12 +451,6 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     if (JS_IsException(result)) {
       JS_FreeValue(ctx, result);
       result = JS_GetException(ctx);
-    }
-
-    if (JS_IsObject(result)) {
-      JSAtom is_logged_key = JS_NewAtom(ctx, "[[L]]");
-      JS_DefinePropertyValue(ctx, result, is_logged_key, JS_NewBool(ctx, 1), JS_PROP_NORMAL);
-      JS_FreeAtom(ctx, is_logged_key);
     }
 
     EvaluateResponse* response = (EvaluateResponse*) initialize_response(ctx, request, "evaluate");
@@ -549,22 +538,20 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
       init_variable(&variables[0]);
       variable_len = 1;
 
-      // Detect this value are printed in the console panel.
-      JSAtom is_logged_key = JS_NewAtom(ctx, "[[L]]");
-      JSValue is_logged_value = JS_GetProperty(ctx, reference_value, is_logged_key);
-      if (JS_ToBool(ctx, is_logged_value)) {
-        variables = js_debugger_get_variables(ctx, reference_value, &info->logging_state, &variable_len, 0,
-                                              arguments->filter, arguments->start, arguments->count);
-      } else {
+      JSObject* p = JS_VALUE_GET_OBJ(reference_value);
+      uint32_t pl = (uint32_t)(uint64_t)p;
+      if (JS_ToBool(ctx, JS_GetPropertyUint32(ctx, info->logged_object, pl))) {
         VariableType variable_type;
         js_debugger_get_variable_type(ctx, &info->logging_state, &variable_type, reference_value, reference_value,  0, 0);
         variables[0].name = "";
         variables[0].value = variable_type.value;
         variables[0].variablesReference = variable_type.variablesReference;
         variables[0].type = variable_type.type;
-        JS_DefinePropertyValue(ctx, reference_value, is_logged_key, JS_NewBool(ctx, 1), JS_PROP_NORMAL);
+        JS_SetPropertyUint32(ctx, info->logged_object, pl, JS_NewBool(ctx, 1));
+      } else {
+        variables = js_debugger_get_variables(ctx, reference_value, &info->logging_state, &variable_len, 0,
+                                              arguments->filter, arguments->start, arguments->count);
       }
-      JS_FreeAtom(ctx, is_logged_key);
     } else {
       reference_value = js_debugger_get_scope_variable(ctx, reference, state, &skip_proto);
       variables = js_debugger_get_variables(ctx, reference_value, state, &variable_len, skip_proto,
@@ -677,20 +664,13 @@ unfiltered:
 
     variables = js_malloc(ctx, sizeof(Variable) * (tab_atom_count + (skip_proto ? 0 : 1)));
 
-    int skipped_property_count = 0;
     for (int i = 0; i < tab_atom_count; i++) {
-      // Skip private property.
-      if (strcmp(atom_to_string(ctx, tab_atom[i].atom), "[[L]]") == 0) {
-        skipped_property_count++;
-        continue;
-      }
-
       JSAtom name_atom = tab_atom[i].atom;
       JSValue value = JS_GetProperty(ctx, reference_value, name_atom);
       VariableType variable_type;
       js_debugger_get_variable_type(ctx, state, &variable_type, value, value, 0, 0);
-      init_variable(&variables[i - skipped_property_count]);
-      Variable* var = &variables[i - skipped_property_count];
+      init_variable(&variables[i]);
+      Variable* var = &variables[i];
       var->name = atom_to_string(ctx, name_atom);
       var->type = variable_type.type;
       var->variablesReference = variable_type.variablesReference;
@@ -705,7 +685,6 @@ unfiltered:
       if (!JS_IsException(proto)) {
         VariableType variable_type;
         js_debugger_get_variable_type(ctx, state, &variable_type, proto, reference_value, 0, 0);
-        tab_atom_count -= skipped_property_count;
         init_variable(&variables[tab_atom_count]);
         variables[tab_atom_count].name = "[[Prototype]]";
         variables[tab_atom_count].value = variable_type.type;
@@ -724,7 +703,7 @@ unfiltered:
       JS_FreeValue(ctx, proto);
     }
 
-    *variable_len = tab_atom_count + (skip_proto ? 0 : 1) - skipped_property_count;
+    *variable_len = tab_atom_count + (skip_proto ? 0 : 1);
     js_free_prop_enum(ctx, tab_atom, tab_atom_count);
   }
 
@@ -1111,6 +1090,7 @@ void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info) {
 
   info->is_connected = FALSE;
   JS_FreeValue(info->debugging_ctx, info->breakpoints);
+  JS_FreeValue(info->debugging_ctx, info->logged_object);
   JS_FreeContext(info->debugging_ctx);
   info->debugging_ctx = NULL;
 }
@@ -1124,6 +1104,7 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   init_list_head(&info->backend_message);
 
   info->breakpoints = JS_NewObject(ctx);
+  info->logged_object = JS_NewObject(ctx);
 
   // Attach native methods and export to Dart.
   methods->write_frontend_commands = handle_client_write;
@@ -1157,6 +1138,13 @@ void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath
 
   VariableType value_type;
   js_debugger_get_variable_type(ctx, &info->logging_state, &value_type, value, value, 0, 1);
+
+  if (JS_IsObject(value)) {
+    JSObject* p = JS_VALUE_GET_OBJ(value);
+    uint32_t pl = (uint32_t)(uint64_t)p;
+    JS_SetPropertyUint32(ctx, info->logged_object, pl, JS_NewBool(ctx, 1));
+  }
+
   info->ctx = ctx;
   assert(info->ctx != NULL);
   OutputEvent* event = initialize_event(ctx, "output");

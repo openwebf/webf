@@ -81,6 +81,7 @@ typedef struct JSDebuggerInfo {
   uint32_t step_depth;
 
   DebuggerSuspendedState logging_state;
+  JSValue logged_object;
 } JSDebuggerInfo;
 
 void init_source(Source* source);

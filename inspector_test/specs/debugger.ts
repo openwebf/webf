@@ -252,4 +252,138 @@ describe('Debugger Test', () => {
       await runner.sendRequest(new ConfigurationDoneRequest());
     });
   });
+
+  it('should support expand objects by variableReference when runnings', async () => {
+    return new Promise<void>(async (resolve) => {
+      const runner = new DebuggerTestRunner();
+      await runner.createConnection();
+      await runner.sendRequest(new ConfigurationDoneRequest());
+      const evalRequest = new EvaluateRequest({
+        expression: 'let a = { name: 1};',
+        frameId: 0
+      });
+      await runner.sendRequest(evalRequest) as DebugProtocol.EvaluateResponse;
+      const response = await runner.sendRequest(new EvaluateRequest({
+        expression: 'a',
+        frameId: 0
+      })) as DebugProtocol.EvaluateResponse;
+      const reference = response.body.variablesReference;
+      const varRequest = new VariablesRequest({
+        variablesReference: reference
+      })
+      const varResponse = await runner.sendRequest(varRequest) as DebugProtocol.VariablesResponse;
+      expect(varResponse.body.variables).toEqual([
+        { name: 'name', value: '1', type: 'integer', variablesReference: 0 },
+        {
+          name: '[[Prototype]]',
+          value: 'object',
+          type: '',
+          // @ts-ignore
+          presentationHint: { attributes: [], visibility: 'internal', lazy: false },
+          variablesReference: 2
+        }
+      ]);
+      resolve();
+    });
+  });
+
+  it('should support expand object inner properties by variableReference when paused', async () => {
+    return new Promise<void>(async (resolve) => {
+      const runner = new DebuggerTestRunner();
+      await runner.createConnection();
+      const setBreakPointRequest = new SetBreakpointsRequest({
+        source: {
+          name: 'bundle.js',
+          path: '/assets/bundle.js'
+        },
+        breakpoints: [{
+          line: 72,
+          column: 0
+        }]
+      });
+      runner.on('stopped', async(event: DebugProtocol.StoppedEvent) => {
+        if (event.body.reason === 'breakpoint') {
+          const threadId = event.body.threadId;
+          const stackTraceResponse = await runner.sendRequest(new StackTraceRequest({
+            threadId: threadId!
+          })) as DebugProtocol.StackTraceResponse;
+          const body = stackTraceResponse.body!;
+          runner.setStackFrames(body.stackFrames);
+          const scopesResponse = await runner.sendRequest(new ScopesRequest({
+            frameId: body.stackFrames[0].id
+          })) as DebugProtocol.ScopesResponse;
+          const vars = await runner.sendRequest(new VariablesRequest({
+            variablesReference: scopesResponse.body.scopes[0].variablesReference
+          })) as DebugProtocol.VariablesResponse;
+          const thisObject = vars.body.variables[0];
+          const thisProps = await runner.sendRequest(new VariablesRequest({
+            variablesReference: thisObject.variablesReference
+          })) as DebugProtocol.VariablesResponse;
+          const thisPropProps = await runner.sendRequest(new VariablesRequest({
+            variablesReference: thisProps.body.variables[1].variablesReference
+          })) as DebugProtocol.VariablesResponse;
+          expect(thisPropProps.body.variables).toEqual([
+            {
+              name: 'arr',
+              value: 'Array(10)',
+              type: 'array',
+              variablesReference: 32769
+            },
+            {
+              name: 'f',
+              value: '{a: {..}}',
+              type: 'object',
+              variablesReference: 32770
+            },
+            {
+              name: '[[Prototype]]',
+              value: 'object',
+              type: '',
+              // @ts-ignore
+              presentationHint: { attributes: [], visibility: 'internal', lazy: false },
+              variablesReference: 32776
+            }
+          ]);
+          resolve();
+        }
+      });
+      await runner.sendRequest(setBreakPointRequest);
+      await runner.sendRequest(new ConfigurationDoneRequest());
+    });
+  });
+
+  it('should support expand object inner props by variableReference when runnings', async () => {
+    return new Promise<void>(async (resolve) => {
+      const runner = new DebuggerTestRunner();
+      await runner.createConnection();
+      await runner.sendRequest(new ConfigurationDoneRequest());
+      const evalRequest = new EvaluateRequest({
+        expression: 'let a = { obj: { age: 10, name: 1} };',
+        frameId: 0
+      });
+      await runner.sendRequest(evalRequest) as DebugProtocol.EvaluateResponse;
+      const response = await runner.sendRequest(new EvaluateRequest({
+        expression: 'a',
+        frameId: 0
+      }));
+      const varResponse = await runner.sendRequest(new VariablesRequest({
+        variablesReference: response.body.variablesReference
+      })) as DebugProtocol.VariablesResponse;
+      const varPropResponse = await runner.sendRequest(new VariablesRequest({
+        variablesReference: varResponse.body.variables[0].variablesReference
+      }));
+      expect(varPropResponse.body.variables).toEqual([
+        { name: 'age', value: '10', type: 'integer', variablesReference: 0 },
+        { name: 'name', value: '1', type: 'integer', variablesReference: 0 },
+        {
+          name: '[[Prototype]]',
+          value: 'object',
+          type: '',
+          presentationHint: { attributes: [], visibility: 'internal', lazy: false },
+          variablesReference: 3
+        }
+      ]);
+      resolve();
+    });
+  });
 });
