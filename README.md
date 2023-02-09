@@ -29,20 +29,48 @@ For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510
 
 ## How to use
 
+> All front-end frameworks based on the DOM can run; this time, we are using Vue as an example.
+
+### 1. Use vue-cli to generate your front-end project
+
+> ES6 modules are not supported yet, so Vite is not supported.
+
+```bash
+vue create app
+cd app
+npm run serve
+```
+
+And the Vue development server will be hosted at `http://<yourip>:8080/`.
+
+### 2. Add webf as a dependency for your flutter apps.
+
 **packages.yaml**
 
 ```yaml
 dependencies:
   webf: <lastest version>
+  webf_websocket: <lastest version>
 ```
 
 **import**
 
 ```dart
 import 'package:webf/webf.dart';
+import 'package:webf_websocket/webf_websocket.dart';
 ```
 
-**Use WebF Widget**
+**init**
+
+```dart
+void main() {
+  WebFWebSocket.initialize();
+  runApp(MyApp());
+}
+```
+
+
+### 3. Add the WebF widget to run your web applications.
 
 ```dart
 @override
@@ -58,13 +86,21 @@ Widget build(BuildContext context) {
           devToolsService: ChromeDevToolsService(), // Enable Chrome DevTools Services
           viewportWidth: viewportSize.width - queryData.padding.horizontal, // Adjust the viewportWidth
           viewportHeight: viewportSize.height - queryData.padding.vertical, // Adjust the viewportHeight
-          bundle: WebFBundle.fromUrl('https://andycall.oss-cn-beijing.aliyuncs.com/demo/demo-vue.js'), // The page entry point
+          bundle: WebFBundle.fromUrl('http://<yourip>:8080/'), // The page entry point
         ),
       ],
     ),
   ));
 }
 ```
+
+### 4. Run
+
+```bash
+flutter run
+```
+
+<img src="https://user-images.githubusercontent.com/4409743/217754470-697b6998-4451-483c-b26e-bdb2740f3ea1.png" width="800" style="display: block; margin: 0 auto;" />
 
 ## How it works
 
