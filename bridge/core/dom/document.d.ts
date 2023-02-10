@@ -20,6 +20,7 @@ interface Document extends Node {
   readonly location: any;
 
   createElement(tagName: string, options?: any): Element;
+  createElementNS(uri: string | null, tagName: string, options?: any): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
   createComment(data: string): Comment;

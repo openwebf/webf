@@ -8,30 +8,77 @@ import 'package:webf/foundation.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
 
-final Map<String, ElementCreator> _elementRegistry = {};
+final HTML_ELEMENT_URI = 'http://www.w3.org/1999/xhtml';
+final SVG_ELEMENT_URI = 'http://www.w3.org/2000/svg';
+final MATHML_ELEMENT_URI = 'http://www.w3.org/1998/Math/MathML';
 
-void defineElement(String name, ElementCreator creator) {
-  if (_elementRegistry.containsKey(name)) {
-    throw Exception('An element with name "$name" has already been defined.');
-  }
-  _elementRegistry[name] = creator;
+final Map<String, ElementCreator> _htmlRegistry = {};
+
+// final Map<String, ElementCreator> _svgRegistry = {};
+
+final Map<String, Map<String, ElementCreator>> _registries = {};
+
+class _UnknownHTMLElement extends HTMLElement {
+  _UnknownHTMLElement([BindingContext? context]) : super(context);
 }
 
-class _UnknownElement extends Element {
-  _UnknownElement([BindingContext? context]) : super(context);
+class _UnknownNamespaceElement extends Element {
+  _UnknownNamespaceElement([BindingContext? context]) : super(context);
+}
+
+void defineElement(String name, ElementCreator creator) {
+  if (_htmlRegistry.containsKey(name)) {
+    throw Exception('An element with name "$name" has already been defined.');
+  }
+  _htmlRegistry[name] = creator;
+}
+
+defineElementNS(String uri, String name, ElementCreator creator) {
+  _registries[uri] ??= {};
+  final registry = _registries[uri]!;
+  if (registry.containsKey(name)) {
+    throw Exception(
+        'An element with uri "$uri" and name "$name" has already been defined.');
+  }
+
+  registry[name] = creator;
 }
 
 Element createElement(String name, [BindingContext? context]) {
-  ElementCreator? creator = _elementRegistry[name];
+  ElementCreator? creator = _htmlRegistry[name];
+  Element element;
   if (creator == null) {
     print('Unexpected element "$name"');
 
-    return _UnknownElement(context);
+    element = _UnknownHTMLElement(context);
+  } else {
+    element = creator(context);
   }
 
-  Element element = creator(context);
   // Assign tagName, used by inspector.
   element.tagName = name;
+  element.namespaceURI = HTML_ELEMENT_URI;
+  return element;
+}
+
+Element createElementNS(String uri, String name, [BindingContext? context]) {
+  if (uri == HTML_ELEMENT_URI) {
+    return createElement(name, context);
+  }
+
+  final ElementCreator? creator = _registries[uri]?[name];
+  Element element;
+
+  if (creator == null) {
+    print('Unexpected element "$name" of namespace "$uri"');
+
+    element = _UnknownNamespaceElement(context);
+  } else {
+    element = creator(context);
+  }
+
+  element.tagName = name;
+  element.namespaceURI = uri;
   return element;
 }
 

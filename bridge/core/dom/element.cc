@@ -14,6 +14,7 @@
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
 #include "element_attribute_names.h"
+#include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
 #include "qjs_element.h"
@@ -21,10 +22,25 @@
 
 namespace webf {
 
-Element::Element(const AtomicString& tag_name, Document* document, Node::ConstructionType construction_type)
-    : ContainerNode(document, construction_type), tag_name_(tag_name) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(
-      eventTargetId(), UICommand::kCreateElement, std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
+Element::Element(const AtomicString& namespace_uri,
+                 const AtomicString& local_name,
+                 const AtomicString& prefix,
+                 Document* document,
+                 Node::ConstructionType construction_type)
+    : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri) {
+  auto buffer = GetExecutingContext()->uiCommandBuffer();
+  if (namespace_uri == element_namespace_uris::khtml) {
+    buffer->addCommand(eventTargetId(), UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())),
+                       (void*)bindingObject());
+  } else if (namespace_uri == element_namespace_uris::ksvg) {
+    // TODO: SVG element
+    buffer->addCommand(eventTargetId(), UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
+                       (void*)bindingObject());
+  } else {
+    // TODO: Unknown namespace uri
+    buffer->addCommand(eventTargetId(), UICommand::kCreateElementNS, std::move(namespace_uri.ToNativeString(ctx())),
+                       std::move(local_name.ToNativeString(ctx())), (void*)bindingObject());
+  }
 }
 
 ElementAttributes& Element::EnsureElementAttributes() const {
@@ -135,7 +151,7 @@ void Element::scrollTo(const std::shared_ptr<ScrollToOptions>& options, Exceptio
 }
 
 bool Element::HasTagName(const AtomicString& name) const {
-  return name == tag_name_;
+  return name == local_name_;
 }
 
 AtomicString Element::nodeValue() const {
@@ -143,11 +159,7 @@ AtomicString Element::nodeValue() const {
 }
 
 std::string Element::nodeName() const {
-  return tag_name_.ToUpperIfNecessary(ctx()).ToStdString(ctx());
-}
-
-std::string Element::nodeNameLowerCase() const {
-  return tag_name_.ToStdString(ctx());
+  return tagName().ToStdString(ctx());
 }
 
 AtomicString Element::className() const {
@@ -262,6 +274,17 @@ void Element::Trace(GCVisitor* visitor) const {
   ContainerNode::Trace(visitor);
 }
 
+// https://dom.spec.whatwg.org/#concept-element-qualified-name
+const AtomicString Element::getUppercasedQualifiedName() const {
+  auto name = getQualifiedName();
+
+  if (namespace_uri_ == element_namespace_uris::khtml) {
+    return name.ToUpperIfNecessary(ctx());
+  }
+
+  return name;
+}
+
 ElementData& Element::EnsureElementData() const {
   if (element_data_ == nullptr) {
     element_data_ = std::make_unique<ElementData>();
@@ -285,7 +308,7 @@ Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
 }
 
 Element& Element::CloneWithoutAttributesAndChildren(Document& factory) const {
-  return *(factory.createElement(tag_name_, ASSERT_NO_EXCEPTION()));
+  return *(factory.createElement(local_name_, ASSERT_NO_EXCEPTION()));
 }
 
 class ElementSnapshotReader {
@@ -351,7 +374,8 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
 }
 
 std::string Element::outerHTML() {
-  std::string s = "<" + nodeNameLowerCase();
+  std::string tagname = local_name_.ToStdString(ctx());
+  std::string s = "<" + tagname;
 
   // Read attributes
   if (attributes_ != nullptr) {
@@ -365,7 +389,7 @@ std::string Element::outerHTML() {
 
   std::string childHTML = innerHTML();
   s += childHTML;
-  s += "</" + nodeNameLowerCase() + ">";
+  s += "</" + tagname + ">";
 
   return s;
 }

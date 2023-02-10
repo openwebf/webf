@@ -441,6 +441,18 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
   }
 
+  void createElementNS(int targetId, Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_START, uniqueId: targetId);
+    }
+    assert(!_existsTarget(targetId), 'ERROR: Can not create element with same id "$targetId"');
+    Element element = document.createElementNS(uri, tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
+    _setEventTarget(targetId, element);
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_END, uniqueId: targetId);
+    }
+  }
+
   void createTextNode(int targetId, Pointer<NativeBindingObject> nativePtr, String data) {
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_CREATE_TEXT_NODE_START, uniqueId: targetId);
