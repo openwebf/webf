@@ -925,11 +925,11 @@ class RenderBoxModel extends RenderBox
 
       BoxConstraints parentConstraints = (parent as RenderBoxModel).constraints;
       BoxConstraints constraints = BoxConstraints(
-        minWidth: parentConstraints.maxWidth != double.infinity
+        minWidth: (parentConstraints.maxWidth != double.infinity && parentRenderStyle.width.value != null)
             ? parentConstraints.maxWidth - horizontalBorderLength - horizontalPaddingLength
             : 0,
         maxWidth: double.infinity,
-        minHeight: parentConstraints.maxHeight != double.infinity
+        minHeight: (parentConstraints.maxHeight != double.infinity && parentRenderStyle.height.value != null)
             ? parentConstraints.maxHeight - verticalBorderLength - verticalPaddingLength
             : 0,
         maxHeight: double.infinity,
