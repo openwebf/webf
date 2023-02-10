@@ -227,6 +227,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
   JSVarRef** var_refs;
   size_t alloca_size;
   InlineCache *ic;
+  int debugger_connected = caller_ctx->rt->debugger_info.is_connected;
 
 #if !DIRECT_DISPATCH
 #define SWITCH(pc) switch (opcode = *pc++)
@@ -256,7 +257,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
     [ OP_COUNT ... 255 ] = &&case_default
   };
 #define SWITCH(pc) goto* active_dispatch_table[opcode = *(pc)++];
-#define CASE(op) case_debugger_ ## op: js_debugger_check(ctx, pc, this_obj, opcode); case_ ## op
+#define CASE(op) case_debugger_ ## op: if (unlikely(debugger_connected)) js_debugger_check(ctx, pc, this_obj, opcode); case_ ## op
 #define DEFAULT case_default
 #define BREAK SWITCH(pc)
   const void* const *active_dispatch_table = caller_ctx->rt->debugger_info.is_connected
@@ -358,7 +359,7 @@ restart:
     JSValue* call_argv;
 
 #if ENABLE_DEBUGGER
-    js_debugger_check(ctx, NULL, this_obj, -1);
+    if (unlikely(debugger_connected)) js_debugger_check(ctx, NULL, this_obj, -1);
 #endif
 
     SWITCH(pc) {
@@ -1505,7 +1506,7 @@ restart:
         JSAtom atom;
         atom = get_u32(pc);
         pc += 4;
-        
+
         val = JS_GetPropertyInternal(ctx, sp[-1], atom, sp[-1], ic, FALSE);
         if (unlikely(JS_IsException(val)))
           goto exception;
@@ -1528,7 +1529,7 @@ restart:
         ic_offset = get_u32(pc);
         atom = get_ic_atom(ic, ic_offset);
         pc += 4;
-        
+
         val = JS_GetPropertyInternalWithIC(ctx, sp[-1], atom, sp[-1], ic, ic_offset, FALSE);
         ic->updated = FALSE;
         if (unlikely(JS_IsException(val)))
@@ -1565,7 +1566,7 @@ restart:
         ic_offset = get_u32(pc);
         atom = get_ic_atom(ic, ic_offset);
         pc += 4;
-        
+
         val = JS_GetPropertyInternalWithIC(ctx, sp[-1], atom, sp[-1], ic, ic_offset, FALSE);
         ic->updated = FALSE;
         if (unlikely(JS_IsException(val)))
@@ -1602,7 +1603,7 @@ restart:
         ic_offset = get_u32(pc);
         atom = get_ic_atom(ic, ic_offset);
         pc += 4;
-        
+
         ret = JS_SetPropertyInternalWithIC(ctx, sp[-2], atom, sp[-1], JS_PROP_THROW_STRICT, ic, ic_offset);
         ic->updated = FALSE;
         JS_FreeValue(ctx, sp[-2]);
