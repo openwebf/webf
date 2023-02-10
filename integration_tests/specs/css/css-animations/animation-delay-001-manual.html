@@ -76,9 +76,14 @@
   expect(negativeDelay.offsetLeft === 0).toBe(true);
 
   const style = window.getComputedStyle(negativeDelay);
+  expect(style['animationDelay']).toBe('-3s');
   expect(style['animation-delay']).toBe('-3s');
+  expect(style['animationDuration']).toBe('6s');
   expect(style['animation-duration']).toBe('6s');
+  expect(style['animationName']).toBe('test-negative-delay');
   expect(style['animation-name']).toBe('test-negative-delay');
+  expect(style['animationFillMode']).toBe('none');
   expect(style['animation-fill-mode']).toBe('none');
+  expect(style['animationTimingFunction']).toBe('linear');
   expect(style['animation-timing-function']).toBe('linear');
 </script>

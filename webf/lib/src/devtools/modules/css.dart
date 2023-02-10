@@ -10,8 +10,6 @@ import 'package:webf/launcher.dart';
 
 const int INLINED_STYLESHEET_ID = 1;
 const String ZERO_PX = '0px';
-RegExp _kebabCaseReg = RegExp(r'[A-Z]');
-RegExp _camelCaseReg = RegExp(r'-(\w)');
 
 class InspectCSSModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
@@ -95,7 +93,7 @@ class InspectCSSModule extends UIInspectorModule {
           if (_kv.length == 2) {
             String name = _kv[0].trim();
             String value = _kv[1].trim();
-            element.setInlineStyle(_camelize(name), value);
+            element.setInlineStyle(camelize(name), value);
           }
         }
         styles.add(buildInlineStyle(element));
@@ -115,7 +113,7 @@ class InspectCSSModule extends UIInspectorModule {
     List<CSSProperty> cssProperties = [];
     String cssText = '';
     for (MapEntry<String, String> entry in element.style) {
-      String kebabName = _kebabize(entry.key);
+      String kebabName = kebabize(entry.key);
       String propertyValue = entry.value.toString();
       String _cssText = '$kebabName: $propertyValue';
       CSSProperty cssProperty = CSSProperty(
@@ -146,7 +144,7 @@ class InspectCSSModule extends UIInspectorModule {
     List<CSSProperty> cssProperties = [];
     String cssText = '';
     element.inlineStyle.forEach((key, value) {
-      String kebabName = _kebabize(key);
+      String kebabName = kebabize(key);
       String propertyValue = value.toString();
       String _cssText = '$kebabName: $propertyValue';
       CSSProperty cssProperty = CSSProperty(
@@ -415,17 +413,4 @@ class InlinedStyle extends JSONEncodable {
       if (attributesStyle != null) 'attributesStyle': attributesStyle,
     };
   }
-}
-
-// aB to a-b
-String _kebabize(String str) {
-  return str.replaceAllMapped(_kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
-}
-
-// a-b to aB
-String _camelize(String str) {
-  return str.replaceAllMapped(_camelCaseReg, (match) {
-    String subStr = match[0]!.substring(1);
-    return subStr.isNotEmpty ? subStr.toUpperCase() : '';
-  });
 }
