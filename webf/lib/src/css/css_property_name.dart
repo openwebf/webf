@@ -170,6 +170,12 @@ enum CSSPropertyID {
   AnimationName,
   AnimationPlayState,
   AnimationTimingFunction,
+  Transform,
+  TransformOrigin,
+  TransformOriginX,
+  TransformOriginY,
+  TransformOriginZ,
+  TransformStyle,
   BufferedRendering,
   ClipPath,
   ClipRule,
@@ -309,6 +315,12 @@ const Map<String, CSSPropertyID> CSSPropertyNameMap = {
   'background-repeat': CSSPropertyID.BackgroundRepeat,
   'counter-increment': CSSPropertyID.CounterIncrement,
   'z-index': CSSPropertyID.ZIndex,
+  'transform': CSSPropertyID.Transform,
+  'transform-origin': CSSPropertyID.TransformOrigin,
+  'transform-originX': CSSPropertyID.TransformOriginX,
+  'transform-originY': CSSPropertyID.TransformOriginY,
+  'transform-originZ': CSSPropertyID.TransformOriginZ,
+  'transform-style': CSSPropertyID.TransformStyle,
   'stroke-miterlimit': CSSPropertyID.StrokeMiterlimit,
   'color': CSSPropertyID.Color,
   'text-overline-width': CSSPropertyID.TextOverlineWidth,
@@ -540,6 +552,21 @@ const List<CSSPropertyID> ComputedProperties = [
   CSSPropertyID.WordWrap,
   CSSPropertyID.ZIndex,
   CSSPropertyID.Zoom,
+  CSSPropertyID.Animation,
+  CSSPropertyID.AnimationDelay,
+  CSSPropertyID.AnimationDirection,
+  CSSPropertyID.AnimationDuration,
+  CSSPropertyID.AnimationFillMode,
+  CSSPropertyID.AnimationIterationCount,
+  CSSPropertyID.AnimationName,
+  CSSPropertyID.AnimationPlayState,
+  CSSPropertyID.AnimationTimingFunction,
+  CSSPropertyID.Transform,
+  CSSPropertyID.TransformOrigin,
+  CSSPropertyID.TransformOriginX,
+  CSSPropertyID.TransformOriginY,
+  CSSPropertyID.TransformOriginZ,
+  CSSPropertyID.TransformStyle,
   CSSPropertyID.BufferedRendering,
   CSSPropertyID.ClipPath,
   CSSPropertyID.ClipRule,
@@ -748,6 +775,12 @@ const List<bool> _isInheritedPropertyTable = [
   false, // CSSPropertyAnimationName
   false, // CSSPropertyAnimationPlayState
   false, // CSSPropertyAnimationTimingFunction
+  false, // CSSPropertyWebkitTransform
+  false, // CSSPropertyWebkitTransformOrigin
+  false, // CSSPropertyWebkitTransformOriginX
+  false, // CSSPropertyWebkitTransformOriginY
+  false, // CSSPropertyWebkitTransformOriginZ
+  false, // CSSPropertyWebkitTransformStyle
   false, // CSSPropertyBufferedRendering
   false, // CSSPropertyClipPath
   true, // CSSPropertyClipRule

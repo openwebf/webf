@@ -3,6 +3,7 @@
  */
 import 'dart:ffi' as ffi;
 import 'package:collection/collection.dart';
+import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
@@ -347,6 +348,16 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.animationFillMode.join(', ');
       case CSSPropertyID.AnimationPlayState:
         return style.animationPlayState.join(', ');
+      case CSSPropertyID.Transform:
+        final matrix4 = style.effectiveTransformMatrix;
+        return matrix4?.cssText() ?? 'none';
+      case CSSPropertyID.TransformOrigin:
+      case CSSPropertyID.TransformOriginX:
+      case CSSPropertyID.TransformOriginY:
+      case CSSPropertyID.TransformOriginZ:
+      case CSSPropertyID.TransformStyle:
+        break;
+
       case CSSPropertyID.Outline:
       case CSSPropertyID.ListStyle:
       case CSSPropertyID.Widows:
@@ -595,9 +606,9 @@ extension CSSFontWeightText on FontWeight {
 
 extension DoubleText on double {
   String cssText() {
-    var result = '$this';
-    if (result.endsWith('.0') == true) {
-      result = result.replaceAll('.0', '');
+    var result = toStringAsFixed(6);
+    if (result.endsWith('.000000') == true) {
+      result = result.replaceAll('.000000', '');
     }
     return result;
   }
@@ -743,6 +754,46 @@ extension WhiteSpaceText on WhiteSpace {
         return 'pre-line';
       case WhiteSpace.breakSpaces:
         return 'break-spaces';
+    }
+  }
+}
+
+extension Matrix4CSSText on Matrix4 {
+  String cssText() {
+    if (isIdentity()) {
+      return 'none';
+    }
+    if (CSSMatrix.isAffine(this)) {
+      final a = entry(0, 0).cssText();
+      final b = entry(1, 0).cssText();
+
+      final c = entry(0, 1).cssText();
+      final d = entry(1, 1).cssText();
+
+      final e = entry(0, 3).cssText();
+      final f = entry(1, 3).cssText();
+      return 'matrix($a, $b, $c, $d, $e, $f)';
+    } else {
+      final m11 = entry(0, 0).cssText();
+      final m12 = entry(0, 1).cssText();
+      final m13 = entry(0, 2).cssText();
+      final m14 = entry(0, 3).cssText();
+
+      final m21 = entry(1, 0).cssText();
+      final m22 = entry(1, 1).cssText();
+      final m23 = entry(1, 2).cssText();
+      final m24 = entry(1, 3).cssText();
+
+      final m31 = entry(2, 0).cssText();
+      final m32 = entry(2, 1).cssText();
+      final m33 = entry(2, 2).cssText();
+      final m34 = entry(2, 3).cssText();
+
+      final m41 = entry(3, 0).cssText();
+      final m42 = entry(3, 1).cssText();
+      final m43 = entry(3, 2).cssText();
+      final m44 = entry(3, 3).cssText();
+      return 'matrix3d($m11, $m12, $m13, $m14, $m21, $m22, $m23, $m24, $m31, $m32, $m33, $m34, $m41, $m42, $m43, $m44)';
     }
   }
 }
