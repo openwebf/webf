@@ -332,7 +332,7 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
   };
 
   MemberInstaller::InstallFunctions(context, context->Global(), functionConfig);
-  initWebFTestFramework(context);
+  initWebFTestFramework(context->ctx());
 }
 
 WebFTestContext::~WebFTestContext() {

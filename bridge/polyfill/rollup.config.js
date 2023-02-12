@@ -57,5 +57,16 @@ module.exports = [
       if (warning.code === 'EVAL') return
       warn(warning)
     },
+  },
+  {
+    input: 'src/sourcemap/index.ts',
+    output: Object.assign({ file: 'dist/sourcemap.js'}, output),
+    plugins: [
+        ...plugins,
+        typescript(),
+        commonjs(),
+        NODE_ENV === 'development' ? null : terser(uglifyOptions)
+    ],
+    context: 'window'
   }
 ];

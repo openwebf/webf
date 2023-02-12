@@ -74,7 +74,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_START);
   //#endif
 
-  initWebFPolyFill(this);
+  initWebFPolyFill(ctx);
 
   for (auto& p : plugin_byte_code) {
     EvaluateByteCode(p.second.bytes, p.second.length);
