@@ -1,4 +1,4 @@
-fdescribe('Transform matrix3d', function() {
+describe('Transform matrix3d', function() {
   it('001', async () => {
    const div = createElementWithStyle('div', {
                       width: '100px',
