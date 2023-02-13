@@ -342,6 +342,9 @@ mixin ElementOverflowMixin on ElementBase {
     } else if (event is PointerSignalEvent) {
       _scrollableX?.handlePinterSignal(event);
       _scrollableY?.handlePinterSignal(event);
+    } else if (event is PointerPanZoomStartEvent) {
+      _scrollableX?.handlePointerPanZoomStart(event);
+      _scrollableY?.handlePointerPanZoomStart(event);
     }
   }
 
