@@ -98,7 +98,6 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
   }
 
   void handlePointerPanZoomStart(PointerPanZoomStartEvent event) {
-    assert(_recognizers != null);
     for (final GestureRecognizer? recognizer in _recognizers.values) {
       recognizer!.addPointerPanZoom(event);
     }

@@ -5,7 +5,6 @@
 
 import 'dart:io';
 import 'dart:ui';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';

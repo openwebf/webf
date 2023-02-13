@@ -4,7 +4,6 @@
  */
 
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -27,7 +26,7 @@ class BoxFitImageKey {
   }
 
   @override
-  int get hashCode => hashValues(configuration, url);
+  int get hashCode => Object.hash(configuration, url);
 
   @override
   String toString() => 'BoxFitImageKey($url, $configuration)';
@@ -81,7 +80,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   DimensionedMultiFrameImageStreamCompleter? _imageStreamCompleter;
 
   @override
-  ImageStreamCompleter load(BoxFitImageKey key, DecoderCallback decode) {
+  ImageStreamCompleter loadBuffer(BoxFitImageKey key, DecoderBufferCallback decode) {
     return _imageStreamCompleter = DimensionedMultiFrameImageStreamCompleter(
       codec: _loadAsync(key),
       scale: 1.0,
@@ -108,7 +107,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     }
     final ImageStreamCompleter? completer = PaintingBinding.instance.imageCache.putIfAbsent(
       key,
-      () => load(key, PaintingBinding.instance.instantiateImageCodec),
+      () => loadBuffer(key, PaintingBinding.instance.instantiateImageCodecFromBuffer),
       onError: handleError,
     );
     if (_imageStreamCompleter == null &&

@@ -4,7 +4,6 @@
 
 import 'package:source_span/source_span.dart';
 import 'package:webf/css.dart';
-import 'dart:ui';
 
 class CSSCalcValue {
   final CalcExpressionNode? expression;
@@ -162,7 +161,7 @@ class CalcOperationExpressionNode extends CalcExpressionNode {
   }
 
   @override
-  int get hashCode => hashValues(leftNode, rightNode);
+  int get hashCode => Object.hash(leftNode, rightNode);
 
   @override
   bool operator ==(Object? other) => other is CalcOperationExpressionNode &&

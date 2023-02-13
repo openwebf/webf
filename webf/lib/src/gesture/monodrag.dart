@@ -460,7 +460,6 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
     }
 
     final VelocityTracker tracker = _velocityTrackers[pointer]!;
-    assert(tracker != null);
 
     final DragEndDetails details;
     final String Function() debugReport;
