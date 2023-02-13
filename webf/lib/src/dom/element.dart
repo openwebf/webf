@@ -830,16 +830,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
-  bool _obtainSliverChild() {
-    if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
-      // Sliver should not create renderer here, but need to trigger
-      // render sliver list dynamical rebuild child by element tree.
-      parentElement?._renderLayoutBox?.markNeedsLayout();
-      return true;
-    }
-    return false;
-  }
-
   // Attach renderObject of current node to parent
   @override
   void attachTo(Node parent, {RenderBox? after}) {
