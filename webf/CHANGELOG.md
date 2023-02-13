@@ -1,3 +1,7 @@
+## 0.14.0-beta.1
+
+* Support flutter 3.3.10
+
 ## 0.13.2+1
 
 * remove logs

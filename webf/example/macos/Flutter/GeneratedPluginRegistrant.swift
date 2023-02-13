@@ -5,8 +5,8 @@
 import FlutterMacOS
 import Foundation
 
-import connectivity_plus_macos
-import shared_preferences_macos
+import connectivity_plus
+import shared_preferences_foundation
 import webf
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
