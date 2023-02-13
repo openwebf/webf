@@ -830,25 +830,15 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
-  bool _obtainSliverChild() {
-    if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
-      // Sliver should not create renderer here, but need to trigger
-      // render sliver list dynamical rebuild child by element tree.
-      parentElement?._renderLayoutBox?.markNeedsLayout();
-      return true;
-    }
-    return false;
-  }
-
   // Attach renderObject of current node to parent
   @override
   void attachTo(Node parent, {RenderBox? after}) {
     applyStyle(style);
 
-    if (_obtainSliverChild()) {
-      // Rebuild all the sliver children.
-      RenderLayoutBox? parentRenderBoxModel = parentElement!.renderBoxModel as RenderLayoutBox?;
-      parentRenderBoxModel?.removeAll();
+    if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
+      // Sliver should not create renderer here, but need to trigger
+      // render sliver list dynamical rebuild child by element tree.
+      parentElement?._renderLayoutBox?.markNeedsLayout();
     } else {
       willAttachRenderer();
     }
@@ -1000,6 +990,26 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
             } else {
               referenceIndex--;
             }
+          }
+        }
+
+        // Remove all element after the new node, when parent is sliver
+        // Sliver's children if change sort need relayout
+        if(renderStyle.display == CSSDisplay.sliver
+            && referenceNode is Element
+            && referenceNode.renderer != null
+            && referenceNode.isRendererAttached) {
+          while(referenceIndex + 1 < childNodes.length) {
+            Node reference = childNodes[referenceIndex + 1];
+            if(reference.isRendererAttached && reference is Element) {
+              if(reference.renderer != null &&
+                  reference.renderer!.parent != null &&
+                  reference.renderer!.parent is RenderSliverRepaintProxy) {
+                (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
+              }
+              reference.unmountRenderObject(deep: true);
+            }
+            referenceIndex++;
           }
         }
 

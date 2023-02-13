@@ -1073,7 +1073,7 @@ class RenderBoxModel extends RenderBox
     // @FIXME: Normally constraints is calculated in getConstraints by parent RenderLayoutBox in Kraken,
     // except in sliver layout, constraints is calculated by [RenderSliverList] which kraken can not control,
     // so it needs to invoke getConstraints here for sliver container's direct child.
-    if (parent is RenderSliverList) {
+    if (parent is RenderSliverRepaintProxy || parent is RenderSliverList) {
       contentConstraints = getConstraints();
     } else {
       // Constraints is already calculated in parent layout.
@@ -1198,7 +1198,7 @@ class RenderBoxModel extends RenderBox
     ));
   }
 
-  // Reaint native EngineLayer sources with LayerHandle.
+  // Repaint native EngineLayer sources with LayerHandle.
   final LayerHandle<ColorFilterLayer> _colorFilterLayer = LayerHandle<ColorFilterLayer>();
 
   void paintColorFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {

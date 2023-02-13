@@ -21,7 +21,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
   late RenderViewport _renderViewport;
 
   // The sliver list render object reference.
-  RenderSliverList? _renderSliverList;
+  WebFRenderSliverList? _renderSliverList;
 
   // The scrollable context to handle gestures.
   late WebFScrollable scrollable;
@@ -56,7 +56,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
         break;
     }
 
-    RenderSliverList renderSliverList = _renderSliverList = _buildRenderSliverList();
+    WebFRenderSliverList renderSliverList = _renderSliverList = _buildRenderSliverList();
     _renderViewport = RenderViewport(
       offset: scrollable.position!,
       axisDirection: scrollable.axisDirection,
@@ -132,8 +132,8 @@ class RenderSliverListLayout extends RenderLayoutBox {
   }
 
   @protected
-  RenderSliverList _buildRenderSliverList() {
-    return _renderSliverList = RenderSliverList(childManager: _renderSliverBoxChildManager);
+  WebFRenderSliverList _buildRenderSliverList() {
+    return _renderSliverList = WebFRenderSliverList(childManager: _renderSliverBoxChildManager);
   }
 
   // Trigger sliver list to rebuild children.
