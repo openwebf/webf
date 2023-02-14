@@ -5,12 +5,12 @@ describe('Transform rotate', function () {
       height: '100px',
       backgroundColor: 'red',
       transform: 'rotate(5deg)',
-    })
-    document.body.appendChild(div)
-    const style = window.getComputedStyle(div)
+    });
+    document.body.appendChild(div);
+    const style = window.getComputedStyle(div);
     expect(style['transform']).toEqual(
       'matrix(0.996195, 0.087156, -0.087156, 0.996195, 0, 0)',
-    )
-    await snapshot()
+    );
+    await snapshot();
   })
 })

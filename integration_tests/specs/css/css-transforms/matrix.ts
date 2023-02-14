@@ -5,10 +5,10 @@ describe('Transform matrix', () => {
       height: '100px',
       backgroundColor: 'red',
       transform: 'matrix(0,1,1,1,10,10)',
-    })
-    document.body.appendChild(div)
-    const style = window.getComputedStyle(div)
-    expect(style['transform']).toEqual('matrix(0, 1, 1, 1, 10, 10)')
-    await snapshot()
+    });
+    document.body.appendChild(div);
+    const style = window.getComputedStyle(div);
+    expect(style['transform']).toEqual('matrix(0, 1, 1, 1, 10, 10)');
+    await snapshot();
   })
 })
