@@ -280,10 +280,10 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
         tracker.addPosition(event.timeStamp, event.localPosition);
       }
     }
-    // if (event is PointerDownEvent) {
-    //   final Duration? timestamp = _lastPendingEventTimestamp;
-    //   _checkStart(timestamp);
-    // }
+    if (event is PointerDownEvent) {
+      final Duration? timestamp = _lastPendingEventTimestamp;
+      _checkStart(timestamp!, event.pointer);
+    }
     if (event is PointerMoveEvent && event.buttons != _initialButtons) {
       _giveUpPointer(event.pointer);
       return;
@@ -319,17 +319,14 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
     }
     if (event is PointerUpEvent || event is PointerCancelEvent || event is PointerPanZoomEndEvent) {
       _giveUpPointer(
-        event.pointer
+        event.pointer,
+        reject: event is PointerCancelEvent || _state == _DragState.possible,
       );
     }
   }
 
-  final Set<int> _acceptedActivePointers = <int>{};
-
   @override
   void acceptGesture(int pointer) {
-    assert(!_acceptedActivePointers.contains(pointer));
-    _acceptedActivePointers.add(pointer);
     if (_state != _DragState.accepted) {
       _state = _DragState.accepted;
       final OffsetPair? delta = _pendingDragOffset;
@@ -348,7 +345,6 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
       _pendingDragOffset = OffsetPair.zero;
       _lastPendingEventTimestamp = null;
       _lastTransform = null;
-      _checkStart(timestamp, pointer);
       if (localUpdateDelta != Offset.zero && onUpdate != null) {
         final Matrix4? localToGlobal = transform != null ? Matrix4.tryInvert(transform) : null;
         final Offset correctedLocalPosition = _initialPosition.local + localUpdateDelta;
@@ -400,12 +396,13 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
     _state = _DragState.ready;
   }
 
-  void _giveUpPointer(int pointer) {
+  void _giveUpPointer(int pointer, {bool reject = true}) {
     stopTrackingPointer(pointer);
-    // If we never accepted the pointer, we reject it since we are no longer
-    // interested in winning the gesture arena for it.
-    if (!_acceptedActivePointers.remove(pointer)) {
-      resolvePointer(pointer, GestureDisposition.rejected);
+    if (reject) {
+      if (_velocityTrackers.containsKey(pointer)) {
+        _velocityTrackers.remove(pointer);
+        resolvePointer(pointer, GestureDisposition.rejected);
+      }
     }
   }
 

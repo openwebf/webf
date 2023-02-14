@@ -182,6 +182,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
+    if (!hasSize) return false;
     if (renderStyle.transformMatrix != null) {
       return hitTestIntrinsicChild(result, child, position!);
     }
