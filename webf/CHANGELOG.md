@@ -1,6 +1,39 @@
 ## 0.14.0-beta.1
 
-* Support flutter 3.3.10
+* Support flutter 3.3.10/3.7.3
+
+## 0.13.3
+
+**Features**
+
+* Add Self Poly Inline Cache for quickjs. https://github.com/openwebf/webf/pull/227
+  |               | master    | feat/ic |      |
+  | ------------- | ---------- | ---------- | ------ |
+  | Richards      | 752        | 888      |  +18.0%  |
+  | Crypto      | 618        | 713      |  +15.3%  |
+  | RayTrace      | 807        | 833       | +3.2%   |
+  | NavierStokes      | 1497        | 1319      | -11.8%  |
+  | DeltaBlue      | 744        | 845       |  +13.5% |
+  | Score (version 7)     | 841        | 890       | +5.5%  |
+* Add window.getComputedStyle support. https://github.com/openwebf/webf/pull/183
+* Add namespace API. https://github.com/openwebf/webf/pull/126
+* The performance of `display: sliver` had been improved. https://github.com/openwebf/webf/pull/225
+
+**Bug Fixed**
+
+* fix: fix history pushState() API. https://github.com/openwebf/webf/pull/218
+* fix: Input use leading to support line-height. https://github.com/openwebf/webf/pull/173
+* fix: fix widget element unmount renderObject. https://github.com/openwebf/webf/pull/221
+* fix: fix scrollable content not work when toggle display. https://github.com/openwebf/webf/pull/220
+* fix: fix set background color on body element. https://github.com/openwebf/webf/pull/130
+* fix: fix renderObject didn't disposed when frame update paused. https://github.com/openwebf/webf/pull/231
+* fix: fix assertion when webf disposed. https://github.com/openwebf/webf/pull/228
+* fix: fix CSS calc value become zero when parameter kind are same. https://github.com/openwebf/webf/issues/234
+* fix: Query computed style for kebabize property name. https://github.com/openwebf/webf/pull/239
+* fix: fix build error on M1 iOS simulator. https://github.com/openwebf/webf/pull/238
+* fix: fix set max-height on scroller box. https://github.com/openwebf/webf/pull/216
+* fix: fix animation transform have no effect when value are rotate(360deg). https://github.com/openwebf/webf/pull/184
+
 
 ## 0.13.2+1
 
