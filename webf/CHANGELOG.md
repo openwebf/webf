@@ -1,3 +1,7 @@
+## 0.14.0-beta.1
+
+* Support flutter 3.3.10/3.7.3
+
 ## 0.13.3
 
 **Features**
@@ -29,6 +33,7 @@
 * fix: fix build error on M1 iOS simulator. https://github.com/openwebf/webf/pull/238
 * fix: fix set max-height on scroller box. https://github.com/openwebf/webf/pull/216
 * fix: fix animation transform have no effect when value are rotate(360deg). https://github.com/openwebf/webf/pull/184
+
 
 ## 0.13.2+1
 

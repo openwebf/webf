@@ -43,6 +43,7 @@ const Set<PointerDeviceKind> _kTouchLikeDeviceTypes = <PointerDeviceKind>{
   PointerDeviceKind.touch,
   PointerDeviceKind.stylus,
   PointerDeviceKind.invertedStylus,
+  PointerDeviceKind.trackpad
 };
 
 // This class should really be called _DisposingTicker or some such, but this
@@ -93,6 +94,12 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
   void handlePointerDown(PointerDownEvent event) {
     for (GestureRecognizer? recognizer in _recognizers.values) {
       recognizer!.addPointer(event);
+    }
+  }
+
+  void handlePointerPanZoomStart(PointerPanZoomStartEvent event) {
+    for (final GestureRecognizer? recognizer in _recognizers.values) {
+      recognizer!.addPointerPanZoom(event);
     }
   }
 

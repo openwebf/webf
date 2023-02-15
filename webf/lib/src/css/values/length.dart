@@ -441,7 +441,7 @@ class CSSLengthValue {
   }
 
   @override
-  int get hashCode => hashValues(value, type);
+  int get hashCode => Object.hash(value, type);
 
   @override
   String toString() => 'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue, calcValue: $calcValue)';

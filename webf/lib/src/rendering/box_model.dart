@@ -1492,7 +1492,7 @@ class RenderBoxModel extends RenderBox
               }
 
               // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
-              if (hitTestChildren(result, position: position) || hitTestSelf(transformPosition)) {
+              if (hasSize && hitTestChildren(result, position: position) || hitTestSelf(transformPosition)) {
                 result.add(BoxHitTestEntry(this, position));
                 return true;
               }

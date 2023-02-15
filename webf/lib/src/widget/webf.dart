@@ -301,7 +301,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
     double viewportWidth = _webfWidget.viewportWidth ?? window.physicalSize.width / window.devicePixelRatio;
     double viewportHeight = _webfWidget.viewportHeight ?? window.physicalSize.height / window.devicePixelRatio;
 
-    WebFController controller = WebFController(shortHash(_webfWidget.hashCode), viewportWidth, viewportHeight,
+    WebFController controller = WebFController(shortHash(_webfWidget), viewportWidth, viewportHeight,
         background: _webfWidget.background,
         showPerformanceOverlay: Platform.environment[ENABLE_PERFORMANCE_OVERLAY] != null,
         entrypoint: _webfWidget.bundle,
@@ -338,7 +338,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
   void updateRenderObject(BuildContext context, covariant RenderObject renderObject) {
     super.updateRenderObject(context, renderObject);
     WebFController controller = (context as _WebFRenderObjectElement).controller!;
-    controller.name = shortHash(_webfWidget.hashCode);
+    controller.name = shortHash(_webfWidget);
 
     bool viewportWidthHasChanged = controller.view.viewportWidth != _webfWidget.viewportWidth;
     bool viewportHeightHasChanged = controller.view.viewportHeight != _webfWidget.viewportHeight;
@@ -377,21 +377,6 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     assert(controller != null);
     (parent as WebFContextInheritElement).controller = controller;
     await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
-  }
-
-  @override
-  void performRebuild() {
-    super.performRebuild();
-  }
-
-  @override
-  void rebuild() {
-    super.rebuild();
-  }
-
-  @override
-  void deactivate() {
-    super.deactivate();
   }
 
   @override

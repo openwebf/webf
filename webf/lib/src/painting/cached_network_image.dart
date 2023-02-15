@@ -5,7 +5,6 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -26,7 +25,7 @@ class CachedNetworkImageKey {
   }
 
   @override
-  int get hashCode => hashValues(url, scale);
+  int get hashCode => Object.hash(url, scale);
 }
 
 class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
@@ -77,9 +76,10 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
   }
 
   Future<Codec> _loadAsync(
-      CachedNetworkImageKey key, DecoderCallback decode, StreamController<ImageChunkEvent> chunkEvents) async {
+      CachedNetworkImageKey key, DecoderBufferCallback decode, StreamController<ImageChunkEvent> chunkEvents) async {
     Uint8List bytes = await _getRawImageBytes(key, chunkEvents);
-    return decode(bytes);
+    ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
+    return decode(buffer);
   }
 
   Future<Uint8List> _fetchImageBytes(CachedNetworkImageKey key, StreamController<ImageChunkEvent> chunkEvents,
@@ -123,7 +123,7 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
   }
 
   @override
-  ImageStreamCompleter load(CachedNetworkImageKey key, DecoderCallback decode) {
+  ImageStreamCompleter loadBuffer(CachedNetworkImageKey key, DecoderBufferCallback decode) {
     // Ownership of this controller is handed off to [_loadAsync]; it is that
     // method's responsibility to close the controller's stream when the image
     // has been loaded or an error is thrown.
