@@ -21,17 +21,17 @@ abstract class WebFDynamicLibrary {
   }
 
   // The kraken library name.
-  static String libName = 'libwebf';
+  static String libName = 'webf';
 
   static String get _nativeDynamicLibraryName {
     if (Platform.isMacOS) {
-      return '$libName.dylib';
+      return 'lib$libName.dylib';
     } else if (Platform.isIOS) {
       return 'webf_bridge.framework/webf_bridge';
     } else if (Platform.isWindows) {
       return '$libName.dll';
     } else if (Platform.isAndroid || Platform.isLinux) {
-      return '$libName.so';
+      return 'lib$libName.so';
     } else {
       throw UnimplementedError('Not supported platform.');
     }
