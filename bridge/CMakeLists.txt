@@ -3,9 +3,19 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
 project(WebF)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
-set(CMAKE_CXX_STANDARD 17)
+# MSBuild are slower than Clang/GCC to support new CXX standards.
+if(MSVC)
+  set(CMAKE_CXX_STANDARD 20)
+else()
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+if(MSVC)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+  set(BUILD_SHARED_LIBS TRUE)
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
@@ -469,9 +479,12 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_g_element.cc
     )
 
+
+  if (NOT MSVC)
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
+  endif()
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
 
 endif ()
@@ -508,13 +521,13 @@ target_include_directories(webf PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
-if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
-  else ()
-    ### remove dynamic_cast and exceptions
-    target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
-  endif ()
+if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
+   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
+   else ()
+     ### remove dynamic_cast and exceptions
+     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
+   endif ()
 endif ()
 
 ### webfStatic
@@ -552,6 +565,13 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
         LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
         RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
+    if(MSVC)
+      set_target_properties(pthread
+        PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      )
+    endif()
   endif ()
 elseif (IS_ANDROID)
   # android do nothing
@@ -571,7 +591,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     PUBLIC_HEADER ${WEBF_PUBLIC_HEADERS}
     )
 
-  # If quickjs is static, there will be no quickjs.framework any more.
+  # If quickjs is static, there will be no quickjs.framework any more.1
   if(NOT DEFINED STATIC_QUICKJS)
     set_target_properties(quickjs PROPERTIES
       OUTPUT_NAME quickjs
