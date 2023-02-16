@@ -541,11 +541,11 @@ task('generate-bindings-code', (done) => {
     },
     stdio: 'inherit'
   });
-  
+
   if (buildResult.status !== 0) {
     return done(buildResult.status);
   }
-  
+
   let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../out'], {
     cwd: paths.codeGen,
     env: {
@@ -553,7 +553,7 @@ task('generate-bindings-code', (done) => {
     },
     stdio: 'inherit'
   });
-  
+
   if (compileResult.status !== 0) {
     return done(compileResult.status);
   }
@@ -562,12 +562,12 @@ task('generate-bindings-code', (done) => {
 });
 
 task('build-window-webf-lib', (done) => {
-  const buildType = buildMode == 'Release' ? 'Release' : 'Relwithdebinfo';
+  const buildType = buildMode == 'Release' ? 'Release' : 'Debug';
 
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DAPP_VERSION="${appVersion}" ${isProfile ? '-DENABLE_PROFILE=TRUE' : ''} ${'-DENABLE_TEST=true '} -G "Visual Studio 16 2019" -B ${paths.bridge}\\cmake-build-windows -S ${paths.bridge}`,
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DAPP_VERSION="${appVersion}" ${isProfile ? '-DENABLE_PROFILE=TRUE' : ''} -B ${paths.bridge}\\cmake-build-windows -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
@@ -579,9 +579,13 @@ task('build-window-webf-lib', (done) => {
     });
 
   // build
-  execSync(`cmake --build ${bridgeCmakeDir} --target webf ${buildMode != 'Release' ? 'webf_test' : ''} webf_unit_test`, {
+  execSync(`cmake --build ${bridgeCmakeDir} --target webf -j 12 --config ${buildType.toLowerCase()}`, {
     stdio: 'inherit'
   });
+
+  // Fix the output path
+  const outputDir = path.join(paths.bridge, `build/windows/lib/${buildType === 'Release' ? 'Release' : 'Debug'}`);
+  execSync(`copy ${outputDir}\\*.dll ${outputDir}\\..\\`);
 
   done();
 });

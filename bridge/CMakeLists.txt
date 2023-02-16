@@ -67,8 +67,12 @@ if (ENABLE_ASAN)
 endif ()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  # Avoid quickjs stackoverflow.
-  add_compile_options(-O1)
+  if (MSVC)
+    add_compile_options(/Ob1)
+  else()
+    # Avoid quickjs stackoverflow.
+    add_compile_options(-O1)
+  endif()
 endif()
 
 if (DEFINED PLATFORM)
