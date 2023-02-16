@@ -15,7 +15,7 @@
 namespace webf {
 
 class BindingObject;
-class NativeBindingObject;
+struct NativeBindingObject;
 class ExceptionState;
 class GCVisitor;
 class ScriptPromiseResolver;

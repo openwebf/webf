@@ -19,7 +19,7 @@ namespace webf {
 
 class ExecutingContext;
 class WrapperTypeInfo;
-class NativeValue;
+struct NativeValue;
 class GCVisitor;
 
 // ScriptValue is a stack allocate only QuickJS JSValue wrapper ScriptValuewhich hold all information to hide out
