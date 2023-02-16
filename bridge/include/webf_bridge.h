@@ -16,7 +16,6 @@
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 #endif
 
-
 typedef struct NativeString NativeString;
 typedef struct NativeValue NativeValue;
 typedef struct NativeScreen NativeScreen;
