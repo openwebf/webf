@@ -238,7 +238,7 @@ void ExecutingContext::ReportError(JSValueConst error) {
   uint32_t messageLength = strlen(type) + strlen(title);
   if (stack != nullptr) {
     messageLength += 4 + strlen(stack);
-    char *message = new char[messageLength];
+    char* message = new char[messageLength];
     sprintf(message, "%s: %s\n%s", type, title, stack);
     handler_(this, message);
     delete[] message;
