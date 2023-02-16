@@ -54,11 +54,7 @@ NativeValue Native_NewFloat64(double value) {
   v.tag = NativeTag::TAG_FLOAT64;
   return v;
 #else
-  return (NativeValue){
-    .u = {.int64 = result},
-    .uint32 = 0,
-    .tag = NativeTag::TAG_FLOAT64,
-  }
+  return (NativeValue) { .u = {.int64 = result}, .uint32 = 0, .tag = NativeTag::TAG_FLOAT64, }
 #endif
 }
 
@@ -72,7 +68,6 @@ NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr) {
 #else
   return (NativeValue){.u = {.ptr = ptr}, .uint32 = static_cast<uint32_t>(pointerType), .tag = NativeTag::TAG_POINTER};
 #endif
-
 }
 
 NativeValue Native_NewBool(bool value) {
@@ -99,11 +94,7 @@ NativeValue Native_NewInt64(int64_t value) {
   v.tag = NativeTag::TAG_INT;
   return v;
 #else
-  return (NativeValue){
-    .u = {.int64 = value},
-    .uint32 = 0,
-    .tag = NativeTag::TAG_INT,
-  }
+  return (NativeValue) { .u = {.int64 = value}, .uint32 = 0, .tag = NativeTag::TAG_INT, }
 #endif
 }
 
@@ -141,7 +132,6 @@ NativeValue Native_NewJSON(const ScriptValue& value, ExceptionState& exception_s
   };
   return result;
 #endif
-
 }
 
 }  // namespace webf
