@@ -8,6 +8,9 @@ import {ComputedCssStyleDeclaration} from "../css/computed_css_style_declaration
 import {Element} from "../dom/element";
 
 interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
+  // base64 utility methods
+  btoa(string: string): string;
+  atob(string: string): string;
   open(url?: string): Window | null;
   scroll(x: number, y: number): void;
   scroll(options?: ScrollToOptions): void;

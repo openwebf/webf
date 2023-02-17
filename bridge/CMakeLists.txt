@@ -120,6 +120,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     OUTPUT_VARIABLE QUICKJS_VERSION
   )
 
+  add_library(modb STATIC
+    third_party/modp_b64/modp_b64.cc
+  )
+
   list(APPEND QUICK_JS_SOURCE
     third_party/quickjs/src/libbf.c
     third_party/quickjs/src/cutils.c
@@ -172,7 +176,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
+  list(APPEND BRIDGE_LINK_LIBS modb)
 
   list(APPEND BRIDGE_SOURCE
     # Binding files
@@ -454,6 +460,7 @@ if (${IS_ANDROID})
 elseif(${IS_IOS})
   add_definitions(-DIS_IOS=1)
 endif()
+
 
 ### webf
 target_include_directories(webf PRIVATE
