@@ -149,7 +149,7 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
       // be fast. Still, we should add a RemoveCharacters method to StringView
       // to avoid a double allocation for non-String-backed StringViews.
       return Base64DecodeRaw(in, out, policy) ||
-             Base64DecodeRaw( in.RemoveCharacters(ctx, &IsAsciiWhitespace), out, policy);
+             Base64DecodeRaw(in.RemoveCharacters(ctx, &IsAsciiWhitespace), out, policy);
     }
     case ModpDecodePolicy::kNoPaddingValidation: {
       return Base64DecodeRaw(in, out, policy);
