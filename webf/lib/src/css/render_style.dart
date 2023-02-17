@@ -179,6 +179,12 @@ abstract class RenderStyle {
   List<String> get animationFillMode;
   List<String> get animationPlayState;
 
+  // transform
+  List<CSSFunctionalNotation>? get transform;
+  Matrix4? get effectiveTransformMatrix;
+  CSSOrigin get transformOrigin;
+  double get effectiveTransformScale;
+
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
   void addColorRelativeProperty(String propertyName);
