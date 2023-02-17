@@ -366,14 +366,15 @@ bool JS_HasClassId(JSRuntime* runtime, JSClassID classId) {
 }
 
 int JS_AtomIs8Bit(JSRuntime* runtime, JSAtom atom) {
-  if (JS_AtomIsTaggedInt(atom)) return true;
+  if (JS_AtomIsTaggedInt(atom))
+    return true;
   JSString* string = runtime->atom_array[atom];
   return string->is_wide_char == 0;
 }
 
 const uint8_t* JS_AtomRawCharacter8(JSRuntime* runtime, JSAtom atom) {
   if (JS_AtomIsTaggedInt(atom)) {
-    auto* buf = (char*) js_malloc_rt(runtime, 64);
+    auto* buf = (char*)js_malloc_rt(runtime, 64);
     snprintf(buf, sizeof(buf), "%u", JS_AtomToUInt32(atom));
     return reinterpret_cast<uint8_t*>(buf);
   }
@@ -384,7 +385,7 @@ const uint8_t* JS_AtomRawCharacter8(JSRuntime* runtime, JSAtom atom) {
 
 const uint16_t* JS_AtomRawCharacter16(JSRuntime* runtime, JSAtom atom) {
   if (JS_AtomIsTaggedInt(atom)) {
-    auto* buf = (char*) js_malloc_rt(runtime, 64);
+    auto* buf = (char*)js_malloc_rt(runtime, 64);
     snprintf(buf, sizeof(buf), "%u", JS_AtomToUInt32(atom));
     return reinterpret_cast<uint16_t*>(buf);
   }

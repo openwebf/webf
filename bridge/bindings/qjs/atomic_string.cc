@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <vector>
 #include "atomic_string.h"
+#include <vector>
 #include "built_in_string.h"
 #include "qjs_engine_patch.h"
 
@@ -270,14 +270,12 @@ AtomicString AtomicString::ToLowerSlow(JSContext* ctx) const {
   return AtomicString(ctx, str);
 }
 
-
 template <typename CharType>
-inline AtomicString RemoveCharactersInternal(
-    JSContext* ctx,
-    const AtomicString& self,
-    const CharType* characters,
-    size_t len,
-    CharacterMatchFunctionPtr find_match) {
+inline AtomicString RemoveCharactersInternal(JSContext* ctx,
+                                             const AtomicString& self,
+                                             const CharType* characters,
+                                             size_t len,
+                                             CharacterMatchFunctionPtr find_match) {
   const CharType* from = characters;
   const CharType* fromend = from + len;
 
