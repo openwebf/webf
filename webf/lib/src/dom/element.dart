@@ -159,7 +159,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+    recalculateStyle(rebuildNested: isNeedRecalculate, forceRecalculate: isNeedRecalculate);
   }
 
   String get className => _classList.join(_ONE_SPACE);
@@ -1687,7 +1687,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         style.flushPendingProperties();
       }
 
-      if (rebuildNested == true || hasInheritedPendingProperty) {
+      if (rebuildNested || hasInheritedPendingProperty) {
         // Update children style.
         children.forEach((Element child) {
           child.recalculateStyle(rebuildNested: rebuildNested);
