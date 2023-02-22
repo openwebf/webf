@@ -23,6 +23,7 @@ interface Node extends EventTarget {
   readonly nodeName: string;
 
   nodeValue: string | null;
+  hasChildNodes(): boolean;
 
   /**
    * Returns the children.

@@ -92,6 +92,7 @@ class Node : public EventTarget {
   Node* removeChild(Node* child, ExceptionState&);
   Node* appendChild(Node* new_child, ExceptionState&);
 
+  bool hasChildNodes(ExceptionState& exception_state) const { return firstChild(); }
   bool hasChildren() const { return firstChild(); }
   Node* cloneNode(bool deep, ExceptionState&) const;
   Node* cloneNode(ExceptionState&) const;
