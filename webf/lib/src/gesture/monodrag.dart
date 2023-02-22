@@ -280,7 +280,7 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
         tracker.addPosition(event.timeStamp, event.localPosition);
       }
     }
-    if (event is PointerDownEvent) {
+    if (event is PointerDownEvent || event is PointerPanZoomStartEvent) {
       final Duration? timestamp = _lastPendingEventTimestamp;
       _checkStart(timestamp!, event.pointer);
     }
