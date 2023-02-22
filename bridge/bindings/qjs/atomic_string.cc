@@ -4,6 +4,7 @@
  */
 
 #include "atomic_string.h"
+#include <vector>
 #include "built_in_string.h"
 #include "qjs_engine_patch.h"
 
@@ -267,6 +268,54 @@ AtomicString AtomicString::ToLowerSlow(JSContext* ctx) const {
   std::transform(str.begin(), str.end(), str.begin(), tolower);
   JS_FreeCString(ctx, cptr);
   return AtomicString(ctx, str);
+}
+
+template <typename CharType>
+inline AtomicString RemoveCharactersInternal(JSContext* ctx,
+                                             const AtomicString& self,
+                                             const CharType* characters,
+                                             size_t len,
+                                             CharacterMatchFunctionPtr find_match) {
+  const CharType* from = characters;
+  const CharType* fromend = from + len;
+
+  // Assume the common case will not remove any characters
+  while (from != fromend && !find_match(*from))
+    ++from;
+  if (from == fromend)
+    return self;
+
+  std::vector<CharType> data;
+  data.resize(len);
+  CharType* to = data.data();
+  size_t outc = static_cast<size_t>(from - characters);
+
+  if (outc)
+    memcpy(to, characters, outc * sizeof(CharType));
+
+  while (true) {
+    while (from != fromend && find_match(*from))
+      ++from;
+    while (from != fromend && !find_match(*from))
+      to[outc++] = *from++;
+    if (from == fromend)
+      break;
+  }
+
+  data.resize(outc);
+  if (self.Is8Bit()) {
+    return AtomicString(ctx, reinterpret_cast<const char*>(data.data()), data.size());
+  }
+
+  return AtomicString(ctx, reinterpret_cast<const uint16_t*>(data.data()), data.size());
+}
+
+AtomicString AtomicString::RemoveCharacters(JSContext* ctx, CharacterMatchFunctionPtr find_match) {
+  if (IsEmpty())
+    return AtomicString::Empty();
+  if (Is8Bit())
+    return RemoveCharactersInternal(ctx, *this, Character8(), length_, find_match);
+  return RemoveCharactersInternal(ctx, *this, Character16(), length_, find_match);
 }
 
 }  // namespace webf

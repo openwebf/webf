@@ -32,6 +32,9 @@ class Window : public EventTargetWithInlineData {
   [[nodiscard]] const Window* self() const { return this; }
   [[nodiscard]] const Window* parent() const { return this; }
 
+  AtomicString btoa(const AtomicString& source, ExceptionState& exception_state);
+  AtomicString atob(const AtomicString& source, ExceptionState& exception_state);
+
   void scroll(ExceptionState& exception_state);
   void scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
   void scroll(double x, double y, ExceptionState& exception_state);

@@ -18,6 +18,8 @@
 
 namespace webf {
 
+typedef bool (*CharacterMatchFunctionPtr)(char);
+
 // An AtomicString instance represents a string, and multiple AtomicString
 // instances can share their string storage if the strings are
 // identical. Comparing two AtomicString instances is much faster than comparing
@@ -80,6 +82,9 @@ class AtomicString {
   AtomicString ToLowerIfNecessary(JSContext* ctx) const;
   AtomicString ToLowerSlow(JSContext* ctx) const;
 
+  inline bool ContainsOnlyLatin1OrEmpty() const;
+  AtomicString RemoveCharacters(JSContext* ctx, CharacterMatchFunctionPtr find_match);
+
   // Copy assignment
   AtomicString(AtomicString const& value);
   AtomicString& operator=(const AtomicString& other);
@@ -105,6 +110,19 @@ class AtomicString {
   void initFromAtom(JSContext* ctx);
 };
 
+bool AtomicString::ContainsOnlyLatin1OrEmpty() const {
+  if (IsEmpty())
+    return true;
+
+  if (Is8Bit())
+    return true;
+
+  const uint16_t* characters = Character16();
+  uint16_t ored = 0;
+  for (size_t i = 0; i < length_; ++i)
+    ored |= characters[i];
+  return !(ored & 0xFF00);
+}
 }  // namespace webf
 
 #endif  // BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
