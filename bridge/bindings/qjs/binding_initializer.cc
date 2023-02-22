@@ -42,6 +42,7 @@
 #include "qjs_html_form_element.h"
 #include "qjs_html_head_element.h"
 #include "qjs_html_html_element.h"
+#include "qjs_html_iframe_element.h"
 #include "qjs_html_image_element.h"
 #include "qjs_html_input_element.h"
 #include "qjs_html_link_element.h"
@@ -121,6 +122,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLHeadElement::Install(context);
   QJSHTMLBodyElement::Install(context);
   QJSHTMLHtmlElement::Install(context);
+  QJSHTMLIFrameElement::Install(context);
   QJSHTMLAnchorElement::Install(context);
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);

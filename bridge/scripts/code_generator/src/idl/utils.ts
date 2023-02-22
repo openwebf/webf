@@ -18,6 +18,10 @@ export function getClassName(blob: IDLBlob) {
     return 'DOM' + raw.slice(3);
   }
   if (raw.slice(0, 4) == 'html') {
+    // Legacy support names.
+    if (raw === 'htmlIframeElement') {
+      return `HTMLIFrameElement`;
+    }
     return 'HTML' + raw.slice(4);
   }
 
@@ -26,9 +30,6 @@ export function getClassName(blob: IDLBlob) {
   }
   if (raw.slice(0, 2) == 'ui') {
     return 'UI' + raw.slice(2);
-  }
-  if (raw.slice(0, 3) == 'dom') {
-    return 'DOM' + raw.slice(3);
   }
 
   return `${raw[0].toUpperCase() + raw.slice(1)}`;
