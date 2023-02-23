@@ -49,6 +49,16 @@ describe('Node API', () => {
     expect(el.isConnected).toEqual(false);
   });
 
+  it('Node.hasChildNodes', () => {
+    let container = document.createElement('div');
+    expect(container.hasChildNodes()).toBe(false);
+    let a = document.createElement('div');
+    container.appendChild(a);
+    expect(container.hasChildNodes()).toBe(true);
+    container.removeChild(a);
+    expect(container.hasChildNodes()).toBe(false);
+  });
+
   it('nextSibling should to null when child is lastChild of one children list', () => {
     let container = document.createElement('div');
     let child = document.createElement('div');
