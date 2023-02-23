@@ -159,7 +159,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
-    recalculateStyle(rebuildNested: isNeedRecalculate, forceRecalculate: isNeedRecalculate);
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   String get className => _classList.join(_ONE_SPACE);
@@ -1224,8 +1224,12 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     switch (name) {
       case DISPLAY:
         bool displayChanged = renderStyle.display != value;
+        bool changFromNone = renderStyle.display == CSSDisplay.none;
         renderStyle.display = value;
         if (displayChanged) {
+          if (changFromNone) {
+            recalculateStyle(rebuildNested: true, forceRecalculate: true);
+          }
           _updateRenderBoxModelWithDisplay();
         }
         break;
