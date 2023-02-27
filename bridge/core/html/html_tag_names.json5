@@ -10,7 +10,10 @@
       },
       {
         "template": "element_factory",
-        "filename": "html_element_factory"
+        "filename": "html_element_factory",
+        "options": {
+          "prefix": "HTML"
+        }
       },
       {
         "template": "element_type_helper",

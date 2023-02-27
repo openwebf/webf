@@ -351,6 +351,30 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Transform:
         final matrix4 = style.effectiveTransformMatrix;
         return matrix4?.cssText() ?? 'none';
+
+      case CSSPropertyID.Stroke:
+        return style.stroke.cssText();
+      case CSSPropertyID.StrokeWidth:
+        return style.strokeWidth.cssText();
+      case CSSPropertyID.StrokeLinecap:
+        return style.strokeLinecap.toString();
+      case CSSPropertyID.StrokeLinejoin:
+        return style.strokeLinejoin.toString();
+      case CSSPropertyID.X:
+        return style.x.cssText();
+      case CSSPropertyID.Y:
+        return style.y.cssText();
+      case CSSPropertyID.RX:
+        return style.rx.cssText();
+      case CSSPropertyID.RY:
+        return style.ry.cssText();
+      case CSSPropertyID.Fill:
+        return style.fill.cssText();
+      case CSSPropertyID.FillRule:
+        return style.fillRule.toString();
+      case CSSPropertyID.D:
+        return style.d.value;
+
       case CSSPropertyID.TransformOrigin:
       case CSSPropertyID.TransformOriginX:
       case CSSPropertyID.TransformOriginY:
@@ -448,23 +472,17 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.ColorInterpolationFilters:
       case CSSPropertyID.ColorProfile:
       case CSSPropertyID.ColorRendering:
-      case CSSPropertyID.Fill:
       case CSSPropertyID.FillOpacity:
-      case CSSPropertyID.FillRule:
       case CSSPropertyID.Marker:
       case CSSPropertyID.MarkerEnd:
       case CSSPropertyID.MarkerMid:
       case CSSPropertyID.MarkerStart:
       case CSSPropertyID.MaskType:
       case CSSPropertyID.ShapeRendering:
-      case CSSPropertyID.Stroke:
       case CSSPropertyID.StrokeDasharray:
       case CSSPropertyID.StrokeDashoffset:
-      case CSSPropertyID.StrokeLinecap:
-      case CSSPropertyID.StrokeLinejoin:
-      case CSSPropertyID.StrokeMiterlimit:
       case CSSPropertyID.StrokeOpacity:
-      case CSSPropertyID.StrokeWidth:
+      case CSSPropertyID.StrokeMiterlimit:
       case CSSPropertyID.AlignmentBaseline:
       case CSSPropertyID.BaselineShift:
       case CSSPropertyID.DominantBaseline:

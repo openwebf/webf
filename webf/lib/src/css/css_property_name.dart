@@ -217,6 +217,11 @@ enum CSSPropertyID {
   TextAnchor,
   VectorEffect,
   WritingMode,
+  X,
+  Y,
+  RX,
+  RY,
+  D,
 }
 
 const Map<String, CSSPropertyID> CSSPropertyNameMap = {
@@ -440,7 +445,12 @@ const Map<String, CSSPropertyID> CSSPropertyNameMap = {
   'color-interpolation-filters': CSSPropertyID.ColorInterpolationFilters,
   'glyph-orientation-horizontal': CSSPropertyID.GlyphOrientationHorizontal,
   'fill-opacity': CSSPropertyID.FillOpacity,
-  'list-style-type': CSSPropertyID.ListStyleType
+  'list-style-type': CSSPropertyID.ListStyleType,
+  'x': CSSPropertyID.X,
+  'y': CSSPropertyID.Y,
+  'rx': CSSPropertyID.RX,
+  'ry': CSSPropertyID.RY,
+  'd': CSSPropertyID.D,
 };
 
 const List<CSSPropertyID> ComputedProperties = [
@@ -822,6 +832,12 @@ const List<bool> _isInheritedPropertyTable = [
   true, // CSSPropertyTextAnchor
   false, // CSSPropertyVectorEffect
   true, // CSSPropertyWritingMode
+  false, // CSSPropertyX,
+  false, // CSSPropertyY,
+  false,
+  false,
+  false,
+  false,
 ];
 
 bool isInheritedPropertyString(String property) {

@@ -3,23 +3,18 @@
  */
 import 'dart:async';
 import 'dart:io';
-import 'dart:ffi';
 
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 
 import 'custom_elements/main.dart';
 import 'test_module.dart';
-import 'bridge/from_native.dart';
-import 'bridge/test_input.dart';
-import 'bridge/to_native.dart';
 import 'local_http_server.dart';
 import 'mem_leak_detector.dart';
+import 'webf_tester.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
@@ -62,68 +57,6 @@ void main() async {
   // Set render font family AlibabaPuHuiTi to resolve rendering difference.
   CSSText.DEFAULT_FONT_FAMILY_FALLBACK = ['AlibabaPuHuiTi'];
 
-  WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
-  javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
-    if(method == 'helloInt64'){
-      return Future.value(1111111111111111);
-    } else {
-      dynamic returnedValue = await javaScriptChannel.invokeMethod(method, arguments);
-      return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
-    }
-  };
-
-  // This is a virtual location for test program to test [Location] functionality.
-  final String specUrl = 'assets:///test.js';
-  late WebF webF;
-
-  Pointer<Void>? testContext;
-  webF = WebF(
-    viewportWidth: 360,
-    viewportHeight: 640,
-    bundle: WebFBundle.fromUrl('http://localhost:$MOCK_SERVER_PORT/public/core.build.js'),
-    disableViewportWidthAssertion: true,
-    disableViewportHeightAssertion: true,
-    javaScriptChannel: javaScriptChannel,
-    onControllerCreated: (_) async {
-      int contextId = webF.controller!.view.contextId;
-      testContext = initTestFramework(contextId);
-      registerDartTestMethodsToCpp(contextId);
-      addJSErrorListener(contextId, print);
-      webF.controller!.view.evaluateJavaScripts(codeInjection);
-    },
-    onLoad: (controller) async {
-      int x = 0;
-      // Collect the running memory info every per 10s.
-      Timer.periodic(Duration(milliseconds: 50), (timer) {
-        mems.add([x += 1, ProcessInfo.currentRss / 1024 ~/ 1024]);
-      });
-
-      // Preload load test cases
-      String result = await executeTest(testContext!, controller.view.contextId);
-      // Manual dispose context for memory leak check.
-      webF.controller!.dispose();
-
-      // Check running memorys
-      // Temporary disabled due to exist memory leaks
-      // if (isMemLeaks(mems)) {
-      //   print('Memory leaks found. ${mems.map((e) => e[1]).toList()}');
-      //   exit(1);
-      // }
-
-      mockHttpServer.kill(ProcessSignal.sigkill);
-
-      exit(result == 'failed' ? 1 : 0);
-    },
-    gestureListener: GestureListener(
-      onDrag: (GestureEvent gestureEvent) {
-        if (gestureEvent.state == EVENT_STATE_START) {
-          var event = CustomEvent('nativegesture', detail: 'nativegesture');
-          webF.controller!.view.document.documentElement?.dispatchEvent(event);
-        }
-      },
-    ),
-  );
-
   runZonedGuarded(() {
     runApp(MaterialApp(
       title: 'webF Integration Tests',
@@ -132,7 +65,12 @@ void main() async {
         appBar: AppBar(title: Text('WebF Integration Tests')),
         body: Wrap(
           children: [
-            webF,
+            WebFTester(
+              preCode: codeInjection,
+              onWillFinish: () {
+                mockHttpServer.kill(ProcessSignal.sigkill);
+              },
+            ),
           ],
         ),
       ),
@@ -140,6 +78,4 @@ void main() async {
   }, (Object error, StackTrace stack) {
     print('$error\n$stack');
   });
-
-  testTextInput = TestTextInput();
 }

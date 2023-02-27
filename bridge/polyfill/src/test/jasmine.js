@@ -4131,13 +4131,14 @@ getJasmineRequireObj().toMatchSnapshot = function (j$) {
 
         const currentSpec = j$.getEnv().currentRunnable();
         const specId = currentSpec.id;
-        if (_matchSnapshotCounter[specId] === undefined) _matchSnapshotCounter[specId] = 0;
+        const isBlob = filename instanceof Blob;
 
-        const countWithinSameSpec = ++_matchSnapshotCounter[specId];
-
-        let postfixString = postfix === false ? '' : postfix ? postfix : [md5(this.description).slice(0, 8), countWithinSameSpec].join('');
-
-        filename = [filename, postfixString].filter(Boolean).join('.')
+        if (!isBlob) {
+          if (_matchSnapshotCounter[specId] === undefined) _matchSnapshotCounter[specId] = 0;
+          const countWithinSameSpec = ++_matchSnapshotCounter[specId];
+          let postfixString = postfix === false ? '' : postfix ? postfix : [md5(this.description).slice(0, 8), countWithinSameSpec].join('');
+          filename = [filename, postfixString].filter(Boolean).join('.')
+        }
 
         return actualPromise.then(blob => {
           return new Promise((resolve, reject) => {
@@ -4152,7 +4153,9 @@ getJasmineRequireObj().toMatchSnapshot = function (j$) {
               if (status) {
                 return resolve({ pass: true });
               } else {
-                return resolve({ pass: false, message: errmsg || `Expected an screenshot is not equal with "${filename}" snapshot.` });
+                // TODO: improve message
+                const defaultMessage = isBlob ? `Expected an screenshot is equal` : `Expected an screenshot is equal with "${filename}" snapshot.`;
+                return resolve({ pass: false, message: errmsg || defaultMessage });
               }
             });
           });

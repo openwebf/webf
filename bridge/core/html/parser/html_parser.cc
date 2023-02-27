@@ -8,6 +8,7 @@
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/text.h"
+#include "element_namespace_uris.h"
 #include "foundation/logging.h"
 #include "html_parser.h"
 
@@ -71,7 +72,20 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
           tagName = std::string(piece.data, piece.length);
         }
 
-        auto* element = context->document()->createElement(AtomicString(ctx, tagName), ASSERT_NO_EXCEPTION());
+        Element* element;
+
+        switch (child->v.element.tag_namespace) {
+          case ::GUMBO_NAMESPACE_SVG: {
+            element = context->document()->createElementNS(element_namespace_uris::ksvg, AtomicString(ctx, tagName),
+                                                           ASSERT_NO_EXCEPTION());
+            break;
+          }
+
+          default: {
+            element = context->document()->createElement(AtomicString(ctx, tagName), ASSERT_NO_EXCEPTION());
+          }
+        }
+
         traverseHTML(element, child);
         root_container->AppendChild(element);
         parseProperty(element, &child->v.element);

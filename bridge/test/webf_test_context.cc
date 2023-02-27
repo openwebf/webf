@@ -48,9 +48,9 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 1 (blob) must be an Blob object.");
   }
 
-  if (!JS_IsString(screenShotValue)) {
+  if (!JS_IsString(screenShotValue) && !QJSBlob::HasInstance(context, screenShotValue)) {
     return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 2 (match) must be an string.");
+        ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 2 (match) must be an string or blob.");
   }
 
   if (!JS_IsObject(callbackValue)) {
@@ -68,7 +68,6 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         ctx, "Failed to execute '__webf_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.");
   }
 
-  std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
   auto fn = [](void* ptr, int32_t contextId, int8_t result, const char* errmsg) {
@@ -92,8 +91,17 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
     delete callbackContext;
   };
 
-  context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),
-                                               screenShotNativeString.release(), fn);
+  if (QJSBlob::HasInstance(context, screenShotValue)) {
+    auto* expectedBlob = toScriptWrappable<Blob>(screenShotValue);
+    context->dartMethodPtr()->matchImageSnapshotBytes(callbackContext, context->contextId(), blob->bytes(),
+                                                      blob->size(), expectedBlob->bytes(), expectedBlob->size(), fn);
+  } else {
+    std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
+
+    context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),
+                                                 screenShotNativeString.release(), fn);
+  }
+
   return JS_NULL;
 }
 
@@ -358,6 +366,7 @@ void WebFTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_t 
 
   dartMethodPtr->onJsError = reinterpret_cast<OnJSError>(methodBytes[i++]);
   dartMethodPtr->matchImageSnapshot = reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]);
+  dartMethodPtr->matchImageSnapshotBytes = reinterpret_cast<MatchImageSnapshotBytes>(methodBytes[i++]);
   dartMethodPtr->environment = reinterpret_cast<Environment>(methodBytes[i++]);
   dartMethodPtr->simulatePointer = reinterpret_cast<SimulatePointer>(methodBytes[i++]);
   dartMethodPtr->simulateInputText = reinterpret_cast<SimulateInputText>(methodBytes[i++]);
