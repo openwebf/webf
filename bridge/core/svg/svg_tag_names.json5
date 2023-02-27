@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "svg_names",
+        // "deps": [
+        //   "./html_attribute_names.json5"
+        // ]
+      },
+       {
+         "template": "element_factory",
+         "filename": "svg_element_factory",
+         "options": {
+           "prefix": "SVG"
+         }
+       },
+      // TODO: add svg element type helper
+      // {
+      //   "template": "element_type_helper",
+      //   "filename": "html_element_type_helper"
+      // }
+    ]
+  },
+  "data": [
+    {
+      "name": "svg",
+      "interfaceName": "SVGSVGElement"
+    },
+    "rect",
+    "path",
+    "text",
+    "g",
+  ]
+}

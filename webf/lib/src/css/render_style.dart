@@ -12,6 +12,8 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/css_animation.dart';
 
+import 'svg.dart';
+
 typedef RenderStyleVisitor<T extends RenderStyle> = void Function(T renderStyle);
 
 /// The abstract class for render-style, declare the
@@ -185,6 +187,19 @@ abstract class RenderStyle {
   CSSOrigin get transformOrigin;
   double get effectiveTransformScale;
 
+  // SVG
+  CSSPaint get fill;
+  CSSPaint get stroke;
+  CSSLengthValue get x;
+  CSSLengthValue get y;
+  CSSLengthValue get rx;
+  CSSLengthValue get ry;
+  CSSLengthValue get strokeWidth;
+  CSSPath get d;
+  CSSFillRule get fillRule;
+  CSSStrokeLinecap get strokeLinecap;
+  CSSStrokeLinejoin get strokeLinejoin;
+
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
   void addColorRelativeProperty(String propertyName);
@@ -230,7 +245,8 @@ class CSSRenderStyle extends RenderStyle
         CSSOpacityMixin,
         CSSTransitionMixin,
         CSSVariableMixin,
-        CSSAnimationMixin {
+        CSSAnimationMixin,
+        CSSSvgMixin {
   CSSRenderStyle({required this.target});
 
   @override
@@ -456,6 +472,11 @@ class CSSRenderStyle extends RenderStyle
       case HEIGHT:
       case MIN_HEIGHT:
       case MAX_HEIGHT:
+      case X:
+      case Y:
+      case RX:
+      case RY:
+      case STROKE_WIDTH:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
       case PADDING_TOP:
@@ -571,6 +592,10 @@ class CSSRenderStyle extends RenderStyle
       case BORDER_BOTTOM_COLOR:
         value = CSSColor.resolveColor(propertyValue, renderStyle, propertyName);
         break;
+      case STROKE:
+      case FILL:
+        value = CSSPaint.parsePaint(propertyValue);
+        break;
       case BOX_SHADOW:
         value = CSSBoxShadow.parseBoxShadow(propertyValue, renderStyle, propertyName);
         break;
@@ -664,6 +689,18 @@ class CSSRenderStyle extends RenderStyle
       case ANIMATION_PLAY_STATE:
       case ANIMATION_TIMING_FUNCTION:
         value = CSSStyleProperty.getMultipleValues(propertyValue);
+        break;
+      case D:
+        value = CSSPath.parseValue(propertyValue);
+        break;
+      case FILL_RULE:
+        value = CSSSvgMixin.resolveFillRule(propertyValue);
+        break;
+      case STROKE_LINECAP:
+        value = CSSSvgMixin.resolveStrokeLinecap(propertyValue);
+        break;
+      case STROKE_LINEJOIN:
+        value = CSSSvgMixin.resolveStrokeLinejoin(propertyValue);
         break;
     }
 

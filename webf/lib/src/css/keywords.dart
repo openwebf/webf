@@ -306,3 +306,17 @@ const String ANIMATION_ITERATION_COUNT = 'animationIterationCount';
 const String ANIMATION_DIRECTION = 'animationDirection';
 const String ANIMATION_FILL_MODE = 'animationFillMode';
 const String ANIMATION_PLAY_STATE = 'animationPlayState';
+
+// SVG
+const String X = 'x';
+const String Y = 'y';
+const String RX = 'rx';
+const String RY = 'ry';
+const String CONTEXT_FILL = 'context-fill';
+const String CONTEXT_STROKE = 'context-stroke';
+const String STROKE = 'stroke';
+const String STROKE_WIDTH = 'strokeWidth';
+const String D = 'd';
+const String FILL_RULE = 'fillRule';
+const String STROKE_LINECAP = 'strokeLinecap';
+const String STROKE_LINEJOIN = 'strokeLinejoin';

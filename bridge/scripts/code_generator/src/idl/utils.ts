@@ -1,5 +1,5 @@
 import {IDLBlob} from './IDLBlob';
-import {camelCase} from 'lodash';
+import {camelCase, snakeCase} from 'lodash';
 
 export function addIndent(str: String, space: number) {
   let lines = str.split('\n');
@@ -24,7 +24,13 @@ export function getClassName(blob: IDLBlob) {
     }
     return 'HTML' + raw.slice(4);
   }
-
+  if (raw.slice(0, 6) == 'svgSvg') {
+    // special for SVGSVGElement
+    return 'SVGSVG' + raw.slice(6)
+  }
+  if (raw.slice(0, 3) == 'svg') {
+    return 'SVG' + raw.slice(3)
+  }
   if (raw.slice(0, 3) == 'css') {
     return 'CSS' + raw.slice(3);
   }
@@ -33,6 +39,18 @@ export function getClassName(blob: IDLBlob) {
   }
 
   return `${raw[0].toUpperCase() + raw.slice(1)}`;
+}
+
+export function getWrapperTypeInfoNameOfClassName(className: string) {
+  if (className.slice(0, 6) === 'SVGSVG') {
+    // special for SVGSVGElement
+    className = `SVGSvg${className.slice(6)}`
+  } else if (className === 'SVGGElement') {
+    // TODO: use more better way
+    className = `SVG_G_Element`
+  }
+
+  return snakeCase(className).toUpperCase()
 }
 
 export function getMethodName(name: string) {

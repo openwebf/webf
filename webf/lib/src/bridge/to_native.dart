@@ -444,6 +444,7 @@ void flushUICommand(WebFViewController view) {
   }
 
   Map<int, bool> pendingStylePropertiesTargets = {};
+  Set<int> pendingRecalculateTargets = {};
 
   // For new ui commands, we needs to tell engine to update frames.
   for (int i = 0; i < commandLength; i++) {
@@ -508,6 +509,7 @@ void flushUICommand(WebFViewController view) {
           String key = nativeStringToString(nativeKey);
           freeNativeString(nativeKey);
           view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
+          pendingRecalculateTargets.add(nativePtr.address);
           break;
         case UICommandType.removeAttribute:
           String key = command.args;
@@ -543,4 +545,13 @@ void flushUICommand(WebFViewController view) {
     }
   }
   pendingStylePropertiesTargets.clear();
+
+  for (var address in pendingRecalculateTargets) {
+    try {
+      view.recalculateStyle(address);
+    } catch(e, stack) {
+      print('$e\n$stack');
+    }
+  }
+  pendingRecalculateTargets.clear();
 }

@@ -5,6 +5,7 @@
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/svg.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
 
@@ -14,7 +15,7 @@ final MATHML_ELEMENT_URI = 'http://www.w3.org/1998/Math/MathML';
 
 final Map<String, ElementCreator> _htmlRegistry = {};
 
-// final Map<String, ElementCreator> _svgRegistry = {};
+final Map<String, ElementCreator> _svgRegistry = {};
 
 final Map<String, Map<String, ElementCreator>> _registries = {};
 
@@ -48,7 +49,7 @@ Element createElement(String name, [BindingContext? context]) {
   ElementCreator? creator = _htmlRegistry[name];
   Element element;
   if (creator == null) {
-    print('Unexpected element "$name"');
+    print('Unexpected HTML element "$name"');
 
     element = _UnknownHTMLElement(context);
   } else {
@@ -61,9 +62,29 @@ Element createElement(String name, [BindingContext? context]) {
   return element;
 }
 
+Element createSvgElement(String name, [BindingContext? context]) {
+  ElementCreator? creator = _svgRegistry[name];
+  Element element;
+  if (creator == null) {
+    print('Unexpected SVG element "$name"');
+    element = SVGUnknownElement(context);
+  } else {
+    element = creator(context);
+  }
+
+  element.tagName = name;
+  element.namespaceURI = SVG_ELEMENT_URI;
+
+  return element;
+}
+
 Element createElementNS(String uri, String name, [BindingContext? context]) {
   if (uri == HTML_ELEMENT_URI) {
     return createElement(name, context);
+  }
+
+  if (uri == SVG_ELEMENT_URI) {
+    return createSvgElement(name, context);
   }
 
   final ElementCreator? creator = _registries[uri]?[name];
@@ -161,4 +182,8 @@ void defineBuiltInElements() {
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
   defineElement(LISTVIEW, (context) => FlutterListViewElement(context));
+
+  svgElementsRegistry.forEach((key, value) {
+    _svgRegistry[key.toUpperCase()] = value;
+  });
 }

@@ -76,7 +76,7 @@ function sleep(second: number) {
 }
 
 function nextFrames(count = 0) {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     function frame() {
       if (count == 0) {
         resolve();
@@ -280,7 +280,7 @@ function append(parent: HTMLElement, child: Node) {
 }
 
 async function snapshot(target?: any, filename?: String, postfix?: boolean | string) {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     requestAnimationFrame(async () => {
       try {
         if (target && target.toBlob) {
@@ -297,6 +297,28 @@ async function snapshot(target?: any, filename?: String, postfix?: boolean | str
       }
     });
   });
+}
+
+let snapshotBlob: Blob | undefined
+
+afterEach(() => {
+  snapshotBlob = undefined;
+})
+
+async function getSnapshot(target?: any) {
+  await nextFrames();
+  return target && target.toBlob ? target.toBlob(1.0) : document.documentElement.toBlob(1.0);
+}
+
+async function cacheSnapshot(target?: any) {
+  snapshotBlob = await getSnapshot(target)
+}
+
+async function matchCacheSnapshot(target?: any) {
+  if (!snapshotBlob) {
+    throw new Error(`Must be call cacheSnapshot before matchCacheSnapshot`)
+  }
+  await expectAsync(getSnapshot()).toMatchSnapshot(snapshotBlob)
 }
 
 /**
@@ -318,6 +340,13 @@ function test_computed_value(property: string, specified: string, computed: stri
 
     let readValue = getComputedStyle(target!)[property];
     expect(readValue).toEqual(computed);
+}
+
+// -1 is reset
+function resizeViewport(width: number = -1, height: number = -1) {
+  return webf.methodChannel.invokeMethod('resizeViewport', width, height).then(() => {
+    return nextFrames();
+  });
 }
 
 // Compatible to tests that use global variables.
@@ -348,5 +377,9 @@ Object.assign(global, {
   simulatePointRemove,
   simulatePointAdd,
   simulatePointMove,
-  test_computed_value
+  test_computed_value,
+  resizeViewport,
+  cacheSnapshot,
+  matchCacheSnapshot,
+  getSnapshot,
 });

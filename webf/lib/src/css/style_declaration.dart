@@ -11,7 +11,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
-typedef StyleChangeListener = void Function(String property, String? original, String present, { String? baseHref });
+typedef StyleChangeListener = void Function(String property, String? original, String present, {String? baseHref});
 typedef StyleFlushedListener = void Function(List<String> properties);
 
 const Map<String, bool> _CSSShorthandProperty = {
@@ -56,7 +56,8 @@ final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = 
 class CSSPropertyValue {
   String? baseHref;
   String value;
-  CSSPropertyValue(this.value, { this.baseHref });
+
+  CSSPropertyValue(this.value, {this.baseHref});
 }
 
 // CSS Object Model: https://drafts.csswg.org/cssom/#the-cssstyledeclaration-interface
@@ -277,7 +278,7 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
 
   String _toLowerCase(String propertyName, String string) {
     // ignore animation case sensitive
-    if (propertyName.startsWith(ANIMATION)) {
+    if (propertyName.startsWith(ANIMATION) || propertyName == D) {
       return string;
     }
     // Like url("http://path") declared with quotation marks and
@@ -306,7 +307,9 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         // Validation length type
         if (!CSSLength.isNonNegativeLength(normalizedValue) &&
             !CSSLength.isAuto(normalizedValue) &&
-            !CSSPercentage.isNonNegativePercentage(normalizedValue)) {
+            !CSSPercentage.isNonNegativePercentage(normalizedValue) &&
+            // SVG width need to support number type
+            !CSSNumber.isNumber(normalizedValue)) {
           return false;
         }
         break;
@@ -371,7 +374,7 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
 
   /// Modifies an existing CSS property or creates a new CSS property in
   /// the declaration block.
-  void setProperty(String propertyName, String? value, { bool? isImportant, String? baseHref }) {
+  void setProperty(String propertyName, String? value, {bool? isImportant, String? baseHref}) {
     propertyName = propertyName.trim();
 
     // Null or empty value means should be removed.
@@ -558,7 +561,7 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     _styleChangeListeners.remove(listener);
   }
 
-  void _emitPropertyChanged(String property, String? original, String present, { String? baseHref }) {
+  void _emitPropertyChanged(String property, String? original, String present, {String? baseHref}) {
     if (original == present) return;
 
     if (onStyleChanged != null) {

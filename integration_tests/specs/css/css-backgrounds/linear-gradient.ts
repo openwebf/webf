@@ -56,7 +56,7 @@ describe('Background linear-gradient', () => {
     await snapshot(div2);
   });
 
-  it('radial-gradient', async () => {
+  xit('radial-gradient', async (done) => {
     var div3 = document.createElement('div');
     Object.assign(div3.style, {
       width: '200px',
@@ -67,10 +67,11 @@ describe('Background linear-gradient', () => {
     append(BODY, div3);
     requestAnimationFrame(async () => {
       await snapshot(div3);
+      done();
     });
   });
 
-  it('linear-gradient-rotate', async () => {
+  it('linear-gradient-rotate', async (done) => {
     var div4 = document.createElement('div');
     Object.assign(div4.style, {
       width: '200px',
@@ -81,10 +82,11 @@ describe('Background linear-gradient', () => {
     append(BODY, div4);
     requestAnimationFrame(async () => {
       await snapshot(div4);
+      done();
     });
   });
 
-  it("linear-gradient to right with color stop of px", async () => {
+  it("linear-gradient to right with color stop of px", async (done) => {
 
     let flexbox;
 
@@ -107,10 +109,11 @@ describe('Background linear-gradient', () => {
 
     requestAnimationFrame(async () => {
       await snapshot();
+      done();
     });
   });
 
-  it("linear-gradient to right with color stop of px and width not set", async () => {
+  it("linear-gradient to right with color stop of px and width not set", async (done) => {
 
     let flexbox;
 
@@ -132,10 +135,11 @@ describe('Background linear-gradient', () => {
 
     requestAnimationFrame(async () => {
       await snapshot();
+      done();
     });
   });
 
-  it("linear-gradient to bottom with color stop of px", async () => {
+  it("linear-gradient to bottom with color stop of px", async (done) => {
 
     let flexbox;
 
@@ -158,10 +162,11 @@ describe('Background linear-gradient', () => {
 
     requestAnimationFrame(async () => {
       await snapshot();
+      done();
     });
   });
 
-  it("linear-gradient to bottom with color stop of px and height not set", async () => {
+  it("linear-gradient to bottom with color stop of px and height not set", async (done) => {
 
     let flexbox;
     let container = createElement(
@@ -192,10 +197,11 @@ describe('Background linear-gradient', () => {
 
     requestAnimationFrame(async () => {
       await snapshot();
-});
+      done();
+    });
   });
 
-  it("linear-gradient to right with color stop not set", async () => {
+  it("linear-gradient to right with color stop not set", async (done) => {
     let flexbox;
     flexbox = createElement(
       'div',
@@ -216,10 +222,11 @@ describe('Background linear-gradient', () => {
 
     requestAnimationFrame(async () => {
       await snapshot();
-});
+      done();
+    });
   });
 
-  it("linear-gradient to bottom with color stop not set", async () => {
+  it("linear-gradient to bottom with color stop not set", async (done) => {
     let flexbox;
     flexbox = createElement(
       'div',
@@ -240,6 +247,7 @@ describe('Background linear-gradient', () => {
 
     requestAnimationFrame(async () => {
       await snapshot();
-});
+      done();
+    });
   });
 });

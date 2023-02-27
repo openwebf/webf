@@ -62,3 +62,5 @@ export 'src/css/values/percentage.dart';
 export 'src/css/values/textual.dart';
 export 'src/css/values/variable.dart';
 export 'src/css/values/calc.dart';
+export 'src/css/values/paint.dart';
+export 'src/css/values/path.dart';

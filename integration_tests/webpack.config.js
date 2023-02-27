@@ -29,10 +29,13 @@ if (process.env.SPEC_SCOPE) {
     throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
   }
 } else {
-  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html}', {
+  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
     cwd: context,
     ignore: ['node_modules/**'],
   }).map((file) => './' + file).filter(name => name.indexOf('plugins') < 0)
+  if (process.env.WEBF_TEST_FILTER) {
+    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
+  }
 }
 
 
@@ -89,6 +92,20 @@ module.exports = {
         use: [
           {
             loader: path.resolve('./scripts/html_loader'),
+            options: {
+              workspacePath: context,
+              testPath,
+              snapshotPath,
+            }
+          }
+        ]
+      },
+      {
+        test: /\.svg$/i,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: path.resolve('./scripts/svg_loader'),
             options: {
               workspacePath: context,
               testPath,

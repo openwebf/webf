@@ -318,6 +318,20 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
+
+    # SVG files
+    core/svg/svg_element.cc
+    core/svg/svg_graphics_element.cc
+    core/svg/svg_geometry_element.cc
+    core/svg/svg_text_content_element.cc
+    core/svg/svg_text_positioning_element.cc
+
+    core/svg/svg_svg_element.cc
+    core/svg/svg_path_element.cc
+    core/svg/svg_rect_element.cc
+    core/svg/svg_text_element.cc
+    core/svg/svg_g_element.cc
+
     # Legacy implements, should remove them in the future.
     core/dom/legacy/element_attributes.cc
     core/dom/legacy/bounding_client_rect.cc
@@ -442,6 +456,23 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/defined_properties_initializer.cc
     out/element_attribute_names.cc
     out/element_namespace_uris.cc
+
+    # SVG generated
+    out/svg_names.cc
+    out/svg_element_factory.cc
+
+    # SVG files
+    out/qjs_svg_element.cc
+    out/qjs_svg_graphics_element.cc
+    out/qjs_svg_geometry_element.cc
+    out/qjs_svg_text_content_element.cc
+    out/qjs_svg_text_positioning_element.cc
+
+    out/qjs_svg_svg_element.cc
+    out/qjs_svg_path_element.cc
+    out/qjs_svg_rect_element.cc
+    out/qjs_svg_text_element.cc
+    out/qjs_svg_g_element.cc
     )
 
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2

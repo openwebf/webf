@@ -67,6 +67,22 @@ num diffBetweenPixels(firstPixel, secondPixel, ignoreAlpha) {
   return diff;
 }
 
+Future<double> imageSameRatio(List<int> imageA, List<int> imageB) async {
+  if (imageA.length == 0 || imageB.length == 0) {
+    return 0;
+  }
+
+  Image a = decodeImage(imageA.toList())!;
+  Image b = decodeImage(imageB.toList())!;
+
+  if (!haveSameSize(a, b)) {
+    return 0;
+  }
+
+  double ratio = await compareImages(src1: a, src2: b, algorithm: EuclideanColorDistance(ignoreAlpha: true));
+  return ratio;
+}
+
 Future<bool> matchImage(Uint8List imageA, List<int> imageB, String filename) async {
   if (imageA.length == 0 || imageB.length == 0) {
     return false;
@@ -78,7 +94,7 @@ Future<bool> matchImage(Uint8List imageA, List<int> imageB, String filename) asy
     return false;
   }
 
-  double ratio = await compareImages(src1: a, src2: b, algorithm: EuclideanColorDistance(ignoreAlpha: true));
+  double ratio = await imageSameRatio(imageA, imageB);
   bool isMatch = (ratio * 100) < 1;
 
   if (!isMatch) {
@@ -148,10 +164,17 @@ Future<bool> matchImageSnapshot(Uint8List bytes, String filename) async {
     return match;
   } else {
     if (Platform.environment['CI'] == 'true') {
-      throw FlutterError('This specs did not have corresponding snapshots.');
+      throw FlutterError('This spec did not have corresponding snapshot file $filename.png.');
     }
 
     await snap.writeAsBytes(currentPixels);
     return true;
   }
+}
+
+Future<bool> matchImageSnapshotBytes(List<int> imageA, List<int> imageB) async {
+  double ratio = await imageSameRatio(imageA, imageB);
+  bool isMatch = (ratio * 100) < 1;
+
+  return isMatch; // < 0.01%
 }
