@@ -8,6 +8,10 @@ WebF (Web on Flutter) is a W3C standards compliant Web rendering engine based on
 - **Web Development Experience:** WebF supports inspecting DOM structure, CSS styles and debugging JavaScript with Chrome DevTools, just like the web development experience of your browser.
 - **Write Once, Run Anywhere:** With the power of WebF, You can write your web application and run it on any device flutter supports, and you can still run your apps in Node.js and Web browsers with the same codebase.
 
+## Check if a Web API or CSS is available in WebF
+
+Check [this yaml](https://github.com/openwebf/webf-available-apis/blob/main/data.yaml)
+
 
 ## The Relationship between WebF and Kraken
 
@@ -102,6 +106,7 @@ flutter run
 ```
 
 <img src="https://user-images.githubusercontent.com/4409743/217754470-697b6998-4451-483c-b26e-bdb2740f3ea1.png" width="800" style="display: block; margin: 0 auto;" />
+
 
 ## How it works
 
