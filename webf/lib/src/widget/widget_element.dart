@@ -26,6 +26,10 @@ abstract class WidgetElement extends dom.Element {
   }
   WebFWidgetElementToWidgetAdapter? attachedAdapter;
 
+  BuildContext get context {
+    return _state!.context;
+  }
+
   WidgetElement(
     BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
