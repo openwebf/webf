@@ -1,3 +1,9 @@
+## 0.14.0-beta.2
+
+* fix: fix scroll error.
+* feat: add Vue SSR support.
+* feat: add atob and btoa API.
+
 ## 0.14.0-beta.1
 
 * Support flutter 3.3.10/3.7.3
