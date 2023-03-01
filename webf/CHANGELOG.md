@@ -1,3 +1,7 @@
+## 0.14.0-beta.3
+
+* fix: add context API for widgetElement.
+
 ## 0.14.0-beta.2
 
 * fix: fix scroll error.
