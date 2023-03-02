@@ -165,9 +165,9 @@ static inline slimb_t sat_add(slimb_t a, slimb_t b)
     return r;
 }
 
-#define malloc(s) malloc_is_forbidden(s)
-#define free(p) free_is_forbidden(p)
-#define realloc(p, s) realloc_is_forbidden(p, s)
+#define mi_malloc(s) malloc_is_forbidden(s)
+#define mi_free(p) free_is_forbidden(p)
+#define mi_realloc(p, s) realloc_is_forbidden(p, s)
 
 void bf_context_init(bf_context_t *s, bf_realloc_func_t *realloc_func,
                      void *realloc_opaque)

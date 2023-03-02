@@ -36,13 +36,7 @@
 #include <time.h>
 #include <fenv.h>
 #include <math.h>
-#if defined(__APPLE__)
-#include <malloc/malloc.h>
-#elif defined(__linux__)
-#include <malloc.h>
-#elif defined(__FreeBSD__)
-#include <malloc_np.h>
-#endif
+#include "mimalloc.h"
 
 #ifdef CONFIG_BIGNUM
 #include "quickjs/libbf.h"
