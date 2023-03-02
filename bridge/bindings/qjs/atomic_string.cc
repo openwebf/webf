@@ -301,12 +301,12 @@ inline AtomicString RemoveCharactersInternal(JSContext* ctx,
   }
 
   AtomicString str;
-  auto data = (CharType *)js_malloc(ctx, outc);
+  auto data = (CharType*)js_malloc(ctx, outc);
   memcpy(data, to, outc);
   js_free(ctx, to);
   if (self.Is8Bit()) {
     str = AtomicString(ctx, reinterpret_cast<const char*>(data), outc);
-  }else {
+  } else {
     str = AtomicString(ctx, reinterpret_cast<const uint16_t*>(data), outc);
   }
 
