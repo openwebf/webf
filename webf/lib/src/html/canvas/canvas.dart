@@ -24,12 +24,22 @@ class RenderCanvasPaint extends RenderCustomPaint {
   @override
   bool get isRepaintBoundary => true;
 
-  RenderCanvasPaint({required CustomPainter painter, required Size preferredSize})
+  RenderCanvasPaint(
+      {required CustomPainter painter, required Size preferredSize})
       : super(
           painter: painter,
           foregroundPainter: null, // Ignore foreground painter
           preferredSize: preferredSize,
         );
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    context.pushClipRect(needsCompositing, offset,
+        Rect.fromLTWH(0, 0, preferredSize.width, preferredSize.height),
+        (context, offset) {
+      super.paint(context, offset);
+    });
+  }
 }
 
 class CanvasElement extends Element {
@@ -41,8 +51,7 @@ class CanvasElement extends Element {
   // The custom paint render object.
   RenderCustomPaint? renderCustomPaint;
 
-  CanvasElement([BindingContext? context])
-      : super(context) {
+  CanvasElement([BindingContext? context]) : super(context) {
     painter = CanvasPainter(repaint: repaintNotifier);
   }
 
@@ -61,15 +70,18 @@ class CanvasElement extends Element {
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeMethods(methods);
-    methods['getContext'] = BindingObjectMethodSync(call: (args) => getContext(castToType<String>(args[0])));
+    methods['getContext'] = BindingObjectMethodSync(
+        call: (args) => getContext(castToType<String>(args[0])));
   }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = castToType<int>(value));
-    properties['height'] =
-        BindingObjectProperty(getter: () => height, setter: (value) => height = castToType<int>(value));
+    properties['width'] = BindingObjectProperty(
+        getter: () => width, setter: (value) => width = castToType<int>(value));
+    properties['height'] = BindingObjectProperty(
+        getter: () => height,
+        setter: (value) => height = castToType<int>(value));
   }
 
   @override
@@ -115,8 +127,10 @@ class CanvasElement extends Element {
     double? height;
 
     RenderStyle renderStyle = renderBoxModel!.renderStyle;
-    double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
-    double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
+    double? styleWidth =
+        renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
+    double? styleHeight =
+        renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
 
     if (styleWidth != null) {
       width = styleWidth;
@@ -136,7 +150,19 @@ class CanvasElement extends Element {
       height = this.width / width * this.height;
     }
 
-    return Size(width!, height!);
+    // need to minus padding and border size
+    width = width! -
+        renderStyle.effectiveBorderLeftWidth.computedValue -
+        renderStyle.effectiveBorderRightWidth.computedValue -
+        renderStyle.paddingLeft.computedValue -
+        renderStyle.paddingRight.computedValue;
+    height = height! -
+        renderStyle.effectiveBorderTopWidth.computedValue -
+        renderStyle.effectiveBorderBottomWidth.computedValue -
+        renderStyle.paddingTop.computedValue -
+        renderStyle.paddingLeft.computedValue;
+
+    return Size(width, height);
   }
 
   void resize() {
@@ -152,8 +178,10 @@ class CanvasElement extends Element {
       // @TODO: CSS object-fit for canvas.
       // To fill (default value of object-fit) the bitmap content, use scale to get the same performed.
       RenderStyle renderStyle = renderBoxModel!.renderStyle;
-      double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
-      double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
+      double? styleWidth =
+          renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
+      double? styleHeight =
+          renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
 
       double? scaleX;
       double? scaleY;
@@ -229,6 +257,18 @@ class CanvasElement extends Element {
     switch (key) {
       case WIDTH:
       case HEIGHT:
+      case PADDING_BOTTOM:
+      case PADDING_LEFT:
+      case PADDING_RIGHT:
+      case PADDING_TOP:
+      case BORDER_TOP_STYLE:
+      case BORDER_TOP_WIDTH:
+      case BORDER_LEFT_STYLE:
+      case BORDER_LEFT_WIDTH:
+      case BORDER_RIGHT_STYLE:
+      case BORDER_RIGHT_WIDTH:
+      case BORDER_BOTTOM_STYLE:
+      case BORDER_BOTTOM_WIDTH:
         resize();
         break;
     }
