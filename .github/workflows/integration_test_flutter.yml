@@ -15,7 +15,9 @@ jobs:
     outputs:
       matrix: ${{ steps.matrix.outputs.value }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - id: matrix
         run: |
           JSON=$(node -e "console.log(JSON.stringify(require('./integration_tests/spec_group.json').map(j=>j.name)))")
@@ -23,7 +25,9 @@ jobs:
   build_bridge:
     runs-on: macos-12
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
@@ -40,7 +44,9 @@ jobs:
   bridge_unit_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
@@ -57,7 +63,9 @@ jobs:
   webf_unit_test_f33:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: subosito/flutter-action@v2
       with:
         flutter-version: ${{ env.flutter33 }}
@@ -68,7 +76,9 @@ jobs:
   webf_unit_test_f37:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: subosito/flutter-action@v2
       with:
         flutter-version: ${{ env.flutter37 }}
@@ -84,7 +94,9 @@ jobs:
       matrix:
         value: ${{fromJson(needs.setup.outputs.matrix)}}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
@@ -119,7 +131,9 @@ jobs:
       matrix:
         value: ${{fromJson(needs.setup.outputs.matrix)}}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
@@ -150,7 +164,9 @@ jobs:
     runs-on: macos-12
     needs: [ build_bridge ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
@@ -178,7 +194,9 @@ jobs:
     runs-on: macos-12
     needs: [ build_bridge ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}

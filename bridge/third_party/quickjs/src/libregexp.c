@@ -2564,7 +2564,7 @@ BOOL lre_check_stack_overflow(void *opaque, size_t alloca_size)
 
 void *lre_realloc(void *opaque, void *ptr, size_t size)
 {
-    return realloc(ptr, size);
+    return mi_realloc(ptr, size);
 }
 
 int main(int argc, char **argv)

@@ -280,7 +280,7 @@ static __maybe_unused void cr_dump(CharRange *cr)
 
 static void *cr_default_realloc(void *opaque, void *ptr, size_t size)
 {
-    return realloc(ptr, size);
+    return mi_realloc(ptr, size);
 }
 
 void cr_init(CharRange *cr, void *mem_opaque, DynBufReallocFunc *realloc_func)

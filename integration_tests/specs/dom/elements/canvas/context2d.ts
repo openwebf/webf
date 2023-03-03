@@ -409,6 +409,25 @@ describe('Canvas context 2d', () => {
     done();
   });
 
+  it('should work when draw overflow element', async () => {
+    const canvas = document.createElement('canvas')
+    canvas.style.width = canvas.style.height = '200px';
+    canvas.style.border = '1px solid green';
+    canvas.style.padding = '10px';
+    canvas.style.margin = '10px';
+    canvas.width = canvas.height = 200;
+
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d')!
+
+    ctx.fillStyle = 'green';
+    ctx.fillRect(10, 10, 200, 200);
+
+    await snapshot();
+    done();
+  });
+  
   it('should work with createLinearGradient', async (done) => {
     const canvas = <canvas height="300" width="300" />;
     document.body.appendChild(canvas);
