@@ -215,7 +215,7 @@ no_inline int resize_properties(JSContext* ctx, JSShape** psh, JSObject* p, uint
   intptr_t h;
 
   sh = *psh;
-  new_size = max_int(count, sh->prop_size * 3 / 2);
+  new_size = max_int(count, sh->prop_size * 9 / 2);
   /* Reallocate prop array first to avoid crash or size inconsistency
      in case of memory allocation failure */
   if (p) {

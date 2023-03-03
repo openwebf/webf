@@ -302,7 +302,7 @@ int cr_realloc(CharRange *cr, int size)
     uint32_t *new_buf;
     
     if (size > cr->size) {
-        new_size = max_int(size, cr->size * 3 / 2);
+        new_size = max_int(size, cr->size * 9 / 2);
         new_buf = cr->realloc_func(cr->mem_opaque, cr->points,
                                    new_size * sizeof(cr->points[0]));
         if (!new_buf)
