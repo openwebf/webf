@@ -285,9 +285,7 @@ inline AtomicString RemoveCharactersInternal(JSContext* ctx,
   if (from == fromend)
     return self;
 
-  std::vector<CharType> data;
-  data.resize(len);
-  CharType* to = data.data();
+  auto* to = (CharType*)js_malloc(ctx, len);
   size_t outc = static_cast<size_t>(from - characters);
 
   if (outc)
@@ -302,12 +300,18 @@ inline AtomicString RemoveCharactersInternal(JSContext* ctx,
       break;
   }
 
-  data.resize(outc);
+  AtomicString str;
+  auto data = (CharType*)js_malloc(ctx, outc);
+  memcpy(data, to, outc);
+  js_free(ctx, to);
   if (self.Is8Bit()) {
-    return AtomicString(ctx, reinterpret_cast<const char*>(data.data()), data.size());
+    str = AtomicString(ctx, reinterpret_cast<const char*>(data), outc);
+  } else {
+    str = AtomicString(ctx, reinterpret_cast<const uint16_t*>(data), outc);
   }
 
-  return AtomicString(ctx, reinterpret_cast<const uint16_t*>(data.data()), data.size());
+  js_free(ctx, data);
+  return str;
 }
 
 AtomicString AtomicString::RemoveCharacters(JSContext* ctx, CharacterMatchFunctionPtr find_match) {

@@ -83,7 +83,7 @@ int has_suffix(const char *str, const char *suffix)
 
 static void *dbuf_default_realloc(void *opaque, void *ptr, size_t size)
 {
-    return realloc(ptr, size);
+    return mi_realloc(ptr, size);
 }
 
 void dbuf_init2(DynBuf *s, void *opaque, DynBufReallocFunc *realloc_func)
