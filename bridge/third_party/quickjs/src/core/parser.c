@@ -6995,7 +6995,7 @@ static __exception int js_parse_statement_or_decl(JSParseState *s, int decl_mask
         goto fail;
 
       // set the breakpoints when debugger is connected.
-      if (js_debugger_is_transport_connected(ctx->rt)) {
+      if (js_debugger_is_connected(ctx->rt)) {
         JSDebuggerInfo* debugger_info = js_debugger_info(JS_GetRuntime(ctx));
         debugger_info->ctx = ctx;
         Source* source = js_malloc(ctx, sizeof(Source));
@@ -7523,6 +7523,9 @@ JSFunctionDef *js_new_function_def(JSContext *ctx,
   fd->filename = JS_NewAtom(ctx, filename);
   fd->line_num = line_num;
   fd->column_num = column_num;
+  if (parent != NULL && !JS_IsNull(parent->source_map)) {
+    fd->source_map = JS_DupValue(ctx, parent->source_map);
+  }
 
   js_dbuf_init(ctx, &fd->pc2line);
   js_dbuf_init(ctx, &fd->pc2column);
@@ -11454,6 +11457,7 @@ JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
     b->debug.filename = fd->filename;
     b->debug.line_num = fd->line_num;
     b->debug.column_num = fd->column_num;
+    b->debug.source_map = JS_DupValue(ctx, fd->source_map);
 
     //DynBuf pc2line;
     //compute_pc2line_info(fd, &pc2line);
@@ -12426,6 +12430,19 @@ JSValue __JS_EvalInternal(JSContext *ctx, JSValueConst this_obj,
 
   push_scope(s); /* body scope */
   fd->body_scope = fd->scope_level;
+  fd->source_map = JS_NULL;
+
+#if ENABLE_DEBUGGER
+  // Set sourcemap to function bytecode.
+  if (js_debugger_is_connected(ctx->rt)) {
+    JSDebuggerInfo* info = js_debugger_info(ctx->rt);
+    // Set source_map when sourcemap is ready(Async).
+    JSValue source_map = js_parse_sourcemap(info->debugging_ctx, input, input_len, filename);
+    fd->source_map = JS_DupValue(ctx, source_map);
+    printf("%s \n %p\n", input, JS_VALUE_GET_PTR(source_map));
+    JS_FreeValue(ctx, source_map);
+  }
+#endif
 
   err = js_parse_program(s);
   if (err) {

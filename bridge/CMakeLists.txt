@@ -134,6 +134,9 @@ list(APPEND BRIDGE_INCLUDE
   ${ADDITIONAL_INCLUDE_DIRS}
   )
 
+add_library(modb STATIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/modp_b64.cc)
+list(APPEND BRIDGE_LINK_LIBS modb)
+
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
 

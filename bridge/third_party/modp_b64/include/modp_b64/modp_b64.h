@@ -24,7 +24,7 @@
 #ifndef MODP_B64
 #define MODP_B64
 
-#include <cstddef>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,7 +88,7 @@ size_t modp_b64_encode(char* dest, const char* str, size_t len);
  * if (len == -1) { error }
  * \endcode
  */
-enum class ModpDecodePolicy {
+enum ModpDecodePolicy {
   // src length must be divisible by 4, with a max of 2 pad chars.
   kStrict,
 
@@ -100,11 +100,12 @@ enum class ModpDecodePolicy {
   // Accepts any number of pad chars.
   kNoPaddingValidation,
 };
+
 size_t modp_b64_decode(
     char* dest,
     const char* src,
     size_t len,
-    ModpDecodePolicy policy = ModpDecodePolicy::kStrict);
+    enum ModpDecodePolicy policy);
 
 /**
  * The maximum input that can be passed into modp_b64_encode{_data}.

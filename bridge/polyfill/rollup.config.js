@@ -59,14 +59,13 @@ module.exports = [
     },
   },
   {
-    input: 'src/sourcemap/index.ts',
+    input: 'src/sourcemap/index.js',
     output: Object.assign({ file: 'dist/sourcemap.js'}, output),
     plugins: [
         ...plugins,
-        typescript(),
         commonjs(),
         NODE_ENV === 'development' ? null : terser(uglifyOptions)
     ],
-    context: 'window'
+    context: 'undefined'
   }
 ];

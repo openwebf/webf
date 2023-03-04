@@ -1190,8 +1190,22 @@ void build_backtrace(JSContext* ctx, JSValueConst error_obj, const char* filenam
           latest_column_num = column_num;
         }
         atom_str = JS_AtomToCString(ctx, b->debug.filename);
-        dbuf_printf(&dbuf, " (%s", atom_str ? atom_str : "<null>");
-        JS_FreeCString(ctx, atom_str);
+
+        if (JS_IsObject(b->debug.source_map)) {
+          MappedPosition mapped_position;
+          js_original_position_from_sourcemap(ctx, b->debug.source_map, line_num, column_num, &mapped_position);
+          if (mapped_position.source != NULL) {
+            JS_FreeCString(ctx, atom_str);
+            atom_str = mapped_position.source;
+            line_num = (int) mapped_position.line;
+            column_num = (int) mapped_position.column;
+          }
+          dbuf_printf(&dbuf, " (%s", atom_str ? atom_str : "<null>");
+        } else {
+          dbuf_printf(&dbuf, " (%s", atom_str ? atom_str : "<null>");
+          JS_FreeCString(ctx, atom_str);
+        }
+
         if (line_num != -1) {
           dbuf_printf(&dbuf, ":%d", line_num);
           if (column_num != -1) {

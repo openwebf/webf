@@ -1778,7 +1778,7 @@ int JS_SetPropertyInternal(JSContext* ctx, JSValueConst this_obj, JSAtom prop, J
   JSProperty* pr;
   uint32_t tag;
   JSPropertyDescriptor desc;
-  int ret, offset;
+  uint32_t ret, offset;
 #if 0
     printf("JS_SetPropertyInternal: "); print_atom(ctx, prop); printf("\n");
 #endif

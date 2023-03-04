@@ -28,7 +28,6 @@
 
 #include "quickjs/cutils.h"
 #include "quickjs/list.h"
-#include "types.h"
 #include "ic.h"
 
 /* JS parser */
@@ -331,6 +330,7 @@ typedef struct JSFunctionDef {
 
   char* source; /* raw source, utf-8 encoded */
   int source_len;
+  JSValue source_map;
 
   JSModuleDef* module; /* != NULL when parsing a module */
   InlineCache *ic; /* inline cache for field op */

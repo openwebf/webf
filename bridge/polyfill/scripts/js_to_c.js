@@ -46,10 +46,11 @@ static uint8_t bytes[${uint8Array.length}] = {${uint8Array.join(',')}};`;
 const getPolyfillEvalCall = () => {
   return `JSValue obj, val;
   obj = JS_ReadObject(ctx, bytes, byteLength, JS_READ_OBJ_BYTECODE);
-  if (!JS_IsException(obj))
+  if (JS_IsException(obj)) {
     return;
+  }
   val = JS_EvalFunction(ctx, obj);
-  if (!JS_IsException(val))
+  if (JS_IsException(val))
     return;
   JS_FreeValue(ctx, val);`;
 }

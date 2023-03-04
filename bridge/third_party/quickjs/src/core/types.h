@@ -43,6 +43,9 @@
 extern "C" {
 #endif
 
+typedef struct JSDebuggerInfo JSDebuggerInfo;
+typedef struct JSDebuggerFunctionInfo JSDebuggerFunctionInfo;
+
 enum {
     /* classid tag        */    /* union usage   | properties */
     JS_CLASS_OBJECT = 1,        /* must be first */
@@ -603,6 +606,7 @@ typedef struct JSFunctionBytecode {
         uint8_t *pc2line_buf;
         uint8_t *pc2column_buf;
         char *source;
+        JSValue source_map;
     } debug;
 #if ENABLE_DEBUGGER
     struct JSDebuggerFunctionInfo debugger;

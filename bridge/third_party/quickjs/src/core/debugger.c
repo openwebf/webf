@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include <modp_b64/modp_b64.h>
 #include "debugger.h"
 #include <pthread.h>
 #include "base.h"
@@ -10,6 +11,7 @@
 #include "dap_protocol.h"
 #include "parser.h"
 #include "runtime.h"
+#include "sourcemap.h"
 #include "types.h"
 
 #if ENABLE_DEBUGGER
@@ -885,7 +887,7 @@ void js_debugger_exception(JSContext* ctx) {
 }
 
 static void js_debugger_context_event(JSContext* caller_ctx, const char* reason) {
-  if (!js_debugger_is_transport_connected(JS_GetRuntime(caller_ctx)))
+  if (!js_debugger_is_connected(JS_GetRuntime(caller_ctx)))
     return;
 
   JSDebuggerInfo* info = js_debugger_info(JS_GetRuntime(caller_ctx));
@@ -1095,6 +1097,28 @@ void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info) {
   info->debugging_ctx = NULL;
 }
 
+JSValue js_debugger_atob(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  const char* input_raw = JS_ToCString(ctx, argv[0]);
+  size_t input_len = strlen(input_raw);
+  size_t decode_len = modp_b64_decode_len(input_len);
+  char* output = js_malloc(ctx, decode_len * sizeof(char));
+  const size_t output_size = modp_b64_decode(output, input_raw, input_len, kForgiving);
+  JS_FreeCString(ctx, input_raw);
+  return JS_NewStringLen(ctx, output, output_size);
+}
+
+JSValue js_debugger_print(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  const char* input_raw = JS_ToCString(ctx, argv[0]);
+  printf("%s\n", input_raw);
+  JS_FreeCString(ctx, input_raw);
+  return JS_UNDEFINED;
+}
+
+static const JSCFunctionListEntry js_debugger_ctx_func[] = {
+    JS_CFUNC_DEF("atob", 1, js_debugger_atob),
+    JS_CFUNC_DEF("print", 1, js_debugger_print),
+};
+
 void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   JSRuntime* rt = JS_GetRuntime(ctx);
   JSDebuggerInfo* info = js_debugger_info(rt);
@@ -1111,6 +1135,11 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
   methods->read_backend_commands = handle_client_read;
 
   info->debugging_ctx = JS_NewContext(rt);
+  initWebFSourceMap(info->debugging_ctx);
+  JSValue debugger_global_object = JS_GetGlobalObject(info->debugging_ctx);
+  JS_SetPropertyFunctionList(ctx, debugger_global_object, js_debugger_ctx_func, countof(js_debugger_ctx_func));
+  JS_FreeValue(ctx, debugger_global_object);
+
   info->is_connected = TRUE;
 
   rt->debugger_info.logging_state.variable_reference_count = 1;
@@ -1130,7 +1159,7 @@ void* JS_AttachDebugger(JSContext* ctx, DebuggerMethods* methods) {
 }
 
 void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath, const char* filename, int64_t lineno, int64_t column) {
-  if (!js_debugger_is_transport_connected(ctx->rt)) {
+  if (!js_debugger_is_connected(ctx->rt)) {
     return;
   }
 
@@ -1174,10 +1203,6 @@ void JS_DebuggerFlushFrontendCommands(JSContext* ctx) {
   if (!info->is_debugging && !info->is_paused) {
     js_debugger_check(ctx, NULL, JS_UNDEFINED, -1);
   }
-}
-
-int js_debugger_is_transport_connected(JSRuntime* rt) {
-  return js_debugger_info(rt)->is_connected;
 }
 
 JSDebuggerLocation js_debugger_current_location(JSContext* ctx, const uint8_t* cur_pc) {
@@ -1589,3 +1614,95 @@ void JS_AttachDebugger(JSContext* ctx,
                        void* udata) {}
 
 #endif
+
+static JSValue call_js_methods(JSContext* ctx, JSValue this_object, const char* method, size_t argc, JSValueConst* argv) {
+  JSValue fn;
+  if (JS_IsUndefined(this_object)) {
+    JSValue global_object = JS_GetGlobalObject(ctx);
+    fn = JS_GetPropertyStr(ctx, global_object, method);
+    JS_FreeValue(ctx, global_object);
+  } else {
+    fn = JS_GetPropertyStr(ctx, this_object, method);
+  }
+  if (!JS_IsFunction(ctx, fn)) {
+    return JS_ThrowTypeError(ctx, "%s is not a function", method);
+  }
+
+  JSValue ret = JS_Call(ctx, fn, this_object, argc, argv);
+
+  if (JS_IsException(ret)) {
+    JSValue error = JS_GetException(ctx);
+    const char* err = JS_ToCString(ctx, error);
+    printf("%s\n", err);
+    JS_FreeValue(ctx, error);
+    JS_FreeCString(ctx, err);
+    return JS_NULL;
+  }
+
+  return ret;
+}
+
+JSValue js_find_script_sourcemap_url(JSContext* ctx, const char* source, size_t source_len, const char* filename) {
+  JSValue str = JS_NewStringLen(ctx, source, source_len);
+  JSValue args[1] = {str};
+
+  return call_js_methods(ctx, JS_UNDEFINED, "findScriptSourceMapUrl", 1, args);
+}
+
+JSValue js_find_script_source_url(JSContext* ctx, const char* source, size_t source_len, const char* filename) {
+  JSValue str = JS_NewStringLen(ctx, source, source_len);
+  JSValue args[1] = {str};
+
+  return call_js_methods(ctx, JS_UNDEFINED, "findScriptSourceURL", 1, args);
+}
+
+JSValue js_parse_sourcemap(JSContext* ctx,
+                           const char* input,
+                           size_t input_len,
+                           const char* filename) {
+  int is_inline = strcmp(filename, "<input>") == 0;
+  if (is_inline) {
+    JSValue str = JS_NewStringLen(ctx, input, input_len);
+    JSValue args[1] = {str};
+    JSValue source_map = call_js_methods(ctx, JS_UNDEFINED, "parseInlineSourceMap", 1, args);
+    if (!JS_IsObject(source_map)) return JS_NULL;
+    JSValue source_map_consumer = call_js_methods(ctx, JS_UNDEFINED, "consumeSourceMap", 1, &source_map);
+    JS_FreeValue(ctx, source_map);
+    JS_FreeValue(ctx, str);
+    return source_map_consumer;
+  }
+  return JS_NULL;
+}
+
+void js_original_position_from_sourcemap(JSContext* ctx, JSValue source_map, size_t original_line, size_t original_column, MappedPosition* source_location) {
+  assert(JS_IsObject(source_map));
+
+  JSValue params = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, params, "line", JS_NewUint32(ctx, original_line));
+  JS_SetPropertyStr(ctx, params, "column", JS_NewUint32(ctx, original_column));
+
+  JSValue result = call_js_methods(ctx, source_map, "originalPositionFor", 1, &params);
+  JSValue source_value = JS_GetPropertyStr(ctx, result, "source");
+  JSValue column_value = JS_GetPropertyStr(ctx, result, "column");
+  JSValue line_value = JS_GetPropertyStr(ctx, result, "line");
+  JSValue name_value = JS_GetPropertyStr(ctx, result, "name");
+
+  source_location->source = JS_IsNull(source_value) ? NULL : value_to_string(ctx, source_value);
+  source_location->name = JS_IsNull(name_value) ? NULL : value_to_string(ctx, name_value);
+
+  int64_t line;
+  int64_t column;
+
+  JS_ToInt64(ctx, &line, line_value);
+  JS_ToInt64(ctx, &column, column_value);
+
+  source_location->line = line;
+  source_location->column = column;
+
+  JS_FreeValue(ctx, params);
+  JS_FreeValue(ctx, result);
+  JS_FreeValue(ctx, source_value);
+  JS_FreeValue(ctx, column_value);
+  JS_FreeValue(ctx, line_value);
+  JS_FreeValue(ctx, name_value);
+}

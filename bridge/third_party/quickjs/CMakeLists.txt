@@ -39,6 +39,7 @@ list(APPEND QUICK_JS_SOURCE
     src/core/convertion.c
     src/core/runtime.c
     src/core/module.c
+    src/core/ic.c
     src/core/debugger.c
     out/dap_converter.c
     out/sourcemap.c
@@ -73,7 +74,8 @@ else()
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
 endif()
 
-target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/out)
+target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/out ${CMAKE_CURRENT_SOURCE_DIR}/../modp_b64/include )
+target_link_libraries(quickjs PUBLIC modb)
 
 add_executable(qjsc qjsc.c quickjs-libc.c)
 target_link_libraries(qjsc quickjs ${LINK_LIBRARIES})

@@ -42,6 +42,8 @@ typedef struct JSDebuggerLocation {
 #define JS_DEBUGGER_STEP_OUT 3
 #define JS_DEBUGGER_STEP_CONTINUE 4
 
+typedef struct JSFunctionBytecode JSFunctionBytecode;
+
 typedef struct MessageItem {
   char* buf;
   uint32_t length;
@@ -84,6 +86,7 @@ typedef struct JSDebuggerInfo {
   JSValue logged_object;
 } JSDebuggerInfo;
 
+typedef struct JSFunctionDef JSFunctionDef;
 void init_source(Source* source);
 void init_source_breakpoint(SourceBreakpoint* breakpoint);
 
@@ -92,7 +95,6 @@ void js_debugger_free_context(JSContext* ctx);
 void js_debugger_check(JSContext* ctx, const uint8_t* pc, JSValue this_object, int opcode);
 void js_debugger_exception(JSContext* ctx);
 void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info);
-int js_debugger_is_transport_connected(JSRuntime* rt);
 
 BreakPointMapItem* js_debugger_file_breakpoints(JSContext* ctx, const char* path);
 
@@ -100,6 +102,10 @@ BreakPointMapItem* js_debugger_file_breakpoints(JSContext* ctx, const char* path
 // these functions all require access to quickjs internal structures.
 
 JSDebuggerInfo* js_debugger_info(JSRuntime* rt);
+
+static inline int js_debugger_is_connected(JSRuntime* rt) {
+  return js_debugger_info(rt)->is_connected;
+}
 
 // this may be able to be done with an Error backtrace,
 // but would be clunky and require stack string parsing.
@@ -117,6 +123,21 @@ JSValue js_debugger_closure_variables(JSContext* ctx, int64_t stack_index);
 
 // evaluates an expression at any stack frame. JS_Evaluate* only evaluates at the top frame.
 JSValue js_debugger_evaluate(JSContext* ctx, int64_t stack_index, DebuggerSuspendedState* state, const char* expression);
+
+JSValue js_find_script_sourcemap_url(JSContext* ctx, const char* source, size_t source_len, const char* filename);
+JSValue js_find_script_source_url(JSContext* ctx, const char* source, size_t source_len, const char* filename);
+JSValue js_parse_sourcemap(JSContext* ctx, const char* raw_input, size_t input_len, const char* filename);
+
+typedef struct MappedPosition {
+  const char* source;
+  size_t line;
+  size_t column;
+  const char* name;
+} MappedPosition;
+
+void js_original_position_from_sourcemap(JSContext* ctx, JSValue source_map, size_t original_line, size_t original_column, MappedPosition* source_location);
+int js_current_func_has_sourcemap(JSContext* ctx, JSFunctionBytecode function_bytecode);
+
 
 #ifdef __cplusplus
 }

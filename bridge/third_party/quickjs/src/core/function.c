@@ -664,7 +664,7 @@ restart:
         goto has_call_argc;
       has_call_argc:
         call_argv = sp - call_argc;
-        sf->cur_pc = pc;
+        sf->cur_pc = (uint8_t*) pc;
         ret_val = JS_CallInternal(ctx, call_argv[-1], JS_UNDEFINED, JS_UNDEFINED, call_argc, call_argv, 0);
         if (unlikely(JS_IsException(ret_val)))
           goto exception;
