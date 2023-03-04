@@ -30,7 +30,7 @@ TEST(Console, debugInspect) {
   auto bridge = TEST_init();
   const char* code = "function f() { console.log(123); } f();";
   bridge->evaluateScript(code, strlen(code), "/tmp/index.js", 0);
-    EXPECT_EQ(logExecuted, true);
+  EXPECT_EQ(logExecuted, true);
 }
 
 TEST(Console, log) {
