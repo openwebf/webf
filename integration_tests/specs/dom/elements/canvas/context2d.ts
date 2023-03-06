@@ -425,7 +425,6 @@ describe('Canvas context 2d', () => {
     ctx.fillRect(10, 10, 200, 200);
 
     await snapshot();
-    done();
   });
   
   it('should work with createLinearGradient', async (done) => {
