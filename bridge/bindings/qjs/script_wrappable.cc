@@ -38,6 +38,7 @@ static void HandleJSObjectGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* m
 /// completed.
 static void HandleJSObjectFinalized(JSRuntime* rt, JSValue val) {
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JSValueGetClassId(val)));
+  MemberMutationScope scope{object->GetExecutingContext()};
   delete object;
 }
 
