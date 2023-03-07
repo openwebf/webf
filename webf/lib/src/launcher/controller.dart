@@ -1258,14 +1258,6 @@ class WebFController {
       if (kProfileMode) {
         PerformanceTiming.instance().mark(PERF_JS_BUNDLE_EVAL_END);
       }
-
-      // trigger DOMContentLoaded event
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        Event event = Event(EVENT_DOM_CONTENT_LOADED);
-        EventTarget window = view.window;
-        window.dispatchEvent(event);
-      });
-      SchedulerBinding.instance.scheduleFrame();
     }
   }
 
@@ -1291,7 +1283,17 @@ class WebFController {
 
     _isComplete = true;
 
+    _dispatchDOMContentLoadedEvent();
     _dispatchWindowLoadEvent();
+  }
+
+  void _dispatchDOMContentLoadedEvent() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      Event event = Event(EVENT_DOM_CONTENT_LOADED);
+      EventTarget window = view.window;
+      window.dispatchEvent(event);
+      _view.document.dispatchEvent(event);
+    });
   }
 
   void _dispatchWindowLoadEvent() {
