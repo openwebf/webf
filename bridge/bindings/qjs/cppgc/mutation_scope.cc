@@ -35,10 +35,10 @@ void MemberMutationScope::RecordFree(ScriptWrappable* wrappable) {
 }
 
 void MemberMutationScope::ApplyRecord() {
-  JSContext* ctx = context_->ctx();
+  JSRuntime* runtime = context_->GetScriptState()->runtime();
   for (auto& entry : mutation_records_) {
     for (int i = 0; i < -entry.second; i++) {
-      JS_FreeValue(ctx, entry.first->ToQuickJSUnsafe());
+      JS_FreeValueRT(runtime, entry.first->ToQuickJSUnsafe());
     }
   }
 }

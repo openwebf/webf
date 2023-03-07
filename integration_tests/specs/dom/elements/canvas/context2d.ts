@@ -426,4 +426,47 @@ describe('Canvas context 2d', () => {
 
     await snapshot();
   });
+  
+  it('should work with createLinearGradient', async (done) => {
+    const canvas = <canvas height="300" width="300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+    const lgd = context.createLinearGradient(20, 0, 220, 0);
+		lgd.addColorStop(0, "green");
+		lgd.addColorStop(0.5, "cyan");
+		lgd.addColorStop(1, "green");
+
+		context.fillStyle = lgd;
+		context.fillRect(20, 20, 200, 100);
+
+    await snapshot(canvas);
+    done();
+  });
+
+  it('should work with createRadialGradient', async (done) => {
+    const canvas = <canvas height="300" width="300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+		const rgd = context.createRadialGradient(110, 90, 30, 100, 100, 70);
+		rgd.addColorStop(0, "pink");
+		rgd.addColorStop(0.9, "white");
+		rgd.addColorStop(1, "green");
+
+		context.fillStyle = rgd;
+		context.fillRect(20, 20, 160, 160);
+    await snapshot(canvas);
+    done();
+  });
 });
