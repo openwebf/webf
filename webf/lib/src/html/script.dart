@@ -57,14 +57,23 @@ class ScriptRunner {
     }
   }
 
-  void _queueScriptForExecution(ScriptElement element) async {
+  void _queueScriptForExecution(ScriptElement element, {bool isInline = false}) async {
     // Increment load event delay count before eval.
     _document.incrementLoadEventDelayCount();
 
-    String url = element.src.toString();
-
     // Obtain bundle.
-    WebFBundle bundle = WebFBundle.fromUrl(url);
+    WebFBundle bundle;
+
+    if (isInline) {
+      String? scriptCode = element.collectElementChildText();
+      if (scriptCode == null) {
+        return;
+      }
+      bundle = WebFBundle.fromContent(scriptCode);
+    } else {
+      String url = element.src.toString();
+      bundle = WebFBundle.fromUrl(url);
+    }
 
     // The bundle execution task.
     void task(bool async) {
@@ -245,6 +254,8 @@ class ScriptElement extends Element {
       ownerDocument.scriptRunner._queueScriptForExecution(this);
 
       SchedulerBinding.instance.scheduleFrame();
+    } else if (childNodes.isNotEmpty) {
+      ownerDocument.scriptRunner._queueScriptForExecution(this, isInline: true);
     }
   }
 
@@ -256,11 +267,7 @@ class ScriptElement extends Element {
     if (src.isNotEmpty) {
       _fetchAndExecuteSource();
     } else if (_type == _MIME_TEXT_JAVASCRIPT || _type == _JAVASCRIPT_MODULE) {
-      // Eval script context: <script> console.log(1) </script>
-      String? script = collectElementChildText();
-      if (script != null && script.isNotEmpty) {
-        evaluateScripts(contextId, script);
-      }
+      _fetchAndExecuteSource();
     }
   }
 }
