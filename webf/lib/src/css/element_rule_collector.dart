@@ -6,6 +6,8 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/css/query_selector.dart';
 
+bool kShowUnavailableCSSProperties = false;
+
 class ElementRuleCollector {
   bool matchedAnyRule(RuleSet ruleSet, Element element) {
     return matchedRules(ruleSet, element).isNotEmpty;
@@ -86,7 +88,9 @@ class ElementRuleCollector {
           matchedRules.add(rule);
         }
       } catch (error) {
-        print('selector evaluator error: $error');
+        if (kShowUnavailableCSSProperties) {
+          print('selector evaluator error: $error');
+        }
       }
     }
     return matchedRules;
