@@ -102,6 +102,7 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     target.ref.uint32 = JSPointerType.Others.index;
     target.ref.u = value.address;
   } else if (value is BindingObject) {
+    assert((value.pointer)!.address != nullptr);
     target.ref.tag = JSValueType.TAG_POINTER.index;
     target.ref.uint32 = JSPointerType.NativeBindingObject.index;
     target.ref.u = (value.pointer)!.address;
