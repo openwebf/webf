@@ -150,6 +150,21 @@ class Document extends Node {
     }
   }
 
+  int _domContentLoadedEventDelayCount = 0;
+  bool get isDelayingDOMContentLoadedEvent => _domContentLoadedEventDelayCount > 0;
+  void incrementDOMContentLoadedEventDelayCount() {
+    _domContentLoadedEventDelayCount++;
+  }
+
+  void decrementDOMContentLoadedEventDelayCount() {
+    _domContentLoadedEventDelayCount--;
+
+    // Try to check when the request is complete.
+    if (_domContentLoadedEventDelayCount == 0) {
+      controller.checkCompleted();
+    }
+  }
+
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
