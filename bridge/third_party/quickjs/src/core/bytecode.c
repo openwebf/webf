@@ -1637,7 +1637,7 @@ static JSValue JS_ReadFunctionTag(BCReaderState* s) {
       if (ic_len == 0) {
         b->ic = NULL;
       } else {
-        b->ic = init_ic(ctx->rt);
+        b->ic = init_ic(ctx);
         if (b->ic == NULL)
           goto fail;
         for (i = 0; i < ic_len; i++) {
