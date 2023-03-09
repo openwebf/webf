@@ -29,16 +29,16 @@ static force_inline uint32_t get_index_hash(JSAtom atom, int hash_bits) {
   return (atom * 0x9e370001) >> (32 - hash_bits);
 }
 
-InlineCache *init_ic(JSRuntime *rt) {
+InlineCache *init_ic(JSContext *ctx) {
   InlineCache *ic;
-  ic = js_malloc_rt(rt, sizeof(InlineCache));
+  ic = js_malloc(ctx, sizeof(InlineCache));
   if (unlikely(!ic))
     goto fail;
   ic->count = 0;
   ic->hash_bits = 2;
   ic->capacity = 1 << ic->hash_bits;
-  ic->rt = rt;
-  ic->hash = js_malloc_rt(rt, sizeof(ic->hash[0]) * ic->capacity);
+  ic->ctx = ctx;
+  ic->hash = js_malloc(ctx, sizeof(ic->hash[0]) * ic->capacity);
   if (unlikely(!ic->hash))
     goto fail;
   memset(ic->hash, 0, sizeof(ic->hash[0]) * ic->capacity);
@@ -56,14 +56,14 @@ int rebuild_ic(InlineCache *ic) {
   if (ic->count == 0)
     goto end;
   count = 0;
-  ic->cache = js_malloc_rt(ic->rt, sizeof(InlineCacheRingSlot) * ic->count);
+  ic->cache = js_malloc(ic->ctx, sizeof(InlineCacheRingSlot) * ic->count);
   if (unlikely(!ic->cache))
     goto fail;
   memset(ic->cache, 0, sizeof(InlineCacheRingSlot) * ic->count);
   for (i = 0; i < ic->capacity; i++) {
     for (ch = ic->hash[i]; ch != NULL; ch = ch->next) {
       ch->index = count++;
-      ic->cache[ch->index].atom = ch->atom;
+      ic->cache[ch->index].atom = JS_DupAtom(ic->ctx, ch->atom);
       ic->cache[ch->index].index = 0;
     }
   }
@@ -79,7 +79,7 @@ int resize_ic_hash(InlineCache *ic) {
   InlineCacheHashSlot **new_hash;
   ic->hash_bits += 1;
   new_capacity = 1 << ic->hash_bits;
-  new_hash = js_malloc_rt(ic->rt, sizeof(ic->hash[0]) * new_capacity);
+  new_hash = js_malloc(ic->ctx, sizeof(ic->hash[0]) * new_capacity);
   if (unlikely(!new_hash))
     goto fail;
   memset(new_hash, 0, sizeof(ic->hash[0]) * new_capacity);
@@ -91,7 +91,7 @@ int resize_ic_hash(InlineCache *ic) {
       new_hash[h] = ch;
     }
   }
-  js_free_rt(ic->rt, ic->hash);
+  js_free(ic->ctx, ic->hash);
   ic->hash = new_hash;
   ic->capacity = new_capacity;
   return 0;
@@ -105,20 +105,22 @@ int free_ic(InlineCache *ic) {
   InlineCacheRingItem *buffer;
   for (i = 0; i < ic->count; i++) {
     buffer = ic->cache[i].buffer;
+    JS_FreeAtom(ic->ctx, ic->cache[i].atom);
     for (j = 0; j < IC_CACHE_ITEM_CAPACITY; j++) {
-      js_free_shape_null(ic->rt, buffer[j].shape);
+      js_free_shape_null(ic->ctx->rt, buffer[j].shape);
     }
   }
   for (i = 0; i < ic->capacity; i++) {
     for (ch = ic->hash[i]; ch != NULL; ch = ch_next) {
       ch_next = ch->next;
-      js_free_rt(ic->rt, ch);
+      JS_FreeAtom(ic->ctx, ch->atom);
+      js_free(ic->ctx, ch);
     }
   }
   if (ic->count > 0)
-    js_free_rt(ic->rt, ic->cache);
-  js_free_rt(ic->rt, ic->hash);
-  js_free_rt(ic->rt, ic);
+    js_free(ic->ctx, ic->cache);
+  js_free(ic->ctx, ic->hash);
+  js_free(ic->ctx, ic);
   return 0;
 }
 
@@ -152,7 +154,7 @@ uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object,
 
   sh = cr->buffer[i].shape;
   cr->buffer[i].shape = js_dup_shape(object->shape);
-  js_free_shape_null(ic->rt, sh);
+  js_free_shape_null(ic->ctx->rt, sh);
   cr->buffer[i].prop_offset = prop_offset;
 end:
   return ch->index;
@@ -167,10 +169,10 @@ uint32_t add_ic_slot1(InlineCache *ic, JSAtom atom) {
   for (ch = ic->hash[h]; ch != NULL; ch = ch->next)
     if (ch->atom == atom)
       goto end;
-  ch = js_malloc_rt(ic->rt, sizeof(InlineCacheHashSlot));
+  ch = js_malloc(ic->ctx, sizeof(InlineCacheHashSlot));
   if (unlikely(!ch))
     goto end;
-  ch->atom = atom;
+  ch->atom = JS_DupAtom(ic->ctx, atom);
   ch->index = 0;
   ch->next = ic->hash[h];
   ic->hash[h] = ch;
