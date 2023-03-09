@@ -1258,14 +1258,6 @@ class WebFController {
       if (kProfileMode) {
         PerformanceTiming.instance().mark(PERF_JS_BUNDLE_EVAL_END);
       }
-
-      // trigger DOMContentLoaded event
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        Event event = Event(EVENT_DOM_CONTENT_LOADED);
-        EventTarget window = view.window;
-        window.dispatchEvent(event);
-      });
-      SchedulerBinding.instance.scheduleFrame();
     }
   }
 
@@ -1280,6 +1272,11 @@ class WebFController {
     // Are we still parsing?
     if (_view.document.parsing) return;
 
+    // Are all script element complete?
+    if (_view.document.isDelayingDOMContentLoadedEvent) return;
+
+    _dispatchDOMContentLoadedEvent();
+
     // Still waiting for images/scripts?
     if (_view.document.hasPendingRequest) return;
 
@@ -1292,6 +1289,16 @@ class WebFController {
     _isComplete = true;
 
     _dispatchWindowLoadEvent();
+  }
+
+  void _dispatchDOMContentLoadedEvent() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      Event event = Event(EVENT_DOM_CONTENT_LOADED);
+      EventTarget window = view.window;
+      window.dispatchEvent(event);
+      _view.document.dispatchEvent(event);
+    });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   void _dispatchWindowLoadEvent() {
