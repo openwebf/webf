@@ -56,7 +56,7 @@ int rebuild_ic(InlineCache *ic) {
   if (ic->count == 0)
     goto end;
   count = 0;
-  ic->cache = js_malloc(ctx, sizeof(InlineCacheRingSlot) * ic->count);
+  ic->cache = js_malloc(ic->ctx, sizeof(InlineCacheRingSlot) * ic->count);
   if (unlikely(!ic->cache))
     goto fail;
   memset(ic->cache, 0, sizeof(InlineCacheRingSlot) * ic->count);
