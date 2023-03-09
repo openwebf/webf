@@ -11,7 +11,9 @@ jobs:
     runs-on: macos-12
     name: Cppcheck
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - name: Run cppcheck
         run: |
           brew install cppcheck
@@ -28,7 +30,9 @@ jobs:
     name: Find merge conflicts
     steps:
       # Checkout the source code so we have some files to look at.
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       # Run the actual merge conflict finder
       - name: Merge Conflict finder
         uses: olivernybroe/action-conflict-finder@v3.0
@@ -36,7 +40,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: DoozyX/clang-format-lint-action@v0.13
       with:
         source: './bridge'
