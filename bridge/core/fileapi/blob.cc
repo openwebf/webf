@@ -2,12 +2,12 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#include <modp_b64/modp_b64.h>
 #include "blob.h"
+#include <modp_b64/modp_b64.h>
 #include <string>
 #include "bindings/qjs/script_promise_resolver.h"
-#include "core/executing_context.h"
 #include "built_in_string.h"
+#include "core/executing_context.h"
 
 namespace webf {
 
@@ -107,8 +107,8 @@ std::string Blob::Base64Result() {
   std::string buffer;
   buffer.resize(encode_len);
 
-  const size_t output_size = modp_b64_encode_data(reinterpret_cast<char*>(buffer.data()),
-                                                  reinterpret_cast<const char*>(bytes()), size());
+  const size_t output_size =
+      modp_b64_encode_data(reinterpret_cast<char*>(buffer.data()), reinterpret_cast<const char*>(bytes()), size());
   assert(output_size == encode_len);
 
   return "data:" + mime_type_ + ";base64," + buffer;
