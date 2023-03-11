@@ -1292,13 +1292,10 @@ class WebFController {
   }
 
   void _dispatchDOMContentLoadedEvent() {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      Event event = Event(EVENT_DOM_CONTENT_LOADED);
-      EventTarget window = view.window;
-      window.dispatchEvent(event);
-      _view.document.dispatchEvent(event);
-    });
-    SchedulerBinding.instance.scheduleFrame();
+    Event event = Event(EVENT_DOM_CONTENT_LOADED);
+    EventTarget window = view.window;
+    window.dispatchEvent(event);
+    _view.document.dispatchEvent(event);
   }
 
   void _dispatchWindowLoadEvent() {
