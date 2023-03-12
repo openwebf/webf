@@ -110,10 +110,10 @@ Pointer<Void> createScreen(double width, double height) {
 }
 
 // Register evaluateScripts
-typedef NativeEvaluateScripts = Void Function(
-    Pointer<Void>, Pointer<NativeString> code, Pointer<Utf8> url, Int32 startLine);
-typedef DartEvaluateScripts = void Function(
-    Pointer<Void>, Pointer<NativeString> code, Pointer<Utf8> url, int startLine);
+typedef NativeEvaluateScripts = Int8 Function(
+    Pointer<Void>, Pointer<NativeString> code, Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url, Int32 startLine);
+typedef DartEvaluateScripts = int Function(
+    Pointer<Void>, Pointer<NativeString> code, Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url, int startLine);
 
 // Register parseHTML
 typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Utf8> code, Int32 length);
@@ -127,9 +127,14 @@ final DartParseHTML _parseHTML =
 
 int _anonymousScriptEvaluationId = 0;
 
-void evaluateScripts(int contextId, String code, {String? url, int line = 0}) {
+class ScriptByteCode {
+  ScriptByteCode();
+  late Uint8List bytes;
+}
+
+Future<bool> evaluateScripts(int contextId, String code, {String? url, int line = 0}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
-    return;
+    return false;
   }
   // Assign `vm://$id` for no url (anonymous scripts).
   if (url == null) {
@@ -137,33 +142,58 @@ void evaluateScripts(int contextId, String code, {String? url, int line = 0}) {
     _anonymousScriptEvaluationId++;
   }
 
-  Pointer<NativeString> nativeString = stringToNativeString(code);
-  Pointer<Utf8> _url = url.toNativeUtf8();
-  try {
-    assert(_allocatedPages.containsKey(contextId));
-    _evaluateScripts(_allocatedPages[contextId]!, nativeString, _url, line);
-  } catch (e, stack) {
-    print('$e\n$stack');
-  }
-  freeNativeString(nativeString);
+  // QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(code);
+  //
+  // if (cacheObject.valid && cacheObject.bytes != null) {
+  //   return evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
+  // } else {
+    Pointer<NativeString> nativeString = stringToNativeString(code);
+    Pointer<Utf8> _url = url.toNativeUtf8();
+    try {
+      assert(_allocatedPages.containsKey(contextId));
+      int result;
+
+      // if (QuickJSByteCodeCache.isCodeNeedCache(code)) {
+      //   // Export the bytecode from scripts
+      //   Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
+      //   Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
+      //   result = _evaluateScripts(_allocatedPages[contextId]!, nativeString, bytecodes, bytecodeLen, _url, line);
+      //   Uint8List bytes = bytecodes.value.asTypedList(bytecodeLen.value);
+      //
+      //   print('orignal source: ${code.length / 1024}KB --> bytecode size: ${bytecodeLen.value / 1024}KB');
+      //
+      //   // Save to disk cache
+      //   QuickJSByteCodeCache.putObject(code, bytes);
+      // } else {
+        result = _evaluateScripts(_allocatedPages[contextId]!, nativeString, nullptr, nullptr, _url, line);
+      // }
+
+      return result == 1;
+    } catch (e, stack) {
+      print('$e\n$stack');
+    }
+    freeNativeString(nativeString);
+  // }
+  return false;
 }
 
-typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen);
-typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen);
+typedef NativeEvaluateQuickjsByteCode = Int8 Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen);
+typedef DartEvaluateQuickjsByteCode = int Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen);
 
 final DartEvaluateQuickjsByteCode _evaluateQuickjsByteCode = WebFDynamicLibrary.ref
     .lookup<NativeFunction<NativeEvaluateQuickjsByteCode>>('evaluateQuickjsByteCode')
     .asFunction();
 
-void evaluateQuickjsByteCode(int contextId, Uint8List bytes) {
+bool evaluateQuickjsByteCode(int contextId, Uint8List bytes) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
-    return;
+    return false;
   }
   Pointer<Uint8> byteData = malloc.allocate(sizeOf<Uint8>() * bytes.length);
   byteData.asTypedList(bytes.length).setAll(0, bytes);
   assert(_allocatedPages.containsKey(contextId));
-  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length);
+  int result = _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length);
   malloc.free(byteData);
+  return result == 1;
 }
 
 void parseHTML(int contextId, String code) {

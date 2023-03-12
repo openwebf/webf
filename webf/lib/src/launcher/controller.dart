@@ -280,9 +280,9 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     document.cookie.clearCookie();
   }
 
-  void evaluateJavaScripts(String code) {
+  void evaluateJavaScripts(String code) async {
     assert(!_disposed, 'WebF have already disposed');
-    evaluateScripts(_contextId, code);
+    await evaluateScripts(_contextId, code);
   }
 
   void _setupObserver() {
@@ -1157,7 +1157,7 @@ class WebFController {
     if (_entrypoint != null && shouldResolve) {
       await _resolveEntrypoint();
       if (_entrypoint!.isResolved && shouldEvaluate) {
-        _evaluateEntrypoint(animationController: animationController);
+        await _evaluateEntrypoint(animationController: animationController);
       } else {
         throw FlutterError('Unable to resolve $_entrypoint');
       }
@@ -1198,13 +1198,13 @@ class WebFController {
   }
 
   // Execute the content from entrypoint bundle.
-  void _evaluateEntrypoint({AnimationController? animationController}) async {
+  Future<void> _evaluateEntrypoint({AnimationController? animationController}) async {
     // @HACK: Execute JavaScript scripts will block the Flutter UI Threads.
     // Listen for animationController listener to make sure to execute Javascript after route transition had completed.
     if (animationController != null) {
-      animationController.addStatusListener((AnimationStatus status) {
+      animationController.addStatusListener((AnimationStatus status) async {
         if (status == AnimationStatus.completed) {
-          _evaluateEntrypoint();
+          await _evaluateEntrypoint();
         }
       });
       return;
@@ -1226,7 +1226,7 @@ class WebFController {
       Uint8List data = entrypoint.data!;
       if (entrypoint.isJavascript) {
         // Prefer sync decode in loading entrypoint.
-        evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
+        await evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
       } else if (entrypoint.isBytecode) {
         evaluateQuickjsByteCode(contextId, data);
       } else if (entrypoint.isHTML) {
@@ -1234,7 +1234,7 @@ class WebFController {
       } else if (entrypoint.contentType.primaryType == 'text') {
         // Fallback treating text content as JavaScript.
         try {
-          evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
+          await evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
         } catch (error) {
           print('Fallback to execute JavaScript content of $url');
           rethrow;

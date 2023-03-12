@@ -33,9 +33,9 @@ void* allocateNewPage(int32_t targetContextId);
 WEBF_EXPORT_C
 void disposePage(void* page);
 WEBF_EXPORT_C
-void evaluateScripts(void* page, NativeString* code, const char* bundleFilename, int32_t startLine);
+int8_t evaluateScripts(void* page, NativeString* code, uint8_t** parsed_bytecodes, uint64_t* bytecode_len, const char* bundleFilename, int32_t startLine);
 WEBF_EXPORT_C
-void evaluateQuickjsByteCode(void* page, uint8_t* bytes, int32_t byteLen);
+int8_t evaluateQuickjsByteCode(void* page, uint8_t* bytes, int32_t byteLen);
 WEBF_EXPORT_C
 void parseHTML(void* page, const char* code, int32_t length);
 WEBF_EXPORT_C
