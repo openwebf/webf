@@ -142,38 +142,32 @@ Future<bool> evaluateScripts(int contextId, String code, {String? url, int line 
     _anonymousScriptEvaluationId++;
   }
 
-  // QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(code);
-  //
-  // if (cacheObject.valid && cacheObject.bytes != null) {
-  //   return evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
-  // } else {
+  QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(code);
+  if (cacheObject.valid && cacheObject.bytes != null) {
+    return evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
+  } else {
     Pointer<NativeString> nativeString = stringToNativeString(code);
     Pointer<Utf8> _url = url.toNativeUtf8();
     try {
       assert(_allocatedPages.containsKey(contextId));
       int result;
-
-      // if (QuickJSByteCodeCache.isCodeNeedCache(code)) {
-      //   // Export the bytecode from scripts
-      //   Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
-      //   Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
-      //   result = _evaluateScripts(_allocatedPages[contextId]!, nativeString, bytecodes, bytecodeLen, _url, line);
-      //   Uint8List bytes = bytecodes.value.asTypedList(bytecodeLen.value);
-      //
-      //   print('orignal source: ${code.length / 1024}KB --> bytecode size: ${bytecodeLen.value / 1024}KB');
-      //
-      //   // Save to disk cache
-      //   QuickJSByteCodeCache.putObject(code, bytes);
-      // } else {
+      if (QuickJSByteCodeCache.isCodeNeedCache(code)) {
+        // Export the bytecode from scripts
+        Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
+        Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
+        result = _evaluateScripts(_allocatedPages[contextId]!, nativeString, bytecodes, bytecodeLen, _url, line);
+        Uint8List bytes = bytecodes.value.asTypedList(bytecodeLen.value);
+        // Save to disk cache
+        QuickJSByteCodeCache.putObject(code, bytes);
+      } else {
         result = _evaluateScripts(_allocatedPages[contextId]!, nativeString, nullptr, nullptr, _url, line);
-      // }
-
+      }
       return result == 1;
     } catch (e, stack) {
       print('$e\n$stack');
     }
     freeNativeString(nativeString);
-  // }
+  }
   return false;
 }
 
