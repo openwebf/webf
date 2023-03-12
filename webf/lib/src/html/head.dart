@@ -147,7 +147,7 @@ class LinkElement extends Element {
         ownerDocument.decrementRequestCount();
 
         final String cssString = await resolveStringFromData(bundle.data!);
-        _styleSheet = CSSParser(cssString).parse();
+        _styleSheet = CSSParser(cssString, href: href).parse();
         _styleSheet?.href = href;
         ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
