@@ -115,10 +115,28 @@ ExecutingContext* ExecutingContext::From(JSContext* ctx) {
 
 bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
                                           size_t codeLength,
+                                          uint8_t** parsed_bytecodes,
+                                          uint64_t* bytecode_len,
                                           const char* sourceURL,
                                           int startLine) {
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), codeLength));
-  JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
+  JSValue result;
+  if (parsed_bytecodes == nullptr) {
+    result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
+  } else {
+    JSValue byte_object = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL,
+                             JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(byte_object)) {
+      HandleException(&byte_object);
+      return false;
+    }
+    size_t len;
+    *parsed_bytecodes = JS_WriteObject(script_state_.ctx(), &len, byte_object, JS_WRITE_OBJ_BYTECODE);
+    *bytecode_len = len;
+
+    result = JS_EvalFunction(script_state_.ctx(), byte_object);
+  }
+
   DrainPendingPromiseJobs();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
