@@ -125,7 +125,7 @@ bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
     result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
   } else {
     JSValue byte_object = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL,
-                             JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+                                  JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
     if (JS_IsException(byte_object)) {
       HandleException(&byte_object);
       return false;
