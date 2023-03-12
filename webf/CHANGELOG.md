@@ -1,3 +1,16 @@
+## 0.14.0-beta.4
+
+* feat: replace malloc to mimalloc.
+* fix: canvas should clip overflowed element.
+* [feat] add canvas gradient api.
+* [fix] method called multiple times.
+* fix: ic should use none instead of atom flag and free it to prevent double delete.
+* feat: add Blob.base64() API.
+* fix: fix change size of canvas element.
+* fix: fix DOMContentLoaded blocked by stylesheet requests.
+* fix: fix script load phase.
+* feat: Support caching bytecode parsed from JavaScript.
+
 ## 0.14.0-beta.3
 
 * fix: add context API for widgetElement.
