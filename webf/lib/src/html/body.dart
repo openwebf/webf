@@ -27,7 +27,7 @@ class BodyElement extends Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
-  void setRenderStyle(String property, String present) {
+  void setRenderStyle(String property, String present, { String? baseHref }) {
     switch (property) {
       // The overflow of body should apply to html.
       // https://drafts.csswg.org/css-overflow-3/#overflow-propagation

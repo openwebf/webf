@@ -255,7 +255,7 @@ class CanvasElement extends Element {
     resize();
   }
 
-  void _styleChangedListener(String key, String? original, String present) {
+  void _styleChangedListener(String key, String? original, String present, { String? baseHref }) {
     switch (key) {
       case WIDTH:
       case HEIGHT:
