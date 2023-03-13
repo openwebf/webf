@@ -91,6 +91,8 @@ describe('script element', () => {
     Promise.all([
       waitForLoad(scriptA),
       waitForLoad(scriptB),
+      waitForLoad(inlineScriptA),
+      waitForLoad(inlineScriptB)
     ]).then(() => {
       // @ts-ignore
       expect(window.C).toBe(window.A);
