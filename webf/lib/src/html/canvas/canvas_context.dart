@@ -3,12 +3,15 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:core';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:ffi' as ffi;
 
+import 'package:flutter/painting.dart';
 import 'package:meta/meta.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/css.dart';
 
 enum ImageSmoothingQuality { low, medium, high }
 
@@ -148,9 +151,13 @@ class CanvasGradient extends BindingObject {
   @override
   get pointer => _pointer;
 
+  List<CSSColorStop> colorGradients = [];
   // opaque object
   void addColorStop(num offset, String color) {
-    print('addColorStop: offset: $offset, color: $color');
+    Color? colorStop = CSSColor.parseColor(color);
+    if (colorStop != null) {
+      colorGradients.add(CSSColorStop(colorStop, offset as double));
+    }
   }
 
   @override
@@ -192,4 +199,24 @@ class CanvasPattern extends BindingObject {
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {}
+}
+
+class CanvasLinearGradient extends CanvasGradient {
+  double x0;
+  double y0;
+  double x1;
+  double y1;
+
+  CanvasLinearGradient(this.x0, this.y0, this.x1, this.y1);
+}
+
+class CanvasRadialGradient extends CanvasGradient {
+  double x0;
+  double y0;
+  double r0;
+  double x1;
+  double y1;
+  double r1;
+
+  CanvasRadialGradient(this.x0, this.y0, this.r0, this.x1, this.y1, this.r1);
 }

@@ -253,10 +253,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
         child.connectedCallback();
       }
 
-      if (child.isConnected) {
-        child.connectedCallback();
-      }
-
       // To insert a node into a parent before a child, run step 9 from the spec:
       // 9. Run the children changed steps for parent when inserting a node into a parent.
       // https://dom.spec.whatwg.org/#concept-node-insert

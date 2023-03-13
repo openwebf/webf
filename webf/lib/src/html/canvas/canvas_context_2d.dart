@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:math' as math;
 import 'dart:core';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -197,31 +198,55 @@ class CanvasRenderingContext2D extends BindingObject {
     methods['translate'] = BindingObjectMethodSync(
         call: (args) => translate(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
     methods['reset'] = BindingObjectMethodSync(call: (_) => reset());
+    methods['createLinearGradient'] = BindingObjectMethodSync(
+        call: (args) => createLinearGradient(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble()));
+    methods['createRadialGradient'] = BindingObjectMethodSync(
+        call: (args) => createRadialGradient(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble(),
+            castToType<num>(args[5]).toDouble()));
   }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     properties['fillStyle'] = BindingObjectProperty(
-        getter: () => CSSColor.convertToHex(fillStyle),
+        getter: () {
+          if (fillStyle is CanvasGradient) {
+            return fillStyle;
+          }
+          return CSSColor.convertToHex(fillStyle as Color);
+        },
         setter: (value) {
           if (value is String) {
             Color? color = CSSColor.parseColor(castToType<String>(value));
             if (color != null) fillStyle = color;
           } else if (value is CanvasGradient) {
-            print('Warning: value which type is CanvasGradient are not implemented.');
+            fillStyle = value;
           }
         });
     properties['direction'] = BindingObjectProperty(
         getter: () => _textDirectionInString, setter: (value) => direction = parseDirection(castToType<String>(value)));
     properties['font'] = BindingObjectProperty(getter: () => font, setter: (value) => font = castToType<String>(value));
     properties['strokeStyle'] = BindingObjectProperty(
-        getter: () => CSSColor.convertToHex(strokeStyle),
+        getter: () {
+          if (strokeStyle is CanvasGradient) {
+            return strokeStyle;
+          }
+          return CSSColor.convertToHex(strokeStyle as Color);
+        },
         setter: (value) {
           if (value is String) {
             Color? color = CSSColor.parseColor(castToType<String>(value));
             if (color != null) strokeStyle = color;
           } else if (value is CanvasGradient) {
-            print('Warning: value which type is CanvasGradient are not implemented.');
+            strokeStyle = value;
           }
         });
     properties['lineCap'] = BindingObjectProperty(
@@ -470,9 +495,12 @@ class CanvasRenderingContext2D extends BindingObject {
 
   void fill(PathFillType fillType) {
     addAction((Canvas canvas, Size size) {
+      if (fillStyle is! Color) {
+        return;
+      }
       path2d.path.fillType = fillType;
       Paint paint = Paint()
-        ..color = fillStyle
+        ..color = fillStyle as Color
         ..style = PaintingStyle.fill;
       canvas.drawPath(path2d.path, paint);
     });
@@ -480,8 +508,11 @@ class CanvasRenderingContext2D extends BindingObject {
 
   void stroke() {
     addAction((Canvas canvas, Size size) {
+      if (strokeStyle is! Color) {
+        return;
+      }
       Paint paint = Paint()
-        ..color = strokeStyle
+        ..color = strokeStyle as Color
         ..strokeJoin = lineJoin
         ..strokeCap = lineCap
         ..strokeWidth = lineWidth
@@ -742,18 +773,18 @@ class CanvasRenderingContext2D extends BindingObject {
     });
   }
 
-  Color _strokeStyle = CSSColor.initial; // default black
-  set strokeStyle(Color? newValue) {
+  Object _strokeStyle = CSSColor.initial; // default black
+  Object get strokeStyle => _strokeStyle;
+  set strokeStyle(Object? newValue) {
     if (newValue == null) return;
     addAction((Canvas canvas, Size size) {
       _strokeStyle = newValue;
     });
   }
-  Color get strokeStyle => _strokeStyle;
 
-  Color _fillStyle = CSSColor.initial; // default black
-  Color get fillStyle => _fillStyle;
-  set fillStyle(Color? newValue) {
+  Object _fillStyle = CSSColor.initial; // default black
+  Object get fillStyle => _fillStyle;
+  set fillStyle(Object? newValue) {
     if (newValue == null) return;
     addAction((Canvas canvas, Size size) {
       _fillStyle = newValue;
@@ -761,8 +792,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   CanvasGradient createLinearGradient(double x0, double y0, double x1, double y1) {
-    print('create createLinearGradient $x0 $y0 $x1 $y1');
-    return CanvasGradient();
+    return CanvasLinearGradient(x0, y0, x1, y1);
   }
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
@@ -771,9 +801,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   CanvasGradient createRadialGradient(double x0, double y0, double r0, double x1, double y1, double r1) {
-    // TODO: implement createRadialGradient
-    print('create createLinearGradient $x0 $y0 $r0 $x1 $y1 $r1');
-    return CanvasGradient();
+    return CanvasRadialGradient(x0, y0, r0, x1, y1, r1);
   }
 
   void clearRect(double x, double y, double w, double h) {
@@ -790,7 +818,20 @@ class CanvasRenderingContext2D extends BindingObject {
   void fillRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction((Canvas canvas, Size size) {
-      Paint paint = Paint()..color = fillStyle;
+      Paint paint = Paint();
+      if (fillStyle is Color) {
+        paint..color = fillStyle as Color;
+      } else if (fillStyle is CanvasRadialGradient) {
+        paint
+          ..shader =
+              _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h)
+                  .createShader(rect);
+      } else if (fillStyle is CanvasLinearGradient) {
+        paint
+          ..shader =
+              _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h)
+                  .createShader(rect);
+      }
       canvas.drawRect(rect, paint);
     });
   }
@@ -798,9 +839,21 @@ class CanvasRenderingContext2D extends BindingObject {
   void strokeRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction((Canvas canvas, Size size) {
-      Paint paint = Paint()
-        ..color = strokeStyle
-        ..strokeJoin = lineJoin
+      Paint paint = Paint();
+      if (strokeStyle is Color) {
+        paint..color = strokeStyle as Color;
+      } else if (strokeStyle is CanvasRadialGradient) {
+        paint
+          ..shader =
+          _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h)
+              .createShader(rect);
+      } else if (strokeStyle is CanvasLinearGradient) {
+        paint
+          ..shader =
+          _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h)
+              .createShader(rect);
+      }
+      paint..strokeJoin = lineJoin
         ..strokeCap = lineCap
         ..strokeWidth = lineWidth
         ..strokeMiterLimit = miterLimit
@@ -869,7 +922,10 @@ class CanvasRenderingContext2D extends BindingObject {
 
   void fillText(String text, double x, double y, {double? maxWidth}) {
     addAction((Canvas canvas, Size size) {
-      TextPainter textPainter = _getTextPainter(text, fillStyle);
+      if (fillStyle is! Color) {
+        return;
+      }
+      TextPainter textPainter = _getTextPainter(text, fillStyle as Color);
       if (maxWidth != null) {
         // FIXME: should scale down to a smaller font size in order to fit the text in the specified width.
         textPainter.layout(maxWidth: maxWidth);
@@ -884,7 +940,11 @@ class CanvasRenderingContext2D extends BindingObject {
 
   void strokeText(String text, double x, double y, {double? maxWidth}) {
     addAction((Canvas canvas, Size size) {
-      TextPainter textPainter = _getTextPainter(text, strokeStyle, shouldStrokeText: true);
+      if (strokeStyle is! Color) {
+        return;
+      }
+      TextPainter textPainter =
+          _getTextPainter(text, strokeStyle as Color, shouldStrokeText: true);
       if (maxWidth != null) {
         // FIXME: should scale down to a smaller font size in order to fit the text in the specified width.
         textPainter.layout(maxWidth: maxWidth);
@@ -902,6 +962,71 @@ class CanvasRenderingContext2D extends BindingObject {
     // TextPainter textPainter = _getTextPainter(text, fillStyle);
     // TODO: transform textPainter layout info into TextMetrics.
     return null;
+  }
+
+  LinearGradient _drawLinearGradient(CanvasLinearGradient gradient, double rX,
+      double rY, double rW, double rH) {
+    double cW = rW / 2;
+    double cH = rH / 2;
+    double lX = rX + cW;
+    double lY = rY + cH;
+    double centerX = (gradient.x0 - lX) / cW;
+    double centerY = (gradient.y0 - lY) / cH;
+    double focalX = (gradient.x1 - lX) / cW;
+    double focalY = (gradient.y1 - lY) / cH;
+    List<Color> colors = [];
+    List<double> stops = [];
+    for (var colorStop in gradient.colorGradients
+      ..sort((a, b) => a.stop?.compareTo(b.stop ?? 0) ?? 0)) {
+      Color? color = colorStop.color;
+      double? stop = colorStop.stop;
+      if (color != null && stop != null) {
+        colors.add(color);
+        stops.add(stop);
+      }
+    }
+    return LinearGradient(
+        begin: Alignment(centerX, centerY),
+        end: Alignment(focalX, focalY),
+        colors: colors,
+        stops: stops,
+        tileMode: TileMode.clamp);
+  }
+
+  RadialGradient _drawRadialGradient(CanvasRadialGradient gradient, double rX,
+      double rY, double rW, double rH) {
+    double cW = rW / 2;
+    double cH = rH / 2;
+    double oX = rX + cW;
+    double oY = rY + cH;
+
+    /// The radius of the gradient, as a fraction of the shortest side
+    /// of the paint box.
+    double oR = math.min(rW, rH);
+    double fx = (gradient.x0 - oX) / cW;
+    double fy = (gradient.y0 - oY) / cH;
+    double fr = gradient.r0 / oR;
+    double cx = (gradient.x1 - oX) / cW;
+    double cy = (gradient.y1 - oY) / cH;
+    double cr = gradient.r1 / oR;
+    List<Color> colors = [];
+    List<double> stops = [];
+    for (var colorStop in gradient.colorGradients
+      ..sort((a, b) => a.stop?.compareTo(b.stop ?? 0) ?? 0)) {
+      Color? color = colorStop.color;
+      double? stop = colorStop.stop;
+      if (color != null && stop != null) {
+        colors.add(color);
+        stops.add(stop);
+      }
+    }
+    return RadialGradient(
+        focal: Alignment(fx, fy),
+        focalRadius: fr,
+        center: Alignment(cx, cy),
+        radius: cr,
+        colors: colors,
+        stops: stops);
   }
 
   // Reset the rendering context to its default state.

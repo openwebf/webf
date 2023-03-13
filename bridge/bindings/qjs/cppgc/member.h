@@ -56,6 +56,7 @@ class Member {
       JS_FreeValueRT(runtime_, raw_->ToQuickJSUnsafe());
     } else {
       auto* wrappable = To<ScriptWrappable>(raw_);
+      assert(wrappable->GetExecutingContext()->HasMutationScope());
       // Record the free operation to avoid JSObject had been freed immediately.
       wrappable->GetExecutingContext()->mutationScope()->RecordFree(wrappable);
     }

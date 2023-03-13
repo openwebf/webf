@@ -7,6 +7,12 @@
     * [Xcode](https://developer.apple.com/xcode/) (10.12) or later (Running on macOS or iOS)
     * [Android NDK](https://developer.android.com/studio/projects/install-ndk) version `22.1.7171670` (Running on Android)
 
+   Get the code:
+   ```
+   git clone git@github.com:openwebf/webf.git
+   git submodule update --init --recursive
+   ```
+
 1. Install
 
     ```shell
