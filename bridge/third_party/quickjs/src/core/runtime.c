@@ -2577,6 +2577,9 @@ void JS_FreeRuntime(JSRuntime* rt) {
   struct list_head *el, *el1;
   int i;
 
+  if (rt->state == JS_RUNTIME_STATE_SHUTDOWN)
+    return;
+  rt->state = JS_RUNTIME_STATE_SHUTDOWN;
   JS_FreeValueRT(rt, rt->current_exception);
 
   list_for_each_safe(el, el1, &rt->job_list) {
@@ -3039,6 +3042,7 @@ JSRuntime* JS_NewRuntime2(const JSMallocFunctions* mf, void* opaque) {
   JS_UpdateStackTop(rt);
 
   rt->current_exception = JS_NULL;
+  rt->state = JS_RUNTIME_STATE_INIT;
 
   return rt;
 fail:

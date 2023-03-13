@@ -17,6 +17,12 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+include(CheckIPOSupported)
+check_ipo_supported(RESULT supported OUTPUT error)
+if( supported )
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 execute_process(
   COMMAND bash "-c" "npm install"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
