@@ -1,3 +1,7 @@
+## 0.14.0-beta.4+1
+
+* fix dart types.
+
 ## 0.14.0-beta.4
 
 * feat: replace malloc to mimalloc.
