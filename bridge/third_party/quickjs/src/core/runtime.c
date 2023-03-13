@@ -3072,6 +3072,7 @@ JSValue JS_EvalInternal(JSContext* ctx, JSValueConst this_obj, const char* input
   if (unlikely(!ctx->eval_internal)) {
     return JS_ThrowTypeError(ctx, "eval is not supported");
   }
+  ctx->rt->state = JS_RUNTIME_STATE_RUNNING;
   return ctx->eval_internal(ctx, this_obj, input, input_len, filename, flags, scope_idx);
 }
 
@@ -3107,6 +3108,7 @@ JSValue JS_EvalFunctionInternal(JSContext* ctx, JSValue fun_obj, JSValueConst th
   JSValue ret_val;
   uint32_t tag;
 
+  ctx->rt->state = JS_RUNTIME_STATE_RUNNING;
   tag = JS_VALUE_GET_TAG(fun_obj);
   if (tag == JS_TAG_FUNCTION_BYTECODE) {
     fun_obj = js_closure(ctx, fun_obj, var_refs, sf);
