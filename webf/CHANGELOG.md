@@ -1,3 +1,10 @@
+## 0.14.0-beta.5
+
+* feat: share HttpClient between multiple WebF pages to keep the exist connection alive.
+* fix: fix empty src on image.
+* fix: bytecode read should free atom to prevent leak
+* fix: fix resolve path from `url()` CSS function on remote css files.
+
 ## 0.14.0-beta.4+1
 
 * fix dart types.
