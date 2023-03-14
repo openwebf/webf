@@ -7516,7 +7516,7 @@ JSFunctionDef *js_new_function_def(JSContext *ctx,
   //fd->pc2line_last_pc = 0;
   fd->last_opcode_line_num = line_num;
 
-  fd->ic = init_ic(ctx->rt);
+  fd->ic = init_ic(ctx);
   return fd;
 }
 

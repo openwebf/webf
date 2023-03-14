@@ -538,7 +538,7 @@ typedef struct InlineCache {
     uint32_t count;
     uint32_t capacity;
     uint32_t hash_bits;
-    JSRuntime* rt;
+    JSContext* ctx;
     InlineCacheHashSlot **hash;
     InlineCacheRingSlot *cache;
     uint32_t updated_offset;

@@ -646,7 +646,7 @@ void mark_children(JSRuntime* rt, JSGCObjectHeader* gp, JS_MarkFunc* mark_func) 
           for (i = 0; i < b->ic->count; i++) {
             buffer = b->ic->cache[i].buffer;
             for (j = 0; j < IC_CACHE_ITEM_CAPACITY; j++)
-              if (buffer[j].shape) 
+              if (buffer[j].shape)
                 mark_func(rt, &buffer[j].shape->header);
           }
         }
