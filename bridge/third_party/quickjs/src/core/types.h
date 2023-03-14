@@ -162,6 +162,12 @@ typedef struct {
 } JSNumericOperations;
 #endif
 
+typedef enum {
+    JS_RUNTIME_STATE_INIT,
+    JS_RUNTIME_STATE_RUNNING,
+    JS_RUNTIME_STATE_SHUTDOWN,
+} JSRuntimeState;
+
 struct JSRuntime {
     JSMallocFunctions mf;
     JSMallocState malloc_state;
@@ -230,6 +236,7 @@ struct JSRuntime {
     uint32_t operator_count;
 #endif
     void *user_opaque;
+    JSRuntimeState state;
 };
 
 struct JSClass {

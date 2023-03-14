@@ -353,7 +353,7 @@ void js_promise_mark(JSRuntime *rt, JSValueConst val,
   struct list_head *el;
   int i;
 
-  if (!s)
+  if (!s || (rt->state != JS_RUNTIME_STATE_SHUTDOWN && s->promise_state == JS_PROMISE_PENDING))
     return;
   for(i = 0; i < 2; i++) {
     list_for_each(el, &s->promise_reactions[i]) {

@@ -2577,6 +2577,9 @@ void JS_FreeRuntime(JSRuntime* rt) {
   struct list_head *el, *el1;
   int i;
 
+  if (rt->state == JS_RUNTIME_STATE_SHUTDOWN)
+    return;
+  rt->state = JS_RUNTIME_STATE_SHUTDOWN;
   JS_FreeValueRT(rt, rt->current_exception);
 
   list_for_each_safe(el, el1, &rt->job_list) {
@@ -3039,6 +3042,7 @@ JSRuntime* JS_NewRuntime2(const JSMallocFunctions* mf, void* opaque) {
   JS_UpdateStackTop(rt);
 
   rt->current_exception = JS_NULL;
+  rt->state = JS_RUNTIME_STATE_INIT;
 
   return rt;
 fail:
@@ -3068,6 +3072,7 @@ JSValue JS_EvalInternal(JSContext* ctx, JSValueConst this_obj, const char* input
   if (unlikely(!ctx->eval_internal)) {
     return JS_ThrowTypeError(ctx, "eval is not supported");
   }
+  ctx->rt->state = JS_RUNTIME_STATE_RUNNING;
   return ctx->eval_internal(ctx, this_obj, input, input_len, filename, flags, scope_idx);
 }
 
@@ -3103,6 +3108,7 @@ JSValue JS_EvalFunctionInternal(JSContext* ctx, JSValue fun_obj, JSValueConst th
   JSValue ret_val;
   uint32_t tag;
 
+  ctx->rt->state = JS_RUNTIME_STATE_RUNNING;
   tag = JS_VALUE_GET_TAG(fun_obj);
   if (tag == JS_TAG_FUNCTION_BYTECODE) {
     fun_obj = js_closure(ctx, fun_obj, var_refs, sf);

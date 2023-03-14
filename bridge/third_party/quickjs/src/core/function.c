@@ -1481,7 +1481,7 @@ restart:
         JSAtom atom;
         atom = get_u32(pc);
         pc += 4;
-        
+
         val = JS_GetPropertyInternal(ctx, sp[-1], atom, sp[-1], ic, FALSE);
         if (unlikely(JS_IsException(val)))
           goto exception;
@@ -1489,6 +1489,7 @@ restart:
           ic->updated = FALSE;
           put_u8(pc - 5, OP_get_field_ic);
           put_u32(pc - 4, ic->updated_offset);
+          // safe free call because ic struct will retain atom
           JS_FreeAtom(ctx, atom);
         }
         JS_FreeValue(ctx, sp[-1]);
@@ -1503,7 +1504,7 @@ restart:
         ic_offset = get_u32(pc);
         atom = get_ic_atom(ic, ic_offset);
         pc += 4;
-        
+
         val = JS_GetPropertyInternalWithIC(ctx, sp[-1], atom, sp[-1], ic, ic_offset, FALSE);
         ic->updated = FALSE;
         if (unlikely(JS_IsException(val)))
@@ -1526,6 +1527,7 @@ restart:
           ic->updated = FALSE;
           put_u8(pc - 5, OP_get_field2_ic);
           put_u32(pc - 4, ic->updated_offset);
+          // safe free call because ic struct will retain atom
           JS_FreeAtom(ctx, atom);
         }
         *sp++ = val;
@@ -1539,7 +1541,7 @@ restart:
         ic_offset = get_u32(pc);
         atom = get_ic_atom(ic, ic_offset);
         pc += 4;
-        
+
         val = JS_GetPropertyInternalWithIC(ctx, sp[-1], atom, sp[-1], ic, ic_offset, FALSE);
         ic->updated = FALSE;
         if (unlikely(JS_IsException(val)))
@@ -1563,6 +1565,7 @@ restart:
           ic->updated = FALSE;
           put_u8(pc - 5, OP_put_field_ic);
           put_u32(pc - 4, ic->updated_offset);
+          // safe free call because ic struct will retain atom
           JS_FreeAtom(ctx, atom);
         }
       }
@@ -1575,7 +1578,7 @@ restart:
         ic_offset = get_u32(pc);
         atom = get_ic_atom(ic, ic_offset);
         pc += 4;
-        
+
         ret = JS_SetPropertyInternalWithIC(ctx, sp[-2], atom, sp[-1], JS_PROP_THROW_STRICT, ic, ic_offset);
         ic->updated = FALSE;
         JS_FreeValue(ctx, sp[-2]);
