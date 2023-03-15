@@ -1643,6 +1643,7 @@ static JSValue JS_ReadFunctionTag(BCReaderState* s) {
         for (i = 0; i < ic_len; i++) {
           bc_get_atom(s, &atom);
           add_ic_slot1(b->ic, atom);
+          JS_FreeAtom(ctx, atom);
         }
         rebuild_ic(b->ic);
       }
