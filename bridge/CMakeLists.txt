@@ -301,6 +301,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_anchor_element.cc
     core/html/html_image_element.cc
     core/html/html_script_element.cc
+    core/html/html_iframe_element.cc
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
     core/html/image.cc
@@ -400,6 +401,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_body_element.cc
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
+    out/qjs_html_iframe_element.cc
     out/qjs_html_canvas_element.cc
     out/qjs_html_link_element.cc
     out/qjs_image.cc
