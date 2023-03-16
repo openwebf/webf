@@ -1,3 +1,8 @@
+## 0.14.0-beta.5+1
+
+* fix: fix empty src on image.
+* fix: pending promise crash for early gc and add lto to quickjs.
+
 ## 0.14.0-beta.5
 
 * feat: share HttpClient between multiple WebF pages to keep the exist connection alive.
