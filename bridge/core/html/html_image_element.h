@@ -17,6 +17,7 @@ class HTMLImageElement : public HTMLElement {
   explicit HTMLImageElement(Document& document);
 
   bool IsAttributeDefinedInternal(const AtomicString& key) const override;
+
  private:
 };
 
