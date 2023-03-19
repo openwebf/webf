@@ -14,14 +14,4 @@ bool HTMLImageElement::IsAttributeDefinedInternal(const AtomicString& key) const
   return QJSHTMLImageElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
 }
 
-ScriptPromise HTMLImageElement::decode(ExceptionState& exception_state) const {
-  exception_state.ThrowException(ctx(), ErrorType::InternalError, "Not implemented.");
-  // @TODO not implemented.
-  return ScriptPromise();
-}
-
-bool HTMLImageElement::KeepAlive() const {
-  return true;
-}
-
 }  // namespace webf

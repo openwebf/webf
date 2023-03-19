@@ -15,6 +15,5 @@ interface HTMLImageElement extends HTMLElement {
     fetchPriority: DartImpl<string>;
     loading: DartImpl<string>;
 
-    decode(): Promise<void>;
     new(): void;
 }
