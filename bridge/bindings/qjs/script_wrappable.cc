@@ -246,7 +246,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
 }
 
 void ScriptWrappable::KeepAlive() {
-  if (is_alive) return;
+  if (is_alive)
+    return;
 
   context_->RegisterActiveScriptWrappers(this);
   JS_DupValue(ctx_, jsObject_);
@@ -254,7 +255,8 @@ void ScriptWrappable::KeepAlive() {
 }
 
 void ScriptWrappable::ReleaseAlive() {
-  if (!is_alive) return;
+  if (!is_alive)
+    return;
   context_->InActiveScriptWrappers(this);
   JS_FreeValue(ctx_, jsObject_);
   is_alive = false;

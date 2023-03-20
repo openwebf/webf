@@ -3,12 +3,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "html_image_element.h"
+#include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "foundation/native_value_converter.h"
-#include "html_image_element.h"
 #include "html_names.h"
 #include "qjs_html_image_element.h"
-#include "binding_call_methods.h"
 
 namespace webf {
 
@@ -34,8 +34,9 @@ AtomicString HTMLImageElement::src() const {
   return v;
 }
 
-void HTMLImageElement::setSrc(const AtomicString &value, ExceptionState &exception_state) {
-  SetBindingProperty(binding_call_methods::ksrc, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value), exception_state);
+void HTMLImageElement::setSrc(const AtomicString& value, ExceptionState& exception_state) {
+  SetBindingProperty(binding_call_methods::ksrc, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
+                     exception_state);
   if (!value.IsEmpty()) {
     KeepAlive();
   }

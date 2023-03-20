@@ -417,7 +417,7 @@ void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrap
   active_wrappers_.emplace(script_wrappable);
 }
 
-void ExecutingContext::InActiveScriptWrappers(ScriptWrappable *script_wrappable) {
+void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.erase(script_wrappable);
 }
 
