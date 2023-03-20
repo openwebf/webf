@@ -414,7 +414,11 @@ void ExecutingContext::InstallGlobal() {
 }
 
 void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable) {
-  active_wrappers_.emplace_back(script_wrappable);
+  active_wrappers_.emplace(script_wrappable);
+}
+
+void ExecutingContext::InActiveScriptWrappers(ScriptWrappable *script_wrappable) {
+  active_wrappers_.erase(script_wrappable);
 }
 
 // An lock free context validator.

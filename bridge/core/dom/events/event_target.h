@@ -114,7 +114,7 @@ class EventTarget : public ScriptWrappable, public BindingObject {
                            ExceptionState& exception_state);
   bool dispatchEvent(Event* event, ExceptionState& exception_state);
 
-  DispatchEventResult FireEventListeners(Event&, ExceptionState&);
+  virtual DispatchEventResult FireEventListeners(Event&, ExceptionState&);
 
   static DispatchEventResult GetDispatchEventResult(const Event&);
 
