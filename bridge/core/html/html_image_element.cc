@@ -27,7 +27,8 @@ ScriptPromise HTMLImageElement::decode(ExceptionState& exception_state) const {
 AtomicString HTMLImageElement::src() const {
   ExceptionState exception_state;
   NativeValue native_value = GetBindingProperty(binding_call_methods::ksrc, exception_state);
-  typename NativeTypeString::ImplType v = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_value));
+  typename NativeTypeString::ImplType v =
+      NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_value));
   if (UNLIKELY(exception_state.HasException())) {
     return AtomicString::Empty();
   }
