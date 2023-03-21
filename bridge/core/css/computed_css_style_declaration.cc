@@ -4,8 +4,8 @@
 
 #include "computed_css_style_declaration.h"
 #include "binding_call_methods.h"
-#include "core/dom/element.h"
 #include "core/binding_object.h"
+#include "core/dom/element.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {

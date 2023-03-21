@@ -6,8 +6,8 @@
 #include "atomic_string.h"
 #include <vector>
 #include "built_in_string.h"
-#include "qjs_engine_patch.h"
 #include "foundation/native_string.h"
+#include "qjs_engine_patch.h"
 
 namespace webf {
 
@@ -90,7 +90,7 @@ AtomicString::AtomicString(JSContext* ctx, const std::unique_ptr<AutoFreeNativeS
     : runtime_(JS_GetRuntime(ctx)),
       atom_(JS_NewUnicodeAtom(ctx, native_string->string(), native_string->length())),
       kind_(GetStringKind(native_string.get())),
-      length_(native_string->length()) {};
+      length_(native_string->length()){};
 
 AtomicString::AtomicString(JSContext* ctx, JSValue value)
     : runtime_(JS_GetRuntime(ctx)), atom_(JS_ValueToAtom(ctx, value)) {

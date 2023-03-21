@@ -5,11 +5,11 @@
 #ifndef BRIDGE_NATIVE_STRING_H
 #define BRIDGE_NATIVE_STRING_H
 
-#include <memory>
+#include <quickjs/quickjs.h>
 #include <cinttypes>
 #include <cstdlib>
 #include <cstring>
-#include <quickjs/quickjs.h>
+#include <memory>
 
 #include "foundation/macros.h"
 
@@ -24,9 +24,8 @@ struct SharedNativeString {
   inline const uint16_t* string() const { return string_; }
   inline uint32_t length() const { return length_; }
 
-  void free() const {
-    delete[] string_;
-  }
+  void free() const { delete[] string_; }
+
  protected:
   SharedNativeString() = default;
   const uint16_t* string_;

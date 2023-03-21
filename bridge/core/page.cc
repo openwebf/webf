@@ -5,7 +5,6 @@
 #include <atomic>
 #include <unordered_map>
 
-#include "foundation/native_value_converter.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
@@ -15,6 +14,7 @@
 #include "core/html/parser/html_parser.h"
 #include "event_factory.h"
 #include "foundation/logging.h"
+#include "foundation/native_value_converter.h"
 #include "page.h"
 #include "polyfill.h"
 

@@ -27,7 +27,10 @@ void UICommandBuffer::addCommand(int32_t id, UICommand type, void* nativePtr) {
   addCommand(item);
 }
 
-void UICommandBuffer::addCommand(int32_t id, UICommand type, std::unique_ptr<SharedNativeString>&& args_01, void* nativePtr) {
+void UICommandBuffer::addCommand(int32_t id,
+                                 UICommand type,
+                                 std::unique_ptr<SharedNativeString>&& args_01,
+                                 void* nativePtr) {
   assert(args_01 != nullptr);
   UICommandItem item{id, static_cast<int32_t>(type), args_01.release(), nativePtr};
   addCommand(item);

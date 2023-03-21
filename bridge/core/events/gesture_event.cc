@@ -41,8 +41,12 @@ GestureEvent::GestureEvent(ExecutingContext* context,
                            NativeGestureEvent* native_gesture_event)
     : Event(context, type, &native_gesture_event->native_event),
 #if ANDROID_32_BIT
-      state_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_gesture_event->state)))),
-      direction_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_gesture_event->direction)))),
+      state_(AtomicString(
+          ctx(),
+          std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_gesture_event->state)))),
+      direction_(AtomicString(ctx(),
+                              std::make_unique<AutoFreeNativeString>(
+                                  reinterpret_cast<SharedNativeString*>(native_gesture_event->direction)))),
 #else
       state_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_gesture_event->state))),
       direction_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_gesture_event->direction))),

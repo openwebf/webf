@@ -40,9 +40,15 @@ MessageEvent::MessageEvent(ExecutingContext* context,
     : Event(context, type, &native_message_event->native_event),
 #if ANDROID_32_BIT
       data_(ScriptValue(ctx(), *(reinterpret_cast<NativeValue*>(native_message_event->data)))),
-      origin_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_message_event->origin)))),
-      lastEventId_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_message_event->lastEventId)))),
-      source_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_message_event->source))))
+      origin_(AtomicString(
+          ctx(),
+          std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_message_event->origin)))),
+      lastEventId_(AtomicString(ctx(),
+                                std::make_unique<AutoFreeNativeString>(
+                                    reinterpret_cast<SharedNativeString*>(native_message_event->lastEventId)))),
+      source_(AtomicString(
+          ctx(),
+          std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_message_event->source))))
 #else
       data_(ScriptValue(ctx(), *(static_cast<NativeValue*>(native_message_event->data)))),
       origin_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_message_event->origin))),

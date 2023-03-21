@@ -13,6 +13,7 @@ namespace webf {
 
 class CSSStyleDeclaration : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   using ImplType = CSSStyleDeclaration*;
   explicit CSSStyleDeclaration(JSContext* ctx);

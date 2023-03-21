@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <memory>
 #include "input_event.h"
+#include <memory>
 #include "qjs_input_event.h"
 
 namespace webf {
@@ -34,8 +34,12 @@ InputEvent::InputEvent(ExecutingContext* context,
 InputEvent::InputEvent(ExecutingContext* context, const AtomicString& type, NativeInputEvent* native_input_event)
     : UIEvent(context, type, &native_input_event->native_event),
 #if ANDROID_32_BIT
-      input_type_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_input_event->inputType)))),
-      data_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_input_event->data))))
+      input_type_(AtomicString(ctx(),
+                               std::make_unique<AutoFreeNativeString>(
+                                   reinterpret_cast<SharedNativeString*>(native_input_event->inputType)))),
+      data_(AtomicString(
+          ctx(),
+          std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_input_event->data))))
 #else
       input_type_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_input_event->inputType))),
       data_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_input_event->data)))

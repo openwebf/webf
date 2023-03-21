@@ -63,8 +63,7 @@ EventTarget::EventTarget(ExecutingContext* context)
     : BindingObject(context->ctx()), event_target_id_(global_event_target_id++) {}
 
 EventTarget::EventTarget(ExecutingContext* context, NativeBindingObject* native_binding_object)
-    : BindingObject(context->ctx(), native_binding_object),
-      event_target_id_(global_event_target_id++) {}
+    : BindingObject(context->ctx(), native_binding_object), event_target_id_(global_event_target_id++) {}
 
 Node* EventTarget::ToNode() {
   return nullptr;
@@ -278,9 +277,7 @@ DispatchEventResult EventTarget::DispatchEventInternal(Event& event, ExceptionSt
   return dispatch_result;
 }
 
-NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method,
-                                                int32_t argc,
-                                                const NativeValue* argv) {
+NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
 
   if (method == binding_call_methods::kdispatchEvent) {
@@ -293,7 +290,8 @@ NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method,
 NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv) {
   assert(argc == 2);
   NativeValue native_event_type = argv[0];
-  AtomicString event_type = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_event_type));
+  AtomicString event_type =
+      NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_event_type));
   RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
 
   Event* event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
