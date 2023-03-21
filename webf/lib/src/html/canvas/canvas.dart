@@ -234,10 +234,9 @@ class CanvasElement extends Element {
     // When the user agent is to set bitmap dimensions to width and height, it must run these steps:
     // 1. Reset the rendering context to its default state.
     context2d?.reset();
-    // 2. Resize the output bitmap to the new width and height and clear it to transparent black.
-    resize();
-    // 3. Let canvas be the canvas element to which the rendering context's canvas attribute was initialized.
-    // 4. If the numeric value of canvas's width content attribute differs from width,
+
+    // 2. Let canvas be the canvas element to which the rendering context's canvas attribute was initialized.
+    // 3. If the numeric value of canvas's width content attribute differs from width,
     // then set canvas's width content attribute to the shortest possible string representing width as
     // a valid non-negative integer.
     if (width != null && width.toString() != getAttribute(WIDTH)) {
@@ -251,6 +250,9 @@ class CanvasElement extends Element {
       if (height < 0) height = 0;
       internalSetAttribute(HEIGHT, height.toString());
     }
+
+    // 4. Resize the output bitmap to the new width and height and clear it to transparent black.
+    resize();
   }
 
   void _styleChangedListener(String key, String? original, String present) {
