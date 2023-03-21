@@ -85,7 +85,6 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   assert(_allocatedPages.containsKey(contextId));
   Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
       _allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
-  freeNativeString(nativeModuleName);
   dynamic result = fromNativeValue(dispatchResult);
   malloc.free(dispatchResult);
   return result;
