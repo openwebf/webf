@@ -90,11 +90,11 @@ describe('Display', () => {
       height: 200px;
       background: red;
     }
-    
+
     .blue {
       background: blue;
     }
-    
+
     .hidden {
       display: none;
     }
@@ -107,7 +107,9 @@ describe('Display', () => {
     ]);
     document.body.appendChild(div);
     await snapshot();
-    div.className = 'box blue';
-    await snapshot();
+    requestAnimationFrame(async () => {
+      div.className = 'box blue';
+      await snapshot();
+    });
   });
 });
