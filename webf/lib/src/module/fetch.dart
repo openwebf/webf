@@ -22,13 +22,11 @@ class FetchModule extends BaseModule {
 
   @override
   void dispose() {
-    _httpClient?.close(force: true);
-    _httpClient = null;
     _disposed = true;
   }
 
-  HttpClient? _httpClient;
-  HttpClient get httpClient => _httpClient ?? (_httpClient = HttpClient());
+  static final HttpClient _sharedHttpClient = HttpClient()..userAgent = NavigatorModule.getUserAgent();
+  HttpClient get httpClient => _sharedHttpClient;
 
   Uri _resolveUri(String input) {
     final Uri parsedUri = Uri.parse(input);

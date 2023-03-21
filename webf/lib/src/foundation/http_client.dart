@@ -301,7 +301,7 @@ class _HttpHeaders implements HttpHeaders {
   }
 
   @override
-  bool persistentConnection = false;
+  bool persistentConnection = true;
 
   @override
   int? port = 80;
