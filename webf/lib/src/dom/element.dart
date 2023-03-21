@@ -1224,12 +1224,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     switch (name) {
       case DISPLAY:
         bool displayChanged = renderStyle.display != value;
-        bool changFromNone = renderStyle.display == CSSDisplay.none;
         renderStyle.display = value;
         if (displayChanged) {
-          if (changFromNone) {
-            recalculateStyle(rebuildNested: true, forceRecalculate: true);
-          }
           _updateRenderBoxModelWithDisplay();
         }
         break;
@@ -1681,7 +1677,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
-    if (renderBoxModel != null || forceRecalculate) {
+    if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);

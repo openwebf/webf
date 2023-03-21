@@ -240,18 +240,26 @@ void ScriptWrappable::InitializeQuickJSObject() {
   jsObject_ = JS_NewObjectClass(ctx_, wrapper_type_info->classId);
   JS_SetOpaque(jsObject_, this);
 
-  if (KeepAlive()) {
-    JS_DupValue(ctx_, jsObject_);
-    context_->RegisterActiveScriptWrappers(this);
-  }
-
   // Let our instance into inherit prototype methods.
   JSValue prototype = GetExecutingContext()->contextData()->prototypeForType(wrapper_type_info);
   JS_SetPrototype(ctx_, jsObject_, prototype);
 }
 
-bool ScriptWrappable::KeepAlive() const {
-  return false;
+void ScriptWrappable::KeepAlive() {
+  if (is_alive)
+    return;
+
+  context_->RegisterActiveScriptWrappers(this);
+  JS_DupValue(ctx_, jsObject_);
+  is_alive = true;
+}
+
+void ScriptWrappable::ReleaseAlive() {
+  if (!is_alive)
+    return;
+  context_->InActiveScriptWrappers(this);
+  JS_FreeValue(ctx_, jsObject_);
+  is_alive = false;
 }
 
 }  // namespace webf

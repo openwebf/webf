@@ -138,4 +138,8 @@ void WindowOrWorkerGlobalScope::clearInterval(ExecutingContext* context, int32_t
   context->Timers()->forceStopTimeoutById(timerId);
 }
 
+void WindowOrWorkerGlobalScope::__gc__(ExecutingContext* context, ExceptionState& exception) {
+  JS_RunGC(context->GetScriptState()->runtime());
+}
+
 }  // namespace webf
