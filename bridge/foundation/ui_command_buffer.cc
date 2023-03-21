@@ -32,7 +32,7 @@ void UICommandBuffer::addCommand(int32_t id,
                                  std::unique_ptr<SharedNativeString>&& args_01,
                                  void* nativePtr) {
   assert(args_01 != nullptr);
-  UICommandItem item{id, static_cast<int32_t>(type), args_01.release(), nativePtr};
+  UICommandItem item{id, static_cast<int32_t>(type), args_01.get(), nativePtr};
   addCommand(item);
 }
 
@@ -43,7 +43,7 @@ void UICommandBuffer::addCommand(int32_t id,
                                  void* nativePtr) {
   assert(args_01 != nullptr);
   assert(args_02 != nullptr);
-  UICommandItem item{id, static_cast<int32_t>(type), args_01.release(), args_02.release(), nativePtr};
+  UICommandItem item{id, static_cast<int32_t>(type), args_01.get(), args_02.get(), nativePtr};
   addCommand(item);
 }
 
@@ -82,10 +82,6 @@ bool UICommandBuffer::empty() {
 }
 
 void UICommandBuffer::clear() {
-  for (int i = 0; i < size_; i++) {
-    delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_01);
-    delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_02);
-  }
   size_ = 0;
   memset(buffer_, 0, sizeof(buffer_));
   update_batched_ = false;

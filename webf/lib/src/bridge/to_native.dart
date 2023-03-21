@@ -372,11 +372,13 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
     if (args01StringMemory != 0) {
       Pointer<Uint16> args_01 = Pointer.fromAddress(args01StringMemory);
       command.args.add(uint16ToString(args_01, args01Length));
+      malloc.free(args_01);
 
       int args02StringMemory = rawMemory[i + args02StringMemOffset];
       if (args02StringMemory != 0) {
         Pointer<Uint16> args_02 = Pointer.fromAddress(args02StringMemory);
         command.args.add(uint16ToString(args_02, args02Length));
+        malloc.free(args_02);
       }
     }
 
@@ -422,6 +424,7 @@ void flushUICommand(WebFViewController view) {
     PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
   }
 
+  print('read command..');
   List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, view.contextId);
 
   SchedulerBinding.instance.scheduleFrame();
