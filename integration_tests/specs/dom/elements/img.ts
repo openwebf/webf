@@ -54,6 +54,14 @@ describe('Tags img', () => {
     };
     img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
   });
+  it('won not leak when overwrite src', (done) => {
+    const img = new Image();
+    img.onload = img.onerror = (evt) => {
+      done();
+    };
+    img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
+    img.src = 'https://gw.alicdn.com/tfs/TB1MRC_cvb2gK0jSZK9XXaEgFXa-1701-1535.png';
+  });
 
   describe('object-fit', () => {
     const imageURL = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';

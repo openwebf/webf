@@ -14,6 +14,7 @@
 #include <locale>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <unordered_map>
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
@@ -85,6 +86,7 @@ class ExecutingContext {
 
   // Register active script wrappers.
   void RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable);
+  void InActiveScriptWrappers(ScriptWrappable* script_wrappable);
 
   // Gets the DOMTimerCoordinator which maintains the "active timer
   // list" of tasks created by setTimeout and setInterval. The
@@ -176,7 +178,7 @@ class ExecutingContext {
   bool in_dispatch_error_event_{false};
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
-  std::vector<ScriptWrappable*> active_wrappers_;
+  std::set<ScriptWrappable*> active_wrappers_;
 };
 
 class ObjectProperty {

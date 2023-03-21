@@ -2,8 +2,9 @@ import {HTMLElement} from "./html_element";
 
 interface HTMLImageElement extends HTMLElement {
     alt: DartImpl<string>;
-    src: DartImpl<string>;
-    srcset: DartImpl<string>;
+    // src: DartImpl<string>;
+    src: string;
+    // srcset: DartImpl<string>;
     sizes: DartImpl<string>;
     width: DartImpl<int64>;
     height: DartImpl<int64>;
