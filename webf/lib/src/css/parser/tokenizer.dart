@@ -77,12 +77,13 @@ class Tokenizer extends TokenizerBase {
 
           if (tokId != -1) {
             return _finishToken(tokId);
-          } else {
-            // Didn't find a CSS directive or margin directive so the @name is
-            // probably the Less definition '@name: value_variable_definition'.
-            _startIndex = oldStartIndex;
-            _index = oldIndex;
           }
+          // } else {
+          //   // Didn't find a CSS directive or margin directive so the @name is
+          //   // probably the Less definition '@name: value_variable_definition'.
+          //   _startIndex = oldStartIndex;
+          //   _index = oldIndex;
+          // }
         }
         return _finishToken(TokenKind.AT);
       case TokenChar.DOT:
