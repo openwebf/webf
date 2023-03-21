@@ -74,7 +74,7 @@ void disposePage(void* page_) {
   delete page;
 }
 
-void evaluateScripts(void* page_, NativeString* code, const char* bundleFilename, int32_t startLine) {
+void evaluateScripts(void* page_, SharedNativeString* code, const char* bundleFilename, int32_t startLine) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   page->evaluateScript(reinterpret_cast<webf::SharedNativeString*>(code), bundleFilename, startLine);
@@ -93,7 +93,7 @@ void parseHTML(void* page_, const char* code, int32_t length) {
 }
 
 NativeValue* invokeModuleEvent(void* page_,
-                               NativeString* module_name,
+                               SharedNativeString* module_name,
                                const char* eventType,
                                void* event,
                                NativeValue* extra) {

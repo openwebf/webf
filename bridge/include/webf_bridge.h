@@ -11,7 +11,7 @@
 #define WEBF_EXPORT_C extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 
-typedef struct NativeString NativeString;
+typedef struct SharedNativeString SharedNativeString;
 typedef struct NativeValue NativeValue;
 typedef struct NativeScreen NativeScreen;
 typedef struct NativeByteCode NativeByteCode;
@@ -33,14 +33,14 @@ void* allocateNewPage(int32_t targetContextId);
 WEBF_EXPORT_C
 void disposePage(void* page);
 WEBF_EXPORT_C
-void evaluateScripts(void* page, NativeString* code, const char* bundleFilename, int32_t startLine);
+void evaluateScripts(void* page, SharedNativeString* code, const char* bundleFilename, int32_t startLine);
 WEBF_EXPORT_C
 void evaluateQuickjsByteCode(void* page, uint8_t* bytes, int32_t byteLen);
 WEBF_EXPORT_C
 void parseHTML(void* page, const char* code, int32_t length);
 WEBF_EXPORT_C
 NativeValue* invokeModuleEvent(void* page,
-                               NativeString* module,
+                               SharedNativeString* module,
                                const char* eventType,
                                void* event,
                                NativeValue* extra);
