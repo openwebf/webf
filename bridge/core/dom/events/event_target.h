@@ -79,7 +79,7 @@ class Node;
 // EventTarget objects allow us to add and remove an event
 // listeners of a specific event type. Each EventTarget object also represents
 // the target to which an event is dispatched when something has occurred.
-class EventTarget : public ScriptWrappable, public BindingObject {
+class EventTarget : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -135,6 +135,8 @@ class EventTarget : public ScriptWrappable, public BindingObject {
   // Check the attribute is defined in native.
   virtual bool IsAttributeDefinedInternal(const AtomicString& key) const;
 
+  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
+
   void Trace(GCVisitor* visitor) const override;
 
  protected:
@@ -147,7 +149,6 @@ class EventTarget : public ScriptWrappable, public BindingObject {
 
   DispatchEventResult DispatchEventInternal(Event& event, ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(const NativeValue* native_method, int32_t argc, const NativeValue* argv) override;
   NativeValue HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv);
 
   // Subclasses should likely not override these themselves; instead, they

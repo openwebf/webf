@@ -36,12 +36,11 @@ class AtomicString {
 
   static AtomicString Empty();
   static AtomicString Null();
-  static AtomicString From(JSContext* ctx, NativeString* native_string);
 
   AtomicString() = default;
   AtomicString(JSContext* ctx, const std::string& string);
   AtomicString(JSContext* ctx, const char* str, size_t length);
-  AtomicString(JSContext* ctx, const NativeString* native_string);
+  AtomicString(JSContext* ctx, const std::unique_ptr<AutoFreeNativeString>& native_string);
   AtomicString(JSContext* ctx, const uint16_t* str, size_t length);
   AtomicString(JSContext* ctx, JSValue value);
   AtomicString(JSContext* ctx, JSAtom atom);
@@ -72,7 +71,7 @@ class AtomicString {
   int Find(bool (*CharacterMatchFunction)(uint16_t)) const;
 
   [[nodiscard]] std::string ToStdString(JSContext* ctx) const;
-  [[nodiscard]] std::unique_ptr<NativeString> ToNativeString(JSContext* ctx) const;
+  [[nodiscard]] std::unique_ptr<SharedNativeString> ToNativeString(JSContext* ctx) const;
 
   StringView ToStringView() const;
 

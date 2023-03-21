@@ -5,6 +5,7 @@
 #include <atomic>
 #include <unordered_map>
 
+#include "foundation/native_value_converter.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
@@ -50,7 +51,7 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
   return true;
 }
 
-NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
+NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
                                          const char* eventType,
                                          void* ptr,
                                          NativeValue* extra) {
@@ -68,7 +69,7 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
   }
 
   ScriptValue extraObject = ScriptValue(ctx, *extra);
-  AtomicString module_name = AtomicString(ctx, native_module_name);
+  AtomicString module_name = AtomicString(ctx, std::make_unique<AutoFreeNativeString>(native_module_name));
   auto listener = context_->ModuleListeners()->listener(module_name);
 
   if (listener == nullptr) {
@@ -94,7 +95,7 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
   return return_value;
 }
 
-void WebFPage::evaluateScript(const NativeString* script, const char* url, int startLine) {
+void WebFPage::evaluateScript(const SharedNativeString* script, const char* url, int startLine) {
   if (!context_->IsContextValid())
     return;
 

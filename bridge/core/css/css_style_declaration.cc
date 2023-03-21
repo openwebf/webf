@@ -7,6 +7,7 @@
 
 namespace webf {
 
-CSSStyleDeclaration::CSSStyleDeclaration(JSContext* ctx) : ScriptWrappable(ctx) {}
+CSSStyleDeclaration::CSSStyleDeclaration(JSContext* ctx) : BindingObject(ctx) {}
+CSSStyleDeclaration::CSSStyleDeclaration(JSContext *ctx, NativeBindingObject *native_binding_object): BindingObject(ctx, native_binding_object) {}
 
 }  // namespace webf

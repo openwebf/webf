@@ -77,7 +77,7 @@ void disposePage(void* page_) {
 void evaluateScripts(void* page_, NativeString* code, const char* bundleFilename, int32_t startLine) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  page->evaluateScript(reinterpret_cast<webf::NativeString*>(code), bundleFilename, startLine);
+  page->evaluateScript(reinterpret_cast<webf::SharedNativeString*>(code), bundleFilename, startLine);
 }
 
 void evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
@@ -99,7 +99,7 @@ NativeValue* invokeModuleEvent(void* page_,
                                NativeValue* extra) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  auto* result = page->invokeModuleEvent(reinterpret_cast<webf::NativeString*>(module_name), eventType, event,
+  auto* result = page->invokeModuleEvent(reinterpret_cast<webf::SharedNativeString*>(module_name), eventType, event,
                                          reinterpret_cast<webf::NativeValue*>(extra));
   return reinterpret_cast<NativeValue*>(result);
 }

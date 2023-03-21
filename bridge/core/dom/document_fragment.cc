@@ -37,7 +37,7 @@ Node* DocumentFragment::Clone(Document& factory, CloneChildrenFlag flag) const {
   DocumentFragment* clone = Create(factory);
   if (flag != CloneChildrenFlag::kSkip)
     clone->CloneChildNodesFrom(*this, flag);
-  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(clone->eventTargetId()));
+  std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(std::to_string(clone->eventTargetId()));
   GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCloneNode, std::move(args_01),
                                                        nullptr);
   return clone;

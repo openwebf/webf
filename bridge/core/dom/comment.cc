@@ -33,7 +33,7 @@ std::string Comment::nodeName() const {
 
 Node* Comment::Clone(Document& factory, CloneChildrenFlag flag) const {
   Node* copy = Create(factory, data());
-  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(copy->eventTargetId()));
+  std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(std::to_string(copy->eventTargetId()));
   GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCloneNode, std::move(args_01),
                                                        nullptr);
   return copy;

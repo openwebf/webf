@@ -16,7 +16,7 @@ DOMMatrixReadonly* DOMMatrixReadonly::Create(ExecutingContext* context,
 DOMMatrixReadonly::DOMMatrixReadonly(ExecutingContext* context,
                                      const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
                                      ExceptionState& exception_state)
-    : BindingObject(context), ScriptWrappable(context->ctx()) {
+    : BindingObject(context->ctx()) {
   assert(GetExecutingContext()->dartMethodPtr()->create_binding_object != nullptr);
 
   NativeValue arguments[1];
@@ -29,7 +29,7 @@ DOMMatrixReadonly::DOMMatrixReadonly(ExecutingContext* context,
       GetExecutingContext()->contextId(), bindingObject(), CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
 }
 
-NativeValue DOMMatrixReadonly::HandleCallFromDartSide(const NativeValue* method,
+NativeValue DOMMatrixReadonly::HandleCallFromDartSide(const AtomicString& method,
                                                       int32_t argc,
                                                       const NativeValue* argv) {
   return Native_NewNull();

@@ -7,7 +7,7 @@
 
 namespace webf {
 
-CanvasRenderingContext::CanvasRenderingContext(ExecutingContext* context) : ScriptWrappable(context->ctx()) {}
+CanvasRenderingContext::CanvasRenderingContext(JSContext* ctx, NativeBindingObject* native_binding_object) : BindingObject(ctx, native_binding_object) {}
 
 bool CanvasRenderingContext::IsCanvas2d() const {
   return false;

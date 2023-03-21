@@ -9,21 +9,23 @@
 #include "bindings/qjs/script_promise_resolver.h"
 #include "core/dom/events/event_target.h"
 #include "core/executing_context.h"
+#include "foundation/native_string.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
 
 void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
-                                                 NativeValue* method,
+                                                 NativeValue* native_method,
                                                  int32_t argc,
                                                  NativeValue* argv) {
+  AtomicString method = AtomicString(binding_object->binding_target_->ctx(), std::make_unique<AutoFreeNativeString>(native_method->u.ptr));
   NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv);
   if (return_value != nullptr)
     *return_value = result;
 }
 
-BindingObject::BindingObject(ExecutingContext* context) : context_(context) {}
+BindingObject::BindingObject(JSContext* ctx) : ScriptWrappable(ctx) {}
 BindingObject::~BindingObject() {
   // Set below properties to nullptr to avoid dart callback to native.
   binding_object_->disposed_ = true;
@@ -32,8 +34,8 @@ BindingObject::~BindingObject() {
   binding_object_->invoke_bindings_methods_from_native = nullptr;
 }
 
-BindingObject::BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object)
-    : context_(context) {
+BindingObject::BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object)
+    : ScriptWrappable(ctx) {
   native_binding_object->binding_target_ = this;
   native_binding_object->invoke_binding_methods_from_dart = NativeBindingObject::HandleCallFromDartSide;
   binding_object_ = native_binding_object;
@@ -47,19 +49,23 @@ void BindingObject::FullFillPendingPromise(BindingObjectPromiseContext* binding_
   pending_promise_contexts_.erase(binding_object_promise_context);
 }
 
+NativeValue BindingObject::HandleCallFromDartSide(const AtomicString &method, int32_t argc, const NativeValue *argv) {
+  return Native_NewNull();
+}
+
 NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
                                                int32_t argc,
                                                const NativeValue* argv,
                                                ExceptionState& exception_state) const {
-  context_->FlushUICommand();
+  GetExecutingContext()->FlushUICommand();
   if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-    exception_state.ThrowException(context_->ctx(), ErrorType::InternalError,
+    exception_state.ThrowException( GetExecutingContext()->ctx(), ErrorType::InternalError,
                                    "Failed to call dart method: invoke_bindings_methods_from_native not initialized.");
     return Native_NewNull();
   }
 
   NativeValue return_value = Native_NewNull();
-  NativeValue native_method = NativeValueConverter<NativeTypeString>::ToNativeValue(context_->ctx(), method);
+  NativeValue native_method = NativeValueConverter<NativeTypeString>::ToNativeValue( GetExecutingContext()->ctx(), method);
   binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
   return return_value;
 }
@@ -68,9 +74,9 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
                                                size_t argc,
                                                const NativeValue* argv,
                                                ExceptionState& exception_state) const {
-  context_->FlushUICommand();
+  GetExecutingContext()->FlushUICommand();
   if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-    exception_state.ThrowException(context_->ctx(), ErrorType::InternalError,
+    exception_state.ThrowException( GetExecutingContext()->ctx(), ErrorType::InternalError,
                                    "Failed to call dart method: invoke_bindings_methods_from_native not initialized.");
     return Native_NewNull();
   }
@@ -82,16 +88,16 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 }
 
 NativeValue BindingObject::GetBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const {
-  context_->FlushUICommand();
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(context_->ctx()).release())};
+  GetExecutingContext()->FlushUICommand();
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString( GetExecutingContext()->ctx()).release())};
   return InvokeBindingMethod(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
 }
 
 NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
                                               NativeValue value,
                                               ExceptionState& exception_state) const {
-  context_->FlushUICommand();
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(context_->ctx()).release()), value};
+  GetExecutingContext()->FlushUICommand();
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString( GetExecutingContext()->ctx()).release()), value};
   return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv, exception_state);
 }
 
@@ -199,7 +205,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
 }
 
 NativeValue BindingObject::GetAllBindingPropertyNames(ExceptionState& exception_state) const {
-  context_->FlushUICommand();
+  GetExecutingContext()->FlushUICommand();
   return InvokeBindingMethod(BindingMethodCallOperations::kGetAllPropertyNames, 0, nullptr, exception_state);
 }
 

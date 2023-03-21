@@ -9,6 +9,7 @@
 #include <cinttypes>
 #include <set>
 #include "bindings/qjs/atomic_string.h"
+#include "bindings/qjs/script_wrappable.h"
 #include "foundation/native_type.h"
 #include "foundation/native_value.h"
 
@@ -65,7 +66,7 @@ struct BindingObjectPromiseContext : public DartReadable {
   std::shared_ptr<ScriptPromiseResolver> promise_resolver;
 };
 
-class BindingObject {
+class BindingObject : public ScriptWrappable {
  public:
   struct AnonymousFunctionData {
     std::string method_name;
@@ -89,10 +90,10 @@ class BindingObject {
 
   BindingObject() = delete;
   ~BindingObject();
-  explicit BindingObject(ExecutingContext* context);
+  explicit BindingObject(JSContext* ctx);
 
   // Handle call from dart side.
-  virtual NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) = 0;
+  virtual NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv);
   // Invoke methods which implemented at dart side.
   NativeValue InvokeBindingMethod(const AtomicString& method,
                                   int32_t argc,
@@ -127,10 +128,9 @@ class BindingObject {
                                   ExceptionState& exception_state) const;
 
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.
-  explicit BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  explicit BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object);
 
  private:
-  ExecutingContext* context_{nullptr};
   NativeBindingObject* binding_object_{new NativeBindingObject(this)};
   std::set<BindingObjectPromiseContext*> pending_promise_contexts_;
 };

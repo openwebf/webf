@@ -19,7 +19,7 @@ namespace webf {
 static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value) {
   switch (native_value.tag) {
     case NativeTag::TAG_STRING: {
-      auto* string = static_cast<NativeString*>(native_value.u.ptr);
+      auto* string = static_cast<SharedNativeString*>(native_value.u.ptr);
       if (string == nullptr)
         return JS_NULL;
       JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());
@@ -143,7 +143,7 @@ AtomicString ScriptValue::ToString() const {
   return {ctx_, value_};
 }
 
-std::unique_ptr<NativeString> ScriptValue::ToNativeString() const {
+std::unique_ptr<SharedNativeString> ScriptValue::ToNativeString() const {
   return ToString().ToNativeString(ctx_);
 }
 

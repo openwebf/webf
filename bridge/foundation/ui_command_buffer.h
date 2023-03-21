@@ -38,17 +38,17 @@ enum class UICommand {
 
 struct UICommandItem {
   UICommandItem() = default;
-  UICommandItem(int32_t id, int32_t type, NativeString* args_01, NativeString* args_02, void* nativePtr)
+  UICommandItem(int32_t id, int32_t type, SharedNativeString* args_01, SharedNativeString* args_02, void* nativePtr)
       : type(type),
-        string_01(reinterpret_cast<int64_t>((new NativeString(args_01))->string())),
+        string_01(reinterpret_cast<int64_t>(args_01->string())),
         args_01_length(args_01->length()),
-        string_02(reinterpret_cast<int64_t>((new NativeString(args_02))->string())),
+        string_02(reinterpret_cast<int64_t>(args_02->string())),
         args_02_length(args_02->length()),
         id(id),
         nativePtr(reinterpret_cast<int64_t>(nativePtr)){};
-  UICommandItem(int32_t id, int32_t type, NativeString* args_01, void* nativePtr)
+  UICommandItem(int32_t id, int32_t type, SharedNativeString* args_01, void* nativePtr)
       : type(type),
-        string_01(reinterpret_cast<int64_t>((new NativeString(args_01))->string())),
+        string_01(reinterpret_cast<int64_t>(args_01->string())),
         args_01_length(args_01->length()),
         id(id),
         nativePtr(reinterpret_cast<int64_t>(nativePtr)){};
@@ -73,10 +73,10 @@ class UICommandBuffer {
   void addCommand(int32_t id, UICommand type, void* nativePtr);
   void addCommand(int32_t id,
                   UICommand type,
-                  std::unique_ptr<NativeString>&& args_01,
-                  std::unique_ptr<NativeString>&& args_02,
+                  std::unique_ptr<SharedNativeString>&& args_01,
+                  std::unique_ptr<SharedNativeString>&& args_02,
                   void* nativePtr);
-  void addCommand(int32_t id, UICommand type, std::unique_ptr<NativeString>&& args_01, void* nativePtr);
+  void addCommand(int32_t id, UICommand type, std::unique_ptr<SharedNativeString>&& args_01, void* nativePtr);
   UICommandItem* data();
   int64_t size();
   bool empty();

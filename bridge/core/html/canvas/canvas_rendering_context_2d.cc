@@ -15,9 +15,9 @@ bool CanvasRenderingContext2D::IsCanvas2d() const {
 
 CanvasRenderingContext2D::CanvasRenderingContext2D(ExecutingContext* context,
                                                    NativeBindingObject* native_binding_object)
-    : BindingObject(context, native_binding_object), CanvasRenderingContext(context) {}
+    : CanvasRenderingContext(context->ctx(), native_binding_object) {}
 
-NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(const NativeValue* method,
+NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(const AtomicString& method,
                                                              int32_t argc,
                                                              const NativeValue* argv) {
   return Native_NewNull();
@@ -98,7 +98,7 @@ void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStr
   }
   SetBindingProperty(binding_call_methods::kfillStyle, value, exception_state);
 
-  fill_style_ = style;
+//  fill_style_ = style;
 }
 
 std::shared_ptr<QJSUnionDomStringCanvasGradient> CanvasRenderingContext2D::strokeStyle() {

@@ -13,7 +13,7 @@ namespace webf {
 
 class Element;
 
-class ComputedCssStyleDeclaration : public CSSStyleDeclaration, public BindingObject {
+class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -34,8 +34,6 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration, public BindingOb
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) override;
 
   bool IsComputedCssStyleDeclaration() const override;
-
-  NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) override;
 
  private:
   Member<Element> owner_element_;

@@ -415,8 +415,8 @@ void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
   new_child.SetPreviousSibling(prev);
   new_child.SetNextSibling(&next_child);
 
-  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(new_child.eventTargetId()));
-  std::unique_ptr<NativeString> args_02 = stringToNativeString("beforebegin");
+  std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(std::to_string(new_child.eventTargetId()));
+  std::unique_ptr<SharedNativeString> args_02 = stringToNativeString("beforebegin");
   GetExecutingContext()->uiCommandBuffer()->addCommand(next_child.eventTargetId(), UICommand::kInsertAdjacentNode,
                                                        std::move(args_01), std::move(args_02), nullptr);
 }
@@ -431,8 +431,8 @@ void ContainerNode::AppendChildCommon(Node& child) {
   }
   SetLastChild(&child);
 
-  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(child.eventTargetId()));
-  std::unique_ptr<NativeString> args_02 = stringToNativeString("beforeend");
+  std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(std::to_string(child.eventTargetId()));
+  std::unique_ptr<SharedNativeString> args_02 = stringToNativeString("beforeend");
 
   GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kInsertAdjacentNode,
                                                        std::move(args_01), std::move(args_02), nullptr);
