@@ -89,6 +89,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
     callbackContext->context->DrainPendingPromiseJobs();
     JS_FreeValue(callbackContext->context->ctx(), callbackContext->callback);
+    delete callbackContext;
   };
 
   context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),

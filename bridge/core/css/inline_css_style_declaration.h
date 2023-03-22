@@ -23,7 +23,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
  public:
   using ImplType = InlineCssStyleDeclaration*;
   static InlineCssStyleDeclaration* Create(ExecutingContext* context, ExceptionState& exception_state);
-  explicit InlineCssStyleDeclaration(ExecutingContext* context, int64_t owner_element_target_id);
+  explicit InlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_);
 
   AtomicString item(const AtomicString& key, ExceptionState& exception_state) override;
   bool SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) override;
@@ -43,12 +43,13 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   //  AtomicString cssText() const override;
   //  void setCssText(const AtomicString &value, ExceptionState &exception_state) override;
 
+  void Trace(GCVisitor* visitor) const override;
  private:
   AtomicString InternalGetPropertyValue(std::string& name);
   bool InternalSetProperty(std::string& name, const AtomicString& value);
   AtomicString InternalRemoveProperty(std::string& name);
   std::unordered_map<std::string, AtomicString> properties_;
-  int32_t owner_element_target_id_;
+  Member<Element> owner_element_;
 };
 
 }  // namespace webf

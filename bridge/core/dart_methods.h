@@ -42,7 +42,7 @@ typedef void (*CancelAnimationFrame)(int32_t context_id, int32_t id);
 typedef void (*ToBlob)(void* callback_context,
                        int32_t context_id,
                        AsyncBlobCallback blobCallback,
-                       int32_t elementId,
+                       void* element_ptr,
                        double devicePixelRatio);
 typedef void (*OnJSError)(int32_t context_id, const char*);
 typedef void (*OnJSLog)(int32_t context_id, int32_t level, const char*);

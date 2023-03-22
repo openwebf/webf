@@ -131,7 +131,9 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     return ScriptValue::Empty(context->ctx());
   }
 
-  return ScriptValue(context->ctx(), *result);
+  ScriptValue return_value = ScriptValue(context->ctx(), *result);
+  delete result;
+  return return_value;
 }
 
 void ModuleManager::__webf_add_module_listener__(ExecutingContext* context,

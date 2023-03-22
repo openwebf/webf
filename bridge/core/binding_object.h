@@ -103,7 +103,7 @@ class BindingObject : public ScriptWrappable {
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
   NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
-  NativeBindingObject* bindingObject() const { return binding_object_; }
+  FORCE_INLINE NativeBindingObject* bindingObject() const { return binding_object_; }
 
   void Trace(GCVisitor* visitor) const;
 

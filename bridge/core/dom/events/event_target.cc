@@ -25,8 +25,6 @@ struct EventDispatchResult : public DartReadable {
   bool propagationStopped{false};
 };
 
-static std::atomic<int32_t> global_event_target_id{0};
-
 Event::PassiveMode EventPassiveMode(const RegisteredEventListener& event_listener) {
   if (!event_listener.Passive()) {
     return Event::PassiveMode::kNotPassiveDefault;
@@ -54,16 +52,13 @@ EventTarget::~EventTarget() {
     TEST_getEnv(GetExecutingContext()->uniqueId())->on_event_target_disposed(this);
   }
 #endif
-
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget,
-                                                       bindingObject());
 }
 
 EventTarget::EventTarget(ExecutingContext* context)
-    : BindingObject(context->ctx()), event_target_id_(global_event_target_id++) {}
+    : BindingObject(context->ctx()) {}
 
 EventTarget::EventTarget(ExecutingContext* context, NativeBindingObject* native_binding_object)
-    : BindingObject(context->ctx(), native_binding_object), event_target_id_(global_event_target_id++) {}
+    : BindingObject(context->ctx(), native_binding_object) {}
 
 Node* EventTarget::ToNode() {
   return nullptr;
@@ -215,8 +210,7 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
                                                               &listener_count);
 
   if (added && listener_count == 1) {
-    GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kAddEvent,
-                                                         std::move(event_type.ToNativeString(ctx())), nullptr);
+    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kAddEvent,std::move(event_type.ToNativeString(ctx())), bindingObject(), nullptr);
   }
 
   return added;
@@ -261,8 +255,8 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   }
 
   if (listener_count == 0) {
-    GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kRemoveEvent,
-                                                         std::move(event_type.ToNativeString(ctx())), nullptr);
+    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveEvent,
+                                                         std::move(event_type.ToNativeString(ctx())), bindingObject(), nullptr);
   }
 
   return true;

@@ -22,28 +22,9 @@ UICommandBuffer::~UICommandBuffer() {
 #endif
 }
 
-void UICommandBuffer::addCommand(int32_t id, UICommand type, void* nativePtr) {
-  UICommandItem item{id, static_cast<int32_t>(type), nativePtr};
-  addCommand(item);
-}
-
-void UICommandBuffer::addCommand(int32_t id,
-                                 UICommand type,
-                                 std::unique_ptr<SharedNativeString>&& args_01,
-                                 void* nativePtr) {
-  assert(args_01 != nullptr);
-  UICommandItem item{id, static_cast<int32_t>(type), args_01.get(), nativePtr};
-  addCommand(item);
-}
-
-void UICommandBuffer::addCommand(int32_t id,
-                                 UICommand type,
-                                 std::unique_ptr<SharedNativeString>&& args_01,
-                                 std::unique_ptr<SharedNativeString>&& args_02,
-                                 void* nativePtr) {
-  assert(args_01 != nullptr);
-  assert(args_02 != nullptr);
-  UICommandItem item{id, static_cast<int32_t>(type), args_01.get(), args_02.get(), nativePtr};
+void UICommandBuffer::addCommand(UICommand type, std::unique_ptr<SharedNativeString>&& args_01, void* nativePtr, void* nativePtr2) {
+  WEBF_LOG(VERBOSE) << "type: " << static_cast<int>(type) << " args_01" << args_01.get() << " nativePtr: " << nativePtr << " nativePtr2 " << nativePtr2;
+  UICommandItem item{static_cast<int32_t>(type), args_01.get(), nativePtr, nativePtr2};
   addCommand(item);
 }
 

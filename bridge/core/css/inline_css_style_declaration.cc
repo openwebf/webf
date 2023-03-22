@@ -67,8 +67,8 @@ InlineCssStyleDeclaration* InlineCssStyleDeclaration::Create(ExecutingContext* c
   return nullptr;
 }
 
-InlineCssStyleDeclaration::InlineCssStyleDeclaration(ExecutingContext* context, int64_t owner_element_target_id)
-    : CSSStyleDeclaration(context->ctx()), owner_element_target_id_(owner_element_target_id) {}
+InlineCssStyleDeclaration::InlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_)
+    : CSSStyleDeclaration(context->ctx()), owner_element_(owner_element_) {}
 
 AtomicString InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
@@ -107,6 +107,10 @@ void InlineCssStyleDeclaration::CopyWith(InlineCssStyleDeclaration* inline_style
   for (auto& attr : inline_style->properties_) {
     properties_[attr.first] = attr.second;
   }
+}
+
+void InlineCssStyleDeclaration::Trace(GCVisitor *visitor) const {
+  visitor->Trace(owner_element_);
 }
 
 std::string InlineCssStyleDeclaration::ToString() const {
@@ -152,9 +156,8 @@ bool InlineCssStyleDeclaration::InternalSetProperty(std::string& name, const Ato
   properties_[name] = value;
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
-  std::unique_ptr<SharedNativeString> args_02 = value.ToNativeString(ctx());
-  GetExecutingContext()->uiCommandBuffer()->addCommand(owner_element_target_id_, UICommand::kSetStyle,
-                                                       std::move(args_01), std::move(args_02), nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetStyle,
+                                                       std::move(args_01), owner_element_->bindingObject(), value.ToNativeString(ctx()).release());
 
   return true;
 }
@@ -170,9 +173,7 @@ AtomicString InlineCssStyleDeclaration::InternalRemoveProperty(std::string& name
   properties_.erase(name);
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
-  std::unique_ptr<SharedNativeString> args_02 = jsValueToNativeString(ctx(), JS_NULL);
-  GetExecutingContext()->uiCommandBuffer()->addCommand(owner_element_target_id_, UICommand::kSetStyle,
-                                                       std::move(args_01), std::move(args_02), nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetStyle,std::move(args_01), owner_element_->bindingObject(), nullptr);
 
   return return_value;
 }

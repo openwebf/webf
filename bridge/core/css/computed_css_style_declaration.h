@@ -36,7 +36,6 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
   bool IsComputedCssStyleDeclaration() const override;
 
  private:
-  Member<Element> owner_element_;
 };
 
 template <>
