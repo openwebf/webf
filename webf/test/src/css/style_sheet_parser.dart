@@ -75,5 +75,12 @@ void main() {
       expect((rules[0] as CSSStyleRule).selectorGroup.selectorText, '.foo h6');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
     });
+
+    test('8', () {
+      List<CSSRule> rules = parseRules('@css-compile@model-base 75/750; .foo {color: red}');
+      expect(rules.length, 1);
+      expect((rules[0] as CSSStyleRule).selectorGroup.selectorText, '.foo');
+      expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
+    });
   });
 }
