@@ -61,8 +61,6 @@ class Tokenizer extends TokenizerBase {
       case TokenChar.AT:
         var peekCh = _peekChar();
         if (TokenizerHelpers.isIdentifierStart(peekCh)) {
-          var oldIndex = _index;
-          var oldStartIndex = _startIndex;
 
           _startIndex = _index;
           ch = _nextChar();
