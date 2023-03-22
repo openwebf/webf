@@ -37,7 +37,8 @@ Node* DocumentFragment::Clone(Document& factory, CloneChildrenFlag flag) const {
   DocumentFragment* clone = Create(factory);
   if (flag != CloneChildrenFlag::kSkip)
     clone->CloneChildNodesFrom(*this, flag);
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(), clone->bindingObject());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+                                                       clone->bindingObject());
   return clone;
 }
 

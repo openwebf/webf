@@ -44,6 +44,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   //  void setCssText(const AtomicString &value, ExceptionState &exception_state) override;
 
   void Trace(GCVisitor* visitor) const override;
+
  private:
   AtomicString InternalGetPropertyValue(std::string& name);
   bool InternalSetProperty(std::string& name, const AtomicString& value);

@@ -34,9 +34,7 @@ BindingObject::~BindingObject() {
   binding_object_->invoke_binding_methods_from_dart = nullptr;
   binding_object_->invoke_bindings_methods_from_native = nullptr;
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kDisposeBindingObject,
-                                                       nullptr,
-                                                       bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kDisposeBindingObject, nullptr, bindingObject(),
                                                        nullptr);
 }
 

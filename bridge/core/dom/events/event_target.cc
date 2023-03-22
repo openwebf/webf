@@ -54,8 +54,7 @@ EventTarget::~EventTarget() {
 #endif
 }
 
-EventTarget::EventTarget(ExecutingContext* context)
-    : BindingObject(context->ctx()) {}
+EventTarget::EventTarget(ExecutingContext* context) : BindingObject(context->ctx()) {}
 
 EventTarget::EventTarget(ExecutingContext* context, NativeBindingObject* native_binding_object)
     : BindingObject(context->ctx(), native_binding_object) {}
@@ -210,7 +209,8 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
                                                               &listener_count);
 
   if (added && listener_count == 1) {
-    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kAddEvent,std::move(event_type.ToNativeString(ctx())), bindingObject(), nullptr);
+    GetExecutingContext()->uiCommandBuffer()->addCommand(
+        UICommand::kAddEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), nullptr);
   }
 
   return added;
@@ -255,8 +255,8 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   }
 
   if (listener_count == 0) {
-    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveEvent,
-                                                         std::move(event_type.ToNativeString(ctx())), bindingObject(), nullptr);
+    GetExecutingContext()->uiCommandBuffer()->addCommand(
+        UICommand::kRemoveEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), nullptr);
   }
 
   return true;

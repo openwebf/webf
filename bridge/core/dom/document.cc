@@ -34,7 +34,8 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
 
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCreateDocument, nullptr, (void*)bindingObject(), nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCreateDocument, nullptr, (void*)bindingObject(),
+                                                       nullptr);
 }
 
 // https://dom.spec.whatwg.org/#dom-document-createelement

@@ -109,7 +109,7 @@ void InlineCssStyleDeclaration::CopyWith(InlineCssStyleDeclaration* inline_style
   }
 }
 
-void InlineCssStyleDeclaration::Trace(GCVisitor *visitor) const {
+void InlineCssStyleDeclaration::Trace(GCVisitor* visitor) const {
   visitor->Trace(owner_element_);
 }
 
@@ -156,8 +156,8 @@ bool InlineCssStyleDeclaration::InternalSetProperty(std::string& name, const Ato
   properties_[name] = value;
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetStyle,
-                                                       std::move(args_01), owner_element_->bindingObject(), value.ToNativeString(ctx()).release());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(
+      UICommand::kSetStyle, std::move(args_01), owner_element_->bindingObject(), value.ToNativeString(ctx()).release());
 
   return true;
 }
@@ -173,7 +173,8 @@ AtomicString InlineCssStyleDeclaration::InternalRemoveProperty(std::string& name
   properties_.erase(name);
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetStyle,std::move(args_01), owner_element_->bindingObject(), nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetStyle, std::move(args_01),
+                                                       owner_element_->bindingObject(), nullptr);
 
   return return_value;
 }
