@@ -1,4 +1,26 @@
 describe('Canvas context 2d', () => {
+  it('can change size by width and height property', async () => {
+    var canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+    canvas.width = canvas.height = 300;
+    // Scaled rectangle
+    context.fillStyle = "red";
+    context.fillRect(10, 10, 380, 380);
+
+    await snapshot();
+    canvas.width = canvas.height = 400;
+    // Scaled rectangle
+    context.fillStyle = "red";
+    context.fillRect(10, 10, 380, 380);
+    await snapshot();
+  });
+
   it('should work with font and rect', async () => {
     var div = document.createElement('div');
     div.style.width = div.style.height = '300px';
@@ -426,7 +448,7 @@ describe('Canvas context 2d', () => {
 
     await snapshot();
   });
-  
+
   it('should work with createLinearGradient', async (done) => {
     const canvas = <canvas height="300" width="300" />;
     document.body.appendChild(canvas);

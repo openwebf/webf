@@ -352,6 +352,7 @@ void ElementSnapshotReader::Start() {
 void ElementSnapshotReader::HandleSnapshot(uint8_t* bytes, int32_t length) {
   MemberMutationScope mutation_scope{context_};
   Blob* blob = Blob::Create(context_);
+  blob->SetMineType("image/png");
   blob->AppendBytes(bytes, length);
   resolver_->Resolve<Blob*>(blob);
 }

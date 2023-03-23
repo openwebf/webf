@@ -20,6 +20,7 @@ const Map<String, dynamic> _defaultStyle = {
 const String _MIME_TEXT_JAVASCRIPT = 'text/javascript';
 const String _MIME_APPLICATION_JAVASCRIPT = 'application/javascript';
 const String _MIME_X_APPLICATION_JAVASCRIPT = 'application/x-javascript';
+const String _MIME_X_APPLICATION_KBC = 'application/vnd.webf.bc1';
 const String _JAVASCRIPT_MODULE = 'module';
 
 typedef ScriptExecution = void Function(bool async);
@@ -249,6 +250,7 @@ class ScriptElement extends Element {
         (_type == _MIME_TEXT_JAVASCRIPT ||
             _type == _MIME_APPLICATION_JAVASCRIPT ||
             _type == _MIME_X_APPLICATION_JAVASCRIPT ||
+            _type == _MIME_X_APPLICATION_KBC ||
             _type == _JAVASCRIPT_MODULE)) {
       // Add bundle to scripts queue.
       ownerDocument.scriptRunner._queueScriptForExecution(this);

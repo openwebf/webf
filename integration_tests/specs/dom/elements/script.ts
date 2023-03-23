@@ -42,6 +42,18 @@ describe('script element', () => {
     };
   });
 
+  it('could loading the kbc files', done => {
+    const script = document.createElement('script');
+    script.src = 'assets:///assets/bundle.kbc1';
+    script.type = 'application/vnd.webf.bc1';
+    document.body.appendChild(script);
+
+    script.onload = async () => {
+      await snapshot();
+      done();
+    }
+  });
+
   function waitForLoad(script) {
     return new Promise((resolve) => {
       script.onload = () => {
@@ -49,7 +61,7 @@ describe('script element', () => {
       };
     });
   }
-
+  
   it('Waiting order for large script loaded', (done) => {
     const scriptLarge = document.createElement('script');
     scriptLarge.src = 'assets:///assets/large-script.js';

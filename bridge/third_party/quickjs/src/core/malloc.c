@@ -161,7 +161,7 @@ no_inline int js_realloc_array(JSContext* ctx, void** parray, int elem_size, int
   size_t slack;
   void* new_array;
   /* XXX: potential arithmetic overflow */
-  new_size = max_int(req_size, *psize * 3 / 2);
+  new_size = max_int(req_size, *psize * 9 / 2);
   new_array = js_realloc2(ctx, *parray, new_size * elem_size, &slack);
   if (!new_array)
     return -1;

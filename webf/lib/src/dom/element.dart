@@ -1677,7 +1677,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
-    if (renderBoxModel != null || forceRecalculate) {
+    if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -1687,7 +1687,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         style.flushPendingProperties();
       }
 
-      if (rebuildNested == true || hasInheritedPendingProperty) {
+      if (rebuildNested || hasInheritedPendingProperty) {
         // Update children style.
         children.forEach((Element child) {
           child.recalculateStyle(rebuildNested: rebuildNested);

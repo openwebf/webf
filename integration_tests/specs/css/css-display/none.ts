@@ -81,4 +81,35 @@ describe('Display', () => {
        done();
     });
   });
+
+  it('should works when update className on hidden element', async () => {
+    let styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+    .box {
+      width: 100px;
+      height: 200px;
+      background: red;
+    }
+
+    .blue {
+      background: blue;
+    }
+
+    .hidden {
+      display: none;
+    }
+    `;
+    document.head.appendChild(styleSheet);
+    let div = createElement('div', {
+      className: 'box hidden'
+    }, [
+      createText('Should be a blue box appear when remove hidden.')
+    ]);
+    document.body.appendChild(div);
+    await snapshot();
+    requestAnimationFrame(async () => {
+      div.className = 'box blue';
+      await snapshot();
+    });
+  });
 });
