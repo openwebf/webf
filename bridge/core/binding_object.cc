@@ -19,8 +19,9 @@ void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_ob
                                                  NativeValue* native_method,
                                                  int32_t argc,
                                                  NativeValue* argv) {
-  AtomicString method = AtomicString(binding_object->binding_target_->ctx(),
-                                     std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)));
+  AtomicString method = AtomicString(
+      binding_object->binding_target_->ctx(),
+      std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)));
   NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv);
   if (return_value != nullptr)
     *return_value = result;

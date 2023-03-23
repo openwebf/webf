@@ -55,7 +55,9 @@ CloseEvent::CloseEvent(ExecutingContext* context, const AtomicString& type, Nati
           context->ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_close_event->reason)))),
 #else
-      reason_(AtomicString(context->ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_close_event->reason)))),
+      reason_(AtomicString(
+          context->ctx(),
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_close_event->reason)))),
 #endif
       was_clean_(native_close_event->wasClean) {
 }

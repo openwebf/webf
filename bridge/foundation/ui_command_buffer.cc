@@ -22,7 +22,10 @@ UICommandBuffer::~UICommandBuffer() {
 #endif
 }
 
-void UICommandBuffer::addCommand(UICommand type, std::unique_ptr<SharedNativeString>&& args_01, void* nativePtr, void* nativePtr2) {
+void UICommandBuffer::addCommand(UICommand type,
+                                 std::unique_ptr<SharedNativeString>&& args_01,
+                                 void* nativePtr,
+                                 void* nativePtr2) {
   UICommandItem item{static_cast<int32_t>(type), args_01.get(), nativePtr, nativePtr2};
   addCommand(item);
 }

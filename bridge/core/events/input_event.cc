@@ -41,8 +41,12 @@ InputEvent::InputEvent(ExecutingContext* context, const AtomicString& type, Nati
           ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_input_event->data))))
 #else
-      input_type_(AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_input_event->inputType)))),
-      data_(AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_input_event->data))))
+      input_type_(AtomicString(ctx(),
+                               std::unique_ptr<AutoFreeNativeString>(
+                                   reinterpret_cast<AutoFreeNativeString*>(native_input_event->inputType)))),
+      data_(AtomicString(
+          ctx(),
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_input_event->data))))
 #endif
 {
 }

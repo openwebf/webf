@@ -51,7 +51,9 @@ PointerEvent::PointerEvent(ExecutingContext* context,
                                  std::unique_ptr<AutoFreeNativeString>(
                                      reinterpret_cast<AutoFreeNativeString*>(native_pointer_event->pointerType)))),
 #else
-      pointer_type_(AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_pointer_event->pointerType)))),
+      pointer_type_(AtomicString(ctx(),
+                                 std::unique_ptr<AutoFreeNativeString>(
+                                     reinterpret_cast<AutoFreeNativeString*>(native_pointer_event->pointerType)))),
 #endif
       pressure_(native_pointer_event->pressure),
       tangential_pressure_(native_pointer_event->tangentialPressure),

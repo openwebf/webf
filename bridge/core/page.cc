@@ -70,7 +70,8 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
   }
 
   ScriptValue extraObject = ScriptValue(ctx, *extra);
-  AtomicString module_name = AtomicString(ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
+  AtomicString module_name = AtomicString(
+      ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
   auto listener = context_->ModuleListeners()->listener(module_name);
 
   if (listener == nullptr) {
