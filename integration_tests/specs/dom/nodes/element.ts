@@ -76,6 +76,12 @@ describe('DOM Element API', () => {
 
   });
 
+  it('should works when getting multiple zero rects', () => {
+    const div = document.createElement('div');
+    expect(JSON.parse(JSON.stringify(div.getBoundingClientRect()))).toEqual({bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0});
+    expect(JSON.parse(JSON.stringify(div.getBoundingClientRect()))).toEqual({bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0});
+  });
+
   it('children should only contain elements', () => {
     let container = document.createElement('div');
     let a = document.createElement('div');
