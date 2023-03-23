@@ -111,7 +111,9 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
           print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: ${fromNativeValue(callbackResult)}');
         }
 
-        completer.complete(fromNativeValue(callbackResult));
+        var returnValue = fromNativeValue(callbackResult);
+        malloc.free(callbackResult);
+        completer.complete(returnValue);
       });
       return completer.future;
     }
@@ -144,6 +146,8 @@ Pointer<NativeValue> _invokeModule(
       fromNativeValue(params), callback.asFunction());
   Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
   toNativeValue(returnValue, result);
+  freeNativeString(module);
+  freeNativeString(method);
   return returnValue;
 }
 

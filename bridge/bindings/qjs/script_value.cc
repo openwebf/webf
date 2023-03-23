@@ -19,7 +19,7 @@ namespace webf {
 static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value) {
   switch (native_value.tag) {
     case NativeTag::TAG_STRING: {
-      auto string = std::make_unique<AutoFreeNativeString>(native_value.u.ptr);
+      std::unique_ptr<AutoFreeNativeString> string{static_cast<AutoFreeNativeString*>(native_value.u.ptr)};
       if (string == nullptr)
         return JS_NULL;
       JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());

@@ -87,6 +87,7 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
       _allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
   dynamic result = fromNativeValue(dispatchResult);
   malloc.free(dispatchResult);
+  malloc.free(extraData);
   return result;
 }
 
@@ -145,6 +146,7 @@ void evaluateScripts(int contextId, String code, {String? url, int line = 0}) {
     print('$e\n$stack');
   }
   freeNativeString(nativeString);
+  malloc.free(_url);
 }
 
 typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen);

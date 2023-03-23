@@ -93,7 +93,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
   };
 
   context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),
-                                               screenShotNativeString.get(), fn);
+                                               screenShotNativeString.release(), fn);
   return JS_NULL;
 }
 

@@ -67,10 +67,12 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
 
       return Pointer.fromAddress(nativeValue.ref.u);
     case JSValueType.TAG_LIST:
-      return List.generate(nativeValue.ref.uint32, (index) {
-        Pointer<NativeValue> head = Pointer.fromAddress(nativeValue.ref.u).cast<NativeValue>();
+      Pointer<NativeValue> head = Pointer.fromAddress(nativeValue.ref.u).cast<NativeValue>();
+      List result = List.generate(nativeValue.ref.uint32, (index) {
         return fromNativeValue(head.elementAt(index));
       });
+      malloc.free(head);
+      return result;
     case JSValueType.TAG_FUNCTION:
     case JSValueType.TAG_ASYNC_FUNCTION:
       break;
@@ -95,8 +97,9 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     target.ref.tag = JSValueType.TAG_FLOAT64.index;
     target.ref.u = doubleToInt64(value);
   } else if (value is String) {
+    Pointer<NativeString> nativeString = stringToNativeString(value);
     target.ref.tag = JSValueType.TAG_STRING.index;
-    target.ref.u = stringToNativeString(value).address;
+    target.ref.u = nativeString.address;
   } else if (value is Pointer) {
     target.ref.tag = JSValueType.TAG_POINTER.index;
     target.ref.uint32 = JSPointerType.Others.index;

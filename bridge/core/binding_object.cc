@@ -20,13 +20,13 @@ void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_ob
                                                  int32_t argc,
                                                  NativeValue* argv) {
   AtomicString method = AtomicString(binding_object->binding_target_->ctx(),
-                                     std::make_unique<AutoFreeNativeString>(native_method->u.ptr));
+                                     std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)));
   NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv);
   if (return_value != nullptr)
     *return_value = result;
 }
 
-BindingObject::BindingObject(JSContext* ctx) : ScriptWrappable(ctx) {}
+BindingObject::BindingObject(JSContext* ctx) : ScriptWrappable(ctx), binding_object_(new NativeBindingObject(this)) {}
 BindingObject::~BindingObject() {
   // Set below properties to nullptr to avoid dart callback to native.
   binding_object_->disposed_ = true;

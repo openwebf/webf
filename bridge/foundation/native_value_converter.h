@@ -43,7 +43,7 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
       return AtomicString::Empty();
     }
     assert(value.tag == NativeTag::TAG_STRING);
-    return {ctx, std::make_unique<AutoFreeNativeString>(value.u.ptr)};
+    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
   }
 };
 

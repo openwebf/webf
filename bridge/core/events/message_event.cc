@@ -51,9 +51,9 @@ MessageEvent::MessageEvent(ExecutingContext* context,
           std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_message_event->source))))
 #else
       data_(ScriptValue(ctx(), *(static_cast<NativeValue*>(native_message_event->data)))),
-      origin_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_message_event->origin))),
-      lastEventId_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_message_event->lastEventId))),
-      source_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_message_event->source)))
+      origin_(AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_message_event->origin)))),
+      lastEventId_(AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_message_event->lastEventId)))),
+      source_(AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_message_event->source))))
 #endif
 
 {

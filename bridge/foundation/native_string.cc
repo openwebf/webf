@@ -15,15 +15,6 @@ std::unique_ptr<SharedNativeString> SharedNativeString::FromTemporaryString(cons
   return std::make_unique<SharedNativeString>(new_str, length);
 }
 
-AutoFreeNativeString::AutoFreeNativeString(const uint16_t* string, uint32_t length)
-    : SharedNativeString(string, length) {}
-
-AutoFreeNativeString::AutoFreeNativeString(void* raw) : SharedNativeString() {
-  auto* p = static_cast<AutoFreeNativeString*>(raw);
-  length_ = p->length();
-  string_ = p->string_;
-}
-
 AutoFreeNativeString::~AutoFreeNativeString() {
   free();
 }

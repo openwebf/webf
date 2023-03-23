@@ -61,7 +61,7 @@ document.body.style.setProperty('--main-color', 'lightblue'); console.assert(doc
   uint16_t* last_key = (uint16_t*)last.string_01;
 
   auto native_str = new SharedNativeString(last_key, last.args_01_length);
-  EXPECT_STREQ(AtomicString(context->ctx(), std::make_unique<AutoFreeNativeString>(native_str))
+  EXPECT_STREQ(AtomicString(context->ctx(), std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(native_str)))
                    .ToStdString(context->ctx())
                    .c_str(),
                "--main-color");

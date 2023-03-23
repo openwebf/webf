@@ -40,16 +40,16 @@ TransitionEvent::TransitionEvent(ExecutingContext* context,
       elapsed_time_(native_transition_event->elapsedTime),
 #if ANDROID_32_BIT
       property_name_(AtomicString(ctx(),
-                                  std::make_unique<AutoFreeNativeString>(
-                                      reinterpret_cast<SharedNativeString*>(native_transition_event->propertyName)))),
+                                  std::unique_ptr<AutoFreeNativeString>(
+                                      reinterpret_cast<AutoFreeNativeString*>(native_transition_event->propertyName)))),
       pseudo_element_(AtomicString(ctx(),
-                                   std::make_unique<AutoFreeNativeString>(
-                                       reinterpret_cast<SharedNativeString*>(native_transition_event->pseudoElement))))
+                                   std::unique_ptr<AutoFreeNativeString>(
+                                       reinterpret_cast<AutoFreeNativeString*>(native_transition_event->pseudoElement))))
 #else
       property_name_(
-          AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_transition_event->propertyName))),
+          AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_transition_event->propertyName)))),
       pseudo_element_(
-          AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_transition_event->pseudoElement)))
+          AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_transition_event->pseudoElement))))
 #endif
 {
 }

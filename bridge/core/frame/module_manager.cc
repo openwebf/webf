@@ -119,12 +119,12 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     auto module_context = std::make_shared<ModuleContext>(context, module_callback);
     context->ModuleContexts()->AddModuleContext(module_context);
     result = context->dartMethodPtr()->invokeModule(
-        module_context.get(), context->contextId(), module_name.ToNativeString(context->ctx()).get(),
-        method.ToNativeString(context->ctx()).get(), &params, handleInvokeModuleTransientCallback);
+        module_context.get(), context->contextId(), module_name.ToNativeString(context->ctx()).release(),
+        method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleTransientCallback);
   } else {
     result = context->dartMethodPtr()->invokeModule(
-        nullptr, context->contextId(), module_name.ToNativeString(context->ctx()).get(),
-        method.ToNativeString(context->ctx()).get(), &params, handleInvokeModuleUnexpectedCallback);
+        nullptr, context->contextId(), module_name.ToNativeString(context->ctx()).release(),
+        method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleUnexpectedCallback);
   }
 
   if (result == nullptr) {

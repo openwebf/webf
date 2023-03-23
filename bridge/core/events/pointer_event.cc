@@ -48,10 +48,10 @@ PointerEvent::PointerEvent(ExecutingContext* context,
       pointer_id_(native_pointer_event->pointerId),
 #if ANDROID_32_BIT
       pointer_type_(AtomicString(ctx(),
-                                 std::make_unique<AutoFreeNativeString>(
-                                     reinterpret_cast<SharedNativeString*>(native_pointer_event->pointerType)))),
+                                 std::unique_ptr<AutoFreeNativeString>(
+                                     reinterpret_cast<AutoFreeNativeString*>(native_pointer_event->pointerType)))),
 #else
-      pointer_type_(AtomicString(ctx(), std::make_unique<AutoFreeNativeString>(native_pointer_event->pointerType))),
+      pointer_type_(AtomicString(ctx(), std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_pointer_event->pointerType)))),
 #endif
       pressure_(native_pointer_event->pressure),
       tangential_pressure_(native_pointer_event->tangentialPressure),

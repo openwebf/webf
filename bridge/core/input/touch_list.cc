@@ -15,6 +15,8 @@ void TouchList::FromNativeTouchList(ExecutingContext* context,
     auto* touch = Touch::Create(context, &native_touch_list->touches[i]);
     touch_list->values_.emplace_back(touch);
   }
+  delete[] native_touch_list->touches;
+  delete native_touch_list;
 }
 
 TouchList::TouchList(ExecutingContext* context, NativeTouchList* native_touch_list) : ScriptWrappable(context->ctx()) {

@@ -131,7 +131,7 @@ class BindingObject : public ScriptWrappable {
   explicit BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object);
 
  private:
-  NativeBindingObject* binding_object_{new NativeBindingObject(this)};
+  NativeBindingObject* binding_object_ = nullptr;
   std::set<BindingObjectPromiseContext*> pending_promise_contexts_;
 };
 

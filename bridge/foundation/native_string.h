@@ -36,8 +36,6 @@ struct SharedNativeString {
 // and freeing strings by itself.
 struct AutoFreeNativeString : public SharedNativeString {
  public:
-  AutoFreeNativeString(const uint16_t* string, uint32_t length);
-  AutoFreeNativeString(void* raw);
   ~AutoFreeNativeString();
 };
 
