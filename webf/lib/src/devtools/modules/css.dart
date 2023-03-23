@@ -114,13 +114,13 @@ class InspectCSSModule extends UIInspectorModule {
   static CSSStyle? buildMatchedStyle(Element element) {
     List<CSSProperty> cssProperties = [];
     String cssText = '';
-    for (MapEntry<String, String> entry in element.style) {
+    for (MapEntry<String, CSSPropertyValue> entry in element.style) {
       String kebabName = kebabize(entry.key);
       String propertyValue = entry.value.toString();
       String _cssText = '$kebabName: $propertyValue';
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
-        value: entry.value,
+        value: entry.value.value,
         range: SourceRange(
           startLine: 0,
           startColumn: cssText.length,

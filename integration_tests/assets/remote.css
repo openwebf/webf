@@ -1,0 +1,7 @@
+.container {
+    width: 100px;
+    height: 100px;
+    border: 1px solid #000;
+    background-image: url(./rabbit.png);
+    background-repeat: no-repeat;
+}

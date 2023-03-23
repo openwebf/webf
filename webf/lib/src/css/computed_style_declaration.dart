@@ -80,7 +80,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   }
 
   @override
-  void setProperty(String propertyName, String? value, [bool? isImportant]) {
+  void setProperty(String propertyName, String? value, { bool? isImportant, String? baseHref }) {
     throw UnimplementedError('No Modification Allowed');
   }
 
