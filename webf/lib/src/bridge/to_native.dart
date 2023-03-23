@@ -403,7 +403,6 @@ void flushUICommand(WebFViewController view) {
     PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
   }
 
-  print('read command..');
   List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, view.contextId);
 
   SchedulerBinding.instance.scheduleFrame();
@@ -460,9 +459,15 @@ void flushUICommand(WebFViewController view) {
           view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
           break;
         case UICommandType.setStyle:
-          Pointer<NativeString> nativeValue = command.nativePtr2.cast<NativeString>();
-          String value = nativeStringToString(nativeValue);
-          freeNativeString(nativeValue);
+          String value;
+          if (command.nativePtr2 != nullptr) {
+            Pointer<NativeString> nativeValue = command.nativePtr2.cast<NativeString>();
+            value = nativeStringToString(nativeValue);
+            freeNativeString(nativeValue);
+          } else {
+            value = '';
+          }
+
           view.setInlineStyle(nativePtr, command.args, value);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;

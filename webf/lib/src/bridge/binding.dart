@@ -87,7 +87,7 @@ abstract class BindingBridge {
   static final SplayTreeMap<int, BindingObject> _nativeObjects = SplayTreeMap();
 
   static T? getBindingObject<T>(Pointer pointer) {
-    return _nativeObjects[pointer.address] as T;
+    return _nativeObjects[pointer.address] as T?;
   }
   static bool hasBindingObject(Pointer pointer) {
     return _nativeObjects.containsKey(pointer.address);

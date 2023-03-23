@@ -351,7 +351,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     assert(!_disposed, 'WebF have already disposed');
     Completer<Uint8List> completer = Completer();
     try {
-      if (eventTargetPointer != null && BindingBridge.hasBindingObject(eventTargetPointer)) {
+      if (eventTargetPointer != null && !BindingBridge.hasBindingObject(eventTargetPointer)) {
         String msg = 'toImage: unknown node id: $eventTargetPointer';
         completer.completeError(Exception(msg));
         return completer.future;
@@ -594,8 +594,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
   void disposeBindingObject(Pointer<NativeBindingObject> pointer) {
-    BindingObject bindingObject = BindingBridge.getBindingObject(pointer);
-    bindingObject.dispose();
+    BindingObject? bindingObject = BindingBridge.getBindingObject(pointer);
+    bindingObject?.dispose();
     malloc.free(pointer);
   }
 
