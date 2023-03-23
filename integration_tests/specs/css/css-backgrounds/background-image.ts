@@ -25,6 +25,21 @@ describe('background image', function() {
     await snapshot(0.5);
   });
 
+  it('should work when remove css host are not same with html host', async () => {
+    const link = document.createElement('link');
+    link.setAttribute('rel', 'stylesheet');
+    link.setAttribute('href', `${location.protocol}//${location.hostname}:${parseInt(location.port) + 1}/public/assets/remote.css`);
+    document.head.appendChild(link);
+
+    console.log(`${location.protocol}//${location.hostname}:${parseInt(location.port) + 1}/public/assets/remote.css`);
+
+    let div = document.createElement('div');
+    div.className = 'container';
+    div.textContent = 'helloworld';
+    document.body.appendChild(div);
+    await snapshot(1);
+  });
+
   it('should work with image of base64', async () => {
     let div;
     let image;

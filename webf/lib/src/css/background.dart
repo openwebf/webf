@@ -230,7 +230,9 @@ class CSSBackgroundImage {
   List<CSSFunctionalNotation> functions;
   RenderStyle renderStyle;
   WebFController controller;
-  CSSBackgroundImage(this.functions, this.renderStyle, this.controller);
+  String? baseHref;
+
+  CSSBackgroundImage(this.functions, this.renderStyle, this.controller, { this.baseHref });
 
   ImageProvider? _image;
   ImageProvider? get image {
@@ -246,7 +248,7 @@ class CSSBackgroundImage {
 
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
-          uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
+          uri = controller.uriParser!.resolve(Uri.parse(baseHref ?? controller.url), uri);
           _image = getImageProvider(uri, contextId: controller.view.contextId);
           return _image;
         }
@@ -611,9 +613,9 @@ class CSSBackground {
     }
   }
 
-  static resolveBackgroundImage(String present, RenderStyle renderStyle, String property, WebFController controller) {
+  static resolveBackgroundImage(String present, RenderStyle renderStyle, String property, WebFController controller, String? baseHref) {
     List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(present);
-    return CSSBackgroundImage(functions, renderStyle, controller);
+    return CSSBackgroundImage(functions, renderStyle, controller, baseHref: baseHref);
   }
 
   static CSSBackgroundRepeatType resolveBackgroundRepeat(String value) {

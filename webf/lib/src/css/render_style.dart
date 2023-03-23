@@ -422,7 +422,7 @@ class CSSRenderStyle extends RenderStyle
   }
 
   @override
-  dynamic resolveValue(String propertyName, String propertyValue) {
+  dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
     RenderStyle renderStyle = this;
 
     // Process CSSVariable.
@@ -529,7 +529,7 @@ class CSSRenderStyle extends RenderStyle
         break;
       case BACKGROUND_IMAGE:
         value = CSSBackground.resolveBackgroundImage(
-            propertyValue, renderStyle, propertyName, renderStyle.target.ownerDocument.controller);
+            propertyValue, renderStyle, propertyName, renderStyle.target.ownerDocument.controller, baseHref);
         break;
       case BACKGROUND_REPEAT:
         value = CSSBackground.resolveBackgroundRepeat(propertyValue);

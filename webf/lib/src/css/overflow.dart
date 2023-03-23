@@ -188,7 +188,7 @@ mixin ElementOverflowMixin on ElementBase {
     }
   }
 
-  void scrollingContentBoxStyleListener(String property, String? original, String present) {
+  void scrollingContentBoxStyleListener(String property, String? original, String present, { String? baseHref }) {
     if (renderBoxModel == null) return;
 
     RenderLayoutBox? scrollingContentBox = (renderBoxModel as RenderLayoutBox).renderScrollingContent;

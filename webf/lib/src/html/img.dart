@@ -553,7 +553,7 @@ class ImageElement extends Element {
     }
   }
 
-  void _stylePropertyChanged(String property, String? original, String present) {
+  void _stylePropertyChanged(String property, String? original, String present, { String? baseHref }) {
     if (property == WIDTH || property == HEIGHT) {
       // Resize image
       if (_shouldScaling) {

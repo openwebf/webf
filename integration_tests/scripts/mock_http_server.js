@@ -31,3 +31,11 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Mock HTTP server listening on port ${port}`)
 });
+
+const staticApp = express();
+staticApp.use(cookieParser());
+staticApp.use('/public', express.static(path.join(__dirname, '../.specs/')))
+staticApp.use('/public/assets', express.static(path.join(__dirname, '../assets/')))
+staticApp.listen(parseInt(port) + 1, () => {
+    console.log(`Separate HTTP server listening on port ${parseInt(port) + 1}`)
+});
