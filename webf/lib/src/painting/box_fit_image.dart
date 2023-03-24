@@ -57,7 +57,19 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   }
 
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
-    Uint8List bytes = await loadImage(url);
+    Uint8List bytes;
+    try {
+      bytes = await loadImage(url);
+    } on FlutterError {
+      PaintingBinding.instance.imageCache.evict(key);
+      rethrow;
+    }
+
+    if (bytes.isEmpty) {
+      PaintingBinding.instance.imageCache.evict(key);
+      throw StateError('Unable to read data');
+    }
+
     final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
     final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
     final Codec codec = await _instantiateImageCodec(
