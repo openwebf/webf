@@ -42,13 +42,13 @@ MessageEvent::MessageEvent(ExecutingContext* context,
       data_(ScriptValue(ctx(), *(reinterpret_cast<NativeValue*>(native_message_event->data)))),
       origin_(AtomicString(
           ctx(),
-          std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_message_event->origin)))),
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_message_event->origin)))),
       lastEventId_(AtomicString(ctx(),
-                                std::make_unique<AutoFreeNativeString>(
-                                    reinterpret_cast<SharedNativeString*>(native_message_event->lastEventId)))),
+                                std::unique_ptr<AutoFreeNativeString>(
+                                    reinterpret_cast<AutoFreeNativeString*>(native_message_event->lastEventId)))),
       source_(AtomicString(
           ctx(),
-          std::make_unique<AutoFreeNativeString>(reinterpret_cast<SharedNativeString*>(native_message_event->source))))
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_message_event->source))))
 #else
       data_(ScriptValue(ctx(), *(static_cast<NativeValue*>(native_message_event->data)))),
       origin_(AtomicString(ctx(),
