@@ -81,15 +81,11 @@ class ImageElement extends Element {
   // https://html.spec.whatwg.org/multipage/urls-and-fetching.html#lazy-loading-attributes
   bool get _shouldLazyLoading => getAttribute(LOADING) == LAZY;
 
-  // Custom attribute defined by Kraken, used to scale the origin image down to fit the box model
-  // to reduce the image size which will save the image painting time significantly when the image
-  // size is too large.
-  //
-  // Note this attribute should be set with caution cause scaling the image size will invalidate
-  // the image cache when width or height is changed and add more images to the cache.
-  // So the best practice to improve image painting performance is scaling the image manually before
-  // used in source code rather than relying Kraken to do the scaling job.
-  bool get _shouldScaling => getAttribute(SCALING) == SCALE;
+  // Resize the rendering image to a fixed size if the original image is much larger than the display size.
+  // This feature could save memory if the original image is much larger than it's actual display size.
+  // Note that images with the same URL but different sizes could produce different resized images, and WebF will treat them
+  // as different images. However, in most cases, using the same image with different sizes is much rarer than using images with different URL.
+  bool get _shouldScaling => true;
 
   ImageStreamCompleterHandle? _completerHandle;
 
