@@ -14,4 +14,6 @@ declare const clearInterval: (handle: double) => void;
 
 declare const __gc__: () => void;
 
+declare const __memory_usage__: () => any;
+
 
