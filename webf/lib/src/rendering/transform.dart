@@ -67,6 +67,8 @@ mixin RenderTransformMixin on RenderBoxModelBase {
       transform: renderStyle.effectiveTransformMatrix,
       position: position,
       hitTest: (BoxHitTestResult result, Offset position) {
+        if (child?.hasSize == false) return false;
+
         return child?.hitTest(result, position: position) ?? false;
       },
     );
