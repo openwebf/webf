@@ -256,12 +256,12 @@ class ImageElement extends Element {
   // The getter must be called after image had loaded, otherwise will return 0.
   int naturalHeight = 0;
 
-  void _handleIntersectionChange(IntersectionObserverEntry entry) {
+  void _handleIntersectionChange(IntersectionObserverEntry entry) async {
     // When appear
     if (entry.isIntersecting) {
       // Once appear remove the listener
       _removeIntersectionChangeListener();
-      _decode();
+      await _decode();
       _loadImage();
       _listenToStream();
       _isInLazyRendering = false;
@@ -376,30 +376,39 @@ class ImageElement extends Element {
   // Create an ImageStream that decodes the obtained image.
   // If imageElement has property size or width/height property on [renderStyle],
   // The image will be encoded into a small size for better rasterization performance.
-  void _decode({bool updateImageProvider = false}) {
-    ImageProvider? provider = _currentImageProvider;
-    if (updateImageProvider || provider == null) {
-      // Image should be resized based on different ratio according to object-fit value.
-      BoxFit objectFit = renderStyle.objectFit;
+  Future<void> _decode({bool updateImageProvider = false}) {
+    Completer completer = Completer();
 
-      // Increment load event delay count before decode.
-      ownerDocument.incrementLoadEventDelayCount();
+    // Make sure all style and properties are ready before decode begins.
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      ImageProvider? provider = _currentImageProvider;
+      if (updateImageProvider || provider == null) {
+        // Image should be resized based on different ratio according to object-fit value.
+        BoxFit objectFit = renderStyle.objectFit;
 
-      provider = _currentImageProvider = BoxFitImage(
-        boxFit: objectFit,
-        url: _resolvedUri!,
-        loadImage: _obtainImage,
-        onImageLoad: _onImageLoad,
-      );
-    }
+        // Increment load event delay count before decode.
+        ownerDocument.incrementLoadEventDelayCount();
 
-    // Try to make sure that this image can be encoded into a smaller size.
-    int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
-    int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
-    ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
-        ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
-        : ImageConfiguration.empty;
-    _updateSourceStream(provider.resolve(imageConfiguration));
+        provider = _currentImageProvider = BoxFitImage(
+          boxFit: objectFit,
+          url: _resolvedUri!,
+          loadImage: _obtainImage,
+          onImageLoad: _onImageLoad,
+        );
+      }
+
+      // Try to make sure that this image can be encoded into a smaller size.
+      int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
+      int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
+      ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
+          ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
+          : ImageConfiguration.empty;
+      _updateSourceStream(provider.resolve(imageConfiguration));
+
+      completer.complete();
+    });
+
+    return completer.future;
   }
 
   // Invoke when image descriptor has created.
@@ -471,16 +480,13 @@ class ImageElement extends Element {
       internalSetAttribute('src', value);
       _resolveResourceUri(value);
       if (_resolvedUri != null) {
-        // Wait until the next frame to ensure that all styles are ready for this element.
-        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          _updateImageData();
-        });
+        _updateImageData();
       }
     }
   }
 
   // https://html.spec.whatwg.org/multipage/images.html#update-the-image-data
-  void _updateImageData() {
+  void _updateImageData() async {
     // Should add image box after style has applied to ensure intersection observer
     // attached to correct renderBoxModel
     if (!_isInLazyLoading) {
@@ -492,7 +498,7 @@ class ImageElement extends Element {
           // When detach renderer, all listeners will be cleared.
           ..addIntersectionChangeListener(_handleIntersectionChange);
       } else {
-        _decode(updateImageProvider: true);
+        await _decode(updateImageProvider: true);
         _listenToStream();
         _loadImage();
       }
