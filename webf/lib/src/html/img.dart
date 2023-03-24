@@ -195,14 +195,14 @@ class ImageElement extends Element {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
     _stopListeningStream();
 
     _completerHandle?.dispose();
     _completerHandle = null;
     _cachedImageInfo = null;
-    _currentImageProvider?.evict();
+    await _currentImageProvider?.evict();
     _currentImageProvider = null;
   }
 
@@ -475,7 +475,10 @@ class ImageElement extends Element {
       internalSetAttribute('src', value);
       _resolveResourceUri(value);
       if (_resolvedUri != null) {
-        _updateImageData();
+        // Wait until the next frame to ensure that all styles are ready for this element.
+        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          _updateImageData();
+        });
       }
     }
   }

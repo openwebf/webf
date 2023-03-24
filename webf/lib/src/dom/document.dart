@@ -395,7 +395,7 @@ class Document extends Node {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();
