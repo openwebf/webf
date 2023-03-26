@@ -407,6 +407,7 @@ class ImageElement extends Element {
 
       completer.complete();
     });
+    SchedulerBinding.instance.scheduleFrame();
 
     return completer.future;
   }
