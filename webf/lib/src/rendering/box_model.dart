@@ -774,13 +774,8 @@ class RenderBoxModel extends RenderBox
       renderPositionPlaceholder!.positioned = copiedRenderBoxModel;
     }
 
-    if (scrollOffsetX != null) {
-      scrollOffsetX!.removeListener(scrollXListener);
-    }
-
-    if (scrollOffsetY != null) {
-      scrollOffsetY!.removeListener(scrollYListener);
-    }
+    scrollOffsetX?.removeListener(scrollXListener);
+    scrollOffsetY?.removeListener(scrollYListener);
 
     return copiedRenderBoxModel
       // Copy render style
