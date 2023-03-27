@@ -96,7 +96,7 @@ NativeValue BindingObject::GetBindingProperty(const AtomicString& prop, Exceptio
   if (UNLIKELY(binding_object_->disposed_)) {
     exception_state.ThrowException(
         ctx(), ErrorType::InternalError,
-        "Can not get binding property on BindingObject , dart binding object had been disposed");
+        "Can not get binding property on BindingObject, dart binding object had been disposed");
     return Native_NewNull();
   }
   GetExecutingContext()->FlushUICommand();

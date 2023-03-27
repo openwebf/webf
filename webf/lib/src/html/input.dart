@@ -379,7 +379,7 @@ mixin BaseInputElement on WidgetElement {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
     _focusNode?.dispose();
   }

@@ -50,6 +50,9 @@ enum ClauseType {
   disjunction,
 }
 
+// We assume that the CSS input may contain unexpected tokens, but they will not be print out or throw unless we open it.
+bool kShowCSSParseError = false;
+
 /// Used for parser lookup ahead (used for nested selectors Less support).
 class ParserState extends TokenizerState {
   final Token peekToken;
@@ -242,6 +245,8 @@ class CSSParser {
   }
 
   void _errorExpected(String expected) {
+    if (!kShowCSSParseError) return;
+
     var tok = _next();
     String message;
     try {
@@ -253,11 +258,13 @@ class CSSParser {
   }
 
   void _error(String message, {SourceSpan? location}) {
+    if (!kShowCSSParseError) return;
     location ??= _peekToken.span;
     print(location.message(message, color: '\u001b[31m'));
   }
 
   void _warning(String message, {SourceSpan? location}) {
+    if (!kShowCSSParseError) return;
     location ??= _makeSpan(_peekToken.span);
     print(location.message(message, color: '\u001b[35m'));
   }

@@ -813,7 +813,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     renderStyle.detach();
     style.dispose();
     attributes.clear();

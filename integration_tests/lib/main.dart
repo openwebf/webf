@@ -19,6 +19,7 @@ import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'bridge/to_native.dart';
 import 'local_http_server.dart';
+import 'mem_leak_detector.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
@@ -33,6 +34,8 @@ Future<void> startHttpMockServer() async {
     'PORT': MOCK_SERVER_PORT.toString()
   }, mode: ProcessStartMode.inheritStdio);
 }
+
+List<List<int>> mems = [];
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
@@ -88,10 +91,23 @@ void main() async {
       webF.controller!.view.evaluateJavaScripts(codeInjection);
     },
     onLoad: (controller) async {
+      int x = 0;
+      // Collect the running memory info every per 10s.
+      Timer.periodic(Duration(milliseconds: 50), (timer) {
+        mems.add([x += 1, ProcessInfo.currentRss / 1024 ~/ 1024]);
+      });
+
       // Preload load test cases
       String result = await executeTest(testContext!, controller.view.contextId);
       // Manual dispose context for memory leak check.
       webF.controller!.dispose();
+
+      // Check running memorys
+      // Temporary disabled due to exist memory leaks
+      // if (isMemLeaks(mems)) {
+      //   print('Memory leaks found. ${mems.map((e) => e[1]).toList()}');
+      //   exit(1);
+      // }
 
       exit(result == 'failed' ? 1 : 0);
     },

@@ -23,7 +23,7 @@ class CharacterData extends Node {
   RenderBox? get renderer => throw UnimplementedError();
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
     flutterWidget = null;
   }
