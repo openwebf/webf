@@ -61,8 +61,6 @@ class Tokenizer extends TokenizerBase {
       case TokenChar.AT:
         var peekCh = _peekChar();
         if (TokenizerHelpers.isIdentifierStart(peekCh)) {
-          var oldIndex = _index;
-          var oldStartIndex = _startIndex;
 
           _startIndex = _index;
           ch = _nextChar();
@@ -77,11 +75,6 @@ class Tokenizer extends TokenizerBase {
 
           if (tokId != -1) {
             return _finishToken(tokId);
-          } else {
-            // Didn't find a CSS directive or margin directive so the @name is
-            // probably the Less definition '@name: value_variable_definition'.
-            _startIndex = oldStartIndex;
-            _index = oldIndex;
           }
         }
         return _finishToken(TokenKind.AT);
