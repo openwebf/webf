@@ -1,3 +1,9 @@
+## 0.14.0-beta.6
+
+* fix: fix native memory leaks.
+* fix: fix renderObject memory leaks.
+* fix: fix parse error of CSS pseudo function.
+
 ## 0.14.0-beta.5+1
 
 * fix: fix empty src on image.
