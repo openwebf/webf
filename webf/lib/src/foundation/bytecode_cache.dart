@@ -10,7 +10,18 @@ import 'package:quiver/collection.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 
+enum ByteCodeCacheMode {
+  /// Default cache usage mode: If the JavaScript source has a corresponding bytecode file,
+  /// we will use the cached bytecode instead of the JavaScript code string to reduce the parsing time.
+  DEFAULT,
+
+  /// Don't use the cache, use the javascript string.
+  NO_CACHE,
+}
+
 class QuickJSByteCodeCacheObject {
+  static ByteCodeCacheMode cacheMode = ByteCodeCacheMode.DEFAULT;
+
   String hash;
 
   // The directory to store cache file.
@@ -129,6 +140,6 @@ class QuickJSByteCodeCache {
   }
 
   static bool isCodeNeedCache(String source) {
-    return source.length > 1024 * 10; // >= 50 KB
+    return QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT && source.length > 1024 * 10; // >= 50 KB
   }
 }

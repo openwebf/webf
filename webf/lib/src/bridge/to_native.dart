@@ -143,7 +143,7 @@ Future<bool> evaluateScripts(int contextId, String code, {String? url, int line 
   }
 
   QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(code);
-  if (cacheObject.valid && cacheObject.bytes != null) {
+  if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT && cacheObject.valid && cacheObject.bytes != null) {
     return evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
   } else {
     Pointer<NativeString> nativeString = stringToNativeString(code);
