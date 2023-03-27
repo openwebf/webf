@@ -36,6 +36,7 @@
 #include "quickjs/libregexp.h"
 #include "runtime.h"
 #include "string.h"
+#include "debugger.h"
 
 static __exception int next_token(JSParseState *s);
 

@@ -139,10 +139,10 @@ static uint32_t handle_client_write(void* ptr, DebuggerMessage* message) {
   // Gain access to front_message.
   pthread_mutex_lock(&info->frontend_message_access);
 
-  char* buf = js_malloc_rt(info->runtime, message->length + 1);
+  char* buf = malloc(message->length + 1);
   strcpy(buf, message->buf);
 
-  MessageItem* item = js_malloc_rt(info->runtime, sizeof(MessageItem));
+  MessageItem* item = malloc(sizeof(MessageItem));
   item->buf = buf;
   item->length = message->length;
 
@@ -213,8 +213,8 @@ static uint32_t write_backend_message(JSDebuggerInfo* info, const char* buffer, 
   // Gain access to backend_message.
   pthread_mutex_lock(&info->backend_message_access);
 
-  MessageItem* item = js_malloc_rt(info->runtime, sizeof(MessageItem));
-  char* buf = js_malloc_rt(info->runtime, length);
+  MessageItem* item = malloc(sizeof(MessageItem));
+  char* buf = malloc(length);
   memcpy(buf, buffer, length);
 
 //  printf("Write backend message %p \n", buffer);
@@ -305,10 +305,10 @@ static void js_debugger_get_variable_type(JSContext* ctx,
   if (JS_IsString(var_val)) {
     variable_type->type = "string";
     const char* s = value_to_string(ctx, var_val);
-    char* buffer = js_malloc(ctx, sizeof(char) * (strlen(s) + 3));
+    char* buffer = malloc(sizeof(char) * (strlen(s) + 3));
     sprintf(buffer, "\"%s\"", s);
     variable_type->value = buffer;
-    js_free(ctx, (void*)s);
+    free((void*)s);
   }
   else if (JS_IsInteger(var_val)) {
     variable_type->type = "integer";
@@ -365,7 +365,7 @@ static void js_debugger_get_variable_type(JSContext* ctx,
           int8_t have_ellipse = FALSE;
           if (!JS_GetOwnPropertyNames(ctx,  &property_enum, &property_len, var_val, JS_GPN_SYMBOL_MASK | JS_GPN_STRING_MASK)) {
             size_t buf_len = 256;
-            char* buf = js_malloc(ctx, buf_len);
+            char* buf = malloc(buf_len);
             buf[0] = '{';
             size_t index = 1;
 
@@ -389,7 +389,7 @@ static void js_debugger_get_variable_type(JSContext* ctx,
               size_t tmp_len = strlen(tmp);
               if (index + tmp_len + strlen(key) + 8 > buf_len) {
                 buf_len = (buf_len + tmp_len) * 2;
-                buf = js_realloc(ctx, buf, buf_len);
+                buf = realloc(buf, buf_len);
               }
               strcpy(buf + index, key);
               index += strlen(key);
@@ -536,7 +536,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
     int64_t variable_len = 0;
     Variable* variables = NULL;
     if (!JS_IsUndefined(reference_value) && reference < LOGGING_VAR_REFERENCE_MAX) {
-      variables = js_malloc(ctx, sizeof(Variable));
+      variables = malloc(sizeof(Variable));
       init_variable(&variables[0]);
       variable_len = 1;
 
@@ -863,7 +863,7 @@ static void js_process_debugger_messages(JSDebuggerInfo* info, const uint8_t* cu
     process_request(info, &state, request);
 //    free_request(ctx, request);
 
-    js_free(ctx, item.buf);
+    free(item.buf);
   } while (info->is_paused);
 
 done:
@@ -1087,7 +1087,7 @@ void js_debugger_free(JSRuntime* rt, JSDebuggerInfo* info) {
   list_for_each(el, &info->frontend_messages) {
     MessageItem* message_item = list_entry(el, MessageItem, link);
     list_del(&message_item->link);
-    js_free(info->ctx, message_item->buf);
+    free(message_item->buf);
   }
 
   info->is_connected = FALSE;
@@ -1101,7 +1101,7 @@ JSValue js_debugger_atob(JSContext* ctx, JSValueConst this_val, int argc, JSValu
   const char* input_raw = JS_ToCString(ctx, argv[0]);
   size_t input_len = strlen(input_raw);
   size_t decode_len = modp_b64_decode_len(input_len);
-  char* output = js_malloc(ctx, decode_len * sizeof(char));
+  char* output = malloc(decode_len * sizeof(char));
   const size_t output_size = modp_b64_decode(output, input_raw, input_len, kForgiving);
   JS_FreeCString(ctx, input_raw);
   return JS_NewStringLen(ctx, output, output_size);
@@ -1180,7 +1180,7 @@ void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath
   event->body->category = "stdout";
 
   uint32_t buf_len;
-  char* buf = js_malloc(ctx, buf_len = (strlen(value_type.value) + 2));
+  char* buf = malloc(buf_len = (strlen(value_type.value) + 2));
   sprintf(buf, "%s\n", value_type.value);
   buf[buf_len - 1] = 0x00;
   event->body->output = buf;
@@ -1188,7 +1188,7 @@ void JS_DebuggerInspectValue(JSContext* ctx, JSValue value, const char* filepath
 
   event->body->line = lineno;
   event->body->column = column;
-  Source* source = js_malloc(ctx, sizeof(Source));
+  Source* source = malloc(sizeof(Source));
   init_source(source);
   source->name = filename;
   source->path = filepath;
@@ -1247,7 +1247,7 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
   uint32_t stack_index = 0;
 
   int MAX_STACK_FRAME = 30;
-  StackFrame* stack_frames = js_malloc(ctx, sizeof(StackFrame) * MAX_STACK_FRAME);
+  StackFrame* stack_frames = malloc(sizeof(StackFrame) * MAX_STACK_FRAME);
 
   for (sf = ctx->rt->current_stack_frame; sf != NULL; sf = sf->prev_frame) {
     uint32_t id = stack_index++;
@@ -1281,7 +1281,7 @@ void js_debugger_build_backtrace(JSContext* ctx, const uint8_t* cur_pc, StackTra
           stack_frames[id].column = column_num1;
         }
 
-        stack_frames[id].source = js_malloc(ctx, sizeof(Source));
+        stack_frames[id].source = malloc(sizeof(Source));
         init_source(stack_frames[id].source);
         stack_frames[id].source->path = atom_to_string(ctx, b->debug.filename);
       }

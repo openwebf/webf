@@ -74,6 +74,11 @@ else()
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
 endif()
 
+set(MI_OVERRIDE OFF)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/mimalloc)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vendor/mimalloc/include)
+target_link_libraries(quickjs PUBLIC mimalloc-static)
+
 target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/out ${CMAKE_CURRENT_SOURCE_DIR}/../modp_b64/include )
 target_link_libraries(quickjs PUBLIC modb)
 

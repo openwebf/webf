@@ -40,6 +40,7 @@
 #include "parser.h"
 #include "runtime.h"
 #include "string.h"
+#include "debugger.h"
 #include "base.h"
 
 JSValue js_call_c_function(JSContext* ctx,
