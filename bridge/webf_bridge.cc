@@ -74,10 +74,18 @@ void disposePage(void* page_) {
   delete page;
 }
 
-int8_t evaluateScripts(void* page_, SharedNativeString* code, uint8_t** parsed_bytecodes, uint64_t* bytecode_len, const char* bundleFilename, int32_t startLine) {
+int8_t evaluateScripts(void* page_,
+                       SharedNativeString* code,
+                       uint8_t** parsed_bytecodes,
+                       uint64_t* bytecode_len,
+                       const char* bundleFilename,
+                       int32_t startLine) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  return page->evaluateScript(reinterpret_cast<webf::SharedNativeString*>(code), parsed_bytecodes, bytecode_len, bundleFilename, startLine) ? 1 : 0;
+  return page->evaluateScript(reinterpret_cast<webf::SharedNativeString*>(code), parsed_bytecodes, bytecode_len,
+                              bundleFilename, startLine)
+             ? 1
+             : 0;
 }
 
 int8_t evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
