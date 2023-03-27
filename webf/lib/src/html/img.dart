@@ -529,7 +529,7 @@ class ImageElement extends Element {
   String get loading => getAttribute(LOADING) ?? '';
 
   set loading(String value) {
-    internalSetAttribute(SCALING, value);
+    internalSetAttribute(LOADING, value);
     if (_isInLazyLoading) {
       _removeIntersectionChangeListener();
     }
