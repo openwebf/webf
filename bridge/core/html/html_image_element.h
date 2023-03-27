@@ -18,7 +18,10 @@ class HTMLImageElement : public HTMLElement {
 
   bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
-  bool KeepAlive() const override;
+  AtomicString src() const;
+  void setSrc(const AtomicString& value, ExceptionState& exception_state);
+
+  DispatchEventResult FireEventListeners(Event&, ExceptionState&) override;
 
   ScriptPromise decode(ExceptionState& exception_state) const;
 

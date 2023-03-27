@@ -138,4 +138,23 @@ void WindowOrWorkerGlobalScope::clearInterval(ExecutingContext* context, int32_t
   context->Timers()->forceStopTimeoutById(timerId);
 }
 
+void WindowOrWorkerGlobalScope::__gc__(ExecutingContext* context, ExceptionState& exception) {
+  JS_RunGC(context->GetScriptState()->runtime());
+}
+
+ScriptValue WindowOrWorkerGlobalScope::__memory_usage__(ExecutingContext* context, ExceptionState& exception) {
+  JSRuntime* runtime = context->GetScriptState()->runtime();
+  JSMemoryUsage memory_usage;
+  JS_ComputeMemoryUsage(runtime, &memory_usage);
+
+  char buff[2048];
+  snprintf(buff,
+          2048,
+          R"({"malloc_size": %lld, "malloc_limit": %lld, "memory_used_size": %lld, "memory_used_count": %lld})",
+          memory_usage.malloc_size, memory_usage.malloc_limit, memory_usage.memory_used_size,
+          memory_usage.memory_used_count);
+
+  return ScriptValue::CreateJsonObject(context->ctx(), buff, strlen(buff));
+}
+
 }  // namespace webf

@@ -60,8 +60,12 @@ document.body.style.setProperty('--main-color', 'lightblue'); console.assert(doc
   EXPECT_EQ(last.type, (int32_t)UICommand::kSetStyle);
   uint16_t* last_key = (uint16_t*)last.string_01;
 
-  auto native_str = NativeString(last_key, last.args_01_length);
-  EXPECT_STREQ(AtomicString(context->ctx(), &native_str).ToStdString(context->ctx()).c_str(), "--main-color");
+  auto native_str = new SharedNativeString(last_key, last.args_01_length);
+  EXPECT_STREQ(AtomicString(context->ctx(),
+                            std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(native_str)))
+                   .ToStdString(context->ctx())
+                   .c_str(),
+               "--main-color");
 
   EXPECT_EQ(errorCalled, false);
 }

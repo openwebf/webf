@@ -1727,7 +1727,7 @@ static int push_scope(JSParseState *s) {
       size_t slack;
       JSVarScope *new_buf;
       /* XXX: potential arithmetic overflow */
-      new_size = max_int(fd->scope_count + 1, fd->scope_size * 3 / 2);
+      new_size = max_int(fd->scope_count + 1, fd->scope_size * 9 / 2);
       if (fd->scopes == fd->def_scope_array) {
         new_buf = js_realloc2(s->ctx, NULL, new_size * sizeof(*fd->scopes), &slack);
         if (!new_buf)
@@ -7516,7 +7516,7 @@ JSFunctionDef *js_new_function_def(JSContext *ctx,
   //fd->pc2line_last_pc = 0;
   fd->last_opcode_line_num = line_num;
 
-  fd->ic = init_ic(ctx->rt);
+  fd->ic = init_ic(ctx);
   return fd;
 }
 

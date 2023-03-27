@@ -105,7 +105,7 @@ int expand_fast_array(JSContext *ctx, JSObject *p, uint32_t new_len)
   size_t slack;
   JSValue *new_array_prop;
   /* XXX: potential arithmetic overflow */
-  new_size = max_int(new_len, p->u.array.u1.size * 3 / 2);
+  new_size = max_int(new_len, p->u.array.u1.size * 9 / 2);
   new_array_prop = js_realloc2(ctx, p->u.array.u.values, sizeof(JSValue) * new_size, &slack);
   if (!new_array_prop)
     return -1;

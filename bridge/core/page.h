@@ -39,7 +39,7 @@ class WebFPage final {
   static std::unordered_map<std::string, NativeByteCode> pluginByteCode;
 
   // evaluate JavaScript source codes in standard mode.
-  bool evaluateScript(const NativeString* script, uint8_t** parsed_bytecodes, uint64_t* bytecode_len, const char* url, int startLine);
+  bool evaluateScript(const SharedNativeString* script, uint8_t** parsed_bytecodes, uint64_t* bytecode_len, const char* url, int startLine);
   bool evaluateScript(const uint16_t* script, size_t length, uint8_t** parsed_bytecodes, uint64_t* bytecode_len, const char* url, int startLine);
   bool parseHTML(const char* code, size_t length);
   void evaluateScript(const char* script, size_t length, const char* url, int startLine);
@@ -50,7 +50,7 @@ class WebFPage final {
 
   [[nodiscard]] ExecutingContext* GetExecutingContext() const { return context_; }
 
-  NativeValue* invokeModuleEvent(const NativeString* moduleName,
+  NativeValue* invokeModuleEvent(SharedNativeString* moduleName,
                                  const char* eventType,
                                  void* event,
                                  NativeValue* extra);

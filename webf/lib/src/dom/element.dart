@@ -1557,8 +1557,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
-  void setRenderStyle(String property, String present) {
-    dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present);
+  void setRenderStyle(String property, String present, { String? baseHref }) {
+    dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present, baseHref: baseHref);
     setRenderStyleProperty(property, value);
   }
 
@@ -1615,7 +1615,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
         // Force inline style to be applied as important priority.
-        style.setProperty(propertyName, value, true);
+        style.setProperty(propertyName, value, isImportant: true);
       });
     }
   }
@@ -1632,11 +1632,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
-  void _onStyleChanged(String propertyName, String? prevValue, String currentValue) {
+  void _onStyleChanged(String propertyName, String? prevValue, String currentValue, { String? baseHref }) {
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
       renderStyle.runTransition(propertyName, prevValue, currentValue);
     } else {
-      setRenderStyle(propertyName, currentValue);
+      setRenderStyle(propertyName, currentValue, baseHref: baseHref);
     }
   }
 
@@ -1662,7 +1662,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       style.removeProperty(property, true);
       recalculateStyle();
     } else {
-      style.setProperty(property, value, true);
+      style.setProperty(property, value, isImportant: true);
     }
   }
 
@@ -1677,7 +1677,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
-    if (renderBoxModel != null || forceRecalculate) {
+    if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -1687,7 +1687,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         style.flushPendingProperties();
       }
 
-      if (rebuildNested == true || hasInheritedPendingProperty) {
+      if (rebuildNested || hasInheritedPendingProperty) {
         // Update children style.
         children.forEach((Element child) {
           child.recalculateStyle(rebuildNested: rebuildNested);

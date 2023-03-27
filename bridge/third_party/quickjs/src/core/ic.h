@@ -30,7 +30,7 @@
 #include "shape.h"
 #include "types.h"
 
-InlineCache *init_ic(JSRuntime *rt);
+InlineCache *init_ic(JSContext *ctx);
 int rebuild_ic(InlineCache *ic);
 int resize_ic_hash(InlineCache *ic);
 int free_ic(InlineCache *ic);

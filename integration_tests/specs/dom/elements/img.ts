@@ -20,6 +20,18 @@ describe('Tags img', () => {
     expect(img.height).toBe(0);
   });
 
+  it('have no effect setting empty src', (done) => {
+    const img = document.createElement('img');
+    img.src = '';
+    document.body.appendChild(img);
+    img.onload = () => {
+      done.fail('image can not load');
+    };
+    setTimeout(() => {
+      done();
+    }, 500);
+  });
+
   it('don\'t error when append child on img element', async (done) => {
     let img = document.createElement('img');
     img.src = 'https://gw.alicdn.com/tfs/TB1MRC_cvb2gK0jSZK9XXaEgFXa-1701-1535.png';
@@ -41,6 +53,14 @@ describe('Tags img', () => {
       done();
     };
     img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
+  });
+  it('won not leak when overwrite src', (done) => {
+    const img = new Image();
+    img.onload = img.onerror = (evt) => {
+      done();
+    };
+    img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
+    img.src = 'https://gw.alicdn.com/tfs/TB1MRC_cvb2gK0jSZK9XXaEgFXa-1701-1535.png';
   });
 
   describe('object-fit', () => {

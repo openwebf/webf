@@ -78,7 +78,10 @@ class CSSParser {
   Token? _previousToken;
   late Token _peekToken;
 
-  CSSParser(String text, {int start = 0}) : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
+  /// A string containing the baseURL used to resolve relative URLs in the stylesheet.
+  String? href;
+
+  CSSParser(String text, {int start = 0, this.href}) : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
     _peekToken = tokenizer.next();
   }
 
@@ -974,7 +977,7 @@ class CSSParser {
         while (_maybeEat(TokenKind.IMPORTANT)) {
           importantPriority = true;
         }
-        style.setProperty(propertyIdent, expr, importantPriority);
+        style.setProperty(propertyIdent, expr, isImportant: importantPriority, baseHref: href);
       }
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
       _next();

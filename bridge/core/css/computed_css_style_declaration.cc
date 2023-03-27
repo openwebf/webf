@@ -4,6 +4,7 @@
 
 #include "computed_css_style_declaration.h"
 #include "binding_call_methods.h"
+#include "core/binding_object.h"
 #include "core/dom/element.h"
 #include "foundation/native_value_converter.h"
 
@@ -11,13 +12,13 @@ namespace webf {
 
 ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* context,
                                                          NativeBindingObject* native_binding_object)
-    : CSSStyleDeclaration(context->ctx()), BindingObject(context, native_binding_object) {}
+    : CSSStyleDeclaration(context->ctx(), native_binding_object) {}
 
 AtomicString ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
 
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetPropertyValue, 1, arguments, exception_state);
-  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), result);
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result));
 }
 
 bool ComputedCssStyleDeclaration::SetItem(const AtomicString& key,
@@ -47,7 +48,7 @@ void ComputedCssStyleDeclaration::setProperty(const AtomicString& key,
 AtomicString ComputedCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kremoveProperty, 1, arguments, exception_state);
-  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), result);
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result));
 }
 
 bool ComputedCssStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
@@ -67,12 +68,6 @@ void ComputedCssStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicStri
 
 bool ComputedCssStyleDeclaration::IsComputedCssStyleDeclaration() const {
   return true;
-}
-
-NativeValue ComputedCssStyleDeclaration::HandleCallFromDartSide(const NativeValue* method,
-                                                                int32_t argc,
-                                                                const NativeValue* argv) {
-  return Native_NewNull();
 }
 
 }  // namespace webf

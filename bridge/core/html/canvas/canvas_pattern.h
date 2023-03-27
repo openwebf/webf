@@ -11,7 +11,7 @@
 
 namespace webf {
 
-class CanvasPattern : public ScriptWrappable, public BindingObject {
+class CanvasPattern : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -22,7 +22,7 @@ class CanvasPattern : public ScriptWrappable, public BindingObject {
 
   void setTransform(DOMMatrix* dom_matrix, ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
 };
 
 }  // namespace webf

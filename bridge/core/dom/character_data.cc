@@ -13,11 +13,10 @@ namespace webf {
 void CharacterData::setData(const AtomicString& data, ExceptionState& exception_state) {
   data_ = data;
 
-  std::unique_ptr<NativeString> args_01 = stringToNativeString("data");
-  std::unique_ptr<NativeString> args_02 = data.ToNativeString(ctx());
-
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kSetAttribute, std::move(args_01),
-                                                       std::move(args_02), (void*)bindingObject());
+  std::unique_ptr<SharedNativeString> args_01 = data.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_02 = stringToNativeString("data");
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetAttribute, std::move(args_01),
+                                                       (void*)bindingObject(), args_02.release());
 }
 
 AtomicString CharacterData::nodeValue() const {

@@ -79,7 +79,7 @@ class Node;
 // EventTarget objects allow us to add and remove an event
 // listeners of a specific event type. Each EventTarget object also represents
 // the target to which an event is dispatched when something has occurred.
-class EventTarget : public ScriptWrappable, public BindingObject {
+class EventTarget : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -114,7 +114,7 @@ class EventTarget : public ScriptWrappable, public BindingObject {
                            ExceptionState& exception_state);
   bool dispatchEvent(Event* event, ExceptionState& exception_state);
 
-  DispatchEventResult FireEventListeners(Event&, ExceptionState&);
+  virtual DispatchEventResult FireEventListeners(Event&, ExceptionState&);
 
   static DispatchEventResult GetDispatchEventResult(const Event&);
 
@@ -126,14 +126,14 @@ class EventTarget : public ScriptWrappable, public BindingObject {
 
   EventListenerVector* GetEventListeners(const AtomicString& event_type);
 
-  int32_t eventTargetId() const { return event_target_id_; }
-
   virtual bool IsWindowOrWorkerGlobalScope() const { return false; }
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
 
   // Check the attribute is defined in native.
   virtual bool IsAttributeDefinedInternal(const AtomicString& key) const;
+
+  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
 
   void Trace(GCVisitor* visitor) const override;
 
@@ -147,7 +147,6 @@ class EventTarget : public ScriptWrappable, public BindingObject {
 
   DispatchEventResult DispatchEventInternal(Event& event, ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(const NativeValue* native_method, int32_t argc, const NativeValue* argv) override;
   NativeValue HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv);
 
   // Subclasses should likely not override these themselves; instead, they
@@ -158,7 +157,6 @@ class EventTarget : public ScriptWrappable, public BindingObject {
  private:
   RegisteredEventListener* GetAttributeRegisteredEventListener(const AtomicString& event_type);
 
-  int32_t event_target_id_;
   bool FireEventListeners(Event&, EventTargetData*, EventListenerVector&, ExceptionState&);
 };
 
@@ -226,91 +224,6 @@ class EventTargetWithInlineData : public EventTarget {
       eventTarget.SetAttributeEventListener(event_type_names::symbol_name, listener, exception_state);               \
     }                                                                                                                \
   }
-
-//
-// using NativeDispatchEvent = int32_t (*)(int32_t contextId, NativeEventTarget* nativeEventTarget, NativeString*
-// eventType, void* nativeEvent, int32_t isCustomEvent); using InvokeBindingMethod = void (*)(void* nativePtr,
-// NativeValue* returnValue, NativeString* method, int32_t argc, NativeValue* argv);
-//
-// struct NativeEventTarget {
-//  NativeEventTarget() = delete;
-//  explicit NativeEventTarget(EventTargetInstance* _instance) : instance(_instance),
-//  dispatchEvent(reinterpret_cast<NativeDispatchEvent>(NativeEventTarget::dispatchEventImpl)){};
-//
-//  // Add more memory valid check with contextId.
-//  static int32_t dispatchEventImpl(int32_t contextId, NativeEventTarget* nativeEventTarget, NativeString* eventType,
-//  void* nativeEvent, int32_t isCustomEvent); EventTargetInstance* instance{nullptr}; NativeDispatchEvent
-//  dispatchEvent{nullptr};
-//#if UNIT_TEST
-//  InvokeBindingMethod invokeBindingMethod{reinterpret_cast<InvokeBindingMethod>(TEST_invokeBindingMethod)};
-//#else
-//  InvokeBindingMethod invokeBindingMethod{nullptr};
-//#endif
-//};
-//
-// class EventTargetProperties : public HeapHashMap<JSAtom> {
-// public:
-//  EventTargetProperties(JSContext* ctx) : HeapHashMap<JSAtom>(ctx){};
-//};
-//
-// class EventHandlerMap : public HeapHashMap<JSAtom> {
-// public:
-//  EventHandlerMap(JSContext* ctx) : HeapHashMap<JSAtom>(ctx){};
-//};
-//
-// class EventTargetInstance : public Instance {
-// public:
-//  EventTargetInstance() = delete;
-//  explicit EventTargetInstance(EventTarget* eventTarget, JSClassID classId, JSClassExoticMethods& exoticMethods,
-//  std::string name); explicit EventTargetInstance(EventTarget* eventTarget, JSClassID classId, std::string name);
-//  explicit EventTargetInstance(EventTarget* eventTarget, JSClassID classId, std::string name, int64_t eventTargetId);
-//  ~EventTargetInstance();
-//
-//  virtual bool dispatchEvent(EventInstance* event);
-//  static inline JSClassID classId();
-//  inline int32_t eventTargetId() const { return m_eventTargetId; }
-//
-//  // @TODO: Should move to BindingObject.
-//  JSValue invokeBindingMethod(const char* method, int32_t argc, NativeValue* argv);
-//  JSValue getBindingProperty(const char* prop);
-//  void setBindingProperty(const char* prop, NativeValue value);
-//
-//  NativeEventTarget* nativeEventTarget{new NativeEventTarget(this)};
-//
-// protected:
-//  int32_t m_eventTargetId;
-//  // EventListener handlers registered with addEventListener API.
-//  // https://dom.spec.whatwg.org/#concept-event-listener
-//  EventListenerMap m_eventListenerMap{m_ctx};
-//
-//  // EventListener handlers registered with DOM attributes API.
-//  // https://html.spec.whatwg.org/C/#event-handler-attributes
-//  EventHandlerMap m_eventHandlerMap{m_ctx};
-//
-//  // When javascript code set a property on EventTarget instance, EventTarget::kSetAttribute callback will be called
-//  when
-//  // property are not defined by Object.defineProperty or kSetAttribute.
-//  // We store there values in here.
-//  EventTargetProperties m_properties{m_ctx};
-//
-//  void trace(JSRuntime* rt, JSValue val, JS_MarkFunc* mark_func) override;
-//  static void copyNodeProperties(EventTargetInstance* newNode, EventTargetInstance* referenceNode);
-//
-//  static int hasProperty(JSContext* ctx, JSValueConst obj, JSAtom atom);
-//  static JSValue getProperty(JSContext* ctx, JSValueConst obj, JSAtom atom, JSValueConst receiver);
-//  static int setProperty(JSContext* ctx, JSValueConst obj, JSAtom atom, JSValueConst value, JSValueConst receiver, int
-//  flags); static int deleteProperty(JSContext* ctx, JSValueConst obj, JSAtom prop);
-//
-//  // Used for legacy "onEvent" attribute APIs.
-//  void setAttributesEventHandler(JSString* p, JSValue value);
-//  JSValue getAttributesEventHandler(JSString* p);
-//
-// private:
-//  bool internalDispatchEvent(EventInstance* eventInstance);
-//  static void finalize(JSRuntime* rt, JSValue val);
-//  friend EventTarget;
-//  friend StyleDeclarationInstance;
-//};
 
 }  // namespace webf
 

@@ -68,9 +68,9 @@ static void unlink_callback(JSThreadState* ts, JSFrameCallback* th) {
 
 NativeValue* TEST_invokeModule(void* callbackContext,
                                int32_t contextId,
-                               NativeString* moduleName,
-                               NativeString* method,
-                               NativeString* params,
+                               SharedNativeString* moduleName,
+                               SharedNativeString* method,
+                               SharedNativeString* params,
                                AsyncModuleCallback callback) {
   std::string module = nativeStringToStdString(moduleName);
 
@@ -170,7 +170,7 @@ double TEST_devicePixelRatio(int32_t contextId) {
   return 1.0;
 }
 
-NativeString* TEST_platformBrightness(int32_t contextId) {
+SharedNativeString* TEST_platformBrightness(int32_t contextId) {
   return nullptr;
 }
 
@@ -296,7 +296,7 @@ void TEST_onMatchImageSnapshot(void* callbackContext,
                                int32_t contextId,
                                uint8_t* bytes,
                                int32_t length,
-                               NativeString* name,
+                               SharedNativeString* name,
                                MatchImageSnapshotCallback callback) {
   callback(callbackContext, contextId, 1, nullptr);
 }
@@ -307,7 +307,7 @@ const char* TEST_environment() {
 
 void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 
-void TEST_simulateInputText(NativeString* nativeString) {}
+void TEST_simulateInputText(SharedNativeString* nativeString) {}
 
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{reinterpret_cast<uint64_t>(TEST_invokeModule),

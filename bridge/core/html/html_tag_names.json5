@@ -56,6 +56,11 @@
       "interfaceName": "HTMLImageElement",
       "filename": "html_image_element"
     },
-    "script"
+    "script",
+    {
+      "name": "iframe",
+      "interfaceName": "HTMLIFrameElement",
+      "filename": "html_iframe_element"
+    }
   ]
 }

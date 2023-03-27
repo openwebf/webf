@@ -470,7 +470,7 @@ class ImageElement extends Element {
   String get src => _resolvedUri?.toString() ?? '';
 
   set src(String value) {
-    if (src != value) {
+    if (src != value && value.isNotEmpty) {
       _loaded = false;
       internalSetAttribute('src', value);
       _resolveResourceUri(value);
@@ -553,7 +553,7 @@ class ImageElement extends Element {
     }
   }
 
-  void _stylePropertyChanged(String property, String? original, String present) {
+  void _stylePropertyChanged(String property, String? original, String present, { String? baseHref }) {
     if (property == WIDTH || property == HEIGHT) {
       // Resize image
       if (_shouldScaling) {

@@ -42,8 +42,8 @@ TEST(Context, recursionThrowError) {
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto bridge = TEST_init(errorHandler);
   const char* code =
-      "addEventListener('error', (evt) => {\n"
-      "  console.log('tagName', evt.target.tagName());\n"
+      "addEventListener('click', (evt) => {\n"
+      "  console.log(1);\n"
       "});\n"
       "\n"
       "throw Error('foo');";
@@ -345,7 +345,7 @@ TEST(Context, evaluateByteCode) {
 TEST(jsValueToNativeString, utf8String) {
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
   JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "helloworld");
-  std::unique_ptr<webf::NativeString> nativeString =
+  std::unique_ptr<webf::SharedNativeString> nativeString =
       webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
   EXPECT_EQ(nativeString->length(), 10);
   uint8_t expectedString[10] = {104, 101, 108, 108, 111, 119, 111, 114, 108, 100};
@@ -358,7 +358,7 @@ TEST(jsValueToNativeString, utf8String) {
 TEST(jsValueToNativeString, unicodeChinese) {
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
   JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "这是你的优乐美");
-  std::unique_ptr<webf::NativeString> nativeString =
+  std::unique_ptr<webf::SharedNativeString> nativeString =
       webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
   std::u16string expectedString = u"这是你的优乐美";
   EXPECT_EQ(nativeString->length(), expectedString.size());
@@ -371,7 +371,7 @@ TEST(jsValueToNativeString, unicodeChinese) {
 TEST(jsValueToNativeString, emoji) {
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
   JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "……🤪");
-  std::unique_ptr<webf::NativeString> nativeString =
+  std::unique_ptr<webf::SharedNativeString> nativeString =
       webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
   std::u16string expectedString = u"……🤪";
   EXPECT_EQ(nativeString->length(), expectedString.length());

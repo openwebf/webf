@@ -16,7 +16,7 @@ class StringView final {
   StringView() = delete;
 
   explicit StringView(const std::string& string);
-  explicit StringView(const NativeString* string);
+  explicit StringView(const SharedNativeString* string);
   explicit StringView(void* bytes, unsigned length, bool is_wide_char);
 
   bool Is8Bit() const { return is_8bit_; }

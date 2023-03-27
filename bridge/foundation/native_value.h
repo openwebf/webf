@@ -67,7 +67,7 @@ struct NativeFunctionContext {
 };
 
 NativeValue Native_NewNull();
-NativeValue Native_NewString(NativeString* string);
+NativeValue Native_NewString(SharedNativeString* string);
 NativeValue Native_NewCString(const std::string& string);
 NativeValue Native_NewFloat64(double value);
 NativeValue Native_NewBool(bool value);

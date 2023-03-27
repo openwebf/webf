@@ -30,16 +30,16 @@ Element::Element(const AtomicString& namespace_uri,
     : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
-    buffer->addCommand(eventTargetId(), UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())),
-                       (void*)bindingObject());
+    buffer->addCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
+                       nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
     // TODO: SVG element
-    buffer->addCommand(eventTargetId(), UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
-                       (void*)bindingObject());
+    buffer->addCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
+                       (void*)bindingObject(), nullptr);
   } else {
     // TODO: Unknown namespace uri
-    buffer->addCommand(eventTargetId(), UICommand::kCreateElementNS, std::move(namespace_uri.ToNativeString(ctx())),
-                       std::move(local_name.ToNativeString(ctx())), (void*)bindingObject());
+    buffer->addCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
+                       namespace_uri.ToNativeString(ctx()).release());
   }
 }
 
@@ -205,7 +205,7 @@ InlineCssStyleDeclaration* Element::style() {
 
 InlineCssStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
   if (cssom_wrapper_ == nullptr) {
-    cssom_wrapper_ = MakeGarbageCollected<InlineCssStyleDeclaration>(GetExecutingContext(), eventTargetId());
+    cssom_wrapper_ = MakeGarbageCollected<InlineCssStyleDeclaration>(GetExecutingContext(), this);
   }
   return *cssom_wrapper_;
 }
@@ -300,9 +300,8 @@ Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
     copy = &CloneWithChildren(flag, &factory);
   }
 
-  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(copy->eventTargetId()));
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCloneNode, std::move(args_01),
-                                                       nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+                                                       copy->bindingObject());
 
   return copy;
 }
@@ -345,13 +344,14 @@ void ElementSnapshotReader::Start() {
     delete reader;
   };
 
-  context_->dartMethodPtr()->toBlob(this, context_->contextId(), callback, element_->eventTargetId(),
+  context_->dartMethodPtr()->toBlob(this, context_->contextId(), callback, element_->bindingObject(),
                                     device_pixel_ratio_);
 }
 
 void ElementSnapshotReader::HandleSnapshot(uint8_t* bytes, int32_t length) {
   MemberMutationScope mutation_scope{context_};
   Blob* blob = Blob::Create(context_);
+  blob->SetMineType("image/png");
   blob->AppendBytes(bytes, length);
   resolver_->Resolve<Blob*>(blob);
 }
