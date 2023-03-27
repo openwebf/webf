@@ -20,7 +20,7 @@ enum class UICommand {
   kCreateComment,
   kCreateDocument,
   kCreateWindow,
-  kDisposeEventTarget,
+  kDisposeBindingObject,
   kAddEvent,
   kRemoveNode,
   kInsertAdjacentNode,
@@ -38,29 +38,17 @@ enum class UICommand {
 
 struct UICommandItem {
   UICommandItem() = default;
-  UICommandItem(int32_t id, int32_t type, NativeString* args_01, NativeString* args_02, void* nativePtr)
+  explicit UICommandItem(int32_t type, SharedNativeString* args_01, void* nativePtr, void* nativePtr2)
       : type(type),
-        string_01(reinterpret_cast<int64_t>((new NativeString(args_01))->string())),
-        args_01_length(args_01->length()),
-        string_02(reinterpret_cast<int64_t>((new NativeString(args_02))->string())),
-        args_02_length(args_02->length()),
-        id(id),
-        nativePtr(reinterpret_cast<int64_t>(nativePtr)){};
-  UICommandItem(int32_t id, int32_t type, NativeString* args_01, void* nativePtr)
-      : type(type),
-        string_01(reinterpret_cast<int64_t>((new NativeString(args_01))->string())),
-        args_01_length(args_01->length()),
-        id(id),
-        nativePtr(reinterpret_cast<int64_t>(nativePtr)){};
-  UICommandItem(int32_t id, int32_t type, void* nativePtr)
-      : type(type), id(id), nativePtr(reinterpret_cast<int64_t>(nativePtr)){};
+        string_01(reinterpret_cast<int64_t>(args_01 != nullptr ? args_01->string() : nullptr)),
+        args_01_length(args_01 != nullptr ? args_01->length() : 0),
+        nativePtr(reinterpret_cast<int64_t>(nativePtr)),
+        nativePtr2(reinterpret_cast<int64_t>(nativePtr2)){};
   int32_t type{0};
-  int32_t id{0};
   int32_t args_01_length{0};
-  int32_t args_02_length{0};
   int64_t string_01{0};
-  int64_t string_02{0};
   int64_t nativePtr{0};
+  int64_t nativePtr2{0};
 };
 
 bool isDartHotRestart();
@@ -70,13 +58,7 @@ class UICommandBuffer {
   UICommandBuffer() = delete;
   explicit UICommandBuffer(ExecutingContext* context);
   ~UICommandBuffer();
-  void addCommand(int32_t id, UICommand type, void* nativePtr);
-  void addCommand(int32_t id,
-                  UICommand type,
-                  std::unique_ptr<NativeString>&& args_01,
-                  std::unique_ptr<NativeString>&& args_02,
-                  void* nativePtr);
-  void addCommand(int32_t id, UICommand type, std::unique_ptr<NativeString>&& args_01, void* nativePtr);
+  void addCommand(UICommand type, std::unique_ptr<SharedNativeString>&& args_01, void* nativePtr, void* nativePtr2);
   UICommandItem* data();
   int64_t size();
   bool empty();

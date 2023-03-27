@@ -17,10 +17,12 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
-include(CheckIPOSupported)
-check_ipo_supported(RESULT supported OUTPUT error)
-if( supported )
+if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT supported OUTPUT error)
+  if( supported )
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+  endif()
 endif()
 
 execute_process(

@@ -38,12 +38,12 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
   }
   static NativeValue ToNativeValue(const std::string& value) { return Native_NewCString(value); }
 
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue&& value) {
     if (value.tag == NativeTag::TAG_NULL) {
       return AtomicString::Empty();
     }
     assert(value.tag == NativeTag::TAG_STRING);
-    return AtomicString(ctx, static_cast<NativeString*>(value.u.ptr));
+    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
   }
 };
 
@@ -184,7 +184,8 @@ struct NativeValueConverter<NativeTypeArray<T>> : public NativeValueConverterBas
     std::vector<typename T::ImplType> vec;
     vec.reserve(length);
     for (int i = 0; i < length; i++) {
-      vec.emplace_back(NativeValueConverter<T>::FromNativeValue(ctx, arr[i]));
+      NativeValue v = arr[i];
+      vec.emplace_back(NativeValueConverter<T>::FromNativeValue(ctx, std::move(v)));
     }
     return vec;
   }

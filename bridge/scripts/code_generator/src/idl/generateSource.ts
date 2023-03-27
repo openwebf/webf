@@ -111,7 +111,7 @@ export function generateRawTypeValue(type: ParameterType, is32Bit: boolean = fal
         return 'int64_t';
       }
 
-      return 'NativeString*';
+      return 'SharedNativeString*';
     }
     default:
       if (is32Bit) {

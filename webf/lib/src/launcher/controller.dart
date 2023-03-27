@@ -224,7 +224,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   late Document document;
   late Window window;
 
-  void initDocument(int targetId, Pointer<NativeBindingObject> pointer) {
+  void initDocument(Pointer<NativeBindingObject> pointer) {
     document = Document(
       BindingContext(_contextId, pointer),
       viewport: viewport,
@@ -232,7 +232,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       gestureListener: gestureListener,
       initialCookies: initialCookies,
     );
-    _setEventTarget(targetId, document);
 
     // Listeners need to be registered to window in order to dispatch events on demand.
     if (gestureListener != null) {
@@ -255,10 +254,9 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
   }
 
-  void initWindow(int targetId, Pointer<NativeBindingObject> pointer) {
+  void initWindow(Pointer<NativeBindingObject> pointer) {
     window = Window(BindingContext(_contextId, pointer), document);
     _registerPlatformBrightnessChange();
-    _setEventTarget(targetId, window);
 
     // Blur input element when new input focused.
     window.addEventListener(EVENT_CLICK, (event) {
@@ -322,8 +320,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
     disposePage(_contextId);
 
-    _clearTargets();
-
     clearCssLength();
 
     document.dispose();
@@ -350,61 +346,17 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     window.dispatchEvent(ColorSchemeChangeEvent(window.colorScheme));
   }
 
-  Map<int, EventTarget> _eventTargets = <int, EventTarget>{};
-
-  T? getEventTargetById<T>(int targetId) {
-    return _getEventTargetById(targetId);
-  }
-
-  int? getTargetIdByEventTarget(EventTarget eventTarget) {
-    if (_eventTargets.containsValue(eventTarget)) {
-      for (var entry in _eventTargets.entries) {
-        if (entry.value == eventTarget) {
-          return entry.key;
-        }
-      }
-    }
-    return null;
-  }
-
-  T? _getEventTargetById<T>(int targetId) {
-    EventTarget? target = _eventTargets[targetId];
-    if (target is T)
-      return target as T;
-    else
-      return null;
-  }
-
-  bool _existsTarget(int id) {
-    return _eventTargets.containsKey(id);
-  }
-
-  void _removeTarget(int targetId) {
-    if (_eventTargets.containsKey(targetId)) {
-      _eventTargets.remove(targetId);
-    }
-  }
-
-  void _setEventTarget(int targetId, EventTarget target) {
-    _eventTargets[targetId] = target;
-  }
-
-  void _clearTargets() {
-    // Set current eventTargets to a new object, clean old targets by gc.
-    _eventTargets = <int, EventTarget>{};
-  }
-
   // export Uint8List bytes from rendered result.
-  Future<Uint8List> toImage(double devicePixelRatio, [int? eventTargetId]) {
+  Future<Uint8List> toImage(double devicePixelRatio, [Pointer<Void>? eventTargetPointer]) {
     assert(!_disposed, 'WebF have already disposed');
     Completer<Uint8List> completer = Completer();
     try {
-      if (eventTargetId != null && !_existsTarget(eventTargetId)) {
-        String msg = 'toImage: unknown node id: $eventTargetId';
+      if (eventTargetPointer != null && !BindingBridge.hasBindingObject(eventTargetPointer)) {
+        String msg = 'toImage: unknown node id: $eventTargetPointer';
         completer.completeError(Exception(msg));
         return completer.future;
       }
-      var node = eventTargetId == null ? document.documentElement : _getEventTargetById<EventTarget>(eventTargetId);
+      var node = eventTargetPointer == null ? document.documentElement : BindingBridge.getBindingObject(eventTargetPointer);
       if (node is Element) {
         if (!node.isRendererAttached) {
           String msg = 'toImage: the element is not attached to document tree.';
@@ -415,11 +367,11 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         node.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List bytes) {
           completer.complete(bytes);
         }).catchError((e, stack) {
-          String msg = 'toBlob: failed to export image data from element id: $eventTargetId. error: $e}.\n$stack';
+          String msg = 'toBlob: failed to export image data from element id: $eventTargetPointer. error: $e}.\n$stack';
           completer.completeError(Exception(msg));
         });
       } else {
-        String msg = 'toBlob: node is not an element, id: $eventTargetId';
+        String msg = 'toBlob: node is not an element, id: $eventTargetPointer';
         completer.completeError(Exception(msg));
       }
     } catch (e, stack) {
@@ -428,97 +380,48 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     return completer.future;
   }
 
-  void createElement(int targetId, Pointer<NativeBindingObject> nativePtr, String tagName) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_START, uniqueId: targetId);
-    }
-    assert(!_existsTarget(targetId), 'ERROR: Can not create element with same id "$targetId"');
-    Element element = document.createElement(tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
-    _setEventTarget(targetId, element);
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_END, uniqueId: targetId);
-    }
+  void createElement(Pointer<NativeBindingObject> nativePtr, String tagName) {
+    assert(!BindingBridge.hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
+    document.createElement(tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
   }
 
-  void createElementNS(int targetId, Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_START, uniqueId: targetId);
-    }
-    assert(!_existsTarget(targetId), 'ERROR: Can not create element with same id "$targetId"');
-    Element element = document.createElementNS(uri, tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
-    _setEventTarget(targetId, element);
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_END, uniqueId: targetId);
-    }
+  void createElementNS(Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
+    assert(!BindingBridge.hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
+    document.createElementNS(uri, tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
   }
 
-  void createTextNode(int targetId, Pointer<NativeBindingObject> nativePtr, String data) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_TEXT_NODE_START, uniqueId: targetId);
-    }
-    TextNode textNode = document.createTextNode(data, BindingContext(_contextId, nativePtr));
-    _setEventTarget(targetId, textNode);
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_TEXT_NODE_END, uniqueId: targetId);
-    }
+  void createTextNode(Pointer<NativeBindingObject> nativePtr, String data) {
+    document.createTextNode(data, BindingContext(_contextId, nativePtr));
   }
 
-  void createComment(int targetId, Pointer<NativeBindingObject> nativePtr) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_COMMENT_START, uniqueId: targetId);
-    }
-    Comment comment = document.createComment(BindingContext(_contextId, nativePtr));
-    _setEventTarget(targetId, comment);
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_COMMENT_END, uniqueId: targetId);
-    }
+  void createComment(Pointer<NativeBindingObject> nativePtr) {
+    document.createComment(BindingContext(_contextId, nativePtr));
   }
 
-  void createDocumentFragment(int targetId, Pointer<NativeBindingObject> nativePtr) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_DOCUMENT_FRAGMENT_START, uniqueId: targetId);
-    }
-    DocumentFragment fragment = document.createDocumentFragment(BindingContext(_contextId, nativePtr));
-    _setEventTarget(targetId, fragment);
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_DOCUMENT_FRAGMENT_END, uniqueId: targetId);
-    }
+  void createDocumentFragment(Pointer<NativeBindingObject> nativePtr) {
+    document.createDocumentFragment(BindingContext(_contextId, nativePtr));
   }
 
-  void addEvent(int targetId, String eventType) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_ADD_EVENT_START, uniqueId: targetId);
-    }
-    if (!_existsTarget(targetId)) return;
-    EventTarget? target = _getEventTargetById<EventTarget>(targetId);
+  void addEvent(Pointer<NativeBindingObject> nativePtr, String eventType) {
+    if (!BindingBridge.hasBindingObject(nativePtr)) return;
+    EventTarget? target = BindingBridge.getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
       BindingBridge.listenEvent(target, eventType);
     }
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_ADD_EVENT_END, uniqueId: targetId);
-    }
   }
 
-  void removeEvent(int targetId, String eventType) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_REMOVE_EVENT_START, uniqueId: targetId);
-    }
-    assert(_existsTarget(targetId), 'targetId: $targetId event: $eventType');
+  void removeEvent(Pointer<NativeBindingObject> nativePtr, String eventType) {
+    assert(BindingBridge.hasBindingObject(nativePtr), 'targetId: $nativePtr event: $eventType');
 
-    EventTarget? target = _getEventTargetById<EventTarget>(targetId);
+    EventTarget? target = BindingBridge.getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
       BindingBridge.unlistenEvent(target, eventType);
     }
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_REMOVE_EVENT_END, uniqueId: targetId);
-    }
   }
 
-  void cloneNode(int originalId, int newId) {
-    EventTarget originalTarget = _getEventTargetById(originalId)!;
-    EventTarget newTarget = _getEventTargetById(newId)!;
+  void cloneNode(Pointer<NativeBindingObject> selfPtr, Pointer<NativeBindingObject> newPtr) {
+    EventTarget originalTarget = BindingBridge.getBindingObject<EventTarget>(selfPtr)!;
+    EventTarget newTarget = BindingBridge.getBindingObject<EventTarget>(newPtr)!;
 
     // Current only element clone will process in dart.
     if (originalTarget is Element) {
@@ -536,21 +439,13 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
   }
 
-  void removeNode(int targetId) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_REMOVE_NODE_START, uniqueId: targetId);
-    }
+  void removeNode(Pointer pointer) {
+    assert(BindingBridge.hasBindingObject(pointer), 'pointer: $pointer');
 
-    assert(_existsTarget(targetId), 'targetId: $targetId');
-
-    Node target = _getEventTargetById<Node>(targetId)!;
+    Node target = BindingBridge.getBindingObject<Node>(pointer)!;
     target.parentNode?.removeChild(target);
 
     _debugDOMTreeChanged();
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_REMOVE_NODE_END, uniqueId: targetId);
-    }
   }
 
   /// <!-- beforebegin -->
@@ -560,16 +455,12 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   ///   <!-- beforeend -->
   /// </p>
   /// <!-- afterend -->
-  void insertAdjacentNode(int targetId, String position, int newTargetId) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_INSERT_ADJACENT_NODE_START, uniqueId: targetId);
-    }
+  void insertAdjacentNode(Pointer<NativeBindingObject> selfPointer, String position, Pointer<NativeBindingObject> newPointer) {
+    assert(BindingBridge.hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
+    assert(BindingBridge.hasBindingObject(selfPointer), 'newTargetId: $newPointer position: $position');
 
-    assert(_existsTarget(targetId), 'targetId: $targetId position: $position newTargetId: $newTargetId');
-    assert(_existsTarget(newTargetId), 'newTargetId: $newTargetId position: $position');
-
-    Node target = _getEventTargetById<Node>(targetId)!;
-    Node newNode = _getEventTargetById<Node>(newTargetId)!;
+    Node target = BindingBridge.getBindingObject<Node>(selfPointer)!;
+    Node newNode = BindingBridge.getBindingObject<Node>(newPointer)!;
     Node? targetParentNode = target.parentNode;
 
     switch (position) {
@@ -595,19 +486,11 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
 
     _debugDOMTreeChanged();
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_INSERT_ADJACENT_NODE_END, uniqueId: targetId);
-    }
   }
 
-  void setAttribute(int targetId, String key, String value) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_SET_PROPERTIES_START, uniqueId: targetId);
-    }
-
-    assert(_existsTarget(targetId), 'targetId: $targetId key: $key value: $value');
-    Node target = _getEventTargetById<Node>(targetId)!;
+  void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
+    assert(BindingBridge.hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
+    Node target = BindingBridge.getBindingObject<Node>(selfPtr)!;
 
     if (target is Element) {
       // Only element has properties.
@@ -615,22 +498,13 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
       target.data = value;
     } else {
-      debugPrint('Only element has properties, try setting $key to Node(#$targetId).');
-    }
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_SET_PROPERTIES_END, uniqueId: targetId);
+      debugPrint('Only element has properties, try setting $key to Node(#$selfPtr).');
     }
   }
 
-  @deprecated
-  getProperty(int targetId, String key) {
-    return getAttribute(targetId, key);
-  }
-
-  String? getAttribute(int targetId, String key) {
-    assert(_existsTarget(targetId), 'targetId: $targetId key: $key');
-    Node target = _getEventTargetById<Node>(targetId)!;
+  String? getAttribute(Pointer selfPtr, String key) {
+    assert(BindingBridge.hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
+    Node target = BindingBridge.getBindingObject<Node>(selfPtr)!;
 
     if (target is Element) {
       // Only element has attributes.
@@ -643,17 +517,9 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
   }
 
-  @deprecated
-  void removeProperty(int targetId, String key) {
-    removeAttribute(targetId, key);
-  }
-
-  void removeAttribute(int targetId, String key) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_SET_PROPERTIES_START, uniqueId: targetId);
-    }
-    assert(_existsTarget(targetId), 'targetId: $targetId key: $key');
-    Node target = _getEventTargetById<Node>(targetId)!;
+  void removeAttribute(Pointer selfPtr, String key) {
+    assert(BindingBridge.hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
+    Node target = BindingBridge.getBindingObject<Node>(selfPtr)!;
 
     if (target is Element) {
       target.removeAttribute(key);
@@ -661,40 +527,31 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       // @TODO: property is not attribute.
       target.data = '';
     } else {
-      debugPrint('Only element has attributes, try removing $key from Node(#$targetId).');
-    }
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_SET_PROPERTIES_END, uniqueId: targetId);
+      debugPrint('Only element has attributes, try removing $key from Node(#$selfPtr).');
     }
   }
 
-  void setInlineStyle(int targetId, String key, String value) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_SET_STYLE_START, uniqueId: targetId);
-    }
-    assert(_existsTarget(targetId), 'id: $targetId key: $key value: $value');
-    Node? target = _getEventTargetById<Node>(targetId);
+  void setInlineStyle(Pointer selfPtr, String key, String value) {
+    assert(BindingBridge.hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
+    Node? target = BindingBridge.getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
     if (target is Element) {
       target.setInlineStyle(key, value);
     } else {
-      debugPrint('Only element has style, try setting style.$key from Node(#$targetId).');
-    }
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_SET_STYLE_END, uniqueId: targetId);
+      debugPrint('Only element has style, try setting style.$key from Node(#$selfPtr).');
     }
   }
 
-  void flushPendingStyleProperties(int targetId) {
-    if (!_existsTarget(targetId)) return;
-    Node? target = _getEventTargetById<Node>(targetId);
+  void flushPendingStyleProperties(int address) {
+    if (!BindingBridge.hasBindingObject(Pointer.fromAddress(address))) return;
+    Node? target = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(address));
     if (target == null) return;
 
     if (target is Element) {
       target.style.flushPendingProperties();
     } else {
-      debugPrint('Only element has style, try flushPendingStyleProperties from Node(#$targetId).');
+      debugPrint('Only element has style, try flushPendingStyleProperties from Node(#${Pointer.fromAddress(address)}).');
     }
   }
 
@@ -735,13 +592,10 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
   }
 
-  // Call from JS Bridge before JS side eventTarget object been Garbage collected.
-  void disposeEventTarget(int targetId, Pointer<NativeBindingObject> pointer) {
-    Node? target = _getEventTargetById<Node>(targetId);
-    if (target == null) return;
-
-    _removeTarget(targetId);
-    target.dispose();
+  // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
+  void disposeBindingObject(Pointer<NativeBindingObject> pointer) {
+    BindingObject? bindingObject = BindingBridge.getBindingObject(pointer);
+    bindingObject?.dispose();
     malloc.free(pointer);
   }
 

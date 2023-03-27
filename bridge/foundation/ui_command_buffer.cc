@@ -22,25 +22,11 @@ UICommandBuffer::~UICommandBuffer() {
 #endif
 }
 
-void UICommandBuffer::addCommand(int32_t id, UICommand type, void* nativePtr) {
-  UICommandItem item{id, static_cast<int32_t>(type), nativePtr};
-  addCommand(item);
-}
-
-void UICommandBuffer::addCommand(int32_t id, UICommand type, std::unique_ptr<NativeString>&& args_01, void* nativePtr) {
-  assert(args_01 != nullptr);
-  UICommandItem item{id, static_cast<int32_t>(type), args_01.release(), nativePtr};
-  addCommand(item);
-}
-
-void UICommandBuffer::addCommand(int32_t id,
-                                 UICommand type,
-                                 std::unique_ptr<NativeString>&& args_01,
-                                 std::unique_ptr<NativeString>&& args_02,
-                                 void* nativePtr) {
-  assert(args_01 != nullptr);
-  assert(args_02 != nullptr);
-  UICommandItem item{id, static_cast<int32_t>(type), args_01.release(), args_02.release(), nativePtr};
+void UICommandBuffer::addCommand(UICommand type,
+                                 std::unique_ptr<SharedNativeString>&& args_01,
+                                 void* nativePtr,
+                                 void* nativePtr2) {
+  UICommandItem item{static_cast<int32_t>(type), args_01.get(), nativePtr, nativePtr2};
   addCommand(item);
 }
 
@@ -79,10 +65,6 @@ bool UICommandBuffer::empty() {
 }
 
 void UICommandBuffer::clear() {
-  for (int i = 0; i < size_; i++) {
-    delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_01);
-    delete[] reinterpret_cast<const uint16_t*>(buffer_[i].string_02);
-  }
   size_ = 0;
   memset(buffer_, 0, sizeof(buffer_));
   update_batched_ = false;

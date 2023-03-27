@@ -111,7 +111,9 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
           print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: ${fromNativeValue(callbackResult)}');
         }
 
-        completer.complete(fromNativeValue(callbackResult));
+        var returnValue = fromNativeValue(callbackResult);
+        malloc.free(callbackResult);
+        completer.complete(returnValue);
       });
       return completer.future;
     }
@@ -144,6 +146,8 @@ Pointer<NativeValue> _invokeModule(
       fromNativeValue(params), callback.asFunction());
   Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
   toNativeValue(returnValue, result);
+  freeNativeString(module);
+  freeNativeString(method);
   return returnValue;
 }
 
@@ -312,17 +316,18 @@ typedef NativeAsyncBlobCallback = Void Function(
 typedef DartAsyncBlobCallback = void Function(
     Pointer<Void> callbackContext, int contextId, Pointer<Utf8>, Pointer<Uint8>, int);
 typedef NativeToBlob = Void Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>>, Int32, Double);
+    Pointer<Void> callbackContext, Int32 contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>>, Pointer<Void>, Double);
 
 void _toBlob(Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>> callback,
-    int id, double devicePixelRatio) {
+    Pointer<Void> elementPtr, double devicePixelRatio) {
   DartAsyncBlobCallback func = callback.asFunction();
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  controller.view.toImage(devicePixelRatio, id).then((Uint8List bytes) {
+  controller.view.toImage(devicePixelRatio, elementPtr).then((Uint8List bytes) {
     Pointer<Uint8> bytePtr = malloc.allocate<Uint8>(sizeOf<Uint8>() * bytes.length);
     Uint8List byteList = bytePtr.asTypedList(bytes.length);
     byteList.setAll(0, bytes);
     func(callbackContext, contextId, nullptr, bytePtr, bytes.length);
+    malloc.free(bytePtr);
   }).catchError((error, stack) {
     Pointer<Utf8> nativeErrorMessage = ('$error\n$stack').toNativeUtf8();
     func(callbackContext, contextId, nativeErrorMessage, nullptr, 0);

@@ -9,7 +9,6 @@ import 'dart:collection';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/geometry.dart';
@@ -87,12 +86,11 @@ abstract class BindingBridge {
 
   static final SplayTreeMap<int, BindingObject> _nativeObjects = SplayTreeMap();
 
-  static BindingObject getBindingObject(Pointer pointer) {
-    BindingObject? target = _nativeObjects[pointer.address];
-    if (target == null) {
-      throw FlutterError('Can not get binding object: $pointer');
-    }
-    return target;
+  static T? getBindingObject<T>(Pointer pointer) {
+    return _nativeObjects[pointer.address] as T?;
+  }
+  static bool hasBindingObject(Pointer pointer) {
+    return _nativeObjects.containsKey(pointer.address);
   }
 
   static void createBindingObject(int contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
@@ -110,9 +108,11 @@ abstract class BindingBridge {
 
   static void _bindObject(BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
-    if (nativeBindingObject != null && !nativeBindingObject.ref.disposed) {
+    if (nativeBindingObject != null) {
       _nativeObjects[nativeBindingObject.address] = object;
-      nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
+      if (!nativeBindingObject.ref.disposed) {
+        nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
+      }
     }
   }
 

@@ -49,6 +49,8 @@ void free_function_bytecode(JSRuntime* rt, JSFunctionBytecode* b) {
     }
 #endif
   free_bytecode_atoms(rt, b->byte_code_buf, b->byte_code_len, TRUE);
+  if (b->ic != NULL)
+    free_ic(b->ic);
 
   if (b->vardefs) {
     for (i = 0; i < b->arg_count + b->var_count; i++) {
@@ -72,9 +74,6 @@ void free_function_bytecode(JSRuntime* rt, JSFunctionBytecode* b) {
     js_free_rt(rt, b->debug.pc2column_buf);
     js_free_rt(rt, b->debug.source);
   }
-
-  if (b->ic != NULL)
-    free_ic(b->ic);
 
   remove_gc_object(&b->header);
   if (rt->gc_phase == JS_GC_PHASE_REMOVE_CYCLES && b->header.ref_count != 0) {

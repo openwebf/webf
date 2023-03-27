@@ -7,15 +7,17 @@
 #define WEBF_CORE_CSS_CSS_STYLE_DECLARATION_H_
 
 #include "bindings/qjs/script_wrappable.h"
+#include "core/binding_object.h"
 
 namespace webf {
 
-class CSSStyleDeclaration : public ScriptWrappable {
+class CSSStyleDeclaration : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
   using ImplType = CSSStyleDeclaration*;
   explicit CSSStyleDeclaration(JSContext* ctx);
+  explicit CSSStyleDeclaration(JSContext* ctx, NativeBindingObject* native_binding_object);
 
   virtual AtomicString item(const AtomicString& key, ExceptionState& exception_state) = 0;
   virtual bool SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) = 0;

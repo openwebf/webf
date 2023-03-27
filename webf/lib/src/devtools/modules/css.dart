@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ffi';
+import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
@@ -38,7 +40,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
     if (element != null) {
       MatchedStyles matchedStyles = MatchedStyles(
         inlineStyle: buildMatchedStyle(element),
@@ -49,7 +51,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetComputedStyleForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       ComputedStyle computedStyle = ComputedStyle(
@@ -63,7 +65,7 @@ class InspectCSSModule extends UIInspectorModule {
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
   void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       InlinedStyle inlinedStyle = InlinedStyle(
@@ -85,7 +87,7 @@ class InspectCSSModule extends UIInspectorModule {
       int nodeId = edit['styleSheetId'];
       String text = edit['text'] ?? '';
       List<String> texts = text.split(';');
-      Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+      Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
       if (element != null) {
         for (String kv in texts) {
           kv = kv.trim();
@@ -133,7 +135,7 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
+        styleSheetId: element.pointer!.address,
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
@@ -164,7 +166,7 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
+        styleSheetId: element.pointer!.address,
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
