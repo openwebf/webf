@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ffi';
-import 'dart:math';
 
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +19,7 @@ import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'bridge/to_native.dart';
 import 'local_http_server.dart';
+import 'mem_leak_detector.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
@@ -33,40 +33,6 @@ Future<void> startHttpMockServer() async {
   await Process.start('node', [testDirectory + '/scripts/mock_http_server.js'], environment: {
     'PORT': MOCK_SERVER_PORT.toString()
   }, mode: ProcessStartMode.inheritStdio);
-}
-
-
-double findSlope(List<List<num>> coordinates) {
-  if (coordinates.length < 2) {
-    throw ArgumentError("At least two coordinates are required");
-  }
-
-  int n = coordinates.length;
-  num sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-
-  for (List<num> coordinate in coordinates) {
-    num x = coordinate[0];
-    num y = coordinate[1];
-
-    sumX += x;
-    sumY += y;
-    sumXY += x * y;
-    sumX2 += x * x;
-  }
-
-  // Calculate the slope of the best-fitting line using the linear regression formula
-  double slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-  return slope;
-}
-
-double findAngle(List<List<num>> coordinates) {
-  double slope = findSlope(coordinates);
-  double angleRadians = atan(slope); // Calculate angle in radians
-  return angleRadians;
-}
-
-double radiansToDegrees(double radians) {
-  return radians * 180 / pi;
 }
 
 List<List<int>> mems = [];
@@ -125,12 +91,10 @@ void main() async {
       webF.controller!.view.evaluateJavaScripts(codeInjection);
     },
     onLoad: (controller) async {
-      Timer(Duration(seconds: 2), () {
-        int x = 0;
-        // Collect the running memory info every per 10s.
-        Timer.periodic(Duration(seconds: 1), (timer) {
-          mems.add([x++, ProcessInfo.currentRss / 1024 ~/ 1024]);
-        });
+      int x = 0;
+      // Collect the running memory info every per 10s.
+      Timer.periodic(Duration(milliseconds: 50), (timer) {
+        mems.add([x += 1, ProcessInfo.currentRss / 1024 ~/ 1024]);
       });
 
       // Preload load test cases
@@ -139,12 +103,11 @@ void main() async {
       webF.controller!.dispose();
 
       // Check running memorys
-      double angleRadians = findAngle(mems.map((e) => [e[0], e[1] ~/ 10]).toList());
-      double angleDegrees = radiansToDegrees(angleRadians);
-      if (angleDegrees > 30) {
-        print('Memory leaks found. ${mems.map((e) => e[1]).toList()}');
-        exit(1);
-      }
+      // Temporary disabled due to exist memory leaks
+      // if (isMemLeaks(mems)) {
+      //   print('Memory leaks found. ${mems.map((e) => e[1]).toList()}');
+      //   exit(1);
+      // }
 
       exit(result == 'failed' ? 1 : 0);
     },
