@@ -10,7 +10,7 @@
 
 namespace webf {
 
-class CanvasGradient : public ScriptWrappable, public BindingObject {
+class CanvasGradient : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -19,7 +19,7 @@ class CanvasGradient : public ScriptWrappable, public BindingObject {
   CanvasGradient() = delete;
   explicit CanvasGradient(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-  NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
 
   bool IsCanvasGradient() const override;
 

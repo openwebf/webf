@@ -68,7 +68,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         ctx, "Failed to execute '__webf_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.");
   }
 
-  std::unique_ptr<NativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
+  std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
   auto fn = [](void* ptr, int32_t contextId, int8_t result, const char* errmsg) {
@@ -89,10 +89,11 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
     callbackContext->context->DrainPendingPromiseJobs();
     JS_FreeValue(callbackContext->context->ctx(), callbackContext->callback);
+    delete callbackContext;
   };
 
   context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),
-                                               screenShotNativeString.get(), fn);
+                                               screenShotNativeString.release(), fn);
   return JS_NULL;
 }
 
@@ -229,9 +230,9 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
     return JS_ThrowTypeError(ctx, "Failed to execute '__webf_simulate_keypress__': first arguments should be a string");
   }
 
-  std::unique_ptr<NativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
+  std::unique_ptr<SharedNativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
   void* p = static_cast<void*>(nativeString.get());
-  context->dartMethodPtr()->simulateInputText(static_cast<NativeString*>(p));
+  context->dartMethodPtr()->simulateInputText(static_cast<SharedNativeString*>(p));
   return JS_NULL;
 };
 
@@ -290,7 +291,7 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
 
     WEBF_LOG(VERBOSE) << "Done..";
 
-    std::unique_ptr<NativeString> status = webf::jsValueToNativeString(ctx, statusValue);
+    std::unique_ptr<SharedNativeString> status = webf::jsValueToNativeString(ctx, statusValue);
     callbackContext->executeCallback(callbackContext->context->contextId(), status.get());
     JS_FreeValue(ctx, proxyObject);
     callbackContext->webf_context->execute_test_proxy_object_ = JS_NULL;

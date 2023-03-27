@@ -11,7 +11,7 @@
 
 namespace webf {
 
-class DOMMatrixReadonly : public ScriptWrappable, public BindingObject {
+class DOMMatrixReadonly : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -25,7 +25,7 @@ class DOMMatrixReadonly : public ScriptWrappable, public BindingObject {
                              const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
                              ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
 };
 
 }  // namespace webf

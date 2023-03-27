@@ -60,6 +60,7 @@ void _matchImageSnapshot(Pointer<Void> callbackContext, int contextId, Pointer<U
     Pointer<NativeString> snapshotNamePtr, Pointer<NativeFunction<NativeMatchImageSnapshotCallback>> pointer) {
   DartMatchImageSnapshotCallback callback = pointer.asFunction();
   String filename = nativeStringToString(snapshotNamePtr);
+  freeNativeString(snapshotNamePtr);
   matchImageSnapshot(bytes.asTypedList(size), filename).then((value) {
     callback(callbackContext, contextId, value ? 1 : 0, nullptr);
   }).catchError((e, stack) {

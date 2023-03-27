@@ -14,6 +14,7 @@
 #include "core/html/parser/html_parser.h"
 #include "event_factory.h"
 #include "foundation/logging.h"
+#include "foundation/native_value_converter.h"
 #include "page.h"
 #include "polyfill.h"
 
@@ -50,7 +51,7 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
   return true;
 }
 
-NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
+NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
                                          const char* eventType,
                                          void* ptr,
                                          NativeValue* extra) {
@@ -63,12 +64,14 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
   Event* event = nullptr;
   if (ptr != nullptr) {
     std::string type = std::string(eventType);
-    auto* rawEvent = static_cast<RawEvent*>(ptr);
-    event = EventFactory::Create(context_, AtomicString(ctx, type), rawEvent);
+    auto* raw_event = static_cast<RawEvent*>(ptr);
+    event = EventFactory::Create(context_, AtomicString(ctx, type), raw_event);
+    delete raw_event;
   }
 
   ScriptValue extraObject = ScriptValue(ctx, *extra);
-  AtomicString module_name = AtomicString(ctx, native_module_name);
+  AtomicString module_name = AtomicString(
+      ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
   auto listener = context_->ModuleListeners()->listener(module_name);
 
   if (listener == nullptr) {
@@ -94,7 +97,7 @@ NativeValue* WebFPage::invokeModuleEvent(const NativeString* native_module_name,
   return return_value;
 }
 
-void WebFPage::evaluateScript(const NativeString* script, const char* url, int startLine) {
+void WebFPage::evaluateScript(const SharedNativeString* script, const char* url, int startLine) {
   if (!context_->IsContextValid())
     return;
 

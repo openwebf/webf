@@ -28,8 +28,8 @@ using AsyncBlobCallback =
     void (*)(void* callback_context, int32_t context_id, const char* error, uint8_t* bytes, int32_t length);
 typedef NativeValue* (*InvokeModule)(void* callback_context,
                                      int32_t context_id,
-                                     NativeString* moduleName,
-                                     NativeString* method,
+                                     SharedNativeString* moduleName,
+                                     SharedNativeString* method,
                                      NativeValue* params,
                                      AsyncModuleCallback callback);
 typedef void (*RequestBatchUpdate)(int32_t context_id);
@@ -42,7 +42,7 @@ typedef void (*CancelAnimationFrame)(int32_t context_id, int32_t id);
 typedef void (*ToBlob)(void* callback_context,
                        int32_t context_id,
                        AsyncBlobCallback blobCallback,
-                       int32_t elementId,
+                       void* element_ptr,
                        double devicePixelRatio);
 typedef void (*OnJSError)(int32_t context_id, const char*);
 typedef void (*OnJSLog)(int32_t context_id, int32_t level, const char*);
@@ -55,7 +55,7 @@ using MatchImageSnapshot = void (*)(void* callback_context,
                                     int32_t context_id,
                                     uint8_t* bytes,
                                     int32_t length,
-                                    NativeString* name,
+                                    SharedNativeString* name,
                                     MatchImageSnapshotCallback callback);
 using Environment = const char* (*)();
 
@@ -78,7 +78,7 @@ struct MousePointer {
 };
 using SimulatePointer =
     void (*)(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
-using SimulateInputText = void (*)(NativeString* nativeString);
+using SimulateInputText = void (*)(SharedNativeString* nativeString);
 
 struct DartMethodPointer {
   DartMethodPointer() = delete;

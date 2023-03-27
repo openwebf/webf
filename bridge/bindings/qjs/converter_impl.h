@@ -213,10 +213,10 @@ struct Converter<IDLDOMString> : public ConverterBase<IDLDOMString> {
   }
 
   static JSValue ToValue(JSContext* ctx, const AtomicString& value) { return value.ToQuickJS(ctx); }
-  static JSValue ToValue(JSContext* ctx, NativeString* str) {
+  static JSValue ToValue(JSContext* ctx, SharedNativeString* str) {
     return JS_NewUnicodeString(ctx, str->string(), str->length());
   }
-  static JSValue ToValue(JSContext* ctx, std::unique_ptr<NativeString> str) {
+  static JSValue ToValue(JSContext* ctx, std::unique_ptr<SharedNativeString> str) {
     return JS_NewUnicodeString(ctx, str->string(), str->length());
   }
   static JSValue ToValue(JSContext* ctx, uint16_t* bytes, size_t length) {

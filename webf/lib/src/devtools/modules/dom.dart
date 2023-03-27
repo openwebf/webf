@@ -2,8 +2,10 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ffi';
 import 'dart:ui' as ui;
 
+import 'package:webf/bridge.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -47,7 +49,7 @@ class InspectDOMModule extends UIInspectorModule {
     rootRenderObject.hitTest(result, position: Offset(x.toDouble(), y.toDouble()));
     if (result.path.first.target is RenderBoxModel) {
       RenderBoxModel lastHitRenderBoxModel = result.path.first.target as RenderBoxModel;
-      int? targetId = document.controller.view.getTargetIdByEventTarget(lastHitRenderBoxModel.renderStyle.target);
+      int? targetId = lastHitRenderBoxModel.renderStyle.target.pointer!.address;
       sendToFrontend(
           id,
           JSONEncodableMap({
@@ -66,7 +68,7 @@ class InspectDOMModule extends UIInspectorModule {
 
   void onSetInspectedNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Node? node = document.controller.view.getEventTargetById(nodeId);
+    Node? node = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(nodeId));
     if (node != null) {
       inspectedNode = node;
     }
@@ -83,7 +85,7 @@ class InspectDOMModule extends UIInspectorModule {
 
   void onGetBoxModel(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     // BoxModel design to BorderBox in kraken.
     if (element != null && element.renderBoxModel != null && element.renderBoxModel!.hasSize) {
@@ -188,12 +190,12 @@ class InspectorNode extends JSONEncodable {
   /// Node identifier that is passed into the rest of the DOM messages as the nodeId.
   /// Backend will only push node with given id once. It is aware of all requested nodes
   /// and will only fire DOM events for nodes known to the client.
-  int? get nodeId => referencedNode.ownerDocument.controller.view.getTargetIdByEventTarget(referencedNode);
+  int? get nodeId => referencedNode.pointer!.address;
 
   /// Optional. The id of the parent node if any.
   int get parentId {
     if (referencedNode.parentNode != null) {
-      return referencedNode.ownerDocument.controller.view.getTargetIdByEventTarget(referencedNode.parentNode!) ?? 0;
+      return referencedNode.parentNode!.pointer!.address;
     } else {
       return 0;
     }
