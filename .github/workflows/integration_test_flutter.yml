@@ -111,7 +111,7 @@ jobs:
         path: bridge/build/macos/
     - run: cd integration_tests && npm i
     - name: Run Test
-      run: cd integration_tests && SPEC_SCOPE="${{ matrix.value }}" npm run integration
+      run: cd integration_tests && CI=true SPEC_SCOPE="${{ matrix.value }}" npm run integration
       id: test
       continue-on-error: true
     - uses: actions/upload-artifact@v2
@@ -149,7 +149,7 @@ jobs:
         path: bridge/build/macos/
     - run: cd integration_tests && npm i
     - name: Run Test
-      run: cd integration_tests && SPEC_SCOPE="${{ matrix.value }}" npm run integration
+      run: cd integration_tests && CI=true SPEC_SCOPE="${{ matrix.value }}" npm run integration
       id: test
       continue-on-error: true
     - uses: actions/upload-artifact@v2
