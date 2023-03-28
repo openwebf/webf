@@ -549,7 +549,7 @@ static void process_request(JSDebuggerInfo* info, struct DebuggerSuspendedState*
         variables[0].value = variable_type.value;
         variables[0].variablesReference = variable_type.variablesReference;
         variables[0].type = variable_type.type;
-        JS_SetPropertyUint32(ctx, info->logged_object, pl, JS_NewBool(ctx, 1));
+        JS_SetPropertyUint32(ctx, info->logged_object, pl, JS_NewBool(ctx, 0));
       } else {
         variables = js_debugger_get_variables(ctx, reference_value, &info->logging_state, &variable_len, 0,
                                               arguments->filter, arguments->start, arguments->count);
