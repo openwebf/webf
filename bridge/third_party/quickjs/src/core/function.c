@@ -2632,6 +2632,9 @@ exception:
     }
   }
   ret_val = JS_EXCEPTION;
+#if ENABLE_DEBUGGER
+  js_debugger_exception(ctx);
+#endif
   /* the local variables are freed by the caller in the generator
      case. Hence the label 'done' should never be reached in a
      generator function. */
