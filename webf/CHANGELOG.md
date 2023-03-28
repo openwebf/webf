@@ -1,3 +1,7 @@
+## 0.14.0-beta.6+2
+
+* fix: CanvasRenderingContext2D should keep alive with Canvas Element.
+
 ## 0.14.0-beta.6+1
 
 * fix: fix scrollable size didn't update when update inner size of fixed elements.
