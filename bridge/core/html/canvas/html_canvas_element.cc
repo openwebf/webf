@@ -21,7 +21,8 @@ CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, 
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
 
   if (type == canvas_types::k2d) {
-    CanvasRenderingContext* context = MakeGarbageCollected<CanvasRenderingContext2D>(GetExecutingContext(), native_binding_object);
+    CanvasRenderingContext* context =
+        MakeGarbageCollected<CanvasRenderingContext2D>(GetExecutingContext(), native_binding_object);
     running_context_2ds_.emplace_back(context);
     return context;
   }
@@ -30,7 +31,7 @@ CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, 
 }
 
 void HTMLCanvasElement::Trace(GCVisitor* visitor) const {
-  for(auto&& context : running_context_2ds_) {
+  for (auto&& context : running_context_2ds_) {
     visitor->Trace(context);
   }
 }
