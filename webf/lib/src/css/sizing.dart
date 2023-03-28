@@ -183,6 +183,7 @@ mixin CSSSizingMixin on RenderStyle {
   }
 
   void _markScrollContainerNeedsLayout() {
+    if (renderBoxModel == null) return;
     RenderLayoutBox? scrollContainer = renderBoxModel!.findScrollContainer() as RenderLayoutBox?;
     scrollContainer?.renderScrollingContent?.markNeedsLayout();
   }
