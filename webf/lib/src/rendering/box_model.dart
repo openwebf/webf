@@ -847,6 +847,7 @@ class RenderBoxModel extends RenderBox
       SchedulerBinding.instance.addPostFrameCallback((_) {
         markNeedsLayout();
       });
+      SchedulerBinding.instance.scheduleFrame();
     } else {
       needsLayout = true;
       super.markNeedsLayout();
@@ -1091,9 +1092,9 @@ class RenderBoxModel extends RenderBox
   /// Find scroll container
   RenderBoxModel? findScrollContainer() {
     RenderLayoutBox? scrollContainer;
-    RenderLayoutBox? parent = this.parent as RenderLayoutBox?;
+    AbstractNode? parent = this.parent;
 
-    while (parent != null) {
+    while (parent != null && parent is RenderLayoutBox) {
       if (parent.isScrollingContentBox) {
         // Scroll container should has definite constraints
         scrollContainer = parent.parent as RenderLayoutBox?;
