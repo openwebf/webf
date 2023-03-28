@@ -1,3 +1,7 @@
+## 0.14.0-beta.6+3
+
+* fix: fix renderBoxModel can be null.
+
 ## 0.14.0-beta.6+2
 
 * fix: CanvasRenderingContext2D should keep alive with Canvas Element.
