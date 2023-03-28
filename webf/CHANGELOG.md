@@ -1,3 +1,8 @@
+## 0.14.0-beta.6+1
+
+* fix: fix scrollable size didn't update when update inner size of fixed elements.
+* fix: fix memory leaks due to document.dirtyStyleElements.
+
 ## 0.14.0-beta.6
 
 * fix: fix native memory leaks.
