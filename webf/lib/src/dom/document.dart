@@ -375,6 +375,7 @@ class Document extends Node {
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
+      styleDirtyElements.clear();
       return;
     }
     if (styleDirtyElements.any((element) {
