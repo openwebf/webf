@@ -1125,4 +1125,43 @@ describe('Position absolute', () => {
 
     await snapshot();
   });
+
+  it('dynamic change the size of elements inside of positioned element can affect scrollable size', async (done) => {
+    let overlay;
+    // @ts-ignore
+    let placeholders = (Array(50).fill(0)).map(item => {
+      return createElement('div', {
+        style: {
+          height: '50px',
+          margin: '5px 0 5px 0',
+          border: '1px solid #000'
+        }
+      });
+    })
+    let container = createElement('div', {
+      style: {
+        'position': 'absolute',
+        'width': '100px',
+        'height': '100px'
+      }
+    }, [
+      overlay = createElement('div', {
+        style: {
+        }
+      }),
+      ...placeholders,
+      createText('bottom text')
+    ]);
+
+    document.body.appendChild(container);
+
+    requestAnimationFrame(async () => {
+      overlay.style.height = '100px';
+      overlay.style.backgroundColor = 'red';
+
+      window.scroll(0, 10000);
+      await snapshot();
+      done();
+    });
+  });
 });
