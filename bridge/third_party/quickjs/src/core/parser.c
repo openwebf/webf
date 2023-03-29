@@ -12440,7 +12440,6 @@ JSValue __JS_EvalInternal(JSContext *ctx, JSValueConst this_obj,
     // Set source_map when sourcemap is ready(Async).
     JSValue source_map = js_parse_sourcemap(info->debugging_ctx, input, input_len, filename);
     fd->source_map = JS_DupValue(ctx, source_map);
-    printf("%s \n %p\n", input, JS_VALUE_GET_PTR(source_map));
     JS_FreeValue(ctx, source_map);
   }
 #endif

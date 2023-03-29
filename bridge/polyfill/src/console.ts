@@ -197,7 +197,7 @@ function debuggerInspectValue(val: any, additionalStack: number) {
   let filepath, column, lineno, filename;
 
   function matchStack(stack: string) {
-    const regex = /^at\s([<>\w]+)\s\(([\w\:\/\.]+):(\d+):(\d+)\)$/;
+    const regex = /^at\s([<>\w]+)\s\(([\w\W]+):(\d+):(\d+)\)$/;
     let pattern = regex.exec(stack.trim());
     if (pattern) {
       return {
@@ -232,8 +232,30 @@ function debuggerInspectValue(val: any, additionalStack: number) {
   __webf_debug_inspect_vars__(val, filepath, filename, lineno, column);
 }
 
+function concatAdjacentStringsAndNumbers(arr: any[]): any[] {
+  const result: any[] = [];
+  let currentString = '';
+
+  for (let i = 0; i < arr.length; i++) {
+    if (typeof arr[i] === 'string' || typeof arr[i] === 'number') {
+      currentString += arr[i].toString();
+      if (i === arr.length - 1) {
+        result.push(currentString);
+      }
+    } else {
+      if (currentString.length > 0) {
+        result.push(currentString);
+        currentString = '';
+      }
+      result.push(arr[i]);
+    }
+  }
+
+  return result;
+}
+
 function __webf__logger(allArgs: any) {
-  var args = Array.prototype.slice.call(allArgs, 0);
+  var args = concatAdjacentStringsAndNumbers(Array.prototype.slice.call(allArgs, 0));
   var firstArg = args[0];
   var result = [];
   if (typeof firstArg === 'string' && INTERPOLATE.test(firstArg)) {
