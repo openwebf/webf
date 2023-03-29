@@ -180,7 +180,7 @@ abstract class BindingObject {
   }
 
   @mustCallSuper
-  void dispose() {
+  Future<void> dispose() async {
     _unbind();
     _properties.clear();
     _methods.clear();

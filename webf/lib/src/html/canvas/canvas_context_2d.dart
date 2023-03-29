@@ -263,7 +263,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     _actions.clear();
     _pendingActions.clear();
     super.dispose();
