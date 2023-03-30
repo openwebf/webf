@@ -108,6 +108,15 @@ abstract class WebFBundle {
     data = null;
   }
 
+  Future<void> invalidateCache() async {
+    Uri? uri = Uri.tryParse(url);
+    if (uri == null) return;
+    String origin = getOrigin(uri);
+    HttpCacheController cacheController = HttpCacheController.instance(origin);
+    HttpCacheObject cacheObject = await cacheController.getCacheObject(uri);
+    await cacheObject.remove();
+  }
+
   static WebFBundle fromUrl(String url, {Map<String, String>? additionalHttpHeaders}) {
     if (_isHttpScheme(url)) {
       return NetworkBundle(url, additionalHttpHeaders: additionalHttpHeaders);
@@ -194,6 +203,12 @@ class NetworkBundle extends WebFBundle {
         IntProperty('HTTP status code', response.statusCode),
       ]);
     final Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+
+    if (bytes.isEmpty) {
+      await invalidateCache();
+      return;
+    }
+
     data = bytes.buffer.asUint8List();
     contentType = response.headers.contentType ?? ContentType.binary;
   }

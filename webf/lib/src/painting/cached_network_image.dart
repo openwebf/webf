@@ -109,7 +109,11 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
         },
       );
 
-      if (bytes.lengthInBytes == 0) throw Exception('Image from network is an empty file: $resolved');
+      if (bytes.lengthInBytes == 0) {
+        HttpCacheObject cacheObject = await cacheController.getCacheObject(resolved);
+        await cacheObject.remove();
+        throw Exception('Image from network is an empty file: $resolved');
+      }
 
       return bytes;
     } finally {

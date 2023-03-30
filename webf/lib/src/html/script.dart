@@ -41,9 +41,15 @@ class ScriptRunner {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       final String contentInString = await resolveStringFromData(bundle.data!, preferSync: !async);
-      await evaluateScripts(contextId, contentInString, url: bundle.url);
+      bool result = await evaluateScripts(contextId, contentInString, url: bundle.url);
+      if (!result) {
+        throw FlutterError('Script code are not valid to evaluate.');
+      }
     } else if (bundle.isBytecode) {
-      evaluateQuickjsByteCode(contextId, bundle.data!);
+      bool result = evaluateQuickjsByteCode(contextId, bundle.data!);
+      if (!result) {
+        throw FlutterError('Bytecode are not valid to execute.');
+      }
     } else {
       throw FlutterError('Unknown type for <script> to execute. $url');
     }
@@ -86,6 +92,7 @@ class ScriptRunner {
       } catch (err, stack) {
         debugPrint('$err\n$stack');
         _document.decrementDOMContentLoadedEventDelayCount();
+        await bundle.invalidateCache();
         return;
       } finally {
         bundle.dispose();
