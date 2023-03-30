@@ -97,25 +97,26 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
   return return_value;
 }
 
-void WebFPage::evaluateScript(const SharedNativeString* script, const char* url, int startLine) {
+bool WebFPage::evaluateScript(const SharedNativeString* script,
+                              uint8_t** parsed_bytecodes,
+                              uint64_t* bytecode_len,
+                              const char* url,
+                              int startLine) {
   if (!context_->IsContextValid())
-    return;
-
-  //#if ENABLE_PROFILE
-  //  auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
-  //  nativePerformance.mark(PERF_JS_PARSE_TIME_START);
-  //  std::u16string patchedCode = std::u16string(u"performance.mark('js_parse_time_end');") +
-  //                               std::u16string(reinterpret_cast<const char16_t*>(script->string), script->length);
-  //  context_->evaluateJavaScript(patchedCode.c_str(), patchedCode.size(), url, startLine);
-  //#else
-  context_->EvaluateJavaScript(script->string(), script->length(), url, startLine);
-  //#endif
+    return false;
+  return context_->EvaluateJavaScript(script->string(), script->length(), parsed_bytecodes, bytecode_len, url,
+                                      startLine);
 }
 
-void WebFPage::evaluateScript(const uint16_t* script, size_t length, const char* url, int startLine) {
+bool WebFPage::evaluateScript(const uint16_t* script,
+                              size_t length,
+                              uint8_t** parsed_bytecodes,
+                              uint64_t* bytecode_len,
+                              const char* url,
+                              int startLine) {
   if (!context_->IsContextValid())
-    return;
-  context_->EvaluateJavaScript(script, length, url, startLine);
+    return false;
+  return context_->EvaluateJavaScript(script, length, parsed_bytecodes, bytecode_len, url, startLine);
 }
 
 void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
@@ -130,10 +131,10 @@ uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* u
   return context_->DumpByteCode(script, length, url, byteLength);
 }
 
-void WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
+bool WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!context_->IsContextValid())
-    return;
-  context_->EvaluateByteCode(bytes, byteLength);
+    return false;
+  return context_->EvaluateByteCode(bytes, byteLength);
 }
 
 std::thread::id WebFPage::currentThread() const {

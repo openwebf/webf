@@ -23,7 +23,7 @@ const String _MIME_X_APPLICATION_JAVASCRIPT = 'application/x-javascript';
 const String _MIME_X_APPLICATION_KBC = 'application/vnd.webf.bc1';
 const String _JAVASCRIPT_MODULE = 'module';
 
-typedef ScriptExecution = void Function(bool async);
+typedef ScriptExecution = Future<void> Function(bool async);
 
 class ScriptRunner {
   ScriptRunner(Document document, int contextId)
@@ -41,7 +41,7 @@ class ScriptRunner {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       final String contentInString = await resolveStringFromData(bundle.data!, preferSync: !async);
-      evaluateScripts(contextId, contentInString, url: bundle.url);
+      await evaluateScripts(contextId, contentInString, url: bundle.url);
     } else if (bundle.isBytecode) {
       evaluateQuickjsByteCode(contextId, bundle.data!);
     } else {
@@ -49,12 +49,12 @@ class ScriptRunner {
     }
   }
 
-  void _execute(List<ScriptExecution> tasks, {bool async = false}) {
+  void _execute(List<ScriptExecution> tasks, {bool async = false}) async {
     List<ScriptExecution> executingTasks = [...tasks];
     tasks.clear();
 
     for (ScriptExecution task in executingTasks) {
-      task(async);
+      await task(async);
     }
   }
 
@@ -77,7 +77,7 @@ class ScriptRunner {
     }
 
     // The bundle execution task.
-    void task(bool async) async {
+    Future<void> task(bool async) async {
       // If bundle is not resolved, should wait for it resolve to prevent the next script running.
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
@@ -139,8 +139,8 @@ class ScriptRunner {
     // Script executing phrase.
     if (shouldAsync) {
       // @TODO: Use requestIdleCallback
-      SchedulerBinding.instance.scheduleFrameCallback((_) {
-        task(shouldAsync);
+      SchedulerBinding.instance.scheduleFrameCallback((_) async {
+        await task(shouldAsync);
       });
     } else {
       scheduleMicrotask(() {

@@ -341,7 +341,7 @@ bool WebFTestContext::evaluateTestScripts(const uint16_t* code,
                                           int startLine) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateJavaScript(code, codeLength, sourceURL, startLine);
+  return context_->EvaluateJavaScript(code, codeLength, nullptr, nullptr, sourceURL, startLine);
 }
 
 bool WebFTestContext::parseTestHTML(const uint16_t* code, size_t codeLength) {

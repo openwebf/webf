@@ -61,7 +61,7 @@ describe('script element', () => {
       };
     });
   }
-  
+
   it('Waiting order for large script loaded', (done) => {
     const scriptLarge = document.createElement('script');
     scriptLarge.src = 'assets:///assets/large-script.js';
@@ -103,6 +103,8 @@ describe('script element', () => {
     Promise.all([
       waitForLoad(scriptA),
       waitForLoad(scriptB),
+      waitForLoad(inlineScriptA),
+      waitForLoad(inlineScriptB)
     ]).then(() => {
       // @ts-ignore
       expect(window.C).toBe(window.A);

@@ -61,7 +61,12 @@ class ExecutingContext {
 
   static ExecutingContext* From(JSContext* ctx);
 
-  bool EvaluateJavaScript(const uint16_t* code, size_t codeLength, const char* sourceURL, int startLine);
+  bool EvaluateJavaScript(const uint16_t* code,
+                          size_t codeLength,
+                          uint8_t** parsed_bytecodes,
+                          uint64_t* bytecode_len,
+                          const char* sourceURL,
+                          int startLine);
   bool EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine);
   bool EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine);
   bool EvaluateByteCode(uint8_t* bytes, size_t byteLength);

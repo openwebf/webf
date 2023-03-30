@@ -39,12 +39,21 @@ class WebFPage final {
   static std::unordered_map<std::string, NativeByteCode> pluginByteCode;
 
   // evaluate JavaScript source codes in standard mode.
-  void evaluateScript(const SharedNativeString* script, const char* url, int startLine);
-  void evaluateScript(const uint16_t* script, size_t length, const char* url, int startLine);
+  bool evaluateScript(const SharedNativeString* script,
+                      uint8_t** parsed_bytecodes,
+                      uint64_t* bytecode_len,
+                      const char* url,
+                      int startLine);
+  bool evaluateScript(const uint16_t* script,
+                      size_t length,
+                      uint8_t** parsed_bytecodes,
+                      uint64_t* bytecode_len,
+                      const char* url,
+                      int startLine);
   bool parseHTML(const char* code, size_t length);
   void evaluateScript(const char* script, size_t length, const char* url, int startLine);
   uint8_t* dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength);
-  void evaluateByteCode(uint8_t* bytes, size_t byteLength);
+  bool evaluateByteCode(uint8_t* bytes, size_t byteLength);
 
   std::thread::id currentThread() const;
 
