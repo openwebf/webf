@@ -1,3 +1,7 @@
+## 0.14.0-beta.7
+
+* feat: invalidate cache when expect errors.
+
 ## 0.14.0-beta.6+3
 
 * fix: fix renderBoxModel can be null.
