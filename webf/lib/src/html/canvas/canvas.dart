@@ -290,7 +290,7 @@ class CanvasElement extends Element {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
     // If not getContext and element is disposed that context is not existed.
     if (painter.context != null) {

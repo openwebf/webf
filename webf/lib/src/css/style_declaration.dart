@@ -579,7 +579,7 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
     target = null;
     _styleChangeListeners.clear();

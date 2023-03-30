@@ -119,7 +119,7 @@ class TextNode extends CharacterData {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
 
     unmountRenderObject();

@@ -375,6 +375,7 @@ class Document extends Node {
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
+      styleDirtyElements.clear();
       return;
     }
     if (styleDirtyElements.any((element) {
@@ -395,7 +396,7 @@ class Document extends Node {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();

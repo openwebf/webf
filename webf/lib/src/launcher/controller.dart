@@ -593,9 +593,9 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
-  void disposeBindingObject(Pointer<NativeBindingObject> pointer) {
+  void disposeBindingObject(Pointer<NativeBindingObject> pointer) async {
     BindingObject? bindingObject = BindingBridge.getBindingObject(pointer);
-    bindingObject?.dispose();
+    await bindingObject?.dispose();
     malloc.free(pointer);
   }
 
