@@ -1094,13 +1094,13 @@ class RenderBoxModel extends RenderBox
 
   /// Find scroll container
   RenderBoxModel? findScrollContainer() {
-    RenderLayoutBox? scrollContainer;
+    RenderBoxModel? scrollContainer;
     AbstractNode? parent = this.parent;
 
     while (parent != null && parent is RenderLayoutBox) {
-      if (parent.isScrollingContentBox) {
+      if (parent.isScrollingContentBox && parent.parent is RenderLayoutBox) {
         // Scroll container should has definite constraints
-        scrollContainer = parent.parent as RenderLayoutBox?;
+        scrollContainer = parent.parent as RenderBoxModel;
         break;
       }
       parent = parent.parent as RenderLayoutBox?;
