@@ -144,7 +144,13 @@ Future<bool> evaluateScripts(int contextId, String code, {String? url, int line 
 
   QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(code);
   if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT && cacheObject.valid && cacheObject.bytes != null) {
-    return evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
+    bool result = evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
+    // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
+    if (!result) {
+      await cacheObject.remove();
+    }
+
+    return result;
   } else {
     Pointer<NativeString> nativeString = stringToNativeString(code);
     Pointer<Utf8> _url = url.toNativeUtf8();
