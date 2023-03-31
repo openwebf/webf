@@ -365,7 +365,8 @@ void ElementSnapshotReader::HandleFailed(const char* error) {
 
 ScriptPromise Element::toBlob(ExceptionState& exception_state) {
   Window* window = GetExecutingContext()->window();
-  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(window->GetBindingProperty(binding_call_methods::kdevicePixelRatio, exception_state));
+  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(
+      window->GetBindingProperty(binding_call_methods::kdevicePixelRatio, exception_state));
   return toBlob(device_pixel_ratio, exception_state);
 }
 
