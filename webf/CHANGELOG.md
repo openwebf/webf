@@ -1,3 +1,8 @@
+## 0.14.0-beta.7+1
+
+* feat: decompress gzip content to caches.
+* fix: fix Element.toBlob() can not default to current pixel_ratio.
+
 ## 0.14.0-beta.7
 
 * feat: invalidate cache when expect errors.
