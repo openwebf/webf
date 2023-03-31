@@ -1,3 +1,7 @@
+## 0.14.0-beta.7+2
+
+* refactor: optimize Element._checkRecalculateStyle() performance.
+
 ## 0.14.0-beta.7+1
 
 * feat: decompress gzip content to caches.
