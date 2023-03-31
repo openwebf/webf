@@ -1886,14 +1886,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (keys.isEmpty || cssMap.values.isEmpty) {
       return false;
     }
-    final rules = cssMap.values.reduce((value, element) => value + element);
-    for (CSSRule rule in rules) {
-      if (rule is! CSSStyleRule) {
-        continue;
-      }
-      for (Selector selector in rule.selectorGroup.selectors) {
-        if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
-          return true;
+    for(final rules in cssMap.values) {
+      for(int i = 0; i < rules.length; i ++) {
+        var rule = rules[i];
+        if (rule is! CSSStyleRule) {
+          continue;
+        }
+        for (Selector selector in rule.selectorGroup.selectors) {
+          if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
+            return true;
+          }
         }
       }
     }
