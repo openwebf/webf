@@ -45,6 +45,7 @@ void main() async {
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
   await startHttpMockServer();
+  sleep(Duration(seconds: 2));
 
   // FIXME: This is a workaround for testcases.
   debugOverridePDefaultStyle({DISPLAY: BLOCK});
