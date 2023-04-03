@@ -60,7 +60,9 @@ mixin CSSTransformMixin on RenderStyle {
     if (_transformMatrix == null && _transform != null) {
       // Illegal transform syntax will return null.
       _transformMatrix = CSSMatrix.computeTransformMatrix(_transform!, this);
-      assert(_transformMatrix!.storage.every((element) => element.isFinite));
+      if (_transformMatrix != null) {
+        assert(_transformMatrix!.storage.every((element) => element.isFinite));
+      }
     }
     return _transformMatrix;
   }
