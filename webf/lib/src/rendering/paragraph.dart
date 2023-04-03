@@ -13,8 +13,28 @@ const String _kEllipsis = '\u2026';
 class WebFRenderTextLine {
   late Rect lineRect = Rect.zero;
   late TextPainter textPainter;
+  late Offset paintOffset = Offset.zero;
+  late double fontHeight = 0;
+  late double leading = 0;
 
   WebFRenderTextLine();
+
+
+  double get paintTop {
+    if (paintOffset.dy > lineRect.top) {
+      return paintOffset.dy + leading/2;
+    }
+    // when lineHeight < fontSize, offset is negative
+    // if (fontHeight != 0 && fontHeight > lineRect.height) {
+    //   return lineRect.top + leading/2;
+    // }
+
+    return lineRect.top + leading/2;
+  }
+
+  double get paintLeft {
+    return lineRect.left + paintOffset.dx;
+  }
 }
 
 
@@ -264,6 +284,11 @@ class WebFRenderParagraph extends RenderBox
     _textPainter.setPlaceholderDimensions(value);
   }
 
+  // Warning this function is high time consuming
+  void markUpdateTextPainter() {
+    _textPainter.markNeedsLayout();
+  }
+
   @override
   bool hitTestSelf(Offset position) => true;
 
@@ -352,8 +377,8 @@ class WebFRenderParagraph extends RenderBox
     for (int i = 0; i < _lineMetrics.length; i++) {
       TextRange range = _textPainter.getLineBoundary(TextPosition(offset: checkOffset));
 
-      List<Object> content = (textSpan as WebFTextSpan).subContent(range.start, range.end);
-      List<WebFTextPlaceHolderSpan> placeHolder = content.whereType<WebFTextPlaceHolderSpan>().toList();
+      List<Object> content = (textSpan as WebfTextSpan).subContent(range.start, range.end);
+      List<WebfTextPlaceHolderSpan> placeHolder = content.whereType<WebfTextPlaceHolderSpan>().toList();
       List<String> stringContent = content.whereType<String>().toList();
 
       double totalLeft = 0;

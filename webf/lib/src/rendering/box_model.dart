@@ -1049,6 +1049,11 @@ class RenderBoxModel extends RenderBox
     return constraints.constrain(borderBoxSize);
   }
 
+  Size wrapOutContentSizeRight (Size contentSize) {
+    Size paddingBoxSize = renderStyle.wrapPaddingSizeRight(contentSize);
+    return renderStyle.wrapBorderSizeRight(paddingBoxSize);
+  }
+
   // The contentSize of layout box
   Size? _contentSize;
   Size get contentSize {

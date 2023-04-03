@@ -1,46 +1,29 @@
-/*
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
- */
-
-
 import 'dart:math' as math;
+import 'dart:math';
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/text.dart';
 
 class LogicInlineBox {
   RenderBox renderObject;
   LogicLineBox? parentLine;
-  LogicInlineBox? next;
-  LogicInlineBox? pre;
-  bool isDirty;
 
-  LogicInlineBox({required this.renderObject, this.parentLine, this.isDirty = true});
+  LogicInlineBox({required this.renderObject, this.parentLine});
 
-  Size _getInlineBoxScrollableSize() {
-    Size scrollableSize = renderObject.size;
-    if (renderObject is RenderBoxModel) {
-      RenderStyle childRenderStyle = (renderObject as RenderBoxModel).renderStyle;
-      CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
-      CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
-      // Only non scroll container need to use scrollable size, otherwise use its own size.
-      if (overflowX == CSSOverflowType.visible && overflowY == CSSOverflowType.visible) {
-        scrollableSize = (renderObject as RenderBoxModel).scrollableSize;
-      }
+  bool get happenLineJoin {
+    if(renderObject is RenderFlowLayout) {
+      return (renderObject as RenderFlowLayout).happenLineJoin();
     }
-    return scrollableSize;
+    if(renderObject is RenderTextBox) {
+      return (renderObject as RenderTextBox).happenLineJoin();
+    }
+    return false;
   }
 
-  bool isLineHeightValid() {
-    if (renderObject is RenderTextBox) {
-      return true;
-    } else if (renderObject is RenderBoxModel) {
-      CSSDisplay? childDisplay = (renderObject as RenderBoxModel).renderStyle.display;
-      return childDisplay == CSSDisplay.inline ||
-          childDisplay == CSSDisplay.inlineBlock ||
-          childDisplay == CSSDisplay.inlineFlex;
+  bool get isBlockLevel {
+    if(renderObject is RenderFlowLayout) {
+      return (renderObject as RenderFlowLayout).isBlockLevel(renderObject);
     }
     return false;
   }
@@ -106,16 +89,30 @@ class LogicInlineBox {
 
   double get height => renderObject.size.height;
 
-  double getMainAxisExtent() {
-    double marginHorizontal = 0;
+  Size _getInlineBoxScrollableSize() {
+    Size scrollableSize = renderObject.size;
     if (renderObject is RenderBoxModel) {
-      marginHorizontal = (renderObject as RenderBoxModel).renderStyle.marginLeft.computedValue +
-          (renderObject as RenderBoxModel).renderStyle.marginRight.computedValue;
+      RenderStyle childRenderStyle = (renderObject as RenderBoxModel).renderStyle;
+      CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
+      CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
+      // Only non scroll container need to use scrollable size, otherwise use its own size.
+      if (overflowX == CSSOverflowType.visible && overflowY == CSSOverflowType.visible) {
+        scrollableSize = (renderObject as RenderBoxModel).scrollableSize;
+      }
     }
+    return scrollableSize;
+  }
 
-    Size childSize = getChildSize() ?? Size.zero;
-
-    return childSize.width + marginHorizontal;
+  bool isLineHeightValid() {
+    if (renderObject is RenderTextBox) {
+      return true;
+    } else if (renderObject is RenderBoxModel) {
+      CSSDisplay? childDisplay = (renderObject as RenderBoxModel).renderStyle.display;
+      return childDisplay == CSSDisplay.inline ||
+          childDisplay == CSSDisplay.inlineBlock ||
+          childDisplay == CSSDisplay.inlineFlex;
+    }
+    return false;
   }
 
   double getCrossAxisExtent(CSSLengthValue? lineHeightFromParent, double? marginVertical) {
@@ -164,11 +161,11 @@ class LogicInlineBox {
         : marginTop + childSize!.height;
     // When baseline of children not found, use boundary of margin bottom as baseline.
     double extentAboveBaseline = childAscent ?? baseline;
-
+    extentAboveBaseline = max(extentAboveBaseline, 0);
     return extentAboveBaseline;
   }
 
-  void applyRelativeOffset(Offset? relativeOffset, double outLineMainSize, double outLineCrossSize) {
+  void applyRelativeOffset(Offset? relativeOffset, double outLineMainSize, double leadingSpace) {
     RenderLayoutParentData? boxParentData = renderObject.parentData as RenderLayoutParentData?;
 
     if (boxParentData != null) {
@@ -195,7 +192,7 @@ class LogicTextInlineBox extends LogicInlineBox {
   Rect logicRect;
 
   LogicTextInlineBox({required this.logicRect, required RenderTextBox renderObject, parentLine, isDirty = true})
-      : super(renderObject: renderObject, parentLine: parentLine, isDirty: isDirty);
+      : super(renderObject: renderObject, parentLine: parentLine);
 
   get isLineBreak {
     return false;
@@ -240,7 +237,7 @@ class LogicTextInlineBox extends LogicInlineBox {
   }
 
   @override
-  void applyRelativeOffset(Offset? relativeOffset, double outLineMainSize, double outLineCrossSize) {
+  void applyRelativeOffset(Offset? relativeOffset, double outLineMainSize, double leadingSpace) {
     RenderLayoutParentData? boxParentData = renderObject.parentData as RenderLayoutParentData?;
     if (boxParentData != null) {
       int index = (renderObject as RenderTextBox).textInLineBoxes.findIndex(this);
@@ -249,39 +246,189 @@ class LogicTextInlineBox extends LogicInlineBox {
         if (index == 0) {
           boxParentData.offset = Offset(outLineMainSize, relativeOffset.dy);
         }
-        // for every LogicTextInlineBox update offset
-        // logicRect = Rect.fromLTWH(relativeOffsetX, relativeOffsetY, logicRect.width, logicRect.height);
+        // paint logic not contain leading space, text paint use this offset, need - parent.offset.dy
+        (renderObject as RenderTextBox)
+            .updateRenderTextLineOffset(index, Offset(leadingSpace, relativeOffset.dy - boxParentData.offset.dy));
       }
     }
   }
 }
 
 class LogicLineBox {
+  LogicLineBox({
+    required this.renderObject,
+    this.breakForExtentShort = false,
+    required double mainAxisExtent,
+    required this.crossAxisExtent,
+    required this.baselineExtent,
+    required this.baselineBelowExtent,
+  }) {
+    _mainAxisExtent = mainAxisExtent;
+  }
+  bool? isFirst;
   RenderBox renderObject;
-  LogicLineBox? next;
-  LogicLineBox? pre;
-  bool isFirstLine;
-  bool isLastLine;
   List<LogicInlineBox> inlineBoxes = [];
-  double mainAxisExtent;
   double crossAxisExtent;
   double baselineExtent;
   double baselineBelowExtent;
 
-  LogicLineBox({
-    required this.renderObject,
-    this.isFirstLine = false,
-    this.isLastLine = false,
-    required this.mainAxisExtent,
-    required this.crossAxisExtent,
-    required this.baselineExtent,
-    required this.baselineBelowExtent,
-  });
+  // TODO this value effect need optimize
+  double firstLineLeftExtent = 0;
+  bool breakForExtentShort;
 
-  appendInlineBox(LogicInlineBox box,double childMainAxisExtent, double childCrossAxisExtent, List<double>? baselineSize) {
+  double _mainAxisExtent = 0;
+
+  int get innerLineLength {
+    if (inlineBoxes.isEmpty) {
+      return 0;
+    }
+
+    /// innerLineLength is dynamic calculate, if this is firstLine and firstLineLeftExtent > 0
+    /// and content size is small which will join to outer pre-line
+    bool singleInlineBoxSmallSize = inlineBoxes.length == 1
+        && !inlineBoxes.first.happenLineJoin
+        && !inlineBoxes.first.isBlockLevel;
+
+    if((singleInlineBoxSmallSize || (inlineBoxes.length > 1)) && firstLineLeftExtent > 0 && (isFirst ?? false)) {
+      return 0;
+    }
+
+    List<int> list = inlineBoxes.map<int>((box) {
+      if (box.renderObject is RenderFlowLayout) {
+        RenderFlowLayout render =  (box.renderObject as RenderFlowLayout);
+        int length = render.lineBoxes.innerLineLength;
+        if(render.happenLineJoin()) {
+          return render.lineBoxes.innerLineLength - 1;
+        }
+        return length;
+      }
+      return 1;
+    }).toList();
+
+    return list.reduce(max);
+  }
+
+  LogicInlineBox? get first {
+    return inlineBoxes.isNotEmpty ? inlineBoxes.first : null;
+  }
+
+  LogicInlineBox? get last {
+    return inlineBoxes.isNotEmpty ? inlineBoxes.last : null;
+  }
+
+  // This value use for calculate RenderObject size.
+  double get mainAxisExtent {
+    return _mainAxisExtent + firstLineLeftExtent;
+  }
+
+  bool get happenLineJoin {
+    if(inlineBoxes.isEmpty) {
+      return false;
+    }
+
+    return inlineBoxes.first.happenLineJoin;
+  }
+
+  void set mainAxisExtent(double value) {
+    _mainAxisExtent = value;
+  }
+
+  // This value use for calculate break line、line join、set children offset
+  double get mainAxisExtentWithoutLineJoin {
+    return _mainAxisExtent;
+  }
+
+  double defaultLastLineMainExtent() {
+    double lineMainExtent = mainAxisExtent;
+    if (last?.renderObject != null &&
+        last?.renderObject is RenderFlowLayout &&
+        (last!.renderObject as RenderFlowLayout).happenLineJoin()) {
+      lineMainExtent = mainAxisExtentWithoutLineJoin;
+    }
+    return lineMainExtent;
+  }
+
+  double findLastLineRenderMainExtent() {
+    LogicLineBox? nextLineBox = null;
+    double mainAxisExtentUse = mainAxisExtent;
+    if (inlineBoxes.isEmpty) {
+      return mainAxisExtentUse;
+    }
+    nextLineBox = this;
+    do {
+      RenderObject theLineLastRender = nextLineBox!.inlineBoxes.last.renderObject;
+      if (nextLineBox.inlineBoxes.length == 1 && theLineLastRender is RenderFlowLayout) {
+        nextLineBox = theLineLastRender.lineBoxes.last;
+        continue;
+      }
+      if (theLineLastRender is RenderFlowLayout && theLineLastRender.happenLineJoin()) {
+        mainAxisExtentUse = nextLineBox.mainAxisExtentWithoutLineJoin;
+        break;
+      }
+      if (theLineLastRender is RenderTextBox && theLineLastRender.textInLineBoxes.length > 1) {
+        mainAxisExtentUse = theLineLastRender.textInLineBoxes.lastChild.width;
+        break;
+      }
+      mainAxisExtentUse = nextLineBox.mainAxisExtent;
+      break;
+    } while (true);
+
+    return mainAxisExtentUse;
+  }
+
+  int get length {
+    return inlineBoxes.length;
+  }
+
+  double findLastLineJoinCrossAxisExtent() {
+    LogicLineBox? nextLineBox = null;
+    double crossAxisExtentLast = crossAxisExtent;
+    if (inlineBoxes.isEmpty) {
+      return crossAxisExtentLast;
+    }
+    nextLineBox = this;
+    do {
+      RenderObject theLineLastRender = nextLineBox!.inlineBoxes.last.renderObject;
+      if (theLineLastRender is RenderFlowLayout) {
+        RenderFlowLayout ref = theLineLastRender;
+        if (ref.isInlineBlockOrInlineFlex(ref)) {
+          crossAxisExtentLast = ref.lineBoxes.last.crossAxisExtent;
+          break;
+        }
+        if (ref.lineBoxes.isEmpty) {
+          if (ref.boxSize != Size.zero && (ref.boxSize?.height ?? 0) > 0) {
+            crossAxisExtentLast = ref.boxSize?.height ?? 0;
+          } else {
+            // the last render size == zero, need use the line cross extent
+            crossAxisExtentLast = nextLineBox.crossAxisExtent;
+          }
+          break;
+        }
+
+        if (ref.lineBoxes.length >= 1) {
+          nextLineBox = ref.lineBoxes.last;
+          continue;
+        }
+      }
+      if (theLineLastRender is RenderTextBox) {
+        if (theLineLastRender.textInLineBoxes.length > 1) {
+          crossAxisExtentLast = theLineLastRender.textInLineBoxes.lastChild.height;
+        } else {
+          crossAxisExtentLast = nextLineBox.crossAxisExtent;
+        }
+        break;
+      }
+      crossAxisExtentLast = nextLineBox.crossAxisExtent;
+      break;
+    } while (true);
+    return crossAxisExtentLast;
+  }
+
+  appendInlineBox(
+      LogicInlineBox box, double childMainAxisExtent, double childCrossAxisExtent, List<double>? baselineSize) {
     box.parentLine = this;
     inlineBoxes.add(box);
-    mainAxisExtent += childMainAxisExtent;
+    mainAxisExtent = _mainAxisExtent + childMainAxisExtent;
     List<double> newCrossAxisSize = calculateMaxCrossAxisExtent(
         crossAxisExtent, baselineExtent, baselineBelowExtent, childCrossAxisExtent, baselineSize);
     crossAxisExtent = newCrossAxisSize[0];
@@ -355,7 +502,7 @@ class LogicLineBox {
     double maxWidth = 0;
     for (int i = 0; i < inlineBoxes.length; i++) {
       LogicInlineBox box = inlineBoxes[i];
-      double width = preSiblingsMainSize + box.width + box.relativeOffsetX;
+      double width = preSiblingsMainSize + box.scrollableWidth + box.relativeOffsetX;
       if (width > maxWidth) {
         maxWidth = width;
       }
@@ -368,11 +515,15 @@ class LogicLineBox {
     double maxHeight = 0;
     for (int i = 0; i < inlineBoxes.length; i++) {
       LogicInlineBox box = inlineBoxes[i];
-      double height = box.height + box.relativeOffsetY;
+      double height = box.scrollableHeight + box.relativeOffsetY;
       if (height > maxHeight) {
         maxHeight = height;
       }
     }
     return maxHeight;
+  }
+
+  void dispose() {
+    inlineBoxes.clear();
   }
 }

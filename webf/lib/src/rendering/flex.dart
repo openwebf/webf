@@ -773,7 +773,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       } else if (child is RenderBoxModel) {
         childConstraints = child.getConstraints();
       } else if (child is RenderTextBox) {
-        childConstraints = child.getConstraints();
+        childConstraints = child.getConstraints(webfTextMaxLines);
       } else {
         childConstraints = BoxConstraints();
       }

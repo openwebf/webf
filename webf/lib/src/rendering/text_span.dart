@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui show ParagraphBuilder, PlaceholderAlignment, Locale;
 
-class WebFTextSpan extends TextSpan {
-  WebFTextSpan(
+class WebfTextSpan extends TextSpan {
+  WebfTextSpan(
       {String? text,
         List<InlineSpan>? children,
         GestureRecognizer? recognizer,
@@ -56,14 +56,17 @@ class WebFTextSpan extends TextSpan {
       int subEnd = end - prePlaceHolderLength;
       content.add(text!.substring(subStart, subEnd));
     }
-
     return content;
   }
 
-  WebFTextPlaceHolderSpan? firstPlaceHolderSpan() {
+  int get contentLength {
+    return (text?.length ?? 0) + (preInsertChildren()?.length ?? 0);
+  }
+
+  WebfTextPlaceHolderSpan? firstPlaceHolderSpan() {
     List<InlineSpan>? children = preInsertChildren();
     if (children != null && children.isNotEmpty) {
-      return children[0] as WebFTextPlaceHolderSpan;
+      return children[0] as WebfTextPlaceHolderSpan;
     }
     return null;
   }
@@ -119,8 +122,8 @@ class WebFTextSpan extends TextSpan {
   }
 }
 
-class WebFTextPlaceHolderSpan extends PlaceholderSpan {
-  WebFTextPlaceHolderSpan({
+class WebfTextPlaceHolderSpan extends PlaceholderSpan {
+  WebfTextPlaceHolderSpan({
     ui.PlaceholderAlignment alignment = ui.PlaceholderAlignment.bottom,
     TextBaseline? baseline,
     TextStyle? style,
@@ -194,7 +197,7 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
     if (identical(this, other)) return RenderComparison.identical;
     if (other.runtimeType != runtimeType) return RenderComparison.layout;
     if ((style == null) != (other.style == null)) return RenderComparison.layout;
-    final WebFTextPlaceHolderSpan typedOther = other as WebFTextPlaceHolderSpan;
+    final WebfTextPlaceHolderSpan typedOther = other as WebfTextPlaceHolderSpan;
     if (alignment != typedOther.alignment) {
       return RenderComparison.layout;
     }
@@ -212,7 +215,7 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
     if (identical(this, other)) return true;
     if (other.runtimeType != runtimeType) return false;
     if (super != other) return false;
-    return other is WebFTextPlaceHolderSpan && other.alignment == alignment && other.baseline == baseline;
+    return other is WebfTextPlaceHolderSpan && other.alignment == alignment && other.baseline == baseline;
   }
 
   @override

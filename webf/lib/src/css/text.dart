@@ -476,7 +476,8 @@ mixin CSSTextMixin on RenderStyle {
     CSSRenderStyle renderStyle, {
     Color? color,
     double? height,
-  }) {
+    TextSpan? oldTextSpan,
+}) {
     // Creates a new TextStyle object.
     //   color: The color to use when painting the text. If this is specified, foreground must be null.
     //   decoration: The decorations to paint near the text (e.g., an underline).
@@ -510,7 +511,7 @@ mixin CSSTextMixin on RenderStyle {
         background: CSSText.getBackground(),
         foreground: CSSText.getForeground(),
         height: height);
-    return WebFTextSpan(text: CSSText.toCharacterBreakStr(text), style: textStyle, children: []);
+    return WebfTextSpan(text: CSSText.toCharacterBreakStr(text), style: textStyle, children: []);
   }
 }
 

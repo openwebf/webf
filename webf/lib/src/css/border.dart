@@ -42,6 +42,10 @@ mixin CSSBorderMixin on RenderStyle {
   Size wrapBorderSize(Size innerSize) {
     return Size(border.left + innerSize.width + border.right, border.top + innerSize.height + border.bottom);
   }
+  Size wrapBorderSizeRight(Size innerSize) {
+    return Size(innerSize.width + border.right,
+        border.top + innerSize.height + border.bottom);
+  }
 
   BoxConstraints deflateBorderConstraints(BoxConstraints constraints) {
     return constraints.deflate(border);
