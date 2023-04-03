@@ -68,9 +68,9 @@ static void unlink_callback(JSThreadState* ts, JSFrameCallback* th) {
 
 NativeValue* TEST_invokeModule(void* callbackContext,
                                int32_t contextId,
-                               NativeString* moduleName,
-                               NativeString* method,
-                               NativeString* params,
+                               SharedNativeString* moduleName,
+                               SharedNativeString* method,
+                               SharedNativeString* params,
                                AsyncModuleCallback callback) {
   std::string module = nativeStringToStdString(moduleName);
 
@@ -170,7 +170,7 @@ double TEST_devicePixelRatio(int32_t contextId) {
   return 1.0;
 }
 
-NativeString* TEST_platformBrightness(int32_t contextId) {
+SharedNativeString* TEST_platformBrightness(int32_t contextId) {
   return nullptr;
 }
 
@@ -186,6 +186,10 @@ void TEST_toBlob(void* ptr,
 void TEST_flushUICommand(int32_t contextId) {
   auto* page = test_context_map[contextId]->page();
   clearUICommandItems(reinterpret_cast<void*>(page));
+}
+
+void TEST_CreateBindingObject(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc) {
+
 }
 
 void TEST_onJsLog(int32_t contextId, int32_t level, const char*) {}
@@ -292,7 +296,7 @@ void TEST_onMatchImageSnapshot(void* callbackContext,
                                int32_t contextId,
                                uint8_t* bytes,
                                int32_t length,
-                               NativeString* name,
+                               SharedNativeString* name,
                                MatchImageSnapshotCallback callback) {
   callback(callbackContext, contextId, 1, nullptr);
 }
@@ -303,21 +307,20 @@ const char* TEST_environment() {
 
 void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 
-void TEST_simulateInputText(NativeString* nativeString) {}
+void TEST_simulateInputText(SharedNativeString* nativeString) {}
 
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
-  std::vector<uint64_t> mockMethods{
-      reinterpret_cast<uint64_t>(TEST_invokeModule),
-      reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
-      reinterpret_cast<uint64_t>(TEST_reloadApp),
-      reinterpret_cast<uint64_t>(TEST_setTimeout),
-      reinterpret_cast<uint64_t>(TEST_setInterval),
-      reinterpret_cast<uint64_t>(TEST_clearTimeout),
-      reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
-      reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
-      reinterpret_cast<uint64_t>(TEST_toBlob),
-      reinterpret_cast<uint64_t>(TEST_flushUICommand),
-  };
+  std::vector<uint64_t> mockMethods{reinterpret_cast<uint64_t>(TEST_invokeModule),
+                                    reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
+                                    reinterpret_cast<uint64_t>(TEST_reloadApp),
+                                    reinterpret_cast<uint64_t>(TEST_setTimeout),
+                                    reinterpret_cast<uint64_t>(TEST_setInterval),
+                                    reinterpret_cast<uint64_t>(TEST_clearTimeout),
+                                    reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_toBlob),
+                                    reinterpret_cast<uint64_t>(TEST_flushUICommand),
+                                    reinterpret_cast<uint64_t>(TEST_CreateBindingObject)};
 
 #if ENABLE_PROFILE
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_getPerformanceEntries));

@@ -20,6 +20,7 @@ webf::DartMethodPointer::DartMethodPointer(const uint64_t* dart_methods, int32_t
   cancelAnimationFrame = reinterpret_cast<CancelAnimationFrame>(dart_methods[i++]);
   toBlob = reinterpret_cast<ToBlob>(dart_methods[i++]);
   flushUICommand = reinterpret_cast<FlushUICommand>(dart_methods[i++]);
+  create_binding_object = reinterpret_cast<CreateBindingObject>(dart_methods[i++]);
 
 #if ENABLE_PROFILE
   dartMethodPointer->getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(dart_methods[i++]);

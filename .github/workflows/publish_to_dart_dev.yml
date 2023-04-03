@@ -15,14 +15,18 @@ jobs:
   build_linux_binary:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v2
         with:
           node-version: "16"
       - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: "3.22.x"
-
+      - run: |
+          sudo apt-get update
+          sudo apt-get install chrpath ninja-build pkg-config -y
       - run: npm i
       - run: npm run build:bridge:linux:release
       - uses: actions/upload-artifact@v2
@@ -32,7 +36,9 @@ jobs:
   build_macos_binary:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: "16"
@@ -50,7 +56,9 @@ jobs:
   build_ios_binary:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: "16"
@@ -68,7 +76,9 @@ jobs:
   build_android_binary:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v2
       with:
         node-version: "16"
@@ -93,7 +103,9 @@ jobs:
     needs: [build_linux_binary, build_android_binary, build_ios_binary, build_macos_binary]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: subosito/flutter-action@v2
       with:
         flutter-version: ${{ env.flutterVersion }}

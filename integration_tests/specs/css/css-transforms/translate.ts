@@ -160,7 +160,7 @@ describe('Transform translate', () => {
        done();
     });
   });
-  
+
   it('should be scrollWidth equal clientWidth', async () => {
     let div2;
     let div;

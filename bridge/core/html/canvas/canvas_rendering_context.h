@@ -10,12 +10,12 @@
 
 namespace webf {
 
-class CanvasRenderingContext : public ScriptWrappable {
+class CanvasRenderingContext : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
   using ImplType = CanvasRenderingContext*;
-  explicit CanvasRenderingContext(ExecutingContext* context);
+  explicit CanvasRenderingContext(JSContext* ctx, NativeBindingObject* native_binding_object);
 
   virtual bool IsCanvas2d() const;
 

@@ -7,11 +7,14 @@
 
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/wrapper_type_info.h"
+#include "core/css/computed_css_style_declaration.h"
 #include "core/dom/events/event_target.h"
 #include "qjs_scroll_to_options.h"
 #include "screen.h"
 
 namespace webf {
+
+class Element;
 
 class Window : public EventTargetWithInlineData {
   DEFINE_WRAPPERTYPEINFO();
@@ -29,6 +32,9 @@ class Window : public EventTargetWithInlineData {
   [[nodiscard]] const Window* self() const { return this; }
   [[nodiscard]] const Window* parent() const { return this; }
 
+  AtomicString btoa(const AtomicString& source, ExceptionState& exception_state);
+  AtomicString atob(const AtomicString& source, ExceptionState& exception_state);
+
   void scroll(ExceptionState& exception_state);
   void scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
   void scroll(double x, double y, ExceptionState& exception_state);
@@ -41,6 +47,11 @@ class Window : public EventTargetWithInlineData {
 
   void postMessage(const ScriptValue& message, ExceptionState& exception_state);
   void postMessage(const ScriptValue& message, const AtomicString& target_origin, ExceptionState& exception_state);
+
+  ComputedCssStyleDeclaration* getComputedStyle(Element* element, ExceptionState& exception_state);
+  ComputedCssStyleDeclaration* getComputedStyle(Element* element,
+                                                const AtomicString& pseudo_elt,
+                                                ExceptionState& exception_state);
 
   double requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState);
   void cancelAnimationFrame(double request_id, ExceptionState& exception_state);

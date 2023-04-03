@@ -13,7 +13,7 @@ class HTMLUnknownElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  explicit HTMLUnknownElement(const AtomicString&, Document& document);
+  explicit HTMLUnknownElement(const AtomicString&, Document* document);
 
   bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 

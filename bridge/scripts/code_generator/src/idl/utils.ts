@@ -14,8 +14,14 @@ export function addIndent(str: String, space: number) {
 
 export function getClassName(blob: IDLBlob) {
   let raw = camelCase(blob.filename[4].toUpperCase() + blob.filename.slice(5));
-
+  if (raw.slice(0, 3) == 'dom') {
+    return 'DOM' + raw.slice(3);
+  }
   if (raw.slice(0, 4) == 'html') {
+    // Legacy support names.
+    if (raw === 'htmlIframeElement') {
+      return `HTMLIFrameElement`;
+    }
     return 'HTML' + raw.slice(4);
   }
 

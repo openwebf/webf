@@ -17,6 +17,14 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT supported OUTPUT error)
+  if( supported )
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+  endif()
+endif()
+
 execute_process(
   COMMAND bash "-c" "npm install"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
@@ -120,6 +128,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     OUTPUT_VARIABLE QUICKJS_VERSION
   )
 
+  add_library(modb STATIC
+    third_party/modp_b64/modp_b64.cc
+  )
+
   list(APPEND QUICK_JS_SOURCE
     third_party/quickjs/src/libbf.c
     third_party/quickjs/src/cutils.c
@@ -138,6 +150,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/convertion.c
     third_party/quickjs/src/core/runtime.c
     third_party/quickjs/src/core/module.c
+    third_party/quickjs/src/core/ic.c
     third_party/quickjs/src/core/builtins/js-array.c
     third_party/quickjs/src/core/builtins/js-async-function.c
     third_party/quickjs/src/core/builtins/js-async-generator.c
@@ -162,16 +175,23 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-symbol.c
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
+
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
   endif()
 
-  target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+  set(MI_OVERRIDE OFF)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
+  target_link_libraries(quickjs mimalloc-static)
 
+  target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
+  list(APPEND BRIDGE_LINK_LIBS modb)
 
   list(APPEND BRIDGE_SOURCE
     # Binding files
@@ -195,6 +215,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/exception_state.cc
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
+    bindings/qjs/union_base.cc
     # Core sources
     core/executing_context.cc
     core/script_state.cc
@@ -222,7 +243,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_mark.cc
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
-    core/css/legacy/css_style_declaration.cc
+    core/css/css_style_declaration.cc
+    core/css/inline_css_style_declaration.cc
+    core/css/computed_css_style_declaration.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
@@ -243,6 +266,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/parent_node.cc
     core/dom/element_data.cc
     core/dom/document.cc
+    core/dom/dom_token_list.cc
+    core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
     core/dom/node_data.cc
     core/dom/document_fragment.cc
@@ -278,18 +303,22 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_anchor_element.cc
     core/html/html_image_element.cc
     core/html/html_script_element.cc
+    core/html/html_iframe_element.cc
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
     core/html/image.cc
     core/html/canvas/html_canvas_element.cc
     core/html/canvas/canvas_rendering_context.cc
     core/html/canvas/canvas_rendering_context_2d.cc
+    core/html/canvas/canvas_gradient.cc
+    core/html/canvas/canvas_pattern.cc
+    core/geometry/dom_matrix.cc
+    core/geometry/dom_matrix_readonly.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
     # Legacy implements, should remove them in the future.
-    core/dom/legacy/space_split_string.cc
     core/dom/legacy/element_attributes.cc
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
@@ -349,12 +378,15 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_node.cc
     out/qjs_document.cc
     out/qjs_element.cc
+    out/qjs_dom_token_list.cc
     out/qjs_element_attributes.cc
     out/qjs_character_data.cc
     out/qjs_comment.cc
     out/qjs_document_fragment.cc
     out/qjs_bounding_client_rect.cc
     out/qjs_css_style_declaration.cc
+    out/qjs_inline_css_style_declaration.cc
+    out/qjs_computed_css_style_declaration.cc
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc
@@ -371,12 +403,20 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_body_element.cc
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
+    out/qjs_html_iframe_element.cc
     out/qjs_html_canvas_element.cc
     out/qjs_html_link_element.cc
     out/qjs_image.cc
     out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc
     out/qjs_canvas_rendering_context.cc
+    out/qjs_canvas_gradient.cc
+    out/qjs_canvas_pattern.cc
+    out/qjs_dom_matrix.cc
+    out/qjs_dom_matrix_readonly.cc
+    out/qjs_union_dom_string_sequencedouble.cc
+    out/qjs_unionhtml_image_elementhtml_canvas_element.cc
+    out/qjs_union_dom_stringcanvas_gradient.cc
     out/canvas_types.cc
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc
@@ -401,6 +441,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/defined_properties.cc
     out/defined_properties_initializer.cc
     out/element_attribute_names.cc
+    out/element_namespace_uris.cc
     )
 
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
@@ -434,6 +475,7 @@ if (${IS_ANDROID})
 elseif(${IS_IOS})
   add_definitions(-DIS_IOS=1)
 endif()
+
 
 ### webf
 target_include_directories(webf PRIVATE

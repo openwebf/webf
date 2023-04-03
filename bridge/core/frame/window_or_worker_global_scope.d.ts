@@ -10,4 +10,10 @@ declare const clearTimeout: (handle: double) => void;
 // @ts-ignore
 declare const clearInterval: (handle: double) => void;
 
+// @ts-ignore
+
+declare const __gc__: () => void;
+
+declare const __memory_usage__: () => any;
+
 

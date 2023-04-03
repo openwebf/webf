@@ -18,6 +18,7 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
+#include "element_namespace_uris.h"
 #include "element_traversal.h"
 #include "event_factory.h"
 #include "foundation/ascii_types.h"
@@ -33,32 +34,73 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
 
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateDocument,
-                                                       (void*)bindingObject());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCreateDocument, nullptr, (void*)bindingObject(),
+                                                       nullptr);
 }
 
+// https://dom.spec.whatwg.org/#dom-document-createelement
 Element* Document::createElement(const AtomicString& name, ExceptionState& exception_state) {
-  if (!IsValidName(name)) {
-    exception_state.ThrowException(ctx(), ErrorType::InternalError,
-                                   "The tag name provided ('" + name.ToStdString(ctx()) + "') is not a valid name.");
+  const AtomicString& local_name = name.ToLowerIfNecessary(ctx());
+  if (!IsValidName(local_name)) {
+    exception_state.ThrowException(
+        ctx(), ErrorType::InternalError,
+        "The tag name provided ('" + local_name.ToStdString(ctx()) + "') is not a valid name.");
     return nullptr;
   }
 
-  if (auto* element = HTMLElementFactory::Create(name, *this)) {
+  if (auto* element = HTMLElementFactory::Create(local_name, *this)) {
     return element;
   }
 
-  if (WidgetElement::IsValidName(name)) {
-    return MakeGarbageCollected<WidgetElement>(name, this);
+  if (WidgetElement::IsValidName(local_name)) {
+    return MakeGarbageCollected<WidgetElement>(local_name, this);
   }
 
-  return MakeGarbageCollected<HTMLUnknownElement>(name, *this);
+  return MakeGarbageCollected<HTMLUnknownElement>(local_name, this);
 }
 
 Element* Document::createElement(const AtomicString& name,
                                  const ScriptValue& options,
                                  ExceptionState& exception_state) {
   return createElement(name, exception_state);
+}
+
+Element* Document::createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state) {
+  // Empty string '' is the same as null
+  const AtomicString& _uri = uri.IsEmpty() ? AtomicString::Null() : uri;
+  if (_uri == element_namespace_uris::khtml) {
+    return createElement(name, exception_state);
+  }
+
+  // TODO: parse `name` to `prefix` & `qualified_name`.
+  // Why not implement it now:
+  // 1. The developers used `prefix:qualified_name` format are very little.
+  // 2. It's so troublesome to implement `split` for `AtomicString`.
+  //    https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/core/dom/document.cc;l=6757;drc=b2f4228f4a55da2dc5f19edd08bd98d9735c311b
+  // 3. It's too slow for parsing. I don't think which is a good design for webf needs to implement.
+  // So I assign `name` to `qualified_name` and assign `prefix` to `null`.
+  const AtomicString prefix = AtomicString::Null();
+  const AtomicString& qualified_name = name;
+
+  if (!IsValidName(qualified_name)) {
+    exception_state.ThrowException(
+        ctx(), ErrorType::InternalError,
+        "The tag name provided ('" + qualified_name.ToStdString(ctx()) + "') is not a valid name.");
+    return nullptr;
+  }
+
+  if (_uri == element_namespace_uris::ksvg) {
+    // TODO: add SVG in next commits
+  }
+
+  return MakeGarbageCollected<Element>(_uri, qualified_name, prefix, this);
+}
+
+Element* Document::createElementNS(const AtomicString& uri,
+                                   const AtomicString& name,
+                                   const ScriptValue& options,
+                                   ExceptionState& exception_state) {
+  return createElementNS(uri, name, exception_state);
 }
 
 Text* Document::createTextNode(const AtomicString& value, ExceptionState& exception_state) {
@@ -69,12 +111,8 @@ DocumentFragment* Document::createDocumentFragment(ExceptionState& exception_sta
   return DocumentFragment::Create(*this);
 }
 
-Comment* Document::createComment(ExceptionState& exception_state) {
-  return Comment::Create(*this);
-}
-
 Comment* Document::createComment(const AtomicString& data, ExceptionState& exception_state) {
-  return Comment::Create(*this);
+  return Comment::Create(*this, data);
 }
 
 Event* Document::createEvent(const AtomicString& type, ExceptionState& exception_state) {
@@ -89,8 +127,8 @@ std::string Document::nodeName() const {
   return "#document";
 }
 
-std::string Document::nodeValue() const {
-  return "";
+AtomicString Document::nodeValue() const {
+  return AtomicString::Null();
 }
 
 Node::NodeType Document::nodeType() const {

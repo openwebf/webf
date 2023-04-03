@@ -41,7 +41,7 @@ TEST(Node, nodeName) {
       "let div = document.createElement('div');"
       "let text = document.createTextNode('helloworld');"
       "let fragment = document.createDocumentFragment();"
-      "let comment = document.createComment();"
+      "let comment = document.createComment('');"
       "console.log(div.nodeName, text.nodeName, fragment.nodeName, comment.nodeName, document.nodeName)";
   bridge->evaluateScript(code, strlen(code), "vm://", 0);
 

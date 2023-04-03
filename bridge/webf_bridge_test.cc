@@ -18,8 +18,8 @@ void* initTestFramework(void* page_) {
 
 int8_t evaluateTestScripts(void* testContext, void* code, const char* bundleFilename, int startLine) {
   return reinterpret_cast<webf::WebFTestContext*>(testContext)
-      ->evaluateTestScripts(static_cast<webf::NativeString*>(code)->string(),
-                            static_cast<webf::NativeString*>(code)->length(), bundleFilename, startLine);
+      ->evaluateTestScripts(static_cast<webf::SharedNativeString*>(code)->string(),
+                            static_cast<webf::SharedNativeString*>(code)->length(), bundleFilename, startLine);
 }
 
 void executeTest(void* testContext, ExecuteCallback executeCallback) {

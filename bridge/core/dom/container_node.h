@@ -49,7 +49,7 @@ class ContainerNode : public Node {
 
   void CloneChildNodesFrom(const ContainerNode&, CloneChildrenFlag);
 
-  std::string nodeValue() const override;
+  AtomicString nodeValue() const override;
 
   virtual bool ChildrenCanHaveStyle() const { return true; }
 

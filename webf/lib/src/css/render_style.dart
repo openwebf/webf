@@ -58,19 +58,19 @@ abstract class RenderStyle {
   CSSLengthValue? get borderRightWidth;
   CSSLengthValue? get borderBottomWidth;
   CSSLengthValue? get borderLeftWidth;
-  BorderStyle get borderLeftStyle;
-  BorderStyle get borderRightStyle;
-  BorderStyle get borderTopStyle;
-  BorderStyle get borderBottomStyle;
+  CSSBorderStyleType get borderLeftStyle;
+  CSSBorderStyleType get borderRightStyle;
+  CSSBorderStyleType get borderTopStyle;
+  CSSBorderStyleType get borderBottomStyle;
   CSSLengthValue get effectiveBorderLeftWidth;
   CSSLengthValue get effectiveBorderRightWidth;
   CSSLengthValue get effectiveBorderTopWidth;
   CSSLengthValue get effectiveBorderBottomWidth;
   double get contentMaxConstraintsWidth;
-  Color get borderLeftColor;
-  Color get borderRightColor;
-  Color get borderTopColor;
-  Color get borderBottomColor;
+  CSSColor get borderLeftColor;
+  CSSColor get borderRightColor;
+  CSSColor get borderTopColor;
+  CSSColor get borderBottomColor;
   List<Radius>? get borderRadius;
   CSSBorderRadius get borderTopLeftRadius;
   CSSBorderRadius get borderTopRightRadius;
@@ -80,11 +80,15 @@ abstract class RenderStyle {
   List<WebFBoxShadow>? get shadows;
 
   // Decorations
-  Color? get backgroundColor;
+  CSSColor? get backgroundColor;
   CSSBackgroundImage? get backgroundImage;
-  ImageRepeat get backgroundRepeat;
+  CSSBackgroundRepeatType get backgroundRepeat;
   CSSBackgroundPosition get backgroundPositionX;
   CSSBackgroundPosition get backgroundPositionY;
+  CSSBackgroundSize get backgroundSize;
+  CSSBackgroundAttachmentType? get backgroundAttachment;
+  CSSBackgroundBoundary? get backgroundClip;
+  CSSBackgroundBoundary? get backgroundOrigin;
 
   // Text
   CSSLengthValue get fontSize;
@@ -140,8 +144,8 @@ abstract class RenderStyle {
   double get flexShrink;
 
   // Color
-  Color get color;
-  Color get currentColor;
+  CSSColor get color;
+  CSSColor get currentColor;
 
   // Filter
   ColorFilter? get colorFilter;
@@ -174,6 +178,12 @@ abstract class RenderStyle {
   List<String> get animationDirection;
   List<String> get animationFillMode;
   List<String> get animationPlayState;
+
+  // transform
+  List<CSSFunctionalNotation>? get transform;
+  Matrix4? get effectiveTransformMatrix;
+  CSSOrigin get transformOrigin;
+  double get effectiveTransformScale;
 
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
@@ -412,17 +422,11 @@ class CSSRenderStyle extends RenderStyle
   }
 
   @override
-  dynamic resolveValue(String propertyName, String propertyValue) {
+  dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
     RenderStyle renderStyle = this;
 
-    // Process CSSCalcValue.
-    dynamic value = CSSCalcValue.tryParse(renderStyle, propertyName, propertyValue);
-    if (value != null && value is CSSCalcValue) {
-      return value;
-    }
-
     // Process CSSVariable.
-    value = CSSVariable.tryParse(renderStyle, propertyValue);
+    dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
       return value;
     }
@@ -525,7 +529,7 @@ class CSSRenderStyle extends RenderStyle
         break;
       case BACKGROUND_IMAGE:
         value = CSSBackground.resolveBackgroundImage(
-            propertyValue, renderStyle, propertyName, renderStyle.target.ownerDocument.controller);
+            propertyValue, renderStyle, propertyName, renderStyle.target.ownerDocument.controller, baseHref);
         break;
       case BACKGROUND_REPEAT:
         value = CSSBackground.resolveBackgroundRepeat(propertyValue);

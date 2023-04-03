@@ -187,7 +187,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   /// Release any resources held by this node.
   @override
-  void dispose() {
+  Future<void> dispose() async {
     parentNode?.removeChild(this);
     assert(!isRendererAttached, 'Should unmount $this before calling dispose.');
     super.dispose();
@@ -247,10 +247,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       childNodes.insert(referenceIndex, child);
       if (this is Element) {
         ownerDocument.styleDirtyElements.add(this as Element);
-      }
-
-      if (child.isConnected) {
-        child.connectedCallback();
       }
 
       if (child.isConnected) {

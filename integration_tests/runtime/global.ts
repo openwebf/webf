@@ -37,6 +37,38 @@ function setAttributes(dom: any, object: any) {
   }
 }
 
+function test(fn, title) {
+  it(title, fn);
+}
+
+function xtest(fn, title) {
+  xit(title, fn)
+}
+
+function assert_equals(a: any, b: any, message?: string) {
+  expect(a).toBe(b, message)
+}
+
+function assert_class_string(classObject: any, result: string) {
+  expect(classObject.constructor.name).toBe(result);
+}
+
+function assert_true(value: any, message?: string) {
+  expect(value).toBe(true, message)
+}
+
+function assert_false(value: any, message?: string) {
+  expect(value).toBe(false, message)
+}
+
+function format_value(v: any) {
+  return JSON.stringify(v)
+}
+
+function assert_array_equals(value, result, message?: string) {
+  expect(value).toEqual(result, message);
+}
+
 // Avoid overwrited by jasmine.
 const originalTimeout = global.setTimeout;
 function sleep(second: number) {
@@ -248,14 +280,44 @@ function append(parent: HTMLElement, child: Node) {
 }
 
 async function snapshot(target?: any, filename?: String, postfix?: boolean | string) {
-  if (target && target.toBlob) {
-    await expectAsync(target.toBlob(1.0)).toMatchSnapshot(filename, postfix);
-  } else {
-    if (typeof target == 'number') {
-      await sleep(target);
-    }
-    await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
-  }
+  return new Promise((resolve, reject) => {
+    requestAnimationFrame(async () => {
+      try {
+        if (target && target.toBlob) {
+          await expectAsync(target.toBlob(1.0)).toMatchSnapshot(filename, postfix);
+        } else {
+          if (typeof target == 'number') {
+            await sleep(target);
+          }
+          await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
+        }
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
+
+/**
+ * Create test that a CSS property computes to the expected value.
+ * The document element #target is used to perform the test.
+ *
+ * @param {string} property  The name of the CSS property being tested.
+ * @param {string} specified A specified value for the property.
+ * @param {string|array} computed  The expected computed value,
+ *                                 or an array of permitted computed value.
+ *                                 If omitted, defaults to specified.
+ */
+function test_computed_value(property: string, specified: string, computed: string = specified) {
+
+    const target = document.getElementById('target');
+    expect(target).not.toBeNull();
+    target?.style?.setProperty(property, '');
+    target?.style?.setProperty(property, specified);
+
+    let readValue = getComputedStyle(target!)[property];
+    expect(readValue).toEqual(computed);
 }
 
 // Compatible to tests that use global variables.
@@ -273,9 +335,18 @@ Object.assign(global, {
   sleep,
   nextFrames,
   snapshot,
+  test,
+  xtest,
+  assert_equals,
+  assert_true,
+  format_value,
+  assert_array_equals,
+  assert_false,
+  assert_class_string,
   simulatePointDown,
   simulatePointUp,
   simulatePointRemove,
   simulatePointAdd,
-  simulatePointMove
+  simulatePointMove,
+  test_computed_value
 });

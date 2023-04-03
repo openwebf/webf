@@ -22,3 +22,8 @@ class SVGElement extends Element {
 Object.defineProperty(window, 'SVGElement', {
   value: SVGElement
 });
+
+// SVGMatrix are equal to DOMMatrix.
+Object.defineProperty(window, 'SVGMatrix', {
+  value: DOMMatrix
+});

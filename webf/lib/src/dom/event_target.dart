@@ -86,7 +86,7 @@ abstract class EventTarget extends BindingObject {
 
   @override
   @mustCallSuper
-  void dispose() {
+  Future<void> dispose() async {
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_DISPOSE_EVENT_TARGET_START, uniqueId: hashCode);
     }

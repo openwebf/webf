@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:image_compare/image_compare.dart';
 
 import 'package:image/image.dart';
@@ -146,6 +147,10 @@ Future<bool> matchImageSnapshot(Uint8List bytes, String filename) async {
     }
     return match;
   } else {
+    if (Platform.environment['CI'] == 'true') {
+      throw FlutterError('This specs did not have corresponding snapshots.');
+    }
+
     await snap.writeAsBytes(currentPixels);
     return true;
   }

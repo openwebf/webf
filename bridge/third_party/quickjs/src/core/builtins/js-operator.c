@@ -448,7 +448,7 @@ JSValue build_for_in_iterator(JSContext* ctx, JSValue obj) {
     if (JS_GetOwnPropertyNamesInternal(ctx, &tab_atom, &tab_atom_count, p, JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY))
       goto fail;
     for (i = 0; i < tab_atom_count; i++) {
-      JS_SetPropertyInternal(ctx, enum_obj, tab_atom[i].atom, JS_NULL, 0);
+      JS_SetPropertyInternal(ctx, enum_obj, tab_atom[i].atom, JS_NULL, 0, NULL);
     }
     js_free_prop_enum(ctx, tab_atom, tab_atom_count);
   }

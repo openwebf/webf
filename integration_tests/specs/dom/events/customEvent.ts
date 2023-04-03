@@ -27,10 +27,10 @@ describe('CustomEvent', () => {
   });
 
   it('should call initCustomEvent method', () => {
-    let customEvent = new CustomEvent('customEvent', { detail: 'detailMessage' });
-    customEvent.initCustomEvent('newCustomEvent', false, false, 'newDetail');
+    let customEvent = new CustomEvent('customEvent', { detail: {name: 1} });
+    customEvent.initCustomEvent('newCustomEvent', false, false, {name: 2});
     expect(customEvent.type).toEqual('newCustomEvent');
-    expect(customEvent.detail).toEqual('newDetail');
+    expect(customEvent.detail).toEqual({name: 2});
   });
 });
 

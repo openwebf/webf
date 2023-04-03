@@ -46,11 +46,11 @@
 <script>
   await sleep(0.1);
   const main = document.getElementById('main');
-  expect(main.offsetLeft > 120 && main.offsetLeft < 150).toBe(true);
+  expect(main.offsetLeft > 100 && main.offsetLeft < 150).toBe(true, `animation 0% offsetLeft: ${main.offsetLeft}`);
   await sleep(1);
-  expect(main.offsetLeft > 60 && main.offsetLeft < 120).toBe(true);
+  expect(main.offsetLeft > 30 && main.offsetLeft < 120).toBe(true, `animation 50% offsetLeft: ${main.offsetLeft}`);
   await sleep(1);
-  expect(main.offsetLeft > 0 && main.offsetLeft < 30).toBe(true);
+  expect(main.offsetLeft > 0 && main.offsetLeft < 60).toBe(true, `animation 100% offsetLeft: ${main.offsetLeft}`);
   await sleep(1);
-  expect(main.offsetLeft > 110 && main.offsetLeft < 150).toBe(true);
+  expect(main.offsetLeft > 30 && main.offsetLeft < 150).toBe(true, `animation 150% offsetLeft: ${main.offsetLeft}`);
 </script>

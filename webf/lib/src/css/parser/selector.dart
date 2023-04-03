@@ -73,9 +73,12 @@ class SelectorGroup extends TreeNode {
             specificity += kIdSpecificity;
             break;
           case ClassSelector:
+          case AttributeSelector:
+          case PseudoClassSelector:
             specificity += kClassLikeSpecificity;
             break;
           case ElementSelector:
+          case PseudoElementSelector:
             specificity += kTagSpecificity;
             break;
         }

@@ -7,10 +7,11 @@ import 'dart:collection';
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
-typedef StyleChangeListener = void Function(String property, String? original, String present);
+typedef StyleChangeListener = void Function(String property, String? original, String present, { String? baseHref });
 typedef StyleFlushedListener = void Function(List<String> properties);
 
 const Map<String, bool> _CSSShorthandProperty = {
@@ -52,6 +53,12 @@ RegExp _kebabCaseReg = RegExp(r'[A-Z]');
 
 final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = LinkedLruHashMap(maximumSize: 500);
 
+class CSSPropertyValue {
+  String? baseHref;
+  String value;
+  CSSPropertyValue(this.value, { this.baseHref });
+}
+
 // CSS Object Model: https://drafts.csswg.org/cssom/#the-cssstyledeclaration-interface
 
 /// The [CSSStyleDeclaration] interface represents an object that is a CSS
@@ -66,7 +73,7 @@ final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = 
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration with IterableMixin {
+class CSSStyleDeclaration extends BindingObject with IterableMixin {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -74,7 +81,7 @@ class CSSStyleDeclaration with IterableMixin {
   StyleChangeListener? onStyleChanged;
   StyleFlushedListener? onStyleFlushed;
 
-  CSSStyleDeclaration();
+  CSSStyleDeclaration([BindingContext? context]);
 
   // ignore: prefer_initializing_formals
   CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
@@ -86,8 +93,8 @@ class CSSStyleDeclaration with IterableMixin {
   /// invoked in synchronous.
   final List<StyleChangeListener> _styleChangeListeners = [];
 
-  final Map<String, String> _properties = {};
-  Map<String, String> _pendingProperties = {};
+  final Map<String, CSSPropertyValue> _properties = {};
+  Map<String, CSSPropertyValue> _pendingProperties = {};
   final Map<String, bool> _importants = {};
   final Map<String, dynamic> _sheetStyle = {};
 
@@ -103,7 +110,7 @@ class CSSStyleDeclaration with IterableMixin {
   }
 
   bool get hasInheritedPendingProperty {
-    return _pendingProperties.keys.any((key) => isInheritedPropertyString(key));
+    return _pendingProperties.keys.any((key) => isInheritedPropertyString(_kebabize(key)));
   }
 
   // @TODO: Impl the cssText setter.
@@ -122,7 +129,7 @@ class CSSStyleDeclaration with IterableMixin {
   /// If not set, returns the empty string.
   String getPropertyValue(String propertyName) {
     // Get the latest pending value first.
-    return _pendingProperties[propertyName] ?? _properties[propertyName] ?? EMPTY_STRING;
+    return _pendingProperties[propertyName]?.value ?? _properties[propertyName]?.value ?? EMPTY_STRING;
   }
 
   /// Removes a property from the CSS declaration.
@@ -179,7 +186,7 @@ class CSSStyleDeclaration with IterableMixin {
     }
 
     // Update removed value by flush pending properties.
-    _pendingProperties[propertyName] = present;
+    _pendingProperties[propertyName] = CSSPropertyValue(present);
   }
 
   void _expandShorthand(String propertyName, String normalizedValue, bool? isImportant) {
@@ -243,7 +250,7 @@ class CSSStyleDeclaration with IterableMixin {
 
     if (longhandProperties.isNotEmpty) {
       longhandProperties.forEach((String propertyName, String? value) {
-        setProperty(propertyName, value, isImportant);
+        setProperty(propertyName, value, isImportant: isImportant);
       });
     }
   }
@@ -341,9 +348,6 @@ class CSSStyleDeclaration with IterableMixin {
       case BORDER_TOP_WIDTH:
       case BORDER_LEFT_WIDTH:
       case BORDER_RIGHT_WIDTH:
-        if (!CSSLength.isNonNegativeLength(normalizedValue)) {
-          return false;
-        }
         break;
       case COLOR:
       case BACKGROUND_COLOR:
@@ -367,7 +371,9 @@ class CSSStyleDeclaration with IterableMixin {
 
   /// Modifies an existing CSS property or creates a new CSS property in
   /// the declaration block.
-  void setProperty(String propertyName, String? value, [bool? isImportant]) {
+  void setProperty(String propertyName, String? value, { bool? isImportant, String? baseHref }) {
+    propertyName = propertyName.trim();
+
     // Null or empty value means should be removed.
     if (isNullOrEmptyValue(value)) {
       removeProperty(propertyName, isImportant);
@@ -384,7 +390,7 @@ class CSSStyleDeclaration with IterableMixin {
 
     // From style sheet mark the property important as false.
     if (isImportant == false) {
-      _sheetStyle[propertyName] = value;
+      _sheetStyle[propertyName] = normalizedValue;
     }
 
     // If the important property is already set, we should ignore it.
@@ -399,7 +405,7 @@ class CSSStyleDeclaration with IterableMixin {
     String? prevValue = getPropertyValue(propertyName);
     if (normalizedValue == prevValue) return;
 
-    _pendingProperties[propertyName] = normalizedValue;
+    _pendingProperties[propertyName] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
   }
 
   void flushPendingProperties() {
@@ -411,11 +417,11 @@ class CSSStyleDeclaration with IterableMixin {
     if (_pendingProperties.containsKey(DISPLAY) &&
         _target.isConnected &&
         _target.parentElement?.renderStyle.display != CSSDisplay.sliver) {
-      String? prevValue = _properties[DISPLAY];
-      String currentValue = _pendingProperties[DISPLAY]!;
+      CSSPropertyValue? prevValue = _properties[DISPLAY];
+      CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
       _pendingProperties.remove(DISPLAY);
-      _emitPropertyChanged(DISPLAY, prevValue, currentValue);
+      _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
     // If target has no renderer attached, no need to flush.
@@ -426,7 +432,7 @@ class CSSStyleDeclaration with IterableMixin {
       return;
     }
 
-    Map<String, String> pendingProperties = _pendingProperties;
+    Map<String, CSSPropertyValue> pendingProperties = _pendingProperties;
     // Reset first avoid set property in flush stage.
     _pendingProperties = {};
 
@@ -439,7 +445,7 @@ class CSSStyleDeclaration with IterableMixin {
       }
     }
 
-    Map<String, String?> prevValues = {};
+    Map<String, CSSPropertyValue?> prevValues = {};
     for (String propertyName in propertyNames) {
       // Update the prevValue to currentValue.
       prevValues[propertyName] = _properties[propertyName];
@@ -456,9 +462,9 @@ class CSSStyleDeclaration with IterableMixin {
     });
 
     for (String propertyName in propertyNames) {
-      String? prevValue = prevValues[propertyName];
-      String currentValue = pendingProperties[propertyName]!;
-      _emitPropertyChanged(propertyName, prevValue, currentValue);
+      CSSPropertyValue? prevValue = prevValues[propertyName];
+      CSSPropertyValue currentValue = pendingProperties[propertyName]!;
+      _emitPropertyChanged(propertyName, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
     onStyleFlushed?.call(propertyNames);
@@ -466,15 +472,15 @@ class CSSStyleDeclaration with IterableMixin {
 
   // Inserts the style of the given Declaration into the current Declaration.
   void union(CSSStyleDeclaration declaration) {
-    Map<String, String> properties = {}
+    Map<String, CSSPropertyValue> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
 
     for (String propertyName in declaration._pendingProperties.keys) {
       bool currentIsImportant = _importants[propertyName] ?? false;
       bool otherIsImportant = declaration._importants[propertyName] ?? false;
-      String? currentValue = properties[propertyName];
-      String? otherValue = declaration._pendingProperties[propertyName];
+      CSSPropertyValue? currentValue = properties[propertyName];
+      CSSPropertyValue? otherValue = declaration._pendingProperties[propertyName];
       if ((otherIsImportant || !currentIsImportant) && currentValue != otherValue) {
         // Add property.
         if (otherValue != null) {
@@ -491,13 +497,13 @@ class CSSStyleDeclaration with IterableMixin {
 
   // Merge the difference between the declarations and return the updated status
   bool merge(CSSStyleDeclaration other) {
-    Map<String, String> properties = {}
+    Map<String, CSSPropertyValue> properties = {}
       ..addAll(_properties)
       ..addAll(_pendingProperties);
     bool updateStatus = false;
     for (String propertyName in properties.keys) {
-      String? prevValue = properties[propertyName];
-      String? currentValue = other._pendingProperties[propertyName];
+      CSSPropertyValue? prevValue = properties[propertyName];
+      CSSPropertyValue? currentValue = other._pendingProperties[propertyName];
       bool currentImportant = other._importants[propertyName] ?? false;
 
       if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
@@ -508,19 +514,19 @@ class CSSStyleDeclaration with IterableMixin {
         updateStatus = true;
       } else if (prevValue != currentValue) {
         // Update property.
-        setProperty(propertyName, currentValue, currentImportant);
+        setProperty(propertyName, currentValue?.value, isImportant: currentImportant, baseHref: currentValue?.baseHref);
         updateStatus = true;
       }
     }
 
     for (String propertyName in other._pendingProperties.keys) {
-      String? prevValue = properties[propertyName];
-      String? currentValue = other._pendingProperties[propertyName];
+      CSSPropertyValue? prevValue = properties[propertyName];
+      CSSPropertyValue? currentValue = other._pendingProperties[propertyName];
       bool currentImportant = other._importants[propertyName] ?? false;
 
       if (isNullOrEmptyValue(prevValue) && !isNullOrEmptyValue(currentValue)) {
         // Add property.
-        setProperty(propertyName, currentValue, currentImportant);
+        setProperty(propertyName, currentValue?.value, isImportant: currentImportant, baseHref: currentValue?.baseHref);
         updateStatus = true;
       }
     }
@@ -552,16 +558,16 @@ class CSSStyleDeclaration with IterableMixin {
     _styleChangeListeners.remove(listener);
   }
 
-  void _emitPropertyChanged(String property, String? original, String present) {
+  void _emitPropertyChanged(String property, String? original, String present, { String? baseHref }) {
     if (original == present) return;
 
     if (onStyleChanged != null) {
-      onStyleChanged!(property, original, present);
+      onStyleChanged!(property, original, present, baseHref: baseHref);
     }
 
     for (int i = 0; i < _styleChangeListeners.length; i++) {
       StyleChangeListener listener = _styleChangeListeners[i];
-      listener(property, original, present);
+      listener(property, original, present, baseHref: baseHref);
     }
   }
 
@@ -572,7 +578,9 @@ class CSSStyleDeclaration with IterableMixin {
     _sheetStyle.clear();
   }
 
-  void dispose() {
+  @override
+  Future<void> dispose() async {
+    super.dispose();
     target = null;
     _styleChangeListeners.clear();
     reset();
@@ -594,9 +602,15 @@ class CSSStyleDeclaration with IterableMixin {
   }
 
   @override
-  Iterator<MapEntry<String, String>> get iterator {
+  Iterator<MapEntry<String, CSSPropertyValue>> get iterator {
     return _properties.entries.followedBy(_pendingProperties.entries).iterator;
   }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 // aB to a-b

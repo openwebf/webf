@@ -8,7 +8,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 
 class BoundingClientRect extends BindingObject {
-  static BoundingClientRect zero = BoundingClientRect(0, 0, 0, 0, 0, 0, 0, 0);
+  static BoundingClientRect zero = BoundingClientRect(x: 0, y: 0, width: 0, height: 0, top: 0, right: 0, bottom: 0, left: 0);
 
   final double x;
   final double y;
@@ -19,7 +19,16 @@ class BoundingClientRect extends BindingObject {
   final double bottom;
   final double left;
 
-  BoundingClientRect(this.x, this.y, this.width, this.height, this.top, this.right, this.bottom, this.left)
+  BoundingClientRect({
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+    required this.top,
+    required this.right,
+    required this.bottom,
+    required this.left
+  })
       : _pointer = allocateNewBindingObject(),
         super();
 

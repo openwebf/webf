@@ -139,8 +139,8 @@ mixin ElementOverflowMixin on ElementBase {
           }
           // Reset canDrag by overflow because hidden is can't drag.
           bool canDrag = overflowX != CSSOverflowType.hidden;
-          _scrollableX!.setCanDrag(canDrag);
           _scrollableX!.overflowType = overflowX;
+          _scrollableX!.setCanDrag(canDrag);
           break;
         case CSSOverflowType.visible:
         default:
@@ -174,8 +174,8 @@ mixin ElementOverflowMixin on ElementBase {
           }
           // Reset canDrag by overflow because hidden is can't drag.
           bool canDrag = overflowY != CSSOverflowType.hidden;
-          _scrollableY!.setCanDrag(canDrag);
           _scrollableY!.overflowType = overflowY;
+          _scrollableY!.setCanDrag(canDrag);
           break;
         case CSSOverflowType.visible:
         default:
@@ -188,7 +188,7 @@ mixin ElementOverflowMixin on ElementBase {
     }
   }
 
-  void scrollingContentBoxStyleListener(String property, String? original, String present) {
+  void scrollingContentBoxStyleListener(String property, String? original, String present, { String? baseHref }) {
     if (renderBoxModel == null) return;
 
     RenderLayoutBox? scrollingContentBox = (renderBoxModel as RenderLayoutBox).renderScrollingContent;
@@ -342,6 +342,9 @@ mixin ElementOverflowMixin on ElementBase {
     } else if (event is PointerSignalEvent) {
       _scrollableX?.handlePinterSignal(event);
       _scrollableY?.handlePinterSignal(event);
+    } else if (event is PointerPanZoomStartEvent) {
+      _scrollableX?.handlePointerPanZoomStart(event);
+      _scrollableY?.handlePointerPanZoomStart(event);
     }
   }
 

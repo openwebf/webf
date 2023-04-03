@@ -14,6 +14,7 @@
 #include <locale>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <unordered_map>
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
@@ -60,7 +61,12 @@ class ExecutingContext {
 
   static ExecutingContext* From(JSContext* ctx);
 
-  bool EvaluateJavaScript(const uint16_t* code, size_t codeLength, const char* sourceURL, int startLine);
+  bool EvaluateJavaScript(const uint16_t* code,
+                          size_t codeLength,
+                          uint8_t** parsed_bytecodes,
+                          uint64_t* bytecode_len,
+                          const char* sourceURL,
+                          int startLine);
   bool EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine);
   bool EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine);
   bool EvaluateByteCode(uint8_t* bytes, size_t byteLength);
@@ -85,6 +91,7 @@ class ExecutingContext {
 
   // Register active script wrappers.
   void RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable);
+  void InActiveScriptWrappers(ScriptWrappable* script_wrappable);
 
   // Gets the DOMTimerCoordinator which maintains the "active timer
   // list" of tasks created by setTimeout and setInterval. The
@@ -176,7 +183,7 @@ class ExecutingContext {
   bool in_dispatch_error_event_{false};
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
-  std::vector<ScriptWrappable*> active_wrappers_;
+  std::set<ScriptWrappable*> active_wrappers_;
 };
 
 class ObjectProperty {

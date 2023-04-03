@@ -26,6 +26,10 @@ abstract class WidgetElement extends dom.Element {
   }
   WebFWidgetElementToWidgetAdapter? attachedAdapter;
 
+  BuildContext get context {
+    return _state!.context;
+  }
+
   WidgetElement(
     BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +41,8 @@ abstract class WidgetElement extends dom.Element {
 
   // State methods, proxy called from _state
   void initState() {}
+
+  bool get mounted => _state?.mounted ?? false;
 
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}

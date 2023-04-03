@@ -39,7 +39,7 @@ struct NativeEvent {
 // Use pointer instead of int64_t on 64 bit system can help compiler to choose best register for better running
 // performance.
 struct NativeEvent {
-  NativeString* type{nullptr};
+  SharedNativeString* type{nullptr};
   int64_t bubbles{0};
   int64_t cancelable{0};
   int64_t composed{0};

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>CSS Animations Test: animation-transform 001 </title>
+<link rel="author" title="Intel" href="http://www.intel.com">
+<link rel="reviewer" title="Zhiqiang Zhang" href="mailto:zhiqiang.zhang@intel.com"> <!-- 2015-05-05 -->
+<link rel="help" href="https://drafts.csswg.org/css-animations-1/#animation-name">
+<link rel="help" href="https://drafts.csswg.org/css-animations-1/#animation-duration">
+<link rel="help" href="https://drafts.csswg.org/css-animations-1/#animation-fill-mode">
+<meta name="flags" content="animated">
+<meta name="assert" content="should run animation when from and to computedValue are same.">
+<style>
+    @keyframes van-rotate {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    div {
+        height: 100px;
+        width: 100px;
+        position: absolute;
+        animation-name: van-rotate;
+        animation-duration: 2s;
+        animation-fill-mode: forwards;
+        background: blue;
+    }
+</style>
+<body>
+<p>
+  Test passes if there is a filled blue with 'Filler Text',
+  and without animation, and if there is no red.
+</p>
+<div id="test">Filler Text</div>
+</body>
+
+<script>
+    const test = document.getElementById('test');
+    await sleep(0.1);
+    let snapshot = await test.toBlob(1);
+    let buffer1 = await snapshot.arrayBuffer();
+
+    await sleep(0.5);
+    let snapshot2 = await test.toBlob(1);
+    let buffer2 = await snapshot2.arrayBuffer();
+
+    let arr1 = Array.from(new Uint8Array(buffer1));
+    let arr2 = Array.from(new Uint8Array(buffer2));
+
+    let isEqual = true;
+    for(let i = 0; i < arr1.length; i ++) {
+      if (arr1[i] !== arr2[i]) {
+        isEqual = false;
+      }
+    }
+
+    expect(isEqual).toBe(false);
+</script>

@@ -9,6 +9,7 @@
 #include <cinttypes>
 #include <set>
 #include "bindings/qjs/atomic_string.h"
+#include "bindings/qjs/script_wrappable.h"
 #include "foundation/native_type.h"
 #include "foundation/native_value.h"
 
@@ -57,13 +58,15 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
+enum CreateBindingObjectType { kCreateDOMMatrix = 0 };
+
 struct BindingObjectPromiseContext : public DartReadable {
   ExecutingContext* context;
   BindingObject* binding_object;
   std::shared_ptr<ScriptPromiseResolver> promise_resolver;
 };
 
-class BindingObject {
+class BindingObject : public ScriptWrappable {
  public:
   struct AnonymousFunctionData {
     std::string method_name;
@@ -87,10 +90,10 @@ class BindingObject {
 
   BindingObject() = delete;
   ~BindingObject();
-  explicit BindingObject(ExecutingContext* context);
+  explicit BindingObject(JSContext* ctx);
 
   // Handle call from dart side.
-  virtual NativeValue HandleCallFromDartSide(const NativeValue* method, int32_t argc, const NativeValue* argv) = 0;
+  virtual NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv);
   // Invoke methods which implemented at dart side.
   NativeValue InvokeBindingMethod(const AtomicString& method,
                                   int32_t argc,
@@ -100,7 +103,7 @@ class BindingObject {
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
   NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
-  NativeBindingObject* bindingObject() const { return binding_object_; }
+  FORCE_INLINE NativeBindingObject* bindingObject() const { return binding_object_; }
 
   void Trace(GCVisitor* visitor) const;
 
@@ -113,6 +116,8 @@ class BindingObject {
 
   virtual bool IsEventTarget() const;
   virtual bool IsTouchList() const;
+  virtual bool IsComputedCssStyleDeclaration() const;
+  virtual bool IsCanvasGradient() const;
 
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);
@@ -123,11 +128,10 @@ class BindingObject {
                                   ExceptionState& exception_state) const;
 
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.
-  explicit BindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  explicit BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object);
 
  private:
-  ExecutingContext* context_{nullptr};
-  NativeBindingObject* binding_object_{new NativeBindingObject(this)};
+  NativeBindingObject* binding_object_ = nullptr;
   std::set<BindingObjectPromiseContext*> pending_promise_contexts_;
 };
 

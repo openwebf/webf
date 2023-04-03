@@ -1,5 +1,6 @@
 const path = require('path');
 const glob = require('glob');
+const execSync = require('child_process').execSync;
 const bableTransformSnapshotPlugin = require('./scripts/babel_transform_snapshot');
 
 const context = path.join(__dirname);
@@ -32,6 +33,19 @@ if (process.env.SPEC_SCOPE) {
     cwd: context,
     ignore: ['node_modules/**'],
   }).map((file) => './' + file).filter(name => name.indexOf('plugins') < 0)
+}
+
+
+const dartVersion = execSync('dart --version', {encoding: 'utf-8'});
+const regExp = /Dart SDK version: (\d\.\d{1,3}\.\d{1,3}) /;
+let versionNum = regExp.exec(dartVersion)[1];
+const ignoreSpecsForOldFlutter = [
+    './specs/dom/elements/pre.ts'
+];
+if (versionNum && parseFloat(versionNum) < 2.19) {
+  coreSpecFiles = coreSpecFiles.filter(file => {
+    return ignoreSpecsForOldFlutter.indexOf(file) === -1;
+  })
 }
 
 const pluginSpecFiles = glob.sync('specs/plugins/**/*.{js,jsx,ts,tsx}', {

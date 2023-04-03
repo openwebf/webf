@@ -40,7 +40,7 @@ class FlutterInputElement extends WidgetElement
 
   @override
   Map<String, dynamic> get defaultStyle {
-    switch(type) {
+    switch (type) {
       case 'text':
       case 'time':
         return _inputDefaultStyle;
@@ -63,12 +63,12 @@ class FlutterInputElement extends WidgetElement
 
   @override
   void blur() {
-    _focusNode.unfocus();
+    _focusNode?.unfocus();
   }
 
   @override
   void focus() {
-    _focusNode.requestFocus();
+    _focusNode?.requestFocus();
   }
 
   @override
@@ -110,8 +110,8 @@ mixin BaseInputElement on WidgetElement {
 
   @override
   void initState() {
-    _focusNode = FocusNode();
-    _focusNode.addListener(() {
+    _focusNode ??= FocusNode();
+    _focusNode!.addListener(() {
       handleFocusChange();
     });
   }
@@ -123,11 +123,13 @@ mixin BaseInputElement on WidgetElement {
     properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = value);
     properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
-    properties['placeholder'] = BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
+    properties['placeholder'] =
+        BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
     properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
     properties['readonly'] = BindingObjectProperty(getter: () => readonly, setter: (value) => readonly = value);
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
-    properties['defaultValue'] = BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
+    properties['defaultValue'] =
+        BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
   }
 
   @override
@@ -135,7 +137,8 @@ mixin BaseInputElement on WidgetElement {
     super.initializeAttributes(attributes);
 
     attributes['value'] = ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
-    attributes['disabled'] = ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
+    attributes['disabled'] =
+        ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
   }
 
   TextInputType? getKeyboardType() {
@@ -162,13 +165,14 @@ mixin BaseInputElement on WidgetElement {
   }
 
   void resetInputDefaultStyle() {
-    switch(type) {
-      case 'checkbox': {
-        _checkboxDefaultStyle.forEach((key, value) {
-          style.setProperty(key, value);
-        });
-        break;
-      }
+    switch (type) {
+      case 'checkbox':
+        {
+          _checkboxDefaultStyle.forEach((key, value) {
+            style.setProperty(key, value);
+          });
+          break;
+        }
       default:
         _inputDefaultStyle.forEach((key, value) {
           style.setProperty(key, value);
@@ -220,7 +224,7 @@ mixin BaseInputElement on WidgetElement {
 
   bool get isPassWord => type == 'password';
 
-  bool get _isFocus => _focusNode.hasFocus;
+  bool get _isFocus => _focusNode?.hasFocus ?? false;
 
   int? get maxLength {
     String? value = getAttribute('maxLength');
@@ -240,14 +244,38 @@ mixin BaseInputElement on WidgetElement {
 
   double? get width => renderStyle.width.value;
 
+  double get fontSize => renderStyle.fontSize.computedValue;
+
+  double get lineHeight => renderStyle.lineHeight.computedValue;
+
+  /// input is 1 and textarea is 3
+  int minLines = 1;
+
+  /// input is 1 and textarea is 5
+  int maxLines = 1;
+
+  /// Use leading to support line height.
+  /// 1. LineHeight must greater than fontSize
+  /// 2. LineHeight must less than height in input but textarea
+  double get leading => lineHeight > fontSize &&
+          (maxLines != 1 || height == null || lineHeight < height!)
+      ? (lineHeight - fontSize - _defaultPadding * 2) / fontSize
+      : 0;
+
   TextStyle get _textStyle => TextStyle(
-        color: renderStyle.color,
-        fontSize: renderStyle.fontSize.computedValue,
+        color: renderStyle.color.value,
+        fontSize: fontSize,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),
       );
 
-  Widget _createInputWidget(BuildContext context, int minLines, int maxLines) {
+  StrutStyle get _textStruct => StrutStyle(
+    leading: leading,
+  );
+
+  final double _defaultPadding = 0;
+
+  Widget _createInputWidget(BuildContext context) {
     FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
     onChanged(String newValue) {
       setState(() {
@@ -260,6 +288,8 @@ mixin BaseInputElement on WidgetElement {
         label: label != null ? Text(label!) : null,
         border: InputBorder.none,
         isDense: true,
+        isCollapsed: true,
+        contentPadding: EdgeInsets.fromLTRB(0, _defaultPadding, 0, _defaultPadding),
         hintText: placeholder,
         suffix: isSearch && value.isNotEmpty && _isFocus
             ? SizedBox(
@@ -285,6 +315,7 @@ mixin BaseInputElement on WidgetElement {
         controller: controller,
         enabled: !disabled && !readonly,
         style: _textStyle,
+        strutStyle: _textStruct,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
@@ -293,7 +324,7 @@ mixin BaseInputElement on WidgetElement {
         textAlign: renderStyle.textAlign,
         focusNode: _focusNode,
         obscureText: isPassWord,
-        cursorColor: renderStyle.caretColor ?? renderStyle.color,
+        cursorColor: renderStyle.caretColor ?? renderStyle.color.value,
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
@@ -304,6 +335,7 @@ mixin BaseInputElement on WidgetElement {
         controller: controller,
         enabled: !disabled && !readonly,
         style: _textStyle,
+        strutStyle: _textStruct,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
@@ -312,7 +344,7 @@ mixin BaseInputElement on WidgetElement {
         textAlign: renderStyle.textAlign,
         focusNode: _focusNode,
         obscureText: isPassWord,
-        cursorColor: renderStyle.caretColor ?? renderStyle.color,
+        cursorColor: renderStyle.caretColor ?? renderStyle.color.value,
         cursorRadius: Radius.circular(4),
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
@@ -328,7 +360,7 @@ mixin BaseInputElement on WidgetElement {
     return widget;
   }
 
-  late FocusNode _focusNode;
+  FocusNode? _focusNode;
 
   void handleFocusChange() {
     if (_isFocus) {
@@ -347,17 +379,31 @@ mixin BaseInputElement on WidgetElement {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
-    _focusNode.dispose();
+    _focusNode?.dispose();
+  }
+
+  Widget _wrapInputHeight(Widget widget) {
+    double? height = renderStyle.height.value;
+
+    if (height == null) return widget;
+
+    return SizedBox(
+        child: Center(
+          child: widget,
+        ),
+        height: height);
   }
 
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
+    this.minLines = minLines;
+    this.maxLines = maxLines;
     switch (type) {
       case 'hidden':
         return SizedBox(width: 0, height: 0);
     }
-    return _createInputWidget(context, minLines, maxLines);
+    return _wrapInputHeight(_createInputWidget(context));
   }
 }
 
@@ -439,7 +485,7 @@ mixin BaseButtonElement on WidgetElement {
   }
 
   TextStyle get _style => TextStyle(
-        color: renderStyle.color,
+        color: renderStyle.color.value,
         fontSize: renderStyle.fontSize.computedValue,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),
@@ -448,7 +494,7 @@ mixin BaseButtonElement on WidgetElement {
   Widget createButton(BuildContext context) {
     return TextButton(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color?>((states) => renderStyle.backgroundColor),
+          backgroundColor: MaterialStateProperty.resolveWith<Color?>((states) => renderStyle.backgroundColor?.value),
         ),
         onPressed: () {
           var box = context.findRenderObject() as RenderBox;

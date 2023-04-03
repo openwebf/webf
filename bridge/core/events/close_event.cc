@@ -51,9 +51,13 @@ CloseEvent::CloseEvent(ExecutingContext* context, const AtomicString& type, Nati
     : Event(context, type, &native_close_event->native_event),
       code_(native_close_event->code),
 #if ANDROID_32_BIT
-      reason_(AtomicString(context->ctx(), reinterpret_cast<NativeString*>(native_close_event->reason))),
+      reason_(AtomicString(
+          context->ctx(),
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_close_event->reason)))),
 #else
-      reason_(AtomicString(context->ctx(), native_close_event->reason)),
+      reason_(AtomicString(
+          context->ctx(),
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_close_event->reason)))),
 #endif
       was_clean_(native_close_event->wasClean) {
 }

@@ -23,7 +23,7 @@ ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element
 AtomicString ElementAttributes::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
   bool numberIndex = IsNumberIndex(name.ToStringView());
 
-  if (numberIndex) {
+  if (numberIndex || attributes_.count(name) == 0) {
     return AtomicString::Empty();
   }
 
@@ -33,7 +33,7 @@ AtomicString ElementAttributes::getAttribute(const AtomicString& name, Exception
   if (value.IsEmpty()) {
     NativeValue dart_result = element_->GetBindingProperty(name, exception_state);
     if (dart_result.tag == NativeTag::TAG_STRING) {
-      return NativeValueConverter<NativeTypeString>::FromNativeValue(element_->ctx(), dart_result);
+      return NativeValueConverter<NativeTypeString>::FromNativeValue(element_->ctx(), std::move(dart_result));
     }
   }
 
@@ -54,11 +54,11 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
 
   attributes_[name] = value;
 
-  std::unique_ptr<NativeString> args_01 = name.ToNativeString(ctx());
-  std::unique_ptr<NativeString> args_02 = value.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(element_->eventTargetId(), UICommand::kSetAttribute,
-                                                       std::move(args_01), std::move(args_02), nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetAttribute, std::move(args_01),
+                                                       element_->bindingObject(), args_02.release());
 
   return true;
 }
@@ -76,9 +76,9 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
   attributes_.erase(name);
 
-  std::unique_ptr<NativeString> args_01 = name.ToNativeString(ctx());
-  GetExecutingContext()->uiCommandBuffer()->addCommand(element_->eventTargetId(), UICommand::kRemoveAttribute,
-                                                       std::move(args_01), nullptr);
+  std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString(ctx());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveAttribute, std::move(args_01),
+                                                       element_->bindingObject(), nullptr);
 }
 
 void ElementAttributes::CopyWith(ElementAttributes* attributes) {

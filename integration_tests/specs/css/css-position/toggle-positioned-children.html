@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Toggle absolute children</title>
+  <style>
+      .container {
+          display: block;
+          position: relative;
+          left: 50%;
+          top: 50%;
+          right: 50%;
+          width: 300px;
+          margin-left: -150px;
+          border: 1px solid #000;
+      }
+
+      .wrapper {
+          display: flex;
+          padding: 10px;
+          justify-content: center;
+          flex-direction: column;
+      }
+
+      .top {
+          padding: 25px;
+          padding-left: 45px;
+          font-size: 20px;
+          font-weight: 700;
+          display: flex;
+          justify-content: center;
+          flex-direction: column;
+      }
+
+      .imgText {
+          border: 1px solid #000;
+          flex-direction: column;
+      }
+
+      .imgText img {
+          width: 20px;
+          height: 20px;
+          margin-right: 5px;
+          position: absolute;
+          top: 30px;
+          left: 20px;
+      }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="wrapper">
+    <div class="top">
+      <div class="imgText">
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAYhJREFUOE+lkr8vA2EYx7/PnU4qoZWQdhFxlSbCIGwkFibSP4GF9GpE/4Zi1GtY+BMaJl0kbMRAJI1WxNKGRI+ETnX3yP2qu1PDxW3P+zzP5/3emw/hnx/593sL5SERoTSYkwxMGn0CrkFU1tAqvKeTT+4dDyCarywzsAei7o7BmJsErDcyiSOn3wb0KY8zBO3ctViDgHmz1lECEHd6DHH2TR6+sNMBPfv1/pD2eQ9Q5AfAV6qcmDbqiFK5BGjK1VNbYnj0Yy32aiaIKJUdgDZ8sZvEKBpnTEgB8P0W76pyYtMGVE8BO66HwgdWSasd3qSkytKCBchXn0EY8A+psuRcwL8AjBc1Iw06AzUAsUAAoK7KUtwERJXqMQOLQQAEnDRkackCFB5yzLwVCEC03UiPZE2AYZ+gi3d+gf58A+amLmhjhpVtkUwLiQ7dKXQNc0YtiDjz6Mu84tjoUdmy8avoFcq9yiqjK+VY2DbRPWJbmQVoHIwJSwPcAHzbEsM5wz5Pmg6CBDr6BpSgmBE+ARyNAAAAAElFTkSuQmCC"/>
+        <span>Header</span>
+        <div>The positioned icon should remain in same position when toggle.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+<script>
+  await snapshot();
+  let visible = true;
+  let container = document.querySelector('.container');
+  container.style.display = 'none';
+  await snapshot();
+  container.style.display = 'block';
+  await snapshot();
+</script>
+</html>

@@ -1399,9 +1399,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     BoxConstraints oldConstraints = child.constraints;
     double maxConstraintWidth =
-        child.hasOverrideContentLogicalWidth ? child.renderStyle.borderBoxLogicalWidth! : oldConstraints.maxWidth;
+        child.hasOverrideContentLogicalWidth ? math.max(0, child.renderStyle.borderBoxLogicalWidth!) : oldConstraints.maxWidth;
     double maxConstraintHeight =
-        child.hasOverrideContentLogicalHeight ? child.renderStyle.borderBoxLogicalHeight! : oldConstraints.maxHeight;
+        child.hasOverrideContentLogicalHeight ? math.max(0, child.renderStyle.borderBoxLogicalHeight!) : oldConstraints.maxHeight;
 
     double minConstraintWidth =
         oldConstraints.minWidth > maxConstraintWidth ? maxConstraintWidth : oldConstraints.minWidth;
@@ -2237,6 +2237,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (_flexLineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
         // Flex item baseline does not includes margin-bottom
+        Size? boxSize = isScrollingContentBox ? (parent as RenderBoxModel).boxSize : this.boxSize;
         lineDistance = isParentFlowLayout ? marginTop + boxSize!.height + marginBottom : marginTop + boxSize!.height;
         return lineDistance;
       } else {

@@ -51,6 +51,8 @@
 <script>
   await sleep(0.1);
   const test = document.getElementById('test');
+  const style = window.getComputedStyle(test);
+  expect(style['animation-fill-mode']).toBe('forwards');
   const previous = test.offsetLeft;
   await sleep(1);
   expect(test.offsetLeft).toBe(previous);

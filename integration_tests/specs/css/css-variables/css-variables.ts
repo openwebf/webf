@@ -59,6 +59,32 @@ describe('CSS Variables', () => {
     });
   });
 
+  it('change-style-003', async (done) => {
+    document.head.appendChild(
+      createStyle(`
+      :root {
+        --red: #red;
+      }
+      .container {
+          color: var(--red);
+      }
+    `)
+    );
+    
+    document.body.appendChild(
+      <div class='container'>
+          <h2>The text should be green.</h2>
+      </div>
+    );
+
+    requestAnimationFrame(async () => {
+      var r = document.querySelector(':root');
+      r.style.setProperty('--red', 'green');
+      await snapshot();
+      done();
+    });
+  });
+
   it('variable resolve percentage color', async (done) => {
     document.head.appendChild(
       createStyle(`

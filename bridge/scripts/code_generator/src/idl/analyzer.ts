@@ -11,6 +11,7 @@ import {
   ParameterMode,
   PropsDeclaration,
 } from './declaration';
+import {isUnionType} from "./generateSource";
 
 interface DefinedPropertyCollector {
   properties: Set<string>;
@@ -18,10 +19,14 @@ interface DefinedPropertyCollector {
   interfaces: Set<string>;
 }
 
-export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector) {
+export interface UnionTypeCollector {
+  types: Set<ParameterType[]>;
+}
+
+export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
   let code = blob.raw;
   const sourceFile = ts.createSourceFile(blob.source, blob.raw, ScriptTarget.ES2020);
-  blob.objects = sourceFile.statements.map(statement => walkProgram(blob, statement, definedPropertyCollector)).filter(o => {
+  blob.objects = sourceFile.statements.map(statement => walkProgram(blob, statement, definedPropertyCollector, unionTypeCollector)).filter(o => {
     return o instanceof ClassObject || o instanceof FunctionObject;
   }) as (FunctionObject | ClassObject)[];
 }
@@ -50,13 +55,20 @@ function getMixins(hertage: HeritageClause): string[] | null {
   return mixins;
 }
 
-function getPropName(propName: ts.PropertyName) {
+function getPropName(propName: ts.PropertyName, prop?: PropsDeclaration) {
   if (propName.kind == ts.SyntaxKind.Identifier) {
     return propName.escapedText.toString();
   } else if (propName.kind === ts.SyntaxKind.StringLiteral) {
     return propName.text;
   } else if (propName.kind === ts.SyntaxKind.NumericLiteral) {
     return propName.text;
+    // @ts-ignore
+  } else if (propName.kind === ts.SyntaxKind.ComputedPropertyName && propName.expression.kind === ts.SyntaxKind.PropertyAccessExpression) {
+    prop!.isSymbol = true;
+    // @ts-ignore
+    let expression = propName.expression;
+    // @ts-ignore
+    return `${expression.expression.text}_${expression.name.text}`;
   }
   throw new Error(`prop name: ${ts.SyntaxKind[propName.kind]} is not supported`);
 }
@@ -68,9 +80,13 @@ function getParameterName(name: ts.BindingName) : string {
   return  '';
 }
 
-export type ParameterType =  FunctionArgumentType | string;
+export type ParameterBaseType = FunctionArgumentType | string;
+export type ParameterType = {
+  isArray?: boolean;
+  value: ParameterType | ParameterType[] | ParameterBaseType;
+};
 
-function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): ParameterType {
+function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): ParameterBaseType {
   if (type.kind === ts.SyntaxKind.StringKeyword) {
     return FunctionArgumentType.dom_string;
   } else if (type.kind === ts.SyntaxKind.NumberKeyword) {
@@ -96,8 +112,10 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       return FunctionArgumentType.function;
     } else if (identifier === 'Promise') {
       return FunctionArgumentType.promise;
-    }else if (identifier === 'int32') {
+    } else if (identifier === 'int32') {
       return FunctionArgumentType.int32;
+    } else if (identifier === 'JSArrayProtoMethod') {
+      return FunctionArgumentType.js_array_proto_methods;
     } else if (identifier === 'int64') {
       return FunctionArgumentType.int64;
     } else if (identifier === 'double') {
@@ -117,6 +135,8 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       let argument = typeReference.typeArguments![0];
       // @ts-ignore
       return getParameterBaseType(argument);
+    } else if (identifier === 'LegacyNullToEmptyString') {
+      return FunctionArgumentType.legacy_dom_string;
     }
 
     return identifier;
@@ -128,24 +148,37 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
   return FunctionArgumentType.any;
 }
 
-function getParameterType(type: ts.TypeNode, mode?: ParameterMode): ParameterType[] {
+function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollector, mode?: ParameterMode): ParameterType {
   if (type.kind == ts.SyntaxKind.ArrayType) {
     let arrayType = type as unknown as ts.ArrayTypeNode;
-    return [FunctionArgumentType.array, getParameterBaseType(arrayType.elementType, mode)];
+    return {
+      isArray: true,
+      value: getParameterType(arrayType.elementType, unionTypeCollector, mode)
+    };
   } else if (type.kind === ts.SyntaxKind.UnionType) {
     let node = type as unknown as ts.UnionType;
     let types = node.types;
-    // @ts-ignore
-    return types.map(type => getParameterBaseType(type as unknown as ts.TypeNode, mode));
+    let result = {
+      isArray: false,
+      value: types.map(type => getParameterType(type as unknown as ts.TypeNode, unionTypeCollector, mode))
+    };
+    if (isUnionType(result)) {
+      unionTypeCollector.types.add(result.value);
+    }
+    return result;
   }
-  return [getParameterBaseType(type, mode)];
+  return {
+    isArray: false,
+    value: getParameterBaseType(type, mode)
+  };
 }
 
-function paramsNodeToArguments(parameter: ts.ParameterDeclaration): FunctionArguments {
+function paramsNodeToArguments(parameter: ts.ParameterDeclaration, unionTypeCollector: UnionTypeCollector): FunctionArguments {
   let args = new FunctionArguments();
   args.name = getParameterName(parameter.name);
   let typeMode = new ParameterMode();
-  args.type = getParameterType(parameter.type!, typeMode);
+  args.type = getParameterType(parameter.type!, unionTypeCollector, typeMode);
+  args.isDotDotDot = !!parameter.dotDotDotToken;
   args.typeMode = typeMode;
   args.required = !parameter.questionToken;
   return args;
@@ -156,7 +189,7 @@ function isParamsReadOnly(m: ts.PropertySignature): boolean {
   return m.modifiers.some(k => k.kind === ts.SyntaxKind.ReadonlyKeyword);
 }
 
-function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyCollector: DefinedPropertyCollector) {
+function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
   switch(statement.kind) {
     case ts.SyntaxKind.InterfaceDeclaration: {
       let interfaceName = getInterfaceName(statement) as string;
@@ -187,6 +220,7 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
       if (obj.kind === ClassObjectKind.interface) {
         definedPropertyCollector.interfaces.add('QJS' + interfaceName);
         definedPropertyCollector.files.add(blob.filename);
+        definedPropertyCollector.properties.add(interfaceName);
       }
 
       s.members.forEach(member => {
@@ -194,27 +228,24 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
           case ts.SyntaxKind.PropertySignature: {
             let prop = new PropsDeclaration();
             let m = (member as ts.PropertySignature);
-            prop.name = getPropName(m.name);
+            prop.name = getPropName(m.name, prop);
             prop.readonly = isParamsReadOnly(m);
 
-            if (obj.kind === ClassObjectKind.interface) {
-              definedPropertyCollector.properties.add(prop.name);
-            }
-
+            definedPropertyCollector.properties.add(prop.name);
             let propKind = m.type;
             if (propKind) {
               let mode = new ParameterMode();
-              prop.type = getParameterType(propKind, mode);
+              prop.type = getParameterType(propKind, unionTypeCollector, mode);
               prop.typeMode = mode;
               if (member.questionToken) {
                 prop.optional = true;
               }
-              if (prop.type[0] === FunctionArgumentType.function) {
+              if (prop.type.value === FunctionArgumentType.function) {
                 let f = (m.type as ts.FunctionTypeNode);
                 let functionProps = prop as FunctionDeclaration;
                 functionProps.args = [];
                 f.parameters.forEach(params => {
-                  let p = paramsNodeToArguments(params);
+                  let p = paramsNodeToArguments(params, unionTypeCollector);
                   functionProps.args.push(p);
                 });
                 obj.methods.push(functionProps);
@@ -230,14 +261,13 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
             f.name = getPropName(m.name);
             f.args = [];
             m.parameters.forEach(params => {
-              let p = paramsNodeToArguments(params);
-
+              let p = paramsNodeToArguments(params, unionTypeCollector);
               f.args.push(p);
             });
             obj.methods.push(f);
             if (m.type) {
               let mode = new ParameterMode();
-              f.returnType = getParameterType(m.type, mode);
+              f.returnType = getParameterType(m.type, unionTypeCollector, mode);
               f.returnTypeMode = mode;
             }
             break;
@@ -252,7 +282,7 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
             prop.indexKeyType = params[0].type!.kind === ts.SyntaxKind.NumberKeyword ? 'number' : 'string';
 
             let mode = new ParameterMode();
-            prop.type = getParameterType(m.type, mode);
+            prop.type = getParameterType(m.type, unionTypeCollector, mode);
             prop.typeMode = mode;
             obj.indexedProp = prop;
             break;
@@ -263,10 +293,10 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
             c.name = 'constructor';
             c.args = [];
             m.parameters.forEach(params => {
-              let p = paramsNodeToArguments(params);
+              let p = paramsNodeToArguments(params, unionTypeCollector);
               c.args.push(p);
             });
-            c.returnType = getParameterType(m.type);
+            c.returnType = getParameterType(m.type, unionTypeCollector);
             obj.construct = c;
             constructorDefined = true;
             break;
@@ -290,8 +320,8 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
 
       functionObject.declare = new FunctionDeclaration();
       if (type?.kind == ts.SyntaxKind.FunctionType) {
-        functionObject.declare.args = (type as ts.FunctionTypeNode).parameters.map(param => paramsNodeToArguments(param));
-        functionObject.declare.returnType = getParameterType((type as ts.FunctionTypeNode).type);
+        functionObject.declare.args = (type as ts.FunctionTypeNode).parameters.map(param => paramsNodeToArguments(param, unionTypeCollector));
+        functionObject.declare.returnType = getParameterType((type as ts.FunctionTypeNode).type, unionTypeCollector);
         functionObject.declare.name = methodName.toString();
       }
 

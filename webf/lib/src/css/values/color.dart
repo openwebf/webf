@@ -180,6 +180,10 @@ final LinkedLruHashMap<String, Color> _cachedParsedColor = LinkedLruHashMap(maxi
 /// rgb(r,g,b)
 /// rgba(r,g,b,a)
 class CSSColor {
+  late Color value;
+
+  CSSColor(this.value);
+
   static const Color transparent = Color(0x00000000);
   static const Color initial = Color(0xFF000000);
   static const String INITIAL_COLOR = 'black';
@@ -228,7 +232,7 @@ class CSSColor {
     return color == CURRENT_COLOR || parseColor(color) != null;
   }
 
-  static Color? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
+  static CSSColor? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
     if (color == CURRENT_COLOR) {
       if (propertyName == COLOR) {
         return null;
@@ -237,7 +241,11 @@ class CSSColor {
       renderStyle.addColorRelativeProperty(propertyName);
       return renderStyle.color;
     }
-    return parseColor(color, renderStyle: renderStyle);
+    Color? value = parseColor(color, renderStyle: renderStyle);
+    if (value == null) {
+      return null;
+    }
+    return CSSColor(value);
   }
 
   static Color? parseColor(String color, {RenderStyle? renderStyle}) {
@@ -307,7 +315,13 @@ class CSSColor {
     return parsed;
   }
 
-  Color? value;
+  String cssText() {
+    if (value.opacity < 1) {
+      return 'rgba(${value.red}, ${value.green}, ${value.blue}, ${value.opacity.cssText()})';
+    } else {
+      return 'rgb(${value.red}, ${value.green}, ${value.blue})';
+    }
+  }
 }
 
 /// A color in the CIELAB color space.

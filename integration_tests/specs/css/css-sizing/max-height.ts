@@ -493,4 +493,32 @@ describe('max-height', () => {
     document.body.appendChild(root);
     await snapshot();
   });
+
+  it('set max-height on scroller box won\' have no effecrt', async () => {
+    const container = createElement('div', {
+      style: {
+        maxHeight: '400px',
+        overflow: 'scroll',
+        backgroundColor: 'red'
+      }
+    }, [
+      createText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam semper diam at erat pulvinar, at pulvinar felis blandit. Vestibulum volutpat tellus diam, consequat gravida libero rhoncus ut. Maecenas imperdiet felis nisi, fringilla luctus felis hendrerit sit amet. Pellentesque interdum, nisl nec interdum maximus, augue diam porttitor lorem, et sollicitudin felis neque sit amet erat.')
+    ]);
+    BODY.appendChild(container);
+    await snapshot();
+  });
+
+  it('set max-width on scroller box should works', async () => {
+    const container = createElement('div', {
+      style: {
+        maxWidth: '100px',
+        overflow: 'scroll',
+        backgroundColor: 'red'
+      }
+    }, [
+      createText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam semper diam at erat pulvinar, at pulvinar felis blandit. Vestibulum volutpat tellus diam, consequat gravida libero rhoncus ut. Maecenas imperdiet felis nisi, fringilla luctus felis hendrerit sit amet. Pellentesque interdum, nisl nec interdum maximus, augue diam porttitor lorem, et sollicitudin felis neque sit amet erat.')
+    ]);
+    BODY.appendChild(container);
+    await snapshot();
+  })
 });

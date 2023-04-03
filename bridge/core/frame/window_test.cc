@@ -137,3 +137,19 @@ TEST(Window, onloadShouldExist) {
   bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
+
+TEST(Window, atob) {
+  static bool errorCalled = false;
+  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
+
+  std::string code = std::string(R"(
+    let a = atob('a bcd');
+console.log(a.charCodeAt(1))
+  )");
+  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  EXPECT_EQ(errorCalled, false);
+}

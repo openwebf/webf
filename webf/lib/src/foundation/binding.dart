@@ -105,6 +105,7 @@ abstract class BindingObject {
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
     toNativeValue(method, 'syncPropertiesAndMethods');
     f(pointer!, returnValue, method, 3, arguments);
+    malloc.free(arguments);
     return fromNativeValue(returnValue) == true;
   }
 
@@ -179,7 +180,7 @@ abstract class BindingObject {
   }
 
   @mustCallSuper
-  void dispose() {
+  Future<void> dispose() async {
     _unbind();
     _properties.clear();
     _methods.clear();

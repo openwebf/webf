@@ -34,7 +34,9 @@ EmptyNodeList* NodeData::EnsureEmptyChildNodeList(Node& node) {
 }
 
 void NodeData::Trace(GCVisitor* visitor) const {
-  visitor->Trace(child_node_list_->ToQuickJSUnsafe());
+  if (child_node_list_ != nullptr) {
+    visitor->Trace(child_node_list_->ToQuickJSUnsafe());
+  }
 }
 
 }  // namespace webf

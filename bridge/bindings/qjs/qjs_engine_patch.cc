@@ -302,6 +302,20 @@ JSValue JS_NewUnicodeString(JSContext* ctx, const uint16_t* code, uint32_t lengt
   return JS_MKPTR(JS_TAG_STRING, str);
 }
 
+JSValue JS_NewRawUTF8String(JSContext* ctx, const uint8_t* buf, uint32_t len) {
+  JSString* str;
+
+  if (len <= 0) {
+    return JS_AtomToString(ctx, JS_ATOM_empty_string);
+  }
+  str = js_alloc_string(JS_GetRuntime(ctx), ctx, len, 0);
+  if (!str)
+    return JS_EXCEPTION;
+  memcpy(str->u.str8, buf, len);
+  str->u.str8[len] = '\0';
+  return JS_MKPTR(JS_TAG_STRING, str);
+}
+
 JSAtom JS_NewUnicodeAtom(JSContext* ctx, const uint16_t* code, uint32_t length) {
   JSValue value = JS_NewUnicodeString(ctx, code, length);
   JSAtom atom = JS_ValueToAtom(ctx, value);
@@ -349,6 +363,55 @@ bool JS_HasClassId(JSRuntime* runtime, JSClassID classId) {
   if (runtime->class_count <= classId)
     return false;
   return runtime->class_array[classId].class_id == classId;
+}
+
+int JS_AtomIs8Bit(JSRuntime* runtime, JSAtom atom) {
+  if (JS_AtomIsTaggedInt(atom))
+    return true;
+  JSString* string = runtime->atom_array[atom];
+  return string->is_wide_char == 0;
+}
+
+const uint8_t* JS_AtomRawCharacter8(JSRuntime* runtime, JSAtom atom) {
+  if (JS_AtomIsTaggedInt(atom)) {
+    auto* buf = (char*)js_malloc_rt(runtime, 64);
+    snprintf(buf, sizeof(buf), "%u", JS_AtomToUInt32(atom));
+    return reinterpret_cast<uint8_t*>(buf);
+  }
+
+  JSString* string = runtime->atom_array[atom];
+  return string->u.str8;
+}
+
+const uint16_t* JS_AtomRawCharacter16(JSRuntime* runtime, JSAtom atom) {
+  if (JS_AtomIsTaggedInt(atom)) {
+    auto* buf = (char*)js_malloc_rt(runtime, 64);
+    snprintf(buf, sizeof(buf), "%u", JS_AtomToUInt32(atom));
+    return reinterpret_cast<uint16_t*>(buf);
+  }
+
+  JSString* string = runtime->atom_array[atom];
+  return string->u.str16;
+}
+
+int JS_FindCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(char)) {
+  JSString* string = runtime->atom_array[atom];
+  for (int i = 0; i < string->len; i++) {
+    if (CharacterMatchFunction(static_cast<char>(string->u.str8[i]))) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int JS_FindWCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(uint16_t)) {
+  JSString* string = runtime->atom_array[atom];
+  for (int i = 0; i < string->len; i++) {
+    if (CharacterMatchFunction(string->u.str16[i])) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 JSValue JS_GetProxyTarget(JSValue value) {

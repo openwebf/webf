@@ -73,7 +73,7 @@ class Node : public EventTarget {
 
   // DOM methods & attributes for Node
   virtual std::string nodeName() const = 0;
-  virtual std::string nodeValue() const = 0;
+  virtual AtomicString nodeValue() const = 0;
   virtual void setNodeValue(const AtomicString&, ExceptionState&);
   virtual NodeType nodeType() const = 0;
 
@@ -92,6 +92,7 @@ class Node : public EventTarget {
   Node* removeChild(Node* child, ExceptionState&);
   Node* appendChild(Node* new_child, ExceptionState&);
 
+  bool hasChildNodes(ExceptionState& exception_state) const { return firstChild(); }
   bool hasChildren() const { return firstChild(); }
   Node* cloneNode(bool deep, ExceptionState&) const;
   Node* cloneNode(ExceptionState&) const;

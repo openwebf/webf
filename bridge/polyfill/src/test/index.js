@@ -59,6 +59,7 @@ class JasmineTracker {
     clearAllTimer();
     resetDocumentElement();
     webf.methodChannel.clearMethodCallHandler();
+    document.___clear_cookies__();
   }
   specStarted(result) {
   }
