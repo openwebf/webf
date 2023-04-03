@@ -1131,6 +1131,7 @@ class RenderBoxModel extends RenderBox
   Size _maxScrollableSize = Size.zero;
   Size get scrollableSize => _maxScrollableSize;
   set scrollableSize(Size value) {
+    assert(value.isFinite);
     _maxScrollableSize = value;
   }
 
