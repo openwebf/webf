@@ -9,7 +9,7 @@ import 'package:webf/src/foundation/binding.dart';
 
 const String DOCUMENT_FRAGMENT = 'DOCUMENTFRAGMENT';
 
-class DocumentFragment extends Node {
+class DocumentFragment extends ContainerNode {
   DocumentFragment([context]) : super(NodeType.COMMENT_NODE, context);
 
   @override
