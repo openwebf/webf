@@ -1,0 +1,93 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
+import 'node.dart';
+import 'node_list.dart';
+import 'container_node.dart';
+import 'collection_index_cache.dart';
+
+class _ChildNodeListIterator extends Iterator<Node> {
+  final ChildNodeList collection;
+  int _index = 0;
+
+  _ChildNodeListIterator(this.collection);
+
+  @override
+  Node get current => collection._collectionIndexCache.nodeAt(collection, _index)!;
+
+  @override
+  bool moveNext() {
+
+  }
+}
+
+class ChildNodeList extends NodeList {
+  ChildNodeList(ContainerNode rootNode)
+      : _owner = rootNode,
+        _collectionIndexCache = CollectionIndexCache<ChildNodeList, Node>();
+
+  final ContainerNode _owner;
+  final CollectionIndexCache<ChildNodeList, Node> _collectionIndexCache;
+
+  @override
+  int get length => _collectionIndexCache.nodeCount(this);
+
+  @override
+  bool get isChildNodeList => true;
+
+  @override
+  Node get ownerNode => _owner;
+
+  Node? item(int index) {
+    return _collectionIndexCache.nodeAt(this, index);
+  }
+
+  void invalidateCache() {
+    _collectionIndexCache.invalidate();
+  }
+
+  bool get canTraverseBackward => true;
+
+  T? traverseToFirst<T extends Node>() => _owner.firstChild as T?;
+  T? traverseToLast<T extends Node>() => _owner.lastChild as T?;
+
+  T? traverseForwardToOffset<T extends Node>(int offset, Node currentNode, int currentOffset) {
+    assert(currentOffset < offset);
+    assert(ownerNode.childNodes == this);
+    assert(ownerNode == currentNode.parentNode);
+    Node? next = currentNode.nextSibling;
+    while (next != null) {
+      currentOffset++;
+      if (currentOffset == offset) {
+        return next as T?;
+      }
+      next = next.nextSibling;
+    }
+    return null;
+  }
+
+  T? traverseBackwardToOffset<T extends Node>(int offset, Node currentNode, int currentOffset) {
+    assert(currentOffset > offset);
+    assert(ownerNode.childNodes == this);
+    assert(ownerNode == currentNode.parentNode);
+    Node? previous = currentNode.previousSibling;
+    while (previous != null) {
+      currentOffset--;
+      if (currentOffset == offset) {
+        return previous as T?;
+      }
+      previous = previous.previousSibling;
+    }
+    return null;
+  }
+
+  @override
+  bool get isEmpty => _collectionIndexCache.isEmpty(this);
+
+  @override
+  bool get isNotEmpty => !_collectionIndexCache.isEmpty(this);
+
+  @override
+  Iterator<Node> get iterator => _collectionIndexCache.iterator;
+}

@@ -11,6 +11,7 @@ export 'src/dom/character_data.dart';
 export 'src/dom/object_element_client.dart';
 export 'src/dom/bounding_client_rect.dart';
 export 'src/dom/node.dart';
+export 'src/dom/container_node.dart';
 export 'src/dom/text_node.dart';
 export 'src/dom/window.dart';
 export 'src/dom/document.dart';

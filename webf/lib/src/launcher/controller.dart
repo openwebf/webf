@@ -468,7 +468,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         targetParentNode!.insertBefore(newNode, target);
         break;
       case 'afterbegin':
-        target.insertBefore(newNode, target.firstChild);
+        target.insertBefore(newNode, target.firstChild!);
         break;
       case 'beforeend':
         target.appendChild(newNode);
@@ -479,7 +479,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         } else {
           targetParentNode.insertBefore(
             newNode,
-            targetParentNode.childNodes[targetParentNode.childNodes.indexOf(target) + 1],
+            target.nextSibling!
           );
         }
         break;

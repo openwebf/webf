@@ -99,7 +99,7 @@ class ElementAttributeProperty {
   final ElementAttributeDeleter? deleter;
 }
 
-abstract class Element extends Node with ElementBase, ElementEventMixin, ElementOverflowMixin {
+abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
@@ -967,8 +967,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   Node insertBefore(Node child, Node referenceNode) {
     // Node.insertBefore will change element tree structure,
     // so get the referenceIndex before calling it.
-    int referenceIndex = childNodes.indexOf(referenceNode);
-    Node node = super.insertBefore(child, referenceNode);
+    // int referenceIndex = childNodes.indexOf(referenceNode);
+    Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
     if (child is Element) {
       child.renderStyle.parent = renderStyle;
@@ -976,19 +976,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     if (isRendererAttached) {
       // If afterRenderObject is null, which means insert child at the head of parent.
-      RenderBox? afterRenderObject;
+      RenderBox? afterRenderObject = referenceNode.renderer;
 
       // Only append child renderer when which is not attached.
       if (!child.isRendererAttached) {
-        if (referenceIndex < childNodes.length) {
-          while (referenceIndex >= 0) {
-            Node reference = childNodes[referenceIndex];
-            if (reference.isRendererAttached) {
-              afterRenderObject = reference.renderer;
-              break;
-            } else {
-              referenceIndex--;
-            }
+        // Found the most closed
+        if (afterRenderObject == null) {
+          Node? ref = referenceNode;
+          while(ref != null && afterRenderObject == null) {
+            afterRenderObject = ref.renderer;
+            ref = ref.previousSibling;
           }
         }
 
@@ -998,8 +995,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
             && referenceNode is Element
             && referenceNode.renderer != null
             && referenceNode.isRendererAttached) {
-          while(referenceIndex + 1 < childNodes.length) {
-            Node reference = childNodes[referenceIndex + 1];
+          Node? reference = referenceNode;
+          while(reference != null) {
             if(reference.isRendererAttached && reference is Element) {
               if(reference.renderer != null &&
                   reference.renderer!.parent != null &&
@@ -1008,7 +1005,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
               }
               reference.unmountRenderObject(deep: true);
             }
-            referenceIndex++;
+            reference = reference.nextSibling;
           }
         }
 
