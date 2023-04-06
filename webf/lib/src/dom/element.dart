@@ -212,15 +212,16 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   RenderBox? get renderer => renderBoxModel;
 
+  HTMLCollection? _collection;
+
+  HTMLCollection ensureCachedCollection() {
+    _collection ??= HTMLCollection(this);
+    return _collection!;
+  }
+
   // https://developer.mozilla.org/en-US/docs/Web/API/Element/children
   // The children is defined at interface [ParentNode].
-  List<Element> get children {
-    List<Element> _children = [];
-    for (Node child in childNodes) {
-      if (child is Element) _children.add(child);
-    }
-    return _children;
-  }
+  HTMLCollection get children => ensureCachedCollection();
 
   @override
   RenderBox createRenderer() {
@@ -976,13 +977,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     if (isRendererAttached) {
       // If afterRenderObject is null, which means insert child at the head of parent.
-      RenderBox? afterRenderObject = referenceNode.renderer;
+      RenderBox? afterRenderObject = referenceNode.previousSibling?.renderer;
 
       // Only append child renderer when which is not attached.
       if (!child.isRendererAttached) {
         // Found the most closed
         if (afterRenderObject == null) {
-          Node? ref = referenceNode;
+          Node? ref = referenceNode.previousSibling;
           while(ref != null && afterRenderObject == null) {
             afterRenderObject = ref.renderer;
             ref = ref.previousSibling;

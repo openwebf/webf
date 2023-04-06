@@ -23,3 +23,4 @@ export 'src/dom/element_registry.dart';
 export 'src/dom/style_node_manager.dart';
 export 'src/dom/node_list.dart';
 export 'src/dom/child_node_list.dart';
+export 'src/dom/html_collection.dart';
