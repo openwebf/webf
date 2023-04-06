@@ -1,3 +1,7 @@
+## 0.14.0-beta.7+3
+
+* fix: fix crash when pass empty blank string to `atob()`
+
 ## 0.14.0-beta.7+2
 
 * refactor: optimize Element._checkRecalculateStyle() performance.
