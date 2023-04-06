@@ -9,16 +9,26 @@ import 'collection_index_cache.dart';
 
 class _ChildNodeListIterator extends Iterator<Node> {
   final ChildNodeList collection;
-  int _index = 0;
+  int _index = -1;
+  Node? _current;
 
   _ChildNodeListIterator(this.collection);
 
   @override
-  Node get current => collection._collectionIndexCache.nodeAt(collection, _index)!;
+  Node get current {
+    return _current!;
+  }
 
   @override
   bool moveNext() {
-
+    if (_current == null) {
+      _current = collection.ownerNode.firstChild;
+      if (_current == null) return false;
+    } else {
+      _current = collection.traverseForwardToOffset(_index + 1, _current!, _index);
+    }
+    _index++;
+    return _current != null;
   }
 }
 
@@ -89,5 +99,5 @@ class ChildNodeList extends NodeList {
   bool get isNotEmpty => !_collectionIndexCache.isEmpty(this);
 
   @override
-  Iterator<Node> get iterator => _collectionIndexCache.iterator;
+  Iterator<Node> get iterator => _ChildNodeListIterator(this);
 }

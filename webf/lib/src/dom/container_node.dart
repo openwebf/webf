@@ -93,7 +93,7 @@ abstract class ContainerNode extends Node {
     }
 
     // 5. Insert node into parent before reference child.
-    _insertNodeVector(targets, referenceNode, _adoptAndInsertBefore);
+    _insertNode(targets, referenceNode, _adoptAndInsertBefore);
 
     // 6. Mark this element to dirty elements.
     if (this is Element) {
@@ -108,7 +108,7 @@ abstract class ContainerNode extends Node {
     // To insert a node into a parent before a child, run step 9 from the spec:
     // 8. Run the children changed steps for parent when inserting a node into a parent.
     // https://dom.spec.whatwg.org/#concept-node-insert
-    childrenChanged();
+    didInsertNode(targets, referenceNode);
 
     return newChild;
   }
@@ -158,9 +158,9 @@ abstract class ContainerNode extends Node {
     // 14. Insert node into parent before reference child with the suppress
     // observers flag set.
     if (next != null) {
-      _insertNodeVector(targets, next, _adoptAndInsertBefore);
+      _insertNode(targets, next, _adoptAndInsertBefore);
     } else {
-      _insertNodeVector(targets, null, _adoptAndAppendChild);
+      _insertNode(targets, null, _adoptAndAppendChild);
     }
 
     if (isOldChildConnected) {
@@ -168,10 +168,7 @@ abstract class ContainerNode extends Node {
       newChild.connectedCallback();
     }
 
-    // To insert a node into a parent before a child, run step 9 from the spec:
-    // Run the children changed steps for parent when inserting a node into a parent.
-    // https://dom.spec.whatwg.org/#concept-node-insert
-    childrenChanged();
+    didInsertNode(targets, next);
 
     return oldChild;
   }
@@ -206,12 +203,13 @@ abstract class ContainerNode extends Node {
 
     // 21. Run the children changed steps for parent.
     // https://dom.spec.whatwg.org/#concept-node-remove
-    childrenChanged();
+    childrenChanged(ChildrenChange.forRemoval(child, prev, next, ChildrenChangeSource.API));
 
     return child;
   }
 
-  void _insertNodeVector(List<Node> targets, Node? next, InsertNodeHandler mutator) {
+  void _insertNode(
+      List<Node> targets, Node? next, InsertNodeHandler mutator) {
     for (final targetNode in targets) {
       assert(targetNode.parentNode == null);
       mutator(this, targetNode, next);
@@ -227,7 +225,7 @@ abstract class ContainerNode extends Node {
       return newChild;
     }
 
-    _insertNodeVector(targets, null, _adoptAndAppendChild);
+    _insertNode(targets, null, _adoptAndAppendChild);
 
     if (this is Element) {
       ownerDocument.styleDirtyElements.add(this as Element);
@@ -237,10 +235,7 @@ abstract class ContainerNode extends Node {
       newChild.connectedCallback();
     }
 
-    // To insert a node into a parent before a child, run step 9 from the spec:
-    // 9. Run the children changed steps for parent when inserting a node into a parent.
-    // https://dom.spec.whatwg.org/#concept-node-insert
-    childrenChanged();
+    didInsertNode(targets, null);
 
     return newChild;
   }
@@ -274,7 +269,7 @@ abstract class ContainerNode extends Node {
 
   void notifyNodeInsertedInternal(Node root) {
     for (final node in NodeTraversal.inclusiveDescendantsOf(root)) {
-      if (!isConnected) {
+      if (!isConnected && !node.isContainerNode()) {
         continue;
       }
       node.insertedInto(this);
@@ -300,6 +295,49 @@ abstract class ContainerNode extends Node {
     oldChild.previousSibling = null;
     oldChild.nextSibling = null;
     oldChild.parentOrShadowHostNode = null;
+  }
+
+  void didInsertNode(List<Node> targets, Node? next) {
+    Node? unchangedPrevious = targets.isNotEmpty ? targets[0].previousSibling : null;
+
+    for (final targetNode in targets) {
+      childrenChanged(ChildrenChange.forInsertion(targetNode, unchangedPrevious, next, ChildrenChangeSource.API));
+    }
+  }
+
+  @override
+  void childrenChanged(ChildrenChange change) {
+    super.childrenChanged(change);
+    invalidateNodeListCachesInAncestors(change);
+  }
+
+  void invalidateNodeListCachesInAncestors(ChildrenChange? change) {
+    // This is a performance optimization, NodeList cache invalidation is
+    // not necessary for a text change.
+    if (change != null && change.type == ChildrenChangeType.TEXT_CHANGE) {
+      return;
+    }
+
+    // This is a performance optimization, NodeList cache invalidation is
+    // not necessary for non-element nodes.
+    if (change != null &&
+        change.affectsElements == ChildrenChangeAffectsElements.NO) {
+      return;
+    }
+
+    // if (!ownerDocument.shouldInvalidateNodeListCaches(attrName)) {
+    //   return;
+    // }
+    // document.invalidateNodeListCaches(attrName);
+
+    ContainerNode? node = this;
+    while (node != null) {
+      NodeList lists = node.childNodes;
+      if (lists is ChildNodeList) {
+        lists.invalidateCache();
+      }
+      node = node.parentNode;
+    }
   }
 
   Node? _firstChild;
