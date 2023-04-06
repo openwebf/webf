@@ -31,6 +31,83 @@ enum DocumentPosition {
   IMPLEMENTATION_SPECIFIC,
 }
 
+enum ChildrenChangeType {
+  ELEMENT_INSERTED,
+  NON_ELEMENT_INSERTED,
+  ELEMENT_REMOVED,
+  NON_ELEMENT_REMOVED,
+  ALL_CHILDREN_REMOVED,
+  TEXT_CHANGE
+}
+
+enum ChildrenChangeSource {
+  API,
+  PARSER
+}
+
+enum ChildrenChangeAffectsElements {
+  NO,
+  YES
+}
+
+class ChildrenChange {
+  final ChildrenChangeType type;
+  final ChildrenChangeSource byParser;
+  final ChildrenChangeAffectsElements affectsElements;
+  final Node? siblingChanged;
+  final Node? siblingBeforeChange;
+  final Node? siblingAfterChange;
+  final List<Node>? removedNodes;
+  final String? oldText;
+
+  ChildrenChange({
+    required this.type,
+    required this.byParser,
+    required this.affectsElements,
+    this.siblingChanged,
+    this.siblingBeforeChange,
+    this.siblingAfterChange,
+    this.removedNodes,
+    this.oldText,
+  });
+
+  factory ChildrenChange.forInsertion(
+      Node node, Node? unchangedPrevious, Node? unchangedNext, ChildrenChangeSource byParser) {
+    return ChildrenChange(
+      type: node.isElementNode() ? ChildrenChangeType.ELEMENT_INSERTED : ChildrenChangeType.NON_ELEMENT_INSERTED,
+      byParser: byParser,
+      affectsElements: node.isElementNode() ? ChildrenChangeAffectsElements.YES : ChildrenChangeAffectsElements.NO,
+      siblingChanged: node,
+      siblingBeforeChange: unchangedPrevious,
+      siblingAfterChange: unchangedNext,
+    );
+  }
+
+  factory ChildrenChange.forRemoval(
+      Node node, Node? previousSibling, Node? nextSibling, ChildrenChangeSource byParser) {
+    return ChildrenChange(
+      type: node.isElementNode() ? ChildrenChangeType.ELEMENT_REMOVED : ChildrenChangeType.NON_ELEMENT_REMOVED,
+      byParser: byParser,
+      affectsElements: node.isElementNode() ? ChildrenChangeAffectsElements.YES : ChildrenChangeAffectsElements.NO,
+      siblingChanged: node,
+      siblingBeforeChange: previousSibling,
+      siblingAfterChange: nextSibling,
+    );
+  }
+
+  bool isChildInsertion() {
+    return type == ChildrenChangeType.ELEMENT_INSERTED || type == ChildrenChangeType.NON_ELEMENT_INSERTED;
+  }
+
+  bool isChildRemoval() {
+    return type == ChildrenChangeType.ELEMENT_REMOVED || type == ChildrenChangeType.NON_ELEMENT_REMOVED;
+  }
+
+  bool isChildElementChange() {
+    return type == ChildrenChangeType.ELEMENT_INSERTED || type == ChildrenChangeType.ELEMENT_REMOVED;
+  }
+}
+
 enum RenderObjectManagerType { FLUTTER_ELEMENT, WEBF_NODE }
 
 typedef NodeVisitor = void Function(Node node);
@@ -134,7 +211,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   // Children changed steps for node.
   // https://dom.spec.whatwg.org/#concept-node-children-changed-ext
-  void childrenChanged() {
+  void childrenChanged(ChildrenChange change) {
     if (!isConnected) {
       return;
     }
@@ -291,11 +368,11 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   //
   // InsertedInto() implementations must not modify the DOM tree, and must not
   // dispatch synchronous events.
-  void insertedInto(ContainerNode insertion_point) {
-    assert(insertion_point.isConnected || isContainerNode());
-    if (insertion_point.isConnected) {
+  void insertedInto(ContainerNode insertionPoint) {
+    assert(insertionPoint.isConnected || isContainerNode());
+    if (insertionPoint.isConnected) {
       _isConnected = true;
-      insertion_point.ownerDocument.incrementNodeCount();
+      insertionPoint.ownerDocument.incrementNodeCount();
     }
   }
 
