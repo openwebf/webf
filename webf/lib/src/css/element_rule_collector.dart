@@ -57,7 +57,7 @@ class ElementRuleCollector {
       if (leftRule is! CSSStyleRule || rightRule is! CSSStyleRule) {
         return 0;
       }
-      int isCompare = leftRule.selectorGroup.specificity.compareTo(rightRule.selectorGroup.specificity);
+      int isCompare = leftRule.selectorGroup.matchSpecificity.compareTo(rightRule.selectorGroup.matchSpecificity);
       if (isCompare == 0) {
         return leftRule.position.compareTo(rightRule.position);
       }

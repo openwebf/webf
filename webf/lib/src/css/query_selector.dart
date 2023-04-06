@@ -50,13 +50,16 @@ SelectorGroup? _parseSelectorGroup(String selector) {
 
 class SelectorEvaluator extends SelectorVisitor {
   Element? _element;
+  SelectorGroup? _selectorGroup;
 
-  bool matchSelector(SelectorGroup? selector, Element? element) {
-    if (selector == null || element == null) {
+  bool matchSelector(SelectorGroup? selectorGroup, Element? element) {
+    if (selectorGroup == null || element == null) {
       return false;
     }
     _element = element;
-    return visitSelectorGroup(selector);
+    _selectorGroup = selectorGroup;
+    _selectorGroup?.matchSpecificity = -1;
+    return visitSelectorGroup(selectorGroup);
   }
 
   Element? querySelector(Node root, SelectorGroup? selector) {
@@ -139,6 +142,8 @@ class SelectorEvaluator extends SelectorVisitor {
     }
 
     _element = old;
+    if (result)
+      _selectorGroup?.matchSpecificity = node.specificity;
     return result;
   }
 
