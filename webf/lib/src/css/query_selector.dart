@@ -273,19 +273,28 @@ class SelectorEvaluator extends SelectorVisitor {
         var parent = _element?.parentElement;
 
         if (parent != null) {
-          var elIndex;
-          var children = parent.children;
+          Iterable<Element> children = parent.children;
+
+          if (children.isEmpty) return false;
 
           if (selector.name == 'nth-of-type' || selector.name == 'nth-last-of-type') {
             children = children.where((Element el) {
               return el.tagName == _element!.tagName;
-            }).toList();
+            });
+          }
+
+          int elIndex = 0;
+          for (var ele in children) {
+            if (ele == _element) {
+              break;
+            }
+            elIndex++;
           }
 
           if (selector.name == 'nth-last-child' || selector.name == 'nth-last-of-type') {
-            elIndex = children.length - children.indexOf(_element!);
+            elIndex = children.length - elIndex;
           } else {
-            elIndex = children.indexOf(_element!) + 1;
+            elIndex = elIndex + 1;
           }
 
           if (A == null) {
