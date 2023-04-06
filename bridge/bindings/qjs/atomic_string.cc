@@ -295,6 +295,11 @@ inline AtomicString RemoveCharactersInternal(JSContext* ctx,
   }
 
   AtomicString str;
+
+  if (outc == 0) {
+    return AtomicString::Empty();
+  }
+
   auto data = (CharType*)js_malloc(ctx, outc);
   memcpy(data, to, outc);
   js_free(ctx, to);

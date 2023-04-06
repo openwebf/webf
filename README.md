@@ -1,12 +1,12 @@
 # [WebF](https://openwebf.com/) [![pub package](https://img.shields.io/pub/v/webf.svg)](https://pub.dev/packages/webf)
 
-WebF (Web on Flutter) is a W3C standards compliant Web rendering engine based on Flutter, it can run web applications on Flutter natively.
+WebF (Web on Flutter) is a W3C standards-compliant web rendering engine based on Flutter, allowing web applications to run natively on Flutter.
 
-- **W3C Standards Compliant:** WebF use HTML/CSS and JavaScript to render contents on flutter. It can achieve 100% consistency with browser rendering.
-- **Front-End Framework Supports:** WebF is W3C standards compliant, so it can be used by many Front-End frameworks, such as [React](https://reactjs.org/), [Vue](https://vuejs.org/).
-- **Expand your Web app with Flutter:** WebF is fully customizable. You can define a customized HTML element with Flutter Widget and use it in your application. Or add a JavaScript API for any Dart library from <pub.dev> registry.
-- **Web Development Experience:** WebF supports inspecting DOM structure, CSS styles and debugging JavaScript with Chrome DevTools, just like the web development experience of your browser.
-- **Write Once, Run Anywhere:** With the power of WebF, You can write your web application and run it on any device flutter supports, and you can still run your apps in Node.js and Web browsers with the same codebase.
+- **W3C Standards Compliant:** WebF uses HTML/CSS and JavaScript to render content on Flutter, achieving 100% consistency with browser rendering.
+- **Front-End Framework Supports:** As WebF is W3C standards compliant, it can be used with many front-end frameworks, such as [React](https://reactjs.org/), [Vue](https://vuejs.org/).
+- **Expand your Web App with Flutter:** WebF is fully customizable. You can define a customized HTML element with Flutter Widgets and use it in your application or add a JavaScript API for any Dart library from <pub.dev> registry.
+- **Web Development Experience:** WebF supports inspecting DOM structure, CSS styles and debugging JavaScript with Chrome DevTools, providing a browser-like web development experience.
+- **Write Once, Run Anywhere:** With the power of WebF, You can write your web application and run it on any device that Flutter supports. Additionally, you can still run your apps in Node.js and web browsers with the same codebase.
 
 ## Check if a Web API or CSS is available in WebF
 
