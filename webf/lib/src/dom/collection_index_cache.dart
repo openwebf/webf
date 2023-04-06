@@ -5,7 +5,7 @@
 import 'node.dart';
 import 'child_node_list.dart';
 
-class CollectionIndexCache<Collection extends ChildNodeList, NodeType extends Node> extends Iterable<NodeType> {
+class CollectionIndexCache<Collection extends ChildNodeList, NodeType extends Node> {
   NodeType? _currentNode;
   int _cachedNodeCount;
   int _cachedNodeIndex;
