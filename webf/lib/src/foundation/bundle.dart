@@ -37,6 +37,18 @@ bool _isSupportedBytecode(String mimeType, Uri? uri) {
   return false;
 }
 
+bool isGzip(List<int> data) {
+  if (data.length < 2) {
+    return false;
+  }
+
+  int magicNumber1 = data[0];
+  int magicNumber2 = data[1];
+
+  return magicNumber1 == 0x1F && magicNumber2 == 0x8B;
+}
+
+
 // The default accept request header.
 // The order is HTML -> KBC -> JavaScript.
 String _acceptHeader() {
@@ -108,6 +120,15 @@ abstract class WebFBundle {
     data = null;
   }
 
+  Future<void> invalidateCache() async {
+    Uri? uri = Uri.tryParse(url);
+    if (uri == null) return;
+    String origin = getOrigin(uri);
+    HttpCacheController cacheController = HttpCacheController.instance(origin);
+    HttpCacheObject cacheObject = await cacheController.getCacheObject(uri);
+    await cacheObject.remove();
+  }
+
   static WebFBundle fromUrl(String url, {Map<String, String>? additionalHttpHeaders}) {
     if (_isHttpScheme(url)) {
       return NetworkBundle(url, additionalHttpHeaders: additionalHttpHeaders);
@@ -164,12 +185,8 @@ class DataBundle extends WebFBundle {
 // The bundle that source from http or https.
 class NetworkBundle extends WebFBundle {
   // Do not access this field directly; use [_httpClient] instead.
-  // We set `autoUncompress` to false to ensure that we can trust the value of
-  // the `Content-CSSLength` HTTP header. We automatically uncompress the content
-  // in our call to [consolidateHttpClientResponseBytes].
   static final HttpClient _sharedHttpClient = HttpClient()
-    ..userAgent = NavigatorModule.getUserAgent()
-    ..autoUncompress = false;
+    ..userAgent = NavigatorModule.getUserAgent();
 
   NetworkBundle(String url, {this.additionalHttpHeaders}) : super(url);
 
@@ -193,7 +210,19 @@ class NetworkBundle extends WebFBundle {
         ErrorSummary('Unable to load asset: $url'),
         IntProperty('HTTP status code', response.statusCode),
       ]);
-    final Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+    Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+
+    // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
+    // and decode them if they are in gzip format.
+    if (isGzip(bytes)) {
+      bytes = Uint8List.fromList(gzip.decoder.convert(bytes));
+    }
+
+    if (bytes.isEmpty) {
+      await invalidateCache();
+      return;
+    }
+
     data = bytes.buffer.asUint8List();
     contentType = response.headers.contentType ?? ContentType.binary;
   }
