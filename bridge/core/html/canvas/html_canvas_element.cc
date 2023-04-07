@@ -34,6 +34,7 @@ void HTMLCanvasElement::Trace(GCVisitor* visitor) const {
   for (auto&& context : running_context_2ds_) {
     visitor->Trace(context);
   }
+  HTMLElement::Trace(visitor);
 }
 
 bool HTMLCanvasElement::IsAttributeDefinedInternal(const AtomicString& key) const {

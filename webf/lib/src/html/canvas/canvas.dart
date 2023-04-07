@@ -107,11 +107,15 @@ class CanvasElement extends Element {
   CanvasRenderingContext2D getContext(String type, {options}) {
     switch (type) {
       case '2d':
-        if (painter.context == null) {
-          context2d ??= CanvasRenderingContext2D(this);
-          painter.context = context2d;
+        if (painter.context != null) {
+          painter.context!.dispose();
+          painter.dispose();
         }
-        return painter.context!;
+
+        context2d = CanvasRenderingContext2D(this);
+        painter.context = context2d;
+
+        return context2d!;
       default:
         throw FlutterError('CanvasRenderingContext $type not supported!');
     }
