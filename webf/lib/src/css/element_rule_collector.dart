@@ -6,7 +6,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/css/query_selector.dart';
 
-bool kShowUnavailableCSSProperties = false;
+bool kShowUnavailableCSSProperties = true;
 
 class ElementRuleCollector {
   bool matchedAnyRule(RuleSet ruleSet, Element element) {
