@@ -1,3 +1,7 @@
+## 0.14.0-beta.7+4
+
+* fix: fix canvas element get multiple context error.
+
 ## 0.14.0-beta.7+3
 
 * fix: fix crash when pass empty blank string to `atob()`
