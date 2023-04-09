@@ -25,8 +25,4 @@ class DocumentFragment extends ContainerNode {
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
   }
-
-  @override
-  void didNotifySubtreeInsertionsToDocument() {
-  }
 }

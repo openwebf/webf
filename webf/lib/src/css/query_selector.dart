@@ -28,7 +28,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-import 'package:quiver/core.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
@@ -283,7 +282,6 @@ class SelectorEvaluator extends SelectorVisitor {
   bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector, num? a, num b, IndexCounter finder) {
     int index = 0;
 
-    Element? currentElement = element;
     int? cacheIndex = SelectorEvaluator._nthIndexCache.getChildrenIndexFromCache(_element!.parentNode!, _element!, selector.name);
     if (cacheIndex != null) {
       index = cacheIndex;

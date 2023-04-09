@@ -141,6 +141,5 @@ class CollectionIndexCache<Collection extends ChildNodeList, NodeType extends No
     _cachedNodeIndex = index;
   }
 
-  @override
   Iterator<NodeType> get iterator => throw UnimplementedError();
 }
