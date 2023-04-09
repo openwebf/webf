@@ -11,7 +11,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'node_data.dart';
-import 'node_list.dart';
 
 enum NodeType {
   ELEMENT_NODE,
@@ -380,7 +379,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     assert(insertionPoint.isConnected || isContainerNode());
     if (insertionPoint.isConnected) {
       _isConnected = true;
-      insertionPoint.ownerDocument.incrementNodeCount();
     }
   }
 
@@ -388,7 +386,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     assert(insertionPoint.isConnected || isContainerNode());
     if (insertionPoint.isConnected) {
       _isConnected = false;
-      insertionPoint.ownerDocument.decrementNodeCount();
     }
   }
 

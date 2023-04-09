@@ -6,7 +6,7 @@ import 'package:webf/dom.dart';
 
 class InclusiveDescendantsOfIterator<T extends Node> extends Iterator<T> {
   T? _current;
-  T? _root;
+  final T? _root;
 
   InclusiveDescendantsOfIterator(this._root);
 

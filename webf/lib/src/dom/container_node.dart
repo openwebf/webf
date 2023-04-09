@@ -2,16 +2,11 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' show Widget;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/css/query_selector.dart';
 import 'package:webf/src/dom/node_traversal.dart';
-import 'package:webf/widget.dart';
 
 typedef InsertNodeHandler = void Function(ContainerNode container, Node child, Node? next);
 
