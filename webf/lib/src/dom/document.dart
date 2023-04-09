@@ -125,14 +125,6 @@ class Document extends ContainerNode {
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L770
   bool parsing = false;
 
-  int _nodeCount = 0;
-  void incrementNodeCount() {
-    _nodeCount++;
-  }
-  void decrementNodeCount() {
-    _nodeCount--;
-  }
-
   int _requestCount = 0;
   bool get hasPendingRequest => _requestCount > 0;
   void incrementRequestCount() {
