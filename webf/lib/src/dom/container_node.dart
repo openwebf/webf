@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' show Widget;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/css/query_selector.dart';
 import 'package:webf/src/dom/node_traversal.dart';
 import 'package:webf/widget.dart';
 
@@ -325,11 +326,6 @@ abstract class ContainerNode extends Node {
       return;
     }
 
-    // if (!ownerDocument.shouldInvalidateNodeListCaches(attrName)) {
-    //   return;
-    // }
-    // document.invalidateNodeListCaches(attrName);
-
     ContainerNode? node = this;
     while (node != null) {
       NodeList lists = node.childNodes;
@@ -337,6 +333,9 @@ abstract class ContainerNode extends Node {
         lists.invalidateCache();
       }
       node = node.parentNode;
+    }
+    if (parentNode != null) {
+      SelectorEvaluator.nthIndexCache.invalidateWithParentNode(parentNode!);
     }
   }
 

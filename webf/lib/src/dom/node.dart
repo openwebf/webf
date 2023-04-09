@@ -232,15 +232,23 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   Element? get previousElementSibling {
-    if (previousSibling != null && previousSibling!.nodeType == NodeType.ELEMENT_NODE) {
-      return previousSibling as Element;
+    Node? previous = previousSibling;
+    while(previous != null) {
+      if (previous is Element) {
+        return previous;
+      }
+      previous = previous.previousSibling;
     }
     return null;
   }
 
   Element? get nextElementSibling {
-    if (nextSibling != null && nextSibling!.nodeType == NodeType.ELEMENT_NODE) {
-      return nextSibling as Element;
+    Node? next = nextSibling;
+    while(next != null) {
+      if (next is Element) {
+        return next;
+      }
+      next = next.nextSibling;
     }
     return null;
   }
