@@ -116,7 +116,7 @@ class StyleNodeManager {
         document.styleDirtyElements.add(node);
       }
       if (node.childNodes.isNotEmpty) {
-        stack.addAll(node.childNodes.reversed);
+        stack.addAll(node.childNodes);
       }
     }
   }

@@ -61,7 +61,7 @@ class _InactiveRenderObjects {
   }
 }
 
-class Document extends Node {
+class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
   RenderViewportBox? _viewport;
@@ -76,6 +76,9 @@ class Document extends Node {
   late StyleNodeManager _styleNodeManager;
 
   final RuleSet ruleSet = RuleSet();
+
+  @override
+  bool get isConnected => true;
 
   Document(
     BindingContext context, {
@@ -288,7 +291,7 @@ class Document extends Node {
   }
 
   @override
-  Node removeChild(Node child) {
+  Node? removeChild(Node child) {
     if (documentElement == child) {
       documentElement = null;
       ruleSet.reset();

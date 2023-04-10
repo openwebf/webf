@@ -1103,7 +1103,7 @@ class RenderBoxModel extends RenderBox
         scrollContainer = parent.parent as RenderBoxModel;
         break;
       }
-      parent = parent.parent as RenderLayoutBox?;
+      parent = parent.parent;
     }
     return scrollContainer;
   }
