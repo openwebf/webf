@@ -103,9 +103,9 @@ class ImageElement extends Element {
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['loading'] =
         BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
-    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = castToType<int>(value));
+    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => widthValue = castToType<String>(value));
     properties['height'] =
-        BindingObjectProperty(getter: () => height, setter: (value) => height = castToType<int>(value));
+        BindingObjectProperty(getter: () => height, setter: (value) => heightValue = castToType<String>(value));
     properties['scaling'] =
         BindingObjectProperty(getter: () => scaling, setter: (value) => scaling = castToType<String>(value));
     properties['naturalWidth'] = BindingObjectProperty(getter: () => naturalWidth);
@@ -119,8 +119,8 @@ class ImageElement extends Element {
 
     attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
     attributes['loading'] = ElementAttributeProperty(setter: (value) => loading = attributeToProperty<String>(value));
-    attributes['width'] = ElementAttributeProperty(setter: (value) => width = attributeToProperty<int>(value));
-    attributes['height'] = ElementAttributeProperty(setter: (value) => height = attributeToProperty<int>(value));
+    attributes['width'] = ElementAttributeProperty(setter: (value) => widthValue = attributeToProperty<String>(value));
+    attributes['height'] = ElementAttributeProperty(setter: (value) => heightValue = attributeToProperty<String>(value));
     attributes['scaling'] = ElementAttributeProperty(setter: (value) => scaling = attributeToProperty<String>(value));
   }
 
@@ -529,9 +529,9 @@ class ImageElement extends Element {
     }
   }
 
-  set width(int value) {
-    if (value.isNegative) value = 0;
-    internalSetAttribute(WIDTH, value.toString());
+  set widthValue(String value) {
+    CSSLengthValue width = CSSLength.parseLength(value, renderStyle);
+    internalSetAttribute(WIDTH, width.computedValue.toString());
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
     } else {
@@ -539,9 +539,9 @@ class ImageElement extends Element {
     }
   }
 
-  set height(int value) {
-    if (value.isNegative) value = 0;
-    internalSetAttribute(HEIGHT, value.toString());
+  set heightValue(String value) {
+    CSSLengthValue height = CSSLength.parseLength(value, renderStyle);
+    internalSetAttribute(HEIGHT, height.computedValue.toString());
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
     } else {

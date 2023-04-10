@@ -765,7 +765,7 @@ class WebFRenderParagraph extends RenderBox
 
     List<ui.TextBox> mergedBoxes = [];
     for (int i = 0; i < boxes.length; i++) {
-      if (mergedBoxes.isNotEmpty && mergedBoxes.last?.right == boxes[i].left) {
+      if (mergedBoxes.isNotEmpty && mergedBoxes.last.right == boxes[i].left) {
         ui.TextBox lastBox = mergedBoxes.removeLast();
         mergedBoxes.add(ui.TextBox.fromLTRBD(lastBox.left,
             math.min(lastBox.top, boxes[i].top),
