@@ -72,11 +72,11 @@ class CollectionIndexCache<Collection extends ChildNodeList, NodeType extends No
 
   NodeType? _nodeBeforeCachedNode(Collection collection, int index) {
     assert(_currentNode != null); // Cache should be valid.
-    int currentIndex = _cachedNodeIndex;
-    assert(currentIndex > index);
+    List<int> currentIndex = [_cachedNodeIndex];
+    assert(currentIndex[0] > index);
     // Determine if we should traverse from the beginning of the collection
     // instead of the cached node.
-    bool firstIsCloser = index < currentIndex - index;
+    bool firstIsCloser = index < currentIndex[0] - index;
     if (firstIsCloser || !collection.canTraverseBackward) {
       NodeType? firstNode = collection.traverseToFirst();
       assert(firstNode != null);
@@ -87,18 +87,18 @@ class CollectionIndexCache<Collection extends ChildNodeList, NodeType extends No
     assert(collection.canTraverseBackward);
     NodeType? currentNode = collection.traverseBackwardToOffset(index, _currentNode!, currentIndex);
     assert(currentNode != null);
-    _setCachedNode(currentNode, currentIndex);
+    _setCachedNode(currentNode, currentIndex[0]);
     return currentNode;
   }
 
   NodeType? _nodeAfterCachedNode(Collection collection, int index) {
     assert(_currentNode != null); // Cache should be valid.
-    int currentIndex = _cachedNodeIndex;
-    assert(currentIndex < index);
+    List<int> currentIndex = [_cachedNodeIndex];
+    assert(currentIndex[0] < index);
 
     // Determine if we should traverse from the end of the collection instead of
     // the cached node.
-    bool lastIsCloser = _isLengthCacheValid && _cachedNodeCount - index < index - currentIndex;
+    bool lastIsCloser = _isLengthCacheValid && _cachedNodeCount - index < index - currentIndex[0];
     if (lastIsCloser && collection.canTraverseBackward) {
       NodeType? lastItem = collection.traverseToLast();
       assert(lastItem != null);
@@ -110,12 +110,12 @@ class CollectionIndexCache<Collection extends ChildNodeList, NodeType extends No
     NodeType? currentNode = collection.traverseForwardToOffset(index, _currentNode!, currentIndex);
     if (currentNode == null) {
       // Did not find the node. On the plus side, we now know the length.
-      if (_isLengthCacheValid) assert(currentIndex + 1 == _cachedNodeCount);
-      _setCachedNodeCount(currentIndex + 1);
+      if (_isLengthCacheValid) assert(currentIndex[0] + 1 == _cachedNodeCount);
+      _setCachedNodeCount(currentIndex[0] + 1);
       return null;
     }
 
-    _setCachedNode(currentNode, currentIndex);
+    _setCachedNode(currentNode, currentIndex[0]);
     return currentNode;
   }
 

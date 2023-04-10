@@ -25,7 +25,7 @@ class _ChildNodeListIterator extends Iterator<Node> {
       _current = collection.ownerNode.firstChild;
       if (_current == null) return false;
     } else {
-      _current = collection.traverseForwardToOffset(_index + 1, _current!, _index);
+      _current = collection.traverseForwardToOffset(_index + 1, _current!, [_index]);
     }
     _index++;
     return _current != null;
@@ -62,14 +62,15 @@ class ChildNodeList extends NodeList {
   T? traverseToFirst<T extends Node>() => _owner.firstChild as T?;
   T? traverseToLast<T extends Node>() => _owner.lastChild as T?;
 
-  T? traverseForwardToOffset<T extends Node>(int offset, Node currentNode, int currentOffset) {
-    assert(currentOffset < offset);
+  T? traverseForwardToOffset<T extends Node>(int offset, Node currentNode, List<int> currentOffset) {
+    assert(currentOffset.length == 1);
+    assert(currentOffset[0] < offset);
     assert(ownerNode.childNodes == this);
     assert(ownerNode == currentNode.parentNode);
     Node? next = currentNode.nextSibling;
     while (next != null) {
-      currentOffset++;
-      if (currentOffset == offset) {
+      currentOffset[0]++;
+      if (currentOffset[0] == offset) {
         return next as T?;
       }
       next = next.nextSibling;
@@ -77,14 +78,15 @@ class ChildNodeList extends NodeList {
     return null;
   }
 
-  T? traverseBackwardToOffset<T extends Node>(int offset, Node currentNode, int currentOffset) {
-    assert(currentOffset > offset);
+  T? traverseBackwardToOffset<T extends Node>(int offset, Node currentNode, List<int> currentOffset) {
+    assert(currentOffset.length == 1);
+    assert(currentOffset[0] > offset);
     assert(ownerNode.childNodes == this);
     assert(ownerNode == currentNode.parentNode);
     Node? previous = currentNode.previousSibling;
     while (previous != null) {
-      currentOffset--;
-      if (currentOffset == offset) {
+      currentOffset[0]--;
+      if (currentOffset[0] == offset) {
         return previous as T?;
       }
       previous = previous.previousSibling;

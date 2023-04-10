@@ -128,6 +128,8 @@ class RenderSliverListLayout extends RenderLayoutBox {
       scrollable.handlePointerDown(event);
     } else if (event is PointerSignalEvent) {
       scrollable.handlePinterSignal(event);
+    } else if (event is PointerPanZoomStartEvent) {
+      scrollable.handlePointerPanZoomStart(event);
     }
   }
 
