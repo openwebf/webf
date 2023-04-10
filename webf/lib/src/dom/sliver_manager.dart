@@ -32,7 +32,7 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
 
   RenderSliverElementChildManager(this._target);
 
-  Iterable<Node> get _renderNodes => _target.childNodes;
+  NodeList get _renderNodes => _target.childNodes;
 
   // Only count renderable child.
   @override
