@@ -28,6 +28,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
@@ -138,7 +139,7 @@ class SelectorEvaluator extends SelectorVisitor {
           combinator = null;
           break;
         default:
-          throw _unsupported(node);
+          if (kDebugMode) throw _unsupported(node);
       }
 
       if (_element == null) {
@@ -231,7 +232,8 @@ class SelectorEvaluator extends SelectorVisitor {
     // :before, :after, :first-letter/line can't match DOM elements.
     if (_isLegacyPsuedoClass(node.name)) return false;
 
-    throw _unimplemented(node);
+    if (kDebugMode) throw _unimplemented(node);
+    return false;
   }
 
   @override
@@ -239,7 +241,8 @@ class SelectorEvaluator extends SelectorVisitor {
     // :before, :after, :first-letter/line can't match DOM elements.
     if (_isLegacyPsuedoClass(node.name)) return false;
 
-    throw _unimplemented(node);
+    if (kDebugMode) throw _unimplemented(node);
+    return false;
   }
 
   static bool _isLegacyPsuedoClass(String name) {
@@ -255,7 +258,10 @@ class SelectorEvaluator extends SelectorVisitor {
   }
 
   @override
-  bool visitPseudoElementFunctionSelector(PseudoElementFunctionSelector node) => throw _unimplemented(node);
+  bool visitPseudoElementFunctionSelector(PseudoElementFunctionSelector node) {
+    if (kDebugMode) throw _unimplemented(node);
+    return false;
+  }
 
   @override
   bool visitPseudoClassFunctionSelector(PseudoClassFunctionSelector selector) {
@@ -276,7 +282,8 @@ class SelectorEvaluator extends SelectorVisitor {
       case 'nth-last-of-type':
         return _elementSatisfiesNthLastChildrenOfType(_element!, _element!.tagName, selector, data[0], data[1]!);
     }
-    throw _unimplemented(selector);
+    if (kDebugMode) throw _unimplemented(selector);
+    return false;
   }
 
   bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector, num? a, num b, IndexCounter finder) {
@@ -479,8 +486,9 @@ class SelectorEvaluator extends SelectorVisitor {
       case TokenKind.SUBSTRING_MATCH:
         return value.contains(select);
       default:
-        throw _unsupported(node);
+        if (kDebugMode) throw _unsupported(node);
     }
+    return false;
   }
 
   UnimplementedError _unimplemented(SimpleSelector selector) => UnimplementedError("'$selector' selector of type "
