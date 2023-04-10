@@ -1,3 +1,7 @@
+## 0.14.0-beta.8
+
+* feat: optimize dart dom and CSS selector performance.
+
 ## 0.14.0-beta.7+4
 
 * fix: fix canvas element get multiple context error.
