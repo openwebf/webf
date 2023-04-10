@@ -1,3 +1,8 @@
+## 0.14.0-beta.8+1
+
+* fix: fix http cache control parse.
+* fix: not throw css parse error in release or profile.
+
 ## 0.14.0-beta.8
 
 * feat: optimize dart dom and CSS selector performance.
