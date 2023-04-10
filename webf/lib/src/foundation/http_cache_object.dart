@@ -94,6 +94,26 @@ class HttpCacheObject {
 
   static final DateTime alwaysExpired = DateTime.fromMillisecondsSinceEpoch(0);
 
+  static Map<String, String> parseCacheControlHeader(String headerValue) {
+    Map<String, String> cacheControl = {};
+
+    if (headerValue.isNotEmpty) {
+      List<String> directives = headerValue.split(',');
+
+      for (String directive in directives) {
+        List<String> parts = directive.trim().split('=');
+
+        if (parts.length == 1) {
+          cacheControl[parts[0].trim()] = '';
+        } else if (parts.length == 2) {
+          cacheControl[parts[0].trim()] = parts[1].trim();
+        }
+      }
+    }
+
+    return cacheControl;
+  }
+
   static DateTime _getExpiredTimeFromResponseHeaders(HttpHeaders headers) {
     // CacheControl's multiple directives are comma-separated.
     List<String>? cacheControls = headers[HttpHeaders.cacheControlHeader];
@@ -101,17 +121,19 @@ class HttpCacheObject {
       for (String cacheControl in cacheControls) {
         cacheControl = cacheControl.toLowerCase();
 
-        if (cacheControl.startsWith('no-store')) {
+        Map<String, String> map = parseCacheControlHeader(cacheControl);
+
+        if (map.containsKey('no-store')) {
           // Will never save cache.
           return alwaysExpired;
-        } else if (cacheControl.startsWith('no-cache')) {
+        } else if (map.containsKey('no-cache')) {
           String? eTag = headers.value(HttpHeaders.etagHeader);
           if (eTag == null) {
             // Since no-cache is determined, eTag must be provided to compare.
             return alwaysExpired;
           }
-        } else if (cacheControl.startsWith('max-age=')) {
-          int maxAge = int.tryParse(cacheControl.substring(8)) ?? 0;
+        } else if (map.containsKey('max-age')) {
+          int maxAge = int.tryParse(map['max-age']!) ?? 0;
           return DateTime.now().add(Duration(seconds: maxAge));
         }
       }
