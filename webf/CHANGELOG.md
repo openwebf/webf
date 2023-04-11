@@ -1,3 +1,8 @@
+## 0.14.0-beta.8+2
+
+* fix: css priority error with mixed selector.
+* fix: fix crash when cancelAnimationFrame in frame callbacks.
+
 ## 0.14.0-beta.8+1
 
 * fix: fix http cache control parse.

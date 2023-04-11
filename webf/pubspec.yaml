@@ -1,6 +1,6 @@
 name: webf
 description: Built flutter apps with HTML/CSS and JavaScript.
-version: 0.14.0-beta.8+1
+version: 0.14.0-beta.8+2
 homepage: https://openwebf.com
 
 environment:
