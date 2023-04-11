@@ -993,8 +993,8 @@ class WebFController {
   }
 
   void dispose() {
-    _view.dispose();
     _module.dispose();
+    _view.dispose();
     _controllerMap[_view.contextId] = null;
     _controllerMap.remove(_view.contextId);
     _nameIdMap.remove(name);
