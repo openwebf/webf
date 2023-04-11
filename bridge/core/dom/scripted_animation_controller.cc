@@ -5,6 +5,7 @@
 
 #include "scripted_animation_controller.h"
 #include "frame_request_callback_collection.h"
+#include "document.h"
 
 namespace webf {
 
@@ -21,8 +22,14 @@ static void handleRAFTransientCallback(void* ptr, int32_t contextId, double high
     return;
   }
 
+  frame_callback->SetStatus(FrameCallback::FrameStatus::kExecuting);
+
   // Trigger callbacks.
   frame_callback->Fire(highResTimeStamp);
+
+  frame_callback->SetStatus(FrameCallback::FrameStatus::kFinished);
+
+  context->document()->script_animations()->callbackCollection()->RemoveFrameCallback(frame_callback->frameId());
 }
 
 uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<FrameCallback>& frame_callback,
@@ -36,6 +43,8 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
     return -1;
   }
 
+  frame_callback->SetStatus(FrameCallback::FrameStatus::kPending);
+
   uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(frame_callback.get(), context->contextId(),
                                                                        handleRAFTransientCallback);
 
@@ -46,7 +55,7 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 }
 
 void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
-                                                    uint32_t callbackId,
+                                                    uint32_t callback_id,
                                                     ExceptionState& exception_state) {
   if (context->dartMethodPtr()->cancelAnimationFrame == nullptr) {
     exception_state.ThrowException(
@@ -55,8 +64,16 @@ void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
     return;
   }
 
-  context->dartMethodPtr()->cancelAnimationFrame(context->contextId(), callbackId);
-  frame_request_callback_collection_.CancelFrameCallback(callbackId);
+  context->dartMethodPtr()->cancelAnimationFrame(context->contextId(), callback_id);
+
+  auto frame_callback = frame_request_callback_collection_.GetFrameCallback(callback_id);
+  if (frame_callback != nullptr) {
+    if (frame_callback->status() == FrameCallback::FrameStatus::kExecuting) {
+      frame_callback->SetStatus(FrameCallback::kCanceled);
+    } else {
+      frame_request_callback_collection_.RemoveFrameCallback(callback_id);
+    }
+  }
 }
 
 void ScriptAnimationController::Trace(GCVisitor* visitor) const {
