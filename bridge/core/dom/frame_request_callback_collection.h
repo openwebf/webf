@@ -25,14 +25,10 @@ class FrameCallback {
   ExecutingContext* context() { return context_; };
 
   FrameStatus status() { return status_; }
-  void SetStatus(FrameStatus status) {
-    status_ = status;
-  }
+  void SetStatus(FrameStatus status) { status_ = status; }
 
   uint32_t frameId() { return frame_id_; }
-  void SetFrameId(uint32_t id) {
-    frame_id_ = id;
-  }
+  void SetFrameId(uint32_t id) { frame_id_ = id; }
 
   void Trace(GCVisitor* visitor) const;
 

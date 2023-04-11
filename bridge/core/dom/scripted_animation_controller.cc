@@ -4,8 +4,8 @@
  */
 
 #include "scripted_animation_controller.h"
-#include "frame_request_callback_collection.h"
 #include "document.h"
+#include "frame_request_callback_collection.h"
 
 namespace webf {
 
@@ -21,6 +21,8 @@ static void handleRAFTransientCallback(void* ptr, int32_t contextId, double high
     context->HandleException(&exception);
     return;
   }
+
+  assert(frame_callback->status() == FrameCallback::FrameStatus::kPending);
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kExecuting);
 
@@ -45,9 +47,8 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kPending);
 
-  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(frame_callback.get(), context->contextId(),
-                                                                       handleRAFTransientCallback);
-
+  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(frame_callback.get(), context->contextId(),                                                   handleRAFTransientCallback);
+  frame_callback->SetFrameId(requestId);
   // Register frame callback to collection.
   frame_request_callback_collection_.RegisterFrameCallback(requestId, frame_callback);
 
@@ -68,11 +69,10 @@ void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
 
   auto frame_callback = frame_request_callback_collection_.GetFrameCallback(callback_id);
   if (frame_callback != nullptr) {
-    if (frame_callback->status() == FrameCallback::FrameStatus::kExecuting) {
-      frame_callback->SetStatus(FrameCallback::kCanceled);
-    } else {
+    if (frame_callback->status() != FrameCallback::FrameStatus::kExecuting) {
       frame_request_callback_collection_.RemoveFrameCallback(callback_id);
     }
+    frame_callback->SetStatus(FrameCallback::kCanceled);
   }
 }
 
