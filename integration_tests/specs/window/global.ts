@@ -54,4 +54,11 @@ describe('window', () => {
 
     await simulateClick(10, 10);
   });
+
+  it('should work when cancelAnimationFrame in frame callback', (done) => {
+    const frameId = requestAnimationFrame(() => {
+      cancelAnimationFrame(frameId);
+      done();
+    });
+  });
 });
