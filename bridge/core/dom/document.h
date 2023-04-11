@@ -95,6 +95,7 @@ class Document : public ContainerNode, public TreeScope {
 
   uint32_t RequestAnimationFrame(const std::shared_ptr<FrameCallback>& callback, ExceptionState& exception_state);
   void CancelAnimationFrame(uint32_t request_id, ExceptionState& exception_state);
+  ScriptAnimationController* script_animations() { return &script_animation_controller_; };
 
   // Helper functions for forwarding LocalDOMWindow event related tasks to the
   // LocalDOMWindow if it exists.

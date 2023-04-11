@@ -15,7 +15,9 @@ class ScriptAnimationController {
  public:
   // Animation frame callbacks are used for requestAnimationFrame().
   uint32_t RegisterFrameCallback(const std::shared_ptr<FrameCallback>& callback, ExceptionState& exception_state);
-  void CancelFrameCallback(ExecutingContext* context, uint32_t callbackId, ExceptionState& exception_state);
+  void CancelFrameCallback(ExecutingContext* context, uint32_t callback_id, ExceptionState& exception_state);
+
+  FrameRequestCallbackCollection* callbackCollection() { return &frame_request_callback_collection_; };
 
   void Trace(GCVisitor* visitor) const;
 
