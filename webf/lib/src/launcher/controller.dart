@@ -310,6 +310,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   // Dispose controller and recycle all resources.
   void dispose() {
+    _disposed = true;
     debugDOMTreeChanged = null;
 
     _teardownObserver();
@@ -324,7 +325,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
     document.dispose();
     window.dispose();
-    _disposed = true;
   }
 
   VoidCallback? _originalOnPlatformBrightnessChanged;
