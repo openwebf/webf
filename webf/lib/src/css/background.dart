@@ -103,6 +103,7 @@ enum CSSBackgroundBoundary {
   borderBox,
   paddingBox,
   contentBox,
+  text
 }
 
 extension CSSBackgroundBoundaryText on CSSBackgroundBoundary {
@@ -114,6 +115,8 @@ extension CSSBackgroundBoundaryText on CSSBackgroundBoundary {
         return 'padding-box';
       case CSSBackgroundBoundary.contentBox:
         return 'content-box';
+      case CSSBackgroundBoundary.text:
+        return 'text';
     }
   }
 }
@@ -638,6 +641,8 @@ class CSSBackground {
         return CSSBackgroundBoundary.paddingBox;
       case 'content-box':
         return CSSBackgroundBoundary.contentBox;
+      case 'text':
+        return CSSBackgroundBoundary.text;
       case 'border-box':
       default:
         return CSSBackgroundBoundary.borderBox;
