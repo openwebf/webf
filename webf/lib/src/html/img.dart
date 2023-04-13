@@ -224,14 +224,20 @@ class ImageElement extends Element {
   // Width and height set through attributes.
   double? get _attrWidth {
     if (hasAttribute(WIDTH)) {
-      return CSSLength.toDouble(getAttribute(WIDTH));
+      final width = getAttribute(WIDTH);
+      if (width != null) {
+        return CSSLength.parseLength(width, renderStyle, WIDTH).computedValue;
+      }
     }
     return null;
   }
 
   double? get _attrHeight {
     if (hasAttribute(HEIGHT)) {
-      return CSSLength.toDouble(getAttribute(HEIGHT));
+      final height = getAttribute(HEIGHT);
+      if (height != null) {
+        return CSSLength.parseLength(height, renderStyle, HEIGHT).computedValue;
+      }
     }
     return null;
   }
@@ -530,8 +536,7 @@ class ImageElement extends Element {
   }
 
   set widthValue(String value) {
-    CSSLengthValue width = CSSLength.parseLength(value, renderStyle);
-    internalSetAttribute(WIDTH, width.computedValue.toString());
+    internalSetAttribute(WIDTH, width);
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
     } else {
@@ -540,8 +545,7 @@ class ImageElement extends Element {
   }
 
   set heightValue(String value) {
-    CSSLengthValue height = CSSLength.parseLength(value, renderStyle);
-    internalSetAttribute(HEIGHT, height.computedValue.toString());
+    internalSetAttribute(HEIGHT, height);
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
     } else {

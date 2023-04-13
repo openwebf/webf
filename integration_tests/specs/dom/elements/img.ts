@@ -524,7 +524,7 @@ describe('Tags img', () => {
     done();
   });
 
-  fit('works with width/height attribute', async (done) => {
+  it('works with width/height attribute', async (done) => {
     let image;
     image = createElement(
       'img',
