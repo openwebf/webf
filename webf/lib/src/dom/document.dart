@@ -182,7 +182,7 @@ class Document extends ContainerNode {
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
     methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
 
-    if (kDebugMode) {
+    if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
     }
   }
