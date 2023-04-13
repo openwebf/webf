@@ -29,8 +29,8 @@ final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
 const MOCK_SERVER_PORT = 4567;
 
-Future<void> startHttpMockServer() async {
-  await Process.start('node', [testDirectory + '/scripts/mock_http_server.js'], environment: {
+Future<Process> startHttpMockServer() async {
+  return await Process.start('node', [testDirectory + '/scripts/mock_http_server.js'], environment: {
     'PORT': MOCK_SERVER_PORT.toString()
   }, mode: ProcessStartMode.inheritStdio);
 }
@@ -44,7 +44,7 @@ void main() async {
   defineWebFCustomElements();
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
-  await startHttpMockServer();
+  Process mockHttpServer = await startHttpMockServer();
   sleep(Duration(seconds: 2));
 
   // FIXME: This is a workaround for testcases.
@@ -109,6 +109,8 @@ void main() async {
       //   print('Memory leaks found. ${mems.map((e) => e[1]).toList()}');
       //   exit(1);
       // }
+
+      mockHttpServer.kill(ProcessSignal.sigkill);
 
       exit(result == 'failed' ? 1 : 0);
     },
