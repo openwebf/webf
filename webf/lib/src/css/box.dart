@@ -43,7 +43,7 @@ mixin CSSBoxMixin on RenderStyle {
       );
     }
 
-    Gradient? gradient = backgroundImage?.gradient;
+    Gradient? gradient = backgroundClip != CSSBackgroundBoundary.text ? backgroundImage?.gradient : null;
     if (gradient is BorderGradientMixin && border != null) {
       gradient.borderEdge = border.dimensions as EdgeInsets;
     }

@@ -93,4 +93,20 @@ describe('Background-clip', () => {
     append(BODY, div);
     await snapshot();
   });
+
+  it('works with text', async () => {
+    const p = createElement(
+      'p',
+      {
+        style: {
+          background: 'linear-gradient(60deg, red, yellow, red, yellow, red)',
+          color: 'rgba(0, 0, 0, 0.5)',
+          backgroundClip: 'text',
+        },
+      },
+      [createText('The background is clipped to the foreground text.')]
+    );
+    append(BODY, p);
+    await snapshot();
+  });
 });
