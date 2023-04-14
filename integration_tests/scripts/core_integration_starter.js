@@ -25,7 +25,7 @@ function startIntegrationTest() {
     throw new Error('Unsupported platform:' + platform);
   }
 
-  const tester = spawn(testExecutable, [], {
+  const tester = spawn('lldb', [testExecutable, '-o', '\'run\'', '-o', '\'exit\''], {
     env: {
       ...process.env,
       WEBF_ENABLE_TEST: 'true',
@@ -52,6 +52,10 @@ function startIntegrationTest() {
     if (code != 0) {
       process.exit(1);
     }
+  });
+
+  process.on('beforeExit', () => {
+    tester.kill();
   });
 }
 
