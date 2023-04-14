@@ -250,6 +250,7 @@ class StyleElement extends Element {
       }
       if (_styleSheet != null) {
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+        ownerDocument.updateStyleIfNeeded();
       }
     }
   }
@@ -259,6 +260,13 @@ class StyleElement extends Element {
     Node ret = super.appendChild(child);
     _recalculateStyle();
     return ret;
+  }
+
+  @override
+  void childrenChanged() {
+    if (!isConnected) {
+      return;
+    }
   }
 
   @override
