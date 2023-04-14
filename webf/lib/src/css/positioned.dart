@@ -121,7 +121,7 @@ class CSSPositionedLayout {
     double childWidth = child.boxSize!.width;
     double scrollContainerWidth = scrollContainer.boxSize!.width;
     // Dynamic offset to scroll container
-    double offsetLeftToScrollContainer = childToScrollContainerOffset.dx - scrollContainer.scrollLeft;
+    double offsetLeftToScrollContainer = childToScrollContainerOffset.dx;
     double offsetRightToScrollContainer = scrollContainerWidth - childWidth - offsetLeftToScrollContainer;
     RenderStyle childRenderStyle = child.renderStyle;
     RenderStyle? scrollContainerRenderStyle = scrollContainer.renderStyle;
