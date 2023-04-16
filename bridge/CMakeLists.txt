@@ -102,6 +102,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/task_queue.cc
   foundation/string_view.cc
   foundation/native_value.cc
+  foundation/native_type.cc
   foundation/ui_command_buffer.cc
   polyfill/dist/polyfill.cc
   )

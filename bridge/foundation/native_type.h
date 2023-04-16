@@ -14,7 +14,11 @@
 namespace webf {
 
 // Shared C struct which can be read by dart through Dart FFI.
-struct DartReadable {};
+struct DartReadable {
+  // Dart FFI use ole32 as it's allocator, we need to override the default allocator to compact with Dart FFI.
+  static void* operator new(std::size_t size);
+  static void operator delete(void* memory);
+};
 
 struct NativeTypeBase {
   using ImplType = void;
