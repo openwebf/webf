@@ -355,7 +355,7 @@ TEST(jsValueToNativeString, utf8String) {
   JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
 }
 
-//TEST(jsValueToNativeString, unicodeChinese) {
+// TEST(jsValueToNativeString, unicodeChinese) {
 //  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
 //  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "这是你的优乐美");
 //  std::unique_ptr<webf::SharedNativeString> nativeString =
@@ -368,7 +368,7 @@ TEST(jsValueToNativeString, utf8String) {
 //  JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
 //}
 //
-//TEST(jsValueToNativeString, emoji) {
+// TEST(jsValueToNativeString, emoji) {
 //  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
 //  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "……🤪");
 //  std::unique_ptr<webf::SharedNativeString> nativeString =
