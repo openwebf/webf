@@ -23,7 +23,7 @@ class CharacterData extends Node {
   RenderBox? get renderer => throw UnimplementedError();
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
     flutterWidget = null;
   }
@@ -35,4 +35,10 @@ class CharacterData extends Node {
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
   }
+
+  @override
+  Node? get firstChild => null;
+
+  @override
+  Node? get lastChild => null;
 }

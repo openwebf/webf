@@ -6,6 +6,8 @@
 import 'package:webf/css.dart';
 import 'package:webf/src/css/css_animation.dart';
 
+// aB to a-b
+RegExp kebabCaseReg = RegExp(r'[A-Z]');
 // a-b to aB
 final RegExp _camelCaseReg = RegExp(r'-(\w)');
 final RegExp _commaRegExp = RegExp(r',(?![^\(]*\))');
@@ -16,6 +18,11 @@ const String _0s = '0s';
 const String _0 = '0';
 const String _1 = '1';
 const String _0Percent = '0%';
+
+// aB to a-b
+String kebabize(String str) {
+  return str.replaceAllMapped(kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
+}
 
 // a-b -> aB
 String camelize(String str) {
@@ -304,7 +311,7 @@ class CSSStyleProperty {
         borderLeftColor = values[2];
       }
     } else if (property == BORDER_WIDTH) {
-      List<String?>? values = getEdgeValues(shorthandValue, isNonNegativeLength: true);
+      List<String?>? values = getEdgeValues(shorthandValue);
       if (values == null) return;
 
       borderTopWidth = values[0];

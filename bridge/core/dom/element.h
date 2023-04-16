@@ -8,7 +8,7 @@
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
-#include "core/css/legacy/css_style_declaration.h"
+#include "core/css/inline_css_style_declaration.h"
 #include "element_data.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
@@ -22,13 +22,17 @@ class Element : public ContainerNode {
 
  public:
   using ImplType = Element*;
-  Element(const AtomicString& tag_name, Document* document, ConstructionType = kCreateElement);
+  Element(const AtomicString& namespace_uri,
+          const AtomicString& local_name,
+          const AtomicString& prefix,
+          Document* document,
+          ConstructionType = kCreateElement);
 
-  ElementAttributes* attributes() { return &EnsureElementAttributes(); }
-  ElementAttributes& EnsureElementAttributes();
+  ElementAttributes* attributes() const { return &EnsureElementAttributes(); }
+  ElementAttributes& EnsureElementAttributes() const;
 
   bool hasAttribute(const AtomicString&, ExceptionState& exception_state);
-  AtomicString getAttribute(const AtomicString&, ExceptionState& exception_state);
+  AtomicString getAttribute(const AtomicString&, ExceptionState& exception_state) const;
 
   // Passing null as the second parameter removes the attribute when
   // calling either of these set methods.
@@ -55,16 +59,25 @@ class Element : public ContainerNode {
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
 
   bool HasTagName(const AtomicString&) const;
-  std::string nodeValue() const override;
-  AtomicString tagName() const { return tag_name_.ToUpperSlow(ctx()); }
+  AtomicString nodeValue() const override;
+  AtomicString tagName() const { return getUppercasedQualifiedName(); }
+  AtomicString prefix() const { return prefix_; }
+  AtomicString localName() const { return local_name_; }
+  AtomicString namespaceURI() const { return namespace_uri_; }
   std::string nodeName() const override;
-  std::string nodeNameLowerCase() const;
+
+  AtomicString className() const;
+  void setClassName(const AtomicString& value, ExceptionState& exception_state);
+
+  AtomicString id() const;
+  void setId(const AtomicString& value, ExceptionState& exception_state);
 
   std::vector<Element*> getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
 
-  CSSStyleDeclaration* style();
-  CSSStyleDeclaration& EnsureCSSStyleDeclaration();
+  InlineCssStyleDeclaration* style();
+  InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
+  DOMTokenList* classList();
 
   Element& CloneWithChildren(CloneChildrenFlag flag, Document* = nullptr) const;
   Element& CloneWithoutChildren(Document* = nullptr) const;
@@ -85,8 +98,12 @@ class Element : public ContainerNode {
 
  protected:
   const ElementData* GetElementData() const { return element_data_.get(); }
+  const AtomicString& getQualifiedName() const { return local_name_; }
+  const AtomicString getUppercasedQualifiedName() const;
   ElementData& EnsureElementData() const;
-  AtomicString tag_name_ = AtomicString::Empty();
+  AtomicString namespace_uri_ = AtomicString::Null();
+  AtomicString prefix_ = AtomicString::Null();
+  AtomicString local_name_ = AtomicString::Empty();
 
  private:
   // Clone is private so that non-virtual CloneElementWithChildren and
@@ -102,8 +119,8 @@ class Element : public ContainerNode {
   void _beforeUpdateId(JSValue oldIdValue, JSValue newIdValue);
 
   mutable std::unique_ptr<ElementData> element_data_;
-  Member<ElementAttributes> attributes_;
-  Member<CSSStyleDeclaration> cssom_wrapper_;
+  mutable Member<ElementAttributes> attributes_;
+  Member<InlineCssStyleDeclaration> cssom_wrapper_;
 };
 
 template <typename T>

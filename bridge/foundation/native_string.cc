@@ -7,18 +7,16 @@
 
 namespace webf {
 
-NativeString::NativeString(const uint16_t* string, uint32_t length) : length_(length) {
-  string_ = static_cast<const uint16_t*>(malloc(length * sizeof(uint16_t)));
-  memcpy((void*)string_, string, length * sizeof(uint16_t));
+SharedNativeString::SharedNativeString(const uint16_t* string, uint32_t length) : length_(length), string_(string) {}
+
+std::unique_ptr<SharedNativeString> SharedNativeString::FromTemporaryString(const uint16_t* string, uint32_t length) {
+  const auto* new_str = static_cast<const uint16_t*>(malloc(length * sizeof(uint16_t)));
+  memcpy((void*)new_str, string, length * sizeof(uint16_t));
+  return std::make_unique<SharedNativeString>(new_str, length);
 }
 
-NativeString::NativeString(const NativeString* source) : length_(source->length()) {
-  string_ = static_cast<const uint16_t*>(malloc(source->length() * sizeof(uint16_t)));
-  memcpy((void*)string_, source->string_, source->length() * sizeof(uint16_t));
-}
-
-NativeString::~NativeString() {
-  delete[] string_;
+AutoFreeNativeString::~AutoFreeNativeString() {
+  free();
 }
 
 }  // namespace webf

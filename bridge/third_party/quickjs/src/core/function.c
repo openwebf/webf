@@ -220,11 +220,12 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
   JSObject* p;
   JSFunctionBytecode* b;
   JSStackFrame sf_s, *sf = &sf_s;
-  const uint8_t* pc;
+  uint8_t* pc;
   int opcode, arg_allocated_size, i;
   JSValue *local_buf, *stack_buf, *var_buf, *arg_buf, *sp, ret_val, *pval;
   JSVarRef** var_refs;
   size_t alloca_size;
+  InlineCache *ic;
 
 #if !DIRECT_DISPATCH
 #define SWITCH(pc) switch (opcode = *pc++)
@@ -268,6 +269,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
       pc = sf->cur_pc;
       sf->prev_frame = rt->current_stack_frame;
       rt->current_stack_frame = sf;
+      ic = b->ic;
       if (s->throw_flag)
         goto exception;
       else
@@ -328,6 +330,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
   sf->prev_frame = rt->current_stack_frame;
   rt->current_stack_frame = sf;
   ctx = b->realm; /* set the current realm */
+  ic = b->ic;
 
 restart:
   for (;;) {
@@ -1478,8 +1481,32 @@ restart:
         JSAtom atom;
         atom = get_u32(pc);
         pc += 4;
+        
+        val = JS_GetPropertyInternal(ctx, sp[-1], atom, sp[-1], ic, FALSE);
+        if (unlikely(JS_IsException(val)))
+          goto exception;
+        if (ic != NULL && ic->updated == TRUE) {
+          ic->updated = FALSE;
+          put_u8(pc - 5, OP_get_field_ic);
+          put_u32(pc - 4, ic->updated_offset);
+          // safe free call because ic struct will retain atom
+          JS_FreeAtom(ctx, atom);
+        }
+        JS_FreeValue(ctx, sp[-1]);
+        sp[-1] = val;
+      }
+      BREAK;
 
-        val = JS_GetProperty(ctx, sp[-1], atom);
+      CASE(OP_get_field_ic): {
+        JSValue val;
+        JSAtom atom;
+        int32_t ic_offset;
+        ic_offset = get_u32(pc);
+        atom = get_ic_atom(ic, ic_offset);
+        pc += 4;
+        
+        val = JS_GetPropertyInternalWithIC(ctx, sp[-1], atom, sp[-1], ic, ic_offset, FALSE);
+        ic->updated = FALSE;
         if (unlikely(JS_IsException(val)))
           goto exception;
         JS_FreeValue(ctx, sp[-1]);
@@ -1493,7 +1520,30 @@ restart:
         atom = get_u32(pc);
         pc += 4;
 
-        val = JS_GetProperty(ctx, sp[-1], atom);
+        val = JS_GetPropertyInternal(ctx, sp[-1], atom, sp[-1], NULL, FALSE);
+        if (unlikely(JS_IsException(val)))
+          goto exception;
+        if (ic != NULL && ic->updated == TRUE) {
+          ic->updated = FALSE;
+          put_u8(pc - 5, OP_get_field2_ic);
+          put_u32(pc - 4, ic->updated_offset);
+          // safe free call because ic struct will retain atom
+          JS_FreeAtom(ctx, atom);
+        }
+        *sp++ = val;
+      }
+      BREAK;
+
+      CASE(OP_get_field2_ic): {
+        JSValue val;
+        JSAtom atom;
+        int32_t ic_offset;
+        ic_offset = get_u32(pc);
+        atom = get_ic_atom(ic, ic_offset);
+        pc += 4;
+        
+        val = JS_GetPropertyInternalWithIC(ctx, sp[-1], atom, sp[-1], ic, ic_offset, FALSE);
+        ic->updated = FALSE;
         if (unlikely(JS_IsException(val)))
           goto exception;
         *sp++ = val;
@@ -1506,7 +1556,31 @@ restart:
         atom = get_u32(pc);
         pc += 4;
 
-        ret = JS_SetPropertyInternal(ctx, sp[-2], atom, sp[-1], JS_PROP_THROW_STRICT);
+        ret = JS_SetPropertyInternal(ctx, sp[-2], atom, sp[-1], JS_PROP_THROW_STRICT, ic);
+        JS_FreeValue(ctx, sp[-2]);
+        sp -= 2;
+        if (unlikely(ret < 0))
+          goto exception;
+        if (ic != NULL && ic->updated == TRUE) {
+          ic->updated = FALSE;
+          put_u8(pc - 5, OP_put_field_ic);
+          put_u32(pc - 4, ic->updated_offset);
+          // safe free call because ic struct will retain atom
+          JS_FreeAtom(ctx, atom);
+        }
+      }
+      BREAK;
+
+      CASE(OP_put_field_ic): {
+        int ret;
+        JSAtom atom;
+        int32_t ic_offset;
+        ic_offset = get_u32(pc);
+        atom = get_ic_atom(ic, ic_offset);
+        pc += 4;
+        
+        ret = JS_SetPropertyInternalWithIC(ctx, sp[-2], atom, sp[-1], JS_PROP_THROW_STRICT, ic, ic_offset);
+        ic->updated = FALSE;
         JS_FreeValue(ctx, sp[-2]);
         sp -= 2;
         if (unlikely(ret < 0))
@@ -1715,7 +1789,7 @@ restart:
         atom = JS_ValueToAtom(ctx, sp[-1]);
         if (unlikely(atom == JS_ATOM_NULL))
           goto exception;
-        val = JS_GetPropertyInternal(ctx, sp[-2], atom, sp[-3], FALSE);
+        val = JS_GetPropertyInternal(ctx, sp[-2], atom, sp[-3], NULL, FALSE);
         JS_FreeAtom(ctx, atom);
         if (unlikely(JS_IsException(val)))
           goto exception;
@@ -2398,7 +2472,7 @@ restart:
               break;
             case OP_with_put_var:
               /* XXX: check if strict mode */
-              ret = JS_SetPropertyInternal(ctx, obj, atom, sp[-2], JS_PROP_THROW_STRICT);
+              ret = JS_SetPropertyInternal(ctx, obj, atom, sp[-2], JS_PROP_THROW_STRICT, NULL);
               JS_FreeValue(ctx, sp[-1]);
               sp -= 2;
               if (unlikely(ret < 0))

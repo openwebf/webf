@@ -4,7 +4,6 @@
  */
 
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -100,7 +99,7 @@ class ElementAttributeProperty {
   final ElementAttributeDeleter? deleter;
 }
 
-abstract class Element extends Node with ElementBase, ElementEventMixin, ElementOverflowMixin {
+abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
@@ -148,6 +147,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   /// The Element.classList is a read-only property that returns a collection of the class attributes of the element.
   final List<String> _classList = [];
 
+  String namespaceURI = '';
+
   List<String> get classList => _classList;
 
   set className(String className) {
@@ -194,8 +195,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     _updateRenderBoxModel();
   }
 
-  Element(BindingContext? context)
-      : super(NodeType.ELEMENT_NODE, context) {
+  Element(BindingContext? context) : super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
     style = CSSStyleDeclaration.computedStyle(this, defaultStyle, _onStyleChanged, _onStyleFlushed);
 
@@ -212,15 +212,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   @override
   RenderBox? get renderer => renderBoxModel;
 
+  HTMLCollection? _collection;
+
+  HTMLCollection ensureCachedCollection() {
+    _collection ??= HTMLCollection(this);
+    return _collection!;
+  }
+
   // https://developer.mozilla.org/en-US/docs/Web/API/Element/children
   // The children is defined at interface [ParentNode].
-  List<Element> get children {
-    List<Element> _children = [];
-    for (Node child in childNodes) {
-      if (child is Element) _children.add(child);
-    }
-    return _children;
-  }
+  HTMLCollection get children => ensureCachedCollection();
 
   @override
   RenderBox createRenderer() {
@@ -252,15 +253,19 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }, deleter: () {
       _removeInlineStyle();
     });
-    attributes[_CLASS_NAME] = ElementAttributeProperty(setter: (value) => className = value, deleter: () {
-      className = EMPTY_STRING;
-    });
-    attributes[_ID] = ElementAttributeProperty(setter: (value) => id = value, deleter: () {
-      id = EMPTY_STRING;
-    });
+    attributes[_CLASS_NAME] = ElementAttributeProperty(
+        setter: (value) => className = value,
+        deleter: () {
+          className = EMPTY_STRING;
+        });
+    attributes[_ID] = ElementAttributeProperty(
+        setter: (value) => id = value,
+        deleter: () {
+          id = EMPTY_STRING;
+        });
     attributes[_NAME] = ElementAttributeProperty(setter: (value) {
       _updateNameMap(value, oldName: getAttribute(_NAME));
-    } , deleter: () {
+    }, deleter: () {
       _updateNameMap(null, oldName: getAttribute(_NAME));
     });
   }
@@ -344,6 +349,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         }
       }
       renderBoxModel = nextRenderBoxModel;
+      assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
 
       // Ensure that the event responder is bound.
       ensureEventResponderBound();
@@ -552,6 +558,20 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
     // Ensure that the child is attached.
     ensureChildAttached();
+
+    // Reconfigure scrollable contents.
+    bool needUpdateOverflowRenderBox = false;
+    if (renderStyle.overflowX != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowX(_handleScroll);
+    }
+    if (renderStyle.overflowY != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowY(_handleScroll);
+    }
+    if (needUpdateOverflowRenderBox) {
+      updateOverflowRenderBox();
+    }
   }
 
   @override
@@ -570,7 +590,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       renderBoxModel.clearIntersectionChangeListeners();
 
       // Remove fixed children from root when element disposed.
-      if (ownerDocument.viewport != null) {
+      if (ownerDocument.viewport != null && renderStyle.position == CSSPositionType.fixed) {
         _removeFixedChild(renderBoxModel, ownerDocument.viewport!);
       }
       // Remove renderBox.
@@ -578,6 +598,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
       // Clear pointer listener
       clearEventResponder(renderBoxModel);
+
+      // Remove scrollable
+      renderBoxModel.disposeScrollable();
+      disposeScrollable();
     }
   }
 
@@ -790,7 +814,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     renderStyle.detach();
     style.dispose();
     attributes.clear();
@@ -806,25 +830,15 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
-  bool _obtainSliverChild() {
-    if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
-      // Sliver should not create renderer here, but need to trigger
-      // render sliver list dynamical rebuild child by element tree.
-      parentElement?._renderLayoutBox?.markNeedsLayout();
-      return true;
-    }
-    return false;
-  }
-
   // Attach renderObject of current node to parent
   @override
   void attachTo(Node parent, {RenderBox? after}) {
     applyStyle(style);
 
-    if (_obtainSliverChild()) {
-      // Rebuild all the sliver children.
-      RenderLayoutBox? parentRenderBoxModel = parentElement!.renderBoxModel as RenderLayoutBox?;
-      parentRenderBoxModel?.removeAll();
+    if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
+      // Sliver should not create renderer here, but need to trigger
+      // render sliver list dynamical rebuild child by element tree.
+      parentElement?._renderLayoutBox?.markNeedsLayout();
     } else {
       willAttachRenderer();
     }
@@ -834,6 +848,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel.attachRenderBox(parent.renderer!, renderer!, after: after);
+        if (renderStyle.position != CSSPositionType.static) {
+          _updateRenderBoxModelWithPosition(CSSPositionType.static);
+        }
       }
 
       // Flush pending style before child attached.
@@ -951,8 +968,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   Node insertBefore(Node child, Node referenceNode) {
     // Node.insertBefore will change element tree structure,
     // so get the referenceIndex before calling it.
-    int referenceIndex = childNodes.indexOf(referenceNode);
-    Node node = super.insertBefore(child, referenceNode);
+    // int referenceIndex = childNodes.indexOf(referenceNode);
+    Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
     if (child is Element) {
       child.renderStyle.parent = renderStyle;
@@ -960,19 +977,36 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     if (isRendererAttached) {
       // If afterRenderObject is null, which means insert child at the head of parent.
-      RenderBox? afterRenderObject;
+      RenderBox? afterRenderObject = referenceNode.previousSibling?.renderer;
 
       // Only append child renderer when which is not attached.
       if (!child.isRendererAttached) {
-        if (referenceIndex < childNodes.length) {
-          while (referenceIndex >= 0) {
-            Node reference = childNodes[referenceIndex];
-            if (reference.isRendererAttached) {
-              afterRenderObject = reference.renderer;
-              break;
-            } else {
-              referenceIndex--;
+        // Found the most closed
+        if (afterRenderObject == null) {
+          Node? ref = referenceNode.previousSibling;
+          while(ref != null && afterRenderObject == null) {
+            afterRenderObject = ref.renderer;
+            ref = ref.previousSibling;
+          }
+        }
+
+        // Remove all element after the new node, when parent is sliver
+        // Sliver's children if change sort need relayout
+        if(renderStyle.display == CSSDisplay.sliver
+            && referenceNode is Element
+            && referenceNode.renderer != null
+            && referenceNode.isRendererAttached) {
+          Node? reference = referenceNode;
+          while(reference != null) {
+            if(reference.isRendererAttached && reference is Element) {
+              if(reference.renderer != null &&
+                  reference.renderer!.parent != null &&
+                  reference.renderer!.parent is RenderSliverRepaintProxy) {
+                (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
+              }
+              reference.unmountRenderObject(deep: true);
             }
+            reference = reference.nextSibling;
           }
         }
 
@@ -1103,7 +1137,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
+    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
     attributes[qualifiedName] = value;
+    recalculateStyle(forceRecalculate: isNeedRecalculate);
   }
 
   @mustCallSuper
@@ -1122,7 +1158,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return attributes.containsKey(qualifiedName);
   }
 
-  // FIXME: only compatible with kraken plugins
   @deprecated
   void setStyle(String property, value) {
     setRenderStyle(property, value);
@@ -1139,6 +1174,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       return;
     }
 
+    willAttachRenderer();
+
     // Update renderBoxModel.
     _updateRenderBoxModel();
     // Attach renderBoxModel to parent if change from `display: none` to other values.
@@ -1154,8 +1191,9 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         RenderBox parentRenderBox = parentNode!.renderer!;
         _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: preSibling);
       }
-      ensureChildAttached();
     }
+
+    didAttachRenderer();
   }
 
   void setRenderStyleProperty(String name, value) {
@@ -1517,8 +1555,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
-  void setRenderStyle(String property, String present) {
-    dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present);
+  void setRenderStyle(String property, String present, { String? baseHref }) {
+    dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present, baseHref: baseHref);
     setRenderStyleProperty(property, value);
   }
 
@@ -1575,7 +1613,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
         // Force inline style to be applied as important priority.
-        style.setProperty(propertyName, value, true);
+        style.setProperty(propertyName, value, isImportant: true);
       });
     }
   }
@@ -1592,11 +1630,11 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
-  void _onStyleChanged(String propertyName, String? prevValue, String currentValue) {
+  void _onStyleChanged(String propertyName, String? prevValue, String currentValue, { String? baseHref }) {
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
       renderStyle.runTransition(propertyName, prevValue, currentValue);
     } else {
-      setRenderStyle(propertyName, currentValue);
+      setRenderStyle(propertyName, currentValue, baseHref: baseHref);
     }
   }
 
@@ -1622,7 +1660,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       style.removeProperty(property, true);
       recalculateStyle();
     } else {
-      style.setProperty(property, value, true);
+      style.setProperty(property, value, isImportant: true);
     }
   }
 
@@ -1636,8 +1674,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     _applySheetStyle(style);
   }
 
-  void recalculateStyle({bool rebuildNested = false}) {
-    if (renderBoxModel != null) {
+  void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
+    if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -1647,7 +1685,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
         style.flushPendingProperties();
       }
 
-      if (rebuildNested == true || hasInheritedPendingProperty) {
+      if (rebuildNested || hasInheritedPendingProperty) {
         // Update children style.
         children.forEach((Element child) {
           child.recalculateStyle(rebuildNested: rebuildNested);
@@ -1683,10 +1721,17 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       }
 
       if (sizedBox.hasSize) {
-        Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement);
+        Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
-        boundingClientRect = BoundingClientRect(offset.dx, offset.dy, size.width, size.height, offset.dy,
-            offset.dx + size.width, offset.dy + size.height, offset.dx);
+        boundingClientRect = BoundingClientRect(
+            x: offset.dx,
+            y: offset.dy,
+            width: size.width,
+            height: size.height,
+            top: offset.dy,
+            right: offset.dx + size.width,
+            bottom: offset.dy + size.height,
+            left: offset.dx);
       }
     }
 
@@ -1745,7 +1790,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   // Get the offset of current element relative to specified ancestor element.
-  Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor}) {
+  Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor, bool excludeScrollOffset = false}) {
     // Need to flush layout to get correct size.
     flushLayout();
 
@@ -1753,7 +1798,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (ancestor == null || ancestor.renderBoxModel == null) {
       return Offset.zero;
     }
-    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!);
+    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!, excludeScrollOffset: excludeScrollOffset);
   }
 
   void click() {
@@ -1839,18 +1884,29 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (keys.isEmpty || cssMap.values.isEmpty) {
       return false;
     }
-    final rules = cssMap.values.reduce((value, element) => value + element);
-    for (CSSRule rule in rules) {
-      if (rule is! CSSStyleRule) {
-        continue;
-      }
-      for (Selector selector in rule.selectorGroup.selectors) {
-        if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
-          return true;
+    for(final rules in cssMap.values) {
+      for(int i = 0; i < rules.length; i ++) {
+        var rule = rules[i];
+        if (rule is! CSSStyleRule) {
+          continue;
+        }
+        for (Selector selector in rule.selectorGroup.selectors) {
+          if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
+            return true;
+          }
         }
       }
     }
     return false;
+  }
+
+  RenderStyle? computedStyle(String? pseudoElementSpecifier) {
+    RenderStyle? style = renderBoxModel?.renderStyle;
+    if (style == null) {
+      recalculateStyle();
+      style = renderBoxModel?.renderStyle;
+    }
+    return style;
   }
 }
 

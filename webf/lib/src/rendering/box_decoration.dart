@@ -3,16 +3,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
-
-enum BackgroundBoundary {
-  borderBox,
-  paddingBox,
-  contentBox,
-}
 
 mixin RenderBoxDecorationMixin on RenderBoxModelBase {
   BoxDecorationPainter? _painter;

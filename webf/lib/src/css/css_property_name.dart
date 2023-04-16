@@ -74,7 +74,6 @@ enum CSSPropertyID {
   CounterReset,
   Cursor,
   EmptyCells,
-  Float,
   FontStretch,
   Height,
   ImageRendering,
@@ -162,6 +161,21 @@ enum CSSPropertyID {
   WordSpacing,
   WordWrap,
   ZIndex,
+  Animation,
+  AnimationDelay,
+  AnimationDirection,
+  AnimationDuration,
+  AnimationFillMode,
+  AnimationIterationCount,
+  AnimationName,
+  AnimationPlayState,
+  AnimationTimingFunction,
+  Transform,
+  TransformOrigin,
+  TransformOriginX,
+  TransformOriginY,
+  TransformOriginZ,
+  TransformStyle,
   BufferedRendering,
   ClipPath,
   ClipRule,
@@ -205,7 +219,7 @@ enum CSSPropertyID {
   WritingMode,
 }
 
-const Map<String, CSSPropertyID> properyNameMap = {
+const Map<String, CSSPropertyID> CSSPropertyNameMap = {
   'bottom': CSSPropertyID.Bottom,
   'border': CSSPropertyID.Border,
   'border-bottom': CSSPropertyID.BorderBottom,
@@ -301,6 +315,12 @@ const Map<String, CSSPropertyID> properyNameMap = {
   'background-repeat': CSSPropertyID.BackgroundRepeat,
   'counter-increment': CSSPropertyID.CounterIncrement,
   'z-index': CSSPropertyID.ZIndex,
+  'transform': CSSPropertyID.Transform,
+  'transform-origin': CSSPropertyID.TransformOrigin,
+  'transform-originX': CSSPropertyID.TransformOriginX,
+  'transform-originY': CSSPropertyID.TransformOriginY,
+  'transform-originZ': CSSPropertyID.TransformOriginZ,
+  'transform-style': CSSPropertyID.TransformStyle,
   'stroke-miterlimit': CSSPropertyID.StrokeMiterlimit,
   'color': CSSPropertyID.Color,
   'text-overline-width': CSSPropertyID.TextOverlineWidth,
@@ -318,7 +338,6 @@ const Map<String, CSSPropertyID> properyNameMap = {
   'border-spacing': CSSPropertyID.BorderSpacing,
   'left': CSSPropertyID.Left,
   'word-spacing': CSSPropertyID.WordSpacing,
-  'float': CSSPropertyID.Float,
   'white-space': CSSPropertyID.WhiteSpace,
   'text-transform': CSSPropertyID.TextTransform,
   'border-left': CSSPropertyID.BorderLeft,
@@ -330,6 +349,15 @@ const Map<String, CSSPropertyID> properyNameMap = {
   'enable-background': CSSPropertyID.EnableBackground,
   'margin-left': CSSPropertyID.MarginLeft,
   'background-position': CSSPropertyID.BackgroundPosition,
+  'animation': CSSPropertyID.Animation,
+  'animation-delay': CSSPropertyID.AnimationDelay,
+  'animation-direction': CSSPropertyID.AnimationDirection,
+  'animation-duration': CSSPropertyID.AnimationDuration,
+  'animation-fill-mode': CSSPropertyID.AnimationFillMode,
+  'animation-iteration-count': CSSPropertyID.AnimationIterationCount,
+  'animation-name': CSSPropertyID.AnimationName,
+  'animation-play-state': CSSPropertyID.AnimationPlayState,
+  'animation-timing-function': CSSPropertyID.AnimationTimingFunction,
   'buffered-rendering': CSSPropertyID.BufferedRendering,
   'box-sizing': CSSPropertyID.BoxSizing,
   'background-repeat-x': CSSPropertyID.BackgroundRepeatX,
@@ -415,6 +443,170 @@ const Map<String, CSSPropertyID> properyNameMap = {
   'list-style-type': CSSPropertyID.ListStyleType
 };
 
+const List<CSSPropertyID> ComputedProperties = [
+  CSSPropertyID.BackgroundAttachment,
+  CSSPropertyID.BackgroundClip,
+  CSSPropertyID.BackgroundColor,
+  CSSPropertyID.BackgroundImage,
+  CSSPropertyID.BackgroundOrigin,
+  CSSPropertyID.BackgroundPosition, // more-specific background-position-x/y are non-standard
+  CSSPropertyID.BackgroundRepeat,
+  CSSPropertyID.BackgroundSize,
+  CSSPropertyID.BorderBottomColor,
+  CSSPropertyID.BorderBottomLeftRadius,
+  CSSPropertyID.BorderBottomRightRadius,
+  CSSPropertyID.BorderBottomStyle,
+  CSSPropertyID.BorderBottomWidth,
+  CSSPropertyID.BorderCollapse,
+  CSSPropertyID.BorderImageOutset,
+  CSSPropertyID.BorderImageRepeat,
+  CSSPropertyID.BorderImageSlice,
+  CSSPropertyID.BorderImageSource,
+  CSSPropertyID.BorderImageWidth,
+  CSSPropertyID.BorderLeftColor,
+  CSSPropertyID.BorderLeftStyle,
+  CSSPropertyID.BorderLeftWidth,
+  CSSPropertyID.BorderRightColor,
+  CSSPropertyID.BorderRightStyle,
+  CSSPropertyID.BorderRightWidth,
+  CSSPropertyID.BorderTopColor,
+  CSSPropertyID.BorderTopLeftRadius,
+  CSSPropertyID.BorderTopRightRadius,
+  CSSPropertyID.BorderTopStyle,
+  CSSPropertyID.BorderTopWidth,
+  CSSPropertyID.Bottom,
+  CSSPropertyID.BoxShadow,
+  CSSPropertyID.BoxSizing,
+  CSSPropertyID.CaptionSide,
+  CSSPropertyID.Clear,
+  CSSPropertyID.Clip,
+  CSSPropertyID.Color,
+  CSSPropertyID.Cursor,
+  CSSPropertyID.Direction,
+  CSSPropertyID.Display,
+  CSSPropertyID.EmptyCells,
+  CSSPropertyID.FontFamily,
+  CSSPropertyID.FontSize,
+  CSSPropertyID.FontStyle,
+  CSSPropertyID.FontVariant,
+  CSSPropertyID.FontWeight,
+  CSSPropertyID.Height,
+  CSSPropertyID.ImageRendering,
+  CSSPropertyID.Left,
+  CSSPropertyID.LetterSpacing,
+  CSSPropertyID.LineHeight,
+  CSSPropertyID.ListStyleImage,
+  CSSPropertyID.ListStylePosition,
+  CSSPropertyID.ListStyleType,
+  CSSPropertyID.MarginBottom,
+  CSSPropertyID.MarginLeft,
+  CSSPropertyID.MarginRight,
+  CSSPropertyID.MarginTop,
+  CSSPropertyID.MaxHeight,
+  CSSPropertyID.MaxWidth,
+  CSSPropertyID.MinHeight,
+  CSSPropertyID.MinWidth,
+  CSSPropertyID.Opacity,
+  CSSPropertyID.Orphans,
+  CSSPropertyID.OutlineColor,
+  CSSPropertyID.OutlineOffset,
+  CSSPropertyID.OutlineStyle,
+  CSSPropertyID.OutlineWidth,
+  CSSPropertyID.OverflowWrap,
+  CSSPropertyID.OverflowX,
+  CSSPropertyID.OverflowY,
+  CSSPropertyID.PaddingBottom,
+  CSSPropertyID.PaddingLeft,
+  CSSPropertyID.PaddingRight,
+  CSSPropertyID.PaddingTop,
+  CSSPropertyID.PageBreakAfter,
+  CSSPropertyID.PageBreakBefore,
+  CSSPropertyID.PageBreakInside,
+  CSSPropertyID.PointerEvents,
+  CSSPropertyID.Position,
+  CSSPropertyID.Resize,
+  CSSPropertyID.Right,
+  CSSPropertyID.Speak,
+  CSSPropertyID.TableLayout,
+  CSSPropertyID.TabSize,
+  CSSPropertyID.TextAlign,
+  CSSPropertyID.TextDecoration,
+  CSSPropertyID.TextIndent,
+  CSSPropertyID.TextRendering,
+  CSSPropertyID.TextShadow,
+  CSSPropertyID.TextOverflow,
+  CSSPropertyID.TextTransform,
+  CSSPropertyID.Top,
+  CSSPropertyID.TransitionDelay,
+  CSSPropertyID.TransitionDuration,
+  CSSPropertyID.TransitionProperty,
+  CSSPropertyID.TransitionTimingFunction,
+  CSSPropertyID.UnicodeBidi,
+  CSSPropertyID.VerticalAlign,
+  CSSPropertyID.Visibility,
+  CSSPropertyID.WhiteSpace,
+  CSSPropertyID.Widows,
+  CSSPropertyID.Width,
+  CSSPropertyID.WordBreak,
+  CSSPropertyID.WordSpacing,
+  CSSPropertyID.WordWrap,
+  CSSPropertyID.ZIndex,
+  CSSPropertyID.Zoom,
+  CSSPropertyID.Animation,
+  CSSPropertyID.AnimationDelay,
+  CSSPropertyID.AnimationDirection,
+  CSSPropertyID.AnimationDuration,
+  CSSPropertyID.AnimationFillMode,
+  CSSPropertyID.AnimationIterationCount,
+  CSSPropertyID.AnimationName,
+  CSSPropertyID.AnimationPlayState,
+  CSSPropertyID.AnimationTimingFunction,
+  CSSPropertyID.Transform,
+  CSSPropertyID.TransformOrigin,
+  CSSPropertyID.TransformOriginX,
+  CSSPropertyID.TransformOriginY,
+  CSSPropertyID.TransformOriginZ,
+  CSSPropertyID.TransformStyle,
+  CSSPropertyID.BufferedRendering,
+  CSSPropertyID.ClipPath,
+  CSSPropertyID.ClipRule,
+  CSSPropertyID.Mask,
+  CSSPropertyID.Filter,
+  CSSPropertyID.FloodColor,
+  CSSPropertyID.FloodOpacity,
+  CSSPropertyID.LightingColor,
+  CSSPropertyID.StopColor,
+  CSSPropertyID.StopOpacity,
+  CSSPropertyID.ColorInterpolation,
+  CSSPropertyID.ColorInterpolationFilters,
+  CSSPropertyID.ColorRendering,
+  CSSPropertyID.Fill,
+  CSSPropertyID.FillOpacity,
+  CSSPropertyID.FillRule,
+  CSSPropertyID.MarkerEnd,
+  CSSPropertyID.MarkerMid,
+  CSSPropertyID.MarkerStart,
+  CSSPropertyID.MaskType,
+  CSSPropertyID.ShapeRendering,
+  CSSPropertyID.Stroke,
+  CSSPropertyID.StrokeDasharray,
+  CSSPropertyID.StrokeDashoffset,
+  CSSPropertyID.StrokeLinecap,
+  CSSPropertyID.StrokeLinejoin,
+  CSSPropertyID.StrokeMiterlimit,
+  CSSPropertyID.StrokeOpacity,
+  CSSPropertyID.StrokeWidth,
+  CSSPropertyID.AlignmentBaseline,
+  CSSPropertyID.BaselineShift,
+  CSSPropertyID.DominantBaseline,
+  CSSPropertyID.Kerning,
+  CSSPropertyID.TextAnchor,
+  CSSPropertyID.WritingMode,
+  CSSPropertyID.GlyphOrientationHorizontal,
+  CSSPropertyID.GlyphOrientationVertical,
+  CSSPropertyID.VectorEffect
+];
+
 const List<bool> _isInheritedPropertyTable = [
   false, // CSSPropertyInvalid
   false, // CSSPropertyVariable
@@ -487,7 +679,6 @@ const List<bool> _isInheritedPropertyTable = [
   false, // CSSPropertyCounterReset
   true, // CSSPropertyCursor
   true, // CSSPropertyEmptyCells
-  false, // CSSPropertyFloat
   false, // CSSPropertyFontStretch
   false, // CSSPropertyHeight
   true, // CSSPropertyImageRendering
@@ -575,6 +766,21 @@ const List<bool> _isInheritedPropertyTable = [
   true, // CSSPropertyWordSpacing
   true, // CSSPropertyWordWrap
   false, // CSSPropertyZIndex
+  false, // CSSPropertyAnimation
+  false, // CSSPropertyAnimationDelay
+  false, // CSSPropertyAnimationDirection
+  false, // CSSPropertyAnimationDuration
+  false, // CSSPropertyAnimationFillMode
+  false, // CSSPropertyAnimationIterationCount
+  false, // CSSPropertyAnimationName
+  false, // CSSPropertyAnimationPlayState
+  false, // CSSPropertyAnimationTimingFunction
+  false, // CSSPropertyWebkitTransform
+  false, // CSSPropertyWebkitTransformOrigin
+  false, // CSSPropertyWebkitTransformOriginX
+  false, // CSSPropertyWebkitTransformOriginY
+  false, // CSSPropertyWebkitTransformOriginZ
+  false, // CSSPropertyWebkitTransformStyle
   false, // CSSPropertyBufferedRendering
   false, // CSSPropertyClipPath
   true, // CSSPropertyClipRule
@@ -619,7 +825,7 @@ const List<bool> _isInheritedPropertyTable = [
 ];
 
 bool isInheritedPropertyString(String property) {
-  CSSPropertyID? id = properyNameMap[property];
+  CSSPropertyID? id = CSSPropertyNameMap[property];
   if (id == null) {
     return false;
   }

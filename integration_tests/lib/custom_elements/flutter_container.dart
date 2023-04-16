@@ -26,10 +26,18 @@ class FlutterContainerElement extends WidgetElement {
       height: renderStyle.height.value,
       decoration: BoxDecoration(
         border: Border(
-            top: BorderSide(width: topWidth ?? 0.0, color: renderStyle.borderTopColor),
-            bottom: BorderSide(width: bottomWidth ?? 0.0, color: renderStyle.borderBottomColor),
-            left: BorderSide(width: leftWidth ?? 0.0, color: renderStyle.borderLeftColor),
-            right: BorderSide(width: rightWidth ?? 0.0, color: renderStyle.borderRightColor)),
+            top: BorderSide(
+                width: topWidth ?? 0.0,
+                color: renderStyle.borderTopColor.value),
+            bottom: BorderSide(
+                width: bottomWidth ?? 0.0,
+                color: renderStyle.borderBottomColor.value),
+            left: BorderSide(
+                width: leftWidth ?? 0.0,
+                color: renderStyle.borderLeftColor.value),
+            right: BorderSide(
+                width: rightWidth ?? 0.0,
+                color: renderStyle.borderRightColor.value)),
       ),
       child: Column(
         children: children,

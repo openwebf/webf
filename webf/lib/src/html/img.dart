@@ -81,15 +81,11 @@ class ImageElement extends Element {
   // https://html.spec.whatwg.org/multipage/urls-and-fetching.html#lazy-loading-attributes
   bool get _shouldLazyLoading => getAttribute(LOADING) == LAZY;
 
-  // Custom attribute defined by Kraken, used to scale the origin image down to fit the box model
-  // to reduce the image size which will save the image painting time significantly when the image
-  // size is too large.
-  //
-  // Note this attribute should be set with caution cause scaling the image size will invalidate
-  // the image cache when width or height is changed and add more images to the cache.
-  // So the best practice to improve image painting performance is scaling the image manually before
-  // used in source code rather than relying Kraken to do the scaling job.
-  bool get _shouldScaling => getAttribute(SCALING) == SCALE;
+  // Resize the rendering image to a fixed size if the original image is much larger than the display size.
+  // This feature could save memory if the original image is much larger than it's actual display size.
+  // Note that images with the same URL but different sizes could produce different resized images, and WebF will treat them
+  // as different images. However, in most cases, using the same image with different sizes is much rarer than using images with different URL.
+  bool get _shouldScaling => true;
 
   ImageStreamCompleterHandle? _completerHandle;
 
@@ -174,7 +170,7 @@ class ImageElement extends Element {
       RenderReplaced renderReplaced = renderBoxModel as RenderReplaced;
       renderReplaced.child = null;
 
-      _renderImage?.dispose();
+      ownerDocument.inactiveRenderObjects.add(_renderImage);
       _renderImage = null;
     }
   }
@@ -195,21 +191,21 @@ class ImageElement extends Element {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
     _stopListeningStream();
 
     _completerHandle?.dispose();
     _completerHandle = null;
     _cachedImageInfo = null;
-    _currentImageProvider?.evict();
+    await _currentImageProvider?.evict();
     _currentImageProvider = null;
   }
 
   // Width and height set through style declaration.
   double? get _styleWidth {
     String width = style.getPropertyValue(WIDTH);
-    if (width.isNotEmpty) {
+    if (width.isNotEmpty && isRendererAttached) {
       CSSLengthValue len = CSSLength.parseLength(width, renderStyle, WIDTH);
       return len.computedValue;
     }
@@ -218,7 +214,7 @@ class ImageElement extends Element {
 
   double? get _styleHeight {
     String height = style.getPropertyValue(HEIGHT);
-    if (height.isNotEmpty) {
+    if (height.isNotEmpty && isRendererAttached) {
       CSSLengthValue len = CSSLength.parseLength(height, renderStyle, HEIGHT);
       return len.computedValue;
     }
@@ -243,15 +239,13 @@ class ImageElement extends Element {
   int get width {
     // Width calc priority: style > attr > intrinsic.
     final double borderBoxWidth = _styleWidth ?? _attrWidth ?? renderStyle.getWidthByAspectRatio();
-
-    return borderBoxWidth.round();
+    return borderBoxWidth.isFinite ? borderBoxWidth.round() : 0;
   }
 
   int get height {
     // Height calc priority: style > attr > intrinsic.
     final double borderBoxHeight = _styleHeight ?? _attrHeight ?? renderStyle.getHeightByAspectRatio();
-
-    return borderBoxHeight.round();
+    return borderBoxHeight.isFinite ? borderBoxHeight.round() : 0;
   }
 
   // Read the original image width of loaded image.
@@ -262,12 +256,12 @@ class ImageElement extends Element {
   // The getter must be called after image had loaded, otherwise will return 0.
   int naturalHeight = 0;
 
-  void _handleIntersectionChange(IntersectionObserverEntry entry) {
+  void _handleIntersectionChange(IntersectionObserverEntry entry) async {
     // When appear
     if (entry.isIntersecting) {
       // Once appear remove the listener
       _removeIntersectionChangeListener();
-      _decode();
+      await _decode();
       _loadImage();
       _listenToStream();
       _isInLazyRendering = false;
@@ -382,30 +376,40 @@ class ImageElement extends Element {
   // Create an ImageStream that decodes the obtained image.
   // If imageElement has property size or width/height property on [renderStyle],
   // The image will be encoded into a small size for better rasterization performance.
-  void _decode({bool updateImageProvider = false}) {
-    ImageProvider? provider = _currentImageProvider;
-    if (updateImageProvider || provider == null) {
-      // Image should be resized based on different ratio according to object-fit value.
-      BoxFit objectFit = renderStyle.objectFit;
+  Future<void> _decode({bool updateImageProvider = false}) {
+    Completer completer = Completer();
 
-      // Increment load event delay count before decode.
-      ownerDocument.incrementLoadEventDelayCount();
+    // Make sure all style and properties are ready before decode begins.
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      ImageProvider? provider = _currentImageProvider;
+      if (updateImageProvider || provider == null) {
+        // Image should be resized based on different ratio according to object-fit value.
+        BoxFit objectFit = renderStyle.objectFit;
 
-      provider = _currentImageProvider = BoxFitImage(
-        boxFit: objectFit,
-        url: _resolvedUri!,
-        loadImage: _obtainImage,
-        onImageLoad: _onImageLoad,
-      );
-    }
+        // Increment load event delay count before decode.
+        ownerDocument.incrementLoadEventDelayCount();
 
-    // Try to make sure that this image can be encoded into a smaller size.
-    int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
-    int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
-    ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
-        ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
-        : ImageConfiguration.empty;
-    _updateSourceStream(provider.resolve(imageConfiguration));
+        provider = _currentImageProvider = BoxFitImage(
+          boxFit: objectFit,
+          url: _resolvedUri!,
+          loadImage: _obtainImage,
+          onImageLoad: _onImageLoad,
+        );
+      }
+
+      // Try to make sure that this image can be encoded into a smaller size.
+      int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
+      int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
+      ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
+          ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
+          : ImageConfiguration.empty;
+      _updateSourceStream(provider.resolve(imageConfiguration));
+
+      completer.complete();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+
+    return completer.future;
   }
 
   // Invoke when image descriptor has created.
@@ -472,7 +476,7 @@ class ImageElement extends Element {
   String get src => _resolvedUri?.toString() ?? '';
 
   set src(String value) {
-    if (src != value) {
+    if (src != value && value.isNotEmpty) {
       _loaded = false;
       internalSetAttribute('src', value);
       _resolveResourceUri(value);
@@ -483,7 +487,7 @@ class ImageElement extends Element {
   }
 
   // https://html.spec.whatwg.org/multipage/images.html#update-the-image-data
-  void _updateImageData() {
+  void _updateImageData() async {
     // Should add image box after style has applied to ensure intersection observer
     // attached to correct renderBoxModel
     if (!_isInLazyLoading) {
@@ -495,7 +499,7 @@ class ImageElement extends Element {
           // When detach renderer, all listeners will be cleared.
           ..addIntersectionChangeListener(_handleIntersectionChange);
       } else {
-        _decode(updateImageProvider: true);
+        await _decode(updateImageProvider: true);
         _listenToStream();
         _loadImage();
       }
@@ -555,7 +559,7 @@ class ImageElement extends Element {
     }
   }
 
-  void _stylePropertyChanged(String property, String? original, String present) {
+  void _stylePropertyChanged(String property, String? original, String present, { String? baseHref }) {
     if (property == WIDTH || property == HEIGHT) {
       // Resize image
       if (_shouldScaling) {

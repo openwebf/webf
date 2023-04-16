@@ -227,7 +227,7 @@ AtomicString Node::textContent(bool convert_brs_to_newlines) const {
   // Documents and non-container nodes (that are not CharacterData)
   // have null textContent.
   if (IsDocumentNode() || !IsContainerNode())
-    return AtomicString::Empty();
+    return AtomicString::Null();
 
   std::string content;
   for (const Node& node : NodeTraversal::InclusiveDescendantsOf(*this)) {

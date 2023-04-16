@@ -49,6 +49,8 @@ void free_function_bytecode(JSRuntime* rt, JSFunctionBytecode* b) {
     }
 #endif
   free_bytecode_atoms(rt, b->byte_code_buf, b->byte_code_len, TRUE);
+  if (b->ic != NULL)
+    free_ic(b->ic);
 
   if (b->vardefs) {
     for (i = 0; i < b->arg_count + b->var_count; i++) {
@@ -579,9 +581,9 @@ static int JS_WriteFunctionTag(BCWriterState* s, JSValueConst obj) {
     bc_put_leb128(s, b->debug.line_num);
     bc_put_leb128(s, b->debug.pc2line_len);
     dbuf_put(&s->dbuf, b->debug.pc2line_buf, b->debug.pc2line_len);
-    /** 
+    /**
      * purely for compatibility with WebF/Kraken V1 quickjs compiler (kbc1 file format).
-     * determination of whether a column number is available by 
+     * determination of whether a column number is available by
      * adding a special sequence of characters.
      */
     dbuf_putc(&s->dbuf, 255);
@@ -591,6 +593,23 @@ static int JS_WriteFunctionTag(BCWriterState* s, JSValueConst obj) {
     bc_put_leb128(s, b->debug.column_num);
     bc_put_leb128(s, b->debug.pc2column_len);
     dbuf_put(&s->dbuf, b->debug.pc2column_buf, b->debug.pc2column_len);
+
+    /** 
+     * purely for compatibility with WebF/Kraken V1 quickjs compiler (kbc1 file format).
+     * determination of whether a Self PolyIC is available by 
+     * adding a special sequence of characters.
+     */
+    dbuf_putc(&s->dbuf, 255);
+    dbuf_putc(&s->dbuf, 73); // 'I'
+    dbuf_putc(&s->dbuf, 67); // 'C'
+    if (b->ic == NULL) {
+      bc_put_leb128(s, 0);
+    } else {
+      bc_put_leb128(s, b->ic->count);
+      for (i = 0; i < b->ic->count; i++) {
+        bc_put_atom(s, b->ic->cache[i].atom);
+      }
+    }
   }
 
   for (i = 0; i < b->cpool_count; i++) {
@@ -1417,6 +1436,8 @@ static JSValue JS_ReadFunctionTag(BCReaderState* s) {
   int idx, i, local_count;
   int function_size, cpool_offset, byte_code_offset;
   int closure_var_offset, vardefs_offset;
+  uint32_t ic_len;
+  JSAtom atom;
 
   memset(&bc, 0, sizeof(bc));
   bc.header.ref_count = 1;
@@ -1605,6 +1626,25 @@ static JSValue JS_ReadFunctionTag(BCReaderState* s) {
         if (bc_get_buf(s, b->debug.pc2column_buf, b->debug.pc2column_len)) {
           goto fail;
         }
+      }
+    }
+
+    /** special Self PolyIC check logic for V1(.kbc1 file) bytecode format. */
+    if(s->buf_end - s->ptr > 3 && s->ptr[0] == 255 && s->ptr[1] == 73 && s->ptr[2] == 67) {
+      s->ptr += 3;
+      bc_get_leb128(s, &ic_len);
+      if (ic_len == 0) {
+        b->ic = NULL;
+      } else {
+        b->ic = init_ic(ctx);
+        if (b->ic == NULL)
+          goto fail;
+        for (i = 0; i < ic_len; i++) {
+          bc_get_atom(s, &atom);
+          add_ic_slot1(b->ic, atom);
+          JS_FreeAtom(ctx, atom);
+        }
+        rebuild_ic(b->ic);
       }
     }
 

@@ -32,7 +32,7 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
 
   RenderSliverElementChildManager(this._target);
 
-  Iterable<Node> get _renderNodes => _target.childNodes.where((child) => child is Element || child is TextNode);
+  NodeList get _renderNodes => _target.childNodes;
 
   // Only count renderable child.
   @override
@@ -53,6 +53,11 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
     // If renderer is not created, use an empty RenderBox to occupy the position, but not do layout or paint.
     RenderBox child = childNode.renderer ?? _createEmptyRenderObject();
 
+    if(!child.isRepaintBoundary) {
+      RenderSliverRepaintProxy? repaintBoundary = _createRepaintRenderObject(child);
+      child = repaintBoundary;
+    }
+
     if (_hasLayout) {
       _sliverListLayout.insertSliverChild(child, after: after);
     }
@@ -68,6 +73,10 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
     return _RenderSliverItemProxy();
   }
 
+  RenderSliverRepaintProxy _createRepaintRenderObject(RenderBox? child) {
+    return RenderSliverRepaintProxy(child);
+  }
+
   @override
   bool debugAssertChildListLocked() => true;
 
@@ -79,7 +88,8 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
 
   @override
   void removeChild(RenderBox child) {
-    if (child is RenderBoxModel) {
+    if (child is RenderBoxModel || child is RenderSliverRepaintProxy &&
+        child.parentData is SliverMultiBoxAdaptorParentData) {
       SliverMultiBoxAdaptorParentData parentData = child.parentData as SliverMultiBoxAdaptorParentData;
       // The index of sliver list.
       int index = parentData.index!;
@@ -87,6 +97,9 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
       Iterable<Node> renderNodes = _renderNodes;
       if (index < renderNodes.length) {
         renderNodes.elementAt(index).unmountRenderObject(deep: true, keepFixedAlive: true);
+        if(child is RenderSliverRepaintProxy && child.parent is ContainerRenderObjectMixin) {
+          (child.parent as ContainerRenderObjectMixin).remove(child);
+        }
         return;
       }
     }
@@ -132,3 +145,22 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
 
 /// Used for the placeholder for empty sliver item.
 class _RenderSliverItemProxy extends RenderProxyBox {}
+
+/// Used for the sliver item which is not RepaintBoundary
+class RenderSliverRepaintProxy extends RenderProxyBox {
+  RenderSliverRepaintProxy(RenderBox? child):super(child);
+
+  @override
+  bool get isRepaintBoundary => true;
+
+  @override
+  void detach() {
+    super.detach();
+    if(child != null) {
+      RenderObject? parentRenderObject = child!.parent as RenderObject?;
+      if(parentRenderObject is RenderObjectWithChildMixin) {
+        parentRenderObject.child = null;
+      }
+    }
+  }
+}

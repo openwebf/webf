@@ -280,7 +280,7 @@ static __maybe_unused void cr_dump(CharRange *cr)
 
 static void *cr_default_realloc(void *opaque, void *ptr, size_t size)
 {
-    return realloc(ptr, size);
+    return mi_realloc(ptr, size);
 }
 
 void cr_init(CharRange *cr, void *mem_opaque, DynBufReallocFunc *realloc_func)
@@ -302,7 +302,7 @@ int cr_realloc(CharRange *cr, int size)
     uint32_t *new_buf;
     
     if (size > cr->size) {
-        new_size = max_int(size, cr->size * 3 / 2);
+        new_size = max_int(size, cr->size * 9 / 2);
         new_buf = cr->realloc_func(cr->mem_opaque, cr->points,
                                    new_size * sizeof(cr->points[0]));
         if (!new_buf)

@@ -69,7 +69,7 @@ class HttpClientStreamResponse extends Stream<List<int>> implements HttpClientRe
   bool get isRedirect => statusCode >= 300 && statusCode < 400;
 
   @override
-  bool get persistentConnection => false;
+  bool get persistentConnection => true;
 
   @override
   Future<HttpClientResponse> redirect([String? method, Uri? url, bool? followLoops]) {

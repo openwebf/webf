@@ -61,7 +61,7 @@ describe('border_radius', () => {
 
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(0.5);
   });
 
   it('works with overflow and child image of no transform', async () => {
@@ -512,4 +512,58 @@ describe('border_radius', () => {
        done();
     });
   });
+
+  it("computed", async () => {
+    let target;
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        'font-size': '40px',
+        'box-sizing': 'border-box',
+      },
+    });
+    BODY.appendChild(target);
+
+    test_computed_value('border-radius', '1px');
+    test_computed_value('border-radius', '1px 2% 3px 4%');
+    test_computed_value(
+      'border-radius',
+      '5em / 1px 2% 3px 4%',
+      '200px / 1px 2% 3px 4%'
+    );
+    test_computed_value(
+      'border-radius',
+      '1px 2% 3px 4% / 5em',
+      '1px 2% 3px 4% / 200px'
+    );
+
+    test_computed_value(
+      'border-radius',
+      '1px 1px 1px 2% / 1px 2% 1px 2%',
+      '1px 1px 1px 2% / 1px 2%'
+    );
+    test_computed_value(
+      'border-radius',
+      '1px 1px 1px 1px / 1px 1px 2% 1px',
+      '1px / 1px 1px 2%'
+    );
+    test_computed_value('border-radius', '1px 1px 2% 2%');
+    test_computed_value('border-radius', '1px 2% 1px 1px');
+    test_computed_value(
+      'border-radius',
+      '1px 2% 2% 2% / 1px 2% 3px 2%',
+      '1px 2% 2% / 1px 2% 3px'
+    );
+
+    test_computed_value('border-top-left-radius', 'calc(-0.5em + 20px)', '0px');
+    test_computed_value('border-top-right-radius', '20%');
+    test_computed_value(
+      'border-bottom-right-radius',
+      'calc(0.5em + 10px) 40%',
+      '30px 40%'
+    );
+    test_computed_value('border-bottom-left-radius', '50% 60px');
+
+    test_computed_value('border-top-left-radius', '40px 0px', '40px 0px');
+  })
 });

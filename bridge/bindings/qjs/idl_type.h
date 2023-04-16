@@ -44,10 +44,14 @@ struct IDLInt64 final : public IDLTypeBaseHelper<int32_t> {};
 struct IDLUint32 final : public IDLTypeBaseHelper<uint32_t> {};
 struct IDLDouble final : public IDLTypeBaseHelper<double> {};
 
-struct NativeString;
+class SharedNativeString;
 // DOMString is UTF-16 strings.
 // https://stackoverflow.com/questions/35123890/what-is-a-domstring-really
 struct IDLDOMString final : public IDLTypeBaseHelper<AtomicString> {};
+
+// DOMString with [LegacyNullToEmptyString] attribute
+// https://webidl.spec.whatwg.org/#LegacyNullToEmptyString
+struct IDLLegacyDOMString final : public IDLTypeBaseHelper<AtomicString> {};
 
 // https://developer.mozilla.org/en-US/docs/Web/API/USVString
 struct IDLUSVString final : public IDLTypeBaseHelper<AtomicString> {};

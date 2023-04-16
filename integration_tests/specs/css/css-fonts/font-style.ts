@@ -115,4 +115,21 @@ describe('FontStyle', () => {
       done();
     });
   });
+
+  it("computed", async () => {
+    let target;
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        'font-family': 'NaNpx',
+        'box-sizing': 'border-box',
+      },
+    });
+    BODY.appendChild(target);
+
+    test_computed_value('font-style', 'normal');
+    test_computed_value('font-style', 'italic');
+    // test_computed_value('font-style', 'oblique');
+
+  })
 });

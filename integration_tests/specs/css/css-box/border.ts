@@ -120,4 +120,31 @@ describe('Box border', () => {
     append(BODY, container);
     await snapshot();
   });
+
+  xit('border-shadow-computed', async () => {
+    let target
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        color: 'blue',
+        'font-size': '20px',
+        'box-sizing': 'border-box',
+      },
+    })
+    BODY.appendChild(target)
+
+    const currentColor = 'rgb(0, 0, 255)'
+    test_computed_value('box-shadow', 'none')
+    test_computed_value(
+      'box-shadow',
+      '1px 2px',
+      currentColor + ' 1px 2px 0px 0px',
+    )
+    test_computed_value(
+      'box-shadow',
+      'currentcolor -1em -2em 3em -4em',
+      currentColor + ' -20px -40px 60px -80px',
+    )
+    test_computed_value('box-shadow', 'rgb(0, 255, 0) 1px 2px 3px 4px inset')
+  })
 });

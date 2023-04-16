@@ -21,7 +21,7 @@ NativeValue Native_NewNull() {
 #endif
 }
 
-NativeValue Native_NewString(NativeString* string) {
+NativeValue Native_NewString(SharedNativeString* string) {
 #ifdef _MSC_VER
   NativeValue value{};
   value.u.ptr = static_cast<void*>(string);
@@ -38,7 +38,7 @@ NativeValue Native_NewString(NativeString* string) {
 }
 
 NativeValue Native_NewCString(const std::string& string) {
-  std::unique_ptr<NativeString> nativeString = stringToNativeString(string);
+  std::unique_ptr<SharedNativeString> nativeString = stringToNativeString(string);
   // NativeString owned by NativeValue will be freed by users.
   return Native_NewString(nativeString.release());
 }

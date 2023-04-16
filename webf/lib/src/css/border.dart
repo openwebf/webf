@@ -7,8 +7,6 @@ import 'dart:core';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 
-final RegExp _splitRegExp = RegExp(r'\s+');
-
 // Initial border value: medium
 final CSSLengthValue _mediumWidth = CSSLengthValue(3, CSSLengthType.PX);
 
@@ -23,6 +21,50 @@ enum CSSBorderStyleType {
   ridge,
   inset,
   outset,
+}
+
+extension CSSBorderStyleTypeText on CSSBorderStyleType {
+  String cssText() {
+    switch (this) {
+      case CSSBorderStyleType.hidden:
+        return 'hidden';
+      case CSSBorderStyleType.dotted:
+        return 'dotted';
+      case CSSBorderStyleType.dashed:
+        return 'dashed';
+      case CSSBorderStyleType.solid:
+        return 'solid';
+      case CSSBorderStyleType.double:
+        return 'double';
+      case CSSBorderStyleType.groove:
+        return 'groove';
+      case CSSBorderStyleType.ridge:
+        return 'ridge';
+      case CSSBorderStyleType.inset:
+        return 'inset';
+      case CSSBorderStyleType.outset:
+        return 'outset';
+      case CSSBorderStyleType.none:
+        return 'none';
+    }
+  }
+
+  BorderStyle borderStyle() {
+    switch (this) {
+      case CSSBorderStyleType.solid:
+        return BorderStyle.solid;
+      case CSSBorderStyleType.hidden:
+      case CSSBorderStyleType.dotted:
+      case CSSBorderStyleType.dashed:
+      case CSSBorderStyleType.double:
+      case CSSBorderStyleType.groove:
+      case CSSBorderStyleType.ridge:
+      case CSSBorderStyleType.inset:
+      case CSSBorderStyleType.outset:
+      case CSSBorderStyleType.none:
+        return BorderStyle.none;
+    }
+  }
 }
 
 mixin CSSBorderMixin on RenderStyle {
@@ -89,7 +131,7 @@ mixin CSSBorderMixin on RenderStyle {
 
   @override
   CSSLengthValue get effectiveBorderTopWidth =>
-      borderTopStyle == BorderStyle.none ? CSSLengthValue.zero : (_borderTopWidth ?? _mediumWidth);
+      borderTopStyle == CSSBorderStyleType.none ? CSSLengthValue.zero : (_borderTopWidth ?? _mediumWidth);
 
   CSSLengthValue? _borderRightWidth;
   set borderRightWidth(CSSLengthValue? value) {
@@ -103,7 +145,7 @@ mixin CSSBorderMixin on RenderStyle {
 
   @override
   CSSLengthValue get effectiveBorderRightWidth =>
-      borderRightStyle == BorderStyle.none ? CSSLengthValue.zero : (_borderRightWidth ?? _mediumWidth);
+      borderRightStyle == CSSBorderStyleType.none ? CSSLengthValue.zero : (_borderRightWidth ?? _mediumWidth);
 
   CSSLengthValue? _borderBottomWidth;
   set borderBottomWidth(CSSLengthValue? value) {
@@ -117,7 +159,7 @@ mixin CSSBorderMixin on RenderStyle {
 
   @override
   CSSLengthValue get effectiveBorderBottomWidth =>
-      borderBottomStyle == BorderStyle.none ? CSSLengthValue.zero : (_borderBottomWidth ?? _mediumWidth);
+      borderBottomStyle == CSSBorderStyleType.none ? CSSLengthValue.zero : (_borderBottomWidth ?? _mediumWidth);
 
   CSSLengthValue? _borderLeftWidth;
   set borderLeftWidth(CSSLengthValue? value) {
@@ -131,40 +173,40 @@ mixin CSSBorderMixin on RenderStyle {
 
   @override
   CSSLengthValue get effectiveBorderLeftWidth =>
-      borderLeftStyle == BorderStyle.none ? CSSLengthValue.zero : (_borderLeftWidth ?? _mediumWidth);
+      borderLeftStyle == CSSBorderStyleType.none ? CSSLengthValue.zero : (_borderLeftWidth ?? _mediumWidth);
 
   /// Border-color
   @override
-  Color get borderTopColor => _borderTopColor ?? currentColor;
-  Color? _borderTopColor;
-  set borderTopColor(Color? value) {
+  CSSColor get borderTopColor => _borderTopColor ?? currentColor;
+  CSSColor? _borderTopColor;
+  set borderTopColor(CSSColor? value) {
     if (value == _borderTopColor) return;
     _borderTopColor = value;
     renderBoxModel?.markNeedsPaint();
   }
 
   @override
-  Color get borderRightColor => _borderRightColor ?? currentColor;
-  Color? _borderRightColor;
-  set borderRightColor(Color? value) {
+  CSSColor get borderRightColor => _borderRightColor ?? currentColor;
+  CSSColor? _borderRightColor;
+  set borderRightColor(CSSColor? value) {
     if (value == _borderRightColor) return;
     _borderRightColor = value;
     renderBoxModel?.markNeedsPaint();
   }
 
   @override
-  Color get borderBottomColor => _borderBottomColor ?? currentColor;
-  Color? _borderBottomColor;
-  set borderBottomColor(Color? value) {
+  CSSColor get borderBottomColor => _borderBottomColor ?? currentColor;
+  CSSColor? _borderBottomColor;
+  set borderBottomColor(CSSColor? value) {
     if (value == _borderBottomColor) return;
     _borderBottomColor = value;
     renderBoxModel?.markNeedsPaint();
   }
 
   @override
-  Color get borderLeftColor => _borderLeftColor ?? currentColor;
-  Color? _borderLeftColor;
-  set borderLeftColor(Color? value) {
+  CSSColor get borderLeftColor => _borderLeftColor ?? currentColor;
+  CSSColor? _borderLeftColor;
+  set borderLeftColor(CSSColor? value) {
     if (value == _borderLeftColor) return;
     _borderLeftColor = value;
     renderBoxModel?.markNeedsPaint();
@@ -172,38 +214,36 @@ mixin CSSBorderMixin on RenderStyle {
 
   /// Border-style
   @override
-  BorderStyle get borderTopStyle => _borderTopStyle ?? BorderStyle.none;
-  BorderStyle? _borderTopStyle;
-  set borderTopStyle(BorderStyle? value) {
+  CSSBorderStyleType get borderTopStyle => _borderTopStyle ?? CSSBorderStyleType.none;
+  CSSBorderStyleType? _borderTopStyle;
+  set borderTopStyle(CSSBorderStyleType? value) {
     if (value == _borderTopStyle) return;
     _borderTopStyle = value;
     renderBoxModel?.markNeedsPaint();
   }
 
   @override
-  BorderStyle get borderRightStyle => _borderRightStyle ?? BorderStyle.none;
-  BorderStyle? _borderRightStyle;
-  set borderRightStyle(BorderStyle? value) {
+  CSSBorderStyleType get borderRightStyle => _borderRightStyle ?? CSSBorderStyleType.none;
+  CSSBorderStyleType? _borderRightStyle;
+  set borderRightStyle(CSSBorderStyleType? value) {
     if (value == _borderRightStyle) return;
     _borderRightStyle = value;
     renderBoxModel?.markNeedsPaint();
   }
 
   @override
-  BorderStyle get borderBottomStyle => _borderBottomStyle ?? BorderStyle.none;
-  BorderStyle? _borderBottomStyle;
-  set borderBottomStyle(BorderStyle? value) {
+  CSSBorderStyleType get borderBottomStyle => _borderBottomStyle ?? CSSBorderStyleType.none;
+  CSSBorderStyleType? _borderBottomStyle;
+  set borderBottomStyle(CSSBorderStyleType? value) {
     if (value == _borderBottomStyle) return;
     _borderBottomStyle = value;
     renderBoxModel?.markNeedsPaint();
   }
 
-  BorderStyle? _borderLeftStyle;
-
   @override
-  BorderStyle get borderLeftStyle => _borderLeftStyle ?? BorderStyle.none;
-
-  set borderLeftStyle(BorderStyle? value) {
+  CSSBorderStyleType get borderLeftStyle => _borderLeftStyle ?? CSSBorderStyleType.none;
+  CSSBorderStyleType? _borderLeftStyle;
+  set borderLeftStyle(CSSBorderStyleType? value) {
     if (value == _borderLeftStyle) return;
     _borderLeftStyle = value;
     renderBoxModel?.markNeedsPaint();
@@ -219,15 +259,15 @@ class CSSBorderSide {
   static const String TOP = 'Top';
   static const String BOTTOM = 'Bottom';
 
-  static BorderStyle resolveBorderStyle(String input) {
-    BorderStyle borderStyle;
+  static CSSBorderStyleType resolveBorderStyle(String input) {
+    CSSBorderStyleType borderStyle;
     switch (input) {
       case SOLID:
-        borderStyle = BorderStyle.solid;
+        borderStyle = CSSBorderStyleType.solid;
         break;
       case NONE:
       default:
-        borderStyle = BorderStyle.none;
+        borderStyle = CSSBorderStyleType.none;
         break;
     }
     return borderStyle;
@@ -270,36 +310,36 @@ class CSSBorderSide {
   static BorderSide none = BorderSide(color: defaultBorderColor, width: 0.0, style: BorderStyle.none);
 
   static BorderSide? _getBorderSide(RenderStyle renderStyle, String side) {
-    BorderStyle? borderStyle;
+    CSSBorderStyleType? borderStyle;
     CSSLengthValue? borderWidth;
     Color? borderColor;
     switch (side) {
       case LEFT:
         borderStyle = renderStyle.borderLeftStyle;
         borderWidth = renderStyle.effectiveBorderLeftWidth;
-        borderColor = renderStyle.borderLeftColor;
+        borderColor = renderStyle.borderLeftColor.value;
         break;
       case RIGHT:
         borderStyle = renderStyle.borderRightStyle;
         borderWidth = renderStyle.effectiveBorderRightWidth;
-        borderColor = renderStyle.borderRightColor;
+        borderColor = renderStyle.borderRightColor.value;
         break;
       case TOP:
         borderStyle = renderStyle.borderTopStyle;
         borderWidth = renderStyle.effectiveBorderTopWidth;
-        borderColor = renderStyle.borderTopColor;
+        borderColor = renderStyle.borderTopColor.value;
         break;
       case BOTTOM:
         borderStyle = renderStyle.borderBottomStyle;
         borderWidth = renderStyle.effectiveBorderBottomWidth;
-        borderColor = renderStyle.borderBottomColor;
+        borderColor = renderStyle.borderBottomColor.value;
         break;
     }
     // Flutter will print border event if width is 0.0. So we needs to set borderStyle to none to prevent this.
-    if (borderStyle == BorderStyle.none || borderWidth!.isZero) {
+    if (borderStyle == CSSBorderStyleType.none || borderWidth!.isZero) {
       return null;
     } else {
-      return BorderSide(width: borderWidth.computedValue, style: borderStyle!, color: borderColor!);
+      return BorderSide(width: borderWidth.computedValue, style: borderStyle!.borderStyle(), color: borderColor!);
     }
   }
 }
@@ -313,7 +353,7 @@ class CSSBorderRadius {
   Radius get computedRadius => Radius.elliptical(x.computedValue, y.computedValue);
 
   @override
-  int get hashCode => hashValues(x, y);
+  int get hashCode => Object.hash(x, y);
 
   @override
   bool operator ==(Object? other) {
@@ -333,7 +373,8 @@ class CSSBorderRadius {
   static CSSBorderRadius? parseBorderRadius(String radius, RenderStyle renderStyle, String propertyName) {
     if (radius.isNotEmpty) {
       // border-top-left-radius: horizontal vertical
-      List<String> values = radius.split(_splitRegExp);
+      List<String> values = radius.split(splitRegExp);
+
       if (values.length == 1 || values.length == 2) {
         String horizontalRadius = values[0];
         // The first value is the horizontal radius, the second the vertical radius.
@@ -346,6 +387,13 @@ class CSSBorderRadius {
       }
     }
     return null;
+  }
+
+  String cssText() {
+    if (x == y) {
+      return x.cssText();
+    }
+    return '${x.cssText()} ${y.cssText()}';
   }
 }
 
@@ -405,7 +453,7 @@ class CSSBoxShadow {
       for (var shadowDefinitions in shadows) {
         // Specifies the color of the shadow. If the color is absent, it defaults to currentColor.
         String colorDefinition = shadowDefinitions[0] ?? CURRENT_COLOR;
-        Color? color = CSSColor.resolveColor(colorDefinition, renderStyle, propertyName);
+        CSSColor? color = CSSColor.resolveColor(colorDefinition, renderStyle, propertyName);
         CSSLengthValue? offsetX;
         if (shadowDefinitions[1] != null) {
           offsetX = CSSLength.parseLength(shadowDefinitions[1]!, renderStyle, propertyName);
@@ -434,7 +482,7 @@ class CSSBoxShadow {
             offsetY: offsetY,
             blurRadius: blurRadius,
             spreadRadius: spreadRadius,
-            color: color,
+            color: color.value,
             inset: inset,
           ));
         }

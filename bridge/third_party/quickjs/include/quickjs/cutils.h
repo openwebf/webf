@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include "mimalloc.h"
 
 #ifdef _MSC_VER
 #include <intrin.h>

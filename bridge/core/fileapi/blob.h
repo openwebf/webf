@@ -51,9 +51,11 @@ class Blob : public ScriptWrappable {
   /// get bytes data's length
   int32_t size();
   std::string type();
+  void SetMineType(const std::string& mine_type);
 
   ScriptPromise arrayBuffer(ExceptionState& exception_state);
   ScriptPromise text(ExceptionState& exception_state);
+  ScriptPromise base64(ExceptionState& exception_state);
 
   Blob* slice(ExceptionState& exception_state);
   Blob* slice(int64_t start, ExceptionState& exception_state);
@@ -61,6 +63,7 @@ class Blob : public ScriptWrappable {
   Blob* slice(int64_t start, int64_t end, const AtomicString& content_type, ExceptionState& exception_state);
 
   std::string StringResult();
+  std::string Base64Result();
   ArrayBufferData ArrayBufferResult();
 
   void Trace(GCVisitor* visitor) const override;

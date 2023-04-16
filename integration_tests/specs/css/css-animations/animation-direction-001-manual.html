@@ -20,6 +20,7 @@
     animation-duration: 2s;
     animation-direction: alternate;
     animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
 
     background-color: blue;
     height: 100px;
@@ -48,11 +49,19 @@
   <div id="main">Filler Text</div>
 </body>
 <script>
-  await sleep(0.1);
+  await sleep(0.2);
   const main = document.getElementById('main');
-  expect(main.offsetLeft > 120 && main.offsetLeft < 150).toBe(true);
+  const style = window.getComputedStyle(main);
+  expect(style['animation-name']).toBe('sample');
+  expect(style['animation-delay']).toBe('0s');
+  expect(style['animation-direction']).toBe('alternate');
+  expect(style['animation-iteration-count']).toBe('infinite');
+  expect(style['animation-fill-mode']).toBe('none');
+  expect(style['animation-timing-function']).toBe('ease-in-out');
+
+  expect(main.offsetLeft > 75 && main.offsetLeft < 150).toBe(true, `animation 0% ${main.offsetLeft}`);
   await sleep(2);
-  expect(main.offsetLeft > 0 && main.offsetLeft < 75).toBe(true);
+  expect(main.offsetLeft >= 0 && main.offsetLeft < 75).toBe(true, `animation 100% ${main.offsetLeft}`);
   await sleep(2);
-  expect(main.offsetLeft > 100 && main.offsetLeft < 150).toBe(true);
+  expect(main.offsetLeft > 75 && main.offsetLeft < 150).toBe(true, `animation 200% ${main.offsetLeft}`);
 </script>

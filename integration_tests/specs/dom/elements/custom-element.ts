@@ -576,4 +576,22 @@ describe('custom html element', () => {
       done();
     }, 800);
   });
+
+  it('unmount widgetElements should works when contains image', async (done) => {
+    let container = document.createElement('flutter-container');
+    let img = document.createElement('img');
+    img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
+    let wrapper = createElement('div', {}, [
+      img
+    ]);
+    container.appendChild(wrapper);
+    document.body.appendChild(container);
+
+    img.onload = async () => {
+      requestAnimationFrame(() => {
+        document.body.removeChild(container);
+        done();
+      });
+    };
+  });
 });

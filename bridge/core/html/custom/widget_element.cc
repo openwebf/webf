@@ -42,17 +42,14 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
   }
 }
 
-NativeValue WidgetElement::HandleCallFromDartSide(const NativeValue* native_method,
-                                                  int32_t argc,
-                                                  const NativeValue* argv) {
+NativeValue WidgetElement::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
-  AtomicString method = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), *native_method);
 
   if (method == binding_call_methods::ksyncPropertiesAndMethods) {
     return HandleSyncPropertiesAndMethodsFromDart(argc, argv);
   }
 
-  return Element::HandleCallFromDartSide(native_method, argc, argv);
+  return Element::HandleCallFromDartSide(method, argc, argv);
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
@@ -60,7 +57,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return unimplemented_properties_[key];
   }
 
-  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
+  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tagName())) {
     GetExecutingContext()->FlushUICommand();
   }
 
@@ -68,7 +65,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return ScriptValue(ctx(), tagName().ToNativeString(ctx()).release());
   }
 
-  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
+  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tagName());
   if (shape != nullptr) {
     if (shape->built_in_properties_.count(key) > 0) {
       return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
@@ -99,11 +96,11 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
-  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
+  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tagName())) {
     GetExecutingContext()->FlushUICommand();
   }
 
-  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
+  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tagName());
   if (shape != nullptr && shape->built_in_properties_.count(key) > 0) {
     NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
@@ -145,7 +142,7 @@ bool WidgetElement::IsAttributeDefinedInternal(const AtomicString& key) const {
 
 NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv) {
   assert(argc == 3);
-  AtomicString key = tag_name_;
+  AtomicString key = tagName();
   assert(!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(key));
 
   auto shape = std::make_shared<WidgetElementShape>();

@@ -65,4 +65,10 @@ class CSSVariable {
   String toString() {
     return 'var($identifier${defaultValue != null ? ', $defaultValue' : ''})';
   }
+
+  @override
+  int get hashCode => identifier.hashCode;
+
+  @override
+  bool operator ==(Object? other) => other is CSSVariable && other.identifier == identifier;
 }

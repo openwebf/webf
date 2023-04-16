@@ -173,5 +173,16 @@ void main() {
       expect(visitor.toString(), '#header h1');
       expect(styleRule2.declaration.getPropertyValue('fontSize'), '26px');
     });
+
+    test('21', () {
+      CSSStyleSheet sheet = CSSParser('''#header {
+          background: -webkit-linear-gradient(right, #00cf37 0, #45dc6d 100%);
+          background: -o-linear-gradient(right, #00cf37 0, #45dc6d 100%);
+          background: linear-gradient(270deg, #00cf37 0, #45dc6d 100%);
+          }''').parse();
+      CSSStyleRule styleRule = sheet.cssRules[0] as CSSStyleRule;
+      expect(styleRule.declaration.getPropertyValue('backgroundImage'),
+          'linear-gradient(270deg, #00cf37 0, #45dc6d 100%)');
+    });
   });
 }

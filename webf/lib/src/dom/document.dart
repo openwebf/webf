@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:collection';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -42,7 +43,9 @@ class _InactiveRenderObjects {
           finalizeInactiveRenderObjects();
           _isScheduled = false;
         });
+        RendererBinding.instance.scheduleFrame();
       });
+      RendererBinding.instance.scheduleFrame();
     }
 
     assert(!renderObject.debugDisposed!);
@@ -58,7 +61,7 @@ class _InactiveRenderObjects {
   }
 }
 
-class Document extends Node {
+class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
   RenderViewportBox? _viewport;
@@ -74,13 +77,18 @@ class Document extends Node {
 
   final RuleSet ruleSet = RuleSet();
 
+  @override
+  bool get isConnected => true;
+
   Document(
     BindingContext context, {
     required this.controller,
     required RenderViewportBox viewport,
     this.gestureListener,
+    List<Cookie>? initialCookies
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
+    cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
   }
@@ -101,7 +109,8 @@ class Document extends Node {
 
   Element? focusedElement;
 
-  CookieJar cookie_ = CookieJar();
+  late CookieJar cookie_;
+  CookieJar get cookie => cookie_;
 
   // Returns the Window object of the active document.
   // https://html.spec.whatwg.org/multipage/window-object.html#dom-document-defaultview-dev
@@ -144,9 +153,24 @@ class Document extends Node {
     }
   }
 
+  int _domContentLoadedEventDelayCount = 0;
+  bool get isDelayingDOMContentLoadedEvent => _domContentLoadedEventDelayCount > 0;
+  void incrementDOMContentLoadedEventDelayCount() {
+    _domContentLoadedEventDelayCount++;
+  }
+
+  void decrementDOMContentLoadedEventDelayCount() {
+    _domContentLoadedEventDelayCount--;
+
+    // Try to check when the request is complete.
+    if (_domContentLoadedEventDelayCount == 0) {
+      controller.checkCompleted();
+    }
+  }
+
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['cookie'] = BindingObjectProperty(getter: () => cookie_.cookie(), setter: (value) => cookie_.setCookie(value));
+    properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
   }
 
   @override
@@ -157,6 +181,14 @@ class Document extends Node {
     methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
     methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
+
+    if (kDebugMode || kProfileMode) {
+      methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
+    }
+  }
+
+  dynamic debugClearCookies(List<dynamic> args) {
+    cookie.clearAllCookies();
   }
 
   dynamic querySelector(List<dynamic> args) {
@@ -259,7 +291,7 @@ class Document extends Node {
   }
 
   @override
-  Node removeChild(Node child) {
+  Node? removeChild(Node child) {
     if (documentElement == child) {
       documentElement = null;
       ruleSet.reset();
@@ -278,6 +310,12 @@ class Document extends Node {
 
   Element createElement(String type, [BindingContext? context]) {
     Element element = element_registry.createElement(type, context);
+    element.ownerDocument = this;
+    return element;
+  }
+
+  Element createElementNS(String uri, String type, [BindingContext? context]) {
+    Element element = element_registry.createElementNS(uri, type, context);
     element.ownerDocument = this;
     return element;
   }
@@ -340,6 +378,7 @@ class Document extends Node {
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
+      styleDirtyElements.clear();
       return;
     }
     if (styleDirtyElements.any((element) {
@@ -360,11 +399,12 @@ class Document extends Node {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();
     adoptedStyleSheets.clear();
+    cookie.clearCookie();
     super.dispose();
   }
 }

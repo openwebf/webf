@@ -14,17 +14,27 @@ namespace webf {
 
 HTMLCanvasElement::HTMLCanvasElement(Document& document) : HTMLElement(html_names::kcanvas, &document) {}
 
-CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, ExceptionState& exception_state) const {
+CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), type)};
   NativeValue value = InvokeBindingMethod(binding_call_methods::kgetContext, 1, arguments, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
 
   if (type == canvas_types::k2d) {
-    return MakeGarbageCollected<CanvasRenderingContext2D>(GetExecutingContext(), native_binding_object);
+    CanvasRenderingContext* context =
+        MakeGarbageCollected<CanvasRenderingContext2D>(GetExecutingContext(), native_binding_object);
+    running_context_2ds_.emplace_back(context);
+    return context;
   }
 
   return nullptr;
+}
+
+void HTMLCanvasElement::Trace(GCVisitor* visitor) const {
+  for (auto&& context : running_context_2ds_) {
+    visitor->Trace(context);
+  }
+  HTMLElement::Trace(visitor);
 }
 
 bool HTMLCanvasElement::IsAttributeDefinedInternal(const AtomicString& key) const {

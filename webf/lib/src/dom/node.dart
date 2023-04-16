@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart' show Widget;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
+import 'node_data.dart';
 
 enum NodeType {
   ELEMENT_NODE,
@@ -27,6 +28,83 @@ enum DocumentPosition {
   CONTAINS,
   CONTAINED_BY,
   IMPLEMENTATION_SPECIFIC,
+}
+
+enum ChildrenChangeType {
+  ELEMENT_INSERTED,
+  NON_ELEMENT_INSERTED,
+  ELEMENT_REMOVED,
+  NON_ELEMENT_REMOVED,
+  ALL_CHILDREN_REMOVED,
+  TEXT_CHANGE
+}
+
+enum ChildrenChangeSource {
+  API,
+  PARSER
+}
+
+enum ChildrenChangeAffectsElements {
+  NO,
+  YES
+}
+
+class ChildrenChange {
+  final ChildrenChangeType type;
+  final ChildrenChangeSource byParser;
+  final ChildrenChangeAffectsElements affectsElements;
+  final Node? siblingChanged;
+  final Node? siblingBeforeChange;
+  final Node? siblingAfterChange;
+  final List<Node>? removedNodes;
+  final String? oldText;
+
+  ChildrenChange({
+    required this.type,
+    required this.byParser,
+    required this.affectsElements,
+    this.siblingChanged,
+    this.siblingBeforeChange,
+    this.siblingAfterChange,
+    this.removedNodes,
+    this.oldText,
+  });
+
+  factory ChildrenChange.forInsertion(
+      Node node, Node? unchangedPrevious, Node? unchangedNext, ChildrenChangeSource byParser) {
+    return ChildrenChange(
+      type: node.isElementNode() ? ChildrenChangeType.ELEMENT_INSERTED : ChildrenChangeType.NON_ELEMENT_INSERTED,
+      byParser: byParser,
+      affectsElements: node.isElementNode() ? ChildrenChangeAffectsElements.YES : ChildrenChangeAffectsElements.NO,
+      siblingChanged: node,
+      siblingBeforeChange: unchangedPrevious,
+      siblingAfterChange: unchangedNext,
+    );
+  }
+
+  factory ChildrenChange.forRemoval(
+      Node node, Node? previousSibling, Node? nextSibling, ChildrenChangeSource byParser) {
+    return ChildrenChange(
+      type: node.isElementNode() ? ChildrenChangeType.ELEMENT_REMOVED : ChildrenChangeType.NON_ELEMENT_REMOVED,
+      byParser: byParser,
+      affectsElements: node.isElementNode() ? ChildrenChangeAffectsElements.YES : ChildrenChangeAffectsElements.NO,
+      siblingChanged: node,
+      siblingBeforeChange: previousSibling,
+      siblingAfterChange: nextSibling,
+    );
+  }
+
+  bool isChildInsertion() {
+    return type == ChildrenChangeType.ELEMENT_INSERTED || type == ChildrenChangeType.NON_ELEMENT_INSERTED;
+  }
+
+  bool isChildRemoval() {
+    return type == ChildrenChangeType.ELEMENT_REMOVED || type == ChildrenChangeType.NON_ELEMENT_REMOVED;
+  }
+
+  bool isChildElementChange() {
+    return type == ChildrenChangeType.ELEMENT_INSERTED || type == ChildrenChangeType.ELEMENT_REMOVED;
+  }
 }
 
 enum RenderObjectManagerType { FLUTTER_ELEMENT, WEBF_NODE }
@@ -97,16 +175,42 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   /// true if node are created by Flutter widgets.
   bool createdByFlutterWidget = false;
-  List<Node> childNodes = [];
 
   /// The Node.parentNode read-only property returns the parent of the specified node in the DOM tree.
-  Node? parentNode;
+  ContainerNode? get parentNode => parentOrShadowHostNode;
+
+  ContainerNode? _parentOrShadowHostNode;
+  ContainerNode? get parentOrShadowHostNode => _parentOrShadowHostNode;
+  set parentOrShadowHostNode(ContainerNode? value) {
+    _parentOrShadowHostNode = value;
+  }
+
+  Node? _previous;
+  Node? _next;
+
+  Node? get firstChild;
+  Node? get lastChild;
+
   NodeType nodeType;
   String get nodeName;
 
+  NodeData? _node_data;
+  NodeData ensureNodeData() {
+    _node_data ??= NodeData();
+    return _node_data!;
+  }
+
+  Node treeRoot() {
+    Node? currentNode = this;
+    while (currentNode!.parentNode != null) {
+      currentNode = currentNode.parentNode;
+    }
+    return currentNode;
+  }
+
   // Children changed steps for node.
   // https://dom.spec.whatwg.org/#concept-node-children-changed-ext
-  void childrenChanged() {
+  void childrenChanged(ChildrenChange change) {
     if (!isConnected) {
       return;
     }
@@ -127,56 +231,76 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   Element? get previousElementSibling {
-    if (previousSibling != null && previousSibling!.nodeType == NodeType.ELEMENT_NODE) {
-      return previousSibling as Element;
+    Node? previous = previousSibling;
+    while(previous != null) {
+      if (previous is Element) {
+        return previous;
+      }
+      previous = previous.previousSibling;
     }
     return null;
   }
 
   Element? get nextElementSibling {
-    if (nextSibling != null && nextSibling!.nodeType == NodeType.ELEMENT_NODE) {
-      return nextSibling as Element;
+    Node? next = nextSibling;
+    while(next != null) {
+      if (next is Element) {
+        return next;
+      }
+      next = next.nextSibling;
     }
     return null;
   }
 
   Node(this.nodeType, [BindingContext? context]) : super(context);
 
+  bool _isConnected = false;
   // If node is on the tree, the root parent is body.
-  bool get isConnected {
-    // If renderer is attached, which means node must been connected.
-    if (isRendererAttached) return true;
+  bool get isConnected => _isConnected;
 
-    Node parent = this;
-    while (parent.parentNode != null) {
-      parent = parent.parentNode!;
+  bool isInTreeScope() { return isConnected; }
+
+  Node? get previousSibling => _previous;
+  set previousSibling(Node? value) {
+    _previous = value;
+  }
+
+  Node? get nextSibling => _next;
+  set nextSibling(Node? value) {
+    _next = value;
+  }
+
+  NodeList get childNodes {
+    if (this is ContainerNode) {
+      return ensureNodeData().ensureChildNodeList(this as ContainerNode);
     }
-    return parent == ownerDocument;
-  }
-
-  Node get firstChild => childNodes.first;
-
-  Node get lastChild => childNodes.last;
-
-  Node? get previousSibling {
-    if (parentNode == null) return null;
-    int index = parentNode!.childNodes.indexOf(this);
-    if (index - 1 < 0) return null;
-    return parentNode!.childNodes[index - 1];
-  }
-
-  Node? get nextSibling {
-    if (parentNode == null) return null;
-    int index = parentNode!.childNodes.indexOf(this);
-    if (index + 1 > parentNode!.childNodes.length - 1) return null;
-    return parentNode!.childNodes[index + 1];
+    return ensureNodeData().ensureEmptyChildNodeList(this);
   }
 
   // Is child renderObject attached.
   bool get isRendererAttached => renderer != null && renderer!.attached;
 
-  bool contains(Node child) {
-    return childNodes.contains(child);
+  bool contains(Node? node) {
+    if (node == null) return false;
+    return this == node || node.isDescendantOf(this);
+  }
+
+  bool isDescendantOf(Node? other) {
+    // Return true if other is an ancestor of this, otherwise false
+    if (other == null || isConnected != other.isConnected) {
+      return false;
+    }
+    if (other.ownerDocument != ownerDocument) {
+      return false;
+    }
+    ContainerNode? n = parentNode;
+    while (n != null) {
+      if (n == other) {
+        return true;
+      }
+      n = n.parentNode;
+    }
+    return false;
   }
 
   /// Attach a renderObject to parent.
@@ -187,7 +311,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   /// Release any resources held by this node.
   @override
-  void dispose() {
+  Future<void> dispose() async {
     parentNode?.removeChild(this);
     assert(!isRendererAttached, 'Should unmount $this before calling dispose.');
     super.dispose();
@@ -208,124 +332,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   @override
   void didDetachRenderer() {}
 
-  void visitChild(NodeVisitor visitor) {
-    childNodes.forEach((node) {
-      visitor(node);
-      node.visitChild(visitor);
-    });
-  }
+  Node? appendChild(Node child) { return null; }
 
-  @mustCallSuper
-  Node appendChild(Node child) {
-    child._ensureOrphan();
-    child.parentNode = this;
-    childNodes.add(child);
+  Node? insertBefore(Node child, Node referenceNode) { return null; }
 
-    if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
-    }
+  Node? removeChild(Node child) { return null; }
 
-    if (child.isConnected) {
-      child.connectedCallback();
-    }
-
-    // To insert a node into a parent before a child, run step 9 from the spec:
-    // 9. Run the children changed steps for parent when inserting a node into a parent.
-    // https://dom.spec.whatwg.org/#concept-node-insert
-    childrenChanged();
-    return child;
-  }
-
-  @mustCallSuper
-  Node insertBefore(Node child, Node referenceNode) {
-    child._ensureOrphan();
-    int referenceIndex = childNodes.indexOf(referenceNode);
-    if (referenceIndex == -1) {
-      return appendChild(child);
-    } else {
-      child.parentNode = this;
-      childNodes.insert(referenceIndex, child);
-      if (this is Element) {
-        ownerDocument.styleDirtyElements.add(this as Element);
-      }
-
-      if (child.isConnected) {
-        child.connectedCallback();
-      }
-
-      if (child.isConnected) {
-        child.connectedCallback();
-      }
-
-      // To insert a node into a parent before a child, run step 9 from the spec:
-      // 9. Run the children changed steps for parent when inserting a node into a parent.
-      // https://dom.spec.whatwg.org/#concept-node-insert
-      childrenChanged();
-
-      return child;
-    }
-  }
-
-  @mustCallSuper
-  Node removeChild(Node child) {
-    // Not remove node type which is not present in RenderObject tree such as Comment
-    // Only append node types which is visible in RenderObject tree
-    // Only remove childNode when it has parent
-    if (child.isRendererAttached) {
-      child.unmountRenderObject();
-    }
-
-    if (childNodes.contains(child)) {
-      bool isConnected = child.isConnected;
-      childNodes.remove(child);
-      child.parentNode = null;
-      if (this is Element) {
-        ownerDocument.styleDirtyElements.add(this as Element);
-      }
-      if (isConnected) {
-        child.disconnectedCallback();
-      }
-
-      // To remove a node, run step 21 from the spec:
-      // 21. Run the children changed steps for parent.
-      // https://dom.spec.whatwg.org/#concept-node-remove
-      childrenChanged();
-    }
-    return child;
-  }
-
-  @mustCallSuper
-  Node? replaceChild(Node newNode, Node oldNode) {
-    Node? replacedNode;
-    if (childNodes.contains(oldNode)) {
-      newNode._ensureOrphan();
-      bool isOldNodeConnected = oldNode.isConnected;
-      int referenceIndex = childNodes.indexOf(oldNode);
-      oldNode.parentNode = null;
-      newNode.parentNode = this;
-      replacedNode = oldNode;
-      childNodes[referenceIndex] = newNode;
-
-      if (isOldNodeConnected) {
-        oldNode.disconnectedCallback();
-        newNode.connectedCallback();
-      }
-
-      // To insert a node into a parent before a child, run step 9 from the spec:
-      // 9. Run the children changed steps for parent when inserting a node into a parent.
-      // https://dom.spec.whatwg.org/#concept-node-insert
-      childrenChanged();
-    }
-    return replacedNode;
-  }
-
-  /// Ensure node is not connected to a parent element.
-  void _ensureOrphan() {
-    Node? _parent = parentNode;
-    if (_parent != null) {
-      _parent.removeChild(this);
-    }
-  }
+  Node? replaceChild(Node newNode, Node oldNode) { return null; }
 
   /// Ensure child and child's child render object is attached.
   void ensureChildAttached() {}
@@ -355,6 +368,32 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   // Whether Kraken Node need to manage render object.
   RenderObjectManagerType get renderObjectManagerType => RenderObjectManagerType.WEBF_NODE;
+
+  // ---------------------------------------------------------------------------
+  // Notification of document structure changes (see container_node.h for more
+  // notification methods)
+  //
+  // InsertedInto() implementations must not modify the DOM tree, and must not
+  // dispatch synchronous events.
+  void insertedInto(ContainerNode insertionPoint) {
+    assert(insertionPoint.isConnected || isContainerNode());
+    if (insertionPoint.isConnected) {
+      _isConnected = true;
+    }
+  }
+
+  void removedFrom(ContainerNode insertionPoint) {
+    assert(insertionPoint.isConnected || isContainerNode());
+    if (insertionPoint.isConnected) {
+      _isConnected = false;
+    }
+  }
+
+  bool isTextNode() { return this is TextNode; }
+  bool isContainerNode() { return this is ContainerNode; }
+  bool isElementNode() { return this is Element; }
+  bool isDocumentFragment() { return this is DocumentFragment;}
+  bool hasChildren() { return firstChild != null; }
 
   DocumentPosition compareDocumentPosition(Node other) {
     if (this == other) {

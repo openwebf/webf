@@ -1,6 +1,6 @@
 HTTP/1.1 200 OK
 Date: Tue, 24 Aug 2021 03:45:23 GMT
-Cache-Control: max-age=900
+Cache-Control: public, max-age=900
 Content-Type: application/javascript
 Content-Length: 488796
 ETag: "02E1E2621F0192E3559631E94E2D2D6A"

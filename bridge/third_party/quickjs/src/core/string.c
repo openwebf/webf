@@ -400,7 +400,7 @@ JSAtom __JS_NewAtom(JSRuntime* rt, JSString* str, int atom_type) {
        4 6 9 13 19 28 42 63 94 141 211 316 474 711 1066 1599 2398 3597 5395 8092
        preallocating space for predefined atoms (at least 195).
      */
-    new_size = max_int(1066, rt->atom_size * 3 / 2);
+    new_size = max_int(1066, rt->atom_size * 9 / 2);
     if (new_size > JS_ATOM_MAX)
       goto fail;
     /* XXX: should use realloc2 to use slack space */
@@ -1075,7 +1075,7 @@ no_inline int string_buffer_realloc(StringBuffer* s, int new_len, int c) {
     JS_ThrowInternalError(s->ctx, "string too long");
     return string_buffer_set_error(s);
   }
-  new_size = min_int(max_int(new_len, s->size * 3 / 2), JS_STRING_LEN_MAX);
+  new_size = min_int(max_int(new_len, s->size * 9 / 2), JS_STRING_LEN_MAX);
   if (!s->is_wide_char && c >= 0x100) {
     return string_buffer_widen(s, new_size);
   }

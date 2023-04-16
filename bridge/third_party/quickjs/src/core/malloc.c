@@ -46,18 +46,7 @@ void js_trigger_gc(JSRuntime* rt, size_t size) {
 
 /* default memory allocation functions with memory limitation */
 static inline size_t js_def_malloc_usable_size(void* ptr) {
-#if defined(__APPLE__)
-  return malloc_size(ptr);
-#elif defined(_WIN32)
-  return _msize(ptr);
-#elif defined(EMSCRIPTEN)
-  return 0;
-#elif defined(__linux__)
-  return malloc_usable_size(ptr);
-#else
-  /* change this to `return 0;` if compilation fails */
-  return malloc_usable_size(ptr);
-#endif
+  return mi_usable_size(ptr);
 }
 
 size_t js_malloc_usable_size_unknown(const void* ptr) {
@@ -172,7 +161,7 @@ no_inline int js_realloc_array(JSContext* ctx, void** parray, int elem_size, int
   size_t slack;
   void* new_array;
   /* XXX: potential arithmetic overflow */
-  new_size = max_int(req_size, *psize * 3 / 2);
+  new_size = max_int(req_size, *psize * 9 / 2);
   new_array = js_realloc2(ctx, *parray, new_size * elem_size, &slack);
   if (!new_array)
     return -1;
@@ -191,7 +180,7 @@ void* js_def_malloc(JSMallocState* s, size_t size) {
   if (unlikely(s->malloc_size + size > s->malloc_limit))
     return NULL;
 
-  ptr = malloc(size);
+  ptr = mi_malloc(size);
   if (!ptr)
     return NULL;
 
@@ -206,7 +195,7 @@ void js_def_free(JSMallocState* s, void* ptr) {
 
   s->malloc_count--;
   s->malloc_size -= js_def_malloc_usable_size(ptr) + MALLOC_OVERHEAD;
-  free(ptr);
+  mi_free(ptr);
 }
 
 void* js_def_realloc(JSMallocState* s, void* ptr, size_t size) {
@@ -221,13 +210,13 @@ void* js_def_realloc(JSMallocState* s, void* ptr, size_t size) {
   if (size == 0) {
     s->malloc_count--;
     s->malloc_size -= old_size + MALLOC_OVERHEAD;
-    free(ptr);
+    mi_free(ptr);
     return NULL;
   }
   if (s->malloc_size + size - old_size > s->malloc_limit)
     return NULL;
 
-  ptr = realloc(ptr, size);
+  ptr = mi_realloc(ptr, size);
   if (!ptr)
     return NULL;
 

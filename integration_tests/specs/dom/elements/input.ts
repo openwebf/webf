@@ -1,3 +1,121 @@
+describe('Tempoary Tags input', () => {
+  it('input text can set height', async () => {
+    const input = document.createElement('input');
+    input.value = 'helloworld';
+    document.body.appendChild(input);
+    await snapshot();
+    input.style.height = '100px';
+    await snapshot();
+  });
+});
+
+describe('Input line-height', () => {
+  it('height not set and line-height set', async () => {
+    let div;
+    div = createElement(
+      'input',
+      {
+        value: '123',
+        style: {
+            lineHeight: '50px',
+            fontSize: '30px',
+        },
+      }
+    );
+    BODY.appendChild(div);
+    await snapshot();
+  });
+
+  it('height set and line-height set', async () => {
+    let div;
+    div = createElement(
+      'input',
+      {
+        value: '1234',
+        style: {
+            lineHeight: '50px',
+            height: '100px',
+            fontSize: '30px',
+        },
+      }
+    );
+    BODY.appendChild(div);
+    await snapshot();
+  });
+
+  it('height set and line-height greater than height', async () => {
+    let div;
+    div = createElement(
+      'input',
+      {
+        value: '12345',
+        style: {
+            lineHeight: '100px',
+            height: '50px',
+            fontSize: '30px',
+        },
+      }
+    );
+    BODY.appendChild(div);
+    await snapshot();
+  });
+
+  it('line-height set and is smaller than text size', async () => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '123456',
+        style: {
+            lineHeight: '10px',
+            fontSize: '30px'
+        },
+      }
+    );
+    BODY.appendChild(input);
+    await snapshot();
+  });
+
+  it('line-height set and is bigger than text size', async () => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '1234567',
+        style: {
+            lineHeight: '100px',
+            fontSize: '30px'
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+  });
+
+  it('line-height changes when height is not set', async (done) => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '12345678',
+        style: {
+          lineHeight: '50px',
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      input.style.lineHeight = '100px';
+      await snapshot();
+      done();
+    });
+  });
+})
+
 xdescribe('Tags input', () => {
   it('basic', async () => {
     const input = document.createElement('input');
@@ -108,77 +226,6 @@ xdescribe('Tags input', () => {
     document.body.appendChild(input);
 
     await snapshot();
-  });
-
-  it('height not set and line-height set', async () => {
-    let div;
-    div = createElement(
-      'input',
-      {
-        value: '1234567890',
-        style: {
-            lineHeight: '50px',
-            fontSize: '30px',
-        },
-      }
-    );
-    BODY.appendChild(div);
-  });
-
-  it('line-height set and is smaller than text size', async () => {
-    let input;
-    input = createElement(
-      'input',
-      {
-        value: '1234567890',
-        style: {
-            lineHeight: '10px',
-            fontSize: '30px'
-        },
-      }
-    );
-    BODY.appendChild(input);
-
-    await snapshot();
-  });
-
-  xit('line-height set and is bigger than text size', async () => {
-    let input;
-    input = createElement(
-      'input',
-      {
-        value: '1234567890',
-        style: {
-            lineHeight: '100px',
-            fontSize: '30px'
-        },
-      }
-    );
-    BODY.appendChild(input);
-
-    await snapshot();
-  });
-
-  xit('line-height changes when height is not set', async (done) => {
-    let input;
-    input = createElement(
-      'input',
-      {
-        value: '1234567890',
-        style: {
-          lineHeight: '50px',
-        },
-      }
-    );
-    BODY.appendChild(input);
-
-    await snapshot();
-
-    requestAnimationFrame(async () => {
-      input.style.lineHeight = '100px';
-      await snapshot();
-      done();
-    });
   });
 
   it('font-size set and width not set', async () => {

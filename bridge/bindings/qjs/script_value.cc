@@ -19,11 +19,10 @@ namespace webf {
 static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value) {
   switch (native_value.tag) {
     case NativeTag::TAG_STRING: {
-      auto* string = static_cast<NativeString*>(native_value.u.ptr);
+      std::unique_ptr<AutoFreeNativeString> string{static_cast<AutoFreeNativeString*>(native_value.u.ptr)};
       if (string == nullptr)
         return JS_NULL;
       JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());
-      delete string;
       return returnedValue;
     }
     case NativeTag::TAG_INT: {
@@ -101,6 +100,7 @@ ScriptValue::ScriptValue(const ScriptValue& value) {
 }
 ScriptValue& ScriptValue::operator=(const ScriptValue& value) {
   if (&value != this) {
+    JS_FreeValue(ctx_, value_);
     value_ = JS_DupValue(ctx_, value.value_);
   }
   ctx_ = value.ctx_;
@@ -115,6 +115,7 @@ ScriptValue::ScriptValue(ScriptValue&& value) noexcept {
 }
 ScriptValue& ScriptValue::operator=(ScriptValue&& value) noexcept {
   if (&value != this) {
+    JS_FreeValue(ctx_, value_);
     value_ = JS_DupValue(ctx_, value.value_);
   }
   ctx_ = value.ctx_;
@@ -141,7 +142,7 @@ AtomicString ScriptValue::ToString() const {
   return {ctx_, value_};
 }
 
-std::unique_ptr<NativeString> ScriptValue::ToNativeString() const {
+std::unique_ptr<SharedNativeString> ScriptValue::ToNativeString() const {
   return ToString().ToNativeString(ctx_);
 }
 

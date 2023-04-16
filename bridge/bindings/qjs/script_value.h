@@ -39,7 +39,7 @@ class ScriptValue final {
   // Wrap an Quickjs JSValue to ScriptValue.
   explicit ScriptValue(JSContext* ctx, JSValue value)
       : ctx_(ctx), value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
-  explicit ScriptValue(JSContext* ctx, const NativeString* string)
+  explicit ScriptValue(JSContext* ctx, const SharedNativeString* string)
       : ctx_(ctx), value_(JS_NewUnicodeString(ctx, string->string(), string->length())), runtime_(JS_GetRuntime(ctx)) {}
   explicit ScriptValue(JSContext* ctx, double v)
       : ctx_(ctx), value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
@@ -61,7 +61,7 @@ class ScriptValue final {
   // Create a new ScriptValue from call JSON.stringify to current value.
   ScriptValue ToJSONStringify(ExceptionState* exception) const;
   AtomicString ToString() const;
-  std::unique_ptr<NativeString> ToNativeString() const;
+  std::unique_ptr<SharedNativeString> ToNativeString() const;
   NativeValue ToNative(ExceptionState& exception_state) const;
 
   bool IsException() const;

@@ -28,9 +28,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
+import 'nth_index_cache.dart';
+
+typedef IndexCounter = int Function(Element element);
 
 Element? querySelector(Node node, String selector) =>
     SelectorEvaluator().querySelector(node, _parseSelectorGroup(selector));
@@ -50,13 +54,19 @@ SelectorGroup? _parseSelectorGroup(String selector) {
 
 class SelectorEvaluator extends SelectorVisitor {
   Element? _element;
+  SelectorGroup? _selectorGroup;
 
-  bool matchSelector(SelectorGroup? selector, Element? element) {
-    if (selector == null || element == null) {
+  static final NthIndexCache _nthIndexCache = NthIndexCache();
+  static NthIndexCache get nthIndexCache => _nthIndexCache;
+
+  bool matchSelector(SelectorGroup? selectorGroup, Element? element) {
+    if (selectorGroup == null || element == null) {
       return false;
     }
     _element = element;
-    return visitSelectorGroup(selector);
+    _selectorGroup = selectorGroup;
+    _selectorGroup?.matchSpecificity = -1;
+    return visitSelectorGroup(selectorGroup);
   }
 
   Element? querySelector(Node root, SelectorGroup? selector) {
@@ -129,7 +139,7 @@ class SelectorEvaluator extends SelectorVisitor {
           combinator = null;
           break;
         default:
-          throw _unsupported(node);
+          if (kDebugMode) throw _unsupported(node);
       }
 
       if (_element == null) {
@@ -139,6 +149,8 @@ class SelectorEvaluator extends SelectorVisitor {
     }
 
     _element = old;
+    if (result)
+      _selectorGroup?.matchSpecificity = node.specificity;
     return result;
   }
 
@@ -220,7 +232,8 @@ class SelectorEvaluator extends SelectorVisitor {
     // :before, :after, :first-letter/line can't match DOM elements.
     if (_isLegacyPsuedoClass(node.name)) return false;
 
-    throw _unimplemented(node);
+    if (kDebugMode) throw _unimplemented(node);
+    return false;
   }
 
   @override
@@ -228,7 +241,8 @@ class SelectorEvaluator extends SelectorVisitor {
     // :before, :after, :first-letter/line can't match DOM elements.
     if (_isLegacyPsuedoClass(node.name)) return false;
 
-    throw _unimplemented(node);
+    if (kDebugMode) throw _unimplemented(node);
+    return false;
   }
 
   static bool _isLegacyPsuedoClass(String name) {
@@ -244,61 +258,115 @@ class SelectorEvaluator extends SelectorVisitor {
   }
 
   @override
-  bool visitPseudoElementFunctionSelector(PseudoElementFunctionSelector node) => throw _unimplemented(node);
+  bool visitPseudoElementFunctionSelector(PseudoElementFunctionSelector node) {
+    if (kDebugMode) throw _unimplemented(node);
+    return false;
+  }
 
   @override
   bool visitPseudoClassFunctionSelector(PseudoClassFunctionSelector selector) {
-    switch (selector.name) {
-      // http://dev.w3.org/csswg/selectors-4/#child-index
+    List<num?>? data = _parseNthExpressions(selector.expression);
+    //  i = An + B
+    if (data == null) {
+      return false;
+    }
 
+    switch (selector.name) {
       // http://dev.w3.org/csswg/selectors-4/#the-nth-child-pseudo
       case 'nth-child':
-      case 'nth-last-child':
+        return _elementSatisfiesNthChildren(_element!, selector, data[0], data[1]!);
       case 'nth-of-type':
+        return _elementSatisfiesNthChildrenOfType(_element!, _element!.tagName, selector, data[0], data[1]!);
+      case 'nth-last-child':
+        return _elementSatisfiesNthLastChildren(_element!, selector, data[0], data[1]!);
       case 'nth-last-of-type':
-        //  i = An + B
-        var nthData = _parseNthExpressions(selector.expression);
-        if (nthData == null) {
-          break;
-        }
-
-        var A = nthData['A'];
-        var B = nthData['B'] ?? 0;
-
-        var parent = _element?.parentElement;
-
-        if (parent != null) {
-          var elIndex;
-          var children = parent.children;
-
-          if (selector.name == 'nth-of-type' || selector.name == 'nth-last-of-type') {
-            children = children.where((Element el) {
-              return el.tagName == _element!.tagName;
-            }).toList();
-          }
-
-          if (selector.name == 'nth-last-child' || selector.name == 'nth-last-of-type') {
-            elIndex = children.length - children.indexOf(_element!);
-          } else {
-            elIndex = children.indexOf(_element!) + 1;
-          }
-
-          if (A == null) {
-            return B > 0 && elIndex == B;
-          } else {
-            var divideResult = (elIndex - B) / A;
-
-            if (divideResult >= 1) {
-              return divideResult % divideResult.ceil() == 0;
-            } else {
-              return divideResult == 0;
-            }
-          }
-        } else {
-          return false;
-        }
+        return _elementSatisfiesNthLastChildrenOfType(_element!, _element!.tagName, selector, data[0], data[1]!);
     }
-    throw _unimplemented(selector);
+    if (kDebugMode) throw _unimplemented(selector);
+    return false;
+  }
+
+  bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector, num? a, num b, IndexCounter finder) {
+    int index = 0;
+
+    int? cacheIndex = SelectorEvaluator._nthIndexCache.getChildrenIndexFromCache(_element!.parentNode!, _element!, selector.name);
+    if (cacheIndex != null) {
+      index = cacheIndex;
+    } else {
+      index = finder(element);
+      SelectorEvaluator._nthIndexCache.setChildrenIndexWithParentNode(_element!.parentNode!, _element!, selector.name, index);
+    }
+
+    return _indexSatisfiesEquation(index + 1, a, b);
+  }
+
+  bool _elementSatisfiesNthChildren(Element element, PseudoClassFunctionSelector selector, num? a, num b) {
+    return _elementSatisfies(element, selector, a, b, (element) {
+      int index = 0;
+      Element? currentElement = element;
+      // Traverse the list to find the index of the element
+      while (currentElement?.previousElementSibling != null) {
+        currentElement = currentElement!.previousElementSibling;
+        index++;
+      }
+      return index;
+    });
+  }
+
+  bool _elementSatisfiesNthChildrenOfType(Element element, String tagName, PseudoClassFunctionSelector selector, num? a, num b) {
+    return _elementSatisfies(element, selector, a, b, (element) {
+      int index = 0;
+      Element? currentElement = element;
+      // Traverse the list to find the index of the element
+      while (currentElement?.previousElementSibling != null) {
+        currentElement = currentElement!.previousElementSibling;
+        if (currentElement?.tagName == tagName) {
+          index++;
+        }
+      }
+      return index;
+    });
+  }
+
+  bool _elementSatisfiesNthLastChildren(Element element, PseudoClassFunctionSelector selector, num? a, num b) {
+    return _elementSatisfies(element, selector, a, b, (element) {
+      Element? currentElement = element;
+      int index = 0;
+      // Traverse the list to find the index of the element
+      while (currentElement?.nextElementSibling != null) {
+        currentElement = currentElement!.nextElementSibling;
+        index++;
+      }
+      return index;
+    });
+  }
+
+  bool _elementSatisfiesNthLastChildrenOfType(Element element, String tagName, PseudoClassFunctionSelector selector, num? a, num b) {
+    return _elementSatisfies(element, selector, a, b, (element) {
+      Element? currentElement = element;
+      int index = 0;
+      // Traverse the list to find the index of the element
+      while (currentElement?.nextElementSibling != null) {
+        currentElement = currentElement!.nextElementSibling;
+        if (currentElement?.tagName == tagName) {
+          index++;
+        }
+      }
+      return index;
+    });
+  }
+
+  bool _indexSatisfiesEquation(int index, num? a, num b) {
+    if (a == null) {
+      return b > 0 && index == b;
+    }
+
+    var divideResult = (index - b) / a;
+    if (divideResult >= 1) {
+      return divideResult % divideResult.ceil() == 0;
+    } else {
+      return divideResult == 0;
+    }
   }
 
   num _countExpressionList(List<String> list) {
@@ -318,7 +386,7 @@ class SelectorEvaluator extends SelectorVisitor {
     return sum * modulus;
   }
 
-  Map<String, num?>? _parseNthExpressions(List<String> exprs) {
+  List<num?>? _parseNthExpressions(List<String> exprs) {
     num? A;
     num B = 0;
 
@@ -373,7 +441,7 @@ class SelectorEvaluator extends SelectorVisitor {
       }
     }
 
-    return {'A': A, 'B': B};
+    return [A, B];
   }
 
   bool isNumeric(String s) {
@@ -418,8 +486,9 @@ class SelectorEvaluator extends SelectorVisitor {
       case TokenKind.SUBSTRING_MATCH:
         return value.contains(select);
       default:
-        throw _unsupported(node);
+        if (kDebugMode) throw _unsupported(node);
     }
+    return false;
   }
 
   UnimplementedError _unimplemented(SimpleSelector selector) => UnimplementedError("'$selector' selector of type "

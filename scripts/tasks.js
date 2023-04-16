@@ -363,20 +363,42 @@ task(`build-ios-webf-lib`, (done) => {
     -DIS_IOS=TRUE \
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
     ${externCmakeArgs.join(' ')} \
-    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-x64 -S ${paths.bridge}`, {
+    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-simulator-x86 -S ${paths.bridge}`, {
     cwd: paths.bridge,
     stdio: 'inherit',
     env: {
       ...process.env,
       WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/x86_64')
+      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/simulator_x86')
+    }
+  });
+  // genereate build scripts for simulator arm64
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
+    -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
+    -DPLATFORM=SIMULATORARM64 \
+    -DDEPLOYMENT_TARGET=9.0 \
+    -DIS_IOS=TRUE \
+    ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
+    ${externCmakeArgs.join(' ')} \
+    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-simulator-arm64 -S ${paths.bridge}`, {
+    cwd: paths.bridge,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      WEBF_JS_ENGINE: targetJSEngine,
+      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/simulator_arm64')
     }
   });
 
   let cpus = os.cpus();
 
-  // build for simulator
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-x64 --target webf -- -j ${cpus.length}`, {
+  // build for simulator x86
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-simulator-x86 --target webf -- -j ${cpus.length}`, {
+    stdio: 'inherit'
+  });
+
+  // build for simulator arm64
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-simulator-arm64 --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
@@ -437,15 +459,21 @@ task(`build-ios-webf-lib`, (done) => {
   targetSourceFrameworks.forEach(target => {
     const armDynamicSDKPath = path.join(paths.bridge, `build/ios/lib/arm/${target}.framework`);
     const arm64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/arm64/${target}.framework`);
-    const x64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/x86_64/${target}.framework`);
+    const simulatorX64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/simulator_x86/${target}.framework`);
+    const simulatorArm64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/simulator_arm64/${target}.framework`);
 
     // Create flat frameworks with multiple archs.
     execSync(`lipo -create ${armDynamicSDKPath}/${target} ${arm64DynamicSDKPath}/${target} -output ${armDynamicSDKPath}/${target}`, {
       stdio: 'inherit'
     });
 
+    // Create flat simulator frameworks with multiple archs.
+    execSync(`lipo -create ${simulatorX64DynamicSDKPath}/${target} ${simulatorArm64DynamicSDKPath}/${target} -output ${simulatorX64DynamicSDKPath}/${target}`, {
+      stdio: 'inherit'
+    });
+
     // CMake generated iOS frameworks does not contains <MinimumOSVersion> key in Info.plist.
-    patchiOSFrameworkPList(x64DynamicSDKPath);
+    patchiOSFrameworkPList(simulatorX64DynamicSDKPath);;
     patchiOSFrameworkPList(armDynamicSDKPath);
 
     const targetDynamicSDKPath = `${paths.bridge}/build/ios/framework`;
@@ -453,8 +481,8 @@ task(`build-ios-webf-lib`, (done) => {
     mkdirp.sync(targetDynamicSDKPath);
 
     // dSYM file are located at /path/to/webf/build/ios/lib/${arch}/target.dSYM.
-    // Create dSYM for x86_64.
-    execSync(`dsymutil ${x64DynamicSDKPath}/${target} --out ${x64DynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
+    // Create dSYM for simulator.
+    execSync(`dsymutil ${simulatorX64DynamicSDKPath}/${target} --out ${simulatorX64DynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
     // Create dSYM for arm64,armv7.
     execSync(`dsymutil ${armDynamicSDKPath}/${target} --out ${armDynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
 
@@ -462,13 +490,13 @@ task(`build-ios-webf-lib`, (done) => {
     // Generate xcframework with dSYM.
     if (buildMode === 'RelWithDebInfo') {
       execSync(`xcodebuild -create-xcframework \
-        -framework ${x64DynamicSDKPath} -debug-symbols ${x64DynamicSDKPath}/../${target}.dSYM \
+        -framework ${simulatorX64DynamicSDKPath} -debug-symbols ${simulatorX64DynamicSDKPath}/../${target}.dSYM \
         -framework ${armDynamicSDKPath} -debug-symbols ${armDynamicSDKPath}/../${target}.dSYM -output ${frameworkPath}`, {
         stdio: 'inherit'
       });
     } else {
       execSync(`xcodebuild -create-xcframework \
-        -framework ${x64DynamicSDKPath} \
+        -framework ${simulatorX64DynamicSDKPath} \
         -framework ${armDynamicSDKPath} -output ${frameworkPath}`, {
         stdio: 'inherit'
       });

@@ -8,11 +8,13 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "built_in_string.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
 #include "element_attribute_names.h"
+#include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
 #include "qjs_element.h"
@@ -20,15 +22,30 @@
 
 namespace webf {
 
-Element::Element(const AtomicString& tag_name, Document* document, Node::ConstructionType construction_type)
-    : ContainerNode(document, construction_type), tag_name_(tag_name) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(
-      eventTargetId(), UICommand::kCreateElement, std::move(tag_name.ToNativeString(ctx())), (void*)bindingObject());
+Element::Element(const AtomicString& namespace_uri,
+                 const AtomicString& local_name,
+                 const AtomicString& prefix,
+                 Document* document,
+                 Node::ConstructionType construction_type)
+    : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri) {
+  auto buffer = GetExecutingContext()->uiCommandBuffer();
+  if (namespace_uri == element_namespace_uris::khtml) {
+    buffer->addCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
+                       nullptr);
+  } else if (namespace_uri == element_namespace_uris::ksvg) {
+    // TODO: SVG element
+    buffer->addCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
+                       (void*)bindingObject(), nullptr);
+  } else {
+    // TODO: Unknown namespace uri
+    buffer->addCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
+                       namespace_uri.ToNativeString(ctx()).release());
+  }
 }
 
-ElementAttributes& Element::EnsureElementAttributes() {
+ElementAttributes& Element::EnsureElementAttributes() const {
   if (attributes_ == nullptr) {
-    attributes_ = ElementAttributes::Create(this);
+    attributes_ = ElementAttributes::Create(const_cast<Element*>(this));
   }
   return *attributes_;
 }
@@ -37,7 +54,7 @@ bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_s
   return EnsureElementAttributes().hasAttribute(name, exception_state);
 }
 
-AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
+AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) const {
   return EnsureElementAttributes().getAttribute(name, exception_state);
 }
 
@@ -134,19 +151,31 @@ void Element::scrollTo(const std::shared_ptr<ScrollToOptions>& options, Exceptio
 }
 
 bool Element::HasTagName(const AtomicString& name) const {
-  return name == tag_name_;
+  return name == local_name_;
 }
 
-std::string Element::nodeValue() const {
-  return "";
+AtomicString Element::nodeValue() const {
+  return AtomicString::Null();
 }
 
 std::string Element::nodeName() const {
-  return tag_name_.ToUpperIfNecessary(ctx()).ToStdString(ctx());
+  return tagName().ToStdString(ctx());
 }
 
-std::string Element::nodeNameLowerCase() const {
-  return tag_name_.ToStdString(ctx());
+AtomicString Element::className() const {
+  return getAttribute(binding_call_methods::kclass, ASSERT_NO_EXCEPTION());
+}
+
+void Element::setClassName(const AtomicString& value, ExceptionState& exception_state) {
+  setAttribute(html_names::kClassAttr, value, exception_state);
+}
+
+AtomicString Element::id() const {
+  return getAttribute(binding_call_methods::kid, ASSERT_NO_EXCEPTION());
+}
+
+void Element::setId(const AtomicString& value, ExceptionState& exception_state) {
+  setAttribute(html_names::kIdAttr, value, exception_state);
 }
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
@@ -168,17 +197,28 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
 
-CSSStyleDeclaration* Element::style() {
+InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
   return &EnsureCSSStyleDeclaration();
 }
 
-CSSStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
+InlineCssStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
   if (cssom_wrapper_ == nullptr) {
-    cssom_wrapper_ = MakeGarbageCollected<CSSStyleDeclaration>(GetExecutingContext(), eventTargetId());
+    cssom_wrapper_ = MakeGarbageCollected<InlineCssStyleDeclaration>(GetExecutingContext(), this);
   }
   return *cssom_wrapper_;
+}
+
+DOMTokenList* Element::classList() {
+  ElementData& element_data = EnsureElementData();
+  if (element_data.GetClassList() == nullptr) {
+    auto* class_list = MakeGarbageCollected<DOMTokenList>(this, html_names::kClassAttr);
+    AtomicString classValue = getAttribute(html_names::kClassAttr, ASSERT_NO_EXCEPTION());
+    class_list->DidUpdateAttributeValue(built_in_string::kNULL, classValue);
+    element_data.SetClassList(class_list);
+  }
+  return element_data.GetClassList();
 }
 
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {
@@ -228,7 +268,21 @@ bool Element::IsAttributeDefinedInternal(const AtomicString& key) const {
 void Element::Trace(GCVisitor* visitor) const {
   visitor->Trace(attributes_);
   visitor->Trace(cssom_wrapper_);
+  if (element_data_ != nullptr) {
+    element_data_->Trace(visitor);
+  }
   ContainerNode::Trace(visitor);
+}
+
+// https://dom.spec.whatwg.org/#concept-element-qualified-name
+const AtomicString Element::getUppercasedQualifiedName() const {
+  auto name = getQualifiedName();
+
+  if (namespace_uri_ == element_namespace_uris::khtml) {
+    return name.ToUpperIfNecessary(ctx());
+  }
+
+  return name;
 }
 
 ElementData& Element::EnsureElementData() const {
@@ -246,15 +300,14 @@ Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
     copy = &CloneWithChildren(flag, &factory);
   }
 
-  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(copy->eventTargetId()));
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCloneNode, std::move(args_01),
-                                                       nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+                                                       copy->bindingObject());
 
   return copy;
 }
 
 Element& Element::CloneWithoutAttributesAndChildren(Document& factory) const {
-  return *(factory.createElement(tag_name_, ASSERT_NO_EXCEPTION()));
+  return *(factory.createElement(local_name_, ASSERT_NO_EXCEPTION()));
 }
 
 class ElementSnapshotReader {
@@ -291,13 +344,14 @@ void ElementSnapshotReader::Start() {
     delete reader;
   };
 
-  context_->dartMethodPtr()->toBlob(this, context_->contextId(), callback, element_->eventTargetId(),
+  context_->dartMethodPtr()->toBlob(this, context_->contextId(), callback, element_->bindingObject(),
                                     device_pixel_ratio_);
 }
 
 void ElementSnapshotReader::HandleSnapshot(uint8_t* bytes, int32_t length) {
   MemberMutationScope mutation_scope{context_};
   Blob* blob = Blob::Create(context_);
+  blob->SetMineType("image/png");
   blob->AppendBytes(bytes, length);
   resolver_->Resolve<Blob*>(blob);
 }
@@ -310,7 +364,10 @@ void ElementSnapshotReader::HandleFailed(const char* error) {
 }
 
 ScriptPromise Element::toBlob(ExceptionState& exception_state) {
-  return toBlob(1.0, exception_state);
+  Window* window = GetExecutingContext()->window();
+  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(
+      window->GetBindingProperty(binding_call_methods::kdevicePixelRatio, exception_state));
+  return toBlob(device_pixel_ratio, exception_state);
 }
 
 ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& exception_state) {
@@ -320,7 +377,8 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
 }
 
 std::string Element::outerHTML() {
-  std::string s = "<" + nodeNameLowerCase();
+  std::string tagname = local_name_.ToStdString(ctx());
+  std::string s = "<" + tagname;
 
   // Read attributes
   if (attributes_ != nullptr) {
@@ -334,7 +392,7 @@ std::string Element::outerHTML() {
 
   std::string childHTML = innerHTML();
   s += childHTML;
-  s += "</" + nodeNameLowerCase() + ">";
+  s += "</" + tagname + ">";
 
   return s;
 }

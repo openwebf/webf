@@ -117,7 +117,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       height = attempingSize.height;
     }
 
-    size = Size(width, height);
+    size = constraints.constrain(Size(width, height));
     assert(size.isFinite);
   }
 
@@ -182,6 +182,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
+    if (!hasSize || child?.hasSize == false) return false;
     if (renderStyle.transformMatrix != null) {
       return hitTestIntrinsicChild(result, child, position!);
     }

@@ -252,3 +252,28 @@ TEST(EventTarget, shouldKeepAtom) {
   bridge->evaluateScript(code3.c_str(), code3.size(), "internal://", 0);
   EXPECT_EQ(logCalled, true);
 }
+
+TEST(EventTarget, shouldWorksWithProxy) {
+  auto bridge = TEST_init();
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    logCalled = true;
+    EXPECT_STREQ(message.c_str(), "11");
+  };
+  std::string code = R"(
+let div = document.createElement('div');
+document.body.appendChild(div);
+const proxy = new Proxy(div, {});
+
+proxy.addEventListener('click', (e) => {
+  console.log(11);
+});
+
+proxy.dispatchEvent(new Event('click'));
+
+)";
+  bridge->evaluateScript(code.c_str(), code.size(), "internal://", 0);
+
+  JS_RunGC(JS_GetRuntime(bridge->GetExecutingContext()->ctx()));
+  EXPECT_EQ(logCalled, true);
+}

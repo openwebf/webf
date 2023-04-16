@@ -50,6 +50,9 @@ enum ClauseType {
   disjunction,
 }
 
+// We assume that the CSS input may contain unexpected tokens, but they will not be print out or throw unless we open it.
+bool kShowCSSParseError = false;
+
 /// Used for parser lookup ahead (used for nested selectors Less support).
 class ParserState extends TokenizerState {
   final Token peekToken;
@@ -78,7 +81,10 @@ class CSSParser {
   Token? _previousToken;
   late Token _peekToken;
 
-  CSSParser(String text, {int start = 0}) : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
+  /// A string containing the baseURL used to resolve relative URLs in the stylesheet.
+  String? href;
+
+  CSSParser(String text, {int start = 0, this.href}) : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
     _peekToken = tokenizer.next();
   }
 
@@ -239,6 +245,8 @@ class CSSParser {
   }
 
   void _errorExpected(String expected) {
+    if (!kShowCSSParseError) return;
+
     var tok = _next();
     String message;
     try {
@@ -250,11 +258,13 @@ class CSSParser {
   }
 
   void _error(String message, {SourceSpan? location}) {
+    if (!kShowCSSParseError) return;
     location ??= _peekToken.span;
     print(location.message(message, color: '\u001b[31m'));
   }
 
   void _warning(String message, {SourceSpan? location}) {
+    if (!kShowCSSParseError) return;
     location ??= _makeSpan(_peekToken.span);
     print(location.message(message, color: '\u001b[35m'));
   }
@@ -974,7 +984,7 @@ class CSSParser {
         while (_maybeEat(TokenKind.IMPORTANT)) {
           importantPriority = true;
         }
-        style.setProperty(propertyIdent, expr, importantPriority);
+        style.setProperty(propertyIdent, expr, isImportant: importantPriority, baseHref: href);
       }
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
       _next();
@@ -1176,7 +1186,13 @@ class CSSParser {
 
     if (!TokenKind.isIdentifier(tok.kind) && !TokenKind.isKindIdentifier(tok.kind)) {
       if (isChecked) {
-        _warning('expected identifier, but found $tok', location: tok.span);
+        String message;
+        try {
+          message = 'expected identifier, but found $tok';
+        } catch (e) {
+          message = 'parsing error expected identifier';
+        }
+        _warning(message, location: tok.span);
       }
       return Identifier('');
     }

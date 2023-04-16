@@ -4,6 +4,7 @@
  */
 
 #include "scripted_animation_controller.h"
+#include "document.h"
 #include "frame_request_callback_collection.h"
 
 namespace webf {
@@ -21,8 +22,16 @@ static void handleRAFTransientCallback(void* ptr, int32_t contextId, double high
     return;
   }
 
+  assert(frame_callback->status() == FrameCallback::FrameStatus::kPending);
+
+  frame_callback->SetStatus(FrameCallback::FrameStatus::kExecuting);
+
   // Trigger callbacks.
   frame_callback->Fire(highResTimeStamp);
+
+  frame_callback->SetStatus(FrameCallback::FrameStatus::kFinished);
+
+  context->document()->script_animations()->callbackCollection()->RemoveFrameCallback(frame_callback->frameId());
 }
 
 uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<FrameCallback>& frame_callback,
@@ -36,9 +45,11 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
     return -1;
   }
 
+  frame_callback->SetStatus(FrameCallback::FrameStatus::kPending);
+
   uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(frame_callback.get(), context->contextId(),
                                                                        handleRAFTransientCallback);
-
+  frame_callback->SetFrameId(requestId);
   // Register frame callback to collection.
   frame_request_callback_collection_.RegisterFrameCallback(requestId, frame_callback);
 
@@ -46,7 +57,7 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 }
 
 void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
-                                                    uint32_t callbackId,
+                                                    uint32_t callback_id,
                                                     ExceptionState& exception_state) {
   if (context->dartMethodPtr()->cancelAnimationFrame == nullptr) {
     exception_state.ThrowException(
@@ -55,8 +66,15 @@ void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
     return;
   }
 
-  context->dartMethodPtr()->cancelAnimationFrame(context->contextId(), callbackId);
-  frame_request_callback_collection_.CancelFrameCallback(callbackId);
+  context->dartMethodPtr()->cancelAnimationFrame(context->contextId(), callback_id);
+
+  auto frame_callback = frame_request_callback_collection_.GetFrameCallback(callback_id);
+  if (frame_callback != nullptr) {
+    if (frame_callback->status() != FrameCallback::FrameStatus::kExecuting) {
+      frame_request_callback_collection_.RemoveFrameCallback(callback_id);
+    }
+    frame_callback->SetStatus(FrameCallback::kCanceled);
+  }
 }
 
 void ScriptAnimationController::Trace(GCVisitor* visitor) const {

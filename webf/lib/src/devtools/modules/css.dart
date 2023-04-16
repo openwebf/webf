@@ -3,18 +3,19 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ffi';
+import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/launcher.dart';
 
 const int INLINED_STYLESHEET_ID = 1;
 const String ZERO_PX = '0px';
-RegExp _kebabCaseReg = RegExp(r'[A-Z]');
-RegExp _camelCaseReg = RegExp(r'-(\w)');
 
 class InspectCSSModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
-  InspectCSSModule(ChromeDevToolsService devtoolsService) : super(devtoolsService);
+  InspectCSSModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
   String get name => 'CSS';
@@ -39,7 +40,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
     if (element != null) {
       MatchedStyles matchedStyles = MatchedStyles(
         inlineStyle: buildMatchedStyle(element),
@@ -50,7 +51,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetComputedStyleForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       ComputedStyle computedStyle = ComputedStyle(
@@ -64,7 +65,7 @@ class InspectCSSModule extends UIInspectorModule {
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
   void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       InlinedStyle inlinedStyle = InlinedStyle(
@@ -86,7 +87,7 @@ class InspectCSSModule extends UIInspectorModule {
       int nodeId = edit['styleSheetId'];
       String text = edit['text'] ?? '';
       List<String> texts = text.split(';');
-      Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+      Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
       if (element != null) {
         for (String kv in texts) {
           kv = kv.trim();
@@ -94,7 +95,7 @@ class InspectCSSModule extends UIInspectorModule {
           if (_kv.length == 2) {
             String name = _kv[0].trim();
             String value = _kv[1].trim();
-            element.setInlineStyle(_camelize(name), value);
+            element.setInlineStyle(camelize(name), value);
           }
         }
         styles.add(buildInlineStyle(element));
@@ -113,13 +114,13 @@ class InspectCSSModule extends UIInspectorModule {
   static CSSStyle? buildMatchedStyle(Element element) {
     List<CSSProperty> cssProperties = [];
     String cssText = '';
-    for (MapEntry<String, String> entry in element.style) {
-      String kebabName = _kebabize(entry.key);
+    for (MapEntry<String, CSSPropertyValue> entry in element.style) {
+      String kebabName = kebabize(entry.key);
       String propertyValue = entry.value.toString();
       String _cssText = '$kebabName: $propertyValue';
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
-        value: entry.value,
+        value: entry.value.value,
         range: SourceRange(
           startLine: 0,
           startColumn: cssText.length,
@@ -134,7 +135,7 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
+        styleSheetId: element.pointer!.address,
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
@@ -145,7 +146,7 @@ class InspectCSSModule extends UIInspectorModule {
     List<CSSProperty> cssProperties = [];
     String cssText = '';
     element.inlineStyle.forEach((key, value) {
-      String kebabName = _kebabize(key);
+      String kebabName = kebabize(key);
       String propertyValue = value.toString();
       String _cssText = '$kebabName: $propertyValue';
       CSSProperty cssProperty = CSSProperty(
@@ -165,110 +166,33 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerDocument.controller.view.getTargetIdByEventTarget(element),
+        styleSheetId: element.pointer!.address,
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
         range: SourceRange(startLine: 0, startColumn: 0, endLine: 0, endColumn: cssText.length));
   }
 
-  static String resolveCSSDisplayString(CSSDisplay display) {
-    switch (display) {
-      case CSSDisplay.none:
-        return 'none';
-      case CSSDisplay.sliver:
-        return 'sliver';
-      case CSSDisplay.block:
-        return 'block';
-      case CSSDisplay.inlineBlock:
-        return 'inline-block';
-      case CSSDisplay.flex:
-        return 'flex';
-      case CSSDisplay.inlineFlex:
-        return 'inline-flex';
-      case CSSDisplay.inline:
-      default:
-        return 'inline';
-    }
-  }
-
-  static String _resolveCSSLengthType(CSSLengthType type) {
-    switch (type) {
-      case CSSLengthType.PX:
-        return 'px';
-      case CSSLengthType.EM:
-        return 'em';
-      case CSSLengthType.REM:
-        return 'rem';
-      case CSSLengthType.VH:
-        return 'vh';
-      case CSSLengthType.VW:
-        return 'vw';
-      case CSSLengthType.VMIN:
-        return 'vmin';
-      case CSSLengthType.VMAX:
-        return 'vmax';
-      case CSSLengthType.PERCENTAGE:
-        return '%';
-      case CSSLengthType.UNKNOWN:
-        return '';
-      case CSSLengthType.AUTO:
-        return 'auto';
-      case CSSLengthType.NONE:
-        return 'none';
-      case CSSLengthType.NORMAL:
-        return 'normal';
-      case CSSLengthType.INITIAL:
-        return 'initial';
-    }
-  }
-
   static List<CSSComputedStyleProperty> buildComputedStyle(Element element) {
     List<CSSComputedStyleProperty> computedStyle = [];
-    CSSStyleDeclaration style = element.style;
-    RenderStyle? renderStyle = element.renderStyle;
-
-    for (int i = 0; i < style.length; i++) {
-      String propertyName = style.item(i);
-      String propertyValue = style.getPropertyValue(propertyName);
-      propertyName = _kebabize(propertyName);
-
-      if (CSSLength.isLength(propertyValue)) {
-        CSSLengthValue? len = CSSLength.resolveLength(
-          propertyValue,
-          renderStyle,
-          propertyName,
-        );
-
-        propertyValue = len == null ? '0' : '${len.computedValue}${_resolveCSSLengthType(len.type)}';
+    Map<CSSPropertyID, String> reverse(Map map) => {for (var e in map.entries) e.value: e.key};
+    final propertyMap = reverse(CSSPropertyNameMap);
+    ComputedCSSStyleDeclaration computedStyleDeclaration = ComputedCSSStyleDeclaration(element, null);
+    for (CSSPropertyID id in ComputedProperties) {
+      final propertyName = propertyMap[id];
+      if (propertyName != null) {
+        final value = computedStyleDeclaration.getPropertyValue(propertyName);
+        if (value.isEmpty) {
+          continue;
+        }
+        computedStyle.add(CSSComputedStyleProperty(name: propertyName, value:value));
+        if (id == CSSPropertyID.Top) {
+          computedStyle.add(CSSComputedStyleProperty(name: 'y', value:value));
+        } else if (id == CSSPropertyID.Left) {
+          computedStyle.add(CSSComputedStyleProperty(name: 'x', value:value));
+        }
       }
-
-      if (propertyName == DISPLAY) {
-        propertyValue = resolveCSSDisplayString(element.renderStyle.display);
-      }
-
-      computedStyle.add(CSSComputedStyleProperty(name: propertyName, value: propertyValue));
     }
-
-    if (!style.contains(BORDER_TOP_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_TOP_STYLE), value: ZERO_PX));
-    }
-    if (!style.contains(BORDER_RIGHT_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_RIGHT_STYLE), value: ZERO_PX));
-    }
-    if (!style.contains(BORDER_BOTTOM_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_BOTTOM_STYLE), value: ZERO_PX));
-    }
-    if (!style.contains(BORDER_LEFT_STYLE)) {
-      computedStyle.add(CSSComputedStyleProperty(name: _kebabize(BORDER_LEFT_STYLE), value: ZERO_PX));
-    }
-
-    // Calc computed size.
-    Map<String, dynamic> boundingClientRect = element.boundingClientRect.toJSON();
-    boundingClientRect.forEach((String name, value) {
-      computedStyle.add(CSSComputedStyleProperty(name: name, value: '${value}px'));
-    });
-
     return computedStyle;
   }
 
@@ -491,17 +415,4 @@ class InlinedStyle extends JSONEncodable {
       if (attributesStyle != null) 'attributesStyle': attributesStyle,
     };
   }
-}
-
-// aB to a-b
-String _kebabize(String str) {
-  return str.replaceAllMapped(_kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
-}
-
-// a-b to aB
-String _camelize(String str) {
-  return str.replaceAllMapped(_camelCaseReg, (match) {
-    String subStr = match[0]!.substring(1);
-    return subStr.isNotEmpty ? subStr.toUpperCase() : '';
-  });
 }

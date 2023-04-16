@@ -45,15 +45,19 @@ class Document : public ContainerNode, public TreeScope {
 
   Element* createElement(const AtomicString& name, ExceptionState& exception_state);
   Element* createElement(const AtomicString& name, const ScriptValue& options, ExceptionState& exception_state);
+  Element* createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state);
+  Element* createElementNS(const AtomicString& uri,
+                           const AtomicString& name,
+                           const ScriptValue& options,
+                           ExceptionState& exception_state);
   Text* createTextNode(const AtomicString& value, ExceptionState& exception_state);
   DocumentFragment* createDocumentFragment(ExceptionState& exception_state);
-  Comment* createComment(ExceptionState& exception_state);
   Comment* createComment(const AtomicString& data, ExceptionState& exception_state);
   Event* createEvent(const AtomicString& type, ExceptionState& exception_state);
   HTMLAllCollection* all();
 
   [[nodiscard]] std::string nodeName() const override;
-  [[nodiscard]] std::string nodeValue() const override;
+  [[nodiscard]] AtomicString nodeValue() const override;
   [[nodiscard]] NodeType nodeType() const override;
   [[nodiscard]] bool ChildTypeAllowed(NodeType) const override;
 
@@ -91,6 +95,7 @@ class Document : public ContainerNode, public TreeScope {
 
   uint32_t RequestAnimationFrame(const std::shared_ptr<FrameCallback>& callback, ExceptionState& exception_state);
   void CancelAnimationFrame(uint32_t request_id, ExceptionState& exception_state);
+  ScriptAnimationController* script_animations() { return &script_animation_controller_; };
 
   // Helper functions for forwarding LocalDOMWindow event related tasks to the
   // LocalDOMWindow if it exists.

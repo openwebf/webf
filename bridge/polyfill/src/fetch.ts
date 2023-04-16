@@ -248,7 +248,7 @@ export class Response extends Body {
     if (!init) {
       init = {};
     }
-
+    this.bodyUsed = false;
     this.type = 'default';
     this.status = init.status === undefined ? 200 : init.status;
     this.ok = this.status >= 200 && this.status < 300;

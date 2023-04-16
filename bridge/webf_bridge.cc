@@ -74,16 +74,24 @@ void disposePage(void* page_) {
   delete page;
 }
 
-void evaluateScripts(void* page_, NativeString* code, const char* bundleFilename, int32_t startLine) {
+int8_t evaluateScripts(void* page_,
+                       SharedNativeString* code,
+                       uint8_t** parsed_bytecodes,
+                       uint64_t* bytecode_len,
+                       const char* bundleFilename,
+                       int32_t startLine) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  page->evaluateScript(reinterpret_cast<webf::NativeString*>(code), bundleFilename, startLine);
+  return page->evaluateScript(reinterpret_cast<webf::SharedNativeString*>(code), parsed_bytecodes, bytecode_len,
+                              bundleFilename, startLine)
+             ? 1
+             : 0;
 }
 
-void evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
+int8_t evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  page->evaluateByteCode(bytes, byteLen);
+  return page->evaluateByteCode(bytes, byteLen) ? 1 : 0;
 }
 
 void parseHTML(void* page_, const char* code, int32_t length) {
@@ -93,13 +101,13 @@ void parseHTML(void* page_, const char* code, int32_t length) {
 }
 
 NativeValue* invokeModuleEvent(void* page_,
-                               NativeString* module_name,
+                               SharedNativeString* module_name,
                                const char* eventType,
                                void* event,
                                NativeValue* extra) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  auto* result = page->invokeModuleEvent(reinterpret_cast<webf::NativeString*>(module_name), eventType, event,
+  auto* result = page->invokeModuleEvent(reinterpret_cast<webf::SharedNativeString*>(module_name), eventType, event,
                                          reinterpret_cast<webf::NativeValue*>(extra));
   return reinterpret_cast<NativeValue*>(result);
 }

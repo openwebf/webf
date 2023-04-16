@@ -325,7 +325,9 @@ mixin CSSMarginMixin on RenderStyle {
         paddingBottom == 0 &&
         borderBottom == 0) {
       RenderObject? lastChild = boxModel.lastChild != null ? boxModel.lastChild as RenderObject : null;
-      if (lastChild is RenderBoxModel && lastChild.renderStyle.effectiveDisplay == CSSDisplay.block) {
+      if (lastChild is RenderBoxModel &&
+          (lastChild.renderStyle.effectiveDisplay == CSSDisplay.block ||
+              lastChild.renderStyle.effectiveDisplay == CSSDisplay.flex)) {
         double childMarginBottom = lastChild is RenderLayoutBox
             ? lastChild.renderStyle._collapsedMarginBottomWithLastChild
             : lastChild.renderStyle.marginBottom.computedValue;
