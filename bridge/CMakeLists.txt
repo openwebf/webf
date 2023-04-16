@@ -163,7 +163,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   )
 
   if (MSVC)
-    add_library(pthread SHARED
+    add_library(pthread STATIC
       third_party/quickjs/compat/win32/pthreads/attr.c
       third_party/quickjs/compat/win32/pthreads/barrier.c
       third_party/quickjs/compat/win32/pthreads/cancel.c

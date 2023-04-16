@@ -20,30 +20,14 @@ target_include_directories(${PLUGIN_NAME} INTERFACE
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
 
 execute_process(
-    COMMAND powershell "-c" "Get-Item ./webf.dll | Select-Object -ExpandProperty Target"
+    COMMAND powershell "-c" "node prepare.js"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE WEBF_LIB_PATH
 )
-string(REGEX REPLACE "\n$" "" WEBF_LIB_PATH "${WEBF_LIB_PATH}")
-
-execute_process(
-    COMMAND powershell "-c" "Get-Item ./quickjs.dll | Select-Object -ExpandProperty Target"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE QUICKJS_LIB_PATH
-)
-string(REGEX REPLACE "\n$" "" QUICKJS_LIB_PATH "${QUICKJS_LIB_PATH}")
-
-execute_process(
-    COMMAND powershell "-c" "Get-Item ./pthread.dll | Select-Object -ExpandProperty Target"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE PTHREAD_LIB_PATH
-)
-string(REGEX REPLACE "\n$" "" PTHREAD_LIB_PATH "${PTHREAD_LIB_PATH}")
 
 # List of absolute paths to libraries that should be bundled with the plugin
 set(webf_bundled_libraries
-  ${WEBF_LIB_PATH}
-  ${QUICKJS_LIB_PATH}
-  ${PTHREAD_LIB_PATH}
+  ${CMAKE_CURRENT_SOURCE_DIR}/pthread.dll
+  ${CMAKE_CURRENT_SOURCE_DIR}/quickjs.dll
+  ${CMAKE_CURRENT_SOURCE_DIR}/webf.dll
   PARENT_SCOPE
 )
