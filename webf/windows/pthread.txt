@@ -1,1 +1,1 @@
-../../bridge/build/windows/lib/quickjs.dll
+../../bridge/build/windows/lib/pthreadVC2.dll
