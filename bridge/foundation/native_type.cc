@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "native_type.h"
 
@@ -26,4 +26,4 @@ void DartReadable::operator delete(void* memory) noexcept {
 #endif
 }
 
-}
+}  // namespace webf
