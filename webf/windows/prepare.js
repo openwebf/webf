@@ -10,7 +10,7 @@ function replaceTextToDLL(p) {
         fs.createReadStream(targetPath.trim()).pipe(fs.createWriteStream(p.replace('.txt', '.dll').trim()))
     }
 }
-
+//
 replaceTextToDLL('./webf.txt');
-replaceTextToDLL('./pthread.txt');
+replaceTextToDLL('./pthreadVC2.txt');
 replaceTextToDLL('./quickjs.txt');
