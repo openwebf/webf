@@ -21,6 +21,17 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
+if(WIN32)
+  set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads")
+  include_directories(${PTHREADS_ROOT}/include)
+  link_directories(${PTHREADS_ROOT}/lib/x64)
+endif()
+find_package(Threads REQUIRED)
+
+if(MSVC)
+  add_compile_options(/MP)
+endif()
+
 if (${ENABLE_PROFILE})
   add_definitions(-DENABLE_PROFILE=1)
 else ()
@@ -68,7 +79,8 @@ endif ()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   if (MSVC)
-    add_compile_options(/Ob1)
+    set(CMAKE_CXX_FLAGS_RELEASE "/O1")
+    set(CMAKE_C_FLAGS_RELEASE "/O1")
   else()
     # Avoid quickjs stackoverflow.
     add_compile_options(-O1)
@@ -131,6 +143,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/modp_b64/modp_b64.cc
   )
 
+  if (NOT MSVC)
+    list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
+  endif()
+
   list(APPEND QUICK_JS_SOURCE
     # third_party/quickjs/src/libbf.c
     third_party/quickjs/src/cutils.c
@@ -178,6 +194,14 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
+  endif()
+
+  if(WIN32)
+    target_link_libraries(quickjs pthreadVC2)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+    target_compile_definitions(quickjs PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
+  else()
+    target_link_libraries(quickjs Threads::Threads)
   endif()
 
   set(MI_OVERRIDE OFF)
@@ -540,7 +564,13 @@ target_include_directories(webf_static PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 target_link_libraries(webf_static ${BRIDGE_LINK_LIBS})
 
-add_definitions(-DAPP_VERSION="${APP_VERSION}") # Read from dartfm version
+execute_process(
+  COMMAND node get_app_ver.js
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/scripts
+  OUTPUT_VARIABLE APP_VER
+)
+string(REPLACE \n "" APP_VER ${APP_VER}) # Remove last \n
+add_definitions(-DAPP_VERSION="${APP_VER}") # Read from dartfm version
 execute_process(
   COMMAND git rev-parse --short HEAD
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}

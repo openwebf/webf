@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <sys/time.h>
+#include <chrono>
 #include <vector>
 
 #include "bindings/qjs/native_string_utils.h"
@@ -15,21 +15,6 @@
 #include "webf_bridge_test.h"
 #include "webf_test_context.h"
 #include "webf_test_env.h"
-
-#if defined(__linux__) || defined(__APPLE__)
-static int64_t get_time_ms(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
-}
-#else
-/* more portable, but does not work if the date is updated */
-static int64_t get_time_ms(void) {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return (int64_t)tv.tv_sec * 1000 + (tv.tv_usec / 1000);
-}
-#endif
 
 namespace webf {
 class WebFTestContext;
@@ -100,7 +85,9 @@ int32_t TEST_setTimeout(webf::DOMTimer* timer, int32_t contextId, AsyncCallback 
   JSRuntime* rt = context->dartContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
-  th->timeout = get_time_ms() + timeout;
+  auto now = std::chrono::system_clock::now();
+  std::time_t current_time = std::chrono::system_clock::to_time_t(now);
+  th->timeout = current_time + timeout;
   th->func = callback;
   th->timer = timer;
   th->contextId = contextId;
@@ -117,7 +104,9 @@ int32_t TEST_setInterval(webf::DOMTimer* timer, int32_t contextId, AsyncCallback
   JSRuntime* rt = context->dartContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
-  th->timeout = get_time_ms() + timeout;
+  auto now = std::chrono::system_clock::now();
+  std::time_t current_time = std::chrono::system_clock::to_time_t(now);
+  th->timeout = current_time + timeout;
   th->func = callback;
   th->timer = timer;
   th->contextId = contextId;
@@ -246,7 +235,8 @@ static bool jsPool(webf::ExecutingContext* context) {
     return true; /* no more events */
 
   if (!ts->os_timers.empty()) {
-    cur_time = get_time_ms();
+    auto now = std::chrono::system_clock::now();
+    cur_time = std::chrono::system_clock::to_time_t(now);
     for (auto& entry : ts->os_timers) {
       JSOSTimer* th = entry.second;
       delay = th->timeout - cur_time;
