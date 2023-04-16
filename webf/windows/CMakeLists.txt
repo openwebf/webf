@@ -26,7 +26,7 @@ execute_process(
 
 # List of absolute paths to libraries that should be bundled with the plugin
 set(webf_bundled_libraries
-  ${CMAKE_CURRENT_SOURCE_DIR}/pthread.dll
+  ${CMAKE_CURRENT_SOURCE_DIR}/pthreadVC2.dll
   ${CMAKE_CURRENT_SOURCE_DIR}/quickjs.dll
   ${CMAKE_CURRENT_SOURCE_DIR}/webf.dll
   PARENT_SCOPE
