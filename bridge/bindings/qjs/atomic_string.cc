@@ -22,13 +22,19 @@ AtomicString AtomicString::Null() {
 
 namespace {
 
-AtomicString::StringKind GetStringKind(const std::string& string) {
+AtomicString::StringKind GetStringKind(const std::string& string, size_t length) {
   AtomicString::StringKind predictKind =
       std::islower(string[0]) ? AtomicString::StringKind::kIsLowerCase : AtomicString::StringKind::kIsUpperCase;
-  for (char i : string) {
-    if (predictKind == AtomicString::StringKind::kIsUpperCase && !std::isupper(i)) {
+  for(int i = 0; i < length; i ++) {
+    char c = string[i];
+
+    if (c < 0 || c > 255) {
+      return AtomicString::StringKind::kUnknown;
+    }
+
+    if (predictKind == AtomicString::StringKind::kIsUpperCase && !std::isupper(c)) {
       return AtomicString::StringKind::kIsMixed;
-    } else if (predictKind == AtomicString::StringKind::kIsLowerCase && !std::islower(i)) {
+    } else if (predictKind == AtomicString::StringKind::kIsLowerCase && !std::islower(c)) {
       return AtomicString::StringKind::kIsMixed;
     }
   }
@@ -42,7 +48,7 @@ AtomicString::StringKind GetStringKind(JSValue stringValue) {
     return AtomicString::StringKind::kIsMixed;
   }
 
-  return GetStringKind(reinterpret_cast<const char*>(p->u.str8));
+  return GetStringKind(reinterpret_cast<const char*>(p->u.str8), p->len);
 }
 
 AtomicString::StringKind GetStringKind(const SharedNativeString* native_string) {
@@ -70,13 +76,13 @@ AtomicString::StringKind GetStringKind(const SharedNativeString* native_string) 
 AtomicString::AtomicString(JSContext* ctx, const std::string& string)
     : runtime_(JS_GetRuntime(ctx)),
       atom_(JS_NewAtomLen(ctx, string.c_str(), string.size())),
-      kind_(GetStringKind(string)),
+      kind_(GetStringKind(string, string.size())),
       length_(string.size()) {}
 
 AtomicString::AtomicString(JSContext* ctx, const char* str, size_t length)
     : runtime_(JS_GetRuntime(ctx)),
       atom_(JS_NewAtomLen(ctx, str, length)),
-      kind_(GetStringKind(str)),
+      kind_(GetStringKind(str, length)),
       length_(length) {}
 
 AtomicString::AtomicString(JSContext* ctx, const uint16_t* str, size_t length) : runtime_(JS_GetRuntime(ctx)) {

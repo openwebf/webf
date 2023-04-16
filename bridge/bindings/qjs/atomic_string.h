@@ -28,7 +28,7 @@ class AtomicString {
   WEBF_DISALLOW_NEW();
 
  public:
-  enum class StringKind { kIsLowerCase, kIsUpperCase, kIsMixed };
+  enum class StringKind { kIsLowerCase, kIsUpperCase, kIsMixed, kUnknown };
 
   struct KeyHasher {
     std::size_t operator()(const AtomicString& k) const { return k.atom_; }

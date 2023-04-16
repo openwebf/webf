@@ -524,6 +524,10 @@ list(APPEND PUBLIC_HEADER
 add_library(webf SHARED ${BRIDGE_SOURCE})
 add_library(webf_static STATIC ${BRIDGE_SOURCE})
 
+if(MSVC)
+  target_compile_options(webf PRIVATE /JMC)
+endif()
+
 target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 
 add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
