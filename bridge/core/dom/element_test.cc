@@ -86,10 +86,12 @@ TEST(Element, outerHTML) {
     logCalled = true;
 #if WIN32
     EXPECT_STREQ(message.c_str(),
-                 "<div attr-key=\"attr-value\" style=\"width: 100px;height: 100px;\"></div>  <div attr-key=\"attr-value\" style=\"width: 100px;height: 100px;\"></div>");
+                 "<div attr-key=\"attr-value\" style=\"width: 100px;height: 100px;\"></div>  <div "
+                 "attr-key=\"attr-value\" style=\"width: 100px;height: 100px;\"></div>");
 #else
     EXPECT_STREQ(message.c_str(),
-                 "<div attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>  <div attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>");
+                 "<div attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>  <div "
+                 "attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>");
 #endif
   };
   auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
