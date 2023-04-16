@@ -260,7 +260,7 @@ uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
       return nullptr;
     }
     // Allocate memory for the UTF-16 string, including the null terminator
-    buffer = (uint16_t*)malloc((utf16_str_len + 1) * sizeof(WCHAR));
+    buffer = (uint16_t*)CoTaskMemAlloc((utf16_str_len + 1) * sizeof(WCHAR));
     if (buffer == nullptr) {
       return nullptr;
     }
@@ -270,7 +270,7 @@ uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
     *length = utf16_str_len;
 #else
     uint32_t len = *length = string->len;
-    buffer = (uint16_t*)malloc(sizeof(uint8_t) * len * 2);
+    buffer = (uint16_t*)malloc(sizeof(uint16_t) * len * 2);
     for (size_t i = 0; i < len; i++) {
       buffer[i] = p[i];
       buffer[i + 1] = 0x00;
@@ -278,7 +278,11 @@ uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
 #endif
   } else {
     *length = string->len;
+#if WIN32
+    buffer = (uint16_t*)CoTaskMemAlloc(sizeof(uint16_t) * string->len);
+#else
     buffer = (uint16_t*)malloc(sizeof(uint16_t) * string->len);
+#endif
     memcpy(buffer, string->u.str16, sizeof(uint16_t) * string->len);
   }
 

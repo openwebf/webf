@@ -567,7 +567,7 @@ task('build-window-webf-lib', (done) => {
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DAPP_VERSION="${appVersion}" ${isProfile ? '-DENABLE_PROFILE=TRUE' : ''} -B ${paths.bridge}\\cmake-build-windows -S ${paths.bridge}`,
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -A x64 -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
@@ -579,7 +579,7 @@ task('build-window-webf-lib', (done) => {
     });
 
   // build
-  execSync(`cmake --build ${bridgeCmakeDir} --target webf -j 12 --config ${buildType.toLowerCase()}`, {
+  execSync(`cmake --build ${bridgeCmakeDir} --target webf --config ${buildType.toLowerCase()}`, {
     stdio: 'inherit'
   });
 
