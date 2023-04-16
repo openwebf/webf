@@ -563,11 +563,8 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
         RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
     if(MSVC)
-      set_target_properties(pthread
-        PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-      )
+      set(PTHREAD_LIB ${PTHREADS_ROOT}/dll/x64/pthreadVC2.dll)
+      file(COPY ${PTHREAD_LIB} DESTINATION "$ENV{LIBRARY_OUTPUT_DIR}")
     endif()
   endif ()
 elseif (IS_ANDROID)
