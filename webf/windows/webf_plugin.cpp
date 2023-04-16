@@ -12,7 +12,7 @@
 
 #include <map>
 #include <memory>
-#include <sstream> 
+#include <sstream>
 
 namespace {
 
@@ -53,20 +53,31 @@ WebfPlugin::WebfPlugin() {}
 
 WebfPlugin::~WebfPlugin() {}
 
+std::string tcharVecToString(const std::vector<TCHAR>& tcharVec) {
+#if defined(UNICODE) || defined(_UNICODE)
+    int requiredSize = WideCharToMultiByte(CP_UTF8, 0, tcharVec.data(), -1, nullptr, 0, nullptr, nullptr);
+    std::string result(requiredSize, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, tcharVec.data(), -1, &result[0], requiredSize, nullptr, nullptr);
+    result.resize(requiredSize - 1); // Remove null terminator
+#else
+    std::string result(tcharVec.begin(), tcharVec.end());
+#endif
+    return result;
+}
+
 void WebfPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-  if (method_call.method_name().compare("getPlatformVersion") == 0) {
-    std::ostringstream version_stream;
-    version_stream << "Windows ";
-    if (IsWindows10OrGreater()) {
-      version_stream << "10+";
-    } else if (IsWindows8OrGreater()) {
-      version_stream << "8";
-    } else if (IsWindows7OrGreater()) {
-      version_stream << "7";
-    }
-    result->Success(flutter::EncodableValue(version_stream.str()));
+  if (method_call.method_name().compare("getTemporaryDirectory") == 0) {
+     // Get the required buffer size for the temporary directory path
+    DWORD bufferSize = GetTempPath(0, nullptr);
+    
+    // Allocate a buffer to store the temporary directory path
+    std::vector<TCHAR> tempDirPath(bufferSize);
+
+    // Get the temporary directory path
+    GetTempPath(bufferSize, (TCHAR*) tempDirPath.data());
+    result->Success(flutter::EncodableValue(tcharVecToString(tempDirPath)));
   } else {
     result->NotImplemented();
   }
