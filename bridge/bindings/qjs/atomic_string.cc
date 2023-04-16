@@ -4,8 +4,8 @@
  */
 
 #include "atomic_string.h"
-#include <vector>
 #include <algorithm>
+#include <vector>
 #include "built_in_string.h"
 #include "foundation/native_string.h"
 #include "qjs_engine_patch.h"
@@ -25,7 +25,7 @@ namespace {
 AtomicString::StringKind GetStringKind(const std::string& string, size_t length) {
   AtomicString::StringKind predictKind =
       std::islower(string[0]) ? AtomicString::StringKind::kIsLowerCase : AtomicString::StringKind::kIsUpperCase;
-  for(int i = 0; i < length; i ++) {
+  for (int i = 0; i < length; i++) {
     char c = string[i];
 
     if (c < 0 || c > 255) {
