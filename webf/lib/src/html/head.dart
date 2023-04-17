@@ -263,13 +263,6 @@ class StyleElement extends Element {
   }
 
   @override
-  void childrenChanged() {
-    if (!isConnected) {
-      return;
-    }
-  }
-
-  @override
   Node insertBefore(Node child, Node referenceNode) {
     Node ret = super.insertBefore(child, referenceNode);
     _recalculateStyle();
