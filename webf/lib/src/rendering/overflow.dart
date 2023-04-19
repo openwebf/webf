@@ -148,6 +148,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return;
     }
 
+    assert(scrollableSize.isFinite);
+
     _scrollableSize = scrollableSize;
     _viewportSize = viewportSize;
     if (_scrollOffsetX != null) {
