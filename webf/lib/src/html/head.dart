@@ -250,6 +250,7 @@ class StyleElement extends Element {
       }
       if (_styleSheet != null) {
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+        ownerDocument.updateStyleIfNeeded();
       }
     }
   }
