@@ -978,6 +978,8 @@ class RenderFlowLayout extends RenderLayoutBox {
             container.renderStyle.effectiveBorderBottomWidth.computedValue,
         maxScrollableCrossSizeOfChildren);
 
+    assert(maxScrollableMainSize.isFinite);
+    assert(maxScrollableCrossSize.isFinite);
     scrollableSize = Size(maxScrollableMainSize, maxScrollableCrossSize);
   }
 
