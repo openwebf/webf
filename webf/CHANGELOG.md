@@ -1,3 +1,8 @@
+## 0.14.0-beta.9
+
+* fix: remove flushLayout when reading contentSize.
+* fix: fix GIF images cause rendering optimze rendering performance overhead.
+
 ## 0.14.0-beta.8+2
 
 * fix: css priority error with mixed selector.
