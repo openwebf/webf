@@ -1164,4 +1164,63 @@ describe('Position absolute', () => {
       done();
     });
   });
+
+  it('dynamic show positioned replace element shoud works', async (done) => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+}
+
+.content {
+width: 200px;
+height: 200px;
+background: white;
+}
+
+.imgText {
+  display: flex;
+  flex-direction: column;
+}
+.imgText img {
+  width: 50px;
+  height: 50px;
+  margin-right: 5px;
+  position: absolute;
+  top: 30px;
+  left: 20px;
+}`;
+    document.head.appendChild(style);
+    let img;
+    const container = createElement('div', {
+      'className': 'overlay',
+      style: {
+        'display': 'none'
+      }
+    }, [
+      createElement('div', {
+        'className': 'content'
+      }, [
+        createElement('div', {'className': 'top'}, [
+          createElement('div', { 'className': 'imgText'}, [
+            img = createElement('img', { 'className': 'logo', src: 'https://andycall.oss-accelerate.aliyuncs.com/images/20x50-green.png'}),
+            createElement('span', {}, [ createText('12345')])
+          ])
+        ])
+      ])
+    ]);
+    document.body.appendChild(container);
+
+    setTimeout(async () => {
+      container.style.display = 'block';
+      await snapshot();
+      done();
+    }, 300);
+  });
 });
