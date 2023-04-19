@@ -318,6 +318,10 @@ class ImageElement extends Element {
     renderStyle.intrinsicWidth = naturalWidth.toDouble();
     renderStyle.intrinsicHeight = naturalHeight.toDouble();
 
+    // Set naturalWidth and naturalHeight to renderImage to avoid relayout when size didn't changes.
+    _renderImage!.width = naturalWidth.toDouble();
+    _renderImage!.height = naturalHeight.toDouble();
+
     if (naturalWidth == 0.0 || naturalHeight == 0.0) {
       renderStyle.aspectRatio = null;
     } else {
@@ -445,8 +449,16 @@ class ImageElement extends Element {
     // the image when they no longer need to access it or draw it.
     ui.Image? clonedImage = _cachedImageInfo?.image.clone();
     if (clonedImage != null) {
+      bool isSizeChanged = true;
+      if (_renderImage != null && _renderImage!.image != null) {
+        isSizeChanged = _renderImage!.image!.width != clonedImage.width ||
+            _renderImage!.image!.height != clonedImage.height;
+      }
+
       _renderImage?.image = clonedImage;
-      _resizeImage();
+      if (isSizeChanged) {
+        _resizeImage();
+      }
     }
   }
 
