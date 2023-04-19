@@ -318,6 +318,10 @@ class ImageElement extends Element {
     renderStyle.intrinsicWidth = naturalWidth.toDouble();
     renderStyle.intrinsicHeight = naturalHeight.toDouble();
 
+    // Set naturalWidth and naturalHeight to renderImage to avoid relayout when size didn't changes.
+    _renderImage!.width = naturalWidth.toDouble();
+    _renderImage!.height = naturalHeight.toDouble();
+
     if (naturalWidth == 0.0 || naturalHeight == 0.0) {
       renderStyle.aspectRatio = null;
     } else {
@@ -536,6 +540,7 @@ class ImageElement extends Element {
   }
 
   set widthValue(String value) {
+    if (value == width) return;
     internalSetAttribute(WIDTH, value);
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
@@ -543,8 +548,9 @@ class ImageElement extends Element {
       _resizeImage();
     }
   }
-
+  
   set heightValue(String value) {
+    if (value == height) return;
     internalSetAttribute(HEIGHT, value);
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
