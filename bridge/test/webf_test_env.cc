@@ -87,7 +87,7 @@ int32_t TEST_setTimeout(webf::DOMTimer* timer, int32_t contextId, AsyncCallback 
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
   auto now = std::chrono::system_clock::now();
   std::time_t current_time = now.time_since_epoch().count();
-  th->timeout = current_time + timeout;
+  th->timeout = current_time + timeout * 1000;
   th->func = callback;
   th->timer = timer;
   th->contextId = contextId;
@@ -106,7 +106,7 @@ int32_t TEST_setInterval(webf::DOMTimer* timer, int32_t contextId, AsyncCallback
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
   auto now = std::chrono::system_clock::now();
   std::time_t current_time = now.time_since_epoch().count();
-  th->timeout = current_time + timeout;
+  th->timeout = current_time + timeout * 1000;
   th->func = callback;
   th->timer = timer;
   th->contextId = contextId;
