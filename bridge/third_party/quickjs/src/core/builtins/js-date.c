@@ -32,7 +32,7 @@
 #include "../string.h"
 #include "js-object.h"
 
-
+#if defined(_WIN32)
 int gettimeofday(struct timeval * tp, struct timezone * tzp) {
 	static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
 
@@ -109,6 +109,7 @@ int clock_gettime(int X, struct timeval *tv)
     tv->tv_usec = t.QuadPart % 1000000;
     return (0);
 }
+#endif
 
 /* Date */
 
