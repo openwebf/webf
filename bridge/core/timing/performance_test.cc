@@ -196,6 +196,8 @@ setTimeout(() => {
 performance.mark('B');
 setTimeout(() => {
   performance.measure("measure a to b", 'A', 'B');
+  let duration = performance.getEntriesByType("measure")[0].duration;
+  console.log(duration > 90 && duration < 101);
 }, 100);
 }, 100);
 
