@@ -653,6 +653,7 @@ class CSSMatrix {
             y = CSSLengthValue.zero;
           }
           CSSLengthValue x = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
+          if (x.computedValue == double.infinity || y.computedValue == double.infinity) return null;
           x.renderStyle = y.renderStyle = renderStyle;
           return Matrix4.identity()..translate(x.computedValue, y.computedValue);
         }
@@ -672,6 +673,7 @@ class CSSMatrix {
             z = CSSLength.parseLength(methodArgs[2].trim(), renderStyle, TRANSLATE);
           }
           CSSLengthValue x = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
+          if (x.computedValue == double.infinity || y.computedValue == double.infinity || z.computedValue == double.infinity) return null;
           x.renderStyle = y.renderStyle = z.renderStyle = renderStyle;
           return Matrix4.identity()..translate(x.computedValue, y.computedValue, z.computedValue);
         }

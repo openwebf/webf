@@ -95,4 +95,34 @@ describe('Transform translate3d', () => {
     BODY.appendChild(div);
     await snapshot();
   });
+
+  it('should work with percentage and size are not defined when dynamic created', async (done) => {
+    let div;
+    div = createElement(
+      'div',
+      {
+        style: {
+          width: '200px',
+          height: '200px',
+          backgroundColor: 'yellow',
+          position: 'relative',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            transform: 'translate3d(50%, 50%, 0)',
+            backgroundColor: 'green',
+          }
+        }, [
+          createText('TEXT TEXT')
+        ])
+      ]
+    );
+    requestAnimationFrame(async () => {
+      document.body.appendChild(div);
+      await snapshot();
+      done();
+    });
+  });
 });
