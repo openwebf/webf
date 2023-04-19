@@ -449,16 +449,8 @@ class ImageElement extends Element {
     // the image when they no longer need to access it or draw it.
     ui.Image? clonedImage = _cachedImageInfo?.image.clone();
     if (clonedImage != null) {
-      bool isSizeChanged = true;
-      if (_renderImage != null && _renderImage!.image != null) {
-        isSizeChanged = _renderImage!.image!.width != clonedImage.width ||
-            _renderImage!.image!.height != clonedImage.height;
-      }
-
       _renderImage?.image = clonedImage;
-      if (isSizeChanged) {
-        _resizeImage();
-      }
+      _resizeImage();
     }
   }
 
