@@ -24,10 +24,10 @@ std::unique_ptr<SharedNativeString> SharedNativeString::FromTemporaryString(cons
 }
 
 AutoFreeNativeString::~AutoFreeNativeString() {
-  free();
+  _free();
 }
 
-void SharedNativeString::free() const {
+void SharedNativeString::_free() const {
 #if WIN32
   CoTaskMemFree((LPVOID)string_);
 #else
