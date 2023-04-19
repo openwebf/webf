@@ -54,7 +54,7 @@ NativeValue Native_NewFloat64(double value) {
   v.tag = NativeTag::TAG_FLOAT64;
   return v;
 #else
-  return (NativeValue) { .u = {.int64 = result}, .uint32 = 0, .tag = NativeTag::TAG_FLOAT64, }
+  return (NativeValue) { .u = {.int64 = result}, .uint32 = 0, .tag = NativeTag::TAG_FLOAT64, };
 #endif
 }
 
@@ -94,7 +94,7 @@ NativeValue Native_NewInt64(int64_t value) {
   v.tag = NativeTag::TAG_INT;
   return v;
 #else
-  return (NativeValue) { .u = {.int64 = value}, .uint32 = 0, .tag = NativeTag::TAG_INT, }
+  return (NativeValue) { .u = {.int64 = value}, .uint32 = 0, .tag = NativeTag::TAG_INT, };
 #endif
 }
 
