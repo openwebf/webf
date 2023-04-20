@@ -1198,7 +1198,7 @@ void build_backtrace(JSContext* ctx, JSValueConst error_obj, const char* filenam
             JS_FreeCString(ctx, atom_str);
             atom_str = mapped_position.source;
             line_num = (int) mapped_position.line;
-            column_num = (int) mapped_position.column;
+            column_num = (int) mapped_position.column + 1;
           }
           dbuf_printf(&dbuf, " (%s", atom_str ? atom_str : "<null>");
         } else {
