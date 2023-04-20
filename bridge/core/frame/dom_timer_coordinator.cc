@@ -62,7 +62,8 @@ void DOMTimerCoordinator::forceStopTimeoutById(int32_t timer_id) {
 
   if (timer->status() == DOMTimer::TimerStatus::kExecuting) {
     timer->SetStatus(DOMTimer::TimerStatus::kCanceled);
-  } else {
+  } else if (timer->status() == DOMTimer::TimerStatus::kPending ||
+             (timer->kind() == DOMTimer::TimerKind::kMultiple && timer->status() == DOMTimer::TimerStatus::kFinished)) {
     removeTimeoutById(timer->timerId());
   }
 }
