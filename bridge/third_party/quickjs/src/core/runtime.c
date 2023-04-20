@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 
+#include <math.h>
 #include "runtime.h"
 #include "builtins/js-array.h"
 #include "builtins/js-function.h"
