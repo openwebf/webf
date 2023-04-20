@@ -370,8 +370,11 @@ describe('Tags img', () => {
       setTimeout(async () => {
         // When img re-append to document, to Gif image will continue to play.
         document.body.appendChild(img);
-        await snapshot(img);
-        done();
+        requestAnimationFrame(async () => {
+          await snapshot(img);
+          done();
+        })
+
       }, 200);
     };
 
