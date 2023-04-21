@@ -23,7 +23,7 @@ webf::DartMethodPointer::DartMethodPointer(const uint64_t* dart_methods, int32_t
   create_binding_object = reinterpret_cast<CreateBindingObject>(dart_methods[i++]);
 
 #if ENABLE_PROFILE
-  dartMethodPointer->getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(dart_methods[i++]);
+  getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(dart_methods[i++]);
 #else
   i++;
 #endif
