@@ -277,10 +277,10 @@ class ImageElement extends Element {
     if (entry.isIntersecting) {
       // Once appear remove the listener
       _removeIntersectionChangeListener();
+      _isInLazyRendering = false;
       await _decode();
       _loadImage();
       _listenToStream();
-      _isInLazyRendering = false;
     }
   }
 
@@ -398,37 +398,37 @@ class ImageElement extends Element {
   // The image will be encoded into a small size for better rasterization performance.
   Future<void> _decode({bool updateImageProvider = false}) {
     Completer completer = Completer();
+    if (!_isInLazyLoading) {
+      // Make sure all style and properties are ready before decode begins.
+      SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+        ImageProvider? provider = _currentImageProvider;
+        if (updateImageProvider || provider == null) {
+          // Image should be resized based on different ratio according to object-fit value.
+          BoxFit objectFit = renderStyle.objectFit;
 
-    // Make sure all style and properties are ready before decode begins.
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-      ImageProvider? provider = _currentImageProvider;
-      if (updateImageProvider || provider == null) {
-        // Image should be resized based on different ratio according to object-fit value.
-        BoxFit objectFit = renderStyle.objectFit;
+          // Increment load event delay count before decode.
+          ownerDocument.incrementLoadEventDelayCount();
 
-        // Increment load event delay count before decode.
-        ownerDocument.incrementLoadEventDelayCount();
+          provider = _currentImageProvider = BoxFitImage(
+            boxFit: objectFit,
+            url: _resolvedUri!,
+            loadImage: _obtainImage,
+            onImageLoad: _onImageLoad,
+          );
+        }
 
-        provider = _currentImageProvider = BoxFitImage(
-          boxFit: objectFit,
-          url: _resolvedUri!,
-          loadImage: _obtainImage,
-          onImageLoad: _onImageLoad,
-        );
-      }
+        // Try to make sure that this image can be encoded into a smaller size.
+        int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
+        int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
+        ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
+            ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
+            : ImageConfiguration.empty;
+        _updateSourceStream(provider.resolve(imageConfiguration));
 
-      // Try to make sure that this image can be encoded into a smaller size.
-      int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
-      int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
-      ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
-          ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
-          : ImageConfiguration.empty;
-      _updateSourceStream(provider.resolve(imageConfiguration));
-
-      completer.complete();
-    });
-    SchedulerBinding.instance.scheduleFrame();
-
+        completer.complete();
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    }
     return completer.future;
   }
 
