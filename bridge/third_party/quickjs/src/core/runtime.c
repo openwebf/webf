@@ -2303,6 +2303,8 @@ static const JSCFunctionListEntry js_string_proto_normalize[] = {
 };
 #endif
 
+#pragma function (log2)
+
 /* Math */
 static const JSCFunctionListEntry js_math_funcs[] = {
     JS_CFUNC_MAGIC_DEF("min", 2, js_math_min_max, 0),
