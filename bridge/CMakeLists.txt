@@ -28,9 +28,9 @@ if(WIN32)
 endif()
 find_package(Threads REQUIRED)
 
-if(MSVC)
-  add_compile_options(/MP)
-endif()
+#if(MSVC)
+#  add_compile_options(/MP)
+#endif()
 
 if (${ENABLE_PROFILE})
   add_definitions(-DENABLE_PROFILE=1)
@@ -48,11 +48,11 @@ if(NOT MSVC)
   endif()
 endif()
 
-execute_process(
-  COMMAND bash "-c" "read dart_sdk < <(type -p dart) && echo $\{dart_sdk%/*\}/cache/dart-sdk/include | xargs"
-  OUTPUT_VARIABLE DART_SDK
-)
-string(REGEX REPLACE "\n$" "" DART_SDK "${DART_SDK}")
+#execute_process(
+#  COMMAND bash "-c" "read dart_sdk < <(type -p dart) && echo $\{dart_sdk%/*\}/cache/dart-sdk/include | xargs"
+#  OUTPUT_VARIABLE DART_SDK
+#)
+#string(REGEX REPLACE "\n$" "" DART_SDK "${DART_SDK}")
 
 list(APPEND WEBF_PUBLIC_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
@@ -130,7 +130,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
-  ${DART_SDK}
+#  ${DART_SDK}
   ${ADDITIONAL_INCLUDE_DIRS}
   )
 
@@ -524,6 +524,7 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
+message(${BRIDGE_SOURCE})
 add_library(webf SHARED ${BRIDGE_SOURCE})
 add_library(webf_static STATIC ${BRIDGE_SOURCE})
 
