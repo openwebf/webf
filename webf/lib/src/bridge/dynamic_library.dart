@@ -22,6 +22,7 @@ abstract class WebFDynamicLibrary {
 
   // The kraken library name.
   static String libName = 'webf';
+  static String testLibName = 'webf_test';
 
   static String get _nativeDynamicLibraryName {
     if (Platform.isMacOS) {
@@ -37,11 +38,29 @@ abstract class WebFDynamicLibrary {
     }
   }
 
-  static DynamicLibrary? _ref;
+  static String get _nativeDynamicLibraryTestName {
+    if (Platform.isMacOS) {
+      return 'lib$testLibName.dylib';
+    } else if (Platform.isWindows) {
+      return '$testLibName.dll';
+    } else if (Platform.isLinux) {
+      return 'lib$libName.so';
+    } else {
+      throw UnimplementedError('Not supported platform.');
+    }
+  }
 
+  static DynamicLibrary? _ref;
   static DynamicLibrary get ref {
     DynamicLibrary? nativeDynamicLibrary = _ref;
     _ref = nativeDynamicLibrary ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryName));
+    return nativeDynamicLibrary;
+  }
+
+  static DynamicLibrary? _testRef;
+  static DynamicLibrary get testRef {
+    DynamicLibrary? nativeDynamicLibrary = _testRef;
+    _testRef = nativeDynamicLibrary ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryTestName));
     return nativeDynamicLibrary;
   }
 }
