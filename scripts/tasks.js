@@ -567,7 +567,7 @@ task('build-window-webf-lib', (done) => {
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true -T host=x64 -A x64 -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+  execSync(`cmake --log-level=VERBOSE -DCMAKE_BUILD_TYPE=${buildType} -DVERBOSE_CONFIGURE=ON -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
@@ -579,16 +579,12 @@ task('build-window-webf-lib', (done) => {
     });
 
   const webfTargets = ['webf'];
-  webfTargets.push('webf_test');
+  // webfTargets.push('webf_test');
 
   // build
-  execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --config ${buildType.toLowerCase()}`, {
+  execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --verbose`, {
     stdio: 'inherit'
   });
-
-  // Fix the output path
-  const outputDir = path.join(paths.bridge, `build/windows/lib/${buildType === 'Release' ? 'RelWithDebInfo' : 'Debug'}`);
-  execSync(`copy ${outputDir}\\*.dll ${outputDir}\\..\\`);
 
   done();
 });

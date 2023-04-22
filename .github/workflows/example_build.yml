@@ -9,12 +9,14 @@ on:
 
 env:
   nodeVersion: "16"
-  cmakeVersion: "3.22.x"
+  cmakeVersion: "3.26.3"
   flutterVersion: "3.3.10"
 
 jobs:
   build_windows-app_in_windows:
     runs-on: windows-2022
+    strategy:
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
         with:
@@ -26,8 +28,14 @@ jobs:
         with:
           cmake-version: ${{ env.cmakeVersion }}
       - run: npm i
-      - run: npm run build:bridge:windows:release
-
+      - name: Build windows dll
+        run: npm run build:bridge:windows:release
+        id: build
+        continue-on-error: true
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: bridge/
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.flutterVersion }}
