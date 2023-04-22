@@ -600,13 +600,13 @@ task('generate-bindings-code', (done) => {
 });
 
 task('build-window-webf-lib', (done) => {
-  const buildType = buildMode == 'Release' ? 'Release' : 'Debug';
+  const buildType = buildMode == 'Release' ? 'RelWithDebInfo' : 'Debug';
 
   const appVersion = getAppVersion();
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -A x64 -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true -T host=x64 -A x64 -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
@@ -617,8 +617,14 @@ task('build-window-webf-lib', (done) => {
       }
     });
 
+  const webfTargets = ['webf'];
+
+  if (buildMode === 'Debug') {
+    webfTargets.push('webf_test');
+  }
+
   // build
-  execSync(`cmake --build ${bridgeCmakeDir} --target webf --config ${buildType.toLowerCase()}`, {
+  execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --config ${buildType.toLowerCase()}`, {
     stdio: 'inherit'
   });
 
