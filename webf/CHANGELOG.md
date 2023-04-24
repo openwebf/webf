@@ -1,3 +1,9 @@
+## 0.14.0-beta.10
+
+* fix: image width/height attribute can not accept string.
+* fix: fix widgetElements remount in the same frame to the DOM tree causes renderWidgets to be unmounted.
+* feat: add DOMContentLoaded API.
+
 ## 0.14.0-beta.9
 
 * fix: remove flushLayout when reading contentSize.
