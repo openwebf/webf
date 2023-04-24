@@ -35,7 +35,11 @@ class WebFWidgetElementToWidgetAdapter<T extends RenderObject> extends SingleChi
 
   @override
   void didUnmountRenderObject(covariant RenderObject renderObject) {
-    widgetElement.unmountRenderObject();
+    // WidgetElement can be remounted to the DOM tree and trigger widget adapter updates.
+    // We need to check if the widgetElement is actually disconnected before unmounting the renderWidget.
+    if (!widgetElement.isConnected) {
+      widgetElement.unmountRenderObject();
+    }
   }
 
   @override
