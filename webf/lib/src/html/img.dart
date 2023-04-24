@@ -103,9 +103,9 @@ class ImageElement extends Element {
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['loading'] =
         BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
-    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => widthValue = castToType<String>(value));
+    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = value);
     properties['height'] =
-        BindingObjectProperty(getter: () => height, setter: (value) => heightValue = castToType<String>(value));
+        BindingObjectProperty(getter: () => height, setter: (value) => height = value);
     properties['scaling'] =
         BindingObjectProperty(getter: () => scaling, setter: (value) => scaling = castToType<String>(value));
     properties['naturalWidth'] = BindingObjectProperty(getter: () => naturalWidth);
@@ -119,8 +119,18 @@ class ImageElement extends Element {
 
     attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
     attributes['loading'] = ElementAttributeProperty(setter: (value) => loading = attributeToProperty<String>(value));
-    attributes['width'] = ElementAttributeProperty(setter: (value) => widthValue = attributeToProperty<String>(value));
-    attributes['height'] = ElementAttributeProperty(setter: (value) => heightValue = attributeToProperty<String>(value));
+    attributes['width'] = ElementAttributeProperty(setter: (value) {
+      CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
+      if (input.value != null) {
+        width = input.value!.toInt();
+      }
+    });
+    attributes['height'] = ElementAttributeProperty(setter: (value) {
+      CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
+      if (input.value != null) {
+        height = input.value!.toInt();
+      }
+    });
     attributes['scaling'] = ElementAttributeProperty(setter: (value) => scaling = attributeToProperty<String>(value));
   }
 
@@ -533,25 +543,25 @@ class ImageElement extends Element {
   String get loading => getAttribute(LOADING) ?? '';
 
   set loading(String value) {
-    internalSetAttribute(SCALING, value);
+    internalSetAttribute(LOADING, value);
     if (_isInLazyLoading) {
       _removeIntersectionChangeListener();
     }
   }
 
-  set widthValue(String value) {
+  set width(int value) {
     if (value == width) return;
-    internalSetAttribute(WIDTH, value);
+    internalSetAttribute(WIDTH, '${value}px');
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
     } else {
       _resizeImage();
     }
   }
-  
-  set heightValue(String value) {
+
+  set height(int value) {
     if (value == height) return;
-    internalSetAttribute(HEIGHT, value);
+    internalSetAttribute(HEIGHT, '${value}px');
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
     } else {
