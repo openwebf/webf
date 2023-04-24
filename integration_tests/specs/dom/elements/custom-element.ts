@@ -594,4 +594,24 @@ describe('custom html element', () => {
       });
     };
   });
+
+  it('remount widget in the same frame should works', async (done) => {
+    const container = createElement('div', {
+
+    }, [
+      createElement('input', {}, [])
+    ]);
+    document.body.appendChild(container);
+    const text = document.createElement('div');
+    text.textContent = 'TEST';
+    document.body.appendChild(text);
+
+    await snapshot();
+    setTimeout(async () => {
+      document.body.removeChild(container);
+      document.body.insertBefore(container, text);
+      await snapshot();
+      done();
+    });
+  });
 });

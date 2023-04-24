@@ -17,7 +17,7 @@ describe('script element', () => {
     script.onerror = () => {
       done();
     };
-    script.src = 'http://example.com/404';
+    script.src = 'http://musttofail.com/404';
   });
 
   it('async script execute in delayed order', async (done) => {
