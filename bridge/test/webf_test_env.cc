@@ -86,8 +86,8 @@ int32_t TEST_setTimeout(webf::DOMTimer* timer, int32_t contextId, AsyncCallback 
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
   auto now = std::chrono::system_clock::now();
-  std::time_t current_time = now.time_since_epoch().count();
-  th->timeout = current_time + timeout * 1000;
+  std::time_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+  th->timeout = current_time + timeout;
   th->func = callback;
   th->timer = timer;
   th->contextId = contextId;
@@ -105,8 +105,8 @@ int32_t TEST_setInterval(webf::DOMTimer* timer, int32_t contextId, AsyncCallback
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
   auto now = std::chrono::system_clock::now();
-  std::time_t current_time = now.time_since_epoch().count();
-  th->timeout = current_time + timeout * 1000;
+  std::time_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+  th->timeout = current_time + timeout;
   th->func = callback;
   th->timer = timer;
   th->contextId = contextId;
@@ -236,7 +236,7 @@ static bool jsPool(webf::ExecutingContext* context) {
 
   if (!ts->os_timers.empty()) {
     auto now = std::chrono::system_clock::now();
-    cur_time = now.time_since_epoch().count();
+    cur_time = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
     for (auto& entry : ts->os_timers) {
       JSOSTimer* th = entry.second;
       delay = th->timeout - cur_time;
