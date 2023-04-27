@@ -24,9 +24,12 @@ struct SharedNativeString {
   inline const uint16_t* string() const { return string_; }
   inline uint32_t length() const { return length_; }
 
-  void free() const { delete[] string_; }
+  // Dart FFI use ole32 as it's allocator, we need to override the default allocator to compact with Dart FFI.
+  static void* operator new(std::size_t size);
+  static void operator delete(void* memory) noexcept;
 
  protected:
+  void _free() const;
   SharedNativeString() = default;
   const uint16_t* string_;
   uint32_t length_;

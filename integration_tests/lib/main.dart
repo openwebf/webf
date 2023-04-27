@@ -40,7 +40,7 @@ List<List<int>> mems = [];
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
   // Overrides library name.
-  WebFDynamicLibrary.libName = 'libwebf_test';
+  WebFDynamicLibrary.testLibName = 'webf_test';
   defineWebFCustomElements();
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));

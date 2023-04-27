@@ -12,13 +12,14 @@
 #include "exception_state.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
+#include "foundation/native_value.h"
 #include "qjs_engine_patch.h"
 
 namespace webf {
 
 class ExecutingContext;
 class WrapperTypeInfo;
-class NativeValue;
+struct NativeValue;
 class GCVisitor;
 
 // ScriptValue is a stack allocate only QuickJS JSValue wrapper ScriptValuewhich hold all information to hide out

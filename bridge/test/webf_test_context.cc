@@ -5,12 +5,12 @@
 
 #include "webf_test_context.h"
 #include "bindings/qjs/member_installer.h"
+#include "bindings/qjs/qjs_interface_bridge.h"
 #include "core/dom/document.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_body_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
-#include "qjs_blob.h"
 #include "testframework.h"
 
 namespace webf {
@@ -36,11 +36,6 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
   JSValue& screenShotValue = argv[1];
   JSValue& callbackValue = argv[2];
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
-
-  if (!QJSBlob::HasInstance(context, blobValue)) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 1 (blob) must be an Blob object.");
-  }
   auto* blob = toScriptWrappable<Blob>(blobValue);
 
   if (blob == nullptr) {

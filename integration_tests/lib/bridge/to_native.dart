@@ -21,7 +21,7 @@ typedef NativeInitTestFramework = Pointer<Void> Function(Pointer<Void> page);
 typedef DartInitTestFramework = Pointer<Void> Function(Pointer<Void> page);
 
 final DartInitTestFramework _initTestFramework =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitTestFramework>>('initTestFramework').asFunction();
+    WebFDynamicLibrary.testRef.lookup<NativeFunction<NativeInitTestFramework>>('initTestFramework').asFunction();
 
 Pointer<Void> initTestFramework(int contextId) {
   return _initTestFramework(getAllocatedPage(contextId)!);
@@ -32,7 +32,7 @@ typedef NativeEvaluateTestScripts = Int8 Function(Pointer<Void> testContext, Poi
 typedef DartEvaluateTestScripts = int Function(Pointer<Void> testContext, Pointer<NativeString>, Pointer<Utf8>, int);
 
 final DartEvaluateTestScripts _evaluateTestScripts =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateTestScripts>>('evaluateTestScripts').asFunction();
+    WebFDynamicLibrary.testRef.lookup<NativeFunction<NativeEvaluateTestScripts>>('evaluateTestScripts').asFunction();
 
 void evaluateTestScripts(int contextId, String code, {String url = 'test://', int line = 0}) {
   Pointer<Utf8> _url = (url).toNativeUtf8();
@@ -45,7 +45,7 @@ typedef NativeExecuteTest = Void Function(Pointer<Void>, Pointer<NativeFunction<
 typedef DartExecuteTest = void Function(Pointer<Void>, Pointer<NativeFunction<NativeExecuteCallback>>);
 
 final DartExecuteTest _executeTest =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeExecuteTest>>('executeTest').asFunction();
+    WebFDynamicLibrary.testRef.lookup<NativeFunction<NativeExecuteTest>>('executeTest').asFunction();
 
 List<Completer<String>?> completerList = List.filled(10, null);
 

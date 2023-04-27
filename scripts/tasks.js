@@ -38,6 +38,7 @@ const paths = {
   webf: resolveWebF('webf'),
   bridge: resolveWebF('bridge'),
   polyfill: resolveWebF('bridge/polyfill'),
+  codeGen: resolveWebF('bridge/scripts/code_generator'),
   thirdParty: resolveWebF('third_party'),
   tests: resolveWebF('integration_tests'),
   sdk: resolveWebF('sdk'),
@@ -45,6 +46,7 @@ const paths = {
   performanceTests: resolveWebF('performance_tests')
 };
 
+const NPM = platform == 'win32' ? 'npm.cmd' : 'npm';
 const pkgVersion = readFileSync(path.join(paths.webf, 'pubspec.yaml'), 'utf-8').match(/version: (.*)/)[1].trim();
 const isProfile = process.env.ENABLE_PROFILE === 'true';
 
@@ -139,21 +141,21 @@ task('run-bridge-unit-test', done => {
     execSync(`${path.join(paths.bridge, 'build/macos/lib/x86_64/webf_unit_test')}`, {stdio: 'inherit'});
   } else if (platform === 'linux') {
     execSync(`${path.join(paths.bridge, 'build/linux/lib/webf_unit_test')}`, {stdio: 'inherit'});
-  } else {
-    throw new Error('Platform not supported.');
+  } else if (platform == 'win32') {
+    execSync(`${path.join(paths.bridge, 'build/windows/lib/webf_unit_test.exe')}`, {stdio: 'inherit'});
   }
    done();
 });
 
 task('compile-polyfill', (done) => {
   if (!fs.existsSync(path.join(paths.polyfill, 'node_modules'))) {
-    spawnSync('npm', ['install'], {
+    spawnSync(NPM, ['install'], {
       cwd: paths.polyfill,
       stdio: 'inherit'
     });
   }
 
-  let result = spawnSync('npm', ['run', (buildMode === 'Release' || buildMode === 'RelWithDebInfo') ? 'build:release' : 'build'], {
+  let result = spawnSync(NPM, ['run', (buildMode === 'Release' || buildMode === 'RelWithDebInfo') ? 'build:release' : 'build'], {
     cwd: paths.polyfill,
     env: {
       ...process.env,
@@ -548,6 +550,69 @@ task('build-linux-webf-lib', (done) => {
     const libkrakenPath = path.join(paths.bridge, `build/linux/lib/${lib}`);
     // Patch libkraken.so's runtime path.
     execSync(`chrpath --replace \\$ORIGIN ${libkrakenPath}`, { stdio: 'inherit' });
+  });
+
+  done();
+});
+
+task('generate-bindings-code', (done) => {
+  if (!fs.existsSync(path.join(paths.codeGen, 'node_modules'))) {
+    spawnSync(NPM, ['install'], {
+      cwd: paths.codeGen,
+      stdio: 'inherit'
+    });
+  }
+
+  let buildResult = spawnSync(NPM, ['run', 'build'], {
+    cwd: paths.codeGen,
+    env: {
+      ...process.env,
+    },
+    stdio: 'inherit'
+  });
+
+  if (buildResult.status !== 0) {
+    return done(buildResult.status);
+  }
+
+  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../out'], {
+    cwd: paths.codeGen,
+    env: {
+      ...process.env,
+    },
+    stdio: 'inherit'
+  });
+
+  if (compileResult.status !== 0) {
+    return done(compileResult.status);
+  }
+
+  done();
+});
+
+task('build-window-webf-lib', (done) => {
+  const buildType = buildMode == 'Release' ? 'RelWithDebInfo' : 'Debug';
+
+  const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
+  const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
+  // generate project
+  execSync(`cmake --log-level=VERBOSE -DCMAKE_BUILD_TYPE=${buildType} -DVERBOSE_CONFIGURE=ON -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+    {
+      cwd: paths.bridge,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        WEBF_JS_ENGINE: targetJSEngine,
+        LIBRARY_OUTPUT_DIR: soBinaryDirectory
+      }
+    });
+
+  const webfTargets = ['webf'];
+  // webfTargets.push('webf_test');
+
+  // build
+  execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --verbose`, {
+    stdio: 'inherit'
   });
 
   done();

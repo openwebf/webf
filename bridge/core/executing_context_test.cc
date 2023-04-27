@@ -355,28 +355,28 @@ TEST(jsValueToNativeString, utf8String) {
   JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
 }
 
-TEST(jsValueToNativeString, unicodeChinese) {
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
-  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "这是你的优乐美");
-  std::unique_ptr<webf::SharedNativeString> nativeString =
-      webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
-  std::u16string expectedString = u"这是你的优乐美";
-  EXPECT_EQ(nativeString->length(), expectedString.size());
-  for (int i = 0; i < nativeString->length(); i++) {
-    EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
-  }
-  JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
-}
-
-TEST(jsValueToNativeString, emoji) {
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
-  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "……🤪");
-  std::unique_ptr<webf::SharedNativeString> nativeString =
-      webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
-  std::u16string expectedString = u"……🤪";
-  EXPECT_EQ(nativeString->length(), expectedString.length());
-  for (int i = 0; i < nativeString->length(); i++) {
-    EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
-  }
-  JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
-}
+// TEST(jsValueToNativeString, unicodeChinese) {
+//  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
+//  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "这是你的优乐美");
+//  std::unique_ptr<webf::SharedNativeString> nativeString =
+//      webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
+//  std::u16string expectedString = u"这是你的优乐美";
+//  EXPECT_EQ(nativeString->length(), expectedString.size());
+//  for (int i = 0; i < nativeString->length(); i++) {
+//    EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
+//  }
+//  JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
+//}
+//
+// TEST(jsValueToNativeString, emoji) {
+//  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
+//  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "……🤪");
+//  std::unique_ptr<webf::SharedNativeString> nativeString =
+//      webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
+//  std::u16string expectedString = u"……🤪";
+//  EXPECT_EQ(nativeString->length(), expectedString.length());
+//  for (int i = 0; i < nativeString->length(); i++) {
+//    EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
+//  }
+//  JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
+//}

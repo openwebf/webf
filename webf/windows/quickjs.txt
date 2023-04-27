@@ -1,0 +1,1 @@
+../../bridge/build/windows/lib/quickjs.dll
