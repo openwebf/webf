@@ -1,3 +1,7 @@
+## 0.14.0-beta.11
+
+* feat: add windows platform support.
+
 ## 0.14.0-beta.10
 
 * fix: image width/height attribute can not accept string.
