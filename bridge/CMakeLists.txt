@@ -517,7 +517,6 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
-message(${BRIDGE_SOURCE})
 add_library(webf SHARED ${BRIDGE_SOURCE})
 add_library(webf_static STATIC ${BRIDGE_SOURCE})
 
