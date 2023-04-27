@@ -162,7 +162,7 @@ ScriptValue WindowOrWorkerGlobalScope::__memory_usage__(ExecutingContext* contex
 
   char buff[2048];
   snprintf(buff, 2048,
-           R"({"malloc_size": %lld, "malloc_limit": %lld, "memory_used_size": %lld, "memory_used_count": %lld})",
+           R"({"malloc_size": %ld, "malloc_limit": %ld, "memory_used_size": %ld, "memory_used_count": %ld})",
            memory_usage.malloc_size, memory_usage.malloc_limit, memory_usage.memory_used_size,
            memory_usage.memory_used_count);
 

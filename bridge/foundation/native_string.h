@@ -26,7 +26,7 @@ struct SharedNativeString {
 
   // Dart FFI use ole32 as it's allocator, we need to override the default allocator to compact with Dart FFI.
   static void* operator new(std::size_t size);
-  static void operator delete(void* memory);
+  static void operator delete(void* memory) noexcept;
 
  protected:
   void _free() const;
