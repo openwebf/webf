@@ -30,12 +30,6 @@ jobs:
       - run: npm i
       - name: Build windows dll
         run: npm run build:bridge:windows:release
-        id: build
-        continue-on-error: true
-      - uses: actions/upload-artifact@v2
-        with:
-          name: build
-          path: bridge/
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.flutterVersion }}
