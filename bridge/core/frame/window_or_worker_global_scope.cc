@@ -50,10 +50,19 @@ static void handlePersistentCallback(void* ptr, int32_t contextId, const char* e
     return;
 
   if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+    context->Timers()->removeTimeoutById(timer->timerId());
     return;
   }
 
+  timer->SetStatus(DOMTimer::TimerStatus::kExecuting);
   handleTimerCallback(timer, errmsg);
+
+  if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+    context->Timers()->removeTimeoutById(timer->timerId());
+    return;
+  }
+
+  timer->SetStatus(DOMTimer::TimerStatus::kFinished);
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,

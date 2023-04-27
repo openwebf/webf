@@ -1052,9 +1052,6 @@ class RenderBoxModel extends RenderBox
   // The contentSize of layout box
   Size? _contentSize;
   Size get contentSize {
-    if (_contentSize == null) {
-      owner?.flushLayout();
-    }
     return _contentSize ?? Size.zero;
   }
 
@@ -1131,6 +1128,7 @@ class RenderBoxModel extends RenderBox
   Size _maxScrollableSize = Size.zero;
   Size get scrollableSize => _maxScrollableSize;
   set scrollableSize(Size value) {
+    assert(value.isFinite);
     _maxScrollableSize = value;
   }
 

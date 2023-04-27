@@ -370,8 +370,11 @@ describe('Tags img', () => {
       setTimeout(async () => {
         // When img re-append to document, to Gif image will continue to play.
         document.body.appendChild(img);
-        await snapshot(img);
-        done();
+        requestAnimationFrame(async () => {
+          await snapshot(img);
+          done();
+        })
+
       }, 200);
     };
 
@@ -524,4 +527,24 @@ describe('Tags img', () => {
     done();
   });
 
+  it('works with width/height attribute', async (done) => {
+    let image;
+    image = createElement(
+      'img',
+      {
+        src: 'assets/100x100-green.png'
+      },
+    );
+    image.setAttribute(
+      'width',
+      '100px'
+    );
+    image.setAttribute(
+      'height',
+      '100px'
+    );
+    BODY.appendChild(image);
+    await snapshot(0.1);
+    done();
+  });
 });

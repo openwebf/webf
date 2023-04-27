@@ -103,9 +103,9 @@ class ImageElement extends Element {
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['loading'] =
         BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
-    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = castToType<int>(value));
+    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = value);
     properties['height'] =
-        BindingObjectProperty(getter: () => height, setter: (value) => height = castToType<int>(value));
+        BindingObjectProperty(getter: () => height, setter: (value) => height = value);
     properties['scaling'] =
         BindingObjectProperty(getter: () => scaling, setter: (value) => scaling = castToType<String>(value));
     properties['naturalWidth'] = BindingObjectProperty(getter: () => naturalWidth);
@@ -119,8 +119,18 @@ class ImageElement extends Element {
 
     attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
     attributes['loading'] = ElementAttributeProperty(setter: (value) => loading = attributeToProperty<String>(value));
-    attributes['width'] = ElementAttributeProperty(setter: (value) => width = attributeToProperty<int>(value));
-    attributes['height'] = ElementAttributeProperty(setter: (value) => height = attributeToProperty<int>(value));
+    attributes['width'] = ElementAttributeProperty(setter: (value) {
+      CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
+      if (input.value != null) {
+        width = input.value!.toInt();
+      }
+    });
+    attributes['height'] = ElementAttributeProperty(setter: (value) {
+      CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
+      if (input.value != null) {
+        height = input.value!.toInt();
+      }
+    });
     attributes['scaling'] = ElementAttributeProperty(setter: (value) => scaling = attributeToProperty<String>(value));
   }
 
@@ -224,14 +234,20 @@ class ImageElement extends Element {
   // Width and height set through attributes.
   double? get _attrWidth {
     if (hasAttribute(WIDTH)) {
-      return CSSLength.toDouble(getAttribute(WIDTH));
+      final width = getAttribute(WIDTH);
+      if (width != null) {
+        return CSSLength.parseLength(width, renderStyle, WIDTH).computedValue;
+      }
     }
     return null;
   }
 
   double? get _attrHeight {
     if (hasAttribute(HEIGHT)) {
-      return CSSLength.toDouble(getAttribute(HEIGHT));
+      final height = getAttribute(HEIGHT);
+      if (height != null) {
+        return CSSLength.parseLength(height, renderStyle, HEIGHT).computedValue;
+      }
     }
     return null;
   }
@@ -311,6 +327,10 @@ class ImageElement extends Element {
 
     renderStyle.intrinsicWidth = naturalWidth.toDouble();
     renderStyle.intrinsicHeight = naturalHeight.toDouble();
+
+    // Set naturalWidth and naturalHeight to renderImage to avoid relayout when size didn't changes.
+    _renderImage!.width = naturalWidth.toDouble();
+    _renderImage!.height = naturalHeight.toDouble();
 
     if (naturalWidth == 0.0 || naturalHeight == 0.0) {
       renderStyle.aspectRatio = null;
@@ -523,15 +543,15 @@ class ImageElement extends Element {
   String get loading => getAttribute(LOADING) ?? '';
 
   set loading(String value) {
-    internalSetAttribute(SCALING, value);
+    internalSetAttribute(LOADING, value);
     if (_isInLazyLoading) {
       _removeIntersectionChangeListener();
     }
   }
 
   set width(int value) {
-    if (value.isNegative) value = 0;
-    internalSetAttribute(WIDTH, value.toString());
+    if (value == width) return;
+    internalSetAttribute(WIDTH, '${value}px');
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
     } else {
@@ -540,8 +560,8 @@ class ImageElement extends Element {
   }
 
   set height(int value) {
-    if (value.isNegative) value = 0;
-    internalSetAttribute(HEIGHT, value.toString());
+    if (value == height) return;
+    internalSetAttribute(HEIGHT, '${value}px');
     if (_shouldScaling) {
       _decode(updateImageProvider: true);
     } else {
