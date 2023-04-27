@@ -30,7 +30,7 @@ final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 const MOCK_SERVER_PORT = 4567;
 
 Future<Process> startHttpMockServer() async {
-  return await Process.start('node', ['C:\\Users\\dongt\\Desktop\\kraken\\integration_tests\\scripts\\mock_http_server.js'], environment: {
+  return await Process.start('node', [testDirectory + '/scripts/mock_http_server.js'], environment: {
     'PORT': MOCK_SERVER_PORT.toString()
   }, mode: ProcessStartMode.inheritStdio);
 }
@@ -40,11 +40,7 @@ List<List<int>> mems = [];
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
   // Overrides library name.
-  if (Platform.isWindows) {
-    WebFDynamicLibrary.testLibName = 'webf_test';
-  } else {
-    WebFDynamicLibrary.testLibName = 'libwebf_test';
-  }
+  WebFDynamicLibrary.testLibName = 'webf_test';
   defineWebFCustomElements();
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
