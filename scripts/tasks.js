@@ -66,12 +66,6 @@ function resolveWebF(submodule) {
   return resolve(WEBF_ROOT, submodule);
 }
 
-function getAppVersion() {
-  const pubspecYaml = path.join(paths.webf, 'pubspec.yaml');
-  const match = /version: (\d{1}\.\d{1,3}\.\d{1,3}(?:[-\w\.]+))/.exec(fs.readFileSync(pubspecYaml, {encoding: 'utf-8'}));
-  return match[1];
-}
-
 task('clean', () => {
   execSync('git clean -xfd', {
     cwd: paths.example,
@@ -90,7 +84,6 @@ const libOutputPath = join(TARGET_PATH, platform, 'lib');
 
 task('build-darwin-webf-lib', done => {
   let externCmakeArgs = [];
-  const appVersion = getAppVersion();
   let buildType = 'Debug';
   if (process.env.WEBF_BUILD === 'Release') {
     buildType = 'RelWithDebInfo';
@@ -109,7 +102,7 @@ task('build-darwin-webf-lib', done => {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
   }
 
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true -DAPP_VERSION="${appVersion}" ${externCmakeArgs.join(' ')} \
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true ${externCmakeArgs.join(' ')} \
     -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-x86_64 -S ${paths.bridge}`, {
     cwd: paths.bridge,
     stdio: 'inherit',
@@ -341,7 +334,6 @@ function patchiOSFrameworkPList(frameworkPath) {
 }
 
 task(`build-ios-webf-lib`, (done) => {
-  const appVersion = getAppVersion();
   const buildType = (buildMode == 'Release' || buildMode === 'RelWithDebInfo')  ? 'RelWithDebInfo' : 'Debug';
   let externCmakeArgs = [];
 
@@ -359,7 +351,6 @@ task(`build-ios-webf-lib`, (done) => {
     -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
     -DPLATFORM=SIMULATOR64 \
     -DDEPLOYMENT_TARGET=9.0 \
-    -DAPP_VERSION="${appVersion}" \
     -DIS_IOS=TRUE \
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
     ${externCmakeArgs.join(' ')} \
@@ -602,7 +593,6 @@ task('generate-bindings-code', (done) => {
 task('build-window-webf-lib', (done) => {
   const buildType = buildMode == 'Release' ? 'RelWithDebInfo' : 'Debug';
 
-  const appVersion = getAppVersion();
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
@@ -630,7 +620,6 @@ task('build-window-webf-lib', (done) => {
 
 task('build-android-webf-lib', (done) => {
   let androidHome;
-  const appversion = getAppVersion();
 
   let ndkDir = '';
 
@@ -690,7 +679,6 @@ task('build-android-webf-lib', (done) => {
     -DCMAKE_TOOLCHAIN_FILE=${path.join(ndkDir, '/build/cmake/android.toolchain.cmake')} \
     -DANDROID_NDK=${ndkDir} \
     -DIS_ANDROID=TRUE \
-    -DAPP_VERSION="${appVersion}" \
     -DANDROID_ABI="${arch}" \
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
     ${externCmakeArgs.join(' ')} \
