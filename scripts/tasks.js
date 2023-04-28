@@ -585,6 +585,10 @@ task('build-window-webf-lib', (done) => {
     stdio: 'inherit'
   });
 
+  // Fix the output path
+  const outputDir = path.join(paths.bridge, `build/windows/lib/${buildType === 'Release' ? 'RelWithDebInfo' : 'Debug'}`);
+  execSync(`copy ${outputDir}\\*.dll ${outputDir}\\..\\`);
+
   done();
 });
 

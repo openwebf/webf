@@ -10,17 +10,17 @@ function symbolicToRealFile(path) {
 
 function txtToRealFile(path) {
   let realPath = PATH.join(path, '../', fs.readFileSync(path, {encoding: 'utf-8'}));
-  moveFile(path, realPath.trim());
+  moveFile(path, realPath.trim(), true);
 }
 
-function moveFile(path, realPath) {
+function moveFile(path, realPath, replaceDll = false) {
   if (fs.lstatSync(realPath).isDirectory()) {
     exec(`rm ${path}`);
     exec(`cp -r ${realPath} ${path}`);
   } else {
     let buffer = fs.readFileSync(realPath);
     fs.rmSync(path);
-    if (os.platform() == 'win32') {
+    if (replaceDll) {
       fs.writeFileSync(path.replace('.txt', '.dll'), buffer);
     } else {
       fs.writeFileSync(path, buffer);
