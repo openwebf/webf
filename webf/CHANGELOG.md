@@ -1,3 +1,7 @@
+## 0.14.0-beta.11+1
+
+* fix: fix flutter app build on windows platform.
+
 ## 0.14.0-beta.11
 
 * feat: add windows platform support.
