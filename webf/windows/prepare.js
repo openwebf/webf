@@ -8,7 +8,7 @@ function replaceTextToDLL(p) {
     if (fileExt === 'txt' && fs.existsSync(p) && !fs.existsSync(dist)) {
         const relPath = fs.readFileSync(p, {encoding: 'utf-8'});
         const targetPath = path.join(__dirname, relPath);
-        fs.createReadStream(targetPath.trim()).pipe(fs.createWriteStream(p.replace('.txt', '.dll').trim()))
+        fs.createReadStream(targetPath.trim()).pipe(fs.createWriteStream(dist))
     }
 }
 //
