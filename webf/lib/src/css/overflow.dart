@@ -349,6 +349,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollTop {
+    _ensureRenderObjectHasLayout();
     WebFScrollable? scrollableY = _getScrollable(Axis.vertical);
     if (scrollableY != null) {
       return scrollableY.position?.pixels ?? 0;
@@ -372,7 +373,14 @@ mixin ElementOverflowMixin on ElementBase {
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
+  void _ensureRenderObjectHasLayout() {
+    if (renderBoxModel?.needsLayout == true) {
+      renderBoxModel!.owner?.flushLayout();
+    }
+  }
+
   double get scrollLeft {
+    _ensureRenderObjectHasLayout();
     WebFScrollable? scrollableX = _getScrollable(Axis.horizontal);
     if (scrollableX != null) {
       return scrollableX.position?.pixels ?? 0;
@@ -388,7 +396,7 @@ mixin ElementOverflowMixin on ElementBase {
     if (!isRendererAttached) {
       return 0.0;
     }
-
+    _ensureRenderObjectHasLayout();
     WebFScrollable? scrollable = _getScrollable(Axis.vertical);
     if (scrollable?.position?.maxScrollExtent != null) {
       // Viewport height + maxScrollExtent
@@ -403,6 +411,7 @@ mixin ElementOverflowMixin on ElementBase {
     if (!isRendererAttached) {
       return 0.0;
     }
+    _ensureRenderObjectHasLayout();
     WebFScrollable? scrollable = _getScrollable(Axis.horizontal);
     if (scrollable?.position?.maxScrollExtent != null) {
       return renderBoxModel!.clientWidth + scrollable!.position!.maxScrollExtent;
@@ -411,15 +420,28 @@ mixin ElementOverflowMixin on ElementBase {
     return scrollContainerSize.width;
   }
 
-  double get clientTop => renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
+  double get clientTop {
+    _ensureRenderObjectHasLayout();
+    return renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
+  }
 
-  double get clientLeft => renderBoxModel?.renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
+  double get clientLeft {
+    _ensureRenderObjectHasLayout();
+    return renderBoxModel?.renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
+  }
 
-  double get clientWidth => renderBoxModel?.clientWidth ?? 0.0;
+  double get clientWidth {
+    _ensureRenderObjectHasLayout();
+    return renderBoxModel?.clientWidth ?? 0.0;
+  }
 
-  double get clientHeight => renderBoxModel?.clientHeight ?? 0.0;
+  double get clientHeight {
+    _ensureRenderObjectHasLayout();
+    return renderBoxModel?.clientHeight ?? 0.0;
+  }
 
   double get offsetWidth {
+    _ensureRenderObjectHasLayout();
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox == null) {
       return 0;
@@ -428,6 +450,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get offsetHeight {
+    _ensureRenderObjectHasLayout();
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox == null) {
       return 0;

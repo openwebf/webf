@@ -65,12 +65,12 @@
 </div>
 </body>
 <script>
-  await snapshot();
+  await snapshotAction();
   let visible = true;
   let container = document.querySelector('.container');
   container.style.display = 'none';
-  await snapshot();
+  await snapshotAction();
   container.style.display = 'block';
-  await snapshot();
+  await snapshotAction();
 </script>
 </html>
