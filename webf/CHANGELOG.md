@@ -1,3 +1,7 @@
+## 0.14.0-beta.11+2
+
+* fix: fix bundled window dlls.
+
 ## 0.14.0-beta.11+1
 
 * fix: fix flutter app build on windows platform.
