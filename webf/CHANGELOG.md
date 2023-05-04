@@ -1,3 +1,7 @@
+## 0.14.0-beta.11+3
+
+* fix: fix string assertion crash on windows platform.
+
 ## 0.14.0-beta.11+2
 
 * fix: fix bundled window dlls.
