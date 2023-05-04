@@ -608,15 +608,14 @@ task('build-window-webf-lib', (done) => {
     });
 
   const webfTargets = ['webf'];
-  // webfTargets.push('webf_test');
 
   // build
-  execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --verbose`, {
+  execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --verbose --config ${buildType}`, {
     stdio: 'inherit'
   });
 
   // Fix the output path
-  const outputDir = path.join(paths.bridge, `build/windows/lib/${buildType === 'Release' ? 'RelWithDebInfo' : 'Debug'}`);
+  const outputDir = path.join(paths.bridge, `build/windows/lib/${buildMode === 'Release' ? 'RelWithDebInfo' : 'Debug'}`);
   execSync(`copy ${outputDir}\\*.dll ${outputDir}\\..\\`);
 
   done();
