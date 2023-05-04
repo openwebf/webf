@@ -31,7 +31,7 @@ static void handleTransientCallback(void* ptr, int32_t contextId, const char* er
   if (!context->IsContextValid())
     return;
 
-  if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+  if (timer->status() == DOMTimer::TimerStatus::kCanceled || timer->status() == DOMTimer::TimerStatus::kTerminated) {
     return;
   }
 
@@ -48,6 +48,10 @@ static void handlePersistentCallback(void* ptr, int32_t contextId, const char* e
 
   if (!context->IsContextValid())
     return;
+
+  if (timer->status() == DOMTimer::TimerStatus::kTerminated) {
+    return;
+  }
 
   if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
     context->Timers()->removeTimeoutById(timer->timerId());
@@ -115,7 +119,7 @@ int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kMultiple);
 
-  uint32_t timerId =
+  int32_t timerId =
       context->dartMethodPtr()->setInterval(timer.get(), context->contextId(), handlePersistentCallback, timeout);
 
   // Register timerId.
