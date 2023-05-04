@@ -23,6 +23,12 @@ AtomicString AtomicString::Null() {
 namespace {
 
 AtomicString::StringKind GetStringKind(const std::string& string, size_t length) {
+  char first_char = string[0];
+
+  if (first_char < 0 || first_char > 255) {
+    return AtomicString::StringKind::kUnknown;
+  }
+
   AtomicString::StringKind predictKind =
       std::islower(string[0]) ? AtomicString::StringKind::kIsLowerCase : AtomicString::StringKind::kIsUpperCase;
   for (int i = 0; i < length; i++) {
