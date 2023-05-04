@@ -25,6 +25,8 @@ DOMTimer::DOMTimer(ExecutingContext* context, std::shared_ptr<QJSFunction> callb
     : context_(context), callback_(std::move(callback)), status_(TimerStatus::kPending), kind_(timer_kind) {}
 
 void DOMTimer::Fire() {
+  if (status_ == TimerStatus::kTerminated) return;
+
   if (!callback_->IsFunction(context_->ctx()))
     return;
 
@@ -33,6 +35,11 @@ void DOMTimer::Fire() {
   if (returnValue.IsException()) {
     context_->HandleException(&returnValue);
   }
+}
+
+void DOMTimer::Terminate() {
+  callback_ = nullptr;
+  status_ = TimerStatus::kTerminated;
 }
 
 void DOMTimer::setTimerId(int32_t timerId) {
