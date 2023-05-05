@@ -1,3 +1,9 @@
+## 0.14.0-beta.12
+
+* fix: protect DOMTimers until the ExecutingContext exits.
+* fix: make sure renderObject had been layout before read view module properties.
+* feat: remove ios armv7 armv7s support.
+
 ## 0.14.0-beta.11+3
 
 * fix: fix string assertion crash on windows platform.
