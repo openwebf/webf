@@ -168,10 +168,7 @@ class ImageElement extends Element {
     // Stop and remove image stream reference.
     _stopListeningStream(keepStreamAlive: true);
     _cachedImageStream = null;
-
-    // Dispose [ImageStreamCompleter].
-    _completerHandle?.dispose();
-    _completerHandle = null;
+    _currentImageProvider = null;
 
     // Remove cached image info.
     _cachedImageInfo = null;
