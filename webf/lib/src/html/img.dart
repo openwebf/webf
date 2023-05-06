@@ -212,7 +212,6 @@ class ImageElement extends Element {
     _completerHandle?.dispose();
     _completerHandle = null;
     _cachedImageInfo = null;
-    await _currentImageProvider?.evict();
     _currentImageProvider = null;
   }
 
