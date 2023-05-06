@@ -395,43 +395,48 @@ class ImageElement extends Element {
     }
   }
 
+  bool _isImageEncoding = false;
+
   // https://html.spec.whatwg.org/multipage/images.html#decoding-images
   // Create an ImageStream that decodes the obtained image.
   // If imageElement has property size or width/height property on [renderStyle],
   // The image will be encoded into a small size for better rasterization performance.
-  Future<void> _decode({bool updateImageProvider = false}) {
+  Future<void> _decode({bool updateImageProvider = false}) async {
+    if (_isImageEncoding || _isInLazyLoading) return;
     Completer completer = Completer();
-    if (!_isInLazyLoading) {
-      // Make sure all style and properties are ready before decode begins.
-      SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-        ImageProvider? provider = _currentImageProvider;
-        if (updateImageProvider || provider == null) {
-          // Image should be resized based on different ratio according to object-fit value.
-          BoxFit objectFit = renderStyle.objectFit;
 
-          // Increment load event delay count before decode.
-          ownerDocument.incrementLoadEventDelayCount();
+    // Make sure all style and properties are ready before decode begins.
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      ImageProvider? provider = _currentImageProvider;
+      if (updateImageProvider || provider == null) {
+        // Image should be resized based on different ratio according to object-fit value.
+        BoxFit objectFit = renderStyle.objectFit;
 
-          provider = _currentImageProvider = BoxFitImage(
-            boxFit: objectFit,
-            url: _resolvedUri!,
-            loadImage: _obtainImage,
-            onImageLoad: _onImageLoad,
-          );
-        }
+        // Increment load event delay count before decode.
+        ownerDocument.incrementLoadEventDelayCount();
 
-        // Try to make sure that this image can be encoded into a smaller size.
-        int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
-        int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
-        ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
-            ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
-            : ImageConfiguration.empty;
-        _updateSourceStream(provider.resolve(imageConfiguration));
+        provider = _currentImageProvider = BoxFitImage(
+          boxFit: objectFit,
+          url: _resolvedUri!,
+          loadImage: _obtainImage,
+          onImageLoad: _onImageLoad,
+        );
+      }
 
-        completer.complete();
-      });
-      SchedulerBinding.instance.scheduleFrame();
-    }
+      // Try to make sure that this image can be encoded into a smaller size.
+      int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
+      int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
+      ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
+          ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
+          : ImageConfiguration.empty;
+      _updateSourceStream(provider.resolve(imageConfiguration));
+
+      _isImageEncoding = false;
+      completer.complete();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+    _isImageEncoding = true;
+
     return completer.future;
   }
 
