@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
@@ -89,7 +90,12 @@ class ImageElement extends Element {
 
   ImageStreamCompleterHandle? _completerHandle;
 
-  ImageElement([BindingContext? context]) : super(context) {}
+  ImageElement([BindingContext? context]) : super(context) {
+    // Add default event listener to make sure load or error event can be fired to the native side to release the keepAlive
+    // handler of HTMLImageElement.
+    BindingBridge.listenEvent(this, 'load');
+    BindingBridge.listenEvent(this, 'error');
+  }
 
   @override
   bool get isReplacedElement => true;
