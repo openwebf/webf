@@ -424,8 +424,18 @@ class ImageElement extends Element {
       }
 
       // Try to make sure that this image can be encoded into a smaller size.
-      int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
-      int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
+      int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
+      int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
+
+      if (cachedWidth != null && cachedHeight != null) {
+        // If a image with the same URL has a fixed size, attempt to remove the previous unsized imageProvider from imageCache.
+        BoxFitImageKey previousUnSizedKey = BoxFitImageKey(
+          url: _resolvedUri!,
+          configuration: ImageConfiguration.empty,
+        );
+        PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
+      }
+
       ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
           ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
           : ImageConfiguration.empty;
