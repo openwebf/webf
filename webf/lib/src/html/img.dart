@@ -185,6 +185,7 @@ class ImageElement extends Element {
     if (renderBoxModel != null) {
       RenderReplaced renderReplaced = renderBoxModel as RenderReplaced;
       renderReplaced.child = null;
+      _renderImage?.image = null;
 
       ownerDocument.inactiveRenderObjects.add(_renderImage);
       _renderImage = null;
