@@ -530,10 +530,14 @@ class ImageElement extends Element {
     // attached to correct renderBoxModel
     if (!_isInLazyLoading) {
       // Image dimensions (width or height) should specified for performance when lazy-load.
-      if (_shouldLazyLoading) {
+      // If the _completerHandle are not null, there must be a imageProvider available in the imageCache.
+      if (_shouldLazyLoading && _completerHandle == null) {
         RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
         renderReplaced
           ?..isInLazyRendering = true
+        // Expand the intersecting area to preload images before they become visible to users.
+          ..intersectPadding = Rect.fromLTRB(ui.window.physicalSize.width, ui.window.physicalSize.height,
+              ui.window.physicalSize.width, ui.window.physicalSize.height)
           // When detach renderer, all listeners will be cleared.
           ..addIntersectionChangeListener(_handleIntersectionChange);
       } else {

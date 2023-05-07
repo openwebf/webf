@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'dart:developer' show Timeline;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -1174,22 +1175,26 @@ class RenderBoxModel extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      childPaintDuration = 0;
-      PerformanceTiming.instance().mark(PERF_PAINT_START, uniqueId: hashCode);
+    if (!kReleaseMode) {
+      Timeline.startSync(
+        'RenderBoxModel paint',
+        arguments: {
+          'ownerElement': renderStyle.target.toString()
+        },
+      );
     }
 
     if (!shouldPaint) {
-      if (kProfileMode && PerformanceTiming.enabled()) {
-        PerformanceTiming.instance().mark(PERF_PAINT_END, uniqueId: hashCode);
+      if (!kReleaseMode) {
+        Timeline.finishSync();
       }
       return;
     }
 
     paintBoxModel(context, offset);
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      int amendEndTime = DateTime.now().microsecondsSinceEpoch - childPaintDuration;
-      PerformanceTiming.instance().mark(PERF_PAINT_END, uniqueId: hashCode, startTime: amendEndTime);
+
+    if (!kReleaseMode) {
+      Timeline.finishSync();
     }
   }
 
