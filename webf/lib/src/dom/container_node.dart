@@ -255,7 +255,7 @@ abstract class ContainerNode extends Node {
       // As an optimization we skip notifying Text nodes and other leaf nodes
       // of removal when they're not in the Document tree and not in a shadow root
       // since the virtual call to removedFrom is not needed.
-      if (node is! ContainerNode && node.isInTreeScope()) {
+      if (node is! ContainerNode && !node.isInTreeScope()) {
         continue;
       }
       node.removedFrom(this);
