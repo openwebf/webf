@@ -349,7 +349,6 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollTop {
-    _ensureRenderObjectHasLayout();
     WebFScrollable? scrollableY = _getScrollable(Axis.vertical);
     if (scrollableY != null) {
       return scrollableY.position?.pixels ?? 0;
@@ -380,7 +379,6 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollLeft {
-    _ensureRenderObjectHasLayout();
     WebFScrollable? scrollableX = _getScrollable(Axis.horizontal);
     if (scrollableX != null) {
       return scrollableX.position?.pixels ?? 0;
