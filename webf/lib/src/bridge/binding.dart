@@ -135,27 +135,16 @@ abstract class BindingBridge {
   }
 
   static void listenEvent(EventTarget target, String type) {
-    assert(_debugShouldNotListenMultiTimes(target, type),
-        'Failed to listen event \'$type\' for $target, for which is already bound.');
-    target.addEventListener(type, _dispatchEventToNative);
+    if (!hasListener(target, type)) {
+      target.addEventListener(type, _dispatchEventToNative);
+    }
   }
 
   static void unlistenEvent(EventTarget target, String type) {
-    assert(_debugShouldNotUnlistenEmpty(target, type),
-        'Failed to unlisten event \'$type\' for $target, for which is already unbound.');
     target.removeEventListener(type, _dispatchEventToNative);
   }
 
-  static bool _debugShouldNotListenMultiTimes(EventTarget target, String type) {
-    Map<String, List<EventHandler>> eventHandlers = target.getEventHandlers();
-    List<EventHandler>? handlers = eventHandlers[type];
-    if (handlers != null) {
-      return !handlers.contains(_dispatchEventToNative);
-    }
-    return true;
-  }
-
-  static bool _debugShouldNotUnlistenEmpty(EventTarget target, String type) {
+  static bool hasListener(EventTarget target, String type) {
     Map<String, List<EventHandler>> eventHandlers = target.getEventHandlers();
     List<EventHandler>? handlers = eventHandlers[type];
     if (handlers != null) {
