@@ -4,6 +4,8 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart';
 
 
 /// copy from flutter RenderSliverList
@@ -232,10 +234,11 @@ class WebFRenderSliverList extends RenderSliverMultiBoxAdaptor {
             return false;
           }
         } else {
-          final DateTime record3 = DateTime.now();
-          // Lay out the child.
-          child!.layout(childConstraints, parentUsesSize: true);
-          print('layout sliver item use time: ${DateTime.now().microsecondsSinceEpoch - record3.microsecondsSinceEpoch}');
+          RenderBoxModel realChild = (child as RenderSliverRepaintProxy).child as RenderBoxModel;
+          // Layout the child.
+          if (realChild.needsLayout) {
+            child!.layout(childConstraints, parentUsesSize: true);
+          }
         }
         trailingChildWithLayout = child;
       }
