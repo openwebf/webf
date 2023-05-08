@@ -51,6 +51,8 @@ class WebF extends StatefulWidget {
   final LoadErrorHandler? onLoadError;
 
   final LoadHandler? onLoad;
+  // https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
+  final LoadHandler? onDOMContentLoaded;
 
   final JSErrorHandler? onJSError;
 
@@ -104,6 +106,7 @@ class WebF extends StatefulWidget {
       this.bundle,
       this.onControllerCreated,
       this.onLoad,
+      this.onDOMContentLoaded,
       this.navigationDelegate,
       this.javaScriptChannel,
       this.background,
@@ -308,6 +311,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         // Execute entrypoint when mount manually.
         autoExecuteEntrypoint: false,
         onLoad: _webfWidget.onLoad,
+        onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
         onLoadError: _webfWidget.onLoadError,
         onJSError: _webfWidget.onJSError,
         methodChannel: _webfWidget.javaScriptChannel,
