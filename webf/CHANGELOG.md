@@ -1,3 +1,7 @@
+## 0.14.0-beta.12+1
+
+* fix: fix assertion error when reading scrollTop property at layout stage.
+
 ## 0.14.0-beta.12
 
 * fix: protect DOMTimers until the ExecutingContext exits.
