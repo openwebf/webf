@@ -118,7 +118,10 @@ class ExecutingContext {
   FORCE_INLINE DartContext* dartContext() const { return dart_context_; };
   FORCE_INLINE Performance* performance() const { return performance_; }
   FORCE_INLINE UICommandBuffer* uiCommandBuffer() { return &ui_command_buffer_; };
-  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() { return dart_context_->dartMethodPtr(); }
+  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() {
+    assert(dart_context_->valid());
+    return dart_context_->dartMethodPtr();
+  }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.

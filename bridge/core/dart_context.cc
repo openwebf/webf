@@ -13,28 +13,7 @@
 namespace webf {
 
 DartContext::DartContext(const uint64_t* dart_methods, int32_t dart_methods_length)
-    : dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {}
-
-DartContext::~DartContext() {
-  pages_.clear();
-}
-
-void DartContext::AddNewPage(WebFPage* new_page) {
-  pages_.emplace(new_page);
-}
-
-void DartContext::RemovePage(WebFPage* page) {
-  pages_.erase(page);
-}
-
-const std::unique_ptr<DartContextData>& DartContext::EnsureData() const {
-  if (data_ == nullptr) {
-    data_ = std::make_unique<DartContextData>();
-  }
-  return data_;
-}
-
-void DartContext::InitializeJSRuntime() {
+    : dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {
   runtime_ = JS_NewRuntime();
   // Avoid stack overflow when running in multiple threads.
   JS_UpdateStackTop(runtime_);
@@ -43,9 +22,12 @@ void DartContext::InitializeJSRuntime() {
     JSClassID id{0};
     JS_NewClassID(&id);
   }
+  is_valid_ = true;
 }
 
-void DartContext::DisposeJSRuntime() {
+DartContext::~DartContext() {
+  is_valid_ = false;
+  pages_.clear();
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
   DefinedPropertiesInitializer::Dispose();
   names_installer::Dispose();
@@ -55,6 +37,26 @@ void DartContext::DisposeJSRuntime() {
   data_.reset();
   JS_FreeRuntime(runtime_);
   runtime_ = nullptr;
+}
+
+void DartContext::AddNewPage(std::unique_ptr<WebFPage>&& new_page) {
+  pages_.insert(std::move(new_page));
+}
+
+void DartContext::RemovePage(const WebFPage* page) {
+  for (auto it = pages_.begin(); it != pages_.end(); ++it) {
+    if (it->get() == page) {
+      pages_.erase(it);
+      break;
+    }
+  }
+}
+
+const std::unique_ptr<DartContextData>& DartContext::EnsureData() const {
+  if (data_ == nullptr) {
+    data_ = std::make_unique<DartContextData>();
+  }
+  return data_;
 }
 
 }  // namespace webf
