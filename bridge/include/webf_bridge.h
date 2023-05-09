@@ -27,7 +27,7 @@ struct WebFInfo {
 
 typedef void (*Task)(void*);
 WEBF_EXPORT_C
-void initDartContext(uint64_t* dart_methods, int32_t dart_methods_len);
+void initDartContext(uint64_t* dart_methods, int32_t dart_methods_len, int is_dart_debug_mode);
 WEBF_EXPORT_C
 void* allocateNewPage(int32_t targetContextId);
 WEBF_EXPORT_C

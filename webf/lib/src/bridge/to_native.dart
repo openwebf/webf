@@ -212,8 +212,8 @@ void parseHTML(int contextId, String code) {
 }
 
 // Register initJsEngine
-typedef NativeInitDartContext = Void Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartInitDartContext = void Function(Pointer<Uint64> dartMethods, int methodsLength);
+typedef NativeInitDartContext = Void Function(Pointer<Uint64> dartMethods, Int32 methodsLength, Int32 isDartDebugMode);
+typedef DartInitDartContext = void Function(Pointer<Uint64> dartMethods, int methodsLength, int isDartDebugMode);
 
 final DartInitDartContext _initDartContext =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartContext>>('initDartContext').asFunction();
@@ -222,7 +222,7 @@ void initDartContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  _initDartContext(bytes, dartMethods.length);
+  _initDartContext(bytes, dartMethods.length, kDebugMode ? 1 : 0);
 }
 
 typedef NativeDisposePage = Void Function(Pointer<Void> page);

@@ -274,7 +274,7 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
 
 TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
-  initDartContext(mockedDartMethods.data(), mockedDartMethods.size());
+  initDartContext(mockedDartMethods.data(), mockedDartMethods.size(), true);
   uint32_t contextId = 0;
   auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPage(contextId));
   static bool disposed = false;
