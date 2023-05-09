@@ -7,6 +7,7 @@
 #define WEBF_BRIDGE_EXPORT_H
 
 #include <thread>
+#include <include/dart_api_dl.h>
 
 #if defined(_WIN32)
 #define WEBF_EXPORT_C extern "C" __declspec(dllexport)
@@ -32,11 +33,11 @@ struct WebFInfo {
 
 typedef void (*Task)(void*);
 WEBF_EXPORT_C
-void initDartContext(uint64_t* dart_methods, int32_t dart_methods_len, int is_dart_debug_mode);
+void* initDartContext(uint64_t* dart_methods, int32_t dart_methods_len);
 WEBF_EXPORT_C
-void* allocateNewPage(int32_t targetContextId);
+void* allocateNewPage(void* dart_context, int32_t targetContextId);
 WEBF_EXPORT_C
-void disposePage(void* page);
+void disposePage(void* dart_context, void* page);
 WEBF_EXPORT_C
 int8_t evaluateScripts(void* page,
                        SharedNativeString* code,
@@ -70,5 +71,10 @@ WEBF_EXPORT_C
 void registerPluginCode(const char* code, int32_t length, const char* pluginName);
 WEBF_EXPORT_C
 int32_t profileModeEnabled();
+
+WEBF_EXPORT_C
+void init_dart_dynamic_linking(void* data);
+WEBF_EXPORT_C
+void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_context_ptr);
 
 #endif  // WEBF_BRIDGE_EXPORT_H
