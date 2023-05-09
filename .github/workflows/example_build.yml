@@ -23,10 +23,10 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
-      - uses: actions/setup-java@v3
+      - name: Setup Java to compile Android project
+        uses: actions/setup-java@v1
         with:
-          distribution: "temurin"
-          java-version: "8"
+          java-version: "12.x"
       - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}
