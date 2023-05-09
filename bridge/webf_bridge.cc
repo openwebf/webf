@@ -49,9 +49,9 @@ bool isDartHotRestart() {
 }
 }  // namespace webf
 
-void initDartContext(uint64_t* dart_methods, int32_t dart_methods_len) {
+void initDartContext(uint64_t* dart_methods, int32_t dart_methods_len, int is_dart_debug_mode) {
   // These could only be Happened with dart hot restart.
-  if (dart_context != nullptr) {
+  if (dart_context != nullptr && is_dart_debug_mode) {
     is_dart_hot_restart = true;
     delete dart_context;
     dart_context = nullptr;

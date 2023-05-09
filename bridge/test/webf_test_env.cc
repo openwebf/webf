@@ -196,7 +196,7 @@ int32_t contextId = 0;
 std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   if (!inited) {
     auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
-    initDartContext(mockedDartMethods.data(), mockedDartMethods.size());
+    initDartContext(mockedDartMethods.data(), mockedDartMethods.size(), true);
     inited = true;
   }
   int pageContextId = contextId++;
