@@ -4,6 +4,7 @@
 
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:archive/archive.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/foundation.dart';
 import 'package:quiver/collection.dart';
@@ -19,6 +20,12 @@ enum ByteCodeCacheMode {
   NO_CACHE,
 }
 
+Future<void> deleteFile(File file) async {
+  if (await file.exists()) {
+    await file.delete();
+  }
+}
+
 class QuickJSByteCodeCacheObject {
   static ByteCodeCacheMode cacheMode = ByteCodeCacheMode.DEFAULT;
 
@@ -28,32 +35,42 @@ class QuickJSByteCodeCacheObject {
   final String cacheDirectory;
 
   // The index file.
-  final File _file;
+  final String _diskPath;
+  final File _checksum;
 
   bool get valid => bytes != null;
 
   Uint8List? bytes;
 
   QuickJSByteCodeCacheObject(this.hash, this.cacheDirectory, { this.bytes }):
-        _file = File(path.join(cacheDirectory, hash));
+        _diskPath = path.join(cacheDirectory, hash),
+        _checksum = File(path.join(cacheDirectory, '$hash.checksum'));
 
   /// Read the index file.
   Future<void> read() async {
+    File cacheFile = File(_diskPath);
     // Make sure file exists, or causing io exception.
-    if (!await _file.exists()) {
+    if (!await cacheFile.exists()) {
       return;
     }
 
     // If read before, ignoring to read again.
     if (valid) return;
 
+    int savedChecksum = int.parse(await _checksum.readAsStringSync());
+
     try {
-      bytes = await _file.readAsBytes();
+      bytes = await cacheFile.readAsBytes();
+      int fileCheckSum = getCrc32(bytes!.toList());
+      if (fileCheckSum != savedChecksum) {
+        throw FlutterError('read bytecode cache failed, reason: checksum failed');
+      }
     } catch (message, stackTrace) {
       print('Error while reading cache object for $hash');
       print('\n$message');
       print('\n$stackTrace');
 
+      bytes = null;
       // Remove index file while invalid.
       await remove();
     }
@@ -61,15 +78,26 @@ class QuickJSByteCodeCacheObject {
 
   Future<void> write() async {
     if (bytes != null) {
-      await _file.writeAsBytes(bytes!);
+      int fileSum = getCrc32(bytes!.toList());
+      File tmp = File(path.join(cacheDirectory, '$hash.tmp'));
+
+      await Future.wait([
+        _checksum.writeAsString(fileSum.toString()),
+        tmp.writeAsBytes(bytes!)
+      ]);
+      await tmp.rename(_diskPath);
     }
   }
 
   // Remove all the cached files.
   Future<void> remove() async {
-    if (await _file.exists()) {
-      await _file.delete();
-    }
+    File cacheFile = File(_diskPath);
+    File tmp = File(path.join(cacheDirectory, '$hash.tmp'));
+    await Future.wait([
+      deleteFile(cacheFile),
+      deleteFile(tmp),
+      deleteFile(_checksum)
+    ]);
   }
 }
 
