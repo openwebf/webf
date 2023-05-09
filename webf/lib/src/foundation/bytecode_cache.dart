@@ -3,7 +3,6 @@
  */
 
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/foundation.dart';
@@ -42,8 +41,8 @@ class QuickJSByteCodeCacheObject {
 
   Uint8List? bytes;
 
-  QuickJSByteCodeCacheObject(this.hash, this.cacheDirectory, { this.bytes }):
-        _diskPath = path.join(cacheDirectory, hash),
+  QuickJSByteCodeCacheObject(this.hash, this.cacheDirectory, {this.bytes})
+      : _diskPath = path.join(cacheDirectory, hash),
         _checksum = File(path.join(cacheDirectory, '$hash.checksum'));
 
   /// Read the index file.
@@ -57,13 +56,22 @@ class QuickJSByteCodeCacheObject {
     // If read before, ignoring to read again.
     if (valid) return;
 
-    int savedChecksum = int.parse(await _checksum.readAsStringSync());
-
     try {
       bytes = await cacheFile.readAsBytes();
       int fileCheckSum = getCrc32(bytes!.toList());
-      if (fileCheckSum != savedChecksum) {
-        throw FlutterError('read bytecode cache failed, reason: checksum failed');
+
+      bool isCheckSumExist = await _checksum.exists();
+
+      if (isCheckSumExist) {
+        int savedChecksum = int.parse(await _checksum.readAsStringSync());
+        if (fileCheckSum != savedChecksum) {
+          throw FlutterError(
+              'read bytecode cache failed, reason: checksum failed');
+        }
+      } else {
+        // the cache files are created by older WebF versions, which doesn't contains the checksum files.
+        // remove the cached file and rollback to init stage.
+        await cacheFile.delete();
       }
     } catch (message, stackTrace) {
       print('Error while reading cache object for $hash');
@@ -93,11 +101,8 @@ class QuickJSByteCodeCacheObject {
   Future<void> remove() async {
     File cacheFile = File(_diskPath);
     File tmp = File(path.join(cacheDirectory, '$hash.tmp'));
-    await Future.wait([
-      deleteFile(cacheFile),
-      deleteFile(tmp),
-      deleteFile(_checksum)
-    ]);
+    await Future.wait(
+        [deleteFile(cacheFile), deleteFile(tmp), deleteFile(_checksum)]);
   }
 }
 
@@ -108,7 +113,8 @@ class QuickJSByteCodeCache {
   // Memory cache.
   //   [String cacheKey] -> [QuickJSByteCodeCache object]
   // A splay tree is a good choice for data that is stored and accessed frequently.
-  static final LinkedLruHashMap<String, QuickJSByteCodeCacheObject> _caches = LinkedLruHashMap(maximumSize: 25);
+  static final LinkedLruHashMap<String, QuickJSByteCodeCacheObject> _caches =
+      LinkedLruHashMap(maximumSize: 25);
 
   static Directory? _cacheDirectory;
   static Future<Directory> getCacheDirectory() async {
@@ -117,7 +123,8 @@ class QuickJSByteCodeCache {
     }
 
     final String appTemporaryPath = await getWebFTemporaryPath();
-    final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'ByteCodeCaches'));
+    final Directory cacheDirectory =
+        Directory(path.join(appTemporaryPath, 'ByteCodeCaches'));
     bool isThere = await cacheDirectory.exists();
     if (!isThere) {
       await cacheDirectory.create(recursive: true);
@@ -156,7 +163,8 @@ class QuickJSByteCodeCache {
     final String key = _getCacheHash(code);
 
     final Directory cacheDirectory = await getCacheDirectory();
-    QuickJSByteCodeCacheObject cacheObject = QuickJSByteCodeCacheObject(key, cacheDirectory.path, bytes: bytes);
+    QuickJSByteCodeCacheObject cacheObject =
+        QuickJSByteCodeCacheObject(key, cacheDirectory.path, bytes: bytes);
 
     _caches.update(key, (value) => cacheObject, ifAbsent: () => cacheObject);
     await cacheObject.write();
@@ -168,6 +176,7 @@ class QuickJSByteCodeCache {
   }
 
   static bool isCodeNeedCache(String source) {
-    return QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT && source.length > 1024 * 10; // >= 50 KB
+    return QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
+        source.length > 1024 * 10; // >= 50 KB
   }
 }
