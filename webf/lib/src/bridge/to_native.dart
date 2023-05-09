@@ -212,41 +212,61 @@ void parseHTML(int contextId, String code) {
 }
 
 // Register initJsEngine
-typedef NativeInitDartContext = Void Function(Pointer<Uint64> dartMethods, Int32 methodsLength, Int32 isDartDebugMode);
-typedef DartInitDartContext = void Function(Pointer<Uint64> dartMethods, int methodsLength, int isDartDebugMode);
+typedef NativeInitDartContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitDartContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartInitDartContext _initDartContext =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartContext>>('initDartContext').asFunction();
 
-void initDartContext(List<int> dartMethods) {
+Pointer<Void> initDartContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  _initDartContext(bytes, dartMethods.length, kDebugMode ? 1 : 0);
+  return _initDartContext(bytes, dartMethods.length);
 }
 
-typedef NativeDisposePage = Void Function(Pointer<Void> page);
-typedef DartDisposePage = void Function(Pointer<Void> page);
+typedef NativeDisposePage = Void Function(Pointer<Void>, Pointer<Void> page);
+typedef DartDisposePage = void Function(Pointer<Void>, Pointer<Void> page);
 
 final DartDisposePage _disposePage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePage').asFunction();
 
 void disposePage(int contextId) {
   Pointer<Void> page = _allocatedPages[contextId]!;
-  _disposePage(page);
+  _disposePage(dartContext.pointer, page);
   _allocatedPages.remove(contextId);
 }
 
-typedef NativeAllocateNewPage = Pointer<Void> Function(Int32);
-typedef DartAllocateNewPage = Pointer<Void> Function(int);
+typedef NativeAllocateNewPage = Pointer<Void> Function(Pointer<Void>, Int32);
+typedef DartAllocateNewPage = Pointer<Void> Function(Pointer<Void>, int);
 
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
 void allocateNewPage(int targetContextId) {
-  Pointer<Void> page = _allocateNewPage(targetContextId);
+  Pointer<Void> page = _allocateNewPage(dartContext.pointer, targetContextId);
   assert(!_allocatedPages.containsKey(targetContextId));
   _allocatedPages[targetContextId] = page;
+}
+
+typedef NativeInitDartDynamicLinking = Void Function(Pointer<Void> data);
+typedef DartInitDartDynamicLinking = void Function(Pointer<Void> data);
+
+final DartInitDartDynamicLinking _initDartDynamicLinking =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartDynamicLinking>>('init_dart_dynamic_linking').asFunction();
+
+void initDartDynamicLinking() {
+  _initDartDynamicLinking(NativeApi.initializeApiDLData);
+}
+
+typedef NativeRegisterDartContextFinalizer = Void Function(Handle object, Pointer<Void> dart_context);
+typedef DartRegisterDartContextFinalizer = void Function(Object object, Pointer<Void> dart_context);
+
+final DartRegisterDartContextFinalizer _registerDartContextFinalizer =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterDartContextFinalizer>>('register_dart_context_finalizer').asFunction();
+
+void registerDartContextFinalizer(DartContext dartContext) {
+  _registerDartContextFinalizer(dartContext, dartContext.pointer);
 }
 
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);

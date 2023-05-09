@@ -93,6 +93,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_value.cc
   foundation/ui_command_buffer.cc
   polyfill/dist/polyfill.cc
+  ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
 list(APPEND GUMBO_PARSER
@@ -116,6 +117,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
+  ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${DART_SDK}
   ${ADDITIONAL_INCLUDE_DIRS}
   )

@@ -14,18 +14,9 @@ thread_local std::atomic<int32_t> runningContexts{0};
 
 ScriptState::ScriptState(DartContext* dart_context) : dart_context_(dart_context) {
   runningContexts++;
-  bool first_loaded = false;
-  if (dart_context_->runtime() == nullptr) {
-    dart_context_->InitializeJSRuntime();
-    first_loaded = true;
-  }
   // Avoid stack overflow when running in multiple threads.
   ctx_ = JS_NewContext(dart_context_->runtime());
-
-  if (first_loaded) {
-    names_installer::Init(ctx_);
-    DefinedPropertiesInitializer::Init();
-  }
+  names_installer::Init(ctx_);
 }
 
 JSRuntime* ScriptState::runtime() {
@@ -39,9 +30,6 @@ ScriptState::~ScriptState() {
   // Run GC to clean up remaining objects about m_ctx;
   JS_RunGC(dart_context_->runtime());
 
-  if (--runningContexts == 0) {
-    dart_context_->DisposeJSRuntime();
-  }
   ctx_ = nullptr;
 }
 }  // namespace webf
