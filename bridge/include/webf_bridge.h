@@ -6,8 +6,8 @@
 #ifndef WEBF_BRIDGE_EXPORT_H
 #define WEBF_BRIDGE_EXPORT_H
 
-#include <thread>
 #include <include/dart_api_dl.h>
+#include <thread>
 
 #define WEBF_EXPORT_C extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #define WEBF_EXPORT __attribute__((__visibility__("default")))

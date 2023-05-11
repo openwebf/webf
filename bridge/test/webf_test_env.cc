@@ -151,14 +151,16 @@ uint32_t TEST_requestAnimationFrame(webf::FrameCallback* frameCallback, int32_t 
 void TEST_cancelAnimationFrame(int32_t contextId, int32_t id) {
   auto* page = test_context_map[contextId]->page();
   auto* context = page->GetExecutingContext();
-  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->dartContext()->runtime()));
+  JSThreadState* ts =
+      static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->dartContext()->runtime()));
   ts->os_frameCallbacks.erase(id);
 }
 
 void TEST_clearTimeout(int32_t contextId, int32_t timerId) {
   auto* page = test_context_map[contextId]->page();
   auto* context = page->GetExecutingContext();
-  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->dartContext()->runtime()));
+  JSThreadState* ts =
+      static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->dartContext()->runtime()));
   ts->os_timers.erase(timerId);
 }
 
@@ -217,8 +219,13 @@ std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
   JSThreadState* th = new JSThreadState();
-  JS_SetRuntimeOpaque(
-      reinterpret_cast<WebFTestContext*>(testContext)->page()->GetExecutingContext()->dartIsolateContext()->dartContext()->runtime(), th);
+  JS_SetRuntimeOpaque(reinterpret_cast<WebFTestContext*>(testContext)
+                          ->page()
+                          ->GetExecutingContext()
+                          ->dartIsolateContext()
+                          ->dartContext()
+                          ->runtime(),
+                      th);
 
   return std::unique_ptr<webf::WebFPage>(reinterpret_cast<webf::WebFPage*>(page));
 }
