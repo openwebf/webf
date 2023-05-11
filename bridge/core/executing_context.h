@@ -56,7 +56,10 @@ bool isContextValid(int32_t contextId);
 class ExecutingContext {
  public:
   ExecutingContext() = delete;
-  ExecutingContext(DartIsolateContext* dart_isolate_context, int32_t contextId, JSExceptionHandler handler, void* owner);
+  ExecutingContext(DartIsolateContext* dart_isolate_context,
+                   int32_t contextId,
+                   JSExceptionHandler handler,
+                   void* owner);
   ~ExecutingContext();
 
   static ExecutingContext* From(JSContext* ctx);

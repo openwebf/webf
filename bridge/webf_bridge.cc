@@ -159,9 +159,9 @@ int32_t profileModeEnabled() {
 
 // Callbacks when dart context object was finalized by Dart GC.
 static void finalize_dart_context(void* isolate_callback_data, void* peer) {
-  auto* dart_isolate_context = (webf::DartIsolateContext*) peer;
+  auto* dart_isolate_context = (webf::DartIsolateContext*)peer;
   auto* dart_context = dart_isolate_context->dartContext();
-  ((webf::DartIsolateContext*) peer)->dartContext()->RemoveIsolate(dart_isolate_context);
+  ((webf::DartIsolateContext*)peer)->dartContext()->RemoveIsolate(dart_isolate_context);
   // Remove the whole dart context if there are no dart isolates alive.
   if (dart_context->IsIsolateEmpty()) {
     delete dart_context;
@@ -177,5 +177,5 @@ void init_dart_dynamic_linking(void* data) {
 
 void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context) {
   Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_isolate_context), sizeof(webf::DartContext),
-                                                     finalize_dart_context);
+                               finalize_dart_context);
 }
