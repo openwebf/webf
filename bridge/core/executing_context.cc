@@ -24,11 +24,11 @@ static std::atomic<int32_t> context_unique_id{0};
 bool valid_contexts[MAX_JS_CONTEXT];
 std::atomic<uint32_t> running_context_list{0};
 
-ExecutingContext::ExecutingContext(DartContext* dart_context,
+ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    int32_t contextId,
                                    JSExceptionHandler handler,
                                    void* owner)
-    : dart_context_(dart_context),
+    : dart_isolate_context_(dart_isolate_context),
       context_id_(contextId),
       handler_(std::move(handler)),
       owner_(owner),
@@ -239,12 +239,12 @@ void ExecutingContext::ReportError(JSValueConst error) {
   if (stack != nullptr) {
     messageLength += 4 + strlen(stack);
     char message[messageLength];
-    sprintf(message, "%s: %s\n%s", type, title, stack);
+    snprintf(message, messageLength, "%s: %s\n%s", type, title, stack);
     handler_(this, message);
   } else {
     messageLength += 3;
     char message[messageLength];
-    sprintf(message, "%s: %s", type, title);
+    snprintf(message, messageLength, "%s: %s", type, title);
     handler_(this, message);
   }
 

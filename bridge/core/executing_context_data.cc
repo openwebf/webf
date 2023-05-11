@@ -37,7 +37,7 @@ JSValue ExecutionContextData::constructorForIdSlowCase(const WrapperTypeInfo* ty
   JSClassDef def{};
   def.class_name = type->className;
   def.call = type->callFunc;
-  JS_NewClass(m_context->dartContext()->runtime(), class_id, &def);
+  JS_NewClass(m_context->dartIsolateContext()->dartContext()->runtime(), class_id, &def);
 
   // Create class object and prototype object.
   JSValue classObject = constructor_map_[type] = JS_NewObjectClass(m_context->ctx(), class_id);
@@ -72,11 +72,11 @@ JSValue ExecutionContextData::constructorForIdSlowCase(const WrapperTypeInfo* ty
 
 void ExecutionContextData::Dispose() {
   for (auto& entry : prototype_map_) {
-    JS_FreeValueRT(m_context->dartContext()->runtime(), entry.second);
+    JS_FreeValueRT(m_context->dartIsolateContext()->dartContext()->runtime(), entry.second);
   }
 
   for (auto& entry : constructor_map_) {
-    JS_FreeValueRT(m_context->dartContext()->runtime(), entry.second);
+    JS_FreeValueRT(m_context->dartIsolateContext()->dartContext()->runtime(), entry.second);
   }
 }
 

@@ -3,10 +3,10 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'webf'
-  s.version          = '0.1.0'
-  s.summary          = 'A W3C standard compliant Web rendering engine based on Flutter.'
+  s.version          = '0.14.0'
+  s.summary          = 'Build flutter apps with HTML/CSS and JavaScript.'
   s.description      = <<-DESC
-  A W3C standard compliant Web rendering engine based on Flutter.
+  WebF (Web on Flutter) is a W3C standards-compliant web rendering engine based on Flutter, allowing web applications to run natively on Flutter.
                        DESC
   s.homepage         = 'https://openwebf.com'
   s.license          = { :file => '../LICENSE' }
@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-  s.platform = :ios, '8.0'
+  s.platform = :ios, '11.0'
   s.prepare_command = 'bash prepare.sh'
   s.vendored_frameworks = 'Frameworks/*.xcframework'
   s.resource = 'Frameworks/*.*'
