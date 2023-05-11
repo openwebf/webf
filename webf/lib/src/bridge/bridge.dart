@@ -4,7 +4,6 @@
  */
 
 import 'dart:ffi';
-
 import 'package:flutter/foundation.dart';
 import 'package:webf/module.dart';
 import 'package:webf/launcher.dart';
@@ -20,7 +19,7 @@ int newContextId() {
 }
 
 class DartContext {
-  DartContext() : pointer = initDartContext(makeDartMethodsData()) {
+  DartContext() : pointer = initDartIsolateContext(makeDartMethodsData()) {
     initDartDynamicLinking();
     registerDartContextFinalizer(this);
   }

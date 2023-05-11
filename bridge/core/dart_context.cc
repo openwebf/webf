@@ -12,8 +12,7 @@
 
 namespace webf {
 
-DartContext::DartContext(const uint64_t* dart_methods, int32_t dart_methods_length)
-    : dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {
+DartContext::DartContext() {
   runtime_ = JS_NewRuntime();
   // Avoid stack overflow when running in multiple threads.
   JS_UpdateStackTop(runtime_);
@@ -27,7 +26,7 @@ DartContext::DartContext(const uint64_t* dart_methods, int32_t dart_methods_leng
 
 DartContext::~DartContext() {
   is_valid_ = false;
-  pages_.clear();
+  isolates_.clear();
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
   DefinedPropertiesInitializer::Dispose();
   names_installer::Dispose();
@@ -39,17 +38,21 @@ DartContext::~DartContext() {
   runtime_ = nullptr;
 }
 
-void DartContext::AddNewPage(std::unique_ptr<WebFPage>&& new_page) {
-  pages_.insert(std::move(new_page));
+void DartContext::AddIsolate(std::unique_ptr<DartIsolateContext>&& dart_isolate_context) {
+  isolates_.insert(std::move(dart_isolate_context));
 }
 
-void DartContext::RemovePage(const WebFPage* page) {
-  for (auto it = pages_.begin(); it != pages_.end(); ++it) {
-    if (it->get() == page) {
-      pages_.erase(it);
+void DartContext::RemoveIsolate(DartIsolateContext* dart_isolate_context) {
+  for (auto it = isolates_.begin(); it != isolates_.end(); ++it) {
+    if (it->get() == dart_isolate_context) {
+      isolates_.erase(it);
       break;
     }
   }
+}
+
+bool DartContext::IsIsolateEmpty() {
+  return isolates_.empty();
 }
 
 const std::unique_ptr<DartContextData>& DartContext::EnsureData() const {
@@ -57,6 +60,31 @@ const std::unique_ptr<DartContextData>& DartContext::EnsureData() const {
     data_ = std::make_unique<DartContextData>();
   }
   return data_;
+}
+
+DartIsolateContext::DartIsolateContext(webf::DartContext* owner_dart_context,
+                                       const uint64_t* dart_methods,
+                                       int32_t dart_methods_length)
+    : owner_dart_context_(owner_dart_context),
+      is_valid_(true),
+      running_thread_(std::this_thread::get_id()),
+      dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {}
+
+DartIsolateContext::~DartIsolateContext() {
+  is_valid_ = false;
+}
+
+void DartIsolateContext::AddNewPage(std::unique_ptr<WebFPage>&& new_page) {
+  pages_.insert(std::move(new_page));
+}
+
+void DartIsolateContext::RemovePage(const webf::WebFPage* page) {
+  for (auto it = pages_.begin(); it != pages_.end(); ++it) {
+    if (it->get() == page) {
+      pages_.erase(it);
+      break;
+    }
+  }
 }
 
 }  // namespace webf
