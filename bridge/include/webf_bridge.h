@@ -6,8 +6,8 @@
 #ifndef WEBF_BRIDGE_EXPORT_H
 #define WEBF_BRIDGE_EXPORT_H
 
-#include <thread>
 #include <include/dart_api_dl.h>
+#include <thread>
 
 #if defined(_WIN32)
 #define WEBF_EXPORT_C extern "C" __declspec(dllexport)

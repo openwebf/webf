@@ -65,7 +65,8 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return ScriptValue(ctx(), tagName().ToNativeString(ctx()).release());
   }
 
-  auto shape = GetExecutingContext()->dartIsolateContext()->dartContext()->EnsureData()->GetWidgetElementShape(tagName());
+  auto shape =
+      GetExecutingContext()->dartIsolateContext()->dartContext()->EnsureData()->GetWidgetElementShape(tagName());
   if (shape != nullptr) {
     if (shape->built_in_properties_.count(key) > 0) {
       return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
@@ -100,7 +101,8 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     GetExecutingContext()->FlushUICommand();
   }
 
-  auto shape = GetExecutingContext()->dartIsolateContext()->dartContext()->EnsureData()->GetWidgetElementShape(tagName());
+  auto shape =
+      GetExecutingContext()->dartIsolateContext()->dartContext()->EnsureData()->GetWidgetElementShape(tagName());
   if (shape != nullptr && shape->built_in_properties_.count(key) > 0) {
     NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
