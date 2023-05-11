@@ -6,6 +6,7 @@
 import 'dart:collection';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
@@ -212,17 +213,17 @@ void parseHTML(int contextId, String code) {
 }
 
 // Register initJsEngine
-typedef NativeInitDartContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartInitDartContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, int methodsLength);
+typedef NativeInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, int methodsLength);
 
-final DartInitDartContext _initDartContext =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartContext>>('initDartContext').asFunction();
+final DartInitDartIsolateContext _initDartIsolateContext =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContext').asFunction();
 
-Pointer<Void> initDartContext(List<int> dartMethods) {
+Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  return _initDartContext(bytes, dartMethods.length);
+  return _initDartIsolateContext(bytes, dartMethods.length);
 }
 
 typedef NativeDisposePage = Void Function(Pointer<Void>, Pointer<Void> page);

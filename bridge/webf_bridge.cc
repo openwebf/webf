@@ -37,23 +37,32 @@
 #define SYSTEM_NAME "unknown"
 #endif
 
-void* initDartContext(uint64_t* dart_methods, int32_t dart_methods_len) {
-  return new webf::DartContext(dart_methods, dart_methods_len);
-}
+thread_local webf::DartContext* dart_context_ = nullptr;
 
-void* allocateNewPage(void* dart_context, int32_t targetContextId) {
-  assert(dart_context != nullptr);
-  auto page = std::make_unique<webf::WebFPage>((webf::DartContext*) dart_context, targetContextId, nullptr);
-  void* ptr = page.get();
-  ((webf::DartContext*) dart_context)->AddNewPage(std::move(page));
+void* initDartIsolateContext(uint64_t* dart_methods, int32_t dart_methods_len) {
+  if (dart_context_ == nullptr) {
+    dart_context_ = new webf::DartContext();
+  }
 
+  auto dart_isolate_context = std::make_unique<webf::DartIsolateContext>(dart_context_, dart_methods, dart_methods_len);
+  auto* ptr = dart_isolate_context.get();
+  dart_context_->AddIsolate(std::move(dart_isolate_context));
   return ptr;
 }
 
-void disposePage(void* dart_context, void* page_) {
+void* allocateNewPage(void* dart_isolate_context, int32_t targetContextId) {
+  assert(dart_isolate_context != nullptr);
+  auto page =
+      std::make_unique<webf::WebFPage>((webf::DartIsolateContext*)dart_isolate_context, targetContextId, nullptr);
+  void* ptr = page.get();
+  ((webf::DartIsolateContext*)dart_isolate_context)->AddNewPage(std::move(page));
+  return ptr;
+}
+
+void disposePage(void* dart_isolate_context, void* page_) {
   auto* page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  ((webf::DartContext*) dart_context)->RemovePage(page);
+  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(page);
 }
 
 int8_t evaluateScripts(void* page_,
@@ -150,8 +159,14 @@ int32_t profileModeEnabled() {
 
 // Callbacks when dart context object was finalized by Dart GC.
 static void finalize_dart_context(void* isolate_callback_data, void* peer) {
-  printf("Finalize %p\n", peer);
-  delete (webf::DartContext*) peer;
+  auto* dart_isolate_context = (webf::DartIsolateContext*) peer;
+  auto* dart_context = dart_isolate_context->dartContext();
+  ((webf::DartIsolateContext*) peer)->dartContext()->RemoveIsolate(dart_isolate_context);
+  // Remove the whole dart context if there are no dart isolates alive.
+  if (dart_context->IsIsolateEmpty()) {
+    delete dart_context;
+    dart_context_ = nullptr;
+  }
 }
 
 void init_dart_dynamic_linking(void* data) {
@@ -160,6 +175,7 @@ void init_dart_dynamic_linking(void* data) {
   }
 }
 
-void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_context_ptr) {
-  Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_context_ptr), sizeof(webf::DartContext), finalize_dart_context);
+void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context) {
+  Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_isolate_context), sizeof(webf::DartContext),
+                                                     finalize_dart_context);
 }

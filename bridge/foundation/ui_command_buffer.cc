@@ -14,7 +14,7 @@ namespace webf {
 UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {}
 
 UICommandBuffer::~UICommandBuffer() {
-  if (UNLIKELY(!context_->dartContext()->valid())) {
+  if (UNLIKELY(!context_->dartIsolateContext()->valid())) {
     return;
   }
 
@@ -35,7 +35,7 @@ void UICommandBuffer::addCommand(UICommand type,
 }
 
 void UICommandBuffer::addCommand(const UICommandItem& item) {
-  if (UNLIKELY(!context_->dartContext()->valid())) {
+  if (UNLIKELY(!context_->dartIsolateContext()->valid())) {
     return;
   }
 
