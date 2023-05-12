@@ -23,6 +23,10 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "11"
       - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}

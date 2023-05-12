@@ -741,6 +741,7 @@ class WebFController {
   GestureDispatcher gestureDispatcher = GestureDispatcher();
 
   LoadHandler? onLoad;
+  LoadHandler? onDOMContentLoaded;
 
   // Error handler when load bundle failed.
   LoadErrorHandler? onLoadError;
@@ -799,6 +800,7 @@ class WebFController {
     this.onCustomElementAttached,
     this.onCustomElementDetached,
     this.onLoad,
+    this.onDOMContentLoaded,
     this.onLoadError,
     this.onJSError,
     this.httpClientInterceptor,
@@ -1162,6 +1164,9 @@ class WebFController {
     EventTarget window = view.window;
     window.dispatchEvent(event);
     _view.document.dispatchEvent(event);
+    if (onDOMContentLoaded != null) {
+      onDOMContentLoaded!(this);
+    }
   }
 
   void _dispatchWindowLoadEvent() {

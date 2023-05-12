@@ -42,6 +42,12 @@ describe('window', () => {
     expect(window.self).toBe(window);
   });
 
+  it('call global function should set this to globalThis', () => {
+    const div = document.createElement('div');
+    document.body.appendChild(div);
+    getComputedStyle(div, null);
+  });
+
   it('window should work with addEventListener', async (done) => {
     const div = document.createElement('div');
     div.style.width = '100px';

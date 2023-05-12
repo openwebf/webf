@@ -336,7 +336,7 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
   if (declare.returnTypeMode?.dartImpl) {
     call = generateDartImplCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
   } else if (options.isInstanceMethod) {
-    call = `auto* self = toScriptWrappable<${getClassName(blob)}>(this_val);
+    call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
   } else {
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declare.name)}(context, ${[...previousArguments, `args_${argument.name}`].join(',')}, exception_state);`;
