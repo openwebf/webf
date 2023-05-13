@@ -15,14 +15,14 @@ TEST(Node, appendChild) {
     EXPECT_STREQ(message.c_str(), "true true true");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = bridge->GetExecutingContext();
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "document.body.appendChild(div);"
       "console.log(document.body.firstChild === div, document.body.lastChild === div, div.parentNode === "
       "document.body);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -35,15 +35,15 @@ TEST(Node, nodeName) {
     EXPECT_STREQ(message.c_str(), "DIV #text #document-fragment #comment #document");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = bridge->GetExecutingContext();
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "let text = document.createTextNode('helloworld');"
       "let fragment = document.createDocumentFragment();"
       "let comment = document.createComment('');"
       "console.log(div.nodeName, text.nodeName, fragment.nodeName, comment.nodeName, document.nodeName)";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -56,8 +56,8 @@ TEST(Node, childNodes) {
     EXPECT_STREQ(message.c_str(), "true true true true");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = bridge->GetExecutingContext();
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->GetExecutingContext();
   MemberMutationScope scope{context};
   const char* code =
       "let div1 = document.createElement('div');"
@@ -69,7 +69,7 @@ TEST(Node, childNodes) {
       "document.body.childNodes[1] === div2,"
       "div1.nextSibling === div2,"
       "div2.previousSibling === div1)";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -79,12 +79,12 @@ TEST(Node, textNodeHaveEmptyChildNodes) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = bridge->GetExecutingContext();
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let text = document.createTextNode('helloworld');"
       "console.log(text.childNodes);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -97,8 +97,8 @@ TEST(Node, textContent) {
     EXPECT_STREQ(message.c_str(), "1234helloworld");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = bridge->GetExecutingContext();
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let text1 = document.createTextNode('1234');"
       "let text2 = document.createTextNode('helloworld');"
@@ -106,7 +106,7 @@ TEST(Node, textContent) {
       "div.appendChild(text1);"
       "div.appendChild(text2);"
       "console.log(div.textContent)";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -119,13 +119,13 @@ TEST(Node, setTextContent) {
     EXPECT_STREQ(message.c_str(), "1234");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = bridge->GetExecutingContext();
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "div.textContent = '1234';"
       "console.log(div.textContent);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -138,8 +138,8 @@ TEST(Node, ensureDetached) {
     EXPECT_STREQ(message.c_str(), "true true");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = bridge->GetExecutingContext();
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "document.body.appendChild(div);"
@@ -147,7 +147,7 @@ TEST(Node, ensureDetached) {
       "container.appendChild(div);"
       "document.body.appendChild(container);"
       "console.log(document.body.firstChild === container, container.firstChild === div);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -157,15 +157,15 @@ TEST(Node, replaceBody) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   //  const char* code = "let newbody = document.createElement('body'); document.documentElement.replaceChild(newbody,
   //  document.body)";
   const char* code = "document.body = document.createElement('body');";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
 }
@@ -195,12 +195,12 @@ TEST(Node, cloneNode) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  auto context = env->page()->GetExecutingContext();
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -244,12 +244,12 @@ TEST(Node, nestedNode) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  auto context = env->page()->GetExecutingContext();
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -286,12 +286,12 @@ el.replaceChild(child_3, child_1);
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  auto context = env->page()->GetExecutingContext();
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, false);
@@ -312,12 +312,12 @@ console.assert(el.isConnected == false);
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  auto context = env->page()->GetExecutingContext();
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, false);

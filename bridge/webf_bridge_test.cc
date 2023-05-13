@@ -6,6 +6,7 @@
 #include "webf_bridge_test.h"
 #include <atomic>
 #include "bindings/qjs/native_string_utils.h"
+#include "logging.h"
 #include "webf_test_context.h"
 
 std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();

@@ -15,9 +15,9 @@ TEST(Console, rawPrintShouldWork) {
     logExecuted = true;
     EXPECT_STREQ(message.c_str(), "1234");
   };
-  auto bridge = TEST_init();
+  auto env = TEST_init();
   const char* code = "__webf_print__('1234', 'info')";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(logExecuted, true);
 }
 
@@ -27,11 +27,11 @@ TEST(Console, log) {
     WEBF_LOG(VERBOSE) << message;
     logExecuted = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     exit(1);
   });
   const char* code = "console.log(1234);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(logExecuted, true);
 }
