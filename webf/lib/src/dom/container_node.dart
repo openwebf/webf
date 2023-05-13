@@ -173,15 +173,6 @@ abstract class ContainerNode extends Node {
   Node? removeChild(Node oldChild) {
     Node child = oldChild;
 
-    bool isOldChildConnected = child.isConnected;
-    assert(child.parentNode == this);
-
-    Node? prev = child.previousSibling;
-    Node? next = child.nextSibling;
-
-    removeBetween(prev, next, oldChild);
-    notifyNodeRemoved(child);
-
     // Not remove node type which is not present in RenderObject tree such as Comment
     // Only append node types which is visible in RenderObject tree
     // Only remove childNode when it has parent
@@ -192,6 +183,14 @@ abstract class ContainerNode extends Node {
     if (this is Element) {
       ownerDocument.styleDirtyElements.add(this as Element);
     }
+
+    bool isOldChildConnected = child.isConnected;
+    assert(child.parentNode == this);
+
+    Node? prev = child.previousSibling;
+    Node? next = child.nextSibling;
+    removeBetween(prev, next, oldChild);
+    notifyNodeRemoved(child);
 
     if (isOldChildConnected) {
       child.disconnectedCallback();
