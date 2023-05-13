@@ -15,17 +15,17 @@ TEST(WidgetElement, setPropertyEventHandler) {
     EXPECT_STREQ(message.c_str(), "1111");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let checkbox = document.createElement('flutter-checkbox'); "
       "function f(){ console.log(1111); }; "
       "checkbox.onclick = f; "
       "checkbox.dispatchEvent(new Event('click'));";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
 }
@@ -37,15 +37,15 @@ TEST(WidgetElement, getPropertyWithSymbolToStringTag) {
     EXPECT_STREQ(message.c_str(), "FLUTTER-CHECKBOX");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let checkbox = document.createElement('flutter-checkbox'); "
       "console.log(checkbox[Symbol.toStringTag])";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
 }

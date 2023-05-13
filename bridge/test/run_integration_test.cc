@@ -34,11 +34,11 @@ std::string readTestSpec() {
 // Run webf integration test specs with Google Test.
 // Very useful to fix bridge bugs.
 TEST(IntegrationTest, runSpecs) {
-  auto bridge = TEST_init();
-  auto context = bridge->GetExecutingContext();
+  auto env = TEST_init();
+  auto context = env->page()->GetExecutingContext();
 
   std::string code = readTestSpec();
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
   executeTest(context->contextId(), [](int32_t contextId, void* status) -> void* {
     WEBF_LOG(VERBOSE) << "done";

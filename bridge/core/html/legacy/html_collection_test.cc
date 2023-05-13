@@ -14,11 +14,11 @@ TEST(HTMLCollection, children) {
     EXPECT_STREQ(message.c_str(), "2 <div/> <p/>");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "let text = document.createTextNode('1234');"
@@ -27,7 +27,7 @@ TEST(HTMLCollection, children) {
       "document.body.appendChild(text);"
       "document.body.appendChild(div2);"
       "console.log(document.body.children.length, document.body.children[0], document.body.children[1]);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
 }
