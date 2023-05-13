@@ -11,18 +11,18 @@ TEST(Element, overrideAttribute) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code = R"(
  const text = document.createElement('div');
     text.setAttribute('value', 'Hello');
     document.body.appendChild(text);
     text.setAttribute('value', 'Hi');
 )";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, false);
 }

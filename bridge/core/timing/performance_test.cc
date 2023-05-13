@@ -15,13 +15,13 @@ TEST(Performance, now) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code = "console.log(performance.now() < 20);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -33,13 +33,13 @@ TEST(Performance, timeOrigin) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code = "console.log(typeof performance.timeOrigin === 'number');";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -51,15 +51,15 @@ TEST(Performance, toJSON) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let json = performance.toJSON();"
       "console.log('now' in json, 'timeOrigin' in json);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -71,16 +71,16 @@ TEST(Performance, mark) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "{detail: null}");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "performance.mark('abc');"
       "let entries = performance.getEntries();"
       "console.log(entries[0])";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -92,16 +92,16 @@ TEST(Performance, markWithDetail) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "{detail: {...}}");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "performance.mark('abc', { detail: {value: 1}});"
       "let entries = performance.getEntries();"
       "console.log(entries[0])";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -113,18 +113,18 @@ TEST(Performance, markWithName) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "[{...}, {...}]");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
       "performance.mark('abc', { detail: 3});"
       "let entries = performance.getEntriesByName('abc');"
       "console.log(entries)";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -136,11 +136,11 @@ TEST(Performance, clearMarks) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "[]");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
@@ -148,7 +148,7 @@ TEST(Performance, clearMarks) {
       "performance.clearMarks();"
       "let entries = performance.getEntries();"
       "console.log(entries);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -160,11 +160,11 @@ TEST(Performance, clearMarksByName) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "[{...}]");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
@@ -172,7 +172,7 @@ TEST(Performance, clearMarksByName) {
       "performance.clearMarks('abc');"
       "let entries = performance.getEntries();"
       "console.log(entries);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -184,11 +184,11 @@ TEST(Performance, measure) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code = R"(
 performance.mark('A');
 
@@ -202,7 +202,7 @@ setTimeout(() => {
 }, 100);
 
 )";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   TEST_runLoop(context);
 
