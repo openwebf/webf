@@ -212,4 +212,26 @@ describe('TouchEvent', () => {
       await simulatePointMove(12, 12);
     });
   });
+
+  it('should works when read touches', async (done) => {
+    const div = document.createElement('div');
+    div.style.width = '100px';
+    div.style.height = '100px';
+    div.style.backgroundColor = 'red';
+    div.style.position = 'fixed';
+    document.body.appendChild(div);
+
+    document.body.addEventListener('touchmove', async function callback(event) {
+      const touchList = event.touches;
+      expect(touchList.length).toBe(1);
+      // @ts-ignore
+      expect(touchList.item(0).target).toBe(div);
+
+      done();
+    });
+    requestAnimationFrame(async () => {
+      await simulatePointDown(10, 10);
+      await simulatePointMove(12, 12);
+    });
+  });
 });
