@@ -524,9 +524,22 @@ typedef enum JSFunctionKindEnum {
     JS_FUNC_ASYNC_GENERATOR = (JS_FUNC_GENERATOR | JS_FUNC_ASYNC),
 } JSFunctionKindEnum;
 
+typedef int watchpoint_delete_callback(JSRuntime* rt, intptr_t ref, JSAtom atom, void* target);
+typedef int watchpoint_free_callback(JSRuntime* rt, intptr_t ref, JSAtom atom);
+
+typedef struct ICWatchpoint {
+    intptr_t ref;
+    JSAtom atom;
+    watchpoint_delete_callback *delete_callback;
+    watchpoint_free_callback *free_callback;
+    struct list_head link;
+} ICWatchpoint;
+
 typedef struct InlineCacheRingItem {
-    JSShape* shape;
+    JSObject* proto;
+    JSShape *shape;
     uint32_t prop_offset;
+    ICWatchpoint *watchpoint_ref;
 } InlineCacheRingItem;
 
 typedef struct InlineCacheRingSlot {
@@ -834,6 +847,7 @@ struct JSShape {
     int deleted_prop_count;
     JSShape *shape_hash_next; /* in JSRuntime.shape_hash[h] list */
     JSObject *proto;
+    struct list_head *watchpoint;
     JSShapeProperty prop[0]; /* prop_size elements */
 };
 
