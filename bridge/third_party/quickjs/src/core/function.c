@@ -1520,7 +1520,7 @@ restart:
         atom = get_u32(pc);
         pc += 4;
 
-        val = JS_GetPropertyInternal(ctx, sp[-1], atom, sp[-1], NULL, FALSE);
+        val = JS_GetPropertyInternal(ctx, sp[-1], atom, sp[-1], ic, FALSE);
         if (unlikely(JS_IsException(val)))
           goto exception;
         if (ic != NULL && ic->updated == TRUE) {
