@@ -648,6 +648,8 @@ void mark_children(JSRuntime* rt, JSGCObjectHeader* gp, JS_MarkFunc* mark_func) 
             for (j = 0; j < IC_CACHE_ITEM_CAPACITY; j++)
               if (buffer[j].shape)
                 mark_func(rt, &buffer[j].shape->header);
+              if (buffer[j].proto)
+                mark_func(rt, &buffer[j].proto->header);
           }
         }
       }
