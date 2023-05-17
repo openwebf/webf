@@ -166,6 +166,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   String get className => _classList.join(_ONE_SPACE);
 
+  Element? _beforeElement;
+  Element? _afterElement;
+
   final bool isDefaultRepaintBoundary = false;
 
   /// Whether should as a repaintBoundary for this element when style changed
@@ -198,6 +201,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   bool _needRecalculateStyle = false;
+
+  final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
 
   Element(BindingContext? context) : super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
@@ -885,7 +890,41 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       // Flush pending style before child attached.
       style.flushPendingProperties();
 
+      String? beforeContent = style.beforeRule?.declaration.getPropertyValue('content');
+      if (style.beforeRule != null && beforeContent != null) {
+        _beforeElement ??= ownerDocument.createElement(BEFORE);
+        _beforeElement?.style.merge(style.beforeRule!.declaration);
+        if (_beforeElement?.parentNode == null) {
+          if (firstChild != null) {
+            insertBefore(_beforeElement!, firstChild!);
+          } else {
+            appendChild(_beforeElement!);
+          }
+        }
+        if (beforeContent.isNotEmpty) {
+          final textNode = ownerDocument.createTextNode(beforeContent);
+          _beforeElement?.appendChild(textNode);
+        }
+      } else if (_beforeElement != null){
+        removeChild(_beforeElement!);
+      }
+
       didAttachRenderer();
+
+      String? afterContent = style.afterRule?.declaration.getPropertyValue('content');
+      if (style.afterRule != null && afterContent != null) {
+        _afterElement ??= ownerDocument.createElement(AFTER);
+        _afterElement?.style.merge(style.afterRule!.declaration);
+        if (_afterElement?.parentNode == null) {
+          appendChild(_afterElement!);
+        }
+        if (afterContent.isNotEmpty) {
+          final textNode = ownerDocument.createTextNode(afterContent);
+          _afterElement?.appendChild(textNode);
+        }
+      } else if (_afterElement != null){
+        removeChild(_afterElement!);
+      }
     }
   }
 
@@ -983,7 +1022,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         child.attachTo(this, after: after);
       }
     }
-
     return child;
   }
 
@@ -1176,7 +1214,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
+    if (qualifiedName == 'class') {
+      className = value;
+      return;
+    }
+    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
     attributes[qualifiedName] = value;
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   @mustCallSuper
@@ -1674,7 +1718,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   void _applyDefaultStyle(CSSStyleDeclaration style) {
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
-        style.setProperty(propertyName, value);
+        if (style.contains(propertyName) == false) {
+          style.setProperty(propertyName, value);
+        }
       });
     }
   }
@@ -1688,7 +1734,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
-  final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
   void _applySheetStyle(CSSStyleDeclaration style) {
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_START);
@@ -1734,6 +1779,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
+  void _applyPseudoStyle(CSSStyleDeclaration style) {
+    List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
+    style.handlePseudoRules(pseudoRules);
+  }
+
   void applyStyle(CSSStyleDeclaration style) {
     // Apply default style.
     _applyDefaultStyle(style);
@@ -1743,6 +1793,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     applyAttributeStyle(style);
     _applyInlineStyle(style);
     _applySheetStyle(style);
+    _applyPseudoStyle(style);
   }
 
   void applyAttributeStyle(CSSStyleDeclaration style) {
@@ -1963,7 +2014,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   bool _checkRecalculateStyle(List<String?> keys, CSSMap cssMap) {
-    if (keys.isEmpty || cssMap.values.isEmpty) {
+    if (keys.isEmpty) {
       return false;
     }
     for(final rules in cssMap.values) {
@@ -1979,6 +2030,19 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
       }
     }
+
+    for(int i = 0; i < ownerDocument.ruleSet.pseudoRules.length; i ++) {
+      var rule = ownerDocument.ruleSet.pseudoRules[i];
+      if (rule is! CSSStyleRule) {
+        continue;
+      }
+      for (Selector selector in rule.selectorGroup.selectors) {
+        if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
+          return true;
+        }
+      }
+    }
+
     return false;
   }
 

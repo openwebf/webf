@@ -186,4 +186,8 @@ void defineBuiltInElements() {
   svgElementsRegistry.forEach((key, value) {
     _svgRegistry[key.toUpperCase()] = value;
   });
+
+  // Pseudo
+  defineElement(BEFORE, (context) => BeforePseudoElement(context));
+  defineElement(AFTER, (context) => AfterPseudoElement(context));
 }
