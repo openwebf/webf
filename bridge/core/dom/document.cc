@@ -216,6 +216,20 @@ std::vector<Element*> Document::getElementsByName(const AtomicString& name, Exce
   }
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
+AtomicString Document::domain() {
+  NativeValue dart_result = this->GetBindingProperty(binding_call_methods::kdomain, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+void Document::setDomain(const AtomicString& value, ExceptionState& exception_state) {
+  SetBindingProperty(binding_call_methods::kdomain, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
+                     exception_state);
+}
+
+AtomicString Document::compatMode() {
+  NativeValue dart_result = this->GetBindingProperty(binding_call_methods::kcompatMode, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
 
 template <typename CharType>
 static inline bool IsValidNameASCII(const CharType* characters, unsigned length) {
