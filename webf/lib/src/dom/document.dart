@@ -77,6 +77,9 @@ class Document extends ContainerNode {
 
   final RuleSet ruleSet = RuleSet();
 
+  String? _domain;
+  final String _compatMode = 'CSS1Compat';
+
   @override
   bool get isConnected => true;
 
@@ -171,6 +174,8 @@ class Document extends ContainerNode {
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
+    properties['compatMode'] = BindingObjectProperty(getter: () => compatMode,);
+    properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
   }
 
   @override
@@ -185,6 +190,18 @@ class Document extends ContainerNode {
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
     }
+  }
+
+  dynamic get compatMode => _compatMode;
+
+  get domain {
+    Uri uri = Uri.parse(controller.url);
+    _domain ??= uri.host;
+    return _domain;
+  }
+
+  set domain(value) {
+    _domain = value;
   }
 
   dynamic debugClearCookies(List<dynamic> args) {

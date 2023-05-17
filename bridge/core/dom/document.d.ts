@@ -14,10 +14,12 @@ interface Document extends Node {
   body: HTMLBodyElement | null;
   cookie: DartImpl<string>;
   __clear_cookies__(): DartImpl<void>;
+  domain: string;
   readonly head: HTMLHeadElement | null;
   readonly documentElement: HTMLHtmlElement | null;
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
+  readonly compatMode: string;
 
   createElement(tagName: string, options?: any): Element;
   createElementNS(uri: string | null, tagName: string, options?: any): Element;
