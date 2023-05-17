@@ -485,4 +485,33 @@ describe('querySelector api', () => {
 
     expect(document.querySelectorAll('[data-id="one"]')?.length).toBe(1);
   });
+
+  it('element querySelector cant find element', () => {
+    ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
+      const div = document.createElement('div')
+      div.style.width = '100px';
+      div.style.height = '100px';
+      div.style.backgroundColor = item;
+      div.setAttribute('id', `id-${index}`);
+      document.body.appendChild(div);
+    });
+
+    expect(document.body.querySelector('span')).toBeNull();
+  });
+
+  it('element querySelectorAll length of elements', () => {
+    const szEle = ['red', 'black', 'green', 'yellow', 'blue'];
+    szEle.forEach((item, index) => {
+      const div = document.createElement('div')
+      div.style.width = '100px';
+      div.style.height = '100px';
+      div.style.backgroundColor = item;
+      div.setAttribute('id', `id-${index}`);
+      document.body.appendChild(div);
+    });
+
+    const eles = document.body.querySelectorAll('div');
+    expect(eles.length).toBe(szEle.length);
+  });
+
 });
