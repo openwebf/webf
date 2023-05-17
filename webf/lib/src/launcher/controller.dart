@@ -18,6 +18,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
     show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
+import 'package:hive/hive.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -707,6 +708,10 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
     _moduleManager = ModuleManager(controller, contextId);
   }
 
+  Future<void> initialize() async {
+    await _moduleManager.initialize();
+  }
+
   void dispose() {
     disposeTimer();
     disposeScheduleFrame();
@@ -877,6 +882,8 @@ class WebFController {
   final Queue<HistoryItem> previousHistoryStack = Queue();
   final Queue<HistoryItem> nextHistoryStack = Queue();
 
+  final Map<String, String> sessionStorage = {};
+
   HistoryModule get history => _module.moduleManager.getModule('History')!;
 
   static Uri fallbackBundleUri([int? id]) {
@@ -1023,7 +1030,10 @@ class WebFController {
   Future<void> executeEntrypoint(
       {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
     if (_entrypoint != null && shouldResolve) {
-      await _resolveEntrypoint();
+      await Future.wait([
+        _resolveEntrypoint(),
+        _module.initialize()
+      ]);
       if (_entrypoint!.isResolved && shouldEvaluate) {
         await _evaluateEntrypoint(animationController: animationController);
       } else {

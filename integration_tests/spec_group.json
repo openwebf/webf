@@ -22,6 +22,12 @@
     ]
   },
   {
+    "name": "Storage",
+    "specs": [
+      "specs/storage/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
     "name": "DOM",
     "specs": [
       "specs/dom/**/*.{js,jsx,ts,tsx,html}"

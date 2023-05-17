@@ -57,6 +57,13 @@ function assert_true(value: any, message?: string) {
   expect(value).toBe(true, message)
 }
 
+function assert_throws_exactly(error: any, fn: Function) {
+  expect(fn).toThrow(error);
+}
+
+function assert_not_equals(a: any, b: any, message?: string) {
+  expect(a !== b).toBe(true, message)
+}
 function assert_false(value: any, message?: string) {
   expect(value).toBe(false, message)
 }
@@ -371,6 +378,8 @@ Object.assign(global, {
   format_value,
   assert_array_equals,
   assert_false,
+  assert_not_equals,
+  assert_throws_exactly,
   assert_class_string,
   simulatePointDown,
   simulatePointUp,
