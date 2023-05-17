@@ -14,6 +14,7 @@ dependencies:
   meta: ^1.7.0 # Pure dart module.
   ffi: ^2.0.1 # Pure dart module.
   intl: ^0.17.0 #Pure dart module.
+  hive: ^2.2.3
   characters: ^1.2.0
   collection: ^1.16.0
   async: ^2.8.2 # Pure dart module.
