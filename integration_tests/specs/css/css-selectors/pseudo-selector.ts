@@ -23,4 +23,69 @@ fdescribe("css pseudo selector", () => {
     document.body.appendChild(div);
     await snapshot();
   });
+
+  it("002", async () => {
+    const style = <style>{`
+      .div1::before {
+        content: before;
+        display: block;
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: after;
+        display: block;
+        background-color: blue;
+        margin-left: 10px;
+    }`}</style>;
+    const div = <div class="div1">{'002 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
+  it("003", async () => {
+    const style = <style>{`
+      .div1::before {
+        content: before;
+        display: block;
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: after;
+        display: block;
+        background-color: blue;
+        margin-left: 10px;
+    }`}</style>;
+    const div = <div>{'003 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1";
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
+
+  it("004", async () => {
+    const style = <style>{`
+      .div1::before {
+        content: before;
+        display: none;
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: after;
+        display: none;
+        background-color: blue;
+        margin-left: 10px;
+    }`}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1";
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
 });
