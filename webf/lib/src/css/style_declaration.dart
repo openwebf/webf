@@ -82,6 +82,12 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   StyleChangeListener? onStyleChanged;
   StyleFlushedListener? onStyleFlushed;
 
+  CSSStyleRule? _beforeRule;
+  CSSStyleRule? _afterRule;
+
+  CSSStyleRule? get beforeRule => _beforeRule;
+  CSSStyleRule? get afterRule => _afterRule;
+
   CSSStyleDeclaration([BindingContext? context]);
 
   // ignore: prefer_initializing_formals
@@ -493,6 +499,22 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         }
         if (otherIsImportant) {
           _importants[propertyName] = true;
+        }
+      }
+    }
+  }
+
+  void handlePseudoRules(List<CSSStyleRule> rules) {
+    for (CSSStyleRule style in rules) {
+      for (Selector selector in style.selectorGroup.selectors) {
+        for (SimpleSelectorSequence sequence in selector.simpleSelectorSequences) {
+          if (sequence.simpleSelector is PseudoElementSelector) {
+            if (sequence.simpleSelector.name == 'before') {
+              _beforeRule = style;
+            } else if (sequence.simpleSelector.name == 'after') {
+              _afterRule = style;
+            }
+          }
         }
       }
     }
