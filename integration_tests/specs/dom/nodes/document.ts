@@ -32,4 +32,12 @@ describe('Document api', () => {
     expect(document.all).not.toBeUndefined();
     expect(document.all.length).toBeGreaterThan(0);
   });
+
+  it('document.domain', () => {
+      expect(document.domain).not.toBeUndefined();
+    });
+
+  it('document.compatMode', () => {
+      expect(document.compatMode).not.toBeUndefined();
+    });
 });
