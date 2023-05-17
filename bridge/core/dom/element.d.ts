@@ -55,6 +55,9 @@ interface Element extends Node, ParentNode {
   getElementsByClassName(className: string) : Element[];
   getElementsByTagName(tagName: string): Element[];
 
+  querySelector(selectors: string): Element | null;
+  querySelectorAll(selectors: string): Element[];
+
   scroll(options?: ScrollToOptions): void;
   scroll(x: number, y: number): void;
   scrollBy(options?: ScrollToOptions): void;

@@ -197,6 +197,24 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
 
+Element* Element::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return nullptr;
+  }
+  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
+}
+
+std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return {};
+  }
+  return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
+}
+
 InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
