@@ -247,8 +247,7 @@ class SelectorEvaluator extends SelectorVisitor {
         return false;
     }
 
-    // :before, :after, :first-letter/line can't match DOM elements.
-    if (_isLegacyPsuedoClass(node.name)) return false;
+    if (_isLegacyPsuedoClass(node.name)) return true;
 
     if (kDebugMode) throw _unimplemented(node);
     return false;
@@ -256,20 +255,20 @@ class SelectorEvaluator extends SelectorVisitor {
 
   @override
   bool visitPseudoElementSelector(PseudoElementSelector node) {
-    // :before, :after, :first-letter/line can't match DOM elements.
-    if (_isLegacyPsuedoClass(node.name)) return false;
+    if (_isLegacyPsuedoClass(node.name)) return true;
 
     if (kDebugMode) throw _unimplemented(node);
     return false;
   }
 
   static bool _isLegacyPsuedoClass(String name) {
+    // TODO: :first-letter/line match elements.
     switch (name) {
       case 'before':
       case 'after':
+        return true;
       case 'first-line':
       case 'first-letter':
-        return true;
       default:
         return false;
     }

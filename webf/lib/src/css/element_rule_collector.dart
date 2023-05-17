@@ -13,6 +13,14 @@ class ElementRuleCollector {
     return matchedRules(ruleSet, element).isNotEmpty;
   }
 
+  List<CSSStyleRule> matchedPseudoRules(RuleSet ruleSet, Element element) {
+    if (ruleSet.pseudoRules.isEmpty) {
+      return [];
+    }
+    List<CSSRule> rules = _collectMatchingRulesForList(ruleSet.pseudoRules, element);
+    return rules.map((e) => e as CSSStyleRule).toList();
+  }
+
   List<CSSRule> matchedRules(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
 
