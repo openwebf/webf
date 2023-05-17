@@ -37,13 +37,13 @@ typedef OnImageLoad = void Function(int naturalWidth, int naturalHeight);
 
 class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   BoxFitImage({
-    required this.loadImage,
+    required LoadImage loadImage,
     required this.url,
     required this.boxFit,
     this.onImageLoad,
-  });
+  }): _loadImage = loadImage;
 
-  final LoadImage loadImage;
+  final LoadImage _loadImage;
   final Uri url;
   final BoxFit boxFit;
   final OnImageLoad? onImageLoad;
@@ -59,7 +59,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
     Uint8List bytes;
     try {
-      bytes = await loadImage(url);
+      bytes = await _loadImage(url);
     } on FlutterError {
       PaintingBinding.instance.imageCache.evict(key);
       rethrow;

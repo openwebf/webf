@@ -118,7 +118,8 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
 
   @override
   void setCanDrag(bool canDrag) {
-    DeviceGestureSettings gestureSettings = DeviceGestureSettings.fromWindow(window);
+    PlatformDispatcher.instance.views;
+    DeviceGestureSettings gestureSettings = DeviceGestureSettings.fromView(window);
 
     // Break no use update drag logic
     if(canDrag == _lastCanDrag && axis == _lastAxisDirection &&
