@@ -75,6 +75,9 @@ class Element : public ContainerNode {
   std::vector<Element*> getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
 
+  Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
+  std::vector<Element*> querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state);
+
   InlineCssStyleDeclaration* style();
   InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
   DOMTokenList* classList();

@@ -313,6 +313,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     methods['click'] = BindingObjectMethodSync(call: (_) => click());
     methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
+    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
+    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
@@ -320,6 +322,16 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   dynamic getElementsByTagName(List<dynamic> args) {
+    return QuerySelector.querySelectorAll(this, args.first);
+  }
+
+  dynamic querySelector(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
+    return QuerySelector.querySelector(this, args.first);
+  }
+
+  dynamic querySelectorAll(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
     return QuerySelector.querySelectorAll(this, args.first);
   }
 
