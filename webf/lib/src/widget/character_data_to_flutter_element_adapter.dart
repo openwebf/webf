@@ -28,4 +28,8 @@ class WebFCharacterDataToFlutterElementAdapter extends RenderObjectElement {
   void insertRenderObjectChild(RenderObject child, Object? slot) {}
   @override
   void moveRenderObjectChild(covariant RenderObject child, covariant Object? oldSlot, covariant Object? newSlot) {}
+
+  @override
+  void removeRenderObjectChild(covariant RenderObject child, covariant Object? slot) {
+  }
 }
