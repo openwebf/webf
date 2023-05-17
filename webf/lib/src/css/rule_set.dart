@@ -19,6 +19,7 @@ class RuleSet {
       attributeRules.isEmpty &&
       tagRules.isEmpty &&
       universalRules.isEmpty &&
+      pseudoRules.isEmpty &&
       keyframesRules.isEmpty;
 
   final CSSMap idRules = HashMap();
@@ -26,6 +27,7 @@ class RuleSet {
   final CSSMap attributeRules = HashMap();
   final CSSMap tagRules = HashMap();
   final List<CSSRule> universalRules = [];
+  final List<CSSRule> pseudoRules = [];
 
   final Map<String, CSSKeyframesRule> keyframesRules = {};
 
@@ -113,6 +115,24 @@ class RuleSet {
       return;
     }
 
+    if (pseudoName != null && _isLegacyPsuedoClass(pseudoName)) {
+      pseudoRules.add(rule);
+      return;
+    }
+
     universalRules.add(rule);
+  }
+
+  static bool _isLegacyPsuedoClass(String name) {
+    // TODO: :first-letter/line match elements.
+    switch (name) {
+      case 'before':
+      case 'after':
+        return true;
+      case 'first-line':
+      case 'first-letter':
+      default:
+        return false;
+    }
   }
 }
