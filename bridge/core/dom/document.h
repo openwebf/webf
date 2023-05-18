@@ -69,6 +69,8 @@ class Document : public ContainerNode, public TreeScope {
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByName(const AtomicString& name, ExceptionState& exception_state);
 
+  Window* defaultView() const;
+
   AtomicString  domain();
   void setDomain(const AtomicString& value, ExceptionState& exception_state);
   AtomicString  compatMode();

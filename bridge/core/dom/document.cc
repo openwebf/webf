@@ -216,6 +216,11 @@ std::vector<Element*> Document::getElementsByName(const AtomicString& name, Exce
   }
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
+
+Window* Document::defaultView() const {
+  return GetExecutingContext()->window();
+}
+
 AtomicString Document::domain() {
   NativeValue dart_result = this->GetBindingProperty(binding_call_methods::kdomain, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
