@@ -3,6 +3,7 @@
  */
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'package:hive/hive.dart';
 import 'package:webf/foundation.dart';
@@ -13,8 +14,8 @@ class LocalStorageModule extends BaseModule {
   String get name => 'LocalStorage';
 
   static String getBoxKey(ModuleManager moduleManager) {
-    String url = moduleManager.controller.url;
-    final bytes = utf8.encode(url);
+    String origin = moduleManager.controller.origin;
+    final bytes = utf8.encode(origin);
     final base64Str = base64.encode(bytes);
     return '_webf_${base64Str.substring(0, 30)}';
   }
