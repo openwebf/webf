@@ -70,9 +70,9 @@ class Document : public ContainerNode, public TreeScope {
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByName(const AtomicString& name, ExceptionState& exception_state);
 
-  AtomicString  domain();
+  AtomicString domain();
   void setDomain(const AtomicString& value, ExceptionState& exception_state);
-  AtomicString  compatMode();
+  AtomicString compatMode();
 
   AtomicString  readyState();
   DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);
