@@ -1024,7 +1024,10 @@ class WebFController {
     devToolsService?.dispose();
   }
 
-  String get origin => Uri.parse(url).origin;
+  String get origin {
+    Uri uri = Uri.parse(url);
+    return '${uri.scheme}://${uri.host}:${uri.port}';
+  }
 
   Future<void> executeEntrypoint(
       {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
