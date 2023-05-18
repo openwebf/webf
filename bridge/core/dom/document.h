@@ -73,6 +73,8 @@ class Document : public ContainerNode, public TreeScope {
   void setDomain(const AtomicString& value, ExceptionState& exception_state);
   AtomicString  compatMode();
 
+  AtomicString  readyState();
+
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);
 
