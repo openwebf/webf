@@ -20,6 +20,7 @@ interface Document extends Node {
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
   readonly compatMode: string;
+  readonly readyState: string;
 
   createElement(tagName: string, options?: any): Element;
   createElementNS(uri: string | null, tagName: string, options?: any): Element;

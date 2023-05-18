@@ -1167,6 +1167,7 @@ class WebFController {
     if (onDOMContentLoaded != null) {
       onDOMContentLoaded!(this);
     }
+    _view.document.interactiveState();
   }
 
   void _dispatchWindowLoadEvent() {
@@ -1178,6 +1179,7 @@ class WebFController {
       if (onLoad != null) {
         onLoad!(this);
       }
+      _view.document.completeState();
     });
     SchedulerBinding.instance.scheduleFrame();
   }

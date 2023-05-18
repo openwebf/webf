@@ -80,6 +80,11 @@ class Document extends ContainerNode {
   String? _domain;
   final String _compatMode = 'CSS1Compat';
 
+  final String READY_STATE_LOADING = 'loading';
+  final String READY_STATE_INTERACTIVE = 'interactive';
+  final String READY_STATE_COMPLETE = 'complete';
+  String readyState = READY_STATE_LOADING;
+
   @override
   bool get isConnected => true;
 
@@ -171,11 +176,20 @@ class Document extends ContainerNode {
     }
   }
 
+  void interactiveState() {
+    readyState = READY_STATE_INTERACTIVE;
+  }
+
+  void completeState() {
+    readyState = READY_STATE_COMPLETE;
+  }
+
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
     properties['compatMode'] = BindingObjectProperty(getter: () => compatMode,);
     properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
+    properties['readyState'] = BindingObjectProperty(getter: () => readyState,);
   }
 
   @override
