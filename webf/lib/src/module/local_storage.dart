@@ -3,7 +3,6 @@
  */
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'package:hive/hive.dart';
 import 'package:webf/foundation.dart';

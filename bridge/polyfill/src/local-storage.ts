@@ -4,5 +4,4 @@
 
 import {Storage, storageProxyHandler } from "./storage";
 
-// @ts-ignore
 export const localStorage = new Proxy(new Storage('LocalStorage'), storageProxyHandler);

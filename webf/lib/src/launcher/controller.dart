@@ -18,7 +18,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
     show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
-import 'package:hive/hive.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
