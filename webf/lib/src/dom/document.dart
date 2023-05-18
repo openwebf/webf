@@ -197,7 +197,8 @@ class Document extends ContainerNode {
   }
 
   get readyState {
-    return _readyState ??= 'loading';
+    _readyState ??= 'loading';
+    return _readyState;
   }
 
   set readyState(value) {
