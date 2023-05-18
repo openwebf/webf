@@ -55,6 +55,7 @@ typedef DartMatchImageSnapshotCallback = void Function(
     Pointer<Void> callbackContext, int contextId, int, Pointer<Utf8>);
 typedef NativeMatchImageSnapshot = Void Function(Pointer<Void> callbackContext, Int32 contextId, Pointer<Uint8>, Int32,
     Pointer<NativeString>, Pointer<NativeFunction<NativeMatchImageSnapshotCallback>>);
+typedef NativeMatchImageSnapshotBytes = Void Function(Pointer<Void> callbackContext, Int32 contextId, Pointer<Uint8>, Int32, Pointer<Uint8>, Int32, Pointer<NativeFunction<NativeMatchImageSnapshotCallback>>);
 
 void _matchImageSnapshot(Pointer<Void> callbackContext, int contextId, Pointer<Uint8> bytes, int size,
     Pointer<NativeString> snapshotNamePtr, Pointer<NativeFunction<NativeMatchImageSnapshotCallback>> pointer) {
@@ -69,8 +70,21 @@ void _matchImageSnapshot(Pointer<Void> callbackContext, int contextId, Pointer<U
   });
 }
 
+void _matchImageSnapshotBytes(Pointer<Void> callbackContext, int contextId, Pointer<Uint8> bytes, int size,
+    Pointer<Uint8> imageBBytes, int imageBSize, Pointer<NativeFunction<NativeMatchImageSnapshotCallback>> pointer) {
+  DartMatchImageSnapshotCallback callback = pointer.asFunction();
+  matchImageSnapshotBytes(bytes.asTypedList(size), imageBBytes.asTypedList(size)).then((value) {
+    callback(callbackContext, contextId, value ? 1 : 0, nullptr);
+  }).catchError((e, stack) {
+    String errmsg = '$e\n$stack';
+    callback(callbackContext, contextId, 0, errmsg.toNativeUtf8());
+  });
+}
+
 final Pointer<NativeFunction<NativeMatchImageSnapshot>> _nativeMatchImageSnapshot =
     Pointer.fromFunction(_matchImageSnapshot);
+final Pointer<NativeFunction<NativeMatchImageSnapshotBytes>> _nativeMatchImageSnapshotBytes =
+    Pointer.fromFunction(_matchImageSnapshotBytes);
 
 typedef NativeEnvironment = Pointer<Utf8> Function();
 typedef DartEnvironment = Pointer<Utf8> Function();
@@ -181,6 +195,7 @@ final Pointer<NativeFunction<NativeSimulateInputText>> _nativeSimulateInputText 
 final List<int> _dartNativeMethods = [
   _nativeOnJsError.address,
   _nativeMatchImageSnapshot.address,
+  _nativeMatchImageSnapshotBytes.address,
   _nativeEnvironment.address,
   _nativeSimulatePointer.address,
   _nativeSimulateInputText.address

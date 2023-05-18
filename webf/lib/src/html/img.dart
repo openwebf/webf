@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
@@ -89,7 +90,12 @@ class ImageElement extends Element {
 
   ImageStreamCompleterHandle? _completerHandle;
 
-  ImageElement([BindingContext? context]) : super(context) {}
+  ImageElement([BindingContext? context]) : super(context) {
+    // Add default event listener to make sure load or error event can be fired to the native side to release the keepAlive
+    // handler of HTMLImageElement.
+    BindingBridge.listenEvent(this, 'load');
+    BindingBridge.listenEvent(this, 'error');
+  }
 
   @override
   bool get isReplacedElement => true;
@@ -162,10 +168,7 @@ class ImageElement extends Element {
     // Stop and remove image stream reference.
     _stopListeningStream(keepStreamAlive: true);
     _cachedImageStream = null;
-
-    // Dispose [ImageStreamCompleter].
-    _completerHandle?.dispose();
-    _completerHandle = null;
+    _currentImageProvider = null;
 
     // Remove cached image info.
     _cachedImageInfo = null;
@@ -179,6 +182,7 @@ class ImageElement extends Element {
     if (renderBoxModel != null) {
       RenderReplaced renderReplaced = renderBoxModel as RenderReplaced;
       renderReplaced.child = null;
+      _renderImage?.image = null;
 
       ownerDocument.inactiveRenderObjects.add(_renderImage);
       _renderImage = null;
@@ -208,7 +212,6 @@ class ImageElement extends Element {
     _completerHandle?.dispose();
     _completerHandle = null;
     _cachedImageInfo = null;
-    await _currentImageProvider?.evict();
     _currentImageProvider = null;
   }
 
@@ -277,10 +280,10 @@ class ImageElement extends Element {
     if (entry.isIntersecting) {
       // Once appear remove the listener
       _removeIntersectionChangeListener();
+      _isInLazyRendering = false;
       await _decode();
       _loadImage();
       _listenToStream();
-      _isInLazyRendering = false;
     }
   }
 
@@ -392,11 +395,14 @@ class ImageElement extends Element {
     }
   }
 
+  bool _isImageEncoding = false;
+
   // https://html.spec.whatwg.org/multipage/images.html#decoding-images
   // Create an ImageStream that decodes the obtained image.
   // If imageElement has property size or width/height property on [renderStyle],
   // The image will be encoded into a small size for better rasterization performance.
-  Future<void> _decode({bool updateImageProvider = false}) {
+  Future<void> _decode({bool updateImageProvider = false}) async {
+    if (_isImageEncoding || _isInLazyLoading) return;
     Completer completer = Completer();
 
     // Make sure all style and properties are ready before decode begins.
@@ -418,16 +424,28 @@ class ImageElement extends Element {
       }
 
       // Try to make sure that this image can be encoded into a smaller size.
-      int? cachedWidth = width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
-      int? cachedHeight = height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
+      int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
+      int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
+
+      if (cachedWidth != null && cachedHeight != null) {
+        // If a image with the same URL has a fixed size, attempt to remove the previous unsized imageProvider from imageCache.
+        BoxFitImageKey previousUnSizedKey = BoxFitImageKey(
+          url: _resolvedUri!,
+          configuration: ImageConfiguration.empty,
+        );
+        PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
+      }
+
       ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
           ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
           : ImageConfiguration.empty;
       _updateSourceStream(provider.resolve(imageConfiguration));
 
+      _isImageEncoding = false;
       completer.complete();
     });
     SchedulerBinding.instance.scheduleFrame();
+    _isImageEncoding = true;
 
     return completer.future;
   }
@@ -457,9 +475,9 @@ class ImageElement extends Element {
   void _attachImage() {
     // Creates a disposable handle to this image. Holders of this [ui.Image] must dispose of
     // the image when they no longer need to access it or draw it.
-    ui.Image? clonedImage = _cachedImageInfo?.image.clone();
-    if (clonedImage != null) {
-      _renderImage?.image = clonedImage;
+    ui.Image? image = _cachedImageInfo?.image;
+    if (image != null) {
+      _renderImage?.image = image;
       _resizeImage();
     }
   }
@@ -512,10 +530,14 @@ class ImageElement extends Element {
     // attached to correct renderBoxModel
     if (!_isInLazyLoading) {
       // Image dimensions (width or height) should specified for performance when lazy-load.
-      if (_shouldLazyLoading) {
+      // If the _completerHandle are not null, there must be a imageProvider available in the imageCache.
+      if (_shouldLazyLoading && _completerHandle == null) {
         RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
         renderReplaced
           ?..isInLazyRendering = true
+        // Expand the intersecting area to preload images before they become visible to users.
+          ..intersectPadding = Rect.fromLTRB(ui.window.physicalSize.width, ui.window.physicalSize.height,
+              ui.window.physicalSize.width, ui.window.physicalSize.height)
           // When detach renderer, all listeners will be cleared.
           ..addIntersectionChangeListener(_handleIntersectionChange);
       } else {
@@ -582,7 +604,7 @@ class ImageElement extends Element {
   void _stylePropertyChanged(String property, String? original, String present, { String? baseHref }) {
     if (property == WIDTH || property == HEIGHT) {
       // Resize image
-      if (_shouldScaling) {
+      if (_shouldScaling && _resolvedUri != null) {
         _decode(updateImageProvider: true);
       } else {
         _resizeImage();

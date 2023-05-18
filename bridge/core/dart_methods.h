@@ -63,6 +63,13 @@ using MatchImageSnapshot = void (*)(void* callback_context,
                                     int32_t length,
                                     SharedNativeString* name,
                                     MatchImageSnapshotCallback callback);
+using MatchImageSnapshotBytes = void (*)(void* callback_context,
+                                         int32_t context_id,
+                                         uint8_t* image_a_bytes,
+                                         int32_t image_a_size,
+                                         uint8_t* image_b_bytes,
+                                         int32_t image_b_size,
+                                         MatchImageSnapshotCallback callback);
 using Environment = const char* (*)();
 
 #if ENABLE_PROFILE
@@ -102,6 +109,7 @@ struct DartMethodPointer {
   OnJSError onJsError{nullptr};
   OnJSLog onJsLog{nullptr};
   MatchImageSnapshot matchImageSnapshot{nullptr};
+  MatchImageSnapshotBytes matchImageSnapshotBytes{nullptr};
   Environment environment{nullptr};
   SimulatePointer simulatePointer{nullptr};
   SimulateInputText simulateInputText{nullptr};

@@ -69,6 +69,16 @@
 #include "qjs_pop_state_event.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
+#include "qjs_svg_element.h"
+#include "qjs_svg_g_element.h"
+#include "qjs_svg_geometry_element.h"
+#include "qjs_svg_graphics_element.h"
+#include "qjs_svg_path_element.h"
+#include "qjs_svg_rect_element.h"
+#include "qjs_svg_svg_element.h"
+#include "qjs_svg_text_content_element.h"
+#include "qjs_svg_text_element.h"
+#include "qjs_svg_text_positioning_element.h"
 #include "qjs_text.h"
 #include "qjs_touch.h"
 #include "qjs_touch_event.h"
@@ -155,6 +165,18 @@ void InstallBindings(ExecutingContext* context) {
   QJSPerformanceEntry::Install(context);
   QJSPerformanceMark::Install(context);
   QJSPerformanceMeasure::Install(context);
+
+  // SVG
+  QJSSVGElement::Install(context);
+  QJSSVGGraphicsElement::Install(context);
+  QJSSVGGeometryElement::Install(context);
+  QJSSVGSVGElement::Install(context);
+  QJSSVGRectElement::Install(context);
+  QJSSVGTextContentElement::Install(context);
+  QJSSVGTextPositioningElement::Install(context);
+  QJSSVGPathElement::Install(context);
+  QJSSVGTextElement::Install(context);
+  QJSSVGGElement::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

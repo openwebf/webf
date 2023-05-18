@@ -18,6 +18,7 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
+#include "core/svg/svg_element.h"
 #include "element_namespace_uris.h"
 #include "element_traversal.h"
 #include "event_factory.h"
@@ -25,6 +26,7 @@
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
 #include "qjs_document.h"
+#include "svg_element_factory.h"
 
 namespace webf {
 
@@ -90,7 +92,9 @@ Element* Document::createElementNS(const AtomicString& uri, const AtomicString& 
   }
 
   if (_uri == element_namespace_uris::ksvg) {
-    // TODO: add SVG in next commits
+    if (auto* element = SVGElementFactory::Create(qualified_name, *this)) {
+      return element;
+    }
   }
 
   return MakeGarbageCollected<Element>(_uri, qualified_name, prefix, this);
@@ -211,6 +215,20 @@ std::vector<Element*> Document::getElementsByName(const AtomicString& name, Exce
     return {};
   }
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
+}
+AtomicString Document::domain() {
+  NativeValue dart_result = this->GetBindingProperty(binding_call_methods::kdomain, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+void Document::setDomain(const AtomicString& value, ExceptionState& exception_state) {
+  SetBindingProperty(binding_call_methods::kdomain, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
+                     exception_state);
+}
+
+AtomicString Document::compatMode() {
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::kcompatMode, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
 }
 
 template <typename CharType>

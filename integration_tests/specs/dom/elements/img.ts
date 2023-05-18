@@ -154,13 +154,13 @@ describe('Tags img', () => {
     }) as HTMLImageElement;
     BODY.appendChild(img);
     let src = img.src;
-    expect(src).toBe('http://localhost:4567/public/assets/rabbit.png');
+    expect(src).toBe(`http://localhost:${location.port}/public/assets/rabbit.png`);
     // have to wait for asset load?
     await snapshot(0.1);
     img.src = 'assets/solidblue.png';
     await snapshot(0.1);
     src = img.src;
-    expect(src).toBe('http://localhost:4567/public/assets/solidblue.png');
+    expect(src).toBe(`http://localhost:${location.port}/public/assets/solidblue.png`);
     done();
   });
 

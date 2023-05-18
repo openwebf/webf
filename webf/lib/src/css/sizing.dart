@@ -6,6 +6,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/svg/rendering/shape.dart';
 
 // CSS Box Sizing: https://drafts.csswg.org/css-sizing-3/
 
@@ -192,6 +193,11 @@ mixin CSSSizingMixin on RenderStyle {
     if (renderBoxModel == null) return;
     RenderBoxModel boxModel = renderBoxModel!;
     boxModel.markNeedsLayout();
+    if (boxModel is RenderSVGShape) {
+      // should update svg shape based on width/height
+      boxModel.markNeedUpdateShape();
+    }
+
     // Sizing may affect parent size, mark parent as needsLayout in case
     // renderBoxModel has tight constraints which will prevent parent from marking.
     if (boxModel.parent is RenderBoxModel) {

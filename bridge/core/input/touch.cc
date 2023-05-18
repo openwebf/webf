@@ -40,6 +40,7 @@ Touch::Touch(ExecutingContext* context, const std::shared_ptr<TouchInit>& initia
 
 Touch::Touch(ExecutingContext* context, NativeTouch* native_touch)
     : ScriptWrappable(context->ctx()),
+      target_(DynamicTo<EventTarget>(BindingObject::From(native_touch->target))),
       identifier_(native_touch->identifier),
       clientX_(native_touch->clientX),
       clientY_(native_touch->clientY),

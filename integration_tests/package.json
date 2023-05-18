@@ -38,6 +38,7 @@
     "cookie-parser": "^1.4.6",
     "core-js": "^3.8.2",
     "lodash.flattendeep": "^4.4.0",
-    "node-html-parser": "^5.1.0"
+    "node-html-parser": "^5.1.0",
+    "svgo": "^3.0.2"
   }
 }

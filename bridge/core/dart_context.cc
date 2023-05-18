@@ -8,6 +8,7 @@
 #include "html_element_factory.h"
 #include "names_installer.h"
 #include "page.h"
+#include "svg_element_factory.h"
 
 namespace webf {
 
@@ -49,6 +50,7 @@ void DartContext::DisposeJSRuntime() {
   DefinedPropertiesInitializer::Dispose();
   names_installer::Dispose();
   HTMLElementFactory::Dispose();
+  SVGElementFactory::Dispose();
   EventFactory::Dispose();
   data_.reset();
   JS_FreeRuntime(runtime_);

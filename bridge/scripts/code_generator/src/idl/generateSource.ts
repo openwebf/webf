@@ -8,7 +8,7 @@ import {
   ParameterMode,
   PropsDeclaration,
 } from "./declaration";
-import {addIndent, getClassName} from "./utils";
+import {addIndent, getClassName, getWrapperTypeInfoNameOfClassName} from "./utils";
 import {ParameterType} from "./analyzer";
 import _ from 'lodash';
 import fs from 'fs';
@@ -336,7 +336,7 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
   if (declare.returnTypeMode?.dartImpl) {
     call = generateDartImplCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
   } else if (options.isInstanceMethod) {
-    call = `auto* self = toScriptWrappable<${getClassName(blob)}>(this_val);
+    call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
   } else {
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declare.name)}(context, ${[...previousArguments, `args_${argument.name}`].join(',')}, exception_state);`;
@@ -522,6 +522,7 @@ function readTemplate(name: string) {
 
 export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
   const baseTemplate = fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/base.cc.tpl'), {encoding: 'utf-8'});
+  const className = getClassName(blob)
 
   const contents = blob.objects.map(object => {
     const templateKind = getTemplateKind(object);
@@ -555,14 +556,14 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object.methods.forEach(addObjectMethods);
 
         if (object.construct) {
-          options.constructorInstallList.push(`{defined_properties::k${getClassName(blob)}.Impl(), nullptr, nullptr, constructor}`)
+          options.constructorInstallList.push(`{defined_properties::k${className}.Impl(), nullptr, nullptr, constructor}`)
         }
 
         let wrapperTypeRegisterList = [
-          `JS_CLASS_${_.snakeCase(getClassName(blob)).toUpperCase()}`,                        // ClassId
-          `"${getClassName(blob)}"`,                                                          // ClassName
+          `JS_CLASS_${getWrapperTypeInfoNameOfClassName(className)}`,                        // ClassId
+          `"${className}"`,                                                          // ClassName
           object.parent != null ? `${object.parent}::GetStaticWrapperTypeInfo()` : 'nullptr', // parentClassWrapper
-          object.construct ? `QJS${getClassName(blob)}::ConstructorCallback` : 'nullptr',     // ConstructorCallback
+          object.construct ? `QJS${className}::ConstructorCallback` : 'nullptr',     // ConstructorCallback
         ];
 
         // Generate indexed property callback.
@@ -604,10 +605,10 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         }
 
         options.wrapperTypeInfoInit = `
-const WrapperTypeInfo QJS${getClassName(blob)}::wrapper_type_info_ {${wrapperTypeRegisterList.join(', ')}};
-const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClassName(blob)}::wrapper_type_info_;`;
+const WrapperTypeInfo QJS${className}::wrapper_type_info_ {${wrapperTypeRegisterList.join(', ')}};
+const WrapperTypeInfo& ${className}::wrapper_type_info_ = QJS${className}::wrapper_type_info_;`;
         return _.template(readTemplate('interface'))({
-          className: getClassName(blob),
+          className,
           blob: blob,
           object: object,
           mixinObjects,
@@ -627,7 +628,7 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
       case TemplateKind.Dictionary: {
         let props = (object as ClassObject).props;
         return _.template(readTemplate('dictionary'))({
-          className: getClassName(blob),
+          className,
           blob: blob,
           props: props,
           object: object,
@@ -639,7 +640,7 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
         object = object as FunctionObject;
         options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}, ${object.declare.args.length}}`);
         return _.template(readTemplate('global_function'))({
-          className: getClassName(blob),
+          className,
           blob: blob,
           object: object,
           generateFunctionBody
@@ -651,7 +652,7 @@ const WrapperTypeInfo& ${getClassName(blob)}::wrapper_type_info_ = QJS${getClass
 
   return _.template(baseTemplate)({
     content: contents.join('\n'),
-    className: getClassName(blob),
+    className,
     blob: blob,
     ...options
   }).split('\n').filter(str => {

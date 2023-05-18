@@ -166,6 +166,8 @@
     "addColorStop",
     "createLinearGradient",
     "createRadialGradient",
-    "createPattern"
+    "createPattern",
+    "domain",
+    "compatMode",
   ]
 }
