@@ -40,4 +40,8 @@ describe('Document api', () => {
   it('document.compatMode', () => {
       expect(document.compatMode).not.toBeUndefined();
     });
+
+  it('document.readyState', () => {
+      expect(document.readyState).not.toBeUndefined();
+    });
 });
