@@ -69,10 +69,10 @@ class Document : public ContainerNode, public TreeScope {
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByName(const AtomicString& name, ExceptionState& exception_state);
 
-  AtomicString  domain();
+  AtomicString domain();
   void setDomain(const AtomicString& value, ExceptionState& exception_state);
-  AtomicString  compatMode();
-  AtomicString  readyState();
+  AtomicString compatMode();
+  AtomicString readyState();
 
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);
