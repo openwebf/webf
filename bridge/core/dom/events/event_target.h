@@ -209,6 +209,14 @@ class EventTargetWithInlineData : public EventTarget {
     GetDocument().SetWindowAttributeEventListener(event_type_names::symbol_name, listener, exception_state); \
   }
 
+#define DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                                      \
+  std::shared_ptr<EventListener> on##lower_name() {                                                          \
+    return GetWindowAttributeEventListener(event_type_names::symbol_name);                     \
+  }                                                                                                          \
+  void setOn##lower_name(const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state) {  \
+    SetWindowAttributeEventListener(event_type_names::symbol_name, listener, exception_state); \
+  }
+
 #define DEFINE_STATIC_WINDOW_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                                       \
   static std::shared_ptr<EventListener> on##lower_name(EventTarget& eventTarget) {                                   \
     if (Node* node = eventTarget.ToNode()) {                                                                         \

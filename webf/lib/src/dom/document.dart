@@ -203,8 +203,17 @@ class Document extends ContainerNode {
 
   set readyState(value) {
     if (value is DocumentReadyState) {
-      _readyState = resolveReadyState(value);
+      String readyStateValue = resolveReadyState(value);
+      if (readyStateValue != _readyState) {
+        _readyState = readyStateValue;
+        _dispatchReadyStateChangeEvent();
+      }
     }
+  }
+
+  void _dispatchReadyStateChangeEvent() {
+    Event event = Event(EVENT_READY_STATE_CHANGE);
+    defaultView.dispatchEvent(event);
   }
 
   String resolveReadyState(DocumentReadyState documentReadyState) {
