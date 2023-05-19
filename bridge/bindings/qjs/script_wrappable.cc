@@ -138,6 +138,15 @@ static int HandleJSPropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** pt
   return wrapper_type_info->property_enumerate_handler_(ctx, ptab, plen, obj);
 }
 
+/// This callback will be called when JS code delete properties on this object.
+/// Exp: delete obj['name']
+static int HandleJSPropertyDelete(JSContext* ctx, JSValueConst obj, JSAtom prop) {
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* wrapper_type_info = object->GetWrapperTypeInfo();
+
+  return wrapper_type_info->property_delete_handler_(ctx, obj, prop);
+}
+
 static int HandleJSGetOwnPropertyNames(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj) {
   // All props and methods are finded in prototype object of scriptwrappable.
   JSValue proto = JS_GetPrototype(ctx, obj);
@@ -225,6 +234,10 @@ void ScriptWrappable::InitializeQuickJSObject() {
       // Support iterate script wrappable defined properties.
       exotic_methods->get_own_property_names = HandleJSGetOwnPropertyNames;
       exotic_methods->get_own_property = HandleJSGetOwnProperty;
+    }
+
+    if (UNLIKELY(wrapper_type_info->property_delete_handler_ != nullptr)) {
+      exotic_methods->delete_property = HandleJSPropertyDelete;
     }
 
     def.exotic = exotic_methods;

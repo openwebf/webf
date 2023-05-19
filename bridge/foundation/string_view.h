@@ -11,6 +11,16 @@
 
 namespace webf {
 
+template <typename CharacterType>
+inline bool isASCIILower(CharacterType character) {
+  return character >= 'a' && character <= 'z';
+}
+
+template <typename CharacterType>
+inline CharacterType toASCIIUpper(CharacterType character) {
+  return character & ~(isASCIILower(character) << 5);
+}
+
 class StringView final {
  public:
   StringView() = delete;

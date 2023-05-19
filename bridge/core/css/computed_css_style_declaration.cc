@@ -30,6 +30,10 @@ bool ComputedCssStyleDeclaration::SetItem(const AtomicString& key,
   return true;
 }
 
+bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  return true;
+}
+
 int64_t ComputedCssStyleDeclaration::length() const {
   NativeValue result = GetBindingProperty(binding_call_methods::klength, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeInt64>::FromNativeValue(result);
