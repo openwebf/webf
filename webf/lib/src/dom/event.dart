@@ -38,6 +38,7 @@ const String EVENT_FOCUS = 'focus';
 const String EVENT_BLUR = 'blur';
 const String EVENT_LOAD = 'load';
 const String EVENT_DOM_CONTENT_LOADED = 'DOMContentLoaded';
+const String EVENT_READY_STATE_CHANGE = 'readystatechange';
 const String EVENT_UNLOAD = 'unload';
 const String EVENT_CHANGE = 'change';
 const String EVENT_CAN_PLAY = 'canplay';

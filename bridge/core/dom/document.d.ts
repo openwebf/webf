@@ -37,5 +37,6 @@ interface Document extends Node {
   querySelector(selectors: string): Element | null;
   querySelectorAll(selectors: string): Element[];
 
+  onreadystatechange: IDLEventHandler | null;
   new(): Document;
 }
