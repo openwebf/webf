@@ -110,6 +110,10 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   return true;
 }
 
+bool WidgetElement::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  return true;
+}
+
 bool WidgetElement::IsWidgetElement() const {
   return true;
 }

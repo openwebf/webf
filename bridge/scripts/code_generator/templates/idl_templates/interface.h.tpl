@@ -62,12 +62,12 @@ class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= c
   static JSValue StringPropertyGetterCallback(JSContext* ctx, JSValue obj, JSAtom key);
   <% } %>
   <% if (!object.indexedProp.readonly) { %>
-
     <% if (object.indexedProp.indexKeyType == 'number') { %>
   static bool IndexedPropertySetterCallback(JSContext* ctx, JSValueConst obj, uint32_t index, JSValueConst value);
     <% } else { %>
   static bool StringPropertySetterCallback(JSContext* ctx, JSValueConst obj, JSAtom key, JSValueConst value);
     <% } %>
+    static bool StringPropertyDeleterCallback(JSContext* ctx, JSValueConst obj, JSAtom key);
   <% } %>
  <% } %>
 };

@@ -96,6 +96,19 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     return success;
   };
     <% } %>
+     bool QJS<%= className %>::StringPropertyDeleterCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
+      auto* self = toScriptWrappable<<%= className %>>(obj);
+      ExceptionState exception_state;
+      MemberMutationScope scope{ExecutingContext::From(ctx)};
+      if (UNLIKELY(exception_state.HasException())) {
+        return false;
+      }
+      bool success = self->DeleteItem(AtomicString(ctx, key), exception_state);
+      if (UNLIKELY(exception_state.HasException())) {
+        return false;
+      }
+      return success;
+    };
   <% } %>
  <% } %>
 

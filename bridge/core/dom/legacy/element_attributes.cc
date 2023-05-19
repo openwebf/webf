@@ -110,6 +110,14 @@ bool ElementAttributes::IsEquivalent(const ElementAttributes& other) const {
   return true;
 }
 
+std::unordered_map<AtomicString, AtomicString>::iterator ElementAttributes::begin() {
+  return attributes_.begin();
+}
+
+std::unordered_map<AtomicString, AtomicString>::iterator ElementAttributes::end() {
+  return attributes_.end();
+}
+
 void ElementAttributes::Trace(GCVisitor* visitor) const {
   visitor->Trace(element_);
 }
