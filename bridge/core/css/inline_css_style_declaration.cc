@@ -10,15 +10,6 @@
 
 namespace webf {
 
-template <typename CharacterType>
-inline bool isASCIILower(CharacterType character) {
-  return character >= 'a' && character <= 'z';
-}
-
-template <typename CharacterType>
-inline CharacterType toASCIIUpper(CharacterType character) {
-  return character & ~(isASCIILower(character) << 5);
-}
 
 static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
   static std::unordered_map<std::string, std::string> propertyCache{};
@@ -80,6 +71,10 @@ bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
                                         ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   return InternalSetProperty(propertyName, value);
+}
+
+bool InlineCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  return true;
 }
 
 int64_t InlineCssStyleDeclaration::length() const {

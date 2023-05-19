@@ -40,6 +40,10 @@ bool TouchList::SetItem(uint32_t index, Touch* touch, ExceptionState& exception_
   return true;
 }
 
+bool TouchList::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  return true;
+}
+
 bool TouchList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
   uint32_t index = std::stoi(key.ToStdString(ctx()));
   return index >= 0 && index < values_.size();
