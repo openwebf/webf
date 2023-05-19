@@ -8,6 +8,7 @@ import {HTMLHtmlElement} from "../html/html_html_element";
 import {Element} from "./element";
 import {Event} from "./events/event";
 import {HTMLAllCollection} from "../html/html_all_collection";
+import {IDLEventHandler} from "../frame/window_event_handlers";
 
 interface Document extends Node {
   readonly all: HTMLAllCollection;
