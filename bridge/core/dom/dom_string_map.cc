@@ -32,6 +32,30 @@ static bool IsValidAttributeName(const AtomicString& name) {
   return true;
 }
 
+static bool PropertyNameMatchesAttributeName(const AtomicString& property_name,
+                                             const AtomicString& attribute_name,
+                                             unsigned property_length,
+                                             unsigned attribute_length) {
+  unsigned a = 5;
+  unsigned p = 0;
+  bool word_boundary = false;
+  while (a < attribute_length && p < property_length) {
+    if (attribute_name.Character8()[a] == '-' && a + 1 < attribute_length &&
+        IsASCIILower(attribute_name.Character8()[a + 1])) {
+      word_boundary = true;
+    } else {
+      if ((word_boundary ? ToASCIIUpper(attribute_name.Character8()[a])
+                         : std::tolower(attribute_name.Character8()[a])) != (property_name.Character8()[p]))
+        return false;
+      p++;
+      word_boundary = false;
+    }
+    a++;
+  }
+
+  return (a == attribute_length && p == property_length);
+}
+
 // This returns an AtomicString because attribute names are always stored
 // as AtomicString types in Element (see setAttribute()).
 static std::string ConvertPropertyNameToAttributeName(const std::string& name) {
@@ -94,8 +118,13 @@ bool DOMStringMap::NamedPropertyQuery(const webf::AtomicString& key, webf::Excep
 }
 
 AtomicString DOMStringMap::item(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-  auto attribute_name = AtomicString(ctx(), ConvertPropertyNameToAttributeName(key.ToStdString(ctx())));
-  return owner_element_->attributes()->getAttribute(attribute_name, exception_state);
+  for(auto &attribute : * owner_element_->attributes()) {
+    if (PropertyNameMatchesAttributeName(key, attribute.first, key.length(), attribute.first.length())) {
+      return attribute.second;
+    }
+  }
+
+  return AtomicString::Empty();
 }
 
 bool DOMStringMap::SetItem(const webf::AtomicString& key,
