@@ -37,7 +37,7 @@ static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
       continue;
     }
     if (toCamelCase) {
-      buffer[i - hyphen] = toASCIIUpper(c);
+      buffer[i - hyphen] = ToASCIIUpper(c);
       toCamelCase = false;
     } else {
       buffer[i - hyphen] = c;
