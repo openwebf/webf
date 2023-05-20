@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/rendering.dart';
 
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
@@ -139,7 +140,16 @@ mixin CSSBackgroundMixin on RenderStyle {
   CSSBackgroundBoundary? _backgroundClip;
   set backgroundClip(CSSBackgroundBoundary? value) {
     if (value == _backgroundClip) return;
+    final isTextLayout = _backgroundClip == CSSBackgroundBoundary.text ||
+                         value == CSSBackgroundBoundary.text;
     _backgroundClip = value;
+    if (isTextLayout) {
+      renderBoxModel?.visitChildren((child) {
+        if (child is RenderTextBox) {
+          child?.markRenderParagraphNeedsLayout();
+        }
+      });
+    }
     renderBoxModel?.markNeedsPaint();
   }
 
