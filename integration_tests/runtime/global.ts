@@ -41,6 +41,9 @@ function test(fn, title) {
   it(title, fn);
 }
 
+function ftest(fn, title) {
+  fit(title, fn);
+}
 function xtest(fn, title) {
   xit(title, fn)
 }
@@ -372,6 +375,7 @@ Object.assign(global, {
   nextFrames,
   snapshot,
   test,
+  ftest,
   xtest,
   assert_equals,
   assert_true,

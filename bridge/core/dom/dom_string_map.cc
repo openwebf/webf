@@ -32,6 +32,15 @@ static bool IsValidAttributeName(const AtomicString& name) {
   return true;
 }
 
+static bool IsValidPropertyName(const AtomicString& name) {
+  unsigned length = name.length();
+  for (unsigned i = 0; i < length; ++i) {
+    if (name.Character8()[i] == '-' && (i + 1 < length) && IsASCIILower(name.Character8()[i + 1]))
+      return false;
+  }
+  return true;
+}
+
 static bool PropertyNameMatchesAttributeName(const AtomicString& property_name,
                                              const AtomicString& attribute_name,
                                              unsigned property_length,
@@ -113,8 +122,12 @@ void DOMStringMap::NamedPropertyEnumerator(std::vector<AtomicString>& props, web
 }
 
 bool DOMStringMap::NamedPropertyQuery(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-  auto attribute_name = AtomicString(ctx(), ConvertPropertyNameToAttributeName(key.ToStdString(ctx())));
-  return owner_element_->attributes()->hasAttribute(attribute_name, exception_state);
+  for(auto &attribute : * owner_element_->attributes()) {
+    if (PropertyNameMatchesAttributeName(key, attribute.first, key.length(), attribute.first.length())) {
+      return true;
+    }
+  }
+  return false;
 }
 
 AtomicString DOMStringMap::item(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
@@ -130,14 +143,22 @@ AtomicString DOMStringMap::item(const webf::AtomicString& key, webf::ExceptionSt
 bool DOMStringMap::SetItem(const webf::AtomicString& key,
                            const webf::AtomicString& value,
                            webf::ExceptionState& exception_state) {
+  if (!IsValidPropertyName(key)) {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError, "'" + key.ToStdString(ctx()) + "' is not a valid property name.");
+    return false;
+  }
+
   auto attribute_name = AtomicString(ctx(), ConvertPropertyNameToAttributeName(key.ToStdString(ctx())));
   return owner_element_->attributes()->setAttribute(attribute_name, value, exception_state);
 }
 
 bool DOMStringMap::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-  auto attribute_name = AtomicString(ctx(), ConvertPropertyNameToAttributeName(key.ToStdString(ctx())));
-  owner_element_->attributes()->removeAttribute(attribute_name, exception_state);
-  return true;
+  if (IsValidPropertyName(key)) {
+    auto attribute_name = AtomicString(ctx(), ConvertPropertyNameToAttributeName(key.ToStdString(ctx())));
+    owner_element_->attributes()->removeAttribute(attribute_name, exception_state);
+    return true;
+  }
+  return false;
 }
 
 void DOMStringMap::Trace(webf::GCVisitor* visitor) const {
