@@ -69,7 +69,7 @@ static bool PropertyNameMatchesAttributeName(const AtomicString& property_name,
 // as AtomicString types in Element (see setAttribute()).
 static std::string ConvertPropertyNameToAttributeName(const std::string& name) {
   std::string result;
-  result.reserve(name.size() + 5); // For performance optimization, reserve enough space beforehand
+  result.reserve(name.size() + 5);  // For performance optimization, reserve enough space beforehand
   result.append("data-");
 
   unsigned length = name.length();
@@ -112,7 +112,7 @@ DOMStringMap::DOMStringMap(webf::Element* owner_element)
 
 void DOMStringMap::NamedPropertyEnumerator(std::vector<AtomicString>& props, webf::ExceptionState& exception_state) {
   auto attributes = owner_element_->attributes();
-  for (auto &attribute : *attributes) {
+  for (auto& attribute : *attributes) {
     auto key = attribute.first;
     if (IsValidAttributeName(key)) {
       auto v = AtomicString(ctx(), ConvertAttributeNameToPropertyName(key.ToStdString(ctx())));
@@ -122,7 +122,7 @@ void DOMStringMap::NamedPropertyEnumerator(std::vector<AtomicString>& props, web
 }
 
 bool DOMStringMap::NamedPropertyQuery(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-  for(auto &attribute : * owner_element_->attributes()) {
+  for (auto& attribute : *owner_element_->attributes()) {
     if (PropertyNameMatchesAttributeName(key, attribute.first, key.length(), attribute.first.length())) {
       return true;
     }
@@ -131,7 +131,7 @@ bool DOMStringMap::NamedPropertyQuery(const webf::AtomicString& key, webf::Excep
 }
 
 AtomicString DOMStringMap::item(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-  for(auto &attribute : * owner_element_->attributes()) {
+  for (auto& attribute : *owner_element_->attributes()) {
     if (PropertyNameMatchesAttributeName(key, attribute.first, key.length(), attribute.first.length())) {
       return attribute.second;
     }
@@ -144,7 +144,8 @@ bool DOMStringMap::SetItem(const webf::AtomicString& key,
                            const webf::AtomicString& value,
                            webf::ExceptionState& exception_state) {
   if (!IsValidPropertyName(key)) {
-    exception_state.ThrowException(ctx(), ErrorType::TypeError, "'" + key.ToStdString(ctx()) + "' is not a valid property name.");
+    exception_state.ThrowException(ctx(), ErrorType::TypeError,
+                                   "'" + key.ToStdString(ctx()) + "' is not a valid property name.");
     return false;
   }
 

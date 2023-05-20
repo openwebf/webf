@@ -10,7 +10,6 @@
 
 namespace webf {
 
-
 static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
   static std::unordered_map<std::string, std::string> propertyCache{};
 

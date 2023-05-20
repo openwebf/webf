@@ -27,7 +27,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
 
   AtomicString item(const AtomicString& key, ExceptionState& exception_state) override;
   bool SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) override;
-  bool DeleteItem(const webf::AtomicString &key, webf::ExceptionState &exception_state) override;
+  bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
   [[nodiscard]] int64_t length() const override;
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
