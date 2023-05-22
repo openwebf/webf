@@ -146,6 +146,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   list(APPEND QUICK_JS_SOURCE
+    # third_party/quickjs/src/libbf.c
     third_party/quickjs/src/cutils.c
     third_party/quickjs/src/libregexp.c
     third_party/quickjs/src/libunicode.c
@@ -187,11 +188,18 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-symbol.c
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
-
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
+  endif()
+
+  if(WIN32)
+    target_link_libraries(quickjs pthreadVC2)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+    target_compile_definitions(quickjs PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
+  else()
+    target_link_libraries(quickjs Threads::Threads)
   endif()
 
   if(WIN32)
@@ -208,6 +216,12 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   target_link_libraries(quickjs mimalloc-static)
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+
+  if (MSVC)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+  endif()
+
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
@@ -614,7 +628,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     PUBLIC_HEADER ${WEBF_PUBLIC_HEADERS}
     )
 
-  # If quickjs is static, there will be no quickjs.framework any more.
+  # If quickjs is static, there will be no quickjs.framework any more.1
   if(NOT DEFINED STATIC_QUICKJS)
     set_target_properties(quickjs PROPERTIES
       OUTPUT_NAME quickjs
