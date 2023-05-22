@@ -222,7 +222,7 @@ Window* Document::defaultView() const {
 }
 
 AtomicString Document::domain() {
-  NativeValue dart_result = this->GetBindingProperty(binding_call_methods::kdomain, ASSERT_NO_EXCEPTION());
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::kdomain, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
 }
 
@@ -233,6 +233,11 @@ void Document::setDomain(const AtomicString& value, ExceptionState& exception_st
 
 AtomicString Document::compatMode() {
   NativeValue dart_result = GetBindingProperty(binding_call_methods::kcompatMode, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+AtomicString Document::readyState() {
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::kreadyState, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
 }
 

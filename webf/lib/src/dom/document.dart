@@ -60,6 +60,7 @@ class _InactiveRenderObjects {
     _renderObjects.clear();
   }
 }
+enum DocumentReadyState { loading, interactive, complete}
 
 class Document extends ContainerNode {
   final WebFController controller;
@@ -79,6 +80,8 @@ class Document extends ContainerNode {
 
   String? _domain;
   final String _compatMode = 'CSS1Compat';
+
+  String? _readyState;
 
   @override
   bool get isConnected => true;
@@ -176,6 +179,7 @@ class Document extends ContainerNode {
     properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
     properties['compatMode'] = BindingObjectProperty(getter: () => compatMode,);
     properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
+    properties['readyState'] = BindingObjectProperty(getter: () => readyState,);
   }
 
   @override
@@ -189,6 +193,37 @@ class Document extends ContainerNode {
 
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
+    }
+  }
+
+  get readyState {
+    _readyState ??= 'loading';
+    return _readyState;
+  }
+
+  set readyState(value) {
+    if (value is DocumentReadyState) {
+      String readyStateValue = resolveReadyState(value);
+      if (readyStateValue != _readyState) {
+        _readyState = readyStateValue;
+        _dispatchReadyStateChangeEvent();
+      }
+    }
+  }
+
+  void _dispatchReadyStateChangeEvent() {
+    Event event = Event(EVENT_READY_STATE_CHANGE);
+    defaultView.dispatchEvent(event);
+  }
+
+  String resolveReadyState(DocumentReadyState documentReadyState) {
+    switch (documentReadyState) {
+      case DocumentReadyState.loading:
+        return 'loading';
+      case DocumentReadyState.interactive:
+        return 'interactive';
+      case DocumentReadyState.complete:
+        return 'complete';
     }
   }
 

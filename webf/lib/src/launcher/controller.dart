@@ -1156,6 +1156,7 @@ class WebFController {
     if (_view.document.isDelayingDOMContentLoadedEvent) return;
 
     _dispatchDOMContentLoadedEvent();
+    _view.document.readyState = DocumentReadyState.interactive;
 
     // Still waiting for images/scripts?
     if (_view.document.hasPendingRequest) return;
@@ -1169,6 +1170,7 @@ class WebFController {
     _isComplete = true;
 
     _dispatchWindowLoadEvent();
+    _view.document.readyState = DocumentReadyState.complete;
   }
 
   void _dispatchDOMContentLoadedEvent() {

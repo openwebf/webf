@@ -169,5 +169,6 @@
     "createPattern",
     "domain",
     "compatMode",
+    "readyState",
   ]
 }

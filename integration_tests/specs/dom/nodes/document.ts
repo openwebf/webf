@@ -44,4 +44,8 @@ describe('Document api', () => {
   it('document.defaultView', () => {
     expect(document.defaultView).toBe(window);
   });
+
+  it('document.readyState', () => {
+      expect(document.readyState).not.toBeUndefined();
+    });
 });

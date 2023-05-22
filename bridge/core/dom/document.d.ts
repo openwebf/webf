@@ -9,6 +9,7 @@ import {Element} from "./element";
 import {Event} from "./events/event";
 import {HTMLAllCollection} from "../html/html_all_collection";
 import {Window} from "../frame/window";
+import {IDLEventHandler} from "../frame/window_event_handlers";
 
 interface Document extends Node {
   readonly all: HTMLAllCollection;
@@ -21,6 +22,7 @@ interface Document extends Node {
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
   readonly compatMode: string;
+  readonly readyState: string;
   readonly defaultView: Window;
 
   createElement(tagName: string, options?: any): Element;
@@ -38,5 +40,6 @@ interface Document extends Node {
   querySelector(selectors: string): Element | null;
   querySelectorAll(selectors: string): Element[];
 
+  onreadystatechange: IDLEventHandler | null;
   new(): Document;
 }
