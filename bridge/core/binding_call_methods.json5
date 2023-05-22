@@ -170,5 +170,7 @@
     "domain",
     "compatMode",
     "readyState",
+    "visibilityState",
+    "hidden",
   ]
 }

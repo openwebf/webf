@@ -22,6 +22,8 @@ interface Document extends Node {
   readonly location: any;
   readonly compatMode: string;
   readonly readyState: string;
+  readonly visibilityState: DartImpl<string>;
+  readonly hidden: boolean;
 
   createElement(tagName: string, options?: any): Element;
   createElementNS(uri: string | null, tagName: string, options?: any): Element;
