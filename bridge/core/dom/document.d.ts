@@ -8,6 +8,7 @@ import {HTMLHtmlElement} from "../html/html_html_element";
 import {Element} from "./element";
 import {Event} from "./events/event";
 import {HTMLAllCollection} from "../html/html_all_collection";
+import {Window} from "../frame/window";
 
 interface Document extends Node {
   readonly all: HTMLAllCollection;
@@ -20,6 +21,7 @@ interface Document extends Node {
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
   readonly compatMode: string;
+  readonly defaultView: Window;
 
   createElement(tagName: string, options?: any): Element;
   createElementNS(uri: string | null, tagName: string, options?: any): Element;
