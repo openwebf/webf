@@ -707,6 +707,10 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
     _moduleManager = ModuleManager(controller, contextId);
   }
 
+  Future<void> initialize() async {
+    await _moduleManager.initialize();
+  }
+
   void dispose() {
     disposeTimer();
     disposeScheduleFrame();
@@ -877,6 +881,8 @@ class WebFController {
   final Queue<HistoryItem> previousHistoryStack = Queue();
   final Queue<HistoryItem> nextHistoryStack = Queue();
 
+  final Map<String, String> sessionStorage = {};
+
   HistoryModule get history => _module.moduleManager.getModule('History')!;
 
   static Uri fallbackBundleUri([int? id]) {
@@ -1018,12 +1024,18 @@ class WebFController {
     devToolsService?.dispose();
   }
 
-  String get origin => Uri.parse(url).origin;
+  String get origin {
+    Uri uri = Uri.parse(url);
+    return '${uri.scheme}://${uri.host}:${uri.port}';
+  }
 
   Future<void> executeEntrypoint(
       {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
     if (_entrypoint != null && shouldResolve) {
-      await _resolveEntrypoint();
+      await Future.wait([
+        _resolveEntrypoint(),
+        _module.initialize()
+      ]);
       if (_entrypoint!.isResolved && shouldEvaluate) {
         await _evaluateEntrypoint(animationController: animationController);
       } else {
