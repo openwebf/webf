@@ -591,6 +591,11 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
 
           wrapperTypeRegisterList.push('PropertyCheckerCallback');
           wrapperTypeRegisterList.push('PropertyEnumerateCallback');
+          if (!object.indexedProp.readonly) {
+            wrapperTypeRegisterList.push('StringPropertyDeleterCallback')
+          } else {
+            wrapperTypeRegisterList.push('nullptr');
+          }
         }
 
         let mixinParent = object.mixinParent;

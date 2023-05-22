@@ -239,6 +239,15 @@ DOMTokenList* Element::classList() {
   return element_data.GetClassList();
 }
 
+DOMStringMap* Element::dataset() {
+  ElementData& element_data = EnsureElementData();
+  if (element_data.DataSet() == nullptr) {
+    auto* data_set = MakeGarbageCollected<DOMStringMap>(this);
+    element_data.SetDataSet(data_set);
+  }
+  return element_data.DataSet();
+}
+
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {
   Element& clone = CloneWithoutAttributesAndChildren(document ? *document : GetDocument());
   assert(IsHTMLElement() == clone.IsHTMLElement());

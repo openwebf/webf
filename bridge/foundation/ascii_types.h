@@ -88,6 +88,16 @@ inline bool IsLowerASCII(const CharacterType* characters, size_t length) {
   return !contains_upper_case;
 }
 
+template <typename CharacterType>
+inline bool IsASCIILower(CharacterType character) {
+  return character >= 'a' && character <= 'z';
+}
+
+template <typename CharacterType>
+inline CharacterType ToASCIIUpper(CharacterType character) {
+  return character & ~(IsASCIILower(character) << 5);
+}
+
 }  // namespace webf
 
 #endif  // BRIDGE_FOUNDATION_ASCII_TYPES_H_

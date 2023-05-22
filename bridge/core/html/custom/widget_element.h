@@ -31,6 +31,7 @@ class WidgetElement : public HTMLElement {
 
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
+  bool DeleteItem(const AtomicString& key, ExceptionState& exception_state);
 
   bool IsWidgetElement() const override;
 

@@ -301,6 +301,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/element_data.cc
     core/dom/document.cc
     core/dom/dom_token_list.cc
+    core/dom/dom_string_map.cc
     core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
     core/dom/node_data.cc
@@ -427,6 +428,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_document.cc
     out/qjs_element.cc
     out/qjs_dom_token_list.cc
+    out/qjs_dom_string_map.cc
     out/qjs_element_attributes.cc
     out/qjs_character_data.cc
     out/qjs_comment.cc

@@ -86,6 +86,7 @@ enum {
   JS_CLASS_COMPUTED_CSS_STYLE_DECLARATION,
 
   JS_CLASS_DOM_TOKEN_LIST,
+  JS_CLASS_DOM_STRING_MAP,
 
   // SVG
   JS_CLASS_SVG_ELEMENT,
@@ -123,6 +124,10 @@ using IndexedPropertySetterHandler = bool (*)(JSContext* ctx, JSValueConst obj, 
 // exp: obj['hello'] = value;
 using StringPropertySetterHandler = bool (*)(JSContext* ctx, JSValueConst obj, JSAtom atom, JSValueConst value);
 
+// Callback when delete property using string or symbol.
+// exp: delete obj['hello']
+using StringPropertyDeleteHandler = bool (*)(JSContext* ctx, JSValueConst obj, JSAtom prop);
+
 // Callback when check property exist on object.
 // exp: 'hello' in obj;
 using PropertyCheckerHandler = bool (*)(JSContext* ctx, JSValueConst obj, JSAtom atom);
@@ -157,6 +162,7 @@ class WrapperTypeInfo final {
   StringPropertySetterHandler string_property_setter_handler_{nullptr};
   PropertyCheckerHandler property_checker_handler_{nullptr};
   PropertyEnumerateHandler property_enumerate_handler_{nullptr};
+  StringPropertyDeleteHandler property_delete_handler_{nullptr};
 };
 
 }  // namespace webf

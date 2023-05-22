@@ -9,6 +9,7 @@ interface Element extends Node, ParentNode {
   id: string;
   className: string;
   readonly classList: DOMTokenList;
+  readonly dataset: DOMStringMap;
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;
   readonly style: CSSStyleDeclaration;
