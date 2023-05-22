@@ -64,7 +64,7 @@ class _InactiveRenderObjects {
 enum DocumentReadyState { loading, interactive, complete}
 enum VisibilityState { visible, hidden}
 
-class Document extends ContainerNode implements ElementsBindingObserver {
+class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
   RenderViewportBox? _viewport;
@@ -224,7 +224,7 @@ class Document extends ContainerNode implements ElementsBindingObserver {
     return _visibilityState == VisibilityState.visible;
   }
 
-  void _visibilityChange(VisibilityState state) {
+  void visibilityChange(VisibilityState state) {
     _visibilityState = state;
     ownerDocument.dispatchEvent(Event('visibilitychange'));
   }
@@ -332,7 +332,6 @@ class Document extends ContainerNode implements ElementsBindingObserver {
         element.renderStyle.width = CSSLengthValue(viewport.viewportSize.width, CSSLengthType.PX);
         element.renderStyle.height = CSSLengthValue(viewport.viewportSize.height, CSSLengthType.PX);
         _visibilityState = VisibilityState.visible;
-        controller.view.addObserver(this);
       } else {
         // Detach document element.
         viewport.removeAll();
@@ -472,65 +471,12 @@ class Document extends ContainerNode implements ElementsBindingObserver {
 
   @override
   Future<void> dispose() async {
-    controller.view.removeObserver(this);
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
     super.dispose();
-  }
-
-  @override
-  void didChangeAccessibilityFeatures() {
-    // TODO: implement didChangeAccessibilityFeatures
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.resumed:
-        _visibilityChange(VisibilityState.visible);
-        break;
-      case AppLifecycleState.paused:
-        _visibilityChange(VisibilityState.hidden);
-        break;
-    }
-  }
-
-  @override
-  void didChangeLocales(List<Locale>? locale) {
-    // TODO: implement didChangeLocales
-  }
-
-  @override
-  void didChangeMetrics() {
-    // TODO: implement didChangeMetrics
-  }
-
-  @override
-  void didChangePlatformBrightness() {
-    // TODO: implement didChangePlatformBrightness
-  }
-
-  @override
-  void didChangeTextScaleFactor() {
-    // TODO: implement didChangeTextScaleFactor
-  }
-
-  @override
-  void didHaveMemoryPressure() {
-    // TODO: implement didHaveMemoryPressure
-  }
-
-  @override
-  Future<bool> didPopRoute() {
-    return Future<bool>.value(false);
-  }
-
-  @override
-  Future<bool> didPushRoute(String route) {
-    return Future<bool>.value(false);
   }
 
 }

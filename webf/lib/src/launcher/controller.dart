@@ -289,6 +289,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     } else {
       WidgetsBinding.instance.addObserver(this);
     }
+    addObserver(rootController);
   }
 
   void _teardownObserver() {
@@ -297,6 +298,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     } else {
       WidgetsBinding.instance.removeObserver(this);
     }
+    removeObserver(rootController);
   }
 
   // Attach kraken's renderObject to an renderObject.
@@ -728,7 +730,7 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
   }
 }
 
-class WebFController {
+class WebFController implements ElementsBindingObserver {
   static final SplayTreeMap<int, WebFController?> _controllerMap = SplayTreeMap();
   static final Map<String, int> _nameIdMap = {};
 
@@ -1205,4 +1207,57 @@ class WebFController {
     });
     SchedulerBinding.instance.scheduleFrame();
   }
+
+  @override
+  void didChangeAccessibilityFeatures() {
+    // TODO: implement didChangeAccessibilityFeatures
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _view.document.visibilityChange(VisibilityState.visible);
+        break;
+      case AppLifecycleState.paused:
+        _view.document.visibilityChange(VisibilityState.hidden);
+        break;
+    }
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locale) {
+    // TODO: implement didChangeLocales
+  }
+
+  @override
+  void didChangeMetrics() {
+    // TODO: implement didChangeMetrics
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    // TODO: implement didChangePlatformBrightness
+  }
+
+  @override
+  void didChangeTextScaleFactor() {
+    // TODO: implement didChangeTextScaleFactor
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    // TODO: implement didHaveMemoryPressure
+  }
+
+  @override
+  Future<bool> didPopRoute() {
+    return Future<bool>.value(false);
+  }
+
+  @override
+  Future<bool> didPushRoute(String route) {
+    return Future<bool>.value(false);
+  }
+
 }
