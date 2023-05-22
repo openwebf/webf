@@ -617,17 +617,17 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   @override
   void didChangeAccessibilityFeatures() {
-    // TODO: implement didChangeAccessibilityFeatures
+    for (ElementsBindingObserver observer in _observers) observer.didChangeAccessibilityFeatures();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // TODO: implement didChangeAppLifecycleState
+    for (ElementsBindingObserver observer in _observers) observer.didChangeAppLifecycleState(state);
   }
 
   @override
   void didChangeLocales(List<Locale>? locales) {
-    // TODO: implement didChangeLocales
+    for (ElementsBindingObserver observer in _observers) observer.didChangeLocales(locales);
   }
 
   ui.WindowPadding _prevViewInsets = ui.window.viewInsets;
@@ -662,32 +662,37 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       }
     }
     _prevViewInsets = ui.window.viewInsets;
+    for (ElementsBindingObserver observer in _observers) observer.didChangeMetrics();
   }
 
   @override
   void didChangePlatformBrightness() {
-    // TODO: implement didChangePlatformBrightness
+    for (ElementsBindingObserver observer in _observers) observer.didChangePlatformBrightness();
   }
 
   @override
   void didChangeTextScaleFactor() {
-    // TODO: implement didChangeTextScaleFactor
+    for (ElementsBindingObserver observer in _observers) observer.didChangeTextScaleFactor();
   }
 
   @override
   void didHaveMemoryPressure() {
-    // TODO: implement didHaveMemoryPressure
+    for (ElementsBindingObserver observer in _observers) observer.didHaveMemoryPressure();
   }
 
   @override
   Future<bool> didPopRoute() async {
-    // TODO: implement didPopRoute
+    for (ElementsBindingObserver observer in List<ElementsBindingObserver>.from(_observers)) {
+      if (await observer.didPopRoute()) return Future<bool>.value(true);
+    }
     return false;
   }
 
   @override
   Future<bool> didPushRoute(String route) async {
-    // TODO: implement didPushRoute
+    for (ElementsBindingObserver observer in List<ElementsBindingObserver>.from(_observers)) {
+      if (await observer.didPushRoute(route)) return Future<bool>.value(true);
+    }
     return false;
   }
 
@@ -696,6 +701,11 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     // TODO: implement didPushRouteInformation
     return false;
   }
+
+  final List<ElementsBindingObserver> _observers = <ElementsBindingObserver>[];
+  void addObserver(ElementsBindingObserver observer) => _observers.add(observer);
+  bool removeObserver(ElementsBindingObserver observer) => _observers.remove(observer);
+
 }
 
 // An controller designed to control kraken's functional modules.
