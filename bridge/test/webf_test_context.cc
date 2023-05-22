@@ -12,6 +12,7 @@
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
 #include "testframework.h"
+#include "qjs_blob.h"
 
 namespace webf {
 
