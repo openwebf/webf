@@ -25,8 +25,20 @@ struct UnitTestEnv {
 
 namespace webf {
 
-std::unique_ptr<WebFPage> TEST_init(OnJSError onJsError);
-std::unique_ptr<WebFPage> TEST_init();
+class WebFTestEnv {
+ public:
+  WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPage* page);
+  ~WebFTestEnv();
+
+  webf::WebFPage* page() { return page_; }
+
+ private:
+  webf::WebFPage* page_;
+  webf::DartIsolateContext* isolate_context_;
+};
+
+std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError);
+std::unique_ptr<WebFTestEnv> TEST_init();
 std::unique_ptr<WebFPage> TEST_allocateNewPage(OnJSError onJsError);
 void TEST_runLoop(ExecutingContext* context);
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError);

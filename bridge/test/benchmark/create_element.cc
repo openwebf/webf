@@ -8,10 +8,10 @@
 
 using namespace webf;
 
-auto bridge = TEST_init();
+auto env = TEST_init();
 
 static void CreateRawJavaScriptObjects(benchmark::State& state) {
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   uint8_t bytes[] = {1, 2, 2, 97, 12, 97, 97,  97, 46, 106, 115, 14, 0,   6, 0, 160, 1,  0,  1,
                      0, 1, 0, 0,  20, 1,  162, 1,  0,  0,   0,   63, 210, 0, 0, 0,   0,  62, 210,
                      0, 0, 0, 0,  11, 57, 210, 0,  0,  0,   195, 40, 166, 3, 1, 2,   31, 33};
@@ -22,7 +22,7 @@ static void CreateRawJavaScriptObjects(benchmark::State& state) {
 }
 
 static void CreateDivElement(benchmark::State& state) {
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   std::string code = R"(
 (() => {
 let container = document.createElement('div');
@@ -45,7 +45,7 @@ for(let i = 0; i < 1000; i ++) {
 }
 
 static void InsertElement(benchmark::State& state) {
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   std::string code = R"(
 (() => {
 let container = document.createElement('div');

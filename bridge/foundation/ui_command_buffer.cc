@@ -14,9 +14,13 @@ namespace webf {
 UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {}
 
 UICommandBuffer::~UICommandBuffer() {
+  if (UNLIKELY(!context_->dartIsolateContext()->valid())) {
+    return;
+  }
+
 #if FLUTTER_BACKEND
   // Flush and execute all disposeEventTarget commands when context released.
-  if (context_->dartMethodPtr()->flushUICommand != nullptr && !isDartHotRestart()) {
+  if (context_->dartMethodPtr()->flushUICommand != nullptr) {
     context_->dartMethodPtr()->flushUICommand(context_->contextId());
   }
 #endif
@@ -31,12 +35,12 @@ void UICommandBuffer::addCommand(UICommand type,
 }
 
 void UICommandBuffer::addCommand(const UICommandItem& item) {
+  if (UNLIKELY(!context_->dartIsolateContext()->valid())) {
+    return;
+  }
+
   if (size_ >= MAXIMUM_UI_COMMAND_SIZE) {
-    if (UNLIKELY(isDartHotRestart())) {
-      clear();
-    } else {
-      context_->FlushUICommand();
-    }
+    context_->FlushUICommand();
     assert(size_ == 0);
   }
 
