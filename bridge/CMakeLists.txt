@@ -546,12 +546,12 @@ target_include_directories(webf PRIVATE
 target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
-   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
-   else ()
-     ### remove dynamic_cast and exceptions
-     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
-   endif ()
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
+  else ()
+    ### remove dynamic_cast and exceptions
+    target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
+  endif ()
 endif ()
 
 ### webfStatic
@@ -618,7 +618,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     PUBLIC_HEADER ${WEBF_PUBLIC_HEADERS}
     )
 
-  # If quickjs is static, there will be no quickjs.framework any more.1
+  # If quickjs is static, there will be no quickjs.framework any more.
   if(NOT DEFINED STATIC_QUICKJS)
     set_target_properties(quickjs PROPERTIES
       OUTPUT_NAME quickjs
