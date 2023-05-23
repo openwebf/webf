@@ -60,8 +60,8 @@ class _InactiveRenderObjects {
     _renderObjects.clear();
   }
 }
-enum DocumentReadyState { loading, interactive, complete}
-enum VisibilityState { visible, hidden}
+enum DocumentReadyState { loading, interactive, complete }
+enum VisibilityState { visible, hidden }
 
 class Document extends ContainerNode {
   final WebFController controller;
