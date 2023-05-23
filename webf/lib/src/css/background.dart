@@ -146,7 +146,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     if (isTextLayout) {
       renderBoxModel?.visitChildren((child) {
         if (child is RenderTextBox) {
-          child?.markRenderParagraphNeedsLayout();
+          child.markRenderParagraphNeedsLayout();
         }
       });
     }
