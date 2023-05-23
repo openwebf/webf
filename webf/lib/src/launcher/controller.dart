@@ -289,7 +289,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     } else {
       WidgetsBinding.instance.addObserver(this);
     }
-    addObserver(rootController);
   }
 
   void _teardownObserver() {
@@ -298,7 +297,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     } else {
       WidgetsBinding.instance.removeObserver(this);
     }
-    removeObserver(rootController);
   }
 
   // Attach kraken's renderObject to an renderObject.
@@ -619,17 +617,32 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   @override
   void didChangeAccessibilityFeatures() {
-    for (ElementsBindingObserver observer in _observers) observer.didChangeAccessibilityFeatures();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    for (ElementsBindingObserver observer in _observers) observer.didChangeAppLifecycleState(state);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        document.visibilityChange(VisibilityState.visible);
+        break;
+      case AppLifecycleState.paused:
+        document.visibilityChange(VisibilityState.hidden);
+        break;
+      case AppLifecycleState.inactive:
+        if (document.visibilityState != VisibilityState.hidden) {
+          document.visibilityChange(VisibilityState.hidden);
+        }
+        break;
+      case AppLifecycleState.detached:
+        if (document.visibilityState != VisibilityState.hidden) {
+          document.visibilityChange(VisibilityState.hidden);
+        }
+        break;
+    }
   }
 
   @override
   void didChangeLocales(List<Locale>? locales) {
-    for (ElementsBindingObserver observer in _observers) observer.didChangeLocales(locales);
   }
 
   ui.WindowPadding _prevViewInsets = ui.window.viewInsets;
@@ -664,50 +677,35 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       }
     }
     _prevViewInsets = ui.window.viewInsets;
-    for (ElementsBindingObserver observer in _observers) observer.didChangeMetrics();
   }
 
   @override
   void didChangePlatformBrightness() {
-    for (ElementsBindingObserver observer in _observers) observer.didChangePlatformBrightness();
   }
 
   @override
   void didChangeTextScaleFactor() {
-    for (ElementsBindingObserver observer in _observers) observer.didChangeTextScaleFactor();
   }
 
   @override
   void didHaveMemoryPressure() {
-    for (ElementsBindingObserver observer in _observers) observer.didHaveMemoryPressure();
   }
 
   @override
   Future<bool> didPopRoute() async {
-    for (ElementsBindingObserver observer in List<ElementsBindingObserver>.from(_observers)) {
-      if (await observer.didPopRoute()) return Future<bool>.value(true);
-    }
+
     return false;
   }
 
   @override
   Future<bool> didPushRoute(String route) async {
-    for (ElementsBindingObserver observer in List<ElementsBindingObserver>.from(_observers)) {
-      if (await observer.didPushRoute(route)) return Future<bool>.value(true);
-    }
     return false;
   }
 
   @override
   Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
-    // TODO: implement didPushRouteInformation
     return false;
   }
-
-  final List<ElementsBindingObserver> _observers = <ElementsBindingObserver>[];
-  void addObserver(ElementsBindingObserver observer) => _observers.add(observer);
-  bool removeObserver(ElementsBindingObserver observer) => _observers.remove(observer);
-
 }
 
 // An controller designed to control kraken's functional modules.
@@ -726,7 +724,7 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
   }
 }
 
-class WebFController implements ElementsBindingObserver {
+class WebFController {
   static final SplayTreeMap<int, WebFController?> _controllerMap = SplayTreeMap();
   static final Map<String, int> _nameIdMap = {};
 
@@ -1195,61 +1193,4 @@ class WebFController implements ElementsBindingObserver {
     });
     SchedulerBinding.instance.scheduleFrame();
   }
-
-  @override
-  void didChangeAccessibilityFeatures() {
-    // TODO: implement didChangeAccessibilityFeatures
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.resumed:
-        _view.document.visibilityChange(VisibilityState.visible);
-        break;
-      case AppLifecycleState.paused:
-        _view.document.visibilityChange(VisibilityState.hidden);
-        break;
-      case AppLifecycleState.inactive:
-        break;
-      case AppLifecycleState.detached:
-        break;
-    }
-  }
-
-  @override
-  void didChangeLocales(List<Locale>? locale) {
-    // TODO: implement didChangeLocales
-  }
-
-  @override
-  void didChangeMetrics() {
-    // TODO: implement didChangeMetrics
-  }
-
-  @override
-  void didChangePlatformBrightness() {
-    // TODO: implement didChangePlatformBrightness
-  }
-
-  @override
-  void didChangeTextScaleFactor() {
-    // TODO: implement didChangeTextScaleFactor
-  }
-
-  @override
-  void didHaveMemoryPressure() {
-    // TODO: implement didHaveMemoryPressure
-  }
-
-  @override
-  Future<bool> didPopRoute() {
-    return Future<bool>.value(false);
-  }
-
-  @override
-  Future<bool> didPushRoute(String route) {
-    return Future<bool>.value(false);
-  }
-
 }
