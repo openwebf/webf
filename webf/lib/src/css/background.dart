@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/rendering.dart';
 
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
@@ -103,6 +104,7 @@ enum CSSBackgroundBoundary {
   borderBox,
   paddingBox,
   contentBox,
+  text
 }
 
 extension CSSBackgroundBoundaryText on CSSBackgroundBoundary {
@@ -114,6 +116,8 @@ extension CSSBackgroundBoundaryText on CSSBackgroundBoundary {
         return 'padding-box';
       case CSSBackgroundBoundary.contentBox:
         return 'content-box';
+      case CSSBackgroundBoundary.text:
+        return 'text';
     }
   }
 }
@@ -136,7 +140,16 @@ mixin CSSBackgroundMixin on RenderStyle {
   CSSBackgroundBoundary? _backgroundClip;
   set backgroundClip(CSSBackgroundBoundary? value) {
     if (value == _backgroundClip) return;
+    final isTextLayout = _backgroundClip == CSSBackgroundBoundary.text ||
+                         value == CSSBackgroundBoundary.text;
     _backgroundClip = value;
+    if (isTextLayout) {
+      renderBoxModel?.visitChildren((child) {
+        if (child is RenderTextBox) {
+          child?.markRenderParagraphNeedsLayout();
+        }
+      });
+    }
     renderBoxModel?.markNeedsPaint();
   }
 
@@ -638,6 +651,8 @@ class CSSBackground {
         return CSSBackgroundBoundary.paddingBox;
       case 'content-box':
         return CSSBackgroundBoundary.contentBox;
+      case 'text':
+        return CSSBackgroundBoundary.text;
       case 'border-box':
       default:
         return CSSBackgroundBoundary.borderBox;
