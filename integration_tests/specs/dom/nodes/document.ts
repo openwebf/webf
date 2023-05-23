@@ -52,4 +52,8 @@ describe('Document api', () => {
   it('document.hidden', () => {
       expect(document.hidden).not.toBeUndefined();
     });
+
+  it('document.defaultView', () => {
+    expect(document.defaultView).toBe(window);
+  });
 });
