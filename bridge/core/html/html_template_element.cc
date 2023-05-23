@@ -22,6 +22,10 @@ DocumentFragment* HTMLTemplateElement::ContentInternal() const {
   return content_.Get();
 }
 
+void HTMLTemplateElement::Trace(webf::GCVisitor* visitor) const {
+  visitor->Trace(content_);
+}
+
 bool HTMLTemplateElement::IsAttributeDefinedInternal(const AtomicString& key) const {
   return QJSHTMLTemplateElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
 }
