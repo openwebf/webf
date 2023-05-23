@@ -594,7 +594,7 @@ class CSSRenderStyle extends RenderStyle
         break;
       case STROKE:
       case FILL:
-        value = CSSPaint.parsePaint(propertyValue);
+        value = CSSPaint.parsePaint(propertyValue, renderStyle: renderStyle);
         break;
       case BOX_SHADOW:
         value = CSSBoxShadow.parseBoxShadow(propertyValue, renderStyle, propertyName);
