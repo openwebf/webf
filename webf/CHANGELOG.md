@@ -1,3 +1,17 @@
+## 0.14.0-beta.13
+
+* feat: add windows support.
+* feat: add multiple flutter engine support.
+* feat: add Element.querySelectorAll and Element.querySelector api.
+* feat: support document.domain and document.compatMode api.
+* feat: add localStorage and sessionStorage support.
+* feat: support document.readyState.
+* feat: add document.defaultView api.
+* feat: add Element.dataset api.
+* fix: fix crashed when access global functions with multiple parameters.
+* fix: fix reading target property on Touch caused crash.
+* fix: fix template element's content property cause mem leaks.
+
 ## 0.14.0-beta.12+1
 
 * fix: fix assertion error when reading scrollTop property at layout stage.
