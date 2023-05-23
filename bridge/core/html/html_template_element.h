@@ -21,6 +21,8 @@ class HTMLTemplateElement : public HTMLElement {
 
   bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
+  void Trace(webf::GCVisitor* visitor) const override;
+
  private:
   DocumentFragment* ContentInternal() const;
   mutable Member<DocumentFragment> content_;
