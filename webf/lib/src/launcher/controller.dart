@@ -1210,6 +1210,10 @@ class WebFController implements ElementsBindingObserver {
       case AppLifecycleState.paused:
         _view.document.visibilityChange(VisibilityState.hidden);
         break;
+      case AppLifecycleState.inactive:
+        break;
+      case AppLifecycleState.detached:
+        break;
     }
   }
 
