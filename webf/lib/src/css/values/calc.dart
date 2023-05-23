@@ -21,7 +21,7 @@ class CSSCalcValue {
   static CSSCalcValue? tryParse(RenderStyle renderStyle, String propertyName, String propertyValue) {
     if (CSSFunction.isFunction(propertyValue, functionName: CALC)) {
       List<CSSFunctionalNotation> fns = CSSFunction.parseFunction(propertyValue);
-      if (fns.first.args.isNotEmpty) {
+      if (fns.isNotEmpty && fns.first.args.isNotEmpty) {
         assert(fns.first.args.length == 1, 'Calc parameters count must be = 1');
         final expression = fns.first.args.first;
         final _CSSCalcParser parser = _CSSCalcParser(propertyName, renderStyle, expression);
@@ -95,6 +95,12 @@ class CalcVariableNode extends CalcExpressionNode {
     if (CSSLength.isLength(text)) {
       return CSSLength.parseLength(text, _renderStyle).computedValue;
     }
+
+    double? num = double.tryParse(text);
+    if (num != null) {
+      return num;
+    }
+
     return 0;
   }
 
