@@ -249,6 +249,7 @@ class StyleElement extends Element {
         _styleSheet = CSSParser(text).parse();
       }
       if (_styleSheet != null) {
+        ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
       }

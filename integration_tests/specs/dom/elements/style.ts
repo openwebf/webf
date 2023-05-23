@@ -61,4 +61,25 @@ describe('Tag style', () => {
       document.body.appendChild(div);
       await snapshot();
     });
+
+  it('add inline styles should works', async () => {
+    const style = document.createElement('style');
+    document.head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.textContent = 'this text should be red';
+    document.body.appendChild(div);
+
+    style.appendChild(document.createTextNode(`
+  :root {
+    --text-color: red;
+  }    
+ 
+  div {
+    color: var(--text-color)
+  }
+  `));
+
+    await snapshot();
+  });
 });
