@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ffi';
 import 'package:flutter/foundation.dart';
 import 'package:webf/module.dart';
 import 'package:webf/launcher.dart';
@@ -11,10 +12,21 @@ import 'binding.dart';
 import 'from_native.dart';
 import 'to_native.dart';
 
-bool _firstView = true;
 int _contextId = 0;
 
-int newContextId() { return ++_contextId; }
+int newContextId() {
+  return ++_contextId;
+}
+
+class DartContext {
+  DartContext() : pointer = initDartIsolateContext(makeDartMethodsData()) {
+    initDartDynamicLinking();
+    registerDartContextFinalizer(this);
+  }
+  final Pointer<Void> pointer;
+}
+
+DartContext dartContext = DartContext();
 
 /// Init bridge
 int initBridge(WebFViewController view) {
@@ -27,12 +39,6 @@ int initBridge(WebFViewController view) {
 
   if (kProfileMode) {
     PerformanceTiming.instance().mark(PERF_BRIDGE_REGISTER_DART_METHOD_END);
-  }
-
-  if (_firstView) {
-    List<int> dartMethods = makeDartMethodsData();
-    initDartContext(dartMethods);
-    _firstView = false;
   }
 
   int pageId = newContextId();

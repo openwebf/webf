@@ -12,14 +12,14 @@ using namespace webf;
 
 TEST(Context, isValid) {
   {
-    auto bridge = TEST_init();
-    EXPECT_EQ(bridge->GetExecutingContext()->IsContextValid(), true);
-    EXPECT_EQ(bridge->GetExecutingContext()->IsCtxValid(), true);
+    auto env = TEST_init();
+    EXPECT_EQ(env->page()->GetExecutingContext()->IsContextValid(), true);
+    EXPECT_EQ(env->page()->GetExecutingContext()->IsCtxValid(), true);
   }
   {
-    auto bridge = TEST_init();
-    EXPECT_EQ(bridge->GetExecutingContext()->IsContextValid(), true);
-    EXPECT_EQ(bridge->GetExecutingContext()->IsCtxValid(), true);
+    auto env = TEST_init();
+    EXPECT_EQ(env->page()->GetExecutingContext()->IsContextValid(), true);
+    EXPECT_EQ(env->page()->GetExecutingContext()->IsCtxValid(), true);
   }
 }
 
@@ -31,23 +31,23 @@ TEST(Context, evalWithError) {
                  "TypeError: cannot read property 'toString' of null\n"
                  "    at <eval> (file://:1:27)\n");
   };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   const char* code = "let object = null; object.toString();";
-  bridge->evaluateScript(code, strlen(code), "file://", 0);
+  env->page()->evaluateScript(code, strlen(code), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, true);
 }
 
 TEST(Context, recursionThrowError) {
   static bool errorHandlerExecuted = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   const char* code =
       "addEventListener('click', (evt) => {\n"
       "  console.log(1);\n"
       "});\n"
       "\n"
       "throw Error('foo');";
-  bridge->evaluateScript(code, strlen(code), "file://", 0);
+  env->page()->evaluateScript(code, strlen(code), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, true);
 }
 
@@ -61,7 +61,7 @@ TEST(Context, unrejectPromiseError) {
                  "    at Promise (native)\n"
                  "    at <eval> (file://:6:10)\n");
   };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   const char* code =
       " var p = new Promise(function (resolve, reject) {\n"
       "        var nullObject = null;\n"
@@ -70,14 +70,14 @@ TEST(Context, unrejectPromiseError) {
       "        resolve();\n"
       "    });\n"
       "\n";
-  bridge->evaluateScript(code, strlen(code), "file://", 0);
+  env->page()->evaluateScript(code, strlen(code), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, true);
 }
 
 TEST(Context, globalErrorHandlerTargetReturnToWindow) {
   static bool logCalled = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) {};
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
 
@@ -90,7 +90,7 @@ let oldError = new Error('1234');
 window.addEventListener('error', (e) => { console.log(e.type, e.target === window, window === globalThis, e.error === oldError) });
 throw oldError;
 )";
-  bridge->evaluateScript(code.c_str(), code.size(), "file://", 0);
+  env->page()->evaluateScript(code.c_str(), code.size(), "file://", 0);
   EXPECT_EQ(logCalled, true);
   webf::WebFPage::consoleMessageHandler = nullptr;
 }
@@ -106,7 +106,7 @@ TEST(Context, unrejectPromiseWillTriggerUnhandledRejectionEvent) {
                  "    at Promise (native)\n"
                  "    at <eval> (file://:14:9)\n");
   };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   static int logIndex = 0;
   static std::string logs[] = {"unhandled event {promise: Promise {...}, reason: Error {...}} true"};
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
@@ -129,7 +129,7 @@ var p = new Promise(function (resolve, reject) {
   resolve();
 });
 )";
-  bridge->evaluateScript(code.c_str(), code.size(), "file://", 0);
+  env->page()->evaluateScript(code.c_str(), code.size(), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, true);
   EXPECT_EQ(logCalled, true);
   EXPECT_EQ(logIndex, 1);
@@ -140,7 +140,7 @@ TEST(Context, handledRejectionWillNotTriggerUnHandledRejectionEvent) {
   static bool errorHandlerExecuted = false;
   static bool logCalled = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "rejected");
@@ -166,7 +166,7 @@ function generateRejectedPromise(isEventuallyHandled) {
 
 generateRejectedPromise(true);
 )";
-  bridge->evaluateScript(code.c_str(), code.size(), "file://", 0);
+  env->page()->evaluateScript(code.c_str(), code.size(), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, false);
   EXPECT_EQ(logCalled, true);
   webf::WebFPage::consoleMessageHandler = nullptr;
@@ -175,7 +175,7 @@ generateRejectedPromise(true);
 TEST(Context, unhandledRejectionEventWillTriggerWhenNotHandled) {
   static bool logCalled = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) {};
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "unhandledrejection fired: Error");
@@ -197,7 +197,7 @@ function generateRejectedPromise(isEventuallyHandled) {
 
 generateRejectedPromise(true);
 )";
-  bridge->evaluateScript(code.c_str(), code.size(), "file://", 0);
+  env->page()->evaluateScript(code.c_str(), code.size(), "file://", 0);
   EXPECT_EQ(logCalled, true);
   webf::WebFPage::consoleMessageHandler = nullptr;
 }
@@ -206,7 +206,7 @@ TEST(Context, handledRejectionEventWillTriggerWhenUnHandledRejectHandled) {
   static bool errorHandlerExecuted = false;
   static bool logCalled = false;
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
 
   std::string code = R"(
@@ -235,9 +235,9 @@ function generateRejectedPromise() {
 
 generateRejectedPromise();
 )";
-  bridge->evaluateScript(code.c_str(), code.size(), "file://", 0);
+  env->page()->evaluateScript(code.c_str(), code.size(), "file://", 0);
 
-  TEST_runLoop(bridge->GetExecutingContext());
+  TEST_runLoop(env->page()->GetExecutingContext());
   EXPECT_EQ(errorHandlerExecuted, false);
   EXPECT_EQ(logCalled, true);
   webf::WebFPage::consoleMessageHandler = nullptr;
@@ -256,8 +256,8 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
                  "    at <eval> (file://:6:10)\n");
   };
 
-  auto bridge = TEST_init(errorHandler);
-  auto bridge2 = TEST_allocateNewPage(errorHandler);
+  auto env = TEST_init(errorHandler);
+  auto env2 = TEST_init(errorHandler);
   const char* code =
       " var p = new Promise(function (resolve, reject) {\n"
       "        var nullObject = null;\n"
@@ -266,20 +266,20 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
       "        resolve();\n"
       "    });\n"
       "\n";
-  bridge->evaluateScript(code, strlen(code), "file://", 0);
-  bridge2->evaluateScript(code, strlen(code), "file://", 0);
+  env->page()->evaluateScript(code, strlen(code), "file://", 0);
+  env2->page()->evaluateScript(code, strlen(code), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, true);
   EXPECT_EQ(errorCalledCount, 2);
 }
 
 TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
-  initDartContext(mockedDartMethods.data(), mockedDartMethods.size());
+  void* dart_context = initDartIsolateContext(mockedDartMethods.data(), mockedDartMethods.size());
   uint32_t contextId = 0;
-  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPage(contextId));
+  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPage(dart_context, contextId));
   static bool disposed = false;
   page->disposeCallback = [](webf::WebFPage* bridge) { disposed = true; };
-  disposePage(page);
+  disposePage(dart_context, page);
   EXPECT_EQ(disposed, true);
 }
 
@@ -295,9 +295,9 @@ TEST(Context, window) {
     errorHandlerExecuted = true;
     WEBF_LOG(VERBOSE) << errmsg;
   };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   const char* code = "console.log(window == globalThis)";
-  bridge->evaluateScript(code, strlen(code), "file://", 0);
+  env->page()->evaluateScript(code, strlen(code), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -314,11 +314,11 @@ TEST(Context, windowInheritEventTarget) {
     errorHandlerExecuted = true;
     WEBF_LOG(VERBOSE) << errmsg;
   };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   const char* code =
       "console.log(window.addEventListener, addEventListener, globalThis.addEventListener, window.addEventListener === "
       "addEventListener)";
-  bridge->evaluateScript(code, strlen(code), "file://", 0);
+  env->page()->evaluateScript(code, strlen(code), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -332,51 +332,25 @@ TEST(Context, evaluateByteCode) {
   };
 
   auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
-  auto bridge = TEST_init(errorHandler);
+  auto env = TEST_init(errorHandler);
   const char* code = "function f() { console.log(arguments)} f(1,2,3,4);";
   size_t byteLen;
-  uint8_t* bytes = bridge->dumpByteCode(code, strlen(code), "vm://", &byteLen);
-  bridge->evaluateByteCode(bytes, byteLen);
+  uint8_t* bytes = env->page()->dumpByteCode(code, strlen(code), "vm://", &byteLen);
+  env->page()->evaluateByteCode(bytes, byteLen);
 
   EXPECT_EQ(errorHandlerExecuted, false);
   EXPECT_EQ(logCalled, true);
 }
 
 TEST(jsValueToNativeString, utf8String) {
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
-  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "helloworld");
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {});
+  JSValue str = JS_NewString(env->page()->GetExecutingContext()->ctx(), "helloworld");
   std::unique_ptr<webf::SharedNativeString> nativeString =
-      webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
+      webf::jsValueToNativeString(env->page()->GetExecutingContext()->ctx(), str);
   EXPECT_EQ(nativeString->length(), 10);
   uint8_t expectedString[10] = {104, 101, 108, 108, 111, 119, 111, 114, 108, 100};
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
   }
-  JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
+  JS_FreeValue(env->page()->GetExecutingContext()->ctx(), str);
 }
-
-// TEST(jsValueToNativeString, unicodeChinese) {
-//  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
-//  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "这是你的优乐美");
-//  std::unique_ptr<webf::SharedNativeString> nativeString =
-//      webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
-//  std::u16string expectedString = u"这是你的优乐美";
-//  EXPECT_EQ(nativeString->length(), expectedString.size());
-//  for (int i = 0; i < nativeString->length(); i++) {
-//    EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
-//  }
-//  JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
-//}
-//
-// TEST(jsValueToNativeString, emoji) {
-//  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {});
-//  JSValue str = JS_NewString(bridge->GetExecutingContext()->ctx(), "……🤪");
-//  std::unique_ptr<webf::SharedNativeString> nativeString =
-//      webf::jsValueToNativeString(bridge->GetExecutingContext()->ctx(), str);
-//  std::u16string expectedString = u"……🤪";
-//  EXPECT_EQ(nativeString->length(), expectedString.length());
-//  for (int i = 0; i < nativeString->length(); i++) {
-//    EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
-//  }
-//  JS_FreeValue(bridge->GetExecutingContext()->ctx(), str);
-//}

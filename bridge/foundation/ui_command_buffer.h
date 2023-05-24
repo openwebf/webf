@@ -51,8 +51,6 @@ struct UICommandItem {
   int64_t nativePtr2{0};
 };
 
-bool isDartHotRestart();
-
 class UICommandBuffer {
  public:
   UICommandBuffer() = delete;

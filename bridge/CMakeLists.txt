@@ -101,6 +101,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_type.cc
   foundation/ui_command_buffer.cc
   polyfill/dist/polyfill.cc
+  ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
 list(APPEND GUMBO_PARSER
@@ -124,6 +125,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
+  ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${ADDITIONAL_INCLUDE_DIRS}
   )
 
@@ -546,12 +548,12 @@ target_include_directories(webf PRIVATE
 target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
-   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
-   else ()
-     ### remove dynamic_cast and exceptions
-     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
-   endif ()
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
+  else ()
+    ### remove dynamic_cast and exceptions
+    target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
+  endif ()
 endif ()
 
 ### webfStatic
@@ -618,7 +620,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     PUBLIC_HEADER ${WEBF_PUBLIC_HEADERS}
     )
 
-  # If quickjs is static, there will be no quickjs.framework any more.1
+  # If quickjs is static, there will be no quickjs.framework any more.
   if(NOT DEFINED STATIC_QUICKJS)
     set_target_properties(quickjs PROPERTIES
       OUTPUT_NAME quickjs

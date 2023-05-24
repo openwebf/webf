@@ -15,11 +15,11 @@ TEST(MouseEvent, init) {
     EXPECT_STREQ(message.c_str(), "10");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = bridge->getContext();
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->getContext();
   const char* code =
       "let mouseEvent = new MouseEvent('click', {clientX: 10, clientY: 20}); console.log(mouseEvent.clientX);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);

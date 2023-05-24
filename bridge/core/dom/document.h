@@ -7,9 +7,9 @@
 
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
+#include "event_type_names.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
-#include "event_type_names.h"
 
 namespace webf {
 
@@ -70,12 +70,15 @@ class Document : public ContainerNode, public TreeScope {
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByName(const AtomicString& name, ExceptionState& exception_state);
 
+  Window* defaultView() const;
   AtomicString domain();
   void setDomain(const AtomicString& value, ExceptionState& exception_state);
   AtomicString compatMode();
 
-  AtomicString  readyState();
+  AtomicString readyState();
   DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);
+
+  bool hidden();
 
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);

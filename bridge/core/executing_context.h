@@ -56,7 +56,10 @@ bool isContextValid(int32_t contextId);
 class ExecutingContext {
  public:
   ExecutingContext() = delete;
-  ExecutingContext(DartContext* dart_context, int32_t contextId, JSExceptionHandler handler, void* owner);
+  ExecutingContext(DartIsolateContext* dart_isolate_context,
+                   int32_t contextId,
+                   JSExceptionHandler handler,
+                   void* owner);
   ~ExecutingContext();
 
   static ExecutingContext* From(JSContext* ctx);
@@ -115,10 +118,13 @@ class ExecutingContext {
 
   FORCE_INLINE Document* document() const { return document_; };
   FORCE_INLINE Window* window() const { return window_; }
-  FORCE_INLINE DartContext* dartContext() const { return dart_context_; };
+  FORCE_INLINE DartIsolateContext* dartIsolateContext() const { return dart_isolate_context_; };
   FORCE_INLINE Performance* performance() const { return performance_; }
   FORCE_INLINE UICommandBuffer* uiCommandBuffer() { return &ui_command_buffer_; };
-  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() { return dart_context_->dartMethodPtr(); }
+  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() {
+    assert(dart_isolate_context_->valid());
+    return dart_isolate_context_->dartMethodPtr();
+  }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.
@@ -157,14 +163,14 @@ class ExecutingContext {
   // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer
   // release.
   UICommandBuffer ui_command_buffer_{this};
-  DartContext* dart_context_{nullptr};
+  DartIsolateContext* dart_isolate_context_{nullptr};
   // Keep uiCommandBuffer above ScriptState to make sure we can collect all disposedEventTarget command when free
   // JSContext. When call JSFreeContext(ctx) inside ScriptState, all eventTargets will be finalized and UICommandBuffer
   // will be fill up to UICommand::disposeEventTarget commands.
   // ----------------------------------------------------------------------
   // All members above ScriptState will be freed after ScriptState freed
   // ----------------------------------------------------------------------
-  ScriptState script_state_{dart_context_};
+  ScriptState script_state_{dart_isolate_context_};
   // ----------------------------------------------------------------------
   // All members below will be free before ScriptState freed.
   // ----------------------------------------------------------------------

@@ -216,6 +216,11 @@ std::vector<Element*> Document::getElementsByName(const AtomicString& name, Exce
   }
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
+
+Window* Document::defaultView() const {
+  return GetExecutingContext()->window();
+}
+
 AtomicString Document::domain() {
   NativeValue dart_result = GetBindingProperty(binding_call_methods::kdomain, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
@@ -234,6 +239,11 @@ AtomicString Document::compatMode() {
 AtomicString Document::readyState() {
   NativeValue dart_result = GetBindingProperty(binding_call_methods::kreadyState, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+bool Document::hidden() {
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::khidden, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeBool>::FromNativeValue(dart_result);
 }
 
 template <typename CharType>

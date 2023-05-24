@@ -9,6 +9,7 @@ import {Element} from "./element";
 import {Event} from "./events/event";
 import {HTMLAllCollection} from "../html/html_all_collection";
 import {IDLEventHandler} from "../frame/window_event_handlers";
+import {Window} from "../frame/window";
 
 interface Document extends Node {
   readonly all: HTMLAllCollection;
@@ -22,6 +23,9 @@ interface Document extends Node {
   readonly location: any;
   readonly compatMode: string;
   readonly readyState: string;
+  readonly visibilityState: DartImpl<string>;
+  readonly hidden: boolean;
+  readonly defaultView: Window;
 
   createElement(tagName: string, options?: any): Element;
   createElementNS(uri: string | null, tagName: string, options?: any): Element;

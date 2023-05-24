@@ -15,15 +15,15 @@ TEST(HTMLElement, globalEventHandlerRegistered) {
     EXPECT_STREQ(message.c_str(), "1234");
     logCalled = true;
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div'); function f(){ console.log(1234); }; div.onclick = f; "
       "div.dispatchEvent(new Event('click'));";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
 }

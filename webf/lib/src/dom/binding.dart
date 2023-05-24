@@ -73,7 +73,7 @@ abstract class ElementsBindingObserver {
   /// settings.
   ///
   /// This method exposes notifications from [Window.onLocaleChanged].
-  void didChangeLocales(List<Locale> locale) {}
+  void didChangeLocales(List<Locale>? locale) {}
 
   /// Called when the system puts the app in the background or returns
   /// the app to the foreground.
@@ -192,7 +192,7 @@ mixin ElementsBinding
   /// notification is received.
   @protected
   @mustCallSuper
-  void dispatchLocalesChanged(List<Locale> locales) {
+  void dispatchLocalesChanged(List<Locale>? locales) {
     for (ElementsBindingObserver observer in _observers) observer.didChangeLocales(locales);
   }
 

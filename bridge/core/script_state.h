@@ -10,7 +10,7 @@
 
 namespace webf {
 
-class DartContext;
+class DartIsolateContext;
 
 // ScriptState is an abstraction class that holds all information about script
 // execution (e.g., JSContext etc). If you need any info about the script execution, you're expected to
@@ -19,7 +19,7 @@ class DartContext;
 class ScriptState {
  public:
   ScriptState() = delete;
-  ScriptState(DartContext* dart_context);
+  ScriptState(DartIsolateContext* dart_context);
   ~ScriptState();
 
   inline bool Invalid() const { return !ctx_invalid_; }
@@ -32,7 +32,7 @@ class ScriptState {
  private:
   bool ctx_invalid_{false};
   JSContext* ctx_{nullptr};
-  DartContext* dart_context_{nullptr};
+  DartIsolateContext* dart_isolate_context_{nullptr};
 };
 
 }  // namespace webf

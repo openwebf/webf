@@ -15,17 +15,17 @@ TEST(Element, setAttribute) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "1234");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "div.setAttribute('hello', 1234);"
       "document.body.appendChild(div);"
       "console.log(div.getAttribute('hello'))";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -37,11 +37,11 @@ TEST(Element, getAttribute) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "helloworld");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "let string = 'helloworld';"
@@ -53,7 +53,7 @@ TEST(Element, getAttribute) {
       "document.body.appendChild(div);"
       "console.log(div.getAttribute('hello'));"
       "console.log(otherDiv.getAttribute('hello'));";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
 }
@@ -65,17 +65,17 @@ TEST(Element, setAttributeWithHTML) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "100%");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "div.innerHTML = '<img src=\"https://miniapp-nikestore-demo.oss-cn-beijing.aliyuncs.com/white_shoes_v1.png\" "
       "style=\"width:100%;height:auto;\">';"
       "console.log(div.firstChild.style.width);";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
 
@@ -94,11 +94,11 @@ TEST(Element, outerHTML) {
                  "attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>");
 #endif
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   std::string code = R"(
 const div = document.createElement('div');
 div.style.width = '100px';
@@ -108,7 +108,7 @@ div.setAttribute('attr-key', 'attr-value');
 document.body.appendChild(div);
 console.log(div.outerHTML, div.innerHTML, document.body.innerHTML);
 )";
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
 
@@ -119,12 +119,12 @@ TEST(Element, style) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true false");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
   const char* code = "console.log('borderTop' in document.body.style, 'borderXXX' in document.body.style)";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
 
@@ -135,15 +135,15 @@ TEST(Element, instanceofNode) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "console.log(div instanceof Node)";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
@@ -156,15 +156,15 @@ TEST(Element, instanceofEventTarget) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto bridge = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = bridge->GetExecutingContext();
+  auto context = env->page()->GetExecutingContext();
   const char* code =
       "let div = document.createElement('div');"
       "console.log(div instanceof EventTarget)";
-  bridge->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);
