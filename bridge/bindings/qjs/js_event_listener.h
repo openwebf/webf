@@ -30,7 +30,9 @@ class JSEventListener final : public JSBasedEventListener {
 
   bool Matches(const EventListener& other) const override {
     const auto* other_listener = DynamicTo<JSEventListener>(other);
-    return other_listener && event_listener_ == other_listener->event_listener_;
+    return other_listener && event_listener_.get() && other_listener->event_listener_.get() &&
+         event_listener_.get() == other_listener->event_listener_.get();
+
   }
 
   void Trace(GCVisitor* visitor) const override;
