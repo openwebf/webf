@@ -1,28 +1,28 @@
 /*
-* Copyright (C) 1999 Lars Knoll (knoll@kde.org)
-*           (C) 1999 Antti Koivisto (koivisto@kde.org)
-*           (C) 2001 Dirk Mueller (mueller@kde.org)
-* Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Apple Inc. All
-* rights reserved.
-* Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies)
-* Copyright (C) 2009 Torch Mobile Inc. All rights reserved.
-* (http://www.torchmobile.com/)
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Library General Public
-* License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Library General Public License for more details.
-*
-* You should have received a copy of the GNU Library General Public License
-* along with this library; see the file COPYING.LIB.  If not, write to
-* the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-* Boston, MA 02110-1301, USA.
-*/
+ * Copyright (C) 1999 Lars Knoll (knoll@kde.org)
+ *           (C) 1999 Antti Koivisto (koivisto@kde.org)
+ *           (C) 2001 Dirk Mueller (mueller@kde.org)
+ * Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Apple Inc. All
+ * rights reserved.
+ * Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies)
+ * Copyright (C) 2009 Torch Mobile Inc. All rights reserved.
+ * (http://www.torchmobile.com/)
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
+ */
 
 /*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
@@ -233,7 +233,8 @@ static Node* ConvertNodesIntoNode(const Node* parent,
   return fragment;
 }
 
-void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, webf::ExceptionState& exception_state) {
+void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
+                   webf::ExceptionState& exception_state) {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (!this_node) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "This node type does not support this method.");
@@ -244,7 +245,8 @@ void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& no
     this_node->InsertBefore(node, this_node->firstChild(), exception_state);
 }
 
-void Node::append(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, webf::ExceptionState& exception_state) {
+void Node::append(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
+                  webf::ExceptionState& exception_state) {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (!this_node) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "This node type does not support this method.");
@@ -263,7 +265,8 @@ static bool IsNodeInNodes(const Node* const node, const std::vector<std::shared_
   return false;
 }
 
-static Node* FindViablePreviousSibling(const Node& node, const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes) {
+static Node* FindViablePreviousSibling(const Node& node,
+                                       const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes) {
   for (Node* sibling = node.previousSibling(); sibling; sibling = sibling->previousSibling()) {
     if (!IsNodeInNodes(sibling, nodes))
       return sibling;
@@ -279,7 +282,8 @@ static Node* FindViableNextSibling(const Node& node, const std::vector<std::shar
   return nullptr;
 }
 
-void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, webf::ExceptionState& exception_state) {
+void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
+                  webf::ExceptionState& exception_state) {
   ContainerNode* parent = parentNode();
   if (!parent)
     return;
@@ -290,7 +294,8 @@ void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nod
   }
 }
 
-void Node::after(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, webf::ExceptionState& exception_state) {
+void Node::after(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
+                 webf::ExceptionState& exception_state) {
   ContainerNode* parent = parentNode();
   if (!parent)
     return;
