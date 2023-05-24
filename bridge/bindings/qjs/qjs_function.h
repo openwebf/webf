@@ -42,8 +42,8 @@ class QJSFunction {
   // https://webidl.spec.whatwg.org/#invoke-a-callback-function
   ScriptValue Invoke(JSContext* ctx, const ScriptValue& this_val, int32_t argc, ScriptValue* arguments);
 
-  bool operator==(const QJSFunction& other) {
-    return JS_VALUE_GET_PTR(function_) == JS_VALUE_GET_PTR(other.function_);
+  friend bool operator==(const QJSFunction& lhs, const QJSFunction& rhs) {
+    return JS_VALUE_GET_PTR(lhs.function_) == JS_VALUE_GET_PTR(rhs.function_);
   };
 
   void Trace(GCVisitor* visitor) const;
