@@ -149,7 +149,7 @@ export function isPointerType(type: ParameterType): boolean {
   return false;
 }
 
-function getPointerType(type: ParameterType): string {
+export function getPointerType(type: ParameterType): string {
   if (typeof type.value === 'string') {
     return type.value;
   }
@@ -400,7 +400,7 @@ ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${min
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
 
-  let minimalRequiredCall = declaration.args.length == 0 ? call : `if (argc <= ${minimalRequiredArgc}) {
+  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (argc <= ${minimalRequiredArgc}) {
   ${call}
   break;
 }`;
