@@ -4,7 +4,13 @@ import {IDLBlob} from "./IDLBlob";
 import {getClassName} from "./utils";
 import fs from 'fs';
 import path from 'path';
-import {generateCoreTypeValue, generateRawTypeValue, isPointerType, isTypeHaveNull} from "./generateSource";
+import {
+  generateCoreTypeValue,
+  generateRawTypeValue,
+  getPointerType,
+  isPointerType,
+  isTypeHaveNull
+} from "./generateSource";
 import {GenerateOptions} from "./generator";
 import {ParameterType} from "./analyzer";
 import {
@@ -113,7 +119,8 @@ export function generateUnionTypeHeader(unionType: ParameterType): string {
     generateUnionMemberType,
     generateUnionMemberName,
     isTypeHaveNull,
-    isPointerType
+    isPointerType,
+    getPointerType,
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

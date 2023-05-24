@@ -10,8 +10,9 @@ import {Event} from "./events/event";
 import {HTMLAllCollection} from "../html/html_all_collection";
 import {IDLEventHandler} from "../frame/window_event_handlers";
 import {Window} from "../frame/window";
+import {ParentNode} from "./parent_node";
 
-interface Document extends Node {
+interface Document extends Node, ParentNode {
   readonly all: HTMLAllCollection;
   body: HTMLBodyElement | null;
   cookie: DartImpl<string>;

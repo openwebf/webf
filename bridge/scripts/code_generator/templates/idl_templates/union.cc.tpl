@@ -3,6 +3,9 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "core/html/html_image_element.h"
+#include "core/html/canvas/html_canvas_element.h"
+#include "core/html/canvas/canvas_gradient.h"
 #include "<%= generateUnionTypeFileName(unionType) %>.h"
 #include "bindings/qjs/converter_impl.h"
 #include "core/html/html_image_element.h"

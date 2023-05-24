@@ -6,6 +6,8 @@
 #include "binding_call_methods.h"
 #include "canvas_gradient.h"
 #include "foundation/native_value_converter.h"
+#include "core/html/html_image_element.h"
+#include "core/html/canvas/html_canvas_element.h"
 
 namespace webf {
 

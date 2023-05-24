@@ -1,4 +1,30 @@
 /*
+* Copyright (C) 1999 Lars Knoll (knoll@kde.org)
+*           (C) 1999 Antti Koivisto (koivisto@kde.org)
+*           (C) 2001 Dirk Mueller (mueller@kde.org)
+* Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Apple Inc. All
+* rights reserved.
+* Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies)
+* Copyright (C) 2009 Torch Mobile Inc. All rights reserved.
+* (http://www.torchmobile.com/)
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU Library General Public License
+* along with this library; see the file COPYING.LIB.  If not, write to
+* the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA 02110-1301, USA.
+*/
+
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
@@ -158,6 +184,119 @@ Node* Node::cloneNode(bool deep, ExceptionState&) const {
                          deep ? (clone_shadows_flag ? CloneChildrenFlag::kCloneWithShadows : CloneChildrenFlag::kClone)
                               : CloneChildrenFlag::kSkip);
   return new_node;
+}
+
+static Node* NodeOrStringToNode(const std::shared_ptr<QJSUnionDomStringNode>& node_or_string,
+                                Document& document,
+                                bool needs_trusted_types_check,
+                                ExceptionState& exception_state) {
+  if (!needs_trusted_types_check) {
+    // Without trusted type checks, we simply extract the string from whatever
+    // constituent type we find.
+    switch (node_or_string->GetContentType()) {
+      case QJSUnionDomStringNode::ContentType::kNode:
+        return node_or_string->GetAsNode();
+      case QJSUnionDomStringNode::ContentType::kDomString:
+        return Text::Create(document, node_or_string->GetAsDomString());
+    }
+    assert(false);
+    return nullptr;
+  }
+
+  // With trusted type checks, we can process trusted script or non-text nodes
+  // directly. Strings or text nodes need to be checked.
+  if (node_or_string->IsNode() && !node_or_string->GetAsNode()->IsTextNode())
+    return node_or_string->GetAsNode();
+
+  AtomicString string_value =
+      node_or_string->IsDomString() ? node_or_string->GetAsDomString() : node_or_string->GetAsNode()->textContent();
+
+  return Text::Create(document, string_value);
+}
+
+// Returns nullptr if an exception was thrown.
+static Node* ConvertNodesIntoNode(const Node* parent,
+                                  const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
+                                  Document& document,
+                                  ExceptionState& exception_state) {
+  if (nodes.size() == 1)
+    return NodeOrStringToNode(nodes[0], document, false, exception_state);
+
+  Node* fragment = DocumentFragment::Create(document);
+  for (const auto& node_or_string : nodes) {
+    Node* node = NodeOrStringToNode(node_or_string, document, false, exception_state);
+    if (node)
+      fragment->appendChild(node, exception_state);
+    if (exception_state.HasException())
+      return nullptr;
+  }
+  return fragment;
+}
+
+void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, webf::ExceptionState& exception_state) {
+  auto* this_node = DynamicTo<ContainerNode>(this);
+  if (!this_node) {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError, "This node type does not support this method.");
+    return;
+  }
+
+  if (Node* node = ConvertNodesIntoNode(this, nodes, GetDocument(), exception_state))
+    this_node->InsertBefore(node, this_node->firstChild(), exception_state);
+}
+
+void Node::append(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, webf::ExceptionState& exception_state) {
+  auto* this_node = DynamicTo<ContainerNode>(this);
+  if (!this_node) {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError, "This node type does not support this method.");
+    return;
+  }
+
+  if (Node* node = ConvertNodesIntoNode(this, nodes, GetDocument(), exception_state))
+    this_node->AppendChild(node, exception_state);
+}
+
+static bool IsNodeInNodes(const Node* const node, const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes) {
+  for (const std::shared_ptr<QJSUnionDomStringNode>& node_or_string : nodes) {
+    if (node_or_string->IsNode() && node_or_string->GetAsNode() == node)
+      return true;
+  }
+  return false;
+}
+
+static Node* FindViablePreviousSibling(const Node& node, const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes) {
+  for (Node* sibling = node.previousSibling(); sibling; sibling = sibling->previousSibling()) {
+    if (!IsNodeInNodes(sibling, nodes))
+      return sibling;
+  }
+  return nullptr;
+}
+
+static Node* FindViableNextSibling(const Node& node, const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes) {
+  for (Node* sibling = node.nextSibling(); sibling; sibling = sibling->nextSibling()) {
+    if (!IsNodeInNodes(sibling, nodes))
+      return sibling;
+  }
+  return nullptr;
+}
+
+void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, webf::ExceptionState& exception_state) {
+  ContainerNode* parent = parentNode();
+  if (!parent)
+    return;
+  Node* viable_previous_sibling = FindViablePreviousSibling(*this, nodes);
+  if (Node* node = ConvertNodesIntoNode(parent, nodes, GetDocument(), exception_state)) {
+    parent->InsertBefore(node, viable_previous_sibling ? viable_previous_sibling->nextSibling() : parent->firstChild(),
+                         exception_state);
+  }
+}
+
+void Node::after(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, webf::ExceptionState& exception_state) {
+  ContainerNode* parent = parentNode();
+  if (!parent)
+    return;
+  Node* viable_next_sibling = FindViableNextSibling(*this, nodes);
+  if (Node* node = ConvertNodesIntoNode(parent, nodes, GetDocument(), exception_state))
+    parent->InsertBefore(node, viable_next_sibling, exception_state);
 }
 
 bool Node::isEqualNode(Node* other, ExceptionState& exception_state) const {

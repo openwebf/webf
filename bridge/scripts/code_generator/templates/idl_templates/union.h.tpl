@@ -11,11 +11,14 @@
 #include "bindings/qjs/union_base.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
-#include "core/html/html_image_element.h"
-#include "core/html/canvas/html_canvas_element.h"
-#include "core/html/canvas/canvas_gradient.h"
 
 namespace webf {
+
+<% _.forEach(unionType, (type, index) => { %>
+  <% if (isPointerType(type)) { %>
+    class <%= getPointerType(type) %>;
+  <% } %>
+<% }); %>
 
 class <%= generateUnionTypeClassName(unionType) %> final : public UnionBase {
  public:
