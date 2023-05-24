@@ -12,8 +12,8 @@
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "node_data.h"
-#include "tree_scope.h"
 #include "qjs_union_dom_stringnode.h"
+#include "tree_scope.h"
 
 namespace webf {
 

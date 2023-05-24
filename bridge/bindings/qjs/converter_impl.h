@@ -315,9 +315,9 @@ struct Converter<IDLSequence<T>> : public ConverterBase<IDLSequence<T>> {
   };
 
   static ImplType ArgumentsValue(ExecutingContext* context,
-                                             JSValue value,
-                                             uint32_t argv_index,
-                                             ExceptionState& exception_state) {
+                                 JSValue value,
+                                 uint32_t argv_index,
+                                 ExceptionState& exception_state) {
     assert(!JS_IsException(value));
     if (JS_IsArray(context->ctx(), value)) {
       return FromValue(context->ctx(), value, exception_state);
