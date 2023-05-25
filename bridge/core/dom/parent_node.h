@@ -6,6 +6,7 @@
 #ifndef BRIDGE_BINDINGS_QJS_BOM_PARENT_NODE_H_
 #define BRIDGE_BINDINGS_QJS_BOM_PARENT_NODE_H_
 
+#include <cstdint>
 #include <vector>
 #include "foundation/macros.h"
 

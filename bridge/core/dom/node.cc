@@ -257,6 +257,18 @@ void Node::append(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nod
     this_node->AppendChild(node, exception_state);
 }
 
+void Node::append(ExceptionState& exception_state) {
+  append(std::vector<std::shared_ptr<QJSUnionDomStringNode>>(), exception_state);
+}
+
+void Node::before(ExceptionState& exception_state) {
+  before(std::vector<std::shared_ptr<QJSUnionDomStringNode>>(), exception_state);
+}
+
+void Node::after(webf::ExceptionState& exception_state) {
+  after(std::vector<std::shared_ptr<QJSUnionDomStringNode>>(), exception_state);
+}
+
 static bool IsNodeInNodes(const Node* const node, const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes) {
   for (const std::shared_ptr<QJSUnionDomStringNode>& node_or_string : nodes) {
     if (node_or_string->IsNode() && node_or_string->GetAsNode() == node)

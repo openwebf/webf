@@ -108,6 +108,7 @@ class FileStorage implements Storage {
 
   @override
   void writeSync(String key, String value) {
+    if (key.isEmpty) return;
     _makeCookieDirSync();
     final file = File('$_curDir$key');
     if (writePreHandler != null) {

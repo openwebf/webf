@@ -4,8 +4,9 @@ import {ScrollToOptions} from "./scroll_to_options";
 import { ElementAttributes } from './legacy/element_attributes';
 import {CSSStyleDeclaration} from "../css/css_style_declaration";
 import {ParentNode} from "./parent_node";
+import {ChildNode} from "./child_node";
 
-interface Element extends Node, ParentNode {
+interface Element extends Node, ParentNode, ChildNode {
   id: string;
   className: string;
   readonly classList: DOMTokenList;
