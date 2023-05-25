@@ -12,7 +12,5 @@ export interface ParentNode {
   readonly childElementCount: int64;
 
   prepend(...node: (string | Node)[]): void;
-  append(...node: (string | Node)[]): void;
-  before(...node: (string | Node)[]): void;
-  after(...node: (string | Node)[]): void;
+  append(...node: (string | Node) []): void;
 }

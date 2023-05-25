@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
+#include "comment.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
@@ -443,6 +444,8 @@ std::string Element::innerHTML() {
       s += element->outerHTML();
     } else if (auto* text = DynamicTo<Text>(child)) {
       s += text->data().ToStdString(ctx());
+    } else if (auto* comment = DynamicTo<Comment>(child)) {
+      s += "<!--" + comment->data().ToStdString(ctx()) + "-->";
     }
     child = child->nextSibling();
   }

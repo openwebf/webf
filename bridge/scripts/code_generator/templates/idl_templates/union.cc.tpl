@@ -24,9 +24,16 @@ std::shared_ptr<<%= generateUnionTypeClassName(unionType) %>> <%= generateUnionT
       return std::make_shared<<%= generateUnionTypeClassName(unionType) %>>(v);
     }
     <% } %>
-
   <% }) %>
+<% if(isTypeHaveString(unionType)) { %>
+  auto&& v = Converter<IDLDOMString>::FromValue(ctx, value, exception_state);
+  if (UNLIKELY(exception_state.HasException())) {
+    return nullptr;
+  }
+  return std::make_shared<<%= generateUnionTypeClassName(unionType) %>>(v);
+<% } else { %>
   return nullptr;
+<% } %>
 }
 
 <% _.forEach(unionType, (type) => { %>

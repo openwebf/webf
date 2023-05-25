@@ -34,6 +34,10 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
     if (m.required) requiredArgsCount++;
   });
 
+  if (requiredArgsCount > 0 && m.args[0].isDotDotDot) {
+    return '';
+  }
+
   return `  if (argc < ${requiredArgsCount}) {
     return JS_ThrowTypeError(ctx, "Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but %d present.", argc);
   }
@@ -136,6 +140,16 @@ export function isTypeHaveNull(type: ParameterType): boolean {
     return type.value === FunctionArgumentType.null;
   }
   return type.value.some(t => t.value === FunctionArgumentType.null);
+}
+
+export function isTypeHaveString(types: ParameterType[]): boolean {
+  return types.some(t => {
+    if (t.isArray) return isTypeHaveString(t.value as ParameterType[]);
+    if (!Array.isArray(t.value)) {
+      return t.value === FunctionArgumentType.dom_string;
+    }
+    return t.value.some(t => t.value === FunctionArgumentType.dom_string);
+  });
 }
 
 export function isPointerType(type: ParameterType): boolean {
@@ -287,10 +301,10 @@ function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number
   let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0;
 
   let body = '';
-  if (hasArgumentCheck) {
-    body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`;
-  } else if (argument.isDotDotDot) {
+  if (argument.isDotDotDot) {
     body = `Converter<${type}>::FromValue(ctx, argv + ${argsIndex}, argc - ${argsIndex}, exception_state)`
+  } else if (hasArgumentCheck) {
+    body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`;
   } else {
     body = `Converter<${type}>::FromValue(ctx, argv[${argsIndex}], exception_state)`;
   }
@@ -677,7 +691,8 @@ export function generateUnionTypeSource(unionType: ParameterType): string {
     generateUnionConstructorImpl,
     generateUnionTypeSetter,
     getUnionTypeName,
-    isTypeHaveNull
+    isTypeHaveNull,
+    isTypeHaveString
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');
