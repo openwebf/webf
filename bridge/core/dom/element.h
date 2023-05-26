@@ -77,6 +77,7 @@ class Element : public ContainerNode {
 
   Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
   std::vector<Element*> querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state);
+  bool matches(const AtomicString& selectors, ExceptionState& exception_state);
 
   InlineCssStyleDeclaration* style();
   InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();

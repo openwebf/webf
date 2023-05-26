@@ -215,6 +215,15 @@ std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, E
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
 
+bool Element::matches(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kmatches, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return false;
+  }
+  return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+}
+
 InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
