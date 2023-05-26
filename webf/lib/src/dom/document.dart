@@ -60,7 +60,8 @@ class _InactiveRenderObjects {
     _renderObjects.clear();
   }
 }
-enum DocumentReadyState { loading, interactive, complete}
+enum DocumentReadyState { loading, interactive, complete }
+enum VisibilityState { visible, hidden }
 
 class Document extends ContainerNode {
   final WebFController controller;
@@ -82,6 +83,7 @@ class Document extends ContainerNode {
   final String _compatMode = 'CSS1Compat';
 
   String? _readyState;
+  VisibilityState _visibilityState = VisibilityState.hidden;
 
   @override
   bool get isConnected => true;
@@ -180,6 +182,8 @@ class Document extends ContainerNode {
     properties['compatMode'] = BindingObjectProperty(getter: () => compatMode,);
     properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
     properties['readyState'] = BindingObjectProperty(getter: () => readyState,);
+    properties['visibilityState'] = BindingObjectProperty(getter: () => visibilityState,);
+    properties['hidden'] = BindingObjectProperty(getter: () => hidden,);
   }
 
   @override
@@ -209,6 +213,19 @@ class Document extends ContainerNode {
         _dispatchReadyStateChangeEvent();
       }
     }
+  }
+
+  get visibilityState {
+    return _visibilityState.name;
+  }
+
+  get hidden {
+    return _visibilityState == VisibilityState.visible;
+  }
+
+  void visibilityChange(VisibilityState state) {
+    _visibilityState = state;
+    ownerDocument.dispatchEvent(Event('visibilitychange'));
   }
 
   void _dispatchReadyStateChangeEvent() {
@@ -313,6 +330,7 @@ class Document extends ContainerNode {
         // Init with viewport size.
         element.renderStyle.width = CSSLengthValue(viewport.viewportSize.width, CSSLengthType.PX);
         element.renderStyle.height = CSSLengthValue(viewport.viewportSize.height, CSSLengthType.PX);
+        _visibilityState = VisibilityState.visible;
       } else {
         // Detach document element.
         viewport.removeAll();
@@ -459,4 +477,5 @@ class Document extends ContainerNode {
     cookie.clearCookie();
     super.dispose();
   }
+
 }

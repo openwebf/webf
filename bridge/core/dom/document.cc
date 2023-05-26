@@ -241,6 +241,11 @@ AtomicString Document::readyState() {
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
 }
 
+bool Document::hidden() {
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::khidden, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeBool>::FromNativeValue(dart_result);
+}
+
 template <typename CharType>
 static inline bool IsValidNameASCII(const CharType* characters, unsigned length) {
   CharType c = characters[0];

@@ -202,14 +202,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     target_link_libraries(quickjs Threads::Threads)
   endif()
 
-  if(WIN32)
-    target_link_libraries(quickjs pthreadVC2)
-    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
-    target_compile_definitions(quickjs PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
-  else()
-    target_link_libraries(quickjs Threads::Threads)
-  endif()
-
   set(MI_OVERRIDE OFF)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
@@ -558,12 +550,12 @@ target_include_directories(webf PRIVATE
 target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
-   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
-   else ()
-     ### remove dynamic_cast and exceptions
-     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
-   endif ()
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
+  else ()
+    ### remove dynamic_cast and exceptions
+    target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
+  endif ()
 endif ()
 
 ### webfStatic

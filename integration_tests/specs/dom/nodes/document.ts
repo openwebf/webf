@@ -48,4 +48,16 @@ describe('Document api', () => {
   it('document.readyState', () => {
       expect(document.readyState).not.toBeUndefined();
     });
+
+  it('document.visibilityState', () => {
+      expect(document.visibilityState).not.toBeUndefined();
+    });
+
+  it('document.hidden', () => {
+      expect(document.hidden).not.toBeUndefined();
+    });
+
+  it('document.defaultView', () => {
+    expect(document.defaultView).toBe(window);
+  });
 });

@@ -857,6 +857,7 @@ class CSSParser {
         case TokenKind.PLUS:
         case TokenKind.MINUS:
         case TokenKind.INTEGER:
+        case TokenKind.PERCENT:
         case TokenKind.DOUBLE:
           termToken = _next();
           expressions.add(termToken.text);

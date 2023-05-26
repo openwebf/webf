@@ -617,17 +617,26 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   @override
   void didChangeAccessibilityFeatures() {
-    // TODO: implement didChangeAccessibilityFeatures
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // TODO: implement didChangeAppLifecycleState
+    switch (state) {
+      case AppLifecycleState.resumed:
+        document.visibilityChange(VisibilityState.visible);
+        break;
+      case AppLifecycleState.paused:
+        document.visibilityChange(VisibilityState.hidden);
+        break;
+      case AppLifecycleState.inactive:
+        break;
+      case AppLifecycleState.detached:
+        break;
+    }
   }
 
   @override
   void didChangeLocales(List<Locale>? locales) {
-    // TODO: implement didChangeLocales
   }
 
   ui.WindowPadding _prevViewInsets = ui.window.viewInsets;
@@ -666,34 +675,29 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   @override
   void didChangePlatformBrightness() {
-    // TODO: implement didChangePlatformBrightness
   }
 
   @override
   void didChangeTextScaleFactor() {
-    // TODO: implement didChangeTextScaleFactor
   }
 
   @override
   void didHaveMemoryPressure() {
-    // TODO: implement didHaveMemoryPressure
   }
 
   @override
   Future<bool> didPopRoute() async {
-    // TODO: implement didPopRoute
+
     return false;
   }
 
   @override
   Future<bool> didPushRoute(String route) async {
-    // TODO: implement didPushRoute
     return false;
   }
 
   @override
   Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
-    // TODO: implement didPushRouteInformation
     return false;
   }
 }

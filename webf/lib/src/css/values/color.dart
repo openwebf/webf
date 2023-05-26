@@ -169,9 +169,9 @@ const Map<String, int> _namedColors = {
 // ignore: public_member_api_docs
 final _colorHexRegExp = RegExp(r'^#([a-f0-9]{3,8})$', caseSensitive: false);
 final _colorHslRegExp =
-    RegExp(r'^(hsla?)\(([0-9.-]+)(deg|rad|grad|turn)?[,\s]+([0-9.]+%)[,\s]+([0-9.]+%)([,\s/]+([0-9.]+%?))?\s*\)$');
+    RegExp(r'^([0-9.-]+)(deg|rad|grad|turn)?[,\s]+([0-9.]+%)[,\s]+([0-9.]+%)([,\s/]+([0-9.]+%?))?\s*$');
 final _colorRgbRegExp =
-    RegExp(r'^(rgba?)\(([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)([,\s/]+([+-]?[^\s,]+%?))?\s*\)$');
+    RegExp(r'^([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)([,\s/]+([+-]?[^\s,]+%?))?\s*$');
 
 final LinkedLruHashMap<String, Color> _cachedParsedColor = LinkedLruHashMap(maximumSize: 100);
 
@@ -188,7 +188,9 @@ class CSSColor {
   static const Color initial = Color(0xFF000000);
   static const String INITIAL_COLOR = 'black';
   static const String RGB = 'rgb';
+  static const String RGBA = 'rgba';
   static const String HSL = 'hsl';
+  static const String HSLA = 'hsla';
 
   // Use a preprocessed color to cache.
   // Example:
@@ -283,23 +285,45 @@ class CSSColor {
         }
       }
     } else if (color.startsWith(RGB)) {
-      final rgbMatch = _colorRgbRegExp.firstMatch(color);
+      bool isRgba = color.startsWith(RGBA);
+      String colorBody = color.substring(isRgba ? 5 : 4, color.length - 1);
+
+      final rgbMatch;
+      if (renderStyle != null && colorBody.startsWith('var') && colorBody.endsWith(')')) {
+        final variable = CSSVariable.tryParse(renderStyle, colorBody);
+        final computedValue = variable?.computedValue('');
+        rgbMatch = _colorRgbRegExp.firstMatch(computedValue);
+      } else {
+        rgbMatch = _colorRgbRegExp.firstMatch(colorBody);
+      }
+
       if (rgbMatch != null) {
-        final double? rgbR = _parseColorPart(rgbMatch[2]!, 0, 255, renderStyle);
-        final double? rgbG = _parseColorPart(rgbMatch[3]!, 0, 255, renderStyle);
-        final double? rgbB = _parseColorPart(rgbMatch[4]!, 0, 255, renderStyle);
-        final double? rgbO = rgbMatch[6] != null ? _parseColorPart(rgbMatch[6]!, 0, 1, renderStyle) : 1;
+        final double? rgbR = _parseColorPart(rgbMatch[1]!, 0, 255, renderStyle);
+        final double? rgbG = _parseColorPart(rgbMatch[2]!, 0, 255, renderStyle);
+        final double? rgbB = _parseColorPart(rgbMatch[3]!, 0, 255, renderStyle);
+        final double? rgbO = rgbMatch[5] != null ? _parseColorPart(rgbMatch[5]!, 0, 1, renderStyle) : 1;
         if (rgbR != null && rgbG != null && rgbB != null && rgbO != null) {
           parsed = Color.fromRGBO(rgbR.round(), rgbG.round(), rgbB.round(), rgbO);
         }
       }
     } else if (color.startsWith(HSL)) {
-      final hslMatch = _colorHslRegExp.firstMatch(color);
+      bool isHsla = color.startsWith(HSLA);
+      String colorBody = color.substring(isHsla ? 5 : 4, color.length - 1);
+
+      final hslMatch;
+      if (renderStyle != null && colorBody.startsWith('var') && colorBody.endsWith(')')) {
+        final variable = CSSVariable.tryParse(renderStyle, colorBody);
+        final computedValue = variable?.computedValue('');
+        hslMatch = _colorHslRegExp.firstMatch(computedValue);
+      } else {
+        hslMatch = _colorHslRegExp.firstMatch(colorBody);
+      }
+
       if (hslMatch != null) {
-        final double? hslH = _parseColorHue(hslMatch[2]!, hslMatch[3]);
-        final double? hslS = _parseColorPart(hslMatch[4]!, 0, 1, renderStyle);
-        final double? hslL = _parseColorPart(hslMatch[5]!, 0, 1, renderStyle);
-        final double? hslA = hslMatch[7] != null ? _parseColorPart(hslMatch[7]!, 0, 1, renderStyle) : 1;
+        final double? hslH = _parseColorHue(hslMatch[1]!, hslMatch[2]);
+        final double? hslS = _parseColorPart(hslMatch[3]!, 0, 1, renderStyle);
+        final double? hslL = _parseColorPart(hslMatch[4]!, 0, 1, renderStyle);
+        final double? hslA = hslMatch[6] != null ? _parseColorPart(hslMatch[6]!, 0, 1, renderStyle) : 1;
         if (hslH != null && hslS != null && hslL != null && hslA != null) {
           parsed = HSLColor.fromAHSL(hslA, hslH, hslS, hslL).toColor();
         }

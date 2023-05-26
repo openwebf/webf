@@ -142,11 +142,12 @@ abstract class CanvasImageData {
 
 // ignore: one_member_abstracts
 class CanvasGradient extends BindingObject {
-  CanvasGradient()
+  CanvasGradient(this.ownerCanvasElement)
       : _pointer = allocateNewBindingObject(),
         super();
 
   final ffi.Pointer<NativeBindingObject> _pointer;
+  final CanvasElement ownerCanvasElement;
 
   @override
   get pointer => _pointer;
@@ -154,7 +155,7 @@ class CanvasGradient extends BindingObject {
   List<CSSColorStop> colorGradients = [];
   // opaque object
   void addColorStop(num offset, String color) {
-    Color? colorStop = CSSColor.parseColor(color);
+    Color? colorStop = CSSColor.parseColor(color, renderStyle: ownerCanvasElement.renderStyle);
     if (colorStop != null) {
       colorGradients.add(CSSColorStop(colorStop, offset as double));
     }
@@ -207,7 +208,7 @@ class CanvasLinearGradient extends CanvasGradient {
   double x1;
   double y1;
 
-  CanvasLinearGradient(this.x0, this.y0, this.x1, this.y1);
+  CanvasLinearGradient(super.ownerCanvasElement, this.x0, this.y0, this.x1, this.y1);
 }
 
 class CanvasRadialGradient extends CanvasGradient {
@@ -218,5 +219,5 @@ class CanvasRadialGradient extends CanvasGradient {
   double y1;
   double r1;
 
-  CanvasRadialGradient(this.x0, this.y0, this.r0, this.x1, this.y1, this.r1);
+  CanvasRadialGradient(super.ownerCanvasElement, this.x0, this.y0, this.r0, this.x1, this.y1, this.r1);
 }

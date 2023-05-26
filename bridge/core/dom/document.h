@@ -78,6 +78,8 @@ class Document : public ContainerNode, public TreeScope {
   AtomicString readyState();
   DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);
 
+  bool hidden();
+
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);
 

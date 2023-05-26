@@ -225,7 +225,7 @@ class CanvasRenderingContext2D extends BindingObject {
         },
         setter: (value) {
           if (value is String) {
-            Color? color = CSSColor.parseColor(castToType<String>(value));
+            Color? color = CSSColor.parseColor(castToType<String>(value), renderStyle: canvas.renderStyle);
             if (color != null) fillStyle = color;
           } else if (value is CanvasGradient) {
             fillStyle = value;
@@ -243,7 +243,7 @@ class CanvasRenderingContext2D extends BindingObject {
         },
         setter: (value) {
           if (value is String) {
-            Color? color = CSSColor.parseColor(castToType<String>(value));
+            Color? color = CSSColor.parseColor(castToType<String>(value), renderStyle: canvas.renderStyle);
             if (color != null) strokeStyle = color;
           } else if (value is CanvasGradient) {
             strokeStyle = value;
@@ -792,7 +792,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   CanvasGradient createLinearGradient(double x0, double y0, double x1, double y1) {
-    return CanvasLinearGradient(x0, y0, x1, y1);
+    return CanvasLinearGradient(canvas, x0, y0, x1, y1);
   }
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
@@ -801,7 +801,7 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   CanvasGradient createRadialGradient(double x0, double y0, double r0, double x1, double y1, double r1) {
-    return CanvasRadialGradient(x0, y0, r0, x1, y1, r1);
+    return CanvasRadialGradient(canvas, x0, y0, r0, x1, y1, r1);
   }
 
   void clearRect(double x, double y, double w, double h) {

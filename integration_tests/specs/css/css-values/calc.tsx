@@ -76,7 +76,7 @@ describe("calc", () => {
       }
     `)
     );
-    
+
     document.body.appendChild(
       <div class='container'>
           <h2>The text should be green.</h2>
@@ -94,6 +94,20 @@ describe("calc", () => {
       }
     }, [
       createText('AAAAA')
+    ]);
+    document.body.appendChild(box);
+    await snapshot();
+  });
+
+  it('should works when combine calc with vars', async () => {
+    let box = createElement('div', {
+      style: {
+        width: 'calc(45* 1px * var(--base_size_ratio, 1))',
+        height: 'calc(45* 1px * var(--base_size_ratio, 1))',
+        background: 'green'
+      }
+    }, [
+      createText('This box should be green')
     ]);
     document.body.appendChild(box);
     await snapshot();
