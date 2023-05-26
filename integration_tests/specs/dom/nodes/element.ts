@@ -140,4 +140,11 @@ describe('DOM Element API', () => {
     var target = el.lastElementChild;
     expect(target.tagName).toEqual('SPAN');
   });
+
+  it('should work with matches', () => {
+    const el = document.createElement('div');
+    el.setAttribute('class', 'a1 b1');
+    document.body.appendChild(el);
+    expect(el.matches('.a1').toBeTrue();
+  });
 });
