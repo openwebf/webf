@@ -46,6 +46,9 @@ List<Element> querySelectorAll(Node node, String selector) {
   return results;
 }
 
+bool matches(Element element, String selector) =>
+    SelectorEvaluator().matchSelector(_parseSelectorGroup(selector), element);
+
 // http://dev.w3.org/csswg/selectors-4/#grouping
 SelectorGroup? _parseSelectorGroup(String selector) {
   CSSParser parser = CSSParser(selector)..tokenizer.inSelector = true;

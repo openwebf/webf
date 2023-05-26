@@ -58,6 +58,7 @@ interface Element extends Node, ParentNode {
 
   querySelector(selectors: string): Element | null;
   querySelectorAll(selectors: string): Element[];
+  matches(selectors: string): boolean;
 
   scroll(options?: ScrollToOptions): void;
   scroll(x: number, y: number): void;
