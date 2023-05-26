@@ -149,6 +149,11 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
 }
 
 function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollector, mode?: ParameterMode): ParameterType {
+  if (type.kind === ts.SyntaxKind.ParenthesizedType) {
+    let typeNode = type as ts.ParenthesizedTypeNode;
+    return getParameterType(typeNode.type, unionTypeCollector, mode);
+  }
+
   if (type.kind == ts.SyntaxKind.ArrayType) {
     let arrayType = type as unknown as ts.ArrayTypeNode;
     return {

@@ -12,6 +12,7 @@
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "node_data.h"
+#include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
 
 namespace webf {
@@ -27,6 +28,7 @@ class DocumentFragment;
 class ContainerNode;
 class NodeList;
 class EventTargetDataObject;
+class QJSUnionDomStringNode;
 
 enum class CustomElementState : uint32_t {
   // https://dom.spec.whatwg.org/#concept-element-custom-element-state
@@ -97,6 +99,15 @@ class Node : public EventTarget {
   Node* cloneNode(bool deep, ExceptionState&) const;
   Node* cloneNode(ExceptionState&) const;
 
+  void prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, ExceptionState& exception_state);
+  void prepend(ExceptionState& exception_state);
+  void append(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, ExceptionState& exception_state);
+  void append(ExceptionState& exception_state);
+  void before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, ExceptionState& exception_state);
+  void before(ExceptionState& exception_state);
+  void after(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, ExceptionState& exception_state);
+  void after(ExceptionState& exception_state);
+
   // https://dom.spec.whatwg.org/#concept-node-clone
   virtual Node* Clone(Document&, CloneChildrenFlag) const = 0;
 
@@ -109,6 +120,7 @@ class Node : public EventTarget {
 
   // Other methods (not part of DOM)
   [[nodiscard]] FORCE_INLINE bool IsTextNode() const { return GetDOMNodeType() == DOMNodeType::kText; }
+  [[nodiscard]] FORCE_INLINE bool IsOtherNode() const { return GetDOMNodeType() == DOMNodeType::kOther; }
   [[nodiscard]] FORCE_INLINE bool IsContainerNode() const { return GetFlag(kIsContainerFlag); }
   [[nodiscard]] FORCE_INLINE bool IsElementNode() const { return GetDOMNodeType() == DOMNodeType::kElement; }
   [[nodiscard]] FORCE_INLINE bool IsDocumentFragment() const {

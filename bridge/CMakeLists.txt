@@ -417,6 +417,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_event_init.cc
     out/qjs_event_target.cc
     out/qjs_node.cc
+    out/qjs_union_dom_stringnode.cc
     out/qjs_document.cc
     out/qjs_element.cc
     out/qjs_dom_token_list.cc
