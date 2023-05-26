@@ -173,5 +173,6 @@
     "visibilityState",
     "hidden",
     "matches",
+    "closest",
   ]
 }

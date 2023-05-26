@@ -79,6 +79,8 @@ class Element : public ContainerNode {
   std::vector<Element*> querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state);
   bool matches(const AtomicString& selectors, ExceptionState& exception_state);
 
+  Element* closest(const AtomicString& selectors, ExceptionState& exception_state);
+
   InlineCssStyleDeclaration* style();
   InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
   DOMTokenList* classList();

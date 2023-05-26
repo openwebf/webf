@@ -514,4 +514,23 @@ describe('querySelector api', () => {
     expect(eles.length).toBe(szEle.length);
   });
 
+  it('element closest cant find element', () => {
+    const parentDiv = document.createElement('div')
+    parentDiv.style.width = '100px';
+    parentDiv.style.height = '100px';
+    parentDiv.style.backgroundColor = 'red';
+    parentDiv.setAttribute('id', 'id-0');
+    parentDiv.className = 'class-parent';
+
+    const childDiv = document.createElement('div')
+    childDiv.style.width = '50px';
+    childDiv.style.height = '50px';
+    childDiv.style.backgroundColor = 'yellow';
+    childDiv.setAttribute('id', 'id-1');
+
+    parentDiv.appendChild(childDiv);
+    document.body.appendChild(parentDiv);
+    const ele = childDiv.closest('.class-parent');
+    expect(ele?.getAttribute('id')).toBe('id-0');
+  });
 });

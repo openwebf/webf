@@ -224,6 +224,15 @@ bool Element::matches(const AtomicString& selectors, ExceptionState& exception_s
   return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
 }
 
+Element* Element::closest(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kclosest, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return nullptr;
+  }
+  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
+}
+
 InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
