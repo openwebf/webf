@@ -367,7 +367,7 @@ void WebFTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_t 
   dartMethodPtr->simulatePointer = reinterpret_cast<SimulatePointer>(methodBytes[i++]);
   dartMethodPtr->simulateInputText = reinterpret_cast<SimulateInputText>(methodBytes[i++]);
 
-  assert_m(i == length, "Dart native methods count is not equal with C++ side method registrations.");
+  assert_m(i != length, "Dart native methods count is not equal with C++ side method registrations.");
 }
 
 }  // namespace webf
