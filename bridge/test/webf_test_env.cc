@@ -307,6 +307,16 @@ void TEST_onMatchImageSnapshot(void* callbackContext,
   callback(callbackContext, contextId, 1, nullptr);
 }
 
+void TEST_onMatchImageSnapshotBytes(void* callback_context,
+              int32_t context_id,
+              uint8_t* image_a_bytes,
+              int32_t image_a_size,
+              uint8_t* image_b_bytes,
+              int32_t image_b_size,
+              MatchImageSnapshotCallback callback) {
+  callback(callback_context, contextId, 1, nullptr);
+}
+
 const char* TEST_environment() {
   return "";
 }
@@ -343,6 +353,7 @@ void TEST_mockTestEnvDartMethods(void* testContext, OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{
       reinterpret_cast<uint64_t>(onJSError),
       reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshot),
+      reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshotBytes),
       reinterpret_cast<uint64_t>(TEST_environment),
       reinterpret_cast<uint64_t>(TEST_simulatePointer),
       reinterpret_cast<uint64_t>(TEST_simulateInputText),
