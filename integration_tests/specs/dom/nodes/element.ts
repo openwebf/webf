@@ -145,6 +145,6 @@ describe('DOM Element API', () => {
     const el = document.createElement('div');
     el.setAttribute('class', 'a1 b1');
     document.body.appendChild(el);
-    expect(el.matches('.a1').toBeTrue());
+    expect(el.matches('.a1')).toBeTrue();
   });
 });
