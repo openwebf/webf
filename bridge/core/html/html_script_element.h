@@ -5,6 +5,7 @@
 #ifndef BRIDGE_CORE_HTML_HTML_SCRIPT_ELEMENT_H_
 #define BRIDGE_CORE_HTML_HTML_SCRIPT_ELEMENT_H_
 
+#include "core/frame/window_event_handlers.h"
 #include "html_element.h"
 
 namespace webf {
@@ -18,6 +19,8 @@ class HTMLScriptElement : public HTMLElement {
   explicit HTMLScriptElement(Document& document);
 
   bool IsAttributeDefinedInternal(const AtomicString& key) const override;
+
+  DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);
 
  private:
 };

@@ -6,6 +6,8 @@ interface HTMLScriptElement extends HTMLElement {
     noModule: DartImpl<boolean>;
     async: DartImpl<boolean>;
     text: DartImpl<string>;
+    readonly readyState: DartImpl<string>;
+    onreadystatechange: IDLEventHandler | null;
     supports(type: string): StaticMember<boolean>;
     new(): void;
 }
