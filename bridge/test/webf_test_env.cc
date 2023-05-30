@@ -308,12 +308,12 @@ void TEST_onMatchImageSnapshot(void* callbackContext,
 }
 
 void TEST_onMatchImageSnapshotBytes(void* callback_context,
-              int32_t context_id,
-              uint8_t* image_a_bytes,
-              int32_t image_a_size,
-              uint8_t* image_b_bytes,
-              int32_t image_b_size,
-              MatchImageSnapshotCallback callback) {
+                                    int32_t context_id,
+                                    uint8_t* image_a_bytes,
+                                    int32_t image_a_size,
+                                    uint8_t* image_b_bytes,
+                                    int32_t image_b_size,
+                                    MatchImageSnapshotCallback callback) {
   callback(callback_context, contextId, 1, nullptr);
 }
 
