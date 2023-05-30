@@ -22,6 +22,7 @@ const String _MIME_APPLICATION_JAVASCRIPT = 'application/javascript';
 const String _MIME_X_APPLICATION_JAVASCRIPT = 'application/x-javascript';
 const String _MIME_X_APPLICATION_KBC = 'application/vnd.webf.bc1';
 const String _JAVASCRIPT_MODULE = 'module';
+enum ScriptReadyState { loading, interactive, complete }
 
 typedef ScriptExecution = Future<void> Function(bool async);
 
@@ -82,6 +83,7 @@ class ScriptRunner {
       bundle = WebFBundle.fromUrl(url);
     }
 
+    element.readyState = ScriptReadyState.interactive;
     // The bundle execution task.
     Future<void> task(bool async) async {
       // If bundle is not resolved, should wait for it resolve to prevent the next script running.
@@ -98,6 +100,7 @@ class ScriptRunner {
         bundle.dispose();
       }
 
+      element.readyState = ScriptReadyState.complete;
       // Dispatch the load event.
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_LOAD));
@@ -169,6 +172,7 @@ class ScriptElement extends Element {
   final String _type = _MIME_TEXT_JAVASCRIPT;
 
   Uri? _resolvedSource;
+  ScriptReadyState _readyState = ScriptReadyState.loading;
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
@@ -181,6 +185,7 @@ class ScriptElement extends Element {
     properties['charset'] = BindingObjectProperty(getter: () => charset, setter: (value) => charset = castToType<String>(value));
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
     properties['text'] = BindingObjectProperty(getter: () => text, setter: (value) => text = castToType<String>(value));
+    properties['readyState'] = BindingObjectProperty(getter: () => readyState.name,);
   }
 
   @override
@@ -236,6 +241,12 @@ class ScriptElement extends Element {
   String get text => getAttribute('text') ?? '';
   set text(String value) {
     internalSetAttribute('text', value);
+  }
+
+  ScriptReadyState get readyState => _readyState;
+
+  set readyState(ScriptReadyState readyState) {
+    _readyState = readyState;
   }
 
   void _resolveSource(String source) {
