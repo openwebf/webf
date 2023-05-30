@@ -37,8 +37,4 @@ void HTMLCanvasElement::Trace(GCVisitor* visitor) const {
   HTMLElement::Trace(visitor);
 }
 
-bool HTMLCanvasElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLCanvasElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
-
 }  // namespace webf

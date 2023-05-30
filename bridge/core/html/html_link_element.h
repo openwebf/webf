@@ -15,10 +15,6 @@ class HTMLLinkElement : public HTMLElement {
 
  public:
   explicit HTMLLinkElement(Document& document);
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
- private:
 };
 
 }  // namespace webf

@@ -15,9 +15,6 @@ class HTMLIFrameElement : public HTMLElement {
  public:
   using ImplType = HTMLIFrameElement*;
   explicit HTMLIFrameElement(Document&);
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
  private:
 };
 

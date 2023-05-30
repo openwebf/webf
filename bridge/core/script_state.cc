@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "script_state.h"
-#include "defined_properties_initializer.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
 #include "names_installer.h"
