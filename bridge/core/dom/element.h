@@ -98,7 +98,6 @@ class Element : public ContainerNode {
   virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) {}
   virtual bool IsWidgetElement() const;
 
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
   void Trace(GCVisitor* visitor) const override;
 
  protected:

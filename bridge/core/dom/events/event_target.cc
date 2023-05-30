@@ -188,10 +188,6 @@ bool EventTarget::IsEventTarget() const {
   return true;
 }
 
-bool EventTarget::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSEventTarget::IsAttributeDefinedInternal(key);
-}
-
 void EventTarget::Trace(GCVisitor* visitor) const {
   ScriptWrappable::Trace(visitor);
   BindingObject::Trace(visitor);

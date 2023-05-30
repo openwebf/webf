@@ -481,7 +481,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/html_names.cc
     out/script_type_names.cc
     out/defined_properties.cc
-    out/defined_properties_initializer.cc
     out/element_attribute_names.cc
     out/element_namespace_uris.cc
 

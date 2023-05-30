@@ -297,10 +297,6 @@ bool Element::IsWidgetElement() const {
   return false;
 }
 
-bool Element::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSElement::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
-}
-
 void Element::Trace(GCVisitor* visitor) const {
   visitor->Trace(attributes_);
   visitor->Trace(cssom_wrapper_);

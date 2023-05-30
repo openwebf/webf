@@ -10,8 +10,4 @@ namespace webf {
 HTMLUnknownElement::HTMLUnknownElement(const AtomicString& tag_name, Document* document)
     : HTMLElement(tag_name, document) {}
 
-bool HTMLUnknownElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLUnknownElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
-
 }  // namespace webf

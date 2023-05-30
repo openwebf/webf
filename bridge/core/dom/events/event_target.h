@@ -130,9 +130,6 @@ class EventTarget : public BindingObject {
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
 
-  // Check the attribute is defined in native.
-  virtual bool IsAttributeDefinedInternal(const AtomicString& key) const;
-
   NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
 
   void Trace(GCVisitor* visitor) const override;

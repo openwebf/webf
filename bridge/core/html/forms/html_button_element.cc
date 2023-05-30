@@ -8,8 +8,4 @@
 
 namespace webf {
 
-bool HTMLButtonElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLButtonElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
-
 }  // namespace webf

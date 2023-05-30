@@ -3,7 +3,6 @@
  */
 
 #include "dart_context.h"
-#include "defined_properties_initializer.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
 #include "names_installer.h"
@@ -28,7 +27,6 @@ DartContext::~DartContext() {
   is_valid_ = false;
   isolates_.clear();
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
-  DefinedPropertiesInitializer::Dispose();
   names_installer::Dispose();
   HTMLElementFactory::Dispose();
   SVGElementFactory::Dispose();

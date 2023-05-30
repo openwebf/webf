@@ -10,8 +10,4 @@ namespace webf {
 
 HTMLBodyElement::HTMLBodyElement(Document& document) : HTMLElement(html_names::kbody, &document) {}
 
-bool HTMLBodyElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLBodyElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
-
 }  // namespace webf

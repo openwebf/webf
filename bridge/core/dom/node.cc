@@ -90,10 +90,6 @@ NodeData& Node::EnsureNodeData() {
   return CreateNodeData();
 }
 
-bool Node::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSNode::IsAttributeDefinedInternal(key) || EventTarget::IsAttributeDefinedInternal(key);
-}
-
 Node& Node::TreeRoot() const {
   const Node* node = this;
   while (node->parentNode())

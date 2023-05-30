@@ -16,10 +16,6 @@ class HTMLScriptElement : public HTMLElement {
   static bool supports(const AtomicString& type, ExceptionState& exception_state);
 
   explicit HTMLScriptElement(Document& document);
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
- private:
 };
 
 }  // namespace webf
