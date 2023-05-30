@@ -33,15 +33,9 @@ Native<%= parentClassName %> native_event;
 #endif
 <% } %>
 
-using AttributeMap = std::unordered_map<AtomicString, bool, AtomicString::KeyHasher>;
-
 class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= className%>> {
  public:
   static void Install(ExecutingContext* context);
-  static void InitAttributeMap();
-  static void DisposeAttributeMap();
-  static AttributeMap* definedAttributeMap();
-  static bool IsAttributeDefinedInternal(const AtomicString& key);
   static WrapperTypeInfo* GetWrapperTypeInfo() {
     return const_cast<WrapperTypeInfo*>(&wrapper_type_info_);
   }

@@ -31,10 +31,6 @@ void CharacterData::setNodeValue(const AtomicString& value, ExceptionState& exce
   setData(!value.IsEmpty() ? value : built_in_string::kempty_string, exception_state);
 }
 
-bool CharacterData::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSCharacterData::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
-}
-
 CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, Node::ConstructionType type)
     : Node(tree_scope.GetDocument().GetExecutingContext(), &tree_scope, type), data_(text) {
   assert(type == kCreateOther || type == kCreateText);

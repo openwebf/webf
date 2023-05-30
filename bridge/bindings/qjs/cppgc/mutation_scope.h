@@ -36,6 +36,7 @@ class MemberMutationScope {
 
   MemberMutationScope* parent_scope_{nullptr};
   ExecutingContext* context_;
+  JSRuntime* runtime_{nullptr};
   std::unordered_map<ScriptWrappable*, int> mutation_records_;
 };
 

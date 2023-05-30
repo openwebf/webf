@@ -17,10 +17,6 @@ class HTMLElement : public Element {
  public:
   using ImplType = HTMLElement*;
   HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType = kCreateHTMLElement);
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
- private:
 };
 
 template <typename T>

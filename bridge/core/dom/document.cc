@@ -382,10 +382,6 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
   return window->GetAttributeEventListener(event_type);
 }
 
-bool Document::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSDocument::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
-}
-
 void Document::Trace(GCVisitor* visitor) const {
   script_animation_controller_.Trace(visitor);
   ContainerNode::Trace(visitor);

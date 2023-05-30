@@ -77,6 +77,7 @@ class Element : public ContainerNode {
 
   Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
   std::vector<Element*> querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state);
+  bool matches(const AtomicString& selectors, ExceptionState& exception_state);
 
   InlineCssStyleDeclaration* style();
   InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
@@ -97,7 +98,6 @@ class Element : public ContainerNode {
   virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) {}
   virtual bool IsWidgetElement() const;
 
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
   void Trace(GCVisitor* visitor) const override;
 
  protected:
