@@ -240,8 +240,6 @@ class Node : public EventTarget {
   [[nodiscard]] NodeData* Data() const { return node_data_.get(); }
   NodeData& EnsureNodeData();
 
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
   void Trace(GCVisitor*) const override;
 
  private:

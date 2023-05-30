@@ -16,10 +16,6 @@ class HTMLDivElement : public HTMLElement {
  public:
   using ImplType = HTMLDivElement*;
   explicit HTMLDivElement(Document&);
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
- private:
 };
 
 }  // namespace webf

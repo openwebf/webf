@@ -19,8 +19,4 @@ bool HTMLScriptElement::supports(const AtomicString& type, ExceptionState& excep
   return false;
 }
 
-bool HTMLScriptElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLScriptElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
-
 }  // namespace webf
