@@ -362,12 +362,13 @@ class Document extends ContainerNode {
 
   @override
   Node? removeChild(Node child) {
+    Node? result = super.removeChild(child);
     if (documentElement == child) {
       documentElement = null;
       ruleSet.reset();
       styleSheets.clear();
     }
-    return super.removeChild(child);
+    return result;
   }
 
   @override
