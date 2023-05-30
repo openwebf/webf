@@ -1581,7 +1581,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         renderStyle.sliverDirection = value;
         break;
       case CARETCOLOR:
-        renderStyle.caretColor = value;
+        renderStyle.caretColor = (value as CSSColor).value;
         break;
       case FILL:
         renderStyle.fill = value;

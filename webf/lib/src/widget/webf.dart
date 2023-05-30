@@ -342,6 +342,8 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
   void updateRenderObject(BuildContext context, covariant RenderObject renderObject) {
     super.updateRenderObject(context, renderObject);
     WebFController controller = (context as _WebFRenderObjectElement).controller!;
+    if (controller.disposed) return;
+
     controller.name = shortHash(_webfWidget);
 
     bool viewportWidthHasChanged = controller.view.viewportWidth != _webfWidget.viewportWidth;

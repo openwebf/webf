@@ -411,8 +411,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   void removeEvent(Pointer<NativeBindingObject> nativePtr, String eventType) {
-    assert(BindingBridge.hasBindingObject(nativePtr), 'targetId: $nativePtr event: $eventType');
-
+    if (!BindingBridge.hasBindingObject(nativePtr)) return;
     EventTarget? target = BindingBridge.getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
       BindingBridge.unlistenEvent(target, eventType);
@@ -1016,6 +1015,8 @@ class WebFController {
     module.resumeInterval();
   }
 
+  bool _disposed = false;
+  bool get disposed => _disposed;
   void dispose() {
     _module.dispose();
     _view.dispose();
@@ -1026,6 +1027,7 @@ class WebFController {
     _entrypoint?.dispose();
 
     devToolsService?.dispose();
+    _disposed = true;
   }
 
   String get origin {

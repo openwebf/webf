@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -95,6 +99,10 @@ mixin BaseInputElement on WidgetElement {
   TextEditingController controller = TextEditingController();
   String? oldValue;
 
+  // Whether value has been changed by user.
+  // https://www.w3.org/TR/2010/WD-html5-20101019/the-input-element.html#concept-input-value-dirty-flag
+  bool hasDirtyValue = false;
+
   String get value => controller.value.text;
 
   set value(value) {
@@ -106,14 +114,13 @@ mixin BaseInputElement on WidgetElement {
         controller.value = TextEditingValue(text: value.toString());
       }
     }
+    hasDirtyValue = true;
   }
 
   @override
   void initState() {
     _focusNode ??= FocusNode();
-    _focusNode!.addListener(() {
-      handleFocusChange();
-    });
+    _focusNode!.addListener(handleFocusChange);
   }
 
   @override
@@ -193,8 +200,12 @@ mixin BaseInputElement on WidgetElement {
   }
 
   String? get defaultValue => getAttribute('defaultValue') ?? getAttribute('value') ?? '';
-  set defaultValue(value) {
-    internalSetAttribute('defaultValue', value?.toString() ?? '');
+  set defaultValue(String? text) {
+    internalSetAttribute('defaultValue', text?.toString() ?? '');
+    // Only set value when dirty flag is false.
+    if (!hasDirtyValue) {
+      value = text;
+    }
   }
 
   bool _disabled = false;
@@ -282,6 +293,7 @@ mixin BaseInputElement on WidgetElement {
         InputEvent inputEvent = InputEvent(inputType: '', data: newValue);
         dispatchEvent(inputEvent);
       });
+      hasDirtyValue = true;
     }
 
     InputDecoration decoration = InputDecoration(
@@ -360,21 +372,34 @@ mixin BaseInputElement on WidgetElement {
     return widget;
   }
 
+  @override
+  void didDetachRenderer() {
+    super.didDetachRenderer();
+    _focusNode?.removeListener(handleFocusChange);
+    _focusNode?.unfocus();
+  }
+
   FocusNode? _focusNode;
 
   void handleFocusChange() {
     if (_isFocus) {
       ownerDocument.focusedElement = this;
       oldValue = value;
-      dispatchEvent(FocusEvent(EVENT_FOCUS, relatedTarget: this));
+      scheduleMicrotask(() {
+        dispatchEvent(FocusEvent(EVENT_FOCUS, relatedTarget: this));
+      });
     } else {
       if (ownerDocument.focusedElement == this) {
         ownerDocument.focusedElement = null;
       }
       if (oldValue != value) {
-        dispatchEvent(Event('change'));
+        scheduleMicrotask(() {
+          dispatchEvent(Event('change'));
+        });
       }
-      dispatchEvent(FocusEvent(EVENT_BLUR, relatedTarget: this));
+      scheduleMicrotask(() {
+        dispatchEvent(FocusEvent(EVENT_BLUR, relatedTarget: this));
+      });
     }
   }
 
