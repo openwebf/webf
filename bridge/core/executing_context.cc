@@ -20,7 +20,7 @@ namespace webf {
 
 static std::atomic<int32_t> context_unique_id{0};
 
-#define MAX_JS_CONTEXT 1024
+#define MAX_JS_CONTEXT 8192
 bool valid_contexts[MAX_JS_CONTEXT];
 std::atomic<uint32_t> running_context_list{0};
 
@@ -441,7 +441,7 @@ void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable)
   active_wrappers_.erase(script_wrappable);
 }
 
-// An lock free context validator.
+// A lock free context validator.
 bool isContextValid(int32_t contextId) {
   if (contextId > running_context_list)
     return false;

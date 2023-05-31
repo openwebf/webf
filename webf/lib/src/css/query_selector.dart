@@ -49,6 +49,10 @@ List<Element> querySelectorAll(Node node, String selector) {
 bool matches(Element element, String selector) =>
     SelectorEvaluator().matchSelector(_parseSelectorGroup(selector), element);
 
+Element? closest(Node node, String selector) =>
+    SelectorEvaluator().closest(node, _parseSelectorGroup(selector));
+
+
 // http://dev.w3.org/csswg/selectors-4/#grouping
 SelectorGroup? _parseSelectorGroup(String selector) {
   CSSParser parser = CSSParser(selector)..tokenizer.inSelector = true;
@@ -86,6 +90,17 @@ class SelectorEvaluator extends SelectorVisitor {
       if (matchSelector(selector, element)) results.add(element);
       querySelectorAll(element, selector, results);
     }
+  }
+
+  Element? closest(Node node, SelectorGroup? selector) {
+    Node? targetNode = node;
+    while (targetNode != null) {
+      if (targetNode is Element) {
+        if (matchSelector(selector, targetNode)) return targetNode;
+      }
+      targetNode = targetNode.parentNode;
+    }
+    return null;
   }
 
   @override

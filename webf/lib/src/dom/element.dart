@@ -316,6 +316,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
     methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
     methods['matches'] = BindingObjectMethodSync(call: (args) => matches(args));
+    methods['closest'] = BindingObjectMethodSync(call: (args) => closest(args));
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
@@ -339,6 +340,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   bool matches(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return false;
     return QuerySelector.matches(this, args.first);
+  }
+
+  dynamic closest(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
+    return QuerySelector.closest(this, args.first);
   }
 
   @visibleForOverriding

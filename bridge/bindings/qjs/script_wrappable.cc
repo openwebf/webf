@@ -10,7 +10,7 @@
 namespace webf {
 
 ScriptWrappable::ScriptWrappable(JSContext* ctx)
-    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)) {}
+    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)), context_id_(context_->contextId()) {}
 
 JSValue ScriptWrappable::ToQuickJS() const {
   return JS_DupValue(ctx_, jsObject_);
@@ -38,8 +38,14 @@ static void HandleJSObjectGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* m
 /// completed.
 static void HandleJSObjectFinalized(JSRuntime* rt, JSValue val) {
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JSValueGetClassId(val)));
-  MemberMutationScope scope{object->GetExecutingContext()};
-  delete object;
+  // When a JSObject got finalized by QuickJS GC, we can not guarantee the ExecutingContext are still alive and accessible.
+  if (isContextValid(object->contextId())) {
+    ExecutingContext* context = object->GetExecutingContext();
+    MemberMutationScope scope{object->GetExecutingContext()};
+    delete object;
+  } else {
+    delete object;
+  }
 }
 
 /// This callback will be called when JS code access this object using [] or `.` operator.
