@@ -203,9 +203,12 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   set(MI_OVERRIDE OFF)
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
-  target_link_libraries(quickjs mimalloc-static)
+  if (NOT DEFINED USE_SYSTEM_MALLOC)
+    add_compile_definitions(ENABLE_MI_MALLOC=1)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
+    target_link_libraries(quickjs mimalloc-static)
+  endif()
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
