@@ -15,6 +15,7 @@ class HTMLIFrameElement : public HTMLElement {
  public:
   using ImplType = HTMLIFrameElement*;
   explicit HTMLIFrameElement(Document&);
+
  private:
 };
 

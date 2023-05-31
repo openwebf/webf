@@ -9,7 +9,8 @@
 
 namespace webf {
 
-MemberMutationScope::MemberMutationScope(ExecutingContext* context) : context_(context), runtime_(context->GetScriptState()->runtime()) {
+MemberMutationScope::MemberMutationScope(ExecutingContext* context)
+    : context_(context), runtime_(context->GetScriptState()->runtime()) {
   context->SetMutationScope(*this);
 }
 
