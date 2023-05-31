@@ -1,3 +1,16 @@
+## 0.14.0-beta.14
+
+* feat: support document.visibilityState and document.hidden support.
+* feat: add support for --color: rgba(var(--color-value)) and --color: hsl(var(--color-value)).
+* feat: add append() and prepend() support for Element, Document and DocumentElement.
+* feat: add before() and after() support for Element and CharaterData.
+* feat: add Element.closest() support.
+* feat: add Element.matches() support.
+* feat: add HTMLScriptElement.readyState support.
+* fix: set CSS var on :root not working when adding stylesheet with <style /> elements.
+* fix: calc not working when combine with vars.
+* fix: fix a crash when a JSObject was finalized after the ExecutingContext was freed.
+
 ## 0.14.0-beta.13
 
 * feat: add windows support.
