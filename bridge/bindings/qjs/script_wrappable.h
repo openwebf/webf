@@ -55,6 +55,7 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
   FORCE_INLINE ExecutingContext* GetExecutingContext() const { return context_; };
   FORCE_INLINE JSContext* ctx() const { return ctx_; }
   FORCE_INLINE JSRuntime* runtime() const { return runtime_; }
+  FORCE_INLINE int64_t contextId() const { return context_id_; }
 
   void InitializeQuickJSObject() override;
 
@@ -70,6 +71,7 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
   JSValue jsObject_{JS_NULL};
   JSContext* ctx_{nullptr};
   ExecutingContext* context_{nullptr};
+  int64_t context_id_;
   JSRuntime* runtime_{nullptr};
   friend class GCVisitor;
 };
