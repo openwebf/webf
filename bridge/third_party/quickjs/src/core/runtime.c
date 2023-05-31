@@ -1219,16 +1219,16 @@ done:
   dbuf_free(&dbuf);
   JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_stack, str, JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
   if (line_num != -1) {
-    JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_lineNumber, JS_NewInt32(ctx, latest_line_num), 
+    JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_lineNumber, JS_NewInt32(ctx, latest_line_num),
       JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
     if (column_num != -1) {
-      /** 
-       * do not add the corresponding definition 
-       * in the 'quickjs-atom.h' file, it will lead to 
+      /**
+       * do not add the corresponding definition
+       * in the 'quickjs-atom.h' file, it will lead to
        * inaccurate diff positions of the atom table
        */
       int atom = JS_NewAtom(ctx, "columnNumber");
-      JS_DefinePropertyValue(ctx, error_obj, atom, JS_NewInt32(ctx, latest_column_num), 
+      JS_DefinePropertyValue(ctx, error_obj, atom, JS_NewInt32(ctx, latest_column_num),
         JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
       JS_FreeAtom(ctx, atom);
     }
@@ -3063,7 +3063,22 @@ static const JSMallocFunctions def_malloc_funcs = {
     js_def_malloc,
     js_def_free,
     js_def_realloc,
+#if ENABLE_MI_MALLOC
     mi_usable_size,
+#else
+#if defined(__APPLE__)
+    malloc_size,
+#elif defined(_WIN32)
+    (size_t(*)(const void*))_msize,
+#elif defined(EMSCRIPTEN)
+    NULL,
+#elif defined(__linux__)
+    (size_t(*)(const void*))malloc_usable_size,
+#else
+    /* change this to `NULL,` if compilation fails */
+    malloc_usable_size,
+#endif
+#endif
 };
 
 JSRuntime* JS_NewRuntime(void) {

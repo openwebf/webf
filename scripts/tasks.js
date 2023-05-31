@@ -97,6 +97,10 @@ task('build-darwin-webf-lib', done => {
     externCmakeArgs.push('-DENABLE_ASAN=true');
   }
 
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
+  }
+
   // Bundle quickjs into webf.
   if (program.staticQuickjs) {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
@@ -346,6 +350,10 @@ task(`build-ios-webf-lib`, (done) => {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
   }
 
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
+  }
+
   // generate build scripts for simulator
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
     -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
@@ -485,10 +493,17 @@ task('build-linux-webf-lib', (done) => {
   const buildType = buildMode == 'Release' ? 'Release' : 'Relwithdebinfo';
   const cmakeGeneratorTemplate = platform == 'win32' ? 'Ninja' : 'Unix Makefiles';
 
+  let externCmakeArgs = [];
+
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
+  }
+
   const soBinaryDirectory = path.join(paths.bridge, `build/linux/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-linux');
   // generate project
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
+  ${externCmakeArgs.join(' ')} \
   ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
   ${'-DENABLE_TEST=true \\'}
   -G "${cmakeGeneratorTemplate}" \
@@ -563,10 +578,16 @@ task('generate-bindings-code', (done) => {
 task('build-window-webf-lib', (done) => {
   const buildType = buildMode == 'Release' ? 'RelWithDebInfo' : 'Debug';
 
+  let externCmakeArgs = [];
+
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
+  }
+
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake --log-level=VERBOSE -DCMAKE_BUILD_TYPE=${buildType} -DVERBOSE_CONFIGURE=ON -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+  execSync(`cmake --log-level=VERBOSE -DCMAKE_BUILD_TYPE=${buildType} ${externCmakeArgs.join(' ')} -DVERBOSE_CONFIGURE=ON -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
@@ -626,6 +647,10 @@ task('build-android-webf-lib', (done) => {
 
   if (process.env.ENABLE_ASAN === 'true') {
     externCmakeArgs.push('-DENABLE_ASAN=true');
+  }
+
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
   }
 
   // Bundle quickjs into webf.
