@@ -31,6 +31,7 @@ const AtomicString& k<%= name %> = reinterpret_cast<AtomicString*>(&names_storag
 <% } %>
 
 void Init(JSContext* ctx) {
+WEBF_LOG(VERBOSE) << " INIT " << "<%= name %> string" ;
   struct NameEntry {
     <% if (options.add_atom_prefix) { %>
       JSAtom atom;
@@ -80,15 +81,18 @@ void Init(JSContext* ctx) {
 };
 
 void Dispose(){
+  WEBF_LOG(VERBOSE) << " DISPOSE " << "<%= name %> string";
   for(size_t i = 0; i < kNamesCount; i ++) {
     AtomicString* atomic_string = reinterpret_cast<AtomicString*>(&names_storage) + i;
     atomic_string->~AtomicString();
+    memset(reinterpret_cast<AtomicString*>(&names_storage) + i, 0xFF, sizeof(AtomicString));
   }
 
   <% if (deps && deps.html_attribute_names) { %>
     for(size_t i = 0; i < kHtmlAttributeNamesCount; i ++) {
       AtomicString* atomic_string = reinterpret_cast<AtomicString*>(&html_attribute_names_storage) + i;
       atomic_string->~AtomicString();
+      memset(reinterpret_cast<AtomicString*>(&html_attribute_names_storage) + i, 0xFF, sizeof(AtomicString));
     }
   <% } %>
 };

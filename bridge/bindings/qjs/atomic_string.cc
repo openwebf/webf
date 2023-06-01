@@ -9,6 +9,7 @@
 #include "built_in_string.h"
 #include "foundation/native_string.h"
 #include "qjs_engine_patch.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
@@ -201,6 +202,13 @@ AtomicString::AtomicString(const AtomicString& value) {
     atom_upper_ = value.atom_upper_;
     atom_lower_ = value.atom_lower_;
   } else if (&value != this) {
+    if (value.runtime_ == nullptr) {
+      WEBF_LOG(VERBOSE) <<  "ERROR: DUMP ATOM " << &value << " RUNTIME: " << value.runtime_ << " atom: " << value.atom_;
+    } else {
+      StringView string_view = JSAtomToStringView(value.runtime_, atom_);
+      WEBF_LOG(VERBOSE) <<  "DUMP ATOM " << &value << " RUNTIME: " << value.runtime_ << " atom: " << value.atom_ << " c_str: " << string_view.Characters8();
+    }
+
     atom_ = JS_DupAtomRT(value.runtime_, value.atom_);
   }
   runtime_ = value.runtime_;
