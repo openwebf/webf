@@ -10,10 +10,10 @@
 #include <cassert>
 #include <functional>
 #include <memory>
+#include "foundation/logging.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
 #include "foundation/string_view.h"
-#include "foundation/logging.h"
 #include "native_string_utils.h"
 #include "qjs_engine_patch.h"
 
@@ -48,7 +48,8 @@ class AtomicString {
   ~AtomicString() {
     if (runtime_ != nullptr && !__JS_AtomIsConst(atom_)) {
       StringView string_view = JSAtomToStringView(runtime_, atom_);
-      WEBF_LOG(VERBOSE) << " FREEING " << this << " runtime_ " << runtime_ << " atom: " << atom_ << " c_str: " << string_view.Characters8();
+      WEBF_LOG(VERBOSE) << " FREEING " << this << " runtime_ " << runtime_ << " atom: " << atom_
+                        << " c_str: " << string_view.Characters8();
     } else {
       WEBF_LOG(VERBOSE) << " FREEING " << this << " runtime_ " << runtime_ << " atom: " << atom_ << " c_str: null";
     }
