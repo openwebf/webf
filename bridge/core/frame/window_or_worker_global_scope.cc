@@ -25,6 +25,8 @@ static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
 }
 
 static void handleTransientCallback(void* ptr, int32_t contextId, const char* errmsg) {
+  if (!isContextValid(contextId)) return;
+
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 
@@ -43,6 +45,8 @@ static void handleTransientCallback(void* ptr, int32_t contextId, const char* er
 }
 
 static void handlePersistentCallback(void* ptr, int32_t contextId, const char* errmsg) {
+  if (!isContextValid(contextId)) return;
+
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 
