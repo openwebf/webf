@@ -45,6 +45,7 @@ void* initDartIsolateContext(uint64_t* dart_methods, int32_t dart_methods_len) {
   }
 
   auto dart_isolate_context = std::make_unique<webf::DartIsolateContext>(dart_context_, dart_methods, dart_methods_len);
+  WEBF_LOG(VERBOSE) << "INIT DART ISOLATE CONTEXT: dart_context: " << dart_context_ << " dart_isolate_context: " << dart_isolate_context.get() <<   " current thread " << std::this_thread::get_id();
   auto* ptr = dart_isolate_context.get();
   dart_context_->AddIsolate(std::move(dart_isolate_context));
   return ptr;
@@ -55,6 +56,7 @@ void* allocateNewPage(void* dart_isolate_context, int32_t targetContextId) {
   auto page =
       std::make_unique<webf::WebFPage>((webf::DartIsolateContext*)dart_isolate_context, targetContextId, nullptr);
   void* ptr = page.get();
+  WEBF_LOG(VERBOSE) << "ADD NEW PAGE: dart_isolate_context: " << dart_isolate_context << " Page: " <<  page.get() << " current thread " << std::this_thread::get_id();
   ((webf::DartIsolateContext*)dart_isolate_context)->AddNewPage(std::move(page));
   return ptr;
 }
@@ -62,6 +64,7 @@ void* allocateNewPage(void* dart_isolate_context, int32_t targetContextId) {
 void disposePage(void* dart_isolate_context, void* page_) {
   auto* page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
+  WEBF_LOG(VERBOSE) << "DISPOSE PAGE: dart_isolate_context: " << dart_isolate_context << " Page: " <<  page << " current thread " << std::this_thread::get_id();
   ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(page);
 }
 
@@ -161,9 +164,11 @@ int32_t profileModeEnabled() {
 static void finalize_dart_context(void* isolate_callback_data, void* peer) {
   auto* dart_isolate_context = (webf::DartIsolateContext*)peer;
   auto* dart_context = dart_isolate_context->dartContext();
+  WEBF_LOG(VERBOSE) << "DISPOSE DART_ISOLATE_CONTEXT:  dart_context: " << dart_context << " dart_isolate_context: " << dart_isolate_context;
   ((webf::DartIsolateContext*)peer)->dartContext()->RemoveIsolate(dart_isolate_context);
   // Remove the whole dart context if there are no dart isolates alive.
   if (dart_context->IsIsolateEmpty()) {
+    WEBF_LOG(VERBOSE) << "DISPOSE DART_CONTEXT:  dart_context: " << dart_context;
     delete dart_context;
     dart_context_ = nullptr;
   }

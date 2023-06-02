@@ -205,6 +205,7 @@ AtomicString::AtomicString(const AtomicString& value) {
     if (value.runtime_ == nullptr) {
       WEBF_LOG(VERBOSE) << "ERROR: DUMP ATOM " << &value << " RUNTIME: " << value.runtime_ << " atom: " << value.atom_;
     } else {
+      WEBF_LOG(VERBOSE) <<  "DUMP ATOM " << &value << " RUNTIME: " << value.runtime_ << " atom: " << value.atom_;
       StringView string_view = JSAtomToStringView(value.runtime_, atom_);
       WEBF_LOG(VERBOSE) << "DUMP ATOM " << &value << " RUNTIME: " << value.runtime_ << " atom: " << value.atom_
                         << " c_str: " << string_view.Characters8();

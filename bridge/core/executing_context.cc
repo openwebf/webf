@@ -44,6 +44,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   //    nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
   //  #endif
 
+  WEBF_LOG(VERBOSE) << "NEW EXECUTING CONTEXT: " << this;
+
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
   valid_contexts[contextId] = true;
   if (contextId > running_context_list)
@@ -90,6 +92,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 }
 
 ExecutingContext::~ExecutingContext() {
+  WEBF_LOG(VERBOSE) << "DESTROY EXECUTING CONTEXT: " << this;
   is_context_valid_ = false;
   valid_contexts[context_id_] = false;
 

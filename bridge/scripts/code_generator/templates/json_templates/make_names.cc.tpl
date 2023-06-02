@@ -81,20 +81,20 @@ WEBF_LOG(VERBOSE) << " INIT " << "<%= name %> string" ;
 };
 
 void Dispose(){
-  WEBF_LOG(VERBOSE) << " DISPOSE " << "<%= name %> string";
+  WEBF_LOG(VERBOSE) << ">>>>>>>>>> DISPOSE " << "<%= name %> string START >>>>>>>>";
   for(size_t i = 0; i < kNamesCount; i ++) {
     AtomicString* atomic_string = reinterpret_cast<AtomicString*>(&names_storage) + i;
     atomic_string->~AtomicString();
-    memset(reinterpret_cast<AtomicString*>(&names_storage) + i, 0xFF, sizeof(AtomicString));
   }
 
   <% if (deps && deps.html_attribute_names) { %>
     for(size_t i = 0; i < kHtmlAttributeNamesCount; i ++) {
       AtomicString* atomic_string = reinterpret_cast<AtomicString*>(&html_attribute_names_storage) + i;
       atomic_string->~AtomicString();
-      memset(reinterpret_cast<AtomicString*>(&html_attribute_names_storage) + i, 0xFF, sizeof(AtomicString));
     }
   <% } %>
+
+  WEBF_LOG(VERBOSE) << "<<<<<<<< DISPOSE " << "<%= name %> string END <<<<<<<<<<";
 };
 
 
