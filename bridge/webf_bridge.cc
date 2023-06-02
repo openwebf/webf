@@ -37,7 +37,9 @@
 #define SYSTEM_NAME "unknown"
 #endif
 
-thread_local webf::DartContext* dart_context_ = nullptr;
+// There will be only 1 flutter ui thread in both single flutter engine and FlutterEngine groups.
+// It ensures there are no conflicts for reading or writing dart_context_ at the same times.
+static webf::DartContext* dart_context_ = nullptr;
 
 void* initDartIsolateContext(uint64_t* dart_methods, int32_t dart_methods_len) {
   if (dart_context_ == nullptr) {
