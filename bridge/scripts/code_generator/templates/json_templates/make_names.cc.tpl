@@ -8,10 +8,10 @@
 namespace webf {
 namespace <%= name %> {
 
-void* names_storage[kNamesCount * ((sizeof(AtomicString) + sizeof(void *) - 1) / sizeof(void *))];
+thread_local void* names_storage[kNamesCount * ((sizeof(AtomicString) + sizeof(void *) - 1) / sizeof(void *))];
 
 <% if (deps && deps.html_attribute_names) { %>
-void* html_attribute_names_storage[kHtmlAttributeNamesCount * ((sizeof(AtomicString) + sizeof(void *) - 1) / sizeof(void *))];
+thread_local void* html_attribute_names_storage[kHtmlAttributeNamesCount * ((sizeof(AtomicString) + sizeof(void *) - 1) / sizeof(void *))];
 <% } %>
 
 
