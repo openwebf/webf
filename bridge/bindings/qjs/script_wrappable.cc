@@ -101,6 +101,7 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
     }
 
     assert_m(JS_IsFunction(ctx, setterFunc), "Setter on prototype should be an function.");
+    JS_UpdateStackTop(JS_GetRuntime(ctx));
     JSValue ret = JS_Call(ctx, setterFunc, obj, 1, &value);
     if (JS_IsException(ret))
       return -1;

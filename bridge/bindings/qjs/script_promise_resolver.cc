@@ -36,6 +36,7 @@ ScriptPromise ScriptPromiseResolver::Promise() {
 }
 
 void ScriptPromiseResolver::ResolveOrRejectImmediately(JSValue value) {
+  JS_UpdateStackTop(JS_GetRuntime(context_->ctx()));
   {
     if (state_ == kResolving) {
       JSValue arguments[] = {value};

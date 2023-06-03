@@ -121,6 +121,7 @@ bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
                                           int startLine) {
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), codeLength));
   JSValue result;
+  JS_UpdateStackTop(script_state_.runtime());
   if (parsed_bytecodes == nullptr) {
     result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
   } else {
@@ -144,6 +145,7 @@ bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
 }
 
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine) {
+  JS_UpdateStackTop(script_state_.runtime());
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
   DrainPendingPromiseJobs();
@@ -153,6 +155,7 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
 }
 
 bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine) {
+  JS_UpdateStackTop(script_state_.runtime());
   JSValue result = JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL);
   DrainPendingPromiseJobs();
   bool success = HandleException(&result);
@@ -287,6 +290,7 @@ uint8_t* ExecutingContext::DumpByteCode(const char* code,
                                         uint32_t codeLength,
                                         const char* sourceURL,
                                         size_t* bytecodeLength) {
+  JS_UpdateStackTop(script_state_.runtime());
   JSValue object =
       JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
   bool success = HandleException(&object);

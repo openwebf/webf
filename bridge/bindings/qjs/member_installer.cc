@@ -27,6 +27,7 @@ static JSValue handleCallThisOnProxy(JSContext* ctx,
                                      JSValueConst* data) {
   JSValue f = data[0];
   JSValue result;
+  JS_UpdateStackTop(JS_GetRuntime(ctx));
   if (JS_IsProxy(this_val)) {
     result = JS_Call(ctx, f, JS_GetProxyTarget(this_val), argc, argv);
   } else {
