@@ -68,7 +68,10 @@ DartIsolateContext::DartIsolateContext(webf::DartContext* owner_dart_context,
     : owner_dart_context_(owner_dart_context),
       is_valid_(true),
       running_thread_(std::this_thread::get_id()),
-      dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {}
+      dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {
+  // Avoid stack overflow when running in multiple threads.
+  JS_UpdateStackTop(dartContext()->runtime());
+}
 
 DartIsolateContext::~DartIsolateContext() {
   is_valid_ = false;

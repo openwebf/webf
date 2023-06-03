@@ -14,7 +14,6 @@ thread_local std::atomic<int32_t> runningContexts{0};
 
 ScriptState::ScriptState(DartIsolateContext* dart_context) : dart_isolate_context_(dart_context) {
   runningContexts++;
-  // Avoid stack overflow when running in multiple threads.
   ctx_ = JS_NewContext(dart_isolate_context_->dartContext()->runtime());
   names_installer::Init(ctx_);
 }
