@@ -15,12 +15,12 @@ thread_local std::atomic<int32_t> runningContexts{0};
 ScriptState::ScriptState(DartIsolateContext* dart_context) : dart_isolate_context_(dart_context) {
   runningContexts++;
   // Avoid stack overflow when running in multiple threads.
-  ctx_ = JS_NewContext(dart_isolate_context_->dartContext()->runtime());
+  ctx_ = JS_NewContext(dart_isolate_context_->runtime());
   names_installer::Init(ctx_);
 }
 
 JSRuntime* ScriptState::runtime() {
-  return dart_isolate_context_->dartContext()->runtime();
+  return dart_isolate_context_->runtime();
 }
 
 ScriptState::~ScriptState() {
@@ -28,7 +28,7 @@ ScriptState::~ScriptState() {
   JS_FreeContext(ctx_);
 
   // Run GC to clean up remaining objects about m_ctx;
-  JS_RunGC(dart_isolate_context_->dartContext()->runtime());
+  JS_RunGC(dart_isolate_context_->runtime());
 
   ctx_ = nullptr;
 }

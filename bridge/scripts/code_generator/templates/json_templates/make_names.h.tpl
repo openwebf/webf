@@ -14,18 +14,18 @@ namespace <%= name %> {
 
 <% _.forEach(data, function(name, index) { %>
   <% if (_.isArray(name)) { %>
-    extern const AtomicString& k<%= name[0] %>;
+    extern thread_local const AtomicString& k<%= name[0] %>;
   <% } else if (_.isObject(name)) { %>
-    extern const AtomicString& k<%= name.name %>;
+    extern thread_local const AtomicString& k<%= name.name %>;
   <% } else { %>
-  extern const AtomicString& k<%= name %>;
+  extern thread_local const AtomicString& k<%= name %>;
   <% } %>
 <% }) %>
 
 <% if (deps && deps.html_attribute_names) { %>
   constexpr unsigned kHtmlAttributeNamesCount = <%= deps.html_attribute_names.data.length %>;
   <% _.forEach(deps.html_attribute_names.data, function(name, index) { %>
-    extern const AtomicString& k<%= upperCamelCase(name) %>Attr;
+    extern thread_local const AtomicString& k<%= upperCamelCase(name) %>Attr;
   <% }) %>
 <% } %>
 
