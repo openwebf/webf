@@ -77,7 +77,7 @@ static void CreateFunctionMap() {
   // Empty array initializer lists are illegal [dcl.init.aggr] and will not
   // compile in MSVC. If tags list is empty, add check to skip this.
 
-  static const CreateFunctionMapData data[] = {
+  const CreateFunctionMapData data[] = {
   <% _.forEach(items, (item, index) => { %>
     {<%= lprefix %>_names::k<%= item.name %>, <%= item.interfaceName %>Constructor},
   <% }); %>

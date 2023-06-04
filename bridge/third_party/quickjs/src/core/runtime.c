@@ -1219,16 +1219,16 @@ done:
   dbuf_free(&dbuf);
   JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_stack, str, JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
   if (line_num != -1) {
-    JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_lineNumber, JS_NewInt32(ctx, latest_line_num), 
+    JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_lineNumber, JS_NewInt32(ctx, latest_line_num),
       JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
     if (column_num != -1) {
-      /** 
-       * do not add the corresponding definition 
-       * in the 'quickjs-atom.h' file, it will lead to 
+      /**
+       * do not add the corresponding definition
+       * in the 'quickjs-atom.h' file, it will lead to
        * inaccurate diff positions of the atom table
        */
       int atom = JS_NewAtom(ctx, "columnNumber");
-      JS_DefinePropertyValue(ctx, error_obj, atom, JS_NewInt32(ctx, latest_column_num), 
+      JS_DefinePropertyValue(ctx, error_obj, atom, JS_NewInt32(ctx, latest_column_num),
         JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
       JS_FreeAtom(ctx, atom);
     }

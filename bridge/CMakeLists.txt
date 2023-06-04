@@ -207,6 +207,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
   target_link_libraries(quickjs mimalloc-static)
 
+#  find_library(log-lib log)
+#  target_link_libraries(quickjs ${log-lib})
+
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
   if (MSVC)
@@ -247,7 +250,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
-    core/dart_context.cc
+          core/dart_isolate_context.cc
     core/dart_context_data.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
