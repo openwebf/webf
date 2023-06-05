@@ -98,7 +98,28 @@ class _MyHomePageState extends State<MyBrowser> {
                 devToolsService: ChromeDevToolsService(),
                 viewportWidth: viewportSize.width - queryData.padding.horizontal,
                 viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
-                bundle: WebFBundle.fromUrl('assets:assets/bundle.html'),
+                bundle: WebFBundle.fromContent('''
+                const a = document.createElement('div');
+                a.style.height = '100px';
+                   a.style.width = '200px';
+
+                   const ele = document.createElement('div');
+
+                   ele.style.backgroundImage = 'linear-gradient(135deg, red, red 10%, blue 75%, yellow 75%)';
+                   ele.style.backgroundRepeat = 'repeat';
+                   ele.style.backgroundSize = '200px 5px';
+                   ele.style.height = '100px';
+                   ele.style.width = '200px';
+
+                   ele.style.position = 'absolute';
+                   // ele.style.top = '60rpx';
+                    ele.style.left = '60rpx';
+                   // ele.style.padding = '60rpx 60rpx';
+                   // const transX = ele.transPosX + ele.transPosWidth / 2;
+                   // ele.appendChild(document.createTextNode(`第 1 个元素`));
+                   a.appendChild(ele);
+                   document.body.appendChild(a);
+                '''),
               ),
             ],
           ),
