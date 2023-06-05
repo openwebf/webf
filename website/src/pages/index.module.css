@@ -1,0 +1,62 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.title {
+  font-size: 60px;
+  font-family: "Google Sans";
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  margin-top: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flutter_text {
+  color: rgb(83, 189, 247);
+}
+
+.flutter_text:hover {
+  cursor: pointer;
+  text-decoration: none;
+  color: rgb(83, 189, 247);;
+}
+
+
+.footer_container {
+  margin: 100px auto 0px auto;
+  padding: 50px 0;
+  min-height: 100px;
+  text-align: center;
+  background-color: #042449;
+}
+
+.footer_container h1 {
+  font-size: 40px;
+  color: white;
+}
+
+.footer_container h2 {
+  font-size: 30px;
+  color: white;
+}
+
+.footer_container div {
+  color: white;
+}
