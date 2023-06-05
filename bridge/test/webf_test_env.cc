@@ -140,16 +140,14 @@ uint32_t TEST_requestAnimationFrame(webf::FrameCallback* frameCallback, int32_t 
 void TEST_cancelAnimationFrame(int32_t contextId, int32_t id) {
   auto* page = test_context_map[contextId]->page();
   auto* context = page->GetExecutingContext();
-  JSThreadState* ts =
-      static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->runtime()));
+  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->runtime()));
   ts->os_frameCallbacks.erase(id);
 }
 
 void TEST_clearTimeout(int32_t contextId, int32_t timerId) {
   auto* page = test_context_map[contextId]->page();
   auto* context = page->GetExecutingContext();
-  JSThreadState* ts =
-      static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->runtime()));
+  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->runtime()));
   ts->os_timers.erase(timerId);
 }
 
@@ -203,19 +201,16 @@ WebFTestEnv::~WebFTestEnv() {
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
-  auto *dart_isolate_context = initDartIsolateContext(mockedDartMethods.data(), mockedDartMethods.size());
+  auto* dart_isolate_context = initDartIsolateContext(mockedDartMethods.data(), mockedDartMethods.size());
   int pageContextId = contextId++;
   auto* page = allocateNewPage(dart_isolate_context, pageContextId);
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
   JSThreadState* th = new JSThreadState();
-  JS_SetRuntimeOpaque(reinterpret_cast<WebFTestContext*>(testContext)
-                          ->page()
-                          ->GetExecutingContext()
-                          ->dartIsolateContext()
-                          ->runtime(),
-                      th);
+  JS_SetRuntimeOpaque(
+      reinterpret_cast<WebFTestContext*>(testContext)->page()->GetExecutingContext()->dartIsolateContext()->runtime(),
+      th);
   return std::make_unique<WebFTestEnv>((webf::DartIsolateContext*)dart_isolate_context, (webf::WebFPage*)page);
 }
 

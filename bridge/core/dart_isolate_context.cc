@@ -28,7 +28,6 @@ DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dar
       dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {
   if (runtime_ == nullptr) {
     runtime_ = JS_NewRuntime();
-    WEBF_LOG(VERBOSE) << "Create new RUNTIME: " << runtime_;
   }
   running_isolates_++;
   // Avoid stack overflow when running in multiple threads.
@@ -54,7 +53,6 @@ DartIsolateContext::~DartIsolateContext() {
     EventFactory::Dispose();
     data_.reset();
     JS_FreeRuntime(runtime_);
-    WEBF_LOG(VERBOSE) << "FREE RUNTIME: " << runtime_;
     runtime_ = nullptr;
   }
 }
