@@ -39,7 +39,6 @@
 
 void* initDartIsolateContext(uint64_t* dart_methods, int32_t dart_methods_len) {
   void* ptr = new webf::DartIsolateContext(dart_methods, dart_methods_len);
-  WEBF_LOG(VERBOSE) << "INIT DART ISOLATE:" << ptr;
   return ptr;
 }
 
@@ -153,7 +152,6 @@ int32_t profileModeEnabled() {
 // Callbacks when dart context object was finalized by Dart GC.
 static void finalize_dart_context(void* isolate_callback_data, void* peer) {
   auto* dart_isolate_context = (webf::DartIsolateContext*)peer;
-  WEBF_LOG(VERBOSE) << "FINALIZE DART ISOLATE CONTEXT: " << dart_isolate_context;
   delete dart_isolate_context;
 }
 
@@ -164,6 +162,6 @@ void init_dart_dynamic_linking(void* data) {
 }
 
 void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context) {
-  Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_isolate_context), sizeof(webf::DartIsolateContext),
-                               finalize_dart_context);
+  Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_isolate_context),
+                               sizeof(webf::DartIsolateContext), finalize_dart_context);
 }
