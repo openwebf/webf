@@ -26,6 +26,22 @@ describe('Input line-height', () => {
     await snapshot();
   });
 
+  it('height set should work when the unit not px', async () => {
+      let div;
+      div = createElement(
+            'input',
+            {
+              value: '1234',
+              style: {
+                  height: '100%',
+                  fontSize: '30px',
+              },
+            }
+          );
+      BODY.appendChild(div);
+      await snapshot();
+    });
+
   it('height set and line-height set', async () => {
     let div;
     div = createElement(

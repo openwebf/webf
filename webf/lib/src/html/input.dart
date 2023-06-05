@@ -269,7 +269,7 @@ mixin BaseInputElement on WidgetElement {
   /// 1. LineHeight must greater than fontSize
   /// 2. LineHeight must less than height in input but textarea
   double get leading => lineHeight > fontSize &&
-          (maxLines != 1 || height == null || lineHeight < height!)
+          (maxLines != 1 || height == null || lineHeight < renderStyle.height.computedValue)
       ? (lineHeight - fontSize - _defaultPadding * 2) / fontSize
       : 0;
 
@@ -410,15 +410,15 @@ mixin BaseInputElement on WidgetElement {
   }
 
   Widget _wrapInputHeight(Widget widget) {
-    double? height = renderStyle.height.value;
+    double? heightValue = renderStyle.height.value;
 
-    if (height == null) return widget;
+    if (heightValue == null) return widget;
 
     return SizedBox(
         child: Center(
           child: widget,
         ),
-        height: height);
+        height: renderStyle.height.computedValue);
   }
 
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
@@ -457,7 +457,7 @@ mixin BaseCheckBoxElement on WidgetElement {
     //TODO support zoom
     //width and height
     if (renderStyle.width.value != null && renderStyle.height.value != null) {
-      return renderStyle.width.value! / 18.0;
+      return renderStyle.width.computedValue! / 18.0;
     }
     return 1.0;
   }
