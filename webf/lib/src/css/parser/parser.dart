@@ -401,7 +401,10 @@ class CSSParser {
 
       case TokenKind.DIRECTIVE_FONTFACE:
         _next();
-        return null;
+        _eat(TokenKind.LBRACE);
+        List data = processDeclarations();
+        assert(data.isNotEmpty);
+        return CSSFontFaceRule(data[0]);
       case TokenKind.DIRECTIVE_STYLET:
         // Stylet grammar:
         //
