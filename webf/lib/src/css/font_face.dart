@@ -6,6 +6,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
 
 final List<String> supportedFonts = [
   'ttc',
@@ -20,6 +21,15 @@ class _Font {
 }
 
 class CSSFontFace {
+  static Uri? _resolveFontSource(int contextId, String source) {
+    WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+    String base = controller.url;
+    try {
+      return controller.uriParser!.resolve(Uri.parse(base), Uri.parse(source));
+    } catch (_) {
+      return null;
+    }
+  }
   static void resolveFontFaceRules(CSSFontFaceRule fontFaceRule, int contextId) async {
     CSSStyleDeclaration declaration = fontFaceRule.declarations;
     String fontFamily = declaration.getPropertyValue('fontFamily');
@@ -49,7 +59,9 @@ class CSSFontFace {
       if (targetFont == null) return;
 
       try {
-        WebFBundle bundle = WebFBundle.fromUrl(targetFont.src);
+        Uri? uri = _resolveFontSource(contextId, targetFont.src);
+        if (uri == null) return;
+        WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
         await bundle.resolve(contextId);
         assert(bundle.isResolved, 'Failed to obtain $url');
         FontLoader loader = FontLoader(fontFamily);
@@ -57,6 +69,7 @@ class CSSFontFace {
         loader.addFont(bytes);
         loader.load();
       } catch(e) {
+        print(e);
         return;
       }
     }
