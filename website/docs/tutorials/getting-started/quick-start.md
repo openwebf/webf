@@ -47,6 +47,7 @@ Now in your Dart code, you can use:
 
 ```dart
 import 'package:webf/webf.dart';
+import 'package:webf/devtools.dart';
 import 'package:webf_websocket/webf_websocket.dart';
 ```
 
@@ -118,18 +119,18 @@ Widget build(BuildContext context) {
   final Size viewportSize = queryData.size;
 
   return Scaffold(
-      body: Center(
-        child: Column(
-          children: [
-            WebF(
-              devToolsService: ChromeDevToolsService(), // Enable Chrome DevTools Services
-              viewportWidth: viewportSize.width - queryData.padding.horizontal, // Adjust the viewportWidth
-              viewportHeight: viewportSize.height - queryData.padding.vertical, // Adjust the viewportHeight
-              bundle: WebFBundle.fromUrl('http://<yourip>:8080/'), // The page entry point
-            ),
-          ],
-        ),
-      ));
+    body: Center(
+      child: Column(
+        children: [
+          WebF(
+            devToolsService: ChromeDevToolsService(), // Enable Chrome DevTools Services
+            viewportWidth: viewportSize.width - queryData.padding.horizontal, // Adjust the viewportWidth
+            viewportHeight: viewportSize.height - queryData.padding.vertical, // Adjust the viewportHeight
+            bundle: WebFBundle.fromUrl('http://<yourip>:8080/'), // The page entry point
+          ),
+        ],
+      ),
+    ));
 }
 ```
 

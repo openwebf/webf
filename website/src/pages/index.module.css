@@ -4,21 +4,24 @@
  */
 
 .heroBanner {
-  padding: 4rem 0;
   text-align: center;
   position: relative;
   overflow: hidden;
+  background-color: var(--ifm-hero-background-color);
+  display: flex;
+  margin: 3rem 0 5rem;
+}
+
+.logo {
+  width: 8rem;
 }
 
 .title {
-  font-size: 60px;
-  font-family: "Google Sans";
+  font-size: 40px;
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+.subtitle {
+  font-size: 32px;
 }
 
 .buttons {
@@ -52,7 +55,7 @@
   color: white;
 }
 
-.footer_container h2 {
+.footer_container p {
   font-size: 30px;
   color: white;
 }

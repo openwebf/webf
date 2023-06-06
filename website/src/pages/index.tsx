@@ -10,17 +10,16 @@ import styles from './index.module.css';
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
   return (
-    <header className={clsx('hero', styles.heroBanner)}>
+    <header className={clsx(styles.heroBanner)}>
       <div className="container">
-        <h1 className={styles.title}>Build <a href="https://flutter.io/"
-                                              className={styles.flutter_text}>Flutter</a> Apps</h1>
-        <h1 className={styles.title}>with HTML/CSS and JavaScript</h1>
-        <h2>
-          Build Flutter apps with web technologies and real-time updates like web applications.
-        </h2>
+        <img className={styles.logo} src={"/img/openwebf.png"} alt={"Logo"}/>
+        <h1 className={styles.title}> WebF </h1>
+        <p className={styles.subtitle}>Build <a href="https://flutter.io/"
+                                                 className={styles.flutter_text}>Flutter</a> Apps with HTML/CSS and
+          JavaScript</p>
         <div className={styles.buttons}>
           <Link to={'/docs/tutorials/getting-started/introduction'}>
-            <div className="button_item btn_default">Getting Started</div>
+            <div className="button_item btn_default btn_active">Getting Started</div>
           </Link>
         </div>
       </div>
@@ -32,11 +31,11 @@ function HomepageFooter() {
   return (
     <div className={clsx(styles.footer_container)}>
       <h1>Web + Flutter = WebF</h1>
-      <h2>
+      <p>
         Build cross-platform apps for both desktop and mobile from a single code base
-      </h2>
+      </p>
       <div className={clsx(styles.buttons, styles.footer_button)}>
-        <div className="button_item btn_default">Getting Started</div>
+        <Link to={'/docs/tutorials/getting-started/introduction'}><div className="button_item btn_default">Getting Started</div></Link>
       </div>
     </div>
   );

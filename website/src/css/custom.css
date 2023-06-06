@@ -68,7 +68,6 @@ html, body, h1,h2,h3,h4,h5 {
 
 
 .button_item {
-  margin-right: 30px;
   border: 1px solid var(--ifm-color-primary);
   padding: 0 32px;
   display: inline-flex;
@@ -86,6 +85,11 @@ html, body, h1,h2,h3,h4,h5 {
 }
 
 .btn_default:hover {
+  background-color: var(--ifm-color-primary);
+  color: var(--ifm-color-on-primary-dark);
+}
+
+.btn_active {
   background-color: var(--ifm-color-primary);
   color: var(--ifm-color-on-primary-dark);
 }
