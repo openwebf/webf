@@ -457,7 +457,7 @@ mixin BaseCheckBoxElement on WidgetElement {
     //TODO support zoom
     //width and height
     if (renderStyle.width.value != null && renderStyle.height.value != null) {
-      return renderStyle.width.computedValue! / 18.0;
+      return renderStyle.width.computedValue / 18.0;
     }
     return 1.0;
   }
