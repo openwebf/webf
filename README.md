@@ -62,6 +62,7 @@ dependencies:
 
 ```dart
 import 'package:webf/webf.dart';
+import 'package:webf/devtools.dart';
 import 'package:webf_websocket/webf_websocket.dart';
 ```
 
