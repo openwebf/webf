@@ -24,7 +24,7 @@ const FeatureList: FeatureItem[] = [
     title: 'High Performance',
     img: '',
     description: 'Execute bytecode with optimized QuickJS engine, and render HTML/CSS in the same context as Flutter apps, saving 50% load times compared to WebView.',
-    btnLink: '/blog/high_performance_webf',
+    btnLink: '/',
     btnText: 'Explore why webf are faster than WebView.'
   },
   {
@@ -38,7 +38,7 @@ const FeatureList: FeatureItem[] = [
     title: 'Smaller Bundle Size',
     img: '',
     description: 'WebF only takes up 4-5 MB of disk space if you already have Flutter integrated.',
-    btnLink: '/blog/high_performance_webf',
+    btnLink: '/',
     btnText: 'Have a Try'
   },
   {
@@ -51,7 +51,7 @@ const FeatureList: FeatureItem[] = [
   {
     title: 'Inspect your WebF apps with Chrome Inspector',
     description: 'Utilize your favorite web frameworks, build tools, and Chrome DevTools to develop, debug, and deploy your apps.',
-    btnLink: '/web_framework_and_tips',
+    btnLink: '/',
     img: '/img/devtools.png',
     btnText: 'Learn More'
   },
