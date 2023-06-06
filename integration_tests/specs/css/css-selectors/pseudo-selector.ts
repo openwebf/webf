@@ -1,6 +1,7 @@
-fdescribe("css pseudo selector", () => {
+describe("css pseudo selector", () => {
   it("001", async () => {
-    const style = <style>{`
+    const style = document.createElement('style');
+    style.innerHTML = `
       .div1::before {
         content: '';
         display: block;
@@ -16,8 +17,11 @@ fdescribe("css pseudo selector", () => {
         height: 30px;
         background-color: blue;
         margin-left: 10px;
-    }`}</style>;
-    const div = <div class="div1">{'001 Before && After'}</div>;
+    }`;
+
+    const div = createElement('div', {
+      className: 'div1'
+    }, [createText('001 Before && After')]);
     div.setAttribute("style", "border:5px solid blue");
     document.head.appendChild(style);
     document.body.appendChild(div);
@@ -27,13 +31,13 @@ fdescribe("css pseudo selector", () => {
   it("002", async () => {
     const style = <style>{`
       .div1::before {
-        content: before;
+        content: 'A';
         display: block;
         background-color: red;
         margin-left: 10px;
       }
       .div1::after {
-        content: after;
+        content: 'B';
         display: block;
         background-color: blue;
         margin-left: 10px;
@@ -48,13 +52,13 @@ fdescribe("css pseudo selector", () => {
   it("003", async () => {
     const style = <style>{`
       .div1::before {
-        content: before;
+        content: 'A';
         display: block;
         background-color: red;
         margin-left: 10px;
       }
       .div1::after {
-        content: after;
+        content: 'B';
         display: block;
         background-color: blue;
         margin-left: 10px;

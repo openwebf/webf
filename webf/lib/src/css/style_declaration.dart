@@ -287,6 +287,11 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     if (propertyName.startsWith(ANIMATION) || propertyName == D) {
       return string;
     }
+
+    if (propertyName == CONTENT) {
+      return string;
+    }
+
     // Like url("http://path") declared with quotation marks and
     // custom property names are case sensitive.
     String lowerCase = string.toLowerCase();

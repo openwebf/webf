@@ -166,8 +166,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   String get className => _classList.join(_ONE_SPACE);
 
-  Element? _beforeElement;
-  Element? _afterElement;
+  PseudoElement? _beforeElement;
+  PseudoElement? _afterElement;
 
   final bool isDefaultRepaintBoundary = false;
 
@@ -253,6 +253,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   final Map<String, ElementAttributeProperty> _attributeProperties = {};
+
   @mustCallSuper
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     attributes[_STYLE_PROPERTY] = ElementAttributeProperty(setter: (value) {
@@ -890,10 +891,12 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       // Flush pending style before child attached.
       style.flushPendingProperties();
 
+      // Add pseudo elements
       String? beforeContent = style.beforeRule?.declaration.getPropertyValue('content');
-      if (style.beforeRule != null && beforeContent != null) {
-        _beforeElement ??= ownerDocument.createElement(BEFORE);
-        _beforeElement?.style.merge(style.beforeRule!.declaration);
+      if (style.beforeRule != null && beforeContent != null && beforeContent.isNotEmpty) {
+        _beforeElement ??= PseudoElement(PseudoKind.kPseudoBefore, this);
+        _beforeElement!.ownerDocument = ownerDocument;
+        _beforeElement!.style.merge(style.beforeRule!.declaration);
         if (_beforeElement?.parentNode == null) {
           if (firstChild != null) {
             insertBefore(_beforeElement!, firstChild!);
@@ -901,28 +904,35 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
             appendChild(_beforeElement!);
           }
         }
-        if (beforeContent.isNotEmpty) {
-          final textNode = ownerDocument.createTextNode(beforeContent);
+        var pseudoValue = CSSPseudo.resolveContent(beforeContent);
+
+        // We plan to support content values only with quoted strings.
+        if (pseudoValue is QuoteStringContentValue) {
+          final textNode = ownerDocument.createTextNode(pseudoValue.value);
           _beforeElement?.appendChild(textNode);
         }
-      } else if (_beforeElement != null){
+      } else if (_beforeElement != null) {
         removeChild(_beforeElement!);
       }
 
       didAttachRenderer();
 
       String? afterContent = style.afterRule?.declaration.getPropertyValue('content');
-      if (style.afterRule != null && afterContent != null) {
-        _afterElement ??= ownerDocument.createElement(AFTER);
-        _afterElement?.style.merge(style.afterRule!.declaration);
-        if (_afterElement?.parentNode == null) {
+      if (style.afterRule != null && afterContent != null && afterContent.isNotEmpty) {
+        _afterElement ??= PseudoElement(PseudoKind.kPseudoAfter, this);
+        _afterElement!.ownerDocument = ownerDocument;
+        _afterElement!.style.merge(style.afterRule!.declaration);
+        if (_afterElement!.parentNode == null) {
           appendChild(_afterElement!);
         }
-        if (afterContent.isNotEmpty) {
-          final textNode = ownerDocument.createTextNode(afterContent);
+
+        var pseudoValue = CSSPseudo.resolveContent(beforeContent);
+        // We plan to support content values only with quoted strings.
+        if (pseudoValue is QuoteStringContentValue) {
+          final textNode = ownerDocument.createTextNode(pseudoValue.value);
           _afterElement?.appendChild(textNode);
         }
-      } else if (_afterElement != null){
+      } else if (_afterElement != null) {
         removeChild(_afterElement!);
       }
     }
@@ -1059,7 +1069,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         // Found the most closed
         if (afterRenderObject == null) {
           Node? ref = referenceNode.previousSibling;
-          while(ref != null && afterRenderObject == null) {
+          while (ref != null && afterRenderObject == null) {
             afterRenderObject = ref.renderer;
             ref = ref.previousSibling;
           }
@@ -1067,14 +1077,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
         // Remove all element after the new node, when parent is sliver
         // Sliver's children if change sort need relayout
-        if(renderStyle.display == CSSDisplay.sliver
-            && referenceNode is Element
-            && referenceNode.renderer != null
-            && referenceNode.isRendererAttached) {
+        if (renderStyle.display == CSSDisplay.sliver &&
+            referenceNode is Element &&
+            referenceNode.renderer != null &&
+            referenceNode.isRendererAttached) {
           Node? reference = referenceNode;
-          while(reference != null) {
-            if(reference.isRendererAttached && reference is Element) {
-              if(reference.renderer != null &&
+          while (reference != null) {
+            if (reference.isRendererAttached && reference is Element) {
+              if (reference.renderer != null &&
                   reference.renderer!.parent != null &&
                   reference.renderer!.parent is RenderSliverRepaintProxy) {
                 (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
@@ -1669,7 +1679,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
-  void setRenderStyle(String property, String present, { String? baseHref }) {
+  void setRenderStyle(String property, String present, {String? baseHref}) {
     dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present, baseHref: baseHref);
     setRenderStyleProperty(property, value);
   }
@@ -1745,7 +1755,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
-  void _onStyleChanged(String propertyName, String? prevValue, String currentValue, { String? baseHref }) {
+  void _onStyleChanged(String propertyName, String? prevValue, String currentValue, {String? baseHref}) {
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
       renderStyle.runTransition(propertyName, prevValue, currentValue);
     } else {
@@ -1931,7 +1941,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (ancestor == null || ancestor.renderBoxModel == null) {
       return Offset.zero;
     }
-    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!, excludeScrollOffset: excludeScrollOffset);
+    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!,
+        excludeScrollOffset: excludeScrollOffset);
   }
 
   void click() {
@@ -2017,8 +2028,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (keys.isEmpty) {
       return false;
     }
-    for(final rules in cssMap.values) {
-      for(int i = 0; i < rules.length; i ++) {
+    for (final rules in cssMap.values) {
+      for (int i = 0; i < rules.length; i++) {
         var rule = rules[i];
         if (rule is! CSSStyleRule) {
           continue;
@@ -2031,7 +2042,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
 
-    for(int i = 0; i < ownerDocument.ruleSet.pseudoRules.length; i ++) {
+    for (int i = 0; i < ownerDocument.ruleSet.pseudoRules.length; i++) {
       var rule = ownerDocument.ruleSet.pseudoRules[i];
       if (rule is! CSSStyleRule) {
         continue;

@@ -320,3 +320,6 @@ const String D = 'd';
 const String FILL_RULE = 'fillRule';
 const String STROKE_LINECAP = 'strokeLinecap';
 const String STROKE_LINEJOIN = 'strokeLinejoin';
+
+// Pseudo
+const String CONTENT = 'content';
