@@ -5,22 +5,20 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 
-const String BEFORE = 'before';
-const String AFTER = 'after';
-
 const Map<String, dynamic> _defaultStyle = {
-  DISPLAY: BLOCK,
+  DISPLAY: INLINE,
 };
 
-class BeforePseudoElement extends Element {
-  BeforePseudoElement([BindingContext? context]) : super(context);
-
-  @override
-  Map<String, dynamic> get defaultStyle => _defaultStyle;
+enum PseudoKind {
+  kPseudoBefore,
+  kPseudoAfter,
 }
 
-class AfterPseudoElement extends Element {
-  AfterPseudoElement([BindingContext? context]) : super(context);
+class PseudoElement extends Element {
+  final PseudoKind kind;
+  final Element parent;
+
+  PseudoElement(this.kind, this.parent, [BindingContext? context]) : super(context);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
