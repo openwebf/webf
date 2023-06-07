@@ -1224,12 +1224,12 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
+    attributes[qualifiedName] = value;
     if (qualifiedName == 'class') {
       className = value;
       return;
     }
     final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
-    attributes[qualifiedName] = value;
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
