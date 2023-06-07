@@ -67,7 +67,8 @@ class InspectDOMModule extends UIInspectorModule {
   Node? inspectedNode;
 
   void onSetInspectedNode(int? id, Map<String, dynamic> params) {
-    int nodeId = params['nodeId'];
+    int? nodeId = params['nodeId'];
+    if (nodeId == null) return;
     Node? node = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(nodeId));
     if (node != null) {
       inspectedNode = node;
@@ -84,8 +85,12 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onGetBoxModel(int? id, Map<String, dynamic> params) {
-    int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    int? nodeId = params['nodeId'];
+    if (nodeId == null) return;
+    Node? node = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(nodeId));
+
+    Element? element = null;
+    if (node is Element) element = node;
 
     // BoxModel design to BorderBox in kraken.
     if (element != null && element.renderBoxModel != null && element.renderBoxModel!.hasSize) {
@@ -190,11 +195,11 @@ class InspectorNode extends JSONEncodable {
   /// Node identifier that is passed into the rest of the DOM messages as the nodeId.
   /// Backend will only push node with given id once. It is aware of all requested nodes
   /// and will only fire DOM events for nodes known to the client.
-  int? get nodeId => referencedNode.pointer!.address;
+  int? get nodeId => referencedNode.pointer?.address;
 
   /// Optional. The id of the parent node if any.
   int get parentId {
-    if (referencedNode.parentNode != null) {
+    if (referencedNode.parentNode != null && referencedNode.parentNode!.pointer != null) {
       return referencedNode.parentNode!.pointer!.address;
     } else {
       return 0;
