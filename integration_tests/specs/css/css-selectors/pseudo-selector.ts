@@ -92,4 +92,122 @@ describe("css pseudo selector", () => {
     document.body.appendChild(div);
     await snapshot();
   });
+
+  it('005', async () => {
+    const style = <style>{`
+      .div1::before {
+        content: 'AAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+    }`}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1";
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+
+    div.style.display = 'none';
+    await snapshot();
+  });
+
+  it('006', async () => {
+    const style = <style>{`
+      .div1::before {
+        content: 'AAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+    }`}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1";
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+
+    document.body.removeChild(div);
+    await snapshot();
+  });
+
+  it('007', async () => {
+    const style = <style>{`
+      .div1::before {
+        content: 'AAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+      }
+      .text-box:before {
+        border: 5px solid #000;
+      }
+      .text-box:after {
+        border: 5px solid red;
+      }
+    
+    `}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1 text-box";
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+
+    document.body.removeChild(div);
+    await snapshot();
+  });
+
+  it('008', async () => {
+    const style = <style>{`
+      
+      #pro:before {
+        border: 2px solid green;
+      }
+      #pro:after {
+        border: 2px solid yellow;
+      }
+    
+      .div1::before {
+        content: 'AAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+      }
+      .text-box:before {
+        border: 5px solid #000;
+      }
+      .text-box:after {
+        border: 5px solid red;
+      }
+     
+    
+    `}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1 text-box";
+    div.id = 'pro';
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+
+    document.body.removeChild(div);
+    await snapshot();
+  });
 });
