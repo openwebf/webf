@@ -56,4 +56,15 @@ describe('Document api', () => {
   it('document.defaultView', () => {
     expect(document.defaultView).toBe(window);
   });
+
+  it('document.elementFromPoint should work', async () => {
+    const ele = document.createElement('div')
+    ele.style.width = '100px';
+    ele.style.height = '100px';
+    ele.style.backgroundColor = 'blue';
+    document.body.appendChild(ele);
+    const findEle = document.elementFromPoint(50, 50);
+    findEle.style.backgroundColor = 'yellow';
+    await snapshot();
+  });
 });

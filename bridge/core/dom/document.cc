@@ -217,6 +217,19 @@ std::vector<Element*> Document::getElementsByName(const AtomicString& name, Exce
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
 
+Element* Document::elementFromPoint(double x, double y, ExceptionState& exception_state) {
+  GetExecutingContext()->FlushUICommand();
+    const NativeValue args[] = {
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+    };
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kelementFromPoint, 2, args, exception_state);
+  if (exception_state.HasException()) {
+    return nullptr;
+  }
+  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
+}
+
 Window* Document::defaultView() const {
   return GetExecutingContext()->window();
 }

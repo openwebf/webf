@@ -174,5 +174,6 @@
     "hidden",
     "matches",
     "closest",
+    "elementFromPoint",
   ]
 }
