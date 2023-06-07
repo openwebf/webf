@@ -82,11 +82,8 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   StyleChangeListener? onStyleChanged;
   StyleFlushedListener? onStyleFlushed;
 
-  CSSStyleRule? _beforeRule;
-  CSSStyleRule? _afterRule;
-
-  CSSStyleRule? get beforeRule => _beforeRule;
-  CSSStyleRule? get afterRule => _afterRule;
+  CSSStyleDeclaration? pseudoBeforeStyle;
+  CSSStyleDeclaration? pseudoAfterStyle;
 
   CSSStyleDeclaration([BindingContext? context]);
 
@@ -510,17 +507,47 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   }
 
   void handlePseudoRules(List<CSSStyleRule> rules) {
+    List<CSSStyleRule> beforeRules = [];
+    List<CSSStyleRule> afterRules = [];
+
     for (CSSStyleRule style in rules) {
       for (Selector selector in style.selectorGroup.selectors) {
         for (SimpleSelectorSequence sequence in selector.simpleSelectorSequences) {
           if (sequence.simpleSelector is PseudoElementSelector) {
             if (sequence.simpleSelector.name == 'before') {
-              _beforeRule = style;
+              beforeRules.add(style);
             } else if (sequence.simpleSelector.name == 'after') {
-              _afterRule = style;
+              afterRules.add(style);
             }
           }
         }
+      }
+    }
+
+    int sortRules(leftRule, rightRule) {
+      int isCompare = leftRule.selectorGroup.matchSpecificity.compareTo(rightRule.selectorGroup.matchSpecificity);
+      if (isCompare == 0) {
+        return leftRule.position.compareTo(rightRule.position);
+      }
+      return isCompare;
+    }
+
+    // sort selector
+    beforeRules.sort(sortRules);
+    afterRules.sort(sortRules);
+
+    if (beforeRules.isNotEmpty) {
+      pseudoBeforeStyle ??= CSSStyleDeclaration();
+      // Merge all the rules
+      for (CSSStyleRule rule in beforeRules) {
+        pseudoBeforeStyle!.union(rule.declaration);
+      }
+    }
+
+    if (afterRules.isNotEmpty) {
+      pseudoAfterStyle ??= CSSStyleDeclaration();
+      for (CSSStyleRule rule in afterRules) {
+        pseudoAfterStyle!.union(rule.declaration);
       }
     }
   }
