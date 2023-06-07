@@ -9,7 +9,7 @@
   overflow: hidden;
   background-color: var(--ifm-hero-background-color);
   display: flex;
-  margin: 3rem 0 5rem;
+  padding: 3rem 0 5rem;
 }
 
 .logo {

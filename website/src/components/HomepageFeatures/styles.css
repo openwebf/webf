@@ -9,6 +9,22 @@
   background-image: conic-gradient(from 90deg at -10% 100%,#bcc1cd 0deg,#bcc1cd 90deg,#fff 1turn);
 }
 
+.cross-platform-container {
+  position: relative;
+}
+
+.cross-platform-container .cross-img-title {
+  position: absolute;
+}
+
+[data-theme='dark'] .feature {
+  background-image: conic-gradient(from 90deg at -10% 100%,#2b303b 0deg,#2b303b 90deg,#16181d 1turn);
+}
+
+[data-theme='dark'] .reverse {
+  background-image: conic-gradient(from -90deg at 110% 100%,#2b303b 0deg,#16181d 90deg,#16181d 1turn) !important;
+}
+
 .feature_wrapper {
   margin-top: 50px;
   margin-bottom: 50px;
@@ -40,6 +56,7 @@
 
 .feature_wrapper .button_wrapper {
   display: flex;
+  margin-top: 2rem;
   justify-content: center;
 }
 
