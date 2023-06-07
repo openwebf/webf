@@ -892,11 +892,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       style.flushPendingProperties();
 
       // Add pseudo elements
-      String? beforeContent = style.beforeRule?.declaration.getPropertyValue('content');
-      if (style.beforeRule != null && beforeContent != null && beforeContent.isNotEmpty) {
+      String? beforeContent = style.pseudoBeforeStyle?.getPropertyValue('content');
+      if (beforeContent != null && beforeContent.isNotEmpty) {
         _beforeElement ??= PseudoElement(PseudoKind.kPseudoBefore, this);
         _beforeElement!.ownerDocument = ownerDocument;
-        _beforeElement!.style.merge(style.beforeRule!.declaration);
+        _beforeElement!.style.merge(style.pseudoBeforeStyle!);
         if (_beforeElement?.parentNode == null) {
           if (firstChild != null) {
             insertBefore(_beforeElement!, firstChild!);
@@ -917,16 +917,16 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
       didAttachRenderer();
 
-      String? afterContent = style.afterRule?.declaration.getPropertyValue('content');
-      if (style.afterRule != null && afterContent != null && afterContent.isNotEmpty) {
+      String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
+      if (afterContent != null && afterContent.isNotEmpty) {
         _afterElement ??= PseudoElement(PseudoKind.kPseudoAfter, this);
         _afterElement!.ownerDocument = ownerDocument;
-        _afterElement!.style.merge(style.afterRule!.declaration);
+        _afterElement!.style.merge(style.pseudoAfterStyle!);
         if (_afterElement!.parentNode == null) {
           appendChild(_afterElement!);
         }
 
-        var pseudoValue = CSSPseudo.resolveContent(beforeContent);
+        var pseudoValue = CSSPseudo.resolveContent(afterContent);
         // We plan to support content values only with quoted strings.
         if (pseudoValue is QuoteStringContentValue) {
           final textNode = ownerDocument.createTextNode(pseudoValue.value);

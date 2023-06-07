@@ -19,7 +19,7 @@ import 'package:webf/rendering.dart';
 const String _singleQuote = '\'';
 const String _doubleQuote = '"';
 
-String _removeQuotationMark(String input) {
+String removeQuotationMark(String input) {
   if ((input.startsWith(_singleQuote) && input.endsWith(_singleQuote)) ||
       (input.startsWith(_doubleQuote) && input.endsWith(_doubleQuote))) {
     input = input.substring(1, input.length - 1);
@@ -257,7 +257,7 @@ class CSSBackgroundImage {
           continue;
         }
         // Method may contain quotation mark, like ['"assets/foo.png"']
-        url = _removeQuotationMark(url);
+        url = removeQuotationMark(url);
 
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {

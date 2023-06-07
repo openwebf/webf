@@ -4,8 +4,6 @@
 
 import 'package:webf/css.dart';
 
-final RegExp matchPseudoContentRegExp = RegExp(r'''["']([\s\S]+)?["']''');
-
 class QuoteStringContentValue {
   String value;
   QuoteStringContentValue(this.value);
@@ -25,9 +23,8 @@ class CSSPseudo {
   static dynamic resolveContent(String? content) {
     if (content == null) return null;
 
-    if (matchPseudoContentRegExp.hasMatch(content)) {
-      RegExpMatch? match = matchPseudoContentRegExp.firstMatch(content);
-      return QuoteStringContentValue(match?[1] ?? '');
+    if (content.startsWith('\'') || content.startsWith('"')) {
+      return QuoteStringContentValue(removeQuotationMark(content));
     }
 
     if (CSSFunction.isFunction(content)) {
