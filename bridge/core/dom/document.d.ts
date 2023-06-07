@@ -43,6 +43,8 @@ interface Document extends Node, ParentNode {
   querySelector(selectors: string): Element | null;
   querySelectorAll(selectors: string): Element[];
 
+  elementFromPoint(x: number, y: number): Element | null;
+
   onreadystatechange: IDLEventHandler | null;
   new(): Document;
 }

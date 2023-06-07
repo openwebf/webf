@@ -194,7 +194,7 @@ class Document extends ContainerNode {
     methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
     methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
-
+    methods['elementFromPoint'] = BindingObjectMethodSync(call: (args) => elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1])));
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
     }
@@ -263,6 +263,28 @@ class Document extends ContainerNode {
   dynamic querySelector(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
     return QuerySelector.querySelector(this, args.first);
+  }
+  dynamic elementFromPoint(double x, double y) {
+    documentElement?.flushLayout();
+    return HitTestPoint(x, y);
+  }
+
+  Element? HitTestPoint(double x, double y) {
+    HitTestResult hitTestResult = HitTestInDocument(x, y);
+    Iterable<HitTestEntry> hitTestEntrys = hitTestResult.path;
+    if (hitTestResult.path.isNotEmpty) {
+      if (hitTestEntrys.first.target is RenderBoxModel) {
+        return (hitTestEntrys.first.target as RenderBoxModel).renderStyle.target;
+      }
+    }
+    return null;
+  }
+
+  HitTestResult HitTestInDocument(double x, double y) {
+    BoxHitTestResult boxHitTestResult = BoxHitTestResult();
+    Offset offset = Offset(x, y);
+    documentElement?.renderer?.hitTest(boxHitTestResult, position: offset);
+    return boxHitTestResult;
   }
 
   dynamic querySelectorAll(List<dynamic> args) {
