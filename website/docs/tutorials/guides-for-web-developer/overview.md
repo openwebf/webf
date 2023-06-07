@@ -27,6 +27,9 @@ These groups are:
 2. [WhatWG](https://spec.whatwg.org/): This group defines the HTML and DOM and other Web API specifications.
 3. [TC39](https://tc39.es/): This group defines the features of the JavaScript language and its built-in APIs.
 
+All the features provided by WebF strictly follow the above standards. These standards make it possible to deploy your
+web apps for both WebF and WebView, yielding the same results as expected.
+
 ## Utilize Flutter to enhance your Web
 
 WebF is built on top of the Flutter framework.

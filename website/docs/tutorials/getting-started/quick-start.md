@@ -9,11 +9,11 @@ By the end of this tutorial, your app will be functioning on both desktop and mo
 To use WebF, you need a Flutter environment. Each version of Flutter has its own range of compatible WebF versions,
 Ensure that you select the correct Flutter version that matches both WebF and Flutter.
 
-| WebF               | Flutter          |
-|--------------------|------------------|
-| >= 0.12.0 < 0.14.0 | 3.0.5            |
-| >= 0.14.0 < 0.15.0 | 3.3.10 and 3.7.3 |
-| >= 0.15.0 < 0.16.0 | 3.10.0           |
+| WebF               | Flutter         |
+|--------------------|-----------------|
+| >= 0.12.0 < 0.14.0 | 3.0.x           |
+| >= 0.14.0 < 0.15.0 | 3.3.x and 3.7.x |
+| >= 0.15.0 < 0.16.0 | 3.10.x          |
 
 :::tip
 
@@ -151,7 +151,7 @@ Flutter's [Getting Started Guide](https://docs.flutter.dev/get-started/test-driv
 
 After the app build completes, you’ll see your vue web app is running on your device.
 
-![img](./imgs/helloworld.png)
+![img](/img/helloworld.png)
 
 ## Use Hot-Restart instead Hot-Reload
 
