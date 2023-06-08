@@ -25,10 +25,11 @@ JSRuntime* ScriptState::runtime() {
 
 ScriptState::~ScriptState() {
   ctx_invalid_ = true;
+  JSRuntime* rt = JS_GetRuntime(ctx_);
   JS_FreeContext(ctx_);
 
   // Run GC to clean up remaining objects about m_ctx;
-  JS_RunGC(dart_isolate_context_->runtime());
+  JS_RunGC(rt);
 
   ctx_ = nullptr;
 }
