@@ -116,3 +116,22 @@ We plan to support this in future versions of WebF
 Use the `webf` command or `WebF` widget to load the URL printed in your terminal and you should see the result as below:
 
 ![react](/img/react.png)
+
+## Others Frameworks
+
+They are hundreds of web frameworks in web development, and we cannot test each one. However, there are primarily two kinds of web frameworks in
+the worlds:
+
+1. Frameworks built on top of virtual DOM diffs.
+2. Frameworks built purely on DOM, without any virtual DOM diffs.
+
+WebF works well on frameworks built on top of virtual DOM diffs, as these mainly depend on a subset of DOM APIs.
+
+However, WebF might not be fully functional for web frameworks built purely on DOM or ShadowDOMs. Since WebF doesn't provide
+full DOM API supports, there may be some DOM APIs missing in WebF that a specific web framework depends on.
+
+**Recommend Web Frameworks:**
+
+1. Vue.js
+2. React.js
+3. Preact.js
