@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: DOM and Selectors
+title: DOM and Selectors Support
 ---
 
 Unlike React-native, which only allows you to operate the virtual DOM, WebF give you full access to DOM and virtual DOM,
@@ -350,3 +350,7 @@ Refer to the [DOMTokenList](https://developer.mozilla.org/en-US/docs/Web/API/DOM
 + [DOMTokenList.forEach](https://developer.mozilla.org/en-US/docs/Web/API/DOMTokenList/forEach)
 + [DOMTokenList.keys](https://developer.mozilla.org/en-US/docs/Web/API/DOMTokenList/keys)
 + [DOMTokenList.values](https://developer.mozilla.org/en-US/docs/Web/API/DOMTokenList/values)
+
+## I want more DOM API support
+
+If you require more DOM APIs for your libraries to work in WebF, please raise an [issue](https://github.com/openwebf/webf/issues/new?assignees=&labels=enhancement%2Cimplement&projects=&template=feature_needs_to_implement.yaml) in our GitHub repo. Once there are more people expressing a desire for this feature, we will plan to support it.
