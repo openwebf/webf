@@ -91,7 +91,8 @@ class CalcVariableNode extends CalcExpressionNode {
 
   @override
   double get computedValue {
-    String text = value.computedValue('');
+    dynamic text = value.computedValue('');
+    if (text == null) return 0;
     if (CSSLength.isLength(text)) {
       return CSSLength.parseLength(text, _renderStyle).computedValue;
     }
