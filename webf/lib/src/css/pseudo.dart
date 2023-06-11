@@ -24,7 +24,14 @@ class CSSPseudo {
     if (content == null) return null;
 
     if (content.startsWith('\'') || content.startsWith('"')) {
-      return QuoteStringContentValue(removeQuotationMark(content));
+      String trimContent = removeQuotationMark(content);
+
+      if (trimContent.startsWith('\\')) {
+        int value = int.parse(trimContent.substring(1), radix: 16);
+        trimContent = String.fromCharCode(value);
+      }
+
+      return QuoteStringContentValue(trimContent);
     }
 
     if (CSSFunction.isFunction(content)) {
