@@ -64,11 +64,11 @@ export default function Home(): JSX.Element {
     <Layout
       title={`Build flutter apps with HTML/CSS and JavaScript | WebF`}
       description="Build flutter apps with HTML/CSS and JavaScript">
-      <HomepageHeader />
+      <HomepageHeader/>
       <main className={styles.feature_container}>
-        <HomepageFeatures />
+        <HomepageFeatures/>
       </main>
-      <HomepageFooter />
+      <HomepageFooter/>
     </Layout>
   );
 }
