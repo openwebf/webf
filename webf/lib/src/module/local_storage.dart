@@ -24,7 +24,12 @@ class LocalStorageModule extends BaseModule {
     String tmpPath = await getWebFTemporaryPath();
     Hive.init(path.join(tmpPath, 'LocalStorage'));
     String key = getBoxKey(moduleManager!);
-    await Hive.openBox(key);
+    try {
+      await Hive.openBox(key);
+    } catch (e) {
+      // Try twice to avoid Resource temporarily unavailable.
+      await Hive.openBox(key);
+    }
   }
 
   LocalStorageModule(ModuleManager? moduleManager) : super(moduleManager);
