@@ -83,6 +83,18 @@ const config = {
           },
         ],
       },
+      algolia: {
+        // The application ID provided by Algolia
+        appId: 'J0MMWK93AU',
+
+        // Public API key: it is safe to commit it
+        apiKey: '78930aa6c10a8720d540744f6a90dcaf',
+
+        indexName: 'openwebf',
+
+        contextualSearch: true,
+        //... other Algolia params
+      },
       footer: {
         style: 'dark',
         links: [

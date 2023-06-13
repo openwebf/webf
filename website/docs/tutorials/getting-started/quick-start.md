@@ -33,17 +33,17 @@ Read more at https://www.npmjs.com/package/@openwebf/cli
 
 :::
 
-## Add WebF to your Flutter apps
+## Install WebF
 
 Add the following code to your package's pubspec.yaml file and run `flutter pub get`.
 
 ```yaml
 dependencies:
   webf: ^0.14.0
-  webf_websocket: ^1.2.0
+  webf_websocket: ^1.3.0
 ```
 
-Now in your Dart code, you can use:
+Now in your Dart code:
 
 ```dart
 import 'package:webf/webf.dart';
