@@ -35,7 +35,7 @@ EmptyNodeList* NodeData::EnsureEmptyChildNodeList(Node& node) {
 
 void NodeData::Trace(GCVisitor* visitor) const {
   if (child_node_list_ != nullptr) {
-    visitor->Trace(child_node_list_->ToQuickJSUnsafe());
+    visitor->TraceValue(child_node_list_->ToQuickJSUnsafe());
   }
 }
 

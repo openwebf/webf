@@ -166,7 +166,7 @@ void Performance::clearMeasures(const AtomicString& name, ExceptionState& except
 
 void Performance::Trace(GCVisitor* visitor) const {
   for (auto& entries : entries_) {
-    visitor->Trace(entries);
+    visitor->TraceMember(entries);
   }
 }
 

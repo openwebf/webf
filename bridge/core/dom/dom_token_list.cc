@@ -108,7 +108,7 @@ void DOMTokenList::Remove(const AtomicString& token) {
 }
 
 void DOMTokenList::Trace(GCVisitor* visitor) const {
-  visitor->Trace(element_);
+  visitor->TraceMember(element_);
 }
 
 bool DOMTokenList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {

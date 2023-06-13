@@ -10,8 +10,8 @@ namespace webf {
 void ElementData::CopyWith(ElementData* other) {}
 
 void ElementData::Trace(GCVisitor* visitor) const {
-  visitor->Trace(class_lists_);
-  visitor->Trace(data_set_);
+  visitor->TraceMember(class_lists_);
+  visitor->TraceMember(data_set_);
 }
 
 DOMTokenList* ElementData::GetClassList() const {
