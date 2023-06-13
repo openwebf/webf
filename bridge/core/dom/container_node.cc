@@ -458,8 +458,8 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
 }
 
 void ContainerNode::Trace(GCVisitor* visitor) const {
-  visitor->Trace(first_child_);
-  visitor->Trace(last_child_);
+  visitor->TraceMember(first_child_);
+  visitor->TraceMember(last_child_);
 
   Node::Trace(visitor);
 }

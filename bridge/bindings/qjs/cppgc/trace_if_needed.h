@@ -57,7 +57,7 @@ struct TraceIfNeeded<IDLSequence<T>> : TraceIfNeededBase<IDLSequence<T>> {
 
 template <typename T>
 struct TraceIfNeeded<T, typename std::enable_if_t<std::is_base_of<ScriptWrappable, T>::value>> {
-  static void Trace(GCVisitor* visitor, const Member<T>& value) { visitor->Trace(value); }
+  static void Trace(GCVisitor* visitor, const Member<T>& value) { visitor->TraceMember(value); }
 };
 
 template <>

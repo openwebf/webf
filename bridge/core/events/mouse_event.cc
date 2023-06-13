@@ -126,7 +126,7 @@ bool MouseEvent::IsMouseEvent() const {
 }
 
 void MouseEvent::Trace(GCVisitor* visitor) const {
-  visitor->Trace(related_target_);
+  visitor->TraceMember(related_target_);
   UIEvent::Trace(visitor);
 }
 

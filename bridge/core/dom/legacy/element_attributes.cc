@@ -119,7 +119,7 @@ std::unordered_map<AtomicString, AtomicString>::iterator ElementAttributes::end(
 }
 
 void ElementAttributes::Trace(GCVisitor* visitor) const {
-  visitor->Trace(element_);
+  visitor->TraceMember(element_);
 }
 
 }  // namespace webf

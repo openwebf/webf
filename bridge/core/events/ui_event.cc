@@ -78,7 +78,7 @@ bool UIEvent::IsUiEvent() const {
 }
 
 void UIEvent::Trace(GCVisitor* visitor) const {
-  visitor->Trace(view_);
+  visitor->TraceMember(view_);
   Event::Trace(visitor);
 }
 

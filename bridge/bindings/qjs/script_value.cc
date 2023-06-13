@@ -219,7 +219,7 @@ bool ScriptValue::IsBool() const {
 }
 
 void ScriptValue::Trace(GCVisitor* visitor) const {
-  visitor->Trace(value_);
+  visitor->TraceValue(value_);
 }
 
 }  // namespace webf

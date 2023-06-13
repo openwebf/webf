@@ -68,7 +68,7 @@ void HeapHashMap<K, V>::Erase(K key) {
 template <typename K, typename V>
 void HeapHashMap<K, V>::Trace(GCVisitor* visitor) const {
   for (auto& entry : entries_) {
-    visitor->Trace(entry.second);
+    visitor->TraceMember(entry.second);
   }
 }
 

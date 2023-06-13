@@ -7,7 +7,7 @@
 
 namespace webf {
 
-void GCVisitor::Trace(JSValue value) {
+void GCVisitor::TraceValue(JSValue value) {
   JS_MarkValue(runtime_, value, markFunc_);
 }
 

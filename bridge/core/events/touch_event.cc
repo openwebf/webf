@@ -85,9 +85,9 @@ TouchList* TouchEvent::targetTouches() const {
 }
 
 void TouchEvent::Trace(GCVisitor* visitor) const {
-  visitor->Trace(touches_);
-  visitor->Trace(changed_touches_);
-  visitor->Trace(target_touches_);
+  visitor->TraceMember(touches_);
+  visitor->TraceMember(changed_touches_);
+  visitor->TraceMember(target_touches_);
   UIEvent::Trace(visitor);
 }
 
