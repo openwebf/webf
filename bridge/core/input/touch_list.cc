@@ -3,6 +3,7 @@
  */
 
 #include "touch_list.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "touch.h"
 
 namespace webf {
@@ -57,7 +58,7 @@ void TouchList::NamedPropertyEnumerator(std::vector<AtomicString>& props, Except
 
 void TouchList::Trace(GCVisitor* visitor) const {
   for (auto& item : values_) {
-    item->Trace(visitor);
+    visitor->TraceMember(item);
   }
 }
 
