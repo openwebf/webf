@@ -15,4 +15,3 @@ export 'src/module/location.dart';
 export 'src/module/history.dart';
 export 'src/module/navigation.dart';
 export 'src/module/navigator.dart';
-export 'src/module/performance_timing.dart';
