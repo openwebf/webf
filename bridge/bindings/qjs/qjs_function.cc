@@ -71,7 +71,7 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
 }
 
 void QJSFunction::Trace(GCVisitor* visitor) const {
-  visitor->Trace(function_);
+  visitor->TraceValue(function_);
 }
 
 }  // namespace webf

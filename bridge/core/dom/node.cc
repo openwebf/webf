@@ -588,9 +588,9 @@ Node::Node(ExecutingContext* context, TreeScope* tree_scope, ConstructionType ty
 Node::~Node() {}
 
 void Node::Trace(GCVisitor* visitor) const {
-  visitor->Trace(previous_);
-  visitor->Trace(next_);
-  visitor->Trace(parent_or_shadow_host_node_);
+  visitor->TraceMember(previous_);
+  visitor->TraceMember(next_);
+  visitor->TraceMember(parent_or_shadow_host_node_);
   if (node_data_ != nullptr)
     node_data_->Trace(visitor);
   if (event_target_data_ != nullptr) {

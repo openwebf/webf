@@ -163,7 +163,7 @@ bool DOMStringMap::DeleteItem(const webf::AtomicString& key, webf::ExceptionStat
 }
 
 void DOMStringMap::Trace(webf::GCVisitor* visitor) const {
-  visitor->Trace(owner_element_);
+  visitor->TraceMember(owner_element_);
 }
 
 }  // namespace webf

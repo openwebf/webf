@@ -208,8 +208,8 @@ void Event::SetHandlingPassive(PassiveMode mode) {
 }
 
 void Event::Trace(GCVisitor* visitor) const {
-  visitor->Trace(target_);
-  visitor->Trace(current_target_);
+  visitor->TraceMember(target_);
+  visitor->TraceMember(current_target_);
 }
 
 }  // namespace webf

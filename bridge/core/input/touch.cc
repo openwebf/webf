@@ -112,7 +112,7 @@ EventTarget* Touch::target() const {
 }
 
 void Touch::Trace(GCVisitor* visitor) const {
-  visitor->Trace(target_);
+  visitor->TraceMember(target_);
 }
 
 }  // namespace webf
