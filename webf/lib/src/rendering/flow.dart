@@ -4,10 +4,8 @@
  */
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 
 // Position and size of each run (line box) in flow layout.
@@ -131,22 +129,12 @@ class RenderFlowLayout extends RenderLayoutBox {
   @override
   void performLayout() {
     doingThisLayout = true;
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      childLayoutDuration = 0;
-      PerformanceTiming.instance().mark(PERF_FLOW_LAYOUT_START, uniqueId: hashCode);
-    }
 
     _doPerformLayout();
 
     if (needsRelayout) {
       _doPerformLayout();
       needsRelayout = false;
-    }
-
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      DateTime flowLayoutEndTime = DateTime.now();
-      int amendEndTime = flowLayoutEndTime.microsecondsSinceEpoch - childLayoutDuration;
-      PerformanceTiming.instance().mark(PERF_FLOW_LAYOUT_END, uniqueId: hashCode, startTime: amendEndTime);
     }
     doingThisLayout = false;
   }
@@ -296,11 +284,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       if (isChildNeedsLayout) {
-        late DateTime childLayoutStart;
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          childLayoutStart = DateTime.now();
-        }
-
         // Inflate constraints of percentage renderBoxModel to force it layout after percentage resolved
         // cause Flutter will skip child layout if its constraints not changed between two layouts.
         if (child is RenderBoxModel && needsRelayout) {
@@ -312,11 +295,6 @@ class RenderFlowLayout extends RenderLayoutBox {
           );
         }
         child.layout(childConstraints, parentUsesSize: true);
-
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          DateTime childLayoutEnd = DateTime.now();
-          childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
-        }
       }
 
       double childMainAxisExtent = _getMainAxisExtent(child);

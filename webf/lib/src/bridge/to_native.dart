@@ -451,17 +451,9 @@ void flushUICommand(WebFViewController view) {
     return;
   }
 
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
-  }
-
   List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, view.contextId);
 
   SchedulerBinding.instance.scheduleFrame();
-
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_END);
-  }
 
   Map<int, bool> pendingStylePropertiesTargets = {};
   Set<int> pendingRecalculateTargets = {};

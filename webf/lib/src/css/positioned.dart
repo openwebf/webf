@@ -273,19 +273,8 @@ class CSSPositionedLayout {
     }
 
     if (isChildNeedsLayout) {
-      late DateTime childLayoutStartTime;
-      if (kProfileMode) {
-        childLayoutStartTime = DateTime.now();
-      }
-
       // Should create relayoutBoundary for positioned child.
       child.layout(childConstraints, parentUsesSize: false);
-
-      if (kProfileMode) {
-        DateTime childLayoutEndTime = DateTime.now();
-        parent.childLayoutDuration +=
-            (childLayoutEndTime.microsecondsSinceEpoch - childLayoutStartTime.microsecondsSinceEpoch);
-      }
     }
   }
 

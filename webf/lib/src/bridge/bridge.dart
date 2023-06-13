@@ -4,8 +4,6 @@
  */
 
 import 'dart:ffi';
-import 'package:flutter/foundation.dart';
-import 'package:webf/module.dart';
 import 'package:webf/launcher.dart';
 
 import 'binding.dart';
@@ -30,16 +28,8 @@ DartContext dartContext = DartContext();
 
 /// Init bridge
 int initBridge(WebFViewController view) {
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_BRIDGE_REGISTER_DART_METHOD_START);
-  }
-
   // Setup binding bridge.
   BindingBridge.setup();
-
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_BRIDGE_REGISTER_DART_METHOD_END);
-  }
 
   int pageId = newContextId();
   allocateNewPage(pageId);

@@ -161,28 +161,14 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
       debugPaintSizeEnabled = true;
     }
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_VIEW_CONTROLLER_PROPERTY_INIT);
-      PerformanceTiming.instance().mark(PERF_BRIDGE_INIT_START);
-    }
     BindingBridge.setup();
     _contextId = contextId ?? initBridge(this);
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_BRIDGE_INIT_END);
-      PerformanceTiming.instance().mark(PERF_CREATE_VIEWPORT_START);
-    }
 
     if (originalViewport != null) {
       viewport = originalViewport;
     } else {
       viewport = RenderViewportBox(
           background: background, viewportSize: ui.Size(viewportWidth, viewportHeight), controller: rootController);
-    }
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CREATE_VIEWPORT_END);
-      PerformanceTiming.instance().mark(PERF_ELEMENT_MANAGER_INIT_START);
     }
 
     _setupObserver();
@@ -194,10 +180,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       // Execute UICommand.createDocument and UICommand.createWindow to initialize window and document.
       flushUICommand(this);
     });
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_ELEMENT_MANAGER_INIT_END);
-    }
 
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
   }
@@ -817,10 +799,6 @@ class WebFController {
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CONTROLLER_PROPERTY_INIT);
-      PerformanceTiming.instance().mark(PERF_VIEW_CONTROLLER_INIT_START);
-    }
 
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
@@ -835,10 +813,6 @@ class WebFController {
       gestureListener: _gestureListener,
       initialCookies: initialCookies
     );
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_VIEW_CONTROLLER_INIT_END);
-    }
 
     final int contextId = _view.contextId;
 
@@ -1057,10 +1031,6 @@ class WebFController {
   Future<void> _resolveEntrypoint() async {
     assert(!_view._disposed, 'WebF have already disposed');
 
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_JS_BUNDLE_LOAD_START);
-    }
-
     WebFBundle? bundleToLoad = _entrypoint;
     if (bundleToLoad == null) {
       // Do nothing if bundle is null.
@@ -1076,10 +1046,6 @@ class WebFController {
       }
       // Not to dismiss this error.
       rethrow;
-    }
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_JS_BUNDLE_LOAD_END);
     }
   }
 
@@ -1101,10 +1067,6 @@ class WebFController {
       WebFBundle entrypoint = _entrypoint!;
       int contextId = _view.contextId;
       assert(entrypoint.isResolved, 'The webf bundle $entrypoint is not resolved to evaluate.');
-
-      if (kProfileMode) {
-        PerformanceTiming.instance().mark(PERF_JS_BUNDLE_EVAL_START);
-      }
 
       // entry point start parse.
       _view.document.parsing = true;
@@ -1140,10 +1102,6 @@ class WebFController {
         checkCompleted();
       });
       SchedulerBinding.instance.scheduleFrame();
-
-      if (kProfileMode) {
-        PerformanceTiming.instance().mark(PERF_JS_BUNDLE_EVAL_END);
-      }
     }
   }
 
