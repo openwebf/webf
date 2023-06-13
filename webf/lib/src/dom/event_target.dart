@@ -5,7 +5,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/module.dart';
 
 typedef EventHandler = void Function(Event event);
 
@@ -87,17 +86,9 @@ abstract class EventTarget extends BindingObject {
   @override
   @mustCallSuper
   Future<void> dispose() async {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_DISPOSE_EVENT_TARGET_START, uniqueId: hashCode);
-    }
-
     _disposed = true;
     _eventHandlers.clear();
     super.dispose();
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_DISPOSE_EVENT_TARGET_END, uniqueId: hashCode);
-    }
   }
 
   EventTarget? get parentEventTarget;

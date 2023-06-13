@@ -317,19 +317,9 @@ class RenderLayoutBox extends RenderBoxModel
     for (int i = 0; i < paintingOrder.length; i++) {
       RenderBox child = paintingOrder[i];
       if (!isPositionPlaceholder(child)) {
-        late DateTime childPaintStart;
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          childPaintStart = DateTime.now();
-        }
-
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
         if (child.hasSize) {
           context.paintChild(child, childParentData.offset + offset);
-        }
-
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          DateTime childPaintEnd = DateTime.now();
-          childPaintDuration += (childPaintEnd.microsecondsSinceEpoch - childPaintStart.microsecondsSinceEpoch);
         }
       }
     }
@@ -693,9 +683,6 @@ class RenderBoxModel extends RenderBox
       markNeedsPaint();
     }
   }
-
-  int childPaintDuration = 0;
-  int childLayoutDuration = 0;
 
   BoxConstraints? _contentConstraints;
 

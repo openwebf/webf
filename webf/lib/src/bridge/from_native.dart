@@ -8,11 +8,8 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/module.dart';
-import 'package:webf/src/module/performance_timing.dart';
 
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
@@ -341,13 +338,7 @@ typedef NativeFlushUICommand = Void Function(Int32 contextId);
 typedef DartFlushUICommand = void Function(int contextId);
 
 void _flushUICommand(int contextId) {
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_DOM_FLUSH_UI_COMMAND_START);
-  }
   flushUICommandWithContextId(contextId);
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_DOM_FLUSH_UI_COMMAND_END);
-  }
 }
 
 final Pointer<NativeFunction<NativeFlushUICommand>> _nativeFlushUICommand = Pointer.fromFunction(_flushUICommand);
@@ -365,9 +356,6 @@ void _createBindingObject(int contextId, Pointer<NativeBindingObject> nativeBind
 final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject = Pointer.fromFunction(_createBindingObject);
 
 Pointer<NativePerformanceEntryList> _performanceGetEntries(int contextId) {
-  if (kProfileMode) {
-    return PerformanceTiming.instance().toNative();
-  }
   return nullptr;
 }
 
