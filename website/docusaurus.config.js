@@ -88,7 +88,7 @@ const config = {
         appId: 'J0MMWK93AU',
 
         // Public API key: it is safe to commit it
-        apiKey: '78930aa6c10a8720d540744f6a90dcaf',
+        apiKey: 'db2383eb268f7088780453660576c63c',
 
         indexName: 'openwebf',
 
