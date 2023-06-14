@@ -297,10 +297,6 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CONTROLLER_INIT_START);
-    }
-
     double viewportWidth = _webfWidget.viewportWidth ?? window.physicalSize.width / window.devicePixelRatio;
     double viewportHeight = _webfWidget.viewportHeight ?? window.physicalSize.height / window.devicePixelRatio;
 
@@ -323,10 +319,6 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         onCustomElementDetached: onCustomElementDetached,
         initialCookies: _webfWidget.initialCookies,
         uriParser: _webfWidget.uriParser);
-
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_CONTROLLER_INIT_END);
-    }
 
     (context as _WebFRenderObjectElement).controller = controller;
 

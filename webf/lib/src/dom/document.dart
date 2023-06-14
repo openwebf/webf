@@ -12,7 +12,6 @@ import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
@@ -467,9 +466,6 @@ class Document extends ContainerNode {
       _recalculating = false;
       return;
     }
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_START);
-    }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
       styleDirtyElements.clear();
@@ -487,9 +483,6 @@ class Document extends ContainerNode {
     }
     styleDirtyElements.clear();
     _recalculating = false;
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_END);
-    }
   }
 
   @override

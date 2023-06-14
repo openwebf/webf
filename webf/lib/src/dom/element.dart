@@ -13,7 +13,6 @@ import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
-import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/svg/rendering/container.dart';
@@ -1745,14 +1744,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _applySheetStyle(CSSStyleDeclaration style) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_START);
-    }
     CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_END);
-    }
   }
 
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue, {String? baseHref}) {
