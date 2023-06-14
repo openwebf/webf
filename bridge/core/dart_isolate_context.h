@@ -14,6 +14,8 @@ namespace webf {
 class WebFPage;
 class DartIsolateContext;
 
+void initializeBuiltInStrings(JSContext* ctx);
+
 // DartIsolateContext has a 1:1 correspondence with a dart isolates.
 class DartIsolateContext {
  public:

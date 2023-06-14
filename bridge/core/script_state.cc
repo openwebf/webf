@@ -16,7 +16,7 @@ ScriptState::ScriptState(DartIsolateContext* dart_context) : dart_isolate_contex
   runningContexts++;
   // Avoid stack overflow when running in multiple threads.
   ctx_ = JS_NewContext(dart_isolate_context_->runtime());
-  names_installer::Init(ctx_);
+  initializeBuiltInStrings(ctx_);
 }
 
 JSRuntime* ScriptState::runtime() {
