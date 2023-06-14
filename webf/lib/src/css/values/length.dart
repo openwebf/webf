@@ -517,7 +517,7 @@ class CSSLength {
   }
 
   static bool isLength(String? value) {
-    return value != null && (value == ZERO || _lengthRegExp.hasMatch(value) || (double.tryParse(value) != null));
+    return value != null && (value == ZERO || _lengthRegExp.hasMatch(value));
   }
 
   static bool isNonNegativeLength(String? value) {
@@ -525,7 +525,7 @@ class CSSLength {
         (value == ZERO ||
             _negativeZeroRegExp.hasMatch(value) // Negative zero is considered to be equal to zero.
             ||
-            _nonNegativeLengthRegExp.hasMatch(value) || (double.tryParse(value) != null));
+            _nonNegativeLengthRegExp.hasMatch(value));
   }
 
   static CSSLengthValue? resolveLength(String text, RenderStyle? renderStyle, String propertyName) {
