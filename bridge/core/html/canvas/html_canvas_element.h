@@ -19,8 +19,6 @@ class HTMLCanvasElement : public HTMLElement {
 
   CanvasRenderingContext* getContext(const AtomicString& type, ExceptionState& exception_state);
 
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
   void Trace(GCVisitor* visitor) const override;
 
   std::vector<Member<CanvasRenderingContext>> running_context_2ds_;

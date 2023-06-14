@@ -15,10 +15,6 @@ class HTMLHeadElement : public HTMLElement {
  public:
   using ImplType = HTMLHeadElement*;
   explicit HTMLHeadElement(Document&);
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
- private:
 };
 
 }  // namespace webf

@@ -140,10 +140,6 @@ void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneC
   }
 }
 
-bool WidgetElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return true;
-}
-
 NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv) {
   assert(argc == 3);
   AtomicString key = tagName();
