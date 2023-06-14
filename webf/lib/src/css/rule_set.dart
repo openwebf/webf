@@ -60,6 +60,7 @@ class RuleSet {
     attributeRules.clear();
     tagRules.clear();
     universalRules.clear();
+    pseudoRules.clear();
   }
 
   // indexed by selectorText
