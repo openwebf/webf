@@ -511,6 +511,8 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   }
 
   void handlePseudoRules(List<CSSStyleRule> rules) {
+    if (rules.isEmpty) return;
+
     List<CSSStyleRule> beforeRules = [];
     List<CSSStyleRule> afterRules = [];
 
