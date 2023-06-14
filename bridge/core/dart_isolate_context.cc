@@ -20,7 +20,15 @@ const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
 }
 
 thread_local JSRuntime* DartIsolateContext::runtime_{nullptr};
+thread_local bool is_name_installed_ = false;
 thread_local int64_t running_isolates_ = 0;
+
+void initializeBuiltInStrings(JSContext* ctx) {
+  if (!is_name_installed_) {
+    names_installer::Init(ctx);
+    is_name_installed_ = true;
+  }
+}
 
 DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length)
     : is_valid_(true),
@@ -54,6 +62,7 @@ DartIsolateContext::~DartIsolateContext() {
     data_.reset();
     JS_FreeRuntime(runtime_);
     runtime_ = nullptr;
+    is_name_installed_ = false;
   }
 }
 

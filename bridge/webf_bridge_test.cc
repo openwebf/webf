@@ -29,6 +29,7 @@ void handler(int sig) {
 
 void* initTestFramework(void* page_) {
   signal(SIGSEGV, handler);  // install handler when crashed.
+  signal(SIGABRT, handler);
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   return new webf::WebFTestContext(page->GetExecutingContext());
