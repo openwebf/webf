@@ -122,7 +122,7 @@ class StyleNodeManager {
   }
 
   RuleSet analyzeStyleSheetChangeRuleSet(List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets) {
-    RuleSet ruleSet = RuleSet();
+    RuleSet ruleSet = RuleSet(document);
 
     final oldSheetsCount = oldSheets.length;
     final newSheetsCount = newSheets.length;

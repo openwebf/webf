@@ -5,10 +5,14 @@
 import 'dart:collection';
 
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 
 typedef CSSMap = HashMap<String, List<CSSRule>>;
 
 class RuleSet {
+  final Document ownerDocument;
+  RuleSet(this.ownerDocument);
+
   bool get isEmpty =>
       idRules.isEmpty &&
       classRules.isEmpty &&
@@ -43,6 +47,8 @@ class RuleSet {
       }
     } else if (rule is CSSKeyframesRule) {
       keyframesRules[rule.name] = rule;
+    } else if (rule is CSSFontFaceRule) {
+      CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!);
     } else {
       assert(false, 'Unsupported rule type: ${rule.runtimeType}');
     }

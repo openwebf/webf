@@ -77,7 +77,7 @@ class Document extends ContainerNode {
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
 
-  final RuleSet ruleSet = RuleSet();
+  late RuleSet ruleSet;
 
   String? _domain;
   final String _compatMode = 'CSS1Compat';
@@ -99,6 +99,7 @@ class Document extends ContainerNode {
     cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
+    ruleSet = RuleSet(this);
   }
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
