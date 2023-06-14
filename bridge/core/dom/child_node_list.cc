@@ -54,7 +54,7 @@ Node* ChildNodeList::TraverseBackwardToOffset(unsigned offset, Node& current_nod
 }
 
 void ChildNodeList::Trace(GCVisitor* visitor) const {
-  visitor->Trace(parent_);
+  visitor->TraceMember(parent_);
   collection_index_cache_.Trace(visitor);
   NodeList::Trace(visitor);
 }

@@ -104,7 +104,7 @@ void InlineCssStyleDeclaration::CopyWith(InlineCssStyleDeclaration* inline_style
 }
 
 void InlineCssStyleDeclaration::Trace(GCVisitor* visitor) const {
-  visitor->Trace(owner_element_);
+  visitor->TraceMember(owner_element_);
 }
 
 std::string InlineCssStyleDeclaration::ToString() const {

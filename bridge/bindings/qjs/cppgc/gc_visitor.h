@@ -24,13 +24,13 @@ class GCVisitor final {
   explicit GCVisitor(JSRuntime* rt, JS_MarkFunc* markFunc) : runtime_(rt), markFunc_(markFunc){};
 
   template <typename T>
-  void Trace(const Member<T>& target) {
+  void TraceMember(const Member<T>& target) {
     if (target.Get() != nullptr) {
       JS_MarkValue(runtime_, target.Get()->jsObject_, markFunc_);
     }
   };
 
-  void Trace(JSValue value);
+  void TraceValue(JSValue value);
 
  private:
   JSRuntime* runtime_{nullptr};

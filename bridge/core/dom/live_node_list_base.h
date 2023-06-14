@@ -73,7 +73,7 @@ class LiveNodeListBase : public GarbageCollected<LiveNodeListBase> {
 
   static bool ShouldInvalidateTypeOnAttributeChange(NodeListInvalidationType, const AtomicString&);
 
-  void Trace(GCVisitor* visitor) const override { visitor->Trace(owner_node_); }
+  void Trace(GCVisitor* visitor) const override { visitor->TraceMember(owner_node_); }
 
  protected:
   Document& GetDocument() const { return owner_node_->GetDocument(); }
