@@ -8,6 +8,7 @@ import 'dart:collection';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
@@ -81,6 +82,9 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   Map<String, dynamic>? defaultStyle;
   StyleChangeListener? onStyleChanged;
   StyleFlushedListener? onStyleFlushed;
+
+  CSSStyleDeclaration? pseudoBeforeStyle;
+  CSSStyleDeclaration? pseudoAfterStyle;
 
   CSSStyleDeclaration([BindingContext? context]);
 
@@ -281,6 +285,11 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     if (propertyName.startsWith(ANIMATION) || propertyName == D) {
       return string;
     }
+
+    if (propertyName == CONTENT) {
+      return string;
+    }
+
     // Like url("http://path") declared with quotation marks and
     // custom property names are case sensitive.
     String lowerCase = string.toLowerCase();
@@ -367,6 +376,9 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         break;
       case BACKGROUND_REPEAT:
         if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
+        break;
+      case FONT_SIZE:
+        if (!CSSText.isValidFontSizeValue(normalizedValue)) return false;
         break;
     }
     return true;
@@ -494,6 +506,54 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         if (otherIsImportant) {
           _importants[propertyName] = true;
         }
+      }
+    }
+  }
+
+  void handlePseudoRules(List<CSSStyleRule> rules) {
+    if (rules.isEmpty) return;
+
+    List<CSSStyleRule> beforeRules = [];
+    List<CSSStyleRule> afterRules = [];
+
+    for (CSSStyleRule style in rules) {
+      for (Selector selector in style.selectorGroup.selectors) {
+        for (SimpleSelectorSequence sequence in selector.simpleSelectorSequences) {
+          if (sequence.simpleSelector is PseudoElementSelector) {
+            if (sequence.simpleSelector.name == 'before') {
+              beforeRules.add(style);
+            } else if (sequence.simpleSelector.name == 'after') {
+              afterRules.add(style);
+            }
+          }
+        }
+      }
+    }
+
+    int sortRules(leftRule, rightRule) {
+      int isCompare = leftRule.selectorGroup.matchSpecificity.compareTo(rightRule.selectorGroup.matchSpecificity);
+      if (isCompare == 0) {
+        return leftRule.position.compareTo(rightRule.position);
+      }
+      return isCompare;
+    }
+
+    // sort selector
+    beforeRules.sort(sortRules);
+    afterRules.sort(sortRules);
+
+    if (beforeRules.isNotEmpty) {
+      pseudoBeforeStyle ??= CSSStyleDeclaration();
+      // Merge all the rules
+      for (CSSStyleRule rule in beforeRules) {
+        pseudoBeforeStyle!.union(rule.declaration);
+      }
+    }
+
+    if (afterRules.isNotEmpty) {
+      pseudoAfterStyle ??= CSSStyleDeclaration();
+      for (CSSStyleRule rule in afterRules) {
+        pseudoAfterStyle!.union(rule.declaration);
       }
     }
   }
