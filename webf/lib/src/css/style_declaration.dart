@@ -378,7 +378,7 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
         break;
       case FONT_SIZE:
-        if (!CSSLength.isLength(normalizedValue)) return false;
+        if (!CSSText.isValidFontSizeValue(normalizedValue)) return false;
         break;
     }
     return true;
