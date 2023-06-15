@@ -1,3 +1,28 @@
+## 0.14.1-beta.1
+
+**Big News**
+
+1. Add IconFonts support. https://github.com/openwebf/webf/pull/332; https://github.com/openwebf/webf/pull/380
+
+**Features**
+
+1. Add document.elementFromPoint API. https://github.com/openwebf/webf/pull/381
+2. Support `::before`/`::after` Selector. https://github.com/openwebf/webf/pull/332
+3. Add `@font-face` rule support. https://github.com/openwebf/webf/pull/380
+
+**Bug Fixed**
+
+1. Fix bugs when setting `display: none` to input and textarea. https://github.com/openwebf/webf/pull/369
+2. fix: fix a crash when a JSObject was finalized after the ExecutingContext was freed. https://github.com/openwebf/webf/pull/372
+3. fix: check ExecutingContext is alive at timer callbacks. https://github.com/openwebf/webf/pull/373
+4. fix: fix crashed when running in multiple flutter engine instance. https://github.com/openwebf/webf/pull/377
+5. fix: fix the size of the input is wrong when using a unit other than px. https://github.com/openwebf/webf/pull/378
+6. fix: fix crashed when shutdown the app. https://github.com/openwebf/webf/pull/383
+7. fix: fix Resource temporarily unavailable for Hive lock file. https://github.com/openwebf/webf/pull/387
+8. fix: fix member of ScriptWrappable not tracked by GC. https://github.com/openwebf/webf/pull/388
+9. fix: fix regex match error for time. https://github.com/openwebf/webf/pull/390
+10. fix: fix built-in string initialized multiples and cause leaks. https://github.com/openwebf/webf/pull/391
+
 ## 0.14.0
 
 **Big News**
