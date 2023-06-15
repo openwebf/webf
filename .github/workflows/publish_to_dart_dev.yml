@@ -8,7 +8,7 @@ on:
 env:
   nodeVersion: "16"
   cmakeVersion: "3.22.x"
-  flutterVersion: "2.2.0"
+  flutterVersion: "3.7.3"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -160,5 +160,6 @@ jobs:
         force: true
         flutter: true
         skipTests: true
+        flutterVersion: ${{ env.flutterVersion }}
         relativePath: ./webf
 
