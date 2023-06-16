@@ -15,6 +15,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 
+import '../../dom.dart';
 import 'box_overflow.dart';
 import 'debug_overlay.dart';
 
@@ -302,7 +303,19 @@ class RenderLayoutBox extends RenderBoxModel
           } else if (isLeftNeedsStacking && !isRightNeedsStacking) {
             return (left.renderStyle.zIndex ?? 0) < 0 ? -1 : 1;
           } else if (isLeftNeedsStacking && isRightNeedsStacking) {
-            return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+            int lZIndex = left.renderStyle.zIndex ?? 0;
+            int rZIndex = right.renderStyle.zIndex ?? 0;
+            if (lZIndex == rZIndex) {
+              Element? rightE = right.renderStyle.target;
+              while (rightE != null) {
+                if (rightE.nextElementSibling == left.renderStyle.target)
+                  return 1;
+                rightE = rightE.nextElementSibling;
+              }
+              return -1;
+            } else {
+              return lZIndex < rZIndex ? -1 : 1;
+            }
           } else {
             return -1;
           }
