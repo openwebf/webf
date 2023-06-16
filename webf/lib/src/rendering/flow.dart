@@ -181,7 +181,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Set offset of positioned element after flex box size is set.
     for (RenderBoxModel child in _positionedChildren) {
       CSSPositionedLayout.applyPositionedChildOffset(this, child);
-      // Position of positioned element affect the scroll size of container.
+      // Only elements whose position is absolute affect the scroll size of container.
+      if (child.renderStyle.position == CSSPositionType.absolute)
+        extendMaxScrollableSize(child);
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);
     }
