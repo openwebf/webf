@@ -15,7 +15,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 
-import '../../dom.dart';
+import 'package:webf/dom.dart';
 import 'box_overflow.dart';
 import 'debug_overlay.dart';
 
