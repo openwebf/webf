@@ -53,6 +53,37 @@ describe('Position absolute', () => {
     });
   });
 
+  it('finally the red square should be on top of the green square', async done => {
+     let parent = createElementWithStyle('div', {
+       width: '100%',
+       height: '100%',
+       position: 'relative',
+       backgroundColor: 'white',
+     });
+     let child = createElementWithStyle('div', {
+       width: '250px',
+       height: '250px',
+       display: 'none',
+       backgroundColor: 'green',
+       position: 'absolute',
+     });
+     let child1 = createElementWithStyle('div', {
+       width: '150px',
+       height: '150px',
+       backgroundColor: 'red',
+       position: 'absolute',
+     });
+     append(parent, child);
+     append(parent, child1);
+     append(BODY, parent);
+     await snapshot(0.1);
+     requestAnimationFrame(async () => {
+       child.style.display = 'block';
+       await snapshot(0.1);
+       done();
+     });
+  });
+
   it('with no left following inline element', async () => {
     let div1 = createElementWithStyle('div', {
       border: '1px solid black',
