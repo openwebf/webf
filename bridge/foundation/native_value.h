@@ -25,6 +25,7 @@ enum NativeTag {
   TAG_POINTER = 7,
   TAG_FUNCTION = 8,
   TAG_ASYNC_FUNCTION = 9,
+  TAG_UINT8_BYTES = 10,
 };
 
 enum class JSPointerType { NativeBindingObject = 0, Others = 1 };

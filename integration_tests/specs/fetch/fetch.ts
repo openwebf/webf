@@ -423,6 +423,28 @@ describe('Response', function() {
           );
         });
     });
+
+    it('should works when response as arraybuffer', async function() {
+      return fetch('https://andycall.oss-cn-beijing.aliyuncs.com/data/data.json')
+          .then(function(response) {
+            return response.arrayBuffer();
+          })
+          .catch(function(error) {
+            console.assert(
+                error instanceof Error,
+                'Promise rejected after body consumed'
+            );
+          }).then(async (buffer: ArrayBuffer) => {
+            expect(buffer instanceof ArrayBuffer);
+            const blob = new Blob([buffer]);
+            expect(await blob.text()).toBe(`{
+    "method": "GET",
+    "data": {
+        "userName": "12345"
+    }
+}`);
+          });
+    });
   });
 
   describe('text', function() {
