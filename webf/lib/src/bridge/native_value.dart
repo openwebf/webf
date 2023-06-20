@@ -4,6 +4,7 @@
  */
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
@@ -30,7 +31,8 @@ enum JSValueType {
   TAG_LIST,
   TAG_POINTER,
   TAG_FUNCTION,
-  TAG_ASYNC_FUNCTION
+  TAG_ASYNC_FUNCTION,
+  TAG_UINT8_BYTES
 }
 
 enum JSPointerType {
@@ -104,6 +106,13 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     target.ref.tag = JSValueType.TAG_POINTER.index;
     target.ref.uint32 = JSPointerType.Others.index;
     target.ref.u = value.address;
+  } else if (value is Uint8List) {
+    Pointer<Uint8> buffer = malloc.allocate(sizeOf<Uint8>() * value.length);
+    final bytes = buffer.asTypedList(value.length);
+    bytes.setAll(0, value);
+    target.ref.tag = JSValueType.TAG_UINT8_BYTES.index;
+    target.ref.uint32 = value.length;
+    target.ref.u = buffer.address;
   } else if (value is BindingObject) {
     assert((value.pointer)!.address != nullptr);
     target.ref.tag = JSValueType.TAG_POINTER.index;
