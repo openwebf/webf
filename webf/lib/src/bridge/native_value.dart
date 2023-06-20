@@ -83,6 +83,9 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
       dynamic value = jsonDecode(nativeStringToString(nativeString));
       freeNativeString(nativeString);
       return value;
+    case JSValueType.TAG_UINT8_BYTES:
+      Pointer<Uint8> buffer = Pointer.fromAddress(nativeValue.ref.u);
+      return buffer.asTypedList(nativeValue.ref.uint32);
   }
 }
 
