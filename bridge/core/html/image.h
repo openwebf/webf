@@ -16,6 +16,7 @@ class Image : public HTMLImageElement {
   static Image* Create(ExecutingContext* context, ExceptionState& exception_state);
 
   explicit Image(ExecutingContext* context, ExceptionState& exception_state);
+
  private:
 };
 

@@ -1791,7 +1791,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Apply default style.
     _applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
-    renderStyle.initDisplay();
+    renderStyle.initDisplay(style);
 
     applyAttributeStyle(style);
     _applyInlineStyle(style);

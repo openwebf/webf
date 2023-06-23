@@ -14,6 +14,7 @@ class HTMLAnchorElement : public HTMLElement {
 
  public:
   explicit HTMLAnchorElement(Document& document);
+
  private:
 };
 

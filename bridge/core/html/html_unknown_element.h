@@ -14,7 +14,6 @@ class HTMLUnknownElement : public HTMLElement {
 
  public:
   explicit HTMLUnknownElement(const AtomicString&, Document* document);
-
 };
 
 }  // namespace webf

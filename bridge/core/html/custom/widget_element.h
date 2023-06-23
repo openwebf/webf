@@ -38,6 +38,7 @@ class WidgetElement : public HTMLElement {
   void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) override;
 
   void Trace(GCVisitor* visitor) const override;
+
  private:
   ScriptValue CreateSyncMethodFunc(const AtomicString& method_name);
   ScriptValue CreateAsyncMethodFunc(const AtomicString& method_name);

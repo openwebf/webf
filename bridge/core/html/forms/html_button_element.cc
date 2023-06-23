@@ -6,6 +6,4 @@
 #include "html_button_element.h"
 #include "qjs_html_button_element.h"
 
-namespace webf {
-
-}  // namespace webf
+namespace webf {}  // namespace webf
