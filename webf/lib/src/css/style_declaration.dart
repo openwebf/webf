@@ -83,8 +83,19 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   StyleChangeListener? onStyleChanged;
   StyleFlushedListener? onStyleFlushed;
 
-  CSSStyleDeclaration? pseudoBeforeStyle;
-  CSSStyleDeclaration? pseudoAfterStyle;
+  CSSStyleDeclaration? _pseudoBeforeStyle;
+  CSSStyleDeclaration? get pseudoBeforeStyle => _pseudoBeforeStyle;
+  set pseudoBeforeStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoBeforeStyle = newStyle;
+    target?.markBeforePseudoElementNeedsUpdate();
+  }
+
+  CSSStyleDeclaration? _pseudoAfterStyle;
+  CSSStyleDeclaration? get pseudoAfterStyle => _pseudoAfterStyle;
+  set pseudoAfterStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoAfterStyle = newStyle;
+    target?.markAfterPseudoElementNeedsUpdate();
+  }
 
   CSSStyleDeclaration([BindingContext? context]);
 
@@ -511,7 +522,7 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     }
   }
 
-  void handlePseudoRules(List<CSSStyleRule> rules) {
+  void handlePseudoRules(Element parentElement, List<CSSStyleRule> rules) {
     if (rules.isEmpty) return;
 
     List<CSSStyleRule> beforeRules = [];
@@ -549,6 +560,9 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
       for (CSSStyleRule rule in beforeRules) {
         pseudoBeforeStyle!.union(rule.declaration);
       }
+      parentElement.markBeforePseudoElementNeedsUpdate();
+    } else if (beforeRules.isEmpty && pseudoBeforeStyle != null) {
+      pseudoBeforeStyle = null;
     }
 
     if (afterRules.isNotEmpty) {
@@ -556,6 +570,9 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
       for (CSSStyleRule rule in afterRules) {
         pseudoAfterStyle!.union(rule.declaration);
       }
+      parentElement.markAfterPseudoElementNeedsUpdate();
+    } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
+      pseudoAfterStyle = null;
     }
   }
 
@@ -593,6 +610,13 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         setProperty(propertyName, currentValue?.value, isImportant: currentImportant, baseHref: currentValue?.baseHref);
         updateStatus = true;
       }
+    }
+
+    if (other.pseudoBeforeStyle != null) {
+      pseudoBeforeStyle?.merge(other.pseudoBeforeStyle!);
+    }
+    if (other.pseudoAfterStyle != null) {
+      pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
     }
 
     return updateStatus;
