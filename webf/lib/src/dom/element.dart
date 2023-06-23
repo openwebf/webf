@@ -15,6 +15,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
@@ -818,6 +819,89 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
+  PseudoElement _createOrUpdatePseudoElement(
+      String contentValue, PseudoKind kind, PseudoElement? previousPseudoElement) {
+    var pseudoValue = CSSPseudo.resolveContent(contentValue);
+
+    bool shouldMutateBeforeElement =
+        previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
+
+    previousPseudoElement ??=
+        PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
+    previousPseudoElement.ownerDocument = ownerDocument;
+    previousPseudoElement.style.merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
+
+    if (shouldMutateBeforeElement) {
+      switch (kind) {
+        case PseudoKind.kPseudoBefore:
+          if (previousPseudoElement.parentNode == null) {
+            if (firstChild != null) {
+              insertBefore(previousPseudoElement, firstChild!);
+            } else {
+              appendChild(previousPseudoElement);
+            }
+          }
+          break;
+        case PseudoKind.kPseudoAfter:
+          if (previousPseudoElement.parentNode == null) {
+            appendChild(previousPseudoElement);
+          }
+          break;
+      }
+    }
+
+    // We plan to support content values only with quoted strings.
+    if (pseudoValue is QuoteStringContentValue) {
+      if (previousPseudoElement.firstChild != null) {
+        (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
+      } else {
+        final textNode = ownerDocument.createTextNode(pseudoValue.value);
+        previousPseudoElement.appendChild(textNode);
+      }
+    }
+
+    previousPseudoElement.style.flushPendingProperties();
+
+    return previousPseudoElement;
+  }
+
+  bool _shouldBeforePseudoElementNeedsUpdate = false;
+
+  void markBeforePseudoElementNeedsUpdate() {
+    if (_shouldBeforePseudoElementNeedsUpdate) return;
+    _shouldBeforePseudoElementNeedsUpdate = true;
+    Future.microtask(_updateBeforePseudoElement);
+  }
+
+  void _updateBeforePseudoElement() {
+    // Add pseudo elements
+    String? beforeContent = style.pseudoBeforeStyle?.getPropertyValue('content');
+    if (beforeContent != null && beforeContent.isNotEmpty) {
+      _beforeElement = _createOrUpdatePseudoElement(beforeContent, PseudoKind.kPseudoBefore, _beforeElement);
+    } else if (_beforeElement != null) {
+      removeChild(_beforeElement!);
+    }
+    _shouldBeforePseudoElementNeedsUpdate = false;
+  }
+
+  bool _shouldAfterPseudoElementNeedsUpdate = false;
+
+  void markAfterPseudoElementNeedsUpdate() {
+    if (_shouldAfterPseudoElementNeedsUpdate) return;
+    _shouldAfterPseudoElementNeedsUpdate = true;
+    Future.microtask(_updateAfterPseudoElement);
+  }
+
+  void _updateAfterPseudoElement() {
+    String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
+    if (afterContent != null && afterContent.isNotEmpty) {
+      _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter,  _afterElement);
+    } else if (_afterElement != null) {
+      removeChild(_afterElement!);
+    }
+    _shouldAfterPseudoElementNeedsUpdate = false;
+  }
+
   // Add element to its containing block which includes the steps of detach the renderBoxModel
   // from its original parent and attach to its new containing block.
   void addToContainingBlock() {
@@ -885,55 +969,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         if (renderStyle.position != CSSPositionType.static) {
           _updateRenderBoxModelWithPosition(CSSPositionType.static);
         }
+        markBeforePseudoElementNeedsUpdate();
+        markAfterPseudoElementNeedsUpdate();
       }
 
       // Flush pending style before child attached.
       style.flushPendingProperties();
 
-      // Add pseudo elements
-      String? beforeContent = style.pseudoBeforeStyle?.getPropertyValue('content');
-      if (beforeContent != null && beforeContent.isNotEmpty) {
-        _beforeElement ??= PseudoElement(PseudoKind.kPseudoBefore, this);
-        _beforeElement!.ownerDocument = ownerDocument;
-        _beforeElement!.style.merge(style.pseudoBeforeStyle!);
-        if (_beforeElement?.parentNode == null) {
-          if (firstChild != null) {
-            insertBefore(_beforeElement!, firstChild!);
-          } else {
-            appendChild(_beforeElement!);
-          }
-        }
-        var pseudoValue = CSSPseudo.resolveContent(beforeContent);
-
-        // We plan to support content values only with quoted strings.
-        if (pseudoValue is QuoteStringContentValue) {
-          final textNode = ownerDocument.createTextNode(pseudoValue.value);
-          _beforeElement?.appendChild(textNode);
-        }
-      } else if (_beforeElement != null) {
-        removeChild(_beforeElement!);
-      }
-
       didAttachRenderer();
-
-      String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
-      if (afterContent != null && afterContent.isNotEmpty) {
-        _afterElement ??= PseudoElement(PseudoKind.kPseudoAfter, this);
-        _afterElement!.ownerDocument = ownerDocument;
-        _afterElement!.style.merge(style.pseudoAfterStyle!);
-        if (_afterElement!.parentNode == null) {
-          appendChild(_afterElement!);
-        }
-
-        var pseudoValue = CSSPseudo.resolveContent(afterContent);
-        // We plan to support content values only with quoted strings.
-        if (pseudoValue is QuoteStringContentValue) {
-          final textNode = ownerDocument.createTextNode(pseudoValue.value);
-          _afterElement?.appendChild(textNode);
-        }
-      } else if (_afterElement != null) {
-        removeChild(_afterElement!);
-      }
     }
   }
 
@@ -1784,7 +1827,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   void _applyPseudoStyle(CSSStyleDeclaration style) {
     List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
-    style.handlePseudoRules(pseudoRules);
+    style.handlePseudoRules(this, pseudoRules);
   }
 
   void applyStyle(CSSStyleDeclaration style) {
