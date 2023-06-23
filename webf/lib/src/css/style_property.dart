@@ -450,6 +450,10 @@ class CSSStyleProperty {
   }
 
   static List<String?>? _getBorderRaidusValues(String shorthandProperty) {
+    if (shorthandProperty == INHERIT) {
+      return [INHERIT, INHERIT, INHERIT, INHERIT];
+    }
+
     if (!shorthandProperty.contains('/')) {
       return getEdgeValues(shorthandProperty, isNonNegativeLengthOrPercentage: true);
     }

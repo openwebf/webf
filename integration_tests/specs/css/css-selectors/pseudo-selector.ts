@@ -292,4 +292,40 @@ describe("css pseudo selector", () => {
     div.id = '';
     await snapshot();
   });
+
+  it('border-radius can inherit in pseduo', async () => {
+    const style = <style>{`
+      #pro:before {
+        border-radius: inherit;
+        border: 2px solid green;
+      }
+      #pro:after {
+        border: 2px solid yellow;
+        border-radius: inherit;
+      }
+    
+      .div1 {
+        border-radius: 50%;
+      }
+    
+      .div1::before {
+        content: 'AAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+      }
+    `}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1 text-box";
+    div.id = 'pro';
+
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+  });
 });

@@ -546,7 +546,10 @@ class CSSLength {
     } else if (text == INITIAL) {
       return CSSLengthValue.initial;
     } else if (text == INHERIT) {
-      return renderStyle?.fontSize ?? CSSLengthValue(1, CSSLengthType.EM);
+      if (renderStyle != null && propertyName != null && renderStyle.target.parentElement != null) {
+        return parseLength(renderStyle.target.parentElement!.style.getPropertyValue(propertyName), renderStyle, propertyName, axisType);
+      }
+      return CSSLengthValue.zero;
     } else if (text == AUTO) {
       return CSSLengthValue.auto;
     } else if (text == NONE) {
