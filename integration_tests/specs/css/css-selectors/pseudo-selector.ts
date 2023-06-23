@@ -210,4 +210,86 @@ describe("css pseudo selector", () => {
     document.body.removeChild(div);
     await snapshot();
   });
+
+  it('pseudo should activate events', async (done) => {
+    const style = <style>{`
+      #pro:before {
+        border: 2px solid green;
+      }
+      #pro:after {
+        border: 2px solid yellow;
+      }
+    
+      .div1::before {
+        content: 'AAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+      }
+      .text-box:before {
+        border: 5px solid #000;
+      }
+      .text-box:after {
+        border: 5px solid red;
+      }
+    `}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1 text-box";
+    div.id = 'pro';
+
+    div.onclick = () => {
+      done();
+    }
+
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+
+    await simulateClick(0, 0);
+  });
+
+  it('pseudo should works when toggle className', async () => {
+    const style = <style>{`
+      #pro:before {
+        border: 2px solid green;
+      }
+      #pro:after {
+        border: 2px solid yellow;
+      }
+    
+      .div1::before {
+        content: 'AAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+      }
+      .text-box:before {
+        border: 5px solid #000;
+      }
+      .text-box:after {
+        border: 5px solid red;
+      }
+    `}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1 text-box";
+    div.id = 'pro';
+
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+    await snapshot();
+
+    div.className = 'div1';
+    div.id = '';
+    await snapshot();
+  });
 });
