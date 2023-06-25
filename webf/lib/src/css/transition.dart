@@ -270,7 +270,7 @@ mixin CSSTransitionMixin on RenderStyle {
 
   bool shouldTransition(String property, String? prevValue, String nextValue) {
     // When begin propertyValue is AUTO, skip animation and trigger style update directly.
-    prevValue ??= CSSInitialValues[property];
+    prevValue = (prevValue == null || prevValue.isEmpty) ? CSSInitialValues[property] : prevValue;
     if (CSSLength.isAuto(prevValue) || CSSLength.isAuto(nextValue)) {
       return false;
     }
@@ -326,11 +326,15 @@ mixin CSSTransitionMixin on RenderStyle {
       }
     }
 
-    if (begin == null) {
+    if (begin == null || (begin is String && begin.isEmpty)) {
       begin = CSSInitialValues[propertyName];
       if (begin == CURRENT_COLOR) {
         begin = currentColor;
       }
+    }
+
+    if (end is String && end.isEmpty) {
+      end = CSSInitialValues[propertyName];
     }
 
     EffectTiming? options = getTransitionEffectTiming(propertyName);
