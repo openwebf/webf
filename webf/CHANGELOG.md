@@ -1,3 +1,13 @@
+## 0.14.1-beta.2
+
+**Features**
+
+1. Support receive binary data from fetch and XMLHttpRequest. https://github.com/openwebf/webf/pull/397
+
+**Bug Fixed**
+
+1. Fix a series of bugs related to https://github.com/openwebf/webf/pull/332.
+
 ## 0.14.1-beta.1
 
 **Big News**
