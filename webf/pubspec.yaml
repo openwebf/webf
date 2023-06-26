@@ -24,6 +24,7 @@ dependencies:
   connectivity_plus: ^3.0.6 # No AndroidX used.
   shared_preferences: 2.0.17 # No AndroidX used.
   archive: ^3.3.7 # Pure dart module.
+  web_socket_channel: ^2.2.0
 
 dev_dependencies:
   flutter_test:

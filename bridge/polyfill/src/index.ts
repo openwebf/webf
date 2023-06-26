@@ -19,6 +19,7 @@ import { DOMException } from './dom-exception';
 import { Storage } from './storage';
 import { URL } from './url';
 import { webf } from './webf';
+import { WebSocket } from './websocket'
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -38,6 +39,7 @@ defineGlobalProperty('URLSearchParams', URLSearchParams);
 defineGlobalProperty('DOMException', DOMException);
 defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
+defineGlobalProperty('WebSocket', WebSocket);
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {
