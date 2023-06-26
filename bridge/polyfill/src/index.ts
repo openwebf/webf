@@ -18,6 +18,7 @@ import { sessionStorage } from './session-storage';
 import { Storage } from './storage';
 import { URL } from './url';
 import { webf } from './webf';
+import { WebSocket } from './websocket'
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -36,6 +37,7 @@ defineGlobalProperty('Storage', Storage);
 defineGlobalProperty('URLSearchParams', URLSearchParams);
 defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
+defineGlobalProperty('WebSocket', WebSocket);
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {
