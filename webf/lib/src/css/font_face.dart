@@ -7,17 +7,26 @@ import 'package:flutter/services.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
+import 'dart:convert';
 
 final List<String> supportedFonts = [
   'ttc',
   'ttf',
-  'otf'
+  'otf',
+  'data'
 ];
 
 class _Font {
-  String src;
-  String format;
+  String src = "";
+  String format = "";
+  Uint8List content = Uint8List(0);
   _Font(this.src, this.format);
+  _Font.content(Uint8List content) {
+    this.src = "";
+    this.format = "data";
+    this.content = content;
+  }
+
 }
 
 class CSSFontFace {
@@ -47,8 +56,21 @@ class CSSFontFace {
 
           tmp_src = removeQuotationMark(tmp_src);
 
-          String formatFromExt = tmp_src.split('.').last;
-          fonts.add(_Font(tmp_src, formatFromExt));
+          if (tmp_src.startsWith('data')) {
+            String tmp_content = tmp_src.split(';').last;
+            if (tmp_content.startsWith('base64')) {
+              String base64 = tmp_src.split(',').last;
+              Uint8List decoded = base64Decode(base64);
+              if (decoded.isNotEmpty) {
+                fonts.add(_Font.content(decoded));
+              }
+            }
+
+          } else {
+            String formatFromExt = tmp_src.split('.').last;
+            fonts.add(_Font(tmp_src, formatFromExt));
+          }
+
         }
       }
 
@@ -59,15 +81,25 @@ class CSSFontFace {
       if (targetFont == null) return;
 
       try {
-        Uri? uri = _resolveFontSource(contextId, targetFont.src);
-        if (uri == null) return;
-        WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
-        await bundle.resolve(contextId);
-        assert(bundle.isResolved, 'Failed to obtain $url');
-        FontLoader loader = FontLoader(fontFamily);
-        Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
-        loader.addFont(bytes);
-        loader.load();
+        if (targetFont.content.length > 0) {
+          Uint8List content = targetFont.content;
+          Future<ByteData> bytes = Future.value(ByteData.sublistView(content));
+          FontLoader loader = FontLoader(fontFamily);
+          loader.addFont(bytes);
+          loader.load();
+        } else {
+          Uri? uri = _resolveFontSource(contextId, targetFont.src);
+          if (uri == null) return;
+          WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
+          await bundle.resolve(contextId);
+          assert(bundle.isResolved, 'Failed to obtain $url');
+          FontLoader loader = FontLoader(fontFamily);
+          Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
+          loader.addFont(bytes);
+          loader.load();
+        }
+
+
       } catch(e) {
         print(e);
         return;
