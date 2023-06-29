@@ -21,10 +21,10 @@ class _Font {
   String format = '';
   Uint8List content = Uint8List(0);
   _Font(this.src, this.format);
-  _Font.content(Uint8List content) {
-    this.src = '';
-    this.format = 'data';
-    this.content = content;
+  _Font.content(Uint8List value) {
+    src = '';
+    format = 'data';
+    content = value;
   }
 }
 
