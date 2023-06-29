@@ -17,16 +17,15 @@ final List<String> supportedFonts = [
 ];
 
 class _Font {
-  String src = "";
-  String format = "";
+  String src = '';
+  String format = '';
   Uint8List content = Uint8List(0);
   _Font(this.src, this.format);
   _Font.content(Uint8List content) {
-    this.src = "";
-    this.format = "data";
+    this.src = '';
+    this.format = 'data';
     this.content = content;
   }
-
 }
 
 class CSSFontFace {
@@ -81,7 +80,7 @@ class CSSFontFace {
       if (targetFont == null) return;
 
       try {
-        if (targetFont.content.length > 0) {
+        if (targetFont.content.isNotEmpty) {
           Uint8List content = targetFont.content;
           Future<ByteData> bytes = Future.value(ByteData.sublistView(content));
           FontLoader loader = FontLoader(fontFamily);
