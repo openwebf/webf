@@ -25,6 +25,15 @@ struct EventDispatchResult : public DartReadable {
   bool propagationStopped{false};
 };
 
+struct DartEventListenerOptions : public DartReadable {
+  bool capture{false};
+};
+
+struct DartAddEventListenerOptions : public DartEventListenerOptions {
+  bool passive{false};
+  bool once{false};
+};
+
 Event::PassiveMode EventPassiveMode(const RegisteredEventListener& event_listener) {
   if (!event_listener.Passive()) {
     return Event::PassiveMode::kNotPassiveDefault;
@@ -65,12 +74,21 @@ Node* EventTarget::ToNode() {
 
 bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
-                                   const std::shared_ptr<AddEventListenerOptions>& options,
+                                   const std::shared_ptr<QJSUnionAddEventListenerOptionsBoolean>& options,
                                    ExceptionState& exception_state) {
+  std::shared_ptr<AddEventListenerOptions> event_listener_options;
   if (options == nullptr) {
-    return AddEventListenerInternal(event_type, event_listener, AddEventListenerOptions::Create());
+    event_listener_options = AddEventListenerOptions::Create();
+  } else {
+    if (options->IsBoolean()) {
+      event_listener_options = AddEventListenerOptions::Create();
+      event_listener_options->setCapture(options->GetAsBoolean());
+    } else if (options->IsAddEventListenerOptions()) {
+      event_listener_options = options->GetAsAddEventListenerOptions();
+    }
   }
-  return AddEventListenerInternal(event_type, event_listener, options);
+
+  return AddEventListenerInternal(event_type, event_listener, event_listener_options);
 }
 
 bool EventTarget::addEventListener(const AtomicString& event_type,
@@ -89,9 +107,22 @@ bool EventTarget::removeEventListener(const AtomicString& event_type,
 
 bool EventTarget::removeEventListener(const AtomicString& event_type,
                                       const std::shared_ptr<EventListener>& event_listener,
-                                      const std::shared_ptr<EventListenerOptions>& options,
+                                      const std::shared_ptr<QJSUnionEventListenerOptionsBoolean>& options,
                                       ExceptionState& exception_state) {
-  return RemoveEventListenerInternal(event_type, event_listener, options);
+  std::shared_ptr<EventListenerOptions> event_listener_options;
+  if (options->IsBoolean()) {
+    event_listener_options = EventListenerOptions::Create();
+    event_listener_options->setCapture(options->GetAsBoolean());
+  } else {
+    if (options->IsBoolean()) {
+      event_listener_options = AddEventListenerOptions::Create();
+      event_listener_options->setCapture(options->GetAsBoolean());
+    } else if (options->IsEventListenerOptions()) {
+      event_listener_options = options->GetAsEventListenerOptions();
+    }
+  }
+
+  return RemoveEventListenerInternal(event_type, event_listener, event_listener_options);
 }
 
 bool EventTarget::removeEventListener(const AtomicString& event_type,
@@ -205,8 +236,19 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
                                                               &listener_count);
 
   if (added && listener_count == 1) {
+    auto* listener_options = new DartAddEventListenerOptions{};
+    if (options->hasOnce()) {
+      listener_options->once = options->once();
+    }
+    if (options->hasCapture()) {
+      listener_options->capture = options->capture();
+    }
+    if (options->hasPassive()) {
+      listener_options->passive = options->passive();
+    }
+
     GetExecutingContext()->uiCommandBuffer()->addCommand(
-        UICommand::kAddEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), nullptr);
+        UICommand::kAddEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), listener_options);
   }
 
   return added;
@@ -251,8 +293,10 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   }
 
   if (listener_count == 0) {
+    bool has_capture = options->hasCapture() && options->capture();
+
     GetExecutingContext()->uiCommandBuffer()->addCommand(
-        UICommand::kRemoveEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), nullptr);
+        UICommand::kRemoveEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), has_capture ? (void*)0x01 : nullptr);
   }
 
   return true;

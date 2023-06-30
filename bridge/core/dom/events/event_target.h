@@ -14,6 +14,8 @@
 #include "foundation/logging.h"
 #include "foundation/native_string.h"
 #include "qjs_add_event_listener_options.h"
+#include "qjs_unionadd_event_listener_options_boolean.h"
+#include "qjs_unionevent_listener_options_boolean.h"
 
 #if UNIT_TEST
 void TEST_invokeBindingMethod(void* nativePtr, void* returnValue, void* method, int32_t argc, void* argv);
@@ -96,7 +98,7 @@ class EventTarget : public BindingObject {
 
   bool addEventListener(const AtomicString& event_type,
                         const std::shared_ptr<EventListener>& event_listener,
-                        const std::shared_ptr<AddEventListenerOptions>& options,
+                        const std::shared_ptr<QJSUnionAddEventListenerOptionsBoolean>& options,
                         ExceptionState& exception_state);
   bool addEventListener(const AtomicString& event_type,
                         const std::shared_ptr<EventListener>& event_listener,
@@ -106,7 +108,7 @@ class EventTarget : public BindingObject {
                            ExceptionState& exception_state);
   bool removeEventListener(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& event_listener,
-                           const std::shared_ptr<EventListenerOptions>& options,
+                           const std::shared_ptr<QJSUnionEventListenerOptionsBoolean>& options,
                            ExceptionState& exception_state);
   bool removeEventListener(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& event_listener,
