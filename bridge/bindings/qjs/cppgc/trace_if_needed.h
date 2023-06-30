@@ -51,12 +51,12 @@ struct TraceIfNeeded<IDLDOMString> : TraceIfNeededBase<IDLDOMString> {
 
 template <>
 struct TraceIfNeeded<IDLBoolean> : TraceIfNeededBase<IDLBoolean> {
-  static void Trace(GCVisitor* visitor, const ImplType& value) { }
+  static void Trace(GCVisitor* visitor, const ImplType& value) {}
 };
 
 template <typename T>
 struct TraceIfNeeded<T, typename std::enable_if_t<std::is_base_of<DictionaryBase, T>::value>> : TraceIfNeededBase<T> {
-  static void Trace(GCVisitor* visitor, const typename T::ImplType& value) { }
+  static void Trace(GCVisitor* visitor, const typename T::ImplType& value) {}
 };
 
 template <typename T>
