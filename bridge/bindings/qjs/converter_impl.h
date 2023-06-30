@@ -460,6 +460,10 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<DictionaryBase, T>
     assert(!JS_IsException(value));
     return T::Create(ctx, value, exception_state);
   }
+
+  static JSValue ToValue(JSContext* ctx, typename T::ImplType value) {
+    return value->toQuickJS(ctx);
+  }
 };
 
 template <typename T>

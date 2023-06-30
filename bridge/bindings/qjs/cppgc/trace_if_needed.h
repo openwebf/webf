@@ -12,6 +12,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "bindings/qjs/idl_type.h"
+#include "bindings/qjs/dictionary_base.h"
 #include "gc_visitor.h"
 #include "member.h"
 // clang-format on
@@ -46,6 +47,16 @@ struct TraceIfNeeded<IDLInt32> : public TraceIfNeededBase<IDLDouble> {
 template <>
 struct TraceIfNeeded<IDLDOMString> : TraceIfNeededBase<IDLDOMString> {
   static void Trace(GCVisitor*, const ImplType&) {}
+};
+
+template <>
+struct TraceIfNeeded<IDLBoolean> : TraceIfNeededBase<IDLBoolean> {
+  static void Trace(GCVisitor* visitor, const ImplType& value) { }
+};
+
+template <typename T>
+struct TraceIfNeeded<T, typename std::enable_if_t<std::is_base_of<DictionaryBase, T>::value>> : TraceIfNeededBase<T> {
+  static void Trace(GCVisitor* visitor, const typename T::ImplType& value) { }
 };
 
 template <typename T>
