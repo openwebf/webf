@@ -295,8 +295,9 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   if (listener_count == 0) {
     bool has_capture = options->hasCapture() && options->capture();
 
-    GetExecutingContext()->uiCommandBuffer()->addCommand(
-        UICommand::kRemoveEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), has_capture ? (void*)0x01 : nullptr);
+    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveEvent,
+                                                         std::move(event_type.ToNativeString(ctx())), bindingObject(),
+                                                         has_capture ? (void*)0x01 : nullptr);
   }
 
   return true;
