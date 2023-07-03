@@ -384,19 +384,19 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     document.createDocumentFragment(BindingContext(_contextId, nativePtr));
   }
 
-  void addEvent(Pointer<NativeBindingObject> nativePtr, String eventType) {
+  void addEvent(Pointer<NativeBindingObject> nativePtr, String eventType, {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
     if (!BindingBridge.hasBindingObject(nativePtr)) return;
     EventTarget? target = BindingBridge.getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
-      BindingBridge.listenEvent(target, eventType);
+      BindingBridge.listenEvent(target, eventType, addEventListenerOptions: addEventListenerOptions);
     }
   }
 
-  void removeEvent(Pointer<NativeBindingObject> nativePtr, String eventType) {
+  void removeEvent(Pointer<NativeBindingObject> nativePtr, String eventType, {bool isCapture = false}) {
     if (!BindingBridge.hasBindingObject(nativePtr)) return;
     EventTarget? target = BindingBridge.getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
-      BindingBridge.unlistenEvent(target, eventType);
+      BindingBridge.unlistenEvent(target, eventType, isCapture: isCapture);
     }
   }
 
