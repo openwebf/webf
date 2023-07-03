@@ -147,4 +147,14 @@ describe('DOM Element API', () => {
     document.body.appendChild(el);
     expect(el.matches('.a1')).toBeTrue();
   });
+
+  it('should have constructor property for DOM elements', () => {
+    const div = document.createElement('div');
+    expect(div.constructor.prototype.addEventListener).toEqual(div.addEventListener);
+
+    function isObject(o) {
+      return typeof o === 'object' && o !== null && o.constructor && o.constructor === Object;
+    }
+    expect(isObject(div)).toBe(false);
+  })
 });
