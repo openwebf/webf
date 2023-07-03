@@ -4,10 +4,10 @@
  */
 
 #include "script_wrappable.h"
+#include "built_in_string.h"
 #include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
 #include "foundation/logging.h"
-#include "built_in_string.h"
 
 namespace webf {
 
@@ -267,7 +267,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
 
   // Set .constructor to the constructor function.
   JSValue constructor = context_->contextData()->constructorForType(wrapper_type_info);
-  JS_DefinePropertyValue(ctx_, jsObject_, built_in_string::kconstructor.Impl(), JS_DupValue(ctx_, constructor), JS_PROP_C_W_E);
+  JS_DefinePropertyValue(ctx_, jsObject_, built_in_string::kconstructor.Impl(), JS_DupValue(ctx_, constructor),
+                         JS_PROP_C_W_E);
 
   // Let our instance into inherit prototype methods.
   JSValue prototype = GetExecutingContext()->contextData()->prototypeForType(wrapper_type_info);
