@@ -100,8 +100,8 @@ mixin ElementEventMixin on ElementBase {
   }
 
   @override
-  void addEventListener(String eventType, EventHandler handler) {
-    super.addEventListener(eventType, handler);
+  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
+    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox != null) {
       ensureEventResponderBound();
@@ -109,8 +109,8 @@ mixin ElementEventMixin on ElementBase {
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler) {
-    super.removeEventListener(eventType, handler);
+  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
+    super.removeEventListener(eventType, handler, isCapture: isCapture);
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox != null) {
       ensureEventResponderBound();

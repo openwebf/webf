@@ -105,19 +105,19 @@ class Window extends EventTarget {
   }
 
   @override
-  void addEventListener(String eventType, EventHandler handler) {
-    super.addEventListener(eventType, handler);
+  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
+    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
     switch (eventType) {
       case EVENT_SCROLL:
         // Fired at the Document or element when the viewport or element is scrolled, respectively.
-        document.documentElement?.addEventListener(eventType, handler);
+        document.documentElement?.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
         break;
     }
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler) {
-    super.removeEventListener(eventType, handler);
+  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
+    super.removeEventListener(eventType, handler, isCapture: isCapture);
     switch (eventType) {
       case EVENT_SCROLL:
         document.documentElement?.removeEventListener(eventType, handler);

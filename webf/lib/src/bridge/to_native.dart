@@ -487,12 +487,12 @@ void flushUICommand(WebFViewController view) {
         case UICommandType.addEvent:
           Pointer<AddEventListenerOptions> eventListenerOptions = command.nativePtr2.cast<AddEventListenerOptions>();
           print('add event: capture: ${eventListenerOptions.ref.capture} passive: ${eventListenerOptions.ref.passive} once: ${eventListenerOptions.ref.once}');
-          view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args);
+          view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args, addEventListenerOptions: eventListenerOptions);
           break;
         case UICommandType.removeEvent:
           bool isCapture = command.nativePtr2.address == 1;
           print('removeEvent: $isCapture');
-          view.removeEvent(nativePtr.cast<NativeBindingObject>(), command.args);
+          view.removeEvent(nativePtr.cast<NativeBindingObject>(), command.args, isCapture: isCapture);
           break;
         case UICommandType.insertAdjacentNode:
           view.insertAdjacentNode(

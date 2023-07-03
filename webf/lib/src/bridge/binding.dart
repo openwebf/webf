@@ -134,18 +134,22 @@ abstract class BindingBridge {
     BindingObject.unbind = null;
   }
 
-  static void listenEvent(EventTarget target, String type) {
-    if (!hasListener(target, type)) {
-      target.addEventListener(type, _dispatchEventToNative);
+  static void listenEvent(EventTarget target, String type, {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
+    bool isCapture = addEventListenerOptions != null ? addEventListenerOptions.ref.capture : false;
+    if (!hasListener(target, type, isCapture: isCapture)) {
+      EventListenerOptions? eventListenerOptions;
+      if (addEventListenerOptions != null)
+        eventListenerOptions = EventListenerOptions(addEventListenerOptions.ref.capture, addEventListenerOptions.ref.passive, addEventListenerOptions.ref.once);
+      target.addEventListener(type, _dispatchEventToNative, addEventListenerOptions: eventListenerOptions);
     }
   }
 
-  static void unlistenEvent(EventTarget target, String type) {
-    target.removeEventListener(type, _dispatchEventToNative);
+  static void unlistenEvent(EventTarget target, String type, {bool isCapture = false}) {
+    target.removeEventListener(type, _dispatchEventToNative, isCapture: isCapture);
   }
 
-  static bool hasListener(EventTarget target, String type) {
-    Map<String, List<EventHandler>> eventHandlers = target.getEventHandlers();
+  static bool hasListener(EventTarget target, String type, {bool isCapture = false}) {
+    Map<String, List<EventHandler>> eventHandlers = isCapture ? target.getCaptureEventHandlers() : target.getEventHandlers();
     List<EventHandler>? handlers = eventHandlers[type];
     if (handlers != null) {
       return handlers.contains(_dispatchEventToNative);

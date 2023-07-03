@@ -16,11 +16,11 @@ class BodyElement extends Element {
   BodyElement([BindingContext? context]) : super(context);
 
   @override
-  void addEventListener(String eventType, EventHandler eventHandler) {
+  void addEventListener(String eventType, EventHandler eventHandler, {EventListenerOptions? addEventListenerOptions}) {
     // Scroll event not working on body.
     if (eventType == EVENT_SCROLL) return;
 
-    super.addEventListener(eventType, eventHandler);
+    super.addEventListener(eventType, eventHandler, addEventListenerOptions: addEventListenerOptions);
   }
 
   @override
