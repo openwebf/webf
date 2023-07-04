@@ -270,6 +270,9 @@ void ScriptWrappable::InitializeQuickJSObject() {
   JS_DefinePropertyValue(ctx_, jsObject_, built_in_string::kconstructor.Impl(), JS_DupValue(ctx_, constructor),
                          JS_PROP_C_W_E);
 
+  // Print className for toString.
+  JS_DefinePropertyValue(ctx_, jsObject_, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx_, wrapper_type_info->className), JS_PROP_C_W_E);
+
   // Let our instance into inherit prototype methods.
   JSValue prototype = GetExecutingContext()->contextData()->prototypeForType(wrapper_type_info);
   JS_SetPrototype(ctx_, jsObject_, prototype);
