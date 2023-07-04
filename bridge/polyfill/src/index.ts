@@ -15,6 +15,7 @@ import { asyncStorage } from './async-storage';
 import { URLSearchParams } from './url-search-params';
 import { localStorage } from './local-storage';
 import { sessionStorage } from './session-storage';
+import { DOMException } from './dom-exception';
 import { Storage } from './storage';
 import { URL } from './url';
 import { webf } from './webf';
@@ -34,6 +35,7 @@ defineGlobalProperty('localStorage', localStorage);
 defineGlobalProperty('sessionStorage', sessionStorage);
 defineGlobalProperty('Storage', Storage);
 defineGlobalProperty('URLSearchParams', URLSearchParams);
+defineGlobalProperty('DOMException', DOMException);
 defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
 
