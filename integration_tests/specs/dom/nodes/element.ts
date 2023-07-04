@@ -156,5 +156,14 @@ describe('DOM Element API', () => {
       return typeof o === 'object' && o !== null && o.constructor && o.constructor === Object;
     }
     expect(isObject(div)).toBe(false);
-  })
+  });
+
+  it('should have className for DOM elements', () => {
+    function isObject(o) {
+      return typeof o === "object" && o !== null && o.constructor && Object.prototype.toString.call(o).slice(8, -1) === "Object";
+    }
+    const div = document.createElement('div');
+    expect(isObject(div)).toBe(false);
+    expect(Object.prototype.toString.call(div)).toBe('[object HTMLDivElement]');
+  });
 });
