@@ -266,7 +266,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
   JS_SetOpaque(jsObject_, this);
 
   // Print className for toString.
-  JS_DefinePropertyValue(ctx_, jsObject_, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx_, wrapper_type_info->className), JS_PROP_NORMAL);
+  JS_DefinePropertyValue(ctx_, jsObject_, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx_, wrapper_type_info->className),
+                         JS_PROP_NORMAL);
 
   // Let our instance into inherit prototype methods.
   JSValue prototype = GetExecutingContext()->contextData()->prototypeForType(wrapper_type_info);
