@@ -265,17 +265,17 @@ void ScriptWrappable::InitializeQuickJSObject() {
   jsObject_ = JS_NewObjectClass(ctx_, wrapper_type_info->classId);
   JS_SetOpaque(jsObject_, this);
 
-  // Set .constructor to the constructor function.
-  JSValue constructor = context_->contextData()->constructorForType(wrapper_type_info);
-  JS_DefinePropertyValue(ctx_, jsObject_, built_in_string::kconstructor.Impl(), JS_DupValue(ctx_, constructor),
-                         JS_PROP_C_W_E);
-
   // Print className for toString.
-  JS_DefinePropertyValue(ctx_, jsObject_, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx_, wrapper_type_info->className), JS_PROP_C_W_E);
+  JS_DefinePropertyValue(ctx_, jsObject_, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx_, wrapper_type_info->className), JS_PROP_NORMAL);
 
   // Let our instance into inherit prototype methods.
   JSValue prototype = GetExecutingContext()->contextData()->prototypeForType(wrapper_type_info);
   JS_SetPrototype(ctx_, jsObject_, prototype);
+
+  // Set .constructor to the constructor function.
+  JSValue constructor = context_->contextData()->constructorForType(wrapper_type_info);
+  JS_DefinePropertyValue(ctx_, prototype, built_in_string::kconstructor.Impl(), JS_DupValue(ctx_, constructor),
+                         JS_PROP_NORMAL);
 }
 
 void ScriptWrappable::KeepAlive() {
