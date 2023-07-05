@@ -19,15 +19,15 @@ class WebSocketModule extends BaseModule {
   @override
   String get name => 'WebSocket';
 
-  Map<String, IOWebSocketChannel> _clientMap = {};
-  Map<String?, Map<String?, bool>> _listenMap = {};
-  Map<String?, _WebSocketState> _stateMap = {};
+  final Map<String, IOWebSocketChannel> _clientMap = {};
+  final Map<String?, Map<String?, bool>> _listenMap = {};
+  final Map<String?, _WebSocketState> _stateMap = {};
   int _clientId = 0;
 
   WebSocketModule(ModuleManager? moduleManager) : super(moduleManager);
 
   @override
-  String invoke(String method, dynamic params, callback) {
+  String invoke(String method, params, callback) {
     if (method == 'init') {
       return init(params, (String id, Event event) {
         moduleManager!.emitModuleEvent(name, event: event, data: id);
