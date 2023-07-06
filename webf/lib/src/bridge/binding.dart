@@ -145,9 +145,10 @@ abstract class BindingBridge {
     bool isCapture = addEventListenerOptions != null ? addEventListenerOptions.ref.capture : false;
     if (!hasListener(target, type, isCapture: isCapture)) {
       EventListenerOptions? eventListenerOptions;
-      if (addEventListenerOptions != null && addEventListenerOptions.ref.capture)
+      if (addEventListenerOptions != null && addEventListenerOptions.ref.capture) {
+        eventListenerOptions = EventListenerOptions(addEventListenerOptions.ref.capture, addEventListenerOptions.ref.passive, addEventListenerOptions.ref.once);
         target.addEventListener(type, _dispatchCaptureEventToNative, addEventListenerOptions: eventListenerOptions);
-      else
+      } else
         target.addEventListener(type, _dispatchNomalEventToNative, addEventListenerOptions: eventListenerOptions);
     }
   }
