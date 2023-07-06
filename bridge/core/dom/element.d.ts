@@ -32,6 +32,7 @@ interface Element extends Node, ParentNode, ChildNode {
    * Returns the HTML-uppercased qualified name.
    */
   readonly tagName: string;
+  readonly dir: DartImpl<string>;
   /**
    * Returns element's first attribute whose qualified name is qualifiedName, and null if there is no such attribute otherwise.
    */
