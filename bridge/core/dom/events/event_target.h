@@ -72,7 +72,7 @@ class EventTargetData final {
 
   EventListenerMap event_listener_map;
   EventListenerMap event_capture_listener_map;
-  
+
   std::unique_ptr<FiringEventIteratorVector> firing_event_iterators;
 };
 
