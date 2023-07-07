@@ -10,14 +10,4 @@ p.appendChild(text1);
 p.appendChild(br);
 p.appendChild(text2);
 
-const ws = new WebSocket('ws://127.0.0.1:8080');
-ws.onopen = () => {
-  setInterval(()=>{
-    ws.send('{"type":"heartbeat"}')
-  }, 2000)
-};
-ws.onmessage = (event) => {
-  console.log('ws.onmessage:', event);
-}
-
 document.body.appendChild(p);
