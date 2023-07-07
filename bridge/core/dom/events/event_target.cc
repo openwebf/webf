@@ -48,6 +48,7 @@ EventTargetData::~EventTargetData() {}
 
 void EventTargetData::Trace(GCVisitor* visitor) const {
   event_listener_map.Trace(visitor);
+  event_capture_listener_map.Trace(visitor);
 }
 
 EventTarget* EventTarget::Create(ExecutingContext* context, ExceptionState& exception_state) {
