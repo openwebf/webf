@@ -23,7 +23,6 @@ import 'src/foundation/http_cache.dart' as http_cache;
 import 'src/foundation/http_client.dart' as http_client;
 import 'src/foundation/http_client_interceptor.dart' as http_client_interceptor;
 import 'src/foundation/uri_parser.dart' as uri_parser;
-import 'src/gesture/scroll_physics.dart' as scroll_physics;
 import 'src/module/fetch.dart' as fetch;
 
 // The main entry for kraken unit test.
@@ -42,7 +41,8 @@ void main() {
 
   // Work around with path_provider.
   Directory tempDirectory = Directory('./temp');
-  getWebFMethodChannel().setMockMethodCallHandler((MethodCall methodCall) async {
+  MethodChannel webfChannel = getWebFMethodChannel();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(webfChannel, (MethodCall methodCall) async {
     if (methodCall.method == 'getTemporaryDirectory') {
       return tempDirectory.path;
     }
@@ -70,10 +70,6 @@ void main() {
     style_inline_parser.main();
     style_animations_parser.main();
     css_values.main();
-  });
-
-  group('gesture', () {
-    scroll_physics.main();
   });
 
   tearDownAll(() {

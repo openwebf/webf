@@ -14,11 +14,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart' show ScrollPhysics, ScrollMetrics;
 
 import 'scroll_activity.dart';
 import 'scroll_context.dart';
-import 'scroll_metrics.dart';
-import 'scroll_physics.dart';
 
 export 'scroll_activity.dart' show ScrollHoldController;
 
@@ -487,7 +486,7 @@ abstract class ScrollPosition extends ViewportOffset with ScrollMetrics {
     ScrollPositionAlignmentPolicy alignmentPolicy = ScrollPositionAlignmentPolicy.explicit,
   }) {
     assert(object.attached);
-    final RenderAbstractViewport viewport = RenderAbstractViewport.of(object)!;
+    final RenderAbstractViewport viewport = RenderAbstractViewport.of(object);
 
     double? target;
     switch (alignmentPolicy) {

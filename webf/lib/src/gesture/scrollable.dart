@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -10,13 +11,13 @@ import 'dart:math' as math;
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart' show BouncingScrollPhysics, ClampingScrollPhysics, ScrollPhysics;
 
 import '../../css.dart';
 import 'gesture_detector.dart';
 import 'monodrag.dart';
 import 'scroll_activity.dart';
 import 'scroll_context.dart';
-import 'scroll_physics.dart';
 import 'scroll_position_with_single_context.dart';
 
 typedef ScrollListener = void Function(double scrollOffset, AxisDirection axisDirection);
@@ -62,24 +63,36 @@ class _CustomTicker extends Ticker {
   }
 }
 
+// Automatically determine scroll physics due to devices.
+ScrollPhysics createScrollPhysics({ScrollPhysics? parent}) {
+  if (Platform.isIOS || Platform.isMacOS) {
+    return BouncingScrollPhysics(parent: parent);
+  } else {
+    // The default scroll physics for platforms otherwise iOS/macOS.
+    return ClampingScrollPhysics(parent: parent);
+  }
+}
+
 class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollContext {
   late AxisDirection _axisDirection;
   ScrollPositionWithSingleContext? position;
-  final ScrollPhysics _physics = ScrollPhysics.createScrollPhysics();
+  final ScrollPhysics _physics = createScrollPhysics();
   DragStartBehavior dragStartBehavior;
   ScrollListener? scrollListener;
   final Set<PointerDeviceKind> dragDevices;
   late CSSOverflowType _overflowType;
+  final FlutterView currentView;
 
-  WebFScrollable(
-      {AxisDirection axisDirection = AxisDirection.down,
-        CSSOverflowType overflowType  = CSSOverflowType.scroll,
-        this.dragStartBehavior = DragStartBehavior.start,
-      this.scrollListener,
-      this.dragDevices = _kTouchLikeDeviceTypes}) {
+  WebFScrollable({
+    required this.currentView,
+    AxisDirection axisDirection = AxisDirection.down,
+    CSSOverflowType overflowType = CSSOverflowType.scroll,
+    this.dragStartBehavior = DragStartBehavior.start,
+    this.scrollListener,
+    this.dragDevices = _kTouchLikeDeviceTypes}) {
     _axisDirection = axisDirection;
     _overflowType = overflowType;
-    position = ScrollPositionWithSingleContext(physics: _physics, context: this, oldPosition: null);
+    position = ScrollPositionWithSingleContext(physics: _physics, context: this, oldPosition: null, devicePixelRatio: currentView.devicePixelRatio);
   }
 
   /// The axis along which the scroll view scrolls.
@@ -119,27 +132,24 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
   @override
   void setCanDrag(bool canDrag) {
     PlatformDispatcher.instance.views;
-    DeviceGestureSettings gestureSettings = DeviceGestureSettings.fromView(window);
+    DeviceGestureSettings gestureSettings = DeviceGestureSettings.fromView(currentView);
 
     // Break no use update drag logic
-    if(canDrag == _lastCanDrag && axis == _lastAxisDirection &&
-        (canDrag && _gestureRecognizers.keys.isNotEmpty ||
-            !canDrag && _gestureRecognizers.keys.isEmpty)) {
+    if (canDrag == _lastCanDrag &&
+        axis == _lastAxisDirection &&
+        (canDrag && _gestureRecognizers.keys.isNotEmpty || !canDrag && _gestureRecognizers.keys.isEmpty)) {
       return;
     }
     // Only this case can update to scroll mode,
     // else no scroll mode
-    if(canDrag && _overflowType != CSSOverflowType.hidden) {
+    if (canDrag && _overflowType != CSSOverflowType.hidden) {
       switch (axis) {
         case Axis.vertical:
         // Vertical drag gesture recognizer to trigger vertical scroll.
           _gestureRecognizers = <Type, GestureRecognizerFactory>{
             ScrollVerticalDragGestureRecognizer:
-            GestureRecognizerFactoryWithHandlers<
-                ScrollVerticalDragGestureRecognizer>(
-                  () =>
-                  ScrollVerticalDragGestureRecognizer(
-                      supportedDevices: dragDevices),
+            GestureRecognizerFactoryWithHandlers<ScrollVerticalDragGestureRecognizer>(
+                  () => ScrollVerticalDragGestureRecognizer(supportedDevices: dragDevices),
                   (ScrollVerticalDragGestureRecognizer instance) {
                 instance
                   ..isAcceptedDrag = _isAcceptedVerticalDrag
@@ -161,11 +171,8 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
         // Horizontal drag gesture recognizer to horizontal vertical scroll.
           _gestureRecognizers = <Type, GestureRecognizerFactory>{
             ScrollHorizontalDragGestureRecognizer:
-            GestureRecognizerFactoryWithHandlers<
-                ScrollHorizontalDragGestureRecognizer>(
-                  () =>
-                  ScrollHorizontalDragGestureRecognizer(
-                      supportedDevices: dragDevices),
+            GestureRecognizerFactoryWithHandlers<ScrollHorizontalDragGestureRecognizer>(
+                  () => ScrollHorizontalDragGestureRecognizer(supportedDevices: dragDevices),
                   (ScrollHorizontalDragGestureRecognizer instance) {
                 instance
                   ..isAcceptedDrag = _isAcceptedHorizontalDrag
@@ -201,7 +208,7 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
     double minScrollExtent = drag.minScrollExtent!;
 
     return !((direction == AxisDirection.down &&
-            (pixels <= minScrollExtent || nearEqual(pixels, minScrollExtent, Tolerance.defaultTolerance.distance))) ||
+        (pixels <= minScrollExtent || nearEqual(pixels, minScrollExtent, Tolerance.defaultTolerance.distance))) ||
         direction == AxisDirection.up &&
             (pixels >= maxScrollExtent || nearEqual(pixels, maxScrollExtent, Tolerance.defaultTolerance.distance)));
   }
@@ -213,7 +220,7 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
     double maxScrollExtent = drag.maxScrollExtent!;
     double minScrollExtent = drag.minScrollExtent!;
     return !((direction == AxisDirection.right &&
-            (pixels <= minScrollExtent || nearEqual(pixels, minScrollExtent, Tolerance.defaultTolerance.distance))) ||
+        (pixels <= minScrollExtent || nearEqual(pixels, minScrollExtent, Tolerance.defaultTolerance.distance))) ||
         direction == AxisDirection.left &&
             (pixels >= maxScrollExtent || nearEqual(pixels, maxScrollExtent, Tolerance.defaultTolerance.distance)));
   }
@@ -226,7 +233,8 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
       assert(!_recognizers.containsKey(type));
       _recognizers[type] = oldRecognizers[type] ?? gestures[type]!.constructor();
       assert(_recognizers[type].runtimeType == type,
-          'GestureRecognizerFactory of type $type created a GestureRecognizer of type ${_recognizers[type].runtimeType}. The GestureRecognizerFactory must be specialized with the type of the class that it returns from its constructor method.');
+      'GestureRecognizerFactory of type $type created a GestureRecognizer of type ${_recognizers[type]
+          .runtimeType}. The GestureRecognizerFactory must be specialized with the type of the class that it returns from its constructor method.');
       gestures[type]!.initializer(_recognizers[type]);
     }
     for (Type type in oldRecognizers.keys) {
