@@ -65,7 +65,6 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(bindingObject, dispatchEventArguments);
 
     Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
-    print('invokeBindingMethodFromDart');
     f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments);
     Pointer<EventDispatchResult> dispatchResult = fromNativeValue(returnValue).cast<EventDispatchResult>();
     event.cancelable = dispatchResult.ref.canceled;
