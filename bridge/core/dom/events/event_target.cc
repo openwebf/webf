@@ -188,7 +188,7 @@ DispatchEventResult EventTarget::FireEventListeners(Event& event, bool isCapture
   if (!isCapture)
     listeners_vector = d->event_listener_map.Find(event.type());
   else
-     listeners_vector = d->event_capture_listener_map.Find(event.type());
+    listeners_vector = d->event_capture_listener_map.Find(event.type());
 
   bool fired_event_listeners = false;
   if (listeners_vector) {
@@ -260,10 +260,10 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
   bool added;
   if (options->hasCapture() && options->capture())
     added = EnsureEventTargetData().event_capture_listener_map.Add(event_type, listener, options, &registered_listener,
-                                                              &listener_count);
+                                                                   &listener_count);
   else
     added = EnsureEventTargetData().event_listener_map.Add(event_type, listener, options, &registered_listener,
-                                                              &listener_count);
+                                                           &listener_count);
 
   if (added && listener_count == 1) {
     auto* listener_options = new DartAddEventListenerOptions{};
