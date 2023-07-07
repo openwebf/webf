@@ -33,7 +33,7 @@ abstract class EventTarget extends BindingObject {
     if (_disposed) return;
     bool capture = false;
     if (addEventListenerOptions != null)
-      capture = addEventListenerOptions!.capture;
+      capture = addEventListenerOptions.capture;
     List<EventHandler>? existHandler = capture ? _eventCaptureHandlers[eventType] : _eventHandlers[eventType];
     if (existHandler == null) {
       if (capture)
