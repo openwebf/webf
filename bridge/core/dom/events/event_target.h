@@ -71,6 +71,8 @@ class EventTargetData final {
   void Trace(GCVisitor* visitor) const;
 
   EventListenerMap event_listener_map;
+  EventListenerMap event_capture_listener_map;
+  
   std::unique_ptr<FiringEventIteratorVector> firing_event_iterators;
 };
 
@@ -117,6 +119,7 @@ class EventTarget : public BindingObject {
   bool dispatchEvent(Event* event, ExceptionState& exception_state);
 
   virtual DispatchEventResult FireEventListeners(Event&, ExceptionState&);
+  virtual DispatchEventResult FireEventListeners(Event&, bool isCapture, ExceptionState&);
 
   static DispatchEventResult GetDispatchEventResult(const Event&);
 

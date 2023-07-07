@@ -177,6 +177,31 @@ DispatchEventResult EventTarget::FireEventListeners(Event& event, ExceptionState
   return GetDispatchEventResult(event);
 }
 
+DispatchEventResult EventTarget::FireEventListeners(Event& event, bool isCapture, ExceptionState& exception_state) {
+  assert(event.WasInitialized());
+
+  EventTargetData* d = GetEventTargetData();
+  if (!d)
+    return DispatchEventResult::kNotCanceled;
+
+  EventListenerVector* listeners_vector;
+  if (!isCapture)
+    listeners_vector = d->event_listener_map.Find(event.type());
+  else
+     listeners_vector = d->event_capture_listener_map.Find(event.type());
+
+  bool fired_event_listeners = false;
+  if (listeners_vector) {
+    fired_event_listeners = FireEventListeners(event, d, *listeners_vector, exception_state);
+  }
+
+  // Only invoke the callback if event listeners were fired for this phase.
+  if (fired_event_listeners) {
+    event.DoneDispatchingEventAtCurrentTarget();
+  }
+  return GetDispatchEventResult(event);
+}
+
 DispatchEventResult EventTarget::GetDispatchEventResult(const Event& event) {
   if (event.defaultPrevented())
     return DispatchEventResult::kCanceledByEventHandler;
@@ -232,7 +257,12 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
 
   RegisteredEventListener registered_listener;
   uint32_t listener_count = 0;
-  bool added = EnsureEventTargetData().event_listener_map.Add(event_type, listener, options, &registered_listener,
+  bool added;
+  if (options->hasCapture() && options->capture())
+    added = EnsureEventTargetData().event_capture_listener_map.Add(event_type, listener, options, &registered_listener,
+                                                              &listener_count);
+  else
+    added = EnsureEventTargetData().event_listener_map.Add(event_type, listener, options, &registered_listener,
                                                               &listener_count);
 
   if (added && listener_count == 1) {
@@ -323,8 +353,10 @@ NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method, int3
 }
 
 NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv) {
-  assert(argc == 2);
+  assert(argc >= 2);
   NativeValue native_event_type = argv[0];
+  NativeValue native_is_capture = argv[2];
+  bool isCapture = NativeValueConverter<NativeTypeBool>::FromNativeValue(native_is_capture);
   AtomicString event_type =
       NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_event_type));
   RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
@@ -333,7 +365,7 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   ExceptionState exception_state;
   event->SetTrusted(false);
   event->SetEventPhase(Event::kAtTarget);
-  DispatchEventResult dispatch_result = FireEventListeners(*event, exception_state);
+  DispatchEventResult dispatch_result = FireEventListeners(*event, isCapture, exception_state);
   event->SetEventPhase(0);
 
   if (exception_state.HasException()) {
