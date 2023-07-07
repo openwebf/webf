@@ -627,6 +627,7 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
       manager: manager,
       onScroll: onScroll,
+      currentView: renderStyle.currentFlutterView
     );
     manager.setupSliverListLayout(sliverListLayout);
     copyWith(sliverListLayout);

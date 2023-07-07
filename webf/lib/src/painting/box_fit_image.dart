@@ -92,7 +92,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   DimensionedMultiFrameImageStreamCompleter? _imageStreamCompleter;
 
   @override
-  ImageStreamCompleter loadBuffer(BoxFitImageKey key, DecoderBufferCallback decode) {
+  ImageStreamCompleter loadImage(BoxFitImageKey key, ImageDecoderCallback decode) {
     return _imageStreamCompleter = DimensionedMultiFrameImageStreamCompleter(
       codec: _loadAsync(key),
       scale: 1.0,
@@ -119,7 +119,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     }
     final ImageStreamCompleter? completer = PaintingBinding.instance.imageCache.putIfAbsent(
       key,
-      () => loadBuffer(key, PaintingBinding.instance.instantiateImageCodecFromBuffer),
+      () => loadImage(key, PaintingBinding.instance.instantiateImageCodecWithSize),
       onError: handleError,
     );
     if (_imageStreamCompleter == null &&

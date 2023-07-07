@@ -10,7 +10,6 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui' as ui;
-import 'dart:ui';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
@@ -117,7 +116,7 @@ abstract class DevToolsService {
 }
 
 // An kraken View Controller designed for multiple kraken view control.
-class WebFViewController implements WidgetsBindingObserver, ElementsBindingObserver {
+class WebFViewController implements WidgetsBindingObserver {
   WebFController rootController;
 
   // The methods of the KrakenNavigateDelegation help you implement custom behaviors that are triggered
@@ -267,19 +266,11 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   void _setupObserver() {
-    if (ElementsBinding.instance != null) {
-      ElementsBinding.instance!.addObserver(this);
-    } else {
-      WidgetsBinding.instance.addObserver(this);
-    }
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void _teardownObserver() {
-    if (ElementsBinding.instance != null) {
-      ElementsBinding.instance!.removeObserver(this);
-    } else {
-      WidgetsBinding.instance.removeObserver(this);
-    }
+    WidgetsBinding.instance.removeObserver(this);
   }
 
   // Attach kraken's renderObject to an renderObject.
@@ -313,12 +304,12 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   VoidCallback? _originalOnPlatformBrightnessChanged;
 
   void _registerPlatformBrightnessChange() {
-    _originalOnPlatformBrightnessChanged = ui.window.onPlatformBrightnessChanged;
-    ui.window.onPlatformBrightnessChanged = _onPlatformBrightnessChanged;
+    _originalOnPlatformBrightnessChanged = rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged;
+    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = _onPlatformBrightnessChanged;
   }
 
   void _unregisterPlatformBrightnessChange() {
-    ui.window.onPlatformBrightnessChanged = _originalOnPlatformBrightnessChanged;
+    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = _originalOnPlatformBrightnessChanged;
     _originalOnPlatformBrightnessChanged = null;
   }
 
@@ -633,13 +624,15 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   void didChangeLocales(List<Locale>? locales) {
   }
 
-  ui.WindowPadding _prevViewInsets = ui.window.viewInsets;
+  ui.ViewPadding? _prevViewInsets;
   static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
 
   @override
   void didChangeMetrics() {
-    double bottomInset = ui.window.viewInsets.bottom / ui.window.devicePixelRatio;
-    if (_prevViewInsets.bottom > ui.window.viewInsets.bottom) {
+    double bottomInset = rootController.ownerFlutterView.viewInsets.bottom / rootController.ownerFlutterView.devicePixelRatio;
+    _prevViewInsets ??= rootController.ownerFlutterView.viewInsets;
+
+    if (_prevViewInsets!.bottom > rootController.ownerFlutterView.viewInsets.bottom) {
       // Hide keyboard
       viewport.bottomInset = bottomInset;
     } else {
@@ -664,7 +657,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         window.scrollBy(0, scrollOffset, true);
       }
     }
-    _prevViewInsets = ui.window.viewInsets;
+    _prevViewInsets = rootController.ownerFlutterView.viewInsets;
   }
 
   @override
@@ -697,7 +690,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   @override
   Future<ui.AppExitResponse> didRequestAppExit() async {
-    return AppExitResponse.exit;
+    return ui.AppExitResponse.exit;
   }
 }
 
@@ -775,6 +768,8 @@ class WebFController {
 
   final List<Cookie>? initialCookies;
 
+  final ui.FlutterView ownerFlutterView;
+
   String? _name;
   String? get name => _name;
   set name(String? value) {
@@ -814,6 +809,7 @@ class WebFController {
     this.devToolsService,
     this.uriParser,
     this.initialCookies,
+    required this.ownerFlutterView,
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {

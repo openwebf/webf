@@ -211,6 +211,7 @@ abstract class RenderStyle {
   RenderBoxModel? get renderBoxModel => target.renderBoxModel;
 
   Size get viewportSize => target.ownerDocument.viewport!.viewportSize;
+  FlutterView get currentFlutterView => target.ownerDocument.controller.ownerFlutterView;
 
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
 

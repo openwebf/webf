@@ -4,7 +4,6 @@
  */
 
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -212,98 +211,12 @@ class WebFResizeImage extends ResizeImage {
     }
     final ImageStreamCompleter? completer = PaintingBinding.instance.imageCache.putIfAbsent(
       key,
-      () => load(key, instantiateImageCodec),
+      () => loadImage(key, PaintingBinding.instance.instantiateImageCodecWithSize),
       onError: handleError,
     );
     if (completer != null) {
       stream.setCompleter(completer);
     }
-  }
-
-  Future<Codec> instantiateImageCodec(
-    Uint8List bytes, {
-    int? cacheWidth,
-    int? cacheHeight,
-    bool allowUpscaling = false,
-  }) async {
-    assert(cacheWidth == null || cacheWidth > 0);
-    assert(cacheHeight == null || cacheHeight > 0);
-
-    final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
-    final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
-
-    double naturalWidth = descriptor.width.toDouble();
-    double naturalHeight = descriptor.height.toDouble();
-
-    int? targetWidth;
-    int? targetHeight;
-
-    // Image will be resized according to its aspect radio if object-fit is not fill.
-    // https://www.w3.org/TR/css-images-3/#propdef-object-fit
-    if (cacheWidth != null && cacheHeight != null) {
-      // When targetWidth or targetHeight is not set at the same time,
-      // image will be resized according to its aspect radio.
-      // https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/painting/box_fit.dart#L152
-      if (objectFit == BoxFit.contain) {
-        if (cacheWidth / cacheHeight > naturalWidth / naturalHeight) {
-          targetHeight = cacheHeight;
-        } else {
-          targetWidth = cacheWidth;
-        }
-
-        // Resized image should maintain its intrinsic aspect radio event if object-fit is fill
-        // which behaves just like object-fit cover otherwise the cached resized image with
-        // distorted aspect ratio will not work when object-fit changes to not fill.
-      } else if (objectFit == BoxFit.fill || objectFit == BoxFit.cover) {
-        if (cacheWidth / cacheHeight > naturalWidth / naturalHeight) {
-          targetWidth = cacheWidth;
-        } else {
-          targetHeight = cacheHeight;
-        }
-
-        // Image should maintain its aspect radio and not resized if object-fit is none.
-      } else if (objectFit == BoxFit.none) {
-        targetWidth = descriptor.width;
-        targetHeight = descriptor.height;
-
-        // If image size is smaller than its natural size when object-fit is contain,
-        // scale-down is parsed as none, otherwise parsed as contain.
-      } else if (objectFit == BoxFit.scaleDown) {
-        if (cacheWidth / cacheHeight > naturalWidth / naturalHeight) {
-          if (cacheHeight > descriptor.height * window.devicePixelRatio) {
-            targetWidth = descriptor.width;
-            targetHeight = descriptor.height;
-          } else {
-            targetHeight = cacheHeight;
-          }
-        } else {
-          if (cacheWidth > descriptor.width * window.devicePixelRatio) {
-            targetWidth = descriptor.width;
-            targetHeight = descriptor.height;
-          } else {
-            targetWidth = cacheWidth;
-          }
-        }
-      }
-    } else {
-      targetWidth = cacheWidth;
-      targetHeight = cacheHeight;
-    }
-
-    // Resize image size should not be larger than its natural size.
-    if (!allowUpscaling) {
-      if (targetWidth != null && targetWidth > descriptor.width * window.devicePixelRatio) {
-        targetWidth = descriptor.width;
-      }
-      if (targetHeight != null && targetHeight > descriptor.height * window.devicePixelRatio) {
-        targetHeight = descriptor.height;
-      }
-    }
-
-    return descriptor.instantiateCodec(
-      targetWidth: targetWidth,
-      targetHeight: targetHeight,
-    );
   }
 }
 

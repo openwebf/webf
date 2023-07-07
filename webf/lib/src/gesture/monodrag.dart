@@ -302,7 +302,6 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
             event is PointerPanZoomStartEvent ||
             event is PointerPanZoomUpdateEvent)) {
       final VelocityTracker tracker = _velocityTrackers[event.pointer]!;
-      assert(tracker != null);
       if (event is PointerPanZoomStartEvent) {
         tracker.addPosition(event.timeStamp, Offset.zero);
       } else if (event is PointerPanZoomUpdateEvent) {
