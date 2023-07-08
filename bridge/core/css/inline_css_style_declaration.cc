@@ -106,8 +106,13 @@ void InlineCssStyleDeclaration::CopyWith(InlineCssStyleDeclaration* inline_style
 
 AtomicString InlineCssStyleDeclaration::cssText() const {
   std::string result;
+  size_t index = 0;
   for (auto& attr : properties_) {
-    result += attr.first + ": " + attr.second.ToStdString(ctx()) + "; ";
+    result += attr.first + ": " + attr.second.ToStdString(ctx()) + ";";
+    index++;
+    if (index < properties_.size()) {
+      result += " ";
+    }
   }
   return AtomicString(ctx(), result);
 }
@@ -133,9 +138,9 @@ void InlineCssStyleDeclaration::setCssText(const std::string& css_text, webf::Ex
     std::string::size_type position = s.find(':');
     if (position != std::basic_string<char>::npos) {
       std::string css_key = s.substr(0, position);
-      trim(css_key);
+      css_key = trim(css_key);
       std::string css_value = s.substr(position + 1, s.length());
-      trim(css_value);
+      css_value = trim(css_value);
       InternalSetProperty(css_key, AtomicString(ctx(), css_value));
     }
   }

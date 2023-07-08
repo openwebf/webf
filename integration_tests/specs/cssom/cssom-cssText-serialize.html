@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSSOM Parsing Test: getting cssText must return the result of serializing the CSS declaration blocks.</title>
+    <link rel="author" title="Paul Irish" href="mailto:paul.irish@gmail.com">
+    <link rel="help" href="http://www.w3.org/TR/cssom-1/#the-cssstyledeclaration-interface">
+
+    <meta name="flags" content="dom">
+</head>
+
+<body>
+<div id="log"></div>
+<div id="box"></div>
+<script>
+    var style = document.getElementById('box').style;
+    style.left = "10px";
+    assert_equals(style.cssText, "left: 10px;");
+    style.right = "20px";
+    assert_equals(style.cssText, "right: 20px; left: 10px;");
+</script>
+</body>
+</html>
