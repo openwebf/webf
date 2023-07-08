@@ -6,8 +6,8 @@
 #include <vector>
 #include "core/dom/element.h"
 #include "core/executing_context.h"
-#include "css_property_list.h"
 #include "core/html/parser/html_parser.h"
+#include "css_property_list.h"
 
 namespace webf {
 
@@ -212,10 +212,11 @@ AtomicString InlineCssStyleDeclaration::InternalRemoveProperty(std::string& name
 }
 
 void InlineCssStyleDeclaration::InternalClearProperty() {
-  if (properties_.empty()) return;
+  if (properties_.empty())
+    return;
   properties_.clear();
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kClearStyle, nullptr,
-                                                       owner_element_->bindingObject(), nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kClearStyle, nullptr, owner_element_->bindingObject(),
+                                                       nullptr);
 }
 
 }  // namespace webf

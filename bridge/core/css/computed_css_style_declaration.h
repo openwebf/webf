@@ -37,7 +37,7 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
   bool IsComputedCssStyleDeclaration() const override;
 
   AtomicString cssText() const override;
-  void setCssText(const AtomicString &value, ExceptionState &exception_state) override;
+  void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
 
  private:
 };
