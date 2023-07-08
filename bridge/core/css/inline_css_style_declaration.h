@@ -42,7 +42,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   void CopyWith(InlineCssStyleDeclaration* inline_style);
 
   AtomicString cssText() const override;
-  void setCssText(const AtomicString &value, ExceptionState &exception_state) override;
+  void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
   void setCssText(const std::string& value, ExceptionState& exception_state);
 
   void Trace(GCVisitor* visitor) const override;
