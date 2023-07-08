@@ -135,7 +135,7 @@ class WebSocketModule extends BaseModule {
       if (_hasListener(id, EVENT_CLOSE)) {
         // CloseEvent https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/CloseEvent
         CloseEvent event =
-        CloseEvent(client.closeCode!, client.closeReason!, false);
+        CloseEvent(client.closeCode!, client.closeReason ?? '', false);
         callback(id, event);
       }
       // Clear instance after close
