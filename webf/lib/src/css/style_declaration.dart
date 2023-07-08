@@ -182,6 +182,8 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         return CSSStyleProperty.removeShorthandTransition(this, isImportant);
       case TEXT_DECORATION:
         return CSSStyleProperty.removeShorthandTextDecoration(this, isImportant);
+      case ANIMATION:
+        return CSSStyleProperty.removeShorthandAnimation(this, isImportant);
     }
 
     String present = EMPTY_STRING;
