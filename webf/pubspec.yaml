@@ -1,6 +1,6 @@
 name: webf
-description: Built flutter apps with HTML/CSS and JavaScript.
-version: 0.15.0-beta.1
+description: W3C standards-compliant web rendering engine based on Flutter, allowing web applications to run natively on Flutter.
+version: 0.15.0-beta.1+1
 homepage: https://openwebf.com
 
 environment:
@@ -13,7 +13,7 @@ dependencies:
   path: ^1.8.1 # Pure dart module.
   meta: ^1.7.0 # Pure dart module.
   ffi: ^2.0.1 # Pure dart module.
-  intl: ^0.17.0 #Pure dart module.
+  intl: ^0.18.1 #Pure dart module.
   hive: ^2.2.3
   characters: ^1.2.0
   collection: ^1.16.0
@@ -21,8 +21,8 @@ dependencies:
   quiver: ^3.2.1 # Pure dart module.
   vector_math: ^2.1.2 # Pure dart module.
   source_span: ^1.9.0 # Pure dart module.
-  connectivity_plus: ^3.0.6 # No AndroidX used.
-  shared_preferences: 2.0.17 # No AndroidX used.
+  connectivity_plus: ^4.0.1 # No AndroidX used.
+  shared_preferences: 2.2.0 # No AndroidX used.
   archive: ^3.3.7 # Pure dart module.
   web_socket_channel: ^2.2.0
 
@@ -30,6 +30,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   test: ^1.20.2
+  lints: ^2.1.1
 
 flutter:
   # This section identifies this Flutter project as a plugin project.
