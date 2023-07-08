@@ -39,7 +39,7 @@ class Member {
       //  Two is by free directly when running out of function body.
       // We detect the GC phase to handle case two, and free our members by hand(call JS_FreeValueRT directly).
       JSGCPhaseEnum phase = JS_GetEnginePhase(runtime_);
-      if (phase == JS_GC_PHASE_DECREF) {
+      if (phase == JS_GC_PHASE_DECREF || phase == JS_GC_PHASE_REMOVE_CYCLES) {
         JS_FreeValueRT(runtime_, raw_->ToQuickJSUnsafe());
       }
     }
