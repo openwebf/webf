@@ -311,6 +311,7 @@ enum UICommandType {
   removeNode,
   insertAdjacentNode,
   setStyle,
+  clearStyle,
   setAttribute,
   removeAttribute,
   cloneNode,
@@ -512,8 +513,11 @@ void flushUICommand(WebFViewController view) {
           } else {
             value = '';
           }
-
           view.setInlineStyle(nativePtr, command.args, value);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.clearStyle:
+          view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setAttribute:

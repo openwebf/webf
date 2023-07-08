@@ -524,6 +524,18 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
   }
 
+  void clearInlineStyle(Pointer selfPtr) {
+    assert(BindingBridge.hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = BindingBridge.getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+
+    if (target is Element) {
+      target.clearInlineStyle();
+    } else {
+      debugPrint('Only element has style, try clear style from Node(#$selfPtr).');
+    }
+  }
+
   void flushPendingStyleProperties(int address) {
     if (!BindingBridge.hasBindingObject(Pointer.fromAddress(address))) return;
     Node? target = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(address));

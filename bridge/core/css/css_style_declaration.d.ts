@@ -1,4 +1,6 @@
 export interface CSSStyleDeclaration {
+  cssText: string;
+
   // @ts-ignore
   readonly length: int64;
   // @ts-ignore

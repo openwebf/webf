@@ -7,6 +7,7 @@
 #include "core/dom/element.h"
 #include "core/executing_context.h"
 #include "css_property_list.h"
+#include "core/html/parser/html_parser.h"
 
 namespace webf {
 
@@ -103,6 +104,43 @@ void InlineCssStyleDeclaration::CopyWith(InlineCssStyleDeclaration* inline_style
   }
 }
 
+AtomicString InlineCssStyleDeclaration::cssText() const {
+  std::string result;
+  for (auto& attr : properties_) {
+    result += attr.first + ": " + attr.second.ToStdString(ctx()) + "; ";
+  }
+  return AtomicString(ctx(), result);
+}
+
+void InlineCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {
+  const std::string css_text = value.ToStdString(ctx());
+  setCssText(css_text, exception_state);
+}
+
+void InlineCssStyleDeclaration::setCssText(const std::string& css_text, webf::ExceptionState& exception_state) {
+  InternalClearProperty();
+
+  std::vector<std::string> styles;
+  std::string::size_type prev_pos = 0, pos = 0;
+
+  while ((pos = css_text.find(';', pos)) != std::string::npos) {
+    styles.push_back(css_text.substr(prev_pos, pos - prev_pos));
+    prev_pos = ++pos;
+  }
+  styles.push_back(css_text.substr(prev_pos, pos - prev_pos));
+
+  for (auto& s : styles) {
+    std::string::size_type position = s.find(':');
+    if (position != std::basic_string<char>::npos) {
+      std::string css_key = s.substr(0, position);
+      trim(css_key);
+      std::string css_value = s.substr(position + 1, s.length());
+      trim(css_value);
+      InternalSetProperty(css_key, AtomicString(ctx(), css_value));
+    }
+  }
+}
+
 void InlineCssStyleDeclaration::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(owner_element_);
 }
@@ -171,6 +209,13 @@ AtomicString InlineCssStyleDeclaration::InternalRemoveProperty(std::string& name
                                                        owner_element_->bindingObject(), nullptr);
 
   return return_value;
+}
+
+void InlineCssStyleDeclaration::InternalClearProperty() {
+  if (properties_.empty()) return;
+  properties_.clear();
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kClearStyle, nullptr,
+                                                       owner_element_->bindingObject(), nullptr);
 }
 
 }  // namespace webf

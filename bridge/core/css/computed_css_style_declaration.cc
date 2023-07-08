@@ -74,4 +74,10 @@ bool ComputedCssStyleDeclaration::IsComputedCssStyleDeclaration() const {
   return true;
 }
 
+AtomicString ComputedCssStyleDeclaration::cssText() const {
+  return AtomicString::Empty();
+}
+
+void ComputedCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {}
+
 }  // namespace webf

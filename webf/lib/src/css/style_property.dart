@@ -268,6 +268,17 @@ class CSSStyleProperty {
     if (style.contains(TEXT_DECORATION_STYLE)) style.removeProperty(TEXT_DECORATION_STYLE, isImportant);
   }
 
+  static void removeShorthandAnimation(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ANIMATION_NAME)) style.removeProperty(ANIMATION_NAME, isImportant);
+    if (style.contains(ANIMATION_DURATION)) style.removeProperty(ANIMATION_DURATION, isImportant);
+    if (style.contains(ANIMATION_TIMING_FUNCTION)) style.removeProperty(ANIMATION_TIMING_FUNCTION, isImportant);
+    if (style.contains(ANIMATION_DELAY)) style.removeProperty(ANIMATION_DELAY, isImportant);
+    if (style.contains(ANIMATION_ITERATION_COUNT)) style.removeProperty(ANIMATION_ITERATION_COUNT, isImportant);
+    if (style.contains(ANIMATION_DIRECTION)) style.removeProperty(ANIMATION_DIRECTION, isImportant);
+    if (style.contains(ANIMATION_FILL_MODE)) style.removeProperty(ANIMATION_FILL_MODE, isImportant);
+    if (style.contains(ANIMATION_PLAY_STATE)) style.removeProperty(ANIMATION_PLAY_STATE, isImportant);
+  }
+
   static void setShorthandBorder(Map<String, String?> properties, String property, String shorthandValue) {
     String? borderTopColor;
     String? borderRightColor;

@@ -23,6 +23,8 @@ class CSSStyleDeclaration : public BindingObject {
   virtual bool SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) = 0;
   virtual bool DeleteItem(const AtomicString& key, ExceptionState& exception_state) = 0;
   virtual int64_t length() const = 0;
+  virtual AtomicString cssText() const = 0;
+  virtual void setCssText(const AtomicString& value, ExceptionState& exception_state) = 0;
 
   virtual AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) = 0;
   virtual void setProperty(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) = 0;

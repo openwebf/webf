@@ -1825,6 +1825,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
+  void clearInlineStyle() {
+    for(var key in inlineStyle.keys) {
+      style.removeProperty(key, true);
+    }
+    inlineStyle.clear();
+  }
+
   void _applyPseudoStyle(CSSStyleDeclaration style) {
     List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
     style.handlePseudoRules(this, pseudoRules);
