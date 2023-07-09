@@ -109,7 +109,7 @@ jobs:
       if: steps.test.outcome != 'success'
       run: exit 1
   plugin_test:
-    runs-on: macos-12
+    runs-on: self-hosted
     needs: [ build_bridge ]
     steps:
     - uses: actions/checkout@v3
@@ -139,7 +139,7 @@ jobs:
       if: steps.test.outcome != 'success'
       run: exit 1
   multiple_page_test:
-    runs-on: macos-12
+    runs-on: self-hosted
     needs: [ build_bridge ]
     steps:
     - uses: actions/checkout@v3
