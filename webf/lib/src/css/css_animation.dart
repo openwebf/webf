@@ -94,20 +94,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   final Map<String, Animation> _runningAnimation = {};
-  final Map<String, String> _animationProperties = {};
   final Map<String, String> _cacheOriginProperties = {};
-
-  @override
-  String? removeAnimationProperty(String propertyName) {
-    String? prevValue = EMPTY_STRING;
-
-    if (_animationProperties.containsKey(propertyName)) {
-      prevValue = _animationProperties[propertyName];
-      _animationProperties.remove(propertyName);
-    }
-
-    return prevValue;
-  }
 
   String _getSingleString(List<String> list, int index) {
     return list[index];

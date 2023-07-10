@@ -15,7 +15,11 @@ Color? _parseColor(String color, RenderStyle renderStyle, String propertyName) {
   return CSSColor.resolveColor(color, renderStyle, propertyName)?.value;
 }
 
-void _updateColor(Color oldColor, Color newColor, double progress, String property, RenderStyle renderStyle) {
+String _stringifyColor(Color color) {
+  return CSSColor(color).cssText();
+}
+
+Color _updateColor(Color oldColor, Color newColor, double progress, String property, RenderStyle renderStyle) {
   int alphaDiff = newColor.alpha - oldColor.alpha;
   int redDiff = newColor.red - oldColor.red;
   int greenDiff = newColor.green - oldColor.green;
@@ -28,43 +32,61 @@ void _updateColor(Color oldColor, Color newColor, double progress, String proper
   Color color = Color.fromARGB(alpha, red, green, blue);
 
   renderStyle.target.setRenderStyleProperty(property, CSSColor(color));
+
+  return color;
 }
 
 double? _parseLength(String length, RenderStyle renderStyle, String property) {
   return CSSLength.parseLength(length, renderStyle, property).computedValue;
 }
 
-void _updateLength(
+String _stringifyLength(double value) {
+  return '${value}px';
+}
+
+double _updateLength(
     double oldLengthValue, double newLengthValue, double progress, String property, CSSRenderStyle renderStyle) {
   double value = oldLengthValue * (1 - progress) + newLengthValue * progress;
   renderStyle.target.setRenderStyleProperty(property, CSSLengthValue(value, CSSLengthType.PX));
+  return value;
 }
 
 FontWeight _parseFontWeight(String fontWeight, RenderStyle renderStyle, String property) {
   return CSSText.resolveFontWeight(fontWeight);
 }
 
-void _updateFontWeight(
+String _stringifyFontWeight(FontWeight fontWeight) {
+  return fontWeight.cssText();
+}
+
+FontWeight _updateFontWeight(
     FontWeight oldValue, FontWeight newValue, double progress, String property, CSSRenderStyle renderStyle) {
-  FontWeight? fontWeight = FontWeight.lerp(oldValue, newValue, progress);
+  FontWeight? fontWeight = FontWeight.lerp(oldValue, newValue, progress) ?? FontWeight.normal;
   switch (property) {
     case FONT_WEIGHT:
       renderStyle.fontWeight = fontWeight;
       break;
   }
+
+  return fontWeight;
 }
 
 double? _parseNumber(String number, RenderStyle renderStyle, String property) {
   return CSSNumber.parseNumber(number);
 }
 
+String _stringifyNumber(double num) {
+  return num.toString();
+}
+
 double _getNumber(double oldValue, double newValue, double progress) {
   return oldValue * (1 - progress) + newValue * progress;
 }
 
-void _updateNumber(double oldValue, double newValue, double progress, String property, RenderStyle renderStyle) {
+double _updateNumber(double oldValue, double newValue, double progress, String property, RenderStyle renderStyle) {
   double number = _getNumber(oldValue, newValue, progress);
   renderStyle.target.setRenderStyleProperty(property, number);
+  return number;
 }
 
 double _parseLineHeight(String lineHeight, RenderStyle renderStyle, String property) {
@@ -74,37 +96,54 @@ double _parseLineHeight(String lineHeight, RenderStyle renderStyle, String prope
   return CSSLength.parseLength(lineHeight, renderStyle, LINE_HEIGHT).computedValue;
 }
 
-void _updateLineHeight(double oldValue, double newValue, double progress, String property, CSSRenderStyle renderStyle) {
-  renderStyle.lineHeight = CSSLengthValue(_getNumber(oldValue, newValue, progress), CSSLengthType.PX);
+String _stringifyLineHeight(CSSLengthValue lineNumber) {
+  return '${lineNumber.value}px';
+}
+
+CSSLengthValue _updateLineHeight(double oldValue, double newValue, double progress, String property, CSSRenderStyle renderStyle) {
+  CSSLengthValue lengthValue = CSSLengthValue(_getNumber(oldValue, newValue, progress), CSSLengthType.PX);
+  renderStyle.lineHeight = lengthValue;
+  return lengthValue;
 }
 
 Matrix4? _parseTransform(String value, RenderStyle renderStyle, String property) {
   return CSSMatrix.computeTransformMatrix(CSSFunction.parseFunction(value), renderStyle);
 }
 
-void _updateTransform(Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle) {
+String _stringifyTransform(Matrix4 value) {
+  return value.cssText();
+}
+
+Matrix4 _updateTransform(Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle) {
   Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(begin, end, t);
   renderStyle.transformMatrix = newMatrix4;
+  return newMatrix4;
 }
 
 CSSOrigin? _parseTransformOrigin(String value, RenderStyle renderStyle, String property) {
   return CSSOrigin.parseOrigin(value, renderStyle, property);
 }
 
-void _updateTransformOrigin(
+String _stringifyTransformOrigin(CSSOrigin value) {
+  return 'CSSOrigin(${value.offset.dx},${value.offset.dy},${value.alignment.x},${value.alignment.y})';
+}
+
+CSSOrigin _updateTransformOrigin(
     CSSOrigin begin, CSSOrigin end, double progress, String property, CSSRenderStyle renderStyle) {
   Offset offset = begin.offset + (end.offset - begin.offset) * progress;
   Alignment alignment = begin.alignment + (end.alignment - begin.alignment) * progress;
-  renderStyle.transformOrigin = CSSOrigin(offset, alignment);
+  CSSOrigin result = CSSOrigin(offset, alignment);
+  renderStyle.transformOrigin = result;
+  return result;
 }
 
-const List<Function> _colorHandler = [_parseColor, _updateColor];
-const List<Function> _lengthHandler = [_parseLength, _updateLength];
-const List<Function> _fontWeightHandler = [_parseFontWeight, _updateFontWeight];
-const List<Function> _numberHandler = [_parseNumber, _updateNumber];
-const List<Function> _lineHeightHandler = [_parseLineHeight, _updateLineHeight];
-const List<Function> _transformHandler = [_parseTransform, _updateTransform];
-const List<Function> _transformOriginHandler = [_parseTransformOrigin, _updateTransformOrigin];
+const List<Function> _colorHandler = [_parseColor, _updateColor, _stringifyColor];
+const List<Function> _lengthHandler = [_parseLength, _updateLength, _stringifyLength];
+const List<Function> _fontWeightHandler = [_parseFontWeight, _updateFontWeight, _stringifyFontWeight];
+const List<Function> _numberHandler = [_parseNumber, _updateNumber, _stringifyNumber];
+const List<Function> _lineHeightHandler = [_parseLineHeight, _updateLineHeight, _stringifyLineHeight];
+const List<Function> _transformHandler = [_parseTransform, _updateTransform, _stringifyTransform];
+const List<Function> _transformOriginHandler = [_parseTransformOrigin, _updateTransformOrigin, _stringifyTransformOrigin];
 
 Map<String, List<Function>> CSSTransitionHandlers = {
   COLOR: _colorHandler,
@@ -294,36 +333,27 @@ mixin CSSTransitionMixin on RenderStyle {
   }
 
   final Map<String, Animation> _propertyRunningTransition = {};
-  final Map<String, String> _animationProperties = {};
 
   bool _hasRunningTransition(String property) {
     return _propertyRunningTransition.containsKey(property);
   }
 
-  @override
-  String? removeAnimationProperty(String propertyName) {
-    String? prevValue = EMPTY_STRING;
-
-    if (_animationProperties.containsKey(propertyName)) {
-      prevValue = _animationProperties[propertyName];
-      _animationProperties.remove(propertyName);
-    }
-
-    return prevValue;
-  }
-
   void runTransition(String propertyName, begin, end) {
     if (_hasRunningTransition(propertyName)) {
       Animation animation = _propertyRunningTransition[propertyName]!;
-      animation.cancel();
+      if (CSSTransitionHandlers.containsKey(propertyName) && animation.effect is KeyframeEffect) {
+        KeyframeEffect effect = animation.effect as KeyframeEffect;
+        var interpolation = effect.interpolations.firstWhere((interpolation) => interpolation.property == propertyName);
+        var stringifyFunc = CSSTransitionHandlers[propertyName]![2];
+        // Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle
+        begin = stringifyFunc(interpolation.lerp(interpolation.begin, interpolation.end, animation.progress, propertyName, this));
+      }
 
+      CSSTransitionHandlers[propertyName];
+
+      animation.cancel();
       // An Event fired when a CSS transition has been cancelled.
       target.dispatchEvent(Event(EVENT_TRANSITION_CANCEL));
-
-      // Maybe set transition twice in a same frame. should check animationProperties has contains propertyName.
-      if (_animationProperties.containsKey(propertyName)) {
-        begin = _animationProperties[propertyName];
-      }
     }
 
     if (begin == null || (begin is String && begin.isEmpty)) {
