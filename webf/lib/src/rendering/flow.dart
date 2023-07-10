@@ -246,6 +246,9 @@ class RenderFlowLayout extends RenderLayoutBox {
   ) {
     List<_RunMetrics> _runMetrics = <_RunMetrics>[];
     double mainAxisLimit = renderStyle.contentMaxConstraintsWidth;
+    if (renderStyle is CSSRenderStyle) {
+      renderStyle.handlerContentMaxConstraintsWidth = mainAxisLimit;
+    }
 
     double runMainAxisExtent = 0.0;
     double runCrossAxisExtent = 0.0;

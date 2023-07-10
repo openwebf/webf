@@ -14,10 +14,10 @@ mixin CSSPaddingMixin on RenderStyle {
   @override
   EdgeInsets get padding {
     EdgeInsets insets = EdgeInsets.only(
-        left: paddingLeft.computedValue,
-        right: paddingRight.computedValue,
-        bottom: paddingBottom.computedValue,
-        top: paddingTop.computedValue);
+        left: left.computedValue > 0 ? left.computedValue : paddingLeft.computedValue,
+        right: right.computedValue > 0 ? right.computedValue : paddingRight.computedValue,
+        bottom: bottom.computedValue > 0 ? bottom.computedValue : paddingBottom.computedValue,
+        top:  top.computedValue > 0 ? top.computedValue : paddingTop.computedValue);
     assert(insets.isNonNegative);
     return insets;
   }
