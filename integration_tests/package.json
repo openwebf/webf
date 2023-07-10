@@ -30,7 +30,7 @@
     "qs": "^6.11.0",
     "stylesheet-loader": "^0.8.5",
     "typescript": "^3.8.3",
-    "webpack": "^4.42.0",
+    "webpack": "^4.46.0",
     "webpack-cli": "^3.3.12",
     "ws": "^7.3.0"
   },
