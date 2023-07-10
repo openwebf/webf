@@ -313,4 +313,48 @@ describe('Transition all', () => {
 
     });
   });
+
+  it('toggle the transition class should the previous animation and run new animations', async (done) => {
+    const container1 = document.createElement('div');
+    document.body.appendChild(container1);
+    setElementStyle(container1, {
+      position: 'absolute',
+      top: '100px',
+      left: 0,
+      padding: '20px',
+      backgroundColor: '#999',
+    });
+    container1.appendChild(document.createTextNode('DIV'));
+    await snapshot();
+
+    container1.addEventListener('transitionend', async () => {
+      console.log('end');
+      await snapshot();
+      done();
+    });
+
+    requestAnimationFrame(async () => {
+      setElementStyle(container1, {
+        transform: 'translate3d(200px, 0, 0)',
+        transition: 'all 1s linear',
+      });
+      await snapshot();
+
+      setTimeout(async () => {
+        setElementStyle(container1, {
+          transform: 'translate3d(0px, 100px, 0)',
+        });
+
+        await snapshot();
+
+        setTimeout(async () => {
+          setElementStyle(container1, {
+            transform: 'translate3d(200px, 200px, 0)',
+          });
+
+          await snapshot();
+        }, 500);
+      }, 500);
+    });
+  });
 });

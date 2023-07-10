@@ -203,7 +203,6 @@ abstract class RenderStyle {
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
   void addColorRelativeProperty(String propertyName);
-  String? removeAnimationProperty(String propertyName);
   double getWidthByAspectRatio();
   double getHeightByAspectRatio();
 
