@@ -34,7 +34,7 @@ TEST(WidgetElement, getPropertyWithSymbolToStringTag) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-    EXPECT_STREQ(message.c_str(), "FLUTTER-CHECKBOX");
+    EXPECT_STREQ(message.c_str(), "WidgetElement");
     logCalled = true;
   };
   auto env = TEST_init([](int32_t contextId, const char* errmsg) {
