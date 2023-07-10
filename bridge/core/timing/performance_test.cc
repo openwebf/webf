@@ -69,7 +69,7 @@ TEST(Performance, mark) {
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-    EXPECT_STREQ(message.c_str(), "{constructor: ƒ (), detail: null}");
+    EXPECT_STREQ(message.c_str(), "PerformanceMark {detail: null}");
   };
   auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
@@ -90,7 +90,7 @@ TEST(Performance, markWithDetail) {
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-    EXPECT_STREQ(message.c_str(), "{constructor: ƒ (), detail: {...}}");
+    EXPECT_STREQ(message.c_str(), "PerformanceMark {detail: {...}}");
   };
   auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
@@ -111,7 +111,7 @@ TEST(Performance, markWithName) {
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-    EXPECT_STREQ(message.c_str(), "[{...}, {...}]");
+    EXPECT_STREQ(message.c_str(), "[PerformanceMark {...}, PerformanceMark {...}]");
   };
   auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
@@ -158,7 +158,7 @@ TEST(Performance, clearMarksByName) {
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-    EXPECT_STREQ(message.c_str(), "[{...}]");
+    EXPECT_STREQ(message.c_str(), "[PerformanceMark {...}]");
   };
   auto env = TEST_init([](int32_t contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
