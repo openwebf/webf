@@ -418,6 +418,10 @@ mixin ElementOverflowMixin on ElementBase {
     return scrollContainerSize.width;
   }
 
+  String get dir {
+    return 'ltr';
+  }
+
   double get clientTop {
     _ensureRenderObjectHasLayout();
     return renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
