@@ -1589,6 +1589,39 @@ describe('containing-block', () => {
 
     await snapshot();
   });
+  it('set fixed on body', async (done) => {
+    const a = createElement('div', {
+      style: {
+        position: 'fixed',
+        top: '10px'
+      }
+    }, [ createText('A') ]);
+    const b = createElement('div', {
+      style: {
+        position: 'fixed',
+        top: '30px'
+      }
+    }, [ createText('B') ]);
+    const c = createElement('div', {
+      style: {
+        position: 'fixed',
+        top: '50px'
+      }
+    }, [ createText('C') ]);
+    document.body.appendChild(a);
+    document.body.appendChild(b);
+    document.body.appendChild(c);
+
+    requestAnimationFrame(() => {
+      document.body.style.position = 'fixed';
+
+      requestAnimationFrame(async () => {
+        document.body.style.position = '';
+        await snapshot();
+        done();
+      });
+    });
+  });
 
   it('without transform', async () => {
     let root;
