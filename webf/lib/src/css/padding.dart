@@ -13,11 +13,21 @@ mixin CSSPaddingMixin on RenderStyle {
   /// must not be null.
   @override
   EdgeInsets get padding {
-    EdgeInsets insets = EdgeInsets.only(
-        left: paddingLeft.computedValue,
-        right: paddingRight.computedValue,
-        bottom: paddingBottom.computedValue,
-        top: paddingTop.computedValue);
+    EdgeInsets insets;
+    ParentData? parentData = renderBoxModel?.parentData;
+    if (parentData != null && parentData is RenderLayoutParentData && !parentData.isPositioned && display == CSSDisplay.block) {
+      insets = EdgeInsets.only(
+          left: left.computedValue > 0 ? left.computedValue : paddingLeft.computedValue,
+          right: right.computedValue > 0 ? right.computedValue : paddingRight.computedValue,
+          bottom: paddingBottom.computedValue,
+          top: paddingTop.computedValue);
+    } else {
+      insets = EdgeInsets.only(
+          left: paddingLeft.computedValue,
+          right: paddingRight.computedValue,
+          bottom: paddingBottom.computedValue,
+          top: paddingTop.computedValue);
+    }
     assert(insets.isNonNegative);
     return insets;
   }

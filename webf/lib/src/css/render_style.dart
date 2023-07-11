@@ -804,7 +804,12 @@ class CSSRenderStyle extends RenderStyle
     double? logicalContentWidth;
     // Subtract padding and border width to get content width.
     if (logicalWidth != null) {
-      logicalContentWidth = logicalWidth - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+      ParentData? parentData = renderStyle?.renderBoxModel?.parentData;
+      if (parentData != null && parentData is RenderLayoutParentData && !parentData.isPositioned && renderStyle.display == CSSDisplay.block) {
+        logicalContentWidth = logicalWidth - renderStyle.border.horizontal - renderStyle.padding.horizontal - renderStyle.margin.left;
+      } else {
+        logicalContentWidth = logicalWidth - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+      }
       // Logical width may be smaller than its border and padding width,
       // in this case, content width will be negative which is illegal.
       logicalContentWidth = math.max(0, logicalContentWidth);
@@ -964,11 +969,20 @@ class CSSRenderStyle extends RenderStyle
     // has no width), the child width is constrained by its closest ancestor who has definite logical content box width.
     if (ancestorRenderStyle != null) {
       borderBoxLogicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
+      if (borderBoxLogicalWidth == null && ancestorRenderStyle is CSSRenderStyle) {
+        borderBoxLogicalWidth = ancestorRenderStyle.handlerContentMaxConstraintsWidth;
+      }
     }
 
     if (borderBoxLogicalWidth != null) {
-      contentMaxConstraintsWidth =
-          borderBoxLogicalWidth - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+      ParentData? parentData = renderStyle?.renderBoxModel?.parentData;
+      if (parentData != null && parentData is RenderLayoutParentData && !parentData.isPositioned && renderStyle.display == CSSDisplay.block) {
+        contentMaxConstraintsWidth =
+            borderBoxLogicalWidth - renderStyle.border.horizontal - renderStyle.padding.horizontal - renderStyle.margin.left;
+      } else {
+        contentMaxConstraintsWidth =
+            borderBoxLogicalWidth - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+      }
       // Logical width may be smaller than its border and padding width,
       // in this case, content width will be negative which is illegal.
       // <div style="width: 300px;">
@@ -980,6 +994,9 @@ class CSSRenderStyle extends RenderStyle
 
     return contentMaxConstraintsWidth;
   }
+
+  // record max width
+  double handlerContentMaxConstraintsWidth = double.infinity;
 
   // Content width calculated from renderStyle tree.
   // https://www.w3.org/TR/css-box-3/#valdef-box-content-box
@@ -1228,6 +1245,8 @@ class CSSRenderStyle extends RenderStyle
       }
 
       if (parentRenderStyle.contentBoxLogicalWidth != null) {
+        break;
+      } else if (parentRenderStyle is CSSRenderStyle && parentRenderStyle.handlerContentMaxConstraintsWidth != double.infinity) {
         break;
       }
 
