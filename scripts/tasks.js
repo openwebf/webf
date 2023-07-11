@@ -490,7 +490,7 @@ task('build-ios-frameworks', (done) => {
 });
 
 task('build-linux-webf-lib', (done) => {
-  const buildType = buildMode == 'Release' ? 'Release' : 'Relwithdebinfo';
+  const buildType = buildMode == 'Release' ? 'Release' : 'RelWithDebInfo';
   const cmakeGeneratorTemplate = platform == 'win32' ? 'Ninja' : 'Unix Makefiles';
 
   let externCmakeArgs = [];
@@ -642,7 +642,7 @@ task('build-android-webf-lib', (done) => {
     'armeabi-v7a': 'arm-linux-androideabi',
     'x86': 'i686-linux-android'
   };
-  const buildType = (buildMode === 'Release' || buildMode == 'Relwithdebinfo') ? 'Relwithdebinfo' : 'Debug';
+  const buildType = (buildMode === 'Release' || buildMode == 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
   let externCmakeArgs = [];
 
   if (process.env.ENABLE_ASAN === 'true') {
