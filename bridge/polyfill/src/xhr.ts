@@ -54,6 +54,7 @@ export class XMLHttpRequest extends EventTarget {
   public onreadystatechange = null;
 
   // Result & response
+  public responseType = '';
   public responseText = "";
   public responseXML = "";
   public status = 0;
@@ -236,7 +237,7 @@ export class XMLHttpRequest extends EventTarget {
       this.headers.Host += ":" + url.port;
     }
 
-    // We did't going to support basic-auth for security reasons.
+    // We didn't go to support basic-auth for security reasons.
     // No basic-auth implementation here.
 
     // Set content length header
@@ -264,9 +265,6 @@ export class XMLHttpRequest extends EventTarget {
 
       // Handler for the response
       const responseHandler = (resp: any) => {
-        // Set response var to the response we got back
-        // This is so it remains accessable outside this scope
-        this.response = resp;
         // Check for redirect
         // @TODO Prevent looped redirects
         if (this.response.status === 301 || this.response.status === 302 || this.response.status === 303 || this.response.status === 307) {
@@ -277,9 +275,10 @@ export class XMLHttpRequest extends EventTarget {
             method: this.response.status === 303 ? "GET" : this.settings.method,
             headers: this.headers,
             body: data,
-          }).then(function(response) {
+          }).then(async (response) => {
             responseHandler(response);
-            return response.text();
+            this.response = await responseTypeHandler(this.responseType, response);
+            return this.response;
           }).then((text) => {
             successHandler(text);
           }).catch(function(error) {
@@ -291,12 +290,28 @@ export class XMLHttpRequest extends EventTarget {
         }
 
         this.setState(this.HEADERS_RECEIVED);
-        this.status = this.response.status;
+        this.status = resp.status;
       };
+
+      const responseTypeHandler = async (responseType: string, response: Response) => {
+        if (responseType == '' || responseType == 'text') {
+          return await response.text();
+        } else if (responseType == 'arraybuffer') {
+          return await response.arrayBuffer();
+        } else if (responseType == 'blob') {
+          return await response.blob();
+        } else if (responseType == 'json') {
+          return await response.json();
+        }
+
+        return await response.text();
+      }
 
       const successHandler = (text: string) => {
         if (this.sendFlag) {
-          this.responseText = text;
+          if (this.responseType == '' || this.responseType == 'text' || this.responseType == 'json') {
+            this.responseText = text;
+          }
           this.setState(this.DONE);
           this.sendFlag = false;
         }
@@ -312,11 +327,12 @@ export class XMLHttpRequest extends EventTarget {
         method: this.settings.method,
         headers: this.headers,
         body: data,
-      }).then(function(response) {
+      }).then(async (response) => {
         responseHandler(response);
-        return response.text();
-      }).then((text) => {
-        successHandler(text);
+        this.response = await responseTypeHandler(this.responseType, response);
+        return this.response;
+      }).then((data) => {
+        successHandler(data);
       }).catch(function(error) {
         errorHandler(error);
       });

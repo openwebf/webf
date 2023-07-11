@@ -4,8 +4,10 @@
  */
 
 #include "script_wrappable.h"
+#include "built_in_string.h"
 #include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
+#include "foundation/logging.h"
 
 namespace webf {
 

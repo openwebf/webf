@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "script_value.h"
+#include <quickjs/quickjs.h>
 #include <vector>
 #include "bindings/qjs/converter_impl.h"
 #include "core/binding_object.h"
@@ -13,6 +14,10 @@
 #include "qjs_bounding_client_rect.h"
 #include "qjs_engine_patch.h"
 #include "qjs_event_target.h"
+
+#if WIN32
+#include <Windows.h>
+#endif
 
 namespace webf {
 
@@ -36,6 +41,18 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
     }
     case NativeTag::TAG_NULL: {
       return JS_NULL;
+    }
+    case NativeTag::TAG_UINT8_BYTES: {
+      auto free_func = [](JSRuntime* rt, void* opaque, void* ptr) {
+#if WIN32
+        return CoTaskMemFree(ptr);
+#else
+        return free(ptr);
+#endif
+      };
+
+      return JS_NewArrayBuffer(context->ctx(), (uint8_t*)native_value.u.ptr, native_value.uint32, free_func, nullptr,
+                               0);
     }
     case NativeTag::TAG_LIST: {
       size_t length = native_value.uint32;

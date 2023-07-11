@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "executing_context_data.h"
+#include "built_in_string.h"
 #include "executing_context.h"
 
 namespace webf {
@@ -54,6 +55,11 @@ JSValue ExecutionContextData::constructorForIdSlowCase(const WrapperTypeInfo* ty
   JSAtom prototypeKey = JS_NewAtom(ctx, "prototype");
   JS_DefinePropertyValue(ctx, classObject, prototypeKey, prototypeObject, JS_PROP_C_W_E);
   JS_FreeAtom(ctx, prototypeKey);
+
+  JS_DefinePropertyValue(ctx, prototypeObject, built_in_string::kconstructor.Impl(), JS_DupValue(ctx, classObject),
+                         JS_PROP_NORMAL);
+  JS_DefinePropertyValue(ctx, prototypeObject, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx, type->className),
+                         JS_PROP_NORMAL);
 
   // Inherit to parentClass.
   if (type->parent_class != nullptr) {
