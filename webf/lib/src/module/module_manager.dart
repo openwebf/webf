@@ -34,7 +34,6 @@ void _defineModuleCreator() {
   _isDefined = true;
   _defineModule((ModuleManager? moduleManager) => AsyncStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => ClipBoardModule(moduleManager));
-  _defineModule((ModuleManager? moduleManager) => ConnectionModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => FetchModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => MethodChannelModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => NavigationModule(moduleManager));
