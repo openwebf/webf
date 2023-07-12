@@ -28,6 +28,7 @@ class NodeData {
   ChildNodeList* GetChildNodeList(ContainerNode& node);
 
   ChildNodeList* EnsureChildNodeList(ContainerNode& node);
+  NodeList* NodeLists() { return child_node_list_; }
 
   EmptyNodeList* EnsureEmptyChildNodeList(Node& node);
 
