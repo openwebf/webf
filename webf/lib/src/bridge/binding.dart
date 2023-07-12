@@ -56,8 +56,9 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     Pointer<RawEvent> rawEvent = event.toRaw().cast<RawEvent>();
     List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCapture];
 
+    Stopwatch? stopwatch;
     if (isEnabledLog) {
-      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
+      stopwatch = Stopwatch()..start();
     }
 
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
@@ -73,6 +74,10 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     event.sharedJSProps = Pointer.fromAddress(rawEvent.ref.bytes.elementAt(8).value);
     event.propLen = rawEvent.ref.bytes.elementAt(9).value;
     event.allocateLen = rawEvent.ref.bytes.elementAt(10).value;
+
+    if (isEnabledLog) {
+      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments time: ${stopwatch!.elapsedMicroseconds}us');
+    }
 
     // Free the allocated arguments.
     malloc.free(rawEvent);
