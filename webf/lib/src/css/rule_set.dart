@@ -81,7 +81,8 @@ class RuleSet {
         }
         tagName = simpleSelector.name;
       } else if (simpleSelector.runtimeType == PseudoClassSelector ||
-          simpleSelector.runtimeType == PseudoElementSelector) {
+          simpleSelector.runtimeType == PseudoElementSelector ||
+          simpleSelector.runtimeType == PseudoClassFunctionSelector) {
         pseudoName = simpleSelector.name;
       }
 
