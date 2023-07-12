@@ -175,5 +175,6 @@
     "matches",
     "closest",
     "elementFromPoint",
+    "dir",
   ]
 }
