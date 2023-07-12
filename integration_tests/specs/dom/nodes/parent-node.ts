@@ -62,7 +62,7 @@ describe('ParentNode prepend', function () {
     test(function() {
       const parent = node.cloneNode();
       parent.prepend();
-      assert_array_equals(parent.childNodes.length, 0);
+      assert_equals(parent.childNodes.length, 0);
     }, nodeName + '.prepend() without any argument, on a parent having no child.');
 
     test(function() {
@@ -87,7 +87,7 @@ describe('ParentNode prepend', function () {
       const parent = node.cloneNode();
       const x = document.createElement('x');
       parent.prepend(x);
-      assert_array_equals(parent.childNodes[0], x);
+      assert_equals(parent.childNodes[0], x);
     }, nodeName + '.prepend() with only one element as an argument, on a parent having no child.');
 
     test(function() {
