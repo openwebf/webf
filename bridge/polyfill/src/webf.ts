@@ -5,9 +5,7 @@
 
 import { addWebfModuleListener, webfInvokeModule, clearWebfModuleListener, removeWebfModuleListener } from './bridge';
 import { methodChannel, triggerMethodCallHandler } from './method-channel';
-import { dispatchConnectivityChangeEvent } from "./connection";
 
-addWebfModuleListener('Connection', (event, data) => dispatchConnectivityChangeEvent(event));
 addWebfModuleListener('MethodChannel', (event, data) => triggerMethodCallHandler(data[0], data[1]));
 
 export const webf = {
