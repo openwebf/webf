@@ -111,7 +111,7 @@ NodeData& Node::CreateNodeData() {
 }
 
 NodeData& Node::EnsureNodeData() {
-  if (HasData())
+  if (HasNodeData())
     return *Data();
   return CreateNodeData();
 }

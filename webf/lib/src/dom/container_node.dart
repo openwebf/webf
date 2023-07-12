@@ -313,6 +313,19 @@ abstract class ContainerNode extends Node {
       return;
     }
 
+    if (nodeData != null) {
+      if (nodeData!.nodeList is ChildNodeList) {
+        if (change != null) {
+          (nodeData!.nodeList as ChildNodeList).childrenChanged(change);
+        } else {
+          (nodeData!.nodeList as ChildNodeList).invalidateCache();
+        }
+      }
+      if (parentNode != null) {
+        SelectorEvaluator.nthIndexCache.invalidateWithParentNode(parentNode!);
+      }
+    }
+
     // This is a performance optimization, NodeList cache invalidation is
     // not necessary for non-element nodes.
     if (change != null &&

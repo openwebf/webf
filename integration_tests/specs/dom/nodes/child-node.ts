@@ -315,3 +315,99 @@ describe('ChildNode after', function() {
   test_after(document.createElement('test'), 'Element', '<test></test>');
   test_after(document.createTextNode('test'), 'Text', 'test');
 });
+
+describe('ChildNodes', () => {
+
+  var check_parent_node = function(node) {
+    assert_array_equals(node.childNodes, []);
+
+    var children = node.childNodes;
+    var child = document.createElement("p");
+    node.appendChild(child);
+    assert_equals(node.childNodes, children);
+    assert_equals(children.item(0), child);
+
+    var child2 = document.createComment("comment");
+    node.appendChild(child2);
+    expect(children.length).toBe(2);
+    assert_equals(children.item(0), child);
+    assert_equals(children.item(1), child2);
+
+    assert_false(2 in children);
+    assert_equals(children[2], undefined);
+    assert_equals(children.item(2), null);
+  };
+
+  test(function() {
+    var element = document.createElement("p");
+    assert_equals(element.childNodes, element.childNodes);
+  }, "Caching of Node.childNodes");
+
+  test(function() {
+    check_parent_node(document.createElement("p"));
+  }, "Node.childNodes on an Element.");
+
+  test(function() {
+    check_parent_node(document.createDocumentFragment());
+  }, "Node.childNodes on a DocumentFragment.");
+
+  test(function() {
+    var node = document.createElement("div");
+    var kid1 = document.createElement("p");
+    var kid2 = document.createTextNode("hey");
+    var kid3 = document.createElement("span");
+    node.appendChild(kid1);
+    node.appendChild(kid2);
+    node.appendChild(kid3);
+
+    var list = node.childNodes;
+    // @ts-ignore
+    assert_array_equals([...list], [kid1, kid2, kid3]);
+
+    // @ts-ignore
+    var keys = list.keys();
+    assert_false(keys instanceof Array);
+    keys = [...keys];
+    assert_array_equals(keys, [0, 1, 2]);
+
+    // @ts-ignore
+    var values = list.values();
+    assert_false(values instanceof Array);
+    values = [...values];
+    assert_array_equals(values, [kid1, kid2, kid3]);
+
+    // @ts-ignore
+    var entries = list.entries();
+    assert_false(entries instanceof Array);
+    entries = [...entries];
+    assert_equals(entries.length, keys.length);
+    assert_equals(entries.length, values.length);
+    for (var i = 0; i < entries.length; ++i) {
+      assert_array_equals(entries[i], [keys[i], values[i]]);
+    }
+
+    var cur = 0;
+    var thisObj = {};
+    list.forEach(function(value, key, listObj) {
+      assert_equals(listObj, list);
+      // @ts-ignore
+      assert_equals(this, thisObj);
+      assert_equals(value, values[cur]);
+      assert_equals(key, keys[cur]);
+      cur++;
+    }, thisObj);
+    assert_equals(cur, entries.length);
+
+    assert_equals(list[Symbol.iterator], Array.prototype[Symbol.iterator]);
+    // @ts-ignore
+    assert_equals(list.keys, Array.prototype.keys);
+    if (Array.prototype.values) {
+      // @ts-ignore
+      assert_equals(list.values, Array.prototype.values);
+    }
+    // @ts-ignore
+    assert_equals(list.entries, Array.prototype.entries);
+    assert_equals(list.forEach, Array.prototype.forEach);
+  }, "Iterator behavior of Node.childNodes");
+
+});
