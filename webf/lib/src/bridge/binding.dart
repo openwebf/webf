@@ -56,8 +56,9 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     Pointer<Void> rawEvent = event.toRaw().cast<Void>();
     List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCapture];
 
+    Stopwatch? stopwatch;
     if (isEnabledLog) {
-      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
+      stopwatch = Stopwatch()..start();
     }
 
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
@@ -69,6 +70,10 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     Pointer<EventDispatchResult> dispatchResult = fromNativeValue(returnValue).cast<EventDispatchResult>();
     event.cancelable = dispatchResult.ref.canceled;
     event.propagationStopped = dispatchResult.ref.propagationStopped;
+
+    if (isEnabledLog) {
+      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments time: ${stopwatch!.elapsedMicroseconds}us');
+    }
 
     // Free the allocated arguments.
     malloc.free(rawEvent);
