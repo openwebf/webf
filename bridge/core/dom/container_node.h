@@ -74,13 +74,10 @@ class ContainerNode : public Node {
                                        Node* unchanged_next,
                                        ChildrenChangeSource by_parser) {
       ChildrenChange change = {
-          .type = node.IsElementNode()
-                      ? ChildrenChangeType::kElementInserted
-                      : ChildrenChangeType::kNonElementInserted,
+          .type = node.IsElementNode() ? ChildrenChangeType::kElementInserted : ChildrenChangeType::kNonElementInserted,
           .by_parser = by_parser,
-          .affects_elements = node.IsElementNode()
-                                  ? ChildrenChangeAffectsElements::kYes
-                                  : ChildrenChangeAffectsElements::kNo,
+          .affects_elements =
+              node.IsElementNode() ? ChildrenChangeAffectsElements::kYes : ChildrenChangeAffectsElements::kNo,
           .sibling_changed = &node,
           .sibling_before_change = unchanged_previous,
           .sibling_after_change = unchanged_next,
@@ -93,12 +90,10 @@ class ContainerNode : public Node {
                                      Node* next_sibling,
                                      ChildrenChangeSource by_parser) {
       ChildrenChange change = {
-          .type = node.IsElementNode() ? ChildrenChangeType::kElementRemoved
-                                       : ChildrenChangeType::kNonElementRemoved,
+          .type = node.IsElementNode() ? ChildrenChangeType::kElementRemoved : ChildrenChangeType::kNonElementRemoved,
           .by_parser = by_parser,
-          .affects_elements = node.IsElementNode()
-                                  ? ChildrenChangeAffectsElements::kYes
-                                  : ChildrenChangeAffectsElements::kNo,
+          .affects_elements =
+              node.IsElementNode() ? ChildrenChangeAffectsElements::kYes : ChildrenChangeAffectsElements::kNo,
           .sibling_changed = &node,
           .sibling_before_change = previous_sibling,
           .sibling_after_change = next_sibling,
@@ -107,16 +102,13 @@ class ContainerNode : public Node {
     }
 
     bool IsChildInsertion() const {
-      return type == ChildrenChangeType::kElementInserted ||
-             type == ChildrenChangeType::kNonElementInserted;
+      return type == ChildrenChangeType::kElementInserted || type == ChildrenChangeType::kNonElementInserted;
     }
     bool IsChildRemoval() const {
-      return type == ChildrenChangeType::kElementRemoved ||
-             type == ChildrenChangeType::kNonElementRemoved;
+      return type == ChildrenChangeType::kElementRemoved || type == ChildrenChangeType::kNonElementRemoved;
     }
     bool IsChildElementChange() const {
-      return type == ChildrenChangeType::kElementInserted ||
-             type == ChildrenChangeType::kElementRemoved;
+      return type == ChildrenChangeType::kElementInserted || type == ChildrenChangeType::kElementRemoved;
     }
 
     bool ByParser() const { return by_parser == ChildrenChangeSource::kParser; }
@@ -176,10 +168,7 @@ class ContainerNode : public Node {
   // |post_insertion_notification_targets| must not be nullptr.
   template <typename Functor>
   void InsertNodeVector(const NodeVector&, Node* next, const Functor&, NodeVector* post_insertion_notification_targets);
-  void DidInsertNodeVector(
-      const NodeVector&,
-      Node* next,
-      const NodeVector& post_insertion_notification_targets);
+  void DidInsertNodeVector(const NodeVector&, Node* next, const NodeVector& post_insertion_notification_targets);
   class AdoptAndInsertBefore;
   class AdoptAndAppendChild;
   friend class AdoptAndInsertBefore;
