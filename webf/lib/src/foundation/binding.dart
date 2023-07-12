@@ -147,7 +147,7 @@ abstract class BindingObject<T> extends Iterable<T> {
   }
 
   @override
-  Iterator<T> get iterator => throw UnimplementedError();
+  Iterator<T> get iterator => Iterable<T>.empty().iterator;
 
   dynamic _invokeBindingMethodAsync(String method, List<dynamic> args) {
     BindingObjectMethod? fn = _methods[method];
@@ -164,18 +164,26 @@ abstract class BindingObject<T> extends Iterable<T> {
       List<dynamic> functionArguments = args.sublist(3);
       Future<dynamic> p = fn.call(functionArguments);
       p.then((result) {
+        Stopwatch? stopwatch;
         if (isEnabledLog) {
-          print('AsyncAnonymousFunction call resolved callback: $method arguments:[$result]');
+          stopwatch = Stopwatch()..start();
         }
         Pointer<NativeValue> nativeValue = malloc.allocate(sizeOf<NativeValue>());
         toNativeValue(nativeValue, result, this);
         callback(callbackContext, nativeValue, contextId, nullptr);
+        if (isEnabledLog) {
+          print('AsyncAnonymousFunction call resolved callback: $method arguments:[$result] time: ${stopwatch!.elapsedMicroseconds}us');
+        }
       }).catchError((e, stack) {
         String errorMessage = '$e\n$stack';
+        Stopwatch? stopwatch;
         if (isEnabledLog) {
-          print('AsyncAnonymousFunction call rejected callback: $method, arguments:[$errorMessage]');
+          stopwatch = Stopwatch()..start();
         }
         callback(callbackContext, nullptr, contextId, errorMessage.toNativeUtf8());
+        if (isEnabledLog) {
+          print('AsyncAnonymousFunction call rejected callback: $method, arguments:[$errorMessage] time: ${stopwatch!.elapsedMicroseconds}us');
+        }
       });
     }
 
@@ -195,12 +203,17 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
 
   BindingObjectProperty? property = bindingObject._properties[args[0]];
 
+  Stopwatch? stopwatch;
   if (isEnabledLog && property != null) {
-    print('$bindingObject getBindingProperty key: ${args[0]} result: ${property.getter()}');
+    stopwatch = Stopwatch()..start();
   }
 
   if (property != null) {
-    return property.getter();
+    dynamic result = property.getter();
+    if (isEnabledLog) {
+      print('$bindingObject getBindingProperty key: ${args[0]} result: ${property.getter()} time: ${stopwatch!.elapsedMicroseconds}us');
+    }
+    return result;
   }
   return null;
 }
@@ -242,10 +255,15 @@ dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> a
 }
 
 dynamic invokeBindingMethodSync(BindingObject bindingObject, List<dynamic> args) {
+  Stopwatch? stopwatch;
   if (isEnabledLog) {
-    print('$bindingObject invokeBindingMethodSync method: ${args[0]} args: ${args.slice(1)}');
+    stopwatch = Stopwatch()..start();
   }
-  return bindingObject._invokeBindingMethodSync(args[0], args.slice(1));
+  dynamic result = bindingObject._invokeBindingMethodSync(args[0], args.slice(1));
+  if (isEnabledLog) {
+    print('$bindingObject invokeBindingMethodSync method: ${args[0]} args: ${args.slice(1)} time: ${stopwatch!.elapsedMilliseconds}ms');
+  }
+  return result;
 }
 
 dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args) {
@@ -274,10 +292,14 @@ void invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindin
     } else {
       BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
       // invokeBindingMethod directly
+      Stopwatch? stopwatch;
       if (isEnabledLog) {
-        print('$bindingObject invokeBindingMethod method: $method args: $values');
+        stopwatch = Stopwatch()..start();
       }
       result = bindingObject._invokeBindingMethodSync(method, values);
+      if (isEnabledLog) {
+        print('$bindingObject invokeBindingMethod method: $method args: $values result: $result time: ${stopwatch!.elapsedMicroseconds}us');
+      }
     }
   } catch (e, stack) {
     print('$e\n$stack');

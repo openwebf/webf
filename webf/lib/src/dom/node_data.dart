@@ -9,15 +9,16 @@ import 'empty_child_node_list.dart';
 import 'node.dart';
 
 class NodeData {
-  NodeList? _node_list;
+  NodeList? _nodeList;
+  NodeList? get nodeList => _nodeList;
 
   ChildNodeList ensureChildNodeList(ContainerNode node) {
-    _node_list ??= ChildNodeList(node);
-    return _node_list! as ChildNodeList;
+    _nodeList ??= ChildNodeList(node);
+    return _nodeList! as ChildNodeList;
   }
 
   NodeList ensureEmptyChildNodeList(Node node) {
-    _node_list ??= EmptyNodeList(node);
-    return _node_list!;
+    _nodeList ??= EmptyNodeList(node);
+    return _nodeList!;
   }
 }

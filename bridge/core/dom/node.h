@@ -235,7 +235,7 @@ class Node : public EventTarget {
   void ClearSelfOrAncestorHasDirAutoAttribute() { ClearFlag(kSelfOrAncestorHasDirAutoAttribute); }
 
   NodeData& CreateNodeData();
-  [[nodiscard]] bool HasData() const { return GetFlag(kHasDataFlag); }
+  [[nodiscard]] bool HasNodeData() const { return GetFlag(kHasDataFlag); }
   // |RareData| cannot be replaced or removed once assigned.
   [[nodiscard]] NodeData* Data() const { return node_data_.get(); }
   NodeData& EnsureNodeData();
