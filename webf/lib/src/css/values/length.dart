@@ -522,6 +522,10 @@ class CSSLength {
     return value == AUTO;
   }
 
+  static bool isInitial(String? value) {
+    return value == INITIAL;
+  }
+
   static bool isLength(String? value) {
     return value != null && (value == ZERO || _lengthRegExp.hasMatch(value));
   }

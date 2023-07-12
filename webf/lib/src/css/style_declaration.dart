@@ -322,6 +322,8 @@ class CSSStyleDeclaration extends BindingObject {
     // Eg. var(--x), calc(1 + 1)
     if (CSSFunction.isFunction(normalizedValue)) return true;
 
+    if (CSSLength.isInitial(normalizedValue)) return true;
+
     // Validate value.
     switch (propertyName) {
       case WIDTH:
