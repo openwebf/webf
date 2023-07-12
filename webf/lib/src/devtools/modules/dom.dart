@@ -262,7 +262,9 @@ class InspectorNode extends JSONEncodable {
       'childNodeCount': childNodeCount,
       'attributes': attributes,
       if (childNodeCount > 0)
-        'children': referencedNode.childNodes.map((Node node) => InspectorNode(node).toJson()).toList(),
+        'children': referencedNode.childNodes.where((node) {
+          return node is Element || (node is TextNode && node.data.isNotEmpty);
+        }).map((Node node) => InspectorNode(node).toJson()).toList(),
     };
   }
 }
