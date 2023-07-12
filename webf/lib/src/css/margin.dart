@@ -77,6 +77,9 @@ mixin CSSMarginMixin on RenderStyle {
   // Margin top of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginTop {
+    if (renderBoxModel == null) {
+      return 0;
+    }
     RenderBoxModel boxModel = renderBoxModel!;
     int hashCode = boxModel.hashCode;
     String propertyName = 'collapsedMarginTop';
@@ -128,6 +131,9 @@ mixin CSSMarginMixin on RenderStyle {
   // The top margin of an in-flow block element collapses with its first in-flow block-level child's
   // top margin if the element has no top border, no top padding, and the child has no clearance.
   double get _collapsedMarginTopWithFirstChild {
+    if (renderBoxModel == null) {
+      return 0;
+    }
     RenderBoxModel boxModel = renderBoxModel!;
 
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
@@ -172,6 +178,9 @@ mixin CSSMarginMixin on RenderStyle {
   // contain a line box, and all of its in-flow children's margins (if any) collapse.
   // Make collapsed margin-top to the max of its top and bottom and margin-bottom as 0.
   double get _collapsedMarginTopWithSelf {
+    if (renderBoxModel == null) {
+      return 0;
+    }
     RenderBoxModel boxModel = renderBoxModel!;
 
     bool isOverflowVisible =
@@ -246,6 +255,9 @@ mixin CSSMarginMixin on RenderStyle {
   // Margin bottom of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginBottom {
+    if (renderBoxModel == null) {
+      return 0;
+    }
     RenderBoxModel boxModel = renderBoxModel!;
     int hashCode = boxModel.hashCode;
     String propertyName = 'collapsedMarginBottom';
@@ -301,6 +313,9 @@ mixin CSSMarginMixin on RenderStyle {
   // with its last in-flow block-level child's bottom margin if the box has no bottom padding and no bottom
   // border and the child's bottom margin does not collapse with a top margin that has clearance.
   double get _collapsedMarginBottomWithLastChild {
+    if (renderBoxModel == null) {
+      return 0;
+    }
     RenderBoxModel boxModel = renderBoxModel!;
 
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
@@ -349,6 +364,9 @@ mixin CSSMarginMixin on RenderStyle {
   // contain a line box, and all of its in-flow children's margins (if any) collapse.
   // Make collapsed margin-top to the max of its top and bottom and margin-bottom as 0.
   double get _collapsedMarginBottomWithSelf {
+    if (renderBoxModel == null) {
+      return 0;
+    }
     RenderBoxModel boxModel = renderBoxModel!;
     bool isOverflowVisible =
         effectiveOverflowX == CSSOverflowType.visible && effectiveOverflowY == CSSOverflowType.visible;

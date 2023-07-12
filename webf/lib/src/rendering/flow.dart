@@ -43,6 +43,11 @@ class RenderFlowLayout extends RenderLayoutBox {
     lineBoxes.clear();
   }
 
+  @override
+  void remove(RenderBox child) {
+    super.remove(child);
+    lineBoxes.removeLineBox(child);
+  }
 
   double get firstLineExtent {
     if(constraints is InlineBoxConstraints && !isInlineBlockOrInlineFlex(this)) {
@@ -785,7 +790,10 @@ class RenderFlowLayout extends RenderLayoutBox {
       for (LogicInlineBox childBox in runLineBox.inlineBoxes) {
         RenderBox childRender = childBox.renderObject;
         final double childMainAxisExtent = RenderFlowLayout.getPureMainAxisExtent(childRender);
-        double marginVertical = getChildMarginTop(childRender as RenderBoxModel) + getChildMarginBottom(childRender as RenderBoxModel);
+        double marginVertical = 0;
+        if (childRender is RenderBoxModel) {
+          marginVertical = getChildMarginTop(childRender) + getChildMarginBottom(childRender);
+        }
         final double childCrossAxisExtent = childBox.getCrossAxisExtent(renderStyle.lineHeight,  marginVertical);
 
         // This value use to range every line render position
@@ -834,9 +842,14 @@ class RenderFlowLayout extends RenderLayoutBox {
 
         if (isLineHeightValid) {
           // Distance from top to baseline of child.
-          double? childMarginTop = getChildMarginTop(childRender);
-          double? childMarginBottom = getChildMarginBottom(childRender);
-          double childAscent = childBox.getChildAscent(childMarginTop, childMarginBottom);
+          double? childMarginTop;
+          double? childMarginBottom;
+          double childAscent = 0;
+          if (childRender is RenderBoxModel) {
+            childMarginTop = getChildMarginTop(childRender);
+            childMarginBottom = getChildMarginBottom(childRender);
+            childAscent = childBox.getChildAscent(childMarginTop, childMarginBottom);
+          }
 
           RenderStyle childRenderStyle = _getChildRenderStyle(childRender)!;
           VerticalAlign verticalAlign = childRenderStyle.verticalAlign;
@@ -1273,6 +1286,16 @@ class RenderLineBoxes {
       lineBox.isFirst = true;
     }
     _lineBoxList.add(lineBox);
+  }
+
+  removeLineBox(RenderBox child) {
+    _lineBoxList.removeWhere((element) {
+      if (element.renderObject == child) {
+        return true;
+      }
+      element.inlineBoxes.removeWhere((element) => element.renderObject == child);
+      return element.inlineBoxes.isEmpty;
+    });
   }
 
   LogicLineBox? get first {

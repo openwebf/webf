@@ -101,6 +101,9 @@ mixin CSSTransformMixin on RenderStyle {
   // Effective transform offset after renderBoxModel has been layouted.
   Offset? get effectiveTransformOffset {
     // Make sure it is used after renderBoxModel been created.
+    if (renderBoxModel == null) {
+      return null;
+    }
     assert(renderBoxModel != null);
     Vector3 translation = effectiveTransformMatrix.getTranslation();
     return Offset(translation[0], translation[1]);
@@ -109,6 +112,9 @@ mixin CSSTransformMixin on RenderStyle {
   // Effective transform scale after renderBoxModel has been layouted.
   @override
   double get effectiveTransformScale {
+    if (renderBoxModel == null) {
+      return 0;
+    }
     assert(renderBoxModel != null);
     double scale = effectiveTransformMatrix.getMaxScaleOnAxis();
     return scale;

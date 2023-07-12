@@ -422,7 +422,7 @@ class WebFRenderParagraph extends RenderBox
       }
       double offset = preLineBottom + leading / 2;
       Rect old = _lineRenders[i].lineRect;
-      _lineRenders[i].lineRect = Rect.fromLTWH(old.left, offset, old.width, lineHeight!);
+      _lineRenders[i].lineRect = Rect.fromLTWH(old.left, offset, old.width, lineHeight ?? 0);
     }
   }
 
