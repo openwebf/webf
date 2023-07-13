@@ -613,15 +613,16 @@ task('build-window-webf-lib', (done) => {
 });
 
 task('build-android-webf-lib', (done) => {
-  let androidHome;
-
   let ndkDir = '';
 
   // If ANDROID_NDK_HOME env defined, use it.
   if (process.env.ANDROID_NDK_HOME) {
     ndkDir = process.env.ANDROID_NDK_HOME;
   } else {
-    if (platform == 'win32') {
+    let androidHome;
+    if (process.env.ANDROID_SDK_HOME) {
+      androidHome = process.env.ANDROID_SDK_HOME;
+    } else if (platform == 'win32') {
       androidHome = path.join(process.env.LOCALAPPDATA, 'Android\\Sdk');
     } else if (platform == 'darwin') {
       androidHome = path.join(process.env.HOME, 'Library/Android/sdk')
