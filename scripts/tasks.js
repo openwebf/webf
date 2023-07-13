@@ -633,7 +633,7 @@ task('build-android-webf-lib', (done) => {
     ndkDir = path.join(androidHome, 'ndk', ndkVersion);
 
     if (!fs.existsSync(ndkDir)) {
-      throw new Error('Android NDK version (22.1.7171670) not installed.');
+      throw new Error('Android NDK version (${ndkVersion}) not installed.');
     }
   }
 
