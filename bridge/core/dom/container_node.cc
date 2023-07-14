@@ -275,6 +275,8 @@ Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_stat
       RemoveBetween(prev, next, *child);
       NotifyNodeRemoved(*child);
     }
+    ChildrenChanged(ChildrenChange::ForRemoval(*child, prev, next,
+                                               ChildrenChangeSource::kAPI));
   }
   return child;
 }
