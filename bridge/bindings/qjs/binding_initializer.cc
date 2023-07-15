@@ -81,6 +81,9 @@
 #include "qjs_svg_text_content_element.h"
 #include "qjs_svg_text_element.h"
 #include "qjs_svg_text_positioning_element.h"
+#include "qjs_svg_circle_element.h"
+#include "qjs_svg_ellipse_element.h"
+#include "qjs_svg_style_element.h"
 #include "qjs_text.h"
 #include "qjs_touch.h"
 #include "qjs_touch_event.h"
@@ -181,6 +184,9 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGPathElement::Install(context);
   QJSSVGTextElement::Install(context);
   QJSSVGGElement::Install(context);
+  QJSSVGCircleElement::Install(context);
+  QJSSVGEllipseElement::Install(context);
+  QJSSVGStyleElement::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

@@ -96,7 +96,7 @@ class StyleNodeManager {
     for (Node node in _styleSheetCandidateNodes) {
       if (node is LinkElement && !node.disabled && !node.loading && node.styleSheet != null) {
         styleSheetsForStyleSheetsList.add(node.styleSheet!);
-      } else if (node is StyleElement && node.styleSheet != null) {
+      } else if (node is StyleElementMixin && node.styleSheet != null) {
         styleSheetsForStyleSheetsList.add(node.styleSheet!);
       }
     }

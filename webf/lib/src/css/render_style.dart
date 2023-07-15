@@ -194,6 +194,9 @@ abstract class RenderStyle {
   CSSLengthValue get y;
   CSSLengthValue get rx;
   CSSLengthValue get ry;
+  CSSLengthValue get cx;
+  CSSLengthValue get cy;
+  CSSLengthValue get r;
   CSSLengthValue get strokeWidth;
   CSSPath get d;
   CSSFillRule get fillRule;
@@ -480,6 +483,9 @@ class CSSRenderStyle extends RenderStyle
       case Y:
       case RX:
       case RY:
+      case CX:
+      case CY:
+      case R:
       case STROKE_WIDTH:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;

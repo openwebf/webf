@@ -31,5 +31,8 @@
     "path",
     "text",
     "g",
+    "circle",
+    "ellipse",
+    "style"
   ]
 }

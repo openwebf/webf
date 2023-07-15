@@ -1715,6 +1715,15 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       case RY:
         renderStyle.ry = value;
         break;
+      case CX:
+        renderStyle.cx = value;
+        break;
+      case CY:
+        renderStyle.cy = value;
+        break;
+      case R:
+        renderStyle.r = value;
+        break;
       case D:
         renderStyle.d = value;
         break;
