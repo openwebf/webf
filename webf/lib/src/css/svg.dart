@@ -138,6 +138,30 @@ mixin CSSSvgMixin on RenderStyle {
     _markShapeUpdate();
   }
 
+  CSSLengthValue? _cx;
+  @override get cx => _cx ?? CSSLengthValue.zero;
+  set cx(CSSLengthValue? value) {
+    if (_cx == value) return;
+    _cx = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _cy;
+  @override get cy => _cy ?? CSSLengthValue.zero;
+  set cy(CSSLengthValue? value) {
+    if (_cy == value) return;
+    _cy = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _r;
+  @override get r => _r ?? CSSLengthValue.zero;
+  set r(CSSLengthValue? value) {
+    if (_r == value) return;
+    _r = value;
+    _markShapeUpdate();
+  }
+
   CSSPath? _d;
   @override get d => _d ?? CSSPath.None;
   set d(CSSPath value) {
