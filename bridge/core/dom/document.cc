@@ -29,6 +29,8 @@
 
 namespace webf {
 
+class HTMLAllCollection;
+
 Document* Document::Create(ExecutingContext* context, ExceptionState& exception_state) {
   return MakeGarbageCollected<Document>(context);
 }

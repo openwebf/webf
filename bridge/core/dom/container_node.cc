@@ -505,7 +505,7 @@ void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNod
 
   if (HasNodeData()) {
     if (NodeList* lists = Data()->NodeLists()) {
-      if (lists->IsChildNodeList()) {
+      if (lists != nullptr && lists->IsChildNodeList()) {
         auto* child_node_list = static_cast<ChildNodeList*>(lists);
         if (change) {
           child_node_list->ChildrenChanged(*change);
