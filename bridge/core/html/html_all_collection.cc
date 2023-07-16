@@ -7,6 +7,6 @@
 
 namespace webf {
 
-HTMLAllCollection::HTMLAllCollection(ContainerNode* base, CollectionType type) : HTMLCollection(base, type) {}
+HTMLAllCollection::HTMLAllCollection(ContainerNode* base, CollectionType type) : HTMLCollection(*base, type) {}
 
 }  // namespace webf

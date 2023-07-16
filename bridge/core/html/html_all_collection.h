@@ -6,7 +6,7 @@
 #ifndef BRIDGE_CORE_HTML_HTML_ALL_COLLECTION_H_
 #define BRIDGE_CORE_HTML_HTML_ALL_COLLECTION_H_
 
-#include "legacy/html_collection.h"
+#include "html_collection.h"
 
 namespace webf {
 

@@ -9,12 +9,12 @@
 #include <vector>
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/heap_vector.h"
+#include "core/html/collection_type.h"
 #include "node.h"
-#include "node_list.h"
 
 namespace webf {
 
-class HTMLAllCollection;
+class HTMLCollection;
 
 // This constant controls how much buffer is initially allocated
 // for a Node Vector that is used to store child Nodes of a given Node.
@@ -32,7 +32,7 @@ class ContainerNode : public Node {
   bool HasOneTextChild() const { return HasOneChild() && first_child_->IsTextNode(); }
   bool HasChildCount(unsigned) const;
 
-  std::vector<Element*> Children();
+  HTMLCollection* Children();
 
   unsigned CountChildren() const;
 
@@ -143,6 +143,10 @@ class ContainerNode : public Node {
   // ChildrenChanged() implementations may modify the DOM tree, and may dispatch
   // synchronous events.
   virtual void ChildrenChanged(const ChildrenChange&);
+
+  // Utility functions for NodeListsNodeData API.
+  template <typename Collection>
+  Collection* EnsureCachedCollection(CollectionType);
 
   void Trace(GCVisitor* visitor) const override;
 

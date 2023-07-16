@@ -37,7 +37,6 @@
 
 #include "container_node.h"
 #include "foundation/macros.h"
-#include "node.h"
 #include "traversal_range.h"
 
 namespace webf {

@@ -16,6 +16,7 @@ namespace webf {
 class HTMLBodyElement;
 class HTMLHeadElement;
 class HTMLHtmlElement;
+class HTMLAllCollection;
 class Text;
 class Comment;
 

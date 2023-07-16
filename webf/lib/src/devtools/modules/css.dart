@@ -7,6 +7,7 @@ import 'dart:ffi';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/launcher.dart';
 
@@ -40,8 +41,8 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
-    if (element != null) {
+    BindingObject? element = BindingBridge.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+    if (element is Element) {
       MatchedStyles matchedStyles = MatchedStyles(
         inlineStyle: buildMatchedStyle(element),
       );
