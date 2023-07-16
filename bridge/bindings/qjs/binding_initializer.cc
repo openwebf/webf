@@ -21,6 +21,7 @@
 #include "qjs_css_style_declaration.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
+#include "qjs_html_collection.h"
 #include "qjs_document_fragment.h"
 #include "qjs_dom_matrix.h"
 #include "qjs_dom_matrix_readonly.h"
@@ -156,7 +157,6 @@ void InstallBindings(ExecutingContext* context) {
   QJSInlineCssStyleDeclaration::Install(context);
   QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
-  QJSHTMLAllCollection::Install(context);
   QJSScreen::Install(context);
   QJSBlob::Install(context);
   QJSTouch::Install(context);
@@ -167,6 +167,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSPerformanceEntry::Install(context);
   QJSPerformanceMark::Install(context);
   QJSPerformanceMeasure::Install(context);
+  QJSHTMLCollection::Install(context);
+  QJSHTMLAllCollection::Install(context);
 
   // SVG
   QJSSVGElement::Install(context);

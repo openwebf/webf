@@ -38,16 +38,8 @@
 namespace webf {
 
 // Legacy impls due to limited time, should remove this func in the future.
-std::vector<Element*> ContainerNode::Children() {
-  std::vector<Element*> elements;
-  uint32_t length = childNodes()->length();
-  for (int i = 0; i < length; i++) {
-    auto* element = DynamicTo<Element>(childNodes()->item(i, ASSERT_NO_EXCEPTION()));
-    if (element) {
-      elements.emplace_back(element);
-    }
-  }
-  return elements;
+HTMLCollection* ContainerNode::Children() {
+  return EnsureCachedCollection<HTMLCollection>(CollectionType::kNodeChildren);
 }
 
 unsigned ContainerNode::CountChildren() const {

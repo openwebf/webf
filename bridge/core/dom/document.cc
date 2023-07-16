@@ -25,7 +25,6 @@
 #include "foundation/ascii_types.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
-#include "qjs_document.h"
 #include "svg_element_factory.h"
 
 namespace webf {

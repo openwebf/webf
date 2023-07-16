@@ -14,6 +14,7 @@ namespace webf {
 
 class Element;
 class ContainerNode;
+class HTMLCollection;
 
 class ParentNode {
   WEBF_STATIC_ONLY(ParentNode);
@@ -21,7 +22,7 @@ class ParentNode {
  public:
   static Element* firstElementChild(ContainerNode& node);
   static Element* lastElementChild(ContainerNode& node);
-  static std::vector<Element*> children(ContainerNode& node);
+  static HTMLCollection* children(ContainerNode& node);
   static int64_t childElementCount(ContainerNode& node);
 };
 

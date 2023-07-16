@@ -179,7 +179,13 @@ TEST(document, all) {
     errorCalled = true;
   });
   auto context = env->page()->GetExecutingContext();
-  const char* code = "console.log(document.all.length, document.all[0])";
+  const char* code = "console.log(document.all.length, document.all[0]);"
+      "document.body.appendChild(document.createElement('div'));"
+      "console.assert(document.all.length == 4);"
+      "document.body.appendChild(document.createTextNode('1111'));"
+      "console.assert(document.all.length == 4);"
+      "document.body.removeChild(document.body.firstChild);"
+      "console.assert(document.all.length == 3)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
   EXPECT_EQ(logCalled, true);

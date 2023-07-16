@@ -10,7 +10,6 @@
 #include "atomic_string.h"
 #include "bindings/qjs/union_base.h"
 #include "converter.h"
-#include "core/dom/document.h"
 #include "core/dom/events/event.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/node_list.h"

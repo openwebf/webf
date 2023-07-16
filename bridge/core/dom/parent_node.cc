@@ -16,7 +16,7 @@ Element* ParentNode::lastElementChild(ContainerNode& node) {
   return ElementTraversal ::LastChild(node);
 }
 
-std::vector<Element*> ParentNode::children(ContainerNode& node) {
+HTMLCollection* ParentNode::children(ContainerNode& node) {
   return node.Children();
 }
 
