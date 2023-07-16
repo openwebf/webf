@@ -88,7 +88,12 @@ class NodeList : public ScriptWrappable {
 
 template <typename Collection>
 inline Collection* ContainerNode::EnsureCachedCollection(CollectionType type) {
-  return EnsureNodeData().NodeLists()->AddCache<Collection>(*this, type);
+  auto* this_node = DynamicTo<ContainerNode>(this);
+  if (this_node) {
+    return reinterpret_cast<NodeList*>(EnsureNodeData().EnsureChildNodeList(*this))->AddCache<Collection>(*this, type);
+  }
+  return reinterpret_cast<NodeList*>(EnsureNodeData().EnsureEmptyChildNodeList(*this))
+      ->AddCache<Collection>(*this, type);
 }
 
 }  // namespace webf
