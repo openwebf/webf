@@ -3,6 +3,7 @@
  */
 
 import 'package:collection/collection.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -86,8 +87,10 @@ class CSSFontFace {
           Uint8List content = targetFont.content;
           Future<ByteData> bytes = Future.value(ByteData.sublistView(content));
           FontLoader loader = FontLoader(fontFamily);
-          loader.addFont(bytes);
-          loader.load();
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            loader.addFont(bytes);
+            loader.load();
+          });
         } else {
           Uri? uri = _resolveFontSource(contextId, targetFont.src);
           if (uri == null) return;
@@ -96,8 +99,10 @@ class CSSFontFace {
           assert(bundle.isResolved, 'Failed to obtain $url');
           FontLoader loader = FontLoader(fontFamily);
           Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
-          loader.addFont(bytes);
-          loader.load();
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            loader.addFont(bytes);
+            loader.load();
+          });
         }
 
 
