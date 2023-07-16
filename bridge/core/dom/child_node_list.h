@@ -59,7 +59,10 @@ class ChildNodeList : public NodeList {
 
   // Non-DOM API.
   void ChildrenChanged(const ContainerNode::ChildrenChange&);
-  void InvalidateCache() { collection_index_cache_.Invalidate(); }
+  void InvalidateCache() override {
+    collection_index_cache_.Invalidate();
+    NodeList::InvalidateCache();
+  }
   ContainerNode& OwnerNode() const { return *parent_.Get(); }
 
   ContainerNode& RootNode() const { return OwnerNode(); }

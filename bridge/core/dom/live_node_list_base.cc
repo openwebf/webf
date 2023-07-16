@@ -23,3 +23,11 @@
  */
 
 #include "live_node_list_base.h"
+
+namespace webf {
+
+ContainerNode& LiveNodeListBase::RootNode() const {
+  return *owner_node_;
+}
+
+}
