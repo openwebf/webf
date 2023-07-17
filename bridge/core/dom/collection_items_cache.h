@@ -47,7 +47,7 @@ class CollectionItemsCache : public CollectionIndexCache<Collection, NodeType> {
   ~CollectionItemsCache();
 
   void Trace(GCVisitor* visitor) const override {
-    for(auto& item : cached_list_) {
+    for (auto& item : cached_list_) {
       visitor->TraceMember(item);
     }
     Base::Trace(visitor);
@@ -72,7 +72,7 @@ template <typename Collection, typename NodeType>
 void CollectionItemsCache<Collection, NodeType>::Invalidate() {
   Base::Invalidate();
   if (list_valid_) {
-    for(auto& item : cached_list_) {
+    for (auto& item : cached_list_) {
       item.Clear();
     }
     cached_list_.clear();

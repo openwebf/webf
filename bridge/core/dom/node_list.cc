@@ -13,7 +13,7 @@ void NodeList::InvalidateCache() {
 }
 
 void NodeList::Trace(webf::GCVisitor* visitor) const {
-  for(auto& item : tag_collection_cache_) {
+  for (auto& item : tag_collection_cache_) {
     visitor->TraceMember(item.second);
   }
 }

@@ -179,7 +179,8 @@ TEST(document, all) {
     errorCalled = true;
   });
   auto context = env->page()->GetExecutingContext();
-  const char* code = "console.log(document.all.length, document.all[0]);"
+  const char* code =
+      "console.log(document.all.length, document.all[0]);"
       "document.body.appendChild(document.createElement('div'));"
       "console.assert(document.all.length == 4);"
       "document.body.appendChild(document.createTextNode('1111'));"
