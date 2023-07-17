@@ -136,20 +136,20 @@ class StyleNodeManager {
       if (equals(oldSheets[index].cssRules, newSheets[index].cssRules)) {
         continue;
       }
-      ruleSet.addRules(newSheets[index].cssRules);
-      ruleSet.addRules(oldSheets[index].cssRules);
+      ruleSet.addRules(newSheets[index].cssRules, baseHref: newSheets[index].href);
+      ruleSet.addRules(oldSheets[index].cssRules, baseHref: oldSheets[index].href);
     }
 
     if (index == oldSheetsCount) {
       for (; index < newSheetsCount; index++) {
-        ruleSet.addRules(newSheets[index].cssRules);
+        ruleSet.addRules(newSheets[index].cssRules, baseHref: newSheets[index].href);
       }
       return ruleSet;
     }
 
     if (index == newSheetsCount) {
       for (; index < oldSheetsCount; index++) {
-        ruleSet.addRules(oldSheets[index].cssRules);
+        ruleSet.addRules(oldSheets[index].cssRules, baseHref: oldSheets[index].href);
       }
       return ruleSet;
     }
@@ -166,7 +166,7 @@ class StyleNodeManager {
       }
       CSSStyleSheet sheet1 = mergeSorted[index];
       if (index == mergeSorted.length - 1 || sheet != sheet1) {
-        ruleSet.addRules(sheet1.cssRules);
+        ruleSet.addRules(sheet1.cssRules, baseHref: sheet1.href);
         continue;
       }
 
@@ -178,8 +178,8 @@ class StyleNodeManager {
         continue;
       }
 
-      ruleSet.addRules(sheet1.cssRules);
-      ruleSet.addRules(sheet2.cssRules);
+      ruleSet.addRules(sheet1.cssRules, baseHref: sheet1.href);
+      ruleSet.addRules(sheet2.cssRules, baseHref: sheet2.href);
     }
 
     return ruleSet;

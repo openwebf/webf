@@ -441,7 +441,7 @@ class Document extends ContainerNode {
     styleSheets.addAll(sheets.map((e) => e.clone()));
     ruleSet.reset();
     for (var sheet in sheets) {
-      ruleSet.addRules(sheet.cssRules);
+      ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
     }
   }
 

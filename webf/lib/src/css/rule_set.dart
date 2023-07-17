@@ -33,13 +33,13 @@ class RuleSet {
 
   int _lastPosition = 0;
 
-  void addRules(List<CSSRule> rules) {
+  void addRules(List<CSSRule> rules, { required String? baseHref }) {
     for (CSSRule rule in rules) {
-      addRule(rule);
+      addRule(rule, baseHref: baseHref);
     }
   }
 
-  void addRule(CSSRule rule) {
+  void addRule(CSSRule rule, { required String? baseHref }) {
     rule.position = _lastPosition++;
     if (rule is CSSStyleRule) {
       for (final selector in rule.selectorGroup.selectors) {
@@ -48,7 +48,7 @@ class RuleSet {
     } else if (rule is CSSKeyframesRule) {
       keyframesRules[rule.name] = rule;
     } else if (rule is CSSFontFaceRule) {
-      CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!);
+      CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!, baseHref);
     } else {
       assert(false, 'Unsupported rule type: ${rule.runtimeType}');
     }
