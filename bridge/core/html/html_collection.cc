@@ -105,16 +105,14 @@ static NodeListSearchRoot SearchRootFromCollectionType(const ContainerNode& owne
 HTMLCollection::HTMLCollection(ContainerNode& owner_node,
                                CollectionType type,
                                ItemAfterOverrideType item_after_override_type)
-    : LiveNodeListBase(owner_node,
-                       SearchRootFromCollectionType(owner_node, type),
-                       type),
+    : LiveNodeListBase(owner_node, SearchRootFromCollectionType(owner_node, type), type),
       overrides_item_after_(item_after_override_type == kOverridesItemAfter),
       should_only_include_direct_children_(ShouldTypeOnlyIncludeDirectChildren(type)),
       ScriptWrappable(owner_node.ctx()) {
   // Keep this in the child class because |registerNodeList| requires wrapper
   // tracing and potentially calls virtual methods which is not allowed in a
   // base class constructor.
-//  GetDocument().RegisterNodeList(this);
+  //  GetDocument().RegisterNodeList(this);
 }
 
 HTMLCollection::~HTMLCollection() = default;
@@ -236,7 +234,7 @@ Element* HTMLCollection::namedItem(const AtomicString& name) const {
 }
 
 bool HTMLCollection::NamedPropertyQuery(const AtomicString& name, ExceptionState&) {
-  return namedItem(name);
+  return namedItem(name) != nullptr;
 }
 
 void HTMLCollection::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {

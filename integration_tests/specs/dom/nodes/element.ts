@@ -179,6 +179,6 @@ describe('children', () => {
         result.push(p);
       }
     }
-    assert_array_equals(result, ['0', '1', '2']);
+    assert_array_equals(result, ['0', '1', '2', 'item', 'length']);
   }, '');
 });

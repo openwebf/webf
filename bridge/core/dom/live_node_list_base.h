@@ -41,12 +41,8 @@ class Node;
 
 class LiveNodeListBase : public GarbageCollectedMixin {
  public:
-  explicit LiveNodeListBase(ContainerNode& owner_node,
-                            NodeListSearchRoot search_root,
-                            CollectionType collection_type)
-      : owner_node_(&owner_node),
-        search_root_(static_cast<unsigned>(search_root)),
-        collection_type_(collection_type) {
+  explicit LiveNodeListBase(ContainerNode& owner_node, NodeListSearchRoot search_root, CollectionType collection_type)
+      : owner_node_(&owner_node), search_root_(static_cast<unsigned>(search_root)), collection_type_(collection_type) {
     assert(search_root_ == static_cast<unsigned>(search_root));
     assert(collection_type_ == static_cast<unsigned>(collection_type));
   }
@@ -63,9 +59,7 @@ class LiveNodeListBase : public GarbageCollectedMixin {
 
   virtual void InvalidateCache(Document* old_document = nullptr) const = 0;
 
-  void Trace(GCVisitor* visitor) const override {
-    visitor->TraceMember(owner_node_);
-  }
+  void Trace(GCVisitor* visitor) const override { visitor->TraceMember(owner_node_); }
 
  protected:
   Document& GetDocument() const { return owner_node_->GetDocument(); }
