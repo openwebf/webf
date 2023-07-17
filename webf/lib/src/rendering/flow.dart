@@ -1285,6 +1285,9 @@ class RenderLineBoxes {
     if(_lineBoxList.isEmpty) {
       lineBox.isFirst = true;
     }
+    if (_lineBoxList.indexWhere((element) => element.renderObject == lineBox.renderObject) != -1) {
+      return;
+    }
     _lineBoxList.add(lineBox);
   }
 

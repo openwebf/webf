@@ -427,6 +427,10 @@ class LogicLineBox {
   appendInlineBox(
       LogicInlineBox box, double childMainAxisExtent, double childCrossAxisExtent, List<double>? baselineSize) {
     box.parentLine = this;
+
+    if (inlineBoxes.indexWhere((element) => element.renderObject == box.renderObject) != -1) {
+      return;
+    }
     inlineBoxes.add(box);
     mainAxisExtent = _mainAxisExtent + childMainAxisExtent;
     List<double> newCrossAxisSize = calculateMaxCrossAxisExtent(
