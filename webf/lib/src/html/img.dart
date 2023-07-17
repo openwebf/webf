@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:ui';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -111,7 +110,8 @@ class ImageElement extends Element {
     properties['loading'] =
         BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
     properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = value);
-    properties['height'] = BindingObjectProperty(getter: () => height, setter: (value) => height = value);
+    properties['height'] =
+        BindingObjectProperty(getter: () => height, setter: (value) => height = value);
     properties['scaling'] =
         BindingObjectProperty(getter: () => scaling, setter: (value) => scaling = castToType<String>(value));
     properties['naturalWidth'] = BindingObjectProperty(getter: () => naturalWidth);
@@ -423,14 +423,9 @@ class ImageElement extends Element {
         );
       }
 
-      FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
       // Try to make sure that this image can be encoded into a smaller size.
-      int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite
-          ? (width * ownerFlutterView.devicePixelRatio).toInt()
-          : null;
-      int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite
-          ? (height * ownerFlutterView.devicePixelRatio).toInt()
-          : null;
+      int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite ? (width * ui.window.devicePixelRatio).toInt() : null;
+      int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite ? (height * ui.window.devicePixelRatio).toInt() : null;
 
       if (cachedWidth != null && cachedHeight != null) {
         // If a image with the same URL has a fixed size, attempt to remove the previous unsized imageProvider from imageCache.
@@ -538,15 +533,11 @@ class ImageElement extends Element {
       // If the _completerHandle are not null, there must be a imageProvider available in the imageCache.
       if (_shouldLazyLoading && _completerHandle == null) {
         RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
-        FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
         renderReplaced
           ?..isInLazyRendering = true
-          // Expand the intersecting area to preload images before they become visible to users.
-          ..intersectPadding = Rect.fromLTRB(
-              ownerFlutterView.physicalSize.width,
-              ownerFlutterView.physicalSize.height,
-              ownerFlutterView.physicalSize.width,
-              ownerFlutterView.physicalSize.height)
+        // Expand the intersecting area to preload images before they become visible to users.
+          ..intersectPadding = Rect.fromLTRB(ui.window.physicalSize.width, ui.window.physicalSize.height,
+              ui.window.physicalSize.width, ui.window.physicalSize.height)
           // When detach renderer, all listeners will be cleared.
           ..addIntersectionChangeListener(_handleIntersectionChange);
       } else {
@@ -610,7 +601,7 @@ class ImageElement extends Element {
     }
   }
 
-  void _stylePropertyChanged(String property, String? original, String present, {String? baseHref}) {
+  void _stylePropertyChanged(String property, String? original, String present, { String? baseHref }) {
     if (property == WIDTH || property == HEIGHT) {
       // Resize image
       if (_shouldScaling && _resolvedUri != null) {

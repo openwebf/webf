@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -35,12 +37,11 @@ class RenderSliverListLayout extends RenderLayoutBox {
   RenderSliverListLayout({
     required CSSRenderStyle renderStyle,
     required RenderSliverElementChildManager manager,
-    required FlutterView currentView,
     ScrollListener? onScroll,
   })  : _renderSliverBoxChildManager = manager,
         _scrollListener = onScroll,
         super(renderStyle: renderStyle) {
-    scrollable = WebFScrollable(axisDirection: getAxisDirection(axis), currentView: currentView);
+    scrollable = WebFScrollable(axisDirection: getAxisDirection(axis));
     axis = renderStyle.sliverDirection;
 
     switch (axis) {
@@ -148,7 +149,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
   @override
   int get childCount => _renderSliverBoxChildManager.childCount;
 
-  Size get _screenSize => renderStyle.currentFlutterView.physicalSize / renderStyle.currentFlutterView.devicePixelRatio;
+  Size get _screenSize => window.physicalSize / window.devicePixelRatio;
 
   @override
   void performLayout() {

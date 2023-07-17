@@ -3,7 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/gestures.dart';
+import 'dart:ui';
+
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -49,11 +50,9 @@ class CSSLengthValue {
   final double? value;
   final CSSLengthType type;
 
-  CSSLengthValue.calc(this.calcValue, this.renderStyle, this.propertyName)
-      : value = null,
-        type = CSSLengthType.PX;
+  CSSLengthValue.calc(this.calcValue, this.renderStyle, this.propertyName): value = null, type = CSSLengthType.PX;
 
-  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]) : calcValue = null {
+  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]): calcValue = null {
     if (propertyName != null) {
       if (type == CSSLengthType.EM) {
         renderStyle!.addFontRelativeProperty(propertyName!);
@@ -64,7 +63,7 @@ class CSSLengthValue {
   }
 
   String cssText() {
-    switch (type) {
+    switch(type) {
       case CSSLengthType.PX:
       case CSSLengthType.EM:
         return '${computedValue.cssText()}px';
@@ -72,7 +71,7 @@ class CSSLengthValue {
         return '${value?.cssText()}rem';
       case CSSLengthType.VH:
         return '${value?.cssText()}vh';
-      case CSSLengthType.VW:
+     case CSSLengthType.VW:
         return '${value?.cssText()}vw';
       case CSSLengthType.VMIN:
         return '${value?.cssText()}vmin';
@@ -95,7 +94,6 @@ class CSSLengthValue {
   static final CSSLengthValue auto = CSSLengthValue(null, CSSLengthType.AUTO);
   static final CSSLengthValue initial = CSSLengthValue(null, CSSLengthType.INITIAL);
   static final CSSLengthValue unknown = CSSLengthValue(null, CSSLengthType.UNKNOWN);
-
   // Used in https://www.w3.org/TR/css-inline-3/#valdef-line-height-normal
   static final CSSLengthValue normal = CSSLengthValue(null, CSSLengthType.NORMAL);
   static final CSSLengthValue none = CSSLengthValue(null, CSSLengthType.NONE);
@@ -439,18 +437,14 @@ class CSSLengthValue {
   @override
   bool operator ==(Object? other) {
     return (other == null && (type == CSSLengthType.UNKNOWN || type == CSSLengthType.INITIAL)) ||
-        (other is CSSLengthValue &&
-            other.value == value &&
-            other.calcValue == calcValue &&
-            (isZero || other.type == type));
+        (other is CSSLengthValue && other.value == value && other.calcValue == calcValue && (isZero || other.type == type));
   }
 
   @override
   int get hashCode => Object.hash(value, type);
 
   @override
-  String toString() =>
-      'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue, calcValue: $calcValue)';
+  String toString() => 'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue, calcValue: $calcValue)';
 }
 
 // Cache computed length value during perform layout.
@@ -534,7 +528,7 @@ class CSSLength {
             _nonNegativeLengthRegExp.hasMatch(value));
   }
 
-  static CSSLengthValue? resolveLength(String text, RenderStyle renderStyle, String propertyName) {
+  static CSSLengthValue? resolveLength(String text, RenderStyle? renderStyle, String propertyName) {
     if (text.isEmpty) {
       // Empty string means delete value.
       return null;
@@ -544,7 +538,6 @@ class CSSLength {
   }
 
   static CSSLengthValue parseLength(String text, RenderStyle? renderStyle, [String? propertyName, Axis? axisType]) {
-    FlutterView? window = renderStyle?.currentFlutterView;
     double? value;
     CSSLengthType unit = CSSLengthType.PX;
     if (text == ZERO) {
@@ -569,7 +562,7 @@ class CSSLength {
       unit = CSSLengthType.EM;
     } else if (text.endsWith(RPX)) {
       value = double.tryParse(text.split(RPX)[0]);
-      if (value != null && window != null) value = value / 750.0 * window.physicalSize.width / window.devicePixelRatio;
+      if (value != null) value = value / 750.0 * window.physicalSize.width / window.devicePixelRatio;
     } else if (text.endsWith(PX)) {
       value = double.tryParse(text.split(PX)[0]);
     } else if (text.endsWith(VW)) {
@@ -622,7 +615,7 @@ class CSSLength {
       List<CSSFunctionalNotation> notations = CSSFunction.parseFunction(text);
       // https://drafts.csswg.org/css-env/#env-function
       // Using Environment Variables: the env() notation
-      if (notations.length == 1 && notations[0].name == ENV && notations[0].args.length == 1 && window != null) {
+      if (notations.length == 1 && notations[0].name == ENV && notations[0].args.length == 1) {
         switch (notations[0].args.first) {
           case SAFE_AREA_INSET_TOP:
             value = window.viewPadding.top / window.devicePixelRatio;

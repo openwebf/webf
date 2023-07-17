@@ -13,11 +13,11 @@ import 'package:flutter/animation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' show ScrollPhysics;
 
 import 'gesture_detector.dart';
 import 'scroll_activity.dart';
 import 'scroll_context.dart';
+import 'scroll_physics.dart';
 import 'scroll_position.dart';
 
 /// A scroll position that manages scroll activities for a single
@@ -53,13 +53,11 @@ class ScrollPositionWithSingleContext extends ScrollPosition implements ScrollAc
   ScrollPositionWithSingleContext({
     required ScrollPhysics physics,
     required ScrollContext context,
-    required double devicePixelRatio,
     double initialPixels = 0.0,
     bool keepScrollOffset = true,
     ScrollPosition? oldPosition,
     String? debugLabel,
-  })  : _devicePixelRatio = devicePixelRatio,
-        super(
+  }) : super(
           physics: physics,
           context: context,
           keepScrollOffset: keepScrollOffset,
@@ -76,8 +74,6 @@ class ScrollPositionWithSingleContext extends ScrollPosition implements ScrollAc
   /// Velocity from a previous activity temporarily held by [hold] to potentially
   /// transfer to a next activity.
   double _heldPreviousVelocity = 0.0;
-
-  final double _devicePixelRatio;
 
   @override
   AxisDirection get axisDirection => context.axisDirection;
@@ -123,7 +119,7 @@ class ScrollPositionWithSingleContext extends ScrollPosition implements ScrollAc
 
   @override
   void applyUserOffset(double? delta) {
-    setPixels(pixels - physics.applyPhysicsToUserOffset(this, delta!));
+    setPixels(pixels - physics.applyPhysicsToUserOffset(this, delta)!);
   }
 
   @override
@@ -168,7 +164,7 @@ class ScrollPositionWithSingleContext extends ScrollPosition implements ScrollAc
     required Duration duration,
     required Curve curve,
   }) {
-    if (nearEqual(to, pixels, physics.toleranceFor(this).distance)) {
+    if (nearEqual(to, pixels, physics.tolerance.distance)) {
       // Skip the animation, go straight to the position as we are already close.
       jumpTo(to);
       return Future<void>.value();
@@ -271,7 +267,4 @@ class ScrollPositionWithSingleContext extends ScrollPosition implements ScrollAc
 
   @override
   bool get hasPixels => true;
-
-  @override
-  double get devicePixelRatio => _devicePixelRatio;
 }

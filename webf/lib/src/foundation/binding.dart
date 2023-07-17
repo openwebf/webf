@@ -52,7 +52,7 @@ class AsyncBindingObjectMethod extends BindingObjectMethod {
 }
 
 
-abstract class BindingObject<T> extends Iterable<T> {
+abstract class BindingObject {
   static BindingObjectOperation? bind;
   static BindingObjectOperation? unbind;
 
@@ -145,9 +145,6 @@ abstract class BindingObject<T> extends Iterable<T> {
 
     return null;
   }
-
-  @override
-  Iterator<T> get iterator => throw UnimplementedError();
 
   dynamic _invokeBindingMethodAsync(String method, List<dynamic> args) {
     BindingObjectMethod? fn = _methods[method];

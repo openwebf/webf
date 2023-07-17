@@ -555,10 +555,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     } else if (display == CSSDisplay.sliver) {
       if (previousRenderLayoutBox == null) {
         nextRenderLayoutBox = RenderSliverListLayout(
-            renderStyle: renderStyle,
-            manager: RenderSliverElementChildManager(this),
-            onScroll: _handleScroll,
-            currentView: ownerDocument.controller.ownerFlutterView);
+          renderStyle: renderStyle,
+          manager: RenderSliverElementChildManager(this),
+          onScroll: _handleScroll,
+        );
       } else if (previousRenderLayoutBox is RenderFlowLayout || previousRenderLayoutBox is RenderFlexLayout) {
         //  RenderFlow/FlexLayout --> RenderSliverListLayout
         nextRenderLayoutBox =
@@ -835,10 +835,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool shouldMutateBeforeElement =
         previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
-    previousPseudoElement ??= PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
+    previousPseudoElement ??=
+        PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
     previousPseudoElement.ownerDocument = ownerDocument;
-    previousPseudoElement.style
-        .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
+    previousPseudoElement.style.merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
 
     if (shouldMutateBeforeElement) {
       switch (kind) {
@@ -904,7 +904,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   void _updateAfterPseudoElement() {
     String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
     if (afterContent != null && afterContent.isNotEmpty) {
-      _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter, _afterElement);
+      _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter,  _afterElement);
     } else if (_afterElement != null) {
       removeChild(_afterElement!);
     }
@@ -2030,8 +2030,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         // Return a blob with zero length.
         captured = Uint8List(0);
       } else {
-        Image image = await _renderBoxModel.toImage(
-            pixelRatio: devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
+        Image image = await _renderBoxModel.toImage(pixelRatio: devicePixelRatio ?? window.devicePixelRatio);
         ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
         captured = byteData!.buffer.asUint8List();
       }

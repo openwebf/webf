@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:collection';
+
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -75,7 +77,7 @@ class CSSPropertyValue {
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration extends BindingObject {
+class CSSStyleDeclaration extends BindingObject with IterableMixin {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -624,7 +626,9 @@ class CSSStyleDeclaration extends BindingObject {
     return updateStatus;
   }
 
+  /// Override [] and []= operator to get/set style properties.
   operator [](String property) => getPropertyValue(property);
+
   operator []=(String property, value) {
     setProperty(property, value);
   }

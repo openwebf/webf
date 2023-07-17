@@ -73,7 +73,7 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
   }
 
   Future<Codec> _loadAsync(
-      CachedNetworkImageKey key, ImageDecoderCallback decode, StreamController<ImageChunkEvent> chunkEvents) async {
+      CachedNetworkImageKey key, DecoderBufferCallback decode, StreamController<ImageChunkEvent> chunkEvents) async {
     Uint8List bytes = await _getRawImageBytes(key, chunkEvents);
     ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
     return decode(buffer);
@@ -130,7 +130,7 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
   }
 
   @override
-  ImageStreamCompleter loadImage(CachedNetworkImageKey key, ImageDecoderCallback decode) {
+  ImageStreamCompleter loadBuffer(CachedNetworkImageKey key, DecoderBufferCallback decode) {
     // Ownership of this controller is handed off to [_loadAsync]; it is that
     // method's responsibility to close the controller's stream when the image
     // has been loaded or an error is thrown.

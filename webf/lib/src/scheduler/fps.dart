@@ -5,8 +5,9 @@
 
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 
 /// Fps callback.
 typedef FpsCallback = void Function(List<FpsInfo> fps);
@@ -32,7 +33,7 @@ class Fps {
     if (!_started) {
       _started = true;
 
-      WidgetsBinding.instance.addTimingsCallback((List<FrameTiming> timings) {
+      ElementsBinding.instance!.addTimingsCallback((List<FrameTiming> timings) {
         if (_fpsCallbacks.isNotEmpty) {
           List<FpsInfo> fps = timings.map<FpsInfo>((timing) => FpsInfo(timing)).toList();
           for (var callback in _fpsCallbacks) {

@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+export 'src/dom/binding.dart';
 export 'src/dom/element.dart';
 export 'src/dom/event.dart';
 export 'src/dom/event_target.dart';

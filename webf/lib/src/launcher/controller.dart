@@ -116,7 +116,7 @@ abstract class DevToolsService {
 }
 
 // An kraken View Controller designed for multiple kraken view control.
-class WebFViewController implements WidgetsBindingObserver {
+class WebFViewController implements WidgetsBindingObserver, ElementsBindingObserver {
   WebFController rootController;
 
   // The methods of the KrakenNavigateDelegation help you implement custom behaviors that are triggered
@@ -266,11 +266,19 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void _setupObserver() {
-    WidgetsBinding.instance.addObserver(this);
+    if (ElementsBinding.instance != null) {
+      ElementsBinding.instance!.addObserver(this);
+    } else {
+      WidgetsBinding.instance.addObserver(this);
+    }
   }
 
   void _teardownObserver() {
-    WidgetsBinding.instance.removeObserver(this);
+    if (ElementsBinding.instance != null) {
+      ElementsBinding.instance!.removeObserver(this);
+    } else {
+      WidgetsBinding.instance.removeObserver(this);
+    }
   }
 
   // Attach kraken's renderObject to an renderObject.
@@ -304,12 +312,12 @@ class WebFViewController implements WidgetsBindingObserver {
   VoidCallback? _originalOnPlatformBrightnessChanged;
 
   void _registerPlatformBrightnessChange() {
-    _originalOnPlatformBrightnessChanged = rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged;
-    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = _onPlatformBrightnessChanged;
+    _originalOnPlatformBrightnessChanged = ui.window.onPlatformBrightnessChanged;
+    ui.window.onPlatformBrightnessChanged = _onPlatformBrightnessChanged;
   }
 
   void _unregisterPlatformBrightnessChange() {
-    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = _originalOnPlatformBrightnessChanged;
+    ui.window.onPlatformBrightnessChanged = _originalOnPlatformBrightnessChanged;
     _originalOnPlatformBrightnessChanged = null;
   }
 
@@ -624,15 +632,13 @@ class WebFViewController implements WidgetsBindingObserver {
   void didChangeLocales(List<Locale>? locales) {
   }
 
-  ui.ViewPadding? _prevViewInsets;
+  ui.WindowPadding _prevViewInsets = ui.window.viewInsets;
   static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
 
   @override
   void didChangeMetrics() {
-    double bottomInset = rootController.ownerFlutterView.viewInsets.bottom / rootController.ownerFlutterView.devicePixelRatio;
-    _prevViewInsets ??= rootController.ownerFlutterView.viewInsets;
-
-    if (_prevViewInsets!.bottom > rootController.ownerFlutterView.viewInsets.bottom) {
+    double bottomInset = ui.window.viewInsets.bottom / ui.window.devicePixelRatio;
+    if (_prevViewInsets.bottom > ui.window.viewInsets.bottom) {
       // Hide keyboard
       viewport.bottomInset = bottomInset;
     } else {
@@ -657,7 +663,7 @@ class WebFViewController implements WidgetsBindingObserver {
         window.scrollBy(0, scrollOffset, true);
       }
     }
-    _prevViewInsets = rootController.ownerFlutterView.viewInsets;
+    _prevViewInsets = ui.window.viewInsets;
   }
 
   @override
@@ -686,11 +692,6 @@ class WebFViewController implements WidgetsBindingObserver {
   @override
   Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
     return false;
-  }
-
-  @override
-  Future<ui.AppExitResponse> didRequestAppExit() async {
-    return ui.AppExitResponse.exit;
   }
 }
 
@@ -768,8 +769,6 @@ class WebFController {
 
   final List<Cookie>? initialCookies;
 
-  final ui.FlutterView ownerFlutterView;
-
   String? _name;
   String? get name => _name;
   set name(String? value) {
@@ -809,7 +808,6 @@ class WebFController {
     this.devToolsService,
     this.uriParser,
     this.initialCookies,
-    required this.ownerFlutterView,
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {

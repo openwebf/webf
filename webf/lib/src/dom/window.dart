@@ -18,7 +18,7 @@ class Window extends EventTarget {
   final Screen screen;
 
   Window(BindingContext? context, this.document)
-      : screen = Screen(context!.contextId, document.controller.ownerFlutterView),
+      : screen = Screen(context!.contextId),
         super(context);
 
   @override
@@ -72,9 +72,9 @@ class Window extends EventTarget {
       ..scrollBy(x, y, withAnimation);
   }
 
-  String get colorScheme => document.controller.ownerFlutterView.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
+  String get colorScheme => window.platformBrightness == Brightness.light ? 'light' : 'dark';
 
-  double get devicePixelRatio => document.controller.ownerFlutterView.devicePixelRatio;
+  double get devicePixelRatio => window.devicePixelRatio;
 
   // The innerWidth/innerHeight attribute must return the viewport width/height
   // including the size of a rendered scroll bar (if any), or zero if there is no viewport.

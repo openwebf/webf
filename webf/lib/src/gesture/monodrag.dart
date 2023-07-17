@@ -6,7 +6,6 @@
 // Modified from Flutter gesture/monodrag.dart.
 // Copyright 2014 The Flutter Authors. All rights reserved.
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
@@ -49,13 +48,9 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
     Set<PointerDeviceKind>? supportedDevices,
     this.dragStartBehavior = DragStartBehavior.start,
     this.velocityTrackerBuilder = _defaultBuilder,
-    AllowedButtonsFilter? allowedButtonsFilter,
-  }) : super(debugOwner: debugOwner, allowedButtonsFilter: allowedButtonsFilter ?? _defaultButtonAcceptBehavior);
+  }) : super(debugOwner: debugOwner, supportedDevices: supportedDevices);
 
   static VelocityTracker _defaultBuilder(PointerEvent event) => VelocityTracker.withKind(event.kind);
-
-  // Accept the input if, and only if, [kPrimaryButton] is pressed.
-  static bool _defaultButtonAcceptBehavior(int buttons) => buttons == kPrimaryButton;
 
   /// Configure the behavior of offsets sent to [onStart].
   ///
@@ -188,24 +183,6 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
   late OffsetPair _initialPosition;
   OffsetPair? _pendingDragOffset;
   Duration? _lastPendingEventTimestamp;
-
-  /// When asserts are enabled, returns the last tracked pending event timestamp
-  /// for this recognizer.
-  ///
-  /// Otherwise, returns null.
-  ///
-  /// This getter is intended for use in framework unit tests. Applications must
-  /// not depend on its value.
-  @visibleForTesting
-  Duration? get debugLastPendingEventTimestamp {
-    Duration? lastPendingEventTimestamp;
-    assert(() {
-      lastPendingEventTimestamp = _lastPendingEventTimestamp;
-      return true;
-    }());
-    return lastPendingEventTimestamp;
-  }
-
   // The buttons sent by `PointerDownEvent`. If a `PointerMoveEvent` comes with a
   // different set of buttons, the gesture is canceled.
   int? _initialButtons;
@@ -224,13 +201,6 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
   /// inertia, for example.
   bool isFlingGesture(VelocityEstimate estimate, PointerDeviceKind kind);
 
-  /// Determines if a gesture is a fling or not, and if so its effective velocity.
-  ///
-  /// A fling calls its gesture end callback with a velocity, allowing the
-  /// provider of the callback to respond by carrying the gesture forward with
-  /// inertia, for example.
-  DragEndDetails? _considerFling(VelocityEstimate estimate, PointerDeviceKind kind);
-
   Offset _getDeltaForDetails(Offset delta);
   double _getPrimaryValueFromOffset(Offset? value);
   bool _hasSufficientGlobalDistanceToAccept(PointerDeviceKind pointerDeviceKind);
@@ -243,12 +213,12 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
   @override
   bool isPointerAllowed(PointerEvent event) {
     if (_initialButtons == null) {
-      if (onDown == null &&
-          onStart == null &&
-          onUpdate == null &&
-          onEnd == null &&
-          onCancel == null) {
-        return false;
+      switch (event.buttons) {
+        case kPrimaryButton:
+          if (onDown == null && onStart == null && onUpdate == null && onEnd == null && onCancel == null) return false;
+          break;
+        default:
+          return false;
       }
     } else {
       // There can be multiple drags simultaneously. Their effects are combined.
@@ -360,7 +330,7 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
     if (_state != _DragState.accepted) {
       _state = _DragState.accepted;
       final OffsetPair? delta = _pendingDragOffset;
-      final Duration? timestamp = _lastPendingEventTimestamp;
+      final Duration timestamp = _lastPendingEventTimestamp!;
       final Matrix4? transform = _lastTransform;
       final Offset localUpdateDelta;
       switch (dragStartBehavior) {
@@ -370,6 +340,7 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
           break;
         case DragStartBehavior.down:
           localUpdateDelta = _getDeltaForDetails(delta!.local);
+          break;
       }
       _pendingDragOffset = OffsetPair.zero;
       _lastPendingEventTimestamp = null;
@@ -436,6 +407,7 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
   }
 
   void _checkDown() {
+    assert(_initialButtons == kPrimaryButton);
     if (onDown != null) {
       final DragDownDetails details = DragDownDetails(
         globalPosition: _initialPosition.global,
@@ -446,6 +418,7 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
   }
 
   void _checkStart(Duration timestamp, int pointer) {
+    assert(_initialButtons == kPrimaryButton);
     if (onStart != null) {
       final DragStartDetails details = DragStartDetails(
         sourceTimeStamp: timestamp,
@@ -464,6 +437,7 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
     required Offset globalPosition,
     Offset? localPosition,
   }) {
+    assert(_initialButtons == kPrimaryButton);
     if (onUpdate != null) {
       final DragUpdateDetails details = DragUpdateDetails(
         sourceTimeStamp: sourceTimeStamp,
@@ -477,29 +451,43 @@ abstract class CompetitiveDragGestureRecognizer extends OneSequenceGestureRecogn
   }
 
   void _checkEnd(int pointer) {
+    assert(_initialButtons == kPrimaryButton);
     if (onEnd == null) {
       return;
     }
 
     final VelocityTracker tracker = _velocityTrackers[pointer]!;
-    final VelocityEstimate? estimate = tracker.getVelocityEstimate();
 
-    DragEndDetails? details;
+    final DragEndDetails details;
     final String Function() debugReport;
-    if (estimate == null) {
-      debugReport = () => 'Could not estimate velocity.';
-    } else {
-      details = _considerFling(estimate, tracker.kind);
-      debugReport = (details != null)
-          ? () => '$estimate; fling at ${details!.velocity}.'
-          : () => '$estimate; judged to not be a fling.';
-    }
-    details ??= DragEndDetails(primaryVelocity: 0.0);
 
-    invokeCallback<void>('onEnd', () => onEnd!(details!), debugReport: debugReport);
+    final VelocityEstimate? estimate = tracker.getVelocityEstimate();
+    if (estimate != null && isFlingGesture(estimate, tracker.kind)) {
+      final Velocity velocity = Velocity(pixelsPerSecond: estimate.pixelsPerSecond)
+          .clampMagnitude(minFlingVelocity ?? kMinFlingVelocity, maxFlingVelocity ?? kMaxFlingVelocity);
+      details = DragEndDetails(
+        velocity: velocity,
+        primaryVelocity: _getPrimaryValueFromOffset(velocity.pixelsPerSecond),
+      );
+      debugReport = () {
+        return '$estimate; fling at $velocity.';
+      };
+    } else {
+      details = DragEndDetails(
+        primaryVelocity: 0.0,
+      );
+      debugReport = () {
+        if (estimate == null) {
+          return 'Could not estimate velocity.';
+        }
+        return '$estimate; judged to not be a fling.';
+      };
+    }
+    invokeCallback<void>('onEnd', () => onEnd!(details), debugReport: debugReport);
   }
 
   void _checkCancel() {
+    assert(_initialButtons == kPrimaryButton);
     if (onCancel != null) {
       invokeCallback<void>('onCancel', onCancel!);
     }
@@ -528,7 +516,6 @@ class ScrollVerticalDragGestureRecognizer extends CompetitiveDragGestureRecogniz
   ScrollVerticalDragGestureRecognizer({
     Object? debugOwner,
     Set<PointerDeviceKind>? supportedDevices,
-    super.allowedButtonsFilter,
   }) : super(debugOwner: debugOwner, supportedDevices: supportedDevices);
 
   late IsAcceptedDragCallback isAcceptedDrag;
@@ -538,19 +525,6 @@ class ScrollVerticalDragGestureRecognizer extends CompetitiveDragGestureRecogniz
     final double minVelocity = minFlingVelocity ?? kMinFlingVelocity;
     final double minDistance = minFlingDistance ?? computeHitSlop(kind, gestureSettings);
     return estimate.pixelsPerSecond.dy.abs() > minVelocity && estimate.offset.dy.abs() > minDistance;
-  }
-
-  @override
-  DragEndDetails? _considerFling(VelocityEstimate estimate, PointerDeviceKind kind) {
-    if (!isFlingGesture(estimate, kind)) {
-      return null;
-    }
-    final double maxVelocity = maxFlingVelocity ?? kMaxFlingVelocity;
-    final double dy = clampDouble(estimate.pixelsPerSecond.dy, -maxVelocity, maxVelocity);
-    return DragEndDetails(
-      velocity: Velocity(pixelsPerSecond: Offset(0, dy)),
-      primaryVelocity: dy,
-    );
   }
 
   @override
@@ -572,7 +546,6 @@ class ScrollVerticalDragGestureRecognizer extends CompetitiveDragGestureRecogniz
 
   @override
   String get debugDescription => 'scroll vertical drag';
-
 }
 
 /// Recognizes movement in the horizontal direction.
@@ -585,7 +558,6 @@ class ScrollHorizontalDragGestureRecognizer extends CompetitiveDragGestureRecogn
   ScrollHorizontalDragGestureRecognizer({
     Object? debugOwner,
     Set<PointerDeviceKind>? supportedDevices,
-    super.allowedButtonsFilter,
   }) : super(debugOwner: debugOwner, supportedDevices: supportedDevices);
 
   late IsAcceptedDragCallback isAcceptedDrag;
@@ -595,19 +567,6 @@ class ScrollHorizontalDragGestureRecognizer extends CompetitiveDragGestureRecogn
     final double minVelocity = minFlingVelocity ?? kMinFlingVelocity;
     final double minDistance = minFlingDistance ?? computeHitSlop(kind, gestureSettings);
     return estimate.pixelsPerSecond.dx.abs() > minVelocity && estimate.offset.dx.abs() > minDistance;
-  }
-
-  @override
-  DragEndDetails? _considerFling(VelocityEstimate estimate, PointerDeviceKind kind) {
-    if (!isFlingGesture(estimate, kind)) {
-      return null;
-    }
-    final double maxVelocity = maxFlingVelocity ?? kMaxFlingVelocity;
-    final double dx = clampDouble(estimate.pixelsPerSecond.dx, -maxVelocity, maxVelocity);
-    return DragEndDetails(
-      velocity: Velocity(pixelsPerSecond: Offset(dx, 0)),
-      primaryVelocity: dx,
-    );
   }
 
   @override

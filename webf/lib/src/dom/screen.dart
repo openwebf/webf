@@ -9,8 +9,7 @@ import 'package:webf/bridge.dart';
 // As its name suggests, the Screen interface represents information about the screen of the output device.
 // https://drafts.csswg.org/cssom-view/#the-screen-interface
 class Screen extends BindingObject {
-  final FlutterView currentView;
-  Screen(int contextId, this.currentView) : super(BindingContext(contextId, allocateNewBindingObject()));
+  Screen(int contextId) : super(BindingContext(contextId, allocateNewBindingObject()));
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
@@ -33,17 +32,17 @@ class Screen extends BindingObject {
   //        so the size of kraken view is depending on how big is the flutter view, for users
   //        they can not adjust size of kraken view. The [window.physicalSize] is the size of
   //        native flutter view. (@zeroling)
-  int get availWidth => currentView.physicalSize.width ~/ currentView.devicePixelRatio;
+  int get availWidth => window.physicalSize.width ~/ window.devicePixelRatio;
 
   // The availHeight attribute must return the height of the Web-exposed available screen area.
-  int get availHeight => currentView.physicalSize.height ~/ currentView.devicePixelRatio;
+  int get availHeight => window.physicalSize.height ~/ window.devicePixelRatio;
 
   // The width attribute must return the width of the Web-exposed screen area.
   // The Web-exposed screen area is one of the following:
   //   - The area of the output device, in CSS pixels.
   //   - The area of the viewport, in CSS pixels.
-  int get width => currentView.physicalSize.width ~/ currentView.devicePixelRatio;
+  int get width => window.physicalSize.width ~/ window.devicePixelRatio;
 
   // The height attribute must return the height of the Web-exposed screen area.
-  int get height => currentView.physicalSize.height ~/ currentView.devicePixelRatio;
+  int get height => window.physicalSize.height ~/ window.devicePixelRatio;
 }
