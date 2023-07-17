@@ -30,4 +30,4 @@ ContainerNode& LiveNodeListBase::RootNode() const {
   return *owner_node_;
 }
 
-}
+}  // namespace webf
