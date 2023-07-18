@@ -33,7 +33,7 @@ mixin ResizeObserverMixin on RenderBox {
   bool needResizeNotify(Size newContentSize, Size newBorderSize) {
     return _listeners != null &&
         _listeners!.isNotEmpty &&
-        (newContentSize != preContentSize || newBorderSize != preBorderSize);
+        !(newContentSize == preContentSize && newBorderSize == preBorderSize);
   }
 
   void dispatchResize(
