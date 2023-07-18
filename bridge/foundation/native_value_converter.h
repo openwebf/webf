@@ -45,6 +45,14 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
     assert(value.tag == NativeTag::TAG_STRING);
     return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
   }
+
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue& value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return AtomicString::Empty();
+    }
+    assert(value.tag == NativeTag::TAG_STRING);
+    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
+  }
 };
 
 template <>

@@ -44,7 +44,7 @@ class ScriptValue final {
   explicit ScriptValue(JSContext* ctx, double v)
       : ctx_(ctx), value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
   explicit ScriptValue(JSContext* ctx) : ctx_(ctx), runtime_(JS_GetRuntime(ctx)){};
-  explicit ScriptValue(JSContext* ctx, const NativeValue& native_value);
+  explicit ScriptValue(JSContext* ctx, const NativeValue& native_value, bool any_js_object = false);
   ScriptValue() = default;
 
   // Copy and assignment
@@ -62,7 +62,7 @@ class ScriptValue final {
   ScriptValue ToJSONStringify(ExceptionState* exception) const;
   AtomicString ToString() const;
   std::unique_ptr<SharedNativeString> ToNativeString() const;
-  NativeValue ToNative(ExceptionState& exception_state) const;
+  NativeValue ToNative(ExceptionState& exception_state, bool shared_js_value = false) const;
 
   bool IsException() const;
   bool IsEmpty() const;

@@ -20,6 +20,11 @@ class EventTarget;
 class ExceptionState;
 struct NativeBindingObject;
 
+struct EventProp : public DartReadable {
+  uint32_t key_atom;
+  NativeValue value;
+};
+
 // Dart generated nativeEvent member are force align to 64-bit system. So all members in NativeEvent should have 64 bit
 // width.
 #if ANDROID_32_BIT
@@ -34,9 +39,11 @@ struct NativeEvent {
   int64_t target{0};
   // The pointer address of current target EventTargetInstance object.
   int64_t currentTarget{0};
+  int64_t* props;
+  int64_t  prop_len;
 };
 #else
-// Use pointer instead of int64_t on 64 bit system can help compiler to choose best register for better running
+// Use pointer instead of int64_t on 64-bit system can help compiler to choose best register for better running
 // performance.
 struct NativeEvent {
   SharedNativeString* type{nullptr};
@@ -49,6 +56,9 @@ struct NativeEvent {
   NativeBindingObject* target{nullptr};
   // The pointer address of current target EventTargetInstance object.
   NativeBindingObject* currentTarget{nullptr};
+  EventProp* props;
+  int64_t props_len;
+  int64_t alloc_size;
 };
 #endif
 
@@ -137,6 +147,12 @@ class Event : public ScriptWrappable {
 
   uint8_t eventPhase() const { return event_phase_; }
   void SetEventPhase(uint8_t event_phase) { event_phase_ = event_phase; }
+
+  bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
+  void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
+  ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
+  bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
+  bool DeleteItem(const AtomicString& key, ExceptionState& exception_state);
 
   // These events are general classes of events.
   virtual bool IsUiEvent() const;
@@ -243,8 +259,15 @@ class Event : public ScriptWrappable {
   unsigned fire_only_capture_listeners_at_target_ : 1;
   unsigned fire_only_non_capture_listeners_at_target_ : 1;
 
+  NativeEvent* raw_event_ = nullptr;
   Member<EventTarget> target_;
   Member<EventTarget> current_target_;
+  std::vector<ScriptValue> customized_event_props_;
+  friend void set_event_prop(EventProp* prop,
+                             Event* event,
+                             const AtomicString& key,
+                             const ScriptValue& value,
+                             ExceptionState& exception_state);
 };
 
 }  // namespace webf

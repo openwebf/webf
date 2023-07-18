@@ -203,6 +203,9 @@ class Event {
       defaultPrevented ? 1 : 0,
       (_target != null && _target.pointer != null) ? _target.pointer!.address : nullptr.address,
       (_currentTarget != null && _currentTarget.pointer != null) ? _currentTarget.pointer!.address : nullptr.address,
+      nullptr.address, // EventProps* props
+      0,  // int64_t props_len
+      0   // int64_t alloc_size;
     ];
 
     // Allocate extra bytes to store subclass's members.
