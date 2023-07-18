@@ -13,5 +13,6 @@ interface PointerEvent extends MouseEvent {
     readonly tiltY: number;
     readonly twist: number;
     readonly width: number;
+    [key: string]: any;
     new(type: string, init?: PointerEventInit): PointerEvent;
 }

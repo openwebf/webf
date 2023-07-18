@@ -2,10 +2,12 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+#include <quickjs/quickjs.h>
 #include "event.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/executing_context.h"
 #include "event_target.h"
+#include "foundation/native_value_converter.h"
 
 namespace webf {
 
@@ -52,6 +54,7 @@ Event::Event(ExecutingContext* context,
 
 Event::Event(ExecutingContext* context, const AtomicString& event_type, NativeEvent* native_event)
     : ScriptWrappable(context->ctx()),
+      raw_event_(native_event),
       type_(event_type),
       bubbles_(native_event->bubbles),
       composed_(native_event->composed),
@@ -102,6 +105,82 @@ EventTarget* Event::srcElement() const {
 
 void Event::SetCurrentTarget(EventTarget* target) {
   current_target_ = target;
+}
+
+void Event::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::ExceptionState&) {
+  for(int i = 0; i < raw_event_->props_len; i ++) {
+    AtomicString key = AtomicString(ctx(), raw_event_->props[i].key_atom);
+    names.emplace_back(key);
+  }
+}
+
+bool Event::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+  for(int i = 0; i < raw_event_->props_len; i ++) {
+    if (key.Impl() == raw_event_->props[i].key_atom) {
+      return true;
+    }
+  }
+  return false;
+}
+
+ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state) {
+  if (raw_event_->props != nullptr) {
+    for(int i = 0; i < raw_event_->props_len; i ++) {
+      if (key.Impl() == raw_event_->props[i].key_atom) {
+        return ScriptValue(ctx(), raw_event_->props[i].value, true);
+      }
+    }
+  }
+
+  return ScriptValue::Empty(ctx());
+}
+
+void set_event_prop(EventProp* prop,
+                           Event* event,
+                           const AtomicString& key,
+                           const ScriptValue& value,
+                           ExceptionState& exception_state) {
+  event->customized_event_props_.emplace_back(value);
+  prop->key_atom = key.Impl();
+  prop->value = value.ToNative(exception_state, true);
+}
+
+#define DEFAULT_EVENT_PROP_LEN 2
+
+bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::ExceptionState& exception_state) {
+  if (raw_event_->props == nullptr) {
+    auto* event_props = (EventProp*) js_malloc_rt(runtime(), sizeof(EventProp) * DEFAULT_EVENT_PROP_LEN);
+    set_event_prop(event_props, this, key, value, exception_state);
+    raw_event_->props = event_props;
+    raw_event_->props_len = 1;
+    raw_event_->alloc_size = DEFAULT_EVENT_PROP_LEN;
+  } else {
+    bool need_expand = raw_event_->props_len + 1 > raw_event_->alloc_size;
+    if (need_expand) {
+      size_t new_size = std::max(raw_event_->alloc_size * 9 / 2, raw_event_->props_len + 1);
+      raw_event_->props = (EventProp*) js_realloc(ctx(), raw_event_->props, sizeof(EventProp) * new_size);
+      raw_event_->alloc_size = new_size;
+    }
+    set_event_prop(&(raw_event_->props[raw_event_->props_len]), this, key, value, exception_state);
+    raw_event_->props_len = raw_event_->props_len + 1;
+  }
+
+  return true;
+}
+
+bool Event::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  for (int i = 0; i < raw_event_->props_len; i ++) {
+    if (raw_event_->props[i].key_atom == key.Impl()) {
+      for(int j = i + 1; j < raw_event_->props_len; j ++) {
+        memcpy(&raw_event_->props[j - 1], &raw_event_->props[j], sizeof(EventProp));
+      }
+      memset(&raw_event_->props[raw_event_->props_len - 1], 0x00, sizeof(EventProp));
+      raw_event_->props_len--;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool Event::IsUiEvent() const {
@@ -210,6 +289,9 @@ void Event::SetHandlingPassive(PassiveMode mode) {
 void Event::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(target_);
   visitor->TraceMember(current_target_);
+  for (auto& prop: customized_event_props_) {
+    prop.Trace(visitor);
+  }
 }
 
 }  // namespace webf
