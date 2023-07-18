@@ -44,6 +44,7 @@ if(NOT MSVC)
     check_ipo_supported(RESULT supported OUTPUT error)
     if( supported )
       set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+      add_compile_options(-flto)
     endif()
   endif()
 endif()
@@ -471,6 +472,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_script_element.cc
     out/qjs_promise_rejection_event.cc
     out/qjs_promise_rejection_event_init.cc
+    out/qjs_unionevent_listener_options_boolean.cc
+    out/qjs_unionadd_event_listener_options_boolean.cc
     out/qjs_html_template_element.cc
     out/qjs_html_unknown_element.cc
     out/qjs_performance.cc
@@ -554,7 +557,8 @@ target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
+    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
+    target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
   else ()
     ### remove dynamic_cast and exceptions
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)

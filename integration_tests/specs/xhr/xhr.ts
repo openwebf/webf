@@ -71,4 +71,94 @@ describe('XMLHttpRequest', () => {
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.send('foobar');
   });
+
+  it('should works when setting responseType to arraybuffer',  (done) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = async function() {
+      if (xhr.readyState == 4) {
+        let arrayBuffer = xhr.response;
+        assert_true(arrayBuffer instanceof ArrayBuffer);
+        let blob = new Blob([arrayBuffer]);
+        let text = await blob.text();
+        expect(text).toEqual(`{
+    "method": "GET",
+    "data": {
+        "userName": "12345"
+    }
+}`);
+        done();
+      }
+    };
+    xhr.responseType = 'arraybuffer';
+    xhr.open('GET', 'https://andycall.oss-cn-beijing.aliyuncs.com/data/data.json', true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send();
+  });
+
+  it('should works when setting responseType to blob',  (done) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = async function() {
+      if (xhr.readyState == 4) {
+        let blob = xhr.response;
+        assert_true(blob instanceof Blob);
+        let text = await blob.text();
+        expect(text).toEqual(`{
+    "method": "GET",
+    "data": {
+        "userName": "12345"
+    }
+}`);
+        done();
+      }
+    };
+    xhr.responseType = 'blob';
+    xhr.open('GET', 'https://andycall.oss-cn-beijing.aliyuncs.com/data/data.json', true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send();
+  });
+
+  it('should works when setting responseType to blob',  (done) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = async function() {
+      if (xhr.readyState == 4) {
+        let text = xhr.response;
+        expect(xhr.responseText).toEqual(text);
+        expect(text).toEqual(`{
+    "method": "GET",
+    "data": {
+        "userName": "12345"
+    }
+}`);
+        done();
+      }
+    };
+    xhr.responseType = '';
+    xhr.open('GET', 'https://andycall.oss-cn-beijing.aliyuncs.com/data/data.json', true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send();
+  });
+
+  it('should works when setting responseType to json',  (done) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = async function() {
+      if (xhr.readyState == 4) {
+        let json = xhr.response;
+        expect(json).toEqual({
+          "method": "GET",
+          "data": {
+            "userName": "12345"
+          }
+        });
+        done();
+      }
+    };
+    xhr.responseType = 'json';
+    xhr.open('GET', 'https://andycall.oss-cn-beijing.aliyuncs.com/data/data.json', true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send();
+  });
 });

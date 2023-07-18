@@ -26,6 +26,8 @@ import {
   getUnionTypeName
 } from "./generateUnionTypes";
 
+const dictionaryClasses: string[] = [];
+
 function generateMethodArgumentsCheck(m: FunctionDeclaration) {
   if (m.args.length == 0) return '';
 
@@ -82,6 +84,10 @@ export function generateCoreTypeValue(type: ParameterType): string {
     case FunctionArgumentType.any: {
       return 'ScriptValue';
     }
+  }
+
+  if (isDictionary(type)) {
+    return `std::shared_ptr<${getPointerType(type)}>`;
   }
 
   if (isPointerType(type)) {
@@ -159,6 +165,14 @@ export function isPointerType(type: ParameterType): boolean {
   }
   if (Array.isArray(type.value)) {
     return type.value.some(t => typeof t.value === 'string');
+  }
+  return false;
+}
+
+export function isDictionary(type: ParameterType): boolean {
+  if (type.isArray) return false;
+  if (typeof type.value === 'string') {
+    return dictionaryClasses.indexOf(type.value) >= 0;
   }
   return false;
 }
@@ -645,6 +659,7 @@ const WrapperTypeInfo& ${className}::wrapper_type_info_ = QJS${className}::wrapp
         });
       }
       case TemplateKind.Dictionary: {
+        dictionaryClasses.push(className);
         let props = (object as ClassObject).props;
         return _.template(readTemplate('dictionary'))({
           className,

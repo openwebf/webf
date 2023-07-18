@@ -14,7 +14,7 @@
 
 namespace webf {
 
-inline std::string trim(const std::string& str) {
+std::string trim(const std::string& str) {
   std::string tmp = str;
   tmp.erase(0, tmp.find_first_not_of(' '));  // prefixing spaces
   tmp.erase(tmp.find_last_not_of(' ') + 1);  // surfixing spaces
@@ -139,29 +139,8 @@ void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
     auto* attribute = (GumboAttribute*)attributes->data[j];
 
     if (strcmp(attribute->name, "style") == 0) {
-      std::vector<std::string> arrStyles;
-      std::string::size_type prev_pos = 0, pos = 0;
-      std::string strStyles = attribute->value;
-
-      while ((pos = strStyles.find(';', pos)) != std::string::npos) {
-        arrStyles.push_back(strStyles.substr(prev_pos, pos - prev_pos));
-        prev_pos = ++pos;
-      }
-      arrStyles.push_back(strStyles.substr(prev_pos, pos - prev_pos));
-
       auto* style = element->style();
-
-      for (auto& s : arrStyles) {
-        std::string::size_type position = s.find(':');
-        if (position != std::basic_string<char>::npos) {
-          std::string styleKey = s.substr(0, position);
-          trim(styleKey);
-          std::string styleValue = s.substr(position + 1, s.length());
-          trim(styleValue);
-          style->setProperty(AtomicString(ctx, styleKey), AtomicString(ctx, styleValue), ASSERT_NO_EXCEPTION());
-        }
-      }
-
+      style->setCssText(AtomicString(ctx, attribute->value), ASSERT_NO_EXCEPTION());
     } else {
       std::string strName = attribute->name;
       std::string strValue = attribute->value;

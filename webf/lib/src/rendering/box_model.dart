@@ -627,6 +627,7 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
       manager: manager,
       onScroll: onScroll,
+      currentView: renderStyle.currentFlutterView
     );
     manager.setupSliverListLayout(sliverListLayout);
     copyWith(sliverListLayout);
@@ -1360,14 +1361,14 @@ class RenderBoxModel extends RenderBox
   // Find previous sibling renderObject of renderBoxModel, used for inserting to containing block.
   // If renderBoxModel is positioned, find the original place (position placeholder) to insert to
   // when its position changes to relative/static/sticky.
-  RenderBox? getPreviousSibling() {
+  RenderBox? getPreviousSibling({ followPlaceHolder = true }) {
     RenderBoxModel renderBoxModel = this;
     RenderBox? previousSibling;
     RenderPositionPlaceholder? renderPositionPlaceholder = renderBoxModel.renderPositionPlaceholder;
     // It needs to find the previous sibling of the previous sibling if the placeholder of
     // positioned element exists and follows renderObject at the same time, eg.
     // <div style="position: relative"><div style="position: absolute" /></div>
-    if (renderPositionPlaceholder != null && renderPositionPlaceholder.parentData != null) {
+    if (followPlaceHolder && renderPositionPlaceholder != null && renderPositionPlaceholder.parentData != null) {
       previousSibling = (renderPositionPlaceholder.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
       // The placeholder's previousSibling maybe the origin renderBox.
       if (previousSibling == renderBoxModel) {

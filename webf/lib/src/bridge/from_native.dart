@@ -104,11 +104,12 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
           callbackResult = callback(callbackContext, contextId, nullptr, dataPtr);
           malloc.free(dataPtr);
         }
-        if (isEnabledLog) {
-          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: ${fromNativeValue(callbackResult)}');
-        }
 
         var returnValue = fromNativeValue(callbackResult);
+        if (isEnabledLog) {
+          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: $returnValue');
+        }
+
         malloc.free(callbackResult);
         completer.complete(returnValue);
       });

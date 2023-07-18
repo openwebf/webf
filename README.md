@@ -15,9 +15,9 @@ Check [this yaml](https://github.com/openwebf/webf-available-apis/blob/main/data
 
 ## The Relationship between WebF and Kraken
 
-The WebF project is a community support version of [Alibaba's Kraken Project](https://github.com/openkraken/kraken). On May 10, 2022, The Kraken Dev Team was dismissed and the project itself are discontinued. 
+The WebF project is a community support version of [Alibaba's Kraken Project](https://github.com/openkraken/kraken). On May 10, 2022, The Kraken Dev Team was dismissed and the project itself are discontinued.
 
-The core developer and architector: [andycall](https://github.com/andycall), who is from the original Kraken Team. Leave the Alibaba Group and launch this project, to keep following the original ambition of the Kraken project. 
+The core developer and architector: [andycall](https://github.com/andycall), who is from the original Kraken Team. Leave the Alibaba Group and launch this project, to keep following the original ambition of the Kraken project.
 
 For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510449
 
@@ -30,7 +30,8 @@ For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510
 | WebF                 | Flutter |
 | -------------------- | ------- |
 | `>= 0.12.0 < 0.14.0` | `3.0.5` |
-| `>= 0.14.0` | `3.3.10` and `3.7.3` |
+| `>= 0.14.0 < 0.15.0` | `3.3.10` and `3.7.3` |
+| `>= 0.15.0` | `3.10.x` |
 
 ## How to use
 
@@ -55,7 +56,6 @@ And the Vue development server will be hosted at `http://<yourip>:8080/`.
 ```yaml
 dependencies:
   webf: <lastest version>
-  webf_websocket: <lastest version>
 ```
 
 **import**
@@ -63,14 +63,12 @@ dependencies:
 ```dart
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
-import 'package:webf_websocket/webf_websocket.dart';
 ```
 
 **init**
 
 ```dart
 void main() {
-  WebFWebSocket.initialize();
   runApp(MyApp());
 }
 ```

@@ -30,6 +30,7 @@ class Member {
   Member(const Member<T>& other) {
     raw_ = other.raw_;
     runtime_ = other.runtime_;
+    js_object_ptr_ = other.js_object_ptr_;
   }
   ~Member() {
     if (raw_ != nullptr) {
@@ -39,8 +40,8 @@ class Member {
       //  Two is by free directly when running out of function body.
       // We detect the GC phase to handle case two, and free our members by hand(call JS_FreeValueRT directly).
       JSGCPhaseEnum phase = JS_GetEnginePhase(runtime_);
-      if (phase == JS_GC_PHASE_DECREF) {
-        JS_FreeValueRT(runtime_, raw_->ToQuickJSUnsafe());
+      if (phase == JS_GC_PHASE_DECREF || phase == JS_GC_PHASE_REMOVE_CYCLES) {
+        JS_FreeValueRT(runtime_, JS_MKPTR(JS_TAG_OBJECT, js_object_ptr_));
       }
     }
   };
@@ -53,7 +54,7 @@ class Member {
 
     if (phase == JS_GC_PHASE_REMOVE_CYCLES) {
       // Free the pointer immediately if parent object are removed by GC.
-      JS_FreeValueRT(runtime_, raw_->ToQuickJSUnsafe());
+      JS_FreeValueRT(runtime_, JS_MKPTR(JS_TAG_OBJECT, js_object_ptr_));
     } else {
       auto* wrappable = To<ScriptWrappable>(raw_);
       assert(wrappable->GetExecutingContext()->HasMutationScope());
@@ -61,12 +62,14 @@ class Member {
       wrappable->GetExecutingContext()->mutationScope()->RecordFree(wrappable);
     }
     raw_ = nullptr;
+    js_object_ptr_ = nullptr;
   }
 
   // Copy assignment.
   Member& operator=(const Member& other) {
     raw_ = other.raw_;
     runtime_ = other.runtime_;
+    js_object_ptr_ = other.js_object_ptr_;
     return *this;
   }
   // Move assignment.
@@ -98,12 +101,14 @@ class Member {
       assert_m(wrappable->GetExecutingContext()->HasMutationScope(),
                "Member must be used after MemberMutationScope allcated.");
       runtime_ = wrappable->runtime();
+      js_object_ptr_ = JS_VALUE_GET_PTR(wrappable->ToQuickJSUnsafe());
       JS_DupValue(wrappable->ctx(), wrappable->ToQuickJSUnsafe());
     }
     raw_ = p;
   }
 
   mutable T* raw_{nullptr};
+  mutable void* js_object_ptr_{nullptr};
   JSRuntime* runtime_{nullptr};
 };
 

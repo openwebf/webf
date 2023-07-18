@@ -59,10 +59,12 @@ class CSSFontFace {
             String tmp_content = tmp_src.split(';').last;
             if (tmp_content.startsWith('base64')) {
               String base64 = tmp_src.split(',').last;
-              Uint8List decoded = base64Decode(base64);
-              if (decoded.isNotEmpty) {
-                fonts.add(_Font.content(decoded));
-              }
+              try {
+                Uint8List decoded = base64Decode(base64);
+                if (decoded.isNotEmpty) {
+                  fonts.add(_Font.content(decoded));
+                }
+              } catch(e) {}
             }
 
           } else {

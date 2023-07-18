@@ -3,8 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:collection';
-
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -46,6 +44,8 @@ List<String> _propertyOrders = [
   COLOR,
   TRANSITION_DURATION,
   TRANSITION_PROPERTY,
+  TRANSITION_TIMING_FUNCTION,
+  TRANSITION_DELAY,
   OVERFLOW_X,
   OVERFLOW_Y
 ];
@@ -75,7 +75,7 @@ class CSSPropertyValue {
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration extends BindingObject with IterableMixin {
+class CSSStyleDeclaration extends BindingObject {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -182,6 +182,8 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         return CSSStyleProperty.removeShorthandTransition(this, isImportant);
       case TEXT_DECORATION:
         return CSSStyleProperty.removeShorthandTextDecoration(this, isImportant);
+      case ANIMATION:
+        return CSSStyleProperty.removeShorthandAnimation(this, isImportant);
     }
 
     String present = EMPTY_STRING;
@@ -622,9 +624,7 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     return updateStatus;
   }
 
-  /// Override [] and []= operator to get/set style properties.
   operator [](String property) => getPropertyValue(property);
-
   operator []=(String property, value) {
     setProperty(property, value);
   }

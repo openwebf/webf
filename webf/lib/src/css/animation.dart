@@ -178,6 +178,10 @@ class Animation {
     return _currentTime;
   }
 
+  double get progress {
+    return _effect?._progress ?? 0.0;
+  }
+
   set currentTime(double? newTime) {
     if (newTime == null) return;
 
@@ -437,7 +441,15 @@ class _Interpolation {
   var begin;
   var end;
   Function lerp;
-  _Interpolation(this.property, this.startOffset, this.endOffset, this.easing, this.begin, this.end, this.lerp) {
+
+  _Interpolation(
+      {required this.property,
+      required this.startOffset,
+      required this.endOffset,
+      required this.easing,
+      required this.begin,
+      required this.end,
+      required this.lerp}) {
     easing ??= Curves.linear;
   }
 
@@ -456,6 +468,7 @@ class KeyframeEffect extends AnimationEffect {
   RenderStyle renderStyle;
   Element? target;
   late List<_Interpolation> _interpolations;
+  List<_Interpolation> get interpolations => _interpolations;
   double? _progress;
   double? _activeTime;
   late Map<String, List<Keyframe>> _propertySpecificKeyframeGroups;
@@ -516,13 +529,13 @@ class KeyframeEffect extends AnimationEffect {
         Function parseProperty = handlers[0];
 
         _Interpolation interpolation = _Interpolation(
-            property,
-            startOffset,
-            endOffset,
-            _parseEasing(keyframes[startIndex].easing),
-            parseProperty(left, renderStyle, property),
-            parseProperty(right, renderStyle, property),
-            handlers[1]);
+            property: property,
+            startOffset: startOffset,
+            endOffset: endOffset,
+            easing: _parseEasing(keyframes[startIndex].easing),
+            begin: parseProperty(left, renderStyle, property),
+            end: parseProperty(right, renderStyle, property),
+            lerp: handlers[1]);
 
         interpolations.add(interpolation);
       }
@@ -565,7 +578,6 @@ class KeyframeEffect extends AnimationEffect {
     if (_progress == null) {
       // If fill is backwards that will be null when animation finished
       _propertySpecificKeyframeGroups.forEach((String propertyName, value) {
-        renderStyle.removeAnimationProperty(propertyName);
         String currentValue = renderStyle.target.style.getPropertyValue(propertyName);
         renderStyle.target.setRenderStyle(propertyName, currentValue);
       });
@@ -806,6 +818,7 @@ class KeyframeEffect extends AnimationEffect {
 
   // The smallest positive double value that is greater than zero.
   static final double _epsilon = 4.94065645841247E-324;
+
   // Permit 2-bits of quantization error. Threshold based on experimentation
   // with accuracy of fmod.
   static final double _calculationEpsilon = 2.0 * _epsilon;
@@ -901,32 +914,39 @@ class EffectTiming {
   // Defaults to 0. Although this is technically optional,
   // keep in mind that your animation will not run if this value is 0.
   double? _duration;
+
   // The number of milliseconds to delay the start of the animation.
   // Defaults to 0.
   double? _delay;
+
   // The rate of the animation's change over time.
   // Accepts the pre-defined values "linear", "ease", "ease-in", "ease-out", and "ease-in-out",
   // or a custom "cubic-bezier" value like "cubic-bezier(0.42, 0, 0.58, 1)".
   // Defaults to "linear".
   String? _easing;
   Curve? _easingCurve;
+
   // Whether the animation runs forwards (normal), backwards (reverse),
   // switches direction after each iteration (alternate),
   // or runs backwards and switches direction after each iteration (alternate-reverse).
   // Defaults to "normal".
   PlaybackDirection? _direction;
+
   // The number of milliseconds to delay after the end of an animation.
   // This is primarily of use when sequencing animations based on the end time of another animation.
   // Defaults to 0.
   double? _endDelay;
+
   // Dictates whether the animation's effects should be reflected by the element(s) prior to playing ("backwards"),
   // retained after the animation has completed playing ("forwards"), or both. Defaults to "none".
   FillMode? _fill;
+
   // Describes at what point in the iteration the animation should start.
   // 0.5 would indicate starting halfway through the first iteration for example,
   // and with this value set, an animation with 2 iterations would end halfway through a third iteration.
   // Defaults to 0.0.
   double? _iterationStart;
+
   // The number of times the animation should repeat.
   // Defaults to 1, and can also take a value of Infinity to make it repeat for as long as the element exists.
   double? _iterations;

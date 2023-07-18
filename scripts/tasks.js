@@ -490,7 +490,7 @@ task('build-ios-frameworks', (done) => {
 });
 
 task('build-linux-webf-lib', (done) => {
-  const buildType = buildMode == 'Release' ? 'Release' : 'Relwithdebinfo';
+  const buildType = buildMode == 'Release' ? 'Release' : 'RelWithDebInfo';
   const cmakeGeneratorTemplate = platform == 'win32' ? 'Ninja' : 'Unix Makefiles';
 
   let externCmakeArgs = [];
@@ -613,15 +613,16 @@ task('build-window-webf-lib', (done) => {
 });
 
 task('build-android-webf-lib', (done) => {
-  let androidHome;
-
   let ndkDir = '';
 
   // If ANDROID_NDK_HOME env defined, use it.
   if (process.env.ANDROID_NDK_HOME) {
     ndkDir = process.env.ANDROID_NDK_HOME;
   } else {
-    if (platform == 'win32') {
+    let androidHome;
+    if (process.env.ANDROID_SDK_HOME) {
+      androidHome = process.env.ANDROID_SDK_HOME;
+    } else if (platform == 'win32') {
       androidHome = path.join(process.env.LOCALAPPDATA, 'Android\\Sdk');
     } else if (platform == 'darwin') {
       androidHome = path.join(process.env.HOME, 'Library/Android/sdk')
@@ -632,7 +633,7 @@ task('build-android-webf-lib', (done) => {
     ndkDir = path.join(androidHome, 'ndk', ndkVersion);
 
     if (!fs.existsSync(ndkDir)) {
-      throw new Error('Android NDK version (22.1.7171670) not installed.');
+      throw new Error('Android NDK version (${ndkVersion}) not installed.');
     }
   }
 
@@ -642,7 +643,7 @@ task('build-android-webf-lib', (done) => {
     'armeabi-v7a': 'arm-linux-androideabi',
     'x86': 'i686-linux-android'
   };
-  const buildType = (buildMode === 'Release' || buildMode == 'Relwithdebinfo') ? 'Relwithdebinfo' : 'Debug';
+  const buildType = (buildMode === 'Release' || buildMode == 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
   let externCmakeArgs = [];
 
   if (process.env.ENABLE_ASAN === 'true') {

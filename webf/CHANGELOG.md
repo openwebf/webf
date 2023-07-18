@@ -1,3 +1,33 @@
+## 0.14.1
+
+**Features**
+
+1. Add CSS @font-face support. https://github.com/openwebf/webf/pull/380
+2. Support ::before/::after selector. https://github.com/openwebf/webf/pull/332
+3. Add document.elementFromPoint API. https://github.com/openwebf/webf/pull/381
+4. Support set textContent on textArea elements. https://github.com/openwebf/webf/pull/369
+5. Support receive binary data from fetch and XMLHttpRequest. https://github.com/openwebf/webf/pull/397
+6. Add support for event capture phases. https://github.com/openwebf/webf/pull/404
+7. Support change the current animation stage for transition animations. https://github.com/openwebf/webf/pull/401
+8. Add CSSStyleDeclaration.cssText support. https://github.com/openwebf/webf/pull/410
+9. Move the webf_websocket plugin into webf. https://github.com/openwebf/webf/pull/398
+
+**Bug Fixed**
+
+1. Fix error when setting display:none for input and textarea. https://github.com/openwebf/webf/pull/369
+2. Fix focus state didn't cleared when input unmount from the DOM Tree. https://github.com/openwebf/webf/pull/369
+3. Fix defaultStyle for textarea elements. https://github.com/openwebf/webf/pull/369
+4. Fix a crash when a JSObject was finalized after the ExecutingContext was freed. https://github.com/openwebf/webf/pull/372
+5. Fix a crash when ExecutingContext is not alive at timer callbacks. https://github.com/openwebf/webf/pull/373
+6. Fix a crashed when running in multiple flutter engine instance. https://github.com/openwebf/webf/pull/377
+7. Fix the size of the input is wrong when using a unit other than px. https://github.com/openwebf/webf/pull/378
+8. Fix crashed when shutdown the app. https://github.com/openwebf/webf/pull/383
+9. Fix Resource temporarily unavailable for Hive lock file. https://github.com/openwebf/webf/pull/387
+10. Fix a memory leaks in TouchList. https://github.com/openwebf/webf/pull/388
+11. Fix match error for animation time. https://github.com/openwebf/webf/pull/390/files
+12. Fix built-in string initialized multiples and cause leaks.  https://github.com/openwebf/webf/pull/391
+13. Fix constructor property on DOM elements. https://github.com/openwebf/webf/pull/402
+
 ## 0.14.0
 
 **Big News**

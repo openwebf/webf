@@ -41,8 +41,9 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
 
   void CopyWith(InlineCssStyleDeclaration* inline_style);
 
-  //  AtomicString cssText() const override;
-  //  void setCssText(const AtomicString &value, ExceptionState &exception_state) override;
+  AtomicString cssText() const override;
+  void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
+  void setCssText(const std::string& value, ExceptionState& exception_state);
 
   void Trace(GCVisitor* visitor) const override;
 
@@ -50,6 +51,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   AtomicString InternalGetPropertyValue(std::string& name);
   bool InternalSetProperty(std::string& name, const AtomicString& value);
   AtomicString InternalRemoveProperty(std::string& name);
+  void InternalClearProperty();
   std::unordered_map<std::string, AtomicString> properties_;
   Member<Element> owner_element_;
 };

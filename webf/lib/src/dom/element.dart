@@ -305,6 +305,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     properties['className'] =
         BindingObjectProperty(getter: () => className, setter: (value) => className = castToType<String>(value));
     properties['classList'] = BindingObjectProperty(getter: () => classList);
+    properties['dir'] = BindingObjectProperty(getter: () => dir);
   }
 
   @override
@@ -554,10 +555,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     } else if (display == CSSDisplay.sliver) {
       if (previousRenderLayoutBox == null) {
         nextRenderLayoutBox = RenderSliverListLayout(
-          renderStyle: renderStyle,
-          manager: RenderSliverElementChildManager(this),
-          onScroll: _handleScroll,
-        );
+            renderStyle: renderStyle,
+            manager: RenderSliverElementChildManager(this),
+            onScroll: _handleScroll,
+            currentView: ownerDocument.controller.ownerFlutterView);
       } else if (previousRenderLayoutBox is RenderFlowLayout || previousRenderLayoutBox is RenderFlexLayout) {
         //  RenderFlow/FlexLayout --> RenderSliverListLayout
         nextRenderLayoutBox =
@@ -784,6 +785,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
       // Find the previous siblings to insert before renderBoxModel is detached.
       RenderBox? previousSibling = _renderBoxModel.getPreviousSibling();
+
+      // // If previousSibling is a renderBox than represent a fixed element. Should skipped it util reach a renderBox in normal layout tree.
+      while (previousSibling != null &&
+          _isRenderBoxFixed(previousSibling, ownerDocument.viewport!) &&
+          previousSibling is RenderBoxModel) {
+        previousSibling = previousSibling.getPreviousSibling(followPlaceHolder: false);
+      }
+
       // Detach renderBoxModel from its original parent.
       _renderBoxModel.detachFromContainingBlock();
       // Change renderBoxModel type in cases such as position changes to fixed which
@@ -826,10 +835,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool shouldMutateBeforeElement =
         previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
-    previousPseudoElement ??=
-        PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
+    previousPseudoElement ??= PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
     previousPseudoElement.ownerDocument = ownerDocument;
-    previousPseudoElement.style.merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
+    previousPseudoElement.style
+        .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
 
     if (shouldMutateBeforeElement) {
       switch (kind) {
@@ -895,7 +904,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   void _updateAfterPseudoElement() {
     String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
     if (afterContent != null && afterContent.isNotEmpty) {
-      _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter,  _afterElement);
+      _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter, _afterElement);
     } else if (_afterElement != null) {
       removeChild(_afterElement!);
     }
@@ -1840,6 +1849,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
+  void clearInlineStyle() {
+    for(var key in inlineStyle.keys) {
+      style.removeProperty(key, true);
+    }
+    inlineStyle.clear();
+  }
+
   void _applyPseudoStyle(CSSStyleDeclaration style) {
     List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
     style.handlePseudoRules(this, pseudoRules);
@@ -2029,7 +2045,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         // Return a blob with zero length.
         captured = Uint8List(0);
       } else {
-        Image image = await _renderBoxModel.toImage(pixelRatio: devicePixelRatio ?? window.devicePixelRatio);
+        Image image = await _renderBoxModel.toImage(
+            pixelRatio: devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
         ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
         captured = byteData!.buffer.asUint8List();
       }
@@ -2137,7 +2154,7 @@ Element? _findContainingBlock(Element child, Element viewportElement) {
 
 // Cache fixed renderObject to root element
 void _addFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewport) {
-  List<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
   if (!fixedChildren.contains(childRenderBoxModel)) {
     fixedChildren.add(childRenderBoxModel);
   }
@@ -2145,10 +2162,15 @@ void _addFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewpo
 
 // Remove non fixed renderObject from root element
 void _removeFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewport) {
-  List<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
   if (fixedChildren.contains(childRenderBoxModel)) {
     fixedChildren.remove(childRenderBoxModel);
   }
+}
+
+bool _isRenderBoxFixed(RenderBox renderBox, RenderViewportBox viewport) {
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  return fixedChildren.contains(renderBox);
 }
 
 // Reflect attribute type as property.

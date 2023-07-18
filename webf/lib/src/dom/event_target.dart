@@ -17,33 +17,46 @@ abstract class EventTarget extends BindingObject {
   @protected
   final Map<String, List<EventHandler>> _eventHandlers = {};
 
+  @protected
+  final Map<String, List<EventHandler>> _eventCaptureHandlers = {};
+
   Map<String, List<EventHandler>> getEventHandlers() => _eventHandlers;
+
+  Map<String, List<EventHandler>> getCaptureEventHandlers() => _eventCaptureHandlers;
 
   @protected
   bool hasEventListener(String type) => _eventHandlers.containsKey(type);
 
   // TODO: Support addEventListener options: capture, once, passive, signal.
   @mustCallSuper
-  void addEventListener(String eventType, EventHandler eventHandler) {
+  void addEventListener(String eventType, EventHandler eventHandler, {EventListenerOptions? addEventListenerOptions}) {
     if (_disposed) return;
-
-    List<EventHandler>? existHandler = _eventHandlers[eventType];
+    bool capture = false;
+    if (addEventListenerOptions != null)
+      capture = addEventListenerOptions.capture;
+    List<EventHandler>? existHandler = capture ? _eventCaptureHandlers[eventType] : _eventHandlers[eventType];
     if (existHandler == null) {
-      _eventHandlers[eventType] = existHandler = [];
+      if (capture)
+        _eventCaptureHandlers[eventType] = existHandler = [];
+      else
+        _eventHandlers[eventType] = existHandler = [];
     }
-
     existHandler.add(eventHandler);
   }
 
   @mustCallSuper
-  void removeEventListener(String eventType, EventHandler eventHandler) {
+  void removeEventListener(String eventType, EventHandler eventHandler, {bool isCapture = false}) {
     if (_disposed) return;
 
-    List<EventHandler>? currentHandlers = _eventHandlers[eventType];
+    List<EventHandler>? currentHandlers = isCapture ? _eventCaptureHandlers[eventType] : _eventHandlers[eventType];
     if (currentHandlers != null) {
       currentHandlers.remove(eventHandler);
       if (currentHandlers.isEmpty) {
-        _eventHandlers.remove(eventType);
+        if (isCapture) {
+          _eventCaptureHandlers.remove(eventType);
+        } else {
+          _eventHandlers.remove(eventType);
+        }
       }
     }
   }
@@ -51,11 +64,30 @@ abstract class EventTarget extends BindingObject {
   @mustCallSuper
   void dispatchEvent(Event event) {
     if (_disposed) return;
-
     event.target = this;
+    _handlerCaptureEvent(event);
     _dispatchEventInDOM(event);
   }
+  void _handlerCaptureEvent(Event event) {
 
+    parentEventTarget?._handlerCaptureEvent(event);
+    String eventType = event.type;
+    List<EventHandler>? existHandler = _eventCaptureHandlers[eventType];
+    if (existHandler != null) {
+      // Modify currentTarget before the handler call, otherwise currentTarget may be modified by the previous handler.
+      event.currentTarget = this;
+      // To avoid concurrent exception while prev handler modify the original handler list, causing list iteration
+      // with error, copy the handlers here.
+      try {
+        for (EventHandler handler in [...existHandler]) {
+          handler(event);
+        }
+      } catch (e, stack) {
+        print('$e\n$stack');
+      }
+      event.currentTarget = null;
+    }
+  }
   // Refs: https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/EventDispatcher.cpp#L85
   void _dispatchEventInDOM(Event event) {
     // TODO: Invoke capturing event listeners in the reverse order.
@@ -102,4 +134,12 @@ abstract class EventTarget extends BindingObject {
     }
     return path;
   }
+}
+class EventListenerOptions {
+
+  bool capture;
+  bool passive;
+  bool once;
+
+  EventListenerOptions(this.capture, this.passive, this.once);
 }

@@ -39,7 +39,13 @@ List<BindingCallFunc> bindingCallMethodDispatchTable = [
 ];
 
 // Dispatch the event to the binding side.
-void _dispatchEventToNative(Event event) {
+void _dispatchNomalEventToNative(Event event) {
+  _dispatchEventToNative(event, false);
+}
+void _dispatchCaptureEventToNative(Event event) {
+  _dispatchEventToNative(event, true);
+}
+void _dispatchEventToNative(Event event, bool isCapture) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
   if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr) {
@@ -48,7 +54,7 @@ void _dispatchEventToNative(Event event) {
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
     Pointer<Void> rawEvent = event.toRaw().cast<Void>();
-    List<dynamic> dispatchEventArguments = [event.type, rawEvent];
+    List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCapture];
 
     if (isEnabledLog) {
       print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
@@ -134,21 +140,31 @@ abstract class BindingBridge {
     BindingObject.unbind = null;
   }
 
-  static void listenEvent(EventTarget target, String type) {
-    if (!hasListener(target, type)) {
-      target.addEventListener(type, _dispatchEventToNative);
+  static void listenEvent(EventTarget target, String type, {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
+    bool isCapture = addEventListenerOptions != null ? addEventListenerOptions.ref.capture : false;
+    if (!hasListener(target, type, isCapture: isCapture)) {
+      EventListenerOptions? eventListenerOptions;
+      if (addEventListenerOptions != null && addEventListenerOptions.ref.capture) {
+        eventListenerOptions = EventListenerOptions(addEventListenerOptions.ref.capture, addEventListenerOptions.ref.passive, addEventListenerOptions.ref.once);
+        target.addEventListener(type, _dispatchCaptureEventToNative, addEventListenerOptions: eventListenerOptions);
+      } else
+        target.addEventListener(type, _dispatchNomalEventToNative, addEventListenerOptions: eventListenerOptions);
     }
   }
 
-  static void unlistenEvent(EventTarget target, String type) {
-    target.removeEventListener(type, _dispatchEventToNative);
+  static void unlistenEvent(EventTarget target, String type, {bool isCapture = false}) {
+    if (isCapture)
+      target.removeEventListener(type, _dispatchCaptureEventToNative, isCapture: isCapture);
+    else
+      target.removeEventListener(type, _dispatchNomalEventToNative, isCapture: isCapture);
+
   }
 
-  static bool hasListener(EventTarget target, String type) {
-    Map<String, List<EventHandler>> eventHandlers = target.getEventHandlers();
+  static bool hasListener(EventTarget target, String type, {bool isCapture = false}) {
+    Map<String, List<EventHandler>> eventHandlers = isCapture ? target.getCaptureEventHandlers() : target.getEventHandlers();
     List<EventHandler>? handlers = eventHandlers[type];
     if (handlers != null) {
-      return handlers.contains(_dispatchEventToNative);
+      return isCapture ? handlers.contains(_dispatchCaptureEventToNative) : handlers.contains(_dispatchNomalEventToNative);
     }
     return false;
   }

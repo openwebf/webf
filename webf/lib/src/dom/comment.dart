@@ -17,5 +17,6 @@ class Comment extends CharacterData {
   // @TODO: Get data from bridge side.
   String get data => '';
 
+  @override
   int get length => data.length;
 }

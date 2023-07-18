@@ -4,7 +4,7 @@ import _ from "lodash";
 import {generateUnionTypeHeader} from "./generateHeader";
 import {
   generateCoreTypeValue,
-  generateUnionTypeSource,
+  generateUnionTypeSource, isDictionary,
   isPointerType,
   isTypeHaveNull, isUnionType,
   trimNullTypeFromType
@@ -78,6 +78,10 @@ export function generateUnionMemberName(unionType: ParameterType) {
 }
 
 export function generateUnionMemberType(unionType: ParameterType) {
+  if (isDictionary(unionType)) {
+    return generateCoreTypeValue(unionType);
+  }
+
   if (isPointerType(unionType)) {
     return `Member<${generateCoreTypeValue(unionType).replace('*', '')}>`;
   }
@@ -86,6 +90,10 @@ export function generateUnionMemberType(unionType: ParameterType) {
 
 export function generateUnionConstructor(className: string, unionType: ParameterType) {
   if (isTypeHaveNull(unionType)) return '';
+  if (isDictionary(unionType)) {
+    return `explicit ${className}(${generateCoreTypeValue(unionType)})`;
+  }
+
   if (isPointerType(unionType)) {
     return `explicit ${className}(${generateCoreTypeValue(unionType)})`;
   }

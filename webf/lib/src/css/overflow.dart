@@ -46,6 +46,7 @@ mixin CSSOverflowMixin on RenderStyle {
   @override
   CSSOverflowType get overflowX => _overflowX ?? CSSOverflowType.visible;
   CSSOverflowType? _overflowX;
+
   set overflowX(CSSOverflowType? value) {
     if (_overflowX == value) return;
     _overflowX = value;
@@ -54,6 +55,7 @@ mixin CSSOverflowMixin on RenderStyle {
   @override
   CSSOverflowType get overflowY => _overflowY ?? CSSOverflowType.visible;
   CSSOverflowType? _overflowY;
+
   set overflowY(CSSOverflowType? value) {
     if (_overflowY == value) return;
     _overflowY = value;
@@ -134,7 +136,11 @@ mixin ElementOverflowMixin on ElementBase {
         case CSSOverflowType.scroll:
           // If the render has been offset when previous overflow is auto or scroll, _scrollableX should not reset.
           if (_scrollableX == null) {
-            _scrollableX = WebFScrollable(axisDirection: AxisDirection.right, scrollListener: scrollListener, overflowType: overflowX);
+            _scrollableX = WebFScrollable(
+                axisDirection: AxisDirection.right,
+                scrollListener: scrollListener,
+                overflowType: overflowX,
+                currentView: renderStyle.currentFlutterView);
             renderBoxModel.scrollOffsetX = _scrollableX!.position;
           }
           // Reset canDrag by overflow because hidden is can't drag.
@@ -169,7 +175,11 @@ mixin ElementOverflowMixin on ElementBase {
         case CSSOverflowType.scroll:
           // If the render has been offset when previous overflow is auto or scroll, _scrollableY should not reset.
           if (_scrollableY == null) {
-            _scrollableY = WebFScrollable(axisDirection: AxisDirection.down, scrollListener: scrollListener, overflowType: overflowY);
+            _scrollableY = WebFScrollable(
+                axisDirection: AxisDirection.down,
+                scrollListener: scrollListener,
+                overflowType: overflowY,
+                currentView: renderStyle.currentFlutterView);
             renderBoxModel.scrollOffsetY = _scrollableY!.position;
           }
           // Reset canDrag by overflow because hidden is can't drag.
@@ -188,7 +198,7 @@ mixin ElementOverflowMixin on ElementBase {
     }
   }
 
-  void scrollingContentBoxStyleListener(String property, String? original, String present, { String? baseHref }) {
+  void scrollingContentBoxStyleListener(String property, String? original, String present, {String? baseHref}) {
     if (renderBoxModel == null) return;
 
     RenderLayoutBox? scrollingContentBox = (renderBoxModel as RenderLayoutBox).renderScrollingContent;
@@ -416,6 +426,10 @@ mixin ElementOverflowMixin on ElementBase {
     }
     Size scrollContainerSize = renderBoxModel!.scrollableSize;
     return scrollContainerSize.width;
+  }
+
+  String get dir {
+    return 'ltr';
   }
 
   double get clientTop {

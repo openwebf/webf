@@ -25,6 +25,7 @@ enum class UICommand {
   kRemoveNode,
   kInsertAdjacentNode,
   kSetStyle,
+  kClearStyle,
   kSetAttribute,
   kRemoveAttribute,
   kCloneNode,
