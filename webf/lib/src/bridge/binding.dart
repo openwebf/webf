@@ -53,7 +53,7 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
-    Pointer<Void> rawEvent = event.toRaw().cast<Void>();
+    Pointer<RawEvent> rawEvent = event.toRaw().cast<RawEvent>();
     List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCapture];
 
     if (isEnabledLog) {
@@ -69,6 +69,10 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     Pointer<EventDispatchResult> dispatchResult = fromNativeValue(returnValue).cast<EventDispatchResult>();
     event.cancelable = dispatchResult.ref.canceled;
     event.propagationStopped = dispatchResult.ref.propagationStopped;
+
+    event.sharedJSProps = Pointer.fromAddress(rawEvent.ref.bytes.elementAt(8).value);
+    event.propLen = rawEvent.ref.bytes.elementAt(9).value;
+    event.allocateLen = rawEvent.ref.bytes.elementAt(10).value;
 
     // Free the allocated arguments.
     malloc.free(rawEvent);
