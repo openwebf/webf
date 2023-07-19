@@ -220,7 +220,7 @@ class Document extends ContainerNode {
   }
 
   get hidden {
-    return _visibilityState == VisibilityState.visible;
+    return _visibilityState == VisibilityState.hidden;
   }
 
   void visibilityChange(VisibilityState state) {
