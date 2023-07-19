@@ -40,7 +40,7 @@ BindingObject::~BindingObject() {
   // accessible.
   if (isContextValid(contextId())) {
     GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kDisposeBindingObject, nullptr, bindingObject(),
-                                                         nullptr);
+                                                         nullptr, false);
   }
 }
 
