@@ -53,6 +53,16 @@ class ChildNodeList extends NodeList {
     return _collectionIndexCache.nodeAt(this, index);
   }
 
+  void childrenChanged(ChildrenChange change) {
+    if (change.isChildInsertion()) {
+      _collectionIndexCache.nodeInserted();
+    } else if (change.isChildRemoval()) {
+      _collectionIndexCache.nodeRemoved();
+    } else {
+      _collectionIndexCache.invalidate();
+    }
+  }
+
   void invalidateCache() {
     _collectionIndexCache.invalidate();
   }

@@ -77,7 +77,7 @@ function format_value(v: any) {
 }
 
 function assert_array_equals(value, result, message?: string) {
-  expect(value).toEqual(result, message);
+  expect([].slice.call(value)).toEqual(result, message);
 }
 
 // Avoid overwrited by jasmine.

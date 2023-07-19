@@ -26,11 +26,8 @@
 #define BRIDGE_CORE_DOM_LIVE_NODE_LIST_BASE_H_
 
 #include "bindings/qjs/script_wrappable.h"
-#include "container_node.h"
-#include "core/dom/element_traversal.h"
 #include "core/html/collection_type.h"
-#include "document.h"
-#include "html_names.h"
+#include "element_traversal.h"
 
 namespace webf {
 
@@ -39,18 +36,14 @@ enum class NodeListSearchRoot {
   kTreeScope,
 };
 
-class LiveNodeListBase : public GarbageCollected<LiveNodeListBase> {
+class ContainerNode;
+class Node;
+
+class LiveNodeListBase : public GarbageCollectedMixin {
  public:
-  explicit LiveNodeListBase(ContainerNode* owner_node,
-                            NodeListSearchRoot search_root,
-                            NodeListInvalidationType invalidation_type,
-                            CollectionType collection_type)
-      : owner_node_(owner_node),
-        search_root_(static_cast<unsigned>(search_root)),
-        invalidation_type_(invalidation_type),
-        collection_type_(collection_type) {
+  explicit LiveNodeListBase(ContainerNode& owner_node, NodeListSearchRoot search_root, CollectionType collection_type)
+      : owner_node_(&owner_node), search_root_(static_cast<unsigned>(search_root)), collection_type_(collection_type) {
     assert(search_root_ == static_cast<unsigned>(search_root));
-    assert(invalidation_type_ == static_cast<unsigned>(invalidation_type));
     assert(collection_type_ == static_cast<unsigned>(collection_type));
   }
 
@@ -58,20 +51,13 @@ class LiveNodeListBase : public GarbageCollected<LiveNodeListBase> {
 
   ContainerNode& RootNode() const;
 
-  void DidMoveToDocument(Document& old_document, Document& new_document);
   FORCE_INLINE bool IsRootedAtTreeScope() const {
     return search_root_ == static_cast<unsigned>(NodeListSearchRoot::kTreeScope);
-  }
-  FORCE_INLINE NodeListInvalidationType InvalidationType() const {
-    return static_cast<NodeListInvalidationType>(invalidation_type_);
   }
   FORCE_INLINE CollectionType GetType() const { return static_cast<CollectionType>(collection_type_); }
   ContainerNode& ownerNode() const { return *owner_node_; }
 
   virtual void InvalidateCache(Document* old_document = nullptr) const = 0;
-  void InvalidateCacheForAttribute(const AtomicString&) const;
-
-  static bool ShouldInvalidateTypeOnAttributeChange(NodeListInvalidationType, const AtomicString&);
 
   void Trace(GCVisitor* visitor) const override { visitor->TraceMember(owner_node_); }
 
@@ -96,34 +82,8 @@ class LiveNodeListBase : public GarbageCollected<LiveNodeListBase> {
  private:
   Member<ContainerNode> owner_node_;  // Cannot be null.
   const unsigned search_root_ : 1;
-  const unsigned invalidation_type_ : 4;
   const unsigned collection_type_ : 5;
 };
-
-FORCE_INLINE bool LiveNodeListBase::ShouldInvalidateTypeOnAttributeChange(NodeListInvalidationType type,
-                                                                          const AtomicString& attr_name) {
-  switch (type) {
-    case kInvalidateOnClassAttrChange:
-      return attr_name == html_names::kClassAttr;
-    case kInvalidateOnNameAttrChange:
-      return attr_name == html_names::kNameAttr;
-    case kInvalidateOnIdNameAttrChange:
-      return attr_name == html_names::kIdAttr || attr_name == html_names::kNameAttr;
-    case kInvalidateOnForAttrChange:
-      return attr_name == html_names::kForAttr;
-    case kInvalidateForFormControls:
-      return attr_name == html_names::kNameAttr || attr_name == html_names::kIdAttr ||
-             attr_name == html_names::kForAttr || attr_name == html_names::kFormAttr ||
-             attr_name == html_names::kTypeAttr;
-    case kInvalidateOnHRefAttrChange:
-      return attr_name == html_names::kHrefAttr;
-    case kDoNotInvalidateOnAttributeChanges:
-      return false;
-    case kInvalidateOnAnyAttrChange:
-      return true;
-  }
-  return false;
-}
 
 template <typename MatchFunc>
 Element* LiveNodeListBase::TraverseMatchingElementsForwardToOffset(Element& current_element,

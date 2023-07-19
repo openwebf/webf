@@ -286,6 +286,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/events/event_target_impl.cc
     core/binding_object.cc
     core/dom/node.cc
+    core/dom/node_list.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
     core/dom/character_data.cc
@@ -323,7 +324,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/keyboard_event.cc
     core/events/promise_rejection_event.cc
     core/html/parser/html_parser.cc
-    core/html/legacy/html_collection.cc
     core/html/html_element.cc
     core/html/html_div_element.cc
     core/html/html_head_element.cc
@@ -338,6 +338,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
     core/html/image.cc
+    core/html/html_collection.cc
     core/html/canvas/html_canvas_element.cc
     core/html/canvas/canvas_rendering_context.cc
     core/html/canvas/canvas_rendering_context_2d.cc
@@ -447,6 +448,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_scroll_to_options.cc
     out/qjs_html_element.cc
     out/qjs_html_all_collection.cc
+    out/qjs_html_collection.cc
     out/qjs_html_anchor_element.cc
     out/qjs_html_div_element.cc
     out/qjs_html_head_element.cc

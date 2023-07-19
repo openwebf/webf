@@ -47,7 +47,9 @@ class CollectionItemsCache : public CollectionIndexCache<Collection, NodeType> {
   ~CollectionItemsCache();
 
   void Trace(GCVisitor* visitor) const override {
-    visitor->TraceValue(cached_list_);
+    for (auto& item : cached_list_) {
+      visitor->TraceMember(item);
+    }
     Base::Trace(visitor);
   }
 
@@ -70,7 +72,10 @@ template <typename Collection, typename NodeType>
 void CollectionItemsCache<Collection, NodeType>::Invalidate() {
   Base::Invalidate();
   if (list_valid_) {
-    cached_list_.Shrink(0);
+    for (auto& item : cached_list_) {
+      item.Clear();
+    }
+    cached_list_.clear();
     list_valid_ = false;
   }
 }
@@ -95,7 +100,7 @@ unsigned CollectionItemsCache<Collection, NodeType>::NodeCount(const Collection&
 template <typename Collection, typename NodeType>
 inline NodeType* CollectionItemsCache<Collection, NodeType>::NodeAt(const Collection& collection, unsigned index) {
   if (list_valid_) {
-    DCHECK(this->IsCachedNodeCountValid());
+    assert(this->IsCachedNodeCountValid());
     return index < this->CachedNodeCount() ? cached_list_[index] : nullptr;
   }
   return Base::NodeAt(collection, index);
