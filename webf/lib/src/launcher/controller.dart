@@ -462,10 +462,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
-    Stopwatch stopwatch = Stopwatch()..start();
     assert(BindingBridge.hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
     Node target = BindingBridge.getBindingObject<Node>(selfPtr)!;
-
 
     if (target is Element) {
       // Only element has properties.
@@ -475,8 +473,6 @@ class WebFViewController implements WidgetsBindingObserver {
     } else {
       debugPrint('Only element has properties, try setting $key to Node(#$selfPtr).');
     }
-
-    print('$target setAttribute $key ${value} time: ${stopwatch.elapsedMilliseconds}ms');
   }
 
   String? getAttribute(Pointer selfPtr, String key) {
