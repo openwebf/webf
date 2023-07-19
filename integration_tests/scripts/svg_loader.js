@@ -4,6 +4,21 @@
 const path = require('path');
 const svgo = require('svgo');
 
+function tryParseSizeNumber(size) {
+  if (!size || size.endsWith('%')) {
+    // default size
+    return 512;
+  } else if (size.endsWith('px')) {
+    return parseInt(size.slice(0, -2), 10)
+  } else {
+    const parsedSize = parseInt(size, 10)
+    if (!Number.isNaN(parsedSize)) {
+      return parsedSize
+    }
+    throw new Error(`Unknown size ${width}`)
+  }
+}
+
 const loader = function(source) {
   const filepath = this.resourcePath
   const opts = this.query || {};
@@ -15,6 +30,9 @@ const loader = function(source) {
       testRelativePath,
     )
   );
+
+  let svgWidth = 512;
+  let svgHeight = 512;
 
   const output = svgo.optimize(source, {
     path: filepath,
@@ -40,6 +58,20 @@ const loader = function(source) {
             }
           }
         }
+      },
+      {
+        name: 'collectSVGSize',
+        fn: (ast, params, info) => {
+          ast.children.forEach(child => {
+            if (child.type === 'element' && child.name === 'svg') {
+              const {width, height} = child.attributes
+              svgWidth = tryParseSizeNumber(width)
+              svgHeight = tryParseSizeNumber(height)
+            }
+          })
+          return {
+          }
+        }
       }
     ]
   })
@@ -56,7 +88,7 @@ ${output.data}
   return `
     describe('SVGSpec/${testRelativePath}', () => {
       beforeEach(async () => {
-        await resizeViewport(512, 512);
+        await resizeViewport(${svgWidth}, ${svgHeight});
       });
 
       afterEach(async () => {

@@ -70,12 +70,15 @@
 #include "qjs_pop_state_event.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
+#include "qjs_svg_circle_element.h"
 #include "qjs_svg_element.h"
+#include "qjs_svg_ellipse_element.h"
 #include "qjs_svg_g_element.h"
 #include "qjs_svg_geometry_element.h"
 #include "qjs_svg_graphics_element.h"
 #include "qjs_svg_path_element.h"
 #include "qjs_svg_rect_element.h"
+#include "qjs_svg_style_element.h"
 #include "qjs_svg_svg_element.h"
 #include "qjs_svg_text_content_element.h"
 #include "qjs_svg_text_element.h"
@@ -179,6 +182,9 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGPathElement::Install(context);
   QJSSVGTextElement::Install(context);
   QJSSVGGElement::Install(context);
+  QJSSVGCircleElement::Install(context);
+  QJSSVGEllipseElement::Install(context);
+  QJSSVGStyleElement::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);
