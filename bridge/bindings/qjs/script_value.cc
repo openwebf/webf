@@ -92,7 +92,9 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
 }
 
 ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value, bool any_js_object)
-    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), value_(FromNativeValue(ExecutingContext::From(ctx), native_value, any_js_object)) {}
+    : ctx_(ctx),
+      runtime_(JS_GetRuntime(ctx)),
+      value_(FromNativeValue(ExecutingContext::From(ctx), native_value, any_js_object)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);
@@ -205,7 +207,7 @@ NativeValue ScriptValue::ToNative(ExceptionState& exception_state, bool shared_j
         }
 
         if (shared_js_value) {
-          return NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(JS_VALUE_GET_PTR( value_));
+          return NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(JS_VALUE_GET_PTR(value_));
         }
 
         return NativeValueConverter<NativeTypeJSON>::ToNativeValue(*this, exception_state);

@@ -3,11 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "event_target.h"
-#include "include/dart_api.h"
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "event_factory.h"
+#include "include/dart_api.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
 #include "qjs_event_target.h"
@@ -386,8 +386,8 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   };
 
   WatchDartWire(wire);
-  Dart_NewFinalizableHandle_DL(dart_object, reinterpret_cast<void*>(wire),
-                               sizeof(DartWireContext), dart_object_finalize_callback);
+  Dart_NewFinalizableHandle_DL(dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext),
+                               dart_object_finalize_callback);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx());

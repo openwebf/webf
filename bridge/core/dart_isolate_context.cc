@@ -2,8 +2,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <set>
 #include "dart_isolate_context.h"
+#include <set>
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
@@ -29,7 +29,7 @@ void DeleteDartWire(DartWireContext* wire) {
 }
 
 static void ClearUpWires() {
-  for(auto& wire : alive_wires) {
+  for (auto& wire : alive_wires) {
     delete wire;
   }
   alive_wires.clear();
