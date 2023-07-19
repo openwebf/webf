@@ -18,11 +18,12 @@ void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_ob
                                                  NativeValue* return_value,
                                                  NativeValue* native_method,
                                                  int32_t argc,
-                                                 NativeValue* argv) {
+                                                 NativeValue* argv,
+                                                 Dart_Handle dart_object) {
   AtomicString method = AtomicString(
       binding_object->binding_target_->ctx(),
       std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)));
-  NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv);
+  NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv, dart_object);
   if (return_value != nullptr)
     *return_value = result;
 }
@@ -57,7 +58,10 @@ void BindingObject::FullFillPendingPromise(BindingObjectPromiseContext* binding_
   pending_promise_contexts_.erase(binding_object_promise_context);
 }
 
-NativeValue BindingObject::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
+NativeValue BindingObject::HandleCallFromDartSide(const AtomicString& method,
+                                                  int32_t argc,
+                                                  const NativeValue* argv,
+                                                  Dart_Handle dart_object) {
   return Native_NewNull();
 }
 

@@ -39,8 +39,9 @@ struct NativeEvent {
   int64_t target{0};
   // The pointer address of current target EventTargetInstance object.
   int64_t currentTarget{0};
-  int64_t* props;
-  int64_t  prop_len;
+  int64_t props;
+  int64_t props_len;
+  int64_t alloc_size;
 };
 #else
 // Use pointer instead of int64_t on 64-bit system can help compiler to choose best register for better running

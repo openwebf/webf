@@ -8,6 +8,7 @@
 
 #include <cinttypes>
 #include <set>
+#include <include/dart_api_dl.h>
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "foundation/native_type.h"
@@ -31,7 +32,8 @@ using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_objec
                                               NativeValue* return_value,
                                               NativeValue* method,
                                               int32_t argc,
-                                              NativeValue* argv);
+                                              NativeValue* argv,
+                                              Dart_Handle dart_object);
 
 struct NativeBindingObject : public DartReadable {
   NativeBindingObject() = delete;
@@ -42,7 +44,8 @@ struct NativeBindingObject : public DartReadable {
                                      NativeValue* return_value,
                                      NativeValue* method,
                                      int32_t argc,
-                                     NativeValue* argv);
+                                     NativeValue* argv,
+                                     Dart_Handle dart_object);
 
   bool disposed_{false};
   BindingObject* binding_target_{nullptr};
@@ -93,7 +96,10 @@ class BindingObject : public ScriptWrappable {
   explicit BindingObject(JSContext* ctx);
 
   // Handle call from dart side.
-  virtual NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv);
+  virtual NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                             int32_t argc,
+                                             const NativeValue* argv,
+                                             Dart_Handle dart_object);
   // Invoke methods which implemented at dart side.
   NativeValue InvokeBindingMethod(const AtomicString& method,
                                   int32_t argc,

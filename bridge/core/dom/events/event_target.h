@@ -135,7 +135,10 @@ class EventTarget : public BindingObject {
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
 
-  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 
   void Trace(GCVisitor* visitor) const override;
 
@@ -149,7 +152,7 @@ class EventTarget : public BindingObject {
 
   DispatchEventResult DispatchEventInternal(Event& event, ExceptionState& exception_state);
 
-  NativeValue HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv);
+  NativeValue HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv, Dart_Handle dart_object);
 
   // Subclasses should likely not override these themselves; instead, they
   // should subclass EventTargetWithInlineData.

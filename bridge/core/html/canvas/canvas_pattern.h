@@ -22,7 +22,10 @@ class CanvasPattern : public BindingObject {
 
   void setTransform(DOMMatrix* dom_matrix, ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 };
 
 }  // namespace webf

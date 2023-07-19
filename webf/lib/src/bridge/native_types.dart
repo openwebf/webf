@@ -113,9 +113,9 @@ typedef InvokeBindingsMethodsFromNative = Void Function(Pointer<NativeBindingObj
     Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
 
 typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
+    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv, Handle bindingDartObject);
 typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv);
+    Pointer<NativeValue> return_value, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv, Object bindingDartObject);
 
 class NativeBindingObject extends Struct {
   @Bool()

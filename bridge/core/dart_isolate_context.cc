@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include <set>
 #include "dart_isolate_context.h"
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
@@ -11,6 +12,28 @@
 #include "svg_element_factory.h"
 
 namespace webf {
+
+thread_local std::set<DartWireContext*> alive_wires;
+
+void WatchDartWire(DartWireContext* wire) {
+  alive_wires.emplace(wire);
+}
+
+bool IsDartWireAlive(DartWireContext* wire) {
+  return alive_wires.find(wire) != alive_wires.end();
+}
+
+void DeleteDartWire(DartWireContext* wire) {
+  alive_wires.erase(wire);
+  delete wire;
+}
+
+static void ClearUpWires() {
+  for(auto& wire : alive_wires) {
+    delete wire;
+  }
+  alive_wires.clear();
+}
 
 const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
   if (data_ == nullptr) {
@@ -23,7 +46,7 @@ thread_local JSRuntime* DartIsolateContext::runtime_{nullptr};
 thread_local bool is_name_installed_ = false;
 thread_local int64_t running_isolates_ = 0;
 
-void initializeBuiltInStrings(JSContext* ctx) {
+void InitializeBuiltInStrings(JSContext* ctx) {
   if (!is_name_installed_) {
     names_installer::Init(ctx);
     is_name_installed_ = true;
@@ -59,6 +82,7 @@ DartIsolateContext::~DartIsolateContext() {
     HTMLElementFactory::Dispose();
     SVGElementFactory::Dispose();
     EventFactory::Dispose();
+    ClearUpWires();
     data_.reset();
     JS_FreeRuntime(runtime_);
     runtime_ = nullptr;

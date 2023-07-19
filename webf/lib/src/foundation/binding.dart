@@ -104,7 +104,7 @@ abstract class BindingObject<T> extends Iterable<T> {
 
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
     toNativeValue(method, 'syncPropertiesAndMethods');
-    f(pointer!, returnValue, method, 3, arguments);
+    f(pointer!, returnValue, method, 3, arguments, {});
     malloc.free(arguments);
     return fromNativeValue(returnValue) == true;
   }

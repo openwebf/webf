@@ -65,7 +65,7 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(bindingObject, dispatchEventArguments);
 
     Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
-    f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments);
+    f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments, event);
     Pointer<EventDispatchResult> dispatchResult = fromNativeValue(returnValue).cast<EventDispatchResult>();
     event.cancelable = dispatchResult.ref.canceled;
     event.propagationStopped = dispatchResult.ref.propagationStopped;
