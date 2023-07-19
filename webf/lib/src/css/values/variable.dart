@@ -47,7 +47,11 @@ class CSSVariable {
 
   // Get the lazy calculated CSS resolved value.
   dynamic computedValue(String propertyName) {
-    dynamic value = _renderStyle.getCSSVariable(identifier, propertyName) ?? defaultValue;
+    dynamic value = _renderStyle.getCSSVariable(identifier, propertyName);
+    if (value == null || value == INITIAL) {
+      value = defaultValue;
+    }
+
     if (value == null) {
       return null;
     }

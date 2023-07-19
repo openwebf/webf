@@ -564,6 +564,11 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     final afterValue = afterSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
     return backgroundColor + ' ' + beforeValue + ' / ' + afterValue;
   }
+
+  @override
+  String toString() {
+    return 'ComputedCSSStyleDeclaration($_element)';
+  }
 }
 
 List<T>? _compressSlidesValue<T>(List<T> values) {

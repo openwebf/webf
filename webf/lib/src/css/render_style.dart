@@ -443,6 +443,10 @@ class CSSRenderStyle extends RenderStyle
   dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
     RenderStyle renderStyle = this;
 
+    if (propertyValue == INITIAL) {
+      propertyValue = CSSInitialValues[propertyName] ?? propertyValue;
+    }
+
     // Process CSSVariable.
     dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
