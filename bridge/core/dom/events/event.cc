@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#include <quickjs/quickjs.h>
 #include "event.h"
+#include <quickjs/quickjs.h>
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/executing_context.h"
 #include "event_target.h"
@@ -113,7 +113,7 @@ void Event::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::Exce
 #else
   auto* raw_event_props = raw_event_->props;
 #endif
-  for(int i = 0; i < raw_event_->props_len; i ++) {
+  for (int i = 0; i < raw_event_->props_len; i++) {
     AtomicString key = AtomicString(ctx(), raw_event_props[i].key_atom);
     names.emplace_back(key);
   }
@@ -125,7 +125,7 @@ bool Event::NamedPropertyQuery(const AtomicString& key, ExceptionState& exceptio
 #else
   auto* raw_event_props = raw_event_->props;
 #endif
-  for(int i = 0; i < raw_event_->props_len; i ++) {
+  for (int i = 0; i < raw_event_->props_len; i++) {
     if (key.Impl() == raw_event_props[i].key_atom) {
       return true;
     }
@@ -141,7 +141,7 @@ ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state
 #endif
 
   if (raw_event_props != nullptr) {
-    for(int i = 0; i < raw_event_->props_len; i ++) {
+    for (int i = 0; i < raw_event_->props_len; i++) {
       if (key.Impl() == raw_event_props[i].key_atom) {
         return ScriptValue(ctx(), raw_event_props[i].value, true);
       }
@@ -152,10 +152,10 @@ ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state
 }
 
 void set_event_prop(EventProp* prop,
-                           Event* event,
-                           const AtomicString& key,
-                           const ScriptValue& value,
-                           ExceptionState& exception_state) {
+                    Event* event,
+                    const AtomicString& key,
+                    const ScriptValue& value,
+                    ExceptionState& exception_state) {
   event->customized_event_props_.emplace_back(value);
   prop->key_atom = key.Impl();
   prop->value = value.ToNative(exception_state, true);
@@ -165,7 +165,7 @@ void set_event_prop(EventProp* prop,
 
 bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::ExceptionState& exception_state) {
   if (raw_event_->props == 0x00) {
-    auto* event_props = (EventProp*) js_malloc_rt(runtime(), sizeof(EventProp) * DEFAULT_EVENT_PROP_LEN);
+    auto* event_props = (EventProp*)js_malloc_rt(runtime(), sizeof(EventProp) * DEFAULT_EVENT_PROP_LEN);
     set_event_prop(event_props, this, key, value, exception_state);
 #if ANDROID_32_BIT
     raw_event_->props = reinterpret_cast<int64_t>(event_props);
@@ -183,7 +183,7 @@ bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::Exc
     auto* raw_event_props = raw_event_->props;
 #endif
 
-    for(int i = 0; i < raw_event_->props_len; i ++) {
+    for (int i = 0; i < raw_event_->props_len; i++) {
       if (raw_event_props[i].key_atom == key.Impl()) {
         prop_index = i;
         break;
@@ -193,9 +193,9 @@ bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::Exc
     bool need_expand = prop_index + 1 > raw_event_->alloc_size;
     if (need_expand) {
       size_t new_size = std::max(raw_event_->alloc_size * 9 / 2, raw_event_->props_len + 1);
-      raw_event_props = (EventProp*) js_realloc(ctx(), raw_event_props, sizeof(EventProp) * new_size);
+      raw_event_props = (EventProp*)js_realloc(ctx(), raw_event_props, sizeof(EventProp) * new_size);
 #if ANDROID_32_BIT
-      raw_event_->props = (int64_t) raw_event_props;
+      raw_event_->props = (int64_t)raw_event_props;
 #else
       raw_event_->props = raw_event_props;
 #endif
@@ -216,9 +216,9 @@ bool Event::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exce
 #else
   auto* raw_event_props = raw_event_->props;
 #endif
-  for (int i = 0; i < raw_event_->props_len; i ++) {
+  for (int i = 0; i < raw_event_->props_len; i++) {
     if (raw_event_props[i].key_atom == key.Impl()) {
-      for(int j = i + 1; j < raw_event_->props_len; j ++) {
+      for (int j = i + 1; j < raw_event_->props_len; j++) {
         memcpy(&raw_event_props[j - 1], &raw_event_props[j], sizeof(EventProp));
       }
       memset(&raw_event_props[raw_event_->props_len - 1], 0x00, sizeof(EventProp));
@@ -336,7 +336,7 @@ void Event::SetHandlingPassive(PassiveMode mode) {
 void Event::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(target_);
   visitor->TraceMember(current_target_);
-  for (auto& prop: customized_event_props_) {
+  for (auto& prop : customized_event_props_) {
     prop.Trace(visitor);
   }
 }
