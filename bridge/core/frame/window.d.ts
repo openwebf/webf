@@ -34,6 +34,8 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
 
   readonly scrollX: DartImpl<double>;
   readonly scrollY: DartImpl<double>;
+  readonly pageXOffset: DartImpl<double>;
+  readonly pageYOffset: DartImpl<double>;
   readonly devicePixelRatio: DartImpl<double>;
   readonly colorScheme: DartImpl<string>;
   readonly innerWidth: DartImpl<double>;
