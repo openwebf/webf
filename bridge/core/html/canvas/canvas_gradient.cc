@@ -9,7 +9,10 @@ namespace webf {
 CanvasGradient::CanvasGradient(ExecutingContext* context, NativeBindingObject* native_binding_object)
     : BindingObject(context->ctx(), native_binding_object) {}
 
-NativeValue CanvasGradient::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
+NativeValue CanvasGradient::HandleCallFromDartSide(const AtomicString& method,
+                                                   int32_t argc,
+                                                   const NativeValue* argv,
+                                                   Dart_Handle dart_object) {
   return Native_NewNull();
 }
 

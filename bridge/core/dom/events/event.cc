@@ -108,15 +108,25 @@ void Event::SetCurrentTarget(EventTarget* target) {
 }
 
 void Event::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::ExceptionState&) {
+#if ANDROID_32_BIT
+  auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+  auto* raw_event_props = raw_event_->props;
+#endif
   for(int i = 0; i < raw_event_->props_len; i ++) {
-    AtomicString key = AtomicString(ctx(), raw_event_->props[i].key_atom);
+    AtomicString key = AtomicString(ctx(), raw_event_props[i].key_atom);
     names.emplace_back(key);
   }
 }
 
 bool Event::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+#if ANDROID_32_BIT
+  auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+  auto* raw_event_props = raw_event_->props;
+#endif
   for(int i = 0; i < raw_event_->props_len; i ++) {
-    if (key.Impl() == raw_event_->props[i].key_atom) {
+    if (key.Impl() == raw_event_props[i].key_atom) {
       return true;
     }
   }
@@ -124,10 +134,16 @@ bool Event::NamedPropertyQuery(const AtomicString& key, ExceptionState& exceptio
 }
 
 ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state) {
-  if (raw_event_->props != nullptr) {
+#if ANDROID_32_BIT
+  auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+  auto* raw_event_props = raw_event_->props;
+#endif
+
+  if (raw_event_props != nullptr) {
     for(int i = 0; i < raw_event_->props_len; i ++) {
-      if (key.Impl() == raw_event_->props[i].key_atom) {
-        return ScriptValue(ctx(), raw_event_->props[i].value, true);
+      if (key.Impl() == raw_event_props[i].key_atom) {
+        return ScriptValue(ctx(), raw_event_props[i].value, true);
       }
     }
   }
@@ -148,33 +164,64 @@ void set_event_prop(EventProp* prop,
 #define DEFAULT_EVENT_PROP_LEN 2
 
 bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::ExceptionState& exception_state) {
-  if (raw_event_->props == nullptr) {
+  if (raw_event_->props == 0x00) {
     auto* event_props = (EventProp*) js_malloc_rt(runtime(), sizeof(EventProp) * DEFAULT_EVENT_PROP_LEN);
     set_event_prop(event_props, this, key, value, exception_state);
+#if ANDROID_32_BIT
+    raw_event_->props = reinterpret_cast<int64_t>(event_props);
+#else
     raw_event_->props = event_props;
+#endif
+
     raw_event_->props_len = 1;
     raw_event_->alloc_size = DEFAULT_EVENT_PROP_LEN;
   } else {
-    bool need_expand = raw_event_->props_len + 1 > raw_event_->alloc_size;
+    int64_t prop_index = raw_event_->props_len;
+#if ANDROID_32_BIT
+    auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+    auto* raw_event_props = raw_event_->props;
+#endif
+
+    for(int i = 0; i < raw_event_->props_len; i ++) {
+      if (raw_event_props[i].key_atom == key.Impl()) {
+        prop_index = i;
+        break;
+      }
+    }
+
+    bool need_expand = prop_index + 1 > raw_event_->alloc_size;
     if (need_expand) {
       size_t new_size = std::max(raw_event_->alloc_size * 9 / 2, raw_event_->props_len + 1);
-      raw_event_->props = (EventProp*) js_realloc(ctx(), raw_event_->props, sizeof(EventProp) * new_size);
+      raw_event_props = (EventProp*) js_realloc(ctx(), raw_event_props, sizeof(EventProp) * new_size);
+#if ANDROID_32_BIT
+      raw_event_->props = (int64_t) raw_event_props;
+#else
+      raw_event_->props = raw_event_props;
+#endif
       raw_event_->alloc_size = new_size;
     }
-    set_event_prop(&(raw_event_->props[raw_event_->props_len]), this, key, value, exception_state);
-    raw_event_->props_len = raw_event_->props_len + 1;
+    set_event_prop(&(raw_event_props[prop_index]), this, key, value, exception_state);
+    if (prop_index == raw_event_->props_len) {
+      raw_event_->props_len = raw_event_->props_len + 1;
+    }
   }
 
   return true;
 }
 
 bool Event::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+#if ANDROID_32_BIT
+  auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+  auto* raw_event_props = raw_event_->props;
+#endif
   for (int i = 0; i < raw_event_->props_len; i ++) {
-    if (raw_event_->props[i].key_atom == key.Impl()) {
+    if (raw_event_props[i].key_atom == key.Impl()) {
       for(int j = i + 1; j < raw_event_->props_len; j ++) {
-        memcpy(&raw_event_->props[j - 1], &raw_event_->props[j], sizeof(EventProp));
+        memcpy(&raw_event_props[j - 1], &raw_event_props[j], sizeof(EventProp));
       }
-      memset(&raw_event_->props[raw_event_->props_len - 1], 0x00, sizeof(EventProp));
+      memset(&raw_event_props[raw_event_->props_len - 1], 0x00, sizeof(EventProp));
       raw_event_->props_len--;
       return true;
     }

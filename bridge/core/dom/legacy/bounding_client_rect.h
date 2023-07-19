@@ -23,7 +23,10 @@ class BoundingClientRect : public BindingObject {
   static BoundingClientRect* Create(ExecutingContext* context, NativeBindingObject* native_binding_object);
   explicit BoundingClientRect(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 
   double x() const { return x_; }
   double y() const { return y_; }

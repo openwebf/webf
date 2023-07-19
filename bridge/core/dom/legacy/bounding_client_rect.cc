@@ -17,7 +17,8 @@ BoundingClientRect::BoundingClientRect(ExecutingContext* context, NativeBindingO
 
 NativeValue BoundingClientRect::HandleCallFromDartSide(const AtomicString& method,
                                                        int32_t argc,
-                                                       const NativeValue* argv) {
+                                                       const NativeValue* argv,
+                                                       Dart_Handle dart_object) {
   return Native_NewNull();
 }
 

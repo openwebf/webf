@@ -6,6 +6,7 @@
 #define WEBF_DART_CONTEXT_H_
 
 #include <set>
+#include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
 #include "dart_methods.h"
 
@@ -14,7 +15,15 @@ namespace webf {
 class WebFPage;
 class DartIsolateContext;
 
-void initializeBuiltInStrings(JSContext* ctx);
+struct DartWireContext {
+  ScriptValue jsObject;
+};
+
+void InitializeBuiltInStrings(JSContext* ctx);
+
+void WatchDartWire(DartWireContext* wire);
+bool IsDartWireAlive(DartWireContext* wire);
+void DeleteDartWire(DartWireContext* wire);
 
 // DartIsolateContext has a 1:1 correspondence with a dart isolates.
 class DartIsolateContext {

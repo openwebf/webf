@@ -21,7 +21,10 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   CanvasRenderingContext2D() = delete;
   explicit CanvasRenderingContext2D(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
   CanvasGradient* createLinearGradient(double x0,
                                        double y0,
                                        double x1,
