@@ -108,6 +108,8 @@ void Event::SetCurrentTarget(EventTarget* target) {
 }
 
 void Event::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::ExceptionState&) {
+  if (raw_event_ == nullptr) return;
+
 #if ANDROID_32_BIT
   auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
 #else
@@ -120,6 +122,8 @@ void Event::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::Exce
 }
 
 bool Event::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+  if (raw_event_ == nullptr) return false;
+
 #if ANDROID_32_BIT
   auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
 #else
@@ -134,6 +138,8 @@ bool Event::NamedPropertyQuery(const AtomicString& key, ExceptionState& exceptio
 }
 
 ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state) {
+  if (raw_event_ == nullptr) return ScriptValue::Empty(ctx());
+
 #if ANDROID_32_BIT
   auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
 #else
@@ -164,6 +170,8 @@ void set_event_prop(EventProp* prop,
 #define DEFAULT_EVENT_PROP_LEN 2
 
 bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::ExceptionState& exception_state) {
+  if (raw_event_ == nullptr) return false;
+
   if (raw_event_->props == 0x00) {
     auto* event_props = (EventProp*)js_malloc_rt(runtime(), sizeof(EventProp) * DEFAULT_EVENT_PROP_LEN);
     set_event_prop(event_props, this, key, value, exception_state);
@@ -211,6 +219,8 @@ bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::Exc
 }
 
 bool Event::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  if (raw_event_ == nullptr) return false;
+
 #if ANDROID_32_BIT
   auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
 #else

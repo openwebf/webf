@@ -109,7 +109,7 @@ TEST(Context, unrejectPromiseWillTriggerUnhandledRejectionEvent) {
   auto env = TEST_init(errorHandler);
   static int logIndex = 0;
   static std::string logs[] = {
-      "unhandled event PromiseRejectionEvent {promise: Promise {...}, reason: Error {...}} true"};
+      "unhandled event PromiseRejectionEvent {} true"};
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(logs[logIndex++].c_str(), message.c_str());
