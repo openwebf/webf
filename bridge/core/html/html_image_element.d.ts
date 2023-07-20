@@ -11,7 +11,7 @@ interface HTMLImageElement extends HTMLElement {
     readonly naturalWidth: DartImpl<int64>;
     readonly naturalHeight: DartImpl<int64>;
     readonly complete: DartImpl<boolean>;
-    readonly currentSrc: DartImpl<boolean>;
+    readonly currentSrc: DartImpl<string>;
     decoding: DartImpl<string>;
     fetchPriority: DartImpl<string>;
     loading: DartImpl<string>;
