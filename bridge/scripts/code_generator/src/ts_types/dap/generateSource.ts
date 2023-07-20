@@ -138,13 +138,13 @@ function getTypeName(type: ParameterType) {
 function generatePropParser(prop: PropsDeclaration, externalInitialize: string[], info: DAPInfoCollector): string | null {
   function wrapOptional(code: string) {
     function generateUnInitializeValue(): string {
-      if (prop.type[0] === FunctionArgumentType.dom_string) {
+      if (prop.type.value === FunctionArgumentType.dom_string) {
         callCode = `args->${prop.name} = NULL;`;
-      } else if (prop.type[0] === FunctionArgumentType.double) {
+      } else if (prop.type.value === FunctionArgumentType.double) {
         callCode = `args->${prop.name} = 0.0;`;
-      } else if (prop.type[0] === FunctionArgumentType.int64) {
+      } else if (prop.type.value === FunctionArgumentType.int64) {
         callCode = `args->${prop.name} = 0;`
-      } else if (prop.type[0] === FunctionArgumentType.boolean) {
+      } else if (prop.type.value === FunctionArgumentType.boolean) {
         callCode = `args->${prop.name} = 0;`
       } else {
         callCode = `args->${prop.name} = NULL;`;
@@ -161,16 +161,8 @@ function generatePropParser(prop: PropsDeclaration, externalInitialize: string[]
 
   const typeKind = getTypeKind(prop.type);
   let callCode = '';
-  if (prop.type[0] === FunctionArgumentType.dom_string) {
-    callCode = `args->${prop.name} = get_property_string_copy(ctx, arguments, "${prop.name}");`;
-  } else if (prop.type[0] === FunctionArgumentType.double) {
-    callCode = `args->${prop.name} = get_property_float64(ctx, arguments, "${prop.name}");`;
-  } else if (prop.type[0] === FunctionArgumentType.int64) {
-    callCode = `args->${prop.name} = get_property_int64(ctx, arguments, "${prop.name}");`
-  } else if (prop.type[0] === FunctionArgumentType.boolean) {
-    callCode = `args->${prop.name} = get_property_boolean(ctx, arguments, "${prop.name}");`
-  } else {
-    let targetTypes = Array.from(info.others).find(o => o.name === prop.type[0]);
+  if (typeKind === PropTypeKind.normal || typeKind === PropTypeKind.normalArray) {
+    const isArray = prop.type.isArray;
 
     let value = prop.type.value;
     if (isArray) {
@@ -212,9 +204,9 @@ function generatePropParser(prop: PropsDeclaration, externalInitialize: string[]
 
 function generateMemberInit(prop: PropsDeclaration, externalInitialize: string[], info: DAPInfoCollector): string {
   let initCode = '';
-  if (prop.type[0] === FunctionArgumentType.boolean) {
+  if (prop.type.value === FunctionArgumentType.boolean) {
     initCode = `body->${prop.name} = 0;`;
-  } else if (prop.type[0] === FunctionArgumentType.int64 || prop.type[0] === FunctionArgumentType.double) {
+  } else if (prop.type.value === FunctionArgumentType.int64 || prop.type.value === FunctionArgumentType.double) {
     initCode = `body->${prop.name} = 0;`;
   } else {
     initCode = `body->${prop.name} = NULL;`;
@@ -225,10 +217,9 @@ function generateMemberInit(prop: PropsDeclaration, externalInitialize: string[]
   return initCode;
 }
 
-function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, externalInitialize: string[], info: DAPInfoCollector): string {
-  function wrapIf(code: string) {
-    if (prop.type[0] === FunctionArgumentType.dom_string || typeof prop.type[0] === 'string') {
-      return `if (${bodyName}->${prop.name} != NULL) {
+function wrapIf(code: string, expression: string, type: ParameterType) {
+  if (type.value === FunctionArgumentType.dom_string || typeof type.value === 'string') {
+    return `if (${expression} != NULL) {
   ${code}
 }`;
   } else if (type.value === FunctionArgumentType.double || type.value === FunctionArgumentType.int64) {
@@ -242,13 +233,13 @@ function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, e
 function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, externalInitialize: string[], info: DAPInfoCollector): string {
 
   function generateQuickJSInitFromType(type: ParameterType) {
-    if (type === FunctionArgumentType.double) {
+    if (type.value === FunctionArgumentType.double) {
       return `JS_NewFloat64`;
-    } else if (type === FunctionArgumentType.dom_string) {
+    } else if (type.value === FunctionArgumentType.dom_string) {
       return `JS_NewString`;
-    } else if (type === FunctionArgumentType.int64) {
+    } else if (type.value === FunctionArgumentType.int64) {
       return `JS_NewInt64`;
-    } else if (type === FunctionArgumentType.boolean) {
+    } else if (type.value === FunctionArgumentType.boolean) {
       return `JS_NewBool`;
     } else {
       let targetTypes = Array.from(info.others).find(o => o.name === type.value);
@@ -262,33 +253,42 @@ function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, e
 
   function genCallCode(type: ParameterType, prop: PropsDeclaration) {
     let callCode = '';
-    if (type === FunctionArgumentType.int64) {
+    if (type.value === FunctionArgumentType.int64) {
       callCode = `JS_SetPropertyStr(ctx, object, "${prop.name}", ${generateQuickJSInitFromType(type)}(ctx, ${bodyName}->${prop.name}));`;
-    } else if (type === FunctionArgumentType.boolean) {
+    } else if (type.value === FunctionArgumentType.boolean) {
       callCode = `JS_SetPropertyStr(ctx, object, "${prop.name}", ${generateQuickJSInitFromType(type)}(ctx, ${bodyName}->${prop.name}));`;
-    } else if (type === FunctionArgumentType.dom_string) {
+    } else if (type.value === FunctionArgumentType.dom_string) {
       callCode = `JS_SetPropertyStr(ctx, object, "${prop.name}", ${generateQuickJSInitFromType(type)}(ctx, ${bodyName}->${prop.name}));`;
-    } else if (type === FunctionArgumentType.double) {
+    } else if (type.value === FunctionArgumentType.double) {
       callCode = `JS_SetPropertyStr(ctx, object, "${prop.name}", ${generateQuickJSInitFromType(type)}(ctx, ${bodyName}->${prop.name}));`;
     } else {
-      if (type === FunctionArgumentType.array) {
+      if (type.isArray) {
+        let isReference = typeof (prop.type.value as ParameterType).value === 'string';
+        let arrCallCode = `JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type.value as ParameterType)}(ctx, ${isReference ? '&' : ''}${bodyName}->${prop.name}[i]));`;
+        const typeKind = getTypeKind(type);
+        if (prop.optional && typeKind === PropTypeKind.normalArray) {
+          arrCallCode = `if (${bodyName}->${prop.name} != NULL) {
+            ${arrCallCode}
+          }`;
+        }
+
         callCode = `JSValue arr = JS_NewArray(ctx);
 for(int i = 0; i < ${bodyName}->${prop.name}Len; i ++) {
   ${arrCallCode}
 }
 JS_SetPropertyStr(ctx, object, "${prop.name}", arr);`
       } else {
-        let targetTypes = Array.from(info.others).find(o => o.name === type);
+        let targetTypes = Array.from(info.others).find(o => o.name === type.value);
         if (targetTypes) {
           generateTypeStringify(targetTypes, prop.name, info, externalInitialize);
-          callCode = `JS_SetPropertyStr(ctx, object, "${prop.name}", stringify_property_${type}(ctx, ${bodyName}->${prop.name}));`
+          callCode = `JS_SetPropertyStr(ctx, object, "${prop.name}", stringify_property_${type.value}(ctx, ${bodyName}->${prop.name}));`
         }
       }
     }
     return callCode;
   }
 
-  let callCode = genCallCode(prop.type[0], prop);
+  let callCode = genCallCode(prop.type, prop);
 
   return addIndent(prop.optional ? wrapIf(callCode, `${bodyName}->${prop.name}`, prop.type) : callCode, 2);
 }

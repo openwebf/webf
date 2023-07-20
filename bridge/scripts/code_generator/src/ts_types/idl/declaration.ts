@@ -1,4 +1,4 @@
-import {ParameterBaseType, ParameterType} from "../analyzer";
+import {ParameterType} from "../analyzer";
 
 export enum FunctionArgumentType {
   // Basic types

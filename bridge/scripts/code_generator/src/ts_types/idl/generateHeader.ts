@@ -12,13 +12,13 @@ import {
   isTypeHaveNull
 } from "./generateSource";
 import {GenerateOptions} from "./generator";
-import {ParameterType} from "./analyzer";
 import {
   generateUnionConstructor,
   generateUnionContentType, generateUnionMemberName, generateUnionMemberType, generateUnionPropertyHeaders,
   generateUnionTypeClassName,
   generateUnionTypeFileName
 } from "./generateUnionTypes";
+import {ParameterType} from "../analyzer";
 
 export enum TemplateKind {
   globalFunction,

@@ -1,4 +1,3 @@
-import {ParameterType} from "./analyzer";
 import {FunctionArgumentType} from "./declaration";
 import _ from "lodash";
 import {generateUnionTypeHeader} from "./generateHeader";
@@ -9,6 +8,7 @@ import {
   isTypeHaveNull, isUnionType,
   trimNullTypeFromType
 } from "./generateSource";
+import {ParameterType} from "../analyzer";
 
 export function generateUnionTypeFileName(unionType: ParameterType[]) {
   let filename = 'qjs_union';

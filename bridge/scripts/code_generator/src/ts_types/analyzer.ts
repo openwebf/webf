@@ -11,8 +11,8 @@ import {
   ParameterMode,
   PropsDeclaration,
 } from './idl/declaration';
-import {isUnionType} from "./idl/generateSource";
 import {TemplateType} from "./types";
+import {isUnionType} from "./idl/generateSource";
 
 interface DefinedPropertyCollector {
   properties: Set<string>;
@@ -24,7 +24,6 @@ export interface UnionTypeCollector {
   types: Set<ParameterType[]>;
 }
 
-export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
 export interface DAPInfoCollector {
   requests: Set<ClassObject>;
   events: Set<ClassObject>;
@@ -34,10 +33,10 @@ export interface DAPInfoCollector {
   others: Set<ClassObject>;
 }
 
-export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, type: TemplateType, dapInfoCollector: DAPInfoCollector) {
+export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector, templateType: TemplateType, dapInfoCollector: DAPInfoCollector) {
   let code = blob.raw;
   const sourceFile = ts.createSourceFile(blob.source, blob.raw, ScriptTarget.ES2020);
-  blob.objects = sourceFile.statements.map(statement => walkProgram(blob, statement, definedPropertyCollector, unionTypeCollector, dapInfoCollector)).filter(o => {
+  blob.objects = sourceFile.statements.map(statement => walkProgram(blob, statement, definedPropertyCollector, unionTypeCollector, templateType, dapInfoCollector)).filter(o => {
     return o instanceof ClassObject || o instanceof FunctionObject;
   }) as (FunctionObject | ClassObject)[];
 }

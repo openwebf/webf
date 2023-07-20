@@ -69,6 +69,8 @@ abstract class DevToolsService {
     return _contextDevToolMap[contextId];
   }
 
+  bool debuggerAttached = false;
+
   /// Used for debugger inspector.
   UIInspector? _uiInspector;
   UIInspector? get uiInspector => _uiInspector;

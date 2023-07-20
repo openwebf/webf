@@ -33,7 +33,8 @@ class InspectorServerInit {
 
 class InspectorServerConnect {
   final String url;
-  InspectorServerConnect(this.url);
+  final int jsContextAddress;
+  InspectorServerConnect(this.jsContextAddress, this.url);
 }
 
 class InspectorClientConnected {}

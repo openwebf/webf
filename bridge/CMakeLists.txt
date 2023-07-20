@@ -38,10 +38,6 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
-if (${ENABLE_DEBUGGER})
-  add_definitions(-DENABLE_DEBUGGER=1)
-endif()
-
 if(NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
     include(CheckIPOSupported)
@@ -51,6 +47,10 @@ if(NOT MSVC)
       add_compile_options(-flto)
     endif()
   endif()
+endif()
+
+if (${ENABLE_DEBUGGER})
+  add_definitions(-DENABLE_DEBUGGER=1)
 endif()
 
 list(APPEND WEBF_PUBLIC_HEADERS
@@ -105,7 +105,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_value.cc
   foundation/native_type.cc
   foundation/ui_command_buffer.cc
-  polyfill/dist/polyfill.cc
+  polyfill/dist/polyfill.c
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
@@ -145,10 +145,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     OUTPUT_VARIABLE QUICKJS_VERSION
   )
 
-  add_library(modb STATIC
-    third_party/modp_b64/modp_b64.cc
-  )
-
   if (NOT MSVC)
     list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
   endif()
@@ -167,12 +163,15 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/gc.c
     third_party/quickjs/src/core/malloc.c
     third_party/quickjs/src/core/shape.c
+    third_party/quickjs/out/dap_converter.c
+    third_party/quickjs/out/dap_protocol.cc
+    third_party/quickjs/out/sourcemap.c
+    third_party/quickjs/src/core/debugger.c
     third_party/quickjs/src/core/parser.c
     third_party/quickjs/src/core/convertion.c
     third_party/quickjs/src/core/runtime.c
     third_party/quickjs/src/core/module.c
     third_party/quickjs/src/core/ic.c
-    third_party/quickjs/src/core/debugger.c
     third_party/quickjs/src/core/builtins/js-array.c
     third_party/quickjs/src/core/builtins/js-async-function.c
     third_party/quickjs/src/core/builtins/js-async-generator.c
@@ -219,7 +218,11 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     target_link_libraries(quickjs mimalloc-static)
   endif()
 
+  target_link_libraries(quickjs modb)
+
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+  target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/out)
+  target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
 
   if (MSVC)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)

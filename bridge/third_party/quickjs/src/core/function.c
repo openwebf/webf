@@ -222,7 +222,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
   JSObject* p;
   JSFunctionBytecode* b;
   JSStackFrame sf_s, *sf = &sf_s;
-  uint8_t* pc;
+  const uint8_t* pc;
   int opcode, arg_allocated_size, i;
   JSValue *local_buf, *stack_buf, *var_buf, *arg_buf, *sp, ret_val, *pval;
   JSVarRef** var_refs;

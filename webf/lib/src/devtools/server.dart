@@ -50,23 +50,13 @@ typedef DartAttachDebugger = Pointer<Void> Function(Pointer<Void> jsContext, Poi
 void serverIsolateEntryPoint(SendPort isolateToMainStream) {
   ReceivePort mainToIsolateStream = ReceivePort();
   isolateToMainStream.send(mainToIsolateStream.sendPort);
-  IsolateInspectorServer? server;
-
+  IsolateInspector? inspector;
   // Callbacks when receive data from main thread.
   mainToIsolateStream.listen((data) {
-    // Init the dev server
-    if (data is InspectorServerInit) {
-      server = IsolateInspectorServer(data.port, data.address, data.bundleURL);
-      server!._isolateToMainStream = isolateToMainStream;
-      server!.onStarted = () {
-        // Tell the main thread the dev server started.
-        isolateToMainStream.send(InspectorServerStart(server!.port));
-      };
-      // Receive message from Chrome DevTools.
-      server!.onChromeDevToolsMessage = (Map<String, dynamic>? frontEndMessage) {
-        int? id = frontEndMessage!['id'];
-        String _method = frontEndMessage['method'];
-        Map<String, dynamic>? params = frontEndMessage['params'];
+    handleChromeDevToolsMessage(Map<String, dynamic>? frontEndMessage) {
+      int? id = frontEndMessage!['id'];
+      String _method = frontEndMessage['method'];
+      Map<String, dynamic>? params = frontEndMessage['params'];
 
       List<String> moduleMethod = _method.split('.');
       String module = moduleMethod[0];
@@ -93,29 +83,31 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
 
     // Init the dev server
     if (data is InspectorServerInit) {
-      IsolateInspectorServer server = IsolateInspectorServer(data.port, data.address, data.bundleURL);
+      IsolateInspectorServer server = IsolateInspectorServer(data.port, data.address, data.bundleURL, data.jsContextAddr);
       server.onStarted = () {
         // Tell the main thread the dev server started.
         isolateToMainStream.send(InspectorServerStart(server.port));
       };
+      // Receive message from Chrome DevTools.
+      server.onChromeDevToolsMessage = handleChromeDevToolsMessage;
       // Receive message from WebF VSCode extension.
-      server!.onVsCodeExtensionMessage = (Map<String, dynamic>? message) {
-        if (message != null) {
-          server!.sendDapMessageToDebugger(message);
-        }
-        print('trigger debugger attached');
-        server!.triggerDebuggerAttachedEvent();
+      server.onVsCodeExtensionMessage = handleVsCodeExtensionMessage;
+      server.start();
+      inspector = server;
+    } else if (data is InspectorServerConnect) {
+      IsolateInspectorClient client = IsolateInspectorClient(data.url, data.jsContextAddress);
+      client.onStarted = () {
+        isolateToMainStream.send(InspectorClientConnected());
       };
-      server!.start();
-      IsolateInspectorServer.attachDebugger(Pointer.fromAddress(data.JSContextAddress), server!.debuggerMethods, server!);
-      server!.readDebuggerBackendMessage();
-    } else if (server != null && server!.connected) {
+      client.onChromeDevToolsMessage = handleChromeDevToolsMessage;
+      client.onVsCodeExtensionMessage = handleVsCodeExtensionMessage;
+      client.start();
+      inspector = client;
+    } else if (inspector != null && inspector!.connected) {
       if (data is InspectorEvent) {
-        server!.sendEventToChromeDevTools(data);
+        inspector!.sendEventToFrontend(data);
       } else if (data is InspectorMethodResult) {
-        server!.sendMessageToChromeDevTools(data.id, data.result);
-      } else if (data is InspectorReload) {
-        // attachInspector(data.contextId);
+        inspector!.sendToFrontend(data.id, data.result);
       }
     }
   });
@@ -128,20 +120,15 @@ enum ConnectionClientKind {
   chromeDevTools
 }
 
-class IsolateInspectorServer {
-  // Maps between debuggerContext and IsolateInspectorServers
-  static final Map<Pointer<Void>, IsolateInspectorServer> _isolateServerMap = {};
-
-  static void attachDebugger(Pointer<Void> JSContext, Pointer<JavaScriptDebuggerMethods> debuggerMethods, IsolateInspectorServer server) {
-    final DartAttachDebugger _attachInspector =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAttachDebugger>>('attachDebugger').asFunction();
-    server.debuggerContext = _attachInspector(JSContext, debuggerMethods);
-    _isolateServerMap[server.debuggerContext] = server;
+class IsolateInspector {
+  static void attachDebugger(Pointer<Void> JSContext, Pointer<JavaScriptDebuggerMethods> debuggerMethods, IsolateInspector inspector) {
+    final DartAttachDebugger _attachInspector = WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAttachDebugger>>('attachDebugger').asFunction();
+    inspector.debuggerContext = _attachInspector(JSContext, debuggerMethods);
   }
 
   ConnectionClientKind? clientKind;
 
-  static void _initDebuggerMethods(IsolateInspectorServer server, Pointer<JavaScriptDebuggerMethods> debuggerMethods) {
+  static void _initDebuggerMethods(IsolateInspector inspector, Pointer<JavaScriptDebuggerMethods> debuggerMethods) {
     // Set to nullptr and waiting for debugger backend to rewrite this methods.
     debuggerMethods.ref.writeFrontEndCommands = nullptr;
     debuggerMethods.ref.readBackendCommands = nullptr;
@@ -152,17 +139,13 @@ class IsolateInspectorServer {
 
   }
 
-  IsolateInspectorServer(this.port, this.address, this.bundleURL) {
+  IsolateInspector(this.jsContextAddress) {
     _initDebuggerMethods(this, debuggerMethods);
   }
 
   bool _disposed = false;
 
-  // final Inspector inspector;
-  final String address;
-  final String bundleURL;
-  int port;
-
+  int jsContextAddress;
   VoidCallback? onStarted;
   MessageCallback? onChromeDevToolsMessage;
   MessageCallback? onVsCodeExtensionMessage;
@@ -173,12 +156,11 @@ class IsolateInspectorServer {
   Pointer<JavaScriptDebuggerMethods> debuggerMethods = malloc.allocate(sizeOf<JavaScriptDebuggerMethods>());
   Pointer<Void> debuggerContext = nullptr;
 
-  late HttpServer _httpServer;
-  WebSocket? _ws;
-
-  WebSocket? get ws => _ws;
-
   final Map<String, IsolateInspectorModule> moduleRegistrar = {};
+
+  WebSocket? _ws;
+  WebSocket? get ws => _ws;
+  bool get connected => false;
 
   void messageRouter(int? id, String module, String method, Map<String, dynamic>? params) {
     if (moduleRegistrar.containsKey(module)) {
@@ -189,6 +171,8 @@ class IsolateInspectorServer {
   // The JavaScript Debugger only accept DAP protocol debug messages.
   void sendDapMessageToDebugger(Map<String, dynamic> message) {
     assert(debuggerContext != nullptr);
+
+    print('send message to debugger: $message');
 
     // Write commands to Debugger Backend.
     DartDebuggerWriteFrontEndCommands fn = debuggerMethods.ref.writeFrontEndCommands.asFunction();
@@ -218,7 +202,6 @@ class IsolateInspectorServer {
         return;
       }
       String str = message.ref.buffer.toDartString(length: message.ref.length);
-      print('backend $str');
       if (_ws != null) {
         if (clientKind == ConnectionClientKind.vscode) {
           _ws?.add(str);
@@ -247,9 +230,82 @@ class IsolateInspectorServer {
     moduleRegistrar[module.name] = module;
   }
 
-  void triggerDebuggerAttachedEvent() {
-    isolateToMainStream!.send(DebuggerAttachedEvent());
+  void sendToFrontend(int? id, Map? result) {
+    if (clientKind == ConnectionClientKind.chromeDevTools) {
+      String data = jsonEncode({
+        if (id != null) 'id': id,
+        // Give an empty object for response.
+        'result': result ?? {},
+      });
+      _ws?.add(data);
+    }
   }
+
+  void sendEventToFrontend(InspectorEvent event) {
+    if (clientKind == ConnectionClientKind.chromeDevTools) {
+      _ws?.add(jsonEncode(event));
+    }
+  }
+
+  void dispose() async {
+    onVsCodeExtensionMessage = null;
+    onChromeDevToolsMessage = null;
+  }
+
+  Map<String, dynamic>? _parseMessage(message) {
+    try {
+      Map<String, dynamic>? data = jsonDecode(message);
+      return data;
+    } catch (err) {
+      print('Error while decoding frontend message: $message');
+      rethrow;
+    }
+  }
+
+  void sendMessageToChromeDevTools(int? id, Map? result) {
+    if (clientKind == ConnectionClientKind.chromeDevTools) {
+      String data = jsonEncode({
+        if (id != null) 'id': id,
+        // Give an empty object for response.
+        'result': result ?? {},
+      });
+      _ws?.add(data);
+    }
+  }
+
+  void sendEventToChromeDevTools(InspectorEvent event) {
+    if (clientKind == ConnectionClientKind.chromeDevTools) {
+      _ws?.add(jsonEncode(event));
+    }
+  }
+
+  void onWebSocketRequest(message) {
+    if (message is String) {
+      Map<String, dynamic>? data = _parseMessage(message);
+      print('receive data: $data');
+      // Handle messages from WebF Vscode plugin.
+      if (data != null && data['vscode'] && onVsCodeExtensionMessage != null) {
+        clientKind = ConnectionClientKind.vscode;
+        onVsCodeExtensionMessage!(data['data']);
+        // Handle message from Chrome DevTools.
+      } else if (onChromeDevToolsMessage != null) {
+        onChromeDevToolsMessage!(data);
+        clientKind = ConnectionClientKind.chromeDevTools;
+      }
+    }
+  }
+}
+
+class IsolateInspectorServer extends IsolateInspector {
+  IsolateInspectorServer(this.port, this.address, this.bundleURL, super.jsContextAddress);
+
+  // final Inspector inspector;
+  final String address;
+  final String bundleURL;
+  int port;
+
+  VoidCallback? onStarted;
+  late HttpServer _httpServer;
 
   /// InspectServer has connected frontend.
   @override
@@ -285,7 +341,6 @@ class IsolateInspectorServer {
       if (WebSocketTransformer.isUpgradeRequest(request)) {
         WebSocketTransformer.upgrade(request, compression: CompressionOptions.compressionOff)
             .then((WebSocket webSocket) {
-              print('upgraded to websocket ');
           _ws = webSocket;
           webSocket.listen(onWebSocketRequest, onDone: () {
             _ws = null;
@@ -298,49 +353,6 @@ class IsolateInspectorServer {
         onHTTPRequest(request);
       }
     });
-  }
-
-  void sendMessageToChromeDevTools(int? id, Map? result) {
-    if (clientKind == ConnectionClientKind.chromeDevTools) {
-      String data = jsonEncode({
-        if (id != null) 'id': id,
-        // Give an empty object for response.
-        'result': result ?? {},
-      });
-      _ws?.add(data);
-    }
-  }
-
-  void sendEventToChromeDevTools(InspectorEvent event) {
-    if (clientKind == ConnectionClientKind.chromeDevTools) {
-      _ws?.add(jsonEncode(event));
-    }
-  }
-
-  Map<String, dynamic>? _parseMessage(message) {
-    try {
-      Map<String, dynamic>? data = jsonDecode(message);
-      return data;
-    } catch (err) {
-      print('Error while decoding frontend message: $message');
-      rethrow;
-    }
-  }
-
-  void onWebSocketRequest(message) {
-    if (message is String) {
-      Map<String, dynamic>? data = _parseMessage(message);
-      print('data: $data');
-      // Handle messages from WebF Vscode plugin.
-      if (data != null && data['vscode'] && onVsCodeExtensionMessage != null) {
-        clientKind = ConnectionClientKind.vscode;
-        onVsCodeExtensionMessage!(data['data']);
-        // Handle message from Chrome DevTools.
-      } else if (onChromeDevToolsMessage != null) {
-        onChromeDevToolsMessage!(data);
-        clientKind = ConnectionClientKind.chromeDevTools;
-      }
-    }
   }
 
   Future<void> onHTTPRequest(HttpRequest request) async {
@@ -435,7 +447,6 @@ class IsolateInspectorServer {
     onStarted = null;
     onChromeDevToolsMessage = null;
     onVsCodeExtensionMessage = null;
-    _isolateServerMap.remove(debuggerContext);
 
     await _ws?.close();
     await _httpServer.close();

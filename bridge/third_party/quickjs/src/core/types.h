@@ -244,7 +244,6 @@ struct JSRuntime {
 #endif
     void *user_opaque;
     JSRuntimeState state;
-
 #if ENABLE_DEBUGGER
     JSDebuggerInfo debugger_info;
 #endif

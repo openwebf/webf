@@ -230,7 +230,7 @@ interface Response {
    * state.
    * etc.
    */
-  message?: 'cancelled' | 'notStopped' | string;
+  message?: string;
 
   /**
    * Contains request result if success is true and error details if success is

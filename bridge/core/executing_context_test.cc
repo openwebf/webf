@@ -365,6 +365,6 @@ TEST(ContextData, constructorName) {
   };
   auto bridge = TEST_init(errorHandler);
   const char* code = "console.assert(Object.getPrototypeOf(window).constructor.name === 'Window')";
-  bridge->evaluateScript(code, strlen(code), "file://", 0);
+  bridge->page()->evaluateScript(code, strlen(code), "file://", 0);
   EXPECT_EQ(errorHandlerExecuted, false);
 }

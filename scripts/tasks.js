@@ -510,8 +510,6 @@ task('build-linux-webf-lib', (done) => {
   const soBinaryDirectory = path.join(paths.bridge, `build/linux/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-linux');
 
-  let externCmakeArgs = [];
-
   if (!process.env.DISABLE_JAVASCRIPT_DEBUGGER) {
     externCmakeArgs.push('-DENABLE_DEBUGGER=true');
   }
@@ -576,7 +574,15 @@ task('generate-bindings-code', (done) => {
     return done(buildResult.status);
   }
 
-  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../out'], {
+  spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../out', '--type', 'idl'], {
+    cwd: paths.codeGen,
+    env: {
+      ...process.env,
+    },
+    stdio: 'inherit'
+  });
+
+  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../third_party/quickjs', '-d', '../../third_party/quickjs/out', '--type', 'dap'], {
     cwd: paths.codeGen,
     env: {
       ...process.env,

@@ -11,9 +11,9 @@ function readDAPTemplate(name: string) {
 }
 
 
-export function generateDAPMembersTypes(type: ParameterType[], mode: ParameterMode, typeName: string): string {
+export function generateDAPMembersTypes(type: ParameterType, mode: ParameterMode, typeName: string): string {
   function generateCTypeFromType(t: ParameterType) {
-    switch (t) {
+    switch (t.value) {
       case FunctionArgumentType.int64: {
         return 'int64_t';
       }
@@ -33,21 +33,17 @@ export function generateDAPMembersTypes(type: ParameterType[], mode: ParameterMo
     return '';
   }
 
-  let isNormalType = generateCTypeFromType(type[0]);
+  let isNormalType = generateCTypeFromType(type);
   if (isNormalType) {
     return isNormalType;
   }
 
-  if (typeof type[0] == 'string') {
+  if (typeof type.value == 'string') {
     if (mode.keyword) {
       return 'const char*';
     }
 
     return 'struct ' + type.value + '*';
-  }
-
-  if (type.length > 1) {
-    return `size_t ${typeName}Len;\n ${generateCTypeFromType(type[1])}*`
   }
 
   if (type.isArray) {
