@@ -348,9 +348,9 @@ NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method,
                                                 int32_t argc,
                                                 const NativeValue* argv,
                                                 Dart_Handle dart_object) {
-   if (!isContextValid(contextId()))
-      return Native_NewNull();
-   MemberMutationScope mutation_scope{GetExecutingContext()};
+  if (!isContextValid(contextId()))
+    return Native_NewNull();
+  MemberMutationScope mutation_scope{GetExecutingContext()};
 
   if (method == binding_call_methods::kdispatchEvent) {
     return HandleDispatchEventFromDart(argc, argv, dart_object);
