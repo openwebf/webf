@@ -24,7 +24,10 @@ class FileStorage implements Storage {
   Future<void> delete(String key) async {
     final file = File('$_curDir$key');
     if (file.existsSync()) {
-      await file.delete(recursive: true);
+      try {
+        await file.delete(recursive: true);
+      } catch(e) {
+      }
     }
   }
 
@@ -32,20 +35,29 @@ class FileStorage implements Storage {
   void deleteSync(String key) {
     final file = File('$_curDir$key');
     if (file.existsSync()) {
-      file.deleteSync(recursive: true);
+      try {
+        file.deleteSync(recursive: true);
+      } catch(e) {
+      }
     }
   }
 
   @override
   Future<void> deleteAll(List<String> keys) async {
-    await Directory(_curDir!).delete(recursive: true);
+    try {
+      await Directory(_curDir!).delete(recursive: true);
+    } catch(e) {
+    }
   }
 
   @override
   void deleteAllSync(List<String> keys) {
     Directory dir = Directory(_curDir!);
     if (dir.existsSync()) {
-      dir.deleteSync(recursive: true);
+      try {
+        dir.deleteSync(recursive: true);
+      } catch(e) {
+      }
     }
   }
 
