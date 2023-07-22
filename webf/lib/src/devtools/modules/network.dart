@@ -4,6 +4,7 @@
  */
 
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -52,6 +53,14 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
               // True, if content was sent as base64.
               'base64Encoded': false,
             }));
+        break;
+
+      case 'setAttachDebugStack':
+        sendToFrontend(id, JSONEncodableMap({}));
+        break;
+
+      case 'clearAcceptedEncodingsOverride':
+        sendToFrontend(id, JSONEncodableMap({}));
         break;
     }
   }
@@ -154,17 +163,31 @@ class NetworkRequestWillBeSentEvent extends InspectorEvent {
         'request': {
           'url': url,
           'method': requestMethod,
-          'headers': headers,
+          'headers': {
+            'Referer': headers['referer']?.join(),
+            'User-Agent': headers['user-agent']?.join(),
+            'Content-Type': headers['content-type']?.join() ?? 'application/json',
+          },
           'initialPriority': 'Medium',
           'referrerPolicy': '',
+
+          // 'hasPostData': true,
+          // 'postData': '',
+          // 'mixedContentType': 'none',
+          // 'isSameSite': false
         },
         'timestamp': timestamp,
+        'wallTime': timestamp,
         'initiator': {
           'type': 'script',
           'lineNumber': 0,
           'columnNumber': 0,
         },
         'redirectHasExtraInfo': false,
+        // 'type': 'XHR',
+        // 'hasUserGesture': false,
+        //
+        // 'frameId': '',
       });
 }
 
@@ -214,7 +237,11 @@ class NetworkResponseReceivedEvent extends InspectorEvent {
           'url': url,
           'status': status,
           'statusText': statusText,
-          'headers': headers,
+          'headers': {
+            'Referer': headers['referer']?.join(),
+            'User-Agent': headers['user-agent']?.join(),
+            'Content-Type': headers['content-type']?.join() ?? 'application/json',
+          },
           'mimeType': mimeType,
           'connectionReused': false,
           'connectionId': 0,
@@ -244,6 +271,159 @@ class NetworkLoadingFinishedEvent extends InspectorEvent {
         'requestId': requestId,
         'timestamp': timestamp,
         'encodedDataLength': contentLength,
+      });
+}
+
+//TODO:[answer] 补全其他的事件
+/// Network.requestWillBeSentExtraInfo
+/// Network.responseReceivedExtraInfo
+/// Network.dataReceived
+/// Network.resourceChangedPriority
+/// Network.loadNetworkResource
+/// Network.requestServedFromCache
+///
+
+class NetworkRequestWillBeSendExtraInfo extends InspectorEvent {
+  final Array associatedCookies;
+  final Map<String, dynamic> clientSecurityState;
+  final Map<String, dynamic> connectTiming;
+  final Map<String, String> headers;
+  final String requestId;
+  final String siteHasCookieInOtherPartition;
+
+  NetworkRequestWillBeSendExtraInfo({
+    required this.associatedCookies,
+    required this.clientSecurityState,
+    required this.connectTiming,
+    required this.headers,
+    required this.siteHasCookieInOtherPartition,
+    required this.requestId,
+  });
+
+  @override
+  String get method => 'Network.requestWillBeSentExtraInfo';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'associatedCookies': associatedCookies,
+        'clientSecurityState': clientSecurityState,
+        'connectTiming': connectTiming,
+        'headers': headers,
+        'requestId': requestId,
+        'siteHasCookieInOtherPartition': siteHasCookieInOtherPartition,
+      });
+}
+
+class NetworkResponseReceivedExtraInfo extends InspectorEvent {
+  final Map<String, dynamic> blockedCookies;
+  final String cookiePartitionKey;
+  final Bool cookiePartitionKeyOpaque;
+  final Map<String, dynamic> headers;
+  final String requestId;
+  final Map<String, dynamic> resourceIPAddressSpace;
+  final int statusCode;
+
+  NetworkResponseReceivedExtraInfo({
+    required this.blockedCookies,
+    required this.cookiePartitionKey,
+    required this.cookiePartitionKeyOpaque,
+    required this.headers,
+    required this.requestId,
+    required this.resourceIPAddressSpace,
+    required this.statusCode,
+  });
+
+  @override
+  String get method => 'Network.responseReceivedExtraInfo';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'blockedCookies': blockedCookies,
+        'cookiePartitionKey': cookiePartitionKey,
+        'cookiePartitionKeyOpaque': false,
+        'headers': {
+          'Referer': headers['referer']?.join(),
+          'User-Agent': headers['user-agent']?.join(),
+          'Content-Type': headers['content-type']?.join() ?? 'application/json',
+        },
+        'requestId': requestId,
+        'resourceIPAddressSpace': resourceIPAddressSpace,
+        'statusCode': 204,
+      });
+}
+
+class NetworkDataReceived extends InspectorEvent {
+  final int dataLength;
+  final int encodedDataLength;
+  final String requestId;
+  final int timestamp;
+
+  NetworkDataReceived({
+    required this.dataLength,
+    required this.encodedDataLength,
+    required this.requestId,
+    required this.timestamp,
+  });
+
+  @override
+  String get method => 'Network.dataReceived';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'dataLength': dataLength,
+        'encodedDataLength': encodedDataLength,
+        'requestId': requestId,
+        'timestamp': timestamp,
+      });
+}
+
+class NetworkResourceChangedPriority extends InspectorEvent {
+  final String requestId;
+  final String newPriority;
+  final int timestamp;
+
+  NetworkResourceChangedPriority({
+    required this.requestId,
+    required this.newPriority,
+    required this.timestamp,
+  });
+
+  @override
+  String get method => 'Network.resourceChangedPriority';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'requestId': requestId,
+        'newPriority': newPriority,
+        'timestamp': timestamp,
+      });
+}
+
+class NetworkLoadNetworkResource extends InspectorEvent {
+  final Map<String, dynamic> resource;
+
+  NetworkLoadNetworkResource({required this.resource});
+
+  @override
+  String get method => 'Network.loadNetworkResource';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'resource': resource,
+      });
+}
+
+class NetworkRequestServedFromCache extends InspectorEvent {
+  final String requestId;
+
+  NetworkRequestServedFromCache({required this.requestId});
+
+  @override
+  String get method => 'Network.requestServedFromCache';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'requestId': requestId,
       });
 }
 
