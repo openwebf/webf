@@ -56,7 +56,7 @@ abstract class IsolateInspectorModule extends _InspectorModule {
 
   @override
   void sendToFrontend(int? id, JSONEncodable? result) {
-    print('send to front end $id $result');
+    // print('send to front end $id $result');
     server.sendToFrontend(id, result?.toJson());
   }
 
