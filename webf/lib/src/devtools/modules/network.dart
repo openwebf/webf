@@ -93,7 +93,7 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
       requestId: requestId,
       loaderId: devtoolsService.controller!.view.contextId.toString(),
       url: request.uri.toString(),
-      headers: _getHttpHeaders(request.headers),
+      headers: _getHttpHeaders(response.headers),
       status: response.statusCode,
       statusText: response.reasonPhrase,
       mimeType: response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain',
@@ -168,11 +168,7 @@ class NetworkRequestWillBeSentEvent extends InspectorEvent {
         'request': {
           'url': url,
           'method': requestMethod,
-          'headers': {
-            'Referer': headers['referer']?.join(),
-            'User-Agent': headers['user-agent']?.join(),
-            'Content-Type': headers['content-type']?.join() ?? 'application/json',
-          },
+          'headers': headers.map((key, value) => MapEntry(key, value.join(''))),
           'initialPriority': 'Medium',
           'referrerPolicy': '',
 
@@ -242,11 +238,7 @@ class NetworkResponseReceivedEvent extends InspectorEvent {
           'url': url,
           'status': status,
           'statusText': statusText,
-          'headers': {
-            'Referer': headers['referer']?.join(),
-            'User-Agent': headers['user-agent']?.join(),
-            'Content-Type': headers['content-type']?.join() ?? 'application/json',
-          },
+          'headers': headers.map((key, value) => MapEntry(key, value.join(''))),
           'mimeType': mimeType,
           'connectionReused': false,
           'connectionId': 0,
@@ -292,7 +284,7 @@ class NetworkRequestWillBeSendExtraInfo extends InspectorEvent {
   final Array associatedCookies;
   final Map<String, dynamic> clientSecurityState;
   final Map<String, dynamic> connectTiming;
-  final Map<String, String> headers;
+  final Map<String, List<String>> headers;
   final String requestId;
   final String siteHasCookieInOtherPartition;
 
@@ -313,7 +305,7 @@ class NetworkRequestWillBeSendExtraInfo extends InspectorEvent {
         'associatedCookies': associatedCookies,
         'clientSecurityState': clientSecurityState,
         'connectTiming': connectTiming,
-        'headers': headers,
+        'headers': headers.map((key, value) => MapEntry(key, value.join(''))),
         'requestId': requestId,
         'siteHasCookieInOtherPartition': siteHasCookieInOtherPartition,
       });
@@ -323,7 +315,7 @@ class NetworkResponseReceivedExtraInfo extends InspectorEvent {
   final Map<String, dynamic> blockedCookies;
   final String cookiePartitionKey;
   final Bool cookiePartitionKeyOpaque;
-  final Map<String, dynamic> headers;
+  final Map<String, List<String>> headers;
   final String requestId;
   final Map<String, dynamic> resourceIPAddressSpace;
   final int statusCode;
@@ -346,11 +338,7 @@ class NetworkResponseReceivedExtraInfo extends InspectorEvent {
         'blockedCookies': blockedCookies,
         'cookiePartitionKey': cookiePartitionKey,
         'cookiePartitionKeyOpaque': false,
-        'headers': {
-          'Referer': headers['referer']?.join(),
-          'User-Agent': headers['user-agent']?.join(),
-          'Content-Type': headers['content-type']?.join() ?? 'application/json',
-        },
+        'headers': headers.map((key, value) => MapEntry(key, value.join(''))),
         'requestId': requestId,
         'resourceIPAddressSpace': resourceIPAddressSpace,
         'statusCode': 204,
