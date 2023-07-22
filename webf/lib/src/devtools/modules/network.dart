@@ -67,6 +67,8 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
 
   @override
   Future<HttpClientRequest?> beforeRequest(HttpClientRequest request) {
+    List<int> data = List<int>.from((request as ProxyHttpClientRequest)?.data ?? []);
+
     sendEventToFrontend(NetworkRequestWillBeSentEvent(
       requestId: _getRequestId(request),
       loaderId: devtoolsService.controller!.view.contextId.toString(),
@@ -74,6 +76,7 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
       url: request.uri.toString(),
       headers: _getHttpHeaders(request.headers),
       timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) ~/ 1000,
+      data: data,
     ));
     HttpClientInterceptor? customHttpClientInterceptor = _customHttpClientInterceptor;
     if (customHttpClientInterceptor != null) {
@@ -142,6 +145,7 @@ class NetworkRequestWillBeSentEvent extends InspectorEvent {
   final String requestMethod;
   final Map<String, List<String>> headers;
   final int timestamp;
+  final List<int> data;
 
   NetworkRequestWillBeSentEvent({
     required this.requestId,
@@ -150,6 +154,7 @@ class NetworkRequestWillBeSentEvent extends InspectorEvent {
     required this.url,
     required this.headers,
     required this.timestamp,
+    required this.data,
   });
 
   @override
@@ -171,8 +176,8 @@ class NetworkRequestWillBeSentEvent extends InspectorEvent {
           'initialPriority': 'Medium',
           'referrerPolicy': '',
 
-          // 'hasPostData': true,
-          // 'postData': '',
+          'hasPostData': data.isNotEmpty,
+          'postData': String.fromCharCodes(data),
           // 'mixedContentType': 'none',
           // 'isSameSite': false
         },
