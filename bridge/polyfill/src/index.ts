@@ -15,6 +15,7 @@ import { asyncStorage } from './async-storage';
 import { URLSearchParams } from './url-search-params';
 import { URL } from './url';
 import { webf } from './webf';
+import { ResizeObserver } from './resize-observer';
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -30,6 +31,7 @@ defineGlobalProperty('asyncStorage', asyncStorage);
 defineGlobalProperty('URLSearchParams', URLSearchParams);
 defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
+defineGlobalProperty('ResizeObserver', ResizeObserver);
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {
