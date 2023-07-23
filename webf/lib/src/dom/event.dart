@@ -154,7 +154,7 @@ mixin ElementEventMixin on ElementBase {
   }
 
   void handleResizeChange(ResizeObserverEntry entry) {
-    dispatchEvent(ResizeEvent(entry));
+    dispatchEvent(ResizeEvent(entry).toCustomEvent());
   }
 }
 
@@ -487,6 +487,9 @@ class DisappearEvent extends Event {
 class ResizeEvent extends Event {
   ResizeObserverEntry entry;
   ResizeEvent(this.entry):super(EVENT_RESIZE);
+  toCustomEvent() {
+    return CustomEvent(EVENT_RESIZE,detail: entry.toJson());
+  }
 }
 
 class ColorSchemeChangeEvent extends Event {
