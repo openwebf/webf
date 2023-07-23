@@ -28,6 +28,7 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
 
   final HttpCacheMode _httpCacheOriginalMode = HttpCacheController.mode;
   final int _initialTimestamp = DateTime.now().millisecondsSinceEpoch;
+
   // RequestId to data buffer.
   final Map<String, Uint8List> _responseBuffers = {};
 
@@ -67,7 +68,7 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
 
   @override
   Future<HttpClientRequest?> beforeRequest(HttpClientRequest request) {
-    List<int> data = List<int>.from((request as ProxyHttpClientRequest)?.data ?? []);
+    List<int> data = List<int>.from((request as ProxyHttpClientRequest).data ?? []);
 
     sendEventToFrontend(NetworkRequestWillBeSentEvent(
       requestId: _getRequestId(request),
@@ -78,6 +79,29 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
       timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) ~/ 1000,
       data: data,
     ));
+
+    Map<String, List<String>> extraHeaders = {
+      ':authority': [request.uri.authority],
+      ':method': [request.method],
+      ':path': [request.uri.path],
+      ':scheme': [request.uri.scheme],
+    };
+    sendEventToFrontend(NetworkRequestWillBeSendExtraInfo(
+          associatedCookies: [],
+          clientSecurityState: {
+          'initiatorIsSecureContext': true,
+          'initiatorIPAddressSpace': 'Local',
+          'privateNetworkRequestPolicy': 'PreflightWarn'
+        },
+        connectTiming: {
+          'requestTime': 100000
+        },
+        headers: {
+          ..._getHttpHeaders(request.headers),
+          ...extraHeaders
+        },
+        siteHasCookieInOtherPartition: false,
+        requestId: _getRequestId(request)));
     HttpClientInterceptor? customHttpClientInterceptor = _customHttpClientInterceptor;
     if (customHttpClientInterceptor != null) {
       return customHttpClientInterceptor.beforeRequest(request);
@@ -281,12 +305,12 @@ class NetworkLoadingFinishedEvent extends InspectorEvent {
 ///
 
 class NetworkRequestWillBeSendExtraInfo extends InspectorEvent {
-  final Array associatedCookies;
+  final List associatedCookies;
   final Map<String, dynamic> clientSecurityState;
   final Map<String, dynamic> connectTiming;
   final Map<String, List<String>> headers;
   final String requestId;
-  final String siteHasCookieInOtherPartition;
+  final bool siteHasCookieInOtherPartition;
 
   NetworkRequestWillBeSendExtraInfo({
     required this.associatedCookies,
