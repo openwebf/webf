@@ -273,4 +273,27 @@ describe('Display block in inline', () => {
 
     await snapshot(container);
   });
+
+  it('percentage box inside of inline-block elements', async () => {
+    const container = createElement('div', {
+      style: {
+        width: '50px'
+      }
+    }, [
+      createElement('div', {
+        style: {
+          display: 'inline-block'
+        }
+      }, [
+        createElement('img', {
+          src: 'assets/green15x15.png',
+          style: {
+            width: '50%'
+          }
+        })
+      ])
+    ]);
+    document.body.appendChild(container);
+    await snapshot();
+  });
 });
