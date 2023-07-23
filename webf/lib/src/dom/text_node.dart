@@ -110,6 +110,11 @@ class TextNode extends CharacterData {
     }
   }
 
+  @override
+  String toString() {
+    return 'TextNode($hashCode)';
+  }
+
   // Detach renderObject of current node from parent
   @override
   void unmountRenderObject({bool deep = false, bool keepFixedAlive = false}) {
