@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:convert';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 
@@ -25,7 +26,7 @@ mixin ResizeObserverMixin on RenderBox {
   }
 
   void removeResizeListener(ResizeChangeCallback callback) {
-    if( _listeners != null && _listeners!.contains(callback)) {
+    if (_listeners != null && _listeners!.contains(callback)) {
       _listeners!.remove(callback);
     }
   }
@@ -63,11 +64,7 @@ mixin ResizeObserverMixin on RenderBox {
 }
 
 class ResizeObserverEntry {
-  ResizeObserverEntry(
-      {Size? borderBoxSize,
-      Size? contentBoxSize,
-      Size? devicePixelContentBoxSize,
-      Size? contentRect})
+  ResizeObserverEntry({Size? borderBoxSize, Size? contentBoxSize, Size? devicePixelContentBoxSize, Size? contentRect})
       : borderBoxSize = borderBoxSize ?? Size.zero,
         contentBoxSize = contentBoxSize ?? Size.zero,
         devicePixelContentBoxSize = devicePixelContentBoxSize ?? Size.zero,
@@ -77,4 +74,12 @@ class ResizeObserverEntry {
   final Size devicePixelContentBoxSize;
   final Size contentRect;
   late EventTarget target;
+
+  String toJson() {
+    return jsonEncode({
+      'borderBoxSize': borderBoxSize,
+      'contentBoxSize': contentBoxSize,
+      'contentRect': contentRect,
+    });
+  }
 }
