@@ -1102,9 +1102,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
-    // Node.insertBefore will change element tree structure,
-    // so get the referenceIndex before calling it.
-    // int referenceIndex = childNodes.indexOf(referenceNode);
+    Node? originalPreviousSibling = referenceNode.previousSibling;
     Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
     if (child is Element) {
@@ -1113,13 +1111,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     if (isRendererAttached) {
       // If afterRenderObject is null, which means insert child at the head of parent.
-      RenderBox? afterRenderObject = referenceNode.previousSibling?.renderer;
+      RenderBox? afterRenderObject = originalPreviousSibling?.renderer;
 
       // Only append child renderer when which is not attached.
       if (!child.isRendererAttached) {
         // Found the most closed
         if (afterRenderObject == null) {
-          Node? ref = referenceNode.previousSibling;
+          Node? ref = originalPreviousSibling?.previousSibling;
           while (ref != null && afterRenderObject == null) {
             afterRenderObject = ref.renderer;
             ref = ref.previousSibling;
