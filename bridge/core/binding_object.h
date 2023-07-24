@@ -9,7 +9,6 @@
 #include <include/dart_api_dl.h>
 #include <cinttypes>
 #include <set>
-#include <include/dart_api_dl.h>
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "foundation/native_type.h"
