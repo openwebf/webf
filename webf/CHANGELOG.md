@@ -1,3 +1,15 @@
+## 0.14.2-beta.2+1
+
+**Bug Fixed**
+
+1. fix: fix percentage width and height not working under inline block box. https://github.com/openwebf/webf/pull/430
+2. fix: fix Node.insertBefore with SVGElement error. https://github.com/openwebf/webf/pull/431
+3. fix: fix cookie delete file error when it's not available. https://github.com/openwebf/webf/pull/429
+
+**Features**
+
+1. feat: optimize location API for better performance results. https://github.com/openwebf/webf/pull/420
+
 ## 0.14.2-beta.2
 
 **Features**
