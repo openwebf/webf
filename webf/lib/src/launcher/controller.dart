@@ -920,7 +920,13 @@ class WebFController {
     return historyModule.stackTop?.url;
   }
 
+  Uri? get _uri {
+    HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+    return historyModule.stackTop?.resolvedUri;
+  }
+
   String get url => _url ?? '';
+  Uri? get uri => _uri;
 
   _addHistory(WebFBundle bundle) {
     HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;

@@ -86,6 +86,11 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
   WebFViewController currentView = controller.view;
   dynamic result;
 
+  Stopwatch? stopwatch;
+  if (isEnabledLog) {
+    stopwatch = Stopwatch()..start();
+  }
+
   try {
     Future<dynamic> invokeModuleCallback({String? error, data}) {
       Completer<dynamic> completer = Completer();
@@ -107,7 +112,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
 
         var returnValue = fromNativeValue(callbackResult);
         if (isEnabledLog) {
-          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: $returnValue');
+          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: ${returnValue} time: ${stopwatch!.elapsedMicroseconds}us');
         }
 
         malloc.free(callbackResult);
@@ -127,7 +132,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
   }
 
   if (isEnabledLog) {
-    print('Invoke module name: $moduleName method: $method, params: $params return: $result');
+    print('Invoke module name: $moduleName method: $method, params: $params return: $result time: ${stopwatch!.elapsedMicroseconds}us');
   }
 
   return result;
