@@ -4,7 +4,8 @@
  */
 
 import 'dart:ui';
-
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -64,7 +65,7 @@ class CSSLengthValue {
   }
 
   String cssText() {
-    switch(type) {
+    switch (type) {
       case CSSLengthType.PX:
       case CSSLengthType.EM:
         return '${computedValue.cssText()}px';
@@ -72,7 +73,7 @@ class CSSLengthValue {
         return '${value?.cssText()}rem';
       case CSSLengthType.VH:
         return '${value?.cssText()}vh';
-     case CSSLengthType.VW:
+      case CSSLengthType.VW:
         return '${value?.cssText()}vw';
       case CSSLengthType.VMIN:
         return '${value?.cssText()}vmin';
@@ -105,6 +106,16 @@ class CSSLengthValue {
   RenderStyle? renderStyle;
   String? propertyName;
   double? _computedValue;
+
+  static bool _isPercentageRelativeContainer(RenderBoxModel containerRenderBox) {
+    CSSRenderStyle renderStyle = containerRenderBox.renderStyle;
+    bool isBlockLevelBox =
+        renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
+    bool isBlockInlineHaveSize = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
+            renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
+        renderStyle.width.value != null;
+    return isBlockLevelBox || isBlockInlineHaveSize;
+  }
 
   // Note return value of double.infinity means the value is resolved as the initial value
   // which can not be computed to a specific value, eg. percentage height is sometimes parsed
@@ -175,14 +186,18 @@ class CSSLengthValue {
         RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
-        RenderStyle? parentRenderStyle;
-        if (renderBoxModel?.parent is RenderBoxModel) {
-          RenderBoxModel parentRenderBoxModel = renderBoxModel?.parent as RenderBoxModel;
-          // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
-          // content box is only a fraction of the complete renderStyle.
-          parentRenderStyle = parentRenderBoxModel.isScrollingContentBox
-              ? (parentRenderBoxModel.parent as RenderBoxModel).renderStyle
-              : parentRenderBoxModel.renderStyle;
+        AbstractNode? containerRenderBox = renderBoxModel?.parent;
+        CSSRenderStyle? parentRenderStyle;
+        while (containerRenderBox != null) {
+          if (containerRenderBox is RenderBoxModel && (_isPercentageRelativeContainer(containerRenderBox))) {
+            // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
+            // content box is only a fraction of the complete renderStyle.
+            parentRenderStyle = containerRenderBox.isScrollingContentBox
+                ? (containerRenderBox.parent as RenderBoxModel).renderStyle
+                : containerRenderBox.renderStyle;
+            break;
+          }
+          containerRenderBox = containerRenderBox.parent;
         }
 
         // Percentage relative width priority: logical width > renderer width
@@ -382,9 +397,7 @@ class CSSLengthValue {
           case RY:
             final target = renderStyle!.target;
             if (target is SVGElement) {
-              final viewBox = target
-                  .findRoot()
-                  ?.viewBox;
+              final viewBox = target.findRoot()?.viewBox;
               if (viewBox != null) {
                 _computedValue = viewBox.height * value!;
               }
@@ -574,7 +587,8 @@ class CSSLength {
       return CSSLengthValue.initial;
     } else if (text == INHERIT) {
       if (renderStyle != null && propertyName != null && renderStyle.target.parentElement != null) {
-        return parseLength(renderStyle.target.parentElement!.style.getPropertyValue(propertyName), renderStyle, propertyName, axisType);
+        return parseLength(renderStyle.target.parentElement!.style.getPropertyValue(propertyName), renderStyle,
+            propertyName, axisType);
       }
       return CSSLengthValue.zero;
     } else if (text == AUTO) {
@@ -631,7 +645,6 @@ class CSSLength {
       if (value != null) value = value / 100;
       unit = CSSLengthType.PERCENTAGE;
     } else if (CSSFunction.isFunction(text)) {
-
       if (renderStyle != null) {
         CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', text);
         if (calcValue != null) {
