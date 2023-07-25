@@ -5,13 +5,13 @@
 
 #include <utility>
 
+#include "core/dom/comment.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/text.h"
 #include "element_namespace_uris.h"
 #include "foundation/logging.h"
 #include "html_parser.h"
-#include "core/dom/comment.h"
 
 namespace webf {
 
@@ -111,7 +111,6 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
             root_container->appendChild(comment, ASSERT_NO_EXCEPTION());
           }
         }
-
       }
     }
   }
