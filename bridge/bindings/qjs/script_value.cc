@@ -75,7 +75,7 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
       auto* ptr = static_cast<NativeBindingObject*>(native_value.u.ptr);
       auto pointer_type = static_cast<JSPointerType>(native_value.uint32);
 
-      switch(pointer_type) {
+      switch (pointer_type) {
         case JSPointerType::NativeBindingObject: {
           auto* binding_object = BindingObject::From(ptr);
           // Only eventTarget can be converted from nativeValue to JSValue.
@@ -96,9 +96,7 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
 }
 
 ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value)
-    : ctx_(ctx),
-      runtime_(JS_GetRuntime(ctx)),
-      value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
+    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);

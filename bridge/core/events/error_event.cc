@@ -43,7 +43,7 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
       source_location_(
           std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString(ctx()) : "",
                                            initializer->hasLineno() ? initializer->lineno() : 0,
-                                           initializer->hasColno() ? initializer->colno(): 0)) {}
+                                           initializer->hasColno() ? initializer->colno() : 0)) {}
 
 bool ErrorEvent::IsErrorEvent() const {
   return true;
