@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+
+.demo > * {
+  width: 250px;
+  height: 200px;
+  padding: 1em;
+}
+
+.demo > * + * {
+  margin-top: -150px;
+  opacity: 0.75;
+}
+
+.demo > :first-child {
+  background: aliceblue;
+  border: 12px solid red;
+  z-index: 4;
+}
+
+.demo > :nth-child(2) {
+  background: pink;
+  border: 2px solid blue;
+  margin-left: 50px;
+  z-index: 1;
+}
+
+.demo > :last-child {
+  background: #0000ff;
+  border: 2px solid gold;
+  z-index: 4;
+  margin-left: 25px;
+}
+
+.emptyStyle:empty {
+  background: #ff0000;
+  height: 50px;
+  width: 300px;
+}
+    </style>
+</head>
+
+<body class="emptyStyle">
+  <p>p</p>
+  <p class="emptyStyle"></p>
+  <p>p1</p>
+  <p class="emptyStyle"> </p>
+  <p>h1</p>
+  <h1 class="emptyStyle"> </h1>
+  <p>h2</p>
+  <h2 class="emptyStyle"></h2>
+  <p>h3</p>
+  <p>h4</p>
+  <div class="emptyStyle" id="debug"></div>
+  <div class="empty" id="debug1">xx</div>
+  <div class="emptyStyle" id="debug"> </div>
+  <div class="empty" id="debug1">xx11</div>
+  <div class="emptyStyle" id="debug"><!-- xx --></div>
+  <div class="empty" id="debug1">xx22</div>
+  <p class="emptyStyle" id="debug"></p>
+  <div class="empty" id="debug1">xx33</div>
+</body>
+</html>
