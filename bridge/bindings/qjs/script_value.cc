@@ -21,7 +21,7 @@
 
 namespace webf {
 
-static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value, bool any_js_object) {
+static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value) {
   switch (native_value.tag) {
     case NativeTag::TAG_STRING: {
       std::unique_ptr<AutoFreeNativeString> string{static_cast<AutoFreeNativeString*>(native_value.u.ptr)};
@@ -60,7 +60,7 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
       JSValue array = JS_NewArray(context->ctx());
       JS_SetPropertyStr(context->ctx(), array, "length", Converter<IDLInt64>::ToValue(context->ctx(), length));
       for (int i = 0; i < length; i++) {
-        JSValue value = FromNativeValue(context, arr[i], any_js_object);
+        JSValue value = FromNativeValue(context, arr[i]);
         JS_SetPropertyInt64(context->ctx(), array, i, value);
       }
       return array;
@@ -73,28 +73,32 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
     }
     case NativeTag::TAG_POINTER: {
       auto* ptr = static_cast<NativeBindingObject*>(native_value.u.ptr);
-      if (any_js_object) {
-        return JS_DupValue(context->ctx(), JS_MKPTR(JS_TAG_OBJECT, ptr));
+      auto pointer_type = static_cast<JSPointerType>(native_value.uint32);
+
+      switch(pointer_type) {
+        case JSPointerType::NativeBindingObject: {
+          auto* binding_object = BindingObject::From(ptr);
+          // Only eventTarget can be converted from nativeValue to JSValue.
+          auto* event_target = DynamicTo<EventTarget>(binding_object);
+          if (event_target) {
+            return event_target->ToQuickJS();
+          }
+          break;
+        }
+        case JSPointerType::Others: {
+          return JS_DupValue(context->ctx(), JS_MKPTR(JS_TAG_OBJECT, ptr));
+        }
       }
-
-      auto* binding_object = BindingObject::From(ptr);
-
-      // Only eventTarget can be converted from nativeValue to JSValue.
-      auto* event_target = DynamicTo<EventTarget>(binding_object);
-      if (event_target) {
-        return event_target->ToQuickJS();
-      }
-
       return JS_NULL;
     }
   }
   return JS_NULL;
 }
 
-ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value, bool any_js_object)
+ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value)
     : ctx_(ctx),
       runtime_(JS_GetRuntime(ctx)),
-      value_(FromNativeValue(ExecutingContext::From(ctx), native_value, any_js_object)) {}
+      value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);
@@ -203,11 +207,11 @@ NativeValue ScriptValue::ToNative(ExceptionState& exception_state, bool shared_j
       } else if (JS_IsObject(value_)) {
         if (QJSEventTarget::HasInstance(ExecutingContext::From(ctx_), value_)) {
           auto* event_target = toScriptWrappable<EventTarget>(value_);
-          return Native_NewPtr(JSPointerType::Others, event_target->bindingObject());
+          return Native_NewPtr(JSPointerType::NativeBindingObject, event_target->bindingObject());
         }
 
         if (shared_js_value) {
-          return NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(JS_VALUE_GET_PTR(value_));
+          return Native_NewPtr(JSPointerType::Others, JS_VALUE_GET_PTR(value_));
         }
 
         return NativeValueConverter<NativeTypeJSON>::ToNativeValue(*this, exception_state);

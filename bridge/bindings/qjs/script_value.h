@@ -44,7 +44,7 @@ class ScriptValue final {
   explicit ScriptValue(JSContext* ctx, double v)
       : ctx_(ctx), value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
   explicit ScriptValue(JSContext* ctx) : ctx_(ctx), runtime_(JS_GetRuntime(ctx)){};
-  explicit ScriptValue(JSContext* ctx, const NativeValue& native_value, bool any_js_object = false);
+  explicit ScriptValue(JSContext* ctx, const NativeValue& native_value);
   ScriptValue() = default;
 
   // Copy and assignment

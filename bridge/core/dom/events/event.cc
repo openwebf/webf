@@ -152,7 +152,7 @@ ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state
   if (raw_event_props != nullptr) {
     for (int i = 0; i < raw_event_->props_len; i++) {
       if (key.Impl() == raw_event_props[i].key_atom) {
-        return ScriptValue(ctx(), raw_event_props[i].value, true);
+        return ScriptValue(ctx(), raw_event_props[i].value);
       }
     }
   }
