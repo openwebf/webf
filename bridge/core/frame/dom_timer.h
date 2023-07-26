@@ -14,7 +14,7 @@ namespace webf {
 class DOMTimer {
  public:
   enum TimerKind { kOnce, kMultiple };
-  enum TimerStatus { kPending, kExecuting, kFinished, kCanceled };
+  enum TimerStatus { kPending, kExecuting, kFinished, kCanceled, kTerminated };
 
   static std::shared_ptr<DOMTimer> create(ExecutingContext* context,
                                           const std::shared_ptr<QJSFunction>& callback,
@@ -23,6 +23,9 @@ class DOMTimer {
 
   // Trigger timer callback.
   void Fire();
+
+  // Mark this timer is terminated and free the underly callbacks.
+  void Terminate();
 
   TimerKind kind() const { return kind_; }
 

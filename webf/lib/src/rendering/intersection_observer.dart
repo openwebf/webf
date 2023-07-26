@@ -36,11 +36,14 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     _intersectionObserverLayer.layer = null;
   }
 
+  Rect intersectPadding = Rect.zero;
+
   void addIntersectionChangeListener(IntersectionChangeCallback callback) {
     // Init things
     if (_listeners == null) {
       _listeners = List.empty(growable: true);
       _onIntersectionChange = _dispatchChange;
+      _intersectionObserverLayer.layer?.onIntersectionChange = _dispatchChange;
     }
     // Avoid same listener added twice.
     if (!_listeners!.contains(callback)) {
@@ -65,6 +68,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
       _listeners = null;
       _onIntersectionChange = null;
     }
+    markNeedsPaint();
   }
 
   void _dispatchChange(IntersectionObserverEntry info) {
@@ -85,7 +89,10 @@ mixin RenderIntersectionObserverMixin on RenderBox {
 
     if (_intersectionObserverLayer.layer == null) {
       _intersectionObserverLayer.layer = IntersectionObserverLayer(
-          elementSize: size, paintOffset: offset, onIntersectionChange: _onIntersectionChange!);
+          elementSize: size,
+          paintOffset: offset,
+          onIntersectionChange: _onIntersectionChange!,
+          intersectPadding: intersectPadding);
     } else {
       _intersectionObserverLayer.layer!.elementSize = semanticBounds.size;
       _intersectionObserverLayer.layer!.paintOffset = offset;
@@ -97,14 +104,18 @@ mixin RenderIntersectionObserverMixin on RenderBox {
 
 class IntersectionObserverLayer extends ContainerLayer {
   IntersectionObserverLayer(
-      {required Size elementSize, required Offset paintOffset, required this.onIntersectionChange})
+      {required Size elementSize, required Offset paintOffset, required this.onIntersectionChange, required Rect intersectPadding})
       : // TODO: This is zero for box element. For sliver element, this offset points to the start of the element which may be outside the viewport.
         _elementOffset = Offset.zero,
         _elementSize = elementSize,
+        _intersectPadding = intersectPadding,
         _paintOffset = paintOffset;
 
   /// The size of the corresponding element.
   Size _elementSize;
+
+  // A padding around element bounds.
+  final Rect _intersectPadding;
 
   static int _id = 0;
   int id = _id++;
@@ -131,7 +142,7 @@ class IntersectionObserverLayer extends ContainerLayer {
     _paintOffset = value;
   }
 
-  final IntersectionChangeCallback onIntersectionChange;
+  IntersectionChangeCallback? onIntersectionChange;
 
   /// Keeps track of the last known visibility state of a element.
   ///
@@ -208,9 +219,8 @@ class IntersectionObserverLayer extends ContainerLayer {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
 
-    properties
-      ..add(DiagnosticsProperty<Rect>('elementRect', _elementBounds))
-      ..add(DiagnosticsProperty<Rect>('rootBounds', _rootBounds));
+    properties..add(DiagnosticsProperty<Rect>('elementRect', _elementBounds))..add(
+        DiagnosticsProperty<Rect>('rootBounds', _rootBounds));
   }
 
   void _scheduleIntersectionObservationUpdate() {
@@ -295,7 +305,7 @@ class IntersectionObserverLayer extends ContainerLayer {
       _lastIntersectionInfo = null;
     }
     // Notify visibility changed event
-    onIntersectionChange(info);
+    onIntersectionChange!(info);
   }
 
   Rect? _rootBounds;
@@ -305,6 +315,7 @@ class IntersectionObserverLayer extends ContainerLayer {
   /// Executes visibility callbacks for all updated.
   static void _processCallbacks() {
     for (final layer in _updated.values) {
+      if (layer.onIntersectionChange == null) return;
       if (!layer.attached) {
         layer._fireCallback(IntersectionObserverEntry(size: Size.zero));
         continue;
@@ -313,7 +324,12 @@ class IntersectionObserverLayer extends ContainerLayer {
       Rect elementBounds = layer._computeElementBounds();
       Rect rootBounds = layer._computeClipRect();
 
-      final info = IntersectionObserverEntry.fromRects(boundingClientRect: elementBounds, rootBounds: rootBounds);
+      Rect paddingAroundElementBounds = Rect.fromLTRB(
+          elementBounds.left - layer._intersectPadding.left, elementBounds.top - layer._intersectPadding.top,
+          elementBounds.right + layer._intersectPadding.right, elementBounds.bottom + layer._intersectPadding.bottom);
+
+      final info = IntersectionObserverEntry.fromRects(
+          boundingClientRect: paddingAroundElementBounds, rootBounds: rootBounds);
       layer._fireCallback(info);
     }
     _updated.clear();

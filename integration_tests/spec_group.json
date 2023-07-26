@@ -7,11 +7,24 @@
       "specs/cookie/**/*.{js,jsx,ts,tsx,html}",
       "specs/fetch/**/*.{js,jsx,ts,tsx,html}",
       "specs/modules/**/*.{js,jsx,ts,tsx,html}",
+      "specs/url/**/*.{js,jsx,ts,tsx,html}",
       "specs/navigator/**/*.{js,jsx,ts,tsx,html}",
       "specs/performance/**/*.{js,jsx,ts,tsx,html}",
       "specs/timer/**/*.{js,jsx,ts,tsx,html}",
       "specs/window/**/*.{js,jsx,ts,tsx,html}",
       "specs/xhr/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "CSSOM",
+    "specs": [
+      "specs/cssom/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "Storage",
+    "specs": [
+      "specs/storage/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
   {
@@ -81,6 +94,12 @@
     "name": "Selectors",
     "specs": [
       "specs/css/css-selectors/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "SVG",
+    "specs": [
+      "specs/svg/**/*.{js,jsx,ts,tsx,html,svg}"
     ]
   }
 ]

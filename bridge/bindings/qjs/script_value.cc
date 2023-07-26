@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "script_value.h"
+#include <quickjs/quickjs.h>
 #include <vector>
 #include "bindings/qjs/converter_impl.h"
 #include "core/binding_object.h"
@@ -14,16 +15,19 @@
 #include "qjs_engine_patch.h"
 #include "qjs_event_target.h"
 
+#if WIN32
+#include <Windows.h>
+#endif
+
 namespace webf {
 
 static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value) {
   switch (native_value.tag) {
     case NativeTag::TAG_STRING: {
-      auto* string = static_cast<NativeString*>(native_value.u.ptr);
+      std::unique_ptr<AutoFreeNativeString> string{static_cast<AutoFreeNativeString*>(native_value.u.ptr)};
       if (string == nullptr)
         return JS_NULL;
       JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());
-      delete string;
       return returnedValue;
     }
     case NativeTag::TAG_INT: {
@@ -37,6 +41,18 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
     }
     case NativeTag::TAG_NULL: {
       return JS_NULL;
+    }
+    case NativeTag::TAG_UINT8_BYTES: {
+      auto free_func = [](JSRuntime* rt, void* opaque, void* ptr) {
+#if WIN32
+        return CoTaskMemFree(ptr);
+#else
+        return free(ptr);
+#endif
+      };
+
+      return JS_NewArrayBuffer(context->ctx(), (uint8_t*)native_value.u.ptr, native_value.uint32, free_func, nullptr,
+                               0);
     }
     case NativeTag::TAG_LIST: {
       size_t length = native_value.uint32;
@@ -101,6 +117,7 @@ ScriptValue::ScriptValue(const ScriptValue& value) {
 }
 ScriptValue& ScriptValue::operator=(const ScriptValue& value) {
   if (&value != this) {
+    JS_FreeValue(ctx_, value_);
     value_ = JS_DupValue(ctx_, value.value_);
   }
   ctx_ = value.ctx_;
@@ -115,6 +132,7 @@ ScriptValue::ScriptValue(ScriptValue&& value) noexcept {
 }
 ScriptValue& ScriptValue::operator=(ScriptValue&& value) noexcept {
   if (&value != this) {
+    JS_FreeValue(ctx_, value_);
     value_ = JS_DupValue(ctx_, value.value_);
   }
   ctx_ = value.ctx_;
@@ -141,7 +159,7 @@ AtomicString ScriptValue::ToString() const {
   return {ctx_, value_};
 }
 
-std::unique_ptr<NativeString> ScriptValue::ToNativeString() const {
+std::unique_ptr<SharedNativeString> ScriptValue::ToNativeString() const {
   return ToString().ToNativeString(ctx_);
 }
 
@@ -218,7 +236,7 @@ bool ScriptValue::IsBool() const {
 }
 
 void ScriptValue::Trace(GCVisitor* visitor) const {
-  visitor->Trace(value_);
+  visitor->TraceValue(value_);
 }
 
 }  // namespace webf

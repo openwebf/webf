@@ -149,7 +149,7 @@ ContentType getFileContentType(String fileName) {
 
 void main() {
   // Overrides library name.
-  WebFDynamicLibrary.libName = 'libwebf_test';
+  WebFDynamicLibrary.libName = 'webf_test';
   defineWebFCustomElements();
 
   ModuleManager.defineModule((moduleManager) => UnresponsiveModule(moduleManager));

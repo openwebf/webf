@@ -40,7 +40,7 @@ class IntegrationTestUriParser extends UriParser {
 // By CLI: `WEBF_ENABLE_TEST=true flutter run`
 void main() async {
   // Overrides library name.
-  WebFDynamicLibrary.libName = 'libwebf_test';
+  WebFDynamicLibrary.libName = 'webf_test';
 
   WebFWebSocket.initialize();
 

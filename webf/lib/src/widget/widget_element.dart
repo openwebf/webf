@@ -26,6 +26,10 @@ abstract class WidgetElement extends dom.Element {
   }
   WebFWidgetElementToWidgetAdapter? attachedAdapter;
 
+  BuildContext get context {
+    return _state!.context;
+  }
+
   WidgetElement(
     BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +41,8 @@ abstract class WidgetElement extends dom.Element {
 
   // State methods, proxy called from _state
   void initState() {}
+
+  bool get mounted => _state?.mounted ?? false;
 
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}
@@ -78,7 +84,9 @@ abstract class WidgetElement extends dom.Element {
   @override
   void willAttachRenderer() {
     super.willAttachRenderer();
-    attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
+    if (renderStyle.display != CSSDisplay.none) {
+      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
+    }
   }
   @mustCallSuper
   @override
@@ -183,6 +191,8 @@ abstract class WidgetElement extends dom.Element {
   }
 
   void _attachWidget(Widget widget) {
+    if (attachedAdapter == null) return;
+
     dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
     if (ancestorWidgetNode != null) {
       (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);

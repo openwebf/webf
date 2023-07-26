@@ -20,9 +20,11 @@ const Map<String, dynamic> _defaultStyle = {
 const String _MIME_TEXT_JAVASCRIPT = 'text/javascript';
 const String _MIME_APPLICATION_JAVASCRIPT = 'application/javascript';
 const String _MIME_X_APPLICATION_JAVASCRIPT = 'application/x-javascript';
+const String _MIME_X_APPLICATION_KBC = 'application/vnd.webf.bc1';
 const String _JAVASCRIPT_MODULE = 'module';
+enum ScriptReadyState { loading, interactive, complete }
 
-typedef ScriptExecution = void Function(bool async);
+typedef ScriptExecution = Future<void> Function(bool async);
 
 class ScriptRunner {
   ScriptRunner(Document document, int contextId)
@@ -36,58 +38,76 @@ class ScriptRunner {
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
 
-  static void _evaluateScriptBundle(int contextId, WebFBundle bundle, {bool async = false}) async {
+  static Future<void> _evaluateScriptBundle(int contextId, WebFBundle bundle, {bool async = false}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       final String contentInString = await resolveStringFromData(bundle.data!, preferSync: !async);
-      evaluateScripts(contextId, contentInString, url: bundle.url);
+      bool result = await evaluateScripts(contextId, contentInString, url: bundle.url);
+      if (!result) {
+        throw FlutterError('Script code are not valid to evaluate.');
+      }
     } else if (bundle.isBytecode) {
-      evaluateQuickjsByteCode(contextId, bundle.data!);
+      bool result = evaluateQuickjsByteCode(contextId, bundle.data!);
+      if (!result) {
+        throw FlutterError('Bytecode are not valid to execute.');
+      }
     } else {
       throw FlutterError('Unknown type for <script> to execute. $url');
     }
   }
 
-  void _execute(List<ScriptExecution> tasks, {bool async = false}) {
+  void _execute(List<ScriptExecution> tasks, {bool async = false}) async {
     List<ScriptExecution> executingTasks = [...tasks];
     tasks.clear();
 
     for (ScriptExecution task in executingTasks) {
-      task(async);
+      await task(async);
     }
   }
 
-  void _queueScriptForExecution(ScriptElement element) async {
+  void _queueScriptForExecution(ScriptElement element, {bool isInline = false}) async {
     // Increment load event delay count before eval.
-    _document.incrementLoadEventDelayCount();
-
-    String url = element.src.toString();
+    _document.incrementDOMContentLoadedEventDelayCount();
 
     // Obtain bundle.
-    WebFBundle bundle = WebFBundle.fromUrl(url);
+    WebFBundle bundle;
 
+    if (isInline) {
+      String? scriptCode = element.collectElementChildText();
+      if (scriptCode == null) {
+        return;
+      }
+      bundle = WebFBundle.fromContent(scriptCode);
+    } else {
+      String url = element.src.toString();
+      bundle = WebFBundle.fromUrl(url);
+    }
+
+    element.readyState = ScriptReadyState.interactive;
     // The bundle execution task.
-    void task(bool async) {
+    Future<void> task(bool async) async {
       // If bundle is not resolved, should wait for it resolve to prevent the next script running.
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
       try {
-        _evaluateScriptBundle(_contextId, bundle, async: async);
+        await _evaluateScriptBundle(_contextId, bundle, async: async);
       } catch (err, stack) {
         debugPrint('$err\n$stack');
-        _document.decrementLoadEventDelayCount();
+        _document.decrementDOMContentLoadedEventDelayCount();
+        await bundle.invalidateCache();
         return;
       } finally {
         bundle.dispose();
       }
 
+      element.readyState = ScriptReadyState.complete;
       // Dispatch the load event.
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_LOAD));
       });
 
       // Decrement load event delay count after eval.
-      _document.decrementLoadEventDelayCount();
+      _document.decrementDOMContentLoadedEventDelayCount();
     }
 
     // @TODO: Differ async and defer.
@@ -99,7 +119,7 @@ class ScriptRunner {
 
     // Script loading phrase.
     // Increment count when request.
-    _document.incrementRequestCount();
+    _document.incrementDOMContentLoadedEventDelayCount();
     try {
       await bundle.resolve(_contextId);
 
@@ -112,7 +132,7 @@ class ScriptRunner {
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_ERROR));
       });
-      _document.decrementLoadEventDelayCount();
+      _document.decrementDOMContentLoadedEventDelayCount();
       // Cancel failed task.
       _syncScriptTasks.remove(task);
       return;
@@ -123,14 +143,14 @@ class ScriptRunner {
       }
 
       // Decrement count when response.
-      _document.decrementRequestCount();
+      _document.decrementDOMContentLoadedEventDelayCount();
     }
 
     // Script executing phrase.
     if (shouldAsync) {
       // @TODO: Use requestIdleCallback
-      SchedulerBinding.instance.scheduleFrameCallback((_) {
-        task(shouldAsync);
+      SchedulerBinding.instance.scheduleFrameCallback((_) async {
+        await task(shouldAsync);
       });
     } else {
       scheduleMicrotask(() {
@@ -152,6 +172,7 @@ class ScriptElement extends Element {
   final String _type = _MIME_TEXT_JAVASCRIPT;
 
   Uri? _resolvedSource;
+  ScriptReadyState _readyState = ScriptReadyState.loading;
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
@@ -164,6 +185,7 @@ class ScriptElement extends Element {
     properties['charset'] = BindingObjectProperty(getter: () => charset, setter: (value) => charset = castToType<String>(value));
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
     properties['text'] = BindingObjectProperty(getter: () => text, setter: (value) => text = castToType<String>(value));
+    properties['readyState'] = BindingObjectProperty(getter: () => readyState.name,);
   }
 
   @override
@@ -221,6 +243,12 @@ class ScriptElement extends Element {
     internalSetAttribute('text', value);
   }
 
+  ScriptReadyState get readyState => _readyState;
+
+  set readyState(ScriptReadyState readyState) {
+    _readyState = readyState;
+  }
+
   void _resolveSource(String source) {
     String base = ownerDocument.controller.url;
     try {
@@ -240,11 +268,14 @@ class ScriptElement extends Element {
         (_type == _MIME_TEXT_JAVASCRIPT ||
             _type == _MIME_APPLICATION_JAVASCRIPT ||
             _type == _MIME_X_APPLICATION_JAVASCRIPT ||
+            _type == _MIME_X_APPLICATION_KBC ||
             _type == _JAVASCRIPT_MODULE)) {
       // Add bundle to scripts queue.
       ownerDocument.scriptRunner._queueScriptForExecution(this);
 
       SchedulerBinding.instance.scheduleFrame();
+    } else if (childNodes.isNotEmpty) {
+      ownerDocument.scriptRunner._queueScriptForExecution(this, isInline: true);
     }
   }
 
@@ -256,11 +287,7 @@ class ScriptElement extends Element {
     if (src.isNotEmpty) {
       _fetchAndExecuteSource();
     } else if (_type == _MIME_TEXT_JAVASCRIPT || _type == _JAVASCRIPT_MODULE) {
-      // Eval script context: <script> console.log(1) </script>
-      String? script = collectElementChildText();
-      if (script != null && script.isNotEmpty) {
-        evaluateScripts(contextId, script);
-      }
+      _fetchAndExecuteSource();
     }
   }
 }

@@ -70,7 +70,7 @@ class CollectionIndexCache {
   void NodeInserted();
   void NodeRemoved();
 
-  virtual void Trace(GCVisitor* visitor) const { visitor->Trace(current_node_); }
+  virtual void Trace(GCVisitor* visitor) const { visitor->TraceMember(current_node_); }
 
  protected:
   FORCE_INLINE NodeType* CachedNode() const { return current_node_.Get(); }

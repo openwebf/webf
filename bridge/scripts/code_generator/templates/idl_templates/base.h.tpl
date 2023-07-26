@@ -12,4 +12,4 @@
 
 <%= content %>
 
-#endif //BRIDGE_<%= blob.filename.toUpperCase() %>T_H
+#endif // BRIDGE_<%= blob.filename.toUpperCase() %>_H

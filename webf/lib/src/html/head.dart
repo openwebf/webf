@@ -147,7 +147,7 @@ class LinkElement extends Element {
         ownerDocument.decrementRequestCount();
 
         final String cssString = await resolveStringFromData(bundle.data!);
-        _styleSheet = CSSParser(cssString).parse();
+        _styleSheet = CSSParser(cssString, href: href).parse();
         _styleSheet?.href = href;
         ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
@@ -211,33 +211,35 @@ class NoScriptElement extends Element {
 
 const String _CSS_MIME = 'text/css';
 
-// https://www.w3.org/TR/2011/WD-html5-author-20110809/the-style-element.html
-class StyleElement extends Element {
-  StyleElement([BindingContext? context]) : super(context);
-
+mixin StyleElementMixin on Element {
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
-  final String _type = _CSS_MIME;
+  String _type = _CSS_MIME;
+
+  String get type => _type;
+
+  set type(String value) {
+    _type = value;
+  }
+
+  CSSStyleSheet? _styleSheet;
 
   CSSStyleSheet? get styleSheet => _styleSheet;
-  CSSStyleSheet? _styleSheet;
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
+    properties['type'] = BindingObjectProperty(
+        getter: () => type,
+        setter: (value) => type = castToType<String>(value));
   }
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
-  }
-
-  String get type => getAttribute('type') ?? '';
-  set type(String value) {
-    internalSetAttribute('type', value);
+    attributes['type'] = ElementAttributeProperty(
+        setter: (value) => type = attributeToProperty<String>(value));
   }
 
   void _recalculateStyle() {
@@ -249,7 +251,9 @@ class StyleElement extends Element {
         _styleSheet = CSSParser(text).parse();
       }
       if (_styleSheet != null) {
+        ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+        ownerDocument.updateStyleIfNeeded();
       }
     }
   }
@@ -294,4 +298,9 @@ class StyleElement extends Element {
     }
     super.disconnectedCallback();
   }
+}
+
+// https://www.w3.org/TR/2011/WD-html5-author-20110809/the-style-element.html
+class StyleElement extends Element with StyleElementMixin {
+  StyleElement([BindingContext? context]) : super(context);
 }

@@ -300,6 +300,8 @@ describe('Position absolute', () => {
     div.style.height = '300px';
     div.style.backgroundColor = 'red';
     div.style.position = 'absolute';
+    document.body.appendChild(div);
+    await snapshot();
 
     requestAnimationFrame(async () => {
       div.style.bottom = '100px';
@@ -310,10 +312,6 @@ describe('Position absolute', () => {
         done();
       });
     });
-
-
-    document.body.appendChild(div);
-    await snapshot();
   });
 
   it('works with dynamic change width property', async (done) => {
@@ -323,6 +321,9 @@ describe('Position absolute', () => {
     div.style.backgroundColor = 'red';
     div.style.position = 'absolute';
 
+    document.body.appendChild(div);
+    await snapshot();
+
     requestAnimationFrame(async () => {
       div.style.width = '100px';
       await snapshot();
@@ -331,10 +332,7 @@ describe('Position absolute', () => {
         await snapshot();
         done();
       })
-    })
-
-    document.body.appendChild(div);
-    await snapshot();
+    });
   });
 
   it('works with dynamic change height property', async (done) => {
@@ -343,6 +341,9 @@ describe('Position absolute', () => {
     div.style.height = '300px';
     div.style.backgroundColor = 'red';
     div.style.position = 'absolute';
+
+    document.body.appendChild(div);
+    await snapshot();
 
     requestAnimationFrame(async () => {
       div.style.height = '100px';
@@ -354,9 +355,6 @@ describe('Position absolute', () => {
         done();
       });
     });
-
-    document.body.appendChild(div);
-    await snapshot();
   });
 
   it('works with dynamic change top property', async (done) => {
@@ -365,6 +363,9 @@ describe('Position absolute', () => {
     div.style.height = '300px';
     div.style.backgroundColor = 'red';
     div.style.position = 'absolute';
+
+    document.body.appendChild(div);
+    await snapshot();
 
     requestAnimationFrame(async () => {
       div.style.top = '100px';
@@ -376,9 +377,6 @@ describe('Position absolute', () => {
         done();
       });
     });
-
-    document.body.appendChild(div);
-    await snapshot();
   });
 
   it('works with dynamic change left property', async (done) => {
@@ -387,6 +385,8 @@ describe('Position absolute', () => {
     div.style.height = '300px';
     div.style.backgroundColor = 'red';
     div.style.position = 'absolute';
+    document.body.appendChild(div);
+    await snapshot();
 
     requestAnimationFrame(async () => {
       div.style.left = '100px';
@@ -399,8 +399,6 @@ describe('Position absolute', () => {
       });
     });
 
-    document.body.appendChild(div);
-    await snapshot();
   });
 
   it('works with dynamic change right property', async (done) => {
@@ -409,6 +407,9 @@ describe('Position absolute', () => {
     div.style.height = '300px';
     div.style.backgroundColor = 'red';
     div.style.position = 'absolute';
+
+    document.body.appendChild(div);
+    await snapshot();
 
     requestAnimationFrame(async () => {
       div.style.right = '100px';
@@ -419,9 +420,6 @@ describe('Position absolute', () => {
         done();
       });
     });
-
-    document.body.appendChild(div);
-    await snapshot();
   });
 
   it('with no width and height', async () => {
@@ -1126,5 +1124,103 @@ describe('Position absolute', () => {
     expect(child.offsetLeft).toEqual(0);
 
     await snapshot();
+  });
+
+  it('dynamic change the size of elements inside of positioned element can affect scrollable size', async (done) => {
+    let overlay;
+    // @ts-ignore
+    let placeholders = (Array(50).fill(0)).map(item => {
+      return createElement('div', {
+        style: {
+          height: '50px',
+          margin: '5px 0 5px 0',
+          border: '1px solid #000'
+        }
+      });
+    })
+    let container = createElement('div', {
+      style: {
+        'position': 'absolute',
+        'width': '100px',
+        'height': '100px'
+      }
+    }, [
+      overlay = createElement('div', {
+        style: {
+        }
+      }),
+      ...placeholders,
+      createText('bottom text')
+    ]);
+
+    document.body.appendChild(container);
+
+    requestAnimationFrame(async () => {
+      overlay.style.height = '100px';
+      overlay.style.backgroundColor = 'red';
+
+      window.scroll(0, 10000);
+      await snapshot();
+      done();
+    });
+  });
+
+  it('dynamic show positioned replace element shoud works', async (done) => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+}
+
+.content {
+width: 200px;
+height: 200px;
+background: white;
+}
+
+.imgText {
+  display: flex;
+  flex-direction: column;
+}
+.imgText img {
+  width: 50px;
+  height: 50px;
+  margin-right: 5px;
+  position: absolute;
+  top: 30px;
+  left: 20px;
+}`;
+    document.head.appendChild(style);
+    let img;
+    const container = createElement('div', {
+      'className': 'overlay',
+      style: {
+        'display': 'none'
+      }
+    }, [
+      createElement('div', {
+        'className': 'content'
+      }, [
+        createElement('div', {'className': 'top'}, [
+          createElement('div', { 'className': 'imgText'}, [
+            img = createElement('img', { 'className': 'logo', src: 'https://andycall.oss-accelerate.aliyuncs.com/images/20x50-green.png'}),
+            createElement('span', {}, [ createText('12345')])
+          ])
+        ])
+      ])
+    ]);
+    document.body.appendChild(container);
+
+    setTimeout(async () => {
+      container.style.display = 'block';
+      await snapshot();
+      done();
+    }, 300);
   });
 });

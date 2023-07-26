@@ -21,7 +21,7 @@ class HeapVector final {
 template <typename V>
 void HeapVector<V>::Trace(GCVisitor* visitor) const {
   for (auto& item : entries_) {
-    visitor->Trace(item);
+    visitor->TraceValue(item);
   }
 }
 

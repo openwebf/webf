@@ -4,13 +4,18 @@
  */
 
 #include "script_wrappable.h"
+#include "built_in_string.h"
 #include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
 ScriptWrappable::ScriptWrappable(JSContext* ctx)
-    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)) {}
+    : ctx_(ctx),
+      runtime_(JS_GetRuntime(ctx)),
+      context_(ExecutingContext::From(ctx)),
+      context_id_(context_->contextId()) {}
 
 JSValue ScriptWrappable::ToQuickJS() const {
   return JS_DupValue(ctx_, jsObject_);
@@ -25,7 +30,7 @@ ScriptValue ScriptWrappable::ToValue() {
 }
 
 /// This callback will be called when QuickJS GC is running at marking stage.
-/// Users of this class should override `void Trace(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)` to
+/// Users of this class should override `void TraceMember(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)` to
 /// tell GC which member of their class should be collected by GC.
 static void HandleJSObjectGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func) {
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JSValueGetClassId(val)));
@@ -38,7 +43,15 @@ static void HandleJSObjectGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* m
 /// completed.
 static void HandleJSObjectFinalized(JSRuntime* rt, JSValue val) {
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JSValueGetClassId(val)));
-  delete object;
+  // When a JSObject got finalized by QuickJS GC, we can not guarantee the ExecutingContext are still alive and
+  // accessible.
+  if (isContextValid(object->contextId())) {
+    ExecutingContext* context = object->GetExecutingContext();
+    MemberMutationScope scope{object->GetExecutingContext()};
+    delete object;
+  } else {
+    delete object;
+  }
 }
 
 /// This callback will be called when JS code access this object using [] or `.` operator.
@@ -51,7 +64,7 @@ static JSValue HandleJSPropertyGetterCallback(JSContext* ctx, JSValueConst obj, 
 
   JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
   if (JS_HasProperty(ctx, prototypeObject, atom)) {
-    JSValue ret = JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, 0);
+    JSValue ret = JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
     return ret;
   }
 
@@ -137,6 +150,15 @@ static int HandleJSPropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** pt
   return wrapper_type_info->property_enumerate_handler_(ctx, ptab, plen, obj);
 }
 
+/// This callback will be called when JS code delete properties on this object.
+/// Exp: delete obj['name']
+static int HandleJSPropertyDelete(JSContext* ctx, JSValueConst obj, JSAtom prop) {
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* wrapper_type_info = object->GetWrapperTypeInfo();
+
+  return wrapper_type_info->property_delete_handler_(ctx, obj, prop);
+}
+
 static int HandleJSGetOwnPropertyNames(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj) {
   // All props and methods are finded in prototype object of scriptwrappable.
   JSValue proto = JS_GetPrototype(ctx, obj);
@@ -198,10 +220,12 @@ void ScriptWrappable::InitializeQuickJSObject() {
         if (wrapper_type_info->string_property_getter_handler_ != nullptr) {
           JSValue return_value = wrapper_type_info->string_property_getter_handler_(ctx, obj, prop);
           if (!JS_IsNull(return_value)) {
-            desc->flags = JS_PROP_ENUMERABLE;
-            desc->value = return_value;
-            desc->getter = JS_NULL;
-            desc->setter = JS_NULL;
+            if (desc != nullptr) {
+              desc->flags = JS_PROP_ENUMERABLE;
+              desc->value = return_value;
+              desc->getter = JS_NULL;
+              desc->setter = JS_NULL;
+            }
             return true;
           }
         }
@@ -210,10 +234,12 @@ void ScriptWrappable::InitializeQuickJSObject() {
           uint32_t index = JS_AtomToUInt32(prop);
           JSValue return_value = wrapper_type_info->indexed_property_getter_handler_(ctx, obj, index);
           if (!JS_IsNull(return_value)) {
-            desc->flags = JS_PROP_ENUMERABLE;
-            desc->value = return_value;
-            desc->getter = JS_NULL;
-            desc->setter = JS_NULL;
+            if (desc != nullptr) {
+              desc->flags = JS_PROP_ENUMERABLE;
+              desc->value = return_value;
+              desc->getter = JS_NULL;
+              desc->setter = JS_NULL;
+            }
             return true;
           }
         }
@@ -224,6 +250,10 @@ void ScriptWrappable::InitializeQuickJSObject() {
       // Support iterate script wrappable defined properties.
       exotic_methods->get_own_property_names = HandleJSGetOwnPropertyNames;
       exotic_methods->get_own_property = HandleJSGetOwnProperty;
+    }
+
+    if (UNLIKELY(wrapper_type_info->property_delete_handler_ != nullptr)) {
+      exotic_methods->delete_property = HandleJSPropertyDelete;
     }
 
     def.exotic = exotic_methods;
@@ -239,18 +269,26 @@ void ScriptWrappable::InitializeQuickJSObject() {
   jsObject_ = JS_NewObjectClass(ctx_, wrapper_type_info->classId);
   JS_SetOpaque(jsObject_, this);
 
-  if (KeepAlive()) {
-    JS_DupValue(ctx_, jsObject_);
-    context_->RegisterActiveScriptWrappers(this);
-  }
-
   // Let our instance into inherit prototype methods.
   JSValue prototype = GetExecutingContext()->contextData()->prototypeForType(wrapper_type_info);
   JS_SetPrototype(ctx_, jsObject_, prototype);
 }
 
-bool ScriptWrappable::KeepAlive() const {
-  return false;
+void ScriptWrappable::KeepAlive() {
+  if (is_alive)
+    return;
+
+  context_->RegisterActiveScriptWrappers(this);
+  JS_DupValue(ctx_, jsObject_);
+  is_alive = true;
+}
+
+void ScriptWrappable::ReleaseAlive() {
+  if (!is_alive)
+    return;
+  context_->InActiveScriptWrappers(this);
+  JS_FreeValue(ctx_, jsObject_);
+  is_alive = false;
 }
 
 }  // namespace webf

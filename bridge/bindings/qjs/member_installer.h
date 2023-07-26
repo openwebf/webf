@@ -30,7 +30,7 @@ class MemberInstaller {
  public:
   struct AttributeConfig {
     AttributeConfig& operator=(const AttributeConfig&) = delete;
-    const char* name;
+    JSAtom key;
     JSCFunction* getter{nullptr};
     JSCFunction* setter{nullptr};
     JSValue value{JS_NULL};

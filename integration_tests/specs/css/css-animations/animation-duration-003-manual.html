@@ -41,7 +41,7 @@
     await sleep(1);
     expect(div[0].offsetLeft).toBe(0);
     div[0].style.animationDuration = "2s";
-    await sleep(0.5);
+    await sleep(0.2);
     expect(div[0].offsetLeft > 75).toBe(true);
   </script>
 </body>

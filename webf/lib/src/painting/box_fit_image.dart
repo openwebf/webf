@@ -4,7 +4,6 @@
  */
 
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -27,7 +26,7 @@ class BoxFitImageKey {
   }
 
   @override
-  int get hashCode => hashValues(configuration, url);
+  int get hashCode => Object.hash(configuration, url);
 
   @override
   String toString() => 'BoxFitImageKey($url, $configuration)';
@@ -38,13 +37,13 @@ typedef OnImageLoad = void Function(int naturalWidth, int naturalHeight);
 
 class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   BoxFitImage({
-    required this.loadImage,
+    required LoadImage loadImage,
     required this.url,
     required this.boxFit,
     this.onImageLoad,
-  });
+  }): _loadImage = loadImage;
 
-  final LoadImage loadImage;
+  final LoadImage _loadImage;
   final Uri url;
   final BoxFit boxFit;
   final OnImageLoad? onImageLoad;
@@ -58,7 +57,19 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   }
 
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
-    Uint8List bytes = await loadImage(url);
+    Uint8List bytes;
+    try {
+      bytes = await _loadImage(url);
+    } on FlutterError {
+      PaintingBinding.instance.imageCache.evict(key);
+      rethrow;
+    }
+
+    if (bytes.isEmpty) {
+      PaintingBinding.instance.imageCache.evict(key);
+      throw StateError('Unable to read data');
+    }
+
     final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
     final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
     final Codec codec = await _instantiateImageCodec(
@@ -81,7 +92,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   DimensionedMultiFrameImageStreamCompleter? _imageStreamCompleter;
 
   @override
-  ImageStreamCompleter load(BoxFitImageKey key, DecoderCallback decode) {
+  ImageStreamCompleter loadImage(BoxFitImageKey key, ImageDecoderCallback decode) {
     return _imageStreamCompleter = DimensionedMultiFrameImageStreamCompleter(
       codec: _loadAsync(key),
       scale: 1.0,
@@ -108,7 +119,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     }
     final ImageStreamCompleter? completer = PaintingBinding.instance.imageCache.putIfAbsent(
       key,
-      () => load(key, PaintingBinding.instance.instantiateImageCodec),
+      () => loadImage(key, PaintingBinding.instance.instantiateImageCodecWithSize),
       onError: handleError,
     );
     if (_imageStreamCompleter == null &&

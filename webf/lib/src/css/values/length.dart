@@ -3,12 +3,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:ui';
-
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
+import 'package:webf/svg.dart';
 
 // https://drafts.csswg.org/css-values-3/#absolute-lengths
 const _1in = 96; // 1in = 2.54cm = 96px
@@ -46,10 +46,15 @@ enum CSSLengthType {
 }
 
 class CSSLengthValue {
+  final CSSCalcValue? calcValue;
   final double? value;
   final CSSLengthType type;
 
-  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]) {
+  CSSLengthValue.calc(this.calcValue, this.renderStyle, this.propertyName)
+      : value = null,
+        type = CSSLengthType.PX;
+
+  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]) : calcValue = null {
     if (propertyName != null) {
       if (type == CSSLengthType.EM) {
         renderStyle!.addFontRelativeProperty(propertyName!);
@@ -59,10 +64,39 @@ class CSSLengthValue {
     }
   }
 
+  String cssText() {
+    switch (type) {
+      case CSSLengthType.PX:
+      case CSSLengthType.EM:
+        return '${computedValue.cssText()}px';
+      case CSSLengthType.REM:
+        return '${value?.cssText()}rem';
+      case CSSLengthType.VH:
+        return '${value?.cssText()}vh';
+      case CSSLengthType.VW:
+        return '${value?.cssText()}vw';
+      case CSSLengthType.VMIN:
+        return '${value?.cssText()}vmin';
+      case CSSLengthType.VMAX:
+        return '${value?.cssText()}vmax';
+      case CSSLengthType.PERCENTAGE:
+        return '${(value! * 100).cssText()}%';
+      case CSSLengthType.UNKNOWN:
+      case CSSLengthType.AUTO:
+        return 'auto';
+      case CSSLengthType.NONE:
+      case CSSLengthType.NORMAL:
+      case CSSLengthType.INITIAL:
+        break;
+    }
+    return '';
+  }
+
   static final CSSLengthValue zero = CSSLengthValue(0, CSSLengthType.PX);
   static final CSSLengthValue auto = CSSLengthValue(null, CSSLengthType.AUTO);
   static final CSSLengthValue initial = CSSLengthValue(null, CSSLengthType.INITIAL);
   static final CSSLengthValue unknown = CSSLengthValue(null, CSSLengthType.UNKNOWN);
+
   // Used in https://www.w3.org/TR/css-inline-3/#valdef-line-height-normal
   static final CSSLengthValue normal = CSSLengthValue(null, CSSLengthType.NORMAL);
   static final CSSLengthValue none = CSSLengthValue(null, CSSLengthType.NONE);
@@ -78,6 +112,11 @@ class CSSLengthValue {
   // which can not be computed to a specific value, eg. percentage height is sometimes parsed
   // to be auto due to parent height not defined.
   double get computedValue {
+    if (calcValue != null) {
+      _computedValue = calcValue!.computedValue(propertyName ?? '') ?? 0;
+      return _computedValue!;
+    }
+
     // Use cached value if type is not percentage which may needs 2 layout passes to resolve the
     // final computed value.
     if (renderStyle?.renderBoxModel != null && propertyName != null && type != CSSLengthType.PERCENTAGE) {
@@ -88,6 +127,7 @@ class CSSLengthValue {
       }
     }
 
+    final realPropertyName = propertyName?.split('_').first ?? propertyName;
     switch (type) {
       case CSSLengthType.PX:
         _computedValue = value;
@@ -95,7 +135,7 @@ class CSSLengthValue {
       case CSSLengthType.EM:
         // Font size of the parent, in the case of typographical properties like font-size,
         // and font size of the element itself, in the case of other properties like width.
-        if (propertyName == FONT_SIZE) {
+        if (realPropertyName == FONT_SIZE) {
           // If root element set fontSize as em unit.
           if (renderStyle!.parent == null) {
             _computedValue = value! * 16;
@@ -161,7 +201,7 @@ class CSSLengthValue {
         double? relativeParentWidth = isPositioned ? parentPaddingBoxWidth : parentContentBoxWidth;
         double? relativeParentHeight = isPositioned ? parentPaddingBoxHeight : parentContentBoxHeight;
 
-        switch (propertyName) {
+        switch (realPropertyName) {
           case FONT_SIZE:
             // Relative to the parent font size.
             if (renderStyle!.parent == null) {
@@ -330,6 +370,28 @@ class CSSLengthValue {
               _computedValue = value!;
             }
             break;
+
+          case RX:
+            final target = renderStyle!.target;
+            if (target is SVGElement) {
+              final viewBox = target.findRoot()?.viewBox;
+              if (viewBox != null) {
+                _computedValue = viewBox.width * value!;
+              }
+            }
+            break;
+
+          case RY:
+            final target = renderStyle!.target;
+            if (target is SVGElement) {
+              final viewBox = target
+                  .findRoot()
+                  ?.viewBox;
+              if (viewBox != null) {
+                _computedValue = viewBox.height * value!;
+              }
+            }
+            break;
         }
         break;
       default:
@@ -346,6 +408,11 @@ class CSSLengthValue {
   }
 
   bool get isAuto {
+    if (calcValue != null) {
+      if (calcValue!.expression == null) {
+        return true;
+      }
+    }
     switch (propertyName) {
       // Length is considered as auto of following properties
       // if it computes to double.infinity in cases of percentage.
@@ -395,14 +462,18 @@ class CSSLengthValue {
   @override
   bool operator ==(Object? other) {
     return (other == null && (type == CSSLengthType.UNKNOWN || type == CSSLengthType.INITIAL)) ||
-        (other is CSSLengthValue && other.value == value && (isZero || other.type == type));
+        (other is CSSLengthValue &&
+            other.value == value &&
+            other.calcValue == calcValue &&
+            (isZero || other.type == type));
   }
 
   @override
-  int get hashCode => hashValues(value, type);
+  int get hashCode => Object.hash(value, type);
 
   @override
-  String toString() => 'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue)';
+  String toString() =>
+      'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue, calcValue: $calcValue)';
 }
 
 // Cache computed length value during perform layout.
@@ -474,6 +545,10 @@ class CSSLength {
     return value == AUTO;
   }
 
+  static bool isInitial(String? value) {
+    return value == INITIAL;
+  }
+
   static bool isLength(String? value) {
     return value != null && (value == ZERO || _lengthRegExp.hasMatch(value));
   }
@@ -486,7 +561,7 @@ class CSSLength {
             _nonNegativeLengthRegExp.hasMatch(value));
   }
 
-  static CSSLengthValue? resolveLength(String text, RenderStyle? renderStyle, String propertyName) {
+  static CSSLengthValue? resolveLength(String text, RenderStyle renderStyle, String propertyName) {
     if (text.isEmpty) {
       // Empty string means delete value.
       return null;
@@ -496,6 +571,7 @@ class CSSLength {
   }
 
   static CSSLengthValue parseLength(String text, RenderStyle? renderStyle, [String? propertyName, Axis? axisType]) {
+    FlutterView? window = renderStyle?.currentFlutterView;
     double? value;
     CSSLengthType unit = CSSLengthType.PX;
     if (text == ZERO) {
@@ -503,6 +579,11 @@ class CSSLength {
       return CSSLengthValue.zero;
     } else if (text == INITIAL) {
       return CSSLengthValue.initial;
+    } else if (text == INHERIT) {
+      if (renderStyle != null && propertyName != null && renderStyle.target.parentElement != null) {
+        return parseLength(renderStyle.target.parentElement!.style.getPropertyValue(propertyName), renderStyle, propertyName, axisType);
+      }
+      return CSSLengthValue.zero;
     } else if (text == AUTO) {
       return CSSLengthValue.auto;
     } else if (text == NONE) {
@@ -515,7 +596,7 @@ class CSSLength {
       unit = CSSLengthType.EM;
     } else if (text.endsWith(RPX)) {
       value = double.tryParse(text.split(RPX)[0]);
-      if (value != null) value = value / 750.0 * window.physicalSize.width / window.devicePixelRatio;
+      if (value != null && window != null) value = value / 750.0 * window.physicalSize.width / window.devicePixelRatio;
     } else if (text.endsWith(PX)) {
       value = double.tryParse(text.split(PX)[0]);
     } else if (text.endsWith(VW)) {
@@ -557,10 +638,18 @@ class CSSLength {
       if (value != null) value = value / 100;
       unit = CSSLengthType.PERCENTAGE;
     } else if (CSSFunction.isFunction(text)) {
+
+      if (renderStyle != null) {
+        CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', text);
+        if (calcValue != null) {
+          return CSSLengthValue.calc(calcValue, renderStyle, propertyName);
+        }
+      }
+
       List<CSSFunctionalNotation> notations = CSSFunction.parseFunction(text);
       // https://drafts.csswg.org/css-env/#env-function
       // Using Environment Variables: the env() notation
-      if (notations.length == 1 && notations[0].name == ENV && notations[0].args.length == 1) {
+      if (notations.length == 1 && notations[0].name == ENV && notations[0].args.length == 1 && window != null) {
         switch (notations[0].args.first) {
           case SAFE_AREA_INSET_TOP:
             value = window.viewPadding.top / window.devicePixelRatio;
@@ -579,6 +668,8 @@ class CSSLength {
             return parseLength(notations[0].args[1], renderStyle, propertyName, axisType);
         }
       }
+    } else {
+      value = double.tryParse(text);
     }
 
     if (value == 0 && unit != CSSLengthType.PERCENTAGE) {

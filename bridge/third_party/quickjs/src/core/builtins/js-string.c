@@ -616,7 +616,7 @@ JSValue js_string_match(JSContext* ctx, JSValueConst this_val, int argc, JSValue
     str = JS_NewString(ctx, "g");
     if (JS_IsException(str))
       goto fail;
-    args[args_len++] = (JSValueConst)str;
+    args[args_len++] = str;
   }
   rx = JS_CallConstructor(ctx, ctx->regexp_ctor, args_len, args);
   JS_FreeValue(ctx, str);

@@ -85,9 +85,9 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   assert(_allocatedPages.containsKey(contextId));
   Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
       _allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
-  freeNativeString(nativeModuleName);
   dynamic result = fromNativeValue(dispatchResult);
   malloc.free(dispatchResult);
+  malloc.free(extraData);
   return result;
 }
 
@@ -110,10 +110,10 @@ Pointer<Void> createScreen(double width, double height) {
 }
 
 // Register evaluateScripts
-typedef NativeEvaluateScripts = Void Function(
-    Pointer<Void>, Pointer<NativeString> code, Pointer<Utf8> url, Int32 startLine);
-typedef DartEvaluateScripts = void Function(
-    Pointer<Void>, Pointer<NativeString> code, Pointer<Utf8> url, int startLine);
+typedef NativeEvaluateScripts = Int8 Function(
+    Pointer<Void>, Pointer<NativeString> code, Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url, Int32 startLine);
+typedef DartEvaluateScripts = int Function(
+    Pointer<Void>, Pointer<NativeString> code, Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url, int startLine);
 
 // Register parseHTML
 typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Utf8> code, Int32 length);
@@ -127,9 +127,14 @@ final DartParseHTML _parseHTML =
 
 int _anonymousScriptEvaluationId = 0;
 
-void evaluateScripts(int contextId, String code, {String? url, int line = 0}) {
+class ScriptByteCode {
+  ScriptByteCode();
+  late Uint8List bytes;
+}
+
+Future<bool> evaluateScripts(int contextId, String code, {String? url, int line = 0}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
-    return;
+    return false;
   }
   // Assign `vm://$id` for no url (anonymous scripts).
   if (url == null) {
@@ -137,33 +142,59 @@ void evaluateScripts(int contextId, String code, {String? url, int line = 0}) {
     _anonymousScriptEvaluationId++;
   }
 
-  Pointer<NativeString> nativeString = stringToNativeString(code);
-  Pointer<Utf8> _url = url.toNativeUtf8();
-  try {
-    assert(_allocatedPages.containsKey(contextId));
-    _evaluateScripts(_allocatedPages[contextId]!, nativeString, _url, line);
-  } catch (e, stack) {
-    print('$e\n$stack');
+  QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(code);
+  if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT && cacheObject.valid && cacheObject.bytes != null) {
+    bool result = evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
+    // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
+    if (!result) {
+      await cacheObject.remove();
+    }
+
+    return result;
+  } else {
+    Pointer<NativeString> nativeString = stringToNativeString(code);
+    Pointer<Utf8> _url = url.toNativeUtf8();
+    try {
+      assert(_allocatedPages.containsKey(contextId));
+      int result;
+      if (QuickJSByteCodeCache.isCodeNeedCache(code)) {
+        // Export the bytecode from scripts
+        Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
+        Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
+        result = _evaluateScripts(_allocatedPages[contextId]!, nativeString, bytecodes, bytecodeLen, _url, line);
+        Uint8List bytes = bytecodes.value.asTypedList(bytecodeLen.value);
+        // Save to disk cache
+        QuickJSByteCodeCache.putObject(code, bytes);
+      } else {
+        result = _evaluateScripts(_allocatedPages[contextId]!, nativeString, nullptr, nullptr, _url, line);
+      }
+      return result == 1;
+    } catch (e, stack) {
+      print('$e\n$stack');
+    }
+    freeNativeString(nativeString);
+    malloc.free(_url);
   }
-  freeNativeString(nativeString);
+  return false;
 }
 
-typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen);
-typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen);
+typedef NativeEvaluateQuickjsByteCode = Int8 Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen);
+typedef DartEvaluateQuickjsByteCode = int Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen);
 
 final DartEvaluateQuickjsByteCode _evaluateQuickjsByteCode = WebFDynamicLibrary.ref
     .lookup<NativeFunction<NativeEvaluateQuickjsByteCode>>('evaluateQuickjsByteCode')
     .asFunction();
 
-void evaluateQuickjsByteCode(int contextId, Uint8List bytes) {
+bool evaluateQuickjsByteCode(int contextId, Uint8List bytes) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
-    return;
+    return false;
   }
   Pointer<Uint8> byteData = malloc.allocate(sizeOf<Uint8>() * bytes.length);
   byteData.asTypedList(bytes.length).setAll(0, bytes);
   assert(_allocatedPages.containsKey(contextId));
-  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length);
+  int result = _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length);
   malloc.free(byteData);
+  return result == 1;
 }
 
 void parseHTML(int contextId, String code) {
@@ -181,41 +212,61 @@ void parseHTML(int contextId, String code) {
 }
 
 // Register initJsEngine
-typedef NativeInitDartContext = Void Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartInitDartContext = void Function(Pointer<Uint64> dartMethods, int methodsLength);
+typedef NativeInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, int methodsLength);
 
-final DartInitDartContext _initDartContext =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartContext>>('initDartContext').asFunction();
+final DartInitDartIsolateContext _initDartIsolateContext =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContext').asFunction();
 
-void initDartContext(List<int> dartMethods) {
+Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  _initDartContext(bytes, dartMethods.length);
+  return _initDartIsolateContext(bytes, dartMethods.length);
 }
 
-typedef NativeDisposePage = Void Function(Pointer<Void> page);
-typedef DartDisposePage = void Function(Pointer<Void> page);
+typedef NativeDisposePage = Void Function(Pointer<Void>, Pointer<Void> page);
+typedef DartDisposePage = void Function(Pointer<Void>, Pointer<Void> page);
 
 final DartDisposePage _disposePage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePage').asFunction();
 
 void disposePage(int contextId) {
   Pointer<Void> page = _allocatedPages[contextId]!;
-  _disposePage(page);
+  _disposePage(dartContext.pointer, page);
   _allocatedPages.remove(contextId);
 }
 
-typedef NativeAllocateNewPage = Pointer<Void> Function(Int32);
-typedef DartAllocateNewPage = Pointer<Void> Function(int);
+typedef NativeAllocateNewPage = Pointer<Void> Function(Pointer<Void>, Int32);
+typedef DartAllocateNewPage = Pointer<Void> Function(Pointer<Void>, int);
 
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
 void allocateNewPage(int targetContextId) {
-  Pointer<Void> page = _allocateNewPage(targetContextId);
+  Pointer<Void> page = _allocateNewPage(dartContext.pointer, targetContextId);
   assert(!_allocatedPages.containsKey(targetContextId));
   _allocatedPages[targetContextId] = page;
+}
+
+typedef NativeInitDartDynamicLinking = Void Function(Pointer<Void> data);
+typedef DartInitDartDynamicLinking = void Function(Pointer<Void> data);
+
+final DartInitDartDynamicLinking _initDartDynamicLinking =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartDynamicLinking>>('init_dart_dynamic_linking').asFunction();
+
+void initDartDynamicLinking() {
+  _initDartDynamicLinking(NativeApi.initializeApiDLData);
+}
+
+typedef NativeRegisterDartContextFinalizer = Void Function(Handle object, Pointer<Void> dart_context);
+typedef DartRegisterDartContextFinalizer = void Function(Object object, Pointer<Void> dart_context);
+
+final DartRegisterDartContextFinalizer _registerDartContextFinalizer =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterDartContextFinalizer>>('register_dart_context_finalizer').asFunction();
+
+void registerDartContextFinalizer(DartContext dartContext) {
+  _registerDartContextFinalizer(dartContext, dartContext.pointer);
 }
 
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);
@@ -255,16 +306,20 @@ enum UICommandType {
   createComment,
   createDocument,
   createWindow,
-  disposeEventTarget,
+  disposeBindingObject,
   addEvent,
   removeNode,
   insertAdjacentNode,
   setStyle,
+  clearStyle,
   setAttribute,
   removeAttribute,
   cloneNode,
   removeEvent,
   createDocumentFragment,
+  // perf optimize
+  createSVGElement,
+  createElementNS,
 }
 
 class UICommandItem extends Struct {
@@ -302,31 +357,28 @@ final DartClearUICommandItems _clearUICommandItems =
 
 class UICommand {
   late final UICommandType type;
-  late final int id;
-  late final List<String> args;
+  late final String args;
   late final Pointer nativePtr;
+  late final Pointer nativePtr2;
 
   @override
   String toString() {
-    return 'UICommand(type: $type, id: $id, args: $args, nativePtr: $nativePtr)';
+    return 'UICommand(type: $type, args: $args, nativePtr: $nativePtr, nativePtr2: $nativePtr2)';
   }
 }
 
 // struct UICommandItem {
 //   int32_t type;             // offset: 0 ~ 0.5
-//   int32_t id;               // offset: 0.5 ~ 1
-//   int32_t args_01_length;   // offset: 1 ~ 1.5
-//   int32_t args_02_length;   // offset: 1.5 ~ 2
-//   const uint16_t *string_01;// offset: 2
-//   const uint16_t *string_02;// offset: 3
-//   void* nativePtr;          // offset: 4
+//   int32_t args_01_length;   // offset: 0.5 ~ 1
+//   const uint16_t *string_01;// offset: 1
+//   void* nativePtr;          // offset: 2
+//   void* nativePtr2;         // offset: 3
 // };
-const int nativeCommandSize = 5;
-const int typeAndIdMemOffset = 0;
-const int args01And02LengthMemOffset = 1;
-const int args01StringMemOffset = 2;
-const int args02StringMemOffset = 3;
-const int nativePtrMemOffset = 4;
+const int nativeCommandSize = 4;
+const int typeAndArgs01LenMemOffset = 0;
+const int args01StringMemOffset = 1;
+const int nativePtrMemOffset = 2;
+const int native2PtrMemOffset = 3;
 
 final bool isEnabledLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
 
@@ -340,50 +392,34 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
     int i = _i * nativeCommandSize;
     UICommand command = UICommand();
 
-    int typeIdCombine = rawMemory[i + typeAndIdMemOffset];
+    int typeArgs01Combine = rawMemory[i + typeAndArgs01LenMemOffset];
 
-    // int32_t  int32_t
-    // +-------+-------+
-    // |  id   | type  |
-    // +-------+-------+
-    int id = (typeIdCombine >> 32).toSigned(32);
-    int type = (typeIdCombine ^ (id << 32)).toSigned(32);
+    //      int32_t        int32_t
+    // +-------------+-----------------+
+    // |      type     | args_01_length  |
+    // +-------------+-----------------+
+    int args01Length = (typeArgs01Combine >> 32).toSigned(32);
+    int type = (typeArgs01Combine ^ (args01Length << 32)).toSigned(32);
 
     command.type = UICommandType.values[type];
-    command.id = id;
-    int nativePtrValue = rawMemory[i + nativePtrMemOffset];
-    command.nativePtr = nativePtrValue != 0 ? Pointer.fromAddress(rawMemory[i + nativePtrMemOffset]) : nullptr;
-    command.args = List.empty(growable: true);
-
-    int args01And02Length = rawMemory[i + args01And02LengthMemOffset];
-    int args01Length;
-    int args02Length;
-
-    if (args01And02Length == 0) {
-      args01Length = args02Length = 0;
-    } else {
-      args02Length = (args01And02Length >> 32).toSigned(32);
-      args01Length = (args01And02Length ^ (args02Length << 32)).toSigned(32);
-    }
 
     int args01StringMemory = rawMemory[i + args01StringMemOffset];
     if (args01StringMemory != 0) {
       Pointer<Uint16> args_01 = Pointer.fromAddress(args01StringMemory);
-      command.args.add(uint16ToString(args_01, args01Length));
-
-      int args02StringMemory = rawMemory[i + args02StringMemOffset];
-      if (args02StringMemory != 0) {
-        Pointer<Uint16> args_02 = Pointer.fromAddress(args02StringMemory);
-        command.args.add(uint16ToString(args_02, args02Length));
-      }
+      command.args = uint16ToString(args_01, args01Length);
+      malloc.free(args_01);
+    } else {
+      command.args = '';
     }
 
+    int nativePtrValue = rawMemory[i + nativePtrMemOffset];
+    command.nativePtr = nativePtrValue != 0 ? Pointer.fromAddress(rawMemory[i + nativePtrMemOffset]) : nullptr;
+
+    int nativePtr2Value = rawMemory[i + native2PtrMemOffset];
+    command.nativePtr2 = nativePtr2Value != 0 ? Pointer.fromAddress(nativePtr2Value) : nullptr;
+
     if (isEnabledLog) {
-      String printMsg = '${command.type}, id: ${command.id}';
-      for (int i = 0; i < command.args.length; i++) {
-        printMsg += ' args[$i]: ${command.args[i]}';
-      }
-      printMsg += ' nativePtr: ${command.nativePtr}';
+      String printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} args: ${command.args} nativePtr2: ${command.nativePtr2}';
       print(printMsg);
     }
     return command;
@@ -416,82 +452,99 @@ void flushUICommand(WebFViewController view) {
     return;
   }
 
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
-  }
-
   List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, view.contextId);
 
   SchedulerBinding.instance.scheduleFrame();
 
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_END);
-  }
-
   Map<int, bool> pendingStylePropertiesTargets = {};
+  Set<int> pendingRecalculateTargets = {};
 
   // For new ui commands, we needs to tell engine to update frames.
   for (int i = 0; i < commandLength; i++) {
     UICommand command = commands[i];
     UICommandType commandType = command.type;
-    int id = command.id;
     Pointer nativePtr = command.nativePtr;
 
     try {
       switch (commandType) {
         case UICommandType.createElement:
-          view.createElement(id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
+          view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
           break;
         case UICommandType.createDocument:
-          view.initDocument(id, nativePtr.cast<NativeBindingObject>());
+          view.initDocument(nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createWindow:
-          view.initWindow(id, nativePtr.cast<NativeBindingObject>());
+          view.initWindow(nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createTextNode:
-          view.createTextNode(id, nativePtr.cast<NativeBindingObject>(), command.args[0]);
+          view.createTextNode(nativePtr.cast<NativeBindingObject>(), command.args);
           break;
         case UICommandType.createComment:
-          view.createComment(id, nativePtr.cast<NativeBindingObject>());
+          view.createComment(nativePtr.cast<NativeBindingObject>());
           break;
-        case UICommandType.disposeEventTarget:
-          view.disposeEventTarget(id, nativePtr.cast<NativeBindingObject>());
+        case UICommandType.disposeBindingObject:
+          view.disposeBindingObject(nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.addEvent:
-          view.addEvent(id, command.args[0]);
+          Pointer<AddEventListenerOptions> eventListenerOptions = command.nativePtr2.cast<AddEventListenerOptions>();
+          view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args, addEventListenerOptions: eventListenerOptions);
           break;
         case UICommandType.removeEvent:
-          view.removeEvent(id, command.args[0]);
+          bool isCapture = command.nativePtr2.address == 1;
+          view.removeEvent(nativePtr.cast<NativeBindingObject>(), command.args, isCapture: isCapture);
           break;
         case UICommandType.insertAdjacentNode:
-          int childId = int.parse(command.args[0]);
-          String position = command.args[1];
-          view.insertAdjacentNode(id, position, childId);
+          view.insertAdjacentNode(
+            nativePtr.cast<NativeBindingObject>(),
+            command.args,
+            command.nativePtr2.cast<NativeBindingObject>()
+          );
           break;
         case UICommandType.removeNode:
-          view.removeNode(id);
+          view.removeNode(nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.cloneNode:
-          int newId = int.parse(command.args[0]);
-          view.cloneNode(id, newId);
+          view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
           break;
         case UICommandType.setStyle:
-          String key = command.args[0];
-          String value = command.args[1];
-          view.setInlineStyle(id, key, value);
-          pendingStylePropertiesTargets[id] = true;
+          String value;
+          if (command.nativePtr2 != nullptr) {
+            Pointer<NativeString> nativeValue = command.nativePtr2.cast<NativeString>();
+            value = nativeStringToString(nativeValue);
+            freeNativeString(nativeValue);
+          } else {
+            value = '';
+          }
+          view.setInlineStyle(nativePtr, command.args, value);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.clearStyle:
+          view.clearInlineStyle(nativePtr);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setAttribute:
-          String key = command.args[0];
-          String value = command.args[1];
-          view.setAttribute(id, key, value);
+          Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
+          String key = nativeStringToString(nativeKey);
+          freeNativeString(nativeKey);
+          view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
+          pendingRecalculateTargets.add(nativePtr.address);
           break;
         case UICommandType.removeAttribute:
-          String key = command.args[0];
-          view.removeAttribute(id, key);
+          String key = command.args;
+          view.removeAttribute(nativePtr, key);
           break;
         case UICommandType.createDocumentFragment:
-          view.createDocumentFragment(id, nativePtr.cast<NativeBindingObject>());
+          view.createDocumentFragment(nativePtr.cast<NativeBindingObject>());
+          break;
+        case UICommandType.createSVGElement:
+          view.createElementNS(nativePtr.cast<NativeBindingObject>(), SVG_ELEMENT_URI, command.args);
+          break;
+        case UICommandType.createElementNS:
+          Pointer<NativeString> nativeNameSpaceUri = command.nativePtr2.cast<NativeString>();
+          String namespaceUri = nativeStringToString(nativeNameSpaceUri);
+          freeNativeString(nativeNameSpaceUri);
+
+          view.createElementNS(nativePtr.cast<NativeBindingObject>(), namespaceUri, command.args);
           break;
         default:
           break;
@@ -502,12 +555,21 @@ void flushUICommand(WebFViewController view) {
   }
 
   // For pending style properties, we needs to flush to render style.
-  for (int id in pendingStylePropertiesTargets.keys) {
+  for (int address in pendingStylePropertiesTargets.keys) {
     try {
-      view.flushPendingStyleProperties(id);
+      view.flushPendingStyleProperties(address);
     } catch (e, stack) {
       print('$e\n$stack');
     }
   }
   pendingStylePropertiesTargets.clear();
+
+  for (var address in pendingRecalculateTargets) {
+    try {
+      view.recalculateStyle(address);
+    } catch(e, stack) {
+      print('$e\n$stack');
+    }
+  }
+  pendingRecalculateTargets.clear();
 }

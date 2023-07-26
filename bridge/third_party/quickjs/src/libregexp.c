@@ -2060,7 +2060,7 @@ static int push_state(REExecContext *s,
 
     if (unlikely((s->state_stack_len + 1) > s->state_stack_size)) {
         /* reallocate the stack */
-        new_size = s->state_stack_size * 3 / 2;
+        new_size = s->state_stack_size * 9 / 2;
         if (new_size < 8)
             new_size = 8;
         new_stack = lre_realloc(s->opaque, s->state_stack, new_size * s->state_size);
@@ -2564,7 +2564,7 @@ BOOL lre_check_stack_overflow(void *opaque, size_t alloca_size)
 
 void *lre_realloc(void *opaque, void *ptr, size_t size)
 {
-    return realloc(ptr, size);
+    return mi_realloc(ptr, size);
 }
 
 int main(int argc, char **argv)

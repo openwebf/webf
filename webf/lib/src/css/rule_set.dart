@@ -5,16 +5,21 @@
 import 'dart:collection';
 
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 
 typedef CSSMap = HashMap<String, List<CSSRule>>;
 
 class RuleSet {
+  final Document ownerDocument;
+  RuleSet(this.ownerDocument);
+
   bool get isEmpty =>
       idRules.isEmpty &&
       classRules.isEmpty &&
       attributeRules.isEmpty &&
       tagRules.isEmpty &&
       universalRules.isEmpty &&
+      pseudoRules.isEmpty &&
       keyframesRules.isEmpty;
 
   final CSSMap idRules = HashMap();
@@ -22,18 +27,19 @@ class RuleSet {
   final CSSMap attributeRules = HashMap();
   final CSSMap tagRules = HashMap();
   final List<CSSRule> universalRules = [];
+  final List<CSSRule> pseudoRules = [];
 
   final Map<String, CSSKeyframesRule> keyframesRules = {};
 
   int _lastPosition = 0;
 
-  void addRules(List<CSSRule> rules) {
+  void addRules(List<CSSRule> rules, { required String? baseHref }) {
     for (CSSRule rule in rules) {
-      addRule(rule);
+      addRule(rule, baseHref: baseHref);
     }
   }
 
-  void addRule(CSSRule rule) {
+  void addRule(CSSRule rule, { required String? baseHref }) {
     rule.position = _lastPosition++;
     if (rule is CSSStyleRule) {
       for (final selector in rule.selectorGroup.selectors) {
@@ -41,6 +47,8 @@ class RuleSet {
       }
     } else if (rule is CSSKeyframesRule) {
       keyframesRules[rule.name] = rule;
+    } else if (rule is CSSFontFaceRule) {
+      CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!, baseHref);
     } else {
       assert(false, 'Unsupported rule type: ${rule.runtimeType}');
     }
@@ -52,6 +60,7 @@ class RuleSet {
     attributeRules.clear();
     tagRules.clear();
     universalRules.clear();
+    pseudoRules.clear();
   }
 
   // indexed by selectorText
@@ -72,7 +81,8 @@ class RuleSet {
         }
         tagName = simpleSelector.name;
       } else if (simpleSelector.runtimeType == PseudoClassSelector ||
-          simpleSelector.runtimeType == PseudoElementSelector) {
+          simpleSelector.runtimeType == PseudoElementSelector ||
+          simpleSelector.runtimeType == PseudoClassFunctionSelector) {
         pseudoName = simpleSelector.name;
       }
 
@@ -107,6 +117,24 @@ class RuleSet {
       return;
     }
 
+    if (pseudoName != null && _isLegacyPsuedoClass(pseudoName)) {
+      pseudoRules.add(rule);
+      return;
+    }
+
     universalRules.add(rule);
+  }
+
+  static bool _isLegacyPsuedoClass(String name) {
+    // TODO: :first-letter/line match elements.
+    switch (name) {
+      case 'before':
+      case 'after':
+        return true;
+      case 'first-line':
+      case 'first-letter':
+      default:
+        return false;
+    }
   }
 }

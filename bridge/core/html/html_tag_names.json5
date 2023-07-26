@@ -10,7 +10,10 @@
       },
       {
         "template": "element_factory",
-        "filename": "html_element_factory"
+        "filename": "html_element_factory",
+        "options": {
+          "prefix": "HTML"
+        }
       },
       {
         "template": "element_type_helper",
@@ -56,6 +59,11 @@
       "interfaceName": "HTMLImageElement",
       "filename": "html_image_element"
     },
-    "script"
+    "script",
+    {
+      "name": "iframe",
+      "interfaceName": "HTMLIFrameElement",
+      "filename": "html_iframe_element"
+    }
   ]
 }

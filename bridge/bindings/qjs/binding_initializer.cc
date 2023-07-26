@@ -9,16 +9,23 @@
 #include "qjs_animation_event.h"
 #include "qjs_blob.h"
 #include "qjs_bounding_client_rect.h"
+#include "qjs_canvas_gradient.h"
+#include "qjs_canvas_pattern.h"
 #include "qjs_canvas_rendering_context.h"
 #include "qjs_canvas_rendering_context_2d.h"
 #include "qjs_character_data.h"
 #include "qjs_close_event.h"
 #include "qjs_comment.h"
+#include "qjs_computed_css_style_declaration.h"
 #include "qjs_console.h"
 #include "qjs_css_style_declaration.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
+#include "qjs_dom_matrix.h"
+#include "qjs_dom_matrix_readonly.h"
+#include "qjs_dom_string_map.h"
+#include "qjs_dom_token_list.h"
 #include "qjs_element.h"
 #include "qjs_element_attributes.h"
 #include "qjs_error_event.h"
@@ -31,11 +38,13 @@
 #include "qjs_html_body_element.h"
 #include "qjs_html_button_element.h"
 #include "qjs_html_canvas_element.h"
+#include "qjs_html_collection.h"
 #include "qjs_html_div_element.h"
 #include "qjs_html_element.h"
 #include "qjs_html_form_element.h"
 #include "qjs_html_head_element.h"
 #include "qjs_html_html_element.h"
+#include "qjs_html_iframe_element.h"
 #include "qjs_html_image_element.h"
 #include "qjs_html_input_element.h"
 #include "qjs_html_link_element.h"
@@ -44,6 +53,7 @@
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
 #include "qjs_image.h"
+#include "qjs_inline_css_style_declaration.h"
 #include "qjs_input_event.h"
 #include "qjs_intersection_change_event.h"
 #include "qjs_keyboard_event.h"
@@ -61,6 +71,19 @@
 #include "qjs_pop_state_event.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
+#include "qjs_svg_circle_element.h"
+#include "qjs_svg_element.h"
+#include "qjs_svg_ellipse_element.h"
+#include "qjs_svg_g_element.h"
+#include "qjs_svg_geometry_element.h"
+#include "qjs_svg_graphics_element.h"
+#include "qjs_svg_path_element.h"
+#include "qjs_svg_rect_element.h"
+#include "qjs_svg_style_element.h"
+#include "qjs_svg_svg_element.h"
+#include "qjs_svg_text_content_element.h"
+#include "qjs_svg_text_element.h"
+#include "qjs_svg_text_positioning_element.h"
 #include "qjs_text.h"
 #include "qjs_touch.h"
 #include "qjs_touch_event.h"
@@ -114,6 +137,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLHeadElement::Install(context);
   QJSHTMLBodyElement::Install(context);
   QJSHTMLHtmlElement::Install(context);
+  QJSHTMLIFrameElement::Install(context);
   QJSHTMLAnchorElement::Install(context);
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
@@ -128,17 +152,41 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLCanvasElement::Install(context);
   QJSCanvasRenderingContext::Install(context);
   QJSCanvasRenderingContext2D::Install(context);
+  QJSCanvasPattern::Install(context);
+  QJSCanvasGradient::Install(context);
+  QJSDOMMatrixReadonly::Install(context);
+  QJSDOMMatrix::Install(context);
   QJSCSSStyleDeclaration::Install(context);
+  QJSInlineCssStyleDeclaration::Install(context);
+  QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
-  QJSHTMLAllCollection::Install(context);
   QJSScreen::Install(context);
   QJSBlob::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);
+  QJSDOMStringMap::Install(context);
+  QJSDOMTokenList::Install(context);
   QJSPerformance::Install(context);
   QJSPerformanceEntry::Install(context);
   QJSPerformanceMark::Install(context);
   QJSPerformanceMeasure::Install(context);
+  QJSHTMLCollection::Install(context);
+  QJSHTMLAllCollection::Install(context);
+
+  // SVG
+  QJSSVGElement::Install(context);
+  QJSSVGGraphicsElement::Install(context);
+  QJSSVGGeometryElement::Install(context);
+  QJSSVGSVGElement::Install(context);
+  QJSSVGRectElement::Install(context);
+  QJSSVGTextContentElement::Install(context);
+  QJSSVGTextPositioningElement::Install(context);
+  QJSSVGPathElement::Install(context);
+  QJSSVGTextElement::Install(context);
+  QJSSVGGElement::Install(context);
+  QJSSVGCircleElement::Install(context);
+  QJSSVGEllipseElement::Install(context);
+  QJSSVGStyleElement::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

@@ -6,10 +6,4 @@
 #include "html_button_element.h"
 #include "qjs_html_button_element.h"
 
-namespace webf {
-
-bool HTMLButtonElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLButtonElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
-
-}  // namespace webf
+namespace webf {}  // namespace webf

@@ -38,6 +38,7 @@ const paths = {
   webf: resolveWebF('webf'),
   bridge: resolveWebF('bridge'),
   polyfill: resolveWebF('bridge/polyfill'),
+  codeGen: resolveWebF('bridge/scripts/code_generator'),
   thirdParty: resolveWebF('third_party'),
   tests: resolveWebF('integration_tests'),
   sdk: resolveWebF('sdk'),
@@ -45,6 +46,7 @@ const paths = {
   performanceTests: resolveWebF('performance_tests')
 };
 
+const NPM = platform == 'win32' ? 'npm.cmd' : 'npm';
 const pkgVersion = readFileSync(path.join(paths.webf, 'pubspec.yaml'), 'utf-8').match(/version: (.*)/)[1].trim();
 const isProfile = process.env.ENABLE_PROFILE === 'true';
 
@@ -95,6 +97,10 @@ task('build-darwin-webf-lib', done => {
     externCmakeArgs.push('-DENABLE_ASAN=true');
   }
 
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
+  }
+
   // Bundle quickjs into webf.
   if (program.staticQuickjs) {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
@@ -139,21 +145,21 @@ task('run-bridge-unit-test', done => {
     execSync(`${path.join(paths.bridge, 'build/macos/lib/x86_64/webf_unit_test')}`, {stdio: 'inherit'});
   } else if (platform === 'linux') {
     execSync(`${path.join(paths.bridge, 'build/linux/lib/webf_unit_test')}`, {stdio: 'inherit'});
-  } else {
-    throw new Error('Platform not supported.');
+  } else if (platform == 'win32') {
+    execSync(`${path.join(paths.bridge, 'build/windows/lib/webf_unit_test.exe')}`, {stdio: 'inherit'});
   }
    done();
 });
 
 task('compile-polyfill', (done) => {
   if (!fs.existsSync(path.join(paths.polyfill, 'node_modules'))) {
-    spawnSync('npm', ['install'], {
+    spawnSync(NPM, ['install'], {
       cwd: paths.polyfill,
       stdio: 'inherit'
     });
   }
 
-  let result = spawnSync('npm', ['run', (buildMode === 'Release' || buildMode === 'RelWithDebInfo') ? 'build:release' : 'build'], {
+  let result = spawnSync(NPM, ['run', (buildMode === 'Release' || buildMode === 'RelWithDebInfo') ? 'build:release' : 'build'], {
     cwd: paths.polyfill,
     env: {
       ...process.env,
@@ -326,7 +332,7 @@ function patchiOSFrameworkPList(frameworkPath) {
 
     pListString = insertStringSlice(pListString, versionStringLast, `
         <key>MinimumOSVersion</key>
-        <string>9.0</string>`);
+        <string>11.0</string>`);
     fs.writeFileSync(pListPath, pListString);
   }
 }
@@ -344,60 +350,62 @@ task(`build-ios-webf-lib`, (done) => {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
   }
 
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
+  }
+
   // generate build scripts for simulator
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
     -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
     -DPLATFORM=SIMULATOR64 \
-    -DDEPLOYMENT_TARGET=9.0 \
+    -DDEPLOYMENT_TARGET=11.0 \
     -DIS_IOS=TRUE \
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
     ${externCmakeArgs.join(' ')} \
-    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-x64 -S ${paths.bridge}`, {
+    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-simulator-x86 -S ${paths.bridge}`, {
     cwd: paths.bridge,
     stdio: 'inherit',
     env: {
       ...process.env,
       WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/x86_64')
+      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/simulator_x86')
+    }
+  });
+  // genereate build scripts for simulator arm64
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
+    -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
+    -DPLATFORM=SIMULATORARM64 \
+    -DDEPLOYMENT_TARGET=11.0 \
+    -DIS_IOS=TRUE \
+    ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
+    ${externCmakeArgs.join(' ')} \
+    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-simulator-arm64 -S ${paths.bridge}`, {
+    cwd: paths.bridge,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      WEBF_JS_ENGINE: targetJSEngine,
+      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/simulator_arm64')
     }
   });
 
   let cpus = os.cpus();
 
-  // build for simulator
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-x64 --target webf -- -j ${cpus.length}`, {
+  // build for simulator x86
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-simulator-x86 --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
-  // Generate builds scripts for ARMv7s, ARMv7
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
-    -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
-    -DPLATFORM=OS \
-    -DIS_IOS=TRUE \
-    -DARCHS="armv7;armv7s" \
-    -DDEPLOYMENT_TARGET=9.0 \
-    ${externCmakeArgs.join(' ')} \
-    ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
-    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-arm -S ${paths.bridge}`, {
-    cwd: paths.bridge,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/arm')
-    }
-  });
-
-  // Build for ARMv7, ARMv7s
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm --target webf -- -j ${cpus.length}`, {
+  // build for simulator arm64
+  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-simulator-arm64 --target webf -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
-  // Generate builds scripts for ARMv7s, ARMv7
+  // Generate builds scripts for ARM64
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
     -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
     -DPLATFORM=OS64 \
-    -DDEPLOYMENT_TARGET=9.0 \
+    -DDEPLOYMENT_TARGET=11.0 \
     -DIS_IOS=TRUE \
     ${externCmakeArgs.join(' ')} \
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
@@ -424,41 +432,41 @@ task(`build-ios-webf-lib`, (done) => {
   }
 
   targetSourceFrameworks.forEach(target => {
-    const armDynamicSDKPath = path.join(paths.bridge, `build/ios/lib/arm/${target}.framework`);
     const arm64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/arm64/${target}.framework`);
-    const x64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/x86_64/${target}.framework`);
+    const simulatorX64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/simulator_x86/${target}.framework`);
+    const simulatorArm64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/simulator_arm64/${target}.framework`);
 
-    // Create flat frameworks with multiple archs.
-    execSync(`lipo -create ${armDynamicSDKPath}/${target} ${arm64DynamicSDKPath}/${target} -output ${armDynamicSDKPath}/${target}`, {
+    // Create flat simulator frameworks with multiple archs.
+    execSync(`lipo -create ${simulatorX64DynamicSDKPath}/${target} ${simulatorArm64DynamicSDKPath}/${target} -output ${simulatorX64DynamicSDKPath}/${target}`, {
       stdio: 'inherit'
     });
 
     // CMake generated iOS frameworks does not contains <MinimumOSVersion> key in Info.plist.
-    patchiOSFrameworkPList(x64DynamicSDKPath);
-    patchiOSFrameworkPList(armDynamicSDKPath);
+    patchiOSFrameworkPList(simulatorX64DynamicSDKPath);;
+    patchiOSFrameworkPList(arm64DynamicSDKPath);
 
     const targetDynamicSDKPath = `${paths.bridge}/build/ios/framework`;
     const frameworkPath = `${targetDynamicSDKPath}/${target}.xcframework`;
     mkdirp.sync(targetDynamicSDKPath);
 
     // dSYM file are located at /path/to/webf/build/ios/lib/${arch}/target.dSYM.
-    // Create dSYM for x86_64.
-    execSync(`dsymutil ${x64DynamicSDKPath}/${target} --out ${x64DynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
+    // Create dSYM for simulator.
+    execSync(`dsymutil ${simulatorX64DynamicSDKPath}/${target} --out ${simulatorX64DynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
     // Create dSYM for arm64,armv7.
-    execSync(`dsymutil ${armDynamicSDKPath}/${target} --out ${armDynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
+    execSync(`dsymutil ${arm64DynamicSDKPath}/${target} --out ${arm64DynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
 
     // Generated xcframework at located at /path/to/webf/build/ios/framework/${target}.xcframework.
     // Generate xcframework with dSYM.
     if (buildMode === 'RelWithDebInfo') {
       execSync(`xcodebuild -create-xcframework \
-        -framework ${x64DynamicSDKPath} -debug-symbols ${x64DynamicSDKPath}/../${target}.dSYM \
-        -framework ${armDynamicSDKPath} -debug-symbols ${armDynamicSDKPath}/../${target}.dSYM -output ${frameworkPath}`, {
+        -framework ${simulatorX64DynamicSDKPath} -debug-symbols ${simulatorX64DynamicSDKPath}/../${target}.dSYM \
+        -framework ${arm64DynamicSDKPath} -debug-symbols ${arm64DynamicSDKPath}/../${target}.dSYM -output ${frameworkPath}`, {
         stdio: 'inherit'
       });
     } else {
       execSync(`xcodebuild -create-xcframework \
-        -framework ${x64DynamicSDKPath} \
-        -framework ${armDynamicSDKPath} -output ${frameworkPath}`, {
+        -framework ${simulatorX64DynamicSDKPath} \
+        -framework ${arm64DynamicSDKPath} -output ${frameworkPath}`, {
         stdio: 'inherit'
       });
     }
@@ -482,13 +490,20 @@ task('build-ios-frameworks', (done) => {
 });
 
 task('build-linux-webf-lib', (done) => {
-  const buildType = buildMode == 'Release' ? 'Release' : 'Relwithdebinfo';
+  const buildType = buildMode == 'Release' ? 'Release' : 'RelWithDebInfo';
   const cmakeGeneratorTemplate = platform == 'win32' ? 'Ninja' : 'Unix Makefiles';
+
+  let externCmakeArgs = [];
+
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
+  }
 
   const soBinaryDirectory = path.join(paths.bridge, `build/linux/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-linux');
   // generate project
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
+  ${externCmakeArgs.join(' ')} \
   ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
   ${'-DENABLE_TEST=true \\'}
   -G "${cmakeGeneratorTemplate}" \
@@ -525,16 +540,89 @@ task('build-linux-webf-lib', (done) => {
   done();
 });
 
-task('build-android-webf-lib', (done) => {
-  let androidHome;
+task('generate-bindings-code', (done) => {
+  if (!fs.existsSync(path.join(paths.codeGen, 'node_modules'))) {
+    spawnSync(NPM, ['install'], {
+      cwd: paths.codeGen,
+      stdio: 'inherit'
+    });
+  }
 
+  let buildResult = spawnSync(NPM, ['run', 'build'], {
+    cwd: paths.codeGen,
+    env: {
+      ...process.env,
+    },
+    stdio: 'inherit'
+  });
+
+  if (buildResult.status !== 0) {
+    return done(buildResult.status);
+  }
+
+  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../out'], {
+    cwd: paths.codeGen,
+    env: {
+      ...process.env,
+    },
+    stdio: 'inherit'
+  });
+
+  if (compileResult.status !== 0) {
+    return done(compileResult.status);
+  }
+
+  done();
+});
+
+task('build-window-webf-lib', (done) => {
+  const buildType = buildMode == 'Release' ? 'RelWithDebInfo' : 'Debug';
+
+  let externCmakeArgs = [];
+
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
+  }
+
+  const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
+  const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
+  // generate project
+  execSync(`cmake --log-level=VERBOSE -DCMAKE_BUILD_TYPE=${buildType} ${externCmakeArgs.join(' ')} -DVERBOSE_CONFIGURE=ON -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+    {
+      cwd: paths.bridge,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        WEBF_JS_ENGINE: targetJSEngine,
+        LIBRARY_OUTPUT_DIR: soBinaryDirectory
+      }
+    });
+
+  const webfTargets = ['webf'];
+
+  // build
+  execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --verbose --config ${buildType}`, {
+    stdio: 'inherit'
+  });
+
+  // Fix the output path
+  const outputDir = path.join(paths.bridge, `build/windows/lib/${buildMode === 'Release' ? 'RelWithDebInfo' : 'Debug'}`);
+  execSync(`copy ${outputDir}\\*.dll ${outputDir}\\..\\`);
+
+  done();
+});
+
+task('build-android-webf-lib', (done) => {
   let ndkDir = '';
 
   // If ANDROID_NDK_HOME env defined, use it.
   if (process.env.ANDROID_NDK_HOME) {
     ndkDir = process.env.ANDROID_NDK_HOME;
   } else {
-    if (platform == 'win32') {
+    let androidHome;
+    if (process.env.ANDROID_SDK_HOME) {
+      androidHome = process.env.ANDROID_SDK_HOME;
+    } else if (platform == 'win32') {
       androidHome = path.join(process.env.LOCALAPPDATA, 'Android\\Sdk');
     } else if (platform == 'darwin') {
       androidHome = path.join(process.env.HOME, 'Library/Android/sdk')
@@ -545,7 +633,7 @@ task('build-android-webf-lib', (done) => {
     ndkDir = path.join(androidHome, 'ndk', ndkVersion);
 
     if (!fs.existsSync(ndkDir)) {
-      throw new Error('Android NDK version (22.1.7171670) not installed.');
+      throw new Error('Android NDK version (${ndkVersion}) not installed.');
     }
   }
 
@@ -555,11 +643,15 @@ task('build-android-webf-lib', (done) => {
     'armeabi-v7a': 'arm-linux-androideabi',
     'x86': 'i686-linux-android'
   };
-  const buildType = (buildMode === 'Release' || buildMode == 'Relwithdebinfo') ? 'Relwithdebinfo' : 'Debug';
+  const buildType = (buildMode === 'Release' || buildMode == 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
   let externCmakeArgs = [];
 
   if (process.env.ENABLE_ASAN === 'true') {
     externCmakeArgs.push('-DENABLE_ASAN=true');
+  }
+
+  if (process.env.USE_SYSTEM_MALLOC === 'true') {
+    externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
   }
 
   // Bundle quickjs into webf.

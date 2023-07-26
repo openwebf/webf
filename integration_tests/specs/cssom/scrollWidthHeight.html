@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>CSS Test: CSSOM View scrollWidth and scrollHeight</title>
+  <link rel="author" title="Robert O'Callahan" href="mailto:robert@ocallahan.org"/>
+  <link rel="help" href="http://www.w3.org/TR/cssom-view/#dom-element-scrollwidth"/>
+  <meta name="flags" content="dom"/>
+  <style>
+      * {
+          box-sizing: border-box;
+      }
+
+      #elemSimple, #elemOverflow, #elemNestedOverflow {
+          border: 1px solid black;
+          overflow: hidden;
+          width: 200px;
+          height: 40px;
+          padding-bottom: 50px;
+          padding-right: 40px;
+      }
+
+      #elemSimple > div {
+          background: yellow;
+          width: 60px;
+          height: 30px;
+      }
+
+      #elemOverflow > div {
+          background: yellow;
+          width: 250px;
+          height: 150px;
+      }
+
+      #elemNestedOverflow > div {
+          background: yellow;
+          width: 60px;
+          height: 30px;
+      }
+
+      #elemNestedOverflow > div > div {
+          background: blue;
+          width: 250px;
+          height: 150px;
+      }
+  </style>
+</head>
+<body>
+<noscript>Test not run - javascript required.</noscript>
+<div id="elemSimple">
+  <div></div>
+</div>
+<div id="elemOverflow">
+  <div></div>
+</div>
+<div id="elemNestedOverflow">
+  <div>
+    <div></div>
+  </div>
+</div>
+<script type="text/javascript">
+var elemSimple = document.getElementById("elemSimple");
+var elemOverflow = document.getElementById("elemOverflow");
+var elemNestedOverflow = document.getElementById("elemNestedOverflow");
+
+const assert_equals = console.log;
+
+assert_equals(elemSimple.clientHeight, 50);
+assert_equals(elemSimple.scrollHeight, 80);
+assert_equals(elemSimple.clientWidth, 198);
+assert_equals(elemSimple.scrollWidth, 198);
+assert_equals(elemOverflow.clientHeight, 50);
+assert_equals(elemOverflow.scrollHeight, 200);
+assert_equals(elemOverflow.clientWidth, 198);
+assert_equals(elemOverflow.scrollWidth, 290);
+assert_equals(elemNestedOverflow.clientHeight, 50);
+assert_equals(elemNestedOverflow.scrollHeight, 200);
+assert_equals(elemNestedOverflow.clientWidth, 198);
+assert_equals(elemNestedOverflow.scrollWidth, 250);
+</script>
+</body>
+</html>

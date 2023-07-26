@@ -75,5 +75,19 @@ void main() {
       expect((rules[0] as CSSStyleRule).selectorGroup.selectorText, '.foo h6');
       expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
     });
+
+    test('8', () {
+      List<CSSRule> rules = parseRules('@css-compile@model-base 75/750; .foo {color: red}');
+      expect(rules.length, 1);
+      expect((rules[0] as CSSStyleRule).selectorGroup.selectorText, '.foo');
+      expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('color'), 'red');
+    });
+    test('9', () {
+      List<CSSRule> rules = parseRules('.item { animation: testAni .5s 1 ease forwards }');
+      expect(rules.length, 1);
+      expect((rules[0] as CSSStyleRule).selectorGroup.selectorText, '.item');
+      expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('animationDelay'), '0s');
+      expect((rules[0] as CSSStyleRule).declaration.getPropertyValue('animationFillMode'), 'forwards');
+    });
   });
 }

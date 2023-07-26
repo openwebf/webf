@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "custom_event.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "native_value_converter.h"
 
 namespace webf {
@@ -66,6 +67,11 @@ void CustomEvent::initCustomEvent(const AtomicString& type,
 
 bool CustomEvent::IsCustomEvent() const {
   return true;
+}
+
+void CustomEvent::Trace(GCVisitor* visitor) const {
+  Event::Trace(visitor);
+  detail_.Trace(visitor);
 }
 
 }  // namespace webf

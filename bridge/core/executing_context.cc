@@ -20,15 +20,15 @@ namespace webf {
 
 static std::atomic<int32_t> context_unique_id{0};
 
-#define MAX_JS_CONTEXT 1024
+#define MAX_JS_CONTEXT 8192
 bool valid_contexts[MAX_JS_CONTEXT];
 std::atomic<uint32_t> running_context_list{0};
 
-ExecutingContext::ExecutingContext(DartContext* dart_context,
+ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    int32_t contextId,
                                    JSExceptionHandler handler,
                                    void* owner)
-    : dart_context_(dart_context),
+    : dart_isolate_context_(dart_isolate_context),
       context_id_(contextId),
       handler_(std::move(handler)),
       owner_(owner),
@@ -115,10 +115,28 @@ ExecutingContext* ExecutingContext::From(JSContext* ctx) {
 
 bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
                                           size_t codeLength,
+                                          uint8_t** parsed_bytecodes,
+                                          uint64_t* bytecode_len,
                                           const char* sourceURL,
                                           int startLine) {
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), codeLength));
-  JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
+  JSValue result;
+  if (parsed_bytecodes == nullptr) {
+    result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
+  } else {
+    JSValue byte_object = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL,
+                                  JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(byte_object)) {
+      HandleException(&byte_object);
+      return false;
+    }
+    size_t len;
+    *parsed_bytecodes = JS_WriteObject(script_state_.ctx(), &len, byte_object, JS_WRITE_OBJ_BYTECODE);
+    *bytecode_len = len;
+
+    result = JS_EvalFunction(script_state_.ctx(), byte_object);
+  }
+
   DrainPendingPromiseJobs();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
@@ -220,14 +238,16 @@ void ExecutingContext::ReportError(JSValueConst error) {
   uint32_t messageLength = strlen(type) + strlen(title);
   if (stack != nullptr) {
     messageLength += 4 + strlen(stack);
-    char message[messageLength];
-    sprintf(message, "%s: %s\n%s", type, title, stack);
+    char* message = new char[messageLength];
+    snprintf(message, messageLength, "%s: %s\n%s", type, title, stack);
     handler_(this, message);
+    delete[] message;
   } else {
     messageLength += 3;
-    char message[messageLength];
-    sprintf(message, "%s: %s", type, title);
+    char* message = new char[messageLength];
+    snprintf(message, messageLength, "%s: %s", type, title);
     handler_(this, message);
+    delete[] message;
   }
 
   JS_FreeValue(ctx, errorTypeValue);
@@ -414,10 +434,14 @@ void ExecutingContext::InstallGlobal() {
 }
 
 void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable) {
-  active_wrappers_.emplace_back(script_wrappable);
+  active_wrappers_.emplace(script_wrappable);
 }
 
-// An lock free context validator.
+void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
+  active_wrappers_.erase(script_wrappable);
+}
+
+// A lock free context validator.
 bool isContextValid(int32_t contextId) {
   if (contextId > running_context_list)
     return false;

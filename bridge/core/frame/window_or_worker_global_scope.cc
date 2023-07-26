@@ -25,13 +25,16 @@ static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
 }
 
 static void handleTransientCallback(void* ptr, int32_t contextId, const char* errmsg) {
+  if (!isContextValid(contextId))
+    return;
+
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 
   if (!context->IsContextValid())
     return;
 
-  if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+  if (timer->status() == DOMTimer::TimerStatus::kCanceled || timer->status() == DOMTimer::TimerStatus::kTerminated) {
     return;
   }
 
@@ -43,17 +46,33 @@ static void handleTransientCallback(void* ptr, int32_t contextId, const char* er
 }
 
 static void handlePersistentCallback(void* ptr, int32_t contextId, const char* errmsg) {
+  if (!isContextValid(contextId))
+    return;
+
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 
   if (!context->IsContextValid())
     return;
 
-  if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+  if (timer->status() == DOMTimer::TimerStatus::kTerminated) {
     return;
   }
 
+  if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+    context->Timers()->removeTimeoutById(timer->timerId());
+    return;
+  }
+
+  timer->SetStatus(DOMTimer::TimerStatus::kExecuting);
   handleTimerCallback(timer, errmsg);
+
+  if (timer->status() == DOMTimer::TimerStatus::kCanceled) {
+    context->Timers()->removeTimeoutById(timer->timerId());
+    return;
+  }
+
+  timer->SetStatus(DOMTimer::TimerStatus::kFinished);
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
@@ -106,7 +125,7 @@ int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kMultiple);
 
-  uint32_t timerId =
+  int32_t timerId =
       context->dartMethodPtr()->setInterval(timer.get(), context->contextId(), handlePersistentCallback, timeout);
 
   // Register timerId.
@@ -136,6 +155,24 @@ void WindowOrWorkerGlobalScope::clearInterval(ExecutingContext* context, int32_t
 
   context->dartMethodPtr()->clearTimeout(context->contextId(), timerId);
   context->Timers()->forceStopTimeoutById(timerId);
+}
+
+void WindowOrWorkerGlobalScope::__gc__(ExecutingContext* context, ExceptionState& exception) {
+  JS_RunGC(context->GetScriptState()->runtime());
+}
+
+ScriptValue WindowOrWorkerGlobalScope::__memory_usage__(ExecutingContext* context, ExceptionState& exception) {
+  JSRuntime* runtime = context->GetScriptState()->runtime();
+  JSMemoryUsage memory_usage;
+  JS_ComputeMemoryUsage(runtime, &memory_usage);
+
+  char buff[2048];
+  snprintf(buff, 2048,
+           R"({"malloc_size": %ld, "malloc_limit": %ld, "memory_used_size": %ld, "memory_used_count": %ld})",
+           memory_usage.malloc_size, memory_usage.malloc_limit, memory_usage.memory_used_size,
+           memory_usage.memory_used_count);
+
+  return ScriptValue::CreateJsonObject(context->ctx(), buff, strlen(buff));
 }
 
 }  // namespace webf

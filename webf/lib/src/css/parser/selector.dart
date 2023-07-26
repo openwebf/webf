@@ -39,13 +39,14 @@ class SelectorGroup extends TreeNode {
   final SelectorTextVisitor _selectorTextVisitor = SelectorTextVisitor();
   final List<Selector> selectors;
 
-  int _specificity = -1;
+  int _matchSpecificity = -1;
 
-  int get specificity {
-    if (_specificity == -1) {
-      _specificity = _calcSpecificity();
+  int get matchSpecificity => _matchSpecificity;
+
+  set matchSpecificity(int specificity) {
+    if (specificity > _matchSpecificity || specificity == -1 ) {
+      _matchSpecificity = specificity;
     }
-    return _specificity;
   }
 
   String? _selectorText;
@@ -62,27 +63,6 @@ class SelectorGroup extends TreeNode {
 
   @override
   dynamic visit(Visitor visitor) => visitor.visitSelectorGroup(this);
-
-  int _calcSpecificity() {
-    int specificity = 0;
-    for (final selector in selectors) {
-      for (final simpleSelectorSequence in selector.simpleSelectorSequences) {
-        final simpleSelector = simpleSelectorSequence.simpleSelector;
-        switch (simpleSelector.runtimeType) {
-          case IdSelector:
-            specificity += kIdSpecificity;
-            break;
-          case ClassSelector:
-            specificity += kClassLikeSpecificity;
-            break;
-          case ElementSelector:
-            specificity += kTagSpecificity;
-            break;
-        }
-      }
-    }
-    return specificity;
-  }
 }
 
 class Selector extends TreeNode {
@@ -94,8 +74,39 @@ class Selector extends TreeNode {
 
   int get length => simpleSelectorSequences.length;
 
+  int _specificity = -1;
+
   @override
   dynamic visit(Visitor visitor) => visitor.visitSelector(this);
+
+  int get specificity {
+    if (_specificity == -1) {
+      _specificity = _calcSpecificity();
+    }
+    return _specificity;
+  }
+
+  int _calcSpecificity() {
+    int specificity = 0;
+    for (final simpleSelectorSequence in simpleSelectorSequences) {
+      final simpleSelector = simpleSelectorSequence.simpleSelector;
+      switch (simpleSelector.runtimeType) {
+        case IdSelector:
+          specificity += kIdSpecificity;
+          break;
+        case ClassSelector:
+        case AttributeSelector:
+        case PseudoClassSelector:
+          specificity += kClassLikeSpecificity;
+          break;
+        case ElementSelector:
+        case PseudoElementSelector:
+          specificity += kTagSpecificity;
+          break;
+      }
+    }
+    return specificity;
+  }
 }
 
 class SimpleSelectorSequence extends TreeNode {

@@ -43,7 +43,9 @@ export 'src/css/value.dart';
 export 'src/css/variable.dart';
 export 'src/css/keywords.dart';
 export 'src/css/input.dart';
+export 'src/css/font_face.dart';
 
+export 'src/css/computed_style_declaration.dart';
 export 'src/css/element_rule_collector.dart';
 export 'src/css/css_property_name.dart';
 
@@ -61,3 +63,6 @@ export 'src/css/values/percentage.dart';
 export 'src/css/values/textual.dart';
 export 'src/css/values/variable.dart';
 export 'src/css/values/calc.dart';
+export 'src/css/values/paint.dart';
+export 'src/css/values/path.dart';
+export 'src/css/pseudo.dart';

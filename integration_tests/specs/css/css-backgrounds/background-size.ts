@@ -70,7 +70,7 @@ describe('Background-size', () => {
     append(BODY, div);
     await snapshot(0.1);
   });
-  
+
   it('should works with auto of two values', async () => {
     let div1;
     let div = createElement(
@@ -380,7 +380,7 @@ describe('Background-size', () => {
     append(BODY, div);
     await snapshot(0.3);
   });
-  
+
   it('should not work with negative value', async () => {
     let div1;
     let div = createElement(
@@ -436,4 +436,38 @@ describe('Background-size', () => {
       done();
     });
   });
+
+  it("computed", async () => {
+    let target;
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        'font-size': '40px',
+        'box-sizing': 'border-box',
+      },
+    });
+    BODY.appendChild(target);
+
+    test_computed_value('background-size', '1px', '1px');
+    test_computed_value('background-size', '1px auto', '1px auto');
+    test_computed_value('background-size', '2% 3%');
+    test_computed_value('background-size', 'auto');
+    test_computed_value('background-size', 'auto auto', 'auto');
+    test_computed_value('background-size', 'auto 4%');
+    test_computed_value('background-size', 'contain');
+    test_computed_value('background-size', 'cover');
+    test_computed_value(
+      'background-size',
+      'calc(10px + 0.5em) calc(10px - 0.5em)',
+      '30px -10px'
+    );
+    test_computed_value(
+      'background-size',
+      'calc(10px - 0.5em) calc(10px + 0.5em)',
+      '-10px 30px'
+    );
+
+    // See background-computed.html for a test with multiple background images.
+    test_computed_value('background-size', 'auto 1px', 'auto 1px');
+  })
 });

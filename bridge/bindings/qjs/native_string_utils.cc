@@ -8,7 +8,7 @@
 
 namespace webf {
 
-std::unique_ptr<NativeString> jsValueToNativeString(JSContext* ctx, JSValue value) {
+std::unique_ptr<SharedNativeString> jsValueToNativeString(JSContext* ctx, JSValue value) {
   bool isValueString = true;
   if (JS_IsNull(value)) {
     value = JS_NewString(ctx, "");
@@ -20,7 +20,7 @@ std::unique_ptr<NativeString> jsValueToNativeString(JSContext* ctx, JSValue valu
 
   uint32_t length;
   uint16_t* buffer = JS_ToUnicode(ctx, value, &length);
-  std::unique_ptr<NativeString> ptr = std::make_unique<NativeString>(buffer, length);
+  std::unique_ptr<SharedNativeString> ptr = std::make_unique<SharedNativeString>(buffer, length);
 
   if (!isValueString) {
     JS_FreeValue(ctx, value);
@@ -28,22 +28,22 @@ std::unique_ptr<NativeString> jsValueToNativeString(JSContext* ctx, JSValue valu
   return ptr;
 }
 
-std::unique_ptr<NativeString> stringToNativeString(const std::string& string) {
+std::unique_ptr<SharedNativeString> stringToNativeString(const std::string& string) {
   std::u16string utf16;
   fromUTF8(string, utf16);
-  NativeString tmp{reinterpret_cast<const uint16_t*>(utf16.c_str()), static_cast<uint32_t>(utf16.size())};
-  return std::make_unique<NativeString>(tmp.string(), tmp.length());
+  SharedNativeString tmp{reinterpret_cast<const uint16_t*>(utf16.c_str()), static_cast<uint32_t>(utf16.size())};
+  return SharedNativeString::FromTemporaryString(tmp.string(), tmp.length());
 }
 
-std::string nativeStringToStdString(const NativeString* native_string) {
+std::string nativeStringToStdString(const SharedNativeString* native_string) {
   std::u16string u16EventType =
       std::u16string(reinterpret_cast<const char16_t*>(native_string->string()), native_string->length());
   return toUTF8(u16EventType);
 }
 
-std::unique_ptr<NativeString> atomToNativeString(JSContext* ctx, JSAtom atom) {
+std::unique_ptr<SharedNativeString> atomToNativeString(JSContext* ctx, JSAtom atom) {
   JSValue stringValue = JS_AtomToString(ctx, atom);
-  std::unique_ptr<NativeString> string = jsValueToNativeString(ctx, stringValue);
+  std::unique_ptr<SharedNativeString> string = jsValueToNativeString(ctx, stringValue);
   JS_FreeValue(ctx, stringValue);
   return string;
 }

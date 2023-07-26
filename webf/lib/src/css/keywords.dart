@@ -161,6 +161,7 @@ const String INITIAL = 'initial';
 const String NORMAL = 'normal';
 const String NONE = 'none';
 const String AUTO = 'auto';
+const String INHERIT = 'inherit';
 
 // CSS Content Visibility: https://www.w3.org/TR/css-contain-2/#content-visibility
 const String VISIBLE = 'visible';
@@ -305,3 +306,23 @@ const String ANIMATION_ITERATION_COUNT = 'animationIterationCount';
 const String ANIMATION_DIRECTION = 'animationDirection';
 const String ANIMATION_FILL_MODE = 'animationFillMode';
 const String ANIMATION_PLAY_STATE = 'animationPlayState';
+
+// SVG
+const String X = 'x';
+const String Y = 'y';
+const String RX = 'rx';
+const String RY = 'ry';
+const String CX = 'cx';
+const String CY = 'cy';
+const String R = 'r';
+const String CONTEXT_FILL = 'context-fill';
+const String CONTEXT_STROKE = 'context-stroke';
+const String STROKE = 'stroke';
+const String STROKE_WIDTH = 'strokeWidth';
+const String D = 'd';
+const String FILL_RULE = 'fillRule';
+const String STROKE_LINECAP = 'strokeLinecap';
+const String STROKE_LINEJOIN = 'strokeLinejoin';
+
+// Pseudo
+const String CONTENT = 'content';

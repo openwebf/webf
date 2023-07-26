@@ -97,9 +97,9 @@ function test_line_column7() {
     }
 }
 
-/** 
- * if comment is first line, 
- * the line number of one line should be locate at next line 
+/**
+ * if comment is first line,
+ * the line number of one line should be locate at next line
  */
 function test_line_column8() {
     try {

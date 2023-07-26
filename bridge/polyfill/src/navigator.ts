@@ -4,10 +4,8 @@
 */
 
 import { webf } from './webf';
-import connection from './connection';
 
 export const navigator = {
-  connection,
   // UA is read-only.
   get userAgent() {
     return webf.invokeModule('Navigator', 'getUserAgent');

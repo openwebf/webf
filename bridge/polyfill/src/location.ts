@@ -8,9 +8,8 @@ import { webf } from './webf';
 import { webfLocationReload } from './bridge';
 
 // Lazy parse url.
-let _url: URL;
 export function getUrl() : URL {
-  return _url ? _url : (_url = new URL(location.href));
+  return new URL(location.href);
 }
 
 export const location = {

@@ -9,10 +9,13 @@
 
 namespace webf {
 
+class FrameRequestCallbackCollection;
+
 // |FrameCallback| is an interface type which generalizes callbacks which are
 // invoked when a script-based animation needs to be resampled.
 class FrameCallback {
  public:
+  enum FrameStatus { kPending, kExecuting, kFinished, kCanceled };
   static std::shared_ptr<FrameCallback> Create(ExecutingContext* context, const std::shared_ptr<QJSFunction>& callback);
 
   FrameCallback(ExecutingContext* context, std::shared_ptr<QJSFunction> callback);
@@ -21,22 +24,31 @@ class FrameCallback {
 
   ExecutingContext* context() { return context_; };
 
+  FrameStatus status() { return status_; }
+  void SetStatus(FrameStatus status) { status_ = status; }
+
+  uint32_t frameId() { return frame_id_; }
+  void SetFrameId(uint32_t id) { frame_id_ = id; }
+
   void Trace(GCVisitor* visitor) const;
 
  private:
   std::shared_ptr<QJSFunction> callback_;
+  FrameStatus status_;
+  uint32_t frame_id_;
   ExecutingContext* context_{nullptr};
 };
 
 class FrameRequestCallbackCollection final {
  public:
   void RegisterFrameCallback(uint32_t callback_id, const std::shared_ptr<FrameCallback>& frame_callback);
-  void CancelFrameCallback(uint32_t callback_id);
+  void RemoveFrameCallback(uint32_t callback_id);
+  std::shared_ptr<FrameCallback> GetFrameCallback(uint32_t callback_id);
 
   void Trace(GCVisitor* visitor) const;
 
  private:
-  std::unordered_map<uint32_t, std::shared_ptr<FrameCallback>> frameCallbacks_;
+  std::unordered_map<uint32_t, std::shared_ptr<FrameCallback>> frame_callbacks_;
 };
 
 }  // namespace webf

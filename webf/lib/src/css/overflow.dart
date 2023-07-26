@@ -46,6 +46,7 @@ mixin CSSOverflowMixin on RenderStyle {
   @override
   CSSOverflowType get overflowX => _overflowX ?? CSSOverflowType.visible;
   CSSOverflowType? _overflowX;
+
   set overflowX(CSSOverflowType? value) {
     if (_overflowX == value) return;
     _overflowX = value;
@@ -54,6 +55,7 @@ mixin CSSOverflowMixin on RenderStyle {
   @override
   CSSOverflowType get overflowY => _overflowY ?? CSSOverflowType.visible;
   CSSOverflowType? _overflowY;
+
   set overflowY(CSSOverflowType? value) {
     if (_overflowY == value) return;
     _overflowY = value;
@@ -134,7 +136,11 @@ mixin ElementOverflowMixin on ElementBase {
         case CSSOverflowType.scroll:
           // If the render has been offset when previous overflow is auto or scroll, _scrollableX should not reset.
           if (_scrollableX == null) {
-            _scrollableX = WebFScrollable(axisDirection: AxisDirection.right, scrollListener: scrollListener, overflowType: overflowX);
+            _scrollableX = WebFScrollable(
+                axisDirection: AxisDirection.right,
+                scrollListener: scrollListener,
+                overflowType: overflowX,
+                currentView: renderStyle.currentFlutterView);
             renderBoxModel.scrollOffsetX = _scrollableX!.position;
           }
           // Reset canDrag by overflow because hidden is can't drag.
@@ -169,7 +175,11 @@ mixin ElementOverflowMixin on ElementBase {
         case CSSOverflowType.scroll:
           // If the render has been offset when previous overflow is auto or scroll, _scrollableY should not reset.
           if (_scrollableY == null) {
-            _scrollableY = WebFScrollable(axisDirection: AxisDirection.down, scrollListener: scrollListener, overflowType: overflowY);
+            _scrollableY = WebFScrollable(
+                axisDirection: AxisDirection.down,
+                scrollListener: scrollListener,
+                overflowType: overflowY,
+                currentView: renderStyle.currentFlutterView);
             renderBoxModel.scrollOffsetY = _scrollableY!.position;
           }
           // Reset canDrag by overflow because hidden is can't drag.
@@ -188,7 +198,7 @@ mixin ElementOverflowMixin on ElementBase {
     }
   }
 
-  void scrollingContentBoxStyleListener(String property, String? original, String present) {
+  void scrollingContentBoxStyleListener(String property, String? original, String present, {String? baseHref}) {
     if (renderBoxModel == null) return;
 
     RenderLayoutBox? scrollingContentBox = (renderBoxModel as RenderLayoutBox).renderScrollingContent;
@@ -342,6 +352,9 @@ mixin ElementOverflowMixin on ElementBase {
     } else if (event is PointerSignalEvent) {
       _scrollableX?.handlePinterSignal(event);
       _scrollableY?.handlePinterSignal(event);
+    } else if (event is PointerPanZoomStartEvent) {
+      _scrollableX?.handlePointerPanZoomStart(event);
+      _scrollableY?.handlePointerPanZoomStart(event);
     }
   }
 
@@ -369,6 +382,12 @@ mixin ElementOverflowMixin on ElementBase {
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
+  void _ensureRenderObjectHasLayout() {
+    if (renderBoxModel?.needsLayout == true) {
+      renderBoxModel!.owner?.flushLayout();
+    }
+  }
+
   double get scrollLeft {
     WebFScrollable? scrollableX = _getScrollable(Axis.horizontal);
     if (scrollableX != null) {
@@ -385,7 +404,7 @@ mixin ElementOverflowMixin on ElementBase {
     if (!isRendererAttached) {
       return 0.0;
     }
-
+    _ensureRenderObjectHasLayout();
     WebFScrollable? scrollable = _getScrollable(Axis.vertical);
     if (scrollable?.position?.maxScrollExtent != null) {
       // Viewport height + maxScrollExtent
@@ -400,6 +419,7 @@ mixin ElementOverflowMixin on ElementBase {
     if (!isRendererAttached) {
       return 0.0;
     }
+    _ensureRenderObjectHasLayout();
     WebFScrollable? scrollable = _getScrollable(Axis.horizontal);
     if (scrollable?.position?.maxScrollExtent != null) {
       return renderBoxModel!.clientWidth + scrollable!.position!.maxScrollExtent;
@@ -408,15 +428,32 @@ mixin ElementOverflowMixin on ElementBase {
     return scrollContainerSize.width;
   }
 
-  double get clientTop => renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
+  String get dir {
+    return 'ltr';
+  }
 
-  double get clientLeft => renderBoxModel?.renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
+  double get clientTop {
+    _ensureRenderObjectHasLayout();
+    return renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
+  }
 
-  double get clientWidth => renderBoxModel?.clientWidth ?? 0.0;
+  double get clientLeft {
+    _ensureRenderObjectHasLayout();
+    return renderBoxModel?.renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
+  }
 
-  double get clientHeight => renderBoxModel?.clientHeight ?? 0.0;
+  double get clientWidth {
+    _ensureRenderObjectHasLayout();
+    return renderBoxModel?.clientWidth ?? 0.0;
+  }
+
+  double get clientHeight {
+    _ensureRenderObjectHasLayout();
+    return renderBoxModel?.clientHeight ?? 0.0;
+  }
 
   double get offsetWidth {
+    _ensureRenderObjectHasLayout();
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox == null) {
       return 0;
@@ -425,6 +462,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get offsetHeight {
+    _ensureRenderObjectHasLayout();
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox == null) {
       return 0;

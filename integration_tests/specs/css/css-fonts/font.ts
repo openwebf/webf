@@ -8,7 +8,7 @@ describe('Font', () => {
       },
       createText('font: 12px "sans-serif"')
     );
-    
+
     const p2 = createElementWithStyle(
       'p',
       {
@@ -16,7 +16,7 @@ describe('Font', () => {
       },
       createText('font: italic 22px serif')
     );
-    
+
     const p3 = createElementWithStyle(
       'p',
       {
@@ -24,7 +24,7 @@ describe('Font', () => {
       },
       createText('font: italic bold 16px/2 cursive')
     );
-    
+
     const p4 = createElementWithStyle(
       'p',
       {
@@ -32,7 +32,7 @@ describe('Font', () => {
       },
       createText('font: normal 600 18px fantasy')
     );
-    
+
     const p5 = createElementWithStyle(
       'p',
       {
@@ -40,7 +40,7 @@ describe('Font', () => {
       },
       createText('font: italic 20px monospace')
     );
-    
+
     append(BODY, p1);
     append(BODY, p2);
     append(BODY, p3);
@@ -63,7 +63,7 @@ describe('Font', () => {
       },
       createText('font-style before font-weight works')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
@@ -82,12 +82,12 @@ describe('Font', () => {
       },
       createText('font-style after font-weight works')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
   });
-  
+
   it('should not work with font-style after font-size', () => {
     const div = createElement('div',
       {
@@ -101,7 +101,7 @@ describe('Font', () => {
       },
       createText('font-style not work and font size works')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
@@ -120,12 +120,12 @@ describe('Font', () => {
       },
       createText('font-weight after font-size not work')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
   });
-  
+
   it('should work with line-height of px', () => {
     const div = createElement('div',
       {
@@ -139,7 +139,7 @@ describe('Font', () => {
       },
       createText('line-height of px works')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
@@ -158,7 +158,7 @@ describe('Font', () => {
       },
       createText('line-height of number works')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
@@ -177,12 +177,12 @@ describe('Font', () => {
       },
       createText('font-size and font-weight works')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
   });
-  
+
   it('should not work with no font-size', () => {
     const div = createElement('div',
       {
@@ -196,7 +196,7 @@ describe('Font', () => {
       },
       createText('no font-size not work')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
@@ -215,7 +215,7 @@ describe('Font', () => {
       },
       createText('no font-family not work')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
@@ -234,9 +234,35 @@ describe('Font', () => {
       },
       createText('font-size after font-family not work')
     );
-    
+
     append(BODY, div);
 
     return snapshot();
   });
+
+  it("computed", async () => {
+    let target;
+    let container;
+    container = createElement(
+      'div',
+      {
+        id: 'container',
+        style: {
+          'font-weight': '800',
+          'font-size': '40px',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        (target = createElement('div', {
+          id: 'target',
+          style: {
+            'box-sizing': 'border-box',
+          },
+        })),
+      ]
+    );
+    BODY.appendChild(container);
+    test_computed_value('font', 'italic 800 12px 14px helvetica');
+  })
 });

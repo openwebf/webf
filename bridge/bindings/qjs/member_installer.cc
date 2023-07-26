@@ -47,8 +47,6 @@ void MemberInstaller::InstallAttributes(ExecutingContext* context,
                                         std::initializer_list<MemberInstaller::AttributeConfig> config) {
   JSContext* ctx = context->ctx();
   for (auto& c : config) {
-    JSAtom key = JS_NewAtom(ctx, c.name);
-
     if (c.getter != nullptr || c.setter != nullptr) {
       JSValue getter = JS_NULL;
       JSValue setter = JS_NULL;
@@ -63,12 +61,10 @@ void MemberInstaller::InstallAttributes(ExecutingContext* context,
         setter = JS_NewCFunctionData(ctx, handleCallThisOnProxy, 1, 0, 1, &f);
         JS_FreeValue(ctx, f);
       }
-      JS_DefinePropertyGetSet(ctx, root, key, getter, setter, c.flag);
+      JS_DefinePropertyGetSet(ctx, root, c.key, getter, setter, c.flag);
     } else {
-      JS_DefinePropertyValue(ctx, root, key, c.value, c.flag);
+      JS_DefinePropertyValue(ctx, root, c.key, c.value, c.flag);
     }
-
-    JS_FreeAtom(ctx, key);
   }
 }
 

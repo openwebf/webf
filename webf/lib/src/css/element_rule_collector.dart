@@ -6,9 +6,19 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/css/query_selector.dart';
 
+bool kShowUnavailableCSSProperties = false;
+
 class ElementRuleCollector {
   bool matchedAnyRule(RuleSet ruleSet, Element element) {
     return matchedRules(ruleSet, element).isNotEmpty;
+  }
+
+  List<CSSStyleRule> matchedPseudoRules(RuleSet ruleSet, Element element) {
+    if (ruleSet.pseudoRules.isEmpty) {
+      return [];
+    }
+    List<CSSRule> rules = _collectMatchingRulesForList(ruleSet.pseudoRules, element);
+    return rules.map((e) => e as CSSStyleRule).toList();
   }
 
   List<CSSRule> matchedRules(RuleSet ruleSet, Element element) {
@@ -55,7 +65,7 @@ class ElementRuleCollector {
       if (leftRule is! CSSStyleRule || rightRule is! CSSStyleRule) {
         return 0;
       }
-      int isCompare = leftRule.selectorGroup.specificity.compareTo(rightRule.selectorGroup.specificity);
+      int isCompare = leftRule.selectorGroup.matchSpecificity.compareTo(rightRule.selectorGroup.matchSpecificity);
       if (isCompare == 0) {
         return leftRule.position.compareTo(rightRule.position);
       }
@@ -86,7 +96,9 @@ class ElementRuleCollector {
           matchedRules.add(rule);
         }
       } catch (error) {
-        print('selector evaluator error: $error');
+        if (kShowUnavailableCSSProperties) {
+          print('selector evaluator error: $error');
+        }
       }
     }
     return matchedRules;

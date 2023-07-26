@@ -11,8 +11,4 @@ namespace webf {
 
 HTMLLinkElement::HTMLLinkElement(Document& document) : HTMLElement(html_names::klink, &document) {}
 
-bool HTMLLinkElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLLinkElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
-}
-
 }  // namespace webf

@@ -47,7 +47,9 @@ describe('gradients-with', () => {
     BODY.appendChild(gradient2);
     BODY.appendChild(gradient3);
 
-    await snapshot();
+    requestAnimationFrame(async () => {
+      await snapshot();
+    });
   });
   it('transparent-ref', async () => {
     let p;

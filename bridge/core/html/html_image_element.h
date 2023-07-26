@@ -15,10 +15,10 @@ class HTMLImageElement : public HTMLElement {
  public:
   using ImplType = HTMLImageElement*;
   explicit HTMLImageElement(Document& document);
+  AtomicString src() const;
+  void setSrc(const AtomicString& value, ExceptionState& exception_state);
 
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
-  bool KeepAlive() const override;
+  DispatchEventResult FireEventListeners(Event&, ExceptionState&) override;
 
   ScriptPromise decode(ExceptionState& exception_state) const;
 

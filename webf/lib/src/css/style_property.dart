@@ -6,6 +6,8 @@
 import 'package:webf/css.dart';
 import 'package:webf/src/css/css_animation.dart';
 
+// aB to a-b
+RegExp kebabCaseReg = RegExp(r'[A-Z]');
 // a-b to aB
 final RegExp _camelCaseReg = RegExp(r'-(\w)');
 final RegExp _commaRegExp = RegExp(r',(?![^\(]*\))');
@@ -16,6 +18,11 @@ const String _0s = '0s';
 const String _0 = '0';
 const String _1 = '1';
 const String _0Percent = '0%';
+
+// aB to a-b
+String kebabize(String str) {
+  return str.replaceAllMapped(kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
+}
 
 // a-b -> aB
 String camelize(String str) {
@@ -261,6 +268,17 @@ class CSSStyleProperty {
     if (style.contains(TEXT_DECORATION_STYLE)) style.removeProperty(TEXT_DECORATION_STYLE, isImportant);
   }
 
+  static void removeShorthandAnimation(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ANIMATION_NAME)) style.removeProperty(ANIMATION_NAME, isImportant);
+    if (style.contains(ANIMATION_DURATION)) style.removeProperty(ANIMATION_DURATION, isImportant);
+    if (style.contains(ANIMATION_TIMING_FUNCTION)) style.removeProperty(ANIMATION_TIMING_FUNCTION, isImportant);
+    if (style.contains(ANIMATION_DELAY)) style.removeProperty(ANIMATION_DELAY, isImportant);
+    if (style.contains(ANIMATION_ITERATION_COUNT)) style.removeProperty(ANIMATION_ITERATION_COUNT, isImportant);
+    if (style.contains(ANIMATION_DIRECTION)) style.removeProperty(ANIMATION_DIRECTION, isImportant);
+    if (style.contains(ANIMATION_FILL_MODE)) style.removeProperty(ANIMATION_FILL_MODE, isImportant);
+    if (style.contains(ANIMATION_PLAY_STATE)) style.removeProperty(ANIMATION_PLAY_STATE, isImportant);
+  }
+
   static void setShorthandBorder(Map<String, String?> properties, String property, String shorthandValue) {
     String? borderTopColor;
     String? borderRightColor;
@@ -304,7 +322,7 @@ class CSSStyleProperty {
         borderLeftColor = values[2];
       }
     } else if (property == BORDER_WIDTH) {
-      List<String?>? values = getEdgeValues(shorthandValue, isNonNegativeLength: true);
+      List<String?>? values = getEdgeValues(shorthandValue);
       if (values == null) return;
 
       borderTopWidth = values[0];
@@ -443,6 +461,10 @@ class CSSStyleProperty {
   }
 
   static List<String?>? _getBorderRaidusValues(String shorthandProperty) {
+    if (shorthandProperty == INHERIT) {
+      return [INHERIT, INHERIT, INHERIT, INHERIT];
+    }
+
     if (!shorthandProperty.contains('/')) {
       return getEdgeValues(shorthandProperty, isNonNegativeLengthOrPercentage: true);
     }

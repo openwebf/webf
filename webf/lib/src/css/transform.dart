@@ -24,6 +24,7 @@ mixin CSSTransformMixin on RenderStyle {
   // Canonical order: per grammar
   // Animation type: transform list, see interpolation rules
   List<CSSFunctionalNotation>? _transform;
+  @override
   List<CSSFunctionalNotation>? get transform => _transform;
   set transform(List<CSSFunctionalNotation>? value) {
     // Transform should converted to matrix4 value to compare cause case such as
@@ -59,6 +60,9 @@ mixin CSSTransformMixin on RenderStyle {
     if (_transformMatrix == null && _transform != null) {
       // Illegal transform syntax will return null.
       _transformMatrix = CSSMatrix.computeTransformMatrix(_transform!, this);
+      if (_transformMatrix != null) {
+        assert(_transformMatrix!.storage.every((element) => element.isFinite));
+      }
     }
     return _transformMatrix;
   }
@@ -72,6 +76,7 @@ mixin CSSTransformMixin on RenderStyle {
 
   // Effective transform matrix after renderBoxModel has been layouted.
   // Copy from flutter [RenderTransform._effectiveTransform]
+  @override
   Matrix4 get effectiveTransformMatrix {
     // Make sure it is used after renderBoxModel been created.
     assert(renderBoxModel != null);
@@ -93,6 +98,7 @@ mixin CSSTransformMixin on RenderStyle {
 
     result.translate(-transformOffset.dx, -transformOffset.dy);
 
+    assert(result.storage.every((double component) => component.isFinite));
     return result;
   }
 
@@ -105,7 +111,8 @@ mixin CSSTransformMixin on RenderStyle {
   }
 
   // Effective transform scale after renderBoxModel has been layouted.
-  double? get effectiveTransformScale {
+  @override
+  double get effectiveTransformScale {
     assert(renderBoxModel != null);
     double scale = effectiveTransformMatrix.getMaxScaleOnAxis();
     return scale;
@@ -128,6 +135,7 @@ mixin CSSTransformMixin on RenderStyle {
   }
 
   CSSOrigin? _transformOrigin;
+  @override
   CSSOrigin get transformOrigin =>
       _transformOrigin ?? const CSSOrigin(_DEFAULT_TRANSFORM_OFFSET, _DEFAULT_TRANSFORM_ALIGNMENT);
   set transformOrigin(CSSOrigin? value) {

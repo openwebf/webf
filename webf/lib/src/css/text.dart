@@ -9,6 +9,8 @@ import 'package:webf/rendering.dart';
 
 final RegExp _commaRegExp = RegExp(r'\s*,\s*');
 
+typedef TextPainterCallback = Paint? Function(Rect bounds);
+
 // CSS Text: https://drafts.csswg.org/css-text-3/
 // CSS Text Decoration: https://drafts.csswg.org/css-text-decor-3/
 // CSS Box Alignment: https://drafts.csswg.org/css-align/
@@ -16,12 +18,11 @@ mixin CSSTextMixin on RenderStyle {
   bool get hasColor => _color != null;
 
   @override
-  Color get currentColor => color;
+  CSSColor get currentColor => color;
 
   Color? _color;
-
   @override
-  Color get color {
+  CSSColor get color {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
     if (_color == null && parent != null) {
@@ -29,12 +30,12 @@ mixin CSSTextMixin on RenderStyle {
     }
 
     // The root element has no color, and the color is initial.
-    return _color ?? CSSColor.initial;
+    return CSSColor(_color ?? CSSColor.initial);
   }
 
-  set color(Color? value) {
+  set color(CSSColor? value) {
     if (_color == value) return;
-    _color = value;
+    _color = value?.value;
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsPaint(renderBoxModel!, COLOR);
   }
@@ -64,12 +65,12 @@ mixin CSSTextMixin on RenderStyle {
     renderBoxModel?.markNeedsLayout();
   }
 
-  Color? _textDecorationColor;
-  Color? get textDecorationColor {
+  CSSColor? _textDecorationColor;
+  CSSColor? get textDecorationColor {
     return _textDecorationColor;
   }
 
-  set textDecorationColor(Color? value) {
+  set textDecorationColor(CSSColor? value) {
     if (_textDecorationColor == value) return;
     _textDecorationColor = value;
     // Non inheritable style change should only update text node in direct children.
@@ -492,9 +493,9 @@ mixin CSSTextMixin on RenderStyle {
     //   background: The paint drawn as a background for the text.
     //   foreground: The paint used to draw the text. If this is specified, color must be null.
     TextStyle textStyle = TextStyle(
-        color: color ?? renderStyle.color,
+        color: renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null,
         decoration: renderStyle.textDecorationLine,
-        decorationColor: renderStyle.textDecorationColor,
+        decorationColor: renderStyle.textDecorationColor?.value,
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
@@ -507,7 +508,7 @@ mixin CSSTextMixin on RenderStyle {
         package: CSSText.getFontPackage(),
         locale: CSSText.getLocale(),
         background: CSSText.getBackground(),
-        foreground: CSSText.getForeground(),
+        foreground: null,
         height: height);
     return TextSpan(
       text: text,
@@ -814,11 +815,6 @@ class CSSText {
     return null;
   }
 
-  static Paint? getForeground() {
-    // TODO: Reserved port for customize text decoration foreground.
-    return null;
-  }
-
   static List<Shadow> resolveTextShadow(String value, RenderStyle renderStyle, String propertyName) {
     List<Shadow> textShadows = [];
 
@@ -827,7 +823,7 @@ class CSSText {
       for (var shadowDefinitions in shadows) {
         String shadowColor = shadowDefinitions[0] ?? CURRENT_COLOR;
         // Specifies the color of the shadow. If the color is absent, it defaults to currentColor.
-        Color? color = CSSColor.resolveColor(shadowColor, renderStyle, propertyName);
+        CSSColor? color = CSSColor.resolveColor(shadowColor, renderStyle, propertyName);
         double offsetX = CSSLength.parseLength(shadowDefinitions[1]!, renderStyle, propertyName).computedValue;
         double offsetY = CSSLength.parseLength(shadowDefinitions[2]!, renderStyle, propertyName).computedValue;
         String? blurRadiusStr = shadowDefinitions[3];
@@ -838,7 +834,7 @@ class CSSText {
           textShadows.add(Shadow(
             offset: Offset(offsetX, offsetY),
             blurRadius: blurRadius,
-            color: color,
+            color: color.value,
           ));
         }
       }

@@ -25,7 +25,14 @@ struct EventDispatchResult : public DartReadable {
   bool propagationStopped{false};
 };
 
-static std::atomic<int32_t> global_event_target_id{0};
+struct DartEventListenerOptions : public DartReadable {
+  bool capture{false};
+};
+
+struct DartAddEventListenerOptions : public DartEventListenerOptions {
+  bool passive{false};
+  bool once{false};
+};
 
 Event::PassiveMode EventPassiveMode(const RegisteredEventListener& event_listener) {
   if (!event_listener.Passive()) {
@@ -41,6 +48,7 @@ EventTargetData::~EventTargetData() {}
 
 void EventTargetData::Trace(GCVisitor* visitor) const {
   event_listener_map.Trace(visitor);
+  event_capture_listener_map.Trace(visitor);
 }
 
 EventTarget* EventTarget::Create(ExecutingContext* context, ExceptionState& exception_state) {
@@ -54,18 +62,12 @@ EventTarget::~EventTarget() {
     TEST_getEnv(GetExecutingContext()->uniqueId())->on_event_target_disposed(this);
   }
 #endif
-
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kDisposeEventTarget,
-                                                       bindingObject());
 }
 
-EventTarget::EventTarget(ExecutingContext* context)
-    : BindingObject(context), ScriptWrappable(context->ctx()), event_target_id_(global_event_target_id++) {}
+EventTarget::EventTarget(ExecutingContext* context) : BindingObject(context->ctx()) {}
 
 EventTarget::EventTarget(ExecutingContext* context, NativeBindingObject* native_binding_object)
-    : BindingObject(context, native_binding_object),
-      ScriptWrappable(context->ctx()),
-      event_target_id_(global_event_target_id++) {}
+    : BindingObject(context->ctx(), native_binding_object) {}
 
 Node* EventTarget::ToNode() {
   return nullptr;
@@ -73,12 +75,21 @@ Node* EventTarget::ToNode() {
 
 bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
-                                   const std::shared_ptr<AddEventListenerOptions>& options,
+                                   const std::shared_ptr<QJSUnionAddEventListenerOptionsBoolean>& options,
                                    ExceptionState& exception_state) {
+  std::shared_ptr<AddEventListenerOptions> event_listener_options;
   if (options == nullptr) {
-    return AddEventListenerInternal(event_type, event_listener, AddEventListenerOptions::Create());
+    event_listener_options = AddEventListenerOptions::Create();
+  } else {
+    if (options->IsBoolean()) {
+      event_listener_options = AddEventListenerOptions::Create();
+      event_listener_options->setCapture(options->GetAsBoolean());
+    } else if (options->IsAddEventListenerOptions()) {
+      event_listener_options = options->GetAsAddEventListenerOptions();
+    }
   }
-  return AddEventListenerInternal(event_type, event_listener, options);
+
+  return AddEventListenerInternal(event_type, event_listener, event_listener_options);
 }
 
 bool EventTarget::addEventListener(const AtomicString& event_type,
@@ -97,9 +108,22 @@ bool EventTarget::removeEventListener(const AtomicString& event_type,
 
 bool EventTarget::removeEventListener(const AtomicString& event_type,
                                       const std::shared_ptr<EventListener>& event_listener,
-                                      const std::shared_ptr<EventListenerOptions>& options,
+                                      const std::shared_ptr<QJSUnionEventListenerOptionsBoolean>& options,
                                       ExceptionState& exception_state) {
-  return RemoveEventListenerInternal(event_type, event_listener, options);
+  std::shared_ptr<EventListenerOptions> event_listener_options;
+  if (options->IsBoolean()) {
+    event_listener_options = EventListenerOptions::Create();
+    event_listener_options->setCapture(options->GetAsBoolean());
+  } else {
+    if (options->IsBoolean()) {
+      event_listener_options = AddEventListenerOptions::Create();
+      event_listener_options->setCapture(options->GetAsBoolean());
+    } else if (options->IsEventListenerOptions()) {
+      event_listener_options = options->GetAsEventListenerOptions();
+    }
+  }
+
+  return RemoveEventListenerInternal(event_type, event_listener, event_listener_options);
 }
 
 bool EventTarget::removeEventListener(const AtomicString& event_type,
@@ -141,6 +165,31 @@ DispatchEventResult EventTarget::FireEventListeners(Event& event, ExceptionState
     return DispatchEventResult::kNotCanceled;
 
   EventListenerVector* listeners_vector = d->event_listener_map.Find(event.type());
+
+  bool fired_event_listeners = false;
+  if (listeners_vector) {
+    fired_event_listeners = FireEventListeners(event, d, *listeners_vector, exception_state);
+  }
+
+  // Only invoke the callback if event listeners were fired for this phase.
+  if (fired_event_listeners) {
+    event.DoneDispatchingEventAtCurrentTarget();
+  }
+  return GetDispatchEventResult(event);
+}
+
+DispatchEventResult EventTarget::FireEventListeners(Event& event, bool isCapture, ExceptionState& exception_state) {
+  assert(event.WasInitialized());
+
+  EventTargetData* d = GetEventTargetData();
+  if (!d)
+    return DispatchEventResult::kNotCanceled;
+
+  EventListenerVector* listeners_vector;
+  if (!isCapture)
+    listeners_vector = d->event_listener_map.Find(event.type());
+  else
+    listeners_vector = d->event_capture_listener_map.Find(event.type());
 
   bool fired_event_listeners = false;
   if (listeners_vector) {
@@ -196,10 +245,6 @@ bool EventTarget::IsEventTarget() const {
   return true;
 }
 
-bool EventTarget::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSEventTarget::IsAttributeDefinedInternal(key);
-}
-
 void EventTarget::Trace(GCVisitor* visitor) const {
   ScriptWrappable::Trace(visitor);
   BindingObject::Trace(visitor);
@@ -213,12 +258,28 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
 
   RegisteredEventListener registered_listener;
   uint32_t listener_count = 0;
-  bool added = EnsureEventTargetData().event_listener_map.Add(event_type, listener, options, &registered_listener,
-                                                              &listener_count);
+  bool added;
+  if (options->hasCapture() && options->capture())
+    added = EnsureEventTargetData().event_capture_listener_map.Add(event_type, listener, options, &registered_listener,
+                                                                   &listener_count);
+  else
+    added = EnsureEventTargetData().event_listener_map.Add(event_type, listener, options, &registered_listener,
+                                                           &listener_count);
 
   if (added && listener_count == 1) {
-    GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kAddEvent,
-                                                         std::move(event_type.ToNativeString(ctx())), nullptr);
+    auto* listener_options = new DartAddEventListenerOptions{};
+    if (options->hasOnce()) {
+      listener_options->once = options->once();
+    }
+    if (options->hasCapture()) {
+      listener_options->capture = options->capture();
+    }
+    if (options->hasPassive()) {
+      listener_options->passive = options->passive();
+    }
+
+    GetExecutingContext()->uiCommandBuffer()->addCommand(
+        UICommand::kAddEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), listener_options);
   }
 
   return added;
@@ -263,8 +324,11 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   }
 
   if (listener_count == 0) {
-    GetExecutingContext()->uiCommandBuffer()->addCommand(event_target_id_, UICommand::kRemoveEvent,
-                                                         std::move(event_type.ToNativeString(ctx())), nullptr);
+    bool has_capture = options->hasCapture() && options->capture();
+
+    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveEvent,
+                                                         std::move(event_type.ToNativeString(ctx())), bindingObject(),
+                                                         has_capture ? (void*)0x01 : nullptr);
   }
 
   return true;
@@ -279,11 +343,10 @@ DispatchEventResult EventTarget::DispatchEventInternal(Event& event, ExceptionSt
   return dispatch_result;
 }
 
-NativeValue EventTarget::HandleCallFromDartSide(const NativeValue* native_method,
-                                                int32_t argc,
-                                                const NativeValue* argv) {
+NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
+  if (!isContextValid(contextId()))
+    return Native_NewNull();
   MemberMutationScope mutation_scope{GetExecutingContext()};
-  AtomicString method = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), *native_method);
 
   if (method == binding_call_methods::kdispatchEvent) {
     return HandleDispatchEventFromDart(argc, argv);
@@ -293,15 +356,19 @@ NativeValue EventTarget::HandleCallFromDartSide(const NativeValue* native_method
 }
 
 NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv) {
-  assert(argc == 2);
-  AtomicString event_type = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), argv[0]);
+  assert(argc >= 2);
+  NativeValue native_event_type = argv[0];
+  NativeValue native_is_capture = argv[2];
+  bool isCapture = NativeValueConverter<NativeTypeBool>::FromNativeValue(native_is_capture);
+  AtomicString event_type =
+      NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_event_type));
   RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
 
   Event* event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
   ExceptionState exception_state;
   event->SetTrusted(false);
   event->SetEventPhase(Event::kAtTarget);
-  DispatchEventResult dispatch_result = FireEventListeners(*event, exception_state);
+  DispatchEventResult dispatch_result = FireEventListeners(*event, isCapture, exception_state);
   event->SetEventPhase(0);
 
   if (exception_state.HasException()) {

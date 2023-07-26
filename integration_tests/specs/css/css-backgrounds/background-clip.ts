@@ -93,4 +93,62 @@ describe('Background-clip', () => {
     append(BODY, div);
     await snapshot();
   });
+
+  it('works with text 1', async () => {
+    const p = createElement(
+      'p',
+      {
+        style: {
+          background: 'linear-gradient(60deg, red, yellow, red, yellow, red)',
+          color: 'rgba(0, 0, 0, 0.5)',
+          backgroundClip: 'text',
+        },
+      },
+      [createText('1 The background is clipped to the foreground text.')]
+    );
+    append(BODY, p);
+    await snapshot();
+  });
+
+  it('works with text 2', async (done) => {
+    const p = createElement(
+      'p',
+      {
+        style: {
+          background: 'linear-gradient(60deg, red, yellow, red, yellow, red)',
+          color: 'rgba(0, 0, 0, 0.5)',
+          backgroundClip: '',
+        },
+      },
+      [createText('2 The background is clipped to the foreground text.')]
+    );
+    append(BODY, p);
+    await snapshot();
+    requestAnimationFrame(async() => {
+      p.style.backgroundClip = 'text';
+      await snapshot();
+      done();
+    });
+  });
+
+  it('works with text 3', async (done) => {
+    const p = createElement(
+      'p',
+      {
+        style: {
+          background: 'linear-gradient(60deg, red, yellow, red, yellow, red)',
+          color: 'rgba(0, 0, 0, 0.5)',
+          backgroundClip: 'text',
+        },
+      },
+      [createText('3 The background is clipped to the foreground text.')]
+    );
+    append(BODY, p);
+    await snapshot();
+    requestAnimationFrame(async() => {
+      p.style.backgroundClip = '';
+      await snapshot();
+      done();
+    });
+  });
 });

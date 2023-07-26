@@ -5,14 +5,14 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
 
 class InspectNetworkModule extends UIInspectorModule implements HttpClientInterceptor {
-  InspectNetworkModule(ChromeDevToolsService devtoolsService) : super(devtoolsService) {
+  InspectNetworkModule(DevToolsService devtoolsService) : super(devtoolsService) {
     _registerHttpClientInterceptor();
   }
 

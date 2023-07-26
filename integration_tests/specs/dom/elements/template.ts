@@ -15,4 +15,17 @@ describe('Tags template', () => {
     expect(t.innerHTML).toBe('');
     await snapshot();
   });
+
+  it('should avoid leaks when massive elements in template element', async () => {
+    const t = document.createElement('template')
+    const template = t.content;
+    const element = document.createElement('div');
+    element.innerHTML = `<ul>
+<li><div><span>1</span></div></li>
+<li><div><span>2</span></div></li>
+<li><div><span>3</span></div></li>
+</ul>`;
+    template.appendChild(element);
+    document.body.appendChild(template);
+  });
 });

@@ -71,16 +71,17 @@ mixin CSSVariableMixin on RenderStyle {
       _identifierStorage![identifier] = value;
     }
     if (_propertyDependencies.containsKey(identifier)) {
-      _notifyCSSVariableChanged(_propertyDependencies[identifier]!, value);
+      _notifyCSSVariableChanged(identifier, value);
     }
   }
 
-  void _notifyCSSVariableChanged(List<String> propertyNames, String value) {
-    propertyNames.forEach((String propertyName) {
+  void _notifyCSSVariableChanged(String identifier,String value) {
+    List<String>? propertyNames = _propertyDependencies[identifier];
+    propertyNames?.forEach((String propertyName) {
       target.setRenderStyle(propertyName, value);
-      visitChildren((CSSRenderStyle childRenderStyle) {
-        childRenderStyle._notifyCSSVariableChanged(propertyNames, value);
-      });
+    });
+    visitChildren((CSSRenderStyle childRenderStyle) {
+      childRenderStyle._notifyCSSVariableChanged(identifier, value);
     });
   }
 }

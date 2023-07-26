@@ -7,14 +7,27 @@
 #define WEBF_CORE_DOM_ELEMENT_DATA_H_
 
 #include "bindings/qjs/atomic_string.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
+#include "bindings/qjs/cppgc/member.h"
+#include "dom_string_map.h"
+#include "dom_token_list.h"
 
 namespace webf {
 
 class ElementData {
  public:
   void CopyWith(ElementData* other);
+  void Trace(GCVisitor* visitor) const;
+
+  DOMTokenList* GetClassList() const;
+  void SetClassList(DOMTokenList* dom_token_lists);
+
+  DOMStringMap* DataSet() const;
+  void SetDataSet(DOMStringMap* data_set);
 
  private:
+  Member<DOMTokenList> class_lists_;
+  Member<DOMStringMap> data_set_;
   AtomicString class_;
 };
 

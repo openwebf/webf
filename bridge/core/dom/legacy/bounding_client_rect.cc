@@ -13,9 +13,9 @@ BoundingClientRect* BoundingClientRect::Create(ExecutingContext* context, Native
 }
 
 BoundingClientRect::BoundingClientRect(ExecutingContext* context, NativeBindingObject* native_binding_object)
-    : ScriptWrappable(context->ctx()), BindingObject(context, native_binding_object) {}
+    : BindingObject(context->ctx(), native_binding_object) {}
 
-NativeValue BoundingClientRect::HandleCallFromDartSide(const NativeValue* method,
+NativeValue BoundingClientRect::HandleCallFromDartSide(const AtomicString& method,
                                                        int32_t argc,
                                                        const NativeValue* argv) {
   return Native_NewNull();

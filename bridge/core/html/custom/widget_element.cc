@@ -28,7 +28,7 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
 }
 
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  return GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(key);
+  return GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key);
 }
 
 void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
@@ -42,17 +42,14 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
   }
 }
 
-NativeValue WidgetElement::HandleCallFromDartSide(const NativeValue* native_method,
-                                                  int32_t argc,
-                                                  const NativeValue* argv) {
+NativeValue WidgetElement::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
-  AtomicString method = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), *native_method);
 
   if (method == binding_call_methods::ksyncPropertiesAndMethods) {
     return HandleSyncPropertiesAndMethodsFromDart(argc, argv);
   }
 
-  return Element::HandleCallFromDartSide(native_method, argc, argv);
+  return Element::HandleCallFromDartSide(method, argc, argv);
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
@@ -60,7 +57,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return unimplemented_properties_[key];
   }
 
-  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
+  if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName())) {
     GetExecutingContext()->FlushUICommand();
   }
 
@@ -68,7 +65,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return ScriptValue(ctx(), tagName().ToNativeString(ctx()).release());
   }
 
-  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
+  auto shape = GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName());
   if (shape != nullptr) {
     if (shape->built_in_properties_.count(key) > 0) {
       return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
@@ -99,17 +96,21 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
-  if (!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(tag_name_)) {
+  if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName())) {
     GetExecutingContext()->FlushUICommand();
   }
 
-  auto shape = GetExecutingContext()->dartContext()->EnsureData()->GetWidgetElementShape(tag_name_);
+  auto shape = GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName());
   if (shape != nullptr && shape->built_in_properties_.count(key) > 0) {
     NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
 
   unimplemented_properties_[key] = value;
+  return true;
+}
+
+bool WidgetElement::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
   return true;
 }
 
@@ -139,14 +140,10 @@ void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneC
   }
 }
 
-bool WidgetElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return true;
-}
-
 NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv) {
   assert(argc == 3);
-  AtomicString key = tag_name_;
-  assert(!GetExecutingContext()->dartContext()->EnsureData()->HasWidgetElementShape(key));
+  AtomicString key = tagName();
+  assert(!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key));
 
   auto shape = std::make_shared<WidgetElementShape>();
 
@@ -166,7 +163,7 @@ NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, 
     shape->built_in_async_methods_.emplace(method);
   }
 
-  GetExecutingContext()->dartContext()->EnsureData()->SetWidgetElementShape(key, shape);
+  GetExecutingContext()->dartIsolateContext()->EnsureData()->SetWidgetElementShape(key, shape);
 
   return Native_NewBool(true);
 }

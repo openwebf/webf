@@ -10,8 +10,10 @@ const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
 const { analyzer } = require('../dist/idl/analyzer');
 const { generatorSource } = require('../dist/idl/generator')
+const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
+const { union } = require("lodash");
 
 program
   .version(packageJSON.version)
@@ -56,7 +58,7 @@ function genCodeFromTypeDefine() {
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
-    analyzer(b, definedPropertyCollector);
+    analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
 
   for (let i = 0; i < blobs.length; i ++) {
@@ -72,6 +74,20 @@ function genCodeFromTypeDefine() {
     wirteFileIfChanged(genFilePath + '.h', result.header);
     wirteFileIfChanged(genFilePath + '.cc', result.source);
   }
+
+  let unionTypes = Array.from(unionTypeCollector.types);
+  unionTypes.forEach(union => {
+    union.sort((p, n) => {
+      if (typeof p.value === 'string') return 1;
+      return -(n.value - p.value);
+    })
+  });
+  for(let i = 0; i < unionTypes.length; i ++) {
+    let result = generateUnionTypes(unionTypes[i]);
+    let filename = generateUnionTypeFileName(unionTypes[i]);
+    wirteFileIfChanged(path.join(dist, filename) + '.h', result.header);
+    wirteFileIfChanged(path.join(dist, filename) + '.cc', result.source);
+  }
 }
 
 // Generate code from json data.
@@ -84,12 +100,12 @@ function genCodeFromJSONData() {
   });
 
   let blobs = jsonFiles.map(file => {
-    let filename = file.split('/').slice(-1)[0].replace('.json', '');
+    let filename = file.split(path.sep).slice(-1)[0].replace('.json', '');
     return new JSONBlob(path.join(source, file), dist, filename);
   });
 
   let templates = templateFiles.map(template => {
-    let filename = template.split('/').slice(-1)[0].replace('.tpl', '');
+    let filename = template.split(path.sep).slice(-1)[0].replace('.tpl', '');
     return new JSONTemplate(path.join(path.join(__dirname, '../templates/json_templates'), template), filename);
   });
 
@@ -101,7 +117,7 @@ function genCodeFromJSONData() {
       }
       let depsBlob = {};
       if (targetTemplate.deps) {
-        let cwdDir = blob.source.split('/').slice(0, -1).join('/');
+        let cwdDir = blob.source.split(path.sep).slice(0, -1).join(path.sep);
         targetTemplate.deps.forEach(depPath => {
           let filename = depPath.split('/').slice(-1)[0].replace('.json5', '');
           depsBlob[filename] = new JSONBlob(path.join(cwdDir, depPath), filename).json;
@@ -146,7 +162,12 @@ class DefinedPropertyCollector {
   interfaces = new Set();
 }
 
+class UnionTypeCollector {
+  types = new Set()
+}
+
 let definedPropertyCollector = new DefinedPropertyCollector();
+let unionTypeCollector = new UnionTypeCollector();
 let names_needs_install = new Set();
 
 genCodeFromTypeDefine();

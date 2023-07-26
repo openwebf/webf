@@ -9,18 +9,52 @@ on:
 
 env:
   nodeVersion: "16"
-  cmakeVersion: "3.22.x"
-  flutterVersion: "3.0.5"
+  cmakeVersion: "3.26.3"
+  flutterVersion: "3.10.5"
 
 jobs:
+  build_windows-app_in_windows:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.nodeVersion }}
+      - uses: jwlawson/actions-setup-cmake@v1.11
+        with:
+          cmake-version: ${{ env.cmakeVersion }}
+      - run: npm i
+      - name: Build windows dll
+        run: npm run build:bridge:windows:release
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.flutterVersion }}
+      - run: flutter doctor -v
+
+      - name: windows app build
+        run: |
+          cd webf/
+          flutter pub get
+          cd example/
+          flutter build windows --release
   build_android-app_in_macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       # Set up the bridge compilation environment
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "11"
       - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}
@@ -43,7 +77,9 @@ jobs:
   build_ios-app_in_macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
@@ -68,7 +104,9 @@ jobs:
   build_macos-app_in_macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
@@ -94,14 +132,18 @@ jobs:
   build_linux-app_in_ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
       - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}
-
+      - run: |
+          sudo apt-get update
+          sudo apt-get install chrpath ninja-build pkg-config libgtk-3-dev -y
       - run: npm i
       - run: npm run build:bridge:linux:release
 
@@ -109,9 +151,6 @@ jobs:
         with:
           flutter-version: ${{ env.flutterVersion }}
       - run: flutter config --enable-linux-desktop
-      - run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build pkg-config libgtk-3-dev -y
       - run: flutter doctor -v
       - name: linux app build
         run: |

@@ -4,8 +4,13 @@ import {ScrollToOptions} from "../dom/scroll_to_options";
 import {Screen} from "./screen";
 import {WindowEventHandlers} from "./window_event_handlers";
 import {GlobalEventHandlers} from "../dom/global_event_handlers";
+import {ComputedCssStyleDeclaration} from "../css/computed_css_style_declaration";
+import {Element} from "../dom/element";
 
 interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
+  // base64 utility methods
+  btoa(string: string): string;
+  atob(string: string): string;
   open(url?: string): Window | null;
   scroll(x: number, y: number): void;
   scroll(options?: ScrollToOptions): void;
@@ -20,6 +25,8 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   requestAnimationFrame(callback: Function): double;
   cancelAnimationFrame(request_id: double): void;
 
+  getComputedStyle(element: Element, pseudoElt?: string): ComputedCssStyleDeclaration;
+
   readonly window: Window;
   readonly parent: Window;
   readonly self: Window;
@@ -27,6 +34,8 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
 
   readonly scrollX: DartImpl<double>;
   readonly scrollY: DartImpl<double>;
+  readonly pageXOffset: DartImpl<double>;
+  readonly pageYOffset: DartImpl<double>;
   readonly devicePixelRatio: DartImpl<double>;
   readonly colorScheme: DartImpl<string>;
   readonly innerWidth: DartImpl<double>;

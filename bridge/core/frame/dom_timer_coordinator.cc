@@ -13,34 +13,6 @@
 
 namespace webf {
 
-static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
-  auto* context = timer->context();
-
-  if (errmsg != nullptr) {
-    JSValue exception = JS_ThrowTypeError(timer->context()->ctx(), "%s", errmsg);
-    context->HandleException(&exception);
-    return;
-  }
-
-  // Trigger timer callbacks.
-  timer->Fire();
-
-  // Executing pending async jobs.
-  context->DrainPendingPromiseJobs();
-}
-
-static void handleTransientCallback(void* ptr, int32_t context_id, const char* errmsg) {
-  auto* timer = static_cast<DOMTimer*>(ptr);
-  auto* context = timer->context();
-
-  if (!context->IsContextValid())
-    return;
-
-  handleTimerCallback(timer, errmsg);
-
-  context->Timers()->removeTimeoutById(timer->timerId());
-}
-
 void DOMTimerCoordinator::installNewTimer(ExecutingContext* context,
                                           int32_t timer_id,
                                           std::shared_ptr<DOMTimer> timer) {
@@ -51,7 +23,8 @@ void DOMTimerCoordinator::removeTimeoutById(int32_t timer_id) {
   if (active_timers_.count(timer_id) == 0)
     return;
   auto timer = active_timers_[timer_id];
-  assert(timer->status() == DOMTimer::TimerStatus::kFinished);
+  timer->Terminate();
+  terminated_timers[timer_id] = timer;
   active_timers_.erase(timer_id);
 }
 
@@ -60,7 +33,13 @@ void DOMTimerCoordinator::forceStopTimeoutById(int32_t timer_id) {
     return;
   }
   auto timer = active_timers_[timer_id];
-  timer->SetStatus(DOMTimer::TimerStatus::kCanceled);
+
+  if (timer->status() == DOMTimer::TimerStatus::kExecuting) {
+    timer->SetStatus(DOMTimer::TimerStatus::kCanceled);
+  } else if (timer->status() == DOMTimer::TimerStatus::kPending ||
+             (timer->kind() == DOMTimer::TimerKind::kMultiple && timer->status() == DOMTimer::TimerStatus::kFinished)) {
+    removeTimeoutById(timer->timerId());
+  }
 }
 
 std::shared_ptr<DOMTimer> DOMTimerCoordinator::getTimerById(int32_t timer_id) {

@@ -4,8 +4,21 @@ import {IDLBlob} from "./IDLBlob";
 import {getClassName} from "./utils";
 import fs from 'fs';
 import path from 'path';
-import {generateCoreTypeValue, generateRawTypeValue} from "./generateSource";
+import {
+  generateCoreTypeValue,
+  generateRawTypeValue,
+  getPointerType,
+  isPointerType,
+  isTypeHaveNull
+} from "./generateSource";
 import {GenerateOptions} from "./generator";
+import {ParameterType} from "./analyzer";
+import {
+  generateUnionConstructor,
+  generateUnionContentType, generateUnionMemberName, generateUnionMemberType, generateUnionPropertyHeaders,
+  generateUnionTypeClassName,
+  generateUnionTypeFileName
+} from "./generateUnionTypes";
 
 export enum TemplateKind {
   globalFunction,
@@ -89,6 +102,25 @@ export function generateCppHeader(blob: IDLBlob, options: GenerateOptions) {
   return _.template(baseTemplate)({
     content: contents.join('\n'),
     blob: blob
+  }).split('\n').filter(str => {
+    return str.trim().length > 0;
+  }).join('\n');
+}
+
+export function generateUnionTypeHeader(unionType: ParameterType): string {
+  return _.template(readTemplate('union'))({
+    unionType,
+    generateUnionTypeClassName,
+    generateUnionTypeFileName,
+    generateUnionContentType,
+    generateUnionConstructor,
+    generateUnionPropertyHeaders,
+    generateCoreTypeValue,
+    generateUnionMemberType,
+    generateUnionMemberName,
+    isTypeHaveNull,
+    isPointerType,
+    getPointerType,
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

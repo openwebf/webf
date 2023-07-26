@@ -60,6 +60,7 @@ JSValue js_object_assign(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 JSValue js_object_seal(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv, int freeze_flag);
 JSValue js_object_isSealed(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv, int is_frozen);
 JSValue js_object_fromEntries(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+JSValue js_object_hasOwn(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 /* return an empty string if not an object */
 JSValue js_object___getClass(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 JSValue js_object_is(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);

@@ -13,15 +13,14 @@ namespace webf {
 void CharacterData::setData(const AtomicString& data, ExceptionState& exception_state) {
   data_ = data;
 
-  std::unique_ptr<NativeString> args_01 = stringToNativeString("data");
-  std::unique_ptr<NativeString> args_02 = data.ToNativeString(ctx());
-
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kSetAttribute, std::move(args_01),
-                                                       std::move(args_02), (void*)bindingObject());
+  std::unique_ptr<SharedNativeString> args_01 = data.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_02 = stringToNativeString("data");
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetAttribute, std::move(args_01),
+                                                       (void*)bindingObject(), args_02.release());
 }
 
-std::string CharacterData::nodeValue() const {
-  return data_.ToStdString(ctx());
+AtomicString CharacterData::nodeValue() const {
+  return data_;
 }
 
 bool CharacterData::IsCharacterDataNode() const {
@@ -30,10 +29,6 @@ bool CharacterData::IsCharacterDataNode() const {
 
 void CharacterData::setNodeValue(const AtomicString& value, ExceptionState& exception_state) {
   setData(!value.IsEmpty() ? value : built_in_string::kempty_string, exception_state);
-}
-
-bool CharacterData::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSCharacterData::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
 }
 
 CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, Node::ConstructionType type)

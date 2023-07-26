@@ -24,7 +24,7 @@ class DocumentFragment : public ContainerNode {
   // This will catch anyone doing an unnecessary check.
   bool IsDocumentFragment() const = delete;
 
-  std::string nodeValue() const override;
+  AtomicString nodeValue() const override;
 
  protected:
   std::string nodeName() const final;

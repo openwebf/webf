@@ -8,6 +8,10 @@
 #include <quickjs/list.h>
 #include <cstring>
 
+#if WIN32
+#include <Windows.h>
+#endif
+
 typedef struct JSProxyData {
   JSValue target;
   JSValue handler;
@@ -250,15 +254,35 @@ uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
 
   if (!string->is_wide_char) {
     uint8_t* p = string->u.str8;
+#if WIN32
+    int utf16_str_len = MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, NULL, 0) - 1;
+    if (utf16_str_len == -1) {
+      return nullptr;
+    }
+    // Allocate memory for the UTF-16 string, including the null terminator
+    buffer = (uint16_t*)CoTaskMemAlloc((utf16_str_len + 1) * sizeof(WCHAR));
+    if (buffer == nullptr) {
+      return nullptr;
+    }
+
+    // Convert the ASCII string to UTF-16
+    MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, (WCHAR*)buffer, utf16_str_len + 1);
+    *length = utf16_str_len;
+#else
     uint32_t len = *length = string->len;
     buffer = (uint16_t*)malloc(sizeof(uint16_t) * len * 2);
     for (size_t i = 0; i < len; i++) {
       buffer[i] = p[i];
       buffer[i + 1] = 0x00;
     }
+#endif
   } else {
     *length = string->len;
+#if WIN32
+    buffer = (uint16_t*)CoTaskMemAlloc(sizeof(uint16_t) * string->len);
+#else
     buffer = (uint16_t*)malloc(sizeof(uint16_t) * string->len);
+#endif
     memcpy(buffer, string->u.str16, sizeof(uint16_t) * string->len);
   }
 
@@ -299,6 +323,20 @@ JSValue JS_NewUnicodeString(JSContext* ctx, const uint16_t* code, uint32_t lengt
   if (!str)
     return JS_EXCEPTION;
   memcpy(str->u.str16, code, length * 2);
+  return JS_MKPTR(JS_TAG_STRING, str);
+}
+
+JSValue JS_NewRawUTF8String(JSContext* ctx, const uint8_t* buf, uint32_t len) {
+  JSString* str;
+
+  if (len <= 0) {
+    return JS_AtomToString(ctx, JS_ATOM_empty_string);
+  }
+  str = js_alloc_string(JS_GetRuntime(ctx), ctx, len, 0);
+  if (!str)
+    return JS_EXCEPTION;
+  memcpy(str->u.str8, buf, len);
+  str->u.str8[len] = '\0';
   return JS_MKPTR(JS_TAG_STRING, str);
 }
 
@@ -349,6 +387,55 @@ bool JS_HasClassId(JSRuntime* runtime, JSClassID classId) {
   if (runtime->class_count <= classId)
     return false;
   return runtime->class_array[classId].class_id == classId;
+}
+
+int JS_AtomIs8Bit(JSRuntime* runtime, JSAtom atom) {
+  if (JS_AtomIsTaggedInt(atom))
+    return true;
+  JSString* string = runtime->atom_array[atom];
+  return string->is_wide_char == 0;
+}
+
+const uint8_t* JS_AtomRawCharacter8(JSRuntime* runtime, JSAtom atom) {
+  if (JS_AtomIsTaggedInt(atom)) {
+    auto* buf = (char*)js_malloc_rt(runtime, 64);
+    snprintf(buf, sizeof(buf), "%u", JS_AtomToUInt32(atom));
+    return reinterpret_cast<uint8_t*>(buf);
+  }
+
+  JSString* string = runtime->atom_array[atom];
+  return string->u.str8;
+}
+
+const uint16_t* JS_AtomRawCharacter16(JSRuntime* runtime, JSAtom atom) {
+  if (JS_AtomIsTaggedInt(atom)) {
+    auto* buf = (char*)js_malloc_rt(runtime, 64);
+    snprintf(buf, sizeof(buf), "%u", JS_AtomToUInt32(atom));
+    return reinterpret_cast<uint16_t*>(buf);
+  }
+
+  JSString* string = runtime->atom_array[atom];
+  return string->u.str16;
+}
+
+int JS_FindCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(char)) {
+  JSString* string = runtime->atom_array[atom];
+  for (int i = 0; i < string->len; i++) {
+    if (CharacterMatchFunction(static_cast<char>(string->u.str8[i]))) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int JS_FindWCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(uint16_t)) {
+  JSString* string = runtime->atom_array[atom];
+  for (int i = 0; i < string->len; i++) {
+    if (CharacterMatchFunction(string->u.str16[i])) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 JSValue JS_GetProxyTarget(JSValue value) {

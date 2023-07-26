@@ -35,6 +35,7 @@ class DOMTimerCoordinator {
 
  private:
   std::unordered_map<int, std::shared_ptr<DOMTimer>> active_timers_;
+  std::unordered_map<int, std::shared_ptr<DOMTimer>> terminated_timers;
 };
 
 }  // namespace webf

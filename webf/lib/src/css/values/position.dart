@@ -7,7 +7,7 @@ import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
 import 'package:quiver/collection.dart';
 
-final RegExp _splitRegExp = RegExp(r'(?<!\+|-|\*|\/)\s+(?!\+\s|-\s|\*\s|\/\s)');
+final RegExp splitRegExp = RegExp(r'(?<!\+|-|\*|\/)\s+(?!\+\s|-\s|\*\s|\/\s)');
 final LinkedLruHashMap<String, List<String>> _cachedParsedPosition = LinkedLruHashMap(maximumSize: 100);
 
 /// CSS Values and Units: https://drafts.csswg.org/css-values-3/#position
@@ -25,7 +25,7 @@ class CSSPosition {
       return _cachedParsedPosition[input]!;
     }
     List<String> positions = [];
-    List<String> split = input.split(_splitRegExp);
+    List<String> split = input.split(splitRegExp);
     if (split.length == 1) {
       switch (split.first) {
         case TOP:
@@ -44,8 +44,14 @@ class CSSPosition {
           break;
       }
     } else if (split.length == 2) {
-      positions.add(split.first);
-      positions.add(split.last);
+      if ((split.first == CENTER || split.first == TOP || split.first == BOTTOM)  &&
+          (split.last == CENTER || split.last == LEFT || split.last == RIGHT)) {
+        positions.add(split.last);
+        positions.add(split.first);
+      } else {
+        positions.add(split.first);
+        positions.add(split.last);
+      }
     }
     return _cachedParsedPosition[input] = positions;
   }
@@ -53,6 +59,10 @@ class CSSPosition {
   /// Parse background-position-x/background-position-y from string to CSSBackgroundPosition type.
   static CSSBackgroundPosition resolveBackgroundPosition(
       String input, RenderStyle renderStyle, String propertyName, bool isHorizontal) {
+    dynamic calcValue = CSSCalcValue.tryParse(renderStyle, propertyName, input);
+    if (calcValue != null && calcValue is CSSCalcValue) {
+      return CSSBackgroundPosition(calcValue: calcValue);
+    }
     if (CSSPercentage.isPercentage(input)) {
       return CSSBackgroundPosition(percentage: _gatValuePercentage(input));
     } else if (CSSLength.isLength(input)) {

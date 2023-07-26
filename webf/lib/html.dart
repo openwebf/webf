@@ -21,3 +21,4 @@ export 'src/html/sections.dart';
 export 'src/html/semantics_text.dart';
 export 'src/html/template.dart';
 export 'src/html/textarea.dart';
+export 'src/html/pseudo.dart';

@@ -9,7 +9,8 @@
 
 namespace webf {
 
-MemberMutationScope::MemberMutationScope(ExecutingContext* context) : context_(context) {
+MemberMutationScope::MemberMutationScope(ExecutingContext* context)
+    : context_(context), runtime_(context->GetScriptState()->runtime()) {
   context->SetMutationScope(*this);
 }
 
@@ -35,10 +36,9 @@ void MemberMutationScope::RecordFree(ScriptWrappable* wrappable) {
 }
 
 void MemberMutationScope::ApplyRecord() {
-  JSContext* ctx = context_->ctx();
   for (auto& entry : mutation_records_) {
     for (int i = 0; i < -entry.second; i++) {
-      JS_FreeValue(ctx, entry.first->ToQuickJSUnsafe());
+      JS_FreeValueRT(runtime_, entry.first->ToQuickJSUnsafe());
     }
   }
 }

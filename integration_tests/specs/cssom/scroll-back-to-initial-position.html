@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<title>Scroll back to initial position</title>
+<meta name="timeout" content="long">
+<link rel="author" title="Yupei Wang" href="mailto:perryuwang@tencent.com">
+<link rel="help" href="https://drafts.csswg.org/cssom-view/#smooth-scrolling">
+<style>
+    .filler { height: 1000px }
+
+    #scrollable {
+        overflow: scroll;
+        width: 100px;
+        height: 100px;
+    }
+</style>
+<div id="log"></div>
+<div id="testContainer">
+  <div id="scrollable">
+    <div class="filler"></div>
+  </div>
+</div>
+<script>
+    const scrollable = document.getElementById('scrollable');
+    scrollable.scrollTop = 0;
+    assert_equals(scrollable.scrollTop, 0, "Inital value of scrollTop");
+    scrollable.scrollTo(0, 500);
+    scrollable.scrollTo(0, 0);
+    assert_equals(scrollable.scrollTop, 0, "Inital value of scrollTop");
+</script>

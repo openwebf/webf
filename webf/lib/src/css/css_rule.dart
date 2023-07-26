@@ -55,9 +55,9 @@ class CSSKeyframesRule extends CSSRule {
     } else {
       offset = CSSPercentage.parsePercentage(keyText);
     }
-    for (MapEntry<String, String> entry in block.declarations) {
+    for (MapEntry<String, CSSPropertyValue> entry in block.declarations) {
       final property = camelize(entry.key);
-      keyframes.add(Keyframe(property, entry.value, offset ?? 0, LINEAR));
+      keyframes.add(Keyframe(property, entry.value.value, offset ?? 0, LINEAR));
     }
   }
 
@@ -74,5 +74,18 @@ class CSSKeyframesRule extends CSSRule {
         return '@-o-keyframes';
     }
     return null;
+  }
+}
+
+class CSSFontFaceRule extends CSSRule {
+  final CSSStyleDeclaration declarations;
+
+  CSSFontFaceRule(this.declarations): super();
+
+  @override
+  int get type => CSSRule.FONT_FACE_RULE;
+
+  String? get keyFrameName {
+    return '@font-face';
   }
 }

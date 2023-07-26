@@ -424,7 +424,7 @@ describe('custom html element', () => {
   it('dart implements getAllBindingPropertyNames works', async () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
-    expect(attributes).toEqual(['classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'fake', 'offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth', 'ping', 'scrollHeight', 'scrollLeft', 'scrollTop', 'scrollWidth', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete', 'click', 'fn', 'getBoundingClientRect', 'getElementsByClassName', 'getElementsByTagName', 'scroll', 'scrollBy', 'scrollTo']);
+    expect(attributes).toEqual(['classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'dir', 'fake', 'offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth', 'ping', 'scrollHeight', 'scrollLeft', 'scrollTop', 'scrollWidth', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete', 'click', 'closest', 'fn', 'getBoundingClientRect', 'getElementsByClassName', 'getElementsByTagName', 'matches', 'querySelector', 'querySelectorAll', 'scroll', 'scrollBy', 'scrollTo']);
   });
 
   it('support custom properties in dart directly', () => {
@@ -575,5 +575,43 @@ describe('custom html element', () => {
       await snapshot();
       done();
     }, 800);
+  });
+
+  it('unmount widgetElements should works when contains image', async (done) => {
+    let container = document.createElement('flutter-container');
+    let img = document.createElement('img');
+    img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
+    let wrapper = createElement('div', {}, [
+      img
+    ]);
+    container.appendChild(wrapper);
+    document.body.appendChild(container);
+
+    img.onload = async () => {
+      requestAnimationFrame(() => {
+        document.body.removeChild(container);
+        done();
+      });
+    };
+  });
+
+  it('remount widget in the same frame should works', async (done) => {
+    const container = createElement('div', {
+
+    }, [
+      createElement('input', {}, [])
+    ]);
+    document.body.appendChild(container);
+    const text = document.createElement('div');
+    text.textContent = 'TEST';
+    document.body.appendChild(text);
+
+    await snapshot();
+    setTimeout(async () => {
+      document.body.removeChild(container);
+      document.body.insertBefore(container, text);
+      await snapshot();
+      done();
+    });
   });
 });
