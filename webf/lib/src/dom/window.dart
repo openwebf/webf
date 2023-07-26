@@ -40,6 +40,8 @@ class Window extends EventTarget {
     properties['innerHeight'] = BindingObjectProperty(getter: () => innerHeight);
     properties['scrollX'] = BindingObjectProperty(getter: () => scrollX);
     properties['scrollY'] = BindingObjectProperty(getter: () => scrollY);
+    properties['pageXOffset'] = BindingObjectProperty(getter: () => scrollX);
+    properties['pageYOffset'] = BindingObjectProperty(getter: () => scrollY);
     properties['screen'] = BindingObjectProperty(getter: () => screen);
     properties['colorScheme'] = BindingObjectProperty(getter: () => colorScheme);
     properties['devicePixelRatio'] = BindingObjectProperty(getter: () => devicePixelRatio);

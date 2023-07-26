@@ -167,3 +167,18 @@ describe('DOM Element API', () => {
     expect(Object.prototype.toString.call(div)).toBe('[object HTMLDivElement]');
   });
 });
+
+describe('children', () => {
+  test(function() {
+    var container = document.createElement('div');
+    container.innerHTML = '<img id=foo><img id=foo><img name="bar">';
+    var list = container.children;
+    var result: any[] = [];
+    for (var p in list) {
+      if (list.hasOwnProperty(p)) {
+        result.push(p);
+      }
+    }
+    assert_array_equals(result, ['0', '1', '2', 'item', 'length']);
+  }, '');
+});

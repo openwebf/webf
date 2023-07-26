@@ -28,13 +28,14 @@ class NodeData {
   ChildNodeList* GetChildNodeList(ContainerNode& node);
 
   ChildNodeList* EnsureChildNodeList(ContainerNode& node);
+  NodeList* NodeLists() { return node_list_; }
 
   EmptyNodeList* EnsureEmptyChildNodeList(Node& node);
 
   void Trace(GCVisitor* visitor) const;
 
  private:
-  Member<NodeList> child_node_list_;
+  Member<NodeList> node_list_;
 };
 
 }  // namespace webf

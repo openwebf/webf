@@ -44,6 +44,7 @@ if(NOT MSVC)
     check_ipo_supported(RESULT supported OUTPUT error)
     if( supported )
       set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+      add_compile_options(-flto)
     endif()
   endif()
 endif()
@@ -285,6 +286,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/events/event_target_impl.cc
     core/binding_object.cc
     core/dom/node.cc
+    core/dom/node_list.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
     core/dom/character_data.cc
@@ -322,7 +324,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/keyboard_event.cc
     core/events/promise_rejection_event.cc
     core/html/parser/html_parser.cc
-    core/html/legacy/html_collection.cc
     core/html/html_element.cc
     core/html/html_div_element.cc
     core/html/html_head_element.cc
@@ -337,6 +338,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
     core/html/image.cc
+    core/html/html_collection.cc
     core/html/canvas/html_canvas_element.cc
     core/html/canvas/canvas_rendering_context.cc
     core/html/canvas/canvas_rendering_context_2d.cc
@@ -361,6 +363,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/svg/svg_rect_element.cc
     core/svg/svg_text_element.cc
     core/svg/svg_g_element.cc
+    core/svg/svg_circle_element.cc
+    core/svg/svg_ellipse_element.cc
+    core/svg/svg_style_element.cc
 
     # Legacy implements, should remove them in the future.
     core/dom/legacy/element_attributes.cc
@@ -443,6 +448,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_scroll_to_options.cc
     out/qjs_html_element.cc
     out/qjs_html_all_collection.cc
+    out/qjs_html_collection.cc
     out/qjs_html_anchor_element.cc
     out/qjs_html_div_element.cc
     out/qjs_html_head_element.cc
@@ -506,6 +512,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_rect_element.cc
     out/qjs_svg_text_element.cc
     out/qjs_svg_g_element.cc
+    out/qjs_svg_circle_element.cc
+    out/qjs_svg_ellipse_element.cc
+    out/qjs_svg_style_element.cc
     )
 
 
@@ -556,7 +565,8 @@ target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
+    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
+    target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
   else ()
     ### remove dynamic_cast and exceptions
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)

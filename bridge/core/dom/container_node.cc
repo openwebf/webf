@@ -1,4 +1,27 @@
 /*
+ * Copyright (C) 1999 Lars Knoll (knoll@kde.org)
+ *           (C) 1999 Antti Koivisto (koivisto@kde.org)
+ *           (C) 2001 Dirk Mueller (mueller@kde.org)
+ * Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2013 Apple Inc. All rights
+ * reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
+ */
+
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
@@ -15,16 +38,8 @@
 namespace webf {
 
 // Legacy impls due to limited time, should remove this func in the future.
-std::vector<Element*> ContainerNode::Children() {
-  std::vector<Element*> elements;
-  uint32_t length = childNodes()->length();
-  for (int i = 0; i < length; i++) {
-    auto* element = DynamicTo<Element>(childNodes()->item(i, ASSERT_NO_EXCEPTION()));
-    if (element) {
-      elements.emplace_back(element);
-    }
-  }
-  return elements;
+HTMLCollection* ContainerNode::Children() {
+  return EnsureCachedCollection<HTMLCollection>(CollectionType::kNodeChildren);
 }
 
 unsigned ContainerNode::CountChildren() const {
@@ -154,6 +169,7 @@ Node* ContainerNode::InsertBefore(Node* new_child, Node* ref_child, ExceptionSta
   // 5. Insert node into parent before reference child.
   NodeVector post_insertion_notification_targets;
   { InsertNodeVector(targets, ref_child, AdoptAndInsertBefore(), &post_insertion_notification_targets); }
+  DidInsertNodeVector(targets, ref_child, post_insertion_notification_targets);
   return new_child;
 }
 
@@ -219,6 +235,7 @@ Node* ContainerNode::ReplaceChild(Node* new_child, Node* old_child, ExceptionSta
       InsertNodeVector(targets, nullptr, AdoptAndAppendChild(), &post_insertion_notification_targets);
     }
   }
+  DidInsertNodeVector(targets, next, post_insertion_notification_targets);
 
   // 16. Return child.
   return old_child;
@@ -250,6 +267,7 @@ Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_stat
       RemoveBetween(prev, next, *child);
       NotifyNodeRemoved(*child);
     }
+    ChildrenChanged(ChildrenChange::ForRemoval(*child, prev, next, ChildrenChangeSource::kAPI));
   }
   return child;
 }
@@ -268,6 +286,7 @@ Node* ContainerNode::AppendChild(Node* new_child, ExceptionState& exception_stat
   NodeVector post_insertion_notification_targets;
   post_insertion_notification_targets.reserve(kInitialNodeVectorSize);
   { InsertNodeVector(targets, nullptr, AdoptAndAppendChild(), &post_insertion_notification_targets); }
+  DidInsertNodeVector(targets, nullptr, post_insertion_notification_targets);
   return new_child;
 }
 
@@ -331,14 +350,21 @@ void ContainerNode::RemoveChildren() {
   if (!first_child_)
     return;
 
+  bool has_element_child = false;
+
   while (Node* child = first_child_) {
+    if (child->IsElementNode()) {
+      has_element_child = true;
+    }
     RemoveBetween(nullptr, child->nextSibling(), *child);
     NotifyNodeRemoved(*child);
   }
 
-  auto* this_node = DynamicTo<ContainerNode>(this);
-  if (this_node)
-    EnsureNodeData().EnsureChildNodeList(*this_node)->InvalidateCache();
+  ChildrenChange change = {
+      .type = ChildrenChangeType::kAllChildrenRemoved,
+      .by_parser = ChildrenChangeSource::kAPI,
+      .affects_elements = has_element_child ? ChildrenChangeAffectsElements::kYes : ChildrenChangeAffectsElements::kNo};
+  ChildrenChanged(change);
 }
 
 void ContainerNode::CloneChildNodesFrom(const ContainerNode& node, CloneChildrenFlag flag) {
@@ -391,6 +417,15 @@ void ContainerNode::InsertNodeVector(const NodeVector& targets,
       mutator(*this, child, next);
       NotifyNodeInsertedInternal(child);
     }
+  }
+}
+
+void ContainerNode::DidInsertNodeVector(const webf::NodeVector& targets,
+                                        webf::Node* next,
+                                        const webf::NodeVector& post_insertion_notification_targets) {
+  Node* unchanged_previous = targets.size() > 0 ? targets[0]->previousSibling() : nullptr;
+  for (const auto& target_node : targets) {
+    ChildrenChanged(ChildrenChange::ForInsertion(*target_node, unchanged_previous, next, ChildrenChangeSource::kAPI));
   }
 }
 
@@ -454,6 +489,42 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
     if (!node.IsContainerNode() && !node.IsInTreeScope())
       continue;
     node.RemovedFrom(*this);
+  }
+}
+
+void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
+  InvalidateNodeListCachesInAncestors(&change);
+}
+
+void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNode::ChildrenChange* change) {
+  // This is a performance optimization, NodeList cache invalidation is
+  // not necessary for a text change.
+  if (change && change->type == ChildrenChangeType::kTextChanged)
+    return;
+
+  if (HasNodeData()) {
+    if (NodeList* lists = Data()->NodeLists()) {
+      if (lists != nullptr && lists->IsChildNodeList()) {
+        auto* child_node_list = static_cast<ChildNodeList*>(lists);
+        if (change) {
+          child_node_list->ChildrenChanged(*change);
+        } else {
+          child_node_list->InvalidateCache();
+        }
+      }
+    }
+  }
+
+  // This is a performance optimization, NodeList cache invalidation is
+  // not necessary for non-element nodes.
+  if (change && change->affects_elements == ChildrenChangeAffectsElements::kNo)
+    return;
+
+  for (ContainerNode* node = this; node; node = node->parentNode()) {
+    NodeList* lists = node->childNodes();
+    if (lists->IsChildNodeList()) {
+      reinterpret_cast<ChildNodeList*>(lists)->InvalidateCache();
+    }
   }
 }
 

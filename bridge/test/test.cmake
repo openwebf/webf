@@ -27,7 +27,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/dom/document_test.cc
   ./core/dom/legacy/element_attribute_test.cc
   ./core/dom/node_test.cc
-  ./core/html/legacy/html_collection_test.cc
+  ./core/html/html_collection_test.cc
   ./core/dom/element_test.cc
   ./core/frame/dom_timer_test.cc
   ./core/frame/window_test.cc

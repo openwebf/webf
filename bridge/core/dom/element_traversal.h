@@ -34,7 +34,6 @@
 #ifndef BRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_
 #define BRIDGE_CORE_DOM_ELEMENT_TRAVERSAL_H_
 
-#include "element.h"
 #include "foundation/macros.h"
 #include "html_element_type_helper.h"
 #include "node_traversal.h"

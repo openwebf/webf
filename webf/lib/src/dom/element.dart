@@ -785,6 +785,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
       // Find the previous siblings to insert before renderBoxModel is detached.
       RenderBox? previousSibling = _renderBoxModel.getPreviousSibling();
+
+      // // If previousSibling is a renderBox than represent a fixed element. Should skipped it util reach a renderBox in normal layout tree.
+      while (previousSibling != null &&
+          _isRenderBoxFixed(previousSibling, ownerDocument.viewport!) &&
+          previousSibling is RenderBoxModel) {
+        previousSibling = previousSibling.getPreviousSibling(followPlaceHolder: false);
+      }
+
       // Detach renderBoxModel from its original parent.
       _renderBoxModel.detachFromContainingBlock();
       // Change renderBoxModel type in cases such as position changes to fixed which
@@ -1707,6 +1715,15 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       case RY:
         renderStyle.ry = value;
         break;
+      case CX:
+        renderStyle.cx = value;
+        break;
+      case CY:
+        renderStyle.cy = value;
+        break;
+      case R:
+        renderStyle.r = value;
+        break;
       case D:
         renderStyle.d = value;
         break;
@@ -2131,7 +2148,7 @@ Element? _findContainingBlock(Element child, Element viewportElement) {
 
 // Cache fixed renderObject to root element
 void _addFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewport) {
-  List<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
   if (!fixedChildren.contains(childRenderBoxModel)) {
     fixedChildren.add(childRenderBoxModel);
   }
@@ -2139,10 +2156,15 @@ void _addFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewpo
 
 // Remove non fixed renderObject from root element
 void _removeFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewport) {
-  List<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
   if (fixedChildren.contains(childRenderBoxModel)) {
     fixedChildren.remove(childRenderBoxModel);
   }
+}
+
+bool _isRenderBoxFixed(RenderBox renderBox, RenderViewportBox viewport) {
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  return fixedChildren.contains(renderBox);
 }
 
 // Reflect attribute type as property.

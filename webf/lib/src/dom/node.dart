@@ -195,6 +195,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   String get nodeName;
 
   NodeData? _node_data;
+  NodeData? get nodeData => _node_data;
   NodeData ensureNodeData() {
     _node_data ??= NodeData();
     return _node_data!;

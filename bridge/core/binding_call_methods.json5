@@ -176,5 +176,7 @@
     "closest",
     "elementFromPoint",
     "dir",
+    "pageXOffset",
+    "pageYOffset"
   ]
 }

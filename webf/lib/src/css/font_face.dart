@@ -3,6 +3,7 @@
  */
 
 import 'package:collection/collection.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -29,16 +30,16 @@ class _Font {
 }
 
 class CSSFontFace {
-  static Uri? _resolveFontSource(int contextId, String source) {
+  static Uri? _resolveFontSource(int contextId, String source, String? base) {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-    String base = controller.url;
+    base = base ?? controller.url;
     try {
       return controller.uriParser!.resolve(Uri.parse(base), Uri.parse(source));
     } catch (_) {
       return null;
     }
   }
-  static void resolveFontFaceRules(CSSFontFaceRule fontFaceRule, int contextId) async {
+  static void resolveFontFaceRules(CSSFontFaceRule fontFaceRule, int contextId, String? baseHref) async {
     CSSStyleDeclaration declaration = fontFaceRule.declarations;
     String fontFamily = declaration.getPropertyValue('fontFamily');
     String url = declaration.getPropertyValue('src');
@@ -86,18 +87,22 @@ class CSSFontFace {
           Uint8List content = targetFont.content;
           Future<ByteData> bytes = Future.value(ByteData.sublistView(content));
           FontLoader loader = FontLoader(fontFamily);
-          loader.addFont(bytes);
-          loader.load();
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            loader.addFont(bytes);
+            loader.load();
+          });
         } else {
-          Uri? uri = _resolveFontSource(contextId, targetFont.src);
+          Uri? uri = _resolveFontSource(contextId, targetFont.src, baseHref);
           if (uri == null) return;
           WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
           await bundle.resolve(contextId);
           assert(bundle.isResolved, 'Failed to obtain $url');
-          FontLoader loader = FontLoader(fontFamily);
+          FontLoader loader = FontLoader(removeQuotationMark(fontFamily));
           Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
-          loader.addFont(bytes);
-          loader.load();
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+            loader.addFont(bytes);
+            loader.load();
+          });
         }
 
 

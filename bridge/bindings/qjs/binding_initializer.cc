@@ -38,6 +38,7 @@
 #include "qjs_html_body_element.h"
 #include "qjs_html_button_element.h"
 #include "qjs_html_canvas_element.h"
+#include "qjs_html_collection.h"
 #include "qjs_html_div_element.h"
 #include "qjs_html_element.h"
 #include "qjs_html_form_element.h"
@@ -70,12 +71,15 @@
 #include "qjs_pop_state_event.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
+#include "qjs_svg_circle_element.h"
 #include "qjs_svg_element.h"
+#include "qjs_svg_ellipse_element.h"
 #include "qjs_svg_g_element.h"
 #include "qjs_svg_geometry_element.h"
 #include "qjs_svg_graphics_element.h"
 #include "qjs_svg_path_element.h"
 #include "qjs_svg_rect_element.h"
+#include "qjs_svg_style_element.h"
 #include "qjs_svg_svg_element.h"
 #include "qjs_svg_text_content_element.h"
 #include "qjs_svg_text_element.h"
@@ -156,7 +160,6 @@ void InstallBindings(ExecutingContext* context) {
   QJSInlineCssStyleDeclaration::Install(context);
   QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
-  QJSHTMLAllCollection::Install(context);
   QJSScreen::Install(context);
   QJSBlob::Install(context);
   QJSTouch::Install(context);
@@ -167,6 +170,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSPerformanceEntry::Install(context);
   QJSPerformanceMark::Install(context);
   QJSPerformanceMeasure::Install(context);
+  QJSHTMLCollection::Install(context);
+  QJSHTMLAllCollection::Install(context);
 
   // SVG
   QJSSVGElement::Install(context);
@@ -179,6 +184,9 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGPathElement::Install(context);
   QJSSVGTextElement::Install(context);
   QJSSVGGElement::Install(context);
+  QJSSVGCircleElement::Install(context);
+  QJSSVGEllipseElement::Install(context);
+  QJSSVGStyleElement::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

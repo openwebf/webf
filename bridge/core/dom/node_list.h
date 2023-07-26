@@ -36,6 +36,8 @@
 #define BRIDGE_CORE_DOM_NODE_LIST_H_
 
 #include "bindings/qjs/script_wrappable.h"
+#include "core/html/collection_type.h"
+#include "core/html/html_collection.h"
 
 namespace webf {
 
@@ -67,10 +69,32 @@ class NodeList : public ScriptWrappable {
 
   virtual Node* VirtualOwnerNode() const { return nullptr; }
 
-  void Trace(GCVisitor* visitor) const override{};
+  virtual void InvalidateCache();
+  template <typename T>
+  T* AddCache(ContainerNode& node, CollectionType collection_type) {
+    if (tag_collection_cache_.count(collection_type)) {
+      return tag_collection_cache_[collection_type];
+    }
+
+    auto* list = MakeGarbageCollected<T>(node, collection_type);
+    tag_collection_cache_[collection_type] = list;
+    return list;
+  }
+  void Trace(GCVisitor* visitor) const override;
 
  protected:
+  std::unordered_map<CollectionType, Member<HTMLCollection>> tag_collection_cache_;
 };
+
+template <typename Collection>
+inline Collection* ContainerNode::EnsureCachedCollection(CollectionType type) {
+  auto* this_node = DynamicTo<ContainerNode>(this);
+  if (this_node) {
+    return reinterpret_cast<NodeList*>(EnsureNodeData().EnsureChildNodeList(*this))->AddCache<Collection>(*this, type);
+  }
+  return reinterpret_cast<NodeList*>(EnsureNodeData().EnsureEmptyChildNodeList(*this))
+      ->AddCache<Collection>(*this, type);
+}
 
 }  // namespace webf
 
