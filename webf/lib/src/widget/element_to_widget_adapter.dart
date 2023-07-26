@@ -2,7 +2,6 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'dart:collection';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -24,7 +23,7 @@ class WebFHTMLElementStatefulWidget extends StatefulWidget {
 }
 
 class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
-  final Set<Widget> customElementWidgets = HashSet();
+  final Set<Widget> customElementWidgets = {};
   final dom.Element _webFElement;
 
   bool _disposed = false;

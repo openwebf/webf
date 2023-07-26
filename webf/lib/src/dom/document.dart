@@ -23,7 +23,7 @@ import 'package:webf/src/foundation/cookie_jar.dart';
 /// This class will buffering all the renderObjects who's element are removed from the document tree, and they will be disposed
 /// in the end of this frame.
 class _InactiveRenderObjects {
-  final Set<RenderObject> _renderObjects = HashSet<RenderObject>();
+  final Set<RenderObject> _renderObjects = <RenderObject>{};
 
   bool _isScheduled = false;
 

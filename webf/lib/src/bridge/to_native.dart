@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:collection';
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
@@ -55,7 +55,7 @@ final DartGetWebFInfo _getWebFInfo =
 
 final WebFInfo _cachedInfo = WebFInfo(_getWebFInfo());
 
-final HashMap<int, Pointer<Void>> _allocatedPages = HashMap();
+final Map<int, Pointer<Void>> _allocatedPages = {};
 
 Pointer<Void>? getAllocatedPage(int contextId) {
   return _allocatedPages[contextId];

@@ -2,12 +2,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:collection';
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 
-typedef CSSMap = HashMap<String, List<CSSRule>>;
+typedef CSSMap = Map<String, List<CSSRule>>;
 
 class RuleSet {
   final Document ownerDocument;
@@ -22,10 +21,10 @@ class RuleSet {
       pseudoRules.isEmpty &&
       keyframesRules.isEmpty;
 
-  final CSSMap idRules = HashMap();
-  final CSSMap classRules = HashMap();
-  final CSSMap attributeRules = HashMap();
-  final CSSMap tagRules = HashMap();
+  final CSSMap idRules = {};
+  final CSSMap classRules = {};
+  final CSSMap attributeRules = {};
+  final CSSMap tagRules = {};
   final List<CSSRule> universalRules = [];
   final List<CSSRule> pseudoRules = [];
 
