@@ -1162,6 +1162,7 @@ class RenderBoxModel extends RenderBox
     }
 
     needsLayout = false;
+    dispatchResize(contentSize, boxSize ?? Size.zero);
   }
 
   /// [RenderLayoutBox] real paint things after basiclly paint box model.

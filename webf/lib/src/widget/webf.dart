@@ -363,7 +363,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
   }
 
   @override
-  void rebuild() {
+  void rebuild({bool force = false}) {
     super.rebuild();
   }
 

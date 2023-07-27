@@ -77,9 +77,9 @@ class ResizeObserverEntry {
 
   String toJson() {
     return jsonEncode({
-      'borderBoxSize': borderBoxSize,
-      'contentBoxSize': contentBoxSize,
-      'contentRect': contentRect,
+      'borderBoxSize': {'blockSize': borderBoxSize.height, 'inlineSize': borderBoxSize.width},
+      'contentBoxSize': {'blockSize': contentBoxSize.height, 'inlineSize': contentBoxSize.width},
+      'contentRect': {'x': 0, 'y': 0, 'width': contentRect.width, 'height': contentRect.height},
     });
   }
 }
