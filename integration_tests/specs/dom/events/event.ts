@@ -661,4 +661,48 @@ describe('Event', () => {
     container.click();
     await snapshot();
   });
+  it('ResizeObserver observer one element', async (done)=> {
+    const el = createElement('div', {
+      style: {
+        width: '100px',
+        height: '100px',
+        background: 'red'
+      }
+    });
+    document.body.appendChild(el);
+    const observer = new ResizeObserver((entries)=>{
+      if(entries) {
+        done();
+      }
+    });
+    observer.observe(el);
+    el.style.width = '102px';
+  });
+  it('ResizeObserver observer two element', async (done)=> {
+    const el = createElement('div', {
+      style: {
+        width: '100px',
+        height: '100px',
+        background: 'red'
+      }
+    });
+    const el2 = createElement('div', {
+      style: {
+        width: '100px',
+        height: '100px',
+        background: 'yellow'
+      }
+    });
+    document.body.appendChild(el);
+    document.body.appendChild(el2);
+    const observer = new ResizeObserver((entries)=>{
+      if(entries && entries.length > 1) {
+        done();
+      }
+    });
+    observer.observe(el);
+    observer.observe(el2);
+    el.style.width = '102px';
+    el2.style.width = '102px';
+  });
 });

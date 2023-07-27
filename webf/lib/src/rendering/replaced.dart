@@ -82,6 +82,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       didLayout();
     } else {
       performResize();
+      dispatchResize(contentSize, boxSize ?? Size.zero);
     }
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }
