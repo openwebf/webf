@@ -42,14 +42,17 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
   }
 }
 
-NativeValue WidgetElement::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
+NativeValue WidgetElement::HandleCallFromDartSide(const AtomicString& method,
+                                                  int32_t argc,
+                                                  const NativeValue* argv,
+                                                  Dart_Handle dart_object) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
 
   if (method == binding_call_methods::ksyncPropertiesAndMethods) {
     return HandleSyncPropertiesAndMethodsFromDart(argc, argv);
   }
 
-  return Element::HandleCallFromDartSide(method, argc, argv);
+  return Element::HandleCallFromDartSide(method, argc, argv, dart_object);
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {

@@ -540,4 +540,87 @@ describe('Event', () => {
 
     expect(ret).toEqual('1');
   });
+
+  it('should work with share event object', async () => {
+    const container1 = document.createElement('div');
+    document.body.appendChild(container1);
+    Object.assign(container1.style, {
+      padding: '20px',
+      backgroundColor: '#999',
+      margin: '40px',
+    });
+    container1.appendChild(document.createTextNode('DIV 1'));
+
+    const container2 = document.createElement('div');
+    Object.assign(container2.style, {
+      padding: '20px',
+      height: '100px',
+      backgroundColor: '#f40',
+      margin: '40px',
+    });
+    container2.appendChild(document.createTextNode('DIV 2'));
+
+    container1.appendChild(container2);
+
+    document.body.addEventListener('click', function listener(e) {
+      wrapper.appendChild(document.createTextNode(e.msg));
+      document.body.removeEventListener('click', listener);
+    });
+    container1.addEventListener('click', (e) => {
+      wrapper.appendChild(document.createTextNode(e.msg));
+      e.msg = 'DIV 1 has clicked';
+    });
+    container2.addEventListener('click', (e) => {
+      e.msg = 'DIV 2 has clicked, ';
+    });
+
+    const wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    wrapper.appendChild(document.createTextNode('Click DIV 2: '));
+
+    container2.click();
+    await snapshot();
+  });
+
+  it('should work with share event callback', async () => {
+    const container1 = document.createElement('div');
+    document.body.appendChild(container1);
+    Object.assign(container1.style, {
+      padding: '20px',
+      backgroundColor: '#999',
+      margin: '40px',
+    });
+    container1.appendChild(document.createTextNode('DIV 1'));
+
+    const container2 = document.createElement('div');
+    Object.assign(container2.style, {
+      padding: '20px',
+      height: '100px',
+      backgroundColor: '#f40',
+      margin: '40px',
+    });
+    container2.appendChild(document.createTextNode('DIV 2'));
+
+    container1.appendChild(container2);
+
+    document.body.addEventListener('click', function listener(e) {
+      wrapper.appendChild(document.createTextNode(e.getMsg()));
+      document.body.removeEventListener('click', listener);
+    });
+
+    function fn () {
+      return 'DIV 2 has clicked ';
+    }
+    container2.addEventListener('click', (e) => {
+      e.getMsg = fn;
+    });
+
+
+    const wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    wrapper.appendChild(document.createTextNode('Click DIV 2: '));
+
+    container2.click();
+    await snapshot();
+  });
 });

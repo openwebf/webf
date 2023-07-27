@@ -62,7 +62,7 @@ class ScriptValue final {
   ScriptValue ToJSONStringify(ExceptionState* exception) const;
   AtomicString ToString() const;
   std::unique_ptr<SharedNativeString> ToNativeString() const;
-  NativeValue ToNative(ExceptionState& exception_state) const;
+  NativeValue ToNative(ExceptionState& exception_state, bool shared_js_value = false) const;
 
   bool IsException() const;
   bool IsEmpty() const;

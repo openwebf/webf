@@ -42,8 +42,8 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
       error_(initializer->hasError() ? initializer->error() : ScriptValue::Empty(ctx())),
       source_location_(
           std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString(ctx()) : "",
-                                           initializer->lineno(),
-                                           initializer->colno())) {}
+                                           initializer->hasLineno() ? initializer->lineno() : 0,
+                                           initializer->hasColno() ? initializer->colno() : 0)) {}
 
 bool ErrorEvent::IsErrorEvent() const {
   return true;

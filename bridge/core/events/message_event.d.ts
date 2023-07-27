@@ -7,4 +7,5 @@ export interface MessageEvent extends Event {
   readonly origin: string;
   readonly lastEventId: string;
   readonly source: string;
+  [key: string]: any;
 }
