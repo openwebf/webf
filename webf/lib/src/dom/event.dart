@@ -488,7 +488,7 @@ class ResizeEvent extends Event {
   ResizeObserverEntry entry;
   ResizeEvent(this.entry):super(EVENT_RESIZE);
   toCustomEvent() {
-    return CustomEvent(EVENT_RESIZE,detail: entry.toJson());
+    return CustomEvent(EVENT_RESIZE, detail: entry.toJson());
   }
 }
 
