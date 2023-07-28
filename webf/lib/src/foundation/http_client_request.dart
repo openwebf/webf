@@ -262,7 +262,6 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   @override
   List<Cookie> get cookies => _backendRequest?.cookies ?? _cookies;
 
-  @override
   List get data => _data;
 
   @override

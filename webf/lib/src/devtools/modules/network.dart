@@ -68,7 +68,7 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
 
   @override
   Future<HttpClientRequest?> beforeRequest(HttpClientRequest request) {
-    List<int> data = List<int>.from((request as ProxyHttpClientRequest).data ?? []);
+    List<int> data = List<int>.from((request as ProxyHttpClientRequest).data);
 
     sendEventToFrontend(NetworkRequestWillBeSentEvent(
       requestId: _getRequestId(request),
