@@ -6,20 +6,22 @@ import 'package:source_span/source_span.dart';
 import 'package:webf/css.dart';
 
 class CSSCalcValue {
-  final CalcExpressionNode? _expression;
-  CSSCalcValue(this._expression);
+  final CalcExpressionNode? expression;
+  CSSCalcValue(this.expression);
 
   // Get the lazy calculated CSS resolved value.
-  dynamic computedValue(String propertyName) {
-    double? value = _expression?.computedValue;
-    return value;
+  double? computedValue(String propertyName) {
+    if (expression == null) {
+      return null;
+    }
+    return expression!.computedValue;
   }
 
   // Try to parse CSSCalcValue.
   static CSSCalcValue? tryParse(RenderStyle renderStyle, String propertyName, String propertyValue) {
     if (CSSFunction.isFunction(propertyValue, functionName: CALC)) {
       List<CSSFunctionalNotation> fns = CSSFunction.parseFunction(propertyValue);
-      if (fns.first.args.isNotEmpty) {
+      if (fns.isNotEmpty && fns.first.args.isNotEmpty) {
         assert(fns.first.args.length == 1, 'Calc parameters count must be = 1');
         final expression = fns.first.args.first;
         final _CSSCalcParser parser = _CSSCalcParser(propertyName, renderStyle, expression);
@@ -29,6 +31,15 @@ class CSSCalcValue {
     }
     return null;
   }
+
+  @override
+  String toString()  => 'CSSCalcValue(expression: $expression)';
+
+  @override
+  int get hashCode => expression.hashCode;
+
+  @override
+  bool operator ==(Object? other) => other is CSSCalcValue && other.expression == expression;
 }
 
 abstract class CalcExpressionNode {
@@ -43,6 +54,15 @@ class CalcInvertNode extends CalcExpressionNode {
   double get computedValue {
     return 1 / node.computedValue;
   }
+
+  @override
+  int get hashCode => node.hashCode;
+
+  @override
+  bool operator ==(Object? other) => other is CalcInvertNode && other.node == node;
+
+  @override
+  String toString()  => 'CalcInvertNode(node: $node)';
 }
 
 class CalcNegateNode extends CalcExpressionNode {
@@ -53,6 +73,15 @@ class CalcNegateNode extends CalcExpressionNode {
   double get computedValue {
     return -1 * node.computedValue;
   }
+
+  @override
+  int get hashCode => node.hashCode;
+
+  @override
+  bool operator ==(Object? other) => other is CalcNegateNode && other.node == node;
+
+  @override
+  String toString()  => 'CalcNegateNode(node: $node)';
 }
 
 class CalcVariableNode extends CalcExpressionNode {
@@ -62,12 +91,28 @@ class CalcVariableNode extends CalcExpressionNode {
 
   @override
   double get computedValue {
-    String text = value.computedValue('');
+    dynamic text = value.computedValue('');
+    if (text == null) return 0;
     if (CSSLength.isLength(text)) {
       return CSSLength.parseLength(text, _renderStyle).computedValue;
     }
+
+    double? num = double.tryParse(text);
+    if (num != null) {
+      return num;
+    }
+
     return 0;
   }
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  bool operator ==(Object? other) => other is CalcVariableNode && other.value == value;
+
+  @override
+  String toString()  => 'CalcVariableNode(node: $value)';
 }
 
 class CalcLengthNode extends CalcExpressionNode {
@@ -76,6 +121,15 @@ class CalcLengthNode extends CalcExpressionNode {
 
   @override
   double get computedValue => value.computedValue;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  bool operator ==(Object? other) => other is CalcLengthNode && other.value == value;
+
+  @override
+  String toString()  => 'CalcLengthNode(node: $value)';
 }
 
 class CalcNumberNode extends CalcExpressionNode {
@@ -84,6 +138,15 @@ class CalcNumberNode extends CalcExpressionNode {
 
   @override
   double get computedValue => value;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  bool operator ==(Object? other) => other is CalcLengthNode && other.value == value;
+
+  @override
+  String toString()  => 'CalcNumberNode(node: $value)';
 }
 
 class CalcOperationExpressionNode extends CalcExpressionNode {
@@ -103,6 +166,17 @@ class CalcOperationExpressionNode extends CalcExpressionNode {
     assert(false, 'This operator should not be used');
     return 0;
   }
+
+  @override
+  int get hashCode => Object.hash(leftNode, rightNode);
+
+  @override
+  bool operator ==(Object? other) => other is CalcOperationExpressionNode &&
+      other.operator == operator && other.leftNode == leftNode && other.rightNode == rightNode;
+
+  @override
+  String toString()  => 'CalcOperationExpressionNode(operator: ${operator == TokenKind.PLUS ? '+' : '*'}, '
+      'leftNode: $leftNode, rightNode: $rightNode)';
 }
 
 class _CSSCalcParser {
@@ -134,6 +208,7 @@ class _CSSCalcParser {
           _next();
           name += _peekToken.text;
         }
+        _maybeEat(TokenKind.RPAREN);
         CSSVariable? variable = CSSVariable.tryParse(_renderStyle, name);
         if (variable != null) {
           return CalcVariableNode(variable, _renderStyle);
@@ -230,7 +305,7 @@ class _CSSCalcParser {
       return CalcNumberNode(numberValue);
     }
     value += unit;
-    CSSLengthValue lengthValue = CSSLength.parseLength(value, _renderStyle, propertyName);
+    CSSLengthValue lengthValue = CSSLength.parseLength(value, _renderStyle, '${propertyName}_$value');
     _next();
     return CalcLengthNode(lengthValue);
   }

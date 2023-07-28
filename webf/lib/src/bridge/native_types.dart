@@ -49,6 +49,17 @@ class EventDispatchResult extends Struct {
   external bool propagationStopped;
 }
 
+class AddEventListenerOptions extends Struct {
+  @Bool()
+  external bool capture;
+
+  @Bool()
+  external bool passive;
+
+  @Bool()
+  external bool once;
+}
+
 class NativeTouchList extends Struct {
   @Int64()
   external int length;

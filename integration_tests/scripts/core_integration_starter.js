@@ -5,12 +5,18 @@ const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const os = require('os');
 
+function getRunningPlatform() {
+  if (os.platform() == 'darwin') return 'macos';
+  if (os.platform() == 'linux') return 'linux';
+  if (os.platform() == 'win32') return 'windows';
+}
+
 // Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
 function startIntegrationTest() {
   const shouldSkipBuild = /skip\-build/.test(process.argv);
   if (!shouldSkipBuild) {
     console.log('Building integration tests macOS application from "lib/main.dart"...');
-    spawnSync('flutter', ['build', 'macos', '--debug'], {
+    spawnSync('flutter', ['build', getRunningPlatform(), '--profile'], {
       stdio: 'inherit'
     });
   }
@@ -20,7 +26,9 @@ function startIntegrationTest() {
   if (platform === 'linux') {
     testExecutable = path.join(__dirname, '../build/linux/x64/debug/bundle/app');
   } else if (platform === 'darwin') {
-    testExecutable = path.join(__dirname, '../build/macos/Build/Products/Debug/tests.app/Contents/MacOS/tests');
+    testExecutable = path.join(__dirname, '../build/macos/Build/Products/Profile/tests.app/Contents/MacOS/tests');
+  } else if (platform == 'win32') {
+    testExecutable = path.join(__dirname, '../build/windows/runner/Profile/app.exe');
   } else {
     throw new Error('Unsupported platform:' + platform);
   }
@@ -34,7 +42,15 @@ function startIntegrationTest() {
       WEBF_TEST_DIR: path.join(__dirname, '../')
     },
     cwd: process.cwd(),
-    stdio: 'inherit'
+    stdio: 'pipe'
+  });
+
+  tester.stdout.on('data', (data) => {
+    console.log(`${data && data.toString().trim()}`);
+  });
+  
+  tester.stderr.on('data', (data) => {
+    console.error(`${data && data.toString().trim()}`);
   });
 
   tester.on('close', (code) => {

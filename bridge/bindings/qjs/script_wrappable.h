@@ -55,20 +55,23 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
   FORCE_INLINE ExecutingContext* GetExecutingContext() const { return context_; };
   FORCE_INLINE JSContext* ctx() const { return ctx_; }
   FORCE_INLINE JSRuntime* runtime() const { return runtime_; }
+  FORCE_INLINE int64_t contextId() const { return context_id_; }
 
   void InitializeQuickJSObject() override;
 
   /**
-   * Classes kept alive as long as
-   * they have a pending activity. Destroying the corresponding ExecutionContext
-   * implicitly releases them to avoid leaks.
+   * Classes kept alive as long as they have a pending activity.
+   * Release them via `ReleaseAlive` method.
    */
-  virtual bool KeepAlive() const;
+  void KeepAlive();
+  void ReleaseAlive();
 
  private:
+  bool is_alive = false;
   JSValue jsObject_{JS_NULL};
   JSContext* ctx_{nullptr};
   ExecutingContext* context_{nullptr};
+  int64_t context_id_;
   JSRuntime* runtime_{nullptr};
   friend class GCVisitor;
 };
@@ -76,6 +79,10 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
 // Converts a QuickJS object back to a ScriptWrappable.
 template <typename ScriptWrappable>
 inline ScriptWrappable* toScriptWrappable(JSValue object) {
+  // If object is proxy object, should get the rel target of this proxy.
+  if (JS_IsProxy(object)) {
+    object = JS_GetProxyTarget(object);
+  }
   return static_cast<ScriptWrappable*>(JS_GetOpaque(object, JSValueGetClassId(object)));
 }
 

@@ -10,6 +10,11 @@ describe('Transition property', () => {
     container1.appendChild(document.createTextNode('DIV'));
     await snapshot();
 
+    const style = window.getComputedStyle(container1);
+    expect(style['transition-property']).toEqual('all');
+    expect(style['transition-delay']).toEqual('0s');
+    expect(style['transition-duration']).toEqual('1s');
+    expect(style['transition-timing-function']).toEqual('linear');
     container1.addEventListener('transitionend', async () => {
       await snapshot();
       done();

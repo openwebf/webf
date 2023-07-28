@@ -29,6 +29,9 @@
 #include "quickjs/quickjs.h"
 #include "quickjs/cutils.h"
 #include "types.h"
+#if ENABLE_MI_MALLOC
+#include "mimalloc.h"
+#endif
 
 void js_trigger_gc(JSRuntime* rt, size_t size);
 no_inline int js_realloc_array(JSContext* ctx, void** parray, int elem_size, int* psize, int req_size);

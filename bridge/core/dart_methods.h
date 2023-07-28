@@ -14,47 +14,62 @@
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
 
+#if defined(_WIN32)
+#define WEBF_EXPORT_C extern "C" __declspec(dllexport)
+#define WEBF_EXPORT __declspec(dllexport)
+#else
+#define WEBF_EXPORT_C extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
+#endif
 
 namespace webf {
 
-using AsyncCallback = void (*)(void* callbackContext, int32_t contextId, const char* errmsg);
-using AsyncRAFCallback = void (*)(void* callbackContext, int32_t contextId, double result, const char* errmsg);
-using AsyncModuleCallback = NativeValue* (*)(void* callbackContext,
-                                             int32_t contextId,
+using AsyncCallback = void (*)(void* callback_context, int32_t context_id, const char* errmsg);
+using AsyncRAFCallback = void (*)(void* callback_context, int32_t context_id, double result, const char* errmsg);
+using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
+                                             int32_t context_id,
                                              const char* errmsg,
                                              NativeValue* value);
 using AsyncBlobCallback =
-    void (*)(void* callbackContext, int32_t contextId, const char* error, uint8_t* bytes, int32_t length);
-typedef NativeValue* (*InvokeModule)(void* callbackContext,
-                                     int32_t contextId,
-                                     NativeString* moduleName,
-                                     NativeString* method,
+    void (*)(void* callback_context, int32_t context_id, const char* error, uint8_t* bytes, int32_t length);
+typedef NativeValue* (*InvokeModule)(void* callback_context,
+                                     int32_t context_id,
+                                     SharedNativeString* moduleName,
+                                     SharedNativeString* method,
                                      NativeValue* params,
                                      AsyncModuleCallback callback);
-typedef void (*RequestBatchUpdate)(int32_t contextId);
-typedef void (*ReloadApp)(int32_t contextId);
-typedef int32_t (*SetTimeout)(void* callbackContext, int32_t contextId, AsyncCallback callback, int32_t timeout);
-typedef int32_t (*SetInterval)(void* callbackContext, int32_t contextId, AsyncCallback callback, int32_t timeout);
-typedef int32_t (*RequestAnimationFrame)(void* callbackContext, int32_t contextId, AsyncRAFCallback callback);
-typedef void (*ClearTimeout)(int32_t contextId, int32_t timerId);
-typedef void (*CancelAnimationFrame)(int32_t contextId, int32_t id);
-typedef void (*ToBlob)(void* callbackContext,
-                       int32_t contextId,
+typedef void (*RequestBatchUpdate)(int32_t context_id);
+typedef void (*ReloadApp)(int32_t context_id);
+typedef int32_t (*SetTimeout)(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout);
+typedef int32_t (*SetInterval)(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout);
+typedef int32_t (*RequestAnimationFrame)(void* callback_context, int32_t context_id, AsyncRAFCallback callback);
+typedef void (*ClearTimeout)(int32_t context_id, int32_t timerId);
+typedef void (*CancelAnimationFrame)(int32_t context_id, int32_t id);
+typedef void (*ToBlob)(void* callback_context,
+                       int32_t context_id,
                        AsyncBlobCallback blobCallback,
-                       int32_t elementId,
+                       void* element_ptr,
                        double devicePixelRatio);
-typedef void (*OnJSError)(int32_t contextId, const char*);
-typedef void (*OnJSLog)(int32_t contextId, int32_t level, const char*);
-typedef void (*FlushUICommand)(int32_t contextId);
+typedef void (*OnJSError)(int32_t context_id, const char*);
+typedef void (*OnJSLog)(int32_t context_id, int32_t level, const char*);
+typedef void (*FlushUICommand)(int32_t context_id);
+typedef void (
+    *CreateBindingObject)(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
 
-using MatchImageSnapshotCallback = void (*)(void* callbackContext, int32_t contextId, int8_t, const char* errmsg);
-using MatchImageSnapshot = void (*)(void* callbackContext,
-                                    int32_t contextId,
+using MatchImageSnapshotCallback = void (*)(void* callback_context, int32_t context_id, int8_t, const char* errmsg);
+using MatchImageSnapshot = void (*)(void* callback_context,
+                                    int32_t context_id,
                                     uint8_t* bytes,
                                     int32_t length,
-                                    NativeString* name,
+                                    SharedNativeString* name,
                                     MatchImageSnapshotCallback callback);
+using MatchImageSnapshotBytes = void (*)(void* callback_context,
+                                         int32_t context_id,
+                                         uint8_t* image_a_bytes,
+                                         int32_t image_a_size,
+                                         uint8_t* image_b_bytes,
+                                         int32_t image_b_size,
+                                         MatchImageSnapshotCallback callback);
 using Environment = const char* (*)();
 
 #if ENABLE_PROFILE
@@ -66,7 +81,7 @@ typedef NativePerformanceEntryList* (*GetPerformanceEntries)(int32_t);
 #endif
 
 struct MousePointer {
-  int32_t contextId;
+  int32_t context_id;
   double x;
   double y;
   double change;
@@ -76,7 +91,7 @@ struct MousePointer {
 };
 using SimulatePointer =
     void (*)(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
-using SimulateInputText = void (*)(NativeString* nativeString);
+using SimulateInputText = void (*)(SharedNativeString* nativeString);
 
 struct DartMethodPointer {
   DartMethodPointer() = delete;
@@ -94,10 +109,12 @@ struct DartMethodPointer {
   OnJSError onJsError{nullptr};
   OnJSLog onJsLog{nullptr};
   MatchImageSnapshot matchImageSnapshot{nullptr};
+  MatchImageSnapshotBytes matchImageSnapshotBytes{nullptr};
   Environment environment{nullptr};
   SimulatePointer simulatePointer{nullptr};
   SimulateInputText simulateInputText{nullptr};
   FlushUICommand flushUICommand{nullptr};
+  CreateBindingObject create_binding_object{nullptr};
 #if ENABLE_PROFILE
   GetPerformanceEntries getPerformanceEntries{nullptr};
 #endif

@@ -1,5 +1,6 @@
 const path = require('path');
 const glob = require('glob');
+const execSync = require('child_process').execSync;
 const bableTransformSnapshotPlugin = require('./scripts/babel_transform_snapshot');
 
 const context = path.join(__dirname);
@@ -28,10 +29,26 @@ if (process.env.SPEC_SCOPE) {
     throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
   }
 } else {
-  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html}', {
+  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
     cwd: context,
     ignore: ['node_modules/**'],
   }).map((file) => './' + file).filter(name => name.indexOf('plugins') < 0)
+  if (process.env.WEBF_TEST_FILTER) {
+    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
+  }
+}
+
+
+const dartVersion = execSync('dart --version', {encoding: 'utf-8'});
+const regExp = /Dart SDK version: (\d\.\d{1,3}\.\d{1,3}) /;
+let versionNum = regExp.exec(dartVersion)[1];
+const ignoreSpecsForOldFlutter = [
+    './specs/dom/elements/pre.ts'
+];
+if (versionNum && parseFloat(versionNum) < 2.19) {
+  coreSpecFiles = coreSpecFiles.filter(file => {
+    return ignoreSpecsForOldFlutter.indexOf(file) === -1;
+  })
 }
 
 const pluginSpecFiles = glob.sync('specs/plugins/**/*.{js,jsx,ts,tsx}', {
@@ -75,6 +92,20 @@ module.exports = {
         use: [
           {
             loader: path.resolve('./scripts/html_loader'),
+            options: {
+              workspacePath: context,
+              testPath,
+              snapshotPath,
+            }
+          }
+        ]
+      },
+      {
+        test: /\.svg$/i,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: path.resolve('./scripts/svg_loader'),
             options: {
               workspacePath: context,
               testPath,

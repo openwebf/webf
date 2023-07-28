@@ -39,17 +39,24 @@ void FrameCallback::Trace(GCVisitor* visitor) const {
 
 void FrameRequestCallbackCollection::RegisterFrameCallback(uint32_t callback_id,
                                                            const std::shared_ptr<FrameCallback>& frame_callback) {
-  frameCallbacks_[callback_id] = frame_callback;
+  assert(frame_callbacks_.count(callback_id) == 0);
+  frame_callbacks_[callback_id] = frame_callback;
 }
 
-void FrameRequestCallbackCollection::CancelFrameCallback(uint32_t callbackId) {
-  if (frameCallbacks_.count(callbackId) == 0)
+void FrameRequestCallbackCollection::RemoveFrameCallback(uint32_t callback_id) {
+  if (frame_callbacks_.count(callback_id) == 0)
     return;
-  frameCallbacks_.erase(callbackId);
+  frame_callbacks_.erase(callback_id);
+}
+
+std::shared_ptr<FrameCallback> FrameRequestCallbackCollection::GetFrameCallback(uint32_t callback_id) {
+  if (frame_callbacks_.count(callback_id) == 0)
+    return nullptr;
+  return frame_callbacks_[callback_id];
 }
 
 void FrameRequestCallbackCollection::Trace(GCVisitor* visitor) const {
-  for (auto& entry : frameCallbacks_) {
+  for (auto& entry : frame_callbacks_) {
     entry.second->Trace(visitor);
   }
 }

@@ -17,8 +17,8 @@ DocumentFragment* DocumentFragment::Create(ExecutingContext* context, ExceptionS
 }
 
 DocumentFragment::DocumentFragment(Document* document, ConstructionType type) : ContainerNode(document, type) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateDocumentFragment,
-                                                       (void*)bindingObject());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCreateDocumentFragment, nullptr,
+                                                       (void*)bindingObject(), nullptr);
 }
 
 std::string DocumentFragment::nodeName() const {
@@ -29,17 +29,16 @@ Node::NodeType DocumentFragment::nodeType() const {
   return NodeType::kDocumentFragmentNode;
 }
 
-std::string DocumentFragment::nodeValue() const {
-  return "";
+AtomicString DocumentFragment::nodeValue() const {
+  return AtomicString::Null();
 }
 
 Node* DocumentFragment::Clone(Document& factory, CloneChildrenFlag flag) const {
   DocumentFragment* clone = Create(factory);
   if (flag != CloneChildrenFlag::kSkip)
     clone->CloneChildNodesFrom(*this, flag);
-  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(clone->eventTargetId()));
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCloneNode, std::move(args_01),
-                                                       nullptr);
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+                                                       clone->bindingObject());
   return clone;
 }
 

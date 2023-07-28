@@ -12,6 +12,8 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/css_animation.dart';
 
+import 'svg.dart';
+
 typedef RenderStyleVisitor<T extends RenderStyle> = void Function(T renderStyle);
 
 /// The abstract class for render-style, declare the
@@ -58,19 +60,19 @@ abstract class RenderStyle {
   CSSLengthValue? get borderRightWidth;
   CSSLengthValue? get borderBottomWidth;
   CSSLengthValue? get borderLeftWidth;
-  BorderStyle get borderLeftStyle;
-  BorderStyle get borderRightStyle;
-  BorderStyle get borderTopStyle;
-  BorderStyle get borderBottomStyle;
+  CSSBorderStyleType get borderLeftStyle;
+  CSSBorderStyleType get borderRightStyle;
+  CSSBorderStyleType get borderTopStyle;
+  CSSBorderStyleType get borderBottomStyle;
   CSSLengthValue get effectiveBorderLeftWidth;
   CSSLengthValue get effectiveBorderRightWidth;
   CSSLengthValue get effectiveBorderTopWidth;
   CSSLengthValue get effectiveBorderBottomWidth;
   double get contentMaxConstraintsWidth;
-  Color get borderLeftColor;
-  Color get borderRightColor;
-  Color get borderTopColor;
-  Color get borderBottomColor;
+  CSSColor get borderLeftColor;
+  CSSColor get borderRightColor;
+  CSSColor get borderTopColor;
+  CSSColor get borderBottomColor;
   List<Radius>? get borderRadius;
   CSSBorderRadius get borderTopLeftRadius;
   CSSBorderRadius get borderTopRightRadius;
@@ -80,11 +82,15 @@ abstract class RenderStyle {
   List<WebFBoxShadow>? get shadows;
 
   // Decorations
-  Color? get backgroundColor;
+  CSSColor? get backgroundColor;
   CSSBackgroundImage? get backgroundImage;
-  ImageRepeat get backgroundRepeat;
+  CSSBackgroundRepeatType get backgroundRepeat;
   CSSBackgroundPosition get backgroundPositionX;
   CSSBackgroundPosition get backgroundPositionY;
+  CSSBackgroundSize get backgroundSize;
+  CSSBackgroundAttachmentType? get backgroundAttachment;
+  CSSBackgroundBoundary? get backgroundClip;
+  CSSBackgroundBoundary? get backgroundOrigin;
 
   // Text
   CSSLengthValue get fontSize;
@@ -140,8 +146,8 @@ abstract class RenderStyle {
   double get flexShrink;
 
   // Color
-  Color get color;
-  Color get currentColor;
+  CSSColor get color;
+  CSSColor get currentColor;
 
   // Filter
   ColorFilter? get colorFilter;
@@ -175,10 +181,31 @@ abstract class RenderStyle {
   List<String> get animationFillMode;
   List<String> get animationPlayState;
 
+  // transform
+  List<CSSFunctionalNotation>? get transform;
+  Matrix4? get effectiveTransformMatrix;
+  CSSOrigin get transformOrigin;
+  double get effectiveTransformScale;
+
+  // SVG
+  CSSPaint get fill;
+  CSSPaint get stroke;
+  CSSLengthValue get x;
+  CSSLengthValue get y;
+  CSSLengthValue get rx;
+  CSSLengthValue get ry;
+  CSSLengthValue get cx;
+  CSSLengthValue get cy;
+  CSSLengthValue get r;
+  CSSLengthValue get strokeWidth;
+  CSSPath get d;
+  CSSFillRule get fillRule;
+  CSSStrokeLinecap get strokeLinecap;
+  CSSStrokeLinejoin get strokeLinejoin;
+
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
   void addColorRelativeProperty(String propertyName);
-  String? removeAnimationProperty(String propertyName);
   double getWidthByAspectRatio();
   double getHeightByAspectRatio();
 
@@ -187,6 +214,7 @@ abstract class RenderStyle {
   RenderBoxModel? get renderBoxModel => target.renderBoxModel;
 
   Size get viewportSize => target.ownerDocument.viewport!.viewportSize;
+  FlutterView get currentFlutterView => target.ownerDocument.controller.ownerFlutterView;
 
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
 
@@ -220,7 +248,8 @@ class CSSRenderStyle extends RenderStyle
         CSSOpacityMixin,
         CSSTransitionMixin,
         CSSVariableMixin,
-        CSSAnimationMixin {
+        CSSAnimationMixin,
+        CSSSvgMixin {
   CSSRenderStyle({required this.target});
 
   @override
@@ -412,17 +441,15 @@ class CSSRenderStyle extends RenderStyle
   }
 
   @override
-  dynamic resolveValue(String propertyName, String propertyValue) {
+  dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
     RenderStyle renderStyle = this;
 
-    // Process CSSCalcValue.
-    dynamic value = CSSCalcValue.tryParse(renderStyle, propertyName, propertyValue);
-    if (value != null && value is CSSCalcValue) {
-      return value;
+    if (propertyValue == INITIAL) {
+      propertyValue = CSSInitialValues[propertyName] ?? propertyValue;
     }
 
     // Process CSSVariable.
-    value = CSSVariable.tryParse(renderStyle, propertyValue);
+    dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
       return value;
     }
@@ -452,6 +479,14 @@ class CSSRenderStyle extends RenderStyle
       case HEIGHT:
       case MIN_HEIGHT:
       case MAX_HEIGHT:
+      case X:
+      case Y:
+      case RX:
+      case RY:
+      case CX:
+      case CY:
+      case R:
+      case STROKE_WIDTH:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
       case PADDING_TOP:
@@ -525,7 +560,7 @@ class CSSRenderStyle extends RenderStyle
         break;
       case BACKGROUND_IMAGE:
         value = CSSBackground.resolveBackgroundImage(
-            propertyValue, renderStyle, propertyName, renderStyle.target.ownerDocument.controller);
+            propertyValue, renderStyle, propertyName, renderStyle.target.ownerDocument.controller, baseHref);
         break;
       case BACKGROUND_REPEAT:
         value = CSSBackground.resolveBackgroundRepeat(propertyValue);
@@ -566,6 +601,10 @@ class CSSRenderStyle extends RenderStyle
       case BORDER_RIGHT_COLOR:
       case BORDER_BOTTOM_COLOR:
         value = CSSColor.resolveColor(propertyValue, renderStyle, propertyName);
+        break;
+      case STROKE:
+      case FILL:
+        value = CSSPaint.parsePaint(propertyValue, renderStyle: renderStyle);
         break;
       case BOX_SHADOW:
         value = CSSBoxShadow.parseBoxShadow(propertyValue, renderStyle, propertyName);
@@ -660,6 +699,18 @@ class CSSRenderStyle extends RenderStyle
       case ANIMATION_PLAY_STATE:
       case ANIMATION_TIMING_FUNCTION:
         value = CSSStyleProperty.getMultipleValues(propertyValue);
+        break;
+      case D:
+        value = CSSPath.parseValue(propertyValue);
+        break;
+      case FILL_RULE:
+        value = CSSSvgMixin.resolveFillRule(propertyValue);
+        break;
+      case STROKE_LINECAP:
+        value = CSSSvgMixin.resolveStrokeLinecap(propertyValue);
+        break;
+      case STROKE_LINEJOIN:
+        value = CSSSvgMixin.resolveStrokeLinejoin(propertyValue);
         break;
     }
 

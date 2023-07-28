@@ -67,6 +67,15 @@ class MakeGarbageCollectedTrait {
   friend GarbageCollected<T>;
 };
 
+class GarbageCollectedMixin {
+ public:
+  /**
+   * This Trace method must be overriden by objects inheriting from
+   * GarbageCollectedMixin.
+   */
+  virtual void Trace(GCVisitor*) const {}
+};
+
 template <typename T, typename... Args>
 T* MakeGarbageCollected(Args&&... args) {
   static_assert(std::is_base_of<ScriptWrappable, T>::value,

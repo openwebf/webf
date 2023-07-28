@@ -4,9 +4,7 @@
  */
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 
@@ -574,22 +572,12 @@ class RenderFlexLayout extends RenderLayoutBox {
   @override
   void performLayout() {
     doingThisLayout = true;
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      childLayoutDuration = 0;
-      PerformanceTiming.instance().mark(PERF_FLEX_LAYOUT_START, uniqueId: hashCode);
-    }
 
     _doPerformLayout();
 
     if (needsRelayout) {
       _doPerformLayout();
       needsRelayout = false;
-    }
-
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      DateTime flexLayoutEndTime = DateTime.now();
-      int amendEndTime = flexLayoutEndTime.microsecondsSinceEpoch - childLayoutDuration;
-      PerformanceTiming.instance().mark(PERF_FLEX_LAYOUT_END, uniqueId: hashCode, startTime: amendEndTime);
     }
     doingThisLayout = false;
   }
@@ -791,10 +779,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
 
       if (isChildNeedsLayout) {
-        late DateTime childLayoutStart;
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          childLayoutStart = DateTime.now();
-        }
         _childrenOldConstraints[child.hashCode] = childConstraints;
 
         // Inflate constraints of percentage renderBoxModel to force it layout after percentage resolved
@@ -809,11 +793,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
 
         child.layout(childConstraints, parentUsesSize: true);
-
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          DateTime childLayoutEnd = DateTime.now();
-          childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
-        }
         Size? childSize = _getChildSize(child);
         _childrenIntrinsicMainSizes[child.hashCode] = _isHorizontalFlexDirection ? childSize!.width : childSize!.height;
       }
@@ -1265,11 +1244,6 @@ class RenderFlexLayout extends RenderLayoutBox {
           continue;
         }
 
-        late DateTime childLayoutStart;
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          childLayoutStart = DateTime.now();
-        }
-
         BoxConstraints childConstraints = _getChildAdjustedConstraints(
           child,
           childFlexedMainSize,
@@ -1292,11 +1266,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Child main size needs to recalculated after layouted.
         childMainAxisExtent = _getMainAxisExtent(child);
         mainAxisExtent += childMainAxisExtent;
-
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          DateTime childLayoutEnd = DateTime.now();
-          childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
-        }
       }
 
       // Update run main axis extent after child is relayouted.
@@ -1399,9 +1368,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     BoxConstraints oldConstraints = child.constraints;
     double maxConstraintWidth =
-        child.hasOverrideContentLogicalWidth ? child.renderStyle.borderBoxLogicalWidth! : oldConstraints.maxWidth;
+        child.hasOverrideContentLogicalWidth ? math.max(0, child.renderStyle.borderBoxLogicalWidth!) : oldConstraints.maxWidth;
     double maxConstraintHeight =
-        child.hasOverrideContentLogicalHeight ? child.renderStyle.borderBoxLogicalHeight! : oldConstraints.maxHeight;
+        child.hasOverrideContentLogicalHeight ? math.max(0, child.renderStyle.borderBoxLogicalHeight!) : oldConstraints.maxHeight;
 
     double minConstraintWidth =
         oldConstraints.minWidth > maxConstraintWidth ? maxConstraintWidth : oldConstraints.minWidth;
@@ -2237,6 +2206,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (_flexLineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
         // Flex item baseline does not includes margin-bottom
+        Size? boxSize = isScrollingContentBox ? (parent as RenderBoxModel).boxSize : this.boxSize;
         lineDistance = isParentFlowLayout ? marginTop + boxSize!.height + marginBottom : marginTop + boxSize!.height;
         return lineDistance;
       } else {

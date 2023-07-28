@@ -1,10 +1,10 @@
 name: webf
-description: A W3C standard compliant Web rendering engine based on Flutter.
-version: 0.13.0-beta.9
+description: W3C standards-compliant web rendering engine based on Flutter, allowing web applications to run natively on Flutter.
+version: 0.15.0-beta.1+1
 homepage: https://openwebf.com
 
 environment:
-  sdk: ">=2.17.5 <3.0.0"
+  sdk: ">=2.17.5 <4.0.0"
   flutter: ">=3.0.5"
 
 dependencies:
@@ -13,20 +13,23 @@ dependencies:
   path: ^1.8.1 # Pure dart module.
   meta: ^1.7.0 # Pure dart module.
   ffi: ^2.0.1 # Pure dart module.
-  intl: ^0.17.0 #Pure dart module.
+  intl: ^0.18.1 #Pure dart module.
+  hive: ^2.2.3
   characters: ^1.2.0
   collection: ^1.16.0
   async: ^2.8.2 # Pure dart module.
-  quiver: ^3.1.0 # Pure dart module.
+  quiver: ^3.2.1 # Pure dart module.
   vector_math: ^2.1.2 # Pure dart module.
-  source_span: ^1.8.2 # Pure dart module.
-  connectivity_plus: ^2.3.5 # No AndroidX used.
-  shared_preferences: ^2.0.15 # No AndroidX used.
+  source_span: ^1.9.0 # Pure dart module.
+  shared_preferences: 2.2.0 # No AndroidX used.
+  archive: ^3.3.7 # Pure dart module.
+  web_socket_channel: ^2.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   test: ^1.20.2
+  lints: ^2.1.1
 
 flutter:
   # This section identifies this Flutter project as a plugin project.
@@ -48,4 +51,6 @@ flutter:
       macos:
         pluginClass: WebFPlugin
       linux:
+        pluginClass: WebfPlugin
+      windows:
         pluginClass: WebfPlugin

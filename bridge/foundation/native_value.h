@@ -25,9 +25,10 @@ enum NativeTag {
   TAG_POINTER = 7,
   TAG_FUNCTION = 8,
   TAG_ASYNC_FUNCTION = 9,
+  TAG_UINT8_BYTES = 10,
 };
 
-enum class JSPointerType { AsyncContextContext = 0, NativeFunctionContext = 1, Others = 2 };
+enum class JSPointerType { NativeBindingObject = 0, Others = 1 };
 
 class ExecutingContext;
 class ExceptionState;
@@ -67,7 +68,7 @@ struct NativeFunctionContext {
 };
 
 NativeValue Native_NewNull();
-NativeValue Native_NewString(NativeString* string);
+NativeValue Native_NewString(SharedNativeString* string);
 NativeValue Native_NewCString(const std::string& string);
 NativeValue Native_NewFloat64(double value);
 NativeValue Native_NewBool(bool value);

@@ -25,6 +25,8 @@ class WindowOrWorkerGlobalScope {
   static int setInterval(ExecutingContext* context, std::shared_ptr<QJSFunction> handler, ExceptionState& exception);
   static void clearTimeout(ExecutingContext* context, int32_t timerId, ExceptionState& exception);
   static void clearInterval(ExecutingContext* context, int32_t timerId, ExceptionState& exception);
+  static void __gc__(ExecutingContext* context, ExceptionState& exception);
+  static ScriptValue __memory_usage__(ExecutingContext* context, ExceptionState& exception_state);
 };
 
 }  // namespace webf

@@ -85,7 +85,7 @@ export class Headers implements Headers {
 class Body {
   // TODO support readableStream
   _bodyInit: any;
-  body: string | null;
+  body: string | null | Blob;
   bodyUsed: boolean;
   headers: Headers;
 
@@ -100,6 +100,8 @@ class Body {
       this.body = '';
     } else if (typeof body === 'string') {
       this.body = body;
+    } else if (Object.prototype.toString.call(body) == '[object ArrayBuffer]') {
+      this.body = new Blob([body as ArrayBuffer]);
     } else {
       this.body = body = Object.prototype.toString.call(body);
     }
@@ -112,11 +114,21 @@ class Body {
   }
 
   arrayBuffer(): Promise<ArrayBuffer> {
-    throw new Error('not supported');
+    if (!this.body) return Promise.resolve(new ArrayBuffer(0));
+
+    if (typeof this.body === 'string') {
+      return new Blob([this.body]).arrayBuffer();
+    }
+    return this.body.arrayBuffer();
   }
 
-  blob(): Promise<Blob> {
-    throw new Error('not supported');
+  async blob(): Promise<Blob> {
+    if (!this.body) new Blob([]);
+
+    if (typeof this.body === 'string') {
+      return new Blob([this.body]);
+    }
+    return this.body as Blob;
   }
 
   formData(): Promise<FormData> {
@@ -129,7 +141,13 @@ class Body {
     }
 
     this.bodyUsed = true;
-    return JSON.parse(this.body);
+
+    if (typeof this.body === 'string') {
+      return JSON.parse(this.body);
+    }
+
+    const txt = await this.body.text();
+    return JSON.parse(txt);
   }
 
   async text(): Promise<string> {
@@ -138,7 +156,14 @@ class Body {
       return rejected;
     }
     this.bodyUsed = true;
-    return this.body || '';
+
+    if (!this.body) return '';
+
+    if (typeof this.body === 'string') {
+      return this.body || '';
+    }
+
+    return this.body.text();
   }
 }
 
@@ -248,7 +273,7 @@ export class Response extends Body {
     if (!init) {
       init = {};
     }
-
+    this.bodyUsed = false;
     this.type = 'default';
     this.status = init.status === undefined ? 200 : init.status;
     this.ok = this.status >= 200 && this.status < 300;

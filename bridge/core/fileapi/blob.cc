@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "blob.h"
+#include <modp_b64/modp_b64.h>
 #include <string>
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
@@ -12,7 +13,7 @@ namespace webf {
 
 class BlobReaderClient {
  public:
-  enum ReadType { kReadAsText, kReadAsArrayBuffer };
+  enum ReadType { kReadAsText, kReadAsArrayBuffer, kReadAsBase64 };
 
   BlobReaderClient(ExecutingContext* context,
                    Blob* blob,
@@ -41,6 +42,8 @@ void BlobReaderClient::DidFinishLoading() {
     resolver_->Resolve<std::string>(blob_->StringResult());
   } else if (read_type_ == ReadType::kReadAsArrayBuffer) {
     resolver_->Resolve<ArrayBufferData>(blob_->ArrayBufferResult());
+  } else if (read_type_ == ReadType::kReadAsBase64) {
+    resolver_->Resolve<std::string>(blob_->Base64Result());
   }
   delete this;
 }
@@ -99,12 +102,28 @@ std::string Blob::StringResult() {
   return std::string(bytes(), bytes() + size());
 }
 
+std::string Blob::Base64Result() {
+  size_t encode_len = modp_b64_encode_data_len(size());
+  std::string buffer;
+  buffer.resize(encode_len);
+
+  const size_t output_size =
+      modp_b64_encode_data(reinterpret_cast<char*>(buffer.data()), reinterpret_cast<const char*>(bytes()), size());
+  assert(output_size == encode_len);
+
+  return "data:" + mime_type_ + ";base64," + buffer;
+}
+
 ArrayBufferData Blob::ArrayBufferResult() {
   return ArrayBufferData{bytes(), size()};
 }
 
 std::string Blob::type() {
   return mime_type_;
+}
+
+void Blob::SetMineType(const std::string& mine_type) {
+  mime_type_ = mine_type;
 }
 
 ScriptPromise Blob::arrayBuffer(ExceptionState& exception_state) {
@@ -116,6 +135,12 @@ ScriptPromise Blob::arrayBuffer(ExceptionState& exception_state) {
 ScriptPromise Blob::text(ExceptionState& exception_state) {
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
   new BlobReaderClient(GetExecutingContext(), this, resolver, BlobReaderClient::ReadType::kReadAsText);
+  return resolver->Promise();
+}
+
+ScriptPromise Blob::base64(ExceptionState& exception_state) {
+  auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
+  new BlobReaderClient(GetExecutingContext(), this, resolver, BlobReaderClient::ReadType::kReadAsBase64);
   return resolver->Promise();
 }
 

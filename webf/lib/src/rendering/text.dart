@@ -30,6 +30,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     _renderParagraph = child = WebFRenderParagraph(
       text,
       textDirection: TextDirection.ltr,
+      foregroundCallback: _getForeground,
     );
   }
 
@@ -170,6 +171,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return CSSTextMixin.createTextSpan(clippedText, renderStyle);
   }
 
+  Paint? _getForeground(Rect bounds) {
+    CSSBackgroundImage? backgroundImage = renderStyle.backgroundImage;
+    if (backgroundImage?.gradient != null && renderStyle.backgroundClip == CSSBackgroundBoundary.text) {
+      return Paint()..shader = backgroundImage?.gradient?.createShader(bounds);
+    }
+    return null;
+  }
+
   // Mirror debugNeedsLayout flag in Flutter to use in layout performance optimization
   bool needsLayout = false;
 
@@ -199,7 +208,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       BoxConstraints parentConstraints = parentRenderBoxModel.constraints;
 
       if (parentRenderBoxModel.isScrollingContentBox && parentRenderBoxModel is! RenderFlexLayout) {
-        maxConstraintWidth = parentConstraints.minWidth;
+        maxConstraintWidth = (parentRenderBoxModel.parent as RenderBoxModel).constraints.maxWidth;
       } else if (parentConstraints.maxWidth == double.infinity) {
         final ParentData? parentParentData = parentRenderBoxModel.parentData;
         // Width of positioned element does not constrained by parent.

@@ -31,6 +31,16 @@ void ChildNodeList::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
   }
 }
 
+void ChildNodeList::ChildrenChanged(const ContainerNode::ChildrenChange& change) {
+  if (change.IsChildInsertion()) {
+    collection_index_cache_.NodeInserted();
+  } else if (change.IsChildRemoval()) {
+    collection_index_cache_.NodeRemoved();
+  } else {
+    collection_index_cache_.Invalidate();
+  }
+}
+
 Node* ChildNodeList::TraverseForwardToOffset(unsigned offset, Node& current_node, unsigned& current_offset) const {
   assert(current_offset < offset);
   assert(OwnerNode().childNodes() == this);
@@ -54,7 +64,7 @@ Node* ChildNodeList::TraverseBackwardToOffset(unsigned offset, Node& current_nod
 }
 
 void ChildNodeList::Trace(GCVisitor* visitor) const {
-  visitor->Trace(parent_);
+  visitor->TraceMember(parent_);
   collection_index_cache_.Trace(visitor);
   NodeList::Trace(visitor);
 }

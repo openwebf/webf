@@ -9,7 +9,7 @@
 using namespace webf;
 
 TEST(Timer, setTimeout) {
-  auto bridge = TEST_init();
+  auto env = TEST_init();
 
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     static int logIdx = 0;
@@ -36,12 +36,12 @@ new Promise((resolve, reject) => {resolve();}).then(() => { console.log('789') }
 console.log('1234');
 )";
 
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(bridge->GetExecutingContext());
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  TEST_runLoop(env->page()->GetExecutingContext());
 }
 
 TEST(Timer, clearTimeout) {
-  auto bridge = TEST_init();
+  auto env = TEST_init();
   static bool log_called = false;
 
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
@@ -64,14 +64,14 @@ let timer = setTimeout(async () => {
 clearTimeout(timer);
 )";
 
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(bridge->GetExecutingContext());
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  TEST_runLoop(env->page()->GetExecutingContext());
 
   EXPECT_EQ(log_called, false);
 }
 
 TEST(Timer, clearTimeoutWhenSetTimeout) {
-  auto bridge = TEST_init();
+  auto env = TEST_init();
 
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
 
@@ -81,6 +81,6 @@ let timer = setTimeout(() => {
 }, 10);
 )";
 
-  bridge->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(bridge->GetExecutingContext());
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+  TEST_runLoop(env->page()->GetExecutingContext());
 }

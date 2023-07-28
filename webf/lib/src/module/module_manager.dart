@@ -4,6 +4,9 @@
  */
 import 'package:webf/bridge.dart' as bridge;
 import 'package:webf/webf.dart';
+import 'local_storage.dart';
+import 'session_storage.dart';
+import 'websocket.dart';
 
 abstract class BaseModule {
   String get name;
@@ -12,6 +15,9 @@ abstract class BaseModule {
   dynamic invoke(String method, params, InvokeModuleCallback callback);
   dynamic dispatchEvent({Event? event, data}) {
     return moduleManager!.emitModuleEvent(name, event: event, data: data);
+  }
+
+  Future<void> initialize() async {
   }
 
   void dispose();
@@ -28,13 +34,15 @@ void _defineModuleCreator() {
   _isDefined = true;
   _defineModule((ModuleManager? moduleManager) => AsyncStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => ClipBoardModule(moduleManager));
-  _defineModule((ModuleManager? moduleManager) => ConnectionModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => FetchModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => MethodChannelModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => NavigationModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => NavigatorModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => HistoryModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => LocationModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => LocalStorageModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => SessionStorageModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => WebSocketModule(moduleManager));
 }
 
 final Map<String, ModuleCreator> _creatorMap = {};
@@ -59,6 +67,10 @@ class ModuleManager {
     _creatorMap.forEach((String name, ModuleCreator creator) {
       _moduleMap[name] = creator(this);
     });
+  }
+
+  Future<void> initialize() async {
+    await Future.wait(_moduleMap.values.map((module) { return module.initialize(); }));
   }
 
   T? getModule<T extends BaseModule>(String moduleName) {

@@ -40,7 +40,8 @@ TEST(AtomicString, Empty) {
 TEST(AtomicString, FromNativeString) {
   TestAtomicString([](JSContext* ctx) {
     auto nativeString = stringToNativeString("helloworld");
-    AtomicString value = AtomicString::From(ctx, nativeString.get());
+    AtomicString value = AtomicString(
+        ctx, std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(nativeString.release())));
 
     EXPECT_STREQ(value.ToStdString(ctx).c_str(), "helloworld");
   });

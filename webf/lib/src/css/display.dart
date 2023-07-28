@@ -34,9 +34,9 @@ mixin CSSDisplayMixin on RenderStyle {
     }
   }
 
-  void initDisplay() {
+  void initDisplay(CSSStyleDeclaration style) {
     // Must take from style because it inited before flush pending properties.
-    _display ??= resolveDisplay(target.style[DISPLAY]);
+    _display ??= resolveDisplay(style[DISPLAY]);
   }
 
   static CSSDisplay resolveDisplay(String? displayString) {

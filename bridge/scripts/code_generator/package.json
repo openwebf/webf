@@ -16,5 +16,8 @@
     "json5": "^2.2.1",
     "lodash": "^4.17.21",
     "typescript": "4.3.5"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }

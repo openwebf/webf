@@ -5,7 +5,6 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:test/test.dart';
@@ -197,6 +196,21 @@ void main() {
       var res = await req.close();
 
       expect(res.statusCode, 301);
+    });
+
+    test('Will ignore set-cookie header in cache', () async {
+      var req = await httpClient.openUrl('GET', server.getUri('text_with_set_cookie'));
+      WebFHttpOverrides.setContextHeader(req.headers, contextId);
+      var res = await req.close();
+      Uint8List bytes = await consolidateHttpClientResponseBytes(res);
+      expect(bytes.lengthInBytes, res.contentLength);
+
+      // Assert cache object.
+      HttpCacheController cacheController = HttpCacheController.instance('local');
+      var cacheObject = await cacheController.getCacheObject(req.uri);
+      assert(cacheObject.valid);
+      var response = await cacheObject.toHttpClientResponse();
+      expect(response?.headers.toString().contains('set-cookie'), false);
     });
 
     test('Handle gzipped content', () async {

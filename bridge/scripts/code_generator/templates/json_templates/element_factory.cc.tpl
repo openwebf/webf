@@ -1,3 +1,36 @@
+<%
+const lprefix = options.prefix.toLowerCase()
+const uprefix = options.prefix.toUpperCase()
+const items = data.map((item, index) => {
+  let name
+  let headerPath
+  let interfaceName
+  if (_.isString(item)) {
+    name = item
+    headerPath = `core/${lprefix}/${lprefix}_${item}_element.h`
+    interfaceName = `${uprefix}${_.upperFirst(item)}Element`
+  } else if (_.isObject(item)) {
+    name = item.name
+    if (item.interfaceHeaderDir) {
+      headerPath = `${item.interfaceHeaderDir}/${lprefix}_${item.filename ? item.filename : item.name}_element.h`
+    } else {
+      headerPath = `core/${lprefix}/${item.filename ? item.filename : `${lprefix}_${item.name}_element`}.h`
+    }
+
+    if (item.interfaceName) {
+      interfaceName = item.interfaceName
+    } else {
+      interfaceName = `${uprefix}${_.upperFirst(item.name)}Element`
+    }
+  }
+
+  return {
+    name,
+    headerPath,
+    interfaceName,
+  }
+})
+%>
 /*
 * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
@@ -8,95 +41,65 @@
  // and input files:
  //   <%= template_path %>
 
-#include "html_element_factory.h"
+#include "<%=lprefix%>_element_factory.h"
 #include <unordered_map>
-#include "html_names.h"
+#include "<%=lprefix%>_names.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 
-<% _.forEach(data, (item, index) => { %>
-  <% if (_.isString(item)) { %>
-#include "core/html/html_<%= item %>_element.h"
-  <% } else if (_.isObject(item)) { %>
-    <% if (item.interfaceHeaderDir) { %>
-#include "<%= item.interfaceHeaderDir %>/html_<%= item.filename ? item.filename : item.name  %>_element.h"
-    <% } else if (item.interfaceName != 'HTMLElement'){ %>
-#include "core/html/<%= item.filename ? item.filename : `html_${item.name}_element` %>.h"
-    <% } %>
-  <% } %>
+<% _.forEach(items, (item, index) => { %>
+#include "<%= item.headerPath %>"
 <% }); %>
 
 namespace webf {
 
-using HTMLConstructorFunction = HTMLElement* (*)(Document&);
+using ElementType = <%=uprefix%>Element;
 
-using HTMLFunctionMap = std::unordered_map<AtomicString, HTMLConstructorFunction, AtomicString::KeyHasher>;
+using ConstructorFunction = ElementType* (*)(Document&);
 
-static thread_local HTMLFunctionMap* g_html_constructors = nullptr;
+using FunctionMap = std::unordered_map<AtomicString, ConstructorFunction, AtomicString::KeyHasher>;
 
-struct CreateHTMLFunctionMapData {
+static thread_local FunctionMap* g_constructors = nullptr;
+
+struct CreateFunctionMapData {
   const AtomicString& tag;
-  HTMLConstructorFunction func;
+  ConstructorFunction func;
 };
 
-
-<% _.forEach(data, (item, index) => { %>
-  <% if (_.isString(item)) { %>
-
-static HTMLElement* HTML<%= _.upperFirst(item) %>Constructor(Document& document) {
-  return MakeGarbageCollected<HTML<%= _.upperFirst(item) %>Element>(document);
-}
-  <% } else if (_.isObject(item)) { %>
-    <% if (item.interfaceName) { %>
-static HTMLElement* HTML<%= _.upperFirst(item.name) %>Constructor(Document& document) {
+<% _.forEach(items, (item, index) => { %>
+static ElementType* <%= item.interfaceName %>Constructor(Document& document) {
   return MakeGarbageCollected<<%= item.interfaceName %>>(document);
 }
-    <% } else { %>
-static HTMLElement* HTML<%= _.upperFirst(item.name)  %>Constructor(Document& document) {
-  return MakeGarbageCollected<HTML<%= _.upperFirst(item.name)  %>Element>(document);
-}
-    <% } %>
-  <% } %>
 <% }); %>
 
-static void CreateHTMLFunctionMap() {
-  assert(!g_html_constructors);
-  g_html_constructors = new HTMLFunctionMap();
+static void CreateFunctionMap() {
+  assert(!g_constructors);
+  g_constructors = new FunctionMap();
   // Empty array initializer lists are illegal [dcl.init.aggr] and will not
   // compile in MSVC. If tags list is empty, add check to skip this.
 
-  static const CreateHTMLFunctionMapData data[] = {
-
-<% _.forEach(data, (item, index) => { %>
-  <% if (_.isString(item)) { %>
-      {html_names::k<%= item %>, HTML<%= _.upperFirst(item) %>Constructor},
-  <% } else if (_.isObject(item)) { %>
-    <% if (item.interfaceName) { %>
-      {html_names::k<%= item.name %>, HTML<%= _.upperFirst(item.name)  %>Constructor},
-    <% } else { %>
-      {html_names::k<%= item.name %>, HTML<%= _.upperFirst(item.name)  %>Constructor},
-    <% } %>
-  <% } %>
-<% }); %>
-
+  const CreateFunctionMapData data[] = {
+  <% _.forEach(items, (item, index) => { %>
+    {<%= lprefix %>_names::k<%= item.name %>, <%= item.interfaceName %>Constructor},
+  <% }); %>
   };
 
   for (size_t i = 0; i < std::size(data); i++)
-    g_html_constructors->insert(std::make_pair(data[i].tag, data[i].func));
+    g_constructors->insert(std::make_pair(data[i].tag, data[i].func));
 }
 
-HTMLElement* HTMLElementFactory::Create(const AtomicString& name, Document& document) {
-  if (!g_html_constructors)
-    CreateHTMLFunctionMap();
-  auto it = g_html_constructors->find(name);
-  if (it == g_html_constructors->end())
+ElementType* <%= uprefix %>ElementFactory::Create(const AtomicString& name, Document& document) {
+  if (!g_constructors)
+    CreateFunctionMap();
+  auto it = g_constructors->find(name);
+  if (it == g_constructors->end())
     return nullptr;
-  HTMLConstructorFunction function = it->second;
+  ConstructorFunction function = it->second;
   return function(document);
 }
 
-void HTMLElementFactory::Dispose() {
-  delete g_html_constructors;
-  g_html_constructors = nullptr;
+void <%= uprefix %>ElementFactory::Dispose() {
+  delete g_constructors;
+  g_constructors = nullptr;
 }
 
 }  // namespace webf

@@ -98,9 +98,9 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   ViewportOffset? _scrollOffsetX;
   set scrollOffsetX(ViewportOffset? value) {
     if (value == _scrollOffsetX) return;
-    _scrollOffsetX?.removeListener(_scrollXListener);
+    _scrollOffsetX?.removeListener(scrollXListener);
     _scrollOffsetX = value;
-    _scrollOffsetX?.addListener(_scrollXListener);
+    _scrollOffsetX?.addListener(scrollXListener);
     markNeedsLayout();
   }
 
@@ -108,13 +108,13 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   ViewportOffset? _scrollOffsetY;
   set scrollOffsetY(ViewportOffset? value) {
     if (value == _scrollOffsetY) return;
-    _scrollOffsetY?.removeListener(_scrollYListener);
+    _scrollOffsetY?.removeListener(scrollYListener);
     _scrollOffsetY = value;
-    _scrollOffsetY?.addListener(_scrollYListener);
+    _scrollOffsetY?.addListener(scrollYListener);
     markNeedsLayout();
   }
 
-  void _scrollXListener() {
+  void scrollXListener() {
     assert(scrollListener != null);
     // If scroll is happening, that element has been unmounted, prevent null usage.
     if (scrollOffsetX != null) {
@@ -123,7 +123,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     }
   }
 
-  void _scrollYListener() {
+  void scrollYListener() {
     assert(scrollListener != null);
     if (scrollOffsetY != null) {
       scrollListener!(scrollOffsetY!.pixels, AxisDirection.down);
@@ -147,6 +147,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     if (this is RenderSliverListLayout) {
       return;
     }
+
+    assert(scrollableSize.isFinite);
 
     _scrollableSize = scrollableSize;
     _viewportSize = viewportSize;
@@ -247,10 +249,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     double? candidate = getDistanceToActualBaseline(baseline);
     if (candidate != null) {
       candidate += childParentData!.offset.dy;
-      if (result != null)
-        result = math.min(result, candidate);
-      else
-        result = candidate;
+      result = candidate;
     }
     return result;
   }

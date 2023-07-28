@@ -1,9 +1,4 @@
 describe('Navigator', () => {
-  it('connectivity', async () => {
-    let connection = await navigator.connection.getConnectivity();
-    expect(connection.isConnected).toBeTrue();
-  });
-
   it('hardwareConcurrency', () => {
     expect(navigator.hardwareConcurrency > 0).toBeTrue();
   });

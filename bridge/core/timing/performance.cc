@@ -100,60 +100,73 @@ void Performance::mark(const AtomicString& name,
 }
 
 void Performance::clearMarks(ExceptionState& exception_state) {
+  auto new_entries = std::vector<Member<PerformanceEntry>>();
+
   auto it = std::begin(entries_);
 
   while (it != entries_.end()) {
-    if ((*it)->entryType() == performance_entry_names::kmark) {
-      (*it).Clear();
-      entries_.erase(it);
+    if ((*it)->entryType() != performance_entry_names::kmark) {
+      new_entries.emplace_back(*it);
     } else {
-      it++;
+      it->Clear();
     }
+    it++;
   }
+  entries_ = new_entries;
 }
 
 void Performance::clearMarks(const AtomicString& name, ExceptionState& exception_state) {
+  auto new_entries = std::vector<Member<PerformanceEntry>>();
+
   auto it = std::begin(entries_);
 
   while (it != std::end(entries_)) {
-    if ((*it)->entryType() == performance_entry_names::kmark && (*it)->name() == name) {
-      (*it).Clear();
-      entries_.erase(it);
+    if (!((*it)->entryType() == performance_entry_names::kmark && (*it)->name() == name)) {
+      new_entries.emplace_back(*it);
     } else {
-      it++;
+      it->Clear();
     }
+    it++;
   }
+
+  entries_ = new_entries;
 }
 
 void Performance::clearMeasures(ExceptionState& exception_state) {
+  auto new_entries = std::vector<Member<PerformanceEntry>>();
   auto it = std::begin(entries_);
 
   while (it != std::end(entries_)) {
-    if ((*it)->entryType() == performance_entry_names::kmeasure) {
-      (*it).Clear();
-      entries_.erase(it);
+    if ((*it)->entryType() != performance_entry_names::kmeasure) {
+      new_entries.emplace_back(*it);
     } else {
-      it++;
+      it->Clear();
     }
+    it++;
   }
+
+  entries_ = new_entries;
 }
 
 void Performance::clearMeasures(const AtomicString& name, ExceptionState& exception_state) {
+  auto new_entries = std::vector<Member<PerformanceEntry>>();
   auto it = std::begin(entries_);
 
   while (it != std::end(entries_)) {
-    if ((*it)->entryType() == performance_entry_names::kmeasure && (*it)->name() == name) {
-      (*it).Clear();
-      entries_.erase(it);
+    if (!((*it)->entryType() == performance_entry_names::kmeasure && (*it)->name() == name)) {
+      new_entries.emplace_back(*it);
     } else {
-      it++;
+      it->Clear();
     }
+    it++;
   }
+
+  entries_ = new_entries;
 }
 
 void Performance::Trace(GCVisitor* visitor) const {
   for (auto& entries : entries_) {
-    visitor->Trace(entries);
+    visitor->TraceMember(entries);
   }
 }
 

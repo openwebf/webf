@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/svg/rendering/text.dart';
 
 const String WHITE_SPACE_CHAR = ' ';
 const String NEW_LINE_CHAR = '\n';
@@ -40,7 +41,7 @@ class TextNode extends CharacterData {
       // To replace data of node node with offset offset, count count, and data data, run step 12 from the spec:
       // 12. If node’s parent is non-null, then run the children changed steps for node’s parent.
       // https://dom.spec.whatwg.org/#concept-cd-replace
-      parentNode?.childrenChanged();
+      parentNode?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
     }
   }
 
@@ -61,8 +62,10 @@ class TextNode extends CharacterData {
       WebFRenderParagraph renderParagraph = _renderTextBox!.child as WebFRenderParagraph;
       renderParagraph.markNeedsLayout();
 
-      RenderLayoutBox parentRenderLayoutBox = _parentElement.renderBoxModel as RenderLayoutBox;
-      parentRenderLayoutBox = parentRenderLayoutBox.renderScrollingContent ?? parentRenderLayoutBox;
+      RenderBoxModel parentRenderLayoutBox = _parentElement.renderBoxModel!;
+      if (parentRenderLayoutBox is RenderLayoutBox) {
+        parentRenderLayoutBox = parentRenderLayoutBox.renderScrollingContent ?? parentRenderLayoutBox;
+      }
       _setTextSizeType(parentRenderLayoutBox.widthSizeType, parentRenderLayoutBox.heightSizeType);
     }
   }
@@ -82,11 +85,17 @@ class TextNode extends CharacterData {
     createRenderer();
 
     // If element attach WidgetElement, render object should be attach to render tree when mount.
-    if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE &&
-        parent.renderBoxModel is RenderLayoutBox) {
-      RenderLayoutBox parentRenderLayoutBox = parent.renderBoxModel as RenderLayoutBox;
-      parentRenderLayoutBox = parentRenderLayoutBox.renderScrollingContent ?? parentRenderLayoutBox;
-      parentRenderLayoutBox.insert(_renderTextBox!, after: after);
+    if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderBoxModel != null) {
+      ContainerRenderObjectMixin? parentRenderBox;
+      if (parent.renderBoxModel is RenderLayoutBox) {
+        final layoutBox = parent.renderBoxModel as RenderLayoutBox;
+        parentRenderBox = layoutBox.renderScrollingContent ?? layoutBox;
+      } else if (parent.renderBoxModel is RenderSVGText) {
+        (parent.renderBoxModel as RenderSVGText).child = _renderTextBox;
+      }
+      if (parentRenderBox != null) {
+        parentRenderBox.insert(_renderTextBox!, after: after);
+      }
     }
 
     _applyTextStyle();
@@ -119,7 +128,7 @@ class TextNode extends CharacterData {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     super.dispose();
 
     unmountRenderObject();

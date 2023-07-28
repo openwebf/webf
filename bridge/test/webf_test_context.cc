@@ -5,6 +5,7 @@
 
 #include "webf_test_context.h"
 #include "bindings/qjs/member_installer.h"
+#include "bindings/qjs/qjs_interface_bridge.h"
 #include "core/dom/document.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_body_element.h"
@@ -36,11 +37,6 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
   JSValue& screenShotValue = argv[1];
   JSValue& callbackValue = argv[2];
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
-
-  if (!QJSBlob::HasInstance(context, blobValue)) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 1 (blob) must be an Blob object.");
-  }
   auto* blob = toScriptWrappable<Blob>(blobValue);
 
   if (blob == nullptr) {
@@ -48,9 +44,9 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 1 (blob) must be an Blob object.");
   }
 
-  if (!JS_IsString(screenShotValue)) {
+  if (!JS_IsString(screenShotValue) && !QJSBlob::HasInstance(context, screenShotValue)) {
     return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 2 (match) must be an string.");
+        ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 2 (match) must be an string or blob.");
   }
 
   if (!JS_IsObject(callbackValue)) {
@@ -68,7 +64,6 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         ctx, "Failed to execute '__webf_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.");
   }
 
-  std::unique_ptr<NativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
   auto fn = [](void* ptr, int32_t contextId, int8_t result, const char* errmsg) {
@@ -89,10 +84,20 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
     callbackContext->context->DrainPendingPromiseJobs();
     JS_FreeValue(callbackContext->context->ctx(), callbackContext->callback);
+    delete callbackContext;
   };
 
-  context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),
-                                               screenShotNativeString.get(), fn);
+  if (QJSBlob::HasInstance(context, screenShotValue)) {
+    auto* expectedBlob = toScriptWrappable<Blob>(screenShotValue);
+    context->dartMethodPtr()->matchImageSnapshotBytes(callbackContext, context->contextId(), blob->bytes(),
+                                                      blob->size(), expectedBlob->bytes(), expectedBlob->size(), fn);
+  } else {
+    std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
+
+    context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),
+                                                 screenShotNativeString.release(), fn);
+  }
+
   return JS_NULL;
 }
 
@@ -157,8 +162,7 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
     JSValue paramsLengthValue = JS_GetPropertyStr(ctx, params, "length");
     uint32_t params_length;
     JS_ToUint32(ctx, &params_length, paramsLengthValue);
-
-    mouse->contextId = context->contextId();
+    mouse->context_id = context->contextId();
     JSValue xValue = JS_GetPropertyUint32(ctx, params, 0);
     JSValue yValue = JS_GetPropertyUint32(ctx, params, 1);
     JSValue changeValue = JS_GetPropertyUint32(ctx, params, 2);
@@ -230,9 +234,9 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
     return JS_ThrowTypeError(ctx, "Failed to execute '__webf_simulate_keypress__': first arguments should be a string");
   }
 
-  std::unique_ptr<NativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
+  std::unique_ptr<SharedNativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
   void* p = static_cast<void*>(nativeString.get());
-  context->dartMethodPtr()->simulateInputText(static_cast<NativeString*>(p));
+  context->dartMethodPtr()->simulateInputText(static_cast<SharedNativeString*>(p));
   return JS_NULL;
 };
 
@@ -291,7 +295,7 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
 
     WEBF_LOG(VERBOSE) << "Done..";
 
-    std::unique_ptr<NativeString> status = webf::jsValueToNativeString(ctx, statusValue);
+    std::unique_ptr<SharedNativeString> status = webf::jsValueToNativeString(ctx, statusValue);
     callbackContext->executeCallback(callbackContext->context->contextId(), status.get());
     JS_FreeValue(ctx, proxyObject);
     callbackContext->webf_context->execute_test_proxy_object_ = JS_NULL;
@@ -341,7 +345,7 @@ bool WebFTestContext::evaluateTestScripts(const uint16_t* code,
                                           int startLine) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateJavaScript(code, codeLength, sourceURL, startLine);
+  return context_->EvaluateJavaScript(code, codeLength, nullptr, nullptr, sourceURL, startLine);
 }
 
 bool WebFTestContext::parseTestHTML(const uint16_t* code, size_t codeLength) {
@@ -358,6 +362,7 @@ void WebFTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_t 
 
   dartMethodPtr->onJsError = reinterpret_cast<OnJSError>(methodBytes[i++]);
   dartMethodPtr->matchImageSnapshot = reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]);
+  dartMethodPtr->matchImageSnapshotBytes = reinterpret_cast<MatchImageSnapshotBytes>(methodBytes[i++]);
   dartMethodPtr->environment = reinterpret_cast<Environment>(methodBytes[i++]);
   dartMethodPtr->simulatePointer = reinterpret_cast<SimulatePointer>(methodBytes[i++]);
   dartMethodPtr->simulateInputText = reinterpret_cast<SimulateInputText>(methodBytes[i++]);

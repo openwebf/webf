@@ -56,6 +56,7 @@ enum {
   JS_CLASS_BOUNDING_CLIENT_RECT,
   JS_CLASS_ELEMENT_ATTRIBUTES,
   JS_CLASS_HTML_ALL_COLLECTION,
+  JS_CLASS_HTML_COLLECTION,
   JS_CLASS_HTML_ELEMENT,
   JS_CLASS_WIDGET_ELEMENT,
   JS_CLASS_HTML_DIV_ELEMENT,
@@ -64,12 +65,17 @@ enum {
   JS_CLASS_HTML_HTML_ELEMENT,
   JS_CLASS_HTML_IMAGE_ELEMENT,
   JS_CLASS_HTML_SCRIPT_ELEMENT,
+  JS_CLASS_HTMLI_FRAME_ELEMENT,
   JS_CLASS_HTML_ANCHOR_ELEMENT,
   JS_CLASS_HTML_LINK_ELEMENT,
   JS_CLASS_HTML_CANVAS_ELEMENT,
   JS_CLASS_IMAGE,
   JS_CLASS_CANVAS_RENDERING_CONTEXT,
   JS_CLASS_CANVAS_RENDERING_CONTEXT_2_D,
+  JS_CLASS_CANVAS_GRADIENT,
+  JS_CLASS_CANVAS_PATTERN,
+  JS_CLASS_DOM_MATRIX,
+  JS_CLASS_DOM_MATRIX_READONLY,
   JS_CLASS_HTML_TEMPLATE_ELEMENT,
   JS_CLASS_HTML_UNKNOWN_ELEMENT,
   JS_CLASS_HTML_INPUT_ELEMENT,
@@ -77,6 +83,31 @@ enum {
   JS_CLASS_HTML_FORM_ELEMENT,
   JS_CLASS_HTML_TEXTAREA_ELEMENT,
   JS_CLASS_CSS_STYLE_DECLARATION,
+  JS_CLASS_INLINE_CSS_STYLE_DECLARATION,
+  JS_CLASS_COMPUTED_CSS_STYLE_DECLARATION,
+
+  JS_CLASS_DOM_TOKEN_LIST,
+  JS_CLASS_DOM_STRING_MAP,
+
+  // SVG
+  JS_CLASS_SVG_ELEMENT,
+  JS_CLASS_SVG_GRAPHICS_ELEMENT,
+  JS_CLASS_SVG_GEOMETRY_ELEMENT,
+  JS_CLASS_SVG_TEXT_CONTENT_ELEMENT,
+  JS_CLASS_SVG_TEXT_POSITIONING_ELEMENT,
+
+  JS_CLASS_SVG_RECT_ELEMENT,
+  JS_CLASS_SVG_SVG_ELEMENT,
+  JS_CLASS_SVG_PATH_ELEMENT,
+  JS_CLASS_SVG_TEXT_ELEMENT,
+  JS_CLASS_SVG_G_ELEMENT,
+  JS_CLASS_SVG_CIRCLE_ELEMENT,
+  JS_CLASS_SVG_ELLIPSE_ELEMENT,
+  JS_CLASS_SVG_STYLE_ELEMENT,
+
+  // SVG unit
+  JS_CLASS_SVG_LENGTH,
+  JS_CLASS_SVG_ANIMATED_LENGTH,
 
   JS_CLASS_CUSTOM_CLASS_INIT_COUNT /* last entry for predefined classes */
 };
@@ -96,6 +127,10 @@ using IndexedPropertySetterHandler = bool (*)(JSContext* ctx, JSValueConst obj, 
 // Callback when set property using string or symbol.
 // exp: obj['hello'] = value;
 using StringPropertySetterHandler = bool (*)(JSContext* ctx, JSValueConst obj, JSAtom atom, JSValueConst value);
+
+// Callback when delete property using string or symbol.
+// exp: delete obj['hello']
+using StringPropertyDeleteHandler = bool (*)(JSContext* ctx, JSValueConst obj, JSAtom prop);
 
 // Callback when check property exist on object.
 // exp: 'hello' in obj;
@@ -131,6 +166,7 @@ class WrapperTypeInfo final {
   StringPropertySetterHandler string_property_setter_handler_{nullptr};
   PropertyCheckerHandler property_checker_handler_{nullptr};
   PropertyEnumerateHandler property_enumerate_handler_{nullptr};
+  StringPropertyDeleteHandler property_delete_handler_{nullptr};
 };
 
 }  // namespace webf

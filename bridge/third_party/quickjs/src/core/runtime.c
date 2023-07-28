@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 
+#include <math.h>
 #include "runtime.h"
 #include "builtins/js-array.h"
 #include "builtins/js-function.h"
@@ -72,8 +73,6 @@ void dbuf_put_leb128(DynBuf* s, uint32_t v) {
     }
   }
 }
-
-
 
 void dbuf_put_sleb128(DynBuf* s, int32_t v1) {
   uint32_t v = v1;
@@ -436,7 +435,7 @@ JSValue JS_GetGlobalVar(JSContext* ctx, JSAtom prop, BOOL throw_ref_error) {
       return JS_ThrowReferenceErrorUninitialized(ctx, prs->atom);
     return JS_DupValue(ctx, pr->u.value);
   }
-  return JS_GetPropertyInternal(ctx, ctx->global_obj, prop, ctx->global_obj, throw_ref_error);
+  return JS_GetPropertyInternal(ctx, ctx->global_obj, prop, ctx->global_obj, NULL, throw_ref_error);
 }
 
 /* construct a reference to a global variable */
@@ -526,7 +525,7 @@ int JS_SetGlobalVar(JSContext* ctx, JSAtom prop, JSValue val, int flag) {
   flags = JS_PROP_THROW_STRICT;
   if (is_strict_mode(ctx))
     flags |= JS_PROP_NO_ADD;
-  return JS_SetPropertyInternal(ctx, ctx->global_obj, prop, val, flags);
+  return JS_SetPropertyInternal(ctx, ctx->global_obj, prop, val, flags, NULL);
 }
 
 /* return -1, FALSE or TRUE. return FALSE if not configurable or
@@ -1220,16 +1219,16 @@ done:
   dbuf_free(&dbuf);
   JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_stack, str, JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
   if (line_num != -1) {
-    JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_lineNumber, JS_NewInt32(ctx, latest_line_num), 
+    JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_lineNumber, JS_NewInt32(ctx, latest_line_num),
       JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
     if (column_num != -1) {
-      /** 
-       * do not add the corresponding definition 
-       * in the 'quickjs-atom.h' file, it will lead to 
+      /**
+       * do not add the corresponding definition
+       * in the 'quickjs-atom.h' file, it will lead to
        * inaccurate diff positions of the atom table
        */
       int atom = JS_NewAtom(ctx, "columnNumber");
-      JS_DefinePropertyValue(ctx, error_obj, atom, JS_NewInt32(ctx, latest_column_num), 
+      JS_DefinePropertyValue(ctx, error_obj, atom, JS_NewInt32(ctx, latest_column_num),
         JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
       JS_FreeAtom(ctx, atom);
     }
@@ -2102,6 +2101,7 @@ static const JSCFunctionListEntry js_object_funcs[] = {
     // JS_CFUNC_DEF("__getObjectData", 1, js_object___getObjectData ),
     // JS_CFUNC_DEF("__setObjectData", 2, js_object___setObjectData ),
     JS_CFUNC_DEF("fromEntries", 1, js_object_fromEntries),
+    JS_CFUNC_DEF("hasOwn", 2, js_object_hasOwn),
 };
 
 static const JSCFunctionListEntry js_object_proto_funcs[] = {
@@ -2214,7 +2214,7 @@ static const JSCFunctionListEntry js_global_funcs[] = {
     JS_CFUNC_DEF("parseInt", 2, js_parseInt), JS_CFUNC_DEF("parseFloat", 1, js_parseFloat), JS_CFUNC_DEF("isNaN", 1, js_global_isNaN), JS_CFUNC_DEF("isFinite", 1, js_global_isFinite),
     JS_CFUNC_MAGIC_DEF("decodeURI", 1, js_global_decodeURI, 0), JS_CFUNC_MAGIC_DEF("decodeURIComponent", 1, js_global_decodeURI, 1), JS_CFUNC_MAGIC_DEF("encodeURI", 1, js_global_encodeURI, 0),
     JS_CFUNC_MAGIC_DEF("encodeURIComponent", 1, js_global_encodeURI, 1), JS_CFUNC_DEF("escape", 1, js_global_escape), JS_CFUNC_DEF("unescape", 1, js_global_unescape),
-    JS_PROP_DOUBLE_DEF("Infinity", 1.0 / 0.0, 0), JS_PROP_DOUBLE_DEF("NaN", NAN, 0), JS_PROP_UNDEFINED_DEF("undefined", 0),
+    JS_PROP_DOUBLE_DEF("Infinity", INFINITY, 0), JS_PROP_DOUBLE_DEF("NaN", NAN, 0), JS_PROP_UNDEFINED_DEF("undefined", 0),
 
     /* for the 'Date' implementation */
     JS_CFUNC_DEF("__date_clock", 0, js___date_clock),
@@ -2302,6 +2302,8 @@ static const JSCFunctionListEntry js_string_proto_normalize[] = {
     JS_CFUNC_DEF("normalize", 0, js_string_normalize),
 };
 #endif
+
+#pragma function (log2)
 
 /* Math */
 static const JSCFunctionListEntry js_math_funcs[] = {
@@ -2578,6 +2580,9 @@ void JS_FreeRuntime(JSRuntime* rt) {
   struct list_head *el, *el1;
   int i;
 
+  if (rt->state == JS_RUNTIME_STATE_SHUTDOWN)
+    return;
+  rt->state = JS_RUNTIME_STATE_SHUTDOWN;
   JS_FreeValueRT(rt, rt->current_exception);
 
   list_for_each_safe(el, el1, &rt->job_list) {
@@ -3040,6 +3045,7 @@ JSRuntime* JS_NewRuntime2(const JSMallocFunctions* mf, void* opaque) {
   JS_UpdateStackTop(rt);
 
   rt->current_exception = JS_NULL;
+  rt->state = JS_RUNTIME_STATE_INIT;
 
   return rt;
 fail:
@@ -3057,6 +3063,9 @@ static const JSMallocFunctions def_malloc_funcs = {
     js_def_malloc,
     js_def_free,
     js_def_realloc,
+#if ENABLE_MI_MALLOC
+    mi_usable_size,
+#else
 #if defined(__APPLE__)
     malloc_size,
 #elif defined(_WIN32)
@@ -3069,6 +3078,7 @@ static const JSMallocFunctions def_malloc_funcs = {
     /* change this to `NULL,` if compilation fails */
     malloc_usable_size,
 #endif
+#endif
 };
 
 JSRuntime* JS_NewRuntime(void) {
@@ -3080,6 +3090,7 @@ JSValue JS_EvalInternal(JSContext* ctx, JSValueConst this_obj, const char* input
   if (unlikely(!ctx->eval_internal)) {
     return JS_ThrowTypeError(ctx, "eval is not supported");
   }
+  ctx->rt->state = JS_RUNTIME_STATE_RUNNING;
   return ctx->eval_internal(ctx, this_obj, input, input_len, filename, flags, scope_idx);
 }
 
@@ -3115,6 +3126,7 @@ JSValue JS_EvalFunctionInternal(JSContext* ctx, JSValue fun_obj, JSValueConst th
   JSValue ret_val;
   uint32_t tag;
 
+  ctx->rt->state = JS_RUNTIME_STATE_RUNNING;
   tag = JS_VALUE_GET_TAG(fun_obj);
   if (tag == JS_TAG_FUNCTION_BYTECODE) {
     fun_obj = js_closure(ctx, fun_obj, var_refs, sf);

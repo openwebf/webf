@@ -3,14 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:ui';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/dom/sliver_manager.dart';
 
@@ -21,7 +18,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
   late RenderViewport _renderViewport;
 
   // The sliver list render object reference.
-  RenderSliverList? _renderSliverList;
+  WebFRenderSliverList? _renderSliverList;
 
   // The scrollable context to handle gestures.
   late WebFScrollable scrollable;
@@ -38,11 +35,12 @@ class RenderSliverListLayout extends RenderLayoutBox {
   RenderSliverListLayout({
     required CSSRenderStyle renderStyle,
     required RenderSliverElementChildManager manager,
+    required FlutterView currentView,
     ScrollListener? onScroll,
   })  : _renderSliverBoxChildManager = manager,
         _scrollListener = onScroll,
         super(renderStyle: renderStyle) {
-    scrollable = WebFScrollable(axisDirection: getAxisDirection(axis));
+    scrollable = WebFScrollable(axisDirection: getAxisDirection(axis), currentView: currentView);
     axis = renderStyle.sliverDirection;
 
     switch (axis) {
@@ -56,7 +54,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
         break;
     }
 
-    RenderSliverList renderSliverList = _renderSliverList = _buildRenderSliverList();
+    WebFRenderSliverList renderSliverList = _renderSliverList = _buildRenderSliverList();
     _renderViewport = RenderViewport(
       offset: scrollable.position!,
       axisDirection: scrollable.axisDirection,
@@ -128,12 +126,14 @@ class RenderSliverListLayout extends RenderLayoutBox {
       scrollable.handlePointerDown(event);
     } else if (event is PointerSignalEvent) {
       scrollable.handlePinterSignal(event);
+    } else if (event is PointerPanZoomStartEvent) {
+      scrollable.handlePointerPanZoomStart(event);
     }
   }
 
   @protected
-  RenderSliverList _buildRenderSliverList() {
-    return _renderSliverList = RenderSliverList(childManager: _renderSliverBoxChildManager);
+  WebFRenderSliverList _buildRenderSliverList() {
+    return _renderSliverList = WebFRenderSliverList(childManager: _renderSliverBoxChildManager);
   }
 
   // Trigger sliver list to rebuild children.
@@ -148,16 +148,11 @@ class RenderSliverListLayout extends RenderLayoutBox {
   @override
   int get childCount => _renderSliverBoxChildManager.childCount;
 
-  Size get _screenSize => window.physicalSize / window.devicePixelRatio;
+  Size get _screenSize => renderStyle.currentFlutterView.physicalSize / renderStyle.currentFlutterView.devicePixelRatio;
 
   @override
   void performLayout() {
     doingThisLayout = true;
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      childLayoutDuration = 0;
-      PerformanceTiming.instance().mark(PERF_SILVER_LAYOUT_START, uniqueId: hashCode);
-    }
-
     beforeLayout();
 
     // If width is given, use exact width; or expand to parent extent width.
@@ -185,17 +180,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
         break;
     }
 
-    late DateTime childLayoutStart;
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      childLayoutStart = DateTime.now();
-    }
-
     child.layout(childConstraints, parentUsesSize: true);
-
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      DateTime childLayoutEnd = DateTime.now();
-      childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
-    }
 
     size = getBoxSize(child.size);
 
@@ -205,11 +190,6 @@ class RenderSliverListLayout extends RenderLayoutBox {
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
 
     // TODO not process child overflowLayout
-
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      PerformanceTiming.instance().mark(PERF_SILVER_LAYOUT_END,
-          uniqueId: hashCode, startTime: DateTime.now().microsecondsSinceEpoch - childLayoutDuration);
-    }
     doingThisLayout = false;
   }
 
@@ -221,15 +201,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
     if (firstChild != null) {
-      late DateTime childPaintStart;
-      if (kProfileMode && PerformanceTiming.enabled()) {
-        childPaintStart = DateTime.now();
-      }
       context.paintChild(firstChild!, offset);
-      if (kProfileMode && PerformanceTiming.enabled()) {
-        DateTime childPaintEnd = DateTime.now();
-        childPaintDuration += (childPaintEnd.microsecondsSinceEpoch - childPaintStart.microsecondsSinceEpoch);
-      }
     }
   }
 

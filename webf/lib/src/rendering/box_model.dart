@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'dart:developer' show Timeline;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -316,19 +317,9 @@ class RenderLayoutBox extends RenderBoxModel
     for (int i = 0; i < paintingOrder.length; i++) {
       RenderBox child = paintingOrder[i];
       if (!isPositionPlaceholder(child)) {
-        late DateTime childPaintStart;
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          childPaintStart = DateTime.now();
-        }
-
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
         if (child.hasSize) {
           context.paintChild(child, childParentData.offset + offset);
-        }
-
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          DateTime childPaintEnd = DateTime.now();
-          childPaintDuration += (childPaintEnd.microsecondsSinceEpoch - childPaintStart.microsecondsSinceEpoch);
         }
       }
     }
@@ -526,8 +517,8 @@ class RenderLayoutBox extends RenderBoxModel
 
     Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
     double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
-    if(transform!=null) {
-      maxScrollableX+= transform.getTranslation()[0];
+    if (transform != null) {
+      maxScrollableX += transform.getTranslation()[0];
     }
 
     if (childRenderStyle.right.isNotAuto) {
@@ -545,8 +536,8 @@ class RenderLayoutBox extends RenderBoxModel
     }
 
     double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
-    if(transform!=null) {
-      maxScrollableY+= transform.getTranslation()[1];
+    if (transform != null) {
+      maxScrollableY += transform.getTranslation()[1];
     }
     if (childRenderStyle.bottom.isNotAuto) {
       if (isScrollingContentBox && (parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
@@ -636,6 +627,7 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
       manager: manager,
       onScroll: onScroll,
+      currentView: renderStyle.currentFlutterView
     );
     manager.setupSliverListLayout(sliverListLayout);
     copyWith(sliverListLayout);
@@ -693,9 +685,6 @@ class RenderBoxModel extends RenderBox
       markNeedsPaint();
     }
   }
-
-  int childPaintDuration = 0;
-  int childLayoutDuration = 0;
 
   BoxConstraints? _contentConstraints;
 
@@ -775,6 +764,9 @@ class RenderBoxModel extends RenderBox
       renderPositionPlaceholder!.positioned = copiedRenderBoxModel;
     }
 
+    scrollOffsetX?.removeListener(scrollXListener);
+    scrollOffsetY?.removeListener(scrollYListener);
+
     return copiedRenderBoxModel
       // Copy render style
       ..renderStyle = renderStyle
@@ -848,6 +840,7 @@ class RenderBoxModel extends RenderBox
       SchedulerBinding.instance.addPostFrameCallback((_) {
         markNeedsLayout();
       });
+      SchedulerBinding.instance.scheduleFrame();
     } else {
       needsLayout = true;
       super.markNeedsLayout();
@@ -926,11 +919,11 @@ class RenderBoxModel extends RenderBox
 
       BoxConstraints parentConstraints = (parent as RenderBoxModel).constraints;
       BoxConstraints constraints = BoxConstraints(
-        minWidth: parentConstraints.maxWidth != double.infinity
+        minWidth: (parentConstraints.maxWidth != double.infinity && parentRenderStyle.width.value != null)
             ? parentConstraints.maxWidth - horizontalBorderLength - horizontalPaddingLength
             : 0,
         maxWidth: double.infinity,
-        minHeight: parentConstraints.maxHeight != double.infinity
+        minHeight: (parentConstraints.maxHeight != double.infinity && parentRenderStyle.height.value != null)
             ? parentConstraints.maxHeight - verticalBorderLength - verticalPaddingLength
             : 0,
         maxHeight: double.infinity,
@@ -1049,9 +1042,6 @@ class RenderBoxModel extends RenderBox
   // The contentSize of layout box
   Size? _contentSize;
   Size get contentSize {
-    if (_contentSize == null) {
-      owner?.flushLayout();
-    }
     return _contentSize ?? Size.zero;
   }
 
@@ -1074,7 +1064,7 @@ class RenderBoxModel extends RenderBox
     // @FIXME: Normally constraints is calculated in getConstraints by parent RenderLayoutBox in Kraken,
     // except in sliver layout, constraints is calculated by [RenderSliverList] which kraken can not control,
     // so it needs to invoke getConstraints here for sliver container's direct child.
-    if (parent is RenderSliverList) {
+    if (parent is RenderSliverRepaintProxy || parent is RenderSliverList) {
       contentConstraints = getConstraints();
     } else {
       // Constraints is already calculated in parent layout.
@@ -1091,16 +1081,16 @@ class RenderBoxModel extends RenderBox
 
   /// Find scroll container
   RenderBoxModel? findScrollContainer() {
-    RenderLayoutBox? scrollContainer;
-    RenderLayoutBox? parent = this.parent as RenderLayoutBox?;
+    RenderBoxModel? scrollContainer;
+    AbstractNode? parent = this.parent;
 
-    while (parent != null) {
-      if (parent.isScrollingContentBox) {
+    while (parent != null && parent is RenderLayoutBox) {
+      if (parent.isScrollingContentBox && parent.parent is RenderLayoutBox) {
         // Scroll container should has definite constraints
-        scrollContainer = parent.parent as RenderLayoutBox?;
+        scrollContainer = parent.parent as RenderBoxModel;
         break;
       }
-      parent = parent.parent as RenderLayoutBox?;
+      parent = parent.parent;
     }
     return scrollContainer;
   }
@@ -1119,8 +1109,6 @@ class RenderBoxModel extends RenderBox
     final BoxParentData childParentData = child.parentData! as BoxParentData;
     Offset offset = childParentData.offset;
     if (excludeScrollOffset) {
-      offset += Offset(scrollLeft, scrollTop);
-    } else {
       offset -= Offset(scrollLeft, scrollTop);
     }
     transform.translate(offset.dx, offset.dy);
@@ -1130,6 +1118,7 @@ class RenderBoxModel extends RenderBox
   Size _maxScrollableSize = Size.zero;
   Size get scrollableSize => _maxScrollableSize;
   set scrollableSize(Size value) {
+    assert(value.isFinite);
     _maxScrollableSize = value;
   }
 
@@ -1176,22 +1165,26 @@ class RenderBoxModel extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      childPaintDuration = 0;
-      PerformanceTiming.instance().mark(PERF_PAINT_START, uniqueId: hashCode);
+    if (!kReleaseMode) {
+      Timeline.startSync(
+        'RenderBoxModel paint',
+        arguments: {
+          'ownerElement': renderStyle.target.toString()
+        },
+      );
     }
 
     if (!shouldPaint) {
-      if (kProfileMode && PerformanceTiming.enabled()) {
-        PerformanceTiming.instance().mark(PERF_PAINT_END, uniqueId: hashCode);
+      if (!kReleaseMode) {
+        Timeline.finishSync();
       }
       return;
     }
 
     paintBoxModel(context, offset);
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      int amendEndTime = DateTime.now().microsecondsSinceEpoch - childPaintDuration;
-      PerformanceTiming.instance().mark(PERF_PAINT_END, uniqueId: hashCode, startTime: amendEndTime);
+
+    if (!kReleaseMode) {
+      Timeline.finishSync();
     }
   }
 
@@ -1202,7 +1195,7 @@ class RenderBoxModel extends RenderBox
     ));
   }
 
-  // Reaint native EngineLayer sources with LayerHandle.
+  // Repaint native EngineLayer sources with LayerHandle.
   final LayerHandle<ColorFilterLayer> _colorFilterLayer = LayerHandle<ColorFilterLayer>();
 
   void paintColorFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
@@ -1305,9 +1298,13 @@ class RenderBoxModel extends RenderBox
 
   // Get the layout offset of renderObject to its ancestor which does not include the paint offset
   // such as scroll or transform.getLayoutTransformTo
-  Offset getOffsetToAncestor(Offset point, RenderObject ancestor, {bool excludeScrollOffset = false}) {
+  Offset getOffsetToAncestor(Offset point, RenderBoxModel ancestor, {bool excludeScrollOffset = false}) {
+    double ancestorBorderTop = ancestor.renderStyle.borderTopWidth?.computedValue ?? 0;
+    double ancestorBorderLeft = ancestor.renderStyle.borderLeftWidth?.computedValue ?? 0;
+    Offset ancestorBorderWidth = Offset(ancestorBorderLeft, ancestorBorderTop);
+
     return MatrixUtils.transformPoint(
-        getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset), point);
+        getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset), point) - ancestorBorderWidth;
   }
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
@@ -1335,6 +1332,10 @@ class RenderBoxModel extends RenderBox
     if (positionType == CSSPositionType.relative ||
         positionType == CSSPositionType.static ||
         positionType == CSSPositionType.sticky) {
+      // If the previousSibling is positioned element, should relative to positionHolder.
+      if (after is RenderBoxModel) {
+        after = after.renderPositionPlaceholder ?? after;
+      }
       // If the element's position is 'relative' or 'static',
       // the containing block is formed by the content edge of the nearest block container ancestor box.
       attachRenderBox(containingBlockRenderBox, renderBoxModel, after: after);
@@ -1362,21 +1363,23 @@ class RenderBoxModel extends RenderBox
   // Find previous sibling renderObject of renderBoxModel, used for inserting to containing block.
   // If renderBoxModel is positioned, find the original place (position placeholder) to insert to
   // when its position changes to relative/static/sticky.
-  RenderBox? getPreviousSibling() {
+  RenderBox? getPreviousSibling({ followPlaceHolder = true }) {
     RenderBoxModel renderBoxModel = this;
     RenderBox? previousSibling;
     RenderPositionPlaceholder? renderPositionPlaceholder = renderBoxModel.renderPositionPlaceholder;
     // It needs to find the previous sibling of the previous sibling if the placeholder of
     // positioned element exists and follows renderObject at the same time, eg.
     // <div style="position: relative"><div style="position: absolute" /></div>
-    if (renderPositionPlaceholder != null) {
+    if (followPlaceHolder && renderPositionPlaceholder != null && renderPositionPlaceholder.parentData != null) {
       previousSibling = (renderPositionPlaceholder.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
       // The placeholder's previousSibling maybe the origin renderBox.
       if (previousSibling == renderBoxModel) {
         previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
       }
     } else {
-      previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
+      if (renderBoxModel.parentData != null) {
+        previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
+      }
     }
     return previousSibling;
   }
@@ -1490,7 +1493,7 @@ class RenderBoxModel extends RenderBox
               }
 
               // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
-              if (hitTestChildren(result, position: position) || hitTestSelf(transformPosition)) {
+              if (hasSize && hitTestChildren(result, position: position) || hitTestSelf(transformPosition)) {
                 result.add(BoxHitTestEntry(this, position));
                 return true;
               }
@@ -1543,9 +1546,8 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
-    properties.add(DiagnosticsProperty('widthSizeType', widthSizeType, missingIfNull: true));
-    properties.add(DiagnosticsProperty('heightSizeType', heightSizeType, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
+    properties.add(DiagnosticsProperty('position', renderStyle.position));
 
     if (renderPositionPlaceholder != null)
       properties.add(DiagnosticsProperty('renderPositionHolder', renderPositionPlaceholder));

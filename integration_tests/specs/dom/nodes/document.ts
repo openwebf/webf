@@ -32,4 +32,39 @@ describe('Document api', () => {
     expect(document.all).not.toBeUndefined();
     expect(document.all.length).toBeGreaterThan(0);
   });
+
+  it('document.domain', () => {
+      expect(document.domain).not.toBeUndefined();
+    });
+
+  it('document.compatMode', () => {
+      expect(document.compatMode).not.toBeUndefined();
+    });
+
+  it('document.readyState', () => {
+      expect(document.readyState).not.toBeUndefined();
+    });
+
+  it('document.visibilityState', () => {
+      expect(document.visibilityState).not.toBeUndefined();
+    });
+
+  it('document.hidden', () => {
+      expect(document.hidden).not.toBeUndefined();
+    });
+
+  it('document.defaultView', () => {
+    expect(document.defaultView).toBe(window);
+  });
+
+  it('document.elementFromPoint should work', async () => {
+    const ele = document.createElement('div')
+    ele.style.width = '100px';
+    ele.style.height = '100px';
+    ele.style.backgroundColor = 'blue';
+    document.body.appendChild(ele);
+    const findEle = document.elementFromPoint(50, 50);
+    findEle.style.backgroundColor = 'yellow';
+    await snapshot();
+  });
 });

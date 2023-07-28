@@ -5,6 +5,7 @@
 #ifndef BRIDGE_CORE_HTML_CANVAS_HTML_CANVAS_ELEMENT_H_
 #define BRIDGE_CORE_HTML_CANVAS_HTML_CANVAS_ELEMENT_H_
 
+#include <vector>
 #include "canvas_rendering_context.h"
 #include "core/html/html_element.h"
 
@@ -16,9 +17,11 @@ class HTMLCanvasElement : public HTMLElement {
  public:
   explicit HTMLCanvasElement(Document&);
 
-  CanvasRenderingContext* getContext(const AtomicString& type, ExceptionState& exception_state) const;
+  CanvasRenderingContext* getContext(const AtomicString& type, ExceptionState& exception_state);
 
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
+  void Trace(GCVisitor* visitor) const override;
+
+  std::vector<Member<CanvasRenderingContext>> running_context_2ds_;
 };
 
 }  // namespace webf

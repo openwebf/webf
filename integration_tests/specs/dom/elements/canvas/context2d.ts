@@ -1,4 +1,26 @@
 describe('Canvas context 2d', () => {
+  it('can change size by width and height property', async () => {
+    var canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+    canvas.width = canvas.height = 300;
+    // Scaled rectangle
+    context.fillStyle = "red";
+    context.fillRect(10, 10, 380, 380);
+
+    await snapshot();
+    canvas.width = canvas.height = 400;
+    // Scaled rectangle
+    context.fillStyle = "red";
+    context.fillRect(10, 10, 380, 380);
+    await snapshot();
+  });
+
   it('should work with font and rect', async () => {
     var div = document.createElement('div');
     div.style.width = div.style.height = '300px';
@@ -405,6 +427,67 @@ describe('Canvas context 2d', () => {
     context.fillStyle = 'green';
     context.fillRect(10, 10, 50, 50);
 
+    await snapshot(canvas);
+    done();
+  });
+
+  it('should work when draw overflow element', async () => {
+    const canvas = document.createElement('canvas')
+    canvas.style.width = canvas.style.height = '200px';
+    canvas.style.border = '1px solid green';
+    canvas.style.padding = '10px';
+    canvas.style.margin = '10px';
+    canvas.width = canvas.height = 200;
+
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d')!
+
+    ctx.fillStyle = 'green';
+    ctx.fillRect(10, 10, 200, 200);
+
+    await snapshot();
+  });
+
+  it('should work with createLinearGradient', async (done) => {
+    const canvas = <canvas height="300" width="300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+    const lgd = context.createLinearGradient(20, 0, 220, 0);
+		lgd.addColorStop(0, "green");
+		lgd.addColorStop(0.5, "cyan");
+		lgd.addColorStop(1, "green");
+
+		context.fillStyle = lgd;
+		context.fillRect(20, 20, 200, 100);
+
+    await snapshot(canvas);
+    done();
+  });
+
+  it('should work with createRadialGradient', async (done) => {
+    const canvas = <canvas height="300" width="300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+		const rgd = context.createRadialGradient(110, 90, 30, 100, 100, 70);
+		rgd.addColorStop(0, "pink");
+		rgd.addColorStop(0.9, "white");
+		rgd.addColorStop(1, "green");
+
+		context.fillStyle = rgd;
+		context.fillRect(20, 20, 160, 160);
     await snapshot(canvas);
     done();
   });

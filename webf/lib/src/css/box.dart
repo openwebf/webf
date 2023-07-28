@@ -43,7 +43,7 @@ mixin CSSBoxMixin on RenderStyle {
       );
     }
 
-    Gradient? gradient = backgroundImage?.gradient;
+    Gradient? gradient = backgroundClip != CSSBackgroundBoundary.text ? backgroundImage?.gradient : null;
     if (gradient is BorderGradientMixin && border != null) {
       gradient.borderEdge = border.dimensions as EdgeInsets;
     }
@@ -53,13 +53,13 @@ mixin CSSBoxMixin on RenderStyle {
     if (image != null) {
       decorationImage = DecorationImage(
         image: image,
-        repeat: backgroundRepeat,
+        repeat: backgroundRepeat.imageRepeat(),
       );
     }
 
     return CSSBoxDecoration(
       boxShadow: shadows,
-      color: gradient != null ? null : backgroundColor, // FIXME: chrome will work with gradient and color.
+      color: gradient != null ? null : backgroundColor?.value, // FIXME: chrome will work with gradient and color.
       image: decorationImage,
       border: border,
       borderRadius: borderRadius,

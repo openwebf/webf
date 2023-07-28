@@ -20,11 +20,9 @@ class CharacterData : public Node {
   int64_t length() const { return data_.length(); };
   void setData(const AtomicString& data, ExceptionState& exception_state);
 
-  std::string nodeValue() const override;
+  AtomicString nodeValue() const override;
   bool IsCharacterDataNode() const override;
   void setNodeValue(const AtomicString&, ExceptionState&) override;
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
  protected:
   CharacterData(TreeScope& tree_scope, const AtomicString& text, ConstructionType type);

@@ -3,15 +3,18 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ffi';
+import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/launcher.dart';
 
 class InspectOverlayModule extends UIInspectorModule {
   @override
   String get name => 'Overlay';
 
   Document get document => devtoolsService.controller!.view.document;
-  InspectOverlayModule(ChromeDevToolsService devtoolsService) : super(devtoolsService);
+  InspectOverlayModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
@@ -32,7 +35,7 @@ class InspectOverlayModule extends UIInspectorModule {
     _highlightElement?.debugHideHighlight();
 
     int nodeId = params['nodeId'];
-    Element? element = document.controller.view.getEventTargetById<Element>(nodeId);
+    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       element.debugHighlight();

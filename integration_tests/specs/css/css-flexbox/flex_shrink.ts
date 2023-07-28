@@ -803,7 +803,7 @@ describe('flexbox flex-shrink', () => {
       {
         style: {
           "display": "flex",
-          "width": "100px",
+          "width": "200px",
           "height": "100px",
         },
       },

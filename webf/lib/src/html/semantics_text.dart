@@ -62,7 +62,7 @@ class BRElement extends Element {
   RenderBoxModel? get renderBoxModel => _renderLineBreak;
 
   @override
-  void setRenderStyle(String property, String present) {
+  void setRenderStyle(String property, String present, { String? baseHref }) {
     // Noop
   }
 

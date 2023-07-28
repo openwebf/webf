@@ -29,12 +29,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 
 import 'package:webf/css.dart';
 
 import 'package:source_span/source_span.dart';
-import 'package:webf/module.dart';
 
 part 'tree.dart';
 part 'token.dart';
@@ -49,6 +47,9 @@ enum ClauseType {
   conjunction,
   disjunction,
 }
+
+// We assume that the CSS input may contain unexpected tokens, but they will not be print out or throw unless we open it.
+bool kShowCSSParseError = false;
 
 /// Used for parser lookup ahead (used for nested selectors Less support).
 class ParserState extends TokenizerState {
@@ -78,7 +79,10 @@ class CSSParser {
   Token? _previousToken;
   late Token _peekToken;
 
-  CSSParser(String text, {int start = 0}) : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
+  /// A string containing the baseURL used to resolve relative URLs in the stylesheet.
+  String? href;
+
+  CSSParser(String text, {int start = 0, this.href}) : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
     _peekToken = tokenizer.next();
   }
 
@@ -89,9 +93,6 @@ class CSSParser {
   }
 
   Map<String, dynamic> parseInlineStyle() {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_PARSE_INLINE_CSS_START);
-    }
     Map<String, dynamic> style = {};
     do {
       if (TokenKind.isIdentifier(_peekToken.kind)) {
@@ -128,16 +129,10 @@ class CSSParser {
         _next();
       }
     } while (_maybeEat(TokenKind.SEMICOLON));
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_PARSE_INLINE_CSS_END);
-    }
     return style;
   }
 
   List<CSSRule> parseRules({int startPosition = 0}) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_PARSE_CSS_START);
-    }
     var rules = <CSSRule>[];
     while (!_maybeEat(TokenKind.END_OF_FILE)) {
       final data = processRule();
@@ -148,9 +143,6 @@ class CSSParser {
       }
     }
     checkEndOfFile();
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_PARSE_CSS_END);
-    }
     return rules;
   }
 
@@ -239,6 +231,8 @@ class CSSParser {
   }
 
   void _errorExpected(String expected) {
+    if (!kShowCSSParseError) return;
+
     var tok = _next();
     String message;
     try {
@@ -250,11 +244,13 @@ class CSSParser {
   }
 
   void _error(String message, {SourceSpan? location}) {
+    if (!kShowCSSParseError) return;
     location ??= _peekToken.span;
     print(location.message(message, color: '\u001b[31m'));
   }
 
   void _warning(String message, {SourceSpan? location}) {
+    if (!kShowCSSParseError) return;
     location ??= _makeSpan(_peekToken.span);
     print(location.message(message, color: '\u001b[35m'));
   }
@@ -405,7 +401,10 @@ class CSSParser {
 
       case TokenKind.DIRECTIVE_FONTFACE:
         _next();
-        return null;
+        _eat(TokenKind.LBRACE);
+        List data = processDeclarations();
+        assert(data.isNotEmpty);
+        return CSSFontFaceRule(data[0]);
       case TokenKind.DIRECTIVE_STYLET:
         // Stylet grammar:
         //
@@ -847,6 +846,7 @@ class CSSParser {
         case TokenKind.PLUS:
         case TokenKind.MINUS:
         case TokenKind.INTEGER:
+        case TokenKind.PERCENT:
         case TokenKind.DOUBLE:
           termToken = _next();
           expressions.add(termToken.text);
@@ -974,7 +974,7 @@ class CSSParser {
         while (_maybeEat(TokenKind.IMPORTANT)) {
           importantPriority = true;
         }
-        style.setProperty(propertyIdent, expr, importantPriority);
+        style.setProperty(propertyIdent, expr, isImportant: importantPriority, baseHref: href);
       }
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
       _next();
@@ -1176,7 +1176,13 @@ class CSSParser {
 
     if (!TokenKind.isIdentifier(tok.kind) && !TokenKind.isKindIdentifier(tok.kind)) {
       if (isChecked) {
-        _warning('expected identifier, but found $tok', location: tok.span);
+        String message;
+        try {
+          message = 'expected identifier, but found $tok';
+        } catch (e) {
+          message = 'parsing error expected identifier';
+        }
+        _warning(message, location: tok.span);
       }
       return Identifier('');
     }

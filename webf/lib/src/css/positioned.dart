@@ -121,7 +121,7 @@ class CSSPositionedLayout {
     double childWidth = child.boxSize!.width;
     double scrollContainerWidth = scrollContainer.boxSize!.width;
     // Dynamic offset to scroll container
-    double offsetLeftToScrollContainer = childToScrollContainerOffset.dx - scrollContainer.scrollLeft;
+    double offsetLeftToScrollContainer = childToScrollContainerOffset.dx;
     double offsetRightToScrollContainer = scrollContainerWidth - childWidth - offsetLeftToScrollContainer;
     RenderStyle childRenderStyle = child.renderStyle;
     RenderStyle? scrollContainerRenderStyle = scrollContainer.renderStyle;
@@ -273,19 +273,8 @@ class CSSPositionedLayout {
     }
 
     if (isChildNeedsLayout) {
-      late DateTime childLayoutStartTime;
-      if (kProfileMode) {
-        childLayoutStartTime = DateTime.now();
-      }
-
       // Should create relayoutBoundary for positioned child.
       child.layout(childConstraints, parentUsesSize: false);
-
-      if (kProfileMode) {
-        DateTime childLayoutEndTime = DateTime.now();
-        parent.childLayoutDuration +=
-            (childLayoutEndTime.microsecondsSinceEpoch - childLayoutStartTime.microsecondsSinceEpoch);
-      }
     }
   }
 

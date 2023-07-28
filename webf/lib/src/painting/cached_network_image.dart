@@ -5,7 +5,6 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -26,7 +25,7 @@ class CachedNetworkImageKey {
   }
 
   @override
-  int get hashCode => hashValues(url, scale);
+  int get hashCode => Object.hash(url, scale);
 }
 
 class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
@@ -41,10 +40,7 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
   final Map<String, String>? headers;
 
   // Do not access this field directly; use [_httpClient] instead.
-  // We set `autoUncompress` to false to ensure that we can trust the value of
-  // the `Content-CSSLength` HTTP header. We automatically uncompress the content
-  // in our call to [consolidateHttpClientResponseBytes].
-  static final HttpClient _sharedHttpClient = HttpClient()..autoUncompress = false;
+  static final HttpClient _sharedHttpClient = HttpClient();
 
   static HttpClient get _httpClient {
     HttpClient client = _sharedHttpClient;
@@ -77,9 +73,10 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
   }
 
   Future<Codec> _loadAsync(
-      CachedNetworkImageKey key, DecoderCallback decode, StreamController<ImageChunkEvent> chunkEvents) async {
+      CachedNetworkImageKey key, ImageDecoderCallback decode, StreamController<ImageChunkEvent> chunkEvents) async {
     Uint8List bytes = await _getRawImageBytes(key, chunkEvents);
-    return decode(bytes);
+    ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
+    return decode(buffer);
   }
 
   Future<Uint8List> _fetchImageBytes(CachedNetworkImageKey key, StreamController<ImageChunkEvent> chunkEvents,
@@ -99,7 +96,7 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
       cacheController.putObject(resolved, cacheObject);
 
       HttpClientResponse _response = HttpClientCachedResponse(response, cacheObject);
-      final Uint8List bytes = await consolidateHttpClientResponseBytes(
+      Uint8List bytes = await consolidateHttpClientResponseBytes(
         _response,
         onBytesReceived: (int cumulative, int? total) {
           chunkEvents.add(ImageChunkEvent(
@@ -109,7 +106,17 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
         },
       );
 
-      if (bytes.lengthInBytes == 0) throw Exception('Image from network is an empty file: $resolved');
+      // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
+      // and decode them if they are in gzip format.
+      if (isGzip(bytes)) {
+        bytes = Uint8List.fromList(gzip.decoder.convert(bytes));
+      }
+
+      if (bytes.lengthInBytes == 0) {
+        HttpCacheObject cacheObject = await cacheController.getCacheObject(resolved);
+        await cacheObject.remove();
+        throw Exception('Image from network is an empty file: $resolved');
+      }
 
       return bytes;
     } finally {
@@ -123,7 +130,7 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
   }
 
   @override
-  ImageStreamCompleter load(CachedNetworkImageKey key, DecoderCallback decode) {
+  ImageStreamCompleter loadImage(CachedNetworkImageKey key, ImageDecoderCallback decode) {
     // Ownership of this controller is handed off to [_loadAsync]; it is that
     // method's responsibility to close the controller's stream when the image
     // has been loaded or an error is thrown.

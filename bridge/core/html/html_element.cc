@@ -4,12 +4,11 @@
  */
 
 #include "html_element.h"
-#include "qjs_html_element.h"
+#include "element_namespace_uris.h"
 
 namespace webf {
 
-bool HTMLElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLElement::IsAttributeDefinedInternal(key) || Element::IsAttributeDefinedInternal(key);
-}
+HTMLElement::HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType type)
+    : Element(element_namespace_uris::khtml, tag_name, AtomicString::Null(), document, type) {}
 
 }  // namespace webf

@@ -1,4 +1,138 @@
-xdescribe('Tags input', () => {
+describe('Tempoary Tags input', () => {
+  it('input text can set height', async () => {
+    const input = document.createElement('input');
+    input.value = 'helloworld';
+    document.body.appendChild(input);
+    await snapshot();
+    input.style.height = '100px';
+    await snapshot();
+  });
+});
+
+describe('Input line-height', () => {
+  it('height not set and line-height set', async () => {
+    let div;
+    div = createElement(
+      'input',
+      {
+        value: '123',
+        style: {
+            lineHeight: '50px',
+            fontSize: '30px',
+        },
+      }
+    );
+    BODY.appendChild(div);
+    await snapshot();
+  });
+
+  it('height set should work when the unit not px', async () => {
+      let div;
+      div = createElement(
+            'input',
+            {
+              value: '1234',
+              style: {
+                  height: '100%',
+                  fontSize: '30px',
+              },
+            }
+          );
+      BODY.appendChild(div);
+      await snapshot();
+    });
+
+  it('height set and line-height set', async () => {
+    let div;
+    div = createElement(
+      'input',
+      {
+        value: '1234',
+        style: {
+            lineHeight: '50px',
+            height: '100px',
+            fontSize: '30px',
+        },
+      }
+    );
+    BODY.appendChild(div);
+    await snapshot();
+  });
+
+  it('height set and line-height greater than height', async () => {
+    let div;
+    div = createElement(
+      'input',
+      {
+        value: '12345',
+        style: {
+            lineHeight: '100px',
+            height: '50px',
+            fontSize: '30px',
+        },
+      }
+    );
+    BODY.appendChild(div);
+    await snapshot();
+  });
+
+  it('line-height set and is smaller than text size', async () => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '123456',
+        style: {
+            lineHeight: '10px',
+            fontSize: '30px'
+        },
+      }
+    );
+    BODY.appendChild(input);
+    await snapshot();
+  });
+
+  it('line-height set and is bigger than text size', async () => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '1234567',
+        style: {
+            lineHeight: '100px',
+            fontSize: '30px'
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+  });
+
+  it('line-height changes when height is not set', async (done) => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '12345678',
+        style: {
+          lineHeight: '50px',
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      input.style.lineHeight = '100px';
+      await snapshot();
+      done();
+    });
+  });
+})
+
+describe('Tags input', () => {
   it('basic', async () => {
     const input = document.createElement('input');
     input.style.width = '60px';
@@ -6,6 +140,16 @@ xdescribe('Tags input', () => {
     input.setAttribute('value', 'Hello World');
     document.body.appendChild(input);
 
+    await snapshot();
+  });
+
+  it('should works with display none', async () => {
+    const input = document.createElement('input');
+    input.style.width = '60px';
+    input.style.fontSize = '16px';
+    input.style.display = 'none';
+    input.setAttribute('value', 'Hello World');
+    document.body.appendChild(input);
     await snapshot();
   });
 
@@ -108,77 +252,6 @@ xdescribe('Tags input', () => {
     document.body.appendChild(input);
 
     await snapshot();
-  });
-
-  it('height not set and line-height set', async () => {
-    let div;
-    div = createElement(
-      'input',
-      {
-        value: '1234567890',
-        style: {
-            lineHeight: '50px',
-            fontSize: '30px',
-        },
-      }
-    );
-    BODY.appendChild(div);
-  });
-
-  it('line-height set and is smaller than text size', async () => {
-    let input;
-    input = createElement(
-      'input',
-      {
-        value: '1234567890',
-        style: {
-            lineHeight: '10px',
-            fontSize: '30px'
-        },
-      }
-    );
-    BODY.appendChild(input);
-
-    await snapshot();
-  });
-
-  xit('line-height set and is bigger than text size', async () => {
-    let input;
-    input = createElement(
-      'input',
-      {
-        value: '1234567890',
-        style: {
-            lineHeight: '100px',
-            fontSize: '30px'
-        },
-      }
-    );
-    BODY.appendChild(input);
-
-    await snapshot();
-  });
-
-  xit('line-height changes when height is not set', async (done) => {
-    let input;
-    input = createElement(
-      'input',
-      {
-        value: '1234567890',
-        style: {
-          lineHeight: '50px',
-        },
-      }
-    );
-    BODY.appendChild(input);
-
-    await snapshot();
-
-    requestAnimationFrame(async () => {
-      input.style.lineHeight = '100px';
-      await snapshot();
-      done();
-    });
   });
 
   it('font-size set and width not set', async () => {
@@ -284,7 +357,7 @@ xdescribe('Tags input', () => {
     });
   });
 
-  it('event input', (done) => {
+  xit('event input', (done) => {
     const VALUE = 'Hello';
     const input = document.createElement('input');
     input.value = '';
@@ -329,7 +402,7 @@ xdescribe('Tags input', () => {
     });
   });
 
-  it('support inputmode=text', (done) => {
+  xit('support inputmode=text', (done) => {
     const VALUE = 'Hello';
     const input = <input inputmode="text" />;
     input.addEventListener('input', function handler(event: InputEvent) {
@@ -346,7 +419,7 @@ xdescribe('Tags input', () => {
     });
   });
 
-  it('support inputmode=tel', (done) => {
+  xit('support inputmode=tel', (done) => {
     const VALUE = '123456789';
     const input = <input inputmode="tel" />;
     input.addEventListener('input', function handler(event: InputEvent) {
@@ -363,7 +436,7 @@ xdescribe('Tags input', () => {
     });
   });
 
-  it('support inputmode=decimal', (done) => {
+  xit('support inputmode=decimal', (done) => {
     const VALUE = '123456789';
     const input = <input inputmode="decimal" />;
     input.addEventListener('input', function handler(event: InputEvent) {
@@ -380,7 +453,7 @@ xdescribe('Tags input', () => {
     });
   });
 
-  it('support inputmode=numeric', (done) => {
+  xit('support inputmode=numeric', (done) => {
     const VALUE = '123456789';
     const input = <input inputmode="numeric" />;
     input.addEventListener('input', function handler(event: InputEvent) {
@@ -397,7 +470,7 @@ xdescribe('Tags input', () => {
     });
   });
 
-  it('support inputmode=search', (done) => {
+  xit('support inputmode=search', (done) => {
     const VALUE = 'Hello';
     const input = <input inputmode="search" />;
     input.addEventListener('input', function handler(event: InputEvent) {
@@ -414,7 +487,7 @@ xdescribe('Tags input', () => {
     });
   });
 
-  it('support inputmode=email', (done) => {
+  xit('support inputmode=email', (done) => {
     const VALUE = 'example@example.com';
     const input = <input inputmode="email" />;
     input.addEventListener('input', function handler(event: InputEvent) {
@@ -431,7 +504,7 @@ xdescribe('Tags input', () => {
     });
   });
 
-  it('support inputmode=url', (done) => {
+  xit('support inputmode=url', (done) => {
     const VALUE = 'example.com';
     const input = <input inputmode="url" />;
     input.addEventListener('input', function handler(event: InputEvent) {

@@ -3,12 +3,33 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
 project(WebF)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
-set(CMAKE_CXX_STANDARD 17)
+# MSBuild are slower than Clang/GCC to support new CXX standards.
+if(MSVC)
+  set(CMAKE_CXX_STANDARD 20)
+else()
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(MSVC)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+  set(BUILD_SHARED_LIBS TRUE)
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+endif()
+
+if(WIN32)
+  set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads")
+  include_directories(${PTHREADS_ROOT}/include)
+  link_directories(${PTHREADS_ROOT}/lib/x64)
+endif()
+find_package(Threads REQUIRED)
+
+if(MSVC)
+  add_compile_options(/MP)
 endif()
 
 if (${ENABLE_PROFILE})
@@ -17,26 +38,16 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
-execute_process(
-  COMMAND bash "-c" "npm install"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
-) # install code_generator deps
-
-execute_process(
-  COMMAND bash "-c" "npm run build"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
-) # g
-
-execute_process(
-  COMMAND bash "-c" "node bin/code_generator -s ../../core -d ../../out"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
-) # generate elements code
-
-execute_process(
-  COMMAND bash "-c" "read dart_sdk < <(type -p dart) && echo $\{dart_sdk%/*\}/cache/dart-sdk/include | xargs"
-  OUTPUT_VARIABLE DART_SDK
-)
-string(REGEX REPLACE "\n$" "" DART_SDK "${DART_SDK}")
+if(NOT MSVC)
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT supported OUTPUT error)
+    if( supported )
+      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+      add_compile_options(-flto)
+    endif()
+  endif()
+endif()
 
 list(APPEND WEBF_PUBLIC_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
@@ -64,8 +75,13 @@ if (ENABLE_ASAN)
 endif ()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  # Avoid quickjs stackoverflow.
-  add_compile_options(-O1)
+  if (MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "/O1")
+    set(CMAKE_C_FLAGS_RELEASE "/O1")
+  else()
+    # Avoid quickjs stackoverflow.
+    add_compile_options(-O1)
+  endif()
 endif()
 
 if (DEFINED PLATFORM)
@@ -83,8 +99,10 @@ list(APPEND BRIDGE_SOURCE
   foundation/task_queue.cc
   foundation/string_view.cc
   foundation/native_value.cc
+  foundation/native_type.cc
   foundation/ui_command_buffer.cc
   polyfill/dist/polyfill.cc
+  ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
 list(APPEND GUMBO_PARSER
@@ -108,7 +126,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
-  ${DART_SDK}
+  ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${ADDITIONAL_INCLUDE_DIRS}
   )
 
@@ -120,8 +138,16 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     OUTPUT_VARIABLE QUICKJS_VERSION
   )
 
+  add_library(modb STATIC
+    third_party/modp_b64/modp_b64.cc
+  )
+
+  if (NOT MSVC)
+    list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
+  endif()
+
   list(APPEND QUICK_JS_SOURCE
-    third_party/quickjs/src/libbf.c
+    # third_party/quickjs/src/libbf.c
     third_party/quickjs/src/cutils.c
     third_party/quickjs/src/libregexp.c
     third_party/quickjs/src/libunicode.c
@@ -138,6 +164,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/convertion.c
     third_party/quickjs/src/core/runtime.c
     third_party/quickjs/src/core/module.c
+    third_party/quickjs/src/core/ic.c
     third_party/quickjs/src/core/builtins/js-array.c
     third_party/quickjs/src/core/builtins/js-async-function.c
     third_party/quickjs/src/core/builtins/js-async-generator.c
@@ -168,10 +195,33 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
   endif()
 
+  if(WIN32)
+    target_link_libraries(quickjs pthreadVC2)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+    target_compile_definitions(quickjs PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
+  else()
+    target_link_libraries(quickjs Threads::Threads)
+  endif()
+
+  set(MI_OVERRIDE OFF)
+  if (NOT DEFINED USE_SYSTEM_MALLOC)
+    add_compile_definitions(ENABLE_MI_MALLOC=1)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
+    target_link_libraries(quickjs mimalloc-static)
+  endif()
+
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
+  if (MSVC)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+  endif()
+
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
+  list(APPEND BRIDGE_LINK_LIBS modb)
 
   list(APPEND BRIDGE_SOURCE
     # Binding files
@@ -195,12 +245,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/exception_state.cc
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
+    bindings/qjs/union_base.cc
     # Core sources
     core/executing_context.cc
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
-    core/dart_context.cc
+    core/dart_isolate_context.cc
     core/dart_context_data.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
@@ -222,7 +273,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_mark.cc
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
-    core/css/legacy/css_style_declaration.cc
+    core/css/css_style_declaration.cc
+    core/css/inline_css_style_declaration.cc
+    core/css/computed_css_style_declaration.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
@@ -233,6 +286,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/events/event_target_impl.cc
     core/binding_object.cc
     core/dom/node.cc
+    core/dom/node_list.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
     core/dom/character_data.cc
@@ -243,6 +297,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/parent_node.cc
     core/dom/element_data.cc
     core/dom/document.cc
+    core/dom/dom_token_list.cc
+    core/dom/dom_string_map.cc
+    core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
     core/dom/node_data.cc
     core/dom/document_fragment.cc
@@ -267,7 +324,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/keyboard_event.cc
     core/events/promise_rejection_event.cc
     core/html/parser/html_parser.cc
-    core/html/legacy/html_collection.cc
     core/html/html_element.cc
     core/html/html_div_element.cc
     core/html/html_head_element.cc
@@ -278,18 +334,40 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_anchor_element.cc
     core/html/html_image_element.cc
     core/html/html_script_element.cc
+    core/html/html_iframe_element.cc
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
     core/html/image.cc
+    core/html/html_collection.cc
     core/html/canvas/html_canvas_element.cc
     core/html/canvas/canvas_rendering_context.cc
     core/html/canvas/canvas_rendering_context_2d.cc
+    core/html/canvas/canvas_gradient.cc
+    core/html/canvas/canvas_pattern.cc
+    core/geometry/dom_matrix.cc
+    core/geometry/dom_matrix_readonly.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
+
+    # SVG files
+    core/svg/svg_element.cc
+    core/svg/svg_graphics_element.cc
+    core/svg/svg_geometry_element.cc
+    core/svg/svg_text_content_element.cc
+    core/svg/svg_text_positioning_element.cc
+
+    core/svg/svg_svg_element.cc
+    core/svg/svg_path_element.cc
+    core/svg/svg_rect_element.cc
+    core/svg/svg_text_element.cc
+    core/svg/svg_g_element.cc
+    core/svg/svg_circle_element.cc
+    core/svg/svg_ellipse_element.cc
+    core/svg/svg_style_element.cc
+
     # Legacy implements, should remove them in the future.
-    core/dom/legacy/space_split_string.cc
     core/dom/legacy/element_attributes.cc
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
@@ -347,14 +425,19 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_event_init.cc
     out/qjs_event_target.cc
     out/qjs_node.cc
+    out/qjs_union_dom_stringnode.cc
     out/qjs_document.cc
     out/qjs_element.cc
+    out/qjs_dom_token_list.cc
+    out/qjs_dom_string_map.cc
     out/qjs_element_attributes.cc
     out/qjs_character_data.cc
     out/qjs_comment.cc
     out/qjs_document_fragment.cc
     out/qjs_bounding_client_rect.cc
     out/qjs_css_style_declaration.cc
+    out/qjs_inline_css_style_declaration.cc
+    out/qjs_computed_css_style_declaration.cc
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc
@@ -365,18 +448,27 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_scroll_to_options.cc
     out/qjs_html_element.cc
     out/qjs_html_all_collection.cc
+    out/qjs_html_collection.cc
     out/qjs_html_anchor_element.cc
     out/qjs_html_div_element.cc
     out/qjs_html_head_element.cc
     out/qjs_html_body_element.cc
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
+    out/qjs_html_iframe_element.cc
     out/qjs_html_canvas_element.cc
     out/qjs_html_link_element.cc
     out/qjs_image.cc
     out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc
     out/qjs_canvas_rendering_context.cc
+    out/qjs_canvas_gradient.cc
+    out/qjs_canvas_pattern.cc
+    out/qjs_dom_matrix.cc
+    out/qjs_dom_matrix_readonly.cc
+    out/qjs_union_dom_string_sequencedouble.cc
+    out/qjs_unionhtml_image_elementhtml_canvas_element.cc
+    out/qjs_union_dom_stringcanvas_gradient.cc
     out/canvas_types.cc
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc
@@ -385,6 +477,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_script_element.cc
     out/qjs_promise_rejection_event.cc
     out/qjs_promise_rejection_event_init.cc
+    out/qjs_unionevent_listener_options_boolean.cc
+    out/qjs_unionadd_event_listener_options_boolean.cc
     out/qjs_html_template_element.cc
     out/qjs_html_unknown_element.cc
     out/qjs_performance.cc
@@ -399,13 +493,36 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/html_names.cc
     out/script_type_names.cc
     out/defined_properties.cc
-    out/defined_properties_initializer.cc
     out/element_attribute_names.cc
+    out/element_namespace_uris.cc
+
+    # SVG generated
+    out/svg_names.cc
+    out/svg_element_factory.cc
+
+    # SVG files
+    out/qjs_svg_element.cc
+    out/qjs_svg_graphics_element.cc
+    out/qjs_svg_geometry_element.cc
+    out/qjs_svg_text_content_element.cc
+    out/qjs_svg_text_positioning_element.cc
+
+    out/qjs_svg_svg_element.cc
+    out/qjs_svg_path_element.cc
+    out/qjs_svg_rect_element.cc
+    out/qjs_svg_text_element.cc
+    out/qjs_svg_g_element.cc
+    out/qjs_svg_circle_element.cc
+    out/qjs_svg_ellipse_element.cc
+    out/qjs_svg_style_element.cc
     )
 
+
+  if (NOT MSVC)
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
+  endif()
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
 
 endif ()
@@ -416,6 +533,10 @@ list(APPEND PUBLIC_HEADER
 
 add_library(webf SHARED ${BRIDGE_SOURCE})
 add_library(webf_static STATIC ${BRIDGE_SOURCE})
+
+if(MSVC)
+  target_compile_options(webf PRIVATE /JMC)
+endif()
 
 target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 
@@ -435,15 +556,17 @@ elseif(${IS_IOS})
   add_definitions(-DIS_IOS=1)
 endif()
 
+
 ### webf
 target_include_directories(webf PRIVATE
   ${BRIDGE_INCLUDE}
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
-if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
+if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti)
+    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
+    target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
   else ()
     ### remove dynamic_cast and exceptions
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
@@ -457,13 +580,10 @@ target_include_directories(webf_static PRIVATE
 target_link_libraries(webf_static ${BRIDGE_LINK_LIBS})
 
 execute_process(
-  COMMAND grep version: ./pubspec.yaml
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../webf
+  COMMAND node get_app_ver.js
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/scripts
   OUTPUT_VARIABLE APP_VER
 )
-string(SUBSTRING ${APP_VER} 9 30 APP_VER)
-string(REGEX REPLACE "\n$" "" APP_VER "${APP_VER}")
-
 string(REPLACE \n "" APP_VER ${APP_VER}) # Remove last \n
 add_definitions(-DAPP_VERSION="${APP_VER}") # Read from dartfm version
 execute_process(
@@ -483,11 +603,21 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
   set_target_properties(webf
     PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-    )
-  set_target_properties(webf_static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}")
+    RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+  )
+  set_target_properties(webf_static
+    PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}")
 
   if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
-    set_target_properties(quickjs PROPERTIES LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}")
+    set_target_properties(quickjs
+      PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+    )
+    if(MSVC)
+      set(PTHREAD_LIB ${PTHREADS_ROOT}/dll/x64/pthreadVC2.dll)
+      file(COPY ${PTHREAD_LIB} DESTINATION "$ENV{LIBRARY_OUTPUT_DIR}")
+    endif()
   endif ()
 elseif (IS_ANDROID)
   # android do nothing

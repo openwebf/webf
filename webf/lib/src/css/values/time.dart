@@ -5,7 +5,7 @@
 
 import 'package:quiver/collection.dart';
 
-final _timeRegExp = RegExp(r'^[+-]?(\d+)?(\.\d+)?ms|s$', caseSensitive: false);
+final _timeRegExp = RegExp(r'^[+-]?(\d+)?(\.\d+)?(?:ms|s){1}$', caseSensitive: false);
 final _0s = '0s';
 final _0ms = '0ms';
 final LinkedLruHashMap<String, int?> _cachedParsedTime = LinkedLruHashMap(maximumSize: 100);

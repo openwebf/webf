@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:collection';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -11,7 +12,6 @@ import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
@@ -42,7 +42,9 @@ class _InactiveRenderObjects {
           finalizeInactiveRenderObjects();
           _isScheduled = false;
         });
+        RendererBinding.instance.scheduleFrame();
       });
+      RendererBinding.instance.scheduleFrame();
     }
 
     assert(!renderObject.debugDisposed!);
@@ -57,8 +59,10 @@ class _InactiveRenderObjects {
     _renderObjects.clear();
   }
 }
+enum DocumentReadyState { loading, interactive, complete }
+enum VisibilityState { visible, hidden }
 
-class Document extends Node {
+class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
   RenderViewportBox? _viewport;
@@ -72,17 +76,29 @@ class Document extends Node {
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
 
-  final RuleSet ruleSet = RuleSet();
+  late RuleSet ruleSet;
+
+  String? _domain;
+  final String _compatMode = 'CSS1Compat';
+
+  String? _readyState;
+  VisibilityState _visibilityState = VisibilityState.hidden;
+
+  @override
+  bool get isConnected => true;
 
   Document(
     BindingContext context, {
     required this.controller,
     required RenderViewportBox viewport,
     this.gestureListener,
+    List<Cookie>? initialCookies
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
+    cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
+    ruleSet = RuleSet(this);
   }
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
@@ -101,7 +117,8 @@ class Document extends Node {
 
   Element? focusedElement;
 
-  CookieJar cookie_ = CookieJar();
+  late CookieJar cookie_;
+  CookieJar get cookie => cookie_;
 
   // Returns the Window object of the active document.
   // https://html.spec.whatwg.org/multipage/window-object.html#dom-document-defaultview-dev
@@ -144,9 +161,29 @@ class Document extends Node {
     }
   }
 
+  int _domContentLoadedEventDelayCount = 0;
+  bool get isDelayingDOMContentLoadedEvent => _domContentLoadedEventDelayCount > 0;
+  void incrementDOMContentLoadedEventDelayCount() {
+    _domContentLoadedEventDelayCount++;
+  }
+
+  void decrementDOMContentLoadedEventDelayCount() {
+    _domContentLoadedEventDelayCount--;
+
+    // Try to check when the request is complete.
+    if (_domContentLoadedEventDelayCount == 0) {
+      controller.checkCompleted();
+    }
+  }
+
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['cookie'] = BindingObjectProperty(getter: () => cookie_.cookie(), setter: (value) => cookie_.setCookie(value));
+    properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
+    properties['compatMode'] = BindingObjectProperty(getter: () => compatMode,);
+    properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
+    properties['readyState'] = BindingObjectProperty(getter: () => readyState,);
+    properties['visibilityState'] = BindingObjectProperty(getter: () => visibilityState,);
+    properties['hidden'] = BindingObjectProperty(getter: () => hidden,);
   }
 
   @override
@@ -157,11 +194,97 @@ class Document extends Node {
     methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
     methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
+    methods['elementFromPoint'] = BindingObjectMethodSync(call: (args) => elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1])));
+    if (kDebugMode || kProfileMode) {
+      methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
+    }
+  }
+
+  get readyState {
+    _readyState ??= 'loading';
+    return _readyState;
+  }
+
+  set readyState(value) {
+    if (value is DocumentReadyState) {
+      String readyStateValue = resolveReadyState(value);
+      if (readyStateValue != _readyState) {
+        _readyState = readyStateValue;
+        _dispatchReadyStateChangeEvent();
+      }
+    }
+  }
+
+  get visibilityState {
+    return _visibilityState.name;
+  }
+
+  get hidden {
+    return _visibilityState == VisibilityState.hidden;
+  }
+
+  void visibilityChange(VisibilityState state) {
+    _visibilityState = state;
+    ownerDocument.dispatchEvent(Event('visibilitychange'));
+  }
+
+  void _dispatchReadyStateChangeEvent() {
+    Event event = Event(EVENT_READY_STATE_CHANGE);
+    defaultView.dispatchEvent(event);
+  }
+
+  String resolveReadyState(DocumentReadyState documentReadyState) {
+    switch (documentReadyState) {
+      case DocumentReadyState.loading:
+        return 'loading';
+      case DocumentReadyState.interactive:
+        return 'interactive';
+      case DocumentReadyState.complete:
+        return 'complete';
+    }
+  }
+
+  dynamic get compatMode => _compatMode;
+
+  get domain {
+    Uri uri = Uri.parse(controller.url);
+    _domain ??= uri.host;
+    return _domain;
+  }
+
+  set domain(value) {
+    _domain = value;
+  }
+
+  dynamic debugClearCookies(List<dynamic> args) {
+    cookie.clearAllCookies();
   }
 
   dynamic querySelector(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
     return QuerySelector.querySelector(this, args.first);
+  }
+  dynamic elementFromPoint(double x, double y) {
+    documentElement?.flushLayout();
+    return HitTestPoint(x, y);
+  }
+
+  Element? HitTestPoint(double x, double y) {
+    HitTestResult hitTestResult = HitTestInDocument(x, y);
+    Iterable<HitTestEntry> hitTestEntrys = hitTestResult.path;
+    if (hitTestResult.path.isNotEmpty) {
+      if (hitTestEntrys.first.target is RenderBoxModel) {
+        return (hitTestEntrys.first.target as RenderBoxModel).renderStyle.target;
+      }
+    }
+    return null;
+  }
+
+  HitTestResult HitTestInDocument(double x, double y) {
+    BoxHitTestResult boxHitTestResult = BoxHitTestResult();
+    Offset offset = Offset(x, y);
+    documentElement?.renderer?.hitTest(boxHitTestResult, position: offset);
+    return boxHitTestResult;
   }
 
   dynamic querySelectorAll(List<dynamic> args) {
@@ -229,6 +352,7 @@ class Document extends Node {
         // Init with viewport size.
         element.renderStyle.width = CSSLengthValue(viewport.viewportSize.width, CSSLengthType.PX);
         element.renderStyle.height = CSSLengthValue(viewport.viewportSize.height, CSSLengthType.PX);
+        _visibilityState = VisibilityState.visible;
       } else {
         // Detach document element.
         viewport.removeAll();
@@ -259,13 +383,14 @@ class Document extends Node {
   }
 
   @override
-  Node removeChild(Node child) {
+  Node? removeChild(Node child) {
+    Node? result = super.removeChild(child);
     if (documentElement == child) {
       documentElement = null;
       ruleSet.reset();
       styleSheets.clear();
     }
-    return super.removeChild(child);
+    return result;
   }
 
   @override
@@ -278,6 +403,12 @@ class Document extends Node {
 
   Element createElement(String type, [BindingContext? context]) {
     Element element = element_registry.createElement(type, context);
+    element.ownerDocument = this;
+    return element;
+  }
+
+  Element createElementNS(String uri, String type, [BindingContext? context]) {
+    Element element = element_registry.createElementNS(uri, type, context);
     element.ownerDocument = this;
     return element;
   }
@@ -310,7 +441,7 @@ class Document extends Node {
     styleSheets.addAll(sheets.map((e) => e.clone()));
     ruleSet.reset();
     for (var sheet in sheets) {
-      ruleSet.addRules(sheet.cssRules);
+      ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
     }
   }
 
@@ -335,11 +466,9 @@ class Document extends Node {
       _recalculating = false;
       return;
     }
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_START);
-    }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
+      styleDirtyElements.clear();
       return;
     }
     if (styleDirtyElements.any((element) {
@@ -354,17 +483,16 @@ class Document extends Node {
     }
     styleDirtyElements.clear();
     _recalculating = false;
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_FLUSH_STYLE_END);
-    }
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();
     adoptedStyleSheets.clear();
+    cookie.clearCookie();
     super.dispose();
   }
+
 }

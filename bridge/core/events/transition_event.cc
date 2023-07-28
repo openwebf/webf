@@ -39,11 +39,19 @@ TransitionEvent::TransitionEvent(ExecutingContext* context,
       Event(context, type, &native_transition_event->native_event),
       elapsed_time_(native_transition_event->elapsedTime),
 #if ANDROID_32_BIT
-      property_name_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_transition_event->propertyName))),
-      pseudo_element_(AtomicString(ctx(), reinterpret_cast<NativeString*>(native_transition_event->pseudoElement)))
+      property_name_(AtomicString(ctx(),
+                                  std::unique_ptr<AutoFreeNativeString>(
+                                      reinterpret_cast<AutoFreeNativeString*>(native_transition_event->propertyName)))),
+      pseudo_element_(AtomicString(ctx(),
+                                   std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(
+                                       native_transition_event->pseudoElement))))
 #else
-      property_name_(AtomicString(ctx(), native_transition_event->propertyName)),
-      pseudo_element_(AtomicString(ctx(), native_transition_event->pseudoElement))
+      property_name_(AtomicString(ctx(),
+                                  std::unique_ptr<AutoFreeNativeString>(
+                                      reinterpret_cast<AutoFreeNativeString*>(native_transition_event->propertyName)))),
+      pseudo_element_(AtomicString(ctx(),
+                                   std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(
+                                       native_transition_event->pseudoElement))))
 #endif
 {
 }

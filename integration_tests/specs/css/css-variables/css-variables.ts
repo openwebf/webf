@@ -59,6 +59,32 @@ describe('CSS Variables', () => {
     });
   });
 
+  it('change-style-003', async (done) => {
+    document.head.appendChild(
+      createStyle(`
+      :root {
+        --red: #red;
+      }
+      .container {
+          color: var(--red);
+      }
+    `)
+    );
+
+    document.body.appendChild(
+      <div class='container'>
+          <h2>The text should be green.</h2>
+      </div>
+    );
+
+    requestAnimationFrame(async () => {
+      var r = document.querySelector(':root');
+      r.style.setProperty('--red', 'green');
+      await snapshot();
+      done();
+    });
+  });
+
   it('variable resolve percentage color', async (done) => {
     document.head.appendChild(
       createStyle(`
@@ -247,6 +273,26 @@ describe('CSS Variables', () => {
       });
     });
   });
+
+  it('the text color should be green', async (done) => {
+
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode('Green Text'));
+      div.className = "textcolor";
+      document.body.appendChild(div);
+      const style = document.createElement('style');
+      document.head.appendChild(style);
+      style.appendChild(document.createTextNode(`
+        .textcolor {
+           color: green;
+         }
+      `));
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
+    });
 
   function createStyle(text) {
     const style = document.createElement('style');

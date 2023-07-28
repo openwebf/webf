@@ -8,7 +8,7 @@ namespace webf {
 
 StringView::StringView(const std::string& string) : bytes_(string.data()), length_(string.length()), is_8bit_(true) {}
 
-StringView::StringView(const NativeString* string)
+StringView::StringView(const SharedNativeString* string)
     : bytes_(string->string()), length_(string->length()), is_8bit_(false) {}
 
 StringView::StringView(void* bytes, unsigned length, bool is_wide_char)

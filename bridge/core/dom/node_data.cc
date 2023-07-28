@@ -13,28 +13,30 @@
 namespace webf {
 
 ChildNodeList* NodeData::GetChildNodeList(ContainerNode& node) {
-  assert(!child_node_list_ || &node == child_node_list_->VirtualOwnerNode());
-  return To<ChildNodeList>(child_node_list_.Get());
+  assert(!node_list_ || &node == node_list_->VirtualOwnerNode());
+  return To<ChildNodeList>(node_list_.Get());
 }
 
 ChildNodeList* NodeData::EnsureChildNodeList(ContainerNode& node) {
-  if (child_node_list_)
-    return To<ChildNodeList>(child_node_list_.Get());
+  if (node_list_)
+    return To<ChildNodeList>(node_list_.Get());
   auto* list = MakeGarbageCollected<ChildNodeList>(&node);
-  child_node_list_ = list;
+  node_list_ = list;
   return list;
 }
 
 EmptyNodeList* NodeData::EnsureEmptyChildNodeList(Node& node) {
-  if (child_node_list_)
-    return To<EmptyNodeList>(child_node_list_.Get());
+  if (node_list_)
+    return To<EmptyNodeList>(node_list_.Get());
   auto* list = MakeGarbageCollected<EmptyNodeList>(&node);
-  child_node_list_ = list;
+  node_list_ = list;
   return list;
 }
 
 void NodeData::Trace(GCVisitor* visitor) const {
-  visitor->Trace(child_node_list_->ToQuickJSUnsafe());
+  if (node_list_ != nullptr) {
+    visitor->TraceValue(node_list_->ToQuickJSUnsafe());
+  }
 }
 
 }  // namespace webf

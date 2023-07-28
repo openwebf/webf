@@ -13,16 +13,21 @@ class Comment : public CharacterData {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  static Comment* Create(ExecutingContext* context, ExceptionState& exception_state);
-  static Comment* Create(Document&);
+  static Comment* Create(ExecutingContext*, const AtomicString&, ExceptionState&);
+  static Comment* Create(Document&, const AtomicString&);
 
-  explicit Comment(TreeScope& tree_scope, ConstructionType type);
+  explicit Comment(TreeScope& tree_scope, const AtomicString& data, ConstructionType type);
 
   NodeType nodeType() const override;
 
  private:
   std::string nodeName() const override;
   Node* Clone(Document&, CloneChildrenFlag) const override;
+};
+
+template <>
+struct DowncastTraits<Comment> {
+  static bool AllowFrom(const Node& node) { return node.IsOtherNode(); }
 };
 
 }  // namespace webf

@@ -9,18 +9,19 @@
 
 namespace webf {
 
-Comment* Comment::Create(ExecutingContext* context, ExceptionState& exception_state) {
-  return MakeGarbageCollected<Comment>(*context->document(), ConstructionType::kCreateOther);
+Comment* Comment::Create(ExecutingContext* context, const AtomicString& data, ExceptionState& exception_state) {
+  return MakeGarbageCollected<Comment>(*context->document(), data.IsNull() ? AtomicString::Empty() : data,
+                                       ConstructionType::kCreateOther);
 }
 
-Comment* Comment::Create(Document& document) {
-  return MakeGarbageCollected<Comment>(document, ConstructionType::kCreateOther);
+Comment* Comment::Create(Document& document, const AtomicString& data) {
+  return MakeGarbageCollected<Comment>(document, data, ConstructionType::kCreateOther);
 }
 
-Comment::Comment(TreeScope& tree_scope, ConstructionType type)
-    : CharacterData(tree_scope, built_in_string::kempty_string, type) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCreateComment,
-                                                       (void*)bindingObject());
+Comment::Comment(TreeScope& tree_scope, const AtomicString& data, ConstructionType type)
+    : CharacterData(tree_scope, data, type) {
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCreateComment, nullptr, (void*)bindingObject(),
+                                                       nullptr);
 }
 
 Node::NodeType Comment::nodeType() const {
@@ -31,10 +32,9 @@ std::string Comment::nodeName() const {
 }
 
 Node* Comment::Clone(Document& factory, CloneChildrenFlag flag) const {
-  Node* copy = Create(factory);
-  std::unique_ptr<NativeString> args_01 = stringToNativeString(std::to_string(copy->eventTargetId()));
-  GetExecutingContext()->uiCommandBuffer()->addCommand(eventTargetId(), UICommand::kCloneNode, std::move(args_01),
-                                                       nullptr);
+  Node* copy = Create(factory, data());
+  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+                                                       copy->bindingObject());
   return copy;
 }
 

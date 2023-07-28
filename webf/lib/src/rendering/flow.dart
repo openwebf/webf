@@ -4,10 +4,8 @@
  */
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 
 // Position and size of each run (line box) in flow layout.
@@ -131,22 +129,12 @@ class RenderFlowLayout extends RenderLayoutBox {
   @override
   void performLayout() {
     doingThisLayout = true;
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      childLayoutDuration = 0;
-      PerformanceTiming.instance().mark(PERF_FLOW_LAYOUT_START, uniqueId: hashCode);
-    }
 
     _doPerformLayout();
 
     if (needsRelayout) {
       _doPerformLayout();
       needsRelayout = false;
-    }
-
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      DateTime flowLayoutEndTime = DateTime.now();
-      int amendEndTime = flowLayoutEndTime.microsecondsSinceEpoch - childLayoutDuration;
-      PerformanceTiming.instance().mark(PERF_FLOW_LAYOUT_END, uniqueId: hashCode, startTime: amendEndTime);
     }
     doingThisLayout = false;
   }
@@ -296,11 +284,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       if (isChildNeedsLayout) {
-        late DateTime childLayoutStart;
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          childLayoutStart = DateTime.now();
-        }
-
         // Inflate constraints of percentage renderBoxModel to force it layout after percentage resolved
         // cause Flutter will skip child layout if its constraints not changed between two layouts.
         if (child is RenderBoxModel && needsRelayout) {
@@ -312,11 +295,6 @@ class RenderFlowLayout extends RenderLayoutBox {
           );
         }
         child.layout(childConstraints, parentUsesSize: true);
-
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          DateTime childLayoutEnd = DateTime.now();
-          childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
-        }
       }
 
       double childMainAxisExtent = _getMainAxisExtent(child);
@@ -510,7 +488,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             // Element of display block will stretch to the width of its container
             // when its width is not specified.
             if (isChildBlockLevel && child.constraints.maxWidth.isInfinite) {
-              double contentBoxWidth = renderStyle.contentBoxWidth!;
+              double contentBoxWidth = isScrollingContentBox ? boxSize!.width : renderStyle.contentBoxWidth!;
               // No need to layout child when its width is identical to parent's width.
               if (child.renderStyle.borderBoxWidth == contentBoxWidth) {
                 continue;
@@ -716,6 +694,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (_lineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
         // Flex item baseline does not includes margin-bottom.
+        Size? boxSize = isScrollingContentBox ? (parent as RenderBoxModel).boxSize : this.boxSize;
         lineDistance = isParentFlowLayout ? marginTop + boxSize!.height + marginBottom : marginTop + boxSize!.height;
         return lineDistance;
       } else {
@@ -977,6 +956,8 @@ class RenderFlowLayout extends RenderLayoutBox {
             container.renderStyle.effectiveBorderBottomWidth.computedValue,
         maxScrollableCrossSizeOfChildren);
 
+    assert(maxScrollableMainSize.isFinite);
+    assert(maxScrollableCrossSize.isFinite);
     scrollableSize = Size(maxScrollableMainSize, maxScrollableCrossSize);
   }
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <sys/time.h>
+#include <chrono>
 #include <vector>
 
 #include "bindings/qjs/native_string_utils.h"
@@ -15,21 +15,6 @@
 #include "webf_bridge_test.h"
 #include "webf_test_context.h"
 #include "webf_test_env.h"
-
-#if defined(__linux__) || defined(__APPLE__)
-static int64_t get_time_ms(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
-}
-#else
-/* more portable, but does not work if the date is updated */
-static int64_t get_time_ms(void) {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return (int64_t)tv.tv_sec * 1000 + (tv.tv_usec / 1000);
-}
-#endif
 
 namespace webf {
 class WebFTestContext;
@@ -68,9 +53,9 @@ static void unlink_callback(JSThreadState* ts, JSFrameCallback* th) {
 
 NativeValue* TEST_invokeModule(void* callbackContext,
                                int32_t contextId,
-                               NativeString* moduleName,
-                               NativeString* method,
-                               NativeString* params,
+                               SharedNativeString* moduleName,
+                               SharedNativeString* method,
+                               SharedNativeString* params,
                                AsyncModuleCallback callback) {
   std::string module = nativeStringToStdString(moduleName);
 
@@ -97,10 +82,12 @@ int32_t timerId = 0;
 
 int32_t TEST_setTimeout(webf::DOMTimer* timer, int32_t contextId, AsyncCallback callback, int32_t timeout) {
   auto* context = timer->context();
-  JSRuntime* rt = context->dartContext()->runtime();
+  JSRuntime* rt = context->dartIsolateContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
-  th->timeout = get_time_ms() + timeout;
+  auto now = std::chrono::system_clock::now();
+  std::time_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+  th->timeout = current_time + timeout;
   th->func = callback;
   th->timer = timer;
   th->contextId = contextId;
@@ -114,10 +101,12 @@ int32_t TEST_setTimeout(webf::DOMTimer* timer, int32_t contextId, AsyncCallback 
 
 int32_t TEST_setInterval(webf::DOMTimer* timer, int32_t contextId, AsyncCallback callback, int32_t timeout) {
   auto* context = timer->context();
-  JSRuntime* rt = context->dartContext()->runtime();
+  JSRuntime* rt = context->dartIsolateContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
-  th->timeout = get_time_ms() + timeout;
+  auto now = std::chrono::system_clock::now();
+  std::time_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+  th->timeout = current_time + timeout;
   th->func = callback;
   th->timer = timer;
   th->contextId = contextId;
@@ -133,7 +122,7 @@ int32_t callbackId = 0;
 
 uint32_t TEST_requestAnimationFrame(webf::FrameCallback* frameCallback, int32_t contextId, AsyncRAFCallback handler) {
   auto* context = frameCallback->context();
-  JSRuntime* rt = context->dartContext()->runtime();
+  JSRuntime* rt = context->dartIsolateContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSFrameCallback* th = static_cast<JSFrameCallback*>(js_mallocz(context->ctx(), sizeof(*th)));
   th->handler = handler;
@@ -151,14 +140,14 @@ uint32_t TEST_requestAnimationFrame(webf::FrameCallback* frameCallback, int32_t 
 void TEST_cancelAnimationFrame(int32_t contextId, int32_t id) {
   auto* page = test_context_map[contextId]->page();
   auto* context = page->GetExecutingContext();
-  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartContext()->runtime()));
+  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->runtime()));
   ts->os_frameCallbacks.erase(id);
 }
 
 void TEST_clearTimeout(int32_t contextId, int32_t timerId) {
   auto* page = test_context_map[contextId]->page();
   auto* context = page->GetExecutingContext();
-  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartContext()->runtime()));
+  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->runtime()));
   ts->os_timers.erase(timerId);
 }
 
@@ -170,7 +159,7 @@ double TEST_devicePixelRatio(int32_t contextId) {
   return 1.0;
 }
 
-NativeString* TEST_platformBrightness(int32_t contextId) {
+SharedNativeString* TEST_platformBrightness(int32_t contextId) {
   return nullptr;
 }
 
@@ -188,6 +177,10 @@ void TEST_flushUICommand(int32_t contextId) {
   clearUICommandItems(reinterpret_cast<void*>(page));
 }
 
+void TEST_CreateBindingObject(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc) {
+
+}
+
 void TEST_onJsLog(int32_t contextId, int32_t level, const char*) {}
 
 #if ENABLE_PROFILE
@@ -197,35 +190,40 @@ NativePerformanceEntryList* TEST_getPerformanceEntries(int32_t) {
 #endif
 
 std::once_flag testInitOnceFlag;
-static int32_t inited{false};
 int32_t contextId = 0;
 
-std::unique_ptr<webf::WebFPage> TEST_init(OnJSError onJsError) {
-  if (!inited) {
-    auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
-    initDartContext(mockedDartMethods.data(), mockedDartMethods.size());
-    inited = true;
-  }
+WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPage* page)
+    : page_(page), isolate_context_(owner_isolate_context) {}
+
+WebFTestEnv::~WebFTestEnv() {
+  delete isolate_context_;
+}
+
+std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
+  auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
+  auto* dart_isolate_context = initDartIsolateContext(mockedDartMethods.data(), mockedDartMethods.size());
   int pageContextId = contextId++;
-  auto* page = allocateNewPage(pageContextId);
+  auto* page = allocateNewPage(dart_isolate_context, pageContextId);
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
   JSThreadState* th = new JSThreadState();
   JS_SetRuntimeOpaque(
-      reinterpret_cast<WebFTestContext*>(testContext)->page()->GetExecutingContext()->dartContext()->runtime(), th);
-
-  return std::unique_ptr<webf::WebFPage>(reinterpret_cast<webf::WebFPage*>(page));
+      reinterpret_cast<WebFTestContext*>(testContext)->page()->GetExecutingContext()->dartIsolateContext()->runtime(),
+      th);
+  return std::make_unique<WebFTestEnv>((webf::DartIsolateContext*)dart_isolate_context, (webf::WebFPage*)page);
 }
 
-std::unique_ptr<webf::WebFPage> TEST_init() {
+std::unique_ptr<WebFTestEnv> TEST_init() {
   return TEST_init(nullptr);
 }
 
 std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
+  auto dart_isolate_context = std::unique_ptr<DartIsolateContext>(
+      (DartIsolateContext*)initDartIsolateContext(mockedDartMethods.data(), mockedDartMethods.size()));
   int pageContextId = contextId++;
-  auto* page = allocateNewPage(pageContextId);
+  auto* page = allocateNewPage(dart_isolate_context.get(), pageContextId);
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
 
@@ -233,7 +231,7 @@ std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
 }
 
 static bool jsPool(webf::ExecutingContext* context) {
-  JSRuntime* rt = context->dartContext()->runtime();
+  JSRuntime* rt = context->dartIsolateContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   int64_t cur_time, delay;
   struct list_head* el;
@@ -242,7 +240,8 @@ static bool jsPool(webf::ExecutingContext* context) {
     return true; /* no more events */
 
   if (!ts->os_timers.empty()) {
-    cur_time = get_time_ms();
+    auto now = std::chrono::system_clock::now();
+    cur_time = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
     for (auto& entry : ts->os_timers) {
       JSOSTimer* th = entry.second;
       delay = th->timeout - cur_time;
@@ -292,9 +291,19 @@ void TEST_onMatchImageSnapshot(void* callbackContext,
                                int32_t contextId,
                                uint8_t* bytes,
                                int32_t length,
-                               NativeString* name,
+                               SharedNativeString* name,
                                MatchImageSnapshotCallback callback) {
   callback(callbackContext, contextId, 1, nullptr);
+}
+
+void TEST_onMatchImageSnapshotBytes(void* callback_context,
+                                    int32_t context_id,
+                                    uint8_t* image_a_bytes,
+                                    int32_t image_a_size,
+                                    uint8_t* image_b_bytes,
+                                    int32_t image_b_size,
+                                    MatchImageSnapshotCallback callback) {
+  callback(callback_context, contextId, 1, nullptr);
 }
 
 const char* TEST_environment() {
@@ -303,21 +312,20 @@ const char* TEST_environment() {
 
 void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 
-void TEST_simulateInputText(NativeString* nativeString) {}
+void TEST_simulateInputText(SharedNativeString* nativeString) {}
 
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
-  std::vector<uint64_t> mockMethods{
-      reinterpret_cast<uint64_t>(TEST_invokeModule),
-      reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
-      reinterpret_cast<uint64_t>(TEST_reloadApp),
-      reinterpret_cast<uint64_t>(TEST_setTimeout),
-      reinterpret_cast<uint64_t>(TEST_setInterval),
-      reinterpret_cast<uint64_t>(TEST_clearTimeout),
-      reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
-      reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
-      reinterpret_cast<uint64_t>(TEST_toBlob),
-      reinterpret_cast<uint64_t>(TEST_flushUICommand),
-  };
+  std::vector<uint64_t> mockMethods{reinterpret_cast<uint64_t>(TEST_invokeModule),
+                                    reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
+                                    reinterpret_cast<uint64_t>(TEST_reloadApp),
+                                    reinterpret_cast<uint64_t>(TEST_setTimeout),
+                                    reinterpret_cast<uint64_t>(TEST_setInterval),
+                                    reinterpret_cast<uint64_t>(TEST_clearTimeout),
+                                    reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_toBlob),
+                                    reinterpret_cast<uint64_t>(TEST_flushUICommand),
+                                    reinterpret_cast<uint64_t>(TEST_CreateBindingObject)};
 
 #if ENABLE_PROFILE
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_getPerformanceEntries));
@@ -334,6 +342,7 @@ void TEST_mockTestEnvDartMethods(void* testContext, OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{
       reinterpret_cast<uint64_t>(onJSError),
       reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshot),
+      reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshotBytes),
       reinterpret_cast<uint64_t>(TEST_environment),
       reinterpret_cast<uint64_t>(TEST_simulatePointer),
       reinterpret_cast<uint64_t>(TEST_simulateInputText),

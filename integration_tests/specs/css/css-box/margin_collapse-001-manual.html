@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>margin collapse Test: margin-bottom</title>
+  <style>
+    .parent {
+      width: 100%;
+    }
+
+    .j4Cp {
+      border-radius: 20px;
+      margin-bottom: 20px;
+      height: 80px;
+      display: flex;
+    }
+
+    .all {
+      border-radius: 20px;
+      margin: 20px;
+      height: 80px;
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+
+<div class="parent" style="background:gold;">
+  <div class="j4Cp" style="background:red;"></div>
+</div>
+
+<div class="parent" style="background:gold;">
+  <div class="j4Cp" style="background:red;"></div>
+</div>
+
+<div class="parent" style="background:gold;">
+  <div class="j4Cp" style="background:red;"></div>
+</div>
+
+<div class="parent" style="background:gold;">
+  <div class="all" style="background:blue;"></div>
+</div>
+<div class="parent" style="background:gold;">
+  <div class="all" style="background:blue;"></div>
+</div>
+<div class="parent" style="background:gold;">
+  <div class="all" style="background:blue;"></div>
+</div>
+
+</body>
+<script>
+  await snapshotAction();
+  await sleep(0.1);
+</script>
+</html>

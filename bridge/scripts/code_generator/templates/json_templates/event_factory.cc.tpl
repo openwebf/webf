@@ -67,7 +67,7 @@ static void CreateEventFunctionMap() {
   // Empty array initializer lists are illegal [dcl.init.aggr] and will not
   // compile in MSVC. If tags list is empty, add check to skip this.
 
-  static const CreateEventFunctionMapData data[] = {
+  const CreateEventFunctionMapData data[] = {
 
       <% _.forEach(data, (item, index) => { %>
           <% if (_.isString(item)) { %>

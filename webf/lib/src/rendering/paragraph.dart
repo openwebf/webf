@@ -7,6 +7,7 @@ import 'dart:ui' as ui show LineMetrics, Gradient, Shader, TextBox, TextHeightBe
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/css.dart';
 
 const String _kEllipsis = '\u2026';
 
@@ -40,10 +41,12 @@ class WebFRenderParagraph extends RenderBox
     TextWidthBasis textWidthBasis = TextWidthBasis.parent,
     ui.TextHeightBehavior? textHeightBehavior,
     List<RenderBox>? children,
+    TextPainterCallback? foregroundCallback,
   })  : assert(text.debugAssertIsValid()),
         assert(maxLines == null || maxLines > 0),
         _softWrap = softWrap,
         _overflow = overflow,
+        _foregroundCallback = foregroundCallback,
         _textPainter = TextPainter(
             text: text,
             textAlign: textAlign,
@@ -140,6 +143,8 @@ class WebFRenderParagraph extends RenderBox
     _softWrap = value;
     markNeedsLayout();
   }
+
+  final TextPainterCallback? _foregroundCallback;
 
   /// How visual overflow should be handled.
   TextOverflow get overflow => _overflow;
@@ -448,6 +453,18 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void performLayout() {
+    if (_foregroundCallback != null) {
+      _textPainter.layout();
+      Size size = _textPainter.size;
+      final paint = _foregroundCallback!(Rect.fromLTWH(0, 0, size.width, size.height));
+      if (paint != null) {
+        text = TextSpan(
+            text: text.text,
+            style: text.style?.copyWith(foreground: paint)
+        );
+      }
+    }
+
     layoutText();
 
     // We grab _textPainter.size and _textPainter.didExceedMaxLines here because

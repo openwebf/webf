@@ -26,9 +26,9 @@ ScriptPromiseResolver::~ScriptPromiseResolver() {
 }
 
 void ScriptPromiseResolver::Trace(GCVisitor* visitor) const {
-  visitor->Trace(promise_);
-  visitor->Trace(resolve_func_);
-  visitor->Trace(reject_func_);
+  visitor->TraceValue(promise_);
+  visitor->TraceValue(resolve_func_);
+  visitor->TraceValue(reject_func_);
 }
 
 ScriptPromise ScriptPromiseResolver::Promise() {

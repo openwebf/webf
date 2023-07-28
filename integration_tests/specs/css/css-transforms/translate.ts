@@ -40,6 +40,36 @@ describe('Transform translate', () => {
     await snapshot();
   });
 
+  it('should work with percentage with one value when dynamic created', async (done) => {
+    let div;
+    div = createElement(
+      'div',
+      {
+        style: {
+          width: '200px',
+          height: '200px',
+          backgroundColor: 'yellow',
+          position: 'relative',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            transform: 'translate(40%)',
+            backgroundColor: 'green',
+          }
+        }, [
+          createText('TEXT TEXT')
+        ])
+      ]
+    );
+    requestAnimationFrame(async () => {
+      BODY.appendChild(div);
+      await snapshot();
+      done();
+    });
+  });
+
   it('should work with percentage with two values', async () => {
     let div;
     div = createElement(
@@ -160,7 +190,7 @@ describe('Transform translate', () => {
        done();
     });
   });
-  
+
   it('should be scrollWidth equal clientWidth', async () => {
     let div2;
     let div;

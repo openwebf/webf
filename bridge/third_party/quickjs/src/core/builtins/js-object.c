@@ -578,6 +578,32 @@ JSValue js_object_hasOwnProperty(JSContext* ctx, JSValueConst this_val, int argc
     return JS_NewBool(ctx, ret);
 }
 
+JSValue js_object_hasOwn(JSContext *ctx, JSValueConst this_val,
+                                int argc, JSValueConst *argv)
+{
+  JSValue obj;
+  JSAtom atom;
+  JSObject *p;
+  BOOL ret;
+
+  obj = JS_ToObject(ctx, argv[0]);
+  if (JS_IsException(obj))
+    return obj;
+  atom = JS_ValueToAtom(ctx, argv[1]);
+  if (unlikely(atom == JS_ATOM_NULL)) {
+    JS_FreeValue(ctx, obj);
+    return JS_EXCEPTION;
+  }
+  p = JS_VALUE_GET_OBJ(obj);
+  ret = JS_GetOwnPropertyInternal(ctx, NULL, p, atom);
+  JS_FreeAtom(ctx, atom);
+  JS_FreeValue(ctx, obj);
+  if (ret < 0)
+    return JS_EXCEPTION;
+  else
+    return JS_NewBool(ctx, ret);
+}
+
 JSValue js_object_valueOf(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   return JS_ToObject(ctx, this_val);
 }

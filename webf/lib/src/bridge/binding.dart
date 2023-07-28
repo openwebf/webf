@@ -9,9 +9,9 @@ import 'dart:collection';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/geometry.dart';
 import 'package:webf/foundation.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
@@ -39,7 +39,13 @@ List<BindingCallFunc> bindingCallMethodDispatchTable = [
 ];
 
 // Dispatch the event to the binding side.
-void _dispatchEventToNative(Event event) {
+void _dispatchNomalEventToNative(Event event) {
+  _dispatchEventToNative(event, false);
+}
+void _dispatchCaptureEventToNative(Event event) {
+  _dispatchEventToNative(event, true);
+}
+void _dispatchEventToNative(Event event, bool isCapture) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
   if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr) {
@@ -48,7 +54,7 @@ void _dispatchEventToNative(Event event) {
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
     Pointer<Void> rawEvent = event.toRaw().cast<Void>();
-    List<dynamic> dispatchEventArguments = [event.type, rawEvent];
+    List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCapture];
 
     if (isEnabledLog) {
       print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
@@ -73,6 +79,10 @@ void _dispatchEventToNative(Event event) {
   }
 }
 
+enum CreateBindingObjectType {
+  createDOMMatrix
+}
+
 abstract class BindingBridge {
   static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNative =
       Pointer.fromFunction(invokeBindingMethodFromNativeImpl);
@@ -82,19 +92,33 @@ abstract class BindingBridge {
 
   static final SplayTreeMap<int, BindingObject> _nativeObjects = SplayTreeMap();
 
-  static BindingObject getBindingObject(Pointer pointer) {
-    BindingObject? target = _nativeObjects[pointer.address];
-    if (target == null) {
-      throw FlutterError('Can not get binding object: $pointer');
+  static T? getBindingObject<T>(Pointer pointer) {
+    return _nativeObjects[pointer.address] as T?;
+  }
+  static bool hasBindingObject(Pointer pointer) {
+    return _nativeObjects.containsKey(pointer.address);
+  }
+
+  static void createBindingObject(int contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
+    List<dynamic> arguments = List.generate(argc, (index) {
+      return fromNativeValue(args.elementAt(index));
+    });
+    switch(type) {
+      case CreateBindingObjectType.createDOMMatrix: {
+        DOMMatrix domMatrix = DOMMatrix(BindingContext(contextId, pointer), arguments);
+        _nativeObjects[pointer.address] = domMatrix;
+        return;
+      }
     }
-    return target;
   }
 
   static void _bindObject(BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
-    if (nativeBindingObject != null && !nativeBindingObject.ref.disposed) {
+    if (nativeBindingObject != null) {
       _nativeObjects[nativeBindingObject.address] = object;
-      nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
+      if (!nativeBindingObject.ref.disposed) {
+        nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
+      }
     }
   }
 
@@ -116,32 +140,31 @@ abstract class BindingBridge {
     BindingObject.unbind = null;
   }
 
-  static void listenEvent(EventTarget target, String type) {
-    assert(_debugShouldNotListenMultiTimes(target, type),
-        'Failed to listen event \'$type\' for $target, for which is already bound.');
-    target.addEventListener(type, _dispatchEventToNative);
-  }
-
-  static void unlistenEvent(EventTarget target, String type) {
-    assert(_debugShouldNotUnlistenEmpty(target, type),
-        'Failed to unlisten event \'$type\' for $target, for which is already unbound.');
-    target.removeEventListener(type, _dispatchEventToNative);
-  }
-
-  static bool _debugShouldNotListenMultiTimes(EventTarget target, String type) {
-    Map<String, List<EventHandler>> eventHandlers = target.getEventHandlers();
-    List<EventHandler>? handlers = eventHandlers[type];
-    if (handlers != null) {
-      return !handlers.contains(_dispatchEventToNative);
+  static void listenEvent(EventTarget target, String type, {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
+    bool isCapture = addEventListenerOptions != null ? addEventListenerOptions.ref.capture : false;
+    if (!hasListener(target, type, isCapture: isCapture)) {
+      EventListenerOptions? eventListenerOptions;
+      if (addEventListenerOptions != null && addEventListenerOptions.ref.capture) {
+        eventListenerOptions = EventListenerOptions(addEventListenerOptions.ref.capture, addEventListenerOptions.ref.passive, addEventListenerOptions.ref.once);
+        target.addEventListener(type, _dispatchCaptureEventToNative, addEventListenerOptions: eventListenerOptions);
+      } else
+        target.addEventListener(type, _dispatchNomalEventToNative, addEventListenerOptions: eventListenerOptions);
     }
-    return true;
   }
 
-  static bool _debugShouldNotUnlistenEmpty(EventTarget target, String type) {
-    Map<String, List<EventHandler>> eventHandlers = target.getEventHandlers();
+  static void unlistenEvent(EventTarget target, String type, {bool isCapture = false}) {
+    if (isCapture)
+      target.removeEventListener(type, _dispatchCaptureEventToNative, isCapture: isCapture);
+    else
+      target.removeEventListener(type, _dispatchNomalEventToNative, isCapture: isCapture);
+
+  }
+
+  static bool hasListener(EventTarget target, String type, {bool isCapture = false}) {
+    Map<String, List<EventHandler>> eventHandlers = isCapture ? target.getCaptureEventHandlers() : target.getEventHandlers();
     List<EventHandler>? handlers = eventHandlers[type];
     if (handlers != null) {
-      return handlers.contains(_dispatchEventToNative);
+      return isCapture ? handlers.contains(_dispatchCaptureEventToNative) : handlers.contains(_dispatchNomalEventToNative);
     }
     return false;
   }
