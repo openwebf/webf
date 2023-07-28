@@ -6,5 +6,6 @@ interface AnimationEvent extends Event {
     readonly animationName: string;
     readonly elapsedTime: number;
     readonly pseudoElement: string;
+    [key: string]: any;
     new(type: string, init?: AnimationEventInit): AnimationEvent;
 }

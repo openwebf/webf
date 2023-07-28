@@ -25,7 +25,10 @@ class DOMMatrixReadonly : public BindingObject {
                              const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
                              ExceptionState& exception_state);
 
-  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 };
 
 }  // namespace webf

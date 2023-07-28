@@ -6,5 +6,6 @@ interface TransitionEvent extends Event {
     readonly elapsedTime: number;
     readonly propertyName: string;
     readonly pseudoElement: string;
+    [key: string]: any;
     new(type: string, init?: TransitionEventInit): TransitionEvent;
 }

@@ -16,7 +16,10 @@ void CanvasPattern::setTransform(DOMMatrix* dom_matrix, ExceptionState& exceptio
   InvokeBindingMethod(binding_call_methods::ksetTransform, 1, arguments, exception_state);
 }
 
-NativeValue CanvasPattern::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
+NativeValue CanvasPattern::HandleCallFromDartSide(const AtomicString& method,
+                                                  int32_t argc,
+                                                  const NativeValue* argv,
+                                                  Dart_Handle dart_object) {
   return Native_NewNull();
 }
 

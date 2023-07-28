@@ -178,6 +178,10 @@ class Event {
   bool _immediateBubble = true;
   bool propagationStopped = false;
 
+  Pointer<Void> sharedJSProps = nullptr;
+  int propLen = 0;
+  int allocateLen = 0;
+
   Event(
     this.type, {
     this.bubbles = false,
@@ -216,6 +220,9 @@ class Event {
       defaultPrevented ? 1 : 0,
       (_target != null && _target.pointer != null) ? _target.pointer!.address : nullptr.address,
       (_currentTarget != null && _currentTarget.pointer != null) ? _currentTarget.pointer!.address : nullptr.address,
+      sharedJSProps.address, // EventProps* props
+      propLen,  // int64_t props_len
+      allocateLen   // int64_t alloc_size;
     ];
 
     // Allocate extra bytes to store subclass's members.

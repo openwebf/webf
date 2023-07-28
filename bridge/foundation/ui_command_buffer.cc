@@ -29,12 +29,13 @@ UICommandBuffer::~UICommandBuffer() {
 void UICommandBuffer::addCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
                                  void* nativePtr,
-                                 void* nativePtr2) {
+                                 void* nativePtr2,
+                                 bool request_ui_update) {
   UICommandItem item{static_cast<int32_t>(type), args_01.get(), nativePtr, nativePtr2};
-  addCommand(item);
+  addCommand(item, request_ui_update);
 }
 
-void UICommandBuffer::addCommand(const UICommandItem& item) {
+void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_update) {
   if (UNLIKELY(!context_->dartIsolateContext()->valid())) {
     return;
   }
@@ -45,7 +46,7 @@ void UICommandBuffer::addCommand(const UICommandItem& item) {
   }
 
 #if FLUTTER_BACKEND
-  if (UNLIKELY(!update_batched_ && context_->IsContextValid() &&
+  if (UNLIKELY(request_ui_update && !update_batched_ && context_->IsContextValid() &&
                context_->dartMethodPtr()->requestBatchUpdate != nullptr)) {
     context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
     update_batched_ = true;

@@ -57,14 +57,18 @@ class UICommandBuffer {
   UICommandBuffer() = delete;
   explicit UICommandBuffer(ExecutingContext* context);
   ~UICommandBuffer();
-  void addCommand(UICommand type, std::unique_ptr<SharedNativeString>&& args_01, void* nativePtr, void* nativePtr2);
+  void addCommand(UICommand type,
+                  std::unique_ptr<SharedNativeString>&& args_01,
+                  void* nativePtr,
+                  void* nativePtr2,
+                  bool request_ui_update = true);
   UICommandItem* data();
   int64_t size();
   bool empty();
   void clear();
 
  private:
-  void addCommand(const UICommandItem& item);
+  void addCommand(const UICommandItem& item, bool request_ui_update = true);
 
   ExecutingContext* context_{nullptr};
   UICommandItem buffer_[MAXIMUM_UI_COMMAND_SIZE];

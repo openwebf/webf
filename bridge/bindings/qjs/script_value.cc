@@ -73,14 +73,22 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
     }
     case NativeTag::TAG_POINTER: {
       auto* ptr = static_cast<NativeBindingObject*>(native_value.u.ptr);
-      auto* binding_object = BindingObject::From(ptr);
+      auto pointer_type = static_cast<JSPointerType>(native_value.uint32);
 
-      // Only eventTarget can be converted from nativeValue to JSValue.
-      auto* event_target = DynamicTo<EventTarget>(binding_object);
-      if (event_target) {
-        return event_target->ToQuickJS();
+      switch (pointer_type) {
+        case JSPointerType::NativeBindingObject: {
+          auto* binding_object = BindingObject::From(ptr);
+          // Only eventTarget can be converted from nativeValue to JSValue.
+          auto* event_target = DynamicTo<EventTarget>(binding_object);
+          if (event_target) {
+            return event_target->ToQuickJS();
+          }
+          break;
+        }
+        case JSPointerType::Others: {
+          return JS_DupValue(context->ctx(), JS_MKPTR(JS_TAG_OBJECT, ptr));
+        }
       }
-
       return JS_NULL;
     }
   }
@@ -163,7 +171,7 @@ std::unique_ptr<SharedNativeString> ScriptValue::ToNativeString() const {
   return ToString().ToNativeString(ctx_);
 }
 
-NativeValue ScriptValue::ToNative(ExceptionState& exception_state) const {
+NativeValue ScriptValue::ToNative(ExceptionState& exception_state, bool shared_js_value) const {
   int8_t tag = JS_VALUE_GET_TAG(value_);
 
   switch (tag) {
@@ -191,14 +199,19 @@ NativeValue ScriptValue::ToNative(ExceptionState& exception_state) const {
             Converter<IDLSequence<IDLAny>>::FromValue(ctx_, value_, ASSERT_NO_EXCEPTION());
         auto* result = new NativeValue[values.size()];
         for (int i = 0; i < values.size(); i++) {
-          result[i] = values[i].ToNative(exception_state);
+          result[i] = values[i].ToNative(exception_state, shared_js_value);
         }
         return Native_NewList(values.size(), result);
       } else if (JS_IsObject(value_)) {
         if (QJSEventTarget::HasInstance(ExecutingContext::From(ctx_), value_)) {
           auto* event_target = toScriptWrappable<EventTarget>(value_);
-          return Native_NewPtr(JSPointerType::Others, event_target->bindingObject());
+          return Native_NewPtr(JSPointerType::NativeBindingObject, event_target->bindingObject());
         }
+
+        if (shared_js_value) {
+          return Native_NewPtr(JSPointerType::Others, JS_VALUE_GET_PTR(value_));
+        }
+
         return NativeValueConverter<NativeTypeJSON>::ToNativeValue(*this, exception_state);
       }
     }

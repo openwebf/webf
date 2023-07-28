@@ -12,5 +12,6 @@ interface TouchEvent extends UIEvent {
     readonly metaKey: boolean;
     readonly ctrlKey: boolean;
     readonly shiftKey: boolean;
+    [key: string]: any;
     new(type: string, init?: TouchEventInit): TouchEvent;
 }

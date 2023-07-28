@@ -93,7 +93,7 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
   if (JS_HasProperty(ctx, prototypeObject, atom)) {
     JSValue target = JS_DupValue(ctx, prototypeObject);
     JSValue setterFunc = JS_UNDEFINED;
-    while (JS_IsUndefined(setterFunc)) {
+    while (JS_IsUndefined(setterFunc) && JS_IsObject(target)) {
       JSPropertyDescriptor descriptor;
       descriptor.setter = JS_UNDEFINED;
       descriptor.getter = JS_UNDEFINED;
@@ -110,6 +110,10 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
       target = new_target;
       JS_FreeValue(ctx, descriptor.getter);
       JS_FreeValue(ctx, descriptor.setter);
+    }
+
+    if (!JS_IsFunction(ctx, setterFunc)) {
+      return -1;
     }
 
     assert_m(JS_IsFunction(ctx, setterFunc), "Setter on prototype should be an function.");

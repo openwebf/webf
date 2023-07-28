@@ -27,7 +27,10 @@ class WidgetElement : public HTMLElement {
   bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
 
-  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);

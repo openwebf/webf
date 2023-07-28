@@ -12,5 +12,6 @@ interface UIEvent extends Event {
     readonly view: Window | null;
     /** @deprecated */
     readonly which: number;
+    [key: string]: any;
     new(type: string, init?: UIEventInit): UIEvent;
 }

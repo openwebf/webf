@@ -21,6 +21,7 @@ interface KeyboardEvent extends UIEvent {
     readonly DOM_KEY_LOCATION_NUMPAD: StaticMember<number>;
     readonly DOM_KEY_LOCATION_RIGHT: StaticMember<number>;
     readonly DOM_KEY_LOCATION_STANDARD: StaticMember<number>;
+    [key: string]: any;
 
     new(type: string, init?: KeyboardEventInit): KeyboardEvent;
 }

@@ -7,6 +7,7 @@
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "event_factory.h"
+#include "include/dart_api.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
 #include "qjs_event_target.h"
@@ -343,19 +344,22 @@ DispatchEventResult EventTarget::DispatchEventInternal(Event& event, ExceptionSt
   return dispatch_result;
 }
 
-NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
+NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method,
+                                                int32_t argc,
+                                                const NativeValue* argv,
+                                                Dart_Handle dart_object) {
   if (!isContextValid(contextId()))
     return Native_NewNull();
   MemberMutationScope mutation_scope{GetExecutingContext()};
 
   if (method == binding_call_methods::kdispatchEvent) {
-    return HandleDispatchEventFromDart(argc, argv);
+    return HandleDispatchEventFromDart(argc, argv, dart_object);
   }
 
   return Native_NewNull();
 }
 
-NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv) {
+NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv, Dart_Handle dart_object) {
   assert(argc >= 2);
   NativeValue native_event_type = argv[0];
   NativeValue native_is_capture = argv[2];
@@ -370,6 +374,20 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   event->SetEventPhase(Event::kAtTarget);
   DispatchEventResult dispatch_result = FireEventListeners(*event, isCapture, exception_state);
   event->SetEventPhase(0);
+
+  auto* wire = new DartWireContext();
+  wire->jsObject = event->ToValue();
+
+  auto dart_object_finalize_callback = [](void* isolate_callback_data, void* peer) {
+    auto* wire = (DartWireContext*)(peer);
+    if (IsDartWireAlive(wire)) {
+      DeleteDartWire(wire);
+    }
+  };
+
+  WatchDartWire(wire);
+  Dart_NewFinalizableHandle_DL(dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext),
+                               dart_object_finalize_callback);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx());
