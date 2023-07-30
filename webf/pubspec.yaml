@@ -13,7 +13,7 @@ dependencies:
   path: ^1.8.1 # Pure dart module.
   meta: ^1.7.0 # Pure dart module.
   ffi: ^2.0.1 # Pure dart module.
-  intl: ^0.18.1 #Pure dart module.
+  intl: '>=0.17.0 <1.0.0' # Pure dart module.
   hive: ^2.2.3
   characters: ^1.2.0
   collection: ^1.16.0
