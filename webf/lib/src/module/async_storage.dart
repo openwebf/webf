@@ -60,55 +60,41 @@ class AsyncStorageModule extends BaseModule {
   void dispose() {}
 
   @override
-  String invoke(String method, params, InvokeModuleCallback callback) {
-    switch (method) {
-      case 'getItem':
-        AsyncStorageModule.getItem(params).then((String? value) {
-          callback(data: value ?? '');
-        }).catchError((e, stack) {
-          callback(error: '$e\n$stack');
-        });
-        break;
-      case 'setItem':
-        String key = params[0];
-        String value = params[1];
-        AsyncStorageModule.setItem(key, value).then((bool isSuccess) {
+  FutureOr<String> invoke(String method, params, InvokeModuleCallback callback) async {
+    try {
+      switch (method) {
+        case 'getItem':
+          String? value = await AsyncStorageModule.getItem(params);
+          callback(data: value ?? '');;
+          break;
+        case 'setItem':
+          String key = params[0];
+          String value = params[1];
+          bool isSuccess = await AsyncStorageModule.setItem(key, value);
           callback(data: isSuccess.toString());
-        }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
-        });
-        break;
-      case 'removeItem':
-        AsyncStorageModule.removeItem(params).then((bool isSuccess) {
+          break;
+        case 'removeItem':
+          bool isSuccess = await AsyncStorageModule.removeItem(params);
           callback(data: isSuccess.toString());
-        }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
-        });
-        break;
-      case 'getAllKeys':
-        AsyncStorageModule.getAllKeys().then((Set<String> set) {
+          break;
+        case 'getAllKeys':
+          Set<String> set = await AsyncStorageModule.getAllKeys();
           List<String> list = List.from(set);
           callback(data: list);
-        }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
-        });
-        break;
-      case 'clear':
-        AsyncStorageModule.clear().then((bool isSuccess) {
+          break;
+        case 'clear':
+          bool isSuccess = await AsyncStorageModule.clear();
           callback(data: isSuccess.toString());
-        }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
-        });
-        break;
-      case 'length':
-        AsyncStorageModule.length().then((int length) {
+          break;
+        case 'length':
+          int length = await AsyncStorageModule.length();
           callback(data: length);
-        }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
-        });
-        break;
-      default:
-        throw Exception('AsyncStorage: Unknown method $method');
+          break;
+        default:
+          throw Exception('AsyncStorage: Unknown method $method');
+      }
+    } catch (e, stack) {
+      callback(error: '$e\n$stack');
     }
 
     return '';

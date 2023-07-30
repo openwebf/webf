@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:webf/src/module/module_manager.dart';
 
@@ -25,20 +27,20 @@ class ClipBoardModule extends BaseModule {
   void dispose() {}
 
   @override
-  String invoke(String method, params, callback) {
-    if (method == 'readText') {
-      ClipBoardModule.readText().then((String value) {
-        callback(data: value);
-      }).catchError((e, stack) {
-        callback(error: '$e\n$stack');
-      });
-    } else if (method == 'writeText') {
-      ClipBoardModule.writeText(params).then((_) {
-        callback();
-      }).catchError((e, stack) {
-        callback(error: '');
-      });
+  FutureOr<String> invoke(String method, params, callback) async {
+    try {
+
+    } catch (e, stack) {
+      callback(error: '$e\n$stack');
     }
+    if (method == 'readText') {
+      String value = await ClipBoardModule.readText();
+      callback(data: value);
+    } else if (method == 'writeText') {
+      await ClipBoardModule.writeText(params);
+      callback();
+    }
+
     return '';
   }
 }
