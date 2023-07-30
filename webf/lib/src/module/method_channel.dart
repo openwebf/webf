@@ -22,13 +22,14 @@ class MethodChannelModule extends BaseModule {
   void dispose() {}
 
   @override
-  dynamic invoke(String method, params, callback) {
+  dynamic invoke(String method, params, callback) async {
     if (method == 'invokeMethod') {
-      _invokeMethodFromJavaScript(moduleManager!.controller, params[0], params[1]).then((result) {
+      try {
+        var result = _invokeMethodFromJavaScript(moduleManager!.controller, params[0], params[1]);
         callback(data: result);
-      }).catchError((e, stack) {
+      } catch (e, stack) {
         callback(error: '$e\n$stack');
-      });
+      }
     }
     return '';
   }
