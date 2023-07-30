@@ -34,10 +34,9 @@ typedef enum {
 
 #ifdef CONFIG_BIGNUM
 
-
 enum OPCodeEnum {
 #define FMT(f)
-#define DEF(id, size, n_pop, n_push, f) OP_ ## id,
+#define DEF(id, size, n_pop, n_push, f) OP_##id,
 #define def(id, size, n_pop, n_push, f)
 #include "quickjs/quickjs-opcode.h"
 #undef def
@@ -49,7 +48,7 @@ enum OPCodeEnum {
   OP___dummy = OP_TEMP_START - 1,
 #define FMT(f)
 #define DEF(id, size, n_pop, n_push, f)
-#define def(id, size, n_pop, n_push, f) OP_ ## id,
+#define def(id, size, n_pop, n_push, f) OP_##id,
 #include "quickjs/quickjs-opcode.h"
 #undef def
 #undef DEF
@@ -60,19 +59,14 @@ enum OPCodeEnum {
 /* function pointers are used for numeric operations so that it is
    possible to remove some numeric types */
 typedef struct {
-  JSValue (*to_string)(JSContext *ctx, JSValueConst val);
-  JSValue (*from_string)(JSContext *ctx, const char *buf,
-                         int radix, int flags, slimb_t *pexponent);
-  int (*unary_arith)(JSContext *ctx,
-                     JSValue *pres, OPCodeEnum op, JSValue op1);
-  int (*binary_arith)(JSContext *ctx, OPCodeEnum op,
-                      JSValue *pres, JSValue op1, JSValue op2);
-  int (*compare)(JSContext *ctx, OPCodeEnum op,
-                 JSValue op1, JSValue op2);
+  JSValue (*to_string)(JSContext* ctx, JSValueConst val);
+  JSValue (*from_string)(JSContext* ctx, const char* buf, int radix, int flags, slimb_t* pexponent);
+  int (*unary_arith)(JSContext* ctx, JSValue* pres, OPCodeEnum op, JSValue op1);
+  int (*binary_arith)(JSContext* ctx, OPCodeEnum op, JSValue* pres, JSValue op1, JSValue op2);
+  int (*compare)(JSContext* ctx, OPCodeEnum op, JSValue op1, JSValue op2);
   /* only for bigfloat: */
-  JSValue (*mul_pow10_to_float64)(JSContext *ctx, const bf_t *a,
-                                  int64_t exponent);
-  int (*mul_pow10)(JSContext *ctx, JSValue *sp);
+  JSValue (*mul_pow10_to_float64)(JSContext* ctx, const bf_t* a, int64_t exponent);
+  int (*mul_pow10)(JSContext* ctx, JSValue* sp);
 } JSNumericOperations;
 #endif
 
