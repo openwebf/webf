@@ -6,10 +6,10 @@
 #define WEBF_DART_CONTEXT_H_
 
 #include <set>
-#include "include/dart_api.h"
 #include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
 #include "dart_methods.h"
+#include "include/dart_api.h"
 
 namespace webf {
 
