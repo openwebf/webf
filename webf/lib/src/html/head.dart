@@ -127,7 +127,7 @@ class LinkElement extends Element {
       _stylesheetLoaded.remove(_resolvedHyperlink.toString());
     }
     if (_styleSheet != null) {
-      ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
+      ownerDocument.styleEngine.styleNodeManager.removePendingStyleSheet(_styleSheet!);
     }
     Future.microtask(() {
       _fetchAndApplyCSSStyle();
@@ -157,9 +157,9 @@ class LinkElement extends Element {
         final String cssString = await resolveStringFromData(bundle.data!);
         _styleSheet = CSSParser(cssString, href: href).parse();
         _styleSheet?.href = href;
-        ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
-        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        ownerDocument.updateStyleIfNeeded();
+        ownerDocument.styleEngine.markElementNeedsStyleUpdate(ownerDocument.documentElement!);
+        ownerDocument.styleEngine.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+        ownerDocument.flushStyleSheetStyleIfNeeded();
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -180,7 +180,7 @@ class LinkElement extends Element {
   @override
   void connectedCallback() {
     super.connectedCallback();
-    ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
+    ownerDocument.styleEngine.styleNodeManager.addStyleSheetCandidateNode(this);
     if (_resolvedHyperlink != null) {
       _fetchAndApplyCSSStyle();
     }
@@ -190,9 +190,9 @@ class LinkElement extends Element {
   void disconnectedCallback() {
     super.disconnectedCallback();
     if (_styleSheet != null) {
-      ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
+      ownerDocument.styleEngine.styleNodeManager.removePendingStyleSheet(_styleSheet!);
     }
-    ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
+    ownerDocument.styleEngine.styleNodeManager.removeStyleSheetCandidateNode(this);
   }
 }
 
@@ -259,9 +259,9 @@ mixin StyleElementMixin on Element {
         _styleSheet = CSSParser(text).parse();
       }
       if (_styleSheet != null) {
-        ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
-        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        ownerDocument.updateStyleIfNeeded();
+        ownerDocument.styleEngine.markElementNeedsStyleUpdate(ownerDocument.documentElement!);
+        ownerDocument.styleEngine.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+        ownerDocument.flushStyleSheetStyleIfNeeded();
       }
     }
   }
@@ -294,15 +294,15 @@ mixin StyleElementMixin on Element {
       if (_styleSheet == null) {
         _recalculateStyle();
       }
-      ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
+      ownerDocument.styleEngine.styleNodeManager.addStyleSheetCandidateNode(this);
     }
   }
 
   @override
   void disconnectedCallback() {
     if (_styleSheet != null) {
-      ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
-      ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
+      ownerDocument.styleEngine.styleNodeManager.removePendingStyleSheet(_styleSheet!);
+      ownerDocument.styleEngine.styleNodeManager.removeStyleSheetCandidateNode(this);
     }
     super.disconnectedCallback();
   }

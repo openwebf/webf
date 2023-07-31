@@ -66,7 +66,6 @@ class StyleNodeManager {
     _pendingStyleSheets.removeWhere((element) => element == styleSheet);
   }
 
-  // TODO(jiangzhou): cache stylesheet
   bool updateActiveStyleSheets({bool rebuild = false}) {
     List<CSSStyleSheet> newSheets = _collectActiveStyleSheets();
     if (newSheets.isEmpty) {
@@ -82,7 +81,7 @@ class StyleNodeManager {
     } else {
       final root = document.documentElement;
       if (root != null) {
-        document.styleDirtyElements.add(root);
+        root.setNeedsStyleRecalc(StyleChangeType.localStyleChange);
       }
     }
     document.handleStyleSheets(newSheets);
@@ -113,7 +112,7 @@ class StyleNodeManager {
       }
       final rules = collector.matchedRules(changedRuleSet, node);
       if (rules.isNotEmpty) {
-        document.styleDirtyElements.add(node);
+        document.styleEngine.markElementNeedsStyleUpdate(node);
       }
       if (node.childNodes.isNotEmpty) {
         stack.addAll(node.childNodes);

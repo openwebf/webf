@@ -90,11 +90,6 @@ abstract class ContainerNode extends Node {
     // 5. Insert node into parent before reference child.
     _insertNode(targets, referenceNode, _adoptAndInsertBefore);
 
-    // 6. Mark this element to dirty elements.
-    if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
-    }
-
     // 7. Trigger connected callback
     if (newChild.isConnected) {
       newChild.connectedCallback();
@@ -179,10 +174,6 @@ abstract class ContainerNode extends Node {
       child.unmountRenderObject();
     }
 
-    if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
-    }
-
     bool isOldChildConnected = child.isConnected;
     assert(child.parentNode == this);
 
@@ -220,10 +211,6 @@ abstract class ContainerNode extends Node {
     }
 
     _insertNode(targets, null, _adoptAndAppendChild);
-
-    if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
-    }
 
     if (newChild.isConnected) {
       newChild.connectedCallback();
@@ -303,6 +290,26 @@ abstract class ContainerNode extends Node {
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
     invalidateNodeListCachesInAncestors(change);
+
+    if (change.isChildRemoval() || change.type == ChildrenChangeType.ALL_CHILDREN_REMOVED) {
+      ownerDocument.styleEngine.childrenRemoved(this);
+      return;
+    }
+
+    if (!change.isChildInsertion()) {
+      return;
+    }
+
+    Node? insertedNode = change.siblingChanged;
+
+    if (renderer == null || !renderer!.hasSize) {
+      // There is no need to mark for style recalc if the parent element does not layout.
+      return;
+    }
+
+    if (insertedNode is ContainerNode || insertedNode is TextNode) {
+      insertedNode!.setStyleChangeOnInsertion();
+    }
   }
 
   void invalidateNodeListCachesInAncestors(ChildrenChange? change) {

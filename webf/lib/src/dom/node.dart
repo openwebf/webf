@@ -7,8 +7,10 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' show Widget;
+import 'package:path/path.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/widget.dart';
 import 'node_data.dart';
 
@@ -39,15 +41,9 @@ enum ChildrenChangeType {
   TEXT_CHANGE
 }
 
-enum ChildrenChangeSource {
-  API,
-  PARSER
-}
+enum ChildrenChangeSource { API, PARSER }
 
-enum ChildrenChangeAffectsElements {
-  NO,
-  YES
-}
+enum ChildrenChangeAffectsElements { NO, YES }
 
 class ChildrenChange {
   final ChildrenChangeType type;
@@ -215,7 +211,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     if (!isConnected) {
       return;
     }
-    ownerDocument.updateStyleIfNeeded();
+  }
+
+  void setStyleChangeOnInsertion() {
+    assert(isConnected);
+    if (!needsStyleRecalc) {
+      styleChangeType = StyleChangeType.localStyleChange;
+    }
   }
 
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
@@ -232,7 +234,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Element? get previousElementSibling {
     Node? previous = previousSibling;
-    while(previous != null) {
+    while (previous != null) {
       if (previous is Element) {
         return previous;
       }
@@ -243,7 +245,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Element? get nextElementSibling {
     Node? next = nextSibling;
-    while(next != null) {
+    while (next != null) {
       if (next is Element) {
         return next;
       }
@@ -258,7 +260,9 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   // If node is on the tree, the root parent is body.
   bool get isConnected => _isConnected;
 
-  bool isInTreeScope() { return isConnected; }
+  bool isInTreeScope() {
+    return isConnected;
+  }
 
   Node? get previousSibling => _previous;
   set previousSibling(Node? value) {
@@ -298,6 +302,34 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return false;
   }
 
+  StyleChangeType _styleChangeType = StyleChangeType.noStyleChange;
+
+  StyleChangeType get styleChangeType => _styleChangeType;
+  set styleChangeType(StyleChangeType changeType) {
+    _styleChangeType = changeType;
+  }
+
+  void clearStyleChangeType() {
+    _styleChangeType = StyleChangeType.noStyleChange;
+  }
+
+  bool get needsStyleRecalc {
+    return _styleChangeType != StyleChangeType.noStyleChange;
+  }
+
+  void setNeedsStyleRecalc(StyleChangeType changeType) {
+    assert(changeType != StyleChangeType.noStyleChange);
+    assert(this is Element);
+
+    // Tracing code removed for simplicity
+    StyleChangeType existingChangeType = styleChangeType;
+    if (changeType.index > existingChangeType.index) styleChangeType = changeType;
+
+    if (existingChangeType == StyleChangeType.noStyleChange) {
+      ownerDocument.styleEngine.markElementNeedsStyleUpdate(this as Element);
+    }
+  }
+
   /// Attach a renderObject to parent.
   void attachTo(Element parent, {RenderBox? after}) {}
 
@@ -327,13 +359,21 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   @override
   void didDetachRenderer() {}
 
-  Node? appendChild(Node child) { return null; }
+  Node? appendChild(Node child) {
+    return null;
+  }
 
-  Node? insertBefore(Node child, Node referenceNode) { return null; }
+  Node? insertBefore(Node child, Node referenceNode) {
+    return null;
+  }
 
-  Node? removeChild(Node child) { return null; }
+  Node? removeChild(Node child) {
+    return null;
+  }
 
-  Node? replaceChild(Node newNode, Node oldNode) { return null; }
+  Node? replaceChild(Node newNode, Node oldNode) {
+    return null;
+  }
 
   /// Ensure child and child's child render object is attached.
   void ensureChildAttached() {}
@@ -384,11 +424,25 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     }
   }
 
-  bool isTextNode() { return this is TextNode; }
-  bool isContainerNode() { return this is ContainerNode; }
-  bool isElementNode() { return this is Element; }
-  bool isDocumentFragment() { return this is DocumentFragment;}
-  bool hasChildren() { return firstChild != null; }
+  bool isTextNode() {
+    return this is TextNode;
+  }
+
+  bool isContainerNode() {
+    return this is ContainerNode;
+  }
+
+  bool isElementNode() {
+    return this is Element;
+  }
+
+  bool isDocumentFragment() {
+    return this is DocumentFragment;
+  }
+
+  bool hasChildren() {
+    return firstChild != null;
+  }
 
   DocumentPosition compareDocumentPosition(Node other) {
     if (this == other) {

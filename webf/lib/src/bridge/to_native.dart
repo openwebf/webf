@@ -493,9 +493,6 @@ void flushUICommand(WebFViewController view) {
 
   SchedulerBinding.instance.scheduleFrame();
 
-  Map<int, bool> pendingStylePropertiesTargets = {};
-  Set<int> pendingRecalculateTargets = {};
-
   // For new ui commands, we needs to tell engine to update frames.
   for (int i = 0; i < commandLength; i++) {
     UICommand command = commands[i];
@@ -553,18 +550,15 @@ void flushUICommand(WebFViewController view) {
             value = '';
           }
           view.setInlineStyle(nativePtr, command.args, value);
-          pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.clearStyle:
           view.clearInlineStyle(nativePtr);
-          pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setAttribute:
           Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
           String key = nativeStringToString(nativeKey);
           freeNativeString(nativeKey);
           view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
-          pendingRecalculateTargets.add(nativePtr.address);
           break;
         case UICommandType.removeAttribute:
           String key = command.args;
@@ -591,22 +585,7 @@ void flushUICommand(WebFViewController view) {
     }
   }
 
-  // For pending style properties, we needs to flush to render style.
-  for (int address in pendingStylePropertiesTargets.keys) {
-    try {
-      view.flushPendingStyleProperties(address);
-    } catch (e, stack) {
-      print('$e\n$stack');
-    }
+  if (view.isDocumentInited) {
+    view.document.scheduleStyleNeedsUpdate();
   }
-  pendingStylePropertiesTargets.clear();
-
-  for (var address in pendingRecalculateTargets) {
-    try {
-      view.recalculateStyle(address);
-    } catch(e, stack) {
-      print('$e\n$stack');
-    }
-  }
-  pendingRecalculateTargets.clear();
 }

@@ -91,7 +91,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   String _valueForPropertyInStyle(CSSPropertyID propertyID, {bool needUpdateStyle = false}) {
     if (needUpdateStyle) {
-      _element.ownerDocument.updateStyleIfNeeded();
+      _element.ownerDocument.styleEngine.recalcStyle();
     }
     RenderStyle? style = _element.computedStyle(_pseudoElementName);
 

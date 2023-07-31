@@ -6,6 +6,7 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -98,7 +99,7 @@ class Document extends ContainerNode {
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
     cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
-    _styleNodeManager = StyleNodeManager(this);
+    _styleEngine = StyleEngine(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
     ruleSet = RuleSet(this);
   }
@@ -116,6 +117,9 @@ class Document extends ContainerNode {
 
   @override
   Document get ownerDocument => this;
+
+  late StyleEngine _styleEngine;
+  StyleEngine get styleEngine => _styleEngine;
 
   Element? focusedElement;
 
@@ -177,6 +181,32 @@ class Document extends ContainerNode {
       controller.checkCompleted();
     }
   }
+
+  void updateStyle() {
+    styleEngine.recalcStyle();
+  }
+
+  bool _isStyleNeedsUpdate = false;
+  void scheduleStyleNeedsUpdate() {
+    if (_isStyleNeedsUpdate) return;
+    SchedulerBinding.instance.scheduleFrameCallback((timeStamp) {
+      updateStyle();
+      _isStyleNeedsUpdate = false;
+    });
+  }
+
+  void flushStyleSheetStyleIfNeeded() {
+    styleEngine.flushStyleSheetsStyleIfNeeded();
+  }
+
+  // bool _isStyleSheetNeedsUpdate = false;
+  // void scheduleStyleSheetsNeedsUpdate() {
+  //   if (_isStyleSheetNeedsUpdate) return;
+  //   SchedulerBinding.instance.scheduleFrameCallback((timeStamp) {
+  //     flushStyleSheetStyle();
+  //     _isStyleSheetNeedsUpdate = true;
+  //   });
+  // }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
@@ -452,55 +482,13 @@ class Document extends ContainerNode {
     }
   }
 
-  bool _recalculating = false;
-  void updateStyleIfNeeded() {
-    if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
-      return;
-    }
-    if (_recalculating) {
-      return;
-    }
-    _recalculating = true;
-    if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
-      flushStyle(rebuild: true);
-      return;
-    }
-    flushStyle();
-  }
-
-  void flushStyle({bool rebuild = false}) {
-    if (styleDirtyElements.isEmpty) {
-      _recalculating = false;
-      return;
-    }
-    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
-      _recalculating = false;
-      styleDirtyElements.clear();
-      return;
-    }
-    if (styleDirtyElements.any((element) {
-          return element is HeadElement || element is HTMLElement;
-        }) ||
-        rebuild) {
-      documentElement?.recalculateStyle(rebuildNested: true);
-    } else {
-      for (Element element in styleDirtyElements) {
-        element.recalculateStyle();
-      }
-    }
-    styleDirtyElements.clear();
-    _recalculating = false;
-  }
-
   @override
   Future<void> dispose() async {
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();
-    nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
-    styleDirtyElements.clear();
     super.dispose();
   }
 

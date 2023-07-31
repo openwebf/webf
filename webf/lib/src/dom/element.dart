@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -49,6 +50,27 @@ enum BoxSizeType {
 
   // Element which neither have intrinsic or predefined size.
   automatic,
+}
+
+enum StyleChangeType {
+  noStyleChange,
+  // This node needs style recalculation, but the changes are of
+  // a very limited set:
+  //
+  //  1. They only touch the node's inline style (style="" attribute).
+  //  2. They don't add or remove any properties.
+  //  3. They only touch independent properties.
+  //
+  // If all changes are of this type, we can do incremental style
+  // recalculation by reusing the previous style and just applying
+  // any modified inline style, which is cheaper than a full recalc.
+  // See CanApplyInlineStyleIncrementally() and comments on
+  // StyleResolver::ApplyBaseStyle() for more details.
+  inlineIndependentStyleChange,
+  // This node needs (full) style recalculation.
+  localStyleChange,
+  // This node and all of its flat-tree descendeants need style recalculation.
+  subtreeStyleChange
 }
 
 mixin ElementBase on Node {
@@ -112,7 +134,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     final isNeedRecalculate = _checkRecalculateStyle([id, _id]);
     _updateIDMap(id, oldID: _id);
     _id = id;
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+    // recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   // Is element an replaced element.
@@ -154,14 +176,15 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   List<String> get classList => _classList;
 
   set className(String className) {
-    List<String> classList = className.split(classNameSplitRegExp);
-    final checkKeys = (_classList + classList).where((key) => !_classList.contains(key) || !classList.contains(key));
+    List<String> newClassLists = className.split(classNameSplitRegExp);
+    if (newClassLists.equals(classList)) return;
+    final checkKeys = (_classList + newClassLists).where((key) => !_classList.contains(key) || !classList.contains(key));
     final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys));
     _classList.clear();
-    if (classList.isNotEmpty) {
-      _classList.addAll(classList);
+    if (newClassLists.isNotEmpty) {
+      _classList.addAll(newClassLists);
     }
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+    // recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   String get className => _classList.join(_ONE_SPACE);
@@ -199,8 +222,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _forceToRepaintBoundary = value;
     updateRenderBoxModel();
   }
-
-  bool _needRecalculateStyle = false;
 
   final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
 
@@ -259,7 +280,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     attributes[_STYLE_PROPERTY] = ElementAttributeProperty(setter: (value) {
       final map = CSSParser(value).parseInlineStyle();
       inlineStyle.addAll(map);
-      recalculateStyle();
+      setNeedsStyleRecalc(StyleChangeType.inlineIndependentStyleChange);
     }, deleter: () {
       _removeInlineStyle();
     });
@@ -1274,8 +1295,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-    _needRecalculateStyle = _needRecalculateStyle || isNeedRecalculate;
+    // final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
+    // _needRecalculateStyle = _needRecalculateStyle || isNeedRecalculate;
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
@@ -1284,8 +1305,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       className = value;
       return;
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+    // final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
+    // recalculateStyle(rebuildNested: isNeedRecalculate);
+    // final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
+    // recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   @mustCallSuper
@@ -1516,10 +1539,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // recalculate matching styles for element when inline styles are removed.
     if (value.isEmpty) {
       style.removeProperty(property, true);
-      recalculateStyle();
     } else {
       style.setProperty(property, value, isImportant: true);
     }
+    setNeedsStyleRecalc(StyleChangeType.inlineIndependentStyleChange);
   }
 
   void clearInlineStyle() {
@@ -1552,11 +1575,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // But it's necessary for SVG.
   }
 
-  void tryRecalculateStyle({bool rebuildNested = false}) {
-    recalculateStyle(forceRecalculate: _needRecalculateStyle);
-    _needRecalculateStyle = false;
-  }
-
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
     if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
       // Diff style.
@@ -1574,6 +1592,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
           child.recalculateStyle(rebuildNested: rebuildNested);
         });
       }
+      clearStyleChangeType();
     }
   }
 
