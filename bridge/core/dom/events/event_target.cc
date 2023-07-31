@@ -390,6 +390,7 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   WatchDartWire(wire);
   Dart_NewFinalizableHandle_DL(dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext),
                                dart_object_finalize_callback);
+  wire->dart_handle = Dart_NewPersistentHandle_DL(dart_object);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx());

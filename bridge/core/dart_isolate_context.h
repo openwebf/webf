@@ -6,6 +6,7 @@
 #define WEBF_DART_CONTEXT_H_
 
 #include <set>
+#include "include/dart_api.h"
 #include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
 #include "dart_methods.h"
@@ -17,6 +18,8 @@ class DartIsolateContext;
 
 struct DartWireContext {
   ScriptValue jsObject;
+  Dart_Handle dart_handle;
+  ~DartWireContext();
 };
 
 void InitializeBuiltInStrings(JSContext* ctx);

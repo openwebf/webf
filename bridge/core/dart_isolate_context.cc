@@ -28,6 +28,10 @@ void DeleteDartWire(DartWireContext* wire) {
   delete wire;
 }
 
+DartWireContext::~DartWireContext() {
+  Dart_DeletePersistentHandle_DL(dart_handle);
+}
+
 static void ClearUpWires() {
   for (auto& wire : alive_wires) {
     delete wire;
