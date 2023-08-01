@@ -70,11 +70,11 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 
   auto shape = GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName());
   if (shape != nullptr) {
-    if (shape->built_in_properties_.count(key) > 0) {
+    if (shape->built_in_properties_.find(key) != shape->built_in_properties_.end()) {
       return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
     }
 
-    if (shape->built_in_methods_.count(key) > 0) {
+    if (shape->built_in_methods_.find(key) != shape->built_in_methods_.end()) {
       if (cached_methods_.count(key) > 0) {
         return cached_methods_[key];
       }
@@ -84,7 +84,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
       return func;
     }
 
-    if (shape->built_in_async_methods_.count(key) > 0) {
+    if (shape->built_in_async_methods_.find(key) != shape->built_in_async_methods_.end()) {
       if (async_cached_methods_.count(key) > 0) {
         return async_cached_methods_[key];
       }
@@ -95,7 +95,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     }
   }
 
-  return ScriptValue::Empty(ctx());
+  return ScriptValue::Undefined(ctx());
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {

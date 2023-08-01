@@ -515,7 +515,7 @@ describe('custom html element', () => {
     document.body.appendChild(sampleElement);
 
     // @ts-ignore
-    expect(sampleElement._fake).toBe(null);
+    expect(sampleElement._fake).toBe(undefined);
 
     // @ts-ignore
     sampleElement._fake = [1, 2, 3, 4, 5];
@@ -538,7 +538,7 @@ describe('custom html element', () => {
     document.body.appendChild(sampleElement);
 
     // @ts-ignore
-    expect(sampleElement._fake).toBe(null);
+    expect(sampleElement._fake).toBe(undefined);
 
     // @ts-ignore
     sampleElement._fake = [1, 2, 3, 4, 5];

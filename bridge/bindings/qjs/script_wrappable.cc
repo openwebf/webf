@@ -7,6 +7,7 @@
 #include "built_in_string.h"
 #include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
+#include <quickjs/quickjs.h>
 #include "foundation/logging.h"
 
 namespace webf {
@@ -62,19 +63,19 @@ static JSValue HandleJSPropertyGetterCallback(JSContext* ctx, JSValueConst obj, 
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
-  JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
-  if (JS_HasProperty(ctx, prototypeObject, atom)) {
-    JSValue ret = JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
-    return ret;
-  }
-
+  JSValue getterValue = JS_UNDEFINED;
   if (wrapper_type_info->indexed_property_getter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
-    return wrapper_type_info->indexed_property_getter_handler_(ctx, obj, JS_AtomToUInt32(atom));
+    getterValue = wrapper_type_info->indexed_property_getter_handler_(ctx, obj, JS_AtomToUInt32(atom));
   } else if (wrapper_type_info->string_property_getter_handler_ != nullptr) {
-    return wrapper_type_info->string_property_getter_handler_(ctx, obj, atom);
+    getterValue = wrapper_type_info->string_property_getter_handler_(ctx, obj, atom);
   }
 
-  return JS_UNDEFINED;
+  if (!JS_IsUndefined(getterValue)) {
+    return getterValue;
+  }
+
+  JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
+  return JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
 }
 
 /// This callback will be called when JS code set property on this object using [] or `.` operator.
@@ -113,7 +114,7 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
     }
 
     if (!JS_IsFunction(ctx, setterFunc)) {
-      return -1;
+      goto custom_setter;
     }
 
     assert_m(JS_IsFunction(ctx, setterFunc), "Setter on prototype should be an function.");
@@ -127,6 +128,7 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
     return 0;
   }
 
+custom_setter:
   if (wrapper_type_info->indexed_property_setter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
     return wrapper_type_info->indexed_property_setter_handler_(ctx, obj, JS_AtomToUInt32(atom), value);
   } else if (wrapper_type_info->string_property_setter_handler_ != nullptr) {

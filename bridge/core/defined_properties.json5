@@ -8,6 +8,9 @@
     ]
   },
   "data": [
+    "getPropertyValue",
+    "setProperty",
+    "removeProperty",
     // The data of defined_properties.json5 will be injected by code_generator scripts.
   ]
 }
