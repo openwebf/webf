@@ -53,7 +53,9 @@ Touch::Touch(ExecutingContext* context, NativeTouch* native_touch)
       rotationAngle_(native_touch->rotationAngle),
       force_(native_touch->force),
       altitude_angle_(native_touch->altitudeAngle),
-      azimuth_angle_(native_touch->azimuthAngle) {}
+      azimuth_angle_(native_touch->azimuthAngle) {
+  assert(target_ != nullptr);
+}
 
 double Touch::altitudeAngle() const {
   return altitude_angle_;
