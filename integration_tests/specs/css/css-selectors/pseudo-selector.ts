@@ -328,4 +328,37 @@ describe("css pseudo selector", () => {
     document.body.appendChild(div);
     await snapshot();
   });
+
+  it('should works with events', async (done) => {
+    const style = <style>{`
+ 
+      .div1 {
+        border-radius: 50%;
+      }
+    
+      .div1::before {
+        content: 'AAAAAAAAAAAAAAAAAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+      }
+    `}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1";
+
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+
+    div.addEventListener('click', (e) => {
+      expect(e.target).toBe(div);
+      done();
+    });
+
+    await simulateClick(15, 5);
+  });
 });
