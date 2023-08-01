@@ -126,7 +126,7 @@ function genCodeFromJSONData() {
 
       // Inject allDefinedProperties set into the definedProperties source.
       if (targetTemplate.filename === 'defined_properties') {
-        blob.json.data = Array.from(definedPropertyCollector.properties);
+        blob.json.data = blob.json.data.concat(Array.from(definedPropertyCollector.properties));
       }
 
       if (targetTemplate.filename === 'defined_properties_initializer') {
