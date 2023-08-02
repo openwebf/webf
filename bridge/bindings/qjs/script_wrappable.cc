@@ -4,6 +4,7 @@
  */
 
 #include "script_wrappable.h"
+#include <quickjs/quickjs.h>
 #include "built_in_string.h"
 #include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
@@ -62,19 +63,19 @@ static JSValue HandleJSPropertyGetterCallback(JSContext* ctx, JSValueConst obj, 
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
-  JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
-  if (JS_HasProperty(ctx, prototypeObject, atom)) {
-    JSValue ret = JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
-    return ret;
-  }
-
+  JSValue getterValue = JS_UNDEFINED;
   if (wrapper_type_info->indexed_property_getter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
-    return wrapper_type_info->indexed_property_getter_handler_(ctx, obj, JS_AtomToUInt32(atom));
+    getterValue = wrapper_type_info->indexed_property_getter_handler_(ctx, obj, JS_AtomToUInt32(atom));
   } else if (wrapper_type_info->string_property_getter_handler_ != nullptr) {
-    return wrapper_type_info->string_property_getter_handler_(ctx, obj, atom);
+    getterValue = wrapper_type_info->string_property_getter_handler_(ctx, obj, atom);
   }
 
-  return JS_UNDEFINED;
+  if (!JS_IsUndefined(getterValue)) {
+    return getterValue;
+  }
+
+  JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
+  return JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
 }
 
 /// This callback will be called when JS code set property on this object using [] or `.` operator.
@@ -87,6 +88,18 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
                                           int flags) {
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
+
+  bool is_success = false;
+
+  if (wrapper_type_info->indexed_property_setter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
+    is_success = wrapper_type_info->indexed_property_setter_handler_(ctx, obj, JS_AtomToUInt32(atom), value);
+  } else if (wrapper_type_info->string_property_setter_handler_ != nullptr) {
+    is_success = wrapper_type_info->string_property_setter_handler_(ctx, obj, atom, value);
+  }
+
+  if (is_success) {
+    return is_success;
+  }
 
   ExecutingContext* context = ExecutingContext::From(ctx);
   JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
@@ -102,6 +115,7 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
       setterFunc = descriptor.setter;
       if (JS_IsFunction(ctx, setterFunc)) {
         JS_FreeValue(ctx, descriptor.getter);
+        JS_FreeValue(ctx, descriptor.value);
         break;
       }
 
@@ -110,27 +124,22 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
       target = new_target;
       JS_FreeValue(ctx, descriptor.getter);
       JS_FreeValue(ctx, descriptor.setter);
+      JS_FreeValue(ctx, descriptor.value);
     }
 
     if (!JS_IsFunction(ctx, setterFunc)) {
-      return -1;
+      return false;
     }
 
     assert_m(JS_IsFunction(ctx, setterFunc), "Setter on prototype should be an function.");
     JSValue ret = JS_Call(ctx, setterFunc, obj, 1, &value);
     if (JS_IsException(ret))
-      return -1;
+      return false;
 
     JS_FreeValue(ctx, ret);
     JS_FreeValue(ctx, setterFunc);
     JS_FreeValue(ctx, target);
-    return 0;
-  }
-
-  if (wrapper_type_info->indexed_property_setter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
-    return wrapper_type_info->indexed_property_setter_handler_(ctx, obj, JS_AtomToUInt32(atom), value);
-  } else if (wrapper_type_info->string_property_setter_handler_ != nullptr) {
-    return wrapper_type_info->string_property_setter_handler_(ctx, obj, atom, value);
+    return true;
   }
 
   return false;

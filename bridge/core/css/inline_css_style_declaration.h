@@ -25,13 +25,13 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   static InlineCssStyleDeclaration* Create(ExecutingContext* context, ExceptionState& exception_state);
   explicit InlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_);
 
-  AtomicString item(const AtomicString& key, ExceptionState& exception_state) override;
-  bool SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) override;
+  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
+  bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
   bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
   [[nodiscard]] int64_t length() const override;
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
-  void setProperty(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) override;
+  void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
   AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 
   [[nodiscard]] std::string ToString() const;

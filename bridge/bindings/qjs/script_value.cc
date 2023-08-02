@@ -117,6 +117,10 @@ ScriptValue ScriptValue::Empty(JSContext* ctx) {
   return ScriptValue(ctx);
 }
 
+ScriptValue ScriptValue::Undefined(JSContext* ctx) {
+  return ScriptValue(ctx, JS_UNDEFINED);
+}
+
 ScriptValue::ScriptValue(const ScriptValue& value) {
   if (&value != this) {
     value_ = JS_DupValue(ctx_, value.value_);
@@ -164,6 +168,13 @@ ScriptValue ScriptValue::ToJSONStringify(ExceptionState* exception) const {
 }
 
 AtomicString ScriptValue::ToString() const {
+  return {ctx_, value_};
+}
+
+AtomicString ScriptValue::ToLegacyDOMString() const {
+  if (JS_IsNull(value_)) {
+    return AtomicString::Empty();
+  }
   return {ctx_, value_};
 }
 

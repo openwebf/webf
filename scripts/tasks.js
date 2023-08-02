@@ -474,21 +474,6 @@ task(`build-ios-webf-lib`, (done) => {
   done();
 });
 
-task('build-ios-frameworks', (done) => {
-  let cmd = `flutter build ios-framework --cocoapods`;
-  execSync(cmd, {
-    env: process.env,
-    cwd: paths.sdk,
-    stdio: 'inherit'
-  });
-
-  execSync(`cp -r ${paths.bridge}/build/ios/framework/webf_bridge.xcframework ${paths.sdk}/build/ios/framework/Debug`);
-  execSync(`cp -r ${paths.bridge}/build/ios/framework/webf_bridge.xcframework ${paths.sdk}/build/ios/framework/Profile`);
-  execSync(`cp -r ${paths.bridge}/build/ios/framework/webf_bridge.xcframework ${paths.sdk}/build/ios/framework/Release`);
-
-  done();
-});
-
 task('build-linux-webf-lib', (done) => {
   const buildType = buildMode == 'Release' ? 'Release' : 'RelWithDebInfo';
   const cmakeGeneratorTemplate = platform == 'win32' ? 'Ninja' : 'Unix Makefiles';
@@ -620,8 +605,8 @@ task('build-android-webf-lib', (done) => {
     ndkDir = process.env.ANDROID_NDK_HOME;
   } else {
     let androidHome;
-    if (process.env.ANDROID_SDK_HOME) {
-      androidHome = process.env.ANDROID_SDK_HOME;
+    if (process.env.ANDROID_HOME) {
+      androidHome = process.env.ANDROID_HOME;
     } else if (platform == 'win32') {
       androidHome = path.join(process.env.LOCALAPPDATA, 'Android\\Sdk');
     } else if (platform == 'darwin') {
@@ -633,7 +618,7 @@ task('build-android-webf-lib', (done) => {
     ndkDir = path.join(androidHome, 'ndk', ndkVersion);
 
     if (!fs.existsSync(ndkDir)) {
-      throw new Error('Android NDK version (${ndkVersion}) not installed.');
+      throw new Error(`Android NDK version (${ndkVersion}) not installed.`);
     }
   }
 
@@ -724,16 +709,6 @@ task('android-so-clean', (done) => {
   execSync(`rm -rf ${paths.bridge}/build/android`, { stdio: 'inherit' });
   done();
 });
-
-task('build-android-sdk', (done) => {
-  execSync(`flutter build aar --build-number ${pkgVersion}`, {
-    eng: process.env,
-    cwd: path.join(paths.sdk),
-    stdio: 'inherit'
-  });
-  done();
-});
-
 
 task('ios-framework-clean', (done) => {
   execSync(`rm -rf ${paths.bridge}/build/ios`, { stdio: 'inherit' });

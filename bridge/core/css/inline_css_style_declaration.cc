@@ -61,16 +61,21 @@ InlineCssStyleDeclaration* InlineCssStyleDeclaration::Create(ExecutingContext* c
 InlineCssStyleDeclaration::InlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_)
     : CSSStyleDeclaration(context->ctx()), owner_element_(owner_element_) {}
 
-AtomicString InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString(ctx());
-  return InternalGetPropertyValue(propertyName);
+ScriptValue InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
+  if (IsPrototypeMethods(key)) {
+    return ScriptValue::Undefined(ctx());
+  }
+
+  std::string property_name = key.ToStdString(ctx());
+  AtomicString property_value = InternalGetPropertyValue(property_name);
+  return ScriptValue(ctx(), property_value);
 }
 
 bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
-                                        const AtomicString& value,
+                                        const ScriptValue& value,
                                         ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
-  return InternalSetProperty(propertyName, value);
+  return InternalSetProperty(propertyName, value.ToLegacyDOMString());
 }
 
 bool InlineCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
@@ -87,10 +92,10 @@ AtomicString InlineCssStyleDeclaration::getPropertyValue(const AtomicString& key
 }
 
 void InlineCssStyleDeclaration::setProperty(const AtomicString& key,
-                                            const AtomicString& value,
+                                            const ScriptValue& value,
                                             ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
-  InternalSetProperty(propertyName, value);
+  InternalSetProperty(propertyName, value.ToLegacyDOMString());
 }
 
 AtomicString InlineCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
@@ -181,7 +186,7 @@ AtomicString InlineCssStyleDeclaration::InternalGetPropertyValue(std::string& na
     return properties_[name];
   }
 
-  return AtomicString::Empty();
+  return AtomicString::Null();
 }
 
 bool InlineCssStyleDeclaration::InternalSetProperty(std::string& name, const AtomicString& value) {

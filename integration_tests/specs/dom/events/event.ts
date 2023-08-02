@@ -623,4 +623,29 @@ describe('Event', () => {
     container2.click();
     await snapshot();
   });
+
+  it('should works when override built-in properties', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    Object.assign(container.style, {
+      padding: '20px',
+      backgroundColor: '#999',
+      margin: '40px',
+    });
+    container.appendChild(document.createTextNode('DIV 1'));
+
+    container.addEventListener('click', (e) => {
+      e.preventDefault = () => 'PREVENTED';
+    });
+
+    document.body.addEventListener('click', (e) => {
+      // @ts-ignore
+      document.body.appendChild(document.createTextNode(e.preventDefault()));
+    });
+
+    document.body.appendChild(container);
+
+    container.click();
+    await snapshot();
+  });
 });
