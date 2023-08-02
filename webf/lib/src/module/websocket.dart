@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:webf/dom.dart';
@@ -28,7 +27,7 @@ class WebSocketModule extends BaseModule {
   WebSocketModule(ModuleManager? moduleManager) : super(moduleManager);
 
   @override
-  FutureOr<String> invoke(String method, params, callback) {
+  String invoke(String method, params, callback) {
     if (method == 'init') {
       return init(params, (String id, Event event) {
         moduleManager!.emitModuleEvent(name, event: event, data: id);
@@ -53,12 +52,12 @@ class WebSocketModule extends BaseModule {
     _stateMap.clear();
   }
 
-  Future<String> init(String url, WebSocketEventCallback callback,
-      {String? protocols}) async {
+  String init(String url, WebSocketEventCallback callback,
+      {String? protocols}) {
     var id = (_clientId++).toString();
-    try {
-      WebSocket webSocket = await WebSocket.connect(url, protocols: protocols != null ? [protocols] : null,
-          headers: {'origin': moduleManager!.controller.url});
+    WebSocket.connect(url,protocols: protocols != null ? [protocols] : null,
+        headers: {'origin': moduleManager!.controller.url})
+        .then((webSocket) {
       IOWebSocketChannel client = IOWebSocketChannel(webSocket);
       _WebSocketState? state = _stateMap[id];
       if (state != null && state.status == _ConnectionState.closed) {
@@ -67,7 +66,7 @@ class WebSocketModule extends BaseModule {
         CloseEvent event = CloseEvent(data[0] ?? 0, data[1] ?? '', true);
         callback(id, event);
         _stateMap.remove(id);
-        return '';
+        return;
       }
       _clientMap[id] = client;
       // Listen all event
@@ -76,11 +75,13 @@ class WebSocketModule extends BaseModule {
         Event event = Event(EVENT_OPEN);
         callback(id, event);
       }
-    } catch (e, stack) {
+    }).catchError((e, stack) {
+      // print connection error internally and trigger error event.
       print(e);
       Event event = Event(EVENT_ERROR);
       callback(id, event);
-    }
+    });
+
     return id;
   }
 
