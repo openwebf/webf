@@ -387,6 +387,7 @@ class Document extends ContainerNode {
     if (viewport != null) {
       if (element != null) {
         element.attachTo(this);
+        element.style.flushPendingProperties();
         // Should scrollable.
         element.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
         element.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);

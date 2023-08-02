@@ -1462,7 +1462,7 @@ class RenderBoxModel extends RenderBox
       RenderLayoutParentData parentData = RenderLayoutParentData();
       renderBoxModel.parentData = CSSPositionedLayout.getPositionParentData(renderBoxModel, parentData);
       // Add child to containing block parent.
-      attachRenderBox(containingBlockRenderBox, renderBoxModel, isLast: true);
+      attachRenderBox(containingBlockRenderBox, renderBoxModel, after: after);
 
       // If container block is same as origin parent, the placeholder must after the origin renderBox
       // because placeholder depends the constraints in layout stage.
@@ -1672,6 +1672,7 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
     properties.add(DiagnosticsProperty('width', renderStyle.width.value));
     properties.add(DiagnosticsProperty('height', renderStyle.height.value));
+    properties.add(DiagnosticsProperty('backgroundColor', renderStyle.backgroundColor?.value));
 
     if (renderPositionPlaceholder != null)
       properties.add(DiagnosticsProperty('renderPositionHolder', renderPositionPlaceholder));
@@ -1688,10 +1689,7 @@ class RenderBoxModel extends RenderBox
 
   // Attach renderBox from tree.
   static void attachRenderBox(RenderObject parentRenderObject, RenderBox renderBox,
-      {RenderObject? after, bool isLast = false}) {
-    if (isLast) {
-      assert(after == null);
-    }
+      {RenderObject? after}) {
     if (parentRenderObject is RenderObjectWithChildMixin) {
       // RenderViewportBox
       parentRenderObject.child = renderBox;
@@ -1700,9 +1698,6 @@ class RenderBoxModel extends RenderBox
       // Should attach to renderScrollingContent if it is scrollable.
       if (parentRenderObject is RenderLayoutBox) {
         parentRenderObject = parentRenderObject.renderScrollingContent ?? parentRenderObject;
-      }
-      if (isLast) {
-        after = parentRenderObject.lastChild;
       }
       parentRenderObject.insert(renderBox, after: after);
     }
