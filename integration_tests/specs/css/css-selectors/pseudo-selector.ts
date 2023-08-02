@@ -157,7 +157,7 @@ describe("css pseudo selector", () => {
       .text-box:after {
         border: 5px solid red;
       }
-    
+
     `}</style>;
     const div = <div>{'004 Before && After'}</div>;
     div.setAttribute("style", "border:5px solid blue");
@@ -172,14 +172,14 @@ describe("css pseudo selector", () => {
 
   it('008', async () => {
     const style = <style>{`
-      
+
       #pro:before {
         border: 2px solid green;
       }
       #pro:after {
         border: 2px solid yellow;
       }
-    
+
       .div1::before {
         content: 'AAA';
         background-color: red;
@@ -196,8 +196,8 @@ describe("css pseudo selector", () => {
       .text-box:after {
         border: 5px solid red;
       }
-     
-    
+
+
     `}</style>;
     const div = <div>{'004 Before && After'}</div>;
     div.setAttribute("style", "border:5px solid blue");
@@ -219,7 +219,7 @@ describe("css pseudo selector", () => {
       #pro:after {
         border: 2px solid yellow;
       }
-    
+
       .div1::before {
         content: 'AAA';
         background-color: red;
@@ -261,7 +261,7 @@ describe("css pseudo selector", () => {
       #pro:after {
         border: 2px solid yellow;
       }
-    
+
       .div1::before {
         content: 'AAA';
         background-color: red;
@@ -303,11 +303,11 @@ describe("css pseudo selector", () => {
         border: 2px solid yellow;
         border-radius: inherit;
       }
-    
+
       .div1 {
         border-radius: 50%;
       }
-    
+
       .div1::before {
         content: 'AAA';
         background-color: red;
@@ -331,11 +331,11 @@ describe("css pseudo selector", () => {
 
   it('should works with events', async (done) => {
     const style = <style>{`
- 
+
       .div1 {
         border-radius: 50%;
       }
-    
+
       .div1::before {
         content: 'AAAAAAAAAAAAAAAAAA';
         background-color: red;
