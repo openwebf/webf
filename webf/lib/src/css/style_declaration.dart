@@ -617,10 +617,18 @@ class CSSStyleDeclaration extends BindingObject {
     }
 
     if (other.pseudoBeforeStyle != null) {
-      pseudoBeforeStyle?.merge(other.pseudoBeforeStyle!);
+      if (pseudoBeforeStyle == null) {
+        pseudoBeforeStyle = other.pseudoBeforeStyle;
+      } else {
+        pseudoBeforeStyle?.merge(other.pseudoBeforeStyle!);
+      }
     }
     if (other.pseudoAfterStyle != null) {
-      pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
+      if (pseudoAfterStyle == null) {
+        pseudoAfterStyle = other.pseudoAfterStyle;
+      } else {
+        pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
+      }
     }
 
     return updateStatus;
@@ -681,7 +689,7 @@ class CSSStyleDeclaration extends BindingObject {
   }
 
   @override
-  String toString() => 'CSSStyleDeclaration($cssText)';
+  String toString() => 'CSSStyleDeclaration($hashCode $cssText)';
 
   @override
   int get hashCode => cssText.hashCode;

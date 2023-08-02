@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -193,20 +194,18 @@ class Document extends ContainerNode {
       updateStyle();
       _isStyleNeedsUpdate = false;
     });
+    _isStyleNeedsUpdate = true;
   }
 
-  void flushStyleSheetStyleIfNeeded() {
-    styleEngine.flushStyleSheetsStyleIfNeeded();
+  bool _isStyleSheetNodesNeedsUpdate = false;
+  void scheduleStyleSheetNodesNeedsUpdate() {
+    if (_isStyleSheetNodesNeedsUpdate) return;
+    scheduleMicrotask(() {
+      styleEngine.flushStyleSheetsStyleIfNeeded();
+      _isStyleSheetNodesNeedsUpdate = false;
+    });
+    _isStyleSheetNodesNeedsUpdate = true;
   }
-
-  // bool _isStyleSheetNeedsUpdate = false;
-  // void scheduleStyleSheetsNeedsUpdate() {
-  //   if (_isStyleSheetNeedsUpdate) return;
-  //   SchedulerBinding.instance.scheduleFrameCallback((timeStamp) {
-  //     flushStyleSheetStyle();
-  //     _isStyleSheetNeedsUpdate = true;
-  //   });
-  // }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {

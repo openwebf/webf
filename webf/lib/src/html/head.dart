@@ -159,7 +159,7 @@ class LinkElement extends Element {
         _styleSheet?.href = href;
         ownerDocument.styleEngine.markElementNeedsStyleUpdate(ownerDocument.documentElement!);
         ownerDocument.styleEngine.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        ownerDocument.flushStyleSheetStyleIfNeeded();
+        ownerDocument.scheduleStyleSheetNodesNeedsUpdate();
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -261,40 +261,19 @@ mixin StyleElementMixin on Element {
       if (_styleSheet != null) {
         ownerDocument.styleEngine.markElementNeedsStyleUpdate(ownerDocument.documentElement!);
         ownerDocument.styleEngine.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        ownerDocument.flushStyleSheetStyleIfNeeded();
+        ownerDocument.scheduleStyleSheetNodesNeedsUpdate();
       }
     }
-  }
-
-  @override
-  Node appendChild(Node child) {
-    Node ret = super.appendChild(child);
-    _recalculateStyle();
-    return ret;
-  }
-
-  @override
-  Node insertBefore(Node child, Node referenceNode) {
-    Node ret = super.insertBefore(child, referenceNode);
-    _recalculateStyle();
-    return ret;
-  }
-
-  @override
-  Node removeChild(Node child) {
-    Node ret = super.removeChild(child);
-    _recalculateStyle();
-    return ret;
   }
 
   @override
   void connectedCallback() {
     super.connectedCallback();
     if (_type == _CSS_MIME) {
+      ownerDocument.styleEngine.styleNodeManager.addStyleSheetCandidateNode(this);
       if (_styleSheet == null) {
         _recalculateStyle();
       }
-      ownerDocument.styleEngine.styleNodeManager.addStyleSheetCandidateNode(this);
     }
   }
 

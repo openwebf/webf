@@ -24,7 +24,11 @@ class StyleEngine {
     if (!parent.isConnected) {
       return;
     }
-    parent.ownerDocument.styleEngine.markElementNeedsStyleUpdate(parent as Element);
+    if (parent == parent.ownerDocument) {
+      parent.ownerDocument.styleEngine.markElementNeedsStyleUpdate(parent.ownerDocument.documentElement!);
+    } else {
+      parent.ownerDocument.styleEngine.markElementNeedsStyleUpdate(parent as Element);
+    }
   }
 
   void flushStyleSheetsStyleIfNeeded() {
@@ -61,11 +65,15 @@ class StyleEngine {
         rebuild) {
       document.documentElement?.recalculateStyle(rebuildNested: true);
     } else {
+      List<Element> removedElements = [];
       for (Element element in styleDirtyElements) {
-        element.recalculateStyle();
+        bool success = element.recalculateStyle();
+        if (success) {
+          removedElements.add(element);
+        }
       }
+      styleDirtyElements.removeAll(removedElements);
     }
-    styleDirtyElements.clear();
   }
 
 }

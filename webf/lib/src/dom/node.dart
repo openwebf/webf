@@ -216,7 +216,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   void setStyleChangeOnInsertion() {
     assert(isConnected);
     if (!needsStyleRecalc) {
-      styleChangeType = StyleChangeType.localStyleChange;
+      _styleChangeType = StyleChangeType.localStyleChange;
     }
   }
 
@@ -305,9 +305,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   StyleChangeType _styleChangeType = StyleChangeType.noStyleChange;
 
   StyleChangeType get styleChangeType => _styleChangeType;
-  set styleChangeType(StyleChangeType changeType) {
-    _styleChangeType = changeType;
-  }
 
   void clearStyleChangeType() {
     _styleChangeType = StyleChangeType.noStyleChange;
@@ -323,10 +320,11 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
     // Tracing code removed for simplicity
     StyleChangeType existingChangeType = styleChangeType;
-    if (changeType.index > existingChangeType.index) styleChangeType = changeType;
+    if (changeType.index > existingChangeType.index) _styleChangeType = changeType;
 
     if (existingChangeType == StyleChangeType.noStyleChange) {
       ownerDocument.styleEngine.markElementNeedsStyleUpdate(this as Element);
+      _styleChangeType = changeType;
     }
   }
 
