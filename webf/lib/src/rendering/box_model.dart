@@ -1433,10 +1433,41 @@ class RenderBoxModel extends RenderBox
     _detachPositionPlaceholder(this);
   }
 
+  // Positioned render box should be attached after the non-positioned render box.
+  // Find the latest renderBox from a container render box which position value is non-static.
+  static RenderBox? findLastNonPositionedRenderBox(RenderLayoutBox? container) {
+    if (container == null) return null;
+    container = container.renderScrollingContent ?? container;
+
+    RenderBox? child = container.firstChild;
+    RenderBox? target;
+
+    if (child == null) return null;
+
+    while(child is RenderObjectWithChildMixin) {
+      if (child is RenderBoxModel) {
+        // The renderStyle may not be resolved when searching, get the raw CSS values from style instead of RenderStyle.
+        String positionValue = child.renderStyle.target.style.getPropertyValue('position');
+        CSSPositionType positionType = CSSPositionMixin.resolvePositionType(positionValue);
+        if (positionType != CSSPositionType.static) {
+          return target;
+        }
+      }
+
+      ContainerBoxParentData<RenderBox> parentData = child?.parentData as ContainerBoxParentData<RenderBox>;
+      target = child;
+      child = parentData.nextSibling;
+    }
+
+    RenderPositionPlaceholder;
+
+    return target;
+  }
+
   // The position and size of an element's box(es) are sometimes calculated relative to a certain rectangle,
   // called the containing block of the element.
   // Definition of "containing block": https://www.w3.org/TR/CSS21/visudet.html#containing-block-details
-  void attachToContainingBlock(RenderBox? containingBlockRenderBox, {RenderBox? parent, RenderBox? after}) {
+  void attachToContainingBlock(RenderLayoutBox? containingBlockRenderBox, {RenderBox? parent, RenderBox? after}) {
     if (parent == null || containingBlockRenderBox == null) return;
 
     RenderBoxModel renderBoxModel = this;
@@ -1461,8 +1492,11 @@ class RenderBoxModel extends RenderBox
       // Set custom positioned parentData.
       RenderLayoutParentData parentData = RenderLayoutParentData();
       renderBoxModel.parentData = CSSPositionedLayout.getPositionParentData(renderBoxModel, parentData);
+
+      RenderBox? lastNonPositionedRenderBox = findLastNonPositionedRenderBox(containingBlockRenderBox);
+
       // Add child to containing block parent.
-      attachRenderBox(containingBlockRenderBox, renderBoxModel, after: after);
+      attachRenderBox(containingBlockRenderBox, renderBoxModel, after: lastNonPositionedRenderBox);
 
       // If container block is same as origin parent, the placeholder must after the origin renderBox
       // because placeholder depends the constraints in layout stage.
@@ -1689,7 +1723,10 @@ class RenderBoxModel extends RenderBox
 
   // Attach renderBox from tree.
   static void attachRenderBox(RenderObject parentRenderObject, RenderBox renderBox,
-      {RenderObject? after}) {
+      {RenderObject? after, bool isLast = false}) {
+    if (isLast) {
+      assert(after == null);
+    }
     if (parentRenderObject is RenderObjectWithChildMixin) {
       // RenderViewportBox
       parentRenderObject.child = renderBox;
@@ -1698,6 +1735,9 @@ class RenderBoxModel extends RenderBox
       // Should attach to renderScrollingContent if it is scrollable.
       if (parentRenderObject is RenderLayoutBox) {
         parentRenderObject = parentRenderObject.renderScrollingContent ?? parentRenderObject;
+      }
+      if (isLast) {
+        after = parentRenderObject.lastChild;
       }
       parentRenderObject.insert(renderBox, after: after);
     }
