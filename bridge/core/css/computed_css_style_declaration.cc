@@ -6,16 +6,14 @@
 #include "binding_call_methods.h"
 #include "core/binding_object.h"
 #include "core/dom/element.h"
-#include "foundation/native_value_converter.h"
 #include "foundation/native_value.h"
+#include "foundation/native_value_converter.h"
 
 namespace webf {
 
 ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* context,
                                                          NativeBindingObject* native_binding_object)
     : CSSStyleDeclaration(context->ctx(), native_binding_object) {}
-
-
 
 ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
   if (IsPrototypeMethods(key)) {
@@ -25,7 +23,7 @@ ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, Exception
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
 
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetPropertyValue, 1, arguments, exception_state);
-  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result))) ;
+  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
 }
 
 bool ComputedCssStyleDeclaration::SetItem(const AtomicString& key,
