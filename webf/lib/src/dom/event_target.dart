@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:flutter/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 
@@ -64,7 +65,12 @@ abstract class EventTarget extends BindingObject {
   @mustCallSuper
   void dispatchEvent(Event event) {
     if (_disposed) return;
-    event.target = this;
+    if (this is PseudoElement) {
+      event.target = (this as PseudoElement).parent;
+    } else {
+      event.target = this;
+    }
+
     _handlerCaptureEvent(event);
     _dispatchEventInDOM(event);
   }

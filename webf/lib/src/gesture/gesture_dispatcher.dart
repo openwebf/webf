@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
+import 'package:webf/html.dart';
 
 class _DragEventInfo extends Drag {
   _DragEventInfo(this.gestureDispatcher);
@@ -102,6 +103,10 @@ class GestureDispatcher {
   final Map<int, EventTarget> _pointTargets = {};
 
   void _bindEventTargetWithTouchPoint(TouchPoint touchPoint, EventTarget eventTarget) {
+    if (eventTarget is PseudoElement) {
+      eventTarget = eventTarget.parent;
+    }
+
     _pointTargets[touchPoint.id] = eventTarget;
   }
 
