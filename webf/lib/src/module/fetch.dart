@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -56,36 +55,37 @@ class FetchModule extends BaseModule {
   }
 
   @visibleForTesting
-  FutureOr<HttpClientRequest> getRequest(Uri uri, String? method, Map? headers, data) async {
-    HttpClientRequest request = await httpClient.openUrl(method ?? 'GET', uri);
-    // Reset WebF UA.
-    request.headers.removeAll(HttpHeaders.userAgentHeader);
-    request.headers.add(HttpHeaders.userAgentHeader, _getDefaultUserAgent());
+  Future<HttpClientRequest> getRequest(Uri uri, String? method, Map? headers, data) {
+    return httpClient.openUrl(method ?? 'GET', uri).then((HttpClientRequest request) {
+      // Reset Kraken UA.
+      request.headers.removeAll(HttpHeaders.userAgentHeader);
+      request.headers.add(HttpHeaders.userAgentHeader, _getDefaultUserAgent());
 
-    // Add additional headers.
-    if (headers is Map<String, dynamic>) {
-      for (MapEntry<String, dynamic> entry in headers.entries) {
-        request.headers.add(entry.key, entry.value);
+      // Add additional headers.
+      if (headers is Map<String, dynamic>) {
+        for (MapEntry<String, dynamic> entry in headers.entries) {
+          request.headers.add(entry.key, entry.value);
+        }
       }
-    }
 
-    // Set ContextID Header
-    if (moduleManager != null) {
-      request.headers.set(HttpHeaderContext, moduleManager!.contextId.toString());
-    }
+      // Set ContextID Header
+      if (moduleManager != null) {
+        request.headers.set(HttpHeaderContext, moduleManager!.contextId.toString());
+      }
 
-    if (data is List<int>) {
-      request.add(data);
-    } else if (data != null) {
-      // Treat as string as default.
-      request.add(utf8.encode(data));
-    }
+      if (data is List<int>) {
+        request.add(data);
+      } else if (data != null) {
+        // Treat as string as default.
+        request.add(utf8.encode(data));
+      }
 
-    return request;
+      return request;
+    });
   }
 
   @override
-  FutureOr<String> invoke(String method, params, InvokeModuleCallback callback) async {
+  String invoke(String method, params, InvokeModuleCallback callback) {
     Uri uri = _resolveUri(method);
     Map<String, dynamic> options = params;
 
@@ -101,15 +101,24 @@ class FetchModule extends BaseModule {
       // No host specified in URI.
       _handleError('Failed to parse URL from $uri.', null);
     } else {
-      try {
-        HttpClientRequest request = await getRequest(uri, options['method'], options['headers'], options['body']);
-        if (_disposed) return Future.value('');
-        HttpClientResponse response = await request.close();
-        Uint8List? bytes = await consolidateHttpClientResponseBytes(response);
-        callback(data: [EMPTY_STRING, response.statusCode, bytes]);
-      } catch (error, stacktrace) {
-        _handleError(error, stacktrace);
-      }
+      HttpClientResponse? response;
+      getRequest(uri, options['method'], options['headers'], options['body']).then((HttpClientRequest request) {
+        if (_disposed) return Future.value(null);
+        return request.close();
+      }).then((HttpClientResponse? res) {
+        if (res == null) {
+          return Future.value(null);
+        } else {
+          response = res;
+          return consolidateHttpClientResponseBytes(res);
+        }
+      }).then((Uint8List? bytes) {
+        if (bytes != null) {
+          callback(data: [EMPTY_STRING, response?.statusCode, bytes]);
+        } else {
+          throw FlutterError('Failed to read response.');
+        }
+      }).catchError(_handleError);
     }
 
     return EMPTY_STRING;
