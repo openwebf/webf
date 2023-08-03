@@ -157,7 +157,7 @@ describe("css pseudo selector", () => {
       .text-box:after {
         border: 5px solid red;
       }
-    
+
     `}</style>;
     const div = <div>{'004 Before && After'}</div>;
     div.setAttribute("style", "border:5px solid blue");
@@ -172,14 +172,14 @@ describe("css pseudo selector", () => {
 
   it('008', async () => {
     const style = <style>{`
-      
+
       #pro:before {
         border: 2px solid green;
       }
       #pro:after {
         border: 2px solid yellow;
       }
-    
+
       .div1::before {
         content: 'AAA';
         background-color: red;
@@ -196,8 +196,8 @@ describe("css pseudo selector", () => {
       .text-box:after {
         border: 5px solid red;
       }
-     
-    
+
+
     `}</style>;
     const div = <div>{'004 Before && After'}</div>;
     div.setAttribute("style", "border:5px solid blue");
@@ -219,7 +219,7 @@ describe("css pseudo selector", () => {
       #pro:after {
         border: 2px solid yellow;
       }
-    
+
       .div1::before {
         content: 'AAA';
         background-color: red;
@@ -261,7 +261,7 @@ describe("css pseudo selector", () => {
       #pro:after {
         border: 2px solid yellow;
       }
-    
+
       .div1::before {
         content: 'AAA';
         background-color: red;
@@ -303,11 +303,11 @@ describe("css pseudo selector", () => {
         border: 2px solid yellow;
         border-radius: inherit;
       }
-    
+
       .div1 {
         border-radius: 50%;
       }
-    
+
       .div1::before {
         content: 'AAA';
         background-color: red;
@@ -327,5 +327,38 @@ describe("css pseudo selector", () => {
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
+  });
+
+  it('should works with events', async (done) => {
+    const style = <style>{`
+
+      .div1 {
+        border-radius: 50%;
+      }
+
+      .div1::before {
+        content: 'AAAAAAAAAAAAAAAAAA';
+        background-color: red;
+        margin-left: 10px;
+      }
+      .div1::after {
+        content: 'BBB';
+        background-color: blue;
+        margin-left: 10px;
+      }
+    `}</style>;
+    const div = <div>{'004 Before && After'}</div>;
+    div.setAttribute("style", "border:5px solid blue");
+    div.className = "div1";
+
+    document.head.appendChild(style);
+    document.body.appendChild(div);
+
+    div.addEventListener('click', (e) => {
+      expect(e.target).toBe(div);
+      done();
+    });
+
+    await simulateClick(15, 5);
   });
 });
