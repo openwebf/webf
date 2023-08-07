@@ -71,9 +71,10 @@ class UICommandBuffer {
   void addCommand(const UICommandItem& item, bool request_ui_update = true);
 
   ExecutingContext* context_{nullptr};
-  UICommandItem buffer_[MAXIMUM_UI_COMMAND_SIZE];
+  UICommandItem* buffer_{nullptr};
   bool update_batched_{false};
   int64_t size_{0};
+  int64_t max_size_{MAXIMUM_UI_COMMAND_SIZE};
 };
 
 }  // namespace webf
