@@ -87,14 +87,12 @@ class CSSStyleDeclaration extends BindingObject {
   CSSStyleDeclaration? get pseudoBeforeStyle => _pseudoBeforeStyle;
   set pseudoBeforeStyle(CSSStyleDeclaration? newStyle) {
     _pseudoBeforeStyle = newStyle;
-    target?.markBeforePseudoElementNeedsUpdate();
   }
 
   CSSStyleDeclaration? _pseudoAfterStyle;
   CSSStyleDeclaration? get pseudoAfterStyle => _pseudoAfterStyle;
   set pseudoAfterStyle(CSSStyleDeclaration? newStyle) {
     _pseudoAfterStyle = newStyle;
-    target?.markAfterPseudoElementNeedsUpdate();
   }
 
   CSSStyleDeclaration([BindingContext? context]): super(context);
@@ -564,7 +562,6 @@ class CSSStyleDeclaration extends BindingObject {
       for (CSSStyleRule rule in beforeRules) {
         pseudoBeforeStyle!.union(rule.declaration);
       }
-      parentElement.markBeforePseudoElementNeedsUpdate();
     } else if (beforeRules.isEmpty && pseudoBeforeStyle != null) {
       pseudoBeforeStyle = null;
     }
@@ -574,7 +571,6 @@ class CSSStyleDeclaration extends BindingObject {
       for (CSSStyleRule rule in afterRules) {
         pseudoAfterStyle!.union(rule.declaration);
       }
-      parentElement.markAfterPseudoElementNeedsUpdate();
     } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
       pseudoAfterStyle = null;
     }
@@ -622,6 +618,7 @@ class CSSStyleDeclaration extends BindingObject {
       } else {
         pseudoBeforeStyle?.merge(other.pseudoBeforeStyle!);
       }
+      target?.updateBeforePseudoElement();
     }
     if (other.pseudoAfterStyle != null) {
       if (pseudoAfterStyle == null) {
@@ -629,6 +626,7 @@ class CSSStyleDeclaration extends BindingObject {
       } else {
         pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
       }
+      target?.updateAfterPseudoElement();
     }
 
     return updateStatus;
@@ -689,7 +687,7 @@ class CSSStyleDeclaration extends BindingObject {
   }
 
   @override
-  String toString() => 'CSSStyleDeclaration($hashCode $cssText)';
+  String toString() => 'CSSStyleDeclaration(${super.hashCode} $cssText)';
 
   @override
   int get hashCode => cssText.hashCode;

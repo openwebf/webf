@@ -22,4 +22,9 @@ class PseudoElement extends Element {
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
+
+  @override
+  String toString() {
+    return 'Pseudo Element($hashCode)';
+  }
 }

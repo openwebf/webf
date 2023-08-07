@@ -889,20 +889,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
 
-    previousPseudoElement.setNeedsStyleRecalc(StyleChangeType.localStyleChange);
-
     return previousPseudoElement;
   }
 
-  bool _shouldBeforePseudoElementNeedsUpdate = false;
-
-  void markBeforePseudoElementNeedsUpdate() {
-    if (_shouldBeforePseudoElementNeedsUpdate) return;
-    _shouldBeforePseudoElementNeedsUpdate = true;
-    Future.microtask(_updateBeforePseudoElement);
-  }
-
-  void _updateBeforePseudoElement() {
+  void updateBeforePseudoElement() {
     // Add pseudo elements
     String? beforeContent = style.pseudoBeforeStyle?.getPropertyValue('content');
     if (beforeContent != null && beforeContent.isNotEmpty) {
@@ -910,25 +900,15 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     } else if (_beforeElement != null) {
       removeChild(_beforeElement!);
     }
-    _shouldBeforePseudoElementNeedsUpdate = false;
   }
 
-  bool _shouldAfterPseudoElementNeedsUpdate = false;
-
-  void markAfterPseudoElementNeedsUpdate() {
-    if (_shouldAfterPseudoElementNeedsUpdate) return;
-    _shouldAfterPseudoElementNeedsUpdate = true;
-    Future.microtask(_updateAfterPseudoElement);
-  }
-
-  void _updateAfterPseudoElement() {
+  void updateAfterPseudoElement() {
     String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
     if (afterContent != null && afterContent.isNotEmpty) {
       _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter, _afterElement);
     } else if (_afterElement != null) {
       removeChild(_afterElement!);
     }
-    _shouldAfterPseudoElementNeedsUpdate = false;
   }
 
   // Add element to its containing block which includes the steps of detach the renderBoxModel
@@ -1567,21 +1547,25 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   bool recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
     if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
-      // Diff style.
-      CSSStyleDeclaration newStyle = CSSStyleDeclaration();
-      applyStyle(newStyle);
-      var hasInheritedPendingProperty = false;
-      if (style.merge(newStyle)) {
-        hasInheritedPendingProperty = style.hasInheritedPendingProperty;
+      if (this is PseudoElement) {
         style.flushPendingProperties();
+      } else {
+        // Diff style.
+        CSSStyleDeclaration newStyle = CSSStyleDeclaration();
+        applyStyle(newStyle);
+        var hasInheritedPendingProperty = false;
+        if (style.merge(newStyle)) {
+          hasInheritedPendingProperty = style.hasInheritedPendingProperty;
+          style.flushPendingProperties();
+        }
+        if (rebuildNested || hasInheritedPendingProperty || styleChangeType == StyleChangeType.subtreeStyleChange) {
+          // Update children style.
+          children.forEach((Element child) {
+            child.recalculateStyle(rebuildNested: rebuildNested);
+          });
+        }
       }
 
-      if (rebuildNested || hasInheritedPendingProperty || styleChangeType == StyleChangeType.subtreeStyleChange) {
-        // Update children style.
-        children.forEach((Element child) {
-          child.recalculateStyle(rebuildNested: rebuildNested);
-        });
-      }
       clearStyleChangeType();
       return true;
     }
