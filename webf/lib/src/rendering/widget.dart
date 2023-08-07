@@ -44,12 +44,24 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
       // To maximum compact with Flutter, We needs to limit the maxWidth and maxHeight constraints to
       // the viewportSize, as same as the MaterialApp does.
       Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
-      BoxConstraints childConstraints = BoxConstraints(
+
+      BoxConstraints childConstraints;
+      if (child is RenderBoxModel) {
+        childConstraints = (child as RenderBoxModel).getConstraints();
+      } else if (child is RenderTextBox) {
+        childConstraints = (child as RenderTextBox).getConstraints();
+      } else if (child is RenderPositionPlaceholder) {
+        childConstraints = BoxConstraints();
+      } else {
+        // RenderObject of custom element need to inherit constraints from its parents
+        // which adhere to flutter's rule.
+        childConstraints = BoxConstraints(
           minWidth: contentConstraints!.minWidth,
           maxWidth: math.min(viewportSize.width, contentConstraints!.maxWidth),
           minHeight: contentConstraints!.minHeight,
           maxHeight: math.min(viewportSize.height, contentConstraints!.maxHeight)
-      );
+        );
+      }
 
       child!.layout(childConstraints, parentUsesSize: true);
 
