@@ -250,7 +250,7 @@ class RenderLayoutBox extends RenderBoxModel
       final Matrix4 transform = Matrix4.identity();
       applyLayoutTransform(child, transform, false);
       Offset tlOffset =
-          MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
       overflowRect = Rect.fromLTRB(
           math.min(overflowRect.left, tlOffset.dx),
           math.min(overflowRect.top, tlOffset.dy),
@@ -263,6 +263,7 @@ class RenderLayoutBox extends RenderBoxModel
 
   // Sort children by zIndex, used for paint and hitTest.
   List<RenderBox>? _paintingOrder;
+
   List<RenderBox> get paintingOrder {
     if (_paintingOrder != null) {
       return _paintingOrder!;
@@ -326,6 +327,7 @@ class RenderLayoutBox extends RenderBoxModel
   }
 
   bool _childrenNeedsSort = false;
+
   void markChildrenNeedsSort() {
     _childrenNeedsSort = true;
     _paintingOrder = null;
@@ -350,7 +352,7 @@ class RenderLayoutBox extends RenderBoxModel
     // Layout positioned element
     while (child != null) {
       final ContainerParentDataMixin<RenderBox>? childParentData =
-          child.parentData as ContainerParentDataMixin<RenderBox>?;
+      child.parentData as ContainerParentDataMixin<RenderBox>?;
       if (child is! RenderBoxModel) {
         child = childParentData!.nextSibling;
         continue;
@@ -624,11 +626,7 @@ class RenderLayoutBox extends RenderBoxModel
 
   RenderSliverListLayout toSliverLayout(RenderSliverElementChildManager manager, ScrollListener? onScroll) {
     RenderSliverListLayout sliverListLayout = RenderSliverListLayout(
-      renderStyle: renderStyle,
-      manager: manager,
-      onScroll: onScroll,
-      currentView: renderStyle.currentFlutterView
-    );
+        renderStyle: renderStyle, manager: manager, onScroll: onScroll, currentView: renderStyle.currentFlutterView);
     manager.setupSliverListLayout(sliverListLayout);
     copyWith(sliverListLayout);
     sliverListLayout.addAll(detachChildren());
@@ -696,9 +694,36 @@ class RenderBoxModel extends RenderBox
   bool isScrollingContentBox = false;
 
   bool _needsRecalculateStyle = false;
+
   void markNeedsRecalculateRenderStyle() {
     if (_needsRecalculateStyle) return;
     _needsRecalculateStyle = true;
+  }
+
+  bool get isSizeTight {
+    bool isDefinedSize = (renderStyle.width.value != null &&
+        renderStyle.height.value != null &&
+        renderStyle.width.isNotAuto &&
+        !renderStyle.width.isPercentage &&
+        renderStyle.height.isNotAuto &&
+        !renderStyle.height.isPercentage);
+    bool isFixedMinAndMaxSize = (renderStyle.minWidth.value == renderStyle.maxWidth.value &&
+        renderStyle.minWidth.value != null && renderStyle.minWidth.isNotAuto && !renderStyle.minWidth.isPercentage) && (
+        renderStyle.minHeight.value == renderStyle.maxHeight.value && renderStyle.minHeight.value != null &&
+            renderStyle.minHeight.isNotAuto && !renderStyle.minHeight.isPercentage
+    );
+
+    return isDefinedSize || isFixedMinAndMaxSize;
+  }
+
+  Size logicalBoxSize() {
+    assert(isSizeTight);
+
+    if (renderStyle.width.value != null && renderStyle.height.value != null) {
+      return Size(renderStyle.width.computedValue, renderStyle.height.computedValue);
+    }
+
+    return Size(renderStyle.minWidth.computedValue, renderStyle.minHeight.computedValue);
   }
 
   BoxSizeType get widthSizeType {
@@ -746,17 +771,17 @@ class RenderBoxModel extends RenderBox
   // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context#the_stacking_context
   bool get needsStacking {
     return
-        // Element with a position value absolute, relative, fixed or sticky.
-        renderStyle.position != CSSPositionType.static ||
-            // Element that is a child of a flex container with z-index value other than auto.
-            ((renderStyle.parent!.display == CSSDisplay.flex || renderStyle.parent!.display == CSSDisplay.inlineFlex) &&
-                renderStyle.zIndex != null) ||
-            // Element with a opacity value less than 1.
-            renderStyle.opacity < 1.0 ||
-            // Element with a transform value.
-            renderStyle.transform != null ||
-            // Element with a filter value.
-            renderStyle.filter != null;
+      // Element with a position value absolute, relative, fixed or sticky.
+      renderStyle.position != CSSPositionType.static ||
+          // Element that is a child of a flex container with z-index value other than auto.
+          ((renderStyle.parent!.display == CSSDisplay.flex || renderStyle.parent!.display == CSSDisplay.inlineFlex) &&
+              renderStyle.zIndex != null) ||
+          // Element with a opacity value less than 1.
+          renderStyle.opacity < 1.0 ||
+          // Element with a transform value.
+          renderStyle.transform != null ||
+          // Element with a filter value.
+          renderStyle.filter != null;
   }
 
   T copyWith<T extends RenderBoxModel>(T copiedRenderBoxModel) {
@@ -768,25 +793,25 @@ class RenderBoxModel extends RenderBox
     scrollOffsetY?.removeListener(scrollYListener);
 
     return copiedRenderBoxModel
-      // Copy render style
+    // Copy render style
       ..renderStyle = renderStyle
 
-      // Copy box decoration
+    // Copy box decoration
       ..boxPainter = boxPainter
 
-      // Copy overflow
+    // Copy overflow
       ..scrollListener = scrollListener
       ..scrollablePointerListener = scrollablePointerListener
       ..scrollOffsetX = scrollOffsetX
       ..scrollOffsetY = scrollOffsetY
 
-      // Copy event hook
+    // Copy event hook
       ..getEventTarget = getEventTarget
 
-      // Copy renderPositionHolder
+    // Copy renderPositionHolder
       ..renderPositionPlaceholder = renderPositionPlaceholder
 
-      // Copy parentData
+    // Copy parentData
       ..parentData = parentData;
   }
 
@@ -1041,6 +1066,7 @@ class RenderBoxModel extends RenderBox
 
   // The contentSize of layout box
   Size? _contentSize;
+
   Size get contentSize {
     return _contentSize ?? Size.zero;
   }
@@ -1116,14 +1142,18 @@ class RenderBoxModel extends RenderBox
 
   // The max scrollable size.
   Size _maxScrollableSize = Size.zero;
+
   Size get scrollableSize => _maxScrollableSize;
+
   set scrollableSize(Size value) {
     assert(value.isFinite);
     _maxScrollableSize = value;
   }
 
   Size _scrollableViewportSize = Size.zero;
+
   Size get scrollableViewportSize => _scrollableViewportSize;
+
   set scrollableViewportSize(Size value) {
     _scrollableViewportSize = value;
   }
@@ -1168,9 +1198,7 @@ class RenderBoxModel extends RenderBox
     if (!kReleaseMode) {
       Timeline.startSync(
         'RenderBoxModel paint',
-        arguments: {
-          'ownerElement': renderStyle.target.toString()
-        },
+        arguments: {'ownerElement': renderStyle.target.toString()},
       );
     }
 
@@ -1227,6 +1255,7 @@ class RenderBoxModel extends RenderBox
   }
 
   final LayerHandle<ImageFilterLayer> _imageFilterLayer = LayerHandle<ImageFilterLayer>();
+
   void paintImageFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     if (renderStyle.imageFilter != null) {
       _imageFilterLayer.layer ??= ImageFilterLayer();
@@ -1304,7 +1333,8 @@ class RenderBoxModel extends RenderBox
     Offset ancestorBorderWidth = Offset(ancestorBorderLeft, ancestorBorderTop);
 
     return MatrixUtils.transformPoint(
-        getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset), point) - ancestorBorderWidth;
+        getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset), point) -
+        ancestorBorderWidth;
   }
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
@@ -1363,7 +1393,7 @@ class RenderBoxModel extends RenderBox
   // Find previous sibling renderObject of renderBoxModel, used for inserting to containing block.
   // If renderBoxModel is positioned, find the original place (position placeholder) to insert to
   // when its position changes to relative/static/sticky.
-  RenderBox? getPreviousSibling({ followPlaceHolder = true }) {
+  RenderBox? getPreviousSibling({followPlaceHolder = true}) {
     RenderBoxModel renderBoxModel = this;
     RenderBox? previousSibling;
     RenderPositionPlaceholder? renderPositionPlaceholder = renderBoxModel.renderPositionPlaceholder;
