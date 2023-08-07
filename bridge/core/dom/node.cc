@@ -413,8 +413,13 @@ void Node::setTextContent(const AtomicString& text, ExceptionState& exception_st
       if (text.IsEmpty()) {
         container->RemoveChildren();
       } else {
-        container->RemoveChildren();
-        container->AppendChild(GetDocument().createTextNode(text, exception_state), exception_state);
+        if (container->HasOneTextChild()) {
+          auto* text_node = To<Text>(container->firstChild());
+          text_node->setData(text, exception_state);
+        } else {
+          container->RemoveChildren();
+          container->AppendChild(GetDocument().createTextNode(text, exception_state), exception_state);
+        }
       }
       return;
     }
