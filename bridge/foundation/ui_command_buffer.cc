@@ -33,7 +33,7 @@ void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_upda
   }
 
   if (size_ >= max_size_) {
-    buffer_ = (UICommandItem*) realloc(buffer_, sizeof(UICommandItem) * max_size_ * 2);
+    buffer_ = (UICommandItem*)realloc(buffer_, sizeof(UICommandItem) * max_size_ * 2);
     max_size_ = max_size_ * 2;
   }
 
