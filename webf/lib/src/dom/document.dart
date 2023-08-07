@@ -183,7 +183,8 @@ class Document extends ContainerNode {
     }
   }
 
-  void updateStyle() {
+  void updateStyleIfNeeded() {
+    if (!_isStyleNeedsUpdate) return;
     styleEngine.recalcStyle();
   }
 
@@ -191,7 +192,7 @@ class Document extends ContainerNode {
   void scheduleStyleNeedsUpdate() {
     if (_isStyleNeedsUpdate) return;
     SchedulerBinding.instance.scheduleFrameCallback((timeStamp) {
-      updateStyle();
+      updateStyleIfNeeded();
       _isStyleNeedsUpdate = false;
     });
     _isStyleNeedsUpdate = true;

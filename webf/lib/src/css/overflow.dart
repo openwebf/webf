@@ -359,6 +359,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollTop {
+    ownerDocument.updateStyleIfNeeded();
     WebFScrollable? scrollableY = _getScrollable(Axis.vertical);
     if (scrollableY != null) {
       return scrollableY.position?.pixels ?? 0;
@@ -389,6 +390,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollLeft {
+    ownerDocument.updateStyleIfNeeded();
     WebFScrollable? scrollableX = _getScrollable(Axis.horizontal);
     if (scrollableX != null) {
       return scrollableX.position?.pixels ?? 0;
@@ -401,6 +403,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollHeight {
+    ownerDocument.updateStyleIfNeeded();
     if (!isRendererAttached) {
       return 0.0;
     }
@@ -416,6 +419,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollWidth {
+    ownerDocument.updateStyleIfNeeded();
     if (!isRendererAttached) {
       return 0.0;
     }
@@ -433,6 +437,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get clientTop {
+    ownerDocument.updateStyleIfNeeded();
     _ensureRenderObjectHasLayout();
     return renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
   }
@@ -443,16 +448,19 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get clientWidth {
+    ownerDocument.updateStyleIfNeeded();
     _ensureRenderObjectHasLayout();
     return renderBoxModel?.clientWidth ?? 0.0;
   }
 
   double get clientHeight {
+    ownerDocument.updateStyleIfNeeded();
     _ensureRenderObjectHasLayout();
     return renderBoxModel?.clientHeight ?? 0.0;
   }
 
   double get offsetWidth {
+    ownerDocument.updateStyleIfNeeded();
     _ensureRenderObjectHasLayout();
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox == null) {
@@ -462,6 +470,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get offsetHeight {
+    ownerDocument.updateStyleIfNeeded();
     _ensureRenderObjectHasLayout();
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox == null) {
