@@ -596,8 +596,8 @@ class CSSLength {
       return CSSLengthValue.initial;
     } else if (text == INHERIT) {
       if (renderStyle != null && propertyName != null && renderStyle.target.parentElement != null) {
-        return parseLength(renderStyle.target.parentElement!.style.getPropertyValue(propertyName), renderStyle,
-            propertyName, axisType);
+        var element = renderStyle.target.parentElement!;
+        return parseLength(element.style.getPropertyValue(propertyName), element.renderStyle, propertyName, axisType);
       }
       return CSSLengthValue.zero;
     } else if (text == AUTO) {
