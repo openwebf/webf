@@ -322,10 +322,8 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     StyleChangeType existingChangeType = styleChangeType;
     if (changeType.index > existingChangeType.index) _styleChangeType = changeType;
 
-    if (existingChangeType == StyleChangeType.noStyleChange) {
-      ownerDocument.styleEngine.markElementNeedsStyleUpdate(this as Element);
-      _styleChangeType = changeType;
-    }
+    ownerDocument.styleEngine.markElementNeedsStyleUpdate(this as Element);
+    _styleChangeType = changeType;
   }
 
   /// Attach a renderObject to parent.
