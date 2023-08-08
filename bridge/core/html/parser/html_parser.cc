@@ -105,9 +105,10 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
 
         if (isBlankSpace) {
           if (nLen > 0) {
-            auto* textNode = context->document()->createTextNode( AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
+            auto* textNode =
+                context->document()->createTextNode(AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
             root_container->appendChild(textNode, ASSERT_NO_EXCEPTION());
-         }
+          }
         }
       }
     }
