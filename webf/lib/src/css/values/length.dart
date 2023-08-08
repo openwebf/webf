@@ -113,8 +113,7 @@ class CSSLengthValue {
 
   static bool _isPercentageRelativeContainer(RenderBoxModel containerRenderBox) {
     CSSRenderStyle renderStyle = containerRenderBox.renderStyle;
-    bool isBlockLevelBox =
-        renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
+    bool isBlockLevelBox = renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
     bool isBlockInlineHaveSize = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
             renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
         renderStyle.width.value != null;
@@ -455,6 +454,14 @@ class CSSLengthValue {
 
   bool get isNotAuto {
     return !isAuto;
+  }
+
+  bool get isPrecise {
+    return type == CSSLengthType.PX ||
+        type == CSSLengthType.VW ||
+        type == CSSLengthType.VH ||
+        type == CSSLengthType.VMIN ||
+        type == CSSLengthType.VMAX;
   }
 
   bool get isNone {

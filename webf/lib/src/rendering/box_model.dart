@@ -703,14 +703,11 @@ class RenderBoxModel extends RenderBox
   bool get isSizeTight {
     bool isDefinedSize = (renderStyle.width.value != null &&
         renderStyle.height.value != null &&
-        renderStyle.width.isNotAuto &&
-        !renderStyle.width.isPercentage &&
-        renderStyle.height.isNotAuto &&
-        !renderStyle.height.isPercentage);
+        renderStyle.width.isPrecise && renderStyle.height.isPrecise);
     bool isFixedMinAndMaxSize = (renderStyle.minWidth.value == renderStyle.maxWidth.value &&
-        renderStyle.minWidth.value != null && renderStyle.minWidth.isNotAuto && !renderStyle.minWidth.isPercentage) && (
+        renderStyle.minWidth.value != null && renderStyle.minWidth.isPrecise) && (
         renderStyle.minHeight.value == renderStyle.maxHeight.value && renderStyle.minHeight.value != null &&
-            renderStyle.minHeight.isNotAuto && !renderStyle.minHeight.isPercentage
+            renderStyle.minHeight.isPrecise
     );
 
     return isDefinedSize || isFixedMinAndMaxSize;
@@ -869,7 +866,7 @@ class RenderBoxModel extends RenderBox
     } else {
       needsLayout = true;
       super.markNeedsLayout();
-      if (isScrollingContentBox && parent != null) {
+      if ((isScrollingContentBox || !isSizeTight) && parent != null) {
         markParentNeedsLayout();
       }
     }
@@ -1583,6 +1580,8 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('needsLayout', needsLayout, missingIfNull: true));
     properties.add(DiagnosticsProperty('position', renderStyle.position));
+    properties.add(DiagnosticsProperty('backgroundColor', renderStyle.backgroundColor?.value));
+    properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
 
     if (renderPositionPlaceholder != null)
       properties.add(DiagnosticsProperty('renderPositionHolder', renderPositionPlaceholder));
