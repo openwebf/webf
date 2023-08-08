@@ -295,11 +295,14 @@ describe('custom widget element', () => {
     div.style.height = '100px';
     div.style.border = `1px solid red`;
 
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(div);
+
     const img = document.createElement('img');
     img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
     div.appendChild(img);
 
-    flutterContainer.appendChild(div);
+    flutterContainer.appendChild(wrapper);
 
     requestAnimationFrame(async () => {
        const rect = div.getBoundingClientRect();
