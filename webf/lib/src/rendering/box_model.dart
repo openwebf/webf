@@ -712,16 +712,6 @@ class RenderBoxModel extends RenderBox
     return isDefinedSize || isFixedMinAndMaxSize;
   }
 
-  Size logicalBoxSize() {
-    assert(isSizeTight);
-
-    if (renderStyle.width.value != null && renderStyle.height.value != null) {
-      return Size(renderStyle.width.computedValue, renderStyle.height.computedValue);
-    }
-
-    return Size(renderStyle.minWidth.computedValue, renderStyle.minHeight.computedValue);
-  }
-
   BoxSizeType get widthSizeType {
     return renderStyle.width.isAuto ? BoxSizeType.automatic : BoxSizeType.specified;
   }
