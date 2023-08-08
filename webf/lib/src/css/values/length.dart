@@ -461,7 +461,9 @@ class CSSLengthValue {
         type == CSSLengthType.VW ||
         type == CSSLengthType.VH ||
         type == CSSLengthType.VMIN ||
-        type == CSSLengthType.VMAX;
+        type == CSSLengthType.VMAX ||
+        type == CSSLengthType.EM ||
+        type == CSSLengthType.REM || type == CSSLengthType.PERCENTAGE;
   }
 
   bool get isNone {
