@@ -90,7 +90,7 @@ describe("em", () => {
     BODY.appendChild(div);
 
     await snapshot();
-  }); 
+  });
 
   it("should works with font size of own change", async (done) => {
     let div;
@@ -143,7 +143,7 @@ describe("em", () => {
       done();
     })
 
-  }); 
+  });
 
   it("should works with font size of parent change when own element has no font size", async (done) => {
     let div;
@@ -187,7 +187,7 @@ describe("em", () => {
     );
 
     BODY.appendChild(div);
-    
+
     await snapshot();
 
     window.requestAnimationFrame(async () => {
@@ -196,7 +196,7 @@ describe("em", () => {
       done();
     })
 
-  }); 
+  });
 
   it("should works with font size of parent change when own element has font size", async (done) => {
     let div;
@@ -250,6 +250,6 @@ describe("em", () => {
       done();
     })
 
-  }); 
+  });
 
 });
