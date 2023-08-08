@@ -860,7 +860,11 @@ class RenderFlowLayout extends RenderLayoutBox {
         // Total main size of previous siblings.
         double preSiblingsMainSize = 0;
         for (RenderBox sibling in runChildrenList) {
-          preSiblingsMainSize += sibling.size.width;
+          if (sibling is RenderBoxModel) {
+            preSiblingsMainSize += sibling.size.width;
+          } else if (sibling is RenderTextBox) {
+            preSiblingsMainSize += sibling.size.width;
+          }
         }
 
         Size childScrollableSize = Size.zero;
@@ -900,6 +904,8 @@ class RenderFlowLayout extends RenderLayoutBox {
             childOffsetX = transformOffset.dx > 0 ? childOffsetX + transformOffset.dx : childOffsetX;
             childOffsetY = transformOffset.dy > 0 ? childOffsetY + transformOffset.dy : childOffsetY;
           }
+        } else if (child is RenderTextBox) {
+          childScrollableSize = child.boxSize!;
         }
 
         scrollableMainSizeOfChildren.add(preSiblingsMainSize + childScrollableSize.width + childOffsetX);

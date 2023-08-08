@@ -868,6 +868,9 @@ class RenderBoxModel extends RenderBox
     } else {
       needsLayout = true;
       super.markNeedsLayout();
+      if (isScrollingContentBox && parent != null) {
+        markParentNeedsLayout();
+      }
     }
   }
 
@@ -1575,6 +1578,8 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
+    properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));
+    properties.add(DiagnosticsProperty('needsLayout', needsLayout, missingIfNull: true));
     properties.add(DiagnosticsProperty('position', renderStyle.position));
 
     if (renderPositionPlaceholder != null)
