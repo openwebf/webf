@@ -4,10 +4,10 @@ export class ResizeObserver {
   private targets:Array<HTMLElement> = [];
   private cacheEvents:Array<CustomEvent> = [];
   private dispatchEvent:Function;
+  private pending:bool = false;
   constructor(callBack: (entries: Array<ResizeObserverEntry>)=>void) {
     this.resizeChangeListener = callBack;
     this.handleResizeEvent = this.handleResizeEvent.bind(this);
-    this.dispatchEvent = this.debounce(this.sendEventToElement.bind(this))
   }
 
   observe(target: HTMLElement) {
@@ -20,7 +20,11 @@ export class ResizeObserver {
 
   handleResizeEvent(event: any) {
     this.cacheEvents.push(event);
-    this.dispatchEvent();
+    this.pending = true;
+    requestAnimationFrame(()=>{
+        sendEventToElement();
+        this.pending = false;
+    });
   }
 
   sendEventToElement() {
@@ -38,22 +42,6 @@ export class ResizeObserver {
     target.removeEventListener('resize', this.handleResizeEvent);
     this.targets = this.targets.filter((item)=> item !== target);
 
-  }
-
-  disconnect(target: HTMLElement) {
-    this.targets.forEach((item)=>{
-      item.removeEventListener('resize', this.handleResizeEvent);
-    });
-    this.targets = [];
-    this.cacheEvents = [];
-  }
-
-  debounce(func:()=>void, timeout = 64){
-    let timer: NodeJS.Timeout;
-    return () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => { func.apply(this, arguments); }, timeout);
-    };
   }
 }
 class ResizeObserverEntry {
