@@ -37,6 +37,8 @@
 #define SYSTEM_NAME "unknown"
 #endif
 
+static std::atomic<int64_t> unique_page_id{0};
+
 void* initDartIsolateContext(uint64_t* dart_methods, int32_t dart_methods_len) {
   void* ptr = new webf::DartIsolateContext(dart_methods, dart_methods_len);
   return ptr;
@@ -49,6 +51,10 @@ void* allocateNewPage(void* dart_isolate_context, int32_t targetContextId) {
   void* ptr = page.get();
   ((webf::DartIsolateContext*)dart_isolate_context)->AddNewPage(std::move(page));
   return ptr;
+}
+
+int64_t newPageId() {
+  return unique_page_id++;
 }
 
 void disposePage(void* dart_isolate_context, void* page_) {

@@ -10,12 +10,6 @@ import 'binding.dart';
 import 'from_native.dart';
 import 'to_native.dart';
 
-int _contextId = 0;
-
-int newContextId() {
-  return ++_contextId;
-}
-
 class DartContext {
   DartContext() : pointer = initDartIsolateContext(makeDartMethodsData()) {
     initDartDynamicLinking();
@@ -31,7 +25,7 @@ int initBridge(WebFViewController view) {
   // Setup binding bridge.
   BindingBridge.setup();
 
-  int pageId = newContextId();
+  int pageId = newPageId();
   allocateNewPage(pageId);
 
   return pageId;
