@@ -56,6 +56,7 @@ abstract class RenderSVGShape extends RenderBoxModel {
       _path = asPath();
       _needUpdateShape = false;
       size = _path!.getBounds().size;
+      dispatchResize(contentSize, boxSize ?? Size.zero);
     }
   }
 
