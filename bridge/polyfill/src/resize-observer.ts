@@ -4,7 +4,7 @@ export class ResizeObserver {
   private targets:Array<HTMLElement> = [];
   private cacheEvents:Array<CustomEvent> = [];
   private dispatchEvent:Function;
-  private pending:bool = false;
+  private pending:boolean = false;
   constructor(callBack: (entries: Array<ResizeObserverEntry>)=>void) {
     this.resizeChangeListener = callBack;
     this.handleResizeEvent = this.handleResizeEvent.bind(this);
