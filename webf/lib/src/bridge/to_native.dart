@@ -237,6 +237,15 @@ void disposePage(int contextId) {
   _allocatedPages.remove(contextId);
 }
 
+typedef NativeNewPageId = Int64 Function();
+typedef DartNewPageId = int Function();
+
+final DartNewPageId _newPageId = WebFDynamicLibrary.ref.lookup<NativeFunction<NativeNewPageId>>('newPageId').asFunction();
+
+int newPageId() {
+  return _newPageId();
+}
+
 typedef NativeAllocateNewPage = Pointer<Void> Function(Pointer<Void>, Int32);
 typedef DartAllocateNewPage = Pointer<Void> Function(Pointer<Void>, int);
 

@@ -36,6 +36,10 @@ WEBF_EXPORT_C
 void* initDartIsolateContext(uint64_t* dart_methods, int32_t dart_methods_len);
 WEBF_EXPORT_C
 void* allocateNewPage(void* dart_isolate_context, int32_t targetContextId);
+
+WEBF_EXPORT_C
+int64_t newPageId();
+
 WEBF_EXPORT_C
 void disposePage(void* dart_isolate_context, void* page);
 WEBF_EXPORT_C
