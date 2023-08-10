@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/rendering/logic_box.dart';
 
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines
@@ -517,6 +518,9 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (_isHorizontalFlexDirection) {
       return childSize!.height + marginVertical;
     } else {
+      if(child is RenderLayoutBox && child.isMarginNegativeChangeSize()) {
+        return _horizontalMarginNegativeSet(childSize!.width, child);
+      }
       return childSize!.width + marginHorizontal;
     }
   }
@@ -530,6 +534,18 @@ class RenderFlexLayout extends RenderLayoutBox {
     } else {
       return renderBoxModel.renderStyle.overflowY != CSSOverflowType.visible;
     }
+  }
+
+  double _horizontalMarginNegativeSet(double baseSize ,RenderLayoutBox box) {
+    CSSRenderStyle boxStyle = box.renderStyle;
+    double? marginLeft = boxStyle.marginLeft.computedValue;
+    double? marginRight = boxStyle.marginRight.computedValue;
+    if(box.isMarginNegativeChangeSize()) {
+      baseSize += marginLeft > 0 ? marginLeft : 0;
+      baseSize += marginRight > 0 ? marginRight : 0;
+      return baseSize;
+    }
+    return baseSize + marginLeft + marginRight;
   }
 
   double _getMainAxisExtent(RenderBox child, {bool shouldUseIntrinsicMainSize = false}) {
@@ -554,6 +570,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     double baseSize = _getMainSize(child, shouldUseIntrinsicMainSize: shouldUseIntrinsicMainSize);
     if (_isHorizontalFlexDirection) {
+      if(child is RenderLayoutBox && child.isMarginNegativeChangeSize()) {
+        return _horizontalMarginNegativeSet(baseSize, child);
+      }
       return baseSize + marginHorizontal;
     } else {
       return baseSize + marginVertical;
@@ -761,7 +780,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       } else if (child is RenderBoxModel) {
         childConstraints = child.getConstraints();
       } else if (child is RenderTextBox) {
-        childConstraints = child.getConstraints();
+        childConstraints = child.getConstraints(webfTextMaxLines);
       } else {
         childConstraints = BoxConstraints();
       }
@@ -1232,6 +1251,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Child cross size adjusted due to align-items/align-self style.
         double? childStretchedCrossSize;
 
+        //TODO 为处理margin负数的情况 待补充check-child.isMarginNegativeChangeSize()
         if (_needToStretchChildCrossSize(child)) {
           childStretchedCrossSize = _getChildStretchedCrossSize(child, metrics.crossAxisExtent, runBetweenSpace);
           childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
@@ -2360,6 +2380,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       case FlexDirection.columnReverse:
         return false;
     }
+  }
+
+  @override
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
   }
 }
 

@@ -9,7 +9,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'dart:io' show Platform;
-
+import 'package:flutter/cupertino.dart' show WidgetsBinding;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
@@ -215,6 +215,14 @@ class ScrollPhysics {
     stiffness: 100.0,
     ratio: 1.1,
   );
+
+  bool recommendDeferredLoading(double velocity, ScrollMetrics metrics,) {
+    if (parent == null) {
+      final double maxPhysicalPixels = WidgetsBinding.instance!.window.physicalSize.longestSide;
+      return velocity.abs() > maxPhysicalPixels;
+    }
+    return parent!.recommendDeferredLoading(velocity, metrics);
+  }
 
   /// The spring to use for ballistic simulations.
   SpringDescription get spring => parent?.spring ?? _kDefaultSpring;
