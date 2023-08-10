@@ -294,7 +294,9 @@ class RenderFlowLayout extends RenderLayoutBox {
             maxHeight: double.infinity,
           );
         }
-        child.layout(childConstraints, parentUsesSize: !isSizeTight);
+
+        bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight);
+        child.layout(childConstraints, parentUsesSize: parentUseSize);
       }
 
       double childMainAxisExtent = _getMainAxisExtent(child);
@@ -861,9 +863,9 @@ class RenderFlowLayout extends RenderLayoutBox {
         double preSiblingsMainSize = 0;
         for (RenderBox sibling in runChildrenList) {
           if (sibling is RenderBoxModel) {
-            preSiblingsMainSize += sibling.size.width;
+            preSiblingsMainSize += sibling.boxSize!.width;
           } else if (sibling is RenderTextBox) {
-            preSiblingsMainSize += sibling.size.width;
+            preSiblingsMainSize += sibling.boxSize!.width;
           }
         }
 
