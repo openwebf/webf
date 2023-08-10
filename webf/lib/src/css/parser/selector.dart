@@ -143,13 +143,15 @@ class SimpleSelectorSequence extends TreeNode {
   @override
   String toString() => simpleSelector.name;
 }
-
+final Set<String> selectorKeySet = {};
 // All other selectors (element, #id, .class, attribute, pseudo, negation,
 // namespace, *) are derived from this selector.
 abstract class SimpleSelector extends TreeNode {
   final dynamic _name; // ThisOperator, Identifier, Negation, others?
 
-  SimpleSelector(this._name) : super();
+  SimpleSelector(this._name) : super(){
+    selectorKeySet.add(_name.name);
+  }
 
   // TOOD(srawlins): Figure this one out.
   // ignore: avoid_dynamic_calls
