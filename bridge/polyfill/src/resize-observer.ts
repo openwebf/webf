@@ -1,17 +1,17 @@
 type BoxSize = {blockSize: number, inlineSize: number};
 export class ResizeObserver {
-  private resizeChangeListener:(entries:Array<ResizeObserverEntry>)=>void;
+  private resizeChangeListener:(entries:Array<ResizeObserverEntry>) => void;
   private targets:Array<HTMLElement> = [];
   private cacheEvents:Array<CustomEvent> = [];
   private dispatchEvent:Function;
   private pending:boolean = false;
-  constructor(callBack: (entries: Array<ResizeObserverEntry>)=>void) {
+  constructor(callBack: (entries: Array<ResizeObserverEntry>) => void) {
     this.resizeChangeListener = callBack;
     this.handleResizeEvent = this.handleResizeEvent.bind(this);
   }
 
   observe(target: HTMLElement) {
-    if(this.targets.filter((item)=> item === target).length > 0) {
+    if(this.targets.filter((item) => item === target).length > 0) {
       return;
     }
     this.targets.push(target);
@@ -20,8 +20,11 @@ export class ResizeObserver {
 
   handleResizeEvent(event: any) {
     this.cacheEvents.push(event);
+    if(this.pending) {
+        return;
+    }
     this.pending = true;
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(() => {
         this.sendEventToElement();
         this.pending = false;
     });
@@ -29,7 +32,7 @@ export class ResizeObserver {
 
   sendEventToElement() {
     if(this.cacheEvents.length > 0) {
-      const entries = this.cacheEvents.map((item)=>{
+      const entries = this.cacheEvents.map((item) => {
         const detail = JSON.parse(item.detail);
         return new ResizeObserverEntry(item.target!, detail.borderBoxSize, detail.contentBoxSize, detail.contentRect);
       });
@@ -40,8 +43,7 @@ export class ResizeObserver {
 
   unobserve(target: HTMLElement) {
     target.removeEventListener('resize', this.handleResizeEvent);
-    this.targets = this.targets.filter((item)=> item !== target);
-
+    this.targets = this.targets.filter((item) => item !== target);
   }
 }
 class ResizeObserverEntry {
