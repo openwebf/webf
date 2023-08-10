@@ -295,7 +295,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           );
         }
 
-        bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight);
+        bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
         child.layout(childConstraints, parentUsesSize: parentUseSize);
       }
 
