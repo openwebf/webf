@@ -541,6 +541,77 @@ describe('Event', () => {
     expect(ret).toEqual('1');
   });
 
+  it('ResizeObserver observer one element', async (done)=> {
+    const el = createElement('div', {
+      style: {
+        width: '100px',
+        height: '100px',
+        background: 'red'
+      }
+    });
+    document.body.appendChild(el);
+    const observer = new ResizeObserver((entries)=>{
+      if(entries) {
+        done();
+      }
+    });
+    observer.observe(el);
+    el.style.width = '102px';
+  });
+
+  it('ResizeObserver observer one element and update twice', async (done)=> {
+      const el = createElement('div', {
+        style: {
+          width: '100px',
+          height: '100px',
+          background: 'red'
+        }
+      });
+      document.body.appendChild(el);
+      const observer = new ResizeObserver((entries)=>{
+        if(entries && entries.length > 0 && entries[entries.length-1].contentRect.width == 103) {
+          done();
+        }
+        done.fail('ResizeObserver size get not right')
+      });
+      observer.observe(el);
+      el.style.width = '102px';
+      el.style.width = '103px';
+    });
+
+  it('ResizeObserver observer two element', async (done)=> {
+    const el = createElement('div', {
+      style: {
+        width: '100px',
+        height: '100px',
+        background: 'red'
+      }
+    });
+    const el2 = createElement('div', {
+      style: {
+        width: '100px',
+        height: '100px',
+        background: 'yellow'
+      }
+    });
+    document.body.appendChild(el);
+    document.body.appendChild(el2);
+    const observer = new ResizeObserver((entries)=>{
+      if(entries && entries.length > 1) {
+        done();
+        return;
+      }
+      done.fail('ResizeObserver entries not ture');
+    });
+    observer.observe(el);
+    observer.observe(el2);
+    el.style.width = '102px';
+    el2.style.width = '102px';
+  });
+
+
+
+
   it('should work with share event object', async () => {
     const container1 = document.createElement('div');
     document.body.appendChild(container1);
