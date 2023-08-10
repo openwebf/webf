@@ -572,7 +572,7 @@ describe('Event', () => {
         if(entries && entries.length > 0 && entries[entries.length-1].contentRect.width == 103) {
           done();
         }
-        done.fail('ResizeObserver size get not right')
+        done.fail('ResizeObserver size get not right，'+entries[entries.length-1].contentRect.width)
       });
       observer.observe(el);
       el.style.width = '102px';
