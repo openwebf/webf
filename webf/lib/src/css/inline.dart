@@ -21,6 +21,9 @@ enum VerticalAlign {
   /// Aligns the middle of the element with the baseline plus half the x-height of the parent.
   /// @TODO not supported
   ///  middle,
+  //
+  /// Aligns the bottom of the element with the bottom of the parent element's font.
+  textBottom,
 }
 
 mixin CSSInlineMixin on RenderStyle {
@@ -40,6 +43,8 @@ mixin CSSInlineMixin on RenderStyle {
         return VerticalAlign.top;
       case BOTTOM:
         return VerticalAlign.bottom;
+      case TEXT_BOTTOM:
+        return VerticalAlign.textBottom;
     }
     return VerticalAlign.baseline;
   }

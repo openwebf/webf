@@ -6,6 +6,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/rendering/text_span.dart';
 
 final RegExp _commaRegExp = RegExp(r'\s*,\s*');
 
@@ -436,6 +437,7 @@ mixin CSSTextMixin on RenderStyle {
           // Manually layout text before text paint cause text style only
           // takes effect after text has been layouted.
           renderParagraph.text = child.textSpan;
+          renderParagraph.text = child.buildTextSpan();
           renderParagraph.layoutText();
           renderParagraph.markNeedsPaint();
         } else {
@@ -476,6 +478,7 @@ mixin CSSTextMixin on RenderStyle {
     CSSRenderStyle renderStyle, {
     Color? color,
     double? height,
+    TextSpan? oldTextSpan,
   }) {
     // Creates a new TextStyle object.
     //   color: The color to use when painting the text. If this is specified, foreground must be null.
@@ -508,12 +511,12 @@ mixin CSSTextMixin on RenderStyle {
         package: CSSText.getFontPackage(),
         locale: CSSText.getLocale(),
         background: CSSText.getBackground(),
-        foreground: null,
+        foreground: CSSText.getForeground(),
         height: height);
-    return TextSpan(
-      text: text,
-      style: textStyle,
-    );
+    if(oldTextSpan != null && oldTextSpan.text == text && oldTextSpan.style == textStyle) {
+      return oldTextSpan;
+    }
+    return WebFTextSpan(text: text, style: textStyle, children: []);
   }
 }
 
@@ -729,6 +732,18 @@ class CSSText {
     }
   }
 
+  static String? toCharacterBreakStr(String? word) {
+    if (word == null || word.isEmpty) {
+      return null;
+    }
+    String breakWord = '';
+    word.runes.forEach((element) {
+      breakWord += String.fromCharCode(element);
+      breakWord += '\u200B';
+    });
+    return breakWord;
+  }
+
   static TextBaseline getTextBaseLine() {
     return TextBaseline.alphabetic; // @TODO: impl vertical-align
   }
@@ -812,6 +827,11 @@ class CSSText {
 
   static Paint? getBackground() {
     // TODO: Reserved port for customize text decoration background.
+    return null;
+  }
+
+  static Paint? getForeground() {
+    // TODO: Reserved port for customize text decoration foreground.
     return null;
   }
 
