@@ -435,6 +435,12 @@ class RenderLayoutBox extends RenderBoxModel
     return result;
   }
 
+  bool isMarginNegativeChangeSize() {
+    double? marginLeft = renderStyle.marginLeft.computedValue;
+    double? marginRight = renderStyle.marginRight.computedValue;
+    return renderStyle.width.isAuto && (marginLeft < 0 || marginRight < 0);
+  }
+
   /// Common layout content size (including flow and flexbox layout) calculation logic
   Size getContentSize({
     required double contentWidth,
@@ -447,6 +453,15 @@ class RenderLayoutBox extends RenderBoxModel
     double? specifiedContentWidth = renderStyle.contentBoxLogicalWidth;
     double? specifiedContentHeight = renderStyle.contentBoxLogicalHeight;
 
+    // Margin negative will set element which is static && not set width, size bigger
+    double? marginLeft = renderStyle.marginLeft.computedValue;
+    double? marginRight = renderStyle.marginRight.computedValue;
+    double? marginAddSizeLeft = 0;
+    double? marginAddSizeRight = 0;
+    if(isMarginNegativeChangeSize()) {
+      marginAddSizeRight = marginLeft < 0 ? -marginLeft : 0;
+      marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
+    }
     // Flex basis takes priority over main size in flex item when flex-grow or flex-shrink not work.
     if (parent is RenderFlexLayout) {
       RenderBoxModel? parentRenderBoxModel = parent as RenderBoxModel?;
@@ -466,6 +481,8 @@ class RenderLayoutBox extends RenderBoxModel
 
     if (specifiedContentWidth != null) {
       finalContentWidth = math.max(specifiedContentWidth, contentWidth);
+      finalContentWidth += marginAddSizeLeft;
+      finalContentWidth += marginAddSizeRight;
     }
     if (specifiedContentHeight != null) {
       finalContentHeight = math.max(specifiedContentHeight, contentHeight);
@@ -886,6 +903,10 @@ class RenderBoxModel extends RenderBox
     }
   }
 
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
+  }
+
   @override
   void layout(Constraints newConstraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);
@@ -1052,6 +1073,11 @@ class RenderBoxModel extends RenderBox
     Size paddingBoxSize = renderStyle.wrapPaddingSize(_contentSize!);
     Size borderBoxSize = renderStyle.wrapBorderSize(paddingBoxSize);
     return constraints.constrain(borderBoxSize);
+  }
+
+  Size wrapOutContentSizeRight (Size contentSize) {
+    Size paddingBoxSize = renderStyle.wrapPaddingSizeRight(contentSize);
+    return renderStyle.wrapBorderSizeRight(paddingBoxSize);
   }
 
   // The contentSize of layout box

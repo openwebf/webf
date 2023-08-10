@@ -12,6 +12,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
@@ -1897,6 +1898,24 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         });
       }
     }
+  }
+
+  bool recommendDeferredLoading() {
+    WebFScrollable? scrollable;
+    Element? next = this;
+    while (next != null && next.parentElement != null && next.parentElement is! HTMLElement &&
+        next.parentElement!.renderStyle.display != CSSDisplay.sliver) {
+      next = next.parentElement;
+    }
+    if(next?.parentElement != null &&
+        next?.parentElement!.renderStyle.display == CSSDisplay.sliver &&
+        next?.parentElement!.renderer != null) {
+      scrollable = (next?.parentElement!.renderer as RenderSliverListLayout).scrollable;
+    }
+    if(scrollable != null && scrollable.position != null) {
+      return scrollable.position!.recommendDeferredLoading();
+    }
+    return false;
   }
 
   void _removeInlineStyle() {

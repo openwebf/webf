@@ -81,6 +81,12 @@ mixin CSSPaddingMixin on RenderStyle {
         paddingTop.computedValue + innerSize.height + paddingBottom.computedValue);
   }
 
+  Size wrapPaddingSizeRight(Size innerSize) {
+    return Size(
+        innerSize.width + paddingRight.computedValue,
+        paddingTop.computedValue + innerSize.height + paddingBottom.computedValue
+    );
+  }
   void debugPaddingProperties(DiagnosticPropertiesBuilder properties) {
     properties.add(DiagnosticsProperty('padding', padding));
   }
