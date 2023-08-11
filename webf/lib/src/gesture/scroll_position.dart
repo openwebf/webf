@@ -14,7 +14,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/widgets.dart' show ScrollPhysics, ScrollMetrics;
+import 'package:flutter/widgets.dart' show BuildContext, ScrollMetrics, ScrollPhysics;
 
 import 'scroll_activity.dart';
 import 'scroll_context.dart';
@@ -228,11 +228,12 @@ abstract class ScrollPosition extends ViewportOffset with ScrollMetrics {
     isScrollingNotifier.value = activity!.isScrolling;
   }
 
-  bool recommendDeferredLoading() {
+  bool recommendDeferredLoading(BuildContext buildContext) {
     assert(activity != null);
     return physics.recommendDeferredLoading(
       activity!.velocity + _impliedVelocity,
       copyWith(),
+      buildContext
     );
   }
 

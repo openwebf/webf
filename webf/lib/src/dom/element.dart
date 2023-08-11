@@ -1910,7 +1910,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       scrollable = (next?.parentElement!.renderer as RenderSliverListLayout).scrollable;
     }
     if(scrollable != null && scrollable.position != null) {
-      return scrollable.position!.recommendDeferredLoading();
+      return scrollable.position!.recommendDeferredLoading(ownerDocument.controller.buildContext);
     }
     return false;
   }

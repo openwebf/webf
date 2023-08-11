@@ -17,7 +17,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
-    show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
+    show AnimationController, BuildContext, RouteInformation, WidgetsBinding, WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -769,6 +769,7 @@ class WebFController {
   final List<Cookie>? initialCookies;
 
   final ui.FlutterView ownerFlutterView;
+  final BuildContext buildContext;
 
   String? _name;
   String? get name => _name;
@@ -810,6 +811,7 @@ class WebFController {
     this.uriParser,
     this.initialCookies,
     required this.ownerFlutterView,
+    required this.buildContext
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {
