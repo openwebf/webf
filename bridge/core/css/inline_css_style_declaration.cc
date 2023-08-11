@@ -74,6 +74,10 @@ ScriptValue InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionSt
 bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
                                         const ScriptValue& value,
                                         ExceptionState& exception_state) {
+  if (IsPrototypeMethods(key)) {
+    return false;
+  }
+
   std::string propertyName = key.ToStdString(ctx());
   return InternalSetProperty(propertyName, value.ToLegacyDOMString());
 }
