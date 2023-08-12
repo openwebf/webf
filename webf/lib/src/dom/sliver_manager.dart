@@ -63,7 +63,7 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
     }
 
     if (childNode is Element) {
-      childNode.setNeedsStyleRecalc(StyleChangeType.localStyleChange);
+      childNode.style.flushPendingProperties();
     }
 
     childNode.didAttachRenderer();
