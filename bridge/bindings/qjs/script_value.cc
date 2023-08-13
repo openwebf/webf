@@ -21,11 +21,13 @@
 
 namespace webf {
 
-static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value, bool shared_js_value = false) {
+static JSValue FromNativeValue(ExecutingContext* context,
+                               const NativeValue& native_value,
+                               bool shared_js_value = false) {
   switch (native_value.tag) {
     case NativeTag::TAG_STRING: {
       if (shared_js_value) {
-        auto* string= static_cast<SharedNativeString*>(native_value.u.ptr);
+        auto* string = static_cast<SharedNativeString*>(native_value.u.ptr);
         if (string == nullptr)
           return JS_NULL;
         JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());
@@ -104,7 +106,9 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
 }
 
 ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value, bool shared_js_value)
-    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), value_(FromNativeValue(ExecutingContext::From(ctx), native_value, shared_js_value)) {}
+    : ctx_(ctx),
+      runtime_(JS_GetRuntime(ctx)),
+      value_(FromNativeValue(ExecutingContext::From(ctx), native_value, shared_js_value)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);
