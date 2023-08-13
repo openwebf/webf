@@ -21,14 +21,22 @@
 
 namespace webf {
 
-static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value) {
+static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& native_value, bool shared_js_value = false) {
   switch (native_value.tag) {
     case NativeTag::TAG_STRING: {
-      std::unique_ptr<AutoFreeNativeString> string{static_cast<AutoFreeNativeString*>(native_value.u.ptr)};
-      if (string == nullptr)
-        return JS_NULL;
-      JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());
-      return returnedValue;
+      if (shared_js_value) {
+        auto* string= static_cast<SharedNativeString*>(native_value.u.ptr);
+        if (string == nullptr)
+          return JS_NULL;
+        JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());
+        return returnedValue;
+      } else {
+        std::unique_ptr<AutoFreeNativeString> string{static_cast<AutoFreeNativeString*>(native_value.u.ptr)};
+        if (string == nullptr)
+          return JS_NULL;
+        JSValue returnedValue = JS_NewUnicodeString(context->ctx(), string->string(), string->length());
+        return returnedValue;
+      }
     }
     case NativeTag::TAG_INT: {
       return JS_NewInt64(context->ctx(), native_value.u.int64);
@@ -60,7 +68,7 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
       JSValue array = JS_NewArray(context->ctx());
       JS_SetPropertyStr(context->ctx(), array, "length", Converter<IDLInt64>::ToValue(context->ctx(), length));
       for (int i = 0; i < length; i++) {
-        JSValue value = FromNativeValue(context, arr[i]);
+        JSValue value = FromNativeValue(context, arr[i], shared_js_value);
         JS_SetPropertyInt64(context->ctx(), array, i, value);
       }
       return array;
@@ -95,8 +103,8 @@ static JSValue FromNativeValue(ExecutingContext* context, const NativeValue& nat
   return JS_NULL;
 }
 
-ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value)
-    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), value_(FromNativeValue(ExecutingContext::From(ctx), native_value)) {}
+ScriptValue::ScriptValue(JSContext* ctx, const NativeValue& native_value, bool shared_js_value)
+    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), value_(FromNativeValue(ExecutingContext::From(ctx), native_value, shared_js_value)) {}
 
 ScriptValue ScriptValue::CreateErrorObject(JSContext* ctx, const char* errmsg) {
   JS_ThrowInternalError(ctx, "%s", errmsg);

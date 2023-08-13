@@ -582,6 +582,19 @@ describe('Event', () => {
     await snapshot();
   });
 
+  it('shared string props should works', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    container.addEventListener('click', (e) => {
+      e['_type'] = '1234';
+      expect(e['_type']).toBe('1234');
+      expect(e['_type']).toBe('1234');
+      expect(e['_type']).toBe('1234');
+      expect(e['_type']).toBe('1234');
+    });
+    container.click();
+  });
+
   it('should work with share event callback', async () => {
     const container1 = document.createElement('div');
     document.body.appendChild(container1);
