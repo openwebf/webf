@@ -35,10 +35,10 @@ mixin RenderIntersectionObserverMixin on RenderBox {
 
   final LayerHandle<IntersectionObserverLayer> _intersectionObserverLayer = LayerHandle<IntersectionObserverLayer>();
 
-  bool intersectionObserverAlwaysNeedsCompositing() => _listeners != null && _listeners!.isNotEmpty;
+  bool intersectionObserverAlwaysNeedsCompositing() => intersectionListeners != null && intersectionListeners!.isNotEmpty;
 
   /// A list of event handlers
-  List<IntersectionChangeCallback>? _listeners;
+  List<IntersectionChangeCallback>? intersectionListeners;
 
   void disposeIntersectionObserverLayer() {
     _intersectionObserverLayer.layer = null;
@@ -48,33 +48,33 @@ mixin RenderIntersectionObserverMixin on RenderBox {
 
   void addIntersectionChangeListener(IntersectionChangeCallback callback) {
     // Init things
-    if (_listeners == null) {
-      _listeners = List.empty(growable: true);
-      _onIntersectionChange = _dispatchChange;
+    if (intersectionListeners == null) {
+      intersectionListeners = List.empty(growable: true);
+      onIntersectionChange = _dispatchChange;
       _intersectionObserverLayer.layer?.onIntersectionChange = _dispatchChange;
     }
     // Avoid same listener added twice.
-    if (!_listeners!.contains(callback)) {
-      _listeners!.add(callback);
+    if (!intersectionListeners!.contains(callback)) {
+      intersectionListeners!.add(callback);
     }
   }
 
   void clearIntersectionChangeListeners() {
-    _listeners?.clear();
-    _listeners = null;
-    _onIntersectionChange = null;
+    intersectionListeners?.clear();
+    intersectionListeners = null;
+    onIntersectionChange = null;
   }
 
   void removeIntersectionChangeListener(IntersectionChangeCallback callback) {
-    if (_listeners == null) {
-      _onIntersectionChange = null;
+    if (intersectionListeners == null) {
+      onIntersectionChange = null;
       return;
     }
 
-    _listeners!.remove(callback);
-    if (_listeners!.isEmpty) {
-      _listeners = null;
-      _onIntersectionChange = null;
+    intersectionListeners!.remove(callback);
+    if (intersectionListeners!.isEmpty) {
+      intersectionListeners = null;
+      onIntersectionChange = null;
     }
     markNeedsPaint();
   }
@@ -82,15 +82,15 @@ mixin RenderIntersectionObserverMixin on RenderBox {
   void _dispatchChange(IntersectionObserverEntry info) {
     // Not use for-in, and not cache length, due to callback call stack may
     // clear [_listeners], which case concurrent exception.
-    for (int i = 0; i < (_listeners == null ? 0 : _listeners!.length); i++) {
-      IntersectionChangeCallback callback = _listeners![i];
+    for (int i = 0; i < (intersectionListeners == null ? 0 : intersectionListeners!.length); i++) {
+      IntersectionChangeCallback callback = intersectionListeners![i];
       callback(info);
     }
   }
 
   void paintIntersectionObserver(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     // Skip to next if not has intersection observer
-    if (_onIntersectionChange == null) {
+    if (onIntersectionChange == null) {
       callback(context, offset);
       return;
     }
@@ -99,7 +99,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
       _intersectionObserverLayer.layer = IntersectionObserverLayer(
           elementSize: size,
           paintOffset: offset,
-          onIntersectionChange: _onIntersectionChange!,
+          onIntersectionChange: onIntersectionChange!,
           intersectPadding: intersectPadding);
     } else {
       _intersectionObserverLayer.layer!.elementSize = semanticBounds.size;
