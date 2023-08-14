@@ -1684,6 +1684,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void click() {
+    ownerDocument.updateStyleIfNeeded();
     flushLayout();
     Event clickEvent = MouseEvent(EVENT_CLICK, detail: 1, view: ownerDocument.defaultView);
     // If element not in tree, click is fired and only response to itself.

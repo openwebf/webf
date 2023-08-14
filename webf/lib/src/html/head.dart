@@ -193,6 +193,7 @@ class LinkElement extends Element {
       ownerDocument.styleEngine.styleNodeManager.removePendingStyleSheet(_styleSheet!);
     }
     ownerDocument.styleEngine.styleNodeManager.removeStyleSheetCandidateNode(this);
+    ownerDocument.scheduleStyleSheetNodesNeedsUpdate();
   }
 }
 
@@ -252,6 +253,7 @@ mixin StyleElementMixin on Element {
 
   void _recalculateStyle() {
     String? text = collectElementChildText();
+    print('text: $text');
     if (text != null) {
       if (_styleSheet != null) {
         _styleSheet!.replace(text);
@@ -264,6 +266,28 @@ mixin StyleElementMixin on Element {
         ownerDocument.scheduleStyleSheetNodesNeedsUpdate();
       }
     }
+  }
+
+
+  @override
+  Node appendChild(Node child) {
+    Node ret = super.appendChild(child);
+    _recalculateStyle();
+    return ret;
+  }
+
+  @override
+  Node insertBefore(Node child, Node referenceNode) {
+    Node ret = super.insertBefore(child, referenceNode);
+    _recalculateStyle();
+    return ret;
+  }
+
+  @override
+  Node removeChild(Node child) {
+    Node ret = super.removeChild(child);
+    _recalculateStyle();
+    return ret;
   }
 
   @override

@@ -307,6 +307,7 @@ class Document extends ContainerNode {
     return QuerySelector.querySelector(this, args.first);
   }
   dynamic elementFromPoint(double x, double y) {
+    updateStyleIfNeeded();
     documentElement?.flushLayout();
     return HitTestPoint(x, y);
   }

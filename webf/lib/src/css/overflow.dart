@@ -372,14 +372,17 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void scroll(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.updateStyleIfNeeded();
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
   void scrollBy(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.updateStyleIfNeeded();
     _scrollBy(dx: x, dy: y, withAnimation: withAnimation);
   }
 
   void scrollTo(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.updateStyleIfNeeded();
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
