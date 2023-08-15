@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/text.dart';
 
 class LogicInlineBox {
   RenderBox renderObject;

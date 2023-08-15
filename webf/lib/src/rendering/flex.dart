@@ -7,7 +7,6 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/rendering/logic_box.dart';
 
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines

@@ -9,7 +9,6 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/logic_box.dart';
 import 'package:webf/src/rendering/text_span.dart';
 // White space processing in CSS affects only the document white space characters:
 // spaces (U+0020), tabs (U+0009), and segment breaks.
@@ -592,5 +591,5 @@ class InlineBoxConstraints extends MultiLineBoxConstraints {
 
   @override
   // TODO: implement hashCode
-  int get hashCode => hashValues(leftWidth, lineMainExtent, minWidth, maxWidth, minHeight, maxHeight);
+  int get hashCode => Object.hash(leftWidth, lineMainExtent, minWidth, maxWidth, minHeight, maxHeight);
 }
