@@ -361,6 +361,8 @@ class WebFViewController implements WidgetsBindingObserver {
       }
       var node = eventTargetPointer == null ? document.documentElement : getBindingObject(eventTargetPointer);
       if (node is Element) {
+        node.ownerDocument.updateStyleIfNeeded();
+
         if (!node.isRendererAttached) {
           String msg = 'toImage: the element is not attached to document tree.';
           completer.completeError(Exception(msg));

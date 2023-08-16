@@ -253,7 +253,6 @@ mixin StyleElementMixin on Element {
 
   void _recalculateStyle() {
     String? text = collectElementChildText();
-    print('text: $text');
     if (text != null) {
       if (_styleSheet != null) {
         _styleSheet!.replace(text);

@@ -180,7 +180,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (newClassLists.equals(classList)) return;
     final checkKeys = (_classList + newClassLists).where((key) => !_classList.contains(key) || !classList.contains(key));
     final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys));
-    _classList.clear();
+    __classList.clear();
     if (newClassLists.isNotEmpty) {
       _classList.addAll(newClassLists);
     }
@@ -850,8 +850,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       String contentValue, PseudoKind kind, PseudoElement? previousPseudoElement) {
     var pseudoValue = CSSPseudo.resolveContent(contentValue);
 
-    bool shouldMutateBeforeElement =
-        previousPseudoElement == null || previousPseudoElement.firstChild == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
+    bool shouldMutateBeforeElement = previousPseudoElement == null ||
+        previousPseudoElement.firstChild == null ||
+        ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
     previousPseudoElement ??=
         PseudoElement(kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
@@ -1472,7 +1473,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   RenderBox? get previousSiblingRenderer {
     Node? prev = previousSibling;
-    while(prev != null) {
+    while (prev != null) {
+      if (prev is Element &&
+          (prev.renderStyle.position == CSSPositionType.absolute ||
+              prev.renderStyle.position == CSSPositionType.fixed)) {
+        RenderPositionPlaceholder? positionHolder = (prev.renderer as RenderLayoutBox).renderPositionPlaceholder;
+        return positionHolder;
+      }
+
       if (prev.renderer != null) return prev.renderer;
 
       prev = prev.previousSibling;
