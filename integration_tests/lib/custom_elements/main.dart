@@ -8,6 +8,7 @@ import 'flutter_text.dart';
 import 'flutter_container.dart';
 import 'sample_element.dart';
 import 'flutter_layout_box.dart';
+import 'flutter_swiper.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -24,4 +25,5 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-asset-image', (BindingContext? context) {
     return ImageWidgetElement(context);
   });
+  WebF.defineCustomElement('flutter-swiper', (context) => SwiperElement(context));
 }
