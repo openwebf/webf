@@ -439,11 +439,10 @@ class CSSStyleDeclaration extends BindingObject {
 
   void flushPendingProperties() {
     Element? _target = target;
-    // If style target element not exists, no need to do flush operation.
-    if (_target == null) return;
 
     // Display change from none to other value that the renderBoxModel is null.
     if (_pendingProperties.containsKey(DISPLAY) &&
+        _target != null &&
         _target.isConnected &&
         _target.parentElement?.renderStyle.display != CSSDisplay.sliver) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
@@ -453,10 +452,7 @@ class CSSStyleDeclaration extends BindingObject {
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
-    // If target has no renderer attached, no need to flush.
-    if (!_target.isRendererAttached) return;
-
-    RenderBoxModel? renderBoxModel = _target.renderBoxModel;
+    RenderBoxModel? renderBoxModel = _target?.renderBoxModel;
     if (_pendingProperties.isEmpty || renderBoxModel == null) {
       return;
     }

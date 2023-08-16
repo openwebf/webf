@@ -268,7 +268,6 @@ mixin StyleElementMixin on Element {
     }
   }
 
-
   @override
   Node appendChild(Node child) {
     Node ret = super.appendChild(child);

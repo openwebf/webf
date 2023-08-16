@@ -62,11 +62,12 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
       _sliverListLayout.insertSliverChild(child, after: after);
     }
 
+    childNode.didAttachRenderer();
+
     if (childNode is Element) {
       childNode.style.flushPendingProperties();
+      childNode.ensureChildAttached();
     }
-
-    childNode.didAttachRenderer();
   }
 
   RenderBox _createEmptyRenderObject() {

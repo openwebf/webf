@@ -612,8 +612,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     super.didAttachRenderer();
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
     renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
-    // Ensure that the child is attached.
-    ensureChildAttached();
 
     // Reconfigure scrollable contents.
     bool needUpdateOverflowRenderBox = false;
@@ -967,8 +965,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // Attach renderObject of current node to parent
   @override
   void attachTo(Node parent, {RenderBox? after}) {
-    applyStyle(style);
-
     if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
       // Sliver should not create renderer here, but need to trigger
       // render sliver list dynamical rebuild child by element tree.
@@ -977,8 +973,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       willAttachRenderer();
     }
 
-    if (renderer != null) {
-      assert(parent.renderer!.attached);
+    if (renderer != null && parent.renderer?.attached == true) {
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel.attachRenderBox(parent.renderer!, renderer!, after: after);
@@ -1064,27 +1059,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (child is Element) {
       child.renderStyle.parent = renderStyle;
     }
-
-    final box = renderBoxModel;
-    if (isRendererAttached) {
-      // Only append child renderer when which is not attached.
-      if (!child.isRendererAttached && box != null && renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-        RenderBox? after;
-        if (box is RenderLayoutBox) {
-          RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
-          if (scrollingContentBox != null) {
-            after = scrollingContentBox.lastChild;
-          } else {
-            after = box.lastChild;
-          }
-        } else if (box is ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>) {
-          // TODO: improve implements
-          after = (box as ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>).lastChild;
-        }
-
-        child.attachTo(this, after: after);
-      }
-    }
     return child;
   }
 
@@ -1109,55 +1083,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Update renderStyle tree.
     if (child is Element) {
       child.renderStyle.parent = renderStyle;
-    }
-
-    if (isRendererAttached) {
-      // If afterRenderObject is null, which means insert child at the head of parent.
-      RenderBox? afterRenderObject = originalPreviousSibling?.renderer;
-
-      // Only append child renderer when which is not attached.
-      if (!child.isRendererAttached) {
-        // Found the most closed
-        if (afterRenderObject == null) {
-          Node? ref = originalPreviousSibling?.previousSibling;
-          while (ref != null && afterRenderObject == null) {
-            afterRenderObject = ref.renderer;
-            ref = ref.previousSibling;
-          }
-        }
-
-        // Remove all element after the new node, when parent is sliver
-        // Sliver's children if change sort need relayout
-        if (renderStyle.display == CSSDisplay.sliver &&
-            referenceNode is Element &&
-            referenceNode.renderer != null &&
-            referenceNode.isRendererAttached) {
-          Node? reference = referenceNode;
-          while (reference != null) {
-            if (reference.isRendererAttached && reference is Element) {
-              if (reference.renderer != null &&
-                  reference.renderer!.parent != null &&
-                  reference.renderer!.parent is RenderSliverRepaintProxy) {
-                (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
-              }
-              reference.unmountRenderObject(deep: true);
-            }
-            reference = reference.nextSibling;
-          }
-        }
-
-        // Renderer of referenceNode may not moved to a difference place compared to its original place
-        // in the dom tree due to position absolute/fixed.
-        // Use the renderPositionPlaceholder to get the same place as dom tree in this case.
-        if (afterRenderObject is RenderBoxModel) {
-          RenderBox? renderPositionPlaceholder = afterRenderObject.renderPositionPlaceholder;
-          if (renderPositionPlaceholder != null) {
-            afterRenderObject = renderPositionPlaceholder;
-          }
-        }
-
-        child.attachTo(this, after: afterRenderObject);
-      }
     }
 
     return node;
@@ -1545,30 +1470,58 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // But it's necessary for SVG.
   }
 
-  bool recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
-    if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
-      if (this is PseudoElement) {
-        style.flushPendingProperties();
-      } else {
-        // Diff style.
-        CSSStyleDeclaration newStyle = CSSStyleDeclaration();
-        applyStyle(newStyle);
-        var hasInheritedPendingProperty = false;
-        if (style.merge(newStyle)) {
-          hasInheritedPendingProperty = style.hasInheritedPendingProperty;
-          style.flushPendingProperties();
-        }
-        if (rebuildNested || hasInheritedPendingProperty || styleChangeType == StyleChangeType.subtreeStyleChange) {
-          // Update children style.
-          children.forEach((Element child) {
-            child.recalculateStyle(rebuildNested: rebuildNested);
-          });
-        }
-      }
-      clearStyleChangeType();
-      return true;
+  RenderBox? get previousSiblingRenderer {
+    Node? prev = previousSibling;
+    while(prev != null) {
+      if (prev.renderer != null) return prev.renderer;
+
+      prev = prev.previousSibling;
     }
-    return false;
+    return null;
+  }
+
+  // Calculate the styles from stylesheet for this element and apply all pending styles into the renderObject.
+  // When this phases was complete, it's ready to layout for this element's renderObject.
+  bool recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
+    if (this is PseudoElement) {
+      style.flushPendingProperties();
+    } else {
+      // Calculate styles from everywhere.
+      CSSStyleDeclaration newStyle = CSSStyleDeclaration();
+      applyStyle(newStyle);
+
+      // Should take care about the inherited CSS property.
+      var hasInheritedPendingProperty = false;
+      if (style.merge(newStyle)) {
+        hasInheritedPendingProperty = style.hasInheritedPendingProperty;
+      }
+      // Create and attach renderObject into the renderObject tree when style was ready.
+      if (!isRendererAttached) {
+        attachTo(parentElement!, after: previousSiblingRenderer);
+      }
+      // Apply all pending styles into the RenderStyle in renderObject.
+      style.flushPendingProperties();
+
+      // Calculate the sub-node's styles when necessary.
+      if (rebuildNested || hasInheritedPendingProperty || styleChangeType == StyleChangeType.subtreeStyleChange) {
+        childNodes.forEach((node) {
+          if (node is CharacterData && !node.isRendererAttached) {
+            node.attachTo(this, after: node.previousSibling?.renderer);
+          } else if (node is Element) {
+            node.recalculateStyle(rebuildNested: rebuildNested);
+          }
+        });
+      }
+    }
+    clearStyleChangeType();
+    return true;
+  }
+
+  void recursiveFlushPendingStyle() {
+    style.flushPendingProperties();
+    children.forEach((child) {
+      child.recursiveFlushPendingStyle();
+    });
   }
 
   void _removeInlineStyle() {
