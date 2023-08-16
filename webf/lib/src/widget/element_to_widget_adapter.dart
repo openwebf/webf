@@ -63,7 +63,7 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return WebFHTMLElementToWidgetAdaptor(_webFElement, children: customElementWidgets.toList());
+    return WebFHTMLElementToWidgetAdaptor(_webFElement, children: customElementWidgets.toList(), key: ObjectKey(_webFElement.hashCode),);
   }
 }
 
@@ -77,12 +77,19 @@ class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
 
   @override
   WebFHTMLElementToFlutterElementAdaptor createElement() {
-    return WebFHTMLElementToFlutterElementAdaptor(this);
+    WebFHTMLElementToFlutterElementAdaptor element = WebFHTMLElementToFlutterElementAdaptor(this);
+    // If a WebF element was already connected to a flutter element, should unmount the previous linked renderObjectt
+    if (_webFElement.flutterWidgetElement != null && _webFElement.flutterWidgetElement != element) {
+      _webFElement.unmountRenderObject(dispose: false, fromFlutterWidget: true);
+    }
+
+    _webFElement.flutterWidgetElement = element;
+    return element;
   }
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return _webFElement.renderer!;
+    return _webFElement.createRenderer();
   }
 
   @override

@@ -124,6 +124,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   // Holding reference if this element are managed by Flutter framework.
   WebFHTMLElementStatefulWidget? flutterWidget_;
+  WebFHTMLElementToFlutterElementAdaptor? flutterWidgetElement;
 
   @override
   WebFHTMLElementStatefulWidget? get flutterWidget => flutterWidget_;
@@ -947,6 +948,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     attributes.clear();
     disposeScrollable();
     _attributeProperties.clear();
+    flutterWidget = null;
+    flutterWidgetElement = null;
     super.dispose();
   }
 
@@ -1842,7 +1845,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void clearInlineStyle() {
-    for(var key in inlineStyle.keys) {
+    for (var key in inlineStyle.keys) {
       style.removeProperty(key, true);
     }
     inlineStyle.clear();
