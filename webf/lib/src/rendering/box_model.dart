@@ -676,6 +676,7 @@ class RenderBoxModel extends RenderBox
         RenderTransformMixin,
         RenderOverflowMixin,
         RenderOpacityMixin,
+        ResizeObserverMixin,
         RenderIntersectionObserverMixin,
         ResizeObserverMixin,
         RenderContentVisibilityMixin,
