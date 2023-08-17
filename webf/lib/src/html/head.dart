@@ -246,7 +246,7 @@ mixin StyleElementMixin on Element {
     String? text = collectElementChildText();
     if (text != null) {
       if (_styleSheet != null) {
-        _styleSheet!.replace(text);
+        _styleSheet!.replaceSync(text);
       } else {
         _styleSheet = CSSParser(text).parse();
       }

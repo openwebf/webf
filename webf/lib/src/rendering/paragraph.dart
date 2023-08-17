@@ -516,6 +516,7 @@ class WebFRenderParagraph extends RenderBox
     // Height of paragraph
     for (int i = 0; i < _lineMetrics.length; i++) {
       ui.LineMetrics lineMetric = _lineMetrics[i];
+
       // Do not add line height in the case of textOverflow ellipsis
       // cause height of line metric equals to 0.
       double height = lineHeight != null && lineMetric.height != 0 ? lineHeight! : lineMetric.height;

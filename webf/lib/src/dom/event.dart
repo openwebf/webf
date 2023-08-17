@@ -10,6 +10,7 @@ import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/rendering/resize_observer.dart';
 
 enum AppearEventType { none, appear, disappear }
 
@@ -90,6 +91,11 @@ mixin ElementEventMixin on ElementBase {
         // Remove listener when no intersection related event
         renderBox.removeIntersectionChangeListener(handleIntersectionChange);
       }
+      if(_hasResizeObserverEvent()) {
+        renderBox.addResizeListener(handleResizeChange);
+      } else {
+        renderBox.removeResizeListener(handleResizeChange);
+      }
     }
   }
 
@@ -97,6 +103,10 @@ mixin ElementEventMixin on ElementBase {
     return hasEventListener(EVENT_APPEAR) ||
         hasEventListener(EVENT_DISAPPEAR) ||
         hasEventListener(EVENT_INTERSECTION_CHANGE);
+  }
+
+  bool _hasResizeObserverEvent() {
+    return hasEventListener(EVENT_RESIZE);
   }
 
   @override
@@ -142,6 +152,9 @@ mixin ElementEventMixin on ElementBase {
     } else {
       handleDisappear();
     }
+  }
+  void handleResizeChange(ResizeObserverEntry entry) {
+    dispatchEvent(ResizeEvent(entry));
   }
 }
 
@@ -248,6 +261,12 @@ class PopStateEvent extends Event {
     return rawEvent;
   }
 }
+
+class ResizeEvent extends Event {
+  ResizeObserverEntry entry;
+  ResizeEvent(this.entry):super(EVENT_RESIZE);
+}
+
 
 class UIEvent extends Event {
   // Returns a long with details about the event, depending on the event type.

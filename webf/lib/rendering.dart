@@ -12,6 +12,7 @@ export 'src/rendering/intersection_observer.dart';
 export 'src/rendering/box_model.dart';
 export 'src/rendering/replaced.dart';
 export 'src/rendering/sliver_list.dart';
+export 'src/rendering/resize_observer.dart';
 export 'src/rendering/preferred_size.dart';
 export 'src/rendering/text.dart';
 export 'src/rendering/text_control.dart';
@@ -27,5 +28,7 @@ export 'src/rendering/paragraph.dart';
 export 'src/rendering/line_break.dart';
 export 'src/rendering/image.dart';
 export 'src/rendering/webf_render_list.dart';
+export 'src/rendering/logic_box.dart';
+
 export 'src/rendering/logic_box.dart';
 

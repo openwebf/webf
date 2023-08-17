@@ -10,6 +10,8 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_span.dart';
+import 'package:webf/src/rendering/logic_box.dart';
+import 'package:webf/src/rendering/text_span.dart';
 // White space processing in CSS affects only the document white space characters:
 // spaces (U+0020), tabs (U+0009), and segment breaks.
 // Carriage returns (U+000D) are treated identically to spaces (U+0020) in all respects.
@@ -44,6 +46,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   set data(String value) {
     _data = value;
   }
+  RenderTextLineBoxes lineBoxes = RenderTextLineBoxes();
 
   String get data => _data;
 
@@ -55,7 +58,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   String get _trimmedData {
-    if (parentData is RenderLayoutParentData) {
+    if (parentData is RenderLayoutParentData && parent is RenderLayoutBox) {
       /// https://drafts.csswg.org/css-text-3/#propdef-white-space
       /// The following table summarizes the behavior of the various white-space values:
       //
@@ -135,7 +138,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return 0;
   }
 
-  LogicTextInlineBox get firstTextInlineBox => textInLineBoxes.firstChild;
+  LogicTextInlineBox get firstTextInlineBox => lineBoxes.firstChild;
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;

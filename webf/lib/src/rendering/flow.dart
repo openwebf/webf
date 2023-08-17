@@ -43,7 +43,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   double get firstLineExtent {
-    if(constraints is InlineBoxConstraints && !isInlineBlockOrInlineFlex(this)) {
+    if(constraints is InlineBoxConstraints && !isInlineLevel(this)) {
       return (constraints as InlineBoxConstraints).leftWidth;
     }
     return 0;
@@ -337,7 +337,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // If the first line first child is not block level and parent render give line join chance
       // the first line add left place holder to create line join env
-      if(!isBlockLevel(child) && !isInlineBlockOrInlineFlex(this) &&
+      if(!isBlockLevel(child) && !isInlineLevel(this) &&
           constraints is InlineBoxConstraints && child == children.first) {
         runLineBox.firstLineLeftExtent = (constraints as InlineBoxConstraints).leftWidth;
       }
@@ -1078,8 +1078,12 @@ class RenderFlowLayout extends RenderLayoutBox {
     return isParamsLevelNode(box,[CSSDisplay.block, CSSDisplay.flex]);
   }
 
-  bool isInlineBlockOrInlineFlex(RenderBox? box) {
+  bool isInlineLevel(RenderBox? box) {
     return isParamsLevelNode(box,[CSSDisplay.inlineBlock, CSSDisplay.inlineFlex]);
+  }
+
+  bool isJoinBox(RenderBox? box) {
+    return !isBlockLevel(box) && !isInlineLevel(box);
   }
 
   bool isParamsLevelNode(RenderBox? box,List<CSSDisplay> params) {
