@@ -10,6 +10,7 @@ import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/rendering/resize_observer.dart';
 
 enum AppearEventType { none, appear, disappear }
 

@@ -12,6 +12,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
+import 'package:webf/src/rendering/logic_box.dart';
+import 'package:webf/src/rendering/resize_observer.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 
@@ -674,6 +676,7 @@ class RenderBoxModel extends RenderBox
         RenderOpacityMixin,
         ResizeObserverMixin,
         RenderIntersectionObserverMixin,
+        ResizeObserverMixin,
         RenderContentVisibilityMixin,
         RenderEventListenerMixin {
   RenderBoxModel({
@@ -1080,6 +1083,11 @@ class RenderBoxModel extends RenderBox
     return renderStyle.wrapBorderSizeRight(paddingBoxSize);
   }
 
+  Size wrapOutContentSize (Size contentSize) {
+    Size paddingBoxSize = renderStyle.wrapPaddingSize(contentSize);
+    return renderStyle.wrapBorderSize(paddingBoxSize);
+  }
+
   // The contentSize of layout box
   Size? _contentSize;
 
@@ -1188,7 +1196,7 @@ class RenderBoxModel extends RenderBox
     }
 
     // Positioned renderBoxModel will not trigger parent to relayout. Needs to update it's offset for itself.
-    if (parentData is RenderLayoutParentData) {
+    if (parentData is RenderLayoutParentData && parent is RenderBoxModel) {
       RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
       RenderBoxModel? parentBox = parent as RenderBoxModel?;
       if (selfParentData.isPositioned && parentBox!.hasSize) {
@@ -1351,6 +1359,10 @@ class RenderBoxModel extends RenderBox
     return MatrixUtils.transformPoint(
         getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset), point) -
         ancestorBorderWidth;
+  }
+
+  Offset getOffsetToRenderObjectAncestor(Offset point, RenderObject ancestor, {bool excludeScrollOffset = false}) {
+    return MatrixUtils.transformPoint(getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset), point);
   }
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {

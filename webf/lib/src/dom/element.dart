@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -969,7 +970,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
       // Sliver should not create renderer here, but need to trigger
       // render sliver list dynamical rebuild child by element tree.
-      parentElement?._renderLayoutBox?.markNeedsLayout();
+      (parentElement?._renderLayoutBox as RenderSliverListLayout).markContentLayout();
     } else {
       willAttachRenderer();
     }
@@ -1033,6 +1034,25 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     renderBoxModel = null;
   }
 
+  void _unmountSliverRenderBox(int referenceIndex, {bool containSelf = false}) {
+    int removeIndex = referenceIndex;
+    if(!containSelf) {
+      removeIndex += 1;
+    }
+    while(removeIndex < childNodes.length) {
+      Node reference = childNodes.elementAt(removeIndex);
+      if(reference.isRendererAttached && reference is Element) {
+        if(reference.renderer != null &&
+            reference.renderer!.parent != null &&
+            reference.renderer!.parent is RenderSliverRepaintProxy) {
+          (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
+        }
+        reference.unmountRenderObject(deep: true);
+      }
+      removeIndex++;
+    }
+  }
+
   @override
   void ensureChildAttached() {
     if (isRendererAttached) {
@@ -1093,6 +1113,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node removeChild(Node child) {
+    int referenceIndex = childNodes.toList(growable: false).indexOf(child);
+    if(renderStyle.display == CSSDisplay.sliver) {
+      _unmountSliverRenderBox(referenceIndex, containSelf: true);
+    }
+
     super.removeChild(child);
 
     // Update renderStyle tree.
@@ -1107,6 +1132,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
     Node? originalPreviousSibling = referenceNode.previousSibling;
+    int referenceIndex = childNodes.toList(growable: false).indexOf(referenceNode);
     Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
     if (child is Element) {
@@ -1130,22 +1156,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
         // Remove all element after the new node, when parent is sliver
         // Sliver's children if change sort need relayout
-        if (renderStyle.display == CSSDisplay.sliver &&
-            referenceNode is Element &&
-            referenceNode.renderer != null &&
-            referenceNode.isRendererAttached) {
-          Node? reference = referenceNode;
-          while (reference != null) {
-            if (reference.isRendererAttached && reference is Element) {
-              if (reference.renderer != null &&
-                  reference.renderer!.parent != null &&
-                  reference.renderer!.parent is RenderSliverRepaintProxy) {
-                (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
-              }
-              reference.unmountRenderObject(deep: true);
-            }
-            reference = reference.nextSibling;
-          }
+        if(renderStyle.display == CSSDisplay.sliver
+            && referenceNode is Element
+            && referenceNode.renderer != null
+            && referenceNode.isRendererAttached) {
+          _unmountSliverRenderBox(referenceIndex);
         }
 
         // Renderer of referenceNode may not moved to a difference place compared to its original place

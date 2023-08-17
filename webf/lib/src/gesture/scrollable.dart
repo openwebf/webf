@@ -100,6 +100,10 @@ class WebFScrollable with _CustomTickerProviderStateMixin implements ScrollConte
   /// Determined by the [axisDirection].
   Axis get axis => axisDirectionToAxis(_axisDirection);
 
+  set axisDirection(direction) {
+    _axisDirection = direction;
+  }
+
   void set overflowType(CSSOverflowType type) {
     _overflowType = type;
   }
