@@ -6,26 +6,26 @@ import 'dart:ui' as ui show ParagraphBuilder, PlaceholderAlignment, Locale;
 class WebFTextSpan extends TextSpan {
   WebFTextSpan(
       {String? text,
-      List<InlineSpan>? children,
-      GestureRecognizer? recognizer,
-      MouseCursor? mouseCursor,
-      PointerEnterEventListener? onEnter,
-      PointerExitEventListener? onExit,
-      String? semanticsLabel,
-      ui.Locale? locale,
-      TextStyle? style,
-      bool? spellOut})
+        List<InlineSpan>? children,
+        GestureRecognizer? recognizer,
+        MouseCursor? mouseCursor,
+        PointerEnterEventListener? onEnter,
+        PointerExitEventListener? onExit,
+        String? semanticsLabel,
+        ui.Locale? locale,
+        TextStyle? style,
+        bool? spellOut})
       : super(
-            text: text,
-            children: children,
-            style: style,
-            recognizer: recognizer,
-            mouseCursor: mouseCursor,
-            onEnter: onEnter,
-            onExit: onExit,
-            semanticsLabel: semanticsLabel,
-            locale: locale,
-            spellOut: spellOut);
+      text: text,
+      children: children,
+      style: style,
+      recognizer: recognizer,
+      mouseCursor: mouseCursor,
+      onEnter: onEnter,
+      onExit: onExit,
+      semanticsLabel: semanticsLabel,
+      locale: locale,
+      spellOut: spellOut);
 
   final Map<InlineSpan, bool> textSpanPosition = <InlineSpan, bool>{};
 
@@ -43,11 +43,12 @@ class WebFTextSpan extends TextSpan {
 
   List<Object> subContent(int start, int end) {
     List<Object> content = [];
-    int prePlaceHolderLength = (preInsertChildren()?.length ?? 0);
+    List<InlineSpan>? prePlaceHolderList= preInsertChildren();
+    int prePlaceHolderLength = prePlaceHolderList?.length ?? 0;
 
     if (start < prePlaceHolderLength) {
       for (int i = start; i < prePlaceHolderLength && i < end; i++) {
-        content.add(preInsertChildren()![i]);
+        content.add(prePlaceHolderList![i]);
       }
     }
 
@@ -73,7 +74,7 @@ class WebFTextSpan extends TextSpan {
 
   String? subContentFilterString(int start, int end) {
     List<Object> content = subContent(start, end);
-    List<Object> filterContent = content.whereType<String>().toList();
+    List<Object> filterContent = content.where((element) => element is String).toList();
     if (filterContent.isNotEmpty) {
       return filterContent[0] as String;
     }
@@ -219,7 +220,7 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
   }
 
   @override
-  int get hashCode => Object.hash(super.hashCode, alignment, baseline);
+  int get hashCode => hashValues(super.hashCode, alignment, baseline);
 
   /// Returns the text span that contains the given position in the text.
   @override
