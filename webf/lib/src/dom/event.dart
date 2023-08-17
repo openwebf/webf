@@ -90,6 +90,11 @@ mixin ElementEventMixin on ElementBase {
         // Remove listener when no intersection related event
         renderBox.removeIntersectionChangeListener(handleIntersectionChange);
       }
+      if(_hasResizeObserverEvent()) {
+        renderBox.addResizeListener(handleResizeChange);
+      } else {
+        renderBox.removeResizeListener(handleResizeChange);
+      }
     }
   }
 
@@ -97,6 +102,10 @@ mixin ElementEventMixin on ElementBase {
     return hasEventListener(EVENT_APPEAR) ||
         hasEventListener(EVENT_DISAPPEAR) ||
         hasEventListener(EVENT_INTERSECTION_CHANGE);
+  }
+
+  bool _hasResizeObserverEvent() {
+    return hasEventListener(EVENT_RESIZE);
   }
 
   @override
@@ -142,6 +151,10 @@ mixin ElementEventMixin on ElementBase {
     } else {
       handleDisappear();
     }
+  }
+
+  void handleResizeChange(ResizeObserverEntry entry) {
+    dispatchEvent(ResizeEvent(entry).toCustomEvent());
   }
 }
 
@@ -469,6 +482,14 @@ class AppearEvent extends Event {
 
 class DisappearEvent extends Event {
   DisappearEvent() : super(EVENT_DISAPPEAR);
+}
+
+class ResizeEvent extends Event {
+  ResizeObserverEntry entry;
+  ResizeEvent(this.entry):super(EVENT_RESIZE);
+  toCustomEvent() {
+    return CustomEvent(EVENT_RESIZE, detail: entry.toJson());
+  }
 }
 
 class ColorSchemeChangeEvent extends Event {

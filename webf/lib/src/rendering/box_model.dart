@@ -674,6 +674,7 @@ class RenderBoxModel extends RenderBox
         RenderTransformMixin,
         RenderOverflowMixin,
         RenderOpacityMixin,
+        ResizeObserverMixin,
         RenderIntersectionObserverMixin,
         RenderContentVisibilityMixin,
         RenderEventListenerMixin {
@@ -1176,6 +1177,7 @@ class RenderBoxModel extends RenderBox
     }
 
     needsLayout = false;
+    dispatchResize(contentSize, boxSize ?? Size.zero);
   }
 
   /// [RenderLayoutBox] real paint things after basiclly paint box model.
