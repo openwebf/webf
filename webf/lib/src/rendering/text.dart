@@ -10,8 +10,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_span.dart';
-import 'package:webf/src/rendering/logic_box.dart';
-import 'package:webf/src/rendering/text_span.dart';
+
 // White space processing in CSS affects only the document white space characters:
 // spaces (U+0020), tabs (U+0009), and segment breaks.
 // Carriage returns (U+000D) are treated identically to spaces (U+0020) in all respects.
@@ -22,6 +21,7 @@ final RegExp _trimLeftWhitespaceReg = RegExp(r'^[' + _documentWhiteSpace + r']([
 final RegExp _trimRightWhitespaceReg = RegExp(r'([^' + _documentWhiteSpace + r']+)[' + _documentWhiteSpace + r']$');
 final webfTextMaxLines = double.maxFinite.toInt();
 Size _miniCharSize = Size.zero;
+
 class TextParentData extends ContainerBoxParentData<RenderBox> {}
 
 enum WhiteSpace { normal, nowrap, pre, preWrap, preLine, breakSpaces }
@@ -38,17 +38,18 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       foregroundCallback: _getForeground,
     );
   }
-  RenderTextLineBoxes textInLineBoxes = RenderTextLineBoxes();
-  double _lastFirstLineIndent = 0;
 
+  RenderTextLineBoxes lineBoxes = RenderTextLineBoxes();
+  late WebFRenderParagraph _renderParagraph;
+  double _lastFirstLineIndent = 0;
   String _data;
 
   set data(String value) {
     _data = value;
   }
-  RenderTextLineBoxes lineBoxes = RenderTextLineBoxes();
 
   String get data => _data;
+
 
   bool isEndWithSpace(String str) {
     return str.endsWith(WHITE_SPACE_CHAR) ||
@@ -119,9 +120,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return _data;
   }
 
-  late WebFRenderParagraph _renderParagraph;
   CSSRenderStyle renderStyle;
-
   BoxSizeType? widthSizeType;
   BoxSizeType? heightSizeType;
 
@@ -138,7 +137,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return 0;
   }
 
-  LogicTextInlineBox get firstTextInlineBox => lineBoxes.firstChild;
+  LogicTextInlineBox get firstInlineBox => lineBoxes.firstChild;
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;
@@ -196,7 +195,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return null;
   }
 
-  TextSpan buildTextSpan({TextSpan? oldText}) {
+  WebFTextSpan buildTextSpan({TextSpan? oldText}) {
     String clippedText = _getClippedText(_trimmedData);
     WebFTextSpan textSpan = CSSTextMixin.createTextSpan(clippedText, renderStyle, oldTextSpan: oldText) as WebFTextSpan;
     return textSpan;
@@ -207,8 +206,8 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   // RenderTextBox content's first line will join a LogicLineBox which have some InlineBoxes as children,
   bool happenLineJoin() {
     if (firstLineIndent > 0 &&
-        (textInLineBoxes.firstChild.logicRect.left >= firstLineIndent ||
-            lines == 1 && textInLineBoxes.firstChild.width < constraints.maxWidth - firstLineIndent)) {
+        (lineBoxes.firstChild.logicRect.left >= firstLineIndent ||
+            lines == 1 && lineBoxes.firstChild.width < constraints.maxWidth - firstLineIndent)) {
       return true;
     }
     return false;
@@ -414,7 +413,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   @override
   void performLayout() {
     WebFRenderParagraph? paragraph = child as WebFRenderParagraph?;
-    textInLineBoxes.clear();
+    lineBoxes.clear();
     if (paragraph != null) {
       paragraph.overflow = renderStyle.effectiveTextOverflow;
       // paragraph.textAlign = renderStyle.textAlign;
@@ -422,7 +421,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       // first set text is no use, so need check again
       paragraph.text = buildTextSpan(oldText: paragraph.text);
 
-      WebFTextSpan text = (paragraph.text as WebFTextSpan);
+      WebFTextSpan text = paragraph.text;
       if (firstLineIndent > 0 && firstLineIndent != _lastFirstLineIndent) {
         if (text.children!.isEmpty) {
           WebFTextPlaceHolderSpan placeHolderSpan = WebFTextPlaceHolderSpan();
@@ -440,7 +439,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       paragraph.lineHeight = _lineHeight;
       paragraph.layout(constraints, parentUsesSize: true);
       paragraph.lineRenderList.forEach((element) {
-        textInLineBoxes.createAndAppendTextBox(this, element.lineRect);
+        lineBoxes.createAndAppendTextBox(this, element.lineRect);
       });
 
       size = paragraph.size;
@@ -494,8 +493,6 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     }
   }
 }
-
-
 class RenderTextLineBoxes {
   List<LogicTextInlineBox> inlineBoxList = [];
 
@@ -508,7 +505,15 @@ class RenderTextLineBoxes {
     return inlineBoxList.last;
   }
 
-  get length {
+  bool containLineBox(LogicTextInlineBox box) {
+    return inlineBoxList.contains(box);
+  }
+
+  bool get isEmpty {
+    return inlineBoxList.isEmpty;
+  }
+
+  int get length {
     return inlineBoxList.length;
   }
 
@@ -594,5 +599,6 @@ class InlineBoxConstraints extends MultiLineBoxConstraints {
 
   @override
   // TODO: implement hashCode
-  int get hashCode => Object.hash(leftWidth, lineMainExtent, minWidth, maxWidth, minHeight, maxHeight);
+  int get hashCode => hashValues(leftWidth, lineMainExtent, minWidth, maxWidth, minHeight, maxHeight);
 }
+

@@ -115,9 +115,9 @@ class WebFRenderParagraph extends RenderBox
   }
 
   // The text to display.
-  TextSpan get text => _textPainter.text as TextSpan;
+  WebFTextSpan get text => _textPainter.text as WebFTextSpan;
 
-  set text(TextSpan value) {
+  set text(WebFTextSpan value) {
     switch (_textPainter.text!.compareTo(value)) {
       case RenderComparison.identical:
       case RenderComparison.metadata:
@@ -551,7 +551,7 @@ class WebFRenderParagraph extends RenderBox
     for (int i = 0; i < lineTexts.length; i++) {
       String lineText = lineTexts[i];
 
-      final TextSpan textSpan = TextSpan(
+      final TextSpan textSpan = WebFTextSpan(
         text: lineText,
         style: text.style,
       );
@@ -610,7 +610,7 @@ class WebFRenderParagraph extends RenderBox
       Size size = _textPainter.size;
       final paint = _foregroundCallback!(Rect.fromLTWH(0, 0, size.width, size.height));
       if (paint != null) {
-        text = TextSpan(
+        text = WebFTextSpan(
             text: text.text,
             style: text.style?.copyWith(foreground: paint)
         );
@@ -654,7 +654,7 @@ class WebFRenderParagraph extends RenderBox
         case TextOverflow.fade:
           _needsClipping = true;
           final TextPainter fadeSizePainter = TextPainter(
-            text: TextSpan(style: _textPainter.text!.style, text: '\u2026'),
+            text: WebFTextSpan(style: _textPainter.text!.style, text: '\u2026'),
             textDirection: textDirection,
             textScaleFactor: textScaleFactor,
             locale: locale,
