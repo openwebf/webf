@@ -63,6 +63,17 @@ class RenderFlowLayout extends RenderLayoutBox {
     return 0;
   }
 
+  double get lastLineExtentWithWrap {
+    if(!lineBoxes.isEmpty) {
+      double lineSize = lineBoxes.last.mainAxisExtentWithoutLineJoin;
+      if(lineBoxes.lineSize == 1) {
+        return wrapOutContentSize(Size.fromWidth(lineSize)).width;
+      }
+      return wrapOutContentSizeRight(Size.fromWidth(lineSize)).width;
+    }
+    return 0;
+  }
+
   bool get constraintsOverflow {
     if(constraints is MultiLineBoxConstraints) {
       return (constraints as MultiLineBoxConstraints).overflow ?? false;
@@ -434,7 +445,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       // use pre render last line extent.Can't use the render MainAxisExtent,
       // because the render MainAxisExtent container Multi-line max extent.
       double childListLineMainAxisExtent = childMainAxisExtent;
-      if(child is RenderFlowLayout) {
+      if(child is RenderFlowLayout && !child.lineBoxes.isEmpty && isJoinBox(child) && isJoinBox(this)) {
         childListLineMainAxisExtent = child.lastLineExtent;
       }
 
@@ -459,6 +470,10 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       LogicInlineBox? newLogicInlineBox = buildInlineBoxFromRender(child);
+      if(child is RenderTextBox && newLogicInlineBox == null) {
+        // null text need jump, because text lineRender is null.
+        continue;
+      }
       assert(newLogicInlineBox != null, 'can not get useful logic box');
       runLineBox.appendInlineBox(newLogicInlineBox!,
           childListLineMainAxisExtent,
@@ -478,7 +493,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   LogicLineBox processTextBoxBreak(RenderTextBox child, LogicLineBox runLine) {
     LogicLineBox newLineBox = runLine;
     if(child.happenLineJoin()) {
-      LogicTextInlineBox firstTextBox = child.textInLineBoxes.get(0);
+      LogicTextInlineBox firstTextBox = child.lineBoxes.get(0);
       runLine.appendInlineBox(firstTextBox, firstTextBox.logicRect.width, firstTextBox.logicRect.height,
           calculateTextCrossAxisExtent(child, 0));
       if(child.lines > 1 ) {
@@ -496,14 +511,14 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   LogicLineBox appendAllInlineTextToLine(RenderTextBox child, bool fromFirst) {
     LogicLineBox newLineBox = buildNewLineBox();
-    for(int i =  fromFirst ? 0 : 1; i < child.textInLineBoxes.inlineBoxList.length; i++) {
+    for(int i =  fromFirst ? 0 : 1; i < child.lineBoxes.inlineBoxList.length; i++) {
       newLineBox = buildNewLineBox();
-      newLineBox.appendInlineBox(child.textInLineBoxes.get(i),
-          child.textInLineBoxes.get(i).logicRect.width,
-          child.textInLineBoxes.get(i).logicRect.height,
+      newLineBox.appendInlineBox(child.lineBoxes.get(i),
+          child.lineBoxes.get(i).logicRect.width,
+          child.lineBoxes.get(i).logicRect.height,
           calculateTextCrossAxisExtent(child, i));
 
-      if(i != child.textInLineBoxes.inlineBoxList.length - 1) {
+      if(i != child.lineBoxes.inlineBoxList.length - 1) {
         appendLineBox(newLineBox);
       }
     }
@@ -539,7 +554,10 @@ class RenderFlowLayout extends RenderLayoutBox {
       return child.createLogicInlineBox();
     }
     if(child is RenderTextBox) {
-      return child.firstTextInlineBox;
+      if (child.lineBoxes.isEmpty) {
+        return null;
+      }
+      return child.firstInlineBox;
     }
     return LogicInlineBox(renderObject: child);
   }
@@ -775,8 +793,11 @@ class RenderFlowLayout extends RenderLayoutBox {
 
         // This value use to range every line render position
         double childListLineMainAxisExtent = childMainAxisExtent;
-        if(childRender is RenderFlowLayout) {
-          childListLineMainAxisExtent = childRender.lastLineExtent;
+        if(childRender is RenderFlowLayout && !childRender.lineBoxes.isEmpty && isJoinBox(childRender)) {
+          childListLineMainAxisExtent = childRender.lastLineExtentWithWrap;
+        }
+        if(childBox is LogicTextInlineBox && (childRender as RenderTextBox).lineBoxes.containLineBox(childBox)){
+          childListLineMainAxisExtent = childBox.width;
         }
 
         // Calculate margin auto length according to CSS spec
@@ -843,10 +864,10 @@ class RenderFlowLayout extends RenderLayoutBox {
             case VerticalAlign.bottom:
               childLineExtent = (lineBoxHeight ?? runCrossAxisExtent) - childSize!.height;
               break;
-            // @TODO: Vertical align middle needs to calculate the baseline of the parent box plus
-            //  half the x-height of the parent from W3C spec currently flutter lack the api to calculate x-height of glyph.
-            //  case VerticalAlign.middle:
-            //  break;
+          // @TODO: Vertical align middle needs to calculate the baseline of the parent box plus
+          //  half the x-height of the parent from W3C spec currently flutter lack the api to calculate x-height of glyph.
+          //  case VerticalAlign.middle:
+          //  break;
             case VerticalAlign.textBottom:
               if(lineBoxLeading > 0) {
                 childLineExtent = lineBoxLeading / 2 + (runCrossAxisExtent) - childSize!.height;
@@ -964,7 +985,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       } else if (child is RenderTextBox) {
         // Text baseline not depends on its own parent but its grand parents.
         childBaseLineDistance =
-            isLastLineBaseline ? child.computeDistanceToLastLineBaseline() : child.computeDistanceToFirstLineBaseline();
+        isLastLineBaseline ? child.computeDistanceToLastLineBaseline() : child.computeDistanceToFirstLineBaseline();
       }
       if (childBaseLineDistance != null && childParentData != null) {
         // Baseline of relative positioned element equals its original position
@@ -1188,7 +1209,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // For TextBox only one line && lineJoin, need give pure with. Else will make parent size error, when parent
     // as display inline, and join to other line
     if(child is RenderTextBox && child.lines == 1 && child.happenLineJoin()) {
-      return child.firstTextInlineBox.width + marginHorizontal;
+      return child.firstInlineBox.width + marginHorizontal;
     }
 
     return childSize.width + marginHorizontal;
@@ -1342,9 +1363,9 @@ class RenderRepaintBoundaryFlowLayout extends RenderFlowLayout {
     List<RenderBox>? children,
     required CSSRenderStyle renderStyle,
   }) : super(
-          children: children,
-          renderStyle: renderStyle,
-        );
+    children: children,
+    renderStyle: renderStyle,
+  );
 
   @override
   bool get isRepaintBoundary => true;

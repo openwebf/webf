@@ -436,7 +436,7 @@ mixin CSSTextMixin on RenderStyle {
         if (renderParagraph.hasSize) {
           // Manually layout text before text paint cause text style only
           // takes effect after text has been layouted.
-          renderParagraph.text = child.textSpan;
+          // renderParagraph.text = child.textSpan; TODO maybe need retain
           renderParagraph.text = child.buildTextSpan();
           renderParagraph.layoutText();
           renderParagraph.markNeedsPaint();
