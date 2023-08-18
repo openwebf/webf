@@ -262,6 +262,8 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   @override
   List<Cookie> get cookies => _backendRequest?.cookies ?? _cookies;
 
+  List get data => _data;
+
   @override
   Future<HttpClientResponse> get done async {
     if (_backendRequest == null) {

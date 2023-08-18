@@ -95,11 +95,11 @@ class RenderSVGRoot extends RenderSVGContainer {
       // unconstraint child size
       child.layout(BoxConstraints());
     });
-
     // HACK: must be call this function otherwise the BoxModel cannot works correctly.
     // Improve it in the future.
     initOverflowLayout(Rect.fromLTWH(0, 0, size.width, size.height),
         Rect.fromLTWH(0, 0, size.width, size.height));
+    dispatchResize(contentSize, boxSize ?? Size.zero);
   }
 
   @override

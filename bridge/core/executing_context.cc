@@ -45,6 +45,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   //  #endif
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
+  assert_m(valid_contexts[contextId] != true, "Conflict context found!");
   valid_contexts[contextId] = true;
   if (contextId > running_context_list)
     running_context_list = contextId;
