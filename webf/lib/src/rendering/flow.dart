@@ -294,7 +294,9 @@ class RenderFlowLayout extends RenderLayoutBox {
             maxHeight: double.infinity,
           );
         }
-        child.layout(childConstraints, parentUsesSize: true);
+
+        bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
+        child.layout(childConstraints, parentUsesSize: parentUseSize);
       }
 
       double childMainAxisExtent = _getMainAxisExtent(child);
@@ -750,12 +752,13 @@ class RenderFlowLayout extends RenderLayoutBox {
     Map<int?, RenderBox> runChildren = runMetrics.runChildren;
     double runMainExtent = 0;
     void iterateRunChildren(int? hashCode, RenderBox runChild) {
-      double runChildMainSize = runChild.size.width;
+      double runChildMainSize = 0.0;
       if (runChild is RenderTextBox) {
         runChildMainSize = runChild.minContentWidth;
       }
       // Should add horizontal margin of child to the main axis auto size of parent.
       if (runChild is RenderBoxModel) {
+        runChildMainSize = runChild.boxSize?.width ?? 0.0;
         double childMarginLeft = runChild.renderStyle.marginLeft.computedValue;
         double childMarginRight = runChild.renderStyle.marginRight.computedValue;
         runChildMainSize += childMarginLeft + childMarginRight;
@@ -797,9 +800,11 @@ class RenderFlowLayout extends RenderLayoutBox {
     double runCrossExtent = 0;
     List<double> runChildrenCrossSize = [];
     void iterateRunChildren(int? hashCode, RenderBox runChild) {
-      double runChildCrossSize = runChild.size.height;
+      double runChildCrossSize = 0.0;
       if (runChild is RenderTextBox) {
         runChildCrossSize = runChild.minContentHeight;
+      } else if (runChild is RenderBoxModel) {
+        runChildCrossSize = runChild.boxSize?.height ?? 0.0;
       }
       runChildrenCrossSize.add(runChildCrossSize);
     }
@@ -857,15 +862,20 @@ class RenderFlowLayout extends RenderLayoutBox {
         // Total main size of previous siblings.
         double preSiblingsMainSize = 0;
         for (RenderBox sibling in runChildrenList) {
-          preSiblingsMainSize += sibling.size.width;
+          if (sibling is RenderBoxModel) {
+            preSiblingsMainSize += sibling.boxSize!.width;
+          } else if (sibling is RenderTextBox) {
+            preSiblingsMainSize += sibling.boxSize!.width;
+          }
         }
 
-        Size childScrollableSize = child.size;
+        Size childScrollableSize = Size.zero;
 
         double childOffsetX = 0;
         double childOffsetY = 0;
 
         if (child is RenderBoxModel) {
+          childScrollableSize = child.boxSize!;
           RenderStyle childRenderStyle = child.renderStyle;
           CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
           CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
@@ -896,6 +906,8 @@ class RenderFlowLayout extends RenderLayoutBox {
             childOffsetX = transformOffset.dx > 0 ? childOffsetX + transformOffset.dx : childOffsetX;
             childOffsetY = transformOffset.dy > 0 ? childOffsetY + transformOffset.dy : childOffsetY;
           }
+        } else if (child is RenderTextBox) {
+          childScrollableSize = child.boxSize!;
         }
 
         scrollableMainSizeOfChildren.add(preSiblingsMainSize + childScrollableSize.width + childOffsetX);
