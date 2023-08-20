@@ -27,8 +27,9 @@ class CSSPseudo {
       String trimContent = removeQuotationMark(content);
 
       if (trimContent.startsWith('\\')) {
-        int value = int.parse(trimContent.substring(1), radix: 16);
-        trimContent = String.fromCharCode(value);
+        String rawInput = trimContent.substring(1);
+        List<int> unicodes = rawInput.split('\\').map((e) => int.parse(e, radix: 16)).toList();
+        trimContent = String.fromCharCodes(unicodes);
       }
 
       return QuoteStringContentValue(trimContent);
