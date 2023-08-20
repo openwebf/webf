@@ -361,4 +361,19 @@ describe("css pseudo selector", () => {
 
     await simulateClick(15, 5);
   });
+
+  it('unicode content', async() => {
+    const style = <style>{`
+      .div1::before {
+        content: '\\66F4\\591A';
+        background-color: red;
+        margin-left: 10px;
+      }
+    `}</style>;
+    document.head.appendChild(style);
+    const div = <div>{'004 Before && After'}</div>;
+    div.className = 'div1';
+    document.body.appendChild(div);
+    await snapshot();
+  });
 });
