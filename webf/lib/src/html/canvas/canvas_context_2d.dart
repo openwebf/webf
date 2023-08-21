@@ -41,10 +41,7 @@ class CanvasRenderingContext2DSettings {
   bool desynchronized = false;
 }
 
-enum FillStyleType {
-  string,
-  canvasGradient
-}
+enum FillStyleType { string, canvasGradient }
 
 typedef CanvasAction = void Function(Canvas, Size);
 
@@ -188,22 +185,20 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble()));
-    methods['transform'] = BindingObjectMethodSync(call: (args) => transform(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble(),
-        castToType<num>(args[2]).toDouble(),
-        castToType<num>(args[3]).toDouble(),
-        castToType<num>(args[4]).toDouble(),
-        castToType<num>(args[5]).toDouble()));
+    methods['transform'] = BindingObjectMethodSync(
+        call: (args) => transform(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble(),
+            castToType<num>(args[5]).toDouble()));
     methods['translate'] = BindingObjectMethodSync(
         call: (args) => translate(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
     methods['reset'] = BindingObjectMethodSync(call: (_) => reset());
     methods['createLinearGradient'] = BindingObjectMethodSync(
-        call: (args) => createLinearGradient(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble()));
+        call: (args) => createLinearGradient(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
     methods['createRadialGradient'] = BindingObjectMethodSync(
         call: (args) => createRadialGradient(
             castToType<num>(args[0]).toDouble(),
@@ -212,43 +207,41 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble()));
+    methods['createPattern'] =
+        BindingObjectMethodSync(call: (args) => createPattern(CanvasImageSource(args[0]), castToType<String>(args[1])));
   }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['fillStyle'] = BindingObjectProperty(
-        getter: () {
-          if (fillStyle is CanvasGradient) {
-            return fillStyle;
-          }
-          return CSSColor.convertToHex(fillStyle as Color);
-        },
-        setter: (value) {
-          if (value is String) {
-            Color? color = CSSColor.parseColor(castToType<String>(value), renderStyle: canvas.renderStyle);
-            if (color != null) fillStyle = color;
-          } else if (value is CanvasGradient) {
-            fillStyle = value;
-          }
-        });
+    properties['fillStyle'] = BindingObjectProperty(getter: () {
+      if (fillStyle is CanvasGradient) {
+        return fillStyle;
+      }
+      return CSSColor.convertToHex(fillStyle as Color);
+    }, setter: (value) {
+      if (value is String) {
+        Color? color = CSSColor.parseColor(castToType<String>(value), renderStyle: canvas.renderStyle);
+        if (color != null) fillStyle = color;
+      } else if (value is CanvasGradient || value is CanvasPattern) {
+        fillStyle = value;
+      }
+    });
     properties['direction'] = BindingObjectProperty(
         getter: () => _textDirectionInString, setter: (value) => direction = parseDirection(castToType<String>(value)));
     properties['font'] = BindingObjectProperty(getter: () => font, setter: (value) => font = castToType<String>(value));
-    properties['strokeStyle'] = BindingObjectProperty(
-        getter: () {
-          if (strokeStyle is CanvasGradient) {
-            return strokeStyle;
-          }
-          return CSSColor.convertToHex(strokeStyle as Color);
-        },
-        setter: (value) {
-          if (value is String) {
-            Color? color = CSSColor.parseColor(castToType<String>(value), renderStyle: canvas.renderStyle);
-            if (color != null) strokeStyle = color;
-          } else if (value is CanvasGradient) {
-            strokeStyle = value;
-          }
-        });
+    properties['strokeStyle'] = BindingObjectProperty(getter: () {
+      if (strokeStyle is CanvasGradient) {
+        return strokeStyle;
+      }
+      return CSSColor.convertToHex(strokeStyle as Color);
+    }, setter: (value) {
+      if (value is String) {
+        Color? color = CSSColor.parseColor(castToType<String>(value), renderStyle: canvas.renderStyle);
+        if (color != null) strokeStyle = color;
+      } else if (value is CanvasGradient) {
+        strokeStyle = value;
+      }
+    });
     properties['lineCap'] = BindingObjectProperty(
         getter: () => lineCap, setter: (value) => lineCap = parseLineCap(castToType<String>(value)));
     properties['lineDashOffset'] = BindingObjectProperty(
@@ -257,9 +250,13 @@ class CanvasRenderingContext2D extends BindingObject {
         getter: () => lineJoin, setter: (value) => lineJoin = parseLineJoin(castToType<String>(value)));
     properties['lineWidth'] = BindingObjectProperty(
         getter: () => lineWidth, setter: (value) => lineWidth = castToType<num>(value).toDouble());
-    properties['miterLimit'] = BindingObjectProperty(getter: () => miterLimit, setter: (value) => miterLimit = castToType<num>(value).toDouble());
-    properties['textAlign'] = BindingObjectProperty(getter: () => textAlign.toString(), setter: (value) => textAlign = parseTextAlign(castToType<String>(value)));
-    properties['textBaseline'] = BindingObjectProperty(getter: () => textBaseline.toString(), setter: (value) => textBaseline = parseTextBaseline(castToType<String>(value)));
+    properties['miterLimit'] = BindingObjectProperty(
+        getter: () => miterLimit, setter: (value) => miterLimit = castToType<num>(value).toDouble());
+    properties['textAlign'] = BindingObjectProperty(
+        getter: () => textAlign.toString(), setter: (value) => textAlign = parseTextAlign(castToType<String>(value)));
+    properties['textBaseline'] = BindingObjectProperty(
+        getter: () => textBaseline.toString(),
+        setter: (value) => textBaseline = parseTextBaseline(castToType<String>(value)));
   }
 
   @override
@@ -290,6 +287,16 @@ class CanvasRenderingContext2D extends BindingObject {
     // Must trigger repaint after action
     canvas.repaintNotifier
         .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
+  }
+
+  //For CanvasRenderingContext2D: createPattern() method; Creating a pattern from a canvas need to replay the actions because the canvas element may be not drawn.
+  void replayActions(Canvas canvas, Size size) {
+    Path2D paintTemp = path2d;
+    path2d = Path2D();
+    _actions.forEach((action) {
+      action.call(canvas, size);
+    });
+    path2d = paintTemp;
   }
 
   // Perform canvas drawing.
@@ -538,6 +545,8 @@ class CanvasRenderingContext2D extends BindingObject {
 
   void arcTo(double x1, double y1, double x2, double y2, double radius) {
     addAction((Canvas canvas, Size size) {
+      print('object arctO ${canvas.hashCode}');
+
       path2d.arcTo(x1, y1, x2, y2, radius);
     });
   }
@@ -775,6 +784,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   Object _strokeStyle = CSSColor.initial; // default black
   Object get strokeStyle => _strokeStyle;
+
   set strokeStyle(Object? newValue) {
     if (newValue == null) return;
     addAction((Canvas canvas, Size size) {
@@ -784,6 +794,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   Object _fillStyle = CSSColor.initial; // default black
   Object get fillStyle => _fillStyle;
+
   set fillStyle(Object? newValue) {
     if (newValue == null) return;
     addAction((Canvas canvas, Size size) {
@@ -796,7 +807,6 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
-    // TODO: implement createPattern
     return CanvasPattern(image, repetition);
   }
 
@@ -819,20 +829,90 @@ class CanvasRenderingContext2D extends BindingObject {
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction((Canvas canvas, Size size) {
       Paint paint = Paint();
-      if (fillStyle is Color) {
-        paint..color = fillStyle as Color;
-      } else if (fillStyle is CanvasRadialGradient) {
-        paint
-          ..shader =
-              _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h)
-                  .createShader(rect);
-      } else if (fillStyle is CanvasLinearGradient) {
-        paint
-          ..shader =
-              _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h)
-                  .createShader(rect);
+      if (fillStyle is Color || fillStyle is CanvasRadialGradient || fillStyle is CanvasLinearGradient) {
+        if (fillStyle is Color) {
+          paint..color = fillStyle as Color;
+        } else if (fillStyle is CanvasRadialGradient) {
+          paint..shader = _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
+        } else if (fillStyle is CanvasLinearGradient) {
+          paint..shader = _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
+        }
+        canvas.drawRect(rect, paint);
+      } else if (fillStyle is CanvasPattern) {
+        var canvasPattern = fillStyle as CanvasPattern;
+        if (canvasPattern.image.image_element == null && canvasPattern.image.canvas_element == null) {
+          throw AssertionError('CanvasPattern must be created from a canvas or image');
+        }
+
+        String repetition = canvasPattern.repetition;
+        int patternHeight = 0;
+        int patternWidth = 0;
+        //CanvasPattern created from an image
+        if (canvasPattern.image.image_element != null) {
+          patternHeight = canvasPattern.image.image_element!.height;
+          patternWidth = canvasPattern.image.image_element!.width;
+          switch (repetition) {
+            case 'no-repeat':
+              canvas.drawImage((fillStyle as CanvasPattern).image.image_element!.image!, Offset(x, y), paint);
+              break;
+            case 'repeat-x':
+              for (int i = 0; i < (w - x) / patternWidth; i++) {
+                canvas.drawImage(
+                    (fillStyle as CanvasPattern).image.image_element!.image!, Offset(x + i * patternWidth, y), paint);
+              }
+              break;
+            case 'repeat-y':
+              for (int i = 0; i < (h - y) / patternHeight; i++) {
+                canvas.drawImage(
+                    (fillStyle as CanvasPattern).image.image_element!.image!, Offset(x, y + i * patternHeight), paint);
+              }
+              break;
+            case 'repeat':
+              for (int i = 0; i <= (w - x) / patternWidth; i++) {
+                for (int j = 0; j <= (h - y) / patternHeight; j++) {
+                  canvas.drawImage((fillStyle as CanvasPattern).image.image_element!.image!,
+                      Offset(x + i * patternWidth, y + j * patternHeight), paint);
+                }
+              }
+              break;
+          }
+        } else {
+          //CanvasPattern created from a canvas
+          int patternHeight = canvasPattern.image.canvas_element!.height;
+          int patternWidth = canvasPattern.image.canvas_element!.width;
+          canvas.translate(x - patternWidth, y - patternHeight);
+          switch (repetition) {
+            case 'no-repeat':
+              canvas.translate(patternWidth.toDouble(), patternHeight.toDouble());
+              canvasPattern.image.canvas_element?.getContext2d!.replayActions(canvas, size);
+              break;
+            case 'repeat-x':
+              canvas.translate(0, patternHeight.toDouble());
+              for (int i = 0; i <= (w - x) / patternWidth; i++) {
+                canvas.translate(patternWidth.toDouble(), 0);
+                canvasPattern.image.canvas_element?.getContext2d!.replayActions(canvas, size);
+              }
+              break;
+            case 'repeat-y':
+              canvas.translate(patternWidth.toDouble(), 0);
+              for (int j = 0; j <= (h - y) / patternHeight; j++) {
+                canvas.translate(0, patternHeight.toDouble());
+                canvasPattern.image.canvas_element?.getContext2d!.replayActions(canvas, size);
+              }
+              break;
+            case 'repeat':
+              for (int i = 0; i <= (w - x) / patternWidth; i++) {
+                canvas.translate(patternWidth.toDouble(), 0);
+                for (int j = 0; j <= (h - y) / patternHeight; j++) {
+                  canvas.translate(0, patternHeight.toDouble());
+                  canvasPattern.image.canvas_element?.getContext2d!.replayActions(canvas, size);
+                }
+                canvas.translate(0, y - h - patternHeight);
+              }
+              break;
+          }
+        }
       }
-      canvas.drawRect(rect, paint);
     });
   }
 
@@ -843,17 +923,12 @@ class CanvasRenderingContext2D extends BindingObject {
       if (strokeStyle is Color) {
         paint..color = strokeStyle as Color;
       } else if (strokeStyle is CanvasRadialGradient) {
-        paint
-          ..shader =
-          _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h)
-              .createShader(rect);
+        paint..shader = _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
       } else if (strokeStyle is CanvasLinearGradient) {
-        paint
-          ..shader =
-          _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h)
-              .createShader(rect);
+        paint..shader = _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
       }
-      paint..strokeJoin = lineJoin
+      paint
+        ..strokeJoin = lineJoin
         ..strokeCap = lineCap
         ..strokeWidth = lineWidth
         ..strokeMiterLimit = miterLimit
@@ -943,8 +1018,7 @@ class CanvasRenderingContext2D extends BindingObject {
       if (strokeStyle is! Color) {
         return;
       }
-      TextPainter textPainter =
-          _getTextPainter(text, strokeStyle as Color, shouldStrokeText: true);
+      TextPainter textPainter = _getTextPainter(text, strokeStyle as Color, shouldStrokeText: true);
       if (maxWidth != null) {
         // FIXME: should scale down to a smaller font size in order to fit the text in the specified width.
         textPainter.layout(maxWidth: maxWidth);
@@ -964,8 +1038,7 @@ class CanvasRenderingContext2D extends BindingObject {
     return null;
   }
 
-  LinearGradient _drawLinearGradient(CanvasLinearGradient gradient, double rX,
-      double rY, double rW, double rH) {
+  LinearGradient _drawLinearGradient(CanvasLinearGradient gradient, double rX, double rY, double rW, double rH) {
     double cW = rW / 2;
     double cH = rH / 2;
     double lX = rX + cW;
@@ -976,8 +1049,7 @@ class CanvasRenderingContext2D extends BindingObject {
     double focalY = (gradient.y1 - lY) / cH;
     List<Color> colors = [];
     List<double> stops = [];
-    for (var colorStop in gradient.colorGradients
-      ..sort((a, b) => a.stop?.compareTo(b.stop ?? 0) ?? 0)) {
+    for (var colorStop in gradient.colorGradients..sort((a, b) => a.stop?.compareTo(b.stop ?? 0) ?? 0)) {
       Color? color = colorStop.color;
       double? stop = colorStop.stop;
       if (color != null && stop != null) {
@@ -993,8 +1065,7 @@ class CanvasRenderingContext2D extends BindingObject {
         tileMode: TileMode.clamp);
   }
 
-  RadialGradient _drawRadialGradient(CanvasRadialGradient gradient, double rX,
-      double rY, double rW, double rH) {
+  RadialGradient _drawRadialGradient(CanvasRadialGradient gradient, double rX, double rY, double rW, double rH) {
     double cW = rW / 2;
     double cH = rH / 2;
     double oX = rX + cW;
@@ -1011,8 +1082,7 @@ class CanvasRenderingContext2D extends BindingObject {
     double cr = gradient.r1 / oR;
     List<Color> colors = [];
     List<double> stops = [];
-    for (var colorStop in gradient.colorGradients
-      ..sort((a, b) => a.stop?.compareTo(b.stop ?? 0) ?? 0)) {
+    for (var colorStop in gradient.colorGradients..sort((a, b) => a.stop?.compareTo(b.stop ?? 0) ?? 0)) {
       Color? color = colorStop.color;
       double? stop = colorStop.stop;
       if (color != null && stop != null) {
@@ -1021,12 +1091,7 @@ class CanvasRenderingContext2D extends BindingObject {
       }
     }
     return RadialGradient(
-        focal: Alignment(fx, fy),
-        focalRadius: fr,
-        center: Alignment(cx, cy),
-        radius: cr,
-        colors: colors,
-        stops: stops);
+        focal: Alignment(fx, fy), focalRadius: fr, center: Alignment(cx, cy), radius: cr, colors: colors, stops: stops);
   }
 
   // Reset the rendering context to its default state.
