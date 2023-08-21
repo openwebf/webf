@@ -1496,6 +1496,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // When this phases was complete, it's ready to layout for this element's renderObject.
   bool recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
     if (this is PseudoElement) {
+      // Create and attach renderObject into the renderObject tree when style was ready.
+      if (!isRendererAttached) {
+        attachTo(parentElement!, after: previousSiblingRenderer);
+        ensureChildAttached();
+      }
       style.flushPendingProperties();
     } else {
       // Calculate styles from everywhere.
