@@ -51,6 +51,12 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
   void initState() {
     super.initState();
     _webFElement.flutterWidgetState = this;
+    if (_webFElement.pendingSubWidgets.isNotEmpty) {
+      _webFElement.pendingSubWidgets.forEach((widget) {
+        customElementWidgets.add(widget);
+      });
+      _webFElement.pendingSubWidgets.clear();
+    }
   }
 
   @override

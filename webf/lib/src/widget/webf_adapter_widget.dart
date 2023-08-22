@@ -24,6 +24,11 @@ class WebFWidgetElementStatefulWidget extends StatefulWidget {
     widgetElement.state = state;
     return state;
   }
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'WebFWidgetElementStatefulWidget($hashCode)-[$widgetElement]';
+  }
 }
 
 class WebFWidgetElementElement extends StatefulElement {
@@ -97,7 +102,7 @@ class WebFWidgetElementState extends State<WebFWidgetElementStatefulWidget> {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'WidgetElement(${widgetElement.tagName}) adapterWidgetState';
+    return 'WebFWidgetElementState($hashCode)-($widgetElement)';
   }
 
   @override

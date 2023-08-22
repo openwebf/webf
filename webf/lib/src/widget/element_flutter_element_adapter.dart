@@ -17,10 +17,8 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    widget.webFElement.ensureChildAttached();
 
-    dom.Element element = widget.webFElement;
-    element.setNeedsStyleRecalc(dom.StyleChangeType.localStyleChange);
+    widget.webFElement.setNeedsStyleRecalc(dom.StyleChangeType.localStyleChange);
   }
 
   @override

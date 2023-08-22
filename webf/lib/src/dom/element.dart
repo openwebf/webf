@@ -8,6 +8,7 @@ import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Widget;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
@@ -155,6 +156,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   HTMLElementState? flutterWidgetState;
+  List<Widget> pendingSubWidgets = [];
 
   // The attrs.
   final Map<String, String> attributes = <String, String>{};
@@ -974,7 +976,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       willAttachRenderer();
     }
 
-    if (renderer != null && parent.renderer?.attached == true) {
+    if (renderer != null && parent.renderer != null) {
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel.attachRenderBox(parent.renderer!, renderer!, after: after);
