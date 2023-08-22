@@ -67,9 +67,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! RenderLayoutParentData) {
-      child.parentData = RenderLayoutParentData();
-    }
+    child.parentData = RenderLayoutParentData();
     if (child is RenderBoxModel) {
       child.parentData = CSSPositionedLayout.getPositionParentData(child, child.parentData as RenderLayoutParentData);
     }
@@ -130,6 +128,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   void performLayout() {
     doingThisLayout = true;
 
+    print('do perform layout..');
     _doPerformLayout();
 
     if (needsRelayout) {
@@ -146,6 +145,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     List<RenderBox> _nonPositionedChildren = [];
     List<RenderBoxModel> _stickyChildren = [];
 
+    print('do perform layout');
     // Prepare children of different type for layout.
     RenderBox? child = firstChild;
     while (child != null) {
