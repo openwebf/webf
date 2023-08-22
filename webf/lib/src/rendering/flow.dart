@@ -2,8 +2,10 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:developer';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -126,9 +128,17 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    if (!kReleaseMode) {
+      Timeline.startSync(
+        '$this layout',
+        arguments: {
+          'ownerElement': renderStyle.target.toString()
+        },
+      );
+    }
+
     doingThisLayout = true;
 
-    print('do perform layout..');
     _doPerformLayout();
 
     if (needsRelayout) {
@@ -136,6 +146,10 @@ class RenderFlowLayout extends RenderLayoutBox {
       needsRelayout = false;
     }
     doingThisLayout = false;
+
+    if (!kReleaseMode) {
+      Timeline.finishSync();
+    }
   }
 
   void _doPerformLayout() {
@@ -145,7 +159,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     List<RenderBox> _nonPositionedChildren = [];
     List<RenderBoxModel> _stickyChildren = [];
 
-    print('do perform layout');
     // Prepare children of different type for layout.
     RenderBox? child = firstChild;
     while (child != null) {

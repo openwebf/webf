@@ -2,6 +2,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:developer';
+
+import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/css.dart';
@@ -59,21 +62,32 @@ class StyleEngine {
   }
 
   void recalcStyle({bool rebuild = false}) {
-    if (styleDirtyElements.any((element) {
-      return element is HeadElement || element is HTMLElement;
-    }) ||
-        rebuild) {
-      document.documentElement?.recalculateStyle(rebuildNested: true);
-    } else {
-      List<Element> removedElements = [];
-      for (Element element in styleDirtyElements) {
-        bool success = element.recalculateStyle();
-        if (success) {
-          removedElements.add(element);
-        }
-      }
-      styleDirtyElements.removeAll(removedElements);
+    if (!kReleaseMode) {
+      Timeline.startSync(
+        'STYLE',
+      );
     }
+
+    document.documentElement?.recalculateStyle(rebuildNested: true);
+
+    if (!kReleaseMode) {
+      Timeline.finishSync();
+    }
+    // if (styleDirtyElements.any((element) {
+    //   return element is HeadElement || element is HTMLElement;
+    // }) ||
+    //     rebuild) {
+    //   document.documentElement?.recalculateStyle(rebuildNested: true);
+    // } else {
+    //   List<Element> removedElements = [];
+    //   for (Element element in styleDirtyElements) {
+    //     bool success = element.recalculateStyle();
+    //     if (success) {
+    //       removedElements.add(element);
+    //     }
+    //   }
+    //   styleDirtyElements.removeAll(removedElements);
+    // }
   }
 
 }

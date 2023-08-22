@@ -5,6 +5,7 @@
 
 import 'dart:async';
 import 'dart:ui';
+import 'dart:developer';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -1497,6 +1498,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // Calculate the styles from stylesheet for this element and apply all pending styles into the renderObject.
   // When this phases was complete, it's ready to layout for this element's renderObject.
   bool recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
+    if (!kReleaseMode) {
+      Timeline.startSync('$this recalculateStyle');
+    }
+
     if (this is PseudoElement) {
       // Create and attach renderObject into the renderObject tree when style was ready.
       if (!isRendererAttached) {
@@ -1533,6 +1538,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
     clearStyleChangeType();
+
+    if (!kReleaseMode) {
+      Timeline.finishSync();
+    }
+
     return true;
   }
 
