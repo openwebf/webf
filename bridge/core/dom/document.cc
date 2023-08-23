@@ -96,6 +96,7 @@ Element* Document::createElementNS(const AtomicString& uri, const AtomicString& 
     if (auto* element = SVGElementFactory::Create(qualified_name, *this)) {
       return element;
     }
+    return MakeGarbageCollected<SVGElement>(qualified_name, this);
   }
 
   return MakeGarbageCollected<Element>(_uri, qualified_name, prefix, this);
