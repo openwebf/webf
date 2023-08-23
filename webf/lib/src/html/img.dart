@@ -322,6 +322,7 @@ class ImageElement extends Element {
   }
 
   int get width {
+    ownerDocument.updateStyleIfNeeded();
     // Width calc priority: style > attr > intrinsic.
     final double borderBoxWidth =
         _styleWidth ?? _attrWidth ?? renderStyle.getWidthByAspectRatio();
@@ -329,6 +330,7 @@ class ImageElement extends Element {
   }
 
   int get height {
+    ownerDocument.updateStyleIfNeeded();
     // Height calc priority: style > attr > intrinsic.
     final double borderBoxHeight =
         _styleHeight ?? _attrHeight ?? renderStyle.getHeightByAspectRatio();

@@ -183,7 +183,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (newClassLists.equals(classList)) return;
     final checkKeys = (_classList + newClassLists).where((key) => !_classList.contains(key) || !classList.contains(key));
     final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys));
-    __classList.clear();
+    _classList.clear();
     if (newClassLists.isNotEmpty) {
       _classList.addAll(newClassLists);
     }
