@@ -285,6 +285,10 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   // Is child renderObject attached.
   bool get isRendererAttached => renderer != null && renderer!.attached;
 
+  bool isRendererAttachedToParent(RenderBox? parent) {
+    return renderer != null && renderer!.parent != null && renderer!.parent == parent;
+  }
+
   bool isDescendantOf(Node? other) {
     // Return true if other is an ancestor of this, otherwise false
     if (other == null || isConnected != other.isConnected) {
