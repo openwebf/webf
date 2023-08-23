@@ -545,8 +545,6 @@ class CanvasRenderingContext2D extends BindingObject {
 
   void arcTo(double x1, double y1, double x2, double y2, double radius) {
     addAction((Canvas canvas, Size size) {
-      print('object arctO ${canvas.hashCode}');
-
       path2d.arcTo(x1, y1, x2, y2, radius);
     });
   }
@@ -884,20 +882,20 @@ class CanvasRenderingContext2D extends BindingObject {
           switch (repetition) {
             case 'no-repeat':
               canvas.translate(patternWidth.toDouble(), patternHeight.toDouble());
-              canvasPattern.image.canvas_element?.getContext2d!.replayActions(canvas, size);
+              canvasPattern.image.canvas_element?.context2d!.replayActions(canvas, size);
               break;
             case 'repeat-x':
               canvas.translate(0, patternHeight.toDouble());
               for (int i = 0; i <= (w - x) / patternWidth; i++) {
                 canvas.translate(patternWidth.toDouble(), 0);
-                canvasPattern.image.canvas_element?.getContext2d!.replayActions(canvas, size);
+                canvasPattern.image.canvas_element?.context2d!.replayActions(canvas, size);
               }
               break;
             case 'repeat-y':
               canvas.translate(patternWidth.toDouble(), 0);
               for (int j = 0; j <= (h - y) / patternHeight; j++) {
                 canvas.translate(0, patternHeight.toDouble());
-                canvasPattern.image.canvas_element?.getContext2d!.replayActions(canvas, size);
+                canvasPattern.image.canvas_element?.context2d!.replayActions(canvas, size);
               }
               break;
             case 'repeat':
@@ -905,7 +903,7 @@ class CanvasRenderingContext2D extends BindingObject {
                 canvas.translate(patternWidth.toDouble(), 0);
                 for (int j = 0; j <= (h - y) / patternHeight; j++) {
                   canvas.translate(0, patternHeight.toDouble());
-                  canvasPattern.image.canvas_element?.getContext2d!.replayActions(canvas, size);
+                  canvasPattern.image.canvas_element?.context2d!.replayActions(canvas, size);
                 }
                 canvas.translate(0, y - h - patternHeight);
               }
