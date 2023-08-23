@@ -140,6 +140,7 @@ void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
 
     if (strcmp(attribute->name, "style") == 0) {
       auto* style = element->style();
+      if (style == nullptr) { return; }
       style->setCssText(AtomicString(ctx, attribute->value), ASSERT_NO_EXCEPTION());
     } else {
       std::string strName = attribute->name;
