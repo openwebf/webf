@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/animation.dart' show Curve;
 import 'package:webf/css.dart';
@@ -423,7 +425,9 @@ mixin CSSTransitionMixin on RenderStyle {
       target.dispatchEvent(Event(EVENT_TRANSITION_END));
     };
 
-    target.dispatchEvent(Event(EVENT_TRANSITION_RUN));
+    scheduleMicrotask(() {
+      target.dispatchEvent(Event(EVENT_TRANSITION_RUN));
+    });
 
     animation.play();
   }
