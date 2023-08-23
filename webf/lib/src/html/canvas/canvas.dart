@@ -67,8 +67,6 @@ class CanvasElement extends Element {
   // Currently only 2d rendering context for canvas is supported.
   CanvasRenderingContext2D? context2d;
 
-  CanvasRenderingContext2D? get getContext2d => context2d;
-
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeMethods(methods);
