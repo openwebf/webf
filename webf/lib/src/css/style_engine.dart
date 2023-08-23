@@ -69,7 +69,6 @@ class StyleEngine {
     }
 
     document.documentElement?.recalculateStyle(rebuildNested: true);
-
     if (!kReleaseMode) {
       Timeline.finishSync();
     }

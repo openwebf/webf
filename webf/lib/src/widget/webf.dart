@@ -169,23 +169,19 @@ class WebFState extends State<WebF> with RouteAware {
   final Set<WebFWidgetElementToWidgetAdapter> customElementWidgets = {};
 
   void onCustomElementWidgetAdd(WebFWidgetElementToWidgetAdapter adapter) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!_disposed) {
-        setState(() {
-          customElementWidgets.add(adapter);
-        });
-      }
-    });
+    if (!_disposed) {
+      setState(() {
+        customElementWidgets.add(adapter);
+      });
+    }
   }
 
   void onCustomElementWidgetRemove(WebFWidgetElementToWidgetAdapter adapter) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!_disposed) {
-        setState(() {
-          customElementWidgets.remove(adapter);
-        });
-      }
-    });
+    if (!_disposed) {
+      setState(() {
+        customElementWidgets.remove(adapter);
+      });
+    }
   }
 
   bool _flutterScreenIsReady = false;
