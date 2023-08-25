@@ -17,6 +17,8 @@ class StyleEngine {
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
 
+  bool inDOMRemoval = false;
+
   Set<Element> styleDirtyElements = {};
 
   StyleEngine(this.document) {

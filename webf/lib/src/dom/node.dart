@@ -319,6 +319,8 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return _styleChangeType != StyleChangeType.noStyleChange;
   }
 
+  bool childNeedsStyleRecalc = false;
+
   void setNeedsStyleRecalc(StyleChangeType changeType) {
     assert(changeType != StyleChangeType.noStyleChange);
     assert(this is Element);
@@ -441,8 +443,31 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return this is DocumentFragment;
   }
 
+  bool isDocumentNode() {
+    return this is Document;
+  }
+
+  bool isPseudoElement() {
+    return this is PseudoElement;
+  }
+
   bool hasChildren() {
     return firstChild != null;
+  }
+
+  Element flatTreeParentForChildDirty() {
+    if (isPseudoElement()) {
+      return parentElement!;
+    }
+    return parentElement!;
+  }
+
+  Element getStyleRecalcParent(){
+    return flatTreeParentForChildDirty();
+  }
+
+  bool get isDirtyForStyleRecalc {
+    return needsStyleRecalc;
   }
 
   DocumentPosition compareDocumentPosition(Node other) {
