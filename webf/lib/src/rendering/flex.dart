@@ -249,6 +249,13 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
   }
 
+  double _calculateMainAxisMarginForJustContentType(double margin) {
+    if(renderStyle.justifyContent == JustifyContent.spaceBetween && margin < 0) {
+      return margin / 2;
+    }
+    return margin;
+  }
+
   // Get start/end margin of child in the cross axis according to flex direction.
   double? _flowAwareChildCrossAxisMargin(RenderBox child, {bool isEnd = false}) {
     RenderBoxModel? childRenderBoxModel;
@@ -1903,7 +1910,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         RenderBox child = runChild.child;
         double childMainAxisMargin = _flowAwareChildMainAxisMargin(child)!;
         // Add start margin of main axis when setting offset.
-        childMainPosition += childMainAxisMargin;
+        childMainPosition += _calculateMainAxisMarginForJustContentType(childMainAxisMargin);
         double? childCrossPosition;
         AlignSelf alignSelf = _getAlignSelf(child);
 
@@ -2057,7 +2064,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (flipMainAxis) {
           childMainPosition -= betweenSpace + childMainAxisMargin;
         } else {
-          childMainPosition += _getMainAxisExtent(child) - childMainAxisMargin + betweenSpace;
+          childMainPosition += _getMainAxisExtent(child) + betweenSpace;
         }
       }
 
