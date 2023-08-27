@@ -19,6 +19,8 @@ class CanvasPainter extends CustomPainter {
 
   // Cache the last paint image.
   Image? _snapshot;
+  Image? get snapshot => _snapshot;
+
   bool _shouldRepaint = false;
   // Indicate that snapshot is not generated yet, should not to perform next frame now.
   bool _updatingSnapshot = false;
