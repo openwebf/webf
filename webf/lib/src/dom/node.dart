@@ -7,7 +7,6 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' show Widget;
-import 'package:path/path.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
@@ -331,6 +330,24 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
     ownerDocument.styleEngine.markElementNeedsStyleUpdate(this as Element);
     _styleChangeType = changeType;
+  }
+
+  bool _needsStyleInvalidation = false;
+  bool get needsStyleInvalidation => _needsStyleInvalidation;
+  void setNeedsStyleInvalidation() {
+    _needsStyleInvalidation = true;
+  }
+  void clearNeedsStyleInvalidation() {
+    _needsStyleInvalidation = false;
+  }
+
+  bool _childNeedsStyleInvalidation = false;
+  bool get childNeedsStyleInvalidation => _childNeedsStyleInvalidation;
+  void setChildNeedsStyleInvalidation() {
+    _childNeedsStyleInvalidation = true;
+  }
+  void clearChildNeedsStyleInvalidation() {
+    _childNeedsStyleInvalidation = false;
   }
 
   /// Attach a renderObject to parent.

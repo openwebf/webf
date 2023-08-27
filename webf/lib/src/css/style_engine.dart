@@ -6,8 +6,10 @@ import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/html.dart';
-import 'package:webf/css.dart';
+import 'invalidation/style_invalidator.dart';
+import 'invalidation/invalidation_set.dart';
+import 'invalidation/pending_invalidation.dart';
+import 'style_invalidation_root.dart';
 
 // The StyleEngine class manages style-related state for the document. There is
 // a 1-1 relationship of Document to StyleEngine. The document calls the
@@ -20,6 +22,9 @@ class StyleEngine {
   bool inDOMRemoval = false;
 
   Set<Element> styleDirtyElements = {};
+  PendingInvalidations pendingInvalidations = PendingInvalidations();
+
+  StyleInvalidationRoot styleInvalidationRoot = StyleInvalidationRoot();
 
   StyleEngine(this.document) {
     _styleNodeManager = StyleNodeManager(document);
@@ -33,6 +38,12 @@ class StyleEngine {
       parent.ownerDocument.styleEngine.markElementNeedsStyleUpdate(parent.ownerDocument.documentElement!);
     } else {
       parent.ownerDocument.styleEngine.markElementNeedsStyleUpdate(parent as Element);
+    }
+  }
+
+  void nodeWillBeRemoved(Node node) {
+    if (node is Element) {
+
     }
   }
 
@@ -63,12 +74,17 @@ class StyleEngine {
     recalcStyle();
   }
 
+  bool _isInRecalcStyle = false;
+  bool get isInRecalcStyle => _isInRecalcStyle;
+
   void recalcStyle({bool rebuild = false}) {
     if (!kReleaseMode) {
       Timeline.startSync(
         'STYLE',
       );
     }
+
+    _isInRecalcStyle = true;
 
     document.documentElement?.recalculateStyle(rebuildNested: true);
     if (!kReleaseMode) {
@@ -89,6 +105,35 @@ class StyleEngine {
     //   }
     //   styleDirtyElements.removeAll(removedElements);
     // }
+    _isInRecalcStyle = false;
   }
 
+  void possiblyScheduleNthPseudoInvalidations(Node node) {
+    if (!node.isElementNode()) {
+      return;
+    }
+    ContainerNode? parent = node.parentNode;
+    if (parent == null) {
+      return;
+    }
+
+    if ((parent.childrenAffectedByForwardPositionalRules() &&
+        node.nextSibling != null) ||
+        (parent.childrenAffectedByBackwardPositionalRules() &&
+            node.previousSibling != null)) {
+      node.ownerDocument.styleEngine.scheduleNthPseudoInvalidations(parent);
+    }
+  }
+
+  void scheduleNthPseudoInvalidations(ContainerNode nthParent) {
+    InvalidationLists invalidationLists = InvalidationLists();
+    // getRuleFeatureSet().collectNthInvalidationSet(invalidationLists);
+    pendingInvalidations.scheduleInvalidationSetsForNode(invalidationLists, nthParent);
+  }
+
+  void invalidateStyle() {
+    var styleInvalidator = StyleInvalidator(pendingInvalidations.pendingInvalidationMap);
+    styleInvalidator.invalidateRootElement(document, styleInvalidationRoot.rootElement());
+    styleInvalidationRoot.clear();
+  }
 }

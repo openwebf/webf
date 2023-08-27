@@ -188,6 +188,21 @@ class Document extends ContainerNode {
     styleEngine.recalcStyle();
   }
 
+  bool _isStyleInvalidationNeedsUpdate = false;
+  void updateStyleInvalidationIfNeeded() {
+    if (!_isStyleInvalidationNeedsUpdate) return;
+    styleEngine.invalidateStyle();
+  }
+
+  void scheduleStyleInvalidationNeedsUpdate() {
+    if (_isStyleInvalidationNeedsUpdate) return;
+    SchedulerBinding.instance.scheduleFrameCallback((timeStamp) {
+      updateStyleInvalidationIfNeeded();
+      _isStyleInvalidationNeedsUpdate = false;
+    });
+    _isStyleInvalidationNeedsUpdate = true;
+  }
+
   bool _isStyleNeedsUpdate = false;
   void scheduleStyleNeedsUpdate() {
     if (_isStyleNeedsUpdate) return;
@@ -443,6 +458,10 @@ class Document extends ContainerNode {
       documentElement = newNode is Element ? newNode : null;
     }
     return super.replaceChild(newNode, oldNode);
+  }
+
+  void nodeWillBeRemoved(Node child) {
+    styleEngine.nodeWillBeRemoved(child);
   }
 
   Element createElement(String type, [BindingContext? context]) {

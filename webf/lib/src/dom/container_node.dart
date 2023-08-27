@@ -9,6 +9,32 @@ import 'package:webf/src/dom/node_traversal.dart';
 
 typedef InsertNodeHandler = void Function(ContainerNode container, Node child, Node? next);
 
+class DynamicRestyleFlags {
+  static const int childrenOrSiblingsAffectedByFocus = 1 << 0;
+  static const int childrenOrSiblingsAffectedByHover = 1 << 1;
+  static const int childrenOrSiblingsAffectedByActive = 1 << 2;
+  static const int childrenOrSiblingsAffectedByDrag = 1 << 3;
+  static const int childrenAffectedByFirstChildRules = 1 << 4;
+  static const int childrenAffectedByLastChildRules = 1 << 5;
+  static const int childrenAffectedByDirectAdjacentRules = 1 << 6;
+  static const int childrenAffectedByIndirectAdjacentRules = 1 << 7;
+  static const int childrenAffectedByForwardPositionalRules = 1 << 8;
+  static const int childrenAffectedByBackwardPositionalRules = 1 << 9;
+  static const int affectedByFirstChildRules = 1 << 10;
+  static const int affectedByLastChildRules = 1 << 11;
+  static const int childrenOrSiblingsAffectedByFocusWithin = 1 << 12;
+  static const int childrenOrSiblingsAffectedByFocusVisible = 1 << 13;
+
+  static const int numberOfDynamicRestyleFlags = 14;
+
+  static const int childrenAffectedByStructuralRules = childrenAffectedByFirstChildRules |
+      childrenAffectedByLastChildRules |
+      childrenAffectedByDirectAdjacentRules |
+      childrenAffectedByIndirectAdjacentRules |
+      childrenAffectedByForwardPositionalRules |
+      childrenAffectedByBackwardPositionalRules;
+}
+
 bool collectChildrenAndRemoveFromOldParent(Node node, List<Node> nodes) {
   if (node is DocumentFragment) {
     getChildNodes(node, nodes);
@@ -32,6 +58,29 @@ void getChildNodes(ContainerNode node, List<Node> nodes) {
 
 abstract class ContainerNode extends Node {
   ContainerNode(NodeType nodeType, [BindingContext? context]) : super(nodeType, context);
+
+  int styleFlags = 0;
+
+  bool hasRestyleFlag(int mask) {
+    return styleFlags & mask == 1;
+  }
+  void setRestyleFlag(int mask) {
+    styleFlags = styleFlags | mask;
+  }
+
+  bool childrenAffectedByForwardPositionalRules() {
+    return hasRestyleFlag(DynamicRestyleFlags.childrenAffectedByForwardPositionalRules);
+  }
+  void setChildrenAffectedByForwardPositionalRules() {
+    setRestyleFlag(DynamicRestyleFlags.childrenAffectedByForwardPositionalRules);
+  }
+
+  bool childrenAffectedByBackwardPositionalRules() {
+    return hasRestyleFlag(DynamicRestyleFlags.childrenAffectedByBackwardPositionalRules);
+  }
+  void setChildrenAffectedByBackwardPositionalRules() {
+    setRestyleFlag(DynamicRestyleFlags.childrenAffectedByBackwardPositionalRules);
+  }
 
   void _adoptAndAppendChild(ContainerNode container, Node child, Node? next) {
     child.parentOrShadowHostNode = this;
@@ -163,6 +212,10 @@ abstract class ContainerNode extends Node {
     return oldChild;
   }
 
+  void willRemoveChild(Node node) {
+    ownerDocument.nodeWillBeRemoved(node);
+  }
+
   @override
   Node? removeChild(Node oldChild) {
     Node child = oldChild;
@@ -193,8 +246,7 @@ abstract class ContainerNode extends Node {
     return child;
   }
 
-  void _insertNode(
-      List<Node> targets, Node? next, InsertNodeHandler mutator) {
+  void _insertNode(List<Node> targets, Node? next, InsertNodeHandler mutator) {
     for (final targetNode in targets) {
       assert(targetNode.parentNode == null);
       mutator(this, targetNode, next);
@@ -334,8 +386,7 @@ abstract class ContainerNode extends Node {
 
     // This is a performance optimization, NodeList cache invalidation is
     // not necessary for non-element nodes.
-    if (change != null &&
-        change.affectsElements == ChildrenChangeAffectsElements.NO) {
+    if (change != null && change.affectsElements == ChildrenChangeAffectsElements.NO) {
       return;
     }
 

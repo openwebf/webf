@@ -195,6 +195,24 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   PseudoElement? _beforeElement;
   PseudoElement? _afterElement;
 
+  Element? get firstElementChild {
+    Node? node = firstChild;
+    while(node != null) {
+      if (node is Element) return node;
+      node = node.nextSibling;
+    }
+    return null;
+  }
+
+  Element? get nextSiblingElement {
+    Node? node = nextSibling;
+    while(node != null) {
+      if (node is Element) return node;
+      node = node.nextSibling;
+    }
+    return null;
+  }
+
   final bool isDefaultRepaintBoundary = false;
 
   /// Whether should as a repaintBoundary for this element when style changed
@@ -1082,7 +1100,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
-    Node? originalPreviousSibling = referenceNode.previousSibling;
     Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
     if (child is Element) {
