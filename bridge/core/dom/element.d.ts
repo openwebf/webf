@@ -54,6 +54,7 @@ interface Element extends Node, ParentNode, ChildNode {
   // CSSOM View Module
   // https://drafts.csswg.org/cssom-view/#extension-to-the-element-interface
   getBoundingClientRect(): BoundingClientRect;
+  getClientRects(): BoundingClientRect[];
 
   getElementsByClassName(className: string) : Element[];
   getElementsByTagName(tagName: string): Element[];
