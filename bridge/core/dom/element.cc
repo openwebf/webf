@@ -86,7 +86,8 @@ std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& excepti
   if (exception_state.HasException()) {
     return {};
   }
-  auto&& nativeRects = NativeValueConverter<NativeTypeArray<NativeTypePointer<NativeBindingObject>>>::FromNativeValue(ctx(), result);
+  auto&& nativeRects =
+      NativeValueConverter<NativeTypeArray<NativeTypePointer<NativeBindingObject>>>::FromNativeValue(ctx(), result);
   std::vector<BoundingClientRect*> vecRects;
   for (auto& nativeRect : nativeRects) {
     BoundingClientRect* rect = BoundingClientRect::Create(GetExecutingContext(), nativeRect);
