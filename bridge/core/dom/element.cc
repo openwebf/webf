@@ -80,6 +80,21 @@ BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_sta
       GetExecutingContext(), NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
 }
 
+std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& exception_state) {
+  GetExecutingContext()->FlushUICommand();
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetClientRects, 0, nullptr, exception_state);
+  if (exception_state.HasException()) {
+    return {};
+  }
+  auto&& nativeRects = NativeValueConverter<NativeTypeArray<NativeTypePointer<NativeBindingObject>>>::FromNativeValue(ctx(), result);
+  std::vector<BoundingClientRect*> vecRects;
+  for (auto& nativeRect : nativeRects) {
+    BoundingClientRect* rect = BoundingClientRect::Create(GetExecutingContext(), nativeRect);
+    vecRects.push_back(rect);
+  }
+  return vecRects;
+}
+
 void Element::click(ExceptionState& exception_state) {
   GetExecutingContext()->FlushUICommand();
   InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, exception_state);
