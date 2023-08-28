@@ -311,6 +311,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     methods['getBoundingClientRect'] = BindingObjectMethodSync(call: (_) => getBoundingClientRect());
+    methods['getClientRects'] = BindingObjectMethodSync(call: (_) => getClientRects());
     methods['scroll'] =
         BindingObjectMethodSync(call: (args) => scroll(castToType<double>(args[0]), castToType<double>(args[1])));
     methods['scrollBy'] =
@@ -641,6 +642,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   BoundingClientRect getBoundingClientRect() => boundingClientRect;
+
+  List<BoundingClientRect> getClientRects() {
+    return [boundingClientRect];
+  }
 
   bool _shouldConsumeScrollTicker = false;
 
