@@ -76,6 +76,10 @@ mixin CSSPaddingMixin on RenderStyle {
     return constraints.deflate(padding);
   }
 
+  BoxConstraints deflateMarginConstraints(BoxConstraints constraints) {
+    return constraints.deflate(margin);
+  }
+
   Size wrapPaddingSize(Size innerSize) {
     return Size(paddingLeft.computedValue + innerSize.width + paddingRight.computedValue,
         paddingTop.computedValue + innerSize.height + paddingBottom.computedValue);

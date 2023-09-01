@@ -447,6 +447,35 @@ describe('max-width', () => {
     await snapshot();
   });
 
+  it('text should overlap multiple span elements in flexlayout', async () => {
+    const container = createElement('div', {
+      style: {
+        display: 'flex',
+        maxWidth: '200px',
+        border: '1px solid #000'
+      }
+    }, [
+        createElement('div', {
+          style: {
+            marginLeft: '10px',
+            padding: '5px 10px',
+            maxWidth: '100px',
+            border: '1px solid #000',
+          }
+        }, [
+            createElement('span', {}, [
+                createElement('span', {}, [
+                    createElement('span', {}, [
+                        createText('123123123 123 12312 3123 12312 312')
+                    ])
+                ])
+            ])
+        ])
+    ]);
+    document.body.appendChild(container);
+    await snapshot();
+  });
+
   it('max-width is larger than width in flex layout', async () => {
     const container = createElement('div', {
       style: {
