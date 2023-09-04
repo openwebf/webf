@@ -11,12 +11,13 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/rendering/text.dart' show InlineBoxConstraints, MultiLineBoxConstraints, RenderTextBox, webfTextMaxLines;
 import 'package:webf/src/rendering/text_span.dart';
+import 'package:webf/src/rendering/webf_text_painter.dart';
 
 const String _kEllipsis = '\u2026';
 
 class WebFRenderTextLine {
   late Rect lineRect = Rect.zero;
-  late TextPainter textPainter;
+  late WebFTextPainter textPainter;
   late Offset paintOffset = Offset.zero;
   late double fontHeight = 0;
   late double leading = 0;
@@ -76,7 +77,7 @@ class WebFRenderParagraph extends RenderBox
         _softWrap = softWrap,
         _overflow = overflow,
         _foregroundCallback = foregroundCallback,
-        _textPainter = TextPainter(
+        _textPainter = WebFTextPainter(
             text: text,
             textAlign: textAlign,
             textDirection: textDirection,
@@ -93,7 +94,7 @@ class WebFRenderParagraph extends RenderBox
     if (child.parentData is! TextParentData) child.parentData = TextParentData();
   }
 
-  final TextPainter _textPainter;
+  final WebFTextPainter _textPainter;
 
   // The line metrics of paragraph
   late List<ui.LineMetrics> _lineMetrics;
@@ -188,6 +189,9 @@ class WebFRenderParagraph extends RenderBox
   }
 
   final TextPainterCallback? _foregroundCallback;
+
+  bool get happenVisualOverflow => _happenVisualOverflow;
+  bool _happenVisualOverflow = false;
 
   /// How visual overflow should be handled.
   TextOverflow get overflow => _overflow;
@@ -389,7 +393,7 @@ class WebFRenderParagraph extends RenderBox
     _layoutText(minWidth: constraints.minWidth, maxWidth: constraints.maxWidth);
   }
 
-  List<String> _getLineTextByLineMetrics(TextPainter textPainter, TextSpan textSpan) {
+  List<String> _getLineTextByLineMetrics(WebFTextPainter textPainter, TextSpan textSpan) {
     List<String> lineTexts = [];
     int checkOffset = 0;
     bool needClear = false;
@@ -555,7 +559,7 @@ class WebFRenderParagraph extends RenderBox
         text: lineText,
         style: text.style,
       );
-      TextPainter _lineTextPainter = TextPainter(
+      WebFTextPainter _lineTextPainter = WebFTextPainter(
           maxLines: 1,
           text: textSpan,
           textAlign: textAlign,
@@ -605,17 +609,17 @@ class WebFRenderParagraph extends RenderBox
   @override
   void performLayout() {
     // TODO need recheck logic  more layout
-    if (_foregroundCallback != null) {
-      _textPainter.layout();
-      Size size = _textPainter.size;
-      final paint = _foregroundCallback!(Rect.fromLTWH(0, 0, size.width, size.height));
-      if (paint != null) {
-        text = WebFTextSpan(
-            text: text.text,
-            style: text.style?.copyWith(foreground: paint)
-        );
-      }
-    }
+    // if (_foregroundCallback != null) {
+    //   _textPainter.layout();
+    //   Size size = _textPainter.size;
+    //   final paint = _foregroundCallback!(Rect.fromLTWH(0, 0, size.width, size.height));
+    //   if (paint != null) {
+    //     text = WebFTextSpan(
+    //         text: text.text,
+    //         style: text.style?.copyWith(foreground: paint)
+    //     );
+    //   }
+    // }
 
     layoutText();
 
@@ -640,6 +644,7 @@ class WebFRenderParagraph extends RenderBox
     // a problem if we start having horizontal overflow and introduce a clip
     // that affects the actual (but undetected) vertical overflow.
     final bool hasVisualOverflow = didOverflowWidth || didOverflowHeight;
+    _happenVisualOverflow = hasVisualOverflow;
     if (hasVisualOverflow) {
       switch (_overflow) {
         case TextOverflow.visible:
@@ -718,7 +723,7 @@ class WebFRenderParagraph extends RenderBox
     if (_lineRenders.length > 1) {
       // Adjust text paint offset of each line according to line-height.
       for (int i = 0; i < _lineRenders.length; i++) {
-        TextPainter _lineTextPainter = _lineRenders[i].textPainter;
+        WebFTextPainter _lineTextPainter = _lineRenders[i].textPainter;
         Offset lineOffset = Offset(offset.dx + _lineRenders[i].paintLeft, offset.dy + _lineRenders[i].paintTop);
         _lineTextPainter.paint(context.canvas, lineOffset);
       }

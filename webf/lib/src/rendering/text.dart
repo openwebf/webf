@@ -203,6 +203,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   int get lines => _renderParagraph.lineMetrics.length;
 
+  bool get happenVisualOverflow => _renderParagraph.happenVisualOverflow;
   // RenderTextBox content's first line will join a LogicLineBox which have some InlineBoxes as children,
   bool happenLineJoin() {
     if (firstLineIndent > 0 &&
@@ -402,12 +403,18 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   void _updatePlaceHolderDimensions(WebFRenderParagraph paragraph) {
     if (firstLineIndent > 0) {
-      double defaultHeight = 1;
+      double defaultHeight = 12;
 
       paragraph.setPlaceholderDimensions([
-        PlaceholderDimensions(size: Size(firstLineIndent, defaultHeight), alignment: PlaceholderAlignment.bottom)
+        PlaceholderDimensions(size:
+        Size(firstLineIndent, defaultHeight),
+            alignment: PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic, baselineOffset: defaultHeight)
       ]);
     }
+  }
+
+  void _clearPlaceHolderDimensions(WebFRenderParagraph paragraph) {
+    paragraph.setPlaceholderDimensions([]);
   }
 
   @override
@@ -426,12 +433,13 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
         if (text.children!.isEmpty) {
           WebFTextPlaceHolderSpan placeHolderSpan = WebFTextPlaceHolderSpan();
           text.children!.add(placeHolderSpan);
-          text.textSpanPosition.putIfAbsent(placeHolderSpan, () => true);
+          text.textSpanPosition.add(placeHolderSpan);
         }
         _updatePlaceHolderDimensions(paragraph);
       } else if (firstLineIndent == 0 && (firstLineIndent != _lastFirstLineIndent || text.children!.isNotEmpty)) {
         text.children!.clear();
         text.textSpanPosition.clear();
+        _clearPlaceHolderDimensions(paragraph);
         paragraph.markUpdateTextPainter();
       }
       _lastFirstLineIndent = firstLineIndent;
@@ -500,6 +508,8 @@ class RenderTextLineBoxes {
 
   LogicTextInlineBox get lastChild => inlineBoxList.last;
 
+  bool get happenVisualOverflow => (inlineBoxList.last.renderObject as RenderTextBox).happenVisualOverflow;
+
   LogicTextInlineBox createAndAppendTextBox(RenderTextBox renderObject, Rect rect) {
     inlineBoxList.add(LogicTextInlineBox(logicRect: rect, renderObject: renderObject));
     return inlineBoxList.last;
@@ -566,10 +576,12 @@ class MultiLineBoxConstraints extends BoxConstraints {
 class InlineBoxConstraints extends MultiLineBoxConstraints {
   final double leftWidth;
   final double lineMainExtent;
+  final bool jumpPaint;
 
   InlineBoxConstraints({
     this.leftWidth = 0.0,
     this.lineMainExtent = 0.0,
+    this.jumpPaint = false,
     int? maxLines,
     int? joinLine,
     bool? overflow,

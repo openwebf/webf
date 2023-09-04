@@ -9,6 +9,7 @@ import 'package:webf/src/rendering/text.dart';
 class LogicInlineBox {
   RenderBox renderObject;
   LogicLineBox? parentLine;
+  bool jumpPaint = false;
 
   LogicInlineBox({required this.renderObject, this.parentLine});
 
@@ -142,11 +143,16 @@ class LogicInlineBox {
 
   double? getLineHeight(CSSLengthValue? lineHeightFromParent) {
     CSSLengthValue? lineHeight;
-    if (renderObject is RenderTextBox || renderObject is RenderBoxModel) {
-      lineHeight = lineHeightFromParent;
+    if (renderObject is RenderTextBox) {
+      lineHeight = (renderObject as RenderTextBox).renderStyle.lineHeight;
+    } else if(renderObject is RenderReplaced) {
+      return renderObject.size.height;
+    } else if (renderObject is RenderBoxModel) {
+      lineHeight =  (renderObject as RenderBoxModel).renderStyle.lineHeight;
     } else if (renderObject is RenderPositionPlaceholder) {
       lineHeight = (renderObject as RenderPositionPlaceholder).positioned!.renderStyle.lineHeight;
     }
+
     if (lineHeight != null && lineHeight.type != CSSLengthType.NORMAL) {
       return lineHeight.computedValue;
     }
@@ -160,8 +166,21 @@ class LogicInlineBox {
     double baseline = renderObject.parent is RenderFlowLayout
         ? marginTop + childSize!.height + marginBottom
         : marginTop + childSize!.height;
+
+    // getDistanceToBaseline() return RenderObject baselineExtent is not right for us.
+    // need to update for RenderFlowLayout and RenderTextBox
+    if(renderObject is RenderFlowLayout && !(renderObject as RenderFlowLayout).lineBoxes.isEmpty) {
+      if(childAscent != null && childAscent == childSize.height) {
+        childAscent = childAscent - (renderObject as RenderFlowLayout).lineBoxes.last!.baselineBelowExtent;
+      } else if((renderObject as RenderFlowLayout).lineBoxes.length == 1) {
+        childAscent = (renderObject as RenderFlowLayout).lineBoxes.last!.baselineExtent;
+      }
+    }
+
+
     // When baseline of children not found, use boundary of margin bottom as baseline.
     double extentAboveBaseline = childAscent ?? baseline;
+    extentAboveBaseline = min(baseline, extentAboveBaseline);
     extentAboveBaseline = max(extentAboveBaseline, 0);
     return extentAboveBaseline;
   }
@@ -235,6 +254,15 @@ class LogicTextInlineBox extends LogicInlineBox {
     double? childAscent = (renderObject as RenderTextBox)
         .getLineAscent((renderObject as RenderTextBox).lineBoxes.findIndex(this))![0];
     return childAscent;
+  }
+
+  List<double> getLineExtent() {
+    List<double>? lineExtent= (renderObject as RenderTextBox)
+        .getLineAscent((renderObject as RenderTextBox).lineBoxes.findIndex(this));
+    if(lineExtent == null) {
+      return [height, 0];
+    }
+    return lineExtent;
   }
 
   @override
@@ -339,6 +367,11 @@ class LogicLineBox {
     return _mainAxisExtent;
   }
 
+  bool happenVisualOverflow() {
+    return inlineBoxes.where((element) => element is LogicTextInlineBox &&
+        (element.renderObject as RenderTextBox).happenVisualOverflow).isNotEmpty;
+  }
+
   double defaultLastLineMainExtent() {
     double lineMainExtent = mainAxisExtent;
     if (last?.renderObject != null &&
@@ -393,27 +426,32 @@ class LogicLineBox {
     return inlineBoxes.length;
   }
 
-  double findLastLineJoinCrossAxisExtent() {
+  List<double> findLastLineJoinCrossAxisExtent() {
     LogicLineBox? nextLineBox = null;
-    double crossAxisExtentLast = crossAxisExtent;
+    double runBaseLineExtent = baselineExtent;
+    double runBaseLineBelow = baselineBelowExtent;
     if (inlineBoxes.isEmpty) {
-      return crossAxisExtentLast;
+      return [runBaseLineExtent, runBaseLineBelow];
     }
     nextLineBox = this;
     do {
       RenderObject theLineLastRender = nextLineBox!.inlineBoxes.last.renderObject;
       if (theLineLastRender is RenderFlowLayout) {
         RenderFlowLayout ref = theLineLastRender;
-        if (ref.isInlineLevel(ref)) {
-          crossAxisExtentLast = ref.lineBoxes.last.crossAxisExtent;
+        if (ref.isInlineBlockLevel(ref) && !ref.lineBoxes.isEmpty) {
+          runBaseLineExtent = ref.lineBoxes.last!.baselineExtent;
+          runBaseLineBelow = ref.lineBoxes.last!.baselineBelowExtent;
           break;
         }
         if (ref.lineBoxes.isEmpty) {
           if (ref.boxSize != Size.zero && (ref.boxSize?.height ?? 0) > 0) {
-            crossAxisExtentLast = ref.boxSize?.height ?? 0;
+            // crossAxisExtentLast = ref.boxSize?.height ?? 0;
+            runBaseLineExtent = ref.boxSize?.height ?? 0;
+            runBaseLineBelow = 0;
           } else {
             // the last render size == zero, need use the line cross extent
-            crossAxisExtentLast = nextLineBox.crossAxisExtent;
+            runBaseLineExtent = nextLineBox.baselineExtent;
+            runBaseLineBelow = nextLineBox.baselineBelowExtent;
           }
           break;
         }
@@ -425,18 +463,111 @@ class LogicLineBox {
       }
       if (theLineLastRender is RenderTextBox) {
         if (theLineLastRender.lineBoxes.length > 1) {
-          crossAxisExtentLast = theLineLastRender.lineBoxes.lastChild.height;
+          List<double> lineExtentParams = theLineLastRender.lineBoxes.lastChild.getLineExtent();
+          runBaseLineExtent = lineExtentParams[0];
+          runBaseLineBelow = lineExtentParams[1];
         } else {
-          crossAxisExtentLast = nextLineBox.crossAxisExtent;
+          runBaseLineExtent = nextLineBox.baselineExtent;
+          runBaseLineBelow = nextLineBox.baselineBelowExtent;
         }
         break;
       }
-      crossAxisExtentLast = nextLineBox.crossAxisExtent;
+      runBaseLineExtent = nextLineBox.baselineExtent;
+      runBaseLineBelow = nextLineBox.baselineBelowExtent;
       break;
     } while (true);
-    return crossAxisExtentLast;
+    return [runBaseLineExtent, runBaseLineBelow];
   }
 
+  List<double> findFirstLineJoinCrossAxisExtent() {
+    LogicLineBox? nextLineBox = null;
+    double runBaseLineExtent = baselineExtent;
+    double runBaseLineBelow = baselineBelowExtent;
+    if (inlineBoxes.isEmpty) {
+      return [runBaseLineExtent, runBaseLineBelow];
+    }
+    nextLineBox = this;
+    do {
+      RenderObject theLineLastRender = nextLineBox!.inlineBoxes.first.renderObject;
+      if (theLineLastRender is RenderFlowLayout) {
+        RenderFlowLayout ref = theLineLastRender;
+        if (ref.isInlineBlockLevel(ref) && !ref.lineBoxes.isEmpty) {
+          runBaseLineExtent = ref.lineBoxes.first!.baselineExtent;
+          runBaseLineBelow = ref.lineBoxes.first!.baselineBelowExtent;
+          break;
+        }
+        if (ref.lineBoxes.isEmpty) {
+          if (ref.boxSize != Size.zero && (ref.boxSize?.height ?? 0) > 0) {
+            // crossAxisExtentLast = ref.boxSize?.height ?? 0;
+            runBaseLineExtent = ref.boxSize?.height ?? 0;
+            runBaseLineBelow = 0;
+          } else {
+            // the last render size == zero, need use the line cross extent
+            runBaseLineExtent = nextLineBox.baselineExtent;
+            runBaseLineBelow = nextLineBox.baselineBelowExtent;
+          }
+          break;
+        }
+
+        if (ref.lineBoxes.length >= 1) {
+          nextLineBox = ref.lineBoxes.first;
+          continue;
+        }
+      }
+      if (theLineLastRender is RenderTextBox) {
+        if (theLineLastRender.lineBoxes.length > 1) {
+          List<double> lineExtentParams = theLineLastRender.lineBoxes.firstChild.getLineExtent();
+          runBaseLineExtent = lineExtentParams[0];
+          runBaseLineBelow = lineExtentParams[1];
+        } else {
+          runBaseLineExtent = nextLineBox.baselineExtent;
+          runBaseLineBelow = nextLineBox.baselineBelowExtent;
+        }
+        break;
+      }
+      runBaseLineExtent = nextLineBox.baselineExtent;
+      runBaseLineBelow = nextLineBox.baselineBelowExtent;
+      break;
+    } while (true);
+    return [runBaseLineExtent, runBaseLineBelow];
+  }
+
+  bool isFirstInlineBoxHasMoreLine() {
+    LogicLineBox? nextLineBox = null;
+    if (inlineBoxes.isEmpty) {
+      return false;
+    }
+    nextLineBox = this;
+    do {
+      RenderObject theLineLastRender = nextLineBox!.inlineBoxes.first.renderObject;
+      if (theLineLastRender is RenderFlowLayout) {
+        RenderFlowLayout ref = theLineLastRender;
+        if (ref.lineBoxes.isEmpty || !ref.isInlineLevel(ref) || ref.lineBoxes.length == 1) {
+          break;
+        }
+
+        if (ref.lineBoxes.length > 1) {
+          nextLineBox = ref.lineBoxes.first;
+          continue;
+        }
+      }
+      if (theLineLastRender is RenderTextBox) {
+        return theLineLastRender.lineBoxes.length > 1;
+      }
+      break;
+    } while (true);
+    return false;
+  }
+
+  double calculateMergeLineExtent(LogicLineBox preLine) {
+    List<double> preLineExtentParams = preLine.findLastLineJoinCrossAxisExtent();
+    List<double> lineExtentParams = findFirstLineJoinCrossAxisExtent();
+
+    if(lineExtentParams[0] != 0 && lineExtentParams[1] != 0 && preLineExtentParams[1] != 0) {
+     return  lineExtentParams[0] + preLineExtentParams[1];
+    }
+    return crossAxisExtent;
+  }
   appendInlineBox(
       LogicInlineBox box, double childMainAxisExtent, double childCrossAxisExtent, List<double>? baselineSize) {
     box.parentLine = this;

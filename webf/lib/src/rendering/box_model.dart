@@ -435,10 +435,20 @@ class RenderLayoutBox extends RenderBoxModel
     return result;
   }
 
-  bool isMarginNegativeChangeSize() {
+  bool get isNegativeMarginChangeHSize {
+    return renderStyle.width.isAuto && isMarginNegativeHorizontal();
+  }
+
+  bool isMarginNegativeVertical() {
+    double? marginBottom = renderStyle.marginBottom.computedValue;
+    double? marginTop = renderStyle.marginTop.computedValue;
+    return marginBottom < 0 || marginTop < 0;
+  }
+
+  bool isMarginNegativeHorizontal() {
     double? marginLeft = renderStyle.marginLeft.computedValue;
     double? marginRight = renderStyle.marginRight.computedValue;
-    return renderStyle.width.isAuto && (marginLeft < 0 || marginRight < 0);
+    return marginLeft < 0 || marginRight < 0;
   }
 
   /// Common layout content size (including flow and flexbox layout) calculation logic
@@ -458,7 +468,7 @@ class RenderLayoutBox extends RenderBoxModel
     double? marginRight = renderStyle.marginRight.computedValue;
     double? marginAddSizeLeft = 0;
     double? marginAddSizeRight = 0;
-    if(isMarginNegativeChangeSize()) {
+    if(isNegativeMarginChangeHSize) {
       marginAddSizeRight = marginLeft < 0 ? -marginLeft : 0;
       marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
     }
@@ -481,6 +491,9 @@ class RenderLayoutBox extends RenderBoxModel
 
     if (specifiedContentWidth != null) {
       finalContentWidth = math.max(specifiedContentWidth, contentWidth);
+    }
+    if(parent is RenderFlexLayout && marginAddSizeLeft > 0 && marginAddSizeRight > 0 ||
+        parent is RenderFlowLayout && (marginAddSizeRight > 0 || marginAddSizeLeft > 0)) {
       finalContentWidth += marginAddSizeLeft;
       finalContentWidth += marginAddSizeRight;
     }

@@ -4,6 +4,7 @@
  */
 import 'dart:math' as math;
 
+import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -43,7 +44,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   double get firstLineExtent {
-    if(constraints is InlineBoxConstraints && !isInlineLevel(this)) {
+    if(constraints is InlineBoxConstraints && !isInlineBlockLevel(this)) {
       return (constraints as InlineBoxConstraints).leftWidth;
     }
     return 0;
@@ -51,21 +52,21 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   double get lastLineHeight {
     if(!lineBoxes.isEmpty) {
-      return lineBoxes.last.crossAxisExtent;
+      return lineBoxes.last!.crossAxisExtent;
     }
     return 0;
   }
 
   double get lastLineExtent {
     if(!lineBoxes.isEmpty) {
-      return lineBoxes.last.mainAxisExtentWithoutLineJoin;
+      return lineBoxes.last!.mainAxisExtentWithoutLineJoin;
     }
     return 0;
   }
 
   double get lastLineExtentWithWrap {
     if(!lineBoxes.isEmpty) {
-      double lineSize = lineBoxes.last.mainAxisExtentWithoutLineJoin;
+      double lineSize = lineBoxes.last!.mainAxisExtentWithoutLineJoin;
       if(lineBoxes.lineSize == 1) {
         return wrapOutContentSize(Size.fromWidth(lineSize)).width;
       }
@@ -143,7 +144,22 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
     return null;
   }
-
+  @override
+  void performPaint(PaintingContext context, Offset offset) {
+    for (int i = 0; i < paintingOrder.length; i++) {
+      RenderBox child = paintingOrder[i];
+      if (!isPositionPlaceholder(child)) {
+        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+        final Constraints constraints = child.constraints;
+        if(constraints is InlineBoxConstraints && constraints.jumpPaint) {
+          continue;
+        }
+        if (child.hasSize) {
+          context.paintChild(child, childParentData.offset + offset);
+        }
+      }
+    }
+  }
   @override
   void performLayout() {
     doingThisLayout = true;
@@ -331,7 +347,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     LogicLineBox runLineBox = buildNewLineBox();
     runLineBox.isFirst = true;
     int remainLines = _maxLines;
-
+    bool happenJumpPaint = false;
     for (RenderBox child in children) {
       /// avoid happen remainLines <= 0 which is invalid
       bool isLineOverflow = constraintsOverflow;
@@ -348,7 +364,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // If the first line first child is not block level and parent render give line join chance
       // the first line add left place holder to create line join env
-      if(!isBlockLevel(child) && !isInlineLevel(this) &&
+      if(!isBlockLevel(child) && !isInlineBlockLevel(this) &&
           constraints is InlineBoxConstraints && child == children.first) {
         runLineBox.firstLineLeftExtent = (constraints as InlineBoxConstraints).leftWidth;
       }
@@ -363,6 +379,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         if(!isBlockLevel(child)) {
           // Inline element use InlineBoxConstraints, support line join logic
           childConstraints = InlineBoxConstraints(
+              jumpPaint: happenJumpPaint,
               overflow: isLineOverflow,
               maxLines: remainLines,
               minWidth: childConstraints.minWidth,
@@ -411,6 +428,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           double leftWidth = runLineBox.findLastLineRenderMainExtent();
           double lineMainExtent = runLineBox.defaultLastLineMainExtent();
           childConstraints = InlineBoxConstraints(
+              jumpPaint: happenJumpPaint,
               overflow: isLineOverflow,
               maxLines: childConstraints.maxLines,
               joinLine: isLineOverflow ? 0 : 1,
@@ -438,6 +456,11 @@ class RenderFlowLayout extends RenderLayoutBox {
             childMainAxisExtent = childCrossAxisExtent = 0;
           }
         }
+      }
+
+      if (!happenJumpPaint && ((child is RenderFlowLayout && isInlineLevel(child) && (child).lineBoxes.happyVisualOverflow())
+          || (child is RenderTextBox && child.happenVisualOverflow))) {
+        happenJumpPaint = true;
       }
 
       // This value use to range every line render position
@@ -571,7 +594,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     bool isLineHeightValid = box.isLineHeightValid();
 
     // Vertical align is only valid for inline box.
-    if (verticalAlign == VerticalAlign.baseline && isLineHeightValid) {
+    if (isLineHeightValid) {
       double childMarginTop = getChildMarginTop(child);
       double childMarginBottom = getChildMarginBottom(child);
 
@@ -591,15 +614,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   List<double>? calculateTextCrossAxisExtent(RenderTextBox textBox, int lineNumber){
-    RenderStyle? childRenderStyle = _getChildRenderStyle(textBox);
-    VerticalAlign verticalAlign = VerticalAlign.baseline;
-    if (childRenderStyle != null) {
-      verticalAlign = childRenderStyle.verticalAlign;
-    }
-    if (verticalAlign == VerticalAlign.baseline) {
-      return textBox.getLineAscent(lineNumber);
-    }
-    return null;
+    return textBox.getLineAscent(lineNumber);
   }
 
   List<double> calculateMaxCrossAxisExtent(double lastCrossAxisExtent, double lastAboveBaseLine,
@@ -743,8 +758,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // process child one line happen line join
       if(i != 0 && firstChild is RenderFlowLayout && firstChild.happenLineJoin()) {
-        final LogicLineBox preLineBox = lineBoxes.lines[i-1];
-        crossAxisLineJoinOffset = preLineBox.findLastLineJoinCrossAxisExtent();
+        crossAxisLineJoinOffset =  runLineBox.calculateMergeLineExtent(lineBoxes.lines[i-1]);
         totalCrossAxisAdjust += crossAxisLineJoinOffset;
       }
 
@@ -786,6 +800,12 @@ class RenderFlowLayout extends RenderLayoutBox {
       double childMainPosition = childLeadingSpace;
 
       for (LogicInlineBox childBox in runLineBox.inlineBoxes) {
+        double usefulRunCrossAxisExtent = runCrossAxisExtent;
+        // for all box which in line the first's box is happen line join, need use last line extent
+        if((crossAxisLineJoinOffset != 0 || runLineBox.isFirstInlineBoxHasMoreLine()) && childBox != runLineBox.first) {
+          List<double> lineExtentParams = runLineBox.findFirstLineJoinCrossAxisExtent();
+          usefulRunCrossAxisExtent = runCrossAxisExtent - (lineExtentParams[0] + lineExtentParams[1]);
+        }
         RenderBox childRender = childBox.renderObject;
         final double childMainAxisExtent = RenderFlowLayout.getPureMainAxisExtent(childRender);
         double marginVertical = getChildMarginTop(childRender) + getChildMarginBottom(childRender);
@@ -830,7 +850,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         // @HACK(kraken): Judge positioned holder to impl top align.
         final double childCrossAxisOffset = isPositionPlaceholder(childRender)
             ? 0
-            : _getChildCrossAxisOffset(runCrossAxisExtent, childCrossAxisExtent);
+            : _getChildCrossAxisOffset(usefulRunCrossAxisExtent, childCrossAxisExtent);
 
         Size? childSize = childBox.getChildSize();
         // Child line extent calculated according to vertical align.
@@ -851,7 +871,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           double lineBoxLeading = 0;
           double? lineBoxHeight = _getLineHeight(this);
           if (lineBoxHeight != null) {
-            lineBoxLeading = lineBoxHeight - runCrossAxisExtent;
+            lineBoxLeading = lineBoxHeight - usefulRunCrossAxisExtent;
           }
 
           switch (verticalAlign) {
@@ -862,18 +882,14 @@ class RenderFlowLayout extends RenderLayoutBox {
               childLineExtent = 0;
               break;
             case VerticalAlign.bottom:
-              childLineExtent = (lineBoxHeight ?? runCrossAxisExtent) - childSize!.height;
+              childLineExtent = (lineBoxHeight ?? usefulRunCrossAxisExtent) - childSize!.height;
               break;
           // @TODO: Vertical align middle needs to calculate the baseline of the parent box plus
           //  half the x-height of the parent from W3C spec currently flutter lack the api to calculate x-height of glyph.
           //  case VerticalAlign.middle:
           //  break;
             case VerticalAlign.textBottom:
-              if(lineBoxLeading > 0) {
-                childLineExtent = lineBoxLeading / 2 + (runCrossAxisExtent) - childSize!.height;
-              } else {
-                childLineExtent = (runCrossAxisExtent) - childSize!.height;
-              }
+              childLineExtent = (lineBoxHeight??usefulRunCrossAxisExtent) - childAscent;
               break;
           }
           // Child should not exceed over the top of parent.
@@ -1099,12 +1115,16 @@ class RenderFlowLayout extends RenderLayoutBox {
     return isParamsLevelNode(box,[CSSDisplay.block, CSSDisplay.flex]);
   }
 
-  bool isInlineLevel(RenderBox? box) {
+  bool isInlineBlockLevel(RenderBox? box) {
     return isParamsLevelNode(box,[CSSDisplay.inlineBlock, CSSDisplay.inlineFlex]);
   }
 
+  bool isInlineLevel(RenderBox? box) {
+    return isParamsLevelNode(box,[CSSDisplay.inline]);
+  }
+
   bool isJoinBox(RenderBox? box) {
-    return !isBlockLevel(box) && !isInlineLevel(box);
+    return !isBlockLevel(box) && !isInlineBlockLevel(box);
   }
 
   bool isParamsLevelNode(RenderBox? box,List<CSSDisplay> params) {
@@ -1250,6 +1270,10 @@ class RenderLineBoxes {
     return _lineBoxList.isNotEmpty ? _lineBoxList[0] : null;
   }
 
+  bool happyVisualOverflow() {
+    return _lineBoxList.where((element) => element.happenVisualOverflow()).isNotEmpty;
+  }
+
   double get firstLinePureMainAxisExtent{
     return _lineBoxList.first.mainAxisExtentWithoutLineJoin;
   }
@@ -1321,8 +1345,10 @@ class RenderLineBoxes {
     return _lineBoxList.map((lineBox) => lineBox.innerLineLength).reduce((value, element) => value + element);
   }
 
-  LogicLineBox get last {
-    return _lineBoxList.last;
+  LogicLineBox? get last {
+    if(_lineBoxList.isNotEmpty)
+      return _lineBoxList.last;
+    return null;
   }
 
   // @TODO: add cache to avoid recalculate in one layout stage.

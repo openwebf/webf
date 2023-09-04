@@ -26,19 +26,10 @@ class WebFTextSpan extends TextSpan {
       semanticsLabel: semanticsLabel,
       locale: locale,
       spellOut: spellOut);
-
-  final Map<InlineSpan, bool> textSpanPosition = <InlineSpan, bool>{};
+  final Set<InlineSpan> textSpanPosition = <InlineSpan>{};
 
   List<InlineSpan>? preInsertChildren() {
-    return children
-        ?.where((element) => textSpanPosition.containsKey(element) && textSpanPosition[element]! == true)
-        .toList();
-  }
-
-  List<InlineSpan>? backInsertChildren() {
-    return children
-        ?.where((element) => !(textSpanPosition.containsKey(element) && textSpanPosition[element]! == true))
-        .toList();
+    return children?.where((element) => textSpanPosition.contains(element)).toList();
   }
 
   List<Object> subContent(int start, int end) {
@@ -112,13 +103,6 @@ class WebFTextSpan extends TextSpan {
         builder.addText('\uFFFD');
       }
     }
-    backInsertChildren()?.forEach((child) {
-      child.build(
-        builder,
-        textScaleFactor: textScaleFactor,
-        dimensions: dimensions,
-      );
-    });
     if (hasStyle) builder.pop();
   }
 }
@@ -133,8 +117,7 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
       !(identical(alignment, ui.PlaceholderAlignment.aboveBaseline) ||
           identical(alignment, ui.PlaceholderAlignment.belowBaseline) ||
           identical(alignment, ui.PlaceholderAlignment.baseline)),
-  ),
-        super(
+  ), super(
         alignment: alignment,
         baseline: baseline,
         style: style,
@@ -190,7 +173,8 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
 
   @override
   int? codeUnitAtVisitor(int index, Accumulator offset) {
-    return null;
+    offset.increment(1);
+    return PlaceholderSpan.placeholderCodeUnit;
   }
 
   @override
