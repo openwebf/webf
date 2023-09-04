@@ -13,6 +13,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/webf.dart';
 
+import 'native_gumbo.dart';
+
 // Steps for using dart:ffi to call a C function from Dart:
 // 1. Import dart:ffi.
 // 2. Create a typedef with the FFI type signature of the C function.
@@ -126,6 +128,16 @@ final DartEvaluateScripts _evaluateScripts =
 final DartParseHTML _parseHTML =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeParseHTML>>('parseHTML').asFunction();
 
+typedef NativeParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, Int32 length);
+typedef DartParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, int length);
+
+final _parseSVGResult = WebFDynamicLibrary.ref.lookupFunction<NativeParseSVGResult, DartParseSVGResult>('parseSVGResult');
+
+typedef NativeFreeSVGResult = Void Function(Pointer<NativeGumboOutput> ptr);
+typedef DartFreeSVGResult = void Function(Pointer<NativeGumboOutput> ptr);
+
+final _freeSVGResult = WebFDynamicLibrary.ref.lookupFunction<NativeFreeSVGResult, DartFreeSVGResult>('freeSVGResult');
+
 int _anonymousScriptEvaluationId = 0;
 
 class ScriptByteCode {
@@ -210,6 +222,23 @@ void parseHTML(int contextId, String code) {
     print('$e\n$stack');
   }
   malloc.free(nativeCode);
+}
+
+class GumboOutput {
+  final Pointer<NativeGumboOutput> ptr;
+  final Pointer<Utf8> source;
+  GumboOutput(this.ptr, this.source);
+}
+
+GumboOutput parseSVGResult(String code) {
+  Pointer<Utf8> nativeCode = code.toNativeUtf8();
+  final ptr = _parseSVGResult(nativeCode, nativeCode.length);
+  return GumboOutput(ptr, nativeCode);
+}
+
+void freeSVGResult(GumboOutput gumboOutput) {
+  _freeSVGResult(gumboOutput.ptr);
+  malloc.free(gumboOutput.source);
 }
 
 // Register initJsEngine
