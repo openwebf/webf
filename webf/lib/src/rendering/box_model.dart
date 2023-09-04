@@ -779,6 +779,8 @@ class RenderBoxModel extends RenderBox
     scrollOffsetX?.removeListener(scrollXListener);
     scrollOffsetY?.removeListener(scrollYListener);
 
+    RenderIntersectionObserverMixin.copyTo(this, copiedRenderBoxModel);
+
     return copiedRenderBoxModel
     // Copy render style
       ..renderStyle = renderStyle

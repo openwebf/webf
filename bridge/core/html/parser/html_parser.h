@@ -23,6 +23,9 @@ class HTMLParser {
   static bool parseHTML(const std::string& html, Node* rootNode);
   static bool parseHTMLFragment(const char* code, size_t codeLength, Node* rootNode);
 
+  static GumboOutput* parseSVGResult(const char* code, size_t codeLength);
+  static void freeSVGResult(GumboOutput* svgTree);
+
  private:
   ExecutingContext* context_;
   static void traverseHTML(Node* root, GumboNode* node);
