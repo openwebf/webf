@@ -153,9 +153,8 @@ mixin ElementEventMixin on ElementBase {
       handleDisappear();
     }
   }
-
   void handleResizeChange(ResizeObserverEntry entry) {
-    dispatchEvent(ResizeEvent(entry).toCustomEvent());
+    dispatchEvent(ResizeEvent(entry));
   }
 }
 
@@ -262,6 +261,12 @@ class PopStateEvent extends Event {
     return rawEvent;
   }
 }
+
+class ResizeEvent extends Event {
+  ResizeObserverEntry entry;
+  ResizeEvent(this.entry):super(EVENT_RESIZE);
+}
+
 
 class UIEvent extends Event {
   // Returns a long with details about the event, depending on the event type.
@@ -483,14 +488,6 @@ class AppearEvent extends Event {
 
 class DisappearEvent extends Event {
   DisappearEvent() : super(EVENT_DISAPPEAR);
-}
-
-class ResizeEvent extends Event {
-  ResizeObserverEntry entry;
-  ResizeEvent(this.entry):super(EVENT_RESIZE);
-  toCustomEvent() {
-    return CustomEvent(EVENT_RESIZE, detail: entry.toJson());
-  }
 }
 
 class ColorSchemeChangeEvent extends Event {
