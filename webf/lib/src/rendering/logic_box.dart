@@ -87,13 +87,24 @@ class LogicInlineBox {
     return childOffsetY;
   }
 
-  double get width => renderObject.size.width;
+  double get width {
+    if (renderObject is RenderBoxModel) {
+      return (renderObject as RenderBoxModel).boxSize!.width;
+    }
+    return 0.0;
+  }
 
-  double get height => renderObject.size.height;
+  double get height {
+   if (renderObject is RenderBoxModel) {
+     return (renderObject as RenderBoxModel).boxSize!.height;
+   }
+   return 0.0;
+  }
 
   Size _getInlineBoxScrollableSize() {
-    Size scrollableSize = renderObject.size;
+    Size scrollableSize = Size.zero;
     if (renderObject is RenderBoxModel) {
+      scrollableSize = (renderObject as RenderBoxModel).boxSize!;
       RenderStyle childRenderStyle = (renderObject as RenderBoxModel).renderStyle;
       CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
       CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
@@ -146,7 +157,7 @@ class LogicInlineBox {
     if (renderObject is RenderTextBox) {
       lineHeight = (renderObject as RenderTextBox).renderStyle.lineHeight;
     } else if(renderObject is RenderReplaced) {
-      return renderObject.size.height;
+      return (renderObject as RenderReplaced).boxSize!.height;
     } else if (renderObject is RenderBoxModel) {
       lineHeight =  (renderObject as RenderBoxModel).renderStyle.lineHeight;
     } else if (renderObject is RenderPositionPlaceholder) {
@@ -610,12 +621,13 @@ class LogicLineBox {
     for (int i = 0; i < inlineBoxes.length; i++) {
       LogicInlineBox box = inlineBoxes[i];
       RenderBox render = box.renderObject;
-      double runChildMainSize = box.renderObject.size.width;
+      double runChildMainSize = 0;
       if (render is RenderTextBox) {
         runChildMainSize = render.minContentWidth;
       }
       // Should add horizontal margin of child to the main axis auto size of parent.
       if (render is RenderBoxModel) {
+        runChildMainSize = render.boxSize!.width;
         double childMarginLeft = render.renderStyle.marginLeft.computedValue;
         double childMarginRight = render.renderStyle.marginRight.computedValue;
         runChildMainSize += childMarginLeft + childMarginRight;
@@ -631,10 +643,13 @@ class LogicLineBox {
       LogicInlineBox box = inlineBoxes[i];
       RenderBox render = box.renderObject;
 
-      double runChildCrossSize = render.size.height;
+      double runChildCrossSize = 0;
       if (render is RenderTextBox && box is LogicTextInlineBox) {
         runChildCrossSize = box.logicRect.height;
+      } else if (render is RenderBoxModel) {
+        runChildCrossSize = render.boxSize!.height;
       }
+
       if (runChildCrossSize > runCrossExtent) {
         runCrossExtent = runChildCrossSize;
       }
