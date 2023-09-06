@@ -103,7 +103,7 @@ class SelectorEvaluator extends SelectorVisitor {
   bool visitSelectorGroup(SelectorGroup node) => node.selectors.any(visitSelector);
 
   @override
-  bool visitSelector(Selector node) {
+  bool visitSelector(CSSSelector node) {
     final old = _element;
     var result = true;
 

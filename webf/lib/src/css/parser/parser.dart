@@ -147,8 +147,8 @@ class CSSParser {
   }
 
   /// Main entry point for parsing a simple selector sequence.
-  List<Selector> parseSelector() {
-    var productions = <Selector>[];
+  List<CSSSelector> parseSelector() {
+    var productions = <CSSSelector>[];
     while (!_maybeEat(TokenKind.END_OF_FILE) && !_peekKind(TokenKind.RBRACE)) {
       var selector = processSelector();
       if (selector != null) {
@@ -460,9 +460,9 @@ class CSSParser {
       List<CSSRule> rules = [rule];
       for (CSSStyleRule childRule in childRules) {
         // child Rule
-        for (Selector selector in childRule.selectorGroup.selectors) {
+        for (CSSSelector selector in childRule.selectorGroup.selectors) {
           // parentRule
-          for (Selector parentSelector in selectorGroup.selectors) {
+          for (CSSSelector parentSelector in selectorGroup.selectors) {
             List<SimpleSelectorSequence> newSelectorSequences =
                 mergeNestedSelector(parentSelector.simpleSelectorSequences, selector.simpleSelectorSequences);
             selector.simpleSelectorSequences.clear();
@@ -552,7 +552,7 @@ class CSSParser {
   }
 
   SelectorGroup? processSelectorGroup() {
-    var selectors = <Selector>[];
+    var selectors = <CSSSelector>[];
 
     tokenizer.inSelector = true;
     do {
@@ -563,6 +563,7 @@ class CSSParser {
     } while (_maybeEat(TokenKind.COMMA));
     tokenizer.inSelector = false;
 
+    print('selectors: $selectors');
     if (selectors.isNotEmpty) {
       return SelectorGroup(selectors);
     }
@@ -570,7 +571,7 @@ class CSSParser {
   }
 
   /// Return list of selectors
-  Selector? processSelector() {
+  CSSSelector? processSelector() {
     var simpleSequences = <SimpleSelectorSequence>[];
     while (true) {
       // First item is never descendant make sure it's COMBINATOR_NONE.
@@ -584,7 +585,7 @@ class CSSParser {
 
     if (simpleSequences.isEmpty) return null;
 
-    return Selector(simpleSequences);
+    return CSSSelector(simpleSequences);
   }
 
   /// Same as [processSelector] but reports an error for each combinator.
@@ -592,7 +593,7 @@ class CSSParser {
   /// This is a quick fix for parsing <compound-selectors> until the parser
   /// supports Selector Level 4 grammar:
   /// https://drafts.csswg.org/selectors-4/#typedef-compound-selector
-  Selector? processCompoundSelector() {
+  CSSSelector? processCompoundSelector() {
     var selector = processSelector();
     if (selector != null) {
       for (var sequence in selector.simpleSelectorSequences) {

@@ -28,6 +28,8 @@ class RuleSet {
   final List<CSSRule> universalRules = [];
   final List<CSSRule> pseudoRules = [];
 
+  RuleFeatureSet features = RuleFeatureSet();
+
   final Map<String, CSSKeyframesRule> keyframesRules = {};
 
   int _lastPosition = 0;
@@ -41,7 +43,11 @@ class RuleSet {
   void addRule(CSSRule rule, { required String? baseHref }) {
     rule.position = _lastPosition++;
     if (rule is CSSStyleRule) {
-      for (final selector in rule.selectorGroup.selectors) {
+      for(int i = 0; i < rule.selectorGroup.selectors.length; i ++) {
+        CSSSelector selector = rule.selectorGroup.selectors[i];
+        // SelectorPreMatch matchResult = features.collectFeaturesFromSelector(selector, i, rule);
+        // if (matchResult == SelectorPreMatch.selectorNeverMatches) return;
+
         findBestRuleSetAndAdd(selector, rule);
       }
     } else if (rule is CSSKeyframesRule) {
@@ -63,7 +69,7 @@ class RuleSet {
   }
 
   // indexed by selectorText
-  void findBestRuleSetAndAdd(Selector selector, CSSRule rule) {
+  void findBestRuleSetAndAdd(CSSSelector selector, CSSRule rule) {
     String? id, className, attributeName, tagName, pseudoName;
 
     for (final simpleSelectorSequence in selector.simpleSelectorSequences.reversed) {

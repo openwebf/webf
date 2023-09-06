@@ -37,19 +37,20 @@ const kTagSpecificity = 0x000001;
 // https://drafts.csswg.org/cssom/#parse-a-group-of-selectors
 class SelectorGroup extends TreeNode {
   final SelectorTextVisitor _selectorTextVisitor = SelectorTextVisitor();
-  final List<Selector> selectors;
+  final List<CSSSelector> selectors;
 
   int _matchSpecificity = -1;
 
   int get matchSpecificity => _matchSpecificity;
 
   set matchSpecificity(int specificity) {
-    if (specificity > _matchSpecificity || specificity == -1 ) {
+    if (specificity > _matchSpecificity || specificity == -1) {
       _matchSpecificity = specificity;
     }
   }
 
   String? _selectorText;
+
   String get selectorText {
     if (_selectorText != null) {
       return _selectorText ?? '';
@@ -65,10 +66,10 @@ class SelectorGroup extends TreeNode {
   dynamic visit(Visitor visitor) => visitor.visitSelectorGroup(this);
 }
 
-class Selector extends TreeNode {
+class CSSSelector extends TreeNode {
   final List<SimpleSelectorSequence> simpleSelectorSequences;
 
-  Selector(this.simpleSelectorSequences) : super();
+  CSSSelector(this.simpleSelectorSequences) : super();
 
   void add(SimpleSelectorSequence seq) => simpleSelectorSequences.add(seq);
 
@@ -109,6 +110,86 @@ class Selector extends TreeNode {
   }
 }
 
+enum RelationType {
+  // No combinator. Used between simple selectors within the same compound.
+  subSelector,
+  // "Space" combinator
+  descendant,
+  // > combinator
+  child,
+  // + combinator
+  directAdjacent,
+  // ~ combinator
+  indirectAdjacent,
+  // The relation types below are implicit combinators inserted at parse time
+  // before pseudo elements which match another flat tree element than the
+  // rest of the compound.
+  //
+  // Implicit combinator inserted before pseudo elements matching an element
+  // inside a UA shadow tree. This combinator allows the selector matching to
+  // cross a shadow root.
+  //
+  // Examples:
+  // input::placeholder, video::cue(i), video::--webkit-media-controls-panel
+  // uaShadow,
+  // Implicit combinator inserted before ::slotted() selectors.
+  // shadowSlot,
+  // Implicit combinator inserted before ::part() selectors which allows
+  // matching a ::part in shadow-including descendant tree for #host in
+  // "#host::part(button)".
+  // shadowPart,
+
+  // leftmost "Space" combinator of relative selector
+  // relativeDescendant,
+  // leftmost > combinator of relative selector
+  // relativeChild,
+  // leftmost + combinator of relative selector
+  // relativeDirectAdjacent,
+  // leftmost ~ combinator of relative selector
+  // relativeIndirectAdjacent,
+}
+
+enum PseudoType {
+  unknown,
+  after,
+  before,
+  empty,
+  firstChild,
+  firstLine,
+  firstOfType,
+  lastChild,
+  lastOfType,
+  nthChild,
+  nthLastChild,
+  nthLastOfType,
+  nthOfType,
+  onlyChild,
+  onlyOfType,
+  root,
+}
+
+final Map<String, PseudoType> _pseudo_type_map = {
+  'after': PseudoType.after,
+  'before': PseudoType.before,
+  'empty': PseudoType.empty,
+  'first-child': PseudoType.firstChild,
+  'first-line': PseudoType.firstLine,
+  'first-of-type': PseudoType.firstOfType,
+  'last-child': PseudoType.lastChild,
+  'last-of-type': PseudoType.lastOfType,
+  'nth-child': PseudoType.nthChild,
+  'nth-last-child': PseudoType.nthLastChild,
+  'nth-last-of-type': PseudoType.nthLastOfType,
+  'nth-of-type': PseudoType.nthOfType,
+  'only-child': PseudoType.onlyChild,
+  'only-of-type': PseudoType.onlyOfType,
+  'root': PseudoType.root,
+};
+
+PseudoType _nameToPseudoType(String name) {
+  return _pseudo_type_map[name]!;
+}
+
 class SimpleSelectorSequence extends TreeNode {
   /// +, >, ~, NONE
   int combinator;
@@ -117,9 +198,13 @@ class SimpleSelectorSequence extends TreeNode {
   SimpleSelectorSequence(this.simpleSelector, [this.combinator = TokenKind.COMBINATOR_NONE]) : super();
 
   bool get isCombinatorNone => combinator == TokenKind.COMBINATOR_NONE;
+
   bool get isCombinatorPlus => combinator == TokenKind.COMBINATOR_PLUS;
+
   bool get isCombinatorGreater => combinator == TokenKind.COMBINATOR_GREATER;
+
   bool get isCombinatorTilde => combinator == TokenKind.COMBINATOR_TILDE;
+
   bool get isCombinatorDescendant => combinator == TokenKind.COMBINATOR_DESCENDANT;
 
   String get combinatorToString {
@@ -143,13 +228,15 @@ class SimpleSelectorSequence extends TreeNode {
   @override
   String toString() => simpleSelector.name;
 }
+
 final Set<String> selectorKeySet = {};
+
 // All other selectors (element, #id, .class, attribute, pseudo, negation,
 // namespace, *) are derived from this selector.
 abstract class SimpleSelector extends TreeNode {
   final dynamic _name; // ThisOperator, Identifier, Negation, others?
 
-  SimpleSelector(this._name) : super(){
+  SimpleSelector(this._name) : super() {
     selectorKeySet.add(_name.name);
   }
 
@@ -265,8 +352,15 @@ class ClassSelector extends SimpleSelector {
   dynamic visit(Visitor visitor) => visitor.visitClassSelector(this);
 }
 
+class PseudoSelector extends SimpleSelector {
+  PseudoSelector(super.name): _pseudoType = PseudoType.unknown;
+
+  final PseudoType _pseudoType;
+  PseudoType get pseudoType => _pseudoType;
+}
+
 // :pseudoClass
-class PseudoClassSelector extends SimpleSelector {
+class PseudoClassSelector extends PseudoSelector {
   PseudoClassSelector(Identifier name) : super(name);
 
   @override
@@ -277,7 +371,7 @@ class PseudoClassSelector extends SimpleSelector {
 }
 
 // ::pseudoElement
-class PseudoElementSelector extends SimpleSelector {
+class PseudoElementSelector extends PseudoSelector {
   // If true, this is a CSS2.1 pseudo-element with only a single ':'.
   final bool isLegacy;
 
@@ -296,7 +390,7 @@ class PseudoClassFunctionSelector extends PseudoClassSelector {
 
   PseudoClassFunctionSelector(Identifier name, this.argument) : super(name);
 
-  Selector get selector => argument as Selector;
+  CSSSelector get selector => argument as CSSSelector;
 
   List<String> get expression => argument as List<String>;
 

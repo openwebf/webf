@@ -527,7 +527,7 @@ class CSSStyleDeclaration extends BindingObject {
     List<CSSStyleRule> afterRules = [];
 
     for (CSSStyleRule style in rules) {
-      for (Selector selector in style.selectorGroup.selectors) {
+      for (CSSSelector selector in style.selectorGroup.selectors) {
         for (SimpleSelectorSequence sequence in selector.simpleSelectorSequences) {
           if (sequence.simpleSelector is PseudoElementSelector) {
             if (sequence.simpleSelector.name == 'before') {

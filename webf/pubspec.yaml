@@ -24,6 +24,7 @@ dependencies:
   source_span: ^1.9.0 # Pure dart module.
   shared_preferences: 2.2.0 # No AndroidX used.
   archive: ^3.3.7 # Pure dart module.
+  serializable_bloom_filter: ^1.0.0
   web_socket_channel: ^2.2.0
 
 dev_dependencies:

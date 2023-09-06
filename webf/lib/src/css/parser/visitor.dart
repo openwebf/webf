@@ -1,5 +1,5 @@
 /*
-Copyright 2013, the Dart project authors. 
+Copyright 2013, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -32,7 +32,7 @@ part of 'parser.dart';
 
 abstract class Visitor {
   dynamic visitSelectorGroup(SelectorGroup node);
-  dynamic visitSelector(Selector node);
+  dynamic visitSelector(CSSSelector node);
   dynamic visitSimpleSelectorSequence(SimpleSelectorSequence node);
   dynamic visitSimpleSelector(SimpleSelector node);
   dynamic visitElementSelector(ElementSelector node);
@@ -63,7 +63,7 @@ class SelectorVisitor implements Visitor {
   }
 
   @override
-  dynamic visitSelector(Selector node) {
+  dynamic visitSelector(CSSSelector node) {
     _visitNodeList(node.simpleSelectorSequences);
   }
 
@@ -127,7 +127,7 @@ class SelectorTextVisitor extends Visitor {
   }
 
   @override
-  void visitSelector(Selector node) {
+  void visitSelector(CSSSelector node) {
     for (var selectorSequences in node.simpleSelectorSequences) {
       selectorSequences.visit(this);
     }

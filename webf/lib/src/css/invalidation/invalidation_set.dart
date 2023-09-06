@@ -265,8 +265,9 @@ class InvalidationSet {
   }
 
   static InvalidationSet selfInvalidationSet() {
-    // Return a singleton or some logic based on requirements.
-    return InvalidationSet(InvalidationType.invalidateDescendants);
+    InvalidationSet invalidationSet = InvalidationSet(InvalidationType.invalidateDescendants);
+    invalidationSet.invalidatesSelf = true;
+    return invalidationSet;
   }
 
   @override
