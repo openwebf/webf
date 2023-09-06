@@ -1,31 +1,48 @@
-## 0.14.2-beta.2+1
+## 0.14.2
 
-**Bug Fixed**
+**Break Changes**
 
-1. fix: fix percentage width and height not working under inline block box. https://github.com/openwebf/webf/pull/430
-2. fix: fix Node.insertBefore with SVGElement error. https://github.com/openwebf/webf/pull/431
-3. fix: fix cookie delete file error when it's not available. https://github.com/openwebf/webf/pull/429
+1. Remove `navigator.connection` API. https://github.com/openwebf/webf/pull/411
 
 **Features**
 
-1. feat: optimize location API for better performance results. https://github.com/openwebf/webf/pull/420
-
-## 0.14.2-beta.2
-
-**Features**
-
-1. feat: optimize the webf_bridge and quickjs binary size. https://github.com/openwebf/webf/pull/414
-2. feat: support CSS initial length value. https://github.com/openwebf/webf/pull/421
-3. feat: optimize Element.children() and Document.all() performance. https://github.com/openwebf/webf/pull/424
+1. Optimize location API for better performance results. https://github.com/openwebf/webf/pull/420
+2. Optimize the size of webf_bridge.xcframework and quickjs.xcframework. https://github.com/openwebf/webf/pull/414
+3. Support CSS initial length value. https://github.com/openwebf/webf/pull/421
+4. Optimize Element.children() and Document.all() performance. https://github.com/openwebf/webf/pull/424
+5. Support base64 format font data in @font-face src. https://github.com/openwebf/webf/pull/399
+6. Support Element.dir API. https://github.com/openwebf/webf/pull/418
+7. Add `<circle />` and `<ellipse>` tags for SVG. https://github.com/openwebf/webf/pull/423
+8. Support share customized JS properties in event object. https://github.com/openwebf/webf/pull/427
+9. Support `window.pageXOffset` and `window.pageYOffset` API. https://github.com/openwebf/webf/pull/428/files
+10. Optimize layout/paint performance when block box size is fixed. https://github.com/openwebf/webf/pull/450
+11. Optimize performance when update Element.className.  https://github.com/openwebf/webf/pull/452
+12. Support CanvasRenderingContext2D.createPattern() API. https://github.com/openwebf/webf/pull/464
 
 **Bug Fixed**
 
-1. fix: fix use css vars with initial. https://github.com/openwebf/webf/pull/421/commits/1da2e5899c53e82a31271c26de3333168e780134
-   0.15.0-beta.3
-2. fix: fix toggle position: fixed on bodyElement with other fixed elements. https://github.com/openwebf/webf/pull/416
-3. fix: css nth-child not work. https://github.com/openwebf/webf/pull/417
-4. fix: fix Node.childNodes didn't update when nodes changed. https://github.com/openwebf/webf/pull/419
-5. fix: fix loading fonts cause assertion when remove or attach RenderObjects. https://github.com/openwebf/webf/pull/425
+1. Fix use css vars with initial. https://github.com/openwebf/webf/pull/421
+2. Fix toggle position: fixed on bodyElement with other fixed elements. https://github.com/openwebf/webf/pull/416
+3. Fss nth-child not work. https://github.com/openwebf/webf/pull/417
+4. Fix Node.childNodes didn't update when nodes changed. https://github.com/openwebf/webf/pull/419
+5. Fix loading fonts cause assertion when remove or attach RenderObjects. https://github.com/openwebf/webf/pull/425
+6. Fix percentage width and height not working under inline block box. https://github.com/openwebf/webf/pull/430
+7. Fix Node.insertBefore with SVGElement error. https://github.com/openwebf/webf/pull/431
+8. Fix cookie delete file error when it's not available. https://github.com/openwebf/webf/pull/429
+9. Fix read ANDROID_SDK_HOME before implying to platform defaults. https://github.com/openwebf/webf/pull/422
+10. Fix cookie delete file error.  https://github.com/openwebf/webf/pull/429
+11. Fix percentage width and height not working under inline block box. https://github.com/openwebf/webf/pull/430
+12. Fix Node.insertBefore with SVGElement error. https://github.com/openwebf/webf/pull/431
+13. Fix DevTool's network panel not working. https://github.com/openwebf/webf/pull/435
+14. Losen intl dependency constraint. https://github.com/openwebf/webf/pull/439
+15. Fix built-in methods in the event object cannot be overridden. https://github.com/openwebf/webf/pull/443
+16. Fix crash when touching pseduo elements.  https://github.com/openwebf/webf/pull/445
+17. Fix event not responding when multiple flutter engine created. https://github.com/openwebf/webf/pull/451
+18. Fix Element.style.cssText API not works. https://github.com/openwebf/webf/pull/455
+19. Fix use-of-free crash of shared string property in event object. https://github.com/openwebf/webf/pull/458
+20. Fix dynamic build items in WidgetElement. https://github.com/openwebf/webf/pull/461
+21. Fix CSS content property have sequences of unicode chars. https://github.com/openwebf/webf/pull/463
+22. Fix crash when create unsupported svg element with style. https://github.com/openwebf/webf/pull/465
 
 ## 0.14.1
 
