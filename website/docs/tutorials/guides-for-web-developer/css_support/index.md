@@ -16,20 +16,19 @@ using the UI libraries.
 To gain a clear understanding of which CSS properties and methods can be used in WebF. We can divide the CSS into the follow
 categories:
 
-1. [CSS Syntax](/docs/tutorials/guides-for-web-developer/css_support/syntax)
-2. [Using CSS in HTML and JavaScript](/docs/tutorials/guides-for-web-developer/css_support/use_css)
-3. [CSS Selectors](/docs/tutorials/guides-for-web-developer/css_support/selectors)
-4. [CSS cascade and inheritance](/docs/tutorials/guides-for-web-developer/css_support/cascade_inheritance)
-5. [Styling Text](/)
-6. [Fonts](/)
-5. [The Box Model](/)
-6. [Overflow and scrolling](/)
-7. [Value and Units](/)
-8. [Sizing Items](/)
-9. [Box Shadow and Filters](/)
-10. [Flow Layout](/)
-11. [Flex layout](/)
-12. [Positioning](/)
+1. [Using CSS in HTML and JavaScript](/docs/tutorials/guides-for-web-developer/css_support/use_css)
+2. [CSS Selectors](/docs/tutorials/guides-for-web-developer/css_support/selectors)
+3. [CSS cascade and inheritance](/docs/tutorials/guides-for-web-developer/css_support/cascade_inheritance)
+4. [Styling Text](/)
+5. [Fonts](/)
+6. [The Box Model](/)
+7. [Overflow and scrolling](/)
+8. [Value and Units](/)
+9. [Sizing Items](/)
+10. [Box Shadow and Filters](/)
+11. [Flow Layout](/)
+12. [Flex layout](/)
+13. [Positioning](/)
 
 
 ## Unsupported CSS features currently
