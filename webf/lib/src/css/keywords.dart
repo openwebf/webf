@@ -323,6 +323,10 @@ const String D = 'd';
 const String FILL_RULE = 'fillRule';
 const String STROKE_LINECAP = 'strokeLinecap';
 const String STROKE_LINEJOIN = 'strokeLinejoin';
+const String X1 = 'x1';
+const String Y1 = 'y1';
+const String X2 = 'x2';
+const String Y2 = 'y2';
 
 // Pseudo
 const String CONTENT = 'content';

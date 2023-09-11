@@ -178,6 +178,38 @@ mixin CSSSvgMixin on RenderStyle {
     _markRepaint();
   }
 
+  CSSLengthValue? _x1;
+  @override get x1 => _x1 ?? CSSLengthValue.zero;
+  set x1(CSSLengthValue value){
+    if(_x1 == value) return;
+    _x1 = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _y1;
+  @override get y1 => _y1 ?? CSSLengthValue.zero;
+  set y1(CSSLengthValue value){
+    if(_y1 == value) return;
+    _y1 = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _x2;
+  @override get x2 => _x2 ?? CSSLengthValue.zero;
+  set x2(CSSLengthValue value){
+    if(_x2 == value) return;
+    _x2 = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _y2;
+  @override get y2 => _y2 ?? CSSLengthValue.zero;
+  set y2(CSSLengthValue value){
+    if(_y2 == value) return;
+    _y2 = value;
+    _markShapeUpdate();
+  }
+
   static resolveFillRule(String value) {
     return _CSSFillRuleMap[value] ?? CSSFillRule.nonzero;
   }
