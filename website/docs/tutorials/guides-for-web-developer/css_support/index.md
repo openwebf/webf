@@ -23,7 +23,7 @@ categories:
 5. [The Box Model](/docs/tutorials/guides-for-web-developer/css_support/the_box_model)
 6. [Overflow and scrolling](/docs/tutorials/guides-for-web-developer/css_support/overflow_scrolling)
 7. [Value and Units](/docs/tutorials/guides-for-web-developer/css_support/value_and_units)
-8. [Sizing Items](/)
+8. [Sizing Items](/docs/tutorials/guides-for-web-developer/css_support/sizing_items)
 9. [Box Shadow and Filters](/)
 10. [Flow Layout](/)
 11. [Flex layout](/)
