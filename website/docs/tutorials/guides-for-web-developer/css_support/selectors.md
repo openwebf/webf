@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 2
 title: Selectors
 ---
 
@@ -47,7 +47,7 @@ their text color to green.
 
 The p type selector selects all `<p>` (paragraph) elements on the webf page and sets their font size to 16 pixels.
 
-### Class Selector
+### Class selector
 
 Class selector allows you to select and style elements based on their class attribute. It's a way to apply styles to
 elements that share the same class value without targeting all instances of a particular HTML element. The class
@@ -81,7 +81,7 @@ The .highlight class selector targets the `<p>` element with the class "highligh
 
 Notice how the regular `<p>` element without the "highlight" class is unaffected by the .highlight style.
 
-### ID Selector
+### ID selector
 
 The ID selector allows you to select and style a single, unique element based on its id attribute.
 
@@ -125,7 +125,7 @@ The #intro ID selector targets the `<p>` element with the ID of "intro" and make
 Attribute selectors in CSS are used to select elements based on their attributes and their attribute values. This allows
 for more specific targeting of elements based on attributes rather than just their type, class, or ID.
 
-### Basic Attribute Selector:
+### Basic attribute selector:
 
 Selects elements based on the existence of a specific attribute, regardless of its value.
 
@@ -136,7 +136,7 @@ Selects elements based on the existence of a specific attribute, regardless of i
 }
 ```
 
-### Exact Value Match:
+### Exact value match:
 
 Selects elements with a specific attribute and value.
 
@@ -147,7 +147,7 @@ input[type="text"] {
 }
 ```
 
-### Partial Match Using *=:
+### Partial match using *=:
 
 Selects elements if the attribute value contains a specified substring.
 
@@ -158,7 +158,7 @@ Selects elements if the attribute value contains a specified substring.
 }
 ```
 
-### Prefix Match Using ^=:
+### Prefix match using ^=:
 
 Selects elements if the attribute value starts with a specified substring.
 
@@ -169,7 +169,7 @@ a[href^="https"] {
 }
 ```
 
-### Suffix Match Using $=:
+### Suffix match using $=:
 
 Selects elements if the attribute value ends with a specified substring.
 
@@ -180,7 +180,7 @@ a[href$=".pdf"] {
 }
 ```
 
-### Substring Match Following a Hyphen Using |=:
+### Substring match following a hyphen using |=:
 
 Selects elements if the attribute value is a list of whitespace-separated values, one of which begins with the specified
 substring.
@@ -192,7 +192,7 @@ substring.
 }
 ```
 
-### Exact Match or Whitespace Separated Value Using ~=:
+### Exact match or whitespace separated value using ~=:
 
 Selects elements if the attribute value is exactly the specified string or contains the specified string as one of a
 whitespace-separated list of words.

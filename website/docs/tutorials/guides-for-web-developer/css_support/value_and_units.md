@@ -3,7 +3,7 @@ sidebar_position: 5
 title: Value and Units
 ---
 
-In CSS, "values" and "units" are fundamental concepts that specify how styles are applied to web content.
+In CSS, "values" and "units" are fundamental concepts that specify how styles are applied to webf/browser content.
 
 ## Supported Values
 

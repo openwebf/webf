@@ -1,7 +1,65 @@
 ---
 sidebar_position: 6
-title: Font and text
+title: Styling Text and Fonts
 ---
+
+## Styling text
+
+Text broad category of properties and values that deal with the styling and arrangement of textual content within a
+webf/web document.
+
+These properties allow you to adjust the appearance and layout of text elements.
+
+1. text-align:
+   + Specifies the horizontal alignment of text.
+   + Values: left, right, center, justify.
+   ```css
+   p {
+      text-align: center;
+   }
+   ```
+2. text-decoration:
+   + Specifies the decoration added to text.
+   + Values: none, underline, overline, line-through.
+   ```css
+   a {
+      text-decoration: none; /* Typically used to remove underlines from hyperlinks */
+   }
+   ```
+3. word-spacing:
+   + Specifies the space between words.
+
+   ```css
+   p {
+     word-spacing: 1em;
+   }
+   ```
+4. white-space:
+   + Specifies how whitespace inside an element is handled.
+   + Values: normal, nowrap, pre, pre-line, pre-wrap.
+   ```css
+   pre {
+      white-space: pre; /* Preserves whitespace and newlines */
+   }
+   ```
+5. text-shadow:
+   + Applies a shadow to text.
+   + Requires horizontal shadow, vertical shadow, and color values. Optional: blur radius.
+
+   ```css
+   h1 {
+     text-shadow: 2px 2px 4px #000;
+   }
+   ```
+6. text-overflow:
++ Specifies how overflowed content that is not displayed should be signaled to the user.
++ Values: clip, ellipsis, fade.
+
+   ```css
+   p {
+     text-overflow: ellipsis;
+   }
+   ```
 
 ## Font
 
@@ -92,61 +150,3 @@ WebF does not support .woff and .woff2 fonts.
     font: italic bold 1em/1.5 "Arial", sans-serif;
 }
   ```
-
-## Text
-
-Text broad category of properties and values that deal with the styling and arrangement of textual content within a
-webf/web document.
-
-These properties allow you to adjust the appearance and layout of text elements.
-
-1. text-align:
-   + Specifies the horizontal alignment of text.
-   + Values: left, right, center, justify.
-   ```css
-   p {
-      text-align: center;
-   }
-   ```
-2. text-decoration:
-   + Specifies the decoration added to text.
-   + Values: none, underline, overline, line-through.
-   ```css
-   a {
-      text-decoration: none; /* Typically used to remove underlines from hyperlinks */
-   }
-   ```
-3. word-spacing: 
-   + Specifies the space between words.
-
-   ```css
-   p {
-     word-spacing: 1em;
-   }
-   ```
-4. white-space:
-   + Specifies how whitespace inside an element is handled.
-   + Values: normal, nowrap, pre, pre-line, pre-wrap.
-   ```css
-   pre {
-      white-space: pre; /* Preserves whitespace and newlines */
-   }
-   ```
-5. text-shadow:
-   + Applies a shadow to text.
-   + Requires horizontal shadow, vertical shadow, and color values. Optional: blur radius.
-
-   ```css
-   h1 {
-     text-shadow: 2px 2px 4px #000;
-   }
-   ```
-6. text-overflow:
-  + Specifies how overflowed content that is not displayed should be signaled to the user.
-  + Values: clip, ellipsis, fade.
-  
-   ```css
-   p {
-     text-overflow: ellipsis;
-   }
-   ```
