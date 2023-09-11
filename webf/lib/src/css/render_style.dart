@@ -202,6 +202,10 @@ abstract class RenderStyle {
   CSSFillRule get fillRule;
   CSSStrokeLinecap get strokeLinecap;
   CSSStrokeLinejoin get strokeLinejoin;
+  CSSLengthValue get x1;
+  CSSLengthValue get y1;
+  CSSLengthValue get x2;
+  CSSLengthValue get y2;
 
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
@@ -486,6 +490,10 @@ class CSSRenderStyle extends RenderStyle
       case CX:
       case CY:
       case R:
+      case X1:
+      case X2:
+      case Y1:
+      case Y2:
       case STROKE_WIDTH:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;

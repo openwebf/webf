@@ -3,6 +3,7 @@
  */
 
 import 'package:webf/dom.dart';
+import 'package:webf/src/svg/line.dart';
 import 'package:webf/svg.dart';
 
 final Map<String, ElementCreator> svgElementsRegistry = {
@@ -14,4 +15,5 @@ final Map<String, ElementCreator> svgElementsRegistry = {
   'CIRCLE': (context) => SVGCircleElement(context),
   'ELLIPSE': (context) => SVGEllipseElement(context),
   'STYLE': (context) => SVGStyleElement(context),
+  'LINE': (context) => SVGLineElement(context),
 };
