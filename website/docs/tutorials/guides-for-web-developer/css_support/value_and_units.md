@@ -7,46 +7,50 @@ In CSS, "values" and "units" are fundamental concepts that specify how styles ar
 
 ## Supported Values
 
-value in CSS refers to the specific settings assigned to properties to control the styling of an element. Values
+Value in CSS refers to the specific settings assigned to properties to control the styling of an element. Values
 dictate how properties influence the display and behavior of content. They can take a variety of forms, such as:
 
-1. Keywords: Pre-defined names that are recognized by browsers. For example, for the display property, you can use
-   keywords
-   like block, inline, and none.
+Each CSS property has a predefined set of valid values it can accept. Using an invalid value for a property will lead to
+the property being ignored by webf.
 
-  ```css
-  div {
+**Keywords: Pre-defined names that are recognized by browsers**
+
+For example, for the display property, you can use keywords like block, inline, and none.
+
+```css
+div {
     display: block;
 }
-  ```
+```
 
-2. Numbers: Some properties accept simple numeric values. For instance, the z-index property can accept an integer to
-   determine stacking order.
+**Numbers: Some properties accept simple numeric values**
 
-  ```css
-  .overlay {
+For instance, the z-index property can accept an integer to determine stacking order.
+
+```css
+.overlay {
     z-index: 10;
 }
-  ```
+```
 
-3. Lengths: A number followed by a length unit, such as px, em, rem, etc.
+**Lengths: A number followed by a length unit, such as px, em, rem, etc**
 
-  ```css
-  p {
+```css
+p {
     margin: 20px;
     font-size: 1.5rem;
 }
-  ```
+```
 
-4. Percentages: Often relative to some other value, like the size of a parent element.
+**Percentages: Often relative to some other value, like the size of a parent element**
 
-  ```css
-  img {
+```css
+img {
     width: 50%;
 }
-  ```
+```
 
-5. Colors: Values that specify colors, and can be written in various ways:
+**Colors: Values that specify colors, and can be written in various ways:**
 
 + Named colors: red, green, blue, etc.
 + Hexadecimal: #FF0000, #00FF00, #0000FF, etc.
@@ -55,46 +59,80 @@ dictate how properties influence the display and behavior of content. They can t
 + HSL: hsl(120, 100%, 50%)
 + HSLA (with alpha for transparency): hsla(120, 100%, 50%, 0.5)
 
-  ```css
+```css
   div {
     background-color: rgba(255, 255, 255, 0.5);
   }
+```
 
-  ```
+**URLs: Used for properties that require a link to an external resource, like images.**
 
-6. URLs: Used for properties that require a link to an external resource, like images.
+```css
+div {
+   background-image: url("path/to/image.jpg");
+}
+```
 
-  ```css
-  div {
-    background-image: url("path/to/image.jpg");
-  }
-  ```
+**Strings: Certain properties accept textual data, usually encapsulated in quotes.**
 
-7. Strings: Certain properties accept textual data, usually encapsulated in quotes.
-
-  ```css
-  ::before {
+```css
+::before {
     content: "Hello!";
 }
-  ```
+```
 
-8. Functional Notations: Functions that take specific arguments and are used to achieve certain effects or
-   representations. Examples include calc(), linear-gradient(), radial-gradient(), rotate(), and many others.
+**Functional Notations: Functions that take specific arguments and are used to achieve certain effects or representations.** 
 
-  ```css
-  div {
-    width: calc(100% - 20px);
-    background: linear-gradient(red, blue);
+Examples include calc(), linear-gradient(), radial-gradient(), rotate(), and many others.
+
+```css
+div {
+   width: calc(100% - 20px);
+   background: linear-gradient(red, blue);
 }
-  ```
+```
 
-9. Global Values: These are values that can be used for any CSS property. They include:
+**Global Values: These are values that can be used for any CSS property.** 
+
+They include:
 
 + inherit: Takes the computed value of the property for the element's parent.
 + initial: Uses the initial (default) value for that property.
 
-Each CSS property has a predefined set of valid values it can accept. Using an invalid value for a property will lead to
-the property being ignored by webf.
+**Custom properties: define reusable values in your stylesheets.**
+
+Very useful for maintaining consistent design systems, theming, or simply making your CSS more readable and maintainable.
+
+Custom properties are defined by prefixing the property name with two dashes (--).
+
+```css
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --font-size: 16px;
+}
+```
+
+To use a custom property, you'll use the var() function.
+
+```css
+body {
+  background-color: var(--primary-color);
+  font-size: var(--font-size);
+}
+
+button {
+  background-color: var(--secondary-color);
+}
+```
+
+You can provide a fallback value to the var() function, which will be used if the custom property is not set.
+
+```css
+body {
+  background-color: var(--primary-color, #333);  /* If --primary-color is not defined, #333 will be used */
+}
+```
 
 ## Supported Units
 
