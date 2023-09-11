@@ -6,6 +6,6 @@
 #include "svg_geometry_element.h"
 #include "svg_names.h"
 
-namespace webf{
+namespace webf {
 SVGLineElement::SVGLineElement(Document& document) : SVGGeometryElement(svg_names::kline, document) {}
 }  // namespace webf
