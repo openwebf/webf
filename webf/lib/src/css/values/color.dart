@@ -289,10 +289,9 @@ class CSSColor {
       String colorBody = color.substring(isRgba ? 5 : 4, color.length - 1);
 
       final rgbMatch;
-      if (renderStyle != null && colorBody.startsWith('var') && colorBody.endsWith(')')) {
-        final variable = CSSVariable.tryParse(renderStyle, colorBody);
-        final computedValue = variable?.computedValue('');
-        rgbMatch = _colorRgbRegExp.firstMatch(computedValue);
+      if (renderStyle != null && colorBody.contains('var')) {
+        final result = CSSVariable.tryReplaceVariableInString(colorBody, renderStyle);
+        rgbMatch = _colorRgbRegExp.firstMatch(result);
       } else {
         rgbMatch = _colorRgbRegExp.firstMatch(colorBody);
       }
@@ -311,10 +310,9 @@ class CSSColor {
       String colorBody = color.substring(isHsla ? 5 : 4, color.length - 1);
 
       final hslMatch;
-      if (renderStyle != null && colorBody.startsWith('var') && colorBody.endsWith(')')) {
-        final variable = CSSVariable.tryParse(renderStyle, colorBody);
-        final computedValue = variable?.computedValue('');
-        hslMatch = _colorHslRegExp.firstMatch(computedValue);
+      if (renderStyle != null && colorBody.contains('var')) {
+        final result = CSSVariable.tryReplaceVariableInString(colorBody, renderStyle);
+        hslMatch = _colorHslRegExp.firstMatch(result);
       } else {
         hslMatch = _colorHslRegExp.firstMatch(colorBody);
       }
