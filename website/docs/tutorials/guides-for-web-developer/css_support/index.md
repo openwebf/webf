@@ -25,10 +25,11 @@ categories:
 7. [Value and Units](/docs/tutorials/guides-for-web-developer/css_support/value_and_units)
 8. [Sizing Items](/docs/tutorials/guides-for-web-developer/css_support/sizing_items)
 9. [Box Shadow and Filters](/docs/tutorials/guides-for-web-developer/css_support/box_shadow_filter)
-10. [Flow Layout](/docs/tutorials/guides-for-web-developer/css_support/flow_layout)
-11. [Flex layout](/docs/tutorials/guides-for-web-developer/css_support/flex_layout)
-12. [Background and Borders](/docs/tutorials/guides-for-web-developer/css_support/background_and_borders)
-13. [Positioning](/docs/tutorials/guides-for-web-developer/css_support/positioning)
+10. [Box Shadow and Filters](/docs/tutorials/guides-for-web-developer/css_support/transition_and_animations)
+11. [Flow Layout](/docs/tutorials/guides-for-web-developer/css_support/flow_layout)
+12. [Flex layout](/docs/tutorials/guides-for-web-developer/css_support/flex_layout)
+13. [Background and Borders](/docs/tutorials/guides-for-web-developer/css_support/background_and_borders)
+14. [Positioning](/docs/tutorials/guides-for-web-developer/css_support/positioning)
 
 ## Unsupported CSS features currently
 
