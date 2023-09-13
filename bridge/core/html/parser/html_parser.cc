@@ -98,7 +98,7 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
         int nLen = strlen(child->v.text.text);
         for (int j = 0; j < nLen; ++j) {
           isBlankSpace = child->v.text.text[j] == ' ';
-          if (isBlankSpace == false) {
+          if (!isBlankSpace) {
             break;
           }
         }
