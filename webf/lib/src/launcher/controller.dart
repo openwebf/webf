@@ -26,8 +26,9 @@ import 'package:webf/devtools.dart';
 import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
-typedef LoadHandler = void Function(WebFController controller);
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
+typedef LoadHandler = void Function(WebFController controller);
+typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
@@ -742,6 +743,7 @@ class WebFController {
 
   LoadHandler? onLoad;
   LoadHandler? onDOMContentLoaded;
+  TitleChangedHandler? onTitleChanged;
 
   // Error handler when load bundle failed.
   LoadErrorHandler? onLoadError;
