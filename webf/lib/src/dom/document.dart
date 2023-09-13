@@ -179,11 +179,18 @@ class Document extends ContainerNode {
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
-    properties['compatMode'] = BindingObjectProperty(getter: () => compatMode,);
+    properties['compatMode'] = BindingObjectProperty(getter: () => compatMode);
     properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
-    properties['readyState'] = BindingObjectProperty(getter: () => readyState,);
-    properties['visibilityState'] = BindingObjectProperty(getter: () => visibilityState,);
-    properties['hidden'] = BindingObjectProperty(getter: () => hidden,);
+    properties['readyState'] = BindingObjectProperty(getter: () => readyState);
+    properties['visibilityState'] = BindingObjectProperty(getter: () => visibilityState);
+    properties['hidden'] = BindingObjectProperty(getter: () => hidden);
+    properties['title'] = BindingObjectProperty(
+      getter: () => _title ?? '',
+      setter: (value) {
+        _title = value ?? '';
+        ownerDocument.controller.onTitleChanged?.call(title);
+      },
+    );
   }
 
   @override
@@ -245,6 +252,9 @@ class Document extends ContainerNode {
   }
 
   dynamic get compatMode => _compatMode;
+
+  String get title => _title ?? '';
+  String? _title;
 
   get domain {
     Uri uri = Uri.parse(controller.url);

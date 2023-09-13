@@ -177,6 +177,7 @@
     "elementFromPoint",
     "dir",
     "pageXOffset",
-    "pageYOffset"
+    "pageYOffset",
+    "title"
   ]
 }
