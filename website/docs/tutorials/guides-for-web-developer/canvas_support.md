@@ -1,3 +1,8 @@
+---
+sidebar_position: 6
+title: Canvas Support
+---
+
 # Canvas Support
 
 The Canvas 2D API is a feature in webf/browser that enables drawing and manipulating graphics directly in an HTML canvas
