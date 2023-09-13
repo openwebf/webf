@@ -65,6 +65,18 @@ without frame drops.
 
 <video src="/videos/interactive_motion_1.mov" controls style={{width: "300px", margin: '0 auto', display: 'block'}} />
 
+### requestAnimationFrame
+
+A more modern and recommended approach for creating JavaScript-based animations. It optimizes the animation for the best performance.
+
+```javascript
+function animate(time) {
+  // Update properties for animation
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+```
+
 ## More Complex Examples
 
 Check out this demo showcasing the performance of an interactive drag list. For a deeper dive, view the source code here:
