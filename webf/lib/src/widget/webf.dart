@@ -72,9 +72,9 @@ class WebF extends StatefulWidget {
   /// whose height is defined by the ambient [FlutterView]'s
   /// [FlutterView.viewInsets] `bottom` property.
   ///
-  /// For example, if there is an onscreen keyboard displayed above the
-  /// scaffold, the body can be resized to avoid overlapping the keyboard, which
-  /// prevents widgets inside the body from being obscured by the keyboard.
+  /// For example, if there is an onscreen keyboard displayed above the widget,
+  /// the view can be resized to avoid overlapping the keyboard, which prevents
+  /// widgets inside the view from being obscured by the keyboard.
   ///
   /// Defaults to true.
   final bool resizeToAvoidBottomInsets;
