@@ -7,6 +7,17 @@ This guide was designed for developers who have experiences of Web development. 
 development,
 please read the [Web developer guide in MDN](https://developer.mozilla.org/en-US/docs/Learn).
 
+## How to use this guides
+
+The WebF is the [blink](https://www.chromium.org/blink/) like rendering engine designed for Web developers to run their web applications on top of flutter
+platform. 
+
+You might have many questions, such as whether a certain CSS/DOM API is available on WebF.
+
+This guide will provide detailed information on the current capabilities of WebF in rendering web applications. 
+
+If you hope for more web capability support, please submit an issue to us.
+
 ## Key concepts of Web development
 
 HTML/CSS and JavaScript, the three crucial components of Web development, form the foundation of the entire web
