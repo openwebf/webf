@@ -1074,7 +1074,7 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxWidth {
-    if (renderBoxModel!.hasSize && renderBoxModel!.boxSize != null) {
+    if (renderBoxModel?.hasSize == true && renderBoxModel?.boxSize != null) {
       return renderBoxModel!.boxSize!.width;
     }
     return null;
@@ -1084,7 +1084,7 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxHeight {
-    if (renderBoxModel!.hasSize && renderBoxModel!.boxSize != null) {
+    if (renderBoxModel?.hasSize == true && renderBoxModel!.boxSize != null) {
       return renderBoxModel!.boxSize!.height;
     }
     return null;
