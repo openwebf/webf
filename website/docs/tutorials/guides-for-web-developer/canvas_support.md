@@ -85,8 +85,8 @@ let ctx = canvas.getContext('2d');
 - **lineCap**: Property to set the end style of lines (`"butt"`, `"round"`, or `"square"`).
 - **lineJoin**: Property to set the corner style of paths (`"bevel"`, `"round"`, or `"miter"`).
 - **lineWidth**: Property to set the width of lines.
-~~- **setLineDash(segments)**: Sets the current line dash pattern.~~
-~~- **getLineDash()**: Returns the current line dash pattern.~~
+- ~~**setLineDash(segments)**: Sets the current line dash pattern.~~
+- ~~**getLineDash()**: Returns the current line dash pattern.~~
 - **lineDashOffset**: Property to set the offset for the line dash pattern.
 
 ### Transformations:
