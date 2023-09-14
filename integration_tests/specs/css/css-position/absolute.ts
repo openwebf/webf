@@ -1223,4 +1223,61 @@ background: white;
       done();
     }, 300);
   });
+
+  it('should works when dynamic toggle display on positioned elements', async () => {
+    let box1;
+    let box2;
+    const container = createElement('div', {}, [
+      createElement('div', {
+        style: {
+          position: 'absolute',
+          width: '100%',
+          height: '100%'
+        }
+      }),
+      box1 = createElement('div', {
+        style: {
+          width: '100%',
+          position: 'absolute',
+          left: 0,
+          top: '50%',
+          transform: 'translate(0, -50%)',
+          zIndex: 1,
+          background: 'green'
+        }
+      }, [
+         createText('A')
+      ]),
+      box2 = createElement('div', {
+        style: {
+          width: '80%',
+          position: 'absolute',
+          left: '10%',
+          top: '50%',
+          transform: 'translate(0, -50%)',
+          background: 'red',
+          display: 'none'
+        }
+      }, [
+        createText('B')
+      ])
+    ]);
+
+    document.body.appendChild(container);
+
+    box1.style.display = 'none';
+    box2.style.display = 'block';
+
+    await snapshot();
+
+    box1.style.display = 'block';
+    box2.style.display = 'none';
+
+    await snapshot();
+
+    box1.style.display = 'none';
+    box2.style.display = 'block';
+
+    await snapshot();
+  });
 });

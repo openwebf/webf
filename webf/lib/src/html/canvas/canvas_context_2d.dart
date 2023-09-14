@@ -185,7 +185,7 @@ class CanvasRenderingContext2D extends BindingObject {
           dHeight = castToType<num>(args[8]).toDouble();
         }
 
-        return drawImage(args.length, imageElement.image, sx, sy, sWidth,
+        return drawImage(args.length, imageElement, sx, sy, sWidth,
             sHeight, dx, dy, dWidth, dHeight);
       }
     });
@@ -634,7 +634,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   void drawImage(
       int argumentCount,
-      Image? img,
+      ImageElement? imgElement,
       double sx,
       double sy,
       double sWidth,
@@ -643,9 +643,11 @@ class CanvasRenderingContext2D extends BindingObject {
       double dy,
       double dWidth,
       double dHeight) {
-    if (img == null) return;
 
     addAction((Canvas canvas, Size size) {
+      if (imgElement?.image == null) return;
+      
+      Image img = imgElement!.image!;
       // ctx.drawImage(image, dx, dy);
       if (argumentCount == 3) {
         canvas.drawImage(img, Offset(dx, dy), Paint());

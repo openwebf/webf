@@ -1313,7 +1313,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
-      unmountRenderObject(deep: true);
+      unmountRenderObject();
       return;
     }
 
