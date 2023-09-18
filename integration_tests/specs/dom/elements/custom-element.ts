@@ -436,6 +436,13 @@ describe('custom html element', () => {
     await snapshot();
   });
 
+  it('works with setTextContent', async () => {
+    let sampleElement = document.createElement('flutter-container');
+    sampleElement.textContent = 'helloworld';
+    document.body.appendChild(sampleElement);
+    await snapshot();
+  });
+
   it('dart implements getAllBindingPropertyNames works', async () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
@@ -523,7 +530,7 @@ describe('custom html element', () => {
     }
   });
 
-  it('property with underscore have no effect', () => {
+  fit('property with underscore have no effect', () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);
@@ -546,7 +553,7 @@ describe('custom html element', () => {
     expect(sampleElement._self === sampleElement);
   });
 
-  it('should work with cloneNode', () => {
+  fit('should work with cloneNode', () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);

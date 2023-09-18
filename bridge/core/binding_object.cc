@@ -141,7 +141,7 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
   ExceptionState exception_state;
 
   for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative(exception_state));
+    arguments.emplace_back(argv[i].ToNative(ctx, exception_state));
   }
 
   if (exception_state.HasException()) {
@@ -215,7 +215,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   ExceptionState exception_state;
 
   for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative(exception_state));
+    arguments.emplace_back(argv[i].ToNative(ctx, exception_state));
   }
 
   event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(),
