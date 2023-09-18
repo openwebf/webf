@@ -5,6 +5,7 @@
 
 #include <utility>
 
+#include "core/dom/comment.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/text.h"
@@ -92,6 +93,23 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
       } else if (child->type == GUMBO_NODE_TEXT) {
         auto* text = context->document()->createTextNode(AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
         root_container->AppendChild(text);
+      } else if (child->type == GUMBO_NODE_WHITESPACE) {
+        bool isBlankSpace = true;
+        int nLen = strlen(child->v.text.text);
+        for (int j = 0; j < nLen; ++j) {
+          isBlankSpace = child->v.text.text[j] == ' ';
+          if (!isBlankSpace) {
+            break;
+          }
+        }
+
+        if (isBlankSpace) {
+          if (nLen > 0) {
+            auto* textNode =
+                context->document()->createTextNode(AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
+            root_container->appendChild(textNode, ASSERT_NO_EXCEPTION());
+          }
+        }
       }
     }
   }
