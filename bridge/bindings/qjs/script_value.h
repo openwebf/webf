@@ -39,14 +39,12 @@ class ScriptValue final {
   // Create an undefined ScriptValue;
   static ScriptValue Undefined(JSContext* ctx);
   // Wrap an Quickjs JSValue to ScriptValue.
-  explicit ScriptValue(JSContext* ctx, JSValue value)
-      : value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
+  explicit ScriptValue(JSContext* ctx, JSValue value) : value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const AtomicString& value)
       : value_(JS_AtomToString(ctx, value.Impl())), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const SharedNativeString* string)
       : value_(JS_NewUnicodeString(ctx, string->string(), string->length())), runtime_(JS_GetRuntime(ctx)) {}
-  explicit ScriptValue(JSContext* ctx, double v)
-      : value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
+  explicit ScriptValue(JSContext* ctx, double v) : value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
   explicit ScriptValue(JSContext* ctx) : runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const NativeValue& native_value, bool shared_js_value = false);
   ScriptValue() = default;
@@ -63,11 +61,11 @@ class ScriptValue final {
 
   JSValue QJSValue() const;
   // Create a new ScriptValue from call JSON.stringify to current value.
-  ScriptValue ToJSONStringify(JSContext *ctx, ExceptionState* exception) const;
+  ScriptValue ToJSONStringify(JSContext* ctx, ExceptionState* exception) const;
   AtomicString ToString(JSContext* ctx) const;
   AtomicString ToLegacyDOMString(JSContext* ctx) const;
   std::unique_ptr<SharedNativeString> ToNativeString(JSContext* ctx) const;
-  NativeValue ToNative(JSContext *ctx, ExceptionState& exception_state, bool shared_js_value = false) const;
+  NativeValue ToNative(JSContext* ctx, ExceptionState& exception_state, bool shared_js_value = false) const;
 
   bool IsException() const;
   bool IsEmpty() const;

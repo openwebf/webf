@@ -166,7 +166,7 @@ JSValue ScriptValue::QJSValue() const {
   return value_;
 }
 
-ScriptValue ScriptValue::ToJSONStringify(JSContext *ctx, ExceptionState* exception) const {
+ScriptValue ScriptValue::ToJSONStringify(JSContext* ctx, ExceptionState* exception) const {
   JSValue stringifyed = JS_JSONStringify(ctx, value_, JS_NULL, JS_NULL);
   ScriptValue result = ScriptValue(ctx, stringifyed);
   // JS_JSONStringify may return JS_EXCEPTION if object is not valid. Return JS_EXCEPTION and let quickjs to handle it.
@@ -217,8 +217,7 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
       return NativeValueConverter<NativeTypeString>::ToNativeValue(ctx, ToString(ctx));
     case JS_TAG_OBJECT: {
       if (JS_IsArray(ctx, value_)) {
-        std::vector<ScriptValue> values =
-            Converter<IDLSequence<IDLAny>>::FromValue(ctx, value_, ASSERT_NO_EXCEPTION());
+        std::vector<ScriptValue> values = Converter<IDLSequence<IDLAny>>::FromValue(ctx, value_, ASSERT_NO_EXCEPTION());
         auto* result = new NativeValue[values.size()];
         for (int i = 0; i < values.size(); i++) {
           result[i] = values[i].ToNative(ctx, exception_state, shared_js_value);
