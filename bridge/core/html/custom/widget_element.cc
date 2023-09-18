@@ -104,11 +104,19 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   }
 
   auto shape = GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName());
+  // This property is defined in the Dart side
   if (shape != nullptr && shape->built_in_properties_.count(key) > 0) {
-    NativeValue result = SetBindingProperty(key, value.ToNative(exception_state), exception_state);
+    NativeValue result = SetBindingProperty(key, value.ToNative(ctx(), exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
 
+  // This property is defined in WidgetElement.prototype, should return false to let it handled in the prototype methods.
+  JSValue prototypeObject = GetExecutingContext()->contextData()->prototypeForType(GetWrapperTypeInfo());
+  if (JS_HasProperty(ctx(), prototypeObject, key.Impl())) {
+    return false;
+  }
+
+  // Nothing at all
   unimplemented_properties_[key] = value;
   return true;
 }

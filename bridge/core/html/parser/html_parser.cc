@@ -21,7 +21,7 @@ std::string trim(const std::string& str) {
   return tmp;
 }
 
-// Parse html,isHTMLFragment should be false if need to automatically complete html, head, and body when they are
+// Parse html,isHTMLFragment should be false if you need to automatically complete html, head, and body when they are
 // missing.
 GumboOutput* parse(const std::string& html, bool isHTMLFragment = false) {
   // Gumbo-parser parse HTML.
