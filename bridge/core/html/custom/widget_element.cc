@@ -110,7 +110,8 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
 
-  // This property is defined in WidgetElement.prototype, should return false to let it handled in the prototype methods.
+  // This property is defined in WidgetElement.prototype, should return false to let it handled in the prototype
+  // methods.
   JSValue prototypeObject = GetExecutingContext()->contextData()->prototypeForType(GetWrapperTypeInfo());
   if (JS_HasProperty(ctx(), prototypeObject, key.Impl())) {
     return false;

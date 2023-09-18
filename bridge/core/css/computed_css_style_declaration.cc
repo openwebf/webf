@@ -29,8 +29,9 @@ ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, Exception
 bool ComputedCssStyleDeclaration::SetItem(const AtomicString& key,
                                           const ScriptValue& value,
                                           ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key),
-                             NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value.ToLegacyDOMString(ctx()))};
+  NativeValue arguments[] = {
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key),
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value.ToLegacyDOMString(ctx()))};
   InvokeBindingMethod(binding_call_methods::ksetProperty, 2, arguments, exception_state);
   return true;
 }
