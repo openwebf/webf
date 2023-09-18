@@ -134,7 +134,7 @@ abstract class WidgetElement extends dom.Element {
 
     // Only trigger update if the child are created by JS. If it's created on Flutter widgets, the flutter framework will handle this.
     if (_state != null && !child.createdByFlutterWidget) {
-      _state!.requestUpdateState();
+      _state!.markChildrenNeedsUpdate();
     }
 
     return child;
@@ -146,7 +146,7 @@ abstract class WidgetElement extends dom.Element {
     dom.Node inserted = super.insertBefore(child, referenceNode);
 
     if (_state != null) {
-      _state!.requestUpdateState();
+      _state!.markChildrenNeedsUpdate();
     }
 
     return inserted;
@@ -158,7 +158,7 @@ abstract class WidgetElement extends dom.Element {
     dom.Node? replaced = super.replaceChild(newNode, oldNode);
 
     if (_state != null) {
-      _state!.requestUpdateState();
+      _state!.markChildrenNeedsUpdate();
     }
 
     return replaced;
@@ -170,7 +170,7 @@ abstract class WidgetElement extends dom.Element {
     super.removeChild(child);
 
     if (_state != null) {
-      _state!.requestUpdateState();
+      _state!.markChildrenNeedsUpdate();
     }
 
     return child;
