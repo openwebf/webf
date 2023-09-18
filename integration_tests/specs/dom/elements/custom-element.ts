@@ -425,6 +425,15 @@ describe('custom widget element', () => {
     await sleep(1);
     await snapshot();
   });
+
+  it('should ignore empty textNodes', async () => {
+    const container = document.createElement('flutter-container');
+    container.appendChild(document.createTextNode(''));
+    container.appendChild(document.createTextNode('A'));
+    container.appendChild(document.createTextNode(''));
+    document.body.appendChild(container);
+    await snapshot();
+  });
 });
 
 describe('custom html element', () => {
