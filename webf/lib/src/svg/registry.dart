@@ -3,7 +3,6 @@
  */
 
 import 'package:webf/dom.dart';
-import 'package:webf/src/svg/line.dart';
 import 'package:webf/svg.dart';
 
 final Map<String, ElementCreator> svgElementsRegistry = {
