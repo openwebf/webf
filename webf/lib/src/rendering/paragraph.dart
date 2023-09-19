@@ -294,10 +294,10 @@ class WebFRenderParagraph extends RenderBox
 
   /// Compute distance to baseline of last text line
   double computeDistanceToLastLineBaseline() {
-    if (_lineOffset.isEmpty) {
+    if (_lineRenders.isEmpty) {
       return 0.0;
     }
-    double lastLineOffset = _lineOffset[_lineOffset.length - 1];
+    double lastLineOffset = _lineRenders[_lineRenders.length - 1].lineRect.top;
     ui.LineMetrics lastLineMetrics = _lineMetrics[_lineMetrics.length - 1];
 
     // Use the baseline of the last line as paragraph baseline.
