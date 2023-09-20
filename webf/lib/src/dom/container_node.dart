@@ -5,7 +5,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/src/css/query_selector.dart';
 import 'package:webf/src/dom/node_traversal.dart';
 
 typedef InsertNodeHandler = void Function(ContainerNode container, Node child, Node? next);
@@ -322,7 +321,7 @@ abstract class ContainerNode extends Node {
         }
       }
       if (parentNode != null) {
-        SelectorEvaluator.nthIndexCache.invalidateWithParentNode(parentNode!);
+        ownerDocument.nthIndexCache.invalidateWithParentNode(parentNode!);
       }
     }
 
@@ -342,7 +341,7 @@ abstract class ContainerNode extends Node {
       node = node.parentNode;
     }
     if (parentNode != null) {
-      SelectorEvaluator.nthIndexCache.invalidateWithParentNode(parentNode!);
+      ownerDocument.nthIndexCache.invalidateWithParentNode(parentNode!);
     }
   }
 

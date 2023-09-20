@@ -942,7 +942,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() async {
     renderStyle.detach();
     style.dispose();
     attributes.clear();
@@ -1932,7 +1932,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
-    BoundingClientRect boundingClientRect = BoundingClientRect.zero;
+    BoundingClientRect boundingClientRect = BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
       flushLayout();
       RenderBoxModel sizedBox = renderBoxModel!;
@@ -1946,6 +1946,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
         boundingClientRect = BoundingClientRect(
+            context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
             x: offset.dx,
             y: offset.dy,
             width: size.width,

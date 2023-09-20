@@ -317,6 +317,11 @@ class WebFViewController implements WidgetsBindingObserver {
 
     clearCssLength();
 
+    _nativeObjects.forEach((key, object) {
+      object.dispose();
+    });
+    _nativeObjects.clear();
+
     document.dispose();
     window.dispose();
   }
@@ -375,6 +380,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void createElement(Pointer<NativeBindingObject> nativePtr, String tagName) {
+    print('create element with $nativePtr');
     assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
     document.createElement(tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
   }
@@ -612,7 +618,7 @@ class WebFViewController implements WidgetsBindingObserver {
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
   void disposeBindingObject(Pointer<NativeBindingObject> pointer) async {
     BindingObject? bindingObject = getBindingObject(pointer);
-    await bindingObject?.dispose();
+    bindingObject?.dispose();
     malloc.free(pointer);
   }
 

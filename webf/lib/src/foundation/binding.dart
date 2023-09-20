@@ -196,7 +196,7 @@ abstract class BindingObject<T> extends Iterable<T> {
   }
 
   @mustCallSuper
-  Future<void> dispose() async {
+  void dispose() async {
     _unbind(_ownerView);
     _properties.clear();
     _methods.clear();

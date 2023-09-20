@@ -205,13 +205,14 @@ class ImageElement extends Element {
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() async {
     super.dispose();
     _stopListeningStream();
 
     _completerHandle?.dispose();
     _completerHandle = null;
     _cachedImageInfo = null;
+    _currentImageProvider!.evict();
     _currentImageProvider = null;
   }
 

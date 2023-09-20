@@ -16,7 +16,9 @@ const String ZERO_PX = '0px';
 
 class InspectCSSModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
+
   WebFViewController get view => devtoolsService.controller!.view;
+
   InspectCSSModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
@@ -179,7 +181,8 @@ class InspectCSSModule extends UIInspectorModule {
     List<CSSComputedStyleProperty> computedStyle = [];
     Map<CSSPropertyID, String> reverse(Map map) => {for (var e in map.entries) e.value: e.key};
     final propertyMap = reverse(CSSPropertyNameMap);
-    ComputedCSSStyleDeclaration computedStyleDeclaration = ComputedCSSStyleDeclaration(element, null);
+    ComputedCSSStyleDeclaration computedStyleDeclaration = ComputedCSSStyleDeclaration(
+        BindingContext(element.ownerView, element.ownerView.contextId, allocateNewBindingObject()), element, null);
     for (CSSPropertyID id in ComputedProperties) {
       final propertyName = propertyMap[id];
       if (propertyName != null) {
@@ -187,11 +190,11 @@ class InspectCSSModule extends UIInspectorModule {
         if (value.isEmpty) {
           continue;
         }
-        computedStyle.add(CSSComputedStyleProperty(name: propertyName, value:value));
+        computedStyle.add(CSSComputedStyleProperty(name: propertyName, value: value));
         if (id == CSSPropertyID.Top) {
-          computedStyle.add(CSSComputedStyleProperty(name: 'y', value:value));
+          computedStyle.add(CSSComputedStyleProperty(name: 'y', value: value));
         } else if (id == CSSPropertyID.Left) {
-          computedStyle.add(CSSComputedStyleProperty(name: 'x', value:value));
+          computedStyle.add(CSSComputedStyleProperty(name: 'x', value: value));
         }
       }
     }
