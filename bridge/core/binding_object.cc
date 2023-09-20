@@ -79,7 +79,8 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   NativeValue return_value = Native_NewNull();
   NativeValue native_method =
       NativeValueConverter<NativeTypeString>::ToNativeValue(GetExecutingContext()->ctx(), method);
-  binding_object_->invoke_bindings_methods_from_native(GetExecutingContext()->contextId(), binding_object_, &return_value, &native_method, argc, argv);
+  binding_object_->invoke_bindings_methods_from_native(GetExecutingContext()->contextId(), binding_object_,
+                                                       &return_value, &native_method, argc, argv);
   return return_value;
 }
 
@@ -96,7 +97,8 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 
   NativeValue return_value = Native_NewNull();
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
-  binding_object_->invoke_bindings_methods_from_native(GetExecutingContext()->contextId(), binding_object_, &return_value, &native_method, argc, argv);
+  binding_object_->invoke_bindings_methods_from_native(GetExecutingContext()->contextId(), binding_object_,
+                                                       &return_value, &native_method, argc, argv);
   return return_value;
 }
 
