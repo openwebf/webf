@@ -183,9 +183,7 @@ class SelectorEvaluator extends SelectorVisitor {
 
       // http://dev.w3.org/csswg/selectors-4/#the-empty-pseudo
       case 'empty':
-        return _element!.childNodes.every((n) =>
-        !(n is Element || (n is TextNode && n.data.isNotEmpty))
-        );
+        return _element!.childNodes.every((n) => !(n is Element || n is TextNode && n.data.isNotEmpty));
 
       // http://dev.w3.org/csswg/selectors-4/#the-blank-pseudo
       case 'blank':
