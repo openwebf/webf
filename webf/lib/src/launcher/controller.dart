@@ -151,7 +151,6 @@ class WebFViewController implements WidgetsBindingObserver {
   WebFViewController(this._viewportWidth, this._viewportHeight,
       {this.background,
       this.enableDebug = false,
-      int? contextId,
       required this.rootController,
       this.navigationDelegate,
       this.gestureListener,
@@ -163,7 +162,7 @@ class WebFViewController implements WidgetsBindingObserver {
       debugPaintSizeEnabled = true;
     }
     BindingBridge.setup();
-    _contextId = contextId ?? initBridge(this);
+    _contextId = initBridge(this);
 
     if (originalViewport != null) {
       viewport = originalViewport;
@@ -900,18 +899,24 @@ class WebFController {
       // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
       _view.viewport.reload();
 
-      allocateNewPage(_view.contextId);
+      int oldId = _view.contextId;
 
       _view = WebFViewController(view.viewportWidth, view.viewportHeight,
           background: _view.background,
           enableDebug: _view.enableDebug,
-          contextId: _view.contextId,
           rootController: this,
           navigationDelegate: _view.navigationDelegate,
           gestureListener: _view.gestureListener,
           originalViewport: _view.viewport);
 
       _module = WebFModuleController(this, _view.contextId);
+
+      // Reconnect the new contextId to the Controller
+      _controllerMap.remove(oldId);
+      _controllerMap[_view.contextId] = this;
+      if (name != null) {
+        _nameIdMap[name!] = _view.contextId;
+      }
 
       completer.complete();
     });
