@@ -493,7 +493,7 @@ void flushUICommand(WebFViewController view) {
           view.createComment(nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.disposeBindingObject:
-          view.disposeBindingObject(nativePtr.cast<NativeBindingObject>());
+          view.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.addEvent:
           Pointer<AddEventListenerOptions> eventListenerOptions = command.nativePtr2.cast<AddEventListenerOptions>();
