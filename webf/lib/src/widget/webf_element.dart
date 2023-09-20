@@ -15,7 +15,7 @@ class WebFHTMLElement extends MultiChildRenderObjectWidget {
   @override
   RenderObject createRenderObject(BuildContext context) {
     _WebFElement webfElement = context as _WebFElement;
-    return webfElement.htmlElement.createRenderer();
+    return webfElement.htmlElement!.createRenderer();
   }
 
   @override
@@ -25,39 +25,39 @@ class WebFHTMLElement extends MultiChildRenderObjectWidget {
 }
 
 class _WebFElement extends MultiChildRenderObjectElement {
-  final dom.Element htmlElement;
+  dom.Element? htmlElement;
 
-  _WebFElement(WebFHTMLElement widget): htmlElement = dom.createElement(widget.tagName), super(widget);
+  _WebFElement(WebFHTMLElement widget): super(widget);
 
   @override
   WebFHTMLElement get widget => super.widget as WebFHTMLElement;
 
   void fullFillInlineStyle(Map<String, String> inlineStyle) {
     inlineStyle.forEach((key, value) {
-      htmlElement.setInlineStyle(key, value);
+      htmlElement!.setInlineStyle(key, value);
     });
   }
 
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    htmlElement.managedByFlutterWidget = true;
-    htmlElement.createdByFlutterWidget = true;
     WebFContextInheritElement webfContext = getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
+    htmlElement = dom.createElement(widget.tagName, BindingContext(webfContext.controller!.view, webfContext.controller!.view.contextId, allocateNewBindingObject()));
+    htmlElement!.managedByFlutterWidget = true;
+    htmlElement!.createdByFlutterWidget = true;
+
     dom.Element? parentElement = findClosestAncestorHTMLElement(this);
     if (parentElement != null) {
-      htmlElement.ownerDocument = webfContext.controller!.view.document;
-      parentElement.ownerDocument = webfContext.controller!.view.document;
-      parentElement.appendChild(htmlElement);
+      parentElement.appendChild(htmlElement!);
 
       if (widget.inlineStyle != null) {
         fullFillInlineStyle(widget.inlineStyle!);
       }
 
-      htmlElement.ensureChildAttached();
-      htmlElement.applyStyle(htmlElement.style);
+      htmlElement!.ensureChildAttached();
+      htmlElement!.applyStyle(htmlElement!.style);
       // Flush pending style before child attached.
-      htmlElement.style.flushPendingProperties();
+      htmlElement!.style.flushPendingProperties();
     }
   }
 
@@ -84,6 +84,6 @@ class _WebFElement extends MultiChildRenderObjectElement {
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     super.unmount();
-    htmlElement.unmountRenderObject(dispose: false, fromFlutterWidget: true);
+    htmlElement!.unmountRenderObject(dispose: false, fromFlutterWidget: true);
   }
 }

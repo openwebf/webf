@@ -218,9 +218,8 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     ownerDocument.updateStyleIfNeeded();
   }
 
-  // FIXME: The ownerDocument getter steps are to return null, if this is a document; otherwise this’s node document.
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
-  late Document ownerDocument;
+  Document get ownerDocument => ownerView.document;
 
   /// The Node.parentElement read-only property returns the DOM node's parent Element,
   /// or null if the node either has no parent, or its parent isn't a DOM Element.

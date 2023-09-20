@@ -78,6 +78,7 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return null;
   }
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
   Pointer<Void> rawEvent = event == null ? nullptr : event.toRaw().cast<Void>();
   Pointer<NativeValue> extraData = malloc.allocate(sizeOf<NativeValue>());
@@ -85,7 +86,7 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   assert(_allocatedPages.containsKey(contextId));
   Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
       _allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
-  dynamic result = fromNativeValue(dispatchResult);
+  dynamic result = fromNativeValue(controller.view, dispatchResult);
   malloc.free(dispatchResult);
   malloc.free(extraData);
   return result;
@@ -480,10 +481,10 @@ void flushUICommand(WebFViewController view) {
           view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
           break;
         case UICommandType.createDocument:
-          view.initDocument(nativePtr.cast<NativeBindingObject>());
+          view.initDocument(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createWindow:
-          view.initWindow(nativePtr.cast<NativeBindingObject>());
+          view.initWindow(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createTextNode:
           view.createTextNode(nativePtr.cast<NativeBindingObject>(), command.args);

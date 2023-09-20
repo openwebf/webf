@@ -16,6 +16,7 @@ const String ZERO_PX = '0px';
 
 class InspectCSSModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
+  WebFViewController get view => devtoolsService.controller!.view;
   InspectCSSModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
@@ -41,7 +42,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    BindingObject? element = BindingBridge.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+    BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
     if (element is Element) {
       MatchedStyles matchedStyles = MatchedStyles(
         inlineStyle: buildMatchedStyle(element),
@@ -52,7 +53,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetComputedStyleForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    Element? element = view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       ComputedStyle computedStyle = ComputedStyle(
@@ -66,7 +67,7 @@ class InspectCSSModule extends UIInspectorModule {
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
   void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    Element? element = view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       InlinedStyle inlinedStyle = InlinedStyle(
@@ -88,7 +89,7 @@ class InspectCSSModule extends UIInspectorModule {
       int nodeId = edit['styleSheetId'];
       String text = edit['text'] ?? '';
       List<String> texts = text.split(';');
-      Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+      Element? element = document.controller.view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
       if (element != null) {
         for (String kv in texts) {
           kv = kv.trim();

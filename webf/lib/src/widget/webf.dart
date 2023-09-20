@@ -387,6 +387,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
   void unmount() {
     super.unmount();
     controller?.dispose();
+    controller = null;
   }
 
   // RenderObjects created by webf are manager by webf itself. There are no needs to operate renderObjects on _WebFRenderObjectElement.
