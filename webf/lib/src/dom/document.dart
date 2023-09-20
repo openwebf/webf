@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ffi';
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -413,31 +414,26 @@ class Document extends ContainerNode {
 
   Element createElement(String type, [BindingContext? context]) {
     Element element = element_registry.createElement(type, context);
-    element.ownerDocument = this;
     return element;
   }
 
   Element createElementNS(String uri, String type, [BindingContext? context]) {
     Element element = element_registry.createElementNS(uri, type, context);
-    element.ownerDocument = this;
     return element;
   }
 
   TextNode createTextNode(String data, [BindingContext? context]) {
     TextNode textNode = TextNode(data, context);
-    textNode.ownerDocument = this;
     return textNode;
   }
 
   DocumentFragment createDocumentFragment([BindingContext? context]) {
     DocumentFragment documentFragment = DocumentFragment(context);
-    documentFragment.ownerDocument = this;
     return documentFragment;
   }
 
   Comment createComment([BindingContext? context]) {
     Comment comment = Comment(context);
-    comment.ownerDocument = this;
     return comment;
   }
 

@@ -13,6 +13,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
 enum BindingMethodCallOperations {
@@ -48,8 +49,9 @@ void _dispatchCaptureEventToNative(Event event) {
 void _dispatchEventToNative(Event event, bool isCapture) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr) {
-    BindingObject bindingObject = BindingBridge.getBindingObject(pointer);
+    BindingObject bindingObject = controller.view.getBindingObject(pointer);
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
@@ -67,7 +69,7 @@ void _dispatchEventToNative(Event event, bool isCapture) {
 
     Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
     f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments, event);
-    Pointer<EventDispatchResult> dispatchResult = fromNativeValue(returnValue).cast<EventDispatchResult>();
+    Pointer<EventDispatchResult> dispatchResult = fromNativeValue(controller.view, returnValue).cast<EventDispatchResult>();
     event.cancelable = dispatchResult.ref.canceled;
     event.propagationStopped = dispatchResult.ref.propagationStopped;
 
@@ -99,42 +101,43 @@ abstract class BindingBridge {
   static Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> get nativeInvokeBindingMethod =>
       _invokeBindingMethodFromNative;
 
-  static final SplayTreeMap<int, BindingObject> _nativeObjects = SplayTreeMap();
-
-  static T? getBindingObject<T>(Pointer pointer) {
-    return _nativeObjects[pointer.address] as T?;
-  }
-  static bool hasBindingObject(Pointer pointer) {
-    return _nativeObjects.containsKey(pointer.address);
-  }
-
   static void createBindingObject(int contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
+    WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
     List<dynamic> arguments = List.generate(argc, (index) {
-      return fromNativeValue(args.elementAt(index));
+      return fromNativeValue(controller.view, args.elementAt(index));
     });
     switch(type) {
       case CreateBindingObjectType.createDOMMatrix: {
-        DOMMatrix domMatrix = DOMMatrix(BindingContext(contextId, pointer), arguments);
-        _nativeObjects[pointer.address] = domMatrix;
+        DOMMatrix domMatrix = DOMMatrix(BindingContext(controller.view, contextId, pointer), arguments);
+        controller.view.setBindingObject(pointer, domMatrix);
         return;
       }
     }
   }
 
-  static void _bindObject(BindingObject object) {
+  // For compatible requirement, we set the WebFViewController to nullable due to the historical reason.
+  // exp: We can not break the types for WidgetElement which will break all the codes for Users.
+  static void _bindObject(WebFViewController? view, BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
     if (nativeBindingObject != null) {
-      _nativeObjects[nativeBindingObject.address] = object;
+      if (view != null) {
+        view.setBindingObject(nativeBindingObject, object);
+      }
+
       if (!nativeBindingObject.ref.disposed) {
         nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
       }
     }
   }
 
-  static void _unbindObject(BindingObject object) {
+  // For compatible requirement, we set the WebFViewController to nullable due to the historical reason.
+  // exp: We can not break the types for WidgetElement which will break all the codes for Users.
+  static void _unbindObject(WebFViewController? view, BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
     if (nativeBindingObject != null) {
-      _nativeObjects.remove(nativeBindingObject.address);
+      if (view != null) {
+        view.removeBindingObject(nativeBindingObject);
+      }
       nativeBindingObject.ref.invokeBindingMethodFromNative = nullptr;
     }
   }

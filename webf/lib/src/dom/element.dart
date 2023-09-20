@@ -836,8 +836,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool shouldMutateBeforeElement =
         previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
-    previousPseudoElement ??= PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
-    previousPseudoElement.ownerDocument = ownerDocument;
+    previousPseudoElement ??=
+        PseudoElement(kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
     previousPseudoElement.style
         .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
 
@@ -950,6 +950,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _attributeProperties.clear();
     flutterWidget = null;
     flutterWidgetElement = null;
+    ownerDocument.inactiveRenderObjects.add(renderer);
+    _beforeElement?.dispose();
+    _beforeElement = null;
+    _afterElement?.dispose();
+    _afterElement = null;
     super.dispose();
   }
 
