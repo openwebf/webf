@@ -51,14 +51,10 @@ const loader = function(source) {
     }
   })
 
-  const htmlString = root.toString().replace(/['\n]/g, function(c){
-    return {'\n': '','\'': '\\'}[c];
-  });
-  
   return `
     describe('HTMLSpec/${testRelativePath}', () => {
       // Use html_parse to parser html in html file.
-      const html_parse = () => __webf_parse_html__(\`${htmlString}\`);
+      const html_parse = () => __webf_parse_html__(\`${root.toString()}\`);
       var index = 0;
       const snapshotAction = async () => { await snapshot(null, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
       ${isFit ? 'fit' : isXit ? 'xit' : 'it'}("should work", async (done) => {\
