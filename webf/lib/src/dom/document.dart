@@ -74,6 +74,9 @@ class Document extends ContainerNode {
 
   Set<Element> styleDirtyElements = {};
 
+  final NthIndexCache _nthIndexCache = NthIndexCache();
+  NthIndexCache get nthIndexCache => _nthIndexCache;
+
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
 
@@ -496,6 +499,7 @@ class Document extends ContainerNode {
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();
+    nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
     super.dispose();
