@@ -201,14 +201,13 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void setBindingObject(Pointer pointer, BindingObject bindingObject) {
-    assert(!_nativeObjects.containsKey(pointer));
+    assert(!_nativeObjects.containsKey(pointer.address));
     _nativeObjects[pointer.address] = bindingObject;
   }
 
   void removeBindingObject(Pointer pointer) {
-    _nativeObjects.remove(pointer);
+    _nativeObjects.remove(pointer.address);
   }
-
 
   // Index value which identify javascript runtime context.
   late int _contextId;
@@ -380,7 +379,6 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void createElement(Pointer<NativeBindingObject> nativePtr, String tagName) {
-    print('create element with $nativePtr');
     assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
     document.createElement(tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
   }
@@ -616,9 +614,10 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
-  void disposeBindingObject(Pointer<NativeBindingObject> pointer) async {
+  void disposeBindingObject(WebFViewController view, Pointer<NativeBindingObject> pointer) async {
     BindingObject? bindingObject = getBindingObject(pointer);
     bindingObject?.dispose();
+    view.removeBindingObject(pointer);
     malloc.free(pointer);
   }
 

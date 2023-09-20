@@ -135,9 +135,6 @@ abstract class BindingBridge {
   static void _unbindObject(WebFViewController? view, BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
     if (nativeBindingObject != null) {
-      if (view != null) {
-        view.removeBindingObject(nativeBindingObject);
-      }
       nativeBindingObject.ref.invokeBindingMethodFromNative = nullptr;
     }
   }

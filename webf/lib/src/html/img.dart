@@ -35,6 +35,7 @@ class ImageElement extends Element {
   WebFRenderImage? _renderImage;
 
   ImageProvider? _currentImageProvider;
+  ImageConfiguration? _currentImageConfig;
 
   ImageStream? _cachedImageStream;
   ImageInfo? _cachedImageInfo;
@@ -212,7 +213,7 @@ class ImageElement extends Element {
     _completerHandle?.dispose();
     _completerHandle = null;
     _cachedImageInfo = null;
-    _currentImageProvider!.evict();
+    _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
     _currentImageProvider = null;
   }
 
@@ -442,7 +443,7 @@ class ImageElement extends Element {
         PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
       }
 
-      ImageConfiguration imageConfiguration = _shouldScaling && cachedWidth != null && cachedHeight != null
+      ImageConfiguration imageConfiguration = _currentImageConfig = _shouldScaling && cachedWidth != null && cachedHeight != null
           ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
           : ImageConfiguration.empty;
       _updateSourceStream(provider.resolve(imageConfiguration));

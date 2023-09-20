@@ -49,7 +49,6 @@ class _InactiveRenderObjects {
     }
 
     assert(!renderObject.debugDisposed!);
-    assert(!_renderObjects.contains(renderObject));
     _renderObjects.add(renderObject);
   }
 
