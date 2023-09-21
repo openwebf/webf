@@ -501,6 +501,7 @@ class Document extends ContainerNode {
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
+    styleDirtyElements.clear();
     super.dispose();
   }
 
