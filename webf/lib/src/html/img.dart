@@ -212,6 +212,7 @@ class ImageElement extends Element {
 
     _completerHandle?.dispose();
     _completerHandle = null;
+    _cachedImageStream = null;
     _cachedImageInfo = null;
     _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
     _currentImageProvider = null;

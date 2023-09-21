@@ -281,6 +281,12 @@ class WebFContextInheritElement extends InheritedElement {
   WebFContextInheritElement(super.widget);
 
   WebFController? controller;
+
+  @override
+  void unmount() {
+    super.unmount();
+    controller = null;
+  }
 }
 
 class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
