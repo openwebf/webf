@@ -15,6 +15,8 @@ class WebFHTMLElement extends MultiChildRenderObjectWidget {
   @override
   RenderObject createRenderObject(BuildContext context) {
     _WebFElement webfElement = context as _WebFElement;
+    WebFContextInheritElement? webfContext = context.getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
+    context.htmlElement = dom.createElement(tagName, BindingContext(webfContext.controller!.view, webfContext.controller!.view.contextId, allocateNewBindingObject()));
     return webfElement.htmlElement!.createRenderer();
   }
 
@@ -41,8 +43,6 @@ class _WebFElement extends MultiChildRenderObjectElement {
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    WebFContextInheritElement webfContext = getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
-    htmlElement = dom.createElement(widget.tagName, BindingContext(webfContext.controller!.view, webfContext.controller!.view.contextId, allocateNewBindingObject()));
     htmlElement!.managedByFlutterWidget = true;
     htmlElement!.createdByFlutterWidget = true;
 
