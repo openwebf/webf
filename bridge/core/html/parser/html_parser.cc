@@ -11,8 +11,8 @@
 #include "core/dom/text.h"
 #include "element_namespace_uris.h"
 #include "foundation/logging.h"
-#include "html_parser.h"
 #include "html_names.h"
+#include "html_parser.h"
 
 namespace webf {
 
