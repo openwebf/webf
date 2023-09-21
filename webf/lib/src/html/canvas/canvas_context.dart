@@ -172,7 +172,7 @@ class CanvasPattern extends BindingObject {
       : _pointer = context.pointer,
         _image = image,
         _repetition = repetition,
-        super();
+        super(context);
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
