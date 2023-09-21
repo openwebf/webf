@@ -11,6 +11,7 @@
 #include "element_namespace_uris.h"
 #include "foundation/logging.h"
 #include "html_parser.h"
+#include "html_names.h"
 
 namespace webf {
 
@@ -56,6 +57,11 @@ GumboOutput* parse(const std::string& html, bool isHTMLFragment = false) {
 void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
   auto* context = root_node->GetExecutingContext();
   JSContext* ctx = root_node->GetExecutingContext()->ctx();
+
+  auto* html_element = DynamicTo<Element>(root_node);
+  if (html_element != nullptr && html_element->localName() == html_names::khtml) {
+    parseProperty(html_element, &node->v.element);
+  }
 
   const GumboVector* children = &node->v.element.children;
   for (int i = 0; i < children->length; ++i) {
