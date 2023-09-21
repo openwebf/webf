@@ -61,7 +61,12 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     try {
       bytes = await _loadImage(url);
     } on FlutterError {
-      PaintingBinding.instance.imageCache.evict(key);
+      // Depending on where the exception was thrown, the image cache may not
+      // have had a chance to track the key in the cache at all.
+      // Schedule a microtask to give the cache a chance to add the key.
+      scheduleMicrotask(() {
+        PaintingBinding.instance.imageCache.evict(key);
+      });
       rethrow;
     }
 
