@@ -1915,11 +1915,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     inlineStyle.forEach((String property, _) {
       _removeInlineStyleProperty(property);
     });
+    inlineStyle.clear();
     style.flushPendingProperties();
   }
 
   void _removeInlineStyleProperty(String property) {
-    inlineStyle.remove(property);
     style.removeProperty(property, true);
   }
 
