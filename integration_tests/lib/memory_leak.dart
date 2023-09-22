@@ -207,15 +207,18 @@ class HomePageElement extends StatelessElement {
         current = codes[currentIndex + 1];
         currentIndex = currentIndex + 1;
       }
+
+      await sleep(Duration(seconds: 1));
+      bool isLeaked = isMemLeaks(mems);
+
+      print('memory leaks: ${isMemLeaks(mems)} $mems');
+      if (isLeaked) {
+        exit(1);
+      }
+
+      mems.clear();
     }, codes.length);
 
-    await sleep(Duration(seconds: 1));
-    bool isLeaked = isMemLeaks(mems);
-
-    print('memory leaks: ${isMemLeaks(mems)}');
-    if (isLeaked) {
-      exit(1);
-    }
     exit(0);
   }
 }
@@ -254,7 +257,9 @@ class MemoryLeakNavigatorObserver extends NavigatorObserver {
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
-    mems.add(ProcessInfo.currentRss / 1024);
+    Timer(Duration(milliseconds: 500), () {
+      mems.add(ProcessInfo.currentRss / 1024);
+    });
   }
 
   @override

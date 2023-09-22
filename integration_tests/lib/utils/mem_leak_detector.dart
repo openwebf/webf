@@ -32,7 +32,7 @@ bool memoryIncreaseRatio(List<double> memoryUsage) {
 bool detectMemoryLeakBasedOnRegression(List<double> memoryUsage) {
   List<double> timePoints = List.generate(memoryUsage.length, (index) => index.toDouble()); // [0.0, 1.0, 2.0, ...]
   double slope = linearRegressionSlope(timePoints, memoryUsage);
-  return slope > 5; // 如果斜率大于0，则判断为可能存在内存泄漏
+  return slope > 10;
 }
 
 bool isMemLeaks(List<double> mems) {
