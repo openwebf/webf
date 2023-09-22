@@ -14,6 +14,21 @@ double linearRegressionSlope(List<double> x, List<double> y) {
   return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
 }
 
+bool memoryIncreaseRatio(List<double> memoryUsage) {
+  if (memoryUsage.length < 2) return false;
+
+  int increasingCount = 0;
+  for (int i = 1; i < memoryUsage.length; i++) {
+    if (memoryUsage[i] > memoryUsage[i - 1]) {
+      increasingCount++;
+    }
+  }
+
+  double ratio = increasingCount / memoryUsage.length;
+  return ratio > 0.75;
+}
+
+
 bool detectMemoryLeakBasedOnRegression(List<double> memoryUsage) {
   List<double> timePoints = List.generate(memoryUsage.length, (index) => index.toDouble()); // [0.0, 1.0, 2.0, ...]
   double slope = linearRegressionSlope(timePoints, memoryUsage);
@@ -21,5 +36,5 @@ bool detectMemoryLeakBasedOnRegression(List<double> memoryUsage) {
 }
 
 bool isMemLeaks(List<double> mems) {
-  return detectMemoryLeakBasedOnRegression(mems);
+  return detectMemoryLeakBasedOnRegression(mems) && memoryIncreaseRatio(mems);
 }

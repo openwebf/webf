@@ -171,14 +171,17 @@ ContentType getFileContentType(String fileName) {
   return javascriptContentType;
 }
 
-
-Future<void> run(AsyncCallback callback) async {
-  await callback();
+Future<void> sleep(Duration duration) {
+  Completer completer = Completer();
+  Timer(duration, () async {
+    completer.complete();
+  });
+  return completer.future;
 }
 
 Future<void> runWithMultiple(AsyncCallback callback, int multipleTime) async {
   for (int i = 0; i < multipleTime; i ++) {
-    await run(callback);
+    await callback();
   }
 }
 
@@ -194,23 +197,11 @@ class HomePageElement extends StatelessElement {
 
     await runWithMultiple(() async {
       await runWithMultiple(() async {
-        await run(() async {
-          Completer completer = Completer();
-          Timer(Duration(seconds: 1), () async {
-            Navigator.pushNamed(this, '/' + current.name);
-            completer.complete();
-          });
-          return completer.future;
-        });
-        await run(() async {
-          Completer completer = Completer();
-          Timer(Duration(seconds: 1), () async {
-            Navigator.pop(this);
-            completer.complete();
-          });
-          return completer.future;
-        });
-      }, 1);
+        await sleep(Duration(seconds: 1));
+        Navigator.pushNamed(this, '/' + current.name);
+        await sleep(Duration(seconds: 1));
+        Navigator.pop(this);
+      }, 5);
 
       if (currentIndex < codes.length - 1) {
         current = codes[currentIndex + 1];
@@ -218,10 +209,14 @@ class HomePageElement extends StatelessElement {
       }
     }, codes.length);
 
-    print(mems);
-    print(isMemLeaks(mems));
+    await sleep(Duration(seconds: 1));
+    bool isLeaked = isMemLeaks(mems);
 
-    print('done');
+    print('memory leaks: ${isMemLeaks(mems)}');
+    if (isLeaked) {
+      exit(1);
+    }
+    exit(0);
   }
 }
 
