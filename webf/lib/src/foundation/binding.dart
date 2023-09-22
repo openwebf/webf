@@ -9,7 +9,6 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/widget.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/launcher.dart';
 
 typedef BindingObjectOperation = void Function(WebFViewController? view, BindingObject bindingObject);
