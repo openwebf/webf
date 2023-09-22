@@ -32,7 +32,6 @@ import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
-import 'nth_index_cache.dart';
 
 typedef IndexCounter = int Function(Element element);
 

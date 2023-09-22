@@ -5,7 +5,6 @@
 
 // Bind the JavaScript side object,
 // provide interface such as property setter/getter, call a property as function.
-import 'dart:collection';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';

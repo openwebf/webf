@@ -5,7 +5,6 @@
 import 'dart:ffi';
 import 'dart:ui' as ui;
 
-import 'package:webf/bridge.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
