@@ -1499,6 +1499,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     Node? prev = previousSibling;
     while (prev != null) {
       if (prev is Element &&
+          prev.renderer != null &&
           (prev.renderStyle.position == CSSPositionType.absolute ||
               prev.renderStyle.position == CSSPositionType.fixed)) {
         RenderPositionPlaceholder? positionHolder = (prev.renderer as RenderBoxModel).renderPositionPlaceholder;
