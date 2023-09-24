@@ -39,7 +39,7 @@ class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
 // coordinate system of `ancestor`.
 Matrix4 getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool excludeScrollOffset = false}) {
   final List<RenderObject> renderers = <RenderObject>[];
-  for (RenderObject renderer = current; renderer != ancestor; renderer = renderer.parent! as RenderObject) {
+  for (RenderObject renderer = current; renderer != ancestor; renderer = renderer.parent!) {
     renderers.add(renderer);
     assert(renderer.parent != null);
   }
