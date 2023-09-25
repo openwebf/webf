@@ -51,6 +51,33 @@ double _updateLength(
   return value;
 }
 
+CSSBorderRadius? _parseBorderLength(String length, RenderStyle renderStyle, String property) {
+  return CSSBorderRadius.parseBorderRadius(length, renderStyle, property);
+}
+
+CSSBorderRadius? _updateBorderLength(
+    CSSBorderRadius startRadius, CSSBorderRadius endRadius, double progress, String property, CSSRenderStyle renderStyle) {
+  Radius? radius = Radius.lerp(startRadius.computedRadius, endRadius.computedRadius, progress);
+  if (radius != null) {
+    CSSLengthValue oldX = startRadius.x;
+    CSSLengthValue oldY = startRadius.y;
+    CSSLengthValue newX = CSSLength.parseLength(_stringifyLength(radius.x), oldX.renderStyle, oldX.propertyName, oldX.axisType);
+    CSSLengthValue newY = CSSLength.parseLength(_stringifyLength(radius.y), oldY.renderStyle, oldY.propertyName, oldY.axisType);
+    CSSBorderRadius newRadius = CSSBorderRadius(newX, newY);
+    //fix optimization current value and the last value have not changed
+    dynamic lastValueObj = renderStyle.getProperty(property);
+    if (lastValueObj is CSSBorderRadius) {
+      if (lastValueObj.computedRadius.x == newRadius.computedRadius.x
+          && lastValueObj.computedRadius.y == newRadius.computedRadius.y) {
+        return newRadius;
+      }
+    }
+    renderStyle.target.setRenderStyleProperty(property, newRadius);
+    return newRadius;
+  }
+  return null;
+}
+
 FontWeight _parseFontWeight(String fontWeight, RenderStyle renderStyle, String property) {
   return CSSText.resolveFontWeight(fontWeight);
 }
@@ -139,6 +166,7 @@ CSSOrigin _updateTransformOrigin(
 
 const List<Function> _colorHandler = [_parseColor, _updateColor, _stringifyColor];
 const List<Function> _lengthHandler = [_parseLength, _updateLength, _stringifyLength];
+const List<Function> _borderLengthHandler = [_parseBorderLength, _updateBorderLength, _stringifyLength];
 const List<Function> _fontWeightHandler = [_parseFontWeight, _updateFontWeight, _stringifyFontWeight];
 const List<Function> _numberHandler = [_parseNumber, _updateNumber, _stringifyNumber];
 const List<Function> _lineHeightHandler = [_parseLineHeight, _updateLineHeight, _stringifyLineHeight];
@@ -162,10 +190,10 @@ Map<String, List<Function>> CSSTransitionHandlers = {
   LINE_HEIGHT: _lineHeightHandler,
   TRANSFORM: _transformHandler,
   TRANSFORM_ORIGIN: _transformOriginHandler,
-  BORDER_BOTTOM_LEFT_RADIUS: _lengthHandler,
-  BORDER_BOTTOM_RIGHT_RADIUS: _lengthHandler,
-  BORDER_TOP_LEFT_RADIUS: _lengthHandler,
-  BORDER_TOP_RIGHT_RADIUS: _lengthHandler,
+  BORDER_BOTTOM_LEFT_RADIUS: _borderLengthHandler,
+  BORDER_BOTTOM_RIGHT_RADIUS: _borderLengthHandler,
+  BORDER_TOP_LEFT_RADIUS: _borderLengthHandler,
+  BORDER_TOP_RIGHT_RADIUS: _borderLengthHandler,
   RIGHT: _lengthHandler,
   TOP: _lengthHandler,
   BOTTOM: _lengthHandler,
