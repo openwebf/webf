@@ -1298,7 +1298,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       propertyHandler.deleter!();
     }
 
-    attributes.remove(qualifiedName);
+    if (hasAttribute(qualifiedName)) {
+      attributes.remove(qualifiedName);
+      final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
+      recalculateStyle(rebuildNested: isNeedRecalculate);
+    }
   }
 
   @mustCallSuper
