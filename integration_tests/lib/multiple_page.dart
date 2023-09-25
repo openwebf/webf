@@ -13,7 +13,6 @@ import 'package:test/test.dart';
 
 import 'custom_elements/main.dart';
 import 'local_http_server.dart';
-import 'plugin.dart';
 import 'modules/unresponsive_module.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
@@ -22,6 +21,18 @@ String? err = (AnsiPen()..red())('[TEST FAILED]');
 final String __dirname = path.dirname(Platform.script.path);
 final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 final GlobalKey<RootPageState> rootPageKey = GlobalKey();
+
+// Test for UriParser.
+class IntegrationTestUriParser extends UriParser {
+  @override
+  Uri resolve(Uri base, Uri relative) {
+    if (base.toString().isEmpty && relative.path.startsWith('assets/')) {
+      return Uri.file(relative.path);
+    } else {
+      return super.resolve(base, relative);
+    }
+  }
+}
 
 class MultiplePageState extends State<MultiplePage> {
   BuildContext? _context;

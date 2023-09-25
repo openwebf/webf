@@ -13,7 +13,7 @@ import 'package:webf/webf.dart';
 import 'custom_elements/main.dart';
 import 'test_module.dart';
 import 'local_http_server.dart';
-import 'mem_leak_detector.dart';
+import 'utils/mem_leak_detector.dart';
 import 'webf_tester.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');

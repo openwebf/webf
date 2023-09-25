@@ -13,13 +13,28 @@ class LocationModule extends BaseModule {
   String get href => moduleManager!.controller.url;
 
   String get origin => moduleManager?.controller.uri?.origin ?? '';
-  String get protocol => moduleManager?.controller.uri?.scheme ?? '';
+  String get protocol {
+    if (moduleManager?.controller.uri?.scheme != null) {
+      return moduleManager!.controller.uri!.scheme + ':';
+    }
+    return '';
+  }
   String get port => moduleManager?.controller.uri?.port.toString() ?? '';
   String get hostname => moduleManager?.controller.uri?.host ?? '';
   String get host => hostname + ':' + port;
   String get pathname => moduleManager?.controller.uri?.path ?? '';
-  String get search => moduleManager?.controller.uri?.query ?? '';
-  String get hash => moduleManager?.controller.uri?.fragment ?? '';
+  String get search {
+    if (moduleManager?.controller.uri?.query != null) {
+      return '?' + moduleManager!.controller.uri!.query;
+    }
+    return '';
+  }
+  String get hash {
+    if (moduleManager?.controller.uri?.fragment != null) {
+      return '#' + moduleManager!.controller.uri!.fragment;
+    }
+    return '';
+  }
 
   @override
   String invoke(String method, params, InvokeModuleCallback callback) {

@@ -28,4 +28,8 @@ class NthIndexCache {
   void invalidateWithParentNode(ContainerNode parent) {
     _cacheElementIndex.remove(parent);
   }
+
+  void clearAll() {
+    _cacheElementIndex.clear();
+  }
 }

@@ -53,7 +53,7 @@ class Window extends EventTarget {
   }
 
   ComputedCSSStyleDeclaration getComputedStyle(Element element) {
-    return ComputedCSSStyleDeclaration(element, element.tagName);
+    return ComputedCSSStyleDeclaration(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), element, element.tagName);
   }
 
   double get scrollX => document.documentElement!.scrollLeft;

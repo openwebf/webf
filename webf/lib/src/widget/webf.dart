@@ -277,6 +277,12 @@ class WebFContextInheritElement extends InheritedElement {
   WebFContextInheritElement(super.widget);
 
   WebFController? controller;
+
+  @override
+  void unmount() {
+    super.unmount();
+    controller = null;
+  }
 }
 
 class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
@@ -380,6 +386,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
   void unmount() {
     super.unmount();
     controller?.dispose();
+    controller = null;
   }
 
   // RenderObjects created by webf are manager by webf itself. There are no needs to operate renderObjects on _WebFRenderObjectElement.

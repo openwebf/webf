@@ -202,6 +202,10 @@ abstract class RenderStyle {
   CSSFillRule get fillRule;
   CSSStrokeLinecap get strokeLinecap;
   CSSStrokeLinejoin get strokeLinejoin;
+  CSSLengthValue get x1;
+  CSSLengthValue get y1;
+  CSSLengthValue get x2;
+  CSSLengthValue get y2;
 
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
@@ -485,6 +489,10 @@ class CSSRenderStyle extends RenderStyle
       case CX:
       case CY:
       case R:
+      case X1:
+      case X2:
+      case Y1:
+      case Y2:
       case STROKE_WIDTH:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
@@ -1073,7 +1081,7 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxWidth {
-    if (renderBoxModel!.hasSize && renderBoxModel!.boxSize != null) {
+    if (renderBoxModel?.hasSize == true && renderBoxModel?.boxSize != null) {
       return renderBoxModel!.boxSize!.width;
     }
     return null;
@@ -1083,7 +1091,7 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxHeight {
-    if (renderBoxModel!.hasSize && renderBoxModel!.boxSize != null) {
+    if (renderBoxModel?.hasSize == true && renderBoxModel!.boxSize != null) {
       return renderBoxModel!.boxSize!.height;
     }
     return null;
