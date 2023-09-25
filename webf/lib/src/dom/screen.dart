@@ -5,11 +5,12 @@
 import 'dart:ui';
 import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/launcher.dart';
 
 // As its name suggests, the Screen interface represents information about the screen of the output device.
 // https://drafts.csswg.org/cssom-view/#the-screen-interface
 class Screen extends BindingObject {
-  Screen(int contextId) : super(BindingContext(contextId, allocateNewBindingObject()));
+  Screen(int contextId, WebFViewController view) : super(BindingContext(view, contextId, allocateNewBindingObject()));
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {

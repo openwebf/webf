@@ -18,7 +18,7 @@ class Window extends EventTarget {
   final Screen screen;
 
   Window(BindingContext? context, this.document)
-      : screen = Screen(context!.contextId),
+      : screen = Screen(context!.contextId, document.ownerView),
         super(context);
 
   @override
