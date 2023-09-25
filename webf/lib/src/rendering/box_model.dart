@@ -1425,6 +1425,11 @@ class RenderBoxModel extends RenderBox
       // because placeholder depends the constraints in layout stage.
       RenderBox? previousSibling = containingBlockRenderBox == parent ? renderBoxModel : after;
 
+      // PreviousSibling of positionPlaceHolder should always been positionPlaceHolder.
+      if (previousSibling is RenderBoxModel && previousSibling.renderPositionPlaceholder != null) {
+        previousSibling = previousSibling.renderPositionPlaceholder;
+      }
+
       // Add position holder to origin position parent.
       _attachPositionPlaceholder(parent, renderBoxModel, after: previousSibling);
     }

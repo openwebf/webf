@@ -28,14 +28,6 @@ if (process.env.SPEC_SCOPE) {
   } else {
     throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
   }
-} else {
-  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
-    cwd: context,
-    ignore: ['node_modules/**'],
-  }).map((file) => './' + file).filter(name => name.indexOf('plugins') < 0)
-  if (process.env.WEBF_TEST_FILTER) {
-    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
-  }
 }
 
 
@@ -51,16 +43,9 @@ if (versionNum && parseFloat(versionNum) < 2.19) {
   })
 }
 
-const pluginSpecFiles = glob.sync('specs/plugins/**/*.{js,jsx,ts,tsx}', {
-  cwd: context,
-  ignore: 'node_modules/**',
-}).map((file) => './' + file);
-
 // Add global vars
 coreSpecFiles.unshift(globalRuntimePath);
 coreSpecFiles.unshift(resetRuntimePath);
-pluginSpecFiles.unshift(globalRuntimePath);
-pluginSpecFiles.unshift(resetRuntimePath);
 
 module.exports = {
   context: context,
@@ -68,7 +53,6 @@ module.exports = {
   devtool: false,
   entry: {
     core: coreSpecFiles,
-    plugin: pluginSpecFiles
   },
   output: {
     path: buildPath,

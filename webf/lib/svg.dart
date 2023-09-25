@@ -17,3 +17,4 @@ export 'src/svg/unknown.dart';
 export 'src/svg/circle.dart';
 export 'src/svg/ellipse.dart';
 export 'src/svg/style.dart';
+export 'src/svg/line.dart';

@@ -14,4 +14,5 @@ final Map<String, ElementCreator> svgElementsRegistry = {
   'CIRCLE': (context) => SVGCircleElement(context),
   'ELLIPSE': (context) => SVGEllipseElement(context),
   'STYLE': (context) => SVGStyleElement(context),
+  'LINE': (context) => SVGLineElement(context),
 };

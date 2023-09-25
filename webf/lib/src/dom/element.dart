@@ -838,8 +838,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool shouldMutateBeforeElement =
         previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
-    previousPseudoElement ??= PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
-    previousPseudoElement.ownerDocument = ownerDocument;
+    previousPseudoElement ??=
+        PseudoElement(kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
     previousPseudoElement.style
         .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
 
@@ -944,7 +944,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() async {
     renderStyle.detach();
     style.dispose();
     attributes.clear();
@@ -952,6 +952,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _attributeProperties.clear();
     flutterWidget = null;
     flutterWidgetElement = null;
+    ownerDocument.inactiveRenderObjects.add(renderer);
+    _beforeElement?.dispose();
+    _beforeElement = null;
+    _afterElement?.dispose();
+    _afterElement = null;
     super.dispose();
   }
 
@@ -1329,7 +1334,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
-      unmountRenderObject(deep: true);
+      unmountRenderObject();
       return;
     }
 
@@ -1741,6 +1746,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       case R:
         renderStyle.r = value;
         break;
+      case X1:
+        renderStyle.x1 = value;
+        break;
+      case X2:
+        renderStyle.x2 = value;
+        break;
+      case Y1:
+        renderStyle.y1 = value;
+        break;
+      case Y2:
+        renderStyle.y2 = value;
+        break;
       case D:
         renderStyle.d = value;
         break;
@@ -1949,7 +1966,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
-    BoundingClientRect boundingClientRect = BoundingClientRect.zero;
+    BoundingClientRect boundingClientRect = BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
       flushLayout();
       RenderBoxModel sizedBox = renderBoxModel!;
@@ -1963,6 +1980,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
         boundingClientRect = BoundingClientRect(
+            context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
             x: offset.dx,
             y: offset.dy,
             width: size.width,

@@ -1,0 +1,13 @@
+<?xml version="1.0" standalone="no"?>
+<svg  xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+    <line x1="10" y1="100" x2="30" y2="0"
+            stroke-width="5"  stroke="yellow" />
+    <line x1="15" y1="300" x2="35" y2="0"
+            stroke-width="10" stroke="red" />
+    <line x1="35" y1="300" x2="55" y2="0"
+            stroke-width="15" stroke="black" />
+    <line x1="55" y1="300" x2="75" y2="0"
+            stroke-width="20"  stroke="yellow"/>
+    <line x1="75" y1="300" x2="100" y2="100"
+            stroke-width="25"  stroke="green" />
+</svg>

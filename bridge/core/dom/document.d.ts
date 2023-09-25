@@ -14,6 +14,7 @@ import {ParentNode} from "./parent_node";
 
 interface Document extends Node, ParentNode {
   readonly all: HTMLAllCollection;
+  title: DartImpl<string>;
   body: HTMLBodyElement | null;
   cookie: DartImpl<string>;
   __clear_cookies__(): DartImpl<void>;

@@ -123,7 +123,7 @@ abstract class EventTarget extends BindingObject {
 
   @override
   @mustCallSuper
-  Future<void> dispose() async {
+  void dispose() async {
     _disposed = true;
     _eventHandlers.clear();
     super.dispose();

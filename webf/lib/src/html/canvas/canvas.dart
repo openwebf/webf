@@ -5,6 +5,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -112,7 +113,7 @@ class CanvasElement extends Element {
           painter.dispose();
         }
 
-        context2d = CanvasRenderingContext2D(this);
+        context2d = CanvasRenderingContext2D(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), this);
         painter.context = context2d;
 
         return context2d!;
