@@ -1,3 +1,31 @@
+## 0.15.1
+
+This version will support Flutter 3.10.x
+
+**Features**
+
+1. Optimize location API for better performance results. https://github.com/openwebf/webf/pull/420
+2. Optimize the webf_bridge and quickjs binary size. https://github.com/openwebf/webf/pull/414
+3. Support CSS initial length value. https://github.com/openwebf/webf/pull/421
+4. Optimize Element.children() and Document.all() performance. https://github.com/openwebf/webf/pull/424
+5. Support element <line> for svg. https://github.com/openwebf/webf/pull/475
+6. Add WebFController.onTitleChanged API. https://github.com/openwebf/webf/pull/479
+
+**Bug Fixed**
+
+1. Fix percentage width and height not working under inline block box. https://github.com/openwebf/webf/pull/430
+2. Fix Node.insertBefore with SVGElement error. https://github.com/openwebf/webf/pull/431
+3. Fix cookie delete file error when it's not available. https://github.com/openwebf/webf/pull/429
+4. Fix use css vars with initial. https://github.com/openwebf/webf/pull/421/commits/1da2e5899c53e82a31271c26de3333168e780134
+   0.15.0-beta.3
+5. Fix toggle position: fixed on bodyElement with other fixed elements. https://github.com/openwebf/webf/pull/416
+6. Fix css nth-child not work. https://github.com/openwebf/webf/pull/417
+7. Fix Node.childNodes didn't update when nodes changed. https://github.com/openwebf/webf/pull/419
+8. Fix loading fonts cause assertion when remove or attach RenderObjects. https://github.com/openwebf/webf/pull/425
+9. fix crash when reload pages. https://github.com/openwebf/webf/pull/476
+10. Fix memory leaks. https://github.com/openwebf/webf/pull/487
+
+
 ## 0.15.0
 
 This version will support Flutter 3.10.x
