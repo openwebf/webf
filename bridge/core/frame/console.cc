@@ -2,8 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#include <quickjs/quickjs.h>
 #include "console.h"
+#include <quickjs/quickjs.h>
 #include <sstream>
 #include "built_in_string.h"
 #include "foundation/logging.h"
