@@ -55,6 +55,10 @@ CSSBorderRadius? _parseBorderLength(String length, RenderStyle renderStyle, Stri
   return CSSBorderRadius.parseBorderRadius(length, renderStyle, property);
 }
 
+String _stringifyBorderLength(CSSBorderRadius? value) {
+  return value?.toString() ?? '';
+}
+
 CSSBorderRadius? _updateBorderLength(
     CSSBorderRadius startRadius, CSSBorderRadius endRadius, double progress, String property, CSSRenderStyle renderStyle) {
   Radius? radius = Radius.lerp(startRadius.computedRadius, endRadius.computedRadius, progress);
@@ -166,7 +170,7 @@ CSSOrigin _updateTransformOrigin(
 
 const List<Function> _colorHandler = [_parseColor, _updateColor, _stringifyColor];
 const List<Function> _lengthHandler = [_parseLength, _updateLength, _stringifyLength];
-const List<Function> _borderLengthHandler = [_parseBorderLength, _updateBorderLength, _stringifyLength];
+const List<Function> _borderLengthHandler = [_parseBorderLength, _updateBorderLength, _stringifyBorderLength];
 const List<Function> _fontWeightHandler = [_parseFontWeight, _updateFontWeight, _stringifyFontWeight];
 const List<Function> _numberHandler = [_parseNumber, _updateNumber, _stringifyNumber];
 const List<Function> _lineHeightHandler = [_parseLineHeight, _updateLineHeight, _stringifyLineHeight];
