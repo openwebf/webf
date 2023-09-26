@@ -134,7 +134,7 @@ CSSLengthValue _updateLineHeight(double oldValue, double newValue, double progre
 }
 
 Matrix4? _parseTransform(String value, RenderStyle renderStyle, String property) {
-  return CSSMatrix.computeTransformMatrix(CSSFunction.parseFunction(value), renderStyle);
+  return CSSMatrix.computeTransformMatrix(CSSTransformMixin.resolveTransform(value), renderStyle);
 }
 
 String _stringifyTransform(Matrix4 value) {
