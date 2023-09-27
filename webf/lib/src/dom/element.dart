@@ -1831,9 +1831,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     style.union(matchRule);
   }
 
+  bool _scheduledRunTransitions = false;
+  void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
+    if (_scheduledRunTransitions) return;
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      renderStyle.runTransition(propertyName, prevValue, currentValue);
+      _scheduledRunTransitions = false;
+    });
+  }
+
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue, {String? baseHref}) {
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
-      renderStyle.runTransition(propertyName, prevValue, currentValue);
+      scheduleRunTransitionAnimations(propertyName, prevValue, currentValue);
     } else {
       setRenderStyle(propertyName, currentValue, baseHref: baseHref);
     }

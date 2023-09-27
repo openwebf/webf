@@ -20,33 +20,22 @@ String _stringifyColor(Color color) {
 }
 
 Color _updateColor(Color oldColor, Color newColor, double progress, String property, RenderStyle renderStyle) {
-  int alphaDiff = newColor.alpha - oldColor.alpha;
-  int redDiff = newColor.red - oldColor.red;
-  int greenDiff = newColor.green - oldColor.green;
-  int blueDiff = newColor.blue - oldColor.blue;
-
-  int alpha = (alphaDiff * progress).toInt() + oldColor.alpha;
-  int red = (redDiff * progress).toInt() + oldColor.red;
-  int blue = (blueDiff * progress).toInt() + oldColor.blue;
-  int green = (greenDiff * progress).toInt() + oldColor.green;
-  Color color = Color.fromARGB(alpha, red, green, blue);
-
-  renderStyle.target.setRenderStyleProperty(property, CSSColor(color));
-
-  return color;
+  Color? result = Color.lerp(oldColor, newColor, progress);
+  renderStyle.target.setRenderStyleProperty(property, CSSColor(result!));
+  return result;
 }
 
-double? _parseLength(String length, RenderStyle renderStyle, String property) {
-  return CSSLength.parseLength(length, renderStyle, property).computedValue;
+CSSLengthValue _parseLength(String length, RenderStyle renderStyle, String property) {
+  return CSSLength.parseLength(length, renderStyle, property);
 }
 
 String _stringifyLength(double value) {
   return '${value}px';
 }
 
-double _updateLength(
-    double oldLengthValue, double newLengthValue, double progress, String property, CSSRenderStyle renderStyle) {
-  double value = oldLengthValue * (1 - progress) + newLengthValue * progress;
+double? _updateLength(
+    CSSLengthValue oldLengthValue, CSSLengthValue newLengthValue, double progress, String property, CSSRenderStyle renderStyle) {
+  double value = oldLengthValue.computedValue * (1 - progress) + newLengthValue.computedValue * progress;
   renderStyle.target.setRenderStyleProperty(property, CSSLengthValue(value, CSSLengthType.PX));
   return value;
 }
@@ -137,18 +126,25 @@ CSSLengthValue _updateLineHeight(double oldValue, double newValue, double progre
   return lengthValue;
 }
 
-Matrix4? _parseTransform(String value, RenderStyle renderStyle, String property) {
-  return CSSMatrix.computeTransformMatrix(CSSTransformMixin.resolveTransform(value), renderStyle);
+TransformAnimationValue _parseTransform(String value, RenderStyle renderStyle, String property) {
+  return CSSTransformMixin.resolveTransformForAnimation(value);
 }
 
 String _stringifyTransform(Matrix4 value) {
   return value.cssText();
 }
 
-Matrix4 _updateTransform(Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle) {
-  Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(begin, end, t);
-  renderStyle.transformMatrix = newMatrix4;
-  return newMatrix4;
+Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue end, double t, String property, CSSRenderStyle renderStyle) {
+  var beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle);
+  var endMatrix = CSSMatrix.computeTransformMatrix(end.value, renderStyle);
+
+  if (beginMatrix != null && endMatrix != null) {
+    Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
+    renderStyle.transformMatrix = newMatrix4;
+    return newMatrix4;
+  }
+
+  return Matrix4.identity();
 }
 
 CSSOrigin? _parseTransformOrigin(String value, RenderStyle renderStyle, String property) {
