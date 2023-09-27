@@ -33,7 +33,7 @@ String _stringifyLength(double value) {
   return '${value}px';
 }
 
-double? _updateLength(
+double _updateLength(
     double oldLengthValue, double newLengthValue, double progress, String property, CSSRenderStyle renderStyle) {
   double value = oldLengthValue * (1 - progress) + newLengthValue * progress;
   renderStyle.target.setRenderStyleProperty(property, CSSLengthValue(value, CSSLengthType.PX));
