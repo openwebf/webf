@@ -530,7 +530,7 @@ describe('custom html element', () => {
     }
   });
 
-  fit('property with underscore have no effect', () => {
+  it('property with underscore have no effect', () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);
@@ -553,7 +553,7 @@ describe('custom html element', () => {
     expect(sampleElement._self === sampleElement);
   });
 
-  fit('should work with cloneNode', () => {
+  it('should work with cloneNode', () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);
