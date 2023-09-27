@@ -25,8 +25,8 @@ Color _updateColor(Color oldColor, Color newColor, double progress, String prope
   return result;
 }
 
-CSSLengthValue _parseLength(String length, RenderStyle renderStyle, String property) {
-  return CSSLength.parseLength(length, renderStyle, property);
+double _parseLength(String length, RenderStyle renderStyle, String property) {
+  return CSSLength.parseLength(length, renderStyle, property).computedValue;
 }
 
 String _stringifyLength(double value) {
@@ -34,8 +34,8 @@ String _stringifyLength(double value) {
 }
 
 double? _updateLength(
-    CSSLengthValue oldLengthValue, CSSLengthValue newLengthValue, double progress, String property, CSSRenderStyle renderStyle) {
-  double value = oldLengthValue.computedValue * (1 - progress) + newLengthValue.computedValue * progress;
+    double oldLengthValue, double newLengthValue, double progress, String property, CSSRenderStyle renderStyle) {
+  double value = oldLengthValue * (1 - progress) + newLengthValue * progress;
   renderStyle.target.setRenderStyleProperty(property, CSSLengthValue(value, CSSLengthType.PX));
   return value;
 }
