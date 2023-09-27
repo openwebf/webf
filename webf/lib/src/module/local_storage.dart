@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:io';
 import 'dart:async';
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as path;
@@ -24,6 +25,11 @@ class LocalStorageModule extends BaseModule {
     String tmpPath = await getWebFTemporaryPath();
     Hive.init(path.join(tmpPath, 'LocalStorage'));
     String key = getBoxKey(moduleManager!);
+    File lockFile = File(path.join(tmpPath, 'LocalStorage', '$key.lock'));
+    if (await lockFile.exists()) {
+      await lockFile.delete();
+    }
+
     try {
       await Hive.openBox(key);
     } catch (e) {
