@@ -105,7 +105,7 @@ mixin CSSPositionMixin on RenderStyle {
 
   void _markNeedsSort() {
     if (renderBoxModel?.parentData is RenderLayoutParentData) {
-      RenderObject? parent = renderBoxModel!.parent;
+      RenderObject? parent = renderBoxModel!.parent as RenderObject?;
       if (parent is RenderLayoutBox) {
         parent.markChildrenNeedsSort();
       }
@@ -121,7 +121,7 @@ mixin CSSPositionMixin on RenderStyle {
     if (renderBoxModel?.parentData is RenderLayoutParentData) {
       RenderStyle renderStyle = renderBoxModel!.renderStyle;
       if (force || renderStyle.position != DEFAULT_POSITION_TYPE) {
-        RenderObject? parent = renderBoxModel!.parent;
+        RenderObject? parent = renderBoxModel!.parent as RenderObject?;
         if (parent is RenderObject) {
           parent.markNeedsLayout();
         }
@@ -140,7 +140,7 @@ mixin CSSPositionMixin on RenderStyle {
       if (renderStyle.position != DEFAULT_POSITION_TYPE ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.flex ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.inlineFlex) {
-        RenderObject? parent = renderBoxModel!.parent;
+        RenderObject? parent = renderBoxModel!.parent as RenderObject?;
         if (parent is RenderObject) {
           parent.markNeedsPaint();
         }

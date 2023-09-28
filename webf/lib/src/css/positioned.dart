@@ -14,14 +14,14 @@ import 'package:webf/rendering.dart';
 // We need to reset these offset to keep positioned elements render at their original position.
 // @NOTE: Attention that renderObjects in tree may not all subtype of RenderBoxModel, use `is` to identify.
 Offset? _getRenderPositionHolderScrollOffset(RenderPositionPlaceholder holder, RenderObject root) {
-  RenderObject? current = holder.parent;
+  RenderObject? current = holder.parent as RenderObject?;
   while (current != null && current != root) {
     if (current is RenderBoxModel) {
       if (current.clipX || current.clipY) {
         return Offset(current.scrollLeft, current.scrollTop);
       }
     }
-    current = current.parent;
+    current = current.parent as RenderObject?;
   }
   return null;
 }

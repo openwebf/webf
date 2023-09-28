@@ -373,7 +373,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       RenderObject? parentRenderObject;
       RenderBox? after;
       if (previousRenderBoxModel != null) {
-        parentRenderObject = previousRenderBoxModel.parent;
+        parentRenderObject = previousRenderBoxModel.parent as RenderObject?;
 
         if (previousRenderBoxModel.parentData is ContainerParentDataMixin<RenderBox>) {
           after = (previousRenderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;

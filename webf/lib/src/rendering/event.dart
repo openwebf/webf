@@ -14,7 +14,7 @@ mixin RenderEventListenerMixin on RenderBox {
   HandleGetEventTarget? getEventTarget;
 
   GestureDispatcher? get gestureDispatcher {
-    RenderObject? p = parent;
+    RenderObject? p = parent as RenderObject?;
     while(p != null) {
       if (p is RenderViewportBox) {
         return p.gestureDispatcher;
@@ -23,7 +23,7 @@ mixin RenderEventListenerMixin on RenderBox {
         return p.gestureDispatcher;
       }
 
-      p = p.parent;
+      p = p.parent as RenderObject?;
     }
     return null;
   }

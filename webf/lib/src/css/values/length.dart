@@ -188,7 +188,7 @@ class CSSLengthValue {
         RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
-        RenderObject? containerRenderBox = renderBoxModel?.parent;
+        RenderObject? containerRenderBox = renderBoxModel?.parent as RenderObject?;
         CSSRenderStyle? parentRenderStyle;
         while (containerRenderBox != null) {
           if (containerRenderBox is RenderBoxModel && (_isPercentageRelativeContainer(containerRenderBox))) {
@@ -199,7 +199,7 @@ class CSSLengthValue {
                 : containerRenderBox.renderStyle;
             break;
           }
-          containerRenderBox = containerRenderBox.parent;
+          containerRenderBox = containerRenderBox.parent as RenderObject?;
         }
 
         // Percentage relative width priority: logical width > renderer width
