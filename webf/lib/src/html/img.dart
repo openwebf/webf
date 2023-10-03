@@ -13,6 +13,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
 
@@ -411,6 +412,7 @@ class ImageElement extends Element {
     // Make sure all style and properties are ready before decode begins.
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       ImageProvider? provider = _currentImageProvider;
+      FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
       if (updateImageProvider || provider == null) {
         // Image should be resized based on different ratio according to object-fit value.
         BoxFit objectFit = renderStyle.objectFit;
@@ -419,14 +421,13 @@ class ImageElement extends Element {
         ownerDocument.incrementLoadEventDelayCount();
 
         provider = _currentImageProvider = BoxFitImage(
-          boxFit: objectFit,
-          url: _resolvedUri!,
-          loadImage: _obtainImage,
-          onImageLoad: _onImageLoad,
-        );
+            boxFit: objectFit,
+            url: _resolvedUri!,
+            loadImage: _obtainImage,
+            onImageLoad: _onImageLoad,
+            devicePixelRatio: ownerFlutterView.devicePixelRatio);
       }
 
-      FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
       // Try to make sure that this image can be encoded into a smaller size.
       int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite
           ? (width * ownerFlutterView.devicePixelRatio).toInt()
@@ -444,9 +445,10 @@ class ImageElement extends Element {
         PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
       }
 
-      ImageConfiguration imageConfiguration = _currentImageConfig = _shouldScaling && cachedWidth != null && cachedHeight != null
-          ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
-          : ImageConfiguration.empty;
+      ImageConfiguration imageConfiguration = _currentImageConfig =
+          _shouldScaling && cachedWidth != null && cachedHeight != null
+              ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
+              : ImageConfiguration.empty;
       _updateSourceStream(provider.resolve(imageConfiguration));
 
       _isImageEncoding = false;
@@ -545,11 +547,8 @@ class ImageElement extends Element {
         renderReplaced
           ?..isInLazyRendering = true
           // Expand the intersecting area to preload images before they become visible to users.
-          ..intersectPadding = Rect.fromLTRB(
-              ownerFlutterView.physicalSize.width,
-              ownerFlutterView.physicalSize.height,
-              ownerFlutterView.physicalSize.width,
-              ownerFlutterView.physicalSize.height)
+          ..intersectPadding = Rect.fromLTRB(ownerFlutterView.physicalSize.width, ownerFlutterView.physicalSize.height,
+              ownerFlutterView.physicalSize.width, ownerFlutterView.physicalSize.height)
           // When detach renderer, all listeners will be cleared.
           ..addIntersectionChangeListener(_handleIntersectionChange);
       } else {
@@ -567,7 +566,7 @@ class ImageElement extends Element {
     // Increment count when request.
     ownerDocument.incrementRequestCount();
 
-    Uint8List data = await request._obtainImage(contextId);
+    Uint8List data = await request.obtainImage(ownerDocument.controller);
 
     // Decrement count when response.
     ownerDocument.decrementRequestCount();
@@ -669,10 +668,12 @@ class ImageRequest {
   bool get available =>
       state == _ImageRequestState.completelyAvailable || state == _ImageRequestState.partiallyAvailable;
 
-  Future<Uint8List> _obtainImage(int? contextId) async {
-    final WebFBundle bundle = WebFBundle.fromUrl(currentUri.toString());
+  Future<Uint8List> obtainImage(WebFController controller) async {
+    final WebFBundle bundle =
+        controller.getPreloadBundleFromUrl(currentUri.toString()) ?? WebFBundle.fromUrl(currentUri.toString());
 
-    await bundle.resolve(contextId);
+    await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
+    await bundle.obtainData();
 
     if (!bundle.isResolved) {
       throw FlutterError('Failed to load $currentUri');
