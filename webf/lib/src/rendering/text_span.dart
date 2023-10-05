@@ -204,7 +204,7 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
   }
 
   @override
-  int get hashCode => hashValues(super.hashCode, alignment, baseline);
+  int get hashCode => Object.hash(super.hashCode, alignment, baseline);
 
   /// Returns the text span that contains the given position in the text.
   @override
@@ -217,4 +217,7 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
   bool debugAssertIsValid() {
     return true;
   }
+
+  @override
+  bool visitDirectChildren(InlineSpanVisitor visitor) => true;
 }

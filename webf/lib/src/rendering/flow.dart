@@ -4,7 +4,6 @@
  */
 import 'dart:math' as math;
 
-import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -647,10 +646,6 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     minContentWidth =  lineBoxes.mainAxisAutoSize;
     minContentHeight = lineBoxes.crossAxisAutoSize;
-
-    //TODO 需要考虑 重新设置跟上面的值
-    // minContentWidth = _getMainAxisAutoSize(_runMetrics);
-    // minContentHeight = _getCrossAxisAutoSize(_runMetrics);
   }
 
   // Set size when layout has no child.
@@ -681,12 +676,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     // when its width is not specified.
     bool isInlineBlock = renderStyle.effectiveDisplay == CSSDisplay.inlineBlock;
     if (isInlineBlock) {
-      for (int i = 0; i < _runMetrics.length; ++i) {
-        final _RunMetrics metrics = _runMetrics[i];
-        final Map<int?, RenderBox> runChildren = metrics.runChildren;
-        final List<RenderBox> runChildrenList = runChildren.values.toList();
-
-        for (RenderBox child in runChildrenList) {
+      for (int i = 0; i < lineBoxes.lines.length; ++i) {
+        final LogicLineBox metrics = lineBoxes.lines[i];
+        for (LogicInlineBox box in metrics.inlineBoxes) {
+          RenderBox child = box.renderObject;
           if (child is RenderBoxModel) {
             bool isChildBlockLevel = child.renderStyle.effectiveDisplay == CSSDisplay.block ||
                 child.renderStyle.effectiveDisplay == CSSDisplay.flex;
