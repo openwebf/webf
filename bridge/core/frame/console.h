@@ -18,6 +18,7 @@ class Console final {
                              const AtomicString& level,
                              ExceptionState& exception);
   static void __webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state);
+  static bool __webf_is_proxy__(ExecutingContext* context, const ScriptValue& log, ExceptionState& exception_state);
 };
 
 }  // namespace webf

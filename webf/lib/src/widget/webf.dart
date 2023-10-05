@@ -68,6 +68,17 @@ class WebF extends StatefulWidget {
   /// The initial cookies to set.
   final List<Cookie>? initialCookies;
 
+  /// If true the content should size itself to avoid the onscreen keyboard
+  /// whose height is defined by the ambient [FlutterView]'s
+  /// [FlutterView.viewInsets] `bottom` property.
+  ///
+  /// For example, if there is an onscreen keyboard displayed above the widget,
+  /// the view can be resized to avoid overlapping the keyboard, which prevents
+  /// widgets inside the view from being obscured by the keyboard.
+  ///
+  /// Defaults to true.
+  final bool resizeToAvoidBottomInsets;
+
   WebFController? get controller {
     return WebFController.getControllerOfName(shortHash(this));
   }
@@ -130,7 +141,8 @@ class WebF extends StatefulWidget {
       // Callback functions when loading Javascript scripts failed.
       this.onLoadError,
       this.animationController,
-      this.onJSError})
+      this.onJSError,
+      this.resizeToAvoidBottomInsets = true})
       : super(key: key);
 
   @override
@@ -221,6 +233,7 @@ class WebFState extends State<WebF> with RouteAware {
           onCustomElementAttached: onCustomElementWidgetAdd,
           onCustomElementDetached: onCustomElementWidgetRemove,
           children: customElementWidgets.toList(),
+          resizeToAvoidBottomInsets: widget.resizeToAvoidBottomInsets,
           buildContext: context,
         ),
       ),
@@ -232,6 +245,14 @@ class WebFState extends State<WebF> with RouteAware {
     super.didChangeDependencies();
     if (widget.routeObserver != null) {
       widget.routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    }
+  }
+
+  @override
+  void didUpdateWidget(WebF oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.resizeToAvoidBottomInsets != widget.resizeToAvoidBottomInsets) {
+      widget.controller?.resizeToAvoidBottomInsets = widget.resizeToAvoidBottomInsets;
     }
   }
 
@@ -294,6 +315,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
   final OnCustomElementAttached onCustomElementAttached;
   final OnCustomElementDetached onCustomElementDetached;
   final FlutterView currentView;
+  final bool resizeToAvoidBottomInsets;
 
   // Creates a widget that visually hides its child.
   WebFRootRenderObjectWidget(
@@ -303,6 +325,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
     required this.currentView,
     required this.onCustomElementAttached,
     required this.onCustomElementDetached,
+    this.resizeToAvoidBottomInsets = true,
     required BuildContext buildContext
   })  : _webfWidget = widget,
         _buildContext = buildContext,
@@ -335,6 +358,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         initialCookies: _webfWidget.initialCookies,
         uriParser: _webfWidget.uriParser,
         ownerFlutterView: currentView,
+        resizeToAvoidBottomInsets: resizeToAvoidBottomInsets,
         buildContext: _buildContext);
 
     (context as _WebFRenderObjectElement).controller = controller;

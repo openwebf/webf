@@ -408,17 +408,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       if (isChildNeedsLayout) {
-        // Inflate constraints of percentage renderBoxModel to force it layout after percentage resolved
-        // cause Flutter will skip child layout if its constraints not changed between two layouts.
-        if (child is RenderBoxModel && needsRelayout) {
-          childConstraints = BoxConstraints(
-            minWidth: childConstraints.maxWidth != double.infinity ? childConstraints.maxWidth : 0,
-            maxWidth: double.infinity,
-            minHeight: childConstraints.maxHeight != double.infinity ? childConstraints.maxHeight : 0,
-            maxHeight: double.infinity,
-          );
-        }
-
         // If mainAxisExtent is not infinity and child's constraints.maxWidth == mainAxisExtent,
         // first layout text child need use current line left extent to do first layout,
         // if happen line break next step will use mainAxisExtent layout twice,
@@ -691,32 +680,33 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Element of inline-block will shrink to its maximum children size
     // when its width is not specified.
     bool isInlineBlock = renderStyle.effectiveDisplay == CSSDisplay.inlineBlock;
-    if( !(isInlineBlock && constraints.maxWidth.isInfinite)) {
-      return;
-    }
+    if (isInlineBlock) {
+      for (int i = 0; i < _runMetrics.length; ++i) {
+        final _RunMetrics metrics = _runMetrics[i];
+        final Map<int?, RenderBox> runChildren = metrics.runChildren;
+        final List<RenderBox> runChildrenList = runChildren.values.toList();
 
-    for (int i = 0; i < lineBoxes.lines.length; ++i) {
-      final LogicLineBox metrics = lineBoxes.lines[i];
-      for (LogicInlineBox box in metrics.inlineBoxes) {
-        RenderBox child = box.renderObject;
-        if (child is RenderBoxModel) {
-          bool isChildBlockLevel = child.renderStyle.effectiveDisplay == CSSDisplay.block
-              || child.renderStyle.effectiveDisplay == CSSDisplay.flex;
-          // Element of display block will stretch to the width of its container
-          // when its width is not specified.
-          if (isChildBlockLevel && child.constraints.maxWidth.isInfinite) {
-            double contentBoxWidth = isScrollingContentBox ? boxSize!.width : renderStyle.contentBoxWidth!;
-            // No need to layout child when its width is identical to parent's width.
-            if (child.renderStyle.borderBoxWidth == contentBoxWidth) {
-              continue;
+        for (RenderBox child in runChildrenList) {
+          if (child is RenderBoxModel) {
+            bool isChildBlockLevel = child.renderStyle.effectiveDisplay == CSSDisplay.block ||
+                child.renderStyle.effectiveDisplay == CSSDisplay.flex;
+            // Element of display block will stretch to the width of its container
+            // when its width is not specified.
+            if (isChildBlockLevel) {
+              double contentBoxWidth = isScrollingContentBox ? boxSize!.width : renderStyle.contentBoxWidth!;
+              // No need to layout child when its width is identical to parent's width.
+              if (child.renderStyle.borderBoxWidth == contentBoxWidth) {
+                continue;
+              }
+              double? borderBoxLogicWidth = child.renderStyle.borderBoxLogicalWidth;
+              BoxConstraints childConstraints = BoxConstraints(
+                minWidth: borderBoxLogicWidth ?? contentBoxWidth,
+                maxWidth: borderBoxLogicWidth ?? contentBoxWidth,
+                minHeight: child.constraints.minHeight,
+                maxHeight: child.constraints.maxHeight,
+              );
+              child.layout(childConstraints, parentUsesSize: true);
             }
-            BoxConstraints childConstraints = BoxConstraints(
-              minWidth: contentBoxWidth,
-              maxWidth: contentBoxWidth,
-              minHeight: child.constraints.minHeight,
-              maxHeight: child.constraints.maxHeight,
-            );
-            child.layout(childConstraints, parentUsesSize: true);
           }
         }
       }

@@ -635,6 +635,7 @@ class WebFViewController implements WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         document.visibilityChange(VisibilityState.visible);
         break;
+      case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
         document.visibilityChange(VisibilityState.hidden);
         break;
@@ -649,18 +650,21 @@ class WebFViewController implements WidgetsBindingObserver {
   void didChangeLocales(List<Locale>? locales) {
   }
 
-  ui.ViewPadding? _prevViewInsets;
   static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
 
   @override
   void didChangeMetrics() {
-    double bottomInset = rootController.ownerFlutterView.viewInsets.bottom / rootController.ownerFlutterView.devicePixelRatio;
-    _prevViewInsets ??= rootController.ownerFlutterView.viewInsets;
+    final ownerView = rootController.ownerFlutterView;
 
-    if (_prevViewInsets!.bottom > rootController.ownerFlutterView.viewInsets.bottom) {
-      // Hide keyboard
-      viewport.bottomInset = bottomInset;
+    final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
+    final double bottomInsets;
+    if (resizeToAvoidBottomInsets) {
+      bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
     } else {
+      bottomInsets = 0;
+    }
+
+    if (resizeToAvoidBottomInsets) {
       bool shouldScrollByToCenter = false;
       Element? focusedElement = document.focusedElement;
       double scrollOffset = 0;
@@ -669,20 +673,19 @@ class WebFViewController implements WidgetsBindingObserver {
         if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
-          if (focusOffset.dy > viewportHeight - bottomInset - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
+          if (focusOffset.dy > viewportHeight - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
             scrollOffset =
-                focusOffset.dy - (viewportHeight - bottomInset) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
+                focusOffset.dy - (viewportHeight - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }
       // Show keyboard
-      viewport.bottomInset = bottomInset;
       if (shouldScrollByToCenter) {
         window.scrollBy(0, scrollOffset, true);
       }
     }
-    _prevViewInsets = rootController.ownerFlutterView.viewInsets;
+    viewport.bottomInset = bottomInsets;
   }
 
   @override
@@ -795,6 +798,7 @@ class WebFController {
   final List<Cookie>? initialCookies;
 
   final ui.FlutterView ownerFlutterView;
+  bool resizeToAvoidBottomInsets;
   final BuildContext buildContext;
 
   String? _name;
@@ -837,6 +841,7 @@ class WebFController {
     this.uriParser,
     this.initialCookies,
     required this.ownerFlutterView,
+    this.resizeToAvoidBottomInsets = true,
     required this.buildContext
   })  : _name = name,
         _entrypoint = entrypoint,

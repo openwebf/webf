@@ -5,7 +5,7 @@ on: [workflow_dispatch, pull_request]
 env:
   nodeVersion: "16"
   cmakeVersion: "3.22.x"
-  flutter310: "3.10.5"
+  flutter310: "3.13.5"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -59,7 +59,7 @@ jobs:
     - run: ENABLE_ASAN=true npm run build:bridge:linux
     - run: node scripts/run_bridge_unit_test.js
 
-  webf_unit_test_310:
+  webf_unit_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -72,7 +72,7 @@ jobs:
     - run: flutter doctor -v
     - run: cd webf && flutter test
 
-  integration_test_f310:
+  integration_test:
     runs-on: self-hosted
     needs: [ setup, build_bridge ]
     strategy:

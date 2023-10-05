@@ -7,6 +7,7 @@ import 'dart:ui' as ui show LineMetrics, Gradient, Shader, TextBox, TextHeightBe
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/rendering/text.dart' show InlineBoxConstraints, MultiLineBoxConstraints, RenderTextBox, webfTextMaxLines;
@@ -49,8 +50,7 @@ class WebFRenderTextLine {
 class WebFRenderParagraph extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TextParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, TextParentData>,
-        RelayoutWhenSystemFontsChangeMixin {
+        RenderInlineChildrenContainerDefaults, RelayoutWhenSystemFontsChangeMixin {
   /// Creates a paragraph render object.
   ///
   /// The [text], [textAlign], [textDirection], [overflow], [softWrap], and
@@ -317,37 +317,14 @@ class WebFRenderParagraph extends RenderBox
   bool hitTestSelf(Offset position) => true;
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
-    RenderBox? child = firstChild;
-    while (child != null) {
-      final TextParentData textParentData = child.parentData as TextParentData;
-      final Matrix4 transform = Matrix4.translationValues(
-        textParentData.offset.dx,
-        textParentData.offset.dy,
-        0.0,
-      )..scale(
-          textParentData.scale,
-          textParentData.scale,
-          textParentData.scale,
-        );
-      final bool isHit = result.addWithPaintTransform(
-        transform: transform,
-        position: position!,
-        hitTest: (BoxHitTestResult result, Offset transformed) {
-          assert(() {
-            final Offset manualPosition = (position - textParentData.offset) / textParentData.scale!;
-            return (transformed.dx - manualPosition.dx).abs() < precisionErrorTolerance &&
-                (transformed.dy - manualPosition.dy).abs() < precisionErrorTolerance;
-          }());
-          return child!.hitTest(result, position: transformed);
-        },
-      );
-      if (isHit) {
-        return true;
-      }
-      child = childAfter(child);
+  bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
+    final TextPosition textPosition = _textPainter.getPositionForOffset(position);
+    final Object? span = _textPainter.text!.getSpanForPosition(textPosition);
+    if (span is HitTestTarget) {
+      result.add(HitTestEntry(span));
+      return true;
     }
-    return false;
+    return hitTestInlineChildren(result, position);
   }
 
   @override

@@ -160,7 +160,7 @@ class RenderSliverRepaintProxy extends RenderProxyBox {
   void detach() {
     super.detach();
     if(child != null) {
-      RenderObject? parentRenderObject = child!.parent as RenderObject?;
+      RenderObject? parentRenderObject = child!.parent;
       if(parentRenderObject is RenderObjectWithChildMixin) {
         parentRenderObject.child = null;
       }
