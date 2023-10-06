@@ -14,6 +14,7 @@ Ensure that you select the correct Flutter version that matches both WebF and Fl
 | >= 0.12.0 < 0.14.0 | 3.0.x           |
 | >= 0.14.0 < 0.15.0 | 3.3.x and 3.7.x |
 | >= 0.15.0 < 0.16.0 | 3.10.x          |
+| >= 0.16.0 < 0.17.0 | 3.13.x          |
 
 :::tip
 
@@ -21,7 +22,7 @@ For more info how to install the Flutter environment, please refer to https://do
 
 :::
 
-In this tutorial, we will use webf `0.14.0` and flutter `3.7.3` as an example.
+In this tutorial, we will use webf `0.15.1` and flutter `3.10.0` as an example.
 
 :::info
 
@@ -39,8 +40,7 @@ Add the following code to your package's pubspec.yaml file and run `flutter pub 
 
 ```yaml
 dependencies:
-  webf: ^0.14.0
-  webf_websocket: ^1.3.0
+  webf: ^0.15.1
 ```
 
 Now in your Dart code:
@@ -48,14 +48,12 @@ Now in your Dart code:
 ```dart
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
-import 'package:webf_websocket/webf_websocket.dart';
 ```
 
 And initialize the WebFWebSocket plugin before initialize flutter framework.
 
 ```dart
 void main() {
-  WebFWebSocket.initialize();
   runApp(MyApp());
 }
 ```
