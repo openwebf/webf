@@ -250,7 +250,7 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   double _calculateMainAxisMarginForJustContentType(double margin) {
-    if(renderStyle.justifyContent == JustifyContent.spaceBetween && margin < 0) {
+    if (renderStyle.justifyContent == JustifyContent.spaceBetween && margin < 0) {
       return margin / 2;
     }
     return margin;
@@ -543,7 +543,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (_isHorizontalFlexDirection) {
       return childSize!.height + marginVertical;
     } else {
-      if(child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
+      if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
         return _horizontalMarginNegativeSet(childSize!.width, child);
       }
       return childSize!.width + marginHorizontal;
@@ -561,21 +561,21 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
   }
 
-  double _horizontalMarginNegativeSet(double baseSize ,RenderBoxModel box,{ bool isHorizontal = false}) {
+  double _horizontalMarginNegativeSet(double baseSize, RenderBoxModel box, {bool isHorizontal = false}) {
     CSSRenderStyle boxStyle = box.renderStyle;
     double? marginLeft = boxStyle.marginLeft.computedValue;
     double? marginRight = boxStyle.marginRight.computedValue;
     double? marginTop = boxStyle.marginTop.computedValue;
     double? marginBottom = boxStyle.marginBottom.computedValue;
-    if(isHorizontal) {
-      if(box is RenderLayoutBox && box.isNegativeMarginChangeHSize) {
+    if (isHorizontal) {
+      if (box is RenderLayoutBox && box.isNegativeMarginChangeHSize) {
         baseSize += marginLeft > 0 ? marginLeft : 0;
         baseSize += marginRight > 0 ? marginRight : 0;
         return baseSize;
       }
       return baseSize + box.renderStyle.margin.horizontal;
     }
-    if(box is RenderLayoutBox && box.isMarginNegativeVertical()) {
+    if (box is RenderLayoutBox && box.isMarginNegativeVertical()) {
       baseSize += marginTop > 0 ? marginTop : 0;
       baseSize += marginBottom > 0 ? marginBottom : 0;
       return baseSize;
@@ -605,7 +605,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     double baseSize = _getMainSize(child, shouldUseIntrinsicMainSize: shouldUseIntrinsicMainSize);
     if (_isHorizontalFlexDirection) {
-      if(child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
+      if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
         return _horizontalMarginNegativeSet(baseSize, child);
       }
       return baseSize + marginHorizontal;
@@ -1289,8 +1289,9 @@ class RenderFlexLayout extends RenderLayoutBox {
         //TODO 为处理margin负数的情况 待补充check-child.isMarginNegativeChangeSize()
         if (_needToStretchChildCrossSize(child)) {
           childStretchedCrossSize = _getChildStretchedCrossSize(child, metrics.crossAxisExtent, runBetweenSpace);
-          if(child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
-            double childCrossAxisMargin = _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
+          if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
+            double childCrossAxisMargin =
+                _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
             childStretchedCrossSize += childCrossAxisMargin.abs();
           }
           childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
@@ -1426,10 +1427,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     BoxConstraints oldConstraints = child.constraints;
-    double maxConstraintWidth =
-        child.hasOverrideContentLogicalWidth ? math.max(0, child.renderStyle.borderBoxLogicalWidth!) : oldConstraints.maxWidth;
-    double maxConstraintHeight =
-        child.hasOverrideContentLogicalHeight ? math.max(0, child.renderStyle.borderBoxLogicalHeight!) : oldConstraints.maxHeight;
+    double maxConstraintWidth = child.hasOverrideContentLogicalWidth
+        ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
+        : oldConstraints.maxWidth;
+    double maxConstraintHeight = child.hasOverrideContentLogicalHeight
+        ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
+        : oldConstraints.maxHeight;
 
     double minConstraintWidth =
         oldConstraints.minWidth > maxConstraintWidth ? maxConstraintWidth : oldConstraints.minWidth;
@@ -2139,8 +2142,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runBetweenSpace,
   ) {
     bool isFlexWrap = renderStyle.flexWrap == FlexWrap.wrap || renderStyle.flexWrap == FlexWrap.wrapReverse;
-    double childCrossAxisMargin =  _horizontalMarginNegativeSet(0, child, isHorizontal: !_isHorizontalFlexDirection);
-        _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
+    double childCrossAxisMargin = _horizontalMarginNegativeSet(0, child, isHorizontal: !_isHorizontalFlexDirection);
+    _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
     double maxCrossSizeConstraints = _isHorizontalFlexDirection ? constraints.maxHeight : constraints.maxWidth;
     double flexLineCrossSize = _getFlexLineCrossSize(child, runCrossAxisExtent, runBetweenSpace);
     // Should subtract margin when stretch flex item.

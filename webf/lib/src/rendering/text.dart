@@ -50,7 +50,6 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   String get data => _data;
 
-
   bool isEndWithSpace(String str) {
     return str.endsWith(WHITE_SPACE_CHAR) ||
         str.endsWith(NEW_LINE_CHAR) ||
@@ -163,7 +162,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   int? get _maxLines {
     int? maxParentLineLimit;
     int? lineClamp = renderStyle.lineClamp;
-    if(constraints is MultiLineBoxConstraints) {
+    if (constraints is MultiLineBoxConstraints) {
       maxParentLineLimit = (constraints as MultiLineBoxConstraints).maxLines;
     }
 
@@ -172,11 +171,13 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     if (lineClamp != null || maxParentLineLimit != null) {
       int? realLineLimit = lineClamp ?? maxParentLineLimit;
 
-      realLineLimit = (maxParentLineLimit!=null && realLineLimit!=null) ?
-      min(realLineLimit, maxParentLineLimit) : realLineLimit;
+      realLineLimit = (maxParentLineLimit != null && realLineLimit != null)
+          ? min(realLineLimit, maxParentLineLimit)
+          : realLineLimit;
 
-      if(constraints is InlineBoxConstraints
-          && (constraints as InlineBoxConstraints).isDynamicMaxLines && realLineLimit! < webfTextMaxLines) {
+      if (constraints is InlineBoxConstraints &&
+          (constraints as InlineBoxConstraints).isDynamicMaxLines &&
+          realLineLimit! < webfTextMaxLines) {
         realLineLimit = realLineLimit + 1;
       }
       return realLineLimit;
@@ -204,6 +205,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   int get lines => _renderParagraph.lineMetrics.length;
 
   bool get happenVisualOverflow => _renderParagraph.happenVisualOverflow;
+
   // RenderTextBox content's first line will join a LogicLineBox which have some InlineBoxes as children,
   bool happenLineJoin() {
     if (firstLineIndent > 0 &&
@@ -310,9 +312,12 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
     // Text will not overflow from container, so it can inherit
     // constraints from parents
-    return InlineBoxConstraints(maxLines: maxLinesFromParent,
-        minWidth: 0, maxWidth: maxConstraintWidth,
-        minHeight: 0, maxHeight: double.infinity);
+    return InlineBoxConstraints(
+        maxLines: maxLinesFromParent,
+        minWidth: 0,
+        maxWidth: maxConstraintWidth,
+        minHeight: 0,
+        maxHeight: double.infinity);
   }
 
   // Empty string is the minimum size character, use it as the base size
@@ -406,9 +411,11 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       double defaultHeight = 12;
 
       paragraph.setPlaceholderDimensions([
-        PlaceholderDimensions(size:
-        Size(firstLineIndent, defaultHeight),
-            alignment: PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic, baselineOffset: defaultHeight)
+        PlaceholderDimensions(
+            size: Size(firstLineIndent, defaultHeight),
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            baselineOffset: defaultHeight)
       ]);
     }
   }
@@ -501,6 +508,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     }
   }
 }
+
 class RenderTextLineBoxes {
   List<LogicTextInlineBox> inlineBoxList = [];
 
@@ -550,27 +558,49 @@ class MultiLineBoxConstraints extends BoxConstraints {
   final int? maxLines;
   final int? joinLineNum;
   final bool? overflow;
-  MultiLineBoxConstraints.from(int? maxLines, int? joinLine, bool? overflow, BoxConstraints constraints
-      ) : maxLines = maxLines ?? webfTextMaxLines,
+
+  MultiLineBoxConstraints.from(int? maxLines, int? joinLine, bool? overflow, BoxConstraints constraints)
+      : maxLines = maxLines ?? webfTextMaxLines,
         joinLineNum = joinLine ?? 0,
         overflow = overflow ?? false,
-        super(minWidth: constraints.minWidth,
-          maxWidth: constraints.maxWidth,
-          minHeight: constraints.minHeight,
-          maxHeight: constraints.maxHeight);
+        super(
+            minWidth: constraints.minWidth,
+            maxWidth: constraints.maxWidth,
+            minHeight: constraints.minHeight,
+            maxHeight: constraints.maxHeight);
 
   MultiLineBoxConstraints({
     int? maxLines,
     int? joinLine,
     bool? overflow,
-    double minWidth = 0.0,
-    double maxWidth = double.infinity,
-    double minHeight = 0.0,
-    double maxHeight = double.infinity,
-  }) : maxLines = maxLines ?? webfTextMaxLines, joinLineNum = joinLine ?? 0,
-        overflow = overflow ?? false,
-        super(minWidth: minWidth, maxWidth: maxWidth, minHeight: minHeight, maxHeight: maxHeight);
+    super.minWidth,
+    super.maxWidth,
+    super.minHeight,
+    super.maxHeight,
+  })  : maxLines = maxLines ?? webfTextMaxLines,
+        joinLineNum = joinLine ?? 0,
+        overflow = overflow ?? false;
 
+  @override
+  String toString() {
+    final String annotation = isNormalized ? '' : '; NOT NORMALIZED';
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'MultiLineBoxConstraints(biggest$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow))';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity && minHeight == 0 && maxHeight == double.infinity) {
+      return 'MultiLineBoxConstraints(unconstrained$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow))';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'MultiLineBoxConstraints($width, $height$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow))';
+  }
 }
 
 class InlineBoxConstraints extends MultiLineBoxConstraints {
@@ -578,18 +608,17 @@ class InlineBoxConstraints extends MultiLineBoxConstraints {
   final double lineMainExtent;
   final bool jumpPaint;
 
-  InlineBoxConstraints({
-    this.leftWidth = 0.0,
-    this.lineMainExtent = 0.0,
-    this.jumpPaint = false,
-    int? maxLines,
-    int? joinLine,
-    bool? overflow,
-    double minWidth = 0.0,
-    double maxWidth = double.infinity,
-    double minHeight = 0.0,
-    double maxHeight = double.infinity,
-  }) : super(maxLines: maxLines, overflow: overflow,joinLine: joinLine,minWidth: minWidth, maxWidth: maxWidth, minHeight: minHeight, maxHeight: maxHeight);
+  InlineBoxConstraints(
+      {this.leftWidth = 0.0,
+      this.lineMainExtent = 0.0,
+      this.jumpPaint = false,
+      super.maxLines,
+      super.joinLine,
+      super.overflow,
+      super.minWidth,
+      super.maxWidth,
+      super.minHeight,
+      super.maxHeight});
 
   bool get isDynamicMaxLines {
     return leftWidth > 0 && joinLineNum != null && joinLineNum! > 0;
@@ -610,7 +639,26 @@ class InlineBoxConstraints extends MultiLineBoxConstraints {
   }
 
   @override
-  // TODO: implement hashCode
-  int get hashCode => hashValues(leftWidth, lineMainExtent, minWidth, maxWidth, minHeight, maxHeight);
-}
+  String toString() {
+    final String annotation = isNormalized ? '' : '; NOT NORMALIZED';
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'InlineBoxConstraints(biggest$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow), leftWidth($leftWidth), lineMainExtent($lineMainExtent), jumpPaint($jumpPaint))';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity && minHeight == 0 && maxHeight == double.infinity) {
+      return 'InlineBoxConstraints(unconstrained$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow), leftWidth($leftWidth), lineMainExtent($lineMainExtent), jumpPaint($jumpPaint))';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
 
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'InlineBoxConstraints($width, $height$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow), leftWidth($leftWidth), lineMainExtent($lineMainExtent), jumpPaint($jumpPaint))';
+  }
+
+  @override
+  int get hashCode => Object.hash(leftWidth, lineMainExtent, minWidth, maxWidth, minHeight, maxHeight);
+}
