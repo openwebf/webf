@@ -445,7 +445,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       if (!happenJumpPaint &&
-          ((child is RenderFlowLayout && isInlineLevel(child) && (child).lineBoxes.happyVisualOverflow()) ||
+          ((child is RenderFlowLayout && isInlineLevel(child) && (child).lineBoxes.happenVisualOverflow()) ||
               (child is RenderTextBox && child.happenVisualOverflow))) {
         happenJumpPaint = true;
       }
@@ -1243,7 +1243,7 @@ class RenderLineBoxes {
     return _lineBoxList.isNotEmpty ? _lineBoxList[0] : null;
   }
 
-  bool happyVisualOverflow() {
+  bool happenVisualOverflow() {
     return _lineBoxList.where((element) => element.happenVisualOverflow()).isNotEmpty;
   }
 
