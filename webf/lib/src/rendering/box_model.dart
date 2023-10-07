@@ -972,7 +972,24 @@ class RenderBoxModel extends RenderBox
         renderStyle.effectiveBorderRightWidth.computedValue +
         renderStyle.paddingLeft.computedValue +
         renderStyle.paddingRight.computedValue;
-    double maxConstraintWidth = renderStyle.borderBoxLogicalWidth ?? double.infinity;
+
+    double? parentBoxContentConstraintsWidth;
+    if (parent is RenderBoxModel && this is RenderLayoutBox) {
+      RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
+      parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
+
+      // When inner minimal content size are larger that parent's constraints.
+      if (parentBoxContentConstraintsWidth < minConstraintWidth) {
+        parentBoxContentConstraintsWidth = null;
+      }
+
+      // FlexItems with flex:none won't inherit parent box's constraints
+      if (parent is RenderFlexLayout && (parent as RenderFlexLayout).isFlexNone(this)) {
+        parentBoxContentConstraintsWidth = null;
+      }
+    }
+
+    double maxConstraintWidth = renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight = renderStyle.effectiveBorderTopWidth.computedValue +

@@ -61,7 +61,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       // pre-wrap  Preserve  Preserve  Wrap     Hang
       // pre-line  Preserve  Collapse  Wrap     Remove
       // break-spaces  Preserve  Preserve  Wrap  Wrap
-      CSSRenderStyle parentRenderStyle = (parent as RenderLayoutBox).renderStyle;
+      CSSRenderStyle parentRenderStyle = (parent as RenderBoxModel).renderStyle;
       WhiteSpace whiteSpace = parentRenderStyle.whiteSpace;
       if (whiteSpace == WhiteSpace.pre ||
           whiteSpace == WhiteSpace.preLine ||

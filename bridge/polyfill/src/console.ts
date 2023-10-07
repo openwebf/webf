@@ -4,7 +4,7 @@
 */
 
 // https://console.spec.whatwg.org/
-import { webfPrint } from './bridge';
+import { webfPrint, webfIsProxy } from './bridge';
 
 const SEPARATOR = ' ';
 const INTERPOLATE = /%[sdifoO]/g;
@@ -115,6 +115,10 @@ function inspect(obj: any, within?: boolean): string {
       result += '/';
     }
     return result + '>';
+  }
+
+  if (webfIsProxy(obj)) {
+    return 'Proxy()';
   }
 
   var kind = Object.prototype.toString.call(obj).slice(8, -1);

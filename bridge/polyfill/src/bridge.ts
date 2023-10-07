@@ -20,3 +20,7 @@ export const webfLocationReload = __webf_location_reload__;
 
 declare const __webf_print__: (log: string, level?: string) => void;
 export const webfPrint = __webf_print__;
+
+declare const __webf_is_proxy__: (obj: any) => boolean;
+
+export const webfIsProxy = __webf_is_proxy__;

@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "console.h"
+#include <quickjs/quickjs.h>
 #include <sstream>
 #include "built_in_string.h"
 #include "foundation/logging.h"
@@ -25,6 +26,10 @@ void Console::__webf_print__(ExecutingContext* context, const AtomicString& log,
   std::string buffer = log.ToStdString(context->ctx());
   stream << buffer;
   printLog(context, stream, "info", nullptr);
+}
+
+bool Console::__webf_is_proxy__(ExecutingContext* context, const ScriptValue& log, ExceptionState& exception_state) {
+  return JS_IsProxy(log.QJSValue());
 }
 
 }  // namespace webf
