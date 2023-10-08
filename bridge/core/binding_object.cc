@@ -79,7 +79,8 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   NativeValue return_value = Native_NewNull();
   NativeValue native_method =
       NativeValueConverter<NativeTypeString>::ToNativeValue(GetExecutingContext()->ctx(), method);
-  binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
+  binding_object_->invoke_bindings_methods_from_native(GetExecutingContext()->contextId(), binding_object_,
+                                                       &return_value, &native_method, argc, argv);
   return return_value;
 }
 
@@ -96,7 +97,8 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 
   NativeValue return_value = Native_NewNull();
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
-  binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
+  binding_object_->invoke_bindings_methods_from_native(GetExecutingContext()->contextId(), binding_object_,
+                                                       &return_value, &native_method, argc, argv);
   return return_value;
 }
 
@@ -141,7 +143,7 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
   ExceptionState exception_state;
 
   for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative(exception_state));
+    arguments.emplace_back(argv[i].ToNative(ctx, exception_state));
   }
 
   if (exception_state.HasException()) {
@@ -215,7 +217,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   ExceptionState exception_state;
 
   for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative(exception_state));
+    arguments.emplace_back(argv[i].ToNative(ctx, exception_state));
   }
 
   event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(),

@@ -373,7 +373,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       RenderObject? parentRenderObject;
       RenderBox? after;
       if (previousRenderBoxModel != null) {
-        parentRenderObject = previousRenderBoxModel.parent as RenderObject?;
+        parentRenderObject = previousRenderBoxModel.parent;
 
         if (previousRenderBoxModel.parentData is ContainerParentDataMixin<RenderBox>) {
           after = (previousRenderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
@@ -836,8 +836,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool shouldMutateBeforeElement =
         previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
-    previousPseudoElement ??= PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
-    previousPseudoElement.ownerDocument = ownerDocument;
+    previousPseudoElement ??=
+        PseudoElement(kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
     previousPseudoElement.style
         .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
 
@@ -942,7 +942,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() async {
     renderStyle.detach();
     style.dispose();
     attributes.clear();
@@ -950,6 +950,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _attributeProperties.clear();
     flutterWidget = null;
     flutterWidgetElement = null;
+    ownerDocument.inactiveRenderObjects.add(renderer);
+    _beforeElement?.dispose();
+    _beforeElement = null;
+    _afterElement?.dispose();
+    _afterElement = null;
     super.dispose();
   }
 
@@ -1927,7 +1932,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
-    BoundingClientRect boundingClientRect = BoundingClientRect.zero;
+    BoundingClientRect boundingClientRect = BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
       flushLayout();
       RenderBoxModel sizedBox = renderBoxModel!;
@@ -1941,6 +1946,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
         boundingClientRect = BoundingClientRect(
+            context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
             x: offset.dx,
             y: offset.dy,
             width: size.width,

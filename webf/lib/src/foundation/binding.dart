@@ -9,14 +9,16 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/launcher.dart';
 
-typedef BindingObjectOperation = void Function(BindingObject bindingObject);
+typedef BindingObjectOperation = void Function(WebFViewController? view, BindingObject bindingObject);
 
 class BindingContext {
   final int contextId;
+  final WebFViewController view;
   final Pointer<NativeBindingObject> pointer;
 
-  const BindingContext(this.contextId, this.pointer);
+  const BindingContext(this.view, this.contextId, this.pointer);
 }
 
 typedef BindingPropertyGetter = dynamic Function();
@@ -62,11 +64,13 @@ abstract class BindingObject<T> extends Iterable<T> {
   final BindingContext? _context;
 
   int? get contextId => _context?.contextId;
+  final WebFViewController? _ownerView;
+  WebFViewController get ownerView => _ownerView!;
 
   Pointer<NativeBindingObject>? get pointer => _context?.pointer;
 
-  BindingObject([BindingContext? context]) : _context = context {
-    _bind();
+  BindingObject([BindingContext? context]) : _context = context, _ownerView = context?.view {
+    _bind(_ownerView);
     initializeProperties(_properties);
     initializeMethods(_methods);
 
@@ -106,7 +110,7 @@ abstract class BindingObject<T> extends Iterable<T> {
     toNativeValue(method, 'syncPropertiesAndMethods');
     f(pointer!, returnValue, method, 3, arguments, {});
     malloc.free(arguments);
-    return fromNativeValue(returnValue) == true;
+    return fromNativeValue(ownerView, returnValue) == true;
   }
 
   final SplayTreeMap<String, BindingObjectProperty> _properties = SplayTreeMap();
@@ -119,15 +123,15 @@ abstract class BindingObject<T> extends Iterable<T> {
   void initializeMethods(Map<String, BindingObjectMethod> methods);
 
   // Bind dart side object method to receive invoking from native side.
-  void _bind() {
+  void _bind(WebFViewController? ownerView) {
     if (bind != null) {
-      bind!(this);
+      bind!(ownerView, this);
     }
   }
 
-  void _unbind() {
+  void _unbind(WebFViewController? ownerView) {
     if (unbind != null) {
-      unbind!(this);
+      unbind!(ownerView, this);
     }
   }
 
@@ -191,8 +195,8 @@ abstract class BindingObject<T> extends Iterable<T> {
   }
 
   @mustCallSuper
-  Future<void> dispose() async {
-    _unbind();
+  void dispose() async {
+    _unbind(_ownerView);
     _properties.clear();
     _methods.clear();
   }
@@ -274,15 +278,17 @@ dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args
 }
 
 // This function receive calling from binding side.
-void invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindingObject,
+void invokeBindingMethodFromNativeImpl(int contextId, Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
-  dynamic method = fromNativeValue(nativeMethod);
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  dynamic method = fromNativeValue(controller.view, nativeMethod);
   List<dynamic> values = List.generate(argc, (i) {
     Pointer<NativeValue> nativeValue = argv.elementAt(i);
-    return fromNativeValue(nativeValue);
+    return fromNativeValue(controller.view, nativeValue);
   });
 
-  BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
+  BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
+
   var result = null;
   try {
     // Method is binding call method operations from internal.
@@ -290,7 +296,7 @@ void invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindin
       // Get and setter ops
       result = bindingCallMethodDispatchTable[method](bindingObject, values);
     } else {
-      BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
+      BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
       // invokeBindingMethod directly
       Stopwatch? stopwatch;
       if (isEnabledLog) {

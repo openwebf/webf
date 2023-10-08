@@ -167,6 +167,7 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!HandleException(&obj))
     return false;
   val = JS_EvalFunction(script_state_.ctx(), obj);
+  DrainPendingPromiseJobs();
   if (!HandleException(&val))
     return false;
   JS_FreeValue(script_state_.ctx(), val);

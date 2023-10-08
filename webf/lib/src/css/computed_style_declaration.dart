@@ -17,9 +17,9 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
-  ComputedCSSStyleDeclaration(this._element, this._pseudoElementName)
-      : _pointer = allocateNewBindingObject(),
-        super();
+  ComputedCSSStyleDeclaration(BindingContext context, this._element, this._pseudoElementName)
+      : _pointer = context.pointer,
+        super(context);
 
   @override
   get pointer => _pointer;
