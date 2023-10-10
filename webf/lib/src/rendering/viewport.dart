@@ -2,6 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ui';
+import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
@@ -14,11 +16,8 @@ class RenderViewportBox extends RenderBox
         RenderEventListenerMixin,
         ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
         RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
-  RenderViewportBox({
-    required Size viewportSize,
-    this.background,
-    required this.controller
-  })  : _viewportSize = viewportSize,
+  RenderViewportBox({required Size? viewportSize, this.background, required this.controller})
+      : _viewportSize = viewportSize,
         super();
 
   WebFController controller;
@@ -36,12 +35,16 @@ class RenderViewportBox extends RenderBox
 
   Color? background;
 
-  Size _viewportSize;
+  Size? _viewportSize;
 
-  Size get viewportSize => _viewportSize;
+  Size get viewportSize {
+    if (_viewportSize != null) return _viewportSize!;
+    if (hasSize) return size;
+    return Size.zero;
+  }
 
-  set viewportSize(Size value) {
-    if (value != _viewportSize) {
+  set viewportSize(Size? value) {
+    if (value != null && value != _viewportSize) {
       _viewportSize = value;
       markNeedsLayout();
     }
@@ -60,19 +63,33 @@ class RenderViewportBox extends RenderBox
 
   @override
   void performLayout() {
-    double width = _viewportSize.width;
-    double height = _viewportSize.height - _bottomInset;
-    if (height.isNegative || height.isNaN) {
-      height = _viewportSize.height;
+    if (_viewportSize != null) {
+      double width = _viewportSize!.width;
+      double height = _viewportSize!.height - _bottomInset;
+      if (height.isNegative || height.isNaN) {
+        height = _viewportSize!.height;
+      }
+      Size preferredSize = Size(width, height);
+      size = constraints.constrain(preferredSize);
+    } else {
+      if (constraints.biggest.isFinite) {
+        size = constraints.biggest;
+      } else {
+        FlutterView currentView = controller.ownerFlutterView;
+        Size preferredSize = Size(
+            math.min(constraints.maxWidth, currentView.physicalSize.width / currentView.devicePixelRatio),
+            math.min(constraints.maxHeight, currentView.physicalSize.height / currentView.devicePixelRatio));
+        size = constraints.constrain(preferredSize);
+      }
     }
-    size = constraints.constrain(Size(width, height));
 
     RenderObject? child = firstChild;
     while (child != null) {
-      final ContainerBoxParentData<RenderObject> childParentData = child.parentData as ContainerBoxParentData<RenderObject>;
+      final ContainerBoxParentData<RenderObject> childParentData =
+          child.parentData as ContainerBoxParentData<RenderObject>;
 
       RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
-      child.layout(rootRenderLayoutBox.getConstraints().tighten(width: width, height: height));
+      child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
 
       assert(child.parentData == childParentData);
       child = childParentData.nextSibling;
@@ -83,7 +100,7 @@ class RenderViewportBox extends RenderBox
   GestureDispatcher? get gestureDispatcher => controller.gestureDispatcher;
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     return defaultHitTestChildren(result, position: position);
   }
 
