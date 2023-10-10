@@ -175,7 +175,7 @@ abstract class ContainerNode extends Node {
     // Not remove node type which is not present in RenderObject tree such as Comment
     // Only append node types which is visible in RenderObject tree
     // Only remove childNode when it has parent
-    if (child.isRendererAttached) {
+    if (child.isRendererAttachedToSegmentTree) {
       child.unmountRenderObject();
     }
 

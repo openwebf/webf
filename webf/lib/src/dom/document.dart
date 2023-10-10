@@ -378,9 +378,6 @@ class Document extends ContainerNode {
         // Should scrollable.
         element.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
         element.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
-        // Init with viewport size.
-        element.renderStyle.width = CSSLengthValue(viewport.viewportSize.width, CSSLengthType.PX);
-        element.renderStyle.height = CSSLengthValue(viewport.viewportSize.height, CSSLengthType.PX);
         _visibilityState = VisibilityState.visible;
       } else {
         // Detach document element.
@@ -389,6 +386,13 @@ class Document extends ContainerNode {
     }
 
     _documentElement = element;
+  }
+
+  void initializeRootElementSize() {
+    assert(documentElement != null);
+    assert(viewport!.hasSize);
+    documentElement!.renderStyle.width = CSSLengthValue(viewport!.viewportSize.width, CSSLengthType.PX);
+    documentElement!.renderStyle.height = CSSLengthValue(viewport!.viewportSize.height, CSSLengthType.PX);
   }
 
   @override
