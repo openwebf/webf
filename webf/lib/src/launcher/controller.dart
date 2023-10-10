@@ -17,7 +17,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
-    show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
+    show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController, BuildContext, View;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -134,23 +134,25 @@ class WebFViewController implements WidgetsBindingObserver {
   double _viewportWidth;
   double get viewportWidth => _viewportWidth;
   set viewportWidth(double value) {
-    if (value != _viewportWidth) {
+    if (value != _viewportWidth && value != null) {
       _viewportWidth = value;
-      viewport.viewportSize = ui.Size(_viewportWidth, _viewportHeight);
+      viewport.viewportSize = ui.Size(_viewportWidth!, _viewportHeight ?? 0.0);
     }
   }
 
-  double _viewportHeight;
-  double get viewportHeight => _viewportHeight;
-  set viewportHeight(double value) {
-    if (value != _viewportHeight) {
+  double? _viewportHeight;
+  double? get viewportHeight => _viewportHeight;
+  set viewportHeight(double? value) {
+    if (value != _viewportHeight && value != null) {
       _viewportHeight = value;
-      viewport.viewportSize = ui.Size(_viewportWidth, _viewportHeight);
+      viewport.viewportSize = ui.Size(_viewportWidth ?? 0.0, _viewportHeight!);
     }
   }
 
   Color? background;
   WebFThread runningThread;
+
+  bool inited = false;
 
   WebFViewController(this._viewportWidth, this._viewportHeight,
       {this.background,
@@ -166,7 +168,7 @@ class WebFViewController implements WidgetsBindingObserver {
       viewport = originalViewport;
     } else {
       viewport = RenderViewportBox(
-          background: background, viewportSize: ui.Size(viewportWidth, viewportHeight), controller: rootController);
+          background: background, viewportSize: (viewportWidth != null && viewportHeight != null ) ? ui.Size(viewportWidth!, viewportHeight!) : null, controller: rootController);
     }
   }
 
@@ -191,10 +193,10 @@ class WebFViewController implements WidgetsBindingObserver {
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
   }
 
-  void _postFrameCallback(Duration timeStamp) {
+  void flushPendingCommandsPerFrame() {
     if (disposed) return;
     flushUICommand(this, window.pointer!);
-    SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
+    SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
 
   final Map<int, BindingObject> _nativeObjects = {};
@@ -291,6 +293,8 @@ class WebFViewController implements WidgetsBindingObserver {
         document.addEventListener(EVENT_DRAG, (Event event) async => listener.onDrag!(event as GestureEvent));
       }
     }
+
+    inited = true;
   }
 
   void initWindow(WebFViewController view, Pointer<NativeBindingObject> pointer) {
@@ -674,6 +678,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!inited) return;
     switch (state) {
       case AppLifecycleState.resumed:
         document.visibilityChange(VisibilityState.visible);
@@ -707,7 +712,7 @@ class WebFViewController implements WidgetsBindingObserver {
       bottomInsets = 0;
     }
 
-    if (resizeToAvoidBottomInsets) {
+    if (resizeToAvoidBottomInsets && viewportHeight != null) {
       bool shouldScrollByToCenter = false;
       Element? focusedElement = document.focusedElement;
       double scrollOffset = 0;
@@ -716,10 +721,10 @@ class WebFViewController implements WidgetsBindingObserver {
         if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
-          if (focusOffset.dy > viewportHeight - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
+          if (focusOffset.dy > viewportHeight! - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
             scrollOffset =
-                focusOffset.dy - (viewportHeight - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
+                focusOffset.dy - (viewportHeight! - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }
@@ -849,8 +854,9 @@ class WebFController {
     if (value == null) return;
     if (_name != null) {
       double? contextId = _nameIdMap[_name];
+      if (contextId == null) return;
       _nameIdMap.remove(_name);
-      _nameIdMap[value] = contextId!;
+      _nameIdMap[value] = contextId;
     }
     _name = value;
   }
@@ -877,10 +883,10 @@ class WebFController {
 
   Completer controlledInitCompleter = Completer();
 
-  WebFController(
+  WebFController(BuildContext context, {
     String? name,
-    double viewportWidth,
-    double viewportHeight, {
+    double? viewportWidth,
+    double? viewportHeight,
     bool showPerformanceOverlay = false,
     bool enableDebug = false,
     bool autoExecuteEntrypoint = true,
@@ -888,7 +894,7 @@ class WebFController {
     GestureListener? gestureListener,
     WebFNavigationDelegate? navigationDelegate,
     WebFMethodChannel? methodChannel,
-    WebFBundle? entrypoint,
+    WebFBundle? bundle,
     WebFThread? runningThread,
     this.onCustomElementAttached,
     this.onCustomElementDetached,
@@ -901,12 +907,12 @@ class WebFController {
     this.uriParser,
     this.preloadedBundles,
     this.initialCookies,
-    required this.ownerFlutterView,
     this.resizeToAvoidBottomInsets = true,
   })  : _name = name,
-        _entrypoint = entrypoint,
+        _entrypoint = bundle,
+        _gestureListener = gestureListener,
         runningThread = runningThread ?? DedicatedThread(),
-        _gestureListener = gestureListener {
+        ownerFlutterView = View.of(context) {
 
     _initializePreloadBundle();
 
@@ -930,10 +936,10 @@ class WebFController {
 
       _module = WebFModuleController(this, contextId);
 
-      if (entrypoint != null) {
-        HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
-        historyModule.add(entrypoint);
-      }
+    if (bundle != null) {
+      HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+      historyModule.add(bundle);
+    }
 
       assert(!_controllerMap.containsKey(contextId), 'found exist contextId of WebFController, contextId: $contextId');
       _controllerMap[contextId] = this;
@@ -1080,6 +1086,30 @@ class WebFController {
     if (devToolsService != null) {
       devToolsService!.didReload();
     }
+  }
+
+  bool _preloaded = false;
+  bool get preloaded => _preloaded;
+
+  Future<void> preload(WebFBundle bundle) async {
+    Completer completer = Completer();
+    _preloaded = true;
+    // Update entrypoint.
+    _entrypoint = bundle;
+    _addHistory(bundle);
+
+    flushUICommand(view);
+
+    await executeEntrypoint();
+
+    view.flushPendingCommandsPerFrame();
+    SchedulerBinding.instance.scheduleFrame();
+
+    view.document.addEventListener(EVENT_DOM_CONTENT_LOADED, (event) {
+      print('dom content loaded');
+      completer.complete();
+    });
+    return completer.future;
   }
 
   String? getResourceContent(String? url) {
