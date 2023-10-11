@@ -4,6 +4,12 @@ This guide will walk you through the process of creating a HelloWorld App with V
 
 By the end of this tutorial, your app will be functioning on both desktop and mobile platforms with the same behavior.
 
+:::caution
+
+Since Flutter for Web is not compatible with WebF, ensure that you set your running platform to either mobile or desktop systems, rather than Chrome.
+
+:::
+
 ## Prerequisites
 
 To use WebF, you need a Flutter environment. Each version of Flutter has its own range of compatible WebF versions,
