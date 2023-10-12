@@ -124,8 +124,8 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
   if (parsed_bytecodes == nullptr) {
     result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
   } else {
-    JSValue byte_object = JS_Eval(script_state_.ctx(), code, code_len, sourceURL,
-                                  JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+    JSValue byte_object =
+        JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
     if (JS_IsException(byte_object)) {
       HandleException(&byte_object);
       return false;

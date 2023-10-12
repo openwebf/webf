@@ -105,8 +105,7 @@ bool WebFPage::evaluateScript(const char* script,
                               int startLine) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url,
-                                      startLine);
+  return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
 }
 
 void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
