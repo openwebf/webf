@@ -41,8 +41,8 @@ class ScriptRunner {
   static Future<void> _evaluateScriptBundle(int contextId, WebFBundle bundle, {bool async = false}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
-      final String contentInString = await resolveStringFromData(bundle.data!, preferSync: !async);
-      bool result = await evaluateScripts(contextId, contentInString, url: bundle.url);
+      assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
+      bool result = await evaluateScripts(contextId, bundle.data!, url: bundle.url);
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');
       }

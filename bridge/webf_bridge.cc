@@ -64,14 +64,15 @@ void disposePage(void* dart_isolate_context, void* page_) {
 }
 
 int8_t evaluateScripts(void* page_,
-                       SharedNativeString* code,
+                       const char* code,
+                       uint64_t code_len,
                        uint8_t** parsed_bytecodes,
                        uint64_t* bytecode_len,
                        const char* bundleFilename,
                        int32_t startLine) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  return page->evaluateScript(reinterpret_cast<webf::SharedNativeString*>(code), parsed_bytecodes, bytecode_len,
+  return page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len,
                               bundleFilename, startLine)
              ? 1
              : 0;

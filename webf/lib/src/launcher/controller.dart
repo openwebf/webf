@@ -281,7 +281,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void evaluateJavaScripts(String code) async {
     assert(!_disposed, 'WebF have already disposed');
-    await evaluateScripts(_contextId, code);
+    List<int> data = utf8.encode(code);
+    await evaluateScripts(_contextId, Uint8List.fromList(data));
   }
 
   void _setupObserver() {
@@ -1130,16 +1131,21 @@ class WebFController {
 
       Uint8List data = entrypoint.data!;
       if (entrypoint.isJavascript) {
+        assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
+        Stopwatch stopwatch = Stopwatch()..start();
         // Prefer sync decode in loading entrypoint.
-        await evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
+        await evaluateScripts(contextId, data, url: url);
+        print('cost: ${stopwatch.elapsedMilliseconds}ms');
       } else if (entrypoint.isBytecode) {
         evaluateQuickjsByteCode(contextId, data);
       } else if (entrypoint.isHTML) {
-        parseHTML(contextId, await resolveStringFromData(data));
+        assert(isValidUTF8String(data), 'The HTML codes should be in UTF-8 encoding format');
+        parseHTML(contextId, data);
       } else if (entrypoint.contentType.primaryType == 'text') {
         // Fallback treating text content as JavaScript.
         try {
-          await evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
+          assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
+          await evaluateScripts(contextId, data, url: url);
         } catch (error) {
           print('Fallback to execute JavaScript content of $url');
           rethrow;
