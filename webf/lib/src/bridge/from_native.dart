@@ -31,9 +31,10 @@ Pointer<NativeString> stringToNativeString(String string) {
 }
 
 Pointer<Uint8> uint8ListToPointer(Uint8List data) {
-  Pointer<Uint8> ptr = malloc.allocate<Uint8>(sizeOf<Uint8>() * data.length);
-  Uint8List dataView = ptr.asTypedList(data.length);
+  Pointer<Uint8> ptr = malloc.allocate<Uint8>(sizeOf<Uint8>() * data.length + 1);
+  Uint8List dataView = ptr.asTypedList(data.length + 1);
   dataView.setAll(0, data);
+  dataView[data.length] = 0;
   return ptr;
 }
 
