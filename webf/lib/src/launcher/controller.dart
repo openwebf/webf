@@ -10,6 +10,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui' as ui;
+import 'dart:ui';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
@@ -116,6 +117,31 @@ abstract class DevToolsService {
   }
 }
 
+enum WebFLoadingMode {
+  /// The default loading mode.
+  /// All associated page resources begin loading once the WebF widget is mounted into the Flutter tree.
+  standard,
+
+  /// This mode preloads remote resources into memory and begins execution when the WebF widget is mounted into the Flutter tree.
+  /// If the entrypoint is an HTML file, the HTML will be parsed, and its elements will be organized into a DOM tree.
+  /// CSS files loaded through `<style>` and `<link>` elements will be parsed and the calculated styles applied to the corresponding DOM elements.
+  /// However, JavaScript code will not be executed in this mode.
+  /// If the entrypoint is a JavaScript file, WebF only do loading until the WebF widget is mounted into the Flutter tree.
+  /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
+  /// It's safe and recommended to use this mode for all types of pages.
+  preloading,
+
+  /// The `aggressive` mode is a step further than `preloading`, cutting down up to 90% of loading time for optimal performance.
+  /// This mode simulates the instantaneous response of native Flutter pages but may require modifications in the existing web codes for compatibility.
+  /// In this mode, all remote resources are loaded and executed similarly to the standard mode, but with an offline-like behavior.
+  /// Given that JavaScript is executed in this mode, properties like `clientWidth` and `clientHeight` from the viewModule always return 0. This is because
+  /// no layout or paint processes occur during preRendering.
+  /// If your application depends on viewModule properties, ensure that the related code is placed within the `load` and `DOMContentLoaded` event callbacks of the window.
+  /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
+  /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
+  preRendering
+}
+
 // An kraken View Controller designed for multiple kraken view control.
 class WebFViewController implements WidgetsBindingObserver {
   WebFController rootController;
@@ -128,33 +154,14 @@ class WebFViewController implements WidgetsBindingObserver {
 
   List<Cookie>? initialCookies;
 
-  // final List<List<UICommand>> pendingUICommands = [];
-  // final UICommandIterator pendingUICommands = UICommandIterator();
-
-  double _viewportWidth;
-  double get viewportWidth => _viewportWidth;
-  set viewportWidth(double value) {
-    if (value != _viewportWidth && value != null) {
-      _viewportWidth = value;
-      viewport.viewportSize = ui.Size(_viewportWidth!, _viewportHeight ?? 0.0);
-    }
-  }
-
-  double? _viewportHeight;
-  double? get viewportHeight => _viewportHeight;
-  set viewportHeight(double? value) {
-    if (value != _viewportHeight && value != null) {
-      _viewportHeight = value;
-      viewport.viewportSize = ui.Size(_viewportWidth ?? 0.0, _viewportHeight!);
-    }
-  }
+  final List<List<UICommand>> pendingUICommands = [];
 
   Color? background;
   WebFThread runningThread;
 
-  bool inited = false;
+  bool firstLoad = true;
 
-  WebFViewController(this._viewportWidth, this._viewportHeight,
+  WebFViewController(
       {this.background,
       this.enableDebug = false,
       required this.rootController,
@@ -164,12 +171,6 @@ class WebFViewController implements WidgetsBindingObserver {
       this.initialCookies,
       // Viewport won't change when kraken page reload, should reuse previous page's viewportBox.
       RenderViewportBox? originalViewport}) {
-    if (originalViewport != null) {
-      viewport = originalViewport;
-    } else {
-      viewport = RenderViewportBox(
-          background: background, viewportSize: (viewportWidth != null && viewportHeight != null ) ? ui.Size(viewportWidth!, viewportHeight!) : null, controller: rootController);
-    }
   }
 
   Future<void> initialize() async {
@@ -190,7 +191,7 @@ class WebFViewController implements WidgetsBindingObserver {
       flushUICommand(this, nullptr);
     });
 
-    SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
+    SchedulerBinding.instance.addPostFrameCallback(flushPendingCommandsPerFrame);
   }
 
   void flushPendingCommandsPerFrame() {
@@ -261,14 +262,13 @@ class WebFViewController implements WidgetsBindingObserver {
 
   bool get disposed => _disposed;
 
-  late RenderViewportBox viewport;
+  RenderViewportBox? viewport;
   late Document document;
   late Window window;
 
   void initDocument(view, Pointer<NativeBindingObject> pointer) {
     document = Document(
       BindingContext(view, _contextId, pointer),
-      viewport: viewport,
       controller: rootController,
       gestureListener: gestureListener,
       initialCookies: initialCookies,
@@ -294,7 +294,7 @@ class WebFViewController implements WidgetsBindingObserver {
       }
     }
 
-    inited = true;
+    firstLoad = false;
   }
 
   void initWindow(WebFViewController view, Pointer<NativeBindingObject> pointer) {
@@ -374,12 +374,14 @@ class WebFViewController implements WidgetsBindingObserver {
   VoidCallback? _originalOnPlatformBrightnessChanged;
 
   void _registerPlatformBrightnessChange() {
-    _originalOnPlatformBrightnessChanged = rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged;
+    _originalOnPlatformBrightnessChanged =
+        rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged;
     rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = _onPlatformBrightnessChanged;
   }
 
   void _unregisterPlatformBrightnessChange() {
-    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = _originalOnPlatformBrightnessChanged;
+    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged =
+        _originalOnPlatformBrightnessChanged;
     _originalOnPlatformBrightnessChanged = null;
   }
 
@@ -431,7 +433,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void createElementNS(Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
     assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
-    document.createElementNS(uri, tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
+    document.createElementNS(
+        uri, tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createTextNode(Pointer<NativeBindingObject> nativePtr, String data) {
@@ -446,7 +449,8 @@ class WebFViewController implements WidgetsBindingObserver {
     document.createDocumentFragment(BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
-  void addEvent(Pointer<NativeBindingObject> nativePtr, String eventType, {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
+  void addEvent(Pointer<NativeBindingObject> nativePtr, String eventType,
+      {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
     if (!hasBindingObject(nativePtr)) return;
     EventTarget? target = getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
@@ -498,7 +502,8 @@ class WebFViewController implements WidgetsBindingObserver {
   ///   <!-- beforeend -->
   /// </p>
   /// <!-- afterend -->
-  void insertAdjacentNode(Pointer<NativeBindingObject> selfPointer, String position, Pointer<NativeBindingObject> newPointer) {
+  void insertAdjacentNode(
+      Pointer<NativeBindingObject> selfPointer, String position, Pointer<NativeBindingObject> newPointer) {
     assert(hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
     assert(hasBindingObject(selfPointer), 'newTargetId: $newPointer position: $position');
 
@@ -520,10 +525,7 @@ class WebFViewController implements WidgetsBindingObserver {
         if (targetParentNode!.lastChild == target) {
           targetParentNode.appendChild(newNode);
         } else {
-          targetParentNode.insertBefore(
-            newNode,
-            target.nextSibling!
-          );
+          targetParentNode.insertBefore(newNode, target.nextSibling!);
         }
         break;
     }
@@ -606,7 +608,8 @@ class WebFViewController implements WidgetsBindingObserver {
     if (target is Element) {
       target.style.flushPendingProperties();
     } else {
-      debugPrint('Only element has style, try flushPendingStyleProperties from Node(#${Pointer.fromAddress(address)}).');
+      debugPrint(
+          'Only element has style, try flushPendingStyleProperties from Node(#${Pointer.fromAddress(address)}).');
     }
   }
 
@@ -624,6 +627,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   // Hooks for DevTools.
   VoidCallback? debugDOMTreeChanged;
+
   void _debugDOMTreeChanged() {
     VoidCallback? f = debugDOMTreeChanged;
     if (f != null) {
@@ -642,7 +646,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController.load(rootController.getPreloadBundleFromUrl(action.target) ?? WebFBundle.fromUrl(action.target));
+          await rootController
+              .load(rootController.getPreloadBundleFromUrl(action.target) ?? WebFBundle.fromUrl(action.target));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
@@ -668,17 +673,16 @@ class WebFViewController implements WidgetsBindingObserver {
     malloc.free(pointer);
   }
 
-  RenderObject getRootRenderObject() {
-    return viewport;
+  RenderBox getRootRenderObject() {
+    return document.documentElement!.renderer!;
   }
 
   @override
-  void didChangeAccessibilityFeatures() {
-  }
+  void didChangeAccessibilityFeatures() {}
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!inited) return;
+    if (firstLoad) return;
     switch (state) {
       case AppLifecycleState.resumed:
         document.visibilityChange(VisibilityState.visible);
@@ -695,62 +699,57 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   @override
-  void didChangeLocales(List<Locale>? locales) {
-  }
+  void didChangeLocales(List<Locale>? locales) {}
 
   static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
 
   @override
   void didChangeMetrics() {
-    final ownerView = rootController.ownerFlutterView;
-
-    final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
-    final double bottomInsets;
-    if (resizeToAvoidBottomInsets) {
-      bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
-    } else {
-      bottomInsets = 0;
-    }
-
-    if (resizeToAvoidBottomInsets && viewportHeight != null) {
-      bool shouldScrollByToCenter = false;
-      Element? focusedElement = document.focusedElement;
-      double scrollOffset = 0;
-      if (focusedElement != null) {
-        RenderBox? renderer = focusedElement.renderer;
-        if (renderer != null && renderer.attached && renderer.hasSize) {
-          Offset focusOffset = renderer.localToGlobal(Offset.zero);
-          // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
-          if (focusOffset.dy > viewportHeight! - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
-            shouldScrollByToCenter = true;
-            scrollOffset =
-                focusOffset.dy - (viewportHeight! - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
-          }
-        }
-      }
-      // Show keyboard
-      if (shouldScrollByToCenter) {
-        window.scrollBy(0, scrollOffset, true);
-      }
-    }
-    viewport.bottomInset = bottomInsets;
+    // final ownerView = rootController.ownerFlutterView;
+    //
+    // final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
+    // final double bottomInsets;
+    // if (resizeToAvoidBottomInsets) {
+    //   bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
+    // } else {
+    //   bottomInsets = 0;
+    // }
+    //
+    // if (resizeToAvoidBottomInsets && viewportHeight != null) {
+    //   bool shouldScrollByToCenter = false;
+    //   Element? focusedElement = document.focusedElement;
+    //   double scrollOffset = 0;
+    //   if (focusedElement != null) {
+    //     RenderBox? renderer = focusedElement.renderer;
+    //     if (renderer != null && renderer.attached && renderer.hasSize) {
+    //       Offset focusOffset = renderer.localToGlobal(Offset.zero);
+    //       // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
+    //       if (focusOffset.dy > viewportHeight! - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
+    //         shouldScrollByToCenter = true;
+    //         scrollOffset =
+    //             focusOffset.dy - (viewportHeight! - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
+    //       }
+    //     }
+    //   }
+    //   // Show keyboard
+    //   if (shouldScrollByToCenter) {
+    //     window.scrollBy(0, scrollOffset, true);
+    //   }
+    // }
+    // viewport.bottomInset = bottomInsets;
   }
 
   @override
-  void didChangePlatformBrightness() {
-  }
+  void didChangePlatformBrightness() {}
 
   @override
-  void didChangeTextScaleFactor() {
-  }
+  void didChangeTextScaleFactor() {}
 
   @override
-  void didHaveMemoryPressure() {
-  }
+  void didHaveMemoryPressure() {}
 
   @override
   Future<bool> didPopRoute() async {
-
     return false;
   }
 
@@ -773,6 +772,7 @@ class WebFViewController implements WidgetsBindingObserver {
 // An controller designed to control kraken's functional modules.
 class WebFModuleController with TimerMixin, ScheduleFrameMixin {
   late ModuleManager _moduleManager;
+
   ModuleManager get moduleManager => _moduleManager;
 
   WebFModuleController(WebFController controller, double contextId) {
@@ -795,6 +795,7 @@ class WebFController {
   static final Map<String, double> _nameIdMap = {};
 
   UriParser? uriParser;
+  WebFLoadingMode mode = WebFLoadingMode.standard;
 
   static WebFController? getControllerOfJSContextId(double? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
@@ -834,7 +835,9 @@ class WebFController {
   WebFMethodChannel? get methodChannel => _methodChannel;
 
   JSLogHandler? _onJSLog;
+
   JSLogHandler? get onJSLog => _onJSLog;
+
   set onJSLog(JSLogHandler? jsLogHandler) {
     _onJSLog = jsLogHandler;
   }
@@ -849,7 +852,9 @@ class WebFController {
   bool resizeToAvoidBottomInsets;
 
   String? _name;
+
   String? get name => _name;
+
   set name(String? value) {
     if (value == null) return;
     if (_name != null) {
@@ -865,9 +870,11 @@ class WebFController {
 
   final List<WebFBundle>? preloadedBundles;
   Map<String, WebFBundle>? _preloadBundleIndex;
+
   WebFBundle? getPreloadBundleFromUrl(String url) {
     return _preloadBundleIndex?[url];
   }
+
   void _initializePreloadBundle() {
     if (preloadedBundles == null) return;
     _preloadBundleIndex = {};
@@ -882,6 +889,8 @@ class WebFController {
   final WebFThread runningThread;
 
   Completer controlledInitCompleter = Completer();
+
+  bool externalController;
 
   WebFController(BuildContext context, {
     String? name,
@@ -907,21 +916,19 @@ class WebFController {
     this.uriParser,
     this.preloadedBundles,
     this.initialCookies,
+    this.externalController = true,
     this.resizeToAvoidBottomInsets = true,
   })  : _name = name,
         _entrypoint = bundle,
         _gestureListener = gestureListener,
         runningThread = runningThread ?? DedicatedThread(),
         ownerFlutterView = View.of(context) {
-
     _initializePreloadBundle();
 
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
 
     _view = WebFViewController(
-      viewportWidth,
-      viewportHeight,
       background: background,
       enableDebug: enableDebug,
       rootController: this,
@@ -1003,11 +1010,11 @@ class WebFController {
       _module.dispose();
       await _view.dispose();
       // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
-      _view.viewport.reload();
+      _view.viewport?.reload();
 
       double oldId = _view.contextId;
 
-      _view = WebFViewController(view.viewportWidth, view.viewportHeight,
+      _view = WebFViewController(
           background: _view.background,
           enableDebug: _view.enableDebug,
           rootController: this,
@@ -1044,6 +1051,7 @@ class WebFController {
   }
 
   String get url => _url ?? '';
+
   Uri? get uri => _uri;
 
   _addHistory(WebFBundle bundle) {
@@ -1089,27 +1097,50 @@ class WebFController {
   }
 
   bool _preloaded = false;
+
   bool get preloaded => _preloaded;
 
-  Future<void> preload(WebFBundle bundle) async {
+  /// Preloads remote resources into memory and begins execution when the WebF widget is mounted into the Flutter tree.
+  /// If the entrypoint is an HTML file, the HTML will be parsed, and its elements will be organized into a DOM tree.
+  /// CSS files loaded through `<style>` and `<link>` elements will be parsed and the calculated styles applied to the corresponding DOM elements.
+  /// However, JavaScript code will not be executed in this mode.
+  /// If the entrypoint is a JavaScript file, WebF only do loading until the WebF widget is mounted into the Flutter tree.
+  /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
+  /// It's safe and recommended to use this mode for all types of pages.
+  Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize}) async {
     Completer completer = Completer();
     _preloaded = true;
+
     // Update entrypoint.
     _entrypoint = bundle;
     _addHistory(bundle);
 
+    mode = WebFLoadingMode.preloading;
+
+    // Initialize document, window and the documentElement.
     flushUICommand(view);
 
+    // Set the status value for preloading.
+    view.document.preloadStatus = PreloadingStatus.preloading;
+
+    // Manually initialize the root element and create renderObjects for each elements.
+    view.document.documentElement!.applyStyle(view.document.documentElement!.style);
+    view.document.documentElement!.createRenderer();
+    view.document.documentElement!.ensureChildAttached();
+
+    // Evaluate the entry point, and loading the stylesheets and scripts.
     await executeEntrypoint();
-
     view.flushPendingCommandsPerFrame();
-    SchedulerBinding.instance.scheduleFrame();
 
-    view.document.addEventListener(EVENT_DOM_CONTENT_LOADED, (event) {
-      print('dom content loaded');
+    view.document.onPreloadingFinished = () {
       completer.complete();
-    });
+    };
+
     return completer.future;
+  }
+
+  Future<void> preRendering(WebFBundle bundle) async {
+
   }
 
   String? getResourceContent(String? url) {
@@ -1121,6 +1152,7 @@ class WebFController {
   }
 
   bool _paused = false;
+
   bool get paused => _paused;
 
   final List<PendingCallback> _pendingCallbacks = [];
@@ -1139,17 +1171,18 @@ class WebFController {
   // Pause all timers and callbacks if kraken page are invisible.
   void pause() {
     _paused = true;
-    module.pauseInterval();
+    module.pauseTimer();
   }
 
   // Resume all timers and callbacks if kraken page now visible.
   void resume() {
     _paused = false;
     flushPendingCallbacks();
-    module.resumeInterval();
+    module.resumeTimer();
   }
 
   bool _disposed = false;
+
   bool get disposed => _disposed;
   Future<void> dispose() async {
     _module.dispose();
@@ -1272,6 +1305,7 @@ class WebFController {
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.h#L470
   bool _isComplete = false;
+  bool get isComplete => _isComplete;
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.cpp#L840
   // Check whether the document has been loaded, such as html has parsed (main of JS has evaled) and images/scripts has loaded.
