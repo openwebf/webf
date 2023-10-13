@@ -51,7 +51,7 @@ class WebFPage final {
                       int startLine);
   bool parseHTML(const char* code, size_t length);
   void evaluateScript(const char* script, size_t length, const char* url, int startLine);
-  uint8_t* dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength);
+  uint8_t* dumpByteCode(const char* script, size_t length, const char* url, uint64_t* byteLength);
   bool evaluateByteCode(uint8_t* bytes, size_t byteLength);
 
   std::thread::id currentThread() const;

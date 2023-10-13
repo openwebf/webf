@@ -80,6 +80,14 @@ void evaluateQuickjsByteCode(void* page,
                              int32_t byteLen,
                              Dart_Handle dart_handle,
                              EvaluateQuickjsByteCodeCallback result_callback);
+
+WEBF_EXPORT_C
+void dumpQuickjsByteCode(void* page, const char* code,
+                         int32_t code_len,
+                         uint8_t** parsed_bytecodes,
+                         uint64_t* bytecode_len,
+                         const char* url);
+
 WEBF_EXPORT_C
 void parseHTML(void* page, const char* code, int32_t length);
 WEBF_EXPORT_C

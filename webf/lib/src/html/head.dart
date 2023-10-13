@@ -139,6 +139,12 @@ class LinkElement extends Element {
         rel == _REL_STYLESHEET &&
         isConnected &&
         !_stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
+
+      // Increase the pending count for preloading resources.
+      if (ownerDocument.preloadStatus != PreloadingStatus.none) {
+        ownerDocument.unfinishedPreloadResources++;
+      }
+
       String url = _resolvedHyperlink.toString();
       WebFBundle bundle = ownerDocument.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
       _stylesheetLoaded[url] = true;
@@ -172,6 +178,14 @@ class LinkElement extends Element {
         });
       } finally {
         bundle.dispose();
+
+        if (ownerDocument.preloadStatus != PreloadingStatus.none) {
+          ownerDocument.unfinishedPreloadResources--;
+          if (ownerDocument.unfinishedPreloadResources == 0 && ownerDocument.onPreloadingFinished != null) {
+            ownerDocument.onPreloadingFinished!();
+          }
+        }
+
       }
       SchedulerBinding.instance.scheduleFrame();
     }

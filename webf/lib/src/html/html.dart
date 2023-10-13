@@ -2,8 +2,11 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+
+import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
 
 const String HTML = 'HTML';
@@ -29,6 +32,29 @@ class HTMLElement extends Element {
     }
     super.dispatchEvent(event);
   }
+
+  @override
+  void ensureChildAttached() {
+    final box = renderBoxModel as RenderLayoutBox?;
+    if (box == null) return;
+    for (Node child in childNodes) {
+      RenderBox? after;
+      RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
+      if (scrollingContentBox != null) {
+        after = scrollingContentBox.lastChild;
+      } else {
+        after = box.lastChild;
+      }
+      if (!child.isRendererAttachedToSegmentTree) {
+        child.attachTo(this, after: after);
+        child.ensureChildAttached();
+      }
+    }
+  }
+
+  // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
+  @override
+  bool get isRendererAttachedToSegmentTree => renderer != null;
 
   @override
   void setRenderStyle(String property, String present, { String? baseHref }) {

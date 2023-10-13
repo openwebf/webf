@@ -965,6 +965,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   void flushLayout() {
     if (isRendererAttached) {
       renderer!.owner!.flushLayout();
+    } else if (isRendererAttachedToSegmentTree) {
+      renderer!.performLayout();
     }
   }
 
