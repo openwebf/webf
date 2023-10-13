@@ -70,7 +70,7 @@ class ScriptRunner {
     _document.incrementDOMContentLoadedEventDelayCount();
 
     // Increase the pending count for preloading resources.
-    if (_document.preloadStatus != PreloadingStatus.none) {
+    if (_document.controller.preloadStatus != PreloadingStatus.none) {
       _document.unfinishedPreloadResources++;
     }
 
@@ -168,10 +168,10 @@ class ScriptRunner {
       }
     } else {
       bundle.preProcessing(_contextId);
-      _document.pendingPreloadingBundles.add(bundle);
+      _document.pendingPreloadingScriptCallbacks.add(() => task(shouldAsync));
     }
 
-    if (_document.preloadStatus != PreloadingStatus.none) {
+    if (_document.controller.preloadStatus != PreloadingStatus.none) {
       _document.unfinishedPreloadResources--;
       if (_document.unfinishedPreloadResources == 0 && _document.onPreloadingFinished != null) {
         _document.onPreloadingFinished!();
