@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
+import 'package:webf/bridge.dart';
 
 const String DEFAULT_URL = 'about:blank';
 const String UTF_8 = 'utf-8';
@@ -101,6 +102,15 @@ abstract class WebFBundle {
   // Content type for data.
   // The default value is plain text.
   ContentType contentType = ContentType.text;
+
+  // Pre process the data before the data actual used.
+  void preProcessing(int contextId) {
+    if (isJavascript && data != null) {
+      assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
+      data = dumpQuickjsByteCode(contextId, data!, url: _uri.toString());
+      contentType = webfBc1ContentType;
+    }
+  }
 
   @mustCallSuper
   Future<void> resolve({ String? baseUrl, UriParser? uriParser }) async {

@@ -139,6 +139,18 @@ void evaluateScripts(void* page_,
       bytecode_len, bundleFilename, startLine, persistent_handle, result_callback);
 }
 
+void dumpQuickjsByteCode(void* page_,
+                         const char* code,
+                         int32_t code_len,
+                         uint8_t** parsed_bytecodes,
+                         uint64_t* bytecode_len,
+                         const char* url) {
+    auto page = reinterpret_cast<webf::WebFPage*>(page_);
+    assert(std::this_thread::get_id() == page->currentThread());
+    uint8_t* bytes = page->dumpByteCode(code, code_len, url, bytecode_len);
+    *parsed_bytecodes = bytes;
+}
+
 void evaluateQuickjsByteCode(void* page_,
                              uint8_t* bytes,
                              int32_t byteLen,

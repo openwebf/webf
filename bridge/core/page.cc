@@ -121,7 +121,7 @@ void WebFPage::evaluateScript(const char* script, size_t length, const char* url
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
-uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, size_t* byteLength) {
+uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, uint64_t* byteLength) {
   if (!context_->IsContextValid())
     return nullptr;
   return context_->DumpByteCode(script, length, url, byteLength);

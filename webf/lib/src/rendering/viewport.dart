@@ -36,10 +36,11 @@ class RenderViewportBox extends RenderBox
   Color? background;
 
   Size? _viewportSize;
+  Size? _boxSize;
 
   Size get viewportSize {
     if (_viewportSize != null) return _viewportSize!;
-    if (hasSize) return size;
+    if (hasSize) return _boxSize!;
     return Size.zero;
   }
 
@@ -59,6 +60,12 @@ class RenderViewportBox extends RenderBox
       _bottomInset = value;
       markNeedsLayout();
     }
+  }
+
+  @override
+  set size(Size value) {
+    super.size = value;
+    _boxSize = value;
   }
 
   @override

@@ -77,15 +77,24 @@ class _InactiveRenderObjects {
 }
 enum DocumentReadyState { loading, interactive, complete }
 enum VisibilityState { visible, hidden }
+enum PreloadingStatus {
+  none,
+  preloading,
+  success
+}
 
 class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
-  RenderViewportBox? _viewport;
   GestureListener? gestureListener;
+  PreloadingStatus preloadStatus = PreloadingStatus.none;
+  int unfinishedPreloadResources = 0;
+  VoidCallback? onPreloadingFinished;
 
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
+
+  final List<WebFBundle> pendingPreloadingBundles = [];
 
   Set<Element> styleDirtyElements = {};
 
@@ -109,11 +118,9 @@ class Document extends ContainerNode {
   Document(
     BindingContext context, {
     required this.controller,
-    required RenderViewportBox viewport,
     this.gestureListener,
     List<Cookie>? initialCookies
-  })  : _viewport = viewport,
-        super(NodeType.DOCUMENT_NODE, context) {
+  })  : super(NodeType.DOCUMENT_NODE, context) {
     cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
@@ -129,7 +136,7 @@ class Document extends ContainerNode {
   @override
   EventTarget? get parentEventTarget => defaultView;
 
-  RenderViewportBox? get viewport => _viewport;
+  RenderViewportBox? get viewport => controller.view.viewport;
 
   @override
   Document get ownerDocument => this;
@@ -147,7 +154,7 @@ class Document extends ContainerNode {
   String get nodeName => '#document';
 
   @override
-  RenderBox? get renderer => _viewport;
+  RenderBox? get renderer => viewport;
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L770
   bool parsing = false;
@@ -370,7 +377,6 @@ class Document extends ContainerNode {
       return;
     }
 
-    RenderViewportBox? viewport = _viewport;
     // When document is disposed, viewport is null.
     if (viewport != null) {
       if (element != null) {
@@ -381,7 +387,7 @@ class Document extends ContainerNode {
         _visibilityState = VisibilityState.visible;
       } else {
         // Detach document element.
-        viewport.removeAll();
+        viewport!.removeAll();
       }
     }
 
@@ -515,13 +521,13 @@ class Document extends ContainerNode {
 
   @override
   Future<void> dispose() async {
-    _viewport = null;
     gestureListener = null;
     styleSheets.clear();
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
     styleDirtyElements.clear();
+    pendingPreloadingBundles.clear();
     super.dispose();
   }
 
