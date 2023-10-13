@@ -142,6 +142,12 @@ enum WebFLoadingMode {
   preRendering
 }
 
+enum PreloadingStatus {
+  none,
+  preloading,
+  success
+}
+
 // An kraken View Controller designed for multiple kraken view control.
 class WebFViewController implements WidgetsBindingObserver {
   WebFController rootController;
@@ -746,8 +752,11 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
     _moduleManager = ModuleManager(controller, contextId);
   }
 
+  bool _initialized = false;
   Future<void> initialize() async {
+    if (_initialized) return;
     await _moduleManager.initialize();
+    _initialized = true;
   }
 
   void dispose() {
@@ -852,6 +861,7 @@ class WebFController {
 
   // The kraken view entrypoint bundle.
   WebFBundle? _entrypoint;
+  WebFBundle? get entrypoint => _entrypoint;
 
   final WebFThread runningThread;
 
@@ -1063,10 +1073,8 @@ class WebFController {
     }
   }
 
-  bool _preloaded = false;
-
-  bool get preloaded => _preloaded;
-
+  PreloadingStatus _preloadStatus = PreloadingStatus.none;
+  PreloadingStatus get preloadStatus => _preloadStatus;
   /// Preloads remote resources into memory and begins execution when the WebF widget is mounted into the Flutter tree.
   /// If the entrypoint is an HTML file, the HTML will be parsed, and its elements will be organized into a DOM tree.
   /// CSS files loaded through `<style>` and `<link>` elements will be parsed and the calculated styles applied to the corresponding DOM elements.
@@ -1075,8 +1083,9 @@ class WebFController {
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
   Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize}) async {
+    if (_preloadStatus != PreloadingStatus.none) return;
+
     Completer completer = Completer();
-    _preloaded = true;
 
     // Update entrypoint.
     _entrypoint = bundle;
@@ -1088,20 +1097,36 @@ class WebFController {
     flushUICommand(view);
 
     // Set the status value for preloading.
-    view.document.preloadStatus = PreloadingStatus.preloading;
+    _preloadStatus = PreloadingStatus.preloading;
 
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
     view.document.documentElement!.createRenderer();
     view.document.documentElement!.ensureChildAttached();
 
-    // Evaluate the entry point, and loading the stylesheets and scripts.
-    await executeEntrypoint();
-    view.flushPendingCommandsPerFrame();
+    await Future.wait([
+      _resolveEntrypoint(),
+      module.initialize()
+    ]);
 
-    view.document.onPreloadingFinished = () {
+    if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
+      // Convert the JavaScript code into bytecode.
+      if (_entrypoint!.isJavascript) {
+        _entrypoint!.preProcessing(view.contextId);
+      }
       completer.complete();
-    };
+    } else if (_entrypoint!.isHTML) {
+      // Evaluate the HTML entry point, and loading the stylesheets and scripts.
+      await evaluateEntrypoint();;
+
+      // Initialize document, window and the documentElement.
+      flushUICommand(view);
+
+      view.document.onPreloadingFinished = () {
+        _preloadStatus = PreloadingStatus.success;
+        completer.complete();
+      };
+    }
 
     return completer.future;
   }
@@ -1178,7 +1203,7 @@ class WebFController {
         _module.initialize()
       ]);
       if (_entrypoint!.isResolved && shouldEvaluate) {
-        await _evaluateEntrypoint(animationController: animationController);
+        await evaluateEntrypoint(animationController: animationController);
       } else {
         throw FlutterError('Unable to resolve $_entrypoint');
       }
@@ -1212,13 +1237,13 @@ class WebFController {
   }
 
   // Execute the content from entrypoint bundle.
-  Future<void> _evaluateEntrypoint({AnimationController? animationController}) async {
+  Future<void> evaluateEntrypoint({AnimationController? animationController}) async {
     // @HACK: Execute JavaScript scripts will block the Flutter UI Threads.
     // Listen for animationController listener to make sure to execute Javascript after route transition had completed.
     if (animationController != null) {
       animationController.addStatusListener((AnimationStatus status) async {
         if (status == AnimationStatus.completed) {
-          await _evaluateEntrypoint();
+          await evaluateEntrypoint();
         }
       });
       return;

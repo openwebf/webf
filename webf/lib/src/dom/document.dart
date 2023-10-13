@@ -77,24 +77,18 @@ class _InactiveRenderObjects {
 }
 enum DocumentReadyState { loading, interactive, complete }
 enum VisibilityState { visible, hidden }
-enum PreloadingStatus {
-  none,
-  preloading,
-  success
-}
 
 class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
   GestureListener? gestureListener;
-  PreloadingStatus preloadStatus = PreloadingStatus.none;
   int unfinishedPreloadResources = 0;
   VoidCallback? onPreloadingFinished;
 
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
 
-  final List<WebFBundle> pendingPreloadingBundles = [];
+  final List<VoidCallback> pendingPreloadingScriptCallbacks = [];
 
   Set<Element> styleDirtyElements = {};
 
@@ -381,9 +375,6 @@ class Document extends ContainerNode {
     if (viewport != null) {
       if (element != null) {
         element.attachTo(this);
-        // Should scrollable.
-        element.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
-        element.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
         _visibilityState = VisibilityState.visible;
       } else {
         // Detach document element.
@@ -399,6 +390,8 @@ class Document extends ContainerNode {
     assert(viewport!.hasSize);
     documentElement!.renderStyle.width = CSSLengthValue(viewport!.viewportSize.width, CSSLengthType.PX);
     documentElement!.renderStyle.height = CSSLengthValue(viewport!.viewportSize.height, CSSLengthType.PX);
+    documentElement!.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
+    documentElement!.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
   }
 
   @override
@@ -527,7 +520,7 @@ class Document extends ContainerNode {
     adoptedStyleSheets.clear();
     cookie.clearCookie();
     styleDirtyElements.clear();
-    pendingPreloadingBundles.clear();
+    pendingPreloadingScriptCallbacks.clear();
     super.dispose();
   }
 
