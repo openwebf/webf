@@ -448,6 +448,10 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     assert(controller != null);
     (parent as WebFContextInheritElement).controller = controller;
 
+    if (controller!.entrypoint == null) {
+      throw FlutterError('Consider providing a WebFBundle resource as the entry point for WebF');
+    }
+
     RenderViewportBox rootRenderObject = renderObject as RenderViewportBox;
     if (!controller!.view.firstLoad) {
       rootRenderObject.insert(controller!.view.getRootRenderObject());
@@ -466,8 +470,18 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
         controller!.view.flushPendingCommandsPerFrame();
 
         // Bundle could be executed before mount to the flutter tree.
-        if (!controller!.preloaded) {
+        if (controller!.mode == WebFLoadingMode.standard) {
           await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
+        } else {
+          assert(controller!.entrypoint!.isResolved);
+          if (controller!.view.document.unfinishedPreloadResources == 0 && controller!.entrypoint!.isHTML) {
+            List<VoidCallback> pendingScriptCallbacks = controller!.view.document.pendingPreloadingScriptCallbacks;
+            for (int i = 0; i < pendingScriptCallbacks.length; i ++) {
+              pendingScriptCallbacks[i]();
+            }
+          } else if (controller!.entrypoint!.isJavascript || controller!.entrypoint!.isBytecode) {
+            await controller!.evaluateEntrypoint();
+          }
         }
       });
     } catch (e, s) {
