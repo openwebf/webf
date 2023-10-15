@@ -1,3 +1,10 @@
+## 0.14.1+1
+
+**Bug Fixed**
+
+1. Fixed a error when changing the css display property on input element.
+
+
 ## 0.14.1
 
 **Features**
