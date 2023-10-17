@@ -355,7 +355,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return QuerySelector.closest(this, args.first);
   }
 
-  @visibleForOverriding
   void updateRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
