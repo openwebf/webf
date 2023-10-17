@@ -22,7 +22,8 @@ class ExceptionState;
 class GCVisitor;
 class ScriptPromiseResolver;
 
-using InvokeBindingsMethodsFromNative = void (*)(const NativeBindingObject* binding_object,
+using InvokeBindingsMethodsFromNative = void (*)(int32_t contextId,
+                                                 const NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
                                                  NativeValue* method,
                                                  int32_t argc,

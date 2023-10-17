@@ -33,6 +33,7 @@
     "g",
     "circle",
     "ellipse",
-    "style"
+    "style",
+    "line"
   ]
 }

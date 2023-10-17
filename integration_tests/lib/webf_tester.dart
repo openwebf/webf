@@ -58,7 +58,7 @@ class _WebFTesterState extends State<WebFTester> {
     return WebF(
       viewportWidth: width,
       viewportHeight: height,
-      bundle: WebFBundle.fromUrl('http://localhost:$MOCK_SERVER_PORT/public/core.build.js'),
+      bundle: WebFBundle.fromUrl('http://localhost:$MOCK_SERVER_PORT/public/core.build.js?search=1234#hash=hashValue'),
       disableViewportWidthAssertion: true,
       disableViewportHeightAssertion: true,
       javaScriptChannel: javaScriptChannel,

@@ -26,8 +26,9 @@ import 'package:webf/devtools.dart';
 import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
-typedef LoadHandler = void Function(WebFController controller);
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
+typedef LoadHandler = void Function(WebFController controller);
+typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
@@ -150,7 +151,6 @@ class WebFViewController implements WidgetsBindingObserver {
   WebFViewController(this._viewportWidth, this._viewportHeight,
       {this.background,
       this.enableDebug = false,
-      int? contextId,
       required this.rootController,
       this.navigationDelegate,
       this.gestureListener,
@@ -162,7 +162,7 @@ class WebFViewController implements WidgetsBindingObserver {
       debugPaintSizeEnabled = true;
     }
     BindingBridge.setup();
-    _contextId = contextId ?? initBridge(this);
+    _contextId = initBridge(this);
 
     if (originalViewport != null) {
       viewport = originalViewport;
@@ -190,6 +190,25 @@ class WebFViewController implements WidgetsBindingObserver {
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
   }
 
+  final Map<int, BindingObject> _nativeObjects = {};
+
+  T? getBindingObject<T>(Pointer pointer) {
+    return _nativeObjects[pointer.address] as T?;
+  }
+
+  bool hasBindingObject(Pointer pointer) {
+    return _nativeObjects.containsKey(pointer.address);
+  }
+
+  void setBindingObject(Pointer pointer, BindingObject bindingObject) {
+    assert(!_nativeObjects.containsKey(pointer.address));
+    _nativeObjects[pointer.address] = bindingObject;
+  }
+
+  void removeBindingObject(Pointer pointer) {
+    _nativeObjects.remove(pointer.address);
+  }
+
   // Index value which identify javascript runtime context.
   late int _contextId;
   int get contextId => _contextId;
@@ -206,9 +225,9 @@ class WebFViewController implements WidgetsBindingObserver {
   late Document document;
   late Window window;
 
-  void initDocument(Pointer<NativeBindingObject> pointer) {
+  void initDocument(view, Pointer<NativeBindingObject> pointer) {
     document = Document(
-      BindingContext(_contextId, pointer),
+      BindingContext(view, _contextId, pointer),
       viewport: viewport,
       controller: rootController,
       gestureListener: gestureListener,
@@ -236,8 +255,8 @@ class WebFViewController implements WidgetsBindingObserver {
     }
   }
 
-  void initWindow(Pointer<NativeBindingObject> pointer) {
-    window = Window(BindingContext(_contextId, pointer), document);
+  void initWindow(WebFViewController view, Pointer<NativeBindingObject> pointer) {
+    window = Window(BindingContext(view, _contextId, pointer), document);
     _registerPlatformBrightnessChange();
 
     // Blur input element when new input focused.
@@ -297,6 +316,11 @@ class WebFViewController implements WidgetsBindingObserver {
 
     clearCssLength();
 
+    _nativeObjects.forEach((key, object) {
+      object.dispose();
+    });
+    _nativeObjects.clear();
+
     document.dispose();
     window.dispose();
   }
@@ -325,12 +349,12 @@ class WebFViewController implements WidgetsBindingObserver {
     assert(!_disposed, 'WebF have already disposed');
     Completer<Uint8List> completer = Completer();
     try {
-      if (eventTargetPointer != null && !BindingBridge.hasBindingObject(eventTargetPointer)) {
+      if (eventTargetPointer != null && !hasBindingObject(eventTargetPointer)) {
         String msg = 'toImage: unknown node id: $eventTargetPointer';
         completer.completeError(Exception(msg));
         return completer.future;
       }
-      var node = eventTargetPointer == null ? document.documentElement : BindingBridge.getBindingObject(eventTargetPointer);
+      var node = eventTargetPointer == null ? document.documentElement : getBindingObject(eventTargetPointer);
       if (node is Element) {
         if (!node.isRendererAttached) {
           String msg = 'toImage: the element is not attached to document tree.';
@@ -355,46 +379,46 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void createElement(Pointer<NativeBindingObject> nativePtr, String tagName) {
-    assert(!BindingBridge.hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
-    document.createElement(tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
+    assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
+    document.createElement(tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createElementNS(Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
-    assert(!BindingBridge.hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
-    document.createElementNS(uri, tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
+    assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
+    document.createElementNS(uri, tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createTextNode(Pointer<NativeBindingObject> nativePtr, String data) {
-    document.createTextNode(data, BindingContext(_contextId, nativePtr));
+    document.createTextNode(data, BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createComment(Pointer<NativeBindingObject> nativePtr) {
-    document.createComment(BindingContext(_contextId, nativePtr));
+    document.createComment(BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createDocumentFragment(Pointer<NativeBindingObject> nativePtr) {
-    document.createDocumentFragment(BindingContext(_contextId, nativePtr));
+    document.createDocumentFragment(BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void addEvent(Pointer<NativeBindingObject> nativePtr, String eventType, {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
-    if (!BindingBridge.hasBindingObject(nativePtr)) return;
-    EventTarget? target = BindingBridge.getBindingObject<EventTarget>(nativePtr);
+    if (!hasBindingObject(nativePtr)) return;
+    EventTarget? target = getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
       BindingBridge.listenEvent(target, eventType, addEventListenerOptions: addEventListenerOptions);
     }
   }
 
   void removeEvent(Pointer<NativeBindingObject> nativePtr, String eventType, {bool isCapture = false}) {
-    if (!BindingBridge.hasBindingObject(nativePtr)) return;
-    EventTarget? target = BindingBridge.getBindingObject<EventTarget>(nativePtr);
+    if (!hasBindingObject(nativePtr)) return;
+    EventTarget? target = getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
       BindingBridge.unlistenEvent(target, eventType, isCapture: isCapture);
     }
   }
 
   void cloneNode(Pointer<NativeBindingObject> selfPtr, Pointer<NativeBindingObject> newPtr) {
-    EventTarget originalTarget = BindingBridge.getBindingObject<EventTarget>(selfPtr)!;
-    EventTarget newTarget = BindingBridge.getBindingObject<EventTarget>(newPtr)!;
+    EventTarget originalTarget = getBindingObject<EventTarget>(selfPtr)!;
+    EventTarget newTarget = getBindingObject<EventTarget>(newPtr)!;
 
     // Current only element clone will process in dart.
     if (originalTarget is Element) {
@@ -413,9 +437,9 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void removeNode(Pointer pointer) {
-    assert(BindingBridge.hasBindingObject(pointer), 'pointer: $pointer');
+    assert(hasBindingObject(pointer), 'pointer: $pointer');
 
-    Node target = BindingBridge.getBindingObject<Node>(pointer)!;
+    Node target = getBindingObject<Node>(pointer)!;
     target.parentNode?.removeChild(target);
 
     _debugDOMTreeChanged();
@@ -429,11 +453,11 @@ class WebFViewController implements WidgetsBindingObserver {
   /// </p>
   /// <!-- afterend -->
   void insertAdjacentNode(Pointer<NativeBindingObject> selfPointer, String position, Pointer<NativeBindingObject> newPointer) {
-    assert(BindingBridge.hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
-    assert(BindingBridge.hasBindingObject(selfPointer), 'newTargetId: $newPointer position: $position');
+    assert(hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
+    assert(hasBindingObject(selfPointer), 'newTargetId: $newPointer position: $position');
 
-    Node target = BindingBridge.getBindingObject<Node>(selfPointer)!;
-    Node newNode = BindingBridge.getBindingObject<Node>(newPointer)!;
+    Node target = getBindingObject<Node>(selfPointer)!;
+    Node newNode = getBindingObject<Node>(newPointer)!;
     Node? targetParentNode = target.parentNode;
 
     switch (position) {
@@ -462,8 +486,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
-    assert(BindingBridge.hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
-    Node target = BindingBridge.getBindingObject<Node>(selfPtr)!;
+    assert(hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
+    Node target = getBindingObject<Node>(selfPtr)!;
 
     if (target is Element) {
       // Only element has properties.
@@ -476,8 +500,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   String? getAttribute(Pointer selfPtr, String key) {
-    assert(BindingBridge.hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node target = BindingBridge.getBindingObject<Node>(selfPtr)!;
+    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
+    Node target = getBindingObject<Node>(selfPtr)!;
 
     if (target is Element) {
       // Only element has attributes.
@@ -491,8 +515,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void removeAttribute(Pointer selfPtr, String key) {
-    assert(BindingBridge.hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node target = BindingBridge.getBindingObject<Node>(selfPtr)!;
+    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
+    Node target = getBindingObject<Node>(selfPtr)!;
 
     if (target is Element) {
       target.removeAttribute(key);
@@ -505,8 +529,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void setInlineStyle(Pointer selfPtr, String key, String value) {
-    assert(BindingBridge.hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
-    Node? target = BindingBridge.getBindingObject<Node>(selfPtr);
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
+    Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
     if (target is Element) {
@@ -517,8 +541,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void clearInlineStyle(Pointer selfPtr) {
-    assert(BindingBridge.hasBindingObject(selfPtr), 'id: $selfPtr');
-    Node? target = BindingBridge.getBindingObject<Node>(selfPtr);
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
     if (target is Element) {
@@ -529,8 +553,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void flushPendingStyleProperties(int address) {
-    if (!BindingBridge.hasBindingObject(Pointer.fromAddress(address))) return;
-    Node? target = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(address));
+    if (!hasBindingObject(Pointer.fromAddress(address))) return;
+    Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
     if (target == null) return;
 
     if (target is Element) {
@@ -541,8 +565,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void recalculateStyle(int address) {
-    if (!BindingBridge.hasBindingObject(Pointer.fromAddress(address))) return;
-    Node? target = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(address));
+    if (!hasBindingObject(Pointer.fromAddress(address))) return;
+    Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
     if (target == null) return;
 
     if (target is Element) {
@@ -590,9 +614,10 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
-  void disposeBindingObject(Pointer<NativeBindingObject> pointer) async {
-    BindingObject? bindingObject = BindingBridge.getBindingObject(pointer);
-    await bindingObject?.dispose();
+  void disposeBindingObject(WebFViewController view, Pointer<NativeBindingObject> pointer) async {
+    BindingObject? bindingObject = getBindingObject(pointer);
+    bindingObject?.dispose();
+    view.removeBindingObject(pointer);
     malloc.free(pointer);
   }
 
@@ -610,6 +635,7 @@ class WebFViewController implements WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         document.visibilityChange(VisibilityState.visible);
         break;
+      case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
         document.visibilityChange(VisibilityState.hidden);
         break;
@@ -624,18 +650,21 @@ class WebFViewController implements WidgetsBindingObserver {
   void didChangeLocales(List<Locale>? locales) {
   }
 
-  ui.ViewPadding? _prevViewInsets;
   static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
 
   @override
   void didChangeMetrics() {
-    double bottomInset = rootController.ownerFlutterView.viewInsets.bottom / rootController.ownerFlutterView.devicePixelRatio;
-    _prevViewInsets ??= rootController.ownerFlutterView.viewInsets;
+    final ownerView = rootController.ownerFlutterView;
 
-    if (_prevViewInsets!.bottom > rootController.ownerFlutterView.viewInsets.bottom) {
-      // Hide keyboard
-      viewport.bottomInset = bottomInset;
+    final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
+    final double bottomInsets;
+    if (resizeToAvoidBottomInsets) {
+      bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
     } else {
+      bottomInsets = 0;
+    }
+
+    if (resizeToAvoidBottomInsets) {
       bool shouldScrollByToCenter = false;
       Element? focusedElement = document.focusedElement;
       double scrollOffset = 0;
@@ -644,20 +673,19 @@ class WebFViewController implements WidgetsBindingObserver {
         if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
-          if (focusOffset.dy > viewportHeight - bottomInset - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
+          if (focusOffset.dy > viewportHeight - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
             scrollOffset =
-                focusOffset.dy - (viewportHeight - bottomInset) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
+                focusOffset.dy - (viewportHeight - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }
       // Show keyboard
-      viewport.bottomInset = bottomInset;
       if (shouldScrollByToCenter) {
         window.scrollBy(0, scrollOffset, true);
       }
     }
-    _prevViewInsets = rootController.ownerFlutterView.viewInsets;
+    viewport.bottomInset = bottomInsets;
   }
 
   @override
@@ -715,7 +743,7 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
 }
 
 class WebFController {
-  static final SplayTreeMap<int, WebFController?> _controllerMap = SplayTreeMap();
+  static final Map<int, WebFController?> _controllerMap = {};
   static final Map<String, int> _nameIdMap = {};
 
   UriParser? uriParser;
@@ -728,7 +756,7 @@ class WebFController {
     return _controllerMap[contextId];
   }
 
-  static SplayTreeMap<int, WebFController?> getControllerMap() {
+  static Map<int, WebFController?> getControllerMap() {
     return _controllerMap;
   }
 
@@ -742,6 +770,7 @@ class WebFController {
 
   LoadHandler? onLoad;
   LoadHandler? onDOMContentLoaded;
+  TitleChangedHandler? onTitleChanged;
 
   // Error handler when load bundle failed.
   LoadErrorHandler? onLoadError;
@@ -769,6 +798,7 @@ class WebFController {
   final List<Cookie>? initialCookies;
 
   final ui.FlutterView ownerFlutterView;
+  bool resizeToAvoidBottomInsets;
 
   String? _name;
   String? get name => _name;
@@ -810,6 +840,7 @@ class WebFController {
     this.uriParser,
     this.initialCookies,
     required this.ownerFlutterView,
+    this.resizeToAvoidBottomInsets = true,
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {
@@ -898,18 +929,24 @@ class WebFController {
       // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
       _view.viewport.reload();
 
-      allocateNewPage(_view.contextId);
+      int oldId = _view.contextId;
 
       _view = WebFViewController(view.viewportWidth, view.viewportHeight,
           background: _view.background,
           enableDebug: _view.enableDebug,
-          contextId: _view.contextId,
           rootController: this,
           navigationDelegate: _view.navigationDelegate,
           gestureListener: _view.gestureListener,
           originalViewport: _view.viewport);
 
       _module = WebFModuleController(this, _view.contextId);
+
+      // Reconnect the new contextId to the Controller
+      _controllerMap.remove(oldId);
+      _controllerMap[_view.contextId] = this;
+      if (name != null) {
+        _nameIdMap[name!] = _view.contextId;
+      }
 
       completer.complete();
     });

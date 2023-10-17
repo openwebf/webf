@@ -5,7 +5,7 @@ on: [workflow_dispatch, pull_request]
 env:
   nodeVersion: "16"
   cmakeVersion: "3.22.x"
-  flutter310: "3.10.5"
+  flutter310: "3.13.5"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -59,7 +59,7 @@ jobs:
     - run: ENABLE_ASAN=true npm run build:bridge:linux
     - run: node scripts/run_bridge_unit_test.js
 
-  webf_unit_test_310:
+  webf_unit_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -72,7 +72,7 @@ jobs:
     - run: flutter doctor -v
     - run: cd webf && flutter test
 
-  integration_test_f310:
+  integration_test:
     runs-on: self-hosted
     needs: [ setup, build_bridge ]
     strategy:
@@ -108,36 +108,6 @@ jobs:
     - name: Check on failures
       if: steps.test.outcome != 'success'
       run: exit 1
-  plugin_test:
-    runs-on: self-hosted
-    needs: [ build_bridge ]
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - uses: actions/setup-node@v2
-      with:
-        node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
-      with:
-        name: macos_bridge_binary
-        path: bridge/build/macos/
-    - uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ${{ env.flutter310 }}
-    - run: flutter config --enable-macos-desktop
-    - run: flutter doctor -v
-    - name: Run Plugin Test
-      run: cd integration_tests && npm run plugin_test
-      id: test
-      continue-on-error: true
-    - uses: actions/upload-artifact@v2
-      with:
-        name: plugin_snapshots
-        path: integration_tests/snapshots/plugins
-    - name: Check on failures
-      if: steps.test.outcome != 'success'
-      run: exit 1
   multiple_page_test:
     runs-on: self-hosted
     needs: [ build_bridge ]
@@ -159,6 +129,33 @@ jobs:
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
       run: cd integration_tests && npm run multiple_page_test
+      id: test
+      continue-on-error: true
+    - name: Check on failures
+      if: steps.test.outcome != 'success'
+      run: exit 1
+
+  memory_leak_test:
+    runs-on: self-hosted
+    needs: [ build_bridge ]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.nodeVersion }}
+    - uses: actions/download-artifact@v2
+      with:
+        name: macos_bridge_binary
+        path: bridge/build/macos/
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.flutter310 }}
+    - run: flutter config --enable-macos-desktop
+    - run: flutter doctor -v
+    - name: Run MemoryLeak Test
+      run: cd integration_tests && npm run memory_leak_integration
       id: test
       continue-on-error: true
     - name: Check on failures

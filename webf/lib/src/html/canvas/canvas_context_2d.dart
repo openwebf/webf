@@ -46,9 +46,9 @@ enum FillStyleType { string, canvasGradient }
 typedef CanvasAction = void Function(Canvas, Size);
 
 class CanvasRenderingContext2D extends BindingObject {
-  CanvasRenderingContext2D(this.canvas)
-      : _pointer = allocateNewBindingObject(),
-        super();
+  CanvasRenderingContext2D(BindingContext context, this.canvas)
+      : _pointer = context.pointer,
+        super(context);
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
@@ -185,7 +185,7 @@ class CanvasRenderingContext2D extends BindingObject {
           dHeight = castToType<num>(args[8]).toDouble();
         }
 
-        return drawImage(args.length, imageElement.image, sx, sy, sWidth,
+        return drawImage(args.length, imageElement, sx, sy, sWidth,
             sHeight, dx, dy, dWidth, dHeight);
       }
     });
@@ -634,7 +634,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   void drawImage(
       int argumentCount,
-      Image? img,
+      ImageElement? imgElement,
       double sx,
       double sy,
       double sWidth,
@@ -643,9 +643,11 @@ class CanvasRenderingContext2D extends BindingObject {
       double dy,
       double dWidth,
       double dHeight) {
-    if (img == null) return;
 
     addAction((Canvas canvas, Size size) {
+      if (imgElement?.image == null) return;
+      
+      Image img = imgElement!.image!;
       // ctx.drawImage(image, dx, dy);
       if (argumentCount == 3) {
         canvas.drawImage(img, Offset(dx, dy), Paint());
@@ -885,16 +887,16 @@ class CanvasRenderingContext2D extends BindingObject {
 
   CanvasGradient createLinearGradient(
       double x0, double y0, double x1, double y1) {
-    return CanvasLinearGradient(canvas, x0, y0, x1, y1);
+    return CanvasLinearGradient(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), canvas, x0, y0, x1, y1);
   }
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
-    return CanvasPattern(image, repetition);
+    return CanvasPattern(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), image, repetition);
   }
 
   CanvasGradient createRadialGradient(
       double x0, double y0, double r0, double x1, double y1, double r1) {
-    return CanvasRadialGradient(canvas, x0, y0, r0, x1, y1, r1);
+    return CanvasRadialGradient(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), canvas, x0, y0, r0, x1, y1, r1);
   }
 
   void clearRect(double x, double y, double w, double h) {

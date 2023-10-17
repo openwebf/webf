@@ -18,7 +18,7 @@ class Window extends EventTarget {
   final Screen screen;
 
   Window(BindingContext? context, this.document)
-      : screen = Screen(context!.contextId, document.controller.ownerFlutterView),
+      : screen = Screen(context!.contextId, document.controller.ownerFlutterView, document.controller.view),
         super(context);
 
   @override
@@ -53,7 +53,7 @@ class Window extends EventTarget {
   }
 
   ComputedCSSStyleDeclaration getComputedStyle(Element element) {
-    return ComputedCSSStyleDeclaration(element, element.tagName);
+    return ComputedCSSStyleDeclaration(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), element, element.tagName);
   }
 
   double get scrollX => document.documentElement!.scrollLeft;

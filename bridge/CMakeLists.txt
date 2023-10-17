@@ -366,6 +366,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/svg/svg_circle_element.cc
     core/svg/svg_ellipse_element.cc
     core/svg/svg_style_element.cc
+    core/svg/svg_line_element.cc
 
     # Legacy implements, should remove them in the future.
     core/dom/legacy/element_attributes.cc
@@ -515,6 +516,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_circle_element.cc
     out/qjs_svg_ellipse_element.cc
     out/qjs_svg_style_element.cc
+    out/qjs_svg_line_element.cc
     )
 
 

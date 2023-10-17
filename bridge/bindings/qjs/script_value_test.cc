@@ -49,7 +49,7 @@ TEST(ScriptValue, ToString) {
   TestScriptValue([](JSContext* ctx) {
     std::string code = "{\"name\": 1}";
     ScriptValue json = ScriptValue::CreateJsonObject(ctx, code.c_str(), code.size());
-    AtomicString string = json.ToString();
+    AtomicString string = json.ToString(ctx);
     EXPECT_STREQ(string.ToStdString(ctx).c_str(), "[object Object]");
   });
 }
@@ -63,7 +63,7 @@ TEST(ScriptValue, CopyAssignment) {
     };
     P p;
     p.value = json;
-    EXPECT_STREQ(p.value.ToJSONStringify(nullptr).ToString().ToStdString(ctx).c_str(), code.c_str());
+    EXPECT_STREQ(p.value.ToJSONStringify(ctx, nullptr).ToString(ctx).ToStdString(ctx).c_str(), code.c_str());
   });
 }
 
@@ -75,6 +75,6 @@ TEST(ScriptValue, MoveAssignment) {
       other = ScriptValue::CreateJsonObject(ctx, code.c_str(), code.size());
     }
 
-    EXPECT_STREQ(other.ToJSONStringify(nullptr).ToString().ToStdString(ctx).c_str(), "{\"name\":1}");
+    EXPECT_STREQ(other.ToJSONStringify(ctx, nullptr).ToString(ctx).ToStdString(ctx).c_str(), "{\"name\":1}");
   });
 }

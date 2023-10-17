@@ -39,7 +39,7 @@ class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
 // coordinate system of `ancestor`.
 Matrix4 getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool excludeScrollOffset = false}) {
   final List<RenderObject> renderers = <RenderObject>[];
-  for (RenderObject renderer = current; renderer != ancestor; renderer = renderer.parent! as RenderObject) {
+  for (RenderObject renderer = current; renderer != ancestor; renderer = renderer.parent!) {
     renderers.add(renderer);
     assert(renderer.parent != null);
   }
@@ -832,7 +832,7 @@ class RenderBoxModel extends RenderBox
   // child has percentage length and parent's size can not be calculated by style
   // thus parent needs relayout for its child calculate percentage length.
   void markParentNeedsRelayout() {
-    AbstractNode? parent = this.parent;
+    RenderObject? parent = this.parent;
     if (parent is RenderBoxModel) {
       parent.needsRelayout = true;
     }
@@ -865,7 +865,7 @@ class RenderBoxModel extends RenderBox
   /// Mark children needs layout when drop child as Flutter did
   ///
   @override
-  void dropChild(RenderBox child) {
+  void dropChild(RenderObject child) {
     super.dropChild(child);
     // Loop to mark all the children to needsLayout as flutter did
     _syncChildNeedsLayoutFlag(child);
@@ -972,7 +972,24 @@ class RenderBoxModel extends RenderBox
         renderStyle.effectiveBorderRightWidth.computedValue +
         renderStyle.paddingLeft.computedValue +
         renderStyle.paddingRight.computedValue;
-    double maxConstraintWidth = renderStyle.borderBoxLogicalWidth ?? double.infinity;
+
+    double? parentBoxContentConstraintsWidth;
+    if (parent is RenderBoxModel && this is RenderLayoutBox) {
+      RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
+      parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
+
+      // When inner minimal content size are larger that parent's constraints.
+      if (parentBoxContentConstraintsWidth < minConstraintWidth) {
+        parentBoxContentConstraintsWidth = null;
+      }
+
+      // FlexItems with flex:none won't inherit parent box's constraints
+      if (parent is RenderFlexLayout && (parent as RenderFlexLayout).isFlexNone(this)) {
+        parentBoxContentConstraintsWidth = null;
+      }
+    }
+
+    double maxConstraintWidth = renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight = renderStyle.effectiveBorderTopWidth.computedValue +
@@ -1098,7 +1115,7 @@ class RenderBoxModel extends RenderBox
   /// Find scroll container
   RenderBoxModel? findScrollContainer() {
     RenderBoxModel? scrollContainer;
-    AbstractNode? parent = this.parent;
+    RenderObject? parent = this.parent;
 
     while (parent != null && parent is RenderLayoutBox) {
       if (parent.isScrollingContentBox && parent.parent is RenderLayoutBox) {
@@ -1375,6 +1392,11 @@ class RenderBoxModel extends RenderBox
       // because placeholder depends the constraints in layout stage.
       RenderBox? previousSibling = containingBlockRenderBox == parent ? renderBoxModel : after;
 
+      // PreviousSibling of positionPlaceHolder should always been positionPlaceHolder.
+      if (previousSibling is RenderBoxModel && previousSibling.renderPositionPlaceholder != null) {
+        previousSibling = previousSibling.renderPositionPlaceholder;
+      }
+
       // Add position holder to origin position parent.
       _attachPositionPlaceholder(parent, renderBoxModel, after: previousSibling);
     }
@@ -1448,7 +1470,7 @@ class RenderBoxModel extends RenderBox
   Offset getTotalScrollOffset() {
     double top = scrollTop;
     double left = scrollLeft;
-    AbstractNode? parentNode = parent;
+    RenderObject? parentNode = parent;
     while (parentNode is RenderBoxModel) {
       top += parentNode.scrollTop;
       left += parentNode.scrollLeft;

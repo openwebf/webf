@@ -32,7 +32,6 @@ import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
-import 'nth_index_cache.dart';
 
 typedef IndexCounter = int Function(Element element);
 
@@ -62,9 +61,6 @@ SelectorGroup? _parseSelectorGroup(String selector) {
 class SelectorEvaluator extends SelectorVisitor {
   Element? _element;
   SelectorGroup? _selectorGroup;
-
-  static final NthIndexCache _nthIndexCache = NthIndexCache();
-  static NthIndexCache get nthIndexCache => _nthIndexCache;
 
   bool matchSelector(SelectorGroup? selectorGroup, Element? element) {
     if (selectorGroup == null || element == null) {
@@ -306,12 +302,12 @@ class SelectorEvaluator extends SelectorVisitor {
   bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector, num? a, num b, IndexCounter finder) {
     int index = 0;
 
-    int? cacheIndex = SelectorEvaluator._nthIndexCache.getChildrenIndexFromCache(_element!.parentNode!, _element!, selector.name);
+    int? cacheIndex = element.ownerDocument.nthIndexCache.getChildrenIndexFromCache(_element!.parentNode!, _element!, selector.name);
     if (cacheIndex != null) {
       index = cacheIndex;
     } else {
       index = finder(element);
-      SelectorEvaluator._nthIndexCache.setChildrenIndexWithParentNode(_element!.parentNode!, _element!, selector.name, index);
+      element.ownerDocument.nthIndexCache.setChildrenIndexWithParentNode(_element!.parentNode!, _element!, selector.name, index);
     }
 
     return _indexSatisfiesEquation(index + 1, a, b);
