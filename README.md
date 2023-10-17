@@ -42,6 +42,11 @@ This ensures that users can reliably receive updates for three minor WebF versio
 
 <img width="817" alt="image" src="https://github.com/openwebf/webf/assets/4409743/2d5cf5a1-e670-424b-8766-324f475bbc0a">
 
+Below is the relationship between the various Flutter and WebF versions:
+
+<img width="627" alt="image" src="https://github.com/openwebf/webf/assets/4409743/8cace8da-ac97-4908-b970-6b52450cb4cc">
+
+
 ## How to use
 
 > All front-end frameworks based on the WhatWG DOM standard are supported; this time, we are using Vue as an example.
