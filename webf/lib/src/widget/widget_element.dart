@@ -211,6 +211,9 @@ abstract class WidgetElement extends dom.Element {
     } else {
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
     }
+    // Flush the build and layout to initialize the renderObject.
+    WidgetsBinding.instance.buildOwner!.buildScope(WidgetsBinding.instance.rootElement!);
+    WidgetsBinding.instance.pipelineOwner.flushLayout();
   }
 
   void _detachWidget() {
