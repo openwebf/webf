@@ -186,7 +186,10 @@ mixin BaseInputElement on WidgetElement {
         });
         break;
     }
-    style.flushPendingProperties();
+
+    if (!ownerDocument.controller.shouldBlockingFlushingResolvedStyleProperties) {
+      style.flushPendingProperties();
+    }
   }
 
   String get placeholder => getAttribute('placeholder') ?? '';

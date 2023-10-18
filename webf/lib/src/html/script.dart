@@ -169,12 +169,12 @@ class ScriptRunner {
     } else {
       bundle.preProcessing(_contextId);
       _document.pendingPreloadingScriptCallbacks.add(() => task(shouldAsync));
-    }
 
-    if (_document.controller.preloadStatus != PreloadingStatus.none) {
-      _document.unfinishedPreloadResources--;
-      if (_document.unfinishedPreloadResources == 0 && _document.onPreloadingFinished != null) {
-        _document.onPreloadingFinished!();
+      if (_document.controller.preloadStatus != PreloadingStatus.none) {
+        _document.unfinishedPreloadResources--;
+        if (_document.unfinishedPreloadResources == 0 && _document.onPreloadingFinished != null) {
+          _document.onPreloadingFinished!();
+        }
       }
     }
   }

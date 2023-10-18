@@ -73,4 +73,14 @@ class HTMLElement extends Element {
     }
     super.setRenderStyle(property, present);
   }
+
+  void flushPendingStylePropertiesForWholeTree() {
+    runner(Element root) {
+      root.style.flushPendingProperties();
+      root.children.forEach((element) {
+        runner(element);
+      });
+    }
+    runner(this);
+  }
 }

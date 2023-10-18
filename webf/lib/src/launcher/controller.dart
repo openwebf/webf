@@ -134,9 +134,9 @@ enum WebFLoadingMode {
   /// The `aggressive` mode is a step further than `preloading`, cutting down up to 90% of loading time for optimal performance.
   /// This mode simulates the instantaneous response of native Flutter pages but may require modifications in the existing web codes for compatibility.
   /// In this mode, all remote resources are loaded and executed similarly to the standard mode, but with an offline-like behavior.
-  /// Given that JavaScript is executed in this mode, properties like `clientWidth` and `clientHeight` from the viewModule always return 0. This is because
+  /// Given that JavaScript is executed in this mode, properties like `clientWidth` and `clientHeight` from the CSSOM-view spec always return 0. This is because
   /// no layout or paint processes occur during preRendering.
-  /// If your application depends on viewModule properties, ensure that the related code is placed within the `load` and `DOMContentLoaded` event callbacks of the window.
+  /// If your application depends on CSSOM-view properties to work, ensure that the related code is placed within the `load` and `DOMContentLoaded` event callbacks of the window.
   /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
   /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
   preRendering
@@ -145,7 +145,15 @@ enum WebFLoadingMode {
 enum PreloadingStatus {
   none,
   preloading,
-  success
+  done,
+}
+
+enum PreRenderingStatus {
+  none,
+  preloading,
+  evaluate,
+  rendering,
+  done
 }
 
 // An kraken View Controller designed for multiple kraken view control.
@@ -190,14 +198,23 @@ class WebFViewController implements WidgetsBindingObserver {
     _setupObserver();
 
     defineBuiltInElements();
+  }
 
-    // Wait viewport mounted on the outside renderObject tree.
-    Future.microtask(() {
-      // Execute UICommand.createDocument and UICommand.createWindow to initialize window and document.
-      flushUICommand(this, nullptr, dependentOnElementUICommandReason | dependentOnLayoutUICommandReason);
+  bool _isAnimationTimelineStopped = false;
+  bool get isAnimationTimelineStopped => _isAnimationTimelineStopped;
+  final List<VoidCallback> _pendingAnimationTimesLines = [];
+
+  void stopAnimationsTimeLine() {
+    _isAnimationTimelineStopped = true;
+  }
+  void addPendingAnimationTimeline(VoidCallback callback) {
+    _pendingAnimationTimesLines.add(callback);
+  }
+  void resumeAnimationTimeline() {
+    _pendingAnimationTimesLines.forEach((callback) {
+      callback();
     });
-
-    SchedulerBinding.instance.addPostFrameCallback(flushPendingCommandsPerFrame);
+    _pendingAnimationTimesLines.clear();
   }
 
   void flushPendingCommandsPerFrame() {
@@ -1036,6 +1053,12 @@ class WebFController {
     historyModule.add(bundle);
   }
 
+  void _replaceCurrentHistory(WebFBundle bundle) {
+    HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+    previousHistoryStack.clear();
+    historyModule.add(bundle);
+  }
+
   Future<void> reload() async {
     assert(!_view._disposed, 'WebF have already disposed');
 
@@ -1089,12 +1112,12 @@ class WebFController {
 
     // Update entrypoint.
     _entrypoint = bundle;
-    _addHistory(bundle);
+    _replaceCurrentHistory(bundle);
 
     mode = WebFLoadingMode.preloading;
 
     // Initialize document, window and the documentElement.
-    flushUICommand(view);
+    flushUICommand(view, view.window.pointer!, standardUICommandReason);
 
     // Set the status value for preloading.
     _preloadStatus = PreloadingStatus.preloading;
@@ -1117,13 +1140,13 @@ class WebFController {
       completer.complete();
     } else if (_entrypoint!.isHTML) {
       // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-      await evaluateEntrypoint();;
+      await evaluateEntrypoint();
 
       // Initialize document, window and the documentElement.
-      flushUICommand(view);
+      flushUICommand(view, view.window.pointer!, standardUICommandReason);
 
       view.document.onPreloadingFinished = () {
-        _preloadStatus = PreloadingStatus.success;
+        _preloadStatus = PreloadingStatus.done;
         completer.complete();
       };
     }
@@ -1131,8 +1154,93 @@ class WebFController {
     return completer.future;
   }
 
-  Future<void> preRendering(WebFBundle bundle) async {
 
+  bool get shouldBlockingFlushingResolvedStyleProperties {
+    return mode == WebFLoadingMode.preRendering && preRenderingStatus == PreRenderingStatus.evaluate;
+  }
+
+  PreRenderingStatus _preRenderingStatus = PreRenderingStatus.none;
+  PreRenderingStatus get preRenderingStatus => _preRenderingStatus;
+  /// The `aggressive` mode is a step further than `preloading`, cutting down up to 90% of loading time for optimal performance.
+  /// This mode simulates the instantaneous response of native Flutter pages but may require modifications in the existing web codes for compatibility.
+  /// In this mode, all remote resources are loaded and executed similarly to the standard mode, but with an offline-like behavior.
+  /// Given that JavaScript is executed in this mode, properties like `clientWidth` and `clientHeight` from the viewModule always return 0. This is because
+  /// no layout or paint processes occur during preRendering.
+  /// If your application depends on viewModule properties, ensure that the related code is placed within the `load` and `DOMContentLoaded` event callbacks of the window.
+  /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
+  /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
+  Future<void> preRendering(WebFBundle bundle) async {
+    if (_preRenderingStatus != PreRenderingStatus.none) return;
+
+    Completer completer = Completer();
+
+    // Update entrypoint.
+    _entrypoint = bundle;
+    _replaceCurrentHistory(bundle);
+
+    mode = WebFLoadingMode.preRendering;
+
+    // Initialize document, window and the documentElement.
+    flushUICommand(view, view.window.pointer!, standardUICommandReason);
+
+    // Set the status value for preloading.
+    _preRenderingStatus = PreRenderingStatus.preloading;
+
+    // Manually initialize the root element and create renderObjects for each elements.
+    view.document.documentElement!.applyStyle(view.document.documentElement!.style);
+    view.document.documentElement!.createRenderer();
+    view.document.documentElement!.ensureChildAttached();
+
+    // Preparing the entrypoint
+    await Future.wait([
+      _resolveEntrypoint(),
+      module.initialize()
+    ]);
+
+    // Stop the timer and animation frame
+    module.pauseTimer();
+    module.pauseAnimationFrame();
+
+    // Pause the animation timeline.
+    view.stopAnimationsTimeLine();
+
+    if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
+      // Convert the JavaScript code into bytecode.
+      if (_entrypoint!.isJavascript) {
+        _entrypoint!.preProcessing(view.contextId);
+      }
+
+      view.window.addEventListener(EVENT_LOAD, (event) async {
+        completer.complete();
+      });
+
+      _preRenderingStatus = PreRenderingStatus.evaluate;
+
+      await evaluateEntrypoint();
+    } else if (_entrypoint!.isHTML) {
+      // Evaluate the HTML entry point, and loading the stylesheets and scripts.
+      await evaluateEntrypoint();
+
+      // Initialize document, window and the documentElement.
+      flushUICommand(view, view.window.pointer!, standardUICommandReason);
+
+      view.document.onPreloadingFinished = () async {
+        _preRenderingStatus = PreRenderingStatus.evaluate;
+
+        if (view.document.unfinishedPreloadResources == 0 && entrypoint!.isHTML) {
+          List<VoidCallback> pendingScriptCallbacks = view.document.pendingPreloadingScriptCallbacks;
+          for (int i = 0; i < pendingScriptCallbacks.length; i ++) {
+            pendingScriptCallbacks[i]();
+          }
+        }
+
+        _preRenderingStatus = PreRenderingStatus.done;
+
+        completer.complete();
+      };
+    }
+
+    return completer.future;
   }
 
   String? getResourceContent(String? url) {
@@ -1299,6 +1407,12 @@ class WebFController {
   bool _isComplete = false;
   bool get isComplete => _isComplete;
 
+  bool _evaluated = false;
+  bool get evaluated => _evaluated;
+  set evaluated(value) {
+    _evaluated = value;
+  }
+
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.cpp#L840
   // Check whether the document has been loaded, such as html has parsed (main of JS has evaled) and images/scripts has loaded.
   void checkCompleted() {
@@ -1310,8 +1424,10 @@ class WebFController {
     // Are all script element complete?
     if (_view.document.isDelayingDOMContentLoadedEvent) return;
 
-    _view.document.readyState = DocumentReadyState.interactive;
-    _dispatchDOMContentLoadedEvent();
+    if (mode != WebFLoadingMode.preRendering) {
+      _view.document.readyState = DocumentReadyState.interactive;
+      dispatchDOMContentLoadedEvent();
+    }
 
     // Still waiting for images/scripts?
     if (_view.document.hasPendingRequest) return;
@@ -1324,11 +1440,13 @@ class WebFController {
 
     _isComplete = true;
 
-    _dispatchWindowLoadEvent();
-    _view.document.readyState = DocumentReadyState.complete;
+    if (mode != WebFLoadingMode.preRendering) {
+      dispatchWindowLoadEvent();
+      _view.document.readyState = DocumentReadyState.complete;
+    }
   }
 
-  void _dispatchDOMContentLoadedEvent() {
+  void dispatchDOMContentLoadedEvent() {
     Event event = Event(EVENT_DOM_CONTENT_LOADED);
     EventTarget window = view.window;
     window.dispatchEvent(event);
@@ -1338,7 +1456,7 @@ class WebFController {
     }
   }
 
-  void _dispatchWindowLoadEvent() {
+  void dispatchWindowLoadEvent() {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       // DOM element are created at next frame, so we should trigger onload callback in the next frame.
       Event event = Event(EVENT_LOAD);
