@@ -88,6 +88,9 @@ class Document extends ContainerNode {
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
 
+  // Cache all the fixed children of renderBoxModel of root element.
+  Set<RenderBoxModel> fixedChildren = {};
+
   final List<VoidCallback> pendingPreloadingScriptCallbacks = [];
 
   Set<Element> styleDirtyElements = {};
@@ -520,6 +523,7 @@ class Document extends ContainerNode {
     adoptedStyleSheets.clear();
     cookie.clearCookie();
     styleDirtyElements.clear();
+    fixedChildren.clear();
     pendingPreloadingScriptCallbacks.clear();
     super.dispose();
   }

@@ -415,7 +415,7 @@ typedef DartDumpQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> co
 
 final DartDumpQuickjsByteCode _dumpQuickjsByteCode = WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDumpQuickjsByteCode>>('dumpQuickjsByteCode').asFunction();
 
-Uint8List dumpQuickjsByteCode(int contextId, Uint8List code, {String? url}) {
+Uint8List dumpQuickjsByteCode(double contextId, Uint8List code, {String? url}) {
   // Assign `vm://$id` for no url (anonymous scripts).
   if (url == null) {
     url = 'vm://$_anonymousScriptEvaluationId';

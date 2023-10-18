@@ -463,7 +463,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     // Should schedule to the next frame to make sure the RenderViewportBox(WebF's root renderObject) had been layout.
     try {
       SchedulerBinding.instance.addPostFrameCallback((_) async {
-        if (controller!.isComplete) return;
+        if (controller!.evaluated) return;
         // Sync viewport size to the documentElement.
         controller!.view.document.initializeRootElementSize();
         // Starting to flush ui commands every frames.
@@ -472,8 +472,9 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
         // Bundle could be executed before mount to the flutter tree.
         if (controller!.mode == WebFLoadingMode.standard) {
           await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
-        } else {
+        } else if (controller!.mode == WebFLoadingMode.preloading) {
           assert(controller!.entrypoint!.isResolved);
+          assert(controller!.entrypoint!.isDataObtained);
           if (controller!.view.document.unfinishedPreloadResources == 0 && controller!.entrypoint!.isHTML) {
             List<VoidCallback> pendingScriptCallbacks = controller!.view.document.pendingPreloadingScriptCallbacks;
             for (int i = 0; i < pendingScriptCallbacks.length; i ++) {
@@ -482,7 +483,18 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
           } else if (controller!.entrypoint!.isJavascript || controller!.entrypoint!.isBytecode) {
             await controller!.evaluateEntrypoint();
           }
+        } else if (controller!.mode == WebFLoadingMode.preRendering) {
+          controller!.module.resumeTimer();
+          controller!.module.resumeAnimationFrame();
+          controller!.view.resumeAnimationTimeline();
+          HTMLElement rootElement = controller!.view.document.documentElement as HTMLElement;
+          rootElement.flushPendingStylePropertiesForWholeTree();
+
+          controller!.dispatchDOMContentLoadedEvent();
+          controller!.dispatchWindowLoadEvent();
         }
+
+        controller!.evaluated = true;
       });
     } catch (e, s) {
       print(s);

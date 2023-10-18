@@ -22,9 +22,6 @@ class RenderViewportBox extends RenderBox
 
   WebFController controller;
 
-  // Cache all the fixed children of renderBoxModel of root element.
-  Set<RenderBoxModel> fixedChildren = {};
-
   @override
   void setupParentData(covariant RenderObject child) {
     child.parentData = RenderViewportParentData();
@@ -145,13 +142,11 @@ class RenderViewportBox extends RenderBox
   // WebF page can reload the whole page.
   void reload() {
     removeAll();
-    fixedChildren.clear();
   }
 
   @override
   void dispose() {
     removeAll();
-    fixedChildren.clear();
     super.dispose();
   }
 }
