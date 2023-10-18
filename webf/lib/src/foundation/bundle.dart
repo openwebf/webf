@@ -98,6 +98,7 @@ abstract class WebFBundle {
 
   // Indicate the bundle is resolved.
   bool get isResolved => _uri != null;
+  bool get isDataObtained => data != null;
 
   // Content type for data.
   // The default value is plain text.
@@ -105,7 +106,7 @@ abstract class WebFBundle {
   ContentType get contentType => _contentType ?? _resolveContentType(_uri);
 
   // Pre process the data before the data actual used.
-  void preProcessing(int contextId) {
+  void preProcessing(double contextId) {
     if (isJavascript && data != null) {
       assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
       data = dumpQuickjsByteCode(contextId, data!, url: _uri.toString());
