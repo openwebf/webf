@@ -4,6 +4,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/launcher.dart';
 import 'package:webf/widget.dart';
 
 class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectElement {
@@ -23,8 +24,10 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
     element.applyStyle(element.style);
 
     if (element.renderer != null) {
-      // Flush pending style before child attached.
-      element.style.flushPendingProperties();
+      if (element.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
+        // Flush pending style before child attached.
+        element.style.flushPendingProperties();
+      }
     }
   }
 
