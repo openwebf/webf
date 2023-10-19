@@ -678,7 +678,7 @@ class CSSBackground {
   }
 }
 
-void _applyColorAndStops(int start, List<String> args, List<Color?> colors, List<double?> stops,
+void _applyColorAndStops(int start, List<String> args, List<Color> colors, List<double> stops,
     RenderStyle renderStyle, String propertyName,
     [double? gradientLength]) {
   // colors should more than one, otherwise invalid
@@ -688,8 +688,10 @@ void _applyColorAndStops(int start, List<String> args, List<Color?> colors, List
       List<CSSColorStop> colorGradients =
           _parseColorAndStop(args[i].trim(), renderStyle, propertyName, (i - start) * grow, gradientLength);
       for (var colorStop in colorGradients) {
-        colors.add(colorStop.color);
-        stops.add(colorStop.stop);
+        if (colorStop.color != null) {
+          colors.add(colorStop.color!);
+          stops.add(colorStop.stop!);
+        }
       }
     }
   }
@@ -701,15 +703,8 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
   List<CSSColorStop> colorGradients = [];
   // rgba may contain space, color should handle special
   if (src.startsWith('rgba(') || src.startsWith('rgb(')) {
-    int indexOfRgbaEnd = src.indexOf(')');
-    if (indexOfRgbaEnd == -1) {
-      // rgba parse error
-      return colorGradients;
-    }
+    int indexOfRgbaEnd = src.lastIndexOf(')');
     strings.add(src.substring(0, indexOfRgbaEnd + 1));
-    if (indexOfRgbaEnd + 1 < src.length) {
-      strings.addAll(src.substring(indexOfRgbaEnd + 1).trim().split(' '));
-    }
   } else {
     strings = src.split(' ');
   }
