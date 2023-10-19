@@ -595,4 +595,23 @@ describe('Tags input', () => {
       done();
     });
   });
+
+  it('should works when change display on input element', (done) => {
+    const input = createElement('input', {
+      style: {
+        width: '50px'
+      }
+    }, []);
+    document.body.appendChild(input);
+    document.body.appendChild(createElement('span', {}, [createText('AAAAA')]))
+
+    requestAnimationFrame(async() => {
+      input.style.display = 'inline-block';
+      requestAnimationFrame((() => {
+
+      }))
+      await snapshot();
+      done();
+    });
+  });
 });
