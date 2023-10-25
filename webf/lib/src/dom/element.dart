@@ -9,7 +9,6 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -355,7 +354,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return QuerySelector.closest(this, args.first);
   }
 
-  @visibleForOverriding
   void updateRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
@@ -1298,7 +1296,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       propertyHandler.deleter!();
     }
 
-    attributes.remove(qualifiedName);
+    if (hasAttribute(qualifiedName)) {
+      attributes.remove(qualifiedName);
+      final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
+      recalculateStyle(rebuildNested: isNeedRecalculate);
+    }
   }
 
   @mustCallSuper
@@ -1827,9 +1829,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     style.union(matchRule);
   }
 
+  bool _scheduledRunTransitions = false;
+  void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
+    if (_scheduledRunTransitions) return;
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      renderStyle.runTransition(propertyName, prevValue, currentValue);
+      _scheduledRunTransitions = false;
+    });
+  }
+
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue, {String? baseHref}) {
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
-      renderStyle.runTransition(propertyName, prevValue, currentValue);
+      scheduleRunTransitionAnimations(propertyName, prevValue, currentValue);
     } else {
       setRenderStyle(propertyName, currentValue, baseHref: baseHref);
     }
