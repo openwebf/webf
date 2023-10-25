@@ -10,8 +10,6 @@ import 'dart:typed_data';
 import 'package:test/test.dart';
 import 'package:webf/foundation.dart';
 
-import '../../local_http_server.dart';
-
 void main() {
   group('Bundle', () {
     test('FileBundle basic', () async {
