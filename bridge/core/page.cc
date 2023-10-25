@@ -87,7 +87,7 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
 
   ExceptionState exception_state;
   auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
-  NativeValue tmp = result.ToNative(exception_state);
+  NativeValue tmp = result.ToNative(ctx, exception_state);
   if (exception_state.HasException()) {
     context_->HandleException(exception_state);
     return nullptr;

@@ -110,11 +110,11 @@ describe('Display inline-block', () => {
     }, [
         createText('11111'),
     ]);
-  
+
     document.body.appendChild(container);
     await snapshot();
   });
-  
+
   it('element wrap when inline-block width exceeds its container', async() => {
     const container = createElement('div', {
       style: {
@@ -140,7 +140,7 @@ describe('Display inline-block', () => {
         }
       })
     ]);
-  
+
     document.body.appendChild(container);
     await snapshot();
   });
@@ -180,6 +180,54 @@ describe('Display inline-block', () => {
           }
         }))
       ]
+    );
+
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      item.style.width = '200px';
+      await snapshot();
+      done();
+    });
+  });
+
+  it('should stretch to its max-width size of inline-block when its width specified', async (done) => {
+    let div;
+    let item;
+    div = createElement(
+        'div',
+        {
+          style: {
+            display: 'inline-block',
+          },
+        },
+        [
+          createElement('div', {
+            style: {
+              height: '50px',
+              maxWidth: '30px',
+              backgroundColor: 'lightblue',
+            }
+          }),
+          (item = createElement('div', {
+            style: {
+              display: 'inline-block',
+              width: '100px',
+              height: '50px',
+              backgroundColor: 'lightgreen'
+            }
+          })),
+          (createElement('div', {
+            style: {
+              display: 'inline-block',
+              width: '100px',
+              height: '50px',
+              backgroundColor: 'yellow'
+            }
+          }))
+        ]
     );
 
     BODY.appendChild(div);
@@ -234,7 +282,7 @@ describe('Display inline-block', () => {
     );
 
     BODY.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -280,7 +328,7 @@ describe('Display inline-block', () => {
     );
 
     BODY.appendChild(div);
-    
+
     await snapshot();
   });
 });
