@@ -13,8 +13,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/webf.dart';
 
-import 'native_gumbo.dart';
-
 // Steps for using dart:ffi to call a C function from Dart:
 // 1. Import dart:ffi.
 // 2. Create a typedef with the FFI type signature of the C function.
