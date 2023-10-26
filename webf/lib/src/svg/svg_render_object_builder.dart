@@ -104,7 +104,6 @@ class SVGRenderBoxBuilder {
     final Constructor = svgElementsRegistry[tagName];
     if (Constructor != null) {
       final element = Constructor(null);
-      // element.ownerDocument = target.ownerDocument;
       if (tagName == TAG_SVG) {
         /// See [setAttribute]
         element.renderStyle.height = CSSLengthValue.auto;
