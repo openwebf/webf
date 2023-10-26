@@ -1,4 +1,5 @@
 # [WebF](https://openwebf.com/) [![pub package](https://img.shields.io/pub/v/webf.svg)](https://pub.dev/packages/webf)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopenwebf%2Fwebf.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopenwebf%2Fwebf?ref=badge_shield)
 
 WebF (Web on Flutter) is a W3C standards-compliant web rendering engine based on Flutter, allowing web applications to run natively on Flutter.
 
@@ -138,3 +139,7 @@ Read our [contributing guide](https://github.com/openwebf/webf/blob/main/.github
 Thank you to all the people who already contributed to [OpenWebF](https://github.com/openwebf) and [OpenKraken](https://github.com/openkraken)!
 
 Copyright (c) 2022-present, The OpenWebF authors.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopenwebf%2Fwebf.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopenwebf%2Fwebf?ref=badge_large)
