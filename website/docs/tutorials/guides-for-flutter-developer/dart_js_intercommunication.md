@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: Dart and JavaScript Intercommunication
+title: Dart and JS Intercommunication
 ---
 
 WebF offers a streamlined and optimized method for facilitating communication between Dart and JavaScript.
