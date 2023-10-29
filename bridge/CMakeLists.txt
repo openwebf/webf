@@ -305,6 +305,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/document_fragment.cc
     core/dom/child_node_list.cc
     core/dom/empty_node_list.cc
+    core/dom/mutation_observer.cc
+    core/dom/mutation_observer_registration.cc
+    core/dom/mutation_record.cc
+    core/dom/child_list_mutation_scope.cc
     core/dom/container_node.cc
     core/html/custom/widget_element.cc
     core/events/error_event.cc

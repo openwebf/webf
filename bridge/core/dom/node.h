@@ -11,6 +11,9 @@
 
 #include "events/event_target.h"
 #include "foundation/macros.h"
+#include "mutation_observer.h"
+#include "mutation_observer_options.h"
+#include "mutation_observer_registration.h"
 #include "node_data.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
@@ -233,6 +236,18 @@ class Node : public EventTarget {
   [[nodiscard]] bool SelfOrAncestorHasDirAutoAttribute() const { return GetFlag(kSelfOrAncestorHasDirAutoAttribute); }
   void SetSelfOrAncestorHasDirAutoAttribute() { SetFlag(kSelfOrAncestorHasDirAutoAttribute); }
   void ClearSelfOrAncestorHasDirAutoAttribute() { ClearFlag(kSelfOrAncestorHasDirAutoAttribute); }
+
+  void GetRegisteredMutationObserversOfType(
+      std::unordered_map<Member<MutationObserver>, MutationRecordDeliveryOptions>&,
+      MutationType,
+      const AtomicString& attribute_name);
+  void RegisterMutationObserver(MutationObserver&,
+                                MutationObserverOptions,
+                                const std::set<AtomicString>& attribute_filter);
+  void UnregisterMutationObserver(MutationObserverRegistration*);
+  void RegisterTransientMutationObserver(MutationObserverRegistration*);
+  void UnregisterTransientMutationObserver(MutationObserverRegistration*);
+  void NotifyMutationObserversNodeWillDetach();
 
   NodeData& CreateNodeData();
   [[nodiscard]] bool HasNodeData() const { return GetFlag(kHasDataFlag); }

@@ -94,6 +94,12 @@ class Member {
   T* operator->() const { return Get(); }
   T& operator*() const { return *Get(); }
 
+  T* Release() {
+    T* result = Get();
+    Clear();
+    return result;
+  }
+
  private:
   void SetRaw(T* p) {
     if (p != nullptr) {

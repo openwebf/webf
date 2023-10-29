@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "mutation_record_types"
+      }
+    ]
+  },
+  "data": [
+    "attributes",
+    "characterData",
+    "childList"
+  ]
+}

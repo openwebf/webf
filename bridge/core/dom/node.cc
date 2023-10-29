@@ -104,6 +104,31 @@ EventTargetData& Node::EnsureEventTargetData() {
   return event_target_data_->GetEventTargetData();
 }
 
+void Node::GetRegisteredMutationObserversOfType(
+    std::unordered_map<Member<MutationObserver>, MutationRecordDeliveryOptions>&,
+    webf::MutationType,
+    const webf::AtomicString& attribute_name) {
+
+}
+
+void Node::RegisterMutationObserver(webf::MutationObserver&,
+                                    webf::MutationObserverOptions,
+                                    const std::set<AtomicString>& attribute_filter) {}
+
+void Node::UnregisterMutationObserver(webf::MutationObserverRegistration*) {}
+
+void Node::RegisterTransientMutationObserver(webf::MutationObserverRegistration*) {
+
+}
+
+void Node::UnregisterTransientMutationObserver(webf::MutationObserverRegistration*) {
+
+}
+
+void Node::NotifyMutationObserversNodeWillDetach() {
+
+}
+
 NodeData& Node::CreateNodeData() {
   node_data_ = std::make_unique<NodeData>();
   SetFlag(kHasDataFlag);
