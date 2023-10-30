@@ -90,7 +90,7 @@ List<double> _cross(v1, v2) {
 
 double _dot(v1, v2) {
   double result = 0;
-  for (var i = 0; i < v1._length; i++) {
+  for (var i = 0; i < v1.length; i++) {
     result += v1[i] * v2[i];
   }
   return result;
