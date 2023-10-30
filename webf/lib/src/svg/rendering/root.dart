@@ -58,7 +58,7 @@ class RenderSVGRoot extends RenderSVGContainer {
         _innerClipLayer.layer = context
             .pushClipRect(false, offset, _renderViewBox, (context, offset) {
           // Draw debug rect
-          // context.canvas.drawRect(_viewBox, Paint()..color = Color.fromARGB(255, 255, 0, 0)..style = PaintingStyle.stroke);
+          // context.canvas.drawRect(_renderViewBox, Paint()..color = Color.fromARGB(255, 255, 0, 0)..style = PaintingStyle.stroke);
           visitChildren((child) {
             context.paintChild(child, offset);
           });
@@ -81,7 +81,9 @@ class RenderSVGRoot extends RenderSVGContainer {
     width = width.isInfinite ? DEFAULT_VIEW_BOX_WIDTH : width;
     height = height.isInfinite ? DEFAULT_VIEW_BOX_HEIGHT : height;
 
-    size = Size(width, height);
+    final biggestSize = constraints.biggest;
+
+    size = biggestSize.isFinite ? biggestSize : constraints.constrain(Size(width, height));
 
     if (_viewBox == null) {
       // When viewBox is not valid, should use width/height
