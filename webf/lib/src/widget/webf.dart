@@ -48,6 +48,14 @@ class WebF extends StatefulWidget {
   // Trigger when webf controller once created.
   final OnControllerCreated? onControllerCreated;
 
+  // Run the JavaScript engine in a dedicated Dart worker thread instead of the Flutter.ui thread.
+  // It cannot be updated once the WebF widget has been initialized.
+  // Advantage: Effectively avoids jank when running JavaScript code takes too much time during scrolling or executing animations.
+  // Appropriate use case: You have a page with a long list and you want the animations to run smoothly when loading more items.
+  // Disadvantage: It significantly increases the communication time between JS and Dart, potentially leading to performance reductions
+  // when heavily relying on data exchange between Dart and JavaScript.
+  final bool? dedicatedJSThread;
+
   final LoadErrorHandler? onLoadError;
 
   final LoadHandler? onLoad;
@@ -131,6 +139,7 @@ class WebF extends StatefulWidget {
       // webf's http client interceptor.
       this.httpClientInterceptor,
       this.uriParser,
+      this.dedicatedJSThread,
       this.routeObserver,
       this.initialCookies,
       this.preloadedBundles,
@@ -352,6 +361,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
         onLoadError: _webfWidget.onLoadError,
         onJSError: _webfWidget.onJSError,
+        dedicatedJSThread: _webfWidget.dedicatedJSThread ?? false,
         methodChannel: _webfWidget.javaScriptChannel,
         gestureListener: _webfWidget.gestureListener,
         navigationDelegate: _webfWidget.navigationDelegate,

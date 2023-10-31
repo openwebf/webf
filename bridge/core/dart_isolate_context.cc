@@ -53,13 +53,14 @@ void InitializeBuiltInStrings(JSContext* ctx) {
   }
 }
 
-DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length)
+DartIsolateContext::DartIsolateContext(bool dedicated_thread, const uint64_t* dart_methods, int32_t dart_methods_length)
     : is_valid_(true),
       running_thread_(std::this_thread::get_id()),
       dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {
   if (runtime_ == nullptr) {
     runtime_ = JS_NewRuntime();
   }
+  WEBF_LOG(VERBOSE) << " dedicated_thread :" << dedicated_thread;
   running_isolates_++;
   // Avoid stack overflow when running in multiple threads.
   JS_UpdateStackTop(runtime_);

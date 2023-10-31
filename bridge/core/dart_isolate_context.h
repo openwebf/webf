@@ -28,7 +28,7 @@ void DeleteDartWire(DartWireContext* wire);
 // DartIsolateContext has a 1:1 correspondence with a dart isolates.
 class DartIsolateContext {
  public:
-  explicit DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length);
+  explicit DartIsolateContext(bool dedicated_thread, const uint64_t* dart_methods, int32_t dart_methods_length);
 
   FORCE_INLINE JSRuntime* runtime() { return runtime_; }
   FORCE_INLINE bool valid() { return is_valid_ && std::this_thread::get_id() == running_thread_; }
