@@ -40,8 +40,8 @@
 
 static std::atomic<int64_t> unique_page_id{0};
 
-void* initDartIsolateContext(uint64_t* dart_methods, int32_t dart_methods_len) {
-  void* ptr = new webf::DartIsolateContext(dart_methods, dart_methods_len);
+void* initDartIsolateContext(int8_t dedicated_thread, uint64_t* dart_methods, int32_t dart_methods_len) {
+  void* ptr = new webf::DartIsolateContext(dedicated_thread == 1, dart_methods, dart_methods_len);
   return ptr;
 }
 

@@ -11,17 +11,19 @@ import 'from_native.dart';
 import 'to_native.dart';
 
 class DartContext {
-  DartContext() : pointer = initDartIsolateContext(makeDartMethodsData()) {
+  DartContext(bool dedicatedThread) : pointer = initDartIsolateContext(dedicatedThread, makeDartMethodsData()) {
     initDartDynamicLinking();
     registerDartContextFinalizer(this);
   }
   final Pointer<Void> pointer;
 }
 
-DartContext dartContext = DartContext();
+DartContext? dartContext;
 
 /// Init bridge
-int initBridge(WebFViewController view) {
+int initBridge(WebFViewController view, bool dedicatedThread) {
+  dartContext ??= DartContext(dedicatedThread);
+
   // Setup binding bridge.
   BindingBridge.setup();
 
