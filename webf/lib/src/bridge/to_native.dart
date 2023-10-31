@@ -240,17 +240,17 @@ void freeSVGResult(GumboOutput gumboOutput) {
 }
 
 // Register initJsEngine
-typedef NativeInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, int methodsLength);
+typedef NativeInitDartIsolateContext = Pointer<Void> Function(Int8 dedicated, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitDartIsolateContext = Pointer<Void> Function(int dedicated, Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartInitDartIsolateContext _initDartIsolateContext =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContext').asFunction();
 
-Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
+Pointer<Void> initDartIsolateContext(bool dedicatedThread, List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  return _initDartIsolateContext(bytes, dartMethods.length);
+  return _initDartIsolateContext(dedicatedThread ? 1 : 0, bytes, dartMethods.length);
 }
 
 typedef NativeDisposePage = Void Function(Pointer<Void>, Pointer<Void> page);
@@ -261,7 +261,7 @@ final DartDisposePage _disposePage =
 
 void disposePage(int contextId) {
   Pointer<Void> page = _allocatedPages[contextId]!;
-  _disposePage(dartContext.pointer, page);
+  _disposePage(dartContext!.pointer, page);
   _allocatedPages.remove(contextId);
 }
 
@@ -281,7 +281,7 @@ final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
 void allocateNewPage(int targetContextId) {
-  Pointer<Void> page = _allocateNewPage(dartContext.pointer, targetContextId);
+  Pointer<Void> page = _allocateNewPage(dartContext!.pointer, targetContextId);
   assert(!_allocatedPages.containsKey(targetContextId));
   _allocatedPages[targetContextId] = page;
 }

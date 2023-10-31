@@ -152,6 +152,7 @@ class WebFViewController implements WidgetsBindingObserver {
       {this.background,
       this.enableDebug = false,
       required this.rootController,
+      required bool dedicatedJSThread,
       this.navigationDelegate,
       this.gestureListener,
       this.initialCookies,
@@ -162,7 +163,7 @@ class WebFViewController implements WidgetsBindingObserver {
       debugPaintSizeEnabled = true;
     }
     BindingBridge.setup();
-    _contextId = initBridge(this);
+    _contextId = initBridge(this, dedicatedJSThread);
 
     if (originalViewport != null) {
       viewport = originalViewport;
@@ -817,6 +818,15 @@ class WebFController {
   // The kraken view entrypoint bundle.
   WebFBundle? _entrypoint;
 
+
+  // Run the JavaScript engine in a dedicated Dart worker thread instead of the Flutter.ui thread.
+  // It cannot be updated once the WebF widget has been initialized.
+  // Advantage: Effectively avoids jank when running JavaScript code takes too much time during scrolling or executing animations.
+  // Appropriate use case: You have a page with a long list and you want the animations to run smoothly when loading more items.
+  // Disadvantage: It significantly increases the communication time between JS and Dart, potentially leading to performance reductions
+  // when heavily relying on data exchange between Dart and JavaScript.
+  final bool dedicatedJSThread;
+
   WebFController(
     String? name,
     double viewportWidth,
@@ -841,6 +851,7 @@ class WebFController {
     this.initialCookies,
     required this.ownerFlutterView,
     this.resizeToAvoidBottomInsets = true,
+    this.dedicatedJSThread = false,
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {
@@ -854,6 +865,7 @@ class WebFController {
       background: background,
       enableDebug: enableDebug,
       rootController: this,
+      dedicatedJSThread: dedicatedJSThread,
       navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
       gestureListener: _gestureListener,
       initialCookies: initialCookies
@@ -937,6 +949,7 @@ class WebFController {
           rootController: this,
           navigationDelegate: _view.navigationDelegate,
           gestureListener: _view.gestureListener,
+          dedicatedJSThread: dedicatedJSThread,
           originalViewport: _view.viewport);
 
       _module = WebFModuleController(this, _view.contextId);
