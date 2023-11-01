@@ -1347,42 +1347,29 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void setRenderStyleProperty(String name, value) {
-    // Memorize the variable value to renderStyle object.
-    if (CSSVariable.isVariable(name)) {
-      renderStyle.setCSSVariable(name, value.toString());
-      return;
+    dynamic oldValue;
+
+    switch(name) {
+      case DISPLAY:
+      case OVERFLOW_X:
+      case OVERFLOW_Y:
+      case POSITION:
+        oldValue = renderStyle.getProperty(name);
+        break;
     }
 
-    // Get the computed value of CSS variable.
-    if (value is CSSVariable) {
-      value = value.computedValue(name);
-    }
-
-    if (value is CSSCalcValue) {
-      if (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y) {
-        value = CSSBackgroundPosition(calcValue: value);
-      } else {
-        value = value.computedValue(name);
-        if (value != null) {
-          value = CSSLengthValue(value, CSSLengthType.PX);
-        }
-      }
-    }
+    renderStyle.setProperty(name, value);
 
     switch (name) {
       case DISPLAY:
-        bool displayChanged = renderStyle.display != value;
-        renderStyle.display = value;
-        if (displayChanged) {
+        assert(oldValue != null);
+        if (value != oldValue) {
           _updateRenderBoxModelWithDisplay();
         }
         break;
-      case Z_INDEX:
-        renderStyle.zIndex = value;
-        break;
       case OVERFLOW_X:
-        CSSOverflowType oldEffectiveOverflowY = renderStyle.effectiveOverflowY;
-        renderStyle.overflowX = value;
+        assert(oldValue != null);
+        CSSOverflowType oldEffectiveOverflowY = oldValue;
         updateRenderBoxModel();
         updateRenderBoxModelWithOverflowX(_handleScroll);
         // Change overflowX may affect effectiveOverflowY.
@@ -1394,8 +1381,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         updateOverflowRenderBox();
         break;
       case OVERFLOW_Y:
-        CSSOverflowType oldEffectiveOverflowX = renderStyle.effectiveOverflowX;
-        renderStyle.overflowY = value;
+        assert(oldValue != null);
+        CSSOverflowType oldEffectiveOverflowX = oldValue;
         updateRenderBoxModel();
         updateRenderBoxModelWithOverflowY(_handleScroll);
         // Change overflowY may affect the effectiveOverflowX.
@@ -1406,355 +1393,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
         updateOverflowRenderBox();
         break;
-      case OPACITY:
-        renderStyle.opacity = value;
-        break;
-      case VISIBILITY:
-        renderStyle.visibility = value;
-        break;
-      case CONTENT_VISIBILITY:
-        renderStyle.contentVisibility = value;
-        break;
       case POSITION:
-        CSSPositionType oldPosition = renderStyle.position;
-        renderStyle.position = value;
-        _updateRenderBoxModelWithPosition(oldPosition);
+        assert(oldValue != null);
+        _updateRenderBoxModelWithPosition(oldValue);
         break;
-      case TOP:
-        renderStyle.top = value;
-        break;
-      case LEFT:
-        renderStyle.left = value;
-        break;
-      case BOTTOM:
-        renderStyle.bottom = value;
-        break;
-      case RIGHT:
-        renderStyle.right = value;
-        break;
-      // Size
-      case WIDTH:
-        renderStyle.width = value;
-        break;
-      case MIN_WIDTH:
-        renderStyle.minWidth = value;
-        break;
-      case MAX_WIDTH:
-        renderStyle.maxWidth = value;
-        break;
-      case HEIGHT:
-        renderStyle.height = value;
-        break;
-      case MIN_HEIGHT:
-        renderStyle.minHeight = value;
-        break;
-      case MAX_HEIGHT:
-        renderStyle.maxHeight = value;
-        break;
-      // Flex
-      case FLEX_DIRECTION:
-        renderStyle.flexDirection = value;
-        break;
-      case FLEX_WRAP:
-        renderStyle.flexWrap = value;
-        break;
-      case ALIGN_CONTENT:
-        renderStyle.alignContent = value;
-        break;
-      case ALIGN_ITEMS:
-        renderStyle.alignItems = value;
-        break;
-      case JUSTIFY_CONTENT:
-        renderStyle.justifyContent = value;
-        break;
-      case ALIGN_SELF:
-        renderStyle.alignSelf = value;
-        break;
-      case FLEX_GROW:
-        renderStyle.flexGrow = value;
-        break;
-      case FLEX_SHRINK:
-        renderStyle.flexShrink = value;
-        break;
-      case FLEX_BASIS:
-        renderStyle.flexBasis = value;
-        break;
-      // Background
-      case BACKGROUND_COLOR:
-        renderStyle.backgroundColor = value;
-        break;
-      case BACKGROUND_ATTACHMENT:
-        renderStyle.backgroundAttachment = value;
-        break;
-      case BACKGROUND_IMAGE:
-        renderStyle.backgroundImage = value;
-        break;
-      case BACKGROUND_REPEAT:
-        renderStyle.backgroundRepeat = value;
-        break;
-      case BACKGROUND_POSITION_X:
-        renderStyle.backgroundPositionX = value;
-        break;
-      case BACKGROUND_POSITION_Y:
-        renderStyle.backgroundPositionY = value;
-        break;
-      case BACKGROUND_SIZE:
-        renderStyle.backgroundSize = value;
-        break;
-      case BACKGROUND_CLIP:
-        renderStyle.backgroundClip = value;
-        break;
-      case BACKGROUND_ORIGIN:
-        renderStyle.backgroundOrigin = value;
-        break;
-      // Padding
-      case PADDING_TOP:
-        renderStyle.paddingTop = value;
-        break;
-      case PADDING_RIGHT:
-        renderStyle.paddingRight = value;
-        break;
-      case PADDING_BOTTOM:
-        renderStyle.paddingBottom = value;
-        break;
-      case PADDING_LEFT:
-        renderStyle.paddingLeft = value;
-        break;
-      // Border
-      case BORDER_LEFT_WIDTH:
-        renderStyle.borderLeftWidth = value;
-        break;
-      case BORDER_TOP_WIDTH:
-        renderStyle.borderTopWidth = value;
-        break;
-      case BORDER_RIGHT_WIDTH:
-        renderStyle.borderRightWidth = value;
-        break;
-      case BORDER_BOTTOM_WIDTH:
-        renderStyle.borderBottomWidth = value;
-        break;
-      case BORDER_LEFT_STYLE:
-        renderStyle.borderLeftStyle = value;
-        break;
-      case BORDER_TOP_STYLE:
-        renderStyle.borderTopStyle = value;
-        break;
-      case BORDER_RIGHT_STYLE:
-        renderStyle.borderRightStyle = value;
-        break;
-      case BORDER_BOTTOM_STYLE:
-        renderStyle.borderBottomStyle = value;
-        break;
-      case BORDER_LEFT_COLOR:
-        renderStyle.borderLeftColor = value;
-        break;
-      case BORDER_TOP_COLOR:
-        renderStyle.borderTopColor = value;
-        break;
-      case BORDER_RIGHT_COLOR:
-        renderStyle.borderRightColor = value;
-        break;
-      case BORDER_BOTTOM_COLOR:
-        renderStyle.borderBottomColor = value;
-        break;
-      case BOX_SHADOW:
-        renderStyle.boxShadow = value;
-        break;
-      case BORDER_TOP_LEFT_RADIUS:
-        renderStyle.borderTopLeftRadius = value;
-        break;
-      case BORDER_TOP_RIGHT_RADIUS:
-        renderStyle.borderTopRightRadius = value;
-        break;
-      case BORDER_BOTTOM_LEFT_RADIUS:
-        renderStyle.borderBottomLeftRadius = value;
-        break;
-      case BORDER_BOTTOM_RIGHT_RADIUS:
-        renderStyle.borderBottomRightRadius = value;
-        break;
-      // Margin
-      case MARGIN_LEFT:
-        renderStyle.marginLeft = value;
-        break;
-      case MARGIN_TOP:
-        renderStyle.marginTop = value;
-        break;
-      case MARGIN_RIGHT:
-        renderStyle.marginRight = value;
-        break;
-      case MARGIN_BOTTOM:
-        renderStyle.marginBottom = value;
-        break;
-      // Text
       case COLOR:
-        renderStyle.color = value;
         _updateColorRelativePropertyWithColor(this);
         break;
-      case TEXT_DECORATION_LINE:
-        renderStyle.textDecorationLine = value;
-        break;
-      case TEXT_DECORATION_STYLE:
-        renderStyle.textDecorationStyle = value;
-        break;
-      case TEXT_DECORATION_COLOR:
-        renderStyle.textDecorationColor = value;
-        break;
-      case FONT_WEIGHT:
-        renderStyle.fontWeight = value;
-        break;
-      case FONT_STYLE:
-        renderStyle.fontStyle = value;
-        break;
-      case FONT_FAMILY:
-        renderStyle.fontFamily = value;
-        break;
       case FONT_SIZE:
-        renderStyle.fontSize = value;
         _updateFontRelativeLengthWithFontSize();
         break;
-      case LINE_HEIGHT:
-        renderStyle.lineHeight = value;
-        break;
-      case LETTER_SPACING:
-        renderStyle.letterSpacing = value;
-        break;
-      case WORD_SPACING:
-        renderStyle.wordSpacing = value;
-        break;
-      case TEXT_SHADOW:
-        renderStyle.textShadow = value;
-        break;
-      case WHITE_SPACE:
-        renderStyle.whiteSpace = value;
-        break;
-      case TEXT_OVERFLOW:
-        // Overflow will affect text-overflow ellipsis taking effect
-        renderStyle.textOverflow = value;
-        break;
-      case LINE_CLAMP:
-        renderStyle.lineClamp = value;
-        break;
-      case VERTICAL_ALIGN:
-        renderStyle.verticalAlign = value;
-        break;
-      case TEXT_ALIGN:
-        renderStyle.textAlign = value;
-        break;
-      // Transform
       case TRANSFORM:
-        renderStyle.transform = value;
         updateRenderBoxModel();
-        break;
-      case TRANSFORM_ORIGIN:
-        renderStyle.transformOrigin = value;
-        break;
-      // Transition
-      case TRANSITION_DELAY:
-        renderStyle.transitionDelay = value;
-        break;
-      case TRANSITION_DURATION:
-        renderStyle.transitionDuration = value;
-        break;
-      case TRANSITION_TIMING_FUNCTION:
-        renderStyle.transitionTimingFunction = value;
-        break;
-      case TRANSITION_PROPERTY:
-        renderStyle.transitionProperty = value;
-        break;
-      // Animation
-      case ANIMATION_DELAY:
-        renderStyle.animationDelay = value;
-        break;
-      case ANIMATION_NAME:
-        renderStyle.animationName = value;
-        break;
-      case ANIMATION_DIRECTION:
-        renderStyle.animationDirection = value;
-        break;
-      case ANIMATION_DURATION:
-        renderStyle.animationDuration = value;
-        break;
-      case ANIMATION_PLAY_STATE:
-        renderStyle.animationPlayState = value;
-        break;
-      case ANIMATION_FILL_MODE:
-        renderStyle.animationFillMode = value;
-        break;
-      case ANIMATION_ITERATION_COUNT:
-        renderStyle.animationIterationCount = value;
-        break;
-      case ANIMATION_TIMING_FUNCTION:
-        renderStyle.animationTimingFunction = value;
-        break;
-      // Others
-      case OBJECT_FIT:
-        renderStyle.objectFit = value;
-        break;
-      case OBJECT_POSITION:
-        renderStyle.objectPosition = value;
-        break;
-      case FILTER:
-        renderStyle.filter = value;
-        break;
-      case SLIVER_DIRECTION:
-        renderStyle.sliverDirection = value;
-        break;
-      case CARETCOLOR:
-        renderStyle.caretColor = (value as CSSColor).value;
-        break;
-      case FILL:
-        renderStyle.fill = value;
-        break;
-      case STROKE:
-        renderStyle.stroke = value;
-        break;
-      case STROKE_WIDTH:
-        renderStyle.strokeWidth = value;
-        break;
-      case X:
-        renderStyle.x = value;
-        break;
-      case Y:
-        renderStyle.y = value;
-        break;
-      case RX:
-        renderStyle.rx = value;
-        break;
-      case RY:
-        renderStyle.ry = value;
-        break;
-      case CX:
-        renderStyle.cx = value;
-        break;
-      case CY:
-        renderStyle.cy = value;
-        break;
-      case R:
-        renderStyle.r = value;
-        break;
-      case X1:
-        renderStyle.x1 = value;
-        break;
-      case X2:
-        renderStyle.x2 = value;
-        break;
-      case Y1:
-        renderStyle.y1 = value;
-        break;
-      case Y2:
-        renderStyle.y2 = value;
-        break;
-      case D:
-        renderStyle.d = value;
-        break;
-      case FILL_RULE:
-        renderStyle.fillRule = value;
-        break;
-      case STROKE_LINECAP:
-        renderStyle.strokeLinecap = value;
-        break;
-      case STROKE_LINEJOIN:
-        renderStyle.strokeLinejoin = value;
         break;
     }
   }
@@ -1931,11 +1581,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     inlineStyle.forEach((String property, _) {
       _removeInlineStyleProperty(property);
     });
+    inlineStyle.clear();
     style.flushPendingProperties();
   }
 
   void _removeInlineStyleProperty(String property) {
-    inlineStyle.remove(property);
     style.removeProperty(property, true);
   }
 

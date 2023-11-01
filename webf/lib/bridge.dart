@@ -10,3 +10,4 @@ export 'src/bridge/to_native.dart';
 export 'src/bridge/from_native.dart';
 export 'src/bridge/native_types.dart';
 export 'src/bridge/native_value.dart';
+export 'src/bridge/native_gumbo.dart';

@@ -161,6 +161,13 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     }
     return super.hitTestChildren(result, position: position!);
   }
+
+  @override
+  T copyWith<T extends RenderBoxModel>(T copiedRenderBoxModel) {
+    final renderObject = super.copyWith(copiedRenderBoxModel) as RenderReplaced;
+    renderObject._isInLazyRendering = _isInLazyRendering;
+    return renderObject as T;
+  }
 }
 
 class RenderRepaintBoundaryReplaced extends RenderReplaced {
