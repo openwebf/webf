@@ -43,32 +43,12 @@ class MyBrowser extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyBrowser> {
-  final WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
-
-  Future<dynamic> handleJSCall(String method, args) async {
-    switch(method) {
-      case 'count':
-        return 1;
-      case 'name':
-        return 'Andy';
-      case 'data':
-        return {
-          'count': 1,
-          'name': 'Andy'
-        };
-      case 'dataList':
-        return [
-          1, 2, '3', 4
-        ];
-    }
-    return null;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    javaScriptChannel.onMethodCall = handleJSCall;
-  }
+  OutlineInputBorder outlineBorder = OutlineInputBorder(
+    borderSide: BorderSide(color: Colors.transparent, width: 0.0),
+    borderRadius: const BorderRadius.all(
+      Radius.circular(20.0),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +85,6 @@ class _MyHomePageState extends State<MyBrowser> {
     );
 
     final Size viewportSize = queryData.size;
-
     return Scaffold(
         appBar: appBar,
         body: Center(
@@ -115,7 +94,6 @@ class _MyHomePageState extends State<MyBrowser> {
             children: [
               _kraken = WebF(
                 devToolsService: ChromeDevToolsService(),
-                javaScriptChannel: javaScriptChannel,
                 viewportWidth: viewportSize.width - queryData.padding.horizontal,
                 viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
                 bundle: WebFBundle.fromUrl('assets:assets/bundle.html'),
