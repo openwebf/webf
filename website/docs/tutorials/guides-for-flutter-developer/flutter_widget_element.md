@@ -14,7 +14,7 @@ an HTMLElement node, allowing it to be seamlessly integrated into a WebF page.
 [Checkout this demo](https://github.com/openwebf/samples/tree/main/demos/video_player) that illustrates how to
 construct a video player using the `video_player` Flutter plugin, and use it as a custom element into the web page.
 
-<video src="/videos/video_player.mov" controls style={{width: "500px", margin: '0 auto', display: 'block'}} />
+<video src="/videos/video_player.mov" controls style={{width: "300px", margin: '0 auto', display: 'block'}} />
 
 ## Defining a Custom Element for the Web
 
@@ -382,9 +382,125 @@ export default {
 
 ## Use CSS Styles to Control Your Customized UI
 
-TODO
+Custom elements can be styled with CSS. This includes setting width and height, arranging them alongside other regular
+elements, and using positioning to place them in specific locations.
 
-## Embedding Other HTMLElements (or WidgetElement) in your WidgetElement Class
+For instance, to ensure the video player always remains visible on the screen, you can use `position: fixed`.
 
+<video src="/videos/video_player.mov" controls style={{width: "300px", margin: '0 auto', display: 'block'}} />
 
-TODO
+```vue
+
+<template>
+  <video-player
+      id="video-player"
+      ref="videoPlayer"
+  />
+</template>
+<style>
+
+#video-player {
+  width: 300px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  margin: auto;
+}
+</style>
+```
+
+## Embedding HTMLElements as Children of Custom Elements
+
+Custom elements can seamlessly integrate with standard HTMLElements to construct more intricate components.
+
+For instance, if you wish to design a complex component where the outer framework is crafted using Flutter widgets,
+while the inner content is structured using HTML and CSS, this combination allows for such versatility.
+
+### Another Demo
+
+The demo below highlights the potential of blended embedding. When designing the UI, you're not confined to a single
+technical framework. If you possess a collection of existing Flutter widget components, you can seamlessly integrate
+them with WebF, making them accessible for web applications.
+
+<video src="/videos/widget_elements.mov" controls style={{width: "500px", margin: '0 auto', display: 'block'}} />
+
+<br />
+
+Standard HTML elements can be set as children within custom elements.
+
+WebF's Flutter widget adapter will translate these child elements into a list of Flutter widgets, which are then passed
+to the `build()` function within the WidgetElement
+class.
+
+Consider a scenario where we've implemented a `FlutterButton` class using Flutter widgets and registered it with WebF
+under the tag name `flutter-button`.
+
+We might want this button to exhibit different behaviors for varied purposes, such as a red warning button or a green
+success button.
+
+Consequently, this button element should accept both properties and attributes as well as children parameters.
+
+```html
+// The success button
+<flutter-button type="primary">Success</flutter-button>
+
+// The error button
+<flutter-button type="default">Fail</flutter-button>
+```
+
+On the Dart side, the text "Success" and "Fail" are converted into widget children and stored in
+the `List<Widget> children` parameter.
+
+In this demonstration, we set these widgets as children of either the `ElevatedButton` or the `OutlinedButton` widget.
+Thus, the text will be displayed within the Flutter buttons.
+
+We also use the `initializeProperties` method to register a type property, which allows for the customization of the
+Flutter button based on its style.
+
+For the Flutter button's `onPressed` event handler, we dispatch a click event to JavaScript, enabling the web app to
+process the click gesture and execute further actions.
+
+```dart
+class FlutterButton extends WidgetElement {
+  FlutterButton(BindingContext? context) : super(context);
+
+  handlePressed(BuildContext context) {
+    dispatchEvent(Event(EVENT_CLICK));
+  }
+
+  @override
+  Map<String, dynamic> get defaultStyle => {'display': 'inline-block'};
+
+  Widget buildButton(BuildContext context, String type, Widget child) {
+    switch (type) {
+      case 'primary':
+        return ElevatedButton(
+            onPressed: () => handlePressed(context), child: child);
+      case 'default':
+      default:
+        return OutlinedButton(
+            onPressed: () => handlePressed(context), child: child);
+    }
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+    properties['type'] = BindingObjectProperty(
+        getter: () => type, setter: (value) => type = value);
+  }
+
+  String get type => getAttribute('type') ?? 'default';
+
+  set type(value) {
+    internalSetAttribute('type', value?.toString() ?? '');
+  }
+
+  @override
+  Widget build(BuildContext context, List<Widget> children) {
+    return buildButton(context, type,
+        children.isNotEmpty ? children[0] : SizedBox.fromSize(size: Size.zero));
+  }
+}
+```
