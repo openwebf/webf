@@ -74,7 +74,7 @@ built with WebF. Here's a step-by-step guide:
     );
   }
 }
-  ``` 
+  ```
 
 Interestingly, the WidgetElement shares many similarities with the State associated with StatefulWidget in Flutter.
 So, if you're already acquainted with typical Flutter app development, working with WidgetElement should come naturally.
