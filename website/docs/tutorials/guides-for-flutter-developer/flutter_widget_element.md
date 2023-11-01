@@ -387,7 +387,7 @@ elements, and using positioning to place them in specific locations.
 
 For instance, to ensure the video player always remains visible on the screen, you can use `position: fixed`.
 
-<video src="/videos/video_player.mov" controls style={{width: "300px", margin: '0 auto', display: 'block'}} />
+<video src="/videos/float_video.mov" controls style={{width: "300px", margin: '0 auto', display: 'block'}} />
 
 ```vue
 
