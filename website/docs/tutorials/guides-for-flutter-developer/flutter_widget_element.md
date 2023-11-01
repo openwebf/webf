@@ -419,7 +419,7 @@ while the inner content is structured using HTML and CSS, this combination allow
 
 ### Another Demo
 
-The demo below highlights the potential of blended embedding. When designing the UI, you're not confined to a single
+[The demo](https://github.com/openwebf/samples/tree/main/demos/widget-elements) below highlights the potential of blended embedding. When designing the UI, you're not confined to a single
 technical framework. If you possess a collection of existing Flutter widget components, you can seamlessly integrate
 them with WebF, making them accessible for web applications.
 
