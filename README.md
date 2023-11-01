@@ -1,6 +1,10 @@
 # [WebF](https://openwebf.com/) [![pub package](https://img.shields.io/pub/v/webf.svg)](https://pub.dev/packages/webf)
 
+<<<<<<< HEAD
 WebF presents a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
+=======
+WebF presents a cutting-edge web rendering engine built atop Flutter, empowering web applications to operate natively within the Flutter ecosystem.
+>>>>>>> f661ac9a5 (Update README.md)
 
 - **Adherence to W3C Standards:** By leveraging HTML/CSS and JavaScript, WebF renders content on Flutter, ensuring impeccable alignment with standard browser rendering.
   
@@ -19,8 +23,11 @@ We envision providing web developers with an innovative web rendering engine, su
 WebF's journey is ambitious and enduring. We believe in the strength of collective effort. If you share our dream of a superior alternative to WebView for the future, your expertise could be invaluable to us.
 
 Further, financial contributions can pave the way for erstwhile members of the Kraken team to rejoin our mission, bolstering our developmental pace and potential.
+<<<<<<< HEAD
 
 If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
+=======
+>>>>>>> f661ac9a5 (Update README.md)
 
 ## Join the community (Beta)
 
