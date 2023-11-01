@@ -29,6 +29,8 @@ If you or your team are interested in supporting us, please contact @andycall on
 =======
 >>>>>>> f661ac9a5 (Update README.md)
 
+If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
+
 ## Join the community (Beta)
 
 [![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=banner1)](https://discord.gg/DvUBtXZ5rK)
