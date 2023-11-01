@@ -20,6 +20,8 @@ WebF's journey is ambitious and enduring. We believe in the strength of collecti
 
 Further, financial contributions can pave the way for erstwhile members of the Kraken team to rejoin our mission, bolstering our developmental pace and potential.
 
+If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
+
 ## Join the community (Beta)
 
 [![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=banner1)](https://discord.gg/DvUBtXZ5rK)
