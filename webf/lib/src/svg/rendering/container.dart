@@ -29,6 +29,8 @@ class RenderSVGContainer extends RenderBoxModel
     });
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height),
         Rect.fromLTRB(0, 0, size.width, size.height));
+    dispatchResize(contentSize, boxSize ?? Size.zero);
+
   }
 
   @override

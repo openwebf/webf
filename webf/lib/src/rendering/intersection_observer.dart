@@ -23,6 +23,14 @@ Iterable<Layer> _getLayerChain(Layer start) {
 typedef IntersectionChangeCallback = void Function(IntersectionObserverEntry info);
 
 mixin RenderIntersectionObserverMixin on RenderBox {
+  static copyTo(RenderIntersectionObserverMixin from, RenderIntersectionObserverMixin to) {
+    to.intersectPadding = from.intersectPadding;
+    to._listeners = from._listeners;
+    to._onIntersectionChange = to._dispatchChange;
+    to._intersectionObserverLayer.layer = from._intersectionObserverLayer.layer;
+    to._intersectionObserverLayer.layer?.onIntersectionChange = to._dispatchChange;
+  }
+
   IntersectionChangeCallback? _onIntersectionChange;
 
   final LayerHandle<IntersectionObserverLayer> _intersectionObserverLayer = LayerHandle<IntersectionObserverLayer>();
@@ -197,14 +205,14 @@ class IntersectionObserverLayer extends ContainerLayer {
     super.addToScene(builder);
   }
 
-  /// See [AbstractNode.attach].
+  /// See [RenderObject.attach].
   @override
   void attach(Object owner) {
     super.attach(owner);
     _scheduleIntersectionObservationUpdate();
   }
 
-  /// See [AbstractNode.detach].
+  /// See [RenderObject.detach].
   @override
   void detach() {
     super.detach();

@@ -152,7 +152,7 @@ ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state
   if (raw_event_props != nullptr) {
     for (int i = 0; i < raw_event_->props_len; i++) {
       if (key.Impl() == raw_event_props[i].key_atom) {
-        return ScriptValue(ctx(), raw_event_props[i].value);
+        return ScriptValue(ctx(), raw_event_props[i].value, true);
       }
     }
   }
@@ -160,14 +160,15 @@ ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state
   return ScriptValue::Undefined(ctx());
 }
 
-void set_event_prop(EventProp* prop,
+void set_event_prop(JSContext* ctx,
+                    EventProp* prop,
                     Event* event,
                     const AtomicString& key,
                     const ScriptValue& value,
                     ExceptionState& exception_state) {
   event->customized_event_props_.emplace_back(value);
   prop->key_atom = key.Impl();
-  prop->value = value.ToNative(exception_state, true);
+  prop->value = value.ToNative(ctx, exception_state, true);
 }
 
 #define DEFAULT_EVENT_PROP_LEN 2
@@ -178,7 +179,7 @@ bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::Exc
 
   if (raw_event_->props == 0x00) {
     auto* event_props = (EventProp*)js_malloc_rt(runtime(), sizeof(EventProp) * DEFAULT_EVENT_PROP_LEN);
-    set_event_prop(event_props, this, key, value, exception_state);
+    set_event_prop(ctx(), event_props, this, key, value, exception_state);
 #if ANDROID_32_BIT
     raw_event_->props = reinterpret_cast<int64_t>(event_props);
 #else
@@ -213,7 +214,7 @@ bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::Exc
 #endif
       raw_event_->alloc_size = new_size;
     }
-    set_event_prop(&(raw_event_props[prop_index]), this, key, value, exception_state);
+    set_event_prop(ctx(), &(raw_event_props[prop_index]), this, key, value, exception_state);
     if (prop_index == raw_event_->props_len) {
       raw_event_->props_len = raw_event_->props_len + 1;
     }

@@ -25,13 +25,27 @@ For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510
 
 [![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=banner1)](https://discord.gg/DvUBtXZ5rK)
 
-## Version requirement
+## The update and maintenance policy for WebF versions 
+
+Each version of WebF will be maintained for the lifespan of three minor WebF releases. For instance, WebF 0.15.0 was released to be compatible with Flutter 3.10.x. Its support will conclude once WebF 0.18.0 is introduced. Any updates applied to versions 0.16.x and 0.17.x will be cherry-picked for the subsequent update of 0.15.x.
+
+This ensures that users can reliably receive updates for three minor WebF versions without the necessity to upgrade the Flutter version in their app.
 
 | WebF                 | Flutter |
 | -------------------- | ------- |
 | `>= 0.12.0 < 0.14.0` | `3.0.5` |
 | `>= 0.14.0 < 0.15.0` | `3.3.10` and `3.7.3` |
-| `>= 0.15.0` | `3.10.x` |
+| `>= 0.15.0 < 0.16.0` | `3.10.x` |
+| `>= 0.16.0 < 0.17.0` | `3.13.x` |
+| `>= 0.17.0 < 0.18.0` | `3.16.x` |
+
+
+<img width="817" alt="image" src="https://github.com/openwebf/webf/assets/4409743/2d5cf5a1-e670-424b-8766-324f475bbc0a">
+
+Below is the relationship between the various Flutter and WebF versions:
+
+<img width="627" alt="image" src="https://github.com/openwebf/webf/assets/4409743/8cace8da-ac97-4908-b970-6b52450cb4cc">
+
 
 ## How to use
 

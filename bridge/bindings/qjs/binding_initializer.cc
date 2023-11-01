@@ -77,6 +77,7 @@
 #include "qjs_svg_g_element.h"
 #include "qjs_svg_geometry_element.h"
 #include "qjs_svg_graphics_element.h"
+#include "qjs_svg_line_element.h"
 #include "qjs_svg_path_element.h"
 #include "qjs_svg_rect_element.h"
 #include "qjs_svg_style_element.h"
@@ -187,6 +188,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGCircleElement::Install(context);
   QJSSVGEllipseElement::Install(context);
   QJSSVGStyleElement::Install(context);
+  QJSSVGLineElement::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

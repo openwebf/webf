@@ -74,8 +74,12 @@ ScriptValue InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionSt
 bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
                                         const ScriptValue& value,
                                         ExceptionState& exception_state) {
+  if (IsPrototypeMethods(key)) {
+    return false;
+  }
+
   std::string propertyName = key.ToStdString(ctx());
-  return InternalSetProperty(propertyName, value.ToLegacyDOMString());
+  return InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
 }
 
 bool InlineCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
@@ -95,7 +99,7 @@ void InlineCssStyleDeclaration::setProperty(const AtomicString& key,
                                             const ScriptValue& value,
                                             ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
-  InternalSetProperty(propertyName, value.ToLegacyDOMString());
+  InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
 }
 
 AtomicString InlineCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {

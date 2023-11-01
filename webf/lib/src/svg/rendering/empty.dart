@@ -12,6 +12,7 @@ class RenderSVGEmpty extends RenderSVGContainer {
   @override
   void performLayout() {
     size = Size(0, 0);
+    dispatchResize(contentSize, boxSize ?? Size.zero);
   }
 
   @override

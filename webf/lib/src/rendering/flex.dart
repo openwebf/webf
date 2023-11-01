@@ -271,6 +271,17 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
   }
 
+  bool isFlexNone(RenderBox child) {
+    // Placeholder have the safe effect to flex: none.
+    if (child is RenderPositionPlaceholder) {
+      return true;
+    }
+    double flexGrow = _getFlexGrow(child);
+    double flexShrink = _getFlexShrink(child);
+    double? flexBasis = _getFlexBasis(child);
+    return flexBasis == null && flexGrow == 0 && flexShrink == 0;
+  }
+
   double _getFlexGrow(RenderBox child) {
     // Flex shrink has no effect on placeholder of positioned element.
     if (child is RenderPositionPlaceholder) {

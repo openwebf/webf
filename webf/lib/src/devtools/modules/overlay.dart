@@ -4,7 +4,6 @@
  */
 
 import 'dart:ffi';
-import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/launcher.dart';
@@ -14,6 +13,7 @@ class InspectOverlayModule extends UIInspectorModule {
   String get name => 'Overlay';
 
   Document get document => devtoolsService.controller!.view.document;
+  WebFViewController get view => devtoolsService.controller!.view;
   InspectOverlayModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
@@ -35,7 +35,7 @@ class InspectOverlayModule extends UIInspectorModule {
     _highlightElement?.debugHideHighlight();
 
     int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    Element? element = view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       element.debugHighlight();

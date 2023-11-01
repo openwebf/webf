@@ -48,7 +48,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     if (result.IsException()) {
       context->HandleException(&result);
     }
-    NativeValue native_result = result.ToNative(exception_state);
+    NativeValue native_result = result.ToNative(ctx, exception_state);
     return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
     memcpy(return_value, &native_result, sizeof(NativeValue));
   } else {
@@ -57,7 +57,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     if (result.IsException()) {
       context->HandleException(&result);
     }
-    NativeValue native_result = result.ToNative(exception_state);
+    NativeValue native_result = result.ToNative(ctx, exception_state);
     return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
     memcpy(return_value, &native_result, sizeof(NativeValue));
   }
@@ -100,7 +100,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   ScriptValue& params_value,
                                                   const std::shared_ptr<QJSFunction>& callback,
                                                   ExceptionState& exception) {
-  NativeValue params = params_value.ToNative(exception);
+  NativeValue params = params_value.ToNative(context->ctx(), exception);
 
   if (exception.HasException()) {
     return ScriptValue::Empty(context->ctx());

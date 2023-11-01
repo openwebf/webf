@@ -45,6 +45,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   //  #endif
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
+  assert_m(valid_contexts[contextId] != true, "Conflict context found!");
   valid_contexts[contextId] = true;
   if (contextId > running_context_list)
     running_context_list = contextId;
@@ -166,6 +167,7 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!HandleException(&obj))
     return false;
   val = JS_EvalFunction(script_state_.ctx(), obj);
+  DrainPendingPromiseJobs();
   if (!HandleException(&val))
     return false;
   JS_FreeValue(script_state_.ctx(), val);

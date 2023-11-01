@@ -5,6 +5,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -112,7 +113,7 @@ class CanvasElement extends Element {
           painter.dispose();
         }
 
-        context2d = CanvasRenderingContext2D(this);
+        context2d = CanvasRenderingContext2D(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), this);
         painter.context = context2d;
 
         return context2d!;
@@ -131,10 +132,8 @@ class CanvasElement extends Element {
     double? height;
 
     RenderStyle renderStyle = renderBoxModel!.renderStyle;
-    double? styleWidth =
-        renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
-    double? styleHeight =
-        renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
+    double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
+    double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
 
     if (styleWidth != null) {
       width = styleWidth;
@@ -182,10 +181,8 @@ class CanvasElement extends Element {
       // @TODO: CSS object-fit for canvas.
       // To fill (default value of object-fit) the bitmap content, use scale to get the same performed.
       RenderStyle renderStyle = renderBoxModel!.renderStyle;
-      double? styleWidth =
-          renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
-      double? styleHeight =
-          renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
+      double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
+      double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
 
       double? scaleX;
       double? scaleY;
@@ -259,7 +256,7 @@ class CanvasElement extends Element {
     resize();
   }
 
-  void _styleChangedListener(String key, String? original, String present, { String? baseHref }) {
+  void _styleChangedListener(String key, String? original, String present, {String? baseHref}) {
     switch (key) {
       case WIDTH:
       case HEIGHT:

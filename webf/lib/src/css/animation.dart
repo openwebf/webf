@@ -581,6 +581,7 @@ class KeyframeEffect extends AnimationEffect {
         String currentValue = renderStyle.target.style.getPropertyValue(propertyName);
         renderStyle.target.setRenderStyle(propertyName, currentValue);
       });
+      SchedulerBinding.instance.scheduleFrame();
     } else {
       for (int i = 0; i < _interpolations.length; i++) {
         _Interpolation interpolation = _interpolations[i];

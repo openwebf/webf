@@ -82,6 +82,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       didLayout();
     } else {
       performResize();
+      dispatchResize(contentSize, boxSize ?? Size.zero);
     }
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }
@@ -159,6 +160,13 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       return hitTestIntrinsicChild(result, child, position!);
     }
     return super.hitTestChildren(result, position: position!);
+  }
+
+  @override
+  T copyWith<T extends RenderBoxModel>(T copiedRenderBoxModel) {
+    final renderObject = super.copyWith(copiedRenderBoxModel) as RenderReplaced;
+    renderObject._isInLazyRendering = _isInLazyRendering;
+    return renderObject as T;
   }
 }
 

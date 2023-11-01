@@ -5,7 +5,6 @@
 import 'dart:ffi';
 import 'dart:ui' as ui;
 
-import 'package:webf/bridge.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -20,6 +19,7 @@ class InspectDOMModule extends UIInspectorModule {
   String get name => 'DOM';
 
   Document get document => devtoolsService.controller!.view.document;
+  WebFViewController get view => devtoolsService.controller!.view;
   InspectDOMModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
@@ -69,7 +69,7 @@ class InspectDOMModule extends UIInspectorModule {
   void onSetInspectedNode(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     if (nodeId == null) return;
-    Node? node = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(nodeId));
+    Node? node = view.getBindingObject<Node>(Pointer.fromAddress(nodeId));
     if (node != null) {
       inspectedNode = node;
     }
@@ -87,7 +87,7 @@ class InspectDOMModule extends UIInspectorModule {
   void onGetBoxModel(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     if (nodeId == null) return;
-    Node? node = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(nodeId));
+    Node? node = view.getBindingObject<Node>(Pointer.fromAddress(nodeId));
 
     Element? element = null;
     if (node is Element) element = node;

@@ -186,6 +186,9 @@ mixin CSSTextMixin on RenderStyle {
   void updateFontRelativeLength() {
     if (_fontRelativeProperties.isEmpty) return;
     renderBoxModel?.markNeedsLayout();
+    if (renderBoxModel?.isSizeTight == true && renderBoxModel?.parent != null) {
+      (renderBoxModel?.parent as RenderBox?)?.markNeedsLayout();
+    }
   }
 
   @override
@@ -196,6 +199,9 @@ mixin CSSTextMixin on RenderStyle {
   void updateRootFontRelativeLength() {
     if (_rootFontRelativeProperties.isEmpty) return;
     renderBoxModel?.markNeedsLayout();
+    if (renderBoxModel?.isSizeTight == true && renderBoxModel?.parent != null) {
+      (renderBoxModel?.parent as RenderBox?)?.markNeedsLayout();
+    }
   }
 
   CSSLengthValue? _lineHeight;

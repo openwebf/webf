@@ -410,6 +410,30 @@ describe('custom widget element', () => {
     await sleep(0.1);
     await snapshot();
   });
+
+  it('should works with swiper component', async () => {
+    const swiper = document.createElement('flutter-swiper');
+    for(let i = 0; i < 10; i ++) {
+      const container = document.createElement('div');
+      container.textContent = i.toString();
+      swiper.appendChild(container);
+    }
+    document.body.appendChild(swiper);
+    await snapshot();
+    // @ts-ignore
+    swiper.move(1);
+    await sleep(1);
+    await snapshot();
+  });
+
+  it('should ignore empty textNodes', async () => {
+    const container = document.createElement('flutter-container');
+    container.appendChild(document.createTextNode(''));
+    container.appendChild(document.createTextNode('A'));
+    container.appendChild(document.createTextNode(''));
+    document.body.appendChild(container);
+    await snapshot();
+  });
 });
 
 describe('custom html element', () => {
@@ -417,6 +441,13 @@ describe('custom html element', () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);
+    document.body.appendChild(sampleElement);
+    await snapshot();
+  });
+
+  it('works with setTextContent', async () => {
+    let sampleElement = document.createElement('flutter-container');
+    sampleElement.textContent = 'helloworld';
     document.body.appendChild(sampleElement);
     await snapshot();
   });

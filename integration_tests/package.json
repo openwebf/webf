@@ -11,8 +11,8 @@
     "specs": "webpack --config ./webpack.config.js",
     "prettier": "prettier --no-config --single-quote --trailing-comma=es5 --write ./specs/{.,**,**/**}/*.ts",
     "integration": "npm run clean && npm run specs && node scripts/core_integration_starter",
-    "plugin_integration": "npm run specs && node scripts/plugin_integration_starter",
-    "multiple_page_integration": "node scripts/multiple_page_integration"
+    "multiple_page_integration": "node scripts/multiple_page_integration",
+    "memory_leak_integration": "node scripts/memory_leak_integration"
   },
   "devDependencies": {
     "@babel/core": "^7.12.10",
@@ -20,7 +20,6 @@
     "@babel/preset-env": "^7.12.11",
     "@babel/preset-react": "^7.12.10",
     "@babel/preset-typescript": "^7.12.7",
-    "babel-laoder": "^0.0.1-security",
     "babel-loader": "^8.2.2",
     "chalk": "^3.0.0",
     "express": "^4.18.2",

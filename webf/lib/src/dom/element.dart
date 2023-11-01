@@ -9,7 +9,6 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -110,7 +109,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   String? get id => _id;
 
   set id(String? id) {
-    final isNeedRecalculate = _checkRecalculateStyle([id, _id], ownerDocument.ruleSet.idRules);
+    final isNeedRecalculate = _checkRecalculateStyle([id, _id]);
     _updateIDMap(id, oldID: _id);
     _id = id;
     recalculateStyle(rebuildNested: isNeedRecalculate);
@@ -124,6 +123,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   // Holding reference if this element are managed by Flutter framework.
   WebFHTMLElementStatefulWidget? flutterWidget_;
+  WebFHTMLElementToFlutterElementAdaptor? flutterWidgetElement;
 
   @override
   WebFHTMLElementStatefulWidget? get flutterWidget => flutterWidget_;
@@ -156,7 +156,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   set className(String className) {
     List<String> classList = className.split(classNameSplitRegExp);
     final checkKeys = (_classList + classList).where((key) => !_classList.contains(key) || !classList.contains(key));
-    final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys), ownerDocument.ruleSet.classRules);
+    final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys));
     _classList.clear();
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
@@ -354,7 +354,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return QuerySelector.closest(this, args.first);
   }
 
-  @visibleForOverriding
   void updateRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
@@ -372,7 +371,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       RenderObject? parentRenderObject;
       RenderBox? after;
       if (previousRenderBoxModel != null) {
-        parentRenderObject = previousRenderBoxModel.parent as RenderObject?;
+        parentRenderObject = previousRenderBoxModel.parent;
 
         if (previousRenderBoxModel.parentData is ContainerParentDataMixin<RenderBox>) {
           after = (previousRenderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
@@ -835,8 +834,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool shouldMutateBeforeElement =
         previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
-    previousPseudoElement ??= PseudoElement(kind, this, BindingContext(contextId!, allocateNewBindingObject()));
-    previousPseudoElement.ownerDocument = ownerDocument;
+    previousPseudoElement ??=
+        PseudoElement(kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
     previousPseudoElement.style
         .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
 
@@ -941,12 +940,19 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() async {
     renderStyle.detach();
     style.dispose();
     attributes.clear();
     disposeScrollable();
     _attributeProperties.clear();
+    flutterWidget = null;
+    flutterWidgetElement = null;
+    ownerDocument.inactiveRenderObjects.add(renderer);
+    _beforeElement?.dispose();
+    _beforeElement = null;
+    _afterElement?.dispose();
+    _afterElement = null;
     super.dispose();
   }
 
@@ -1268,7 +1274,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
+    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
     _needRecalculateStyle = _needRecalculateStyle || isNeedRecalculate;
   }
 
@@ -1278,7 +1284,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       className = value;
       return;
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
+    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
@@ -1290,7 +1296,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       propertyHandler.deleter!();
     }
 
-    attributes.remove(qualifiedName);
+    if (hasAttribute(qualifiedName)) {
+      attributes.remove(qualifiedName);
+      final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
+      recalculateStyle(rebuildNested: isNeedRecalculate);
+    }
   }
 
   @mustCallSuper
@@ -1310,7 +1320,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
-      unmountRenderObject(deep: true);
+      unmountRenderObject();
       return;
     }
 
@@ -1337,42 +1347,29 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void setRenderStyleProperty(String name, value) {
-    // Memorize the variable value to renderStyle object.
-    if (CSSVariable.isVariable(name)) {
-      renderStyle.setCSSVariable(name, value.toString());
-      return;
+    dynamic oldValue;
+
+    switch(name) {
+      case DISPLAY:
+      case OVERFLOW_X:
+      case OVERFLOW_Y:
+      case POSITION:
+        oldValue = renderStyle.getProperty(name);
+        break;
     }
 
-    // Get the computed value of CSS variable.
-    if (value is CSSVariable) {
-      value = value.computedValue(name);
-    }
-
-    if (value is CSSCalcValue) {
-      if (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y) {
-        value = CSSBackgroundPosition(calcValue: value);
-      } else {
-        value = value.computedValue(name);
-        if (value != null) {
-          value = CSSLengthValue(value, CSSLengthType.PX);
-        }
-      }
-    }
+    renderStyle.setProperty(name, value);
 
     switch (name) {
       case DISPLAY:
-        bool displayChanged = renderStyle.display != value;
-        renderStyle.display = value;
-        if (displayChanged) {
+        assert(oldValue != null);
+        if (value != oldValue) {
           _updateRenderBoxModelWithDisplay();
         }
         break;
-      case Z_INDEX:
-        renderStyle.zIndex = value;
-        break;
       case OVERFLOW_X:
-        CSSOverflowType oldEffectiveOverflowY = renderStyle.effectiveOverflowY;
-        renderStyle.overflowX = value;
+        assert(oldValue != null);
+        CSSOverflowType oldEffectiveOverflowY = oldValue;
         updateRenderBoxModel();
         updateRenderBoxModelWithOverflowX(_handleScroll);
         // Change overflowX may affect effectiveOverflowY.
@@ -1384,8 +1381,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         updateOverflowRenderBox();
         break;
       case OVERFLOW_Y:
-        CSSOverflowType oldEffectiveOverflowX = renderStyle.effectiveOverflowX;
-        renderStyle.overflowY = value;
+        assert(oldValue != null);
+        CSSOverflowType oldEffectiveOverflowX = oldValue;
         updateRenderBoxModel();
         updateRenderBoxModelWithOverflowY(_handleScroll);
         // Change overflowY may affect the effectiveOverflowX.
@@ -1396,343 +1393,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
         updateOverflowRenderBox();
         break;
-      case OPACITY:
-        renderStyle.opacity = value;
-        break;
-      case VISIBILITY:
-        renderStyle.visibility = value;
-        break;
-      case CONTENT_VISIBILITY:
-        renderStyle.contentVisibility = value;
-        break;
       case POSITION:
-        CSSPositionType oldPosition = renderStyle.position;
-        renderStyle.position = value;
-        _updateRenderBoxModelWithPosition(oldPosition);
+        assert(oldValue != null);
+        _updateRenderBoxModelWithPosition(oldValue);
         break;
-      case TOP:
-        renderStyle.top = value;
-        break;
-      case LEFT:
-        renderStyle.left = value;
-        break;
-      case BOTTOM:
-        renderStyle.bottom = value;
-        break;
-      case RIGHT:
-        renderStyle.right = value;
-        break;
-      // Size
-      case WIDTH:
-        renderStyle.width = value;
-        break;
-      case MIN_WIDTH:
-        renderStyle.minWidth = value;
-        break;
-      case MAX_WIDTH:
-        renderStyle.maxWidth = value;
-        break;
-      case HEIGHT:
-        renderStyle.height = value;
-        break;
-      case MIN_HEIGHT:
-        renderStyle.minHeight = value;
-        break;
-      case MAX_HEIGHT:
-        renderStyle.maxHeight = value;
-        break;
-      // Flex
-      case FLEX_DIRECTION:
-        renderStyle.flexDirection = value;
-        break;
-      case FLEX_WRAP:
-        renderStyle.flexWrap = value;
-        break;
-      case ALIGN_CONTENT:
-        renderStyle.alignContent = value;
-        break;
-      case ALIGN_ITEMS:
-        renderStyle.alignItems = value;
-        break;
-      case JUSTIFY_CONTENT:
-        renderStyle.justifyContent = value;
-        break;
-      case ALIGN_SELF:
-        renderStyle.alignSelf = value;
-        break;
-      case FLEX_GROW:
-        renderStyle.flexGrow = value;
-        break;
-      case FLEX_SHRINK:
-        renderStyle.flexShrink = value;
-        break;
-      case FLEX_BASIS:
-        renderStyle.flexBasis = value;
-        break;
-      // Background
-      case BACKGROUND_COLOR:
-        renderStyle.backgroundColor = value;
-        break;
-      case BACKGROUND_ATTACHMENT:
-        renderStyle.backgroundAttachment = value;
-        break;
-      case BACKGROUND_IMAGE:
-        renderStyle.backgroundImage = value;
-        break;
-      case BACKGROUND_REPEAT:
-        renderStyle.backgroundRepeat = value;
-        break;
-      case BACKGROUND_POSITION_X:
-        renderStyle.backgroundPositionX = value;
-        break;
-      case BACKGROUND_POSITION_Y:
-        renderStyle.backgroundPositionY = value;
-        break;
-      case BACKGROUND_SIZE:
-        renderStyle.backgroundSize = value;
-        break;
-      case BACKGROUND_CLIP:
-        renderStyle.backgroundClip = value;
-        break;
-      case BACKGROUND_ORIGIN:
-        renderStyle.backgroundOrigin = value;
-        break;
-      // Padding
-      case PADDING_TOP:
-        renderStyle.paddingTop = value;
-        break;
-      case PADDING_RIGHT:
-        renderStyle.paddingRight = value;
-        break;
-      case PADDING_BOTTOM:
-        renderStyle.paddingBottom = value;
-        break;
-      case PADDING_LEFT:
-        renderStyle.paddingLeft = value;
-        break;
-      // Border
-      case BORDER_LEFT_WIDTH:
-        renderStyle.borderLeftWidth = value;
-        break;
-      case BORDER_TOP_WIDTH:
-        renderStyle.borderTopWidth = value;
-        break;
-      case BORDER_RIGHT_WIDTH:
-        renderStyle.borderRightWidth = value;
-        break;
-      case BORDER_BOTTOM_WIDTH:
-        renderStyle.borderBottomWidth = value;
-        break;
-      case BORDER_LEFT_STYLE:
-        renderStyle.borderLeftStyle = value;
-        break;
-      case BORDER_TOP_STYLE:
-        renderStyle.borderTopStyle = value;
-        break;
-      case BORDER_RIGHT_STYLE:
-        renderStyle.borderRightStyle = value;
-        break;
-      case BORDER_BOTTOM_STYLE:
-        renderStyle.borderBottomStyle = value;
-        break;
-      case BORDER_LEFT_COLOR:
-        renderStyle.borderLeftColor = value;
-        break;
-      case BORDER_TOP_COLOR:
-        renderStyle.borderTopColor = value;
-        break;
-      case BORDER_RIGHT_COLOR:
-        renderStyle.borderRightColor = value;
-        break;
-      case BORDER_BOTTOM_COLOR:
-        renderStyle.borderBottomColor = value;
-        break;
-      case BOX_SHADOW:
-        renderStyle.boxShadow = value;
-        break;
-      case BORDER_TOP_LEFT_RADIUS:
-        renderStyle.borderTopLeftRadius = value;
-        break;
-      case BORDER_TOP_RIGHT_RADIUS:
-        renderStyle.borderTopRightRadius = value;
-        break;
-      case BORDER_BOTTOM_LEFT_RADIUS:
-        renderStyle.borderBottomLeftRadius = value;
-        break;
-      case BORDER_BOTTOM_RIGHT_RADIUS:
-        renderStyle.borderBottomRightRadius = value;
-        break;
-      // Margin
-      case MARGIN_LEFT:
-        renderStyle.marginLeft = value;
-        break;
-      case MARGIN_TOP:
-        renderStyle.marginTop = value;
-        break;
-      case MARGIN_RIGHT:
-        renderStyle.marginRight = value;
-        break;
-      case MARGIN_BOTTOM:
-        renderStyle.marginBottom = value;
-        break;
-      // Text
       case COLOR:
-        renderStyle.color = value;
         _updateColorRelativePropertyWithColor(this);
         break;
-      case TEXT_DECORATION_LINE:
-        renderStyle.textDecorationLine = value;
-        break;
-      case TEXT_DECORATION_STYLE:
-        renderStyle.textDecorationStyle = value;
-        break;
-      case TEXT_DECORATION_COLOR:
-        renderStyle.textDecorationColor = value;
-        break;
-      case FONT_WEIGHT:
-        renderStyle.fontWeight = value;
-        break;
-      case FONT_STYLE:
-        renderStyle.fontStyle = value;
-        break;
-      case FONT_FAMILY:
-        renderStyle.fontFamily = value;
-        break;
       case FONT_SIZE:
-        renderStyle.fontSize = value;
         _updateFontRelativeLengthWithFontSize();
         break;
-      case LINE_HEIGHT:
-        renderStyle.lineHeight = value;
-        break;
-      case LETTER_SPACING:
-        renderStyle.letterSpacing = value;
-        break;
-      case WORD_SPACING:
-        renderStyle.wordSpacing = value;
-        break;
-      case TEXT_SHADOW:
-        renderStyle.textShadow = value;
-        break;
-      case WHITE_SPACE:
-        renderStyle.whiteSpace = value;
-        break;
-      case TEXT_OVERFLOW:
-        // Overflow will affect text-overflow ellipsis taking effect
-        renderStyle.textOverflow = value;
-        break;
-      case LINE_CLAMP:
-        renderStyle.lineClamp = value;
-        break;
-      case VERTICAL_ALIGN:
-        renderStyle.verticalAlign = value;
-        break;
-      case TEXT_ALIGN:
-        renderStyle.textAlign = value;
-        break;
-      // Transform
       case TRANSFORM:
-        renderStyle.transform = value;
         updateRenderBoxModel();
-        break;
-      case TRANSFORM_ORIGIN:
-        renderStyle.transformOrigin = value;
-        break;
-      // Transition
-      case TRANSITION_DELAY:
-        renderStyle.transitionDelay = value;
-        break;
-      case TRANSITION_DURATION:
-        renderStyle.transitionDuration = value;
-        break;
-      case TRANSITION_TIMING_FUNCTION:
-        renderStyle.transitionTimingFunction = value;
-        break;
-      case TRANSITION_PROPERTY:
-        renderStyle.transitionProperty = value;
-        break;
-      // Animation
-      case ANIMATION_DELAY:
-        renderStyle.animationDelay = value;
-        break;
-      case ANIMATION_NAME:
-        renderStyle.animationName = value;
-        break;
-      case ANIMATION_DIRECTION:
-        renderStyle.animationDirection = value;
-        break;
-      case ANIMATION_DURATION:
-        renderStyle.animationDuration = value;
-        break;
-      case ANIMATION_PLAY_STATE:
-        renderStyle.animationPlayState = value;
-        break;
-      case ANIMATION_FILL_MODE:
-        renderStyle.animationFillMode = value;
-        break;
-      case ANIMATION_ITERATION_COUNT:
-        renderStyle.animationIterationCount = value;
-        break;
-      case ANIMATION_TIMING_FUNCTION:
-        renderStyle.animationTimingFunction = value;
-        break;
-      // Others
-      case OBJECT_FIT:
-        renderStyle.objectFit = value;
-        break;
-      case OBJECT_POSITION:
-        renderStyle.objectPosition = value;
-        break;
-      case FILTER:
-        renderStyle.filter = value;
-        break;
-      case SLIVER_DIRECTION:
-        renderStyle.sliverDirection = value;
-        break;
-      case CARETCOLOR:
-        renderStyle.caretColor = (value as CSSColor).value;
-        break;
-      case FILL:
-        renderStyle.fill = value;
-        break;
-      case STROKE:
-        renderStyle.stroke = value;
-        break;
-      case STROKE_WIDTH:
-        renderStyle.strokeWidth = value;
-        break;
-      case X:
-        renderStyle.x = value;
-        break;
-      case Y:
-        renderStyle.y = value;
-        break;
-      case RX:
-        renderStyle.rx = value;
-        break;
-      case RY:
-        renderStyle.ry = value;
-        break;
-      case CX:
-        renderStyle.cx = value;
-        break;
-      case CY:
-        renderStyle.cy = value;
-        break;
-      case R:
-        renderStyle.r = value;
-        break;
-      case D:
-        renderStyle.d = value;
-        break;
-      case FILL_RULE:
-        renderStyle.fillRule = value;
-        break;
-      case STROKE_LINECAP:
-        renderStyle.strokeLinecap = value;
-        break;
-      case STROKE_LINEJOIN:
-        renderStyle.strokeLinejoin = value;
         break;
     }
   }
@@ -1807,9 +1479,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     style.union(matchRule);
   }
 
+  bool _scheduledRunTransitions = false;
+  void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
+    if (_scheduledRunTransitions) return;
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      renderStyle.runTransition(propertyName, prevValue, currentValue);
+      _scheduledRunTransitions = false;
+    });
+  }
+
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue, {String? baseHref}) {
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
-      renderStyle.runTransition(propertyName, prevValue, currentValue);
+      scheduleRunTransitionAnimations(propertyName, prevValue, currentValue);
     } else {
       setRenderStyle(propertyName, currentValue, baseHref: baseHref);
     }
@@ -1842,7 +1523,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void clearInlineStyle() {
-    for(var key in inlineStyle.keys) {
+    for (var key in inlineStyle.keys) {
       style.removeProperty(key, true);
     }
     inlineStyle.clear();
@@ -1900,11 +1581,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     inlineStyle.forEach((String property, _) {
       _removeInlineStyleProperty(property);
     });
+    inlineStyle.clear();
     style.flushPendingProperties();
   }
 
   void _removeInlineStyleProperty(String property) {
-    inlineStyle.remove(property);
     style.removeProperty(property, true);
   }
 
@@ -1912,7 +1593,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
-    BoundingClientRect boundingClientRect = BoundingClientRect.zero;
+    BoundingClientRect boundingClientRect = BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
       flushLayout();
       RenderBoxModel sizedBox = renderBoxModel!;
@@ -1926,6 +1607,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
         boundingClientRect = BoundingClientRect(
+            context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
             x: offset.dx,
             y: offset.dy,
             width: size.width,
@@ -2084,37 +1766,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return scrollingContentLayoutBox;
   }
 
-  bool _checkRecalculateStyle(List<String?> keys, CSSMap cssMap) {
+  bool _checkRecalculateStyle(List<String?> keys) {
     if (keys.isEmpty) {
       return false;
     }
-    for (final rules in cssMap.values) {
-      for (int i = 0; i < rules.length; i++) {
-        var rule = rules[i];
-        if (rule is! CSSStyleRule) {
-          continue;
-        }
-        for (Selector selector in rule.selectorGroup.selectors) {
-          if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
-            return true;
-          }
-        }
-      }
+    if (keys.isEmpty) {
+      return false;
     }
-
-    for (int i = 0; i < ownerDocument.ruleSet.pseudoRules.length; i++) {
-      var rule = ownerDocument.ruleSet.pseudoRules[i];
-      if (rule is! CSSStyleRule) {
-        continue;
-      }
-      for (Selector selector in rule.selectorGroup.selectors) {
-        if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    return keys.any((element) => selectorKeySet.contains(element));
   }
 
   RenderStyle? computedStyle(String? pseudoElementSpecifier) {

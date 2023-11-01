@@ -20,6 +20,7 @@ import { Storage } from './storage';
 import { URL } from './url';
 import { webf } from './webf';
 import { WebSocket } from './websocket'
+import { ResizeObserver } from './resize-observer';
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -40,6 +41,7 @@ defineGlobalProperty('DOMException', DOMException);
 defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
 defineGlobalProperty('WebSocket', WebSocket);
+defineGlobalProperty('ResizeObserver', ResizeObserver);
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {

@@ -5,7 +5,6 @@
 
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -113,8 +112,7 @@ class CSSLengthValue {
 
   static bool _isPercentageRelativeContainer(RenderBoxModel containerRenderBox) {
     CSSRenderStyle renderStyle = containerRenderBox.renderStyle;
-    bool isBlockLevelBox =
-        renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
+    bool isBlockLevelBox = renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
     bool isBlockInlineHaveSize = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
             renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
         renderStyle.width.value != null;
@@ -190,7 +188,7 @@ class CSSLengthValue {
         RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
-        AbstractNode? containerRenderBox = renderBoxModel?.parent;
+        RenderObject? containerRenderBox = renderBoxModel?.parent;
         CSSRenderStyle? parentRenderStyle;
         while (containerRenderBox != null) {
           if (containerRenderBox is RenderBoxModel && (_isPercentageRelativeContainer(containerRenderBox))) {
@@ -455,6 +453,16 @@ class CSSLengthValue {
 
   bool get isNotAuto {
     return !isAuto;
+  }
+
+  bool get isPrecise {
+    return type == CSSLengthType.PX ||
+        type == CSSLengthType.VW ||
+        type == CSSLengthType.VH ||
+        type == CSSLengthType.VMIN ||
+        type == CSSLengthType.VMAX ||
+        type == CSSLengthType.EM ||
+        type == CSSLengthType.REM || type == CSSLengthType.PERCENTAGE;
   }
 
   bool get isNone {

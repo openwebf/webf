@@ -48,7 +48,6 @@ class _InactiveRenderObjects {
     }
 
     assert(!renderObject.debugDisposed!);
-    assert(!_renderObjects.contains(renderObject));
     _renderObjects.add(renderObject);
   }
 
@@ -72,6 +71,9 @@ class Document extends ContainerNode {
   Map<String, List<Element>> elementsByName = {};
 
   Set<Element> styleDirtyElements = {};
+
+  final NthIndexCache _nthIndexCache = NthIndexCache();
+  NthIndexCache get nthIndexCache => _nthIndexCache;
 
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
@@ -179,11 +181,18 @@ class Document extends ContainerNode {
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
-    properties['compatMode'] = BindingObjectProperty(getter: () => compatMode,);
+    properties['compatMode'] = BindingObjectProperty(getter: () => compatMode);
     properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
-    properties['readyState'] = BindingObjectProperty(getter: () => readyState,);
-    properties['visibilityState'] = BindingObjectProperty(getter: () => visibilityState,);
-    properties['hidden'] = BindingObjectProperty(getter: () => hidden,);
+    properties['readyState'] = BindingObjectProperty(getter: () => readyState);
+    properties['visibilityState'] = BindingObjectProperty(getter: () => visibilityState);
+    properties['hidden'] = BindingObjectProperty(getter: () => hidden);
+    properties['title'] = BindingObjectProperty(
+      getter: () => _title ?? '',
+      setter: (value) {
+        _title = value ?? '';
+        ownerDocument.controller.onTitleChanged?.call(title);
+      },
+    );
   }
 
   @override
@@ -245,6 +254,9 @@ class Document extends ContainerNode {
   }
 
   dynamic get compatMode => _compatMode;
+
+  String get title => _title ?? '';
+  String? _title;
 
   get domain {
     Uri uri = Uri.parse(controller.url);
@@ -403,31 +415,26 @@ class Document extends ContainerNode {
 
   Element createElement(String type, [BindingContext? context]) {
     Element element = element_registry.createElement(type, context);
-    element.ownerDocument = this;
     return element;
   }
 
   Element createElementNS(String uri, String type, [BindingContext? context]) {
     Element element = element_registry.createElementNS(uri, type, context);
-    element.ownerDocument = this;
     return element;
   }
 
   TextNode createTextNode(String data, [BindingContext? context]) {
     TextNode textNode = TextNode(data, context);
-    textNode.ownerDocument = this;
     return textNode;
   }
 
   DocumentFragment createDocumentFragment([BindingContext? context]) {
     DocumentFragment documentFragment = DocumentFragment(context);
-    documentFragment.ownerDocument = this;
     return documentFragment;
   }
 
   Comment createComment([BindingContext? context]) {
     Comment comment = Comment(context);
-    comment.ownerDocument = this;
     return comment;
   }
 
@@ -490,8 +497,10 @@ class Document extends ContainerNode {
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();
+    nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
+    styleDirtyElements.clear();
     super.dispose();
   }
 

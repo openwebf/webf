@@ -78,6 +78,7 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return null;
   }
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
   Pointer<Void> rawEvent = event == null ? nullptr : event.toRaw().cast<Void>();
   Pointer<NativeValue> extraData = malloc.allocate(sizeOf<NativeValue>());
@@ -85,7 +86,7 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   assert(_allocatedPages.containsKey(contextId));
   Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
       _allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
-  dynamic result = fromNativeValue(dispatchResult);
+  dynamic result = fromNativeValue(controller.view, dispatchResult);
   malloc.free(dispatchResult);
   malloc.free(extraData);
   return result;
@@ -124,6 +125,16 @@ final DartEvaluateScripts _evaluateScripts =
 
 final DartParseHTML _parseHTML =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeParseHTML>>('parseHTML').asFunction();
+
+typedef NativeParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, Int32 length);
+typedef DartParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, int length);
+
+final _parseSVGResult = WebFDynamicLibrary.ref.lookupFunction<NativeParseSVGResult, DartParseSVGResult>('parseSVGResult');
+
+typedef NativeFreeSVGResult = Void Function(Pointer<NativeGumboOutput> ptr);
+typedef DartFreeSVGResult = void Function(Pointer<NativeGumboOutput> ptr);
+
+final _freeSVGResult = WebFDynamicLibrary.ref.lookupFunction<NativeFreeSVGResult, DartFreeSVGResult>('freeSVGResult');
 
 int _anonymousScriptEvaluationId = 0;
 
@@ -211,6 +222,23 @@ void parseHTML(int contextId, String code) {
   malloc.free(nativeCode);
 }
 
+class GumboOutput {
+  final Pointer<NativeGumboOutput> ptr;
+  final Pointer<Utf8> source;
+  GumboOutput(this.ptr, this.source);
+}
+
+GumboOutput parseSVGResult(String code) {
+  Pointer<Utf8> nativeCode = code.toNativeUtf8();
+  final ptr = _parseSVGResult(nativeCode, nativeCode.length);
+  return GumboOutput(ptr, nativeCode);
+}
+
+void freeSVGResult(GumboOutput gumboOutput) {
+  _freeSVGResult(gumboOutput.ptr);
+  malloc.free(gumboOutput.source);
+}
+
 // Register initJsEngine
 typedef NativeInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
 typedef DartInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, int methodsLength);
@@ -235,6 +263,15 @@ void disposePage(int contextId) {
   Pointer<Void> page = _allocatedPages[contextId]!;
   _disposePage(dartContext.pointer, page);
   _allocatedPages.remove(contextId);
+}
+
+typedef NativeNewPageId = Int64 Function();
+typedef DartNewPageId = int Function();
+
+final DartNewPageId _newPageId = WebFDynamicLibrary.ref.lookup<NativeFunction<NativeNewPageId>>('newPageId').asFunction();
+
+int newPageId() {
+  return _newPageId();
 }
 
 typedef NativeAllocateNewPage = Pointer<Void> Function(Pointer<Void>, Int32);
@@ -471,10 +508,10 @@ void flushUICommand(WebFViewController view) {
           view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
           break;
         case UICommandType.createDocument:
-          view.initDocument(nativePtr.cast<NativeBindingObject>());
+          view.initDocument(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createWindow:
-          view.initWindow(nativePtr.cast<NativeBindingObject>());
+          view.initWindow(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createTextNode:
           view.createTextNode(nativePtr.cast<NativeBindingObject>(), command.args);
@@ -483,7 +520,7 @@ void flushUICommand(WebFViewController view) {
           view.createComment(nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.disposeBindingObject:
-          view.disposeBindingObject(nativePtr.cast<NativeBindingObject>());
+          view.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.addEvent:
           Pointer<AddEventListenerOptions> eventListenerOptions = command.nativePtr2.cast<AddEventListenerOptions>();

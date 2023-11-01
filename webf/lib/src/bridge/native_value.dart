@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/launcher.dart';
 import 'package:webf/foundation.dart';
 
 class NativeValue extends Struct {
@@ -43,7 +44,7 @@ enum JSPointerType {
 typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);
 typedef AsyncAnonymousNativeFunction = Future<dynamic> Function(List<dynamic> args);
 
-dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
+dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValue) {
   if (nativeValue == nullptr) return null;
 
   JSValueType type = JSValueType.values[nativeValue.ref.tag];
@@ -64,14 +65,14 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
     case JSValueType.TAG_POINTER:
       JSPointerType pointerType = JSPointerType.values[nativeValue.ref.uint32];
       if (pointerType == JSPointerType.NativeBindingObject) {
-        return BindingBridge.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
+        return view.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
       }
 
       return Pointer.fromAddress(nativeValue.ref.u);
     case JSValueType.TAG_LIST:
       Pointer<NativeValue> head = Pointer.fromAddress(nativeValue.ref.u).cast<NativeValue>();
       List result = List.generate(nativeValue.ref.uint32, (index) {
-        return fromNativeValue(head.elementAt(index));
+        return fromNativeValue(view, head.elementAt(index));
       });
       malloc.free(head);
       return result;
