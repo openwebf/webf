@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
@@ -82,6 +83,9 @@ class ImageElement extends Element {
   // Note that images with the same URL but different sizes could produce different resized images, and WebF will treat them
   // as different images. However, in most cases, using the same image with different sizes is much rarer than using images with different URL.
   bool get _shouldScaling => true;
+
+  bool _isAnimatedImage = false;
+  bool get isAnimatedImage => _isAnimatedImage;
 
   // only the last task works
   Future<void>? _updateImageDataTaskFuture;
@@ -251,9 +255,17 @@ class ImageElement extends Element {
     _isListeningStream = true;
   }
 
+  void _watchAnimatedImageWhenVisible() {
+    RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+    renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
+  }
+
   @override
   void dispose() async {
     super.dispose();
+
+    RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+    renderReplaced?.removeIntersectionChangeListener(_handleIntersectionChange);
 
     // Stop and remove image stream reference.
     _stopListeningStream();
@@ -337,6 +349,9 @@ class ImageElement extends Element {
     // When appear
     if (entry.isIntersecting) {
       _updateImageDataLazyCompleter?.complete();
+      _listenToStream();
+    } else {
+      _stopListeningStream();
     }
   }
 
@@ -524,15 +539,8 @@ class ImageElement extends Element {
       _updateImageDataLazyCompleter = completer;
 
       RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
-      FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
       renderReplaced
         ?..isInLazyRendering = true
-        // Expand the intersecting area to preload images before they become visible to users.
-        ..intersectPadding = Rect.fromLTRB(
-            ownerFlutterView.physicalSize.width,
-            ownerFlutterView.physicalSize.height,
-            ownerFlutterView.physicalSize.width,
-            ownerFlutterView.physicalSize.height)
         // When detach renderer, all listeners will be cleared.
         ..addIntersectionChangeListener(_handleIntersectionChange);
 
@@ -547,8 +555,6 @@ class ImageElement extends Element {
 
       renderReplaced = renderBoxModel as RenderReplaced?;
       renderReplaced?.isInLazyRendering = false;
-      renderReplaced
-          ?.removeIntersectionChangeListener(_handleIntersectionChange);
     }
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
@@ -646,9 +652,26 @@ class ImageElement extends Element {
 
     final data = await request._obtainImage(contextId);
 
+    if (isAnimatedGif(data.bytes) && !_isAnimatedImage) {
+      _isAnimatedImage = true;
+      _watchAnimatedImageWhenVisible();
+      _stopListeningStream();
+    }
+
     // Decrement count when response.
     ownerDocument.decrementRequestCount();
     return data;
+  }
+
+  static bool isAnimatedGif(List<int> data) {
+    const gif87a = [71, 73, 70, 56, 55, 97]; // GIF87a
+    const gif89a = [71, 73, 70, 56, 57, 97]; // GIF89a
+
+    if (!data.sublist(0, 6).equals(gif87a) && !data.sublist(0, 6).equals(gif89a)) {
+      return false;
+    }
+
+    return data.where((byte) => byte == 0x2C).length > 1;
   }
 
   void _startLoadNewImage() {
