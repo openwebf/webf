@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
@@ -255,9 +254,14 @@ class ImageElement extends Element {
     _isListeningStream = true;
   }
 
+  bool _didWatchAnimationImage = false;
   void _watchAnimatedImageWhenVisible() {
     RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
-    renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
+    if (_isListeningStream && !_didWatchAnimationImage) {
+      _stopListeningStream();
+      renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
+      _didWatchAnimationImage = true;
+    }
   }
 
   @override
@@ -499,6 +503,7 @@ class ImageElement extends Element {
     // Multi frame image should wrap a repaint boundary for better composite performance.
     if (_frameCount > 2) {
       forceToRepaintBoundary = true;
+      _watchAnimatedImageWhenVisible();
     }
 
     _updateRenderObject(image: imageInfo.image);
@@ -652,26 +657,9 @@ class ImageElement extends Element {
 
     final data = await request._obtainImage(contextId);
 
-    if (isAnimatedGif(data.bytes) && !_isAnimatedImage) {
-      _isAnimatedImage = true;
-      _watchAnimatedImageWhenVisible();
-      _stopListeningStream();
-    }
-
     // Decrement count when response.
     ownerDocument.decrementRequestCount();
     return data;
-  }
-
-  static bool isAnimatedGif(List<int> data) {
-    const gif87a = [71, 73, 70, 56, 55, 97]; // GIF87a
-    const gif89a = [71, 73, 70, 56, 57, 97]; // GIF89a
-
-    if (!data.sublist(0, 6).equals(gif87a) && !data.sublist(0, 6).equals(gif89a)) {
-      return false;
-    }
-
-    return data.where((byte) => byte == 0x2C).length > 1;
   }
 
   void _startLoadNewImage() {
