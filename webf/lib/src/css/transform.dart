@@ -78,6 +78,10 @@ mixin CSSTransformMixin on RenderStyle {
     return _transformMatrix;
   }
 
+  void markTransformMatrixNeedsUpdate() {
+    _transformMatrix = null;
+  }
+
   // Transform animation drived by transformMatrix.
   set transformMatrix(Matrix4? value) {
     if (value == null || _transformMatrix == value) return;
