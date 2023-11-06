@@ -337,6 +337,7 @@ void ExecutingContext::FlushUICommand() {
 
 void ExecutingContext::TurnOnJavaScriptGC() {
   JS_TurnOnGC(script_state_.runtime());
+  JS_RunGC(script_state_.runtime());
 }
 
 void ExecutingContext::TurnOffJavaScriptGC() {
