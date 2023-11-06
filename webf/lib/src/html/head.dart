@@ -133,14 +133,15 @@ class LinkElement extends Element {
         isConnected &&
         !_stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
       String url = _resolvedHyperlink.toString();
-      WebFBundle bundle = WebFBundle.fromUrl(url);
+      WebFBundle bundle = ownerDocument.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
       _stylesheetLoaded[url] = true;
       try {
         _loading = true;
         // Increment count when request.
         ownerDocument.incrementRequestCount();
 
-        await bundle.resolve(contextId);
+        await bundle.resolve(baseUrl: ownerDocument.controller.url, uriParser: ownerDocument.controller.uriParser);
+        await bundle.obtainData();
         assert(bundle.isResolved, 'Failed to obtain $url');
         _loading = false;
         // Decrement count when response.
