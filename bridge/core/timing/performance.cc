@@ -5,6 +5,7 @@
 
 #include "performance.h"
 #include <chrono>
+#include <algorithm>
 #include "bindings/qjs/converter_impl.h"
 #include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
