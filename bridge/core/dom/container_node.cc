@@ -34,6 +34,7 @@
 #include "document.h"
 #include "document_fragment.h"
 #include "node_traversal.h"
+#include "child_list_mutation_scope.h"
 
 namespace webf {
 
@@ -285,7 +286,10 @@ Node* ContainerNode::AppendChild(Node* new_child, ExceptionState& exception_stat
 
   NodeVector post_insertion_notification_targets;
   post_insertion_notification_targets.reserve(kInitialNodeVectorSize);
-  { InsertNodeVector(targets, nullptr, AdoptAndAppendChild(), &post_insertion_notification_targets); }
+  {
+    ChildListMutationScope mutation_scope(*this);
+    InsertNodeVector(targets, nullptr, AdoptAndAppendChild(), &post_insertion_notification_targets);
+  }
   DidInsertNodeVector(targets, nullptr, post_insertion_notification_targets);
   return new_child;
 }
@@ -415,6 +419,7 @@ void ContainerNode::InsertNodeVector(const NodeVector& targets,
       assert(!target_node->parentNode());
       Node& child = *target_node;
       mutator(*this, child, next);
+      ChildListMutationScope(*this).ChildAdded(child);
       NotifyNodeInsertedInternal(child);
     }
   }

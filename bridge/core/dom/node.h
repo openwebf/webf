@@ -238,7 +238,7 @@ class Node : public EventTarget {
   void ClearSelfOrAncestorHasDirAutoAttribute() { ClearFlag(kSelfOrAncestorHasDirAutoAttribute); }
 
   void GetRegisteredMutationObserversOfType(
-      std::unordered_map<Member<MutationObserver>, MutationRecordDeliveryOptions>&,
+      std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>&,
       MutationType,
       const AtomicString& attribute_name);
   void RegisterMutationObserver(MutationObserver&,

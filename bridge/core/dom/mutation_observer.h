@@ -37,28 +37,67 @@
 
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"
+#include "bindings/qjs/cppgc/member.h"
 #include "qjs_mutation_observer_init.h"
-
-class Node;
+#include "mutation_record.h"
 
 namespace webf {
 
+class Node;
+class MutationObserver;
+class MutationObserverInit;
+class MutationObserverRegistration;
+
+using MutationObserverSet = std::set<Member<MutationObserver>>;
+using MutationObserverRegistrationSet =
+    std::set<Member<MutationObserverRegistration>>;
+using MutationObserverVector = std::vector<Member<MutationObserver>>;
+using MutationRecordVector = std::vector<MutationRecord*>;
+
 class MutationObserver final : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
-
  public:
   enum ObservationFlags { kSubtree = 1 << 3, kAttributeFilter = 1 << 4 };
   enum DeliveryFlags {
     kAttributeOldValue = 1 << 5,
     kCharacterDataOldValue = 1 << 6,
   };
+
+  class Delegate {
+   public:
+    ~Delegate() = default;
+    virtual ExecutingContext* GetExecutingContext() const = 0;
+    virtual void Deliver(const MutationRecordVector& records,
+                         MutationObserver&) = 0;
+    virtual void Trace(GCVisitor* visitor) const {}
+  };
+
   static MutationObserver* Create(ExecutingContext* context,
                                   const std::shared_ptr<QJSFunction>& function,
                                   ExceptionState& exception_state);
+  static void DeliverMutations();
 
-  void observe(Node* target, ExceptionState& exception_state);
+  MutationObserver(ExecutingContext*, const std::shared_ptr<QJSFunction>& function);
+  ~MutationObserver() override;
+
+  void observe(Node*, const std::shared_ptr<MutationObserverInit>& init, ExceptionState&);
+  void observe(Node*, ExceptionState&);
+  MutationRecordVector takeRecords(ExceptionState&);
   void disconnect(ExceptionState& exception_state);
-  std::vector<MutationRe>
+  void ObservationStarted(MutationObserverRegistration*);
+  void ObservationEnded(MutationObserverRegistration*);
+  void EnqueueMutationRecord(MutationRecord*);
+  void SetHasTransientRegistration();
+
+  std::set<Member<Node>> GetObservedNodes() const;
+
+  bool HasPendingActivity() const { return !records_.empty(); }
+
+ private:
+  Member<Delegate> delegate_;
+  std::vector<Member<MutationRecord>> records_;
+  MutationObserverRegistrationSet registrations_;
+  unsigned priority_;
 };
 
 }  // namespace webf

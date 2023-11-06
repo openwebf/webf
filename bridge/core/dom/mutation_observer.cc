@@ -1,15 +1,155 @@
 /*
+ * Copyright (C) 2011 Google Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "mutation_observer.h"
+#include "mutation_observer_options.h"
+#include "node.h"
+#include "mutation_observer_registration.h"
 
 namespace webf {
 
-MutationObserver* MutationObserver::Create(webf::ExecutingContext* context,
-                                           const std::shared_ptr<QJSFunction>& function,
-                                           webf::ExceptionState& exception_state) {
+static unsigned g_observer_priority = 0;
 
+MutationObserver* MutationObserver::Create(ExecutingContext* context,
+                                           const std::shared_ptr<QJSFunction>& function,
+                                           ExceptionState& exception_state) {
+  return MakeGarbageCollected<MutationObserver>(context, function);
+}
+
+MutationObserver::MutationObserver(ExecutingContext* context, const std::shared_ptr<QJSFunction>& function)
+    : ScriptWrappable(context->ctx()) {
+  priority_ = g_observer_priority++;
+}
+
+MutationObserver::~MutationObserver() = default;
+
+void MutationObserver::observe(Node* node, const std::shared_ptr<MutationObserverInit>& observer_init, ExceptionState& exception_state) {
+
+  assert(node != nullptr);
+
+  MutationObserverOptions options = 0;
+
+  if (observer_init->hasAttributeOldValue() &&
+      observer_init->attributeOldValue())
+    options |= kAttributeOldValue;
+
+  std::set<AtomicString> attribute_filter;
+  if (observer_init->hasAttributeFilter()) {
+    for (const auto& name : observer_init->attributeFilter())
+      attribute_filter.insert(AtomicString(name));
+    options |= kAttributeFilter;
+  }
+
+  bool attributes =
+      observer_init->hasAttributes() && observer_init->attributes();
+  if (attributes || (!observer_init->hasAttributes() &&
+                     (observer_init->hasAttributeOldValue() ||
+                      observer_init->hasAttributeFilter())))
+    options |= kMutationTypeAttributes;
+
+  if (observer_init->hasCharacterDataOldValue() &&
+      observer_init->characterDataOldValue())
+    options |= kCharacterDataOldValue;
+
+  bool character_data =
+      observer_init->hasCharacterData() && observer_init->characterData();
+  if (character_data || (!observer_init->hasCharacterData() &&
+                         observer_init->hasCharacterDataOldValue()))
+    options |= kMutationTypeCharacterData;
+
+  if (observer_init->childList())
+    options |= kMutationTypeChildList;
+
+  if (observer_init->subtree())
+    options |= kSubtree;
+
+  if (!(options & kMutationTypeAttributes)) {
+    if (options & kAttributeOldValue) {
+      exception_state.ThrowException(ctx(), ErrorType::TypeError,
+                                     "The options object may only set 'attributeOldValue' to true when "
+                                     "'attributes' is true or not present.");
+      return;
+    }
+    if (options & kAttributeFilter) {
+      exception_state.ThrowException(ctx(), ErrorType::TypeError,
+          "The options object may only set 'attributeFilter' when 'attributes' "
+          "is true or not present.");
+      return;
+    }
+  }
+  if (!((options & kMutationTypeCharacterData) ||
+        !(options & kCharacterDataOldValue))) {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError,
+        "The options object may only set 'characterDataOldValue' to true when "
+        "'characterData' is true or not present.");
+    return;
+  }
+
+  if (!(options & kMutationTypeAll)) {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError,
+        "The options object must set at least one of 'attributes', "
+        "'characterData', or 'childList' to true.");
+    return;
+  }
+
+  node->RegisterMutationObserver(*this, options, attribute_filter);
+}
+
+void MutationObserver::observe(Node* node, ExceptionState& exception_state) {
+  observe(node, MutationObserverInit::Create(), exception_state);
+}
+
+MutationRecordVector MutationObserver::takeRecords(ExceptionState& exception_state) {
+  MutationObserverVector records;
+  std::swap(records_, records_);
+}
+
+void MutationObserver::disconnect(ExceptionState& exception_state) {
+  records_.clear();
+  MutationObserverRegistrationSet registrations(registrations_);
+  for (auto& registration : registrations) {
+    // The registration may be already unregistered while iteration.
+    // Only call unregister if it is still in the original set.
+    if (registrations_.Contains(registration))
+      registration->Unregister();
+  }
+  assert(registrations_.empty());
+}
+
+void MutationObserver::ObservationStarted(MutationObserverRegistration* registration) {
+  assert(registrations_.Contains(registration));
+  registrations_.erase(registration);
 }
 
 }  // namespace webf

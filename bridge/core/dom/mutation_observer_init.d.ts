@@ -3,7 +3,7 @@
 @Dictionary()
 export interface MutationObserverInit {
     childList: boolean;
-    attribute: boolean;
+    attributes: boolean;
     characterData: boolean;
     subtree: boolean;
     attributeOldValue: boolean;

@@ -44,7 +44,7 @@ namespace webf {
 
 class Node;
 
-class MutationObserverInterestGroup : public GarbageCollected<MutationObserverInterestGroup> {
+class MutationObserverInterestGroup {
  public:
   static std::shared_ptr<MutationObserverInterestGroup> CreateForChildListMutation(
       Node& target) {
@@ -79,7 +79,7 @@ class MutationObserverInterestGroup : public GarbageCollected<MutationObserverIn
   }
 
   MutationObserverInterestGroup(
-      std::unordered_map<Member<MutationObserver>, MutationRecordDeliveryOptions>&
+      std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>&
           observers,
       MutationRecordDeliveryOptions old_value_flag);
 
@@ -99,8 +99,7 @@ class MutationObserverInterestGroup : public GarbageCollected<MutationObserverIn
     return options & old_value_flag_;
   }
 
-  std::unordered_map<Member<MutationObserver>, MutationRecordDeliveryOptions>
-      observers_;
+  std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions> observers_;
   MutationRecordDeliveryOptions old_value_flag_;
 };
 

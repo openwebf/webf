@@ -15,8 +15,8 @@ MutationRecord::MutationRecord(JSContext* ctx) : ScriptWrappable(ctx) {}
 class ChildListRecord : public MutationRecord {
  public:
   explicit ChildListRecord(Node* target,
-                           std::vector<Member<Node>>& added,
-                           std::vector<Member<Node>>& removed,
+                           StaticNodeList* added,
+                           StaticNodeList* removed,
                            Node* previous_sibling,
                            Node* next_sibling)
       : target_(target),
@@ -28,15 +28,8 @@ class ChildListRecord : public MutationRecord {
 
   void Trace(GCVisitor* visitor) const override {
     visitor->TraceMember(target_);
-
-    for (auto& entry : added_nodes_) {
-      visitor->TraceMember(entry);
-    }
-
-    for (auto& entry : removed_nodes_) {
-      visitor->TraceMember(entry);
-    }
-
+    visitor->TraceMember(added_nodes_);
+    visitor->TraceMember(removed_nodes_);
     visitor->TraceMember(previous_sibling_);
     visitor->TraceMember(next_sibling_);
     MutationRecord::Trace(visitor);
@@ -45,8 +38,8 @@ class ChildListRecord : public MutationRecord {
  private:
   const AtomicString& type() override;
   Node* target() override { return target_.Get(); }
-  StaticNodeList* addedNodes() override { return &added_nodes_; }
-  StaticNodeList* removedNodes() override { return &removed_nodes_; }
+  StaticNodeList* addedNodes() override { return added_nodes_; }
+  StaticNodeList* removedNodes() override { return removed_nodes_; }
   Node* previousSibling() override { return previous_sibling_.Get(); }
   Node* nextSibling() override { return next_sibling_.Get(); }
 
@@ -64,15 +57,8 @@ class RecordWithEmptyNodeLists : public MutationRecord {
 
   void Trace(GCVisitor* visitor) const override {
     visitor->TraceMember(target_);
-
-    for (auto& entry : added_nodes_) {
-      visitor->TraceMember(entry);
-    }
-
-    for (auto& entry : removed_nodes_) {
-      visitor->TraceMember(entry);
-    }
-
+    visitor->TraceMember(added_nodes_);
+    visitor->TraceMember(removed_nodes_);
     MutationRecord::Trace(visitor);
   }
 
@@ -157,8 +143,8 @@ const AtomicString& CharacterDataRecord::type() {
 }
 
 MutationRecord* MutationRecord::CreateChildList(Node* target,
-                                                std::vector<Member<Node>>&& added,
-                                                std::vector<Member<Node>>&& removed,
+                                                StaticNodeList* added,
+                                                StaticNodeList* removed,
                                                 Node* previous_sibling,
                                                 Node* next_sibling) {
   return MakeGarbageCollected<ChildListRecord>(target, added, removed, previous_sibling, next_sibling);

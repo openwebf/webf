@@ -116,9 +116,9 @@ void ChildListMutationAccumulator::EnqueueMutationRecord() {
   assert(HasObservers());
   assert(!IsEmpty());
 
-  std::vector<Member<Node>> added_nodes = added_nodes_;
-  std::vector<Member<Node>> removed_nodes = removed_nodes_;
-  MutationRecord* record = MutationRecord::CreateChildList(target_, std::move(added_nodes), std::move(removed_nodes),
+  StaticNodeList* added_nodes = StaticNodeList::Adopt(target_->ctx(), added_nodes_);
+  StaticNodeList* removed_nodes = StaticNodeList::Adopt(target_->ctx(), removed_nodes_);
+  MutationRecord* record = MutationRecord::CreateChildList(target_, added_nodes, removed_nodes,
                                                            previous_sibling_.Release(), next_sibling_.Release());
   observers_->EnqueueMutationRecord(record);
   last_added_ = nullptr;

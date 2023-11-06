@@ -25,6 +25,11 @@ class ScriptWrappable;
 template <typename T, typename = std::is_base_of<ScriptWrappable, T>>
 class Member {
  public:
+
+  struct KeyHasher {
+    std::size_t operator()(const Member& k) const { return k.raw_; }
+  };
+
   Member() = default;
   Member(T* ptr) { SetRaw(ptr); }
   Member(const Member<T>& other) {

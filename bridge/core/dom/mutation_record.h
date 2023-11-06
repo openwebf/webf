@@ -7,20 +7,19 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "bindings/qjs/cppgc/member.h"
-#include "static_node_list.h"
-
 
 namespace webf {
 
 class Node;
+class StaticNodeList;
 
 class MutationRecord : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
  public:
-
+  using ImplType = MutationRecord*;
   static MutationRecord* CreateChildList(Node* target,
-                                         std::vector<Member<Node>>&& added,
-                                         std::vector<Member<Node>>&& removed,
+                                         StaticNodeList* added,
+                                         StaticNodeList* removed,
                                          Node* previous_sibling,
                                          Node* next_sibling);
   static MutationRecord* CreateAttributes(Node* target,
