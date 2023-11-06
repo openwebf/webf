@@ -83,9 +83,6 @@ class ImageElement extends Element {
   // as different images. However, in most cases, using the same image with different sizes is much rarer than using images with different URL.
   bool get _shouldScaling => true;
 
-  bool _isAnimatedImage = false;
-  bool get isAnimatedImage => _isAnimatedImage;
-
   // only the last task works
   Future<void>? _updateImageDataTaskFuture;
   int _updateImageDataTaskId = 0;
