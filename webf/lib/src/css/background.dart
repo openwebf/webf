@@ -256,12 +256,12 @@ class CSSBackgroundImage {
 
   ImageProvider? _image;
 
-  Future<Uint8List> _obtainImage(Uri url) async {
+  Future<ImageLoadResponse> _obtainImage(Uri url) async {
     ImageRequest request = ImageRequest.fromUri(url);
     // Increment count when request.
     controller.view.document.incrementRequestCount();
 
-    Uint8List data = await request.obtainImage(controller);
+    ImageLoadResponse data = await request.obtainImage(controller);
 
     // Decrement count when response.
     controller.view.document.decrementRequestCount();

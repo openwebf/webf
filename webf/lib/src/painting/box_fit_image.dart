@@ -7,7 +7,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/painting.dart';
+import 'package:flutter/rendering.dart';
 import 'package:webf/foundation.dart';
 
 class BoxFitImageKey {
@@ -21,7 +21,6 @@ class BoxFitImageKey {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
     return other is BoxFitImageKey && other.url == url && other.configuration == configuration;
   }
 
@@ -32,7 +31,14 @@ class BoxFitImageKey {
   String toString() => 'BoxFitImageKey($url, $configuration)';
 }
 
-typedef LoadImage = Future<Uint8List> Function(Uri url);
+class ImageLoadResponse {
+  final Uint8List bytes;
+  final String? mime;
+
+  ImageLoadResponse(this.bytes,{ this.mime });
+}
+
+typedef LoadImage = Future<ImageLoadResponse> Function(Uri url);
 typedef OnImageLoad = void Function(int naturalWidth, int naturalHeight);
 
 class BoxFitImage extends ImageProvider<BoxFitImageKey> {
@@ -59,9 +65,9 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   }
 
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
-    Uint8List bytes;
+    ImageLoadResponse response;
     try {
-      bytes = await _loadImage(url);
+      response = await _loadImage(url);
     } on FlutterError {
       // Depending on where the exception was thrown, the image cache may not
       // have had a chance to track the key in the cache at all.
@@ -72,6 +78,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       rethrow;
     }
 
+    final bytes = response.bytes;
     if (bytes.isEmpty) {
       PaintingBinding.instance.imageCache.evict(key);
       throw StateError('Unable to read data');
