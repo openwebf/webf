@@ -19,7 +19,9 @@ class Window extends EventTarget {
 
   Window(BindingContext? context, this.document)
       : screen = Screen(context!.contextId, document.controller.ownerFlutterView, document.controller.view),
-        super(context);
+        super(context) {
+    BindingBridge.listenEvent(this, 'load');
+  }
 
   @override
   EventTarget? get parentEventTarget => null;

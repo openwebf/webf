@@ -55,6 +55,9 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   JSContext* ctx = script_state_.ctx();
   global_object_ = JS_GetGlobalObject(script_state_.ctx());
 
+  // Turn off quickjs GC to avoid performance issue at loading status.
+  // When the `load` event fired in window, the GC will turn on.
+  JS_TurnOffGC(script_state_.runtime());
   JS_SetContextOpaque(ctx, this);
   JS_SetHostPromiseRejectionTracker(script_state_.runtime(), promiseRejectTracker, nullptr);
 
@@ -330,6 +333,14 @@ void ExecutingContext::FlushUICommand() {
   if (!uiCommandBuffer()->empty()) {
     dartMethodPtr()->flushUICommand(context_id_);
   }
+}
+
+void ExecutingContext::TurnOnJavaScriptGC() {
+  JS_TurnOnGC(script_state_.runtime());
+}
+
+void ExecutingContext::TurnOffJavaScriptGC() {
+  JS_TurnOffGC(script_state_.runtime());
 }
 
 void ExecutingContext::DispatchErrorEvent(ErrorEvent* error_event) {

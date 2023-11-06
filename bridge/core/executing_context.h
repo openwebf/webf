@@ -130,6 +130,9 @@ class ExecutingContext {
   // Force dart side to execute the pending ui commands.
   void FlushUICommand();
 
+  void TurnOnJavaScriptGC();
+  void TurnOffJavaScriptGC();
+
   void DispatchErrorEvent(ErrorEvent* error_event);
   void DispatchErrorEventInterval(ErrorEvent* error_event);
   void ReportErrorEvent(ErrorEvent* error_event);

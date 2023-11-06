@@ -3005,7 +3005,8 @@ JSRuntime* JS_NewRuntime2(const JSMallocFunctions* mf, void* opaque) {
     rt->mf.js_malloc_usable_size = js_malloc_usable_size_unknown;
   }
   rt->malloc_state = ms;
-  rt->malloc_gc_threshold = 256 * 1024;
+  rt->malloc_gc_threshold = 64 * 1024 * 1024; // 64 KB as a start
+  rt->gc_off = FALSE;
 
 #ifdef CONFIG_BIGNUM
   bf_context_init(&rt->bf_ctx, js_bf_realloc, rt);
