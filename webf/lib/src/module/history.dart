@@ -110,7 +110,7 @@ class HistoryModule extends BaseModule {
       return;
     }
 
-    WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
+    WebFBundle bundle = controller.getPreloadBundleFromUrl(uri.toString()) ?? WebFBundle.fromUrl(uri.toString());
     HistoryItem history = HistoryItem(bundle, state, false);
     _addItem(history);
   }
@@ -130,7 +130,7 @@ class HistoryModule extends BaseModule {
       return;
     }
 
-    WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
+    WebFBundle bundle = controller.getPreloadBundleFromUrl(uri.toString()) ?? WebFBundle.fromUrl(uri.toString());
     HistoryItem history = HistoryItem(bundle, state, false);
 
     _previousStack.removeFirst();

@@ -5,10 +5,13 @@
 
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/painting.dart';
+import 'package:webf/html.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
@@ -253,6 +256,18 @@ class CSSBackgroundImage {
 
   ImageProvider? _image;
 
+  Future<ImageLoadResponse> _obtainImage(Uri url) async {
+    ImageRequest request = ImageRequest.fromUri(url);
+    // Increment count when request.
+    controller.view.document.incrementRequestCount();
+
+    ImageLoadResponse data = await request.obtainImage(controller);
+
+    // Decrement count when response.
+    controller.view.document.decrementRequestCount();
+    return data;
+  }
+
   ImageProvider? get image {
     if (_image != null) return _image;
     for (CSSFunctionalNotation method in functions) {
@@ -267,8 +282,13 @@ class CSSBackgroundImage {
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
           uri = controller.uriParser!.resolve(Uri.parse(baseHref ?? controller.url), uri);
-          _image = getImageProvider(uri, contextId: controller.view.contextId);
-          return _image;
+          FlutterView ownerFlutterView = controller.ownerFlutterView;
+          return BoxFitImage(
+            boxFit: renderStyle.backgroundSize.fit,
+            url: uri,
+            loadImage: _obtainImage,
+            devicePixelRatio: ownerFlutterView.devicePixelRatio
+          );
         }
       }
     }
