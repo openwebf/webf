@@ -1132,10 +1132,8 @@ class WebFController {
       Uint8List data = entrypoint.data!;
       if (entrypoint.isJavascript) {
         assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
-        Stopwatch stopwatch = Stopwatch()..start();
         // Prefer sync decode in loading entrypoint.
         await evaluateScripts(contextId, data, url: url);
-        print('cost: ${stopwatch.elapsedMilliseconds}ms');
       } else if (entrypoint.isBytecode) {
         evaluateQuickjsByteCode(contextId, data);
       } else if (entrypoint.isHTML) {
