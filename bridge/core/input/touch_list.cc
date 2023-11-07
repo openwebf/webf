@@ -28,7 +28,7 @@ TouchList::TouchList(ExecutingContext* context, NativeTouchList* native_touch_li
   FromNativeTouchList(context, this, native_touch_list);
 }
 
-TouchList::TouchList(webf::ExecutingContext* context): ScriptWrappable(context->ctx()) {}
+TouchList::TouchList(webf::ExecutingContext* context) : ScriptWrappable(context->ctx()) {}
 
 uint32_t TouchList::length() const {
   return values_.size();

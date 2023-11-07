@@ -22,9 +22,9 @@ TouchEvent* TouchEvent::Create(ExecutingContext* context,
 
 TouchEvent::TouchEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
     : UIEvent(context, type, exception_state),
-    changed_touches_(TouchList::Create(context)),
-    touches_(TouchList::Create(context)),
-    target_touches_(TouchList::Create(context)) {}
+      changed_touches_(TouchList::Create(context)),
+      touches_(TouchList::Create(context)),
+      target_touches_(TouchList::Create(context)) {}
 
 TouchEvent::TouchEvent(ExecutingContext* context,
                        const AtomicString& type,
