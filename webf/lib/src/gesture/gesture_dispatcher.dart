@@ -4,6 +4,7 @@
  */
 
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -382,6 +383,13 @@ class GestureDispatcher {
         TouchPoint touchPoint = touchPoints[i];
         Touch touch = _toTouch(touchPoint);
 
+        // The touch target might be eliminated from the DOM tree and collected by JavaScript GC,
+        // resulting in it becoming invisible and inaccessible, yet this change is not synchronized with Dart instantly.
+        // Therefore, refrain from triggering events on these unavailable DOM targets.
+        if (touch.target.pointer?.ref.disposed == true) {
+          continue;
+        }
+
         if (currentTouchPoint.id == touchPoint.id) {
           // TODO: add pointEvent list for handle pointEvent at the current frame and support changedTouches.
           e.changedTouches.append(touch);
@@ -394,7 +402,9 @@ class GestureDispatcher {
         e.touches.append(touch);
       }
 
-      _pointTargets[currentTouchPoint.id]?.dispatchEvent(e);
+      if (e.touches.length > 0) {
+        _pointTargets[currentTouchPoint.id]?.dispatchEvent(e);
+      }
     }
   }
 }
