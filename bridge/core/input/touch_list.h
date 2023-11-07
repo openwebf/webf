@@ -21,10 +21,12 @@ class TouchList : public ScriptWrappable {
  public:
   using ImplType = TouchList*;
 
+  static TouchList* Create(ExecutingContext* context);
   static void FromNativeTouchList(ExecutingContext* context, TouchList* touch_list, NativeTouchList* native_touch_list);
 
   TouchList() = delete;
   explicit TouchList(ExecutingContext* context, NativeTouchList* native_touch_list);
+  explicit TouchList(ExecutingContext* context);
 
   uint32_t length() const;
   Touch* item(uint32_t index, ExceptionState& exception_state) const;
