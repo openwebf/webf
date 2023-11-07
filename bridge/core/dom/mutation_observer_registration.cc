@@ -46,19 +46,16 @@ MutationObserverRegistration::MutationObserverRegistration(MutationObserver& obs
       registration_node_(registration_node),
       options_(options),
       attribute_filter_(attribute_filter){
-  observer_->ObservationStarted(this);
+  observer_->ObservationStarted(std::shared_ptr<MutationObserverRegistration>(this));
 }
 
 MutationObserverRegistration::~MutationObserverRegistration() = default;
 
-
 void MutationObserverRegistration::Dispose() {
   ClearTransientRegistrations();
-  observer_->ObservationEnded(this);
+  observer_->ObservationEnded(std::shared_ptr<MutationObserverRegistration>(this));
   observer_.Clear();
 }
-
-
 
 void MutationObserverRegistration::ResetObservation(
     MutationObserverOptions options,
@@ -73,8 +70,7 @@ void MutationObserverRegistration::ObservedSubtreeNodeWillDetach(Node& node) {
   if (!IsSubtree())
     return;
 
-  node.RegisterTransientMutationObserver(this);
-  observer_->SetHasTransientRegistration();
+  node.RegisterTransientMutationObserver(std::shared_ptr<MutationObserverRegistration>(this));
 
   transient_registration_nodes_ = std::set<Member<Node>>();
 
@@ -93,7 +89,7 @@ void MutationObserverRegistration::ClearTransientRegistrations() {
   }
 
   for (auto& node : transient_registration_nodes_)
-    node->UnregisterTransientMutationObserver(this);
+    node->UnregisterTransientMutationObserver(std::shared_ptr<MutationObserverRegistration>(this));
 
   transient_registration_nodes_.clear();
 
@@ -106,7 +102,7 @@ void MutationObserverRegistration::ClearTransientRegistrations() {
 void MutationObserverRegistration::Unregister() {
   // |this| can outlives registration_node_.
   if (registration_node_)
-    registration_node_->UnregisterMutationObserver(this);
+    registration_node_->UnregisterMutationObserver(std::shared_ptr<MutationObserverRegistration>(this));
   else
     Dispose();
 }

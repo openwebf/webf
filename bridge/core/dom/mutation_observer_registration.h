@@ -56,7 +56,7 @@ class MutationObserverRegistration {
   void ObservedSubtreeNodeWillDetach(Node&);
   void ClearTransientRegistrations();
   bool HasTransientRegistrations() const {
-    return transient_registration_nodes_.Get() != nullptr && !transient_registration_nodes_->empty();
+    return !transient_registration_nodes_.empty();
   }
   void Unregister();
 
@@ -79,8 +79,7 @@ class MutationObserverRegistration {
   Member<MutationObserver> observer_;
   Member<Node> registration_node_;
   Member<Node> registration_node_keep_alive_;
-  typedef std::set<Member<Node>> NodeHashSet;
-  NodeHashSet transient_registration_nodes_;
+  std::set<Member<Node>> transient_registration_nodes_;
 
   MutationObserverOptions options_;
   std::set<AtomicString> attribute_filter_;

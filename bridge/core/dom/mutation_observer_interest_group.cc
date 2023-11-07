@@ -32,6 +32,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "bindings/qjs/cppgc/member.h"
 #include "mutation_observer_interest_group.h"
 #include "node.h"
 
@@ -43,8 +44,8 @@ std::shared_ptr<MutationObserverInterestGroup> MutationObserverInterestGroup::Cr
     MutationRecordDeliveryOptions old_value_flag,
     const AtomicString* attribute_name) {
   assert((type == kMutationTypeAttributes && attribute_name) || !attribute_name);
-  std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions> observers;
-  target.GetRegisteredMutationObserversOfType(observers, type, *attribute_name);
+  MutationObserverOptionsMap observers;
+  target.GetRegisteredMutationObserversOfType(observers, type, attribute_name);
   if (observers.empty())
     return nullptr;
 
@@ -52,7 +53,7 @@ std::shared_ptr<MutationObserverInterestGroup> MutationObserverInterestGroup::Cr
 }
 
 MutationObserverInterestGroup::MutationObserverInterestGroup(
-    std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>& observers,
+    MutationObserverOptionsMap& observers,
     webf::MutationRecordDeliveryOptions old_value_flag): old_value_flag_(old_value_flag) {
   assert(!observers.empty());
   observers_.swap(observers);
@@ -84,6 +85,12 @@ void MutationObserverInterestGroup::EnqueueMutationRecord(
             MutationRecord::CreateWithNullOldValue(mutation);
     }
     observer->EnqueueMutationRecord(mutation_with_null_old_value);
+  }
+}
+
+void MutationObserverInterestGroup::Trace(GCVisitor* visitor) const {
+  for(auto& item : observers_) {
+    visitor->TraceMember(item.first);
   }
 }
 

@@ -15,8 +15,9 @@ class StaticNodeList;
 
 class MutationRecord : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
-  using ImplType = MutationRecord*;
+  using ImplType = Member<MutationRecord>;
   static MutationRecord* CreateChildList(Node* target,
                                          StaticNodeList* added,
                                          StaticNodeList* removed,

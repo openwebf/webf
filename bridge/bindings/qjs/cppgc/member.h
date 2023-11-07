@@ -27,7 +27,7 @@ class Member {
  public:
 
   struct KeyHasher {
-    std::size_t operator()(const Member& k) const { return k.raw_; }
+    std::size_t operator()(const Member& k) const { return reinterpret_cast<std::size_t>(k.raw_); }
   };
 
   Member() = default;

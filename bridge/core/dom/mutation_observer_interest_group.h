@@ -36,7 +36,6 @@
 #define WEBF_CORE_DOM_MUTATION_OBSERVER_INTEREST_GROUP_H_
 
 #include "bindings/qjs/cppgc/garbage_collected.h"
-#include "mutation_observer_options.h"
 #include "document.h"
 #include "mutation_record.h"
 
@@ -79,8 +78,7 @@ class MutationObserverInterestGroup {
   }
 
   MutationObserverInterestGroup(
-      std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>&
-          observers,
+      MutationObserverOptionsMap& observers,
       MutationRecordDeliveryOptions old_value_flag);
 
   bool IsOldValueRequested();
@@ -99,7 +97,7 @@ class MutationObserverInterestGroup {
     return options & old_value_flag_;
   }
 
-  std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions> observers_;
+  MutationObserverOptionsMap observers_;
   MutationRecordDeliveryOptions old_value_flag_;
 };
 

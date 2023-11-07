@@ -248,6 +248,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/union_base.cc
     # Core sources
     core/executing_context.cc
+    core/script_forbidden_scope.cc
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
@@ -307,6 +308,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/empty_node_list.cc
     core/dom/mutation_observer.cc
     core/dom/mutation_observer_registration.cc
+    core/dom/mutation_observer_interest_group.cc
     core/dom/mutation_record.cc
     core/dom/child_list_mutation_scope.cc
     core/dom/container_node.cc
@@ -411,6 +413,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_touch.cc
     out/qjs_touch_init.cc
     out/qjs_touch_list.cc
+    out/qjs_mutation_record.cc
+    out/qjs_mutation_observer.cc
     out/qjs_touch_event.cc
     out/qjs_touch_event_init.cc
     out/qjs_pointer_event.cc

@@ -6,6 +6,7 @@
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "built_in_string.h"
 #include "mutation_record_types.h"
+#include "static_node_list.h"
 #include "node.h"
 
 namespace webf {

@@ -47,12 +47,13 @@ class Node;
 class MutationObserver;
 class MutationObserverInit;
 class MutationObserverRegistration;
+class MutationRecord;
 
 using MutationObserverSet = std::set<Member<MutationObserver>>;
 using MutationObserverRegistrationSet =
-    std::set<Member<MutationObserverRegistration>>;
+    std::set<std::shared_ptr<MutationObserverRegistration>>;
 using MutationObserverVector = std::vector<Member<MutationObserver>>;
-using MutationRecordVector = std::vector<MutationRecord*>;
+using MutationRecordVector = std::vector<Member<MutationRecord>>;
 
 class MutationObserver final : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
@@ -63,19 +64,9 @@ class MutationObserver final : public ScriptWrappable {
     kCharacterDataOldValue = 1 << 6,
   };
 
-  class Delegate {
-   public:
-    ~Delegate() = default;
-    virtual ExecutingContext* GetExecutingContext() const = 0;
-    virtual void Deliver(const MutationRecordVector& records,
-                         MutationObserver&) = 0;
-    virtual void Trace(GCVisitor* visitor) const {}
-  };
-
   static MutationObserver* Create(ExecutingContext* context,
                                   const std::shared_ptr<QJSFunction>& function,
                                   ExceptionState& exception_state);
-  static void DeliverMutations();
 
   MutationObserver(ExecutingContext*, const std::shared_ptr<QJSFunction>& function);
   ~MutationObserver() override;
@@ -84,18 +75,18 @@ class MutationObserver final : public ScriptWrappable {
   void observe(Node*, ExceptionState&);
   MutationRecordVector takeRecords(ExceptionState&);
   void disconnect(ExceptionState& exception_state);
-  void ObservationStarted(MutationObserverRegistration*);
-  void ObservationEnded(MutationObserverRegistration*);
+  void ObservationStarted(const std::shared_ptr<MutationObserverRegistration>&);
+  void ObservationEnded(const std::shared_ptr<MutationObserverRegistration>&);
   void EnqueueMutationRecord(MutationRecord*);
-  void SetHasTransientRegistration();
 
   std::set<Member<Node>> GetObservedNodes() const;
 
   bool HasPendingActivity() const { return !records_.empty(); }
 
+  void Trace(webf::GCVisitor *visitor) const override;
+
  private:
-  Member<Delegate> delegate_;
-  std::vector<Member<MutationRecord>> records_;
+  MutationRecordVector records_;
   MutationObserverRegistrationSet registrations_;
   unsigned priority_;
 };

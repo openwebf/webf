@@ -31,6 +31,7 @@
 
 #include "node.h"
 #include <unordered_map>
+#include "core/script_forbidden_scope.h"
 #include "character_data.h"
 #include "child_node_list.h"
 #include "document.h"
@@ -104,29 +105,116 @@ EventTargetData& Node::EnsureEventTargetData() {
   return event_target_data_->GetEventTargetData();
 }
 
+template <typename Registry>
+static inline void CollectMatchingObserversForMutation(
+    MutationObserverOptionsMap& observers,
+    Registry* registry,
+    Node& target,
+    MutationType type,
+    const AtomicString* attribute_name) {
+  if (!registry)
+    return;
+
+  for (const auto& registration : *registry) {
+    if (registration->ShouldReceiveMutationFrom(target, type, attribute_name)) {
+      MutationRecordDeliveryOptions delivery_options = registration->DeliveryOptions();
+      if (observers.count(&registration->Observer()) > 0) {
+        observers[&registration->Observer()] |= delivery_options;
+      }
+    }
+  }
+}
+
 void Node::GetRegisteredMutationObserversOfType(
-    std::unordered_map<Member<MutationObserver>, MutationRecordDeliveryOptions>&,
-    webf::MutationType,
-    const webf::AtomicString& attribute_name) {
-
+    MutationObserverOptionsMap& observers,
+    MutationType type,
+    const AtomicString* attribute_name) {
+  assert((type == kMutationTypeAttributes && attribute_name) ||
+         !attribute_name);
+  CollectMatchingObserversForMutation(observers, MutationObserverRegistry(),
+                                      *this, type, attribute_name);
+  CollectMatchingObserversForMutation(observers,
+                                      TransientMutationObserverRegistry(),
+                                      *this, type, attribute_name);
+  ScriptForbiddenScope forbid_script_during_raw_iteration;
+  for (Node* node = parentNode(); node; node = node->parentNode()) {
+    CollectMatchingObserversForMutation(observers,
+                                        node->MutationObserverRegistry(), *this,
+                                        type, attribute_name);
+    CollectMatchingObserversForMutation(
+        observers, node->TransientMutationObserverRegistry(), *this, type,
+        attribute_name);
+  }
 }
 
-void Node::RegisterMutationObserver(webf::MutationObserver&,
-                                    webf::MutationObserverOptions,
-                                    const std::set<AtomicString>& attribute_filter) {}
+void Node::RegisterMutationObserver(webf::MutationObserver& observer,
+                                    webf::MutationObserverOptions options,
+                                    const std::set<AtomicString>& attribute_filter) {
+  std::shared_ptr<MutationObserverRegistration> registration = nullptr;
 
-void Node::UnregisterMutationObserver(webf::MutationObserverRegistration*) {}
+  for (const auto& item :
+       EnsureNodeData().EnsureMutationObserverData().Registry()) {
+    if (&item->Observer() == &observer) {
+      registration = item;
+      registration->ResetObservation(options, attribute_filter);
+    }
+  }
 
-void Node::RegisterTransientMutationObserver(webf::MutationObserverRegistration*) {
+  if (!registration) {
+    registration = std::make_shared<MutationObserverRegistration>(
+        observer, this, options, attribute_filter);
+    EnsureNodeData().EnsureMutationObserverData().AddRegistration(registration);
+  }
 
+  GetDocument().AddMutationObserverTypes(registration->MutationTypes());
 }
 
-void Node::UnregisterTransientMutationObserver(webf::MutationObserverRegistration*) {
+void Node::UnregisterMutationObserver(const std::shared_ptr<MutationObserverRegistration>& registration) {
+  const std::vector<std::shared_ptr<MutationObserverRegistration>>* registry =
+      MutationObserverRegistry();
+  assert(registry);
+  if (!registry)
+    return;
 
+  registration->Dispose();
+  EnsureNodeData().EnsureMutationObserverData().RemoveRegistration(
+      registration);
+}
+
+void Node::RegisterTransientMutationObserver(const std::shared_ptr<MutationObserverRegistration>& registration) {
+  EnsureNodeData().EnsureMutationObserverData().AddTransientRegistration(
+      registration);
+}
+
+void Node::UnregisterTransientMutationObserver(const std::shared_ptr<MutationObserverRegistration>& registration) {
+  const std::set<std::shared_ptr<MutationObserverRegistration>>* transient_registry =
+      TransientMutationObserverRegistry();
+  assert(transient_registry != nullptr);
+  if (!transient_registry)
+    return;
+
+  EnsureNodeData().EnsureMutationObserverData().RemoveTransientRegistration(
+      registration);
 }
 
 void Node::NotifyMutationObserversNodeWillDetach() {
+  if (!GetDocument().HasMutationObservers())
+    return;
 
+  ScriptForbiddenScope forbid_script_during_raw_iteration;
+  for (Node* node = parentNode(); node; node = node->parentNode()) {
+    if (const std::vector<std::shared_ptr<MutationObserverRegistration>>* registry =
+            node->MutationObserverRegistry()) {
+      for (const auto& registration : *registry)
+        registration->ObservedSubtreeNodeWillDetach(*this);
+    }
+
+    if (const std::set<std::shared_ptr<MutationObserverRegistration>>*
+            transient_registry = node->TransientMutationObserverRegistry()) {
+      for (auto& registration : *transient_registry)
+        registration->ObservedSubtreeNodeWillDetach(*this);
+    }
+  }
 }
 
 NodeData& Node::CreateNodeData() {
@@ -139,6 +227,24 @@ NodeData& Node::EnsureNodeData() {
   if (HasNodeData())
     return *Data();
   return CreateNodeData();
+}
+
+const std::vector<std::shared_ptr<MutationObserverRegistration>>* Node::MutationObserverRegistry() {
+  if (!HasNodeData()) return nullptr;
+  NodeMutationObserverData* data = NodeData().MutationObserverData();
+  if (!data) {
+    return nullptr;
+  }
+  return &data->Registry();
+}
+
+const std::set<std::shared_ptr<MutationObserverRegistration>>* Node::TransientMutationObserverRegistry() {
+  if (!HasNodeData()) return nullptr;
+  NodeMutationObserverData* data = NodeData().MutationObserverData();
+  if (!data) {
+    return nullptr;
+  }
+  return &data->TransientRegistry();
 }
 
 Node& Node::TreeRoot() const {

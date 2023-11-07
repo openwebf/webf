@@ -33,9 +33,9 @@
  */
 
 #include "mutation_observer.h"
-#include "mutation_observer_options.h"
 #include "node.h"
 #include "mutation_observer_registration.h"
+#include "mutation_record.h"
 
 namespace webf {
 
@@ -131,8 +131,9 @@ void MutationObserver::observe(Node* node, ExceptionState& exception_state) {
 }
 
 MutationRecordVector MutationObserver::takeRecords(ExceptionState& exception_state) {
-  MutationObserverVector records;
-  std::swap(records_, records_);
+  MutationRecordVector records;
+  std::swap(records_, records);
+  return records;
 }
 
 void MutationObserver::disconnect(ExceptionState& exception_state) {
@@ -141,15 +142,42 @@ void MutationObserver::disconnect(ExceptionState& exception_state) {
   for (auto& registration : registrations) {
     // The registration may be already unregistered while iteration.
     // Only call unregister if it is still in the original set.
-    if (registrations_.Contains(registration))
+    if (registrations_.count(registration) > 0)
       registration->Unregister();
   }
   assert(registrations_.empty());
 }
 
-void MutationObserver::ObservationStarted(MutationObserverRegistration* registration) {
-  assert(registrations_.Contains(registration));
+void MutationObserver::ObservationStarted(const std::shared_ptr<MutationObserverRegistration>& registration) {
+  assert(registrations_.count(registration) == 0);
+  registrations_.insert(registration);
+}
+
+void MutationObserver::ObservationEnded(const std::shared_ptr<MutationObserverRegistration>& registration) {
+  assert(registrations_.count(registration) > 0);
   registrations_.erase(registration);
 }
+
+void MutationObserver::EnqueueMutationRecord(MutationRecord* mutation) {
+  records_.emplace_back(mutation);
+}
+
+std::set<Member<Node>> MutationObserver::GetObservedNodes() const {
+  std::set<Member<Node>> observed_nodes;
+  for (const auto& registration : registrations_)
+    registration->AddRegistrationNodesToSet(observed_nodes);
+  return observed_nodes;
+}
+
+void MutationObserver::Trace(GCVisitor* visitor) const {
+  for(auto& record : records_) {
+    visitor->TraceMember(record);
+  }
+
+  for(auto& re : registrations_) {
+    re->Trace(visitor);
+  }
+}
+
 
 }  // namespace webf

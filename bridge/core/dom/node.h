@@ -12,13 +12,15 @@
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "mutation_observer.h"
-#include "mutation_observer_options.h"
 #include "mutation_observer_registration.h"
 #include "node_data.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
 
 namespace webf {
+
+using MutationObserverOptionsMap =
+    std::unordered_map<Member<MutationObserver>, MutationRecordDeliveryOptions, Member<MutationObserver>::KeyHasher>;
 
 const int kDOMNodeTypeShift = 2;
 const int kElementNamespaceTypeShift = 4;
@@ -238,15 +240,15 @@ class Node : public EventTarget {
   void ClearSelfOrAncestorHasDirAutoAttribute() { ClearFlag(kSelfOrAncestorHasDirAutoAttribute); }
 
   void GetRegisteredMutationObserversOfType(
-      std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>&,
+      MutationObserverOptionsMap&,
       MutationType,
-      const AtomicString& attribute_name);
+      const AtomicString* attribute_name);
   void RegisterMutationObserver(MutationObserver&,
                                 MutationObserverOptions,
                                 const std::set<AtomicString>& attribute_filter);
-  void UnregisterMutationObserver(MutationObserverRegistration*);
-  void RegisterTransientMutationObserver(MutationObserverRegistration*);
-  void UnregisterTransientMutationObserver(MutationObserverRegistration*);
+  void UnregisterMutationObserver(const std::shared_ptr<MutationObserverRegistration>&);
+  void RegisterTransientMutationObserver(const std::shared_ptr<MutationObserverRegistration>&);
+  void UnregisterTransientMutationObserver(const std::shared_ptr<MutationObserverRegistration>&);
   void NotifyMutationObserversNodeWillDetach();
 
   NodeData& CreateNodeData();
@@ -254,6 +256,9 @@ class Node : public EventTarget {
   // |RareData| cannot be replaced or removed once assigned.
   [[nodiscard]] NodeData* Data() const { return node_data_.get(); }
   NodeData& EnsureNodeData();
+
+  const std::vector<std::shared_ptr<MutationObserverRegistration>>* MutationObserverRegistry();
+  const std::set<std::shared_ptr<MutationObserverRegistration>>* TransientMutationObserverRegistry();
 
   void Trace(GCVisitor*) const override;
 

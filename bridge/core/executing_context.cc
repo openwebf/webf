@@ -14,6 +14,7 @@
 #include "foundation/logging.h"
 #include "polyfill.h"
 #include "qjs_window.h"
+#include "script_forbidden_scope.h"
 #include "timing/performance.h"
 
 namespace webf {
@@ -120,6 +121,10 @@ bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
                                           uint64_t* bytecode_len,
                                           const char* sourceURL,
                                           int startLine) {
+  if (ScriptForbiddenScope::IsScriptForbidden()) {
+    return false;
+  }
+
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), codeLength));
   JSValue result;
   if (parsed_bytecodes == nullptr) {
