@@ -1,19 +1,15 @@
 # [WebF](https://openwebf.com/) [![pub package](https://img.shields.io/pub/v/webf.svg)](https://pub.dev/packages/webf)
 
-<<<<<<< HEAD
 WebF presents a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
-=======
-WebF presents a cutting-edge web rendering engine built atop Flutter, empowering web applications to operate natively within the Flutter ecosystem.
->>>>>>> f661ac9a5 (Update README.md)
 
 - **Adherence to W3C Standards:** By leveraging HTML/CSS and JavaScript, WebF renders content on Flutter, ensuring impeccable alignment with standard browser rendering.
-  
+
 - **Compatible with Leading Front-End Frameworks:** Given its compliance with W3C standards, WebF seamlessly integrates with popular front-end frameworks, including [React](https://reactjs.org/) and [Vue](https://vuejs.org/).
-  
+
 - **Amplify Your Web Applications with Flutter:** WebF's adaptability shines through its customization capabilities. Craft bespoke HTML elements using Flutter Widgets or enhance your application by integrating a JavaScript API sourced from any Dart library on the `pub.dev` registry.
-  
+
 - **Authentic Web Development Environment:** Experience a traditional web development setting with WebF. It facilitates DOM structure inspection, CSS style evaluations, and JavaScript debugging via Chrome DevTools.
-  
+
 - **Craft Once, Deploy Everywhere:** Harness the versatility of WebF to design your web application and launch it across any Flutter-compatible device. What's more, maintain the flexibility to execute your apps within Node.js or web browsers, all from a unified codebase.
 
 ## Join Our Mission
@@ -23,11 +19,6 @@ We envision providing web developers with an innovative web rendering engine, su
 WebF's journey is ambitious and enduring. We believe in the strength of collective effort. If you share our dream of a superior alternative to WebView for the future, your expertise could be invaluable to us.
 
 Further, financial contributions can pave the way for erstwhile members of the Kraken team to rejoin our mission, bolstering our developmental pace and potential.
-<<<<<<< HEAD
-
-If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
-=======
->>>>>>> f661ac9a5 (Update README.md)
 
 If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
 
@@ -35,7 +26,7 @@ If you or your team are interested in supporting us, please contact @andycall on
 
 [![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=banner1)](https://discord.gg/DvUBtXZ5rK)
 
-## The update and maintenance policy for WebF versions 
+## The update and maintenance policy for WebF versions
 
 Each version of WebF will be maintained for the lifespan of three minor WebF releases. For instance, WebF 0.15.0 was released to be compatible with Flutter 3.10.x. Its support will conclude once WebF 0.18.0 is introduced. Any updates applied to versions 0.16.x and 0.17.x will be cherry-picked for the subsequent update of 0.15.x.
 
