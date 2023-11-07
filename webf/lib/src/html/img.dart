@@ -252,9 +252,22 @@ class ImageElement extends Element {
     _isListeningStream = true;
   }
 
+  bool _didWatchAnimationImage = false;
+  void _watchAnimatedImageWhenVisible() {
+    RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+    if (_isListeningStream && !_didWatchAnimationImage) {
+      _stopListeningStream();
+      renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
+      _didWatchAnimationImage = true;
+    }
+  }
+
   @override
   void dispose() async {
     super.dispose();
+
+    RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+    renderReplaced?.removeIntersectionChangeListener(_handleIntersectionChange);
 
     // Stop and remove image stream reference.
     _stopListeningStream();
@@ -338,6 +351,9 @@ class ImageElement extends Element {
     // When appear
     if (entry.isIntersecting) {
       _updateImageDataLazyCompleter?.complete();
+      _listenToStream();
+    } else {
+      _stopListeningStream();
     }
   }
 
@@ -485,6 +501,7 @@ class ImageElement extends Element {
     // Multi frame image should wrap a repaint boundary for better composite performance.
     if (_frameCount > 2) {
       forceToRepaintBoundary = true;
+      _watchAnimatedImageWhenVisible();
     }
 
     _updateRenderObject(image: imageInfo.image);
@@ -525,15 +542,8 @@ class ImageElement extends Element {
       _updateImageDataLazyCompleter = completer;
 
       RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
-      FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
       renderReplaced
         ?..isInLazyRendering = true
-        // Expand the intersecting area to preload images before they become visible to users.
-        ..intersectPadding = Rect.fromLTRB(
-            ownerFlutterView.physicalSize.width,
-            ownerFlutterView.physicalSize.height,
-            ownerFlutterView.physicalSize.width,
-            ownerFlutterView.physicalSize.height)
         // When detach renderer, all listeners will be cleared.
         ..addIntersectionChangeListener(_handleIntersectionChange);
 
@@ -548,8 +558,6 @@ class ImageElement extends Element {
 
       renderReplaced = renderBoxModel as RenderReplaced?;
       renderReplaced?.isInLazyRendering = false;
-      renderReplaced
-          ?.removeIntersectionChangeListener(_handleIntersectionChange);
     }
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
