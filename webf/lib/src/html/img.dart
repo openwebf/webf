@@ -13,6 +13,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
@@ -575,7 +576,7 @@ class ImageElement extends Element {
 
   void _loadSVGImage() {
     final builder =
-        SVGRenderBoxBuilder(_obtainImage(_resolvedUri!), target: this);
+        SVGRenderBoxBuilder(obtainImage(_resolvedUri!), target: this);
 
     builder.decode().then((renderObject) {
       final size = builder.getIntrinsicSize();
@@ -609,8 +610,9 @@ class ImageElement extends Element {
       provider = _currentImageProvider = BoxFitImage(
         boxFit: objectFit,
         url: _resolvedUri!,
-        loadImage: _obtainImage,
+        loadImage: obtainImage,
         onImageLoad: _onImageLoad,
+        devicePixelRatio: ownerDocument.defaultView.devicePixelRatio
       );
     }
 
@@ -647,12 +649,12 @@ class ImageElement extends Element {
 
   // To load the resource, and dispatch load event.
   // https://html.spec.whatwg.org/multipage/images.html#when-to-obtain-images
-  Future<ImageLoadResponse> _obtainImage(Uri url) async {
+  Future<ImageLoadResponse> obtainImage(Uri url) async {
     ImageRequest request = _currentRequest = ImageRequest.fromUri(url);
     // Increment count when request.
     ownerDocument.incrementRequestCount();
 
-    final data = await request._obtainImage(contextId);
+    final data = await request.obtainImage(ownerDocument.controller);
 
     // Decrement count when response.
     ownerDocument.decrementRequestCount();
@@ -746,10 +748,11 @@ class ImageRequest {
       state == _ImageRequestState.completelyAvailable ||
       state == _ImageRequestState.partiallyAvailable;
 
-  Future<ImageLoadResponse> _obtainImage(int? contextId) async {
-    final WebFBundle bundle = WebFBundle.fromUrl(currentUri.toString());
-
-    await bundle.resolve(contextId);
+  Future<ImageLoadResponse> obtainImage(WebFController controller) async {
+    final WebFBundle bundle =
+        controller.getPreloadBundleFromUrl(currentUri.toString()) ?? WebFBundle.fromUrl(currentUri.toString());
+    await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
+    await bundle.obtainData();
 
     if (!bundle.isResolved) {
       throw FlutterError('Failed to load $currentUri');
@@ -760,7 +763,6 @@ class ImageRequest {
     // Free the bundle memory.
     bundle.dispose();
 
-    return ImageLoadResponse(data,
-        mime: bundle.contentType.toString());
+    return ImageLoadResponse(data, mime: bundle.contentType.toString());
   }
 }

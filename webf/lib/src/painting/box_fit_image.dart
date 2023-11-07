@@ -46,6 +46,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     required LoadImage loadImage,
     required this.url,
     required this.boxFit,
+    required this.devicePixelRatio,
     this.onImageLoad,
   }): _loadImage = loadImage;
 
@@ -53,6 +54,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   final Uri url;
   final BoxFit boxFit;
   final OnImageLoad? onImageLoad;
+  final double devicePixelRatio;
 
   @override
   Future<BoxFitImageKey> obtainKey(ImageConfiguration configuration) {
@@ -84,11 +86,19 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
 
     final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
     final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+
+    int? preferredWidth;
+    int? preferredHeight;
+    if (key.configuration?.size != null) {
+      preferredWidth = (key.configuration!.size!.width * devicePixelRatio).toInt();
+      preferredHeight = (key.configuration!.size!.height * devicePixelRatio).toInt();
+    }
+
     final Codec codec = await _instantiateImageCodec(
       descriptor,
       boxFit: boxFit,
-      preferredWidth: key.configuration?.size?.width.toInt(),
-      preferredHeight: key.configuration?.size?.height.toInt(),
+      preferredWidth: preferredWidth,
+      preferredHeight: preferredHeight,
     );
 
     // Fire image on load after codec created.

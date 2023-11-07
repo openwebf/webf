@@ -9,7 +9,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
 
 const String DEFAULT_URL = 'about:blank';
@@ -97,25 +96,26 @@ abstract class WebFBundle {
   Uint8List? data;
 
   // Indicate the bundle is resolved.
-  bool get isResolved => _uri != null && data != null;
+  bool get isResolved => _uri != null;
 
   // Content type for data.
   // The default value is plain text.
   ContentType contentType = ContentType.text;
 
   @mustCallSuper
-  Future<void> resolve(int? contextId) async {
+  Future<void> resolve({ String? baseUrl, UriParser? uriParser }) async {
     if (isResolved) return;
 
     // Source is input by user, do not trust it's a valid URL.
     _uri = Uri.tryParse(url);
-    if (contextId != null && _uri != null) {
-      WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
-      if (controller != null) {
-        _uri = controller.uriParser!.resolve(Uri.parse(controller.url), _uri!);
-      }
+
+    if (baseUrl != null && _uri != null) {
+      uriParser ??= UriParser();
+      _uri = uriParser.resolve(Uri.parse(baseUrl), _uri!);
     }
   }
+
+  Future<void> obtainData();
 
   // Dispose the memory obtained by bundle.
   @mustCallSuper
@@ -183,6 +183,9 @@ class DataBundle extends WebFBundle {
     data = uriData.contentAsBytes();
     this.contentType = contentType ?? ContentType.parse('${uriData.mimeType}; charset=${uriData.charset}');
   }
+
+  @override
+  Future<void> obtainData() async {}
 }
 
 // The bundle that source from http or https.
@@ -196,16 +199,14 @@ class NetworkBundle extends WebFBundle {
   Map<String, String>? additionalHttpHeaders = {};
 
   @override
-  Future<void> resolve(int? contextId) async {
-    super.resolve(contextId);
+  Future<void> obtainData() async {
+    if (data != null) return;
+
     final HttpClientRequest request = await _sharedHttpClient.getUrl(_uri!);
 
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
-    if (contextId != null) {
-      WebFHttpOverrides.setContextHeader(request.headers, contextId);
-    }
 
     final HttpClientResponse response = await request.close();
     if (response.statusCode != HttpStatus.ok)
@@ -235,8 +236,9 @@ class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
   AssetsBundle(String url) : super(url);
 
   @override
-  Future<WebFBundle> resolve(int? contextId) async {
-    super.resolve(contextId);
+  Future<void> obtainData() async {
+    if (data != null) return;
+
     final Uri? _resolvedUri = resolvedUri;
     if (_resolvedUri != null) {
       final String assetName = getAssetName(_resolvedUri);
@@ -245,7 +247,6 @@ class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
     } else {
       _failedToResolveBundle(url);
     }
-    return this;
   }
 
   /// Get flutter asset name from uri scheme asset.
@@ -267,8 +268,8 @@ class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
   FileBundle(String url) : super(url);
 
   @override
-  Future<WebFBundle> resolve(int? contextId) async {
-    super.resolve(contextId);
+  Future<void> obtainData() async {
+    if (data != null) return;
 
     Uri uri = _uri!;
     final String path = uri.path;
@@ -279,7 +280,6 @@ class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
     } else {
       _failedToResolveBundle(url);
     }
-    return this;
   }
 }
 

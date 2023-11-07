@@ -80,7 +80,7 @@ class ScriptRunner {
       bundle = WebFBundle.fromContent(scriptCode);
     } else {
       String url = element.src.toString();
-      bundle = WebFBundle.fromUrl(url);
+      bundle = _document.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
     }
 
     element.readyState = ScriptReadyState.interactive;
@@ -121,7 +121,8 @@ class ScriptRunner {
     // Increment count when request.
     _document.incrementDOMContentLoadedEventDelayCount();
     try {
-      await bundle.resolve(_contextId);
+      await bundle.resolve(baseUrl: _document.controller.url, uriParser: _document.controller.uriParser);
+      await bundle.obtainData();
 
       if (!bundle.isResolved) {
         throw FlutterError('Network error.');
