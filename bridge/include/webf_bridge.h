@@ -22,8 +22,6 @@ typedef struct NativeValue NativeValue;
 typedef struct NativeScreen NativeScreen;
 typedef struct NativeByteCode NativeByteCode;
 
-struct WebFInfo;
-
 struct WebFInfo {
   const char* app_name{nullptr};
   const char* app_version{nullptr};
@@ -54,6 +52,10 @@ WEBF_EXPORT_C
 int8_t evaluateQuickjsByteCode(void* page, uint8_t* bytes, int32_t byteLen);
 WEBF_EXPORT_C
 void parseHTML(void* page, const char* code, int32_t length);
+WEBF_EXPORT_C
+void* parseSVGResult(const char* code, int32_t length);
+WEBF_EXPORT_C
+void freeSVGResult(void* svgTree);
 WEBF_EXPORT_C
 NativeValue* invokeModuleEvent(void* page,
                                SharedNativeString* module,

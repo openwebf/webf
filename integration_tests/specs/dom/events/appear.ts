@@ -59,4 +59,34 @@ describe('Appear Event', () => {
       done();
     });
   });
+
+  it('should trigger appear when changing RenderBox type', async () => {
+    const div = document.createElement('div');
+    div.style.width = '300px';
+    div.style.height = '300px';
+    div.style.backgroundColor = 'red';
+    div.style.top = '0';
+
+    document.body.appendChild(div);
+
+    let resolve = () => {}
+    let promise = new Promise<void>((res) => resolve = res)
+    div.addEventListener('appear', function onAppear() {
+      resolve();
+      promise = new Promise<void>((res) => resolve = res)
+    });
+
+    await promise
+
+    div.style.top = '-600px';
+    // this style will change RenderFlexLayout to RenderRepaintBoundaryFlexLayout
+    div.style.position = 'absolute';
+    div.style.display = 'flex';
+
+    await sleep(0.5)
+
+    div.style.top = '0'; // appear
+
+    await promise
+  })
 });

@@ -21,7 +21,6 @@
   },
   "devDependencies": {
     "rax-app": "^3.8.7",
-    "@iceworks/spec": "^1.0.0",
     "@types/rax": "^1.0.0",
     "eslint": "^8.0.0",
     "prettier": "^2.1.2",

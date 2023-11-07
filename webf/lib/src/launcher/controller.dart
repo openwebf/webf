@@ -597,7 +597,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController.load(WebFBundle.fromUrl(action.target));
+          await rootController.load(rootController.getPreloadBundleFromUrl(action.target) ?? WebFBundle.fromUrl(action.target));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
@@ -815,6 +815,19 @@ class WebFController {
 
   final GestureListener? _gestureListener;
 
+  final List<WebFBundle>? preloadedBundles;
+  Map<String, WebFBundle>? _preloadBundleIndex;
+  WebFBundle? getPreloadBundleFromUrl(String url) {
+    return _preloadBundleIndex?[url];
+  }
+  void _initializePreloadBundle() {
+    if (preloadedBundles == null) return;
+    _preloadBundleIndex = {};
+    preloadedBundles!.forEach((bundle) {
+      _preloadBundleIndex![bundle.url] = bundle;
+    });
+  }
+
   // The kraken view entrypoint bundle.
   WebFBundle? _entrypoint;
 
@@ -839,12 +852,15 @@ class WebFController {
     this.httpClientInterceptor,
     this.devToolsService,
     this.uriParser,
+    this.preloadedBundles,
     this.initialCookies,
     required this.ownerFlutterView,
     this.resizeToAvoidBottomInsets = true,
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {
+
+    _initializePreloadBundle();
 
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
@@ -1097,7 +1113,8 @@ class WebFController {
 
     // Resolve the bundle, including network download or other fetching ways.
     try {
-      await bundleToLoad.resolve(view.contextId);
+      await bundleToLoad.resolve(baseUrl: url, uriParser: uriParser);
+      await bundleToLoad.obtainData();
     } catch (e, stack) {
       if (onLoadError != null) {
         onLoadError!(FlutterError(e.toString()), stack);

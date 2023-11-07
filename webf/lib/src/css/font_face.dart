@@ -94,8 +94,10 @@ class CSSFontFace {
         } else {
           Uri? uri = _resolveFontSource(contextId, targetFont.src, baseHref);
           if (uri == null) return;
-          WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
-          await bundle.resolve(contextId);
+          final WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+          WebFBundle bundle = controller.getPreloadBundleFromUrl(uri.toString()) ?? WebFBundle.fromUrl(uri.toString());
+          await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
+          await bundle.obtainData();
           assert(bundle.isResolved, 'Failed to obtain $url');
           FontLoader loader = FontLoader(removeQuotationMark(fontFamily));
           Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
