@@ -288,6 +288,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/binding_object.cc
     core/dom/node.cc
     core/dom/node_list.cc
+    core/dom/static_node_list.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
     core/dom/character_data.cc
@@ -415,6 +416,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_touch_list.cc
     out/qjs_mutation_record.cc
     out/qjs_mutation_observer.cc
+    out/qjs_mutation_observer_init.cc
     out/qjs_touch_event.cc
     out/qjs_touch_event_init.cc
     out/qjs_pointer_event.cc
@@ -452,6 +454,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_node_list.cc
     out/event_type_names.cc
     out/built_in_string.cc
+    out/mutation_record_types.cc
     out/binding_call_methods.cc
     out/qjs_scroll_options.cc
     out/qjs_scroll_to_options.cc

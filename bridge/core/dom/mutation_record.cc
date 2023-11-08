@@ -13,6 +13,8 @@ namespace webf {
 
 MutationRecord::MutationRecord(JSContext* ctx) : ScriptWrappable(ctx) {}
 
+MutationRecord::~MutationRecord() = default;
+
 class ChildListRecord : public MutationRecord {
  public:
   explicit ChildListRecord(Node* target,
@@ -152,9 +154,18 @@ MutationRecord* MutationRecord::CreateChildList(Node* target,
 }
 
 MutationRecord* MutationRecord::CreateAttributes(Node* target,
-                                                 const AtomicString& new_value,
+                                                 const AtomicString& name,
+                                                 const AtomicString& namespaceURI,
                                                  const AtomicString& old_value) {
+  return MakeGarbageCollected<AttributesRecord>(target, name, namespaceURI, old_value);
+}
 
+MutationRecord* MutationRecord::CreateCharacterData(Node* target, const AtomicString& old_value) {
+  return MakeGarbageCollected<CharacterDataRecord>(target, old_value);
+}
+
+MutationRecord* MutationRecord::CreateWithNullOldValue(MutationRecord* record) {
+  return MakeGarbageCollected<MutationRecordWithNullOldValue>(record);
 }
 
 }  // namespace webf

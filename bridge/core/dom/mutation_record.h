@@ -24,7 +24,8 @@ class MutationRecord : public ScriptWrappable {
                                          Node* previous_sibling,
                                          Node* next_sibling);
   static MutationRecord* CreateAttributes(Node* target,
-                                          const AtomicString& new_value,
+                                          const AtomicString& name,
+                                          const AtomicString& namespaceURI,
                                           const AtomicString& old_value);
   static MutationRecord* CreateCharacterData(Node* target,
                                              const AtomicString& old_value);

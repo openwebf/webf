@@ -108,6 +108,9 @@ class Document : public ContainerNode, public TreeScope {
     mutation_observer_types_ |= types;
   }
 
+  // nodeWillBeRemoved is only safe when removing one node at a time.
+  void NodeWillBeRemoved(Node&);
+
   void IncrementNodeCount() { node_count_++; }
   void DecrementNodeCount() {
     assert(node_count_ > 0);

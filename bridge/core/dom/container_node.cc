@@ -261,6 +261,8 @@ Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_stat
     return nullptr;
   }
 
+  WillRemoveChild(*child);
+
   {
     Node* prev = child->previousSibling();
     Node* next = child->nextSibling();
@@ -296,6 +298,30 @@ Node* ContainerNode::AppendChild(Node* new_child, ExceptionState& exception_stat
 
 Node* ContainerNode::AppendChild(Node* new_child) {
   return AppendChild(new_child, ASSERT_NO_EXCEPTION());
+}
+
+void ContainerNode::WillRemoveChild(Node& child) {
+  assert(child.parentNode() == this);
+  ChildListMutationScope(*this).WillRemoveChild(child);
+  child.NotifyMutationObserversNodeWillDetach();
+  if (&GetDocument() != &child.GetDocument()) {
+    // |child| was moved to another document by the DOM mutation event handler.
+    return;
+  }
+}
+
+void ContainerNode::WillRemoveChildren() {
+  NodeVector children;
+  GetChildNodes(*this, children);
+
+  ChildListMutationScope mutation(*this);
+  for (const auto& node : children) {
+    assert(node);
+    Node& child = *node;
+    mutation.WillRemoveChild(child);
+    child.NotifyMutationObserversNodeWillDetach();
+  }
+
 }
 
 bool ContainerNode::EnsurePreInsertionValidity(const Node& new_child,
@@ -353,6 +379,10 @@ bool ContainerNode::EnsurePreInsertionValidity(const Node& new_child,
 void ContainerNode::RemoveChildren() {
   if (!first_child_)
     return;
+
+  // Do any prep work needed before actually starting to detach
+  // and remove... e.g. stop loading frames, fire unload events.
+  WillRemoveChildren();
 
   bool has_element_child = false;
 
