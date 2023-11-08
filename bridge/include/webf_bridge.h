@@ -42,7 +42,8 @@ WEBF_EXPORT_C
 void disposePage(void* dart_isolate_context, void* page);
 WEBF_EXPORT_C
 int8_t evaluateScripts(void* page,
-                       SharedNativeString* code,
+                       const char* code,
+                       uint64_t code_len,
                        uint8_t** parsed_bytecodes,
                        uint64_t* bytecode_len,
                        const char* bundleFilename,
