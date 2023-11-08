@@ -52,7 +52,9 @@ MutationObserver::MutationObserver(ExecutingContext* context, const std::shared_
   priority_ = g_observer_priority++;
 }
 
-MutationObserver::~MutationObserver() = default;
+MutationObserver::~MutationObserver() {
+    WEBF_LOG(VERBOSE) << "FINALIZE MUTATION OBSERVER";
+};
 
 void MutationObserver::observe(Node* node, const std::shared_ptr<MutationObserverInit>& observer_init, ExceptionState& exception_state) {
 

@@ -80,6 +80,7 @@ class MutationObserverInterestGroup {
   MutationObserverInterestGroup(
       MutationObserverOptionsMap& observers,
       MutationRecordDeliveryOptions old_value_flag);
+  ~MutationObserverInterestGroup();
 
   bool IsOldValueRequested();
   void EnqueueMutationRecord(MutationRecord*);

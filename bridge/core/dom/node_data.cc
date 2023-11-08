@@ -23,6 +23,10 @@ void NodeMutationObserverData::Trace(GCVisitor* visitor) const {
   }
 }
 
+NodeMutationObserverData::~NodeMutationObserverData() {
+  WEBF_LOG(VERBOSE) << 2;
+}
+
 void NodeMutationObserverData::AddTransientRegistration(const std::shared_ptr<MutationObserverRegistration>& registration) {
   transient_registry_.insert(registration);
 }

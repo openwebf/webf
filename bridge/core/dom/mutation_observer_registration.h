@@ -44,7 +44,7 @@ namespace webf {
 class MutationObserver;
 class Node;
 
-class MutationObserverRegistration {
+class MutationObserverRegistration : public std::enable_shared_from_this<MutationObserverRegistration> {
  public:
   MutationObserverRegistration(MutationObserver&,
                                Node*,
@@ -63,7 +63,7 @@ class MutationObserverRegistration {
   bool ShouldReceiveMutationFrom(Node&, MutationType, const AtomicString* attribute_name) const;
   bool IsSubtree() const { return options_ & MutationObserver::kSubtree; }
 
-  MutationObserver& Observer() const { return *observer_; }
+  MutationObserver* Observer() const { return observer_; }
   MutationRecordDeliveryOptions DeliveryOptions() const {
     return options_ & (MutationObserver::kAttributeOldValue | MutationObserver::kCharacterDataOldValue);
   }

@@ -24,6 +24,7 @@ class NodeMutationObserverData final {
   NodeMutationObserverData() = default;
   NodeMutationObserverData(const NodeMutationObserverData&) = delete;
   NodeMutationObserverData& operator=(const NodeMutationObserverData&) = delete;
+  ~NodeMutationObserverData();
 
   const std::vector<std::shared_ptr<MutationObserverRegistration>>& Registry() { return registry_; }
 

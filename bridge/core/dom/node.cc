@@ -118,8 +118,15 @@ static inline void CollectMatchingObserversForMutation(
   for (const auto& registration : *registry) {
     if (registration->ShouldReceiveMutationFrom(target, type, attribute_name)) {
       MutationRecordDeliveryOptions delivery_options = registration->DeliveryOptions();
-      if (observers.count(&registration->Observer()) > 0) {
-        observers[&registration->Observer()] |= delivery_options;
+      MutationObserver* ob = registration->Observer();
+
+      bool inserted = false;
+      auto position = observers.end();
+      std::tie(position, inserted) = observers.insert(std::make_pair(ob, delivery_options));
+      if (inserted) {
+        position->second |= delivery_options;
+      } else {
+        position->second = delivery_options;
       }
     }
   }
@@ -133,18 +140,18 @@ void Node::GetRegisteredMutationObserversOfType(
          !attribute_name);
   CollectMatchingObserversForMutation(observers, MutationObserverRegistry(),
                                       *this, type, attribute_name);
-  CollectMatchingObserversForMutation(observers,
-                                      TransientMutationObserverRegistry(),
-                                      *this, type, attribute_name);
-  ScriptForbiddenScope forbid_script_during_raw_iteration;
-  for (Node* node = parentNode(); node; node = node->parentNode()) {
-    CollectMatchingObserversForMutation(observers,
-                                        node->MutationObserverRegistry(), *this,
-                                        type, attribute_name);
-    CollectMatchingObserversForMutation(
-        observers, node->TransientMutationObserverRegistry(), *this, type,
-        attribute_name);
-  }
+//  CollectMatchingObserversForMutation(observers,
+//                                      TransientMutationObserverRegistry(),
+//                                      *this, type, attribute_name);
+//  ScriptForbiddenScope forbid_script_during_raw_iteration;
+//  for (Node* node = parentNode(); node; node = node->parentNode()) {
+//    CollectMatchingObserversForMutation(observers,
+//                                        node->MutationObserverRegistry(), *this,
+//                                        type, attribute_name);
+//    CollectMatchingObserversForMutation(
+//        observers, node->TransientMutationObserverRegistry(), *this, type,
+//        attribute_name);
+//  }
 }
 
 void Node::RegisterMutationObserver(webf::MutationObserver& observer,
@@ -154,7 +161,7 @@ void Node::RegisterMutationObserver(webf::MutationObserver& observer,
 
   for (const auto& item :
        EnsureNodeData().EnsureMutationObserverData().Registry()) {
-    if (&item->Observer() == &observer) {
+    if (item->Observer() == &observer) {
       registration = item;
       registration->ResetObservation(options, attribute_filter);
     }
@@ -163,6 +170,7 @@ void Node::RegisterMutationObserver(webf::MutationObserver& observer,
   if (!registration) {
     registration = std::make_shared<MutationObserverRegistration>(
         observer, this, options, attribute_filter);
+    observer.ObservationStarted(registration);
     EnsureNodeData().EnsureMutationObserverData().AddRegistration(registration);
   }
 
@@ -231,7 +239,7 @@ NodeData& Node::EnsureNodeData() {
 
 const std::vector<std::shared_ptr<MutationObserverRegistration>>* Node::MutationObserverRegistry() {
   if (!HasNodeData()) return nullptr;
-  NodeMutationObserverData* data = NodeData().MutationObserverData();
+  NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();
   if (!data) {
     return nullptr;
   }
@@ -240,7 +248,7 @@ const std::vector<std::shared_ptr<MutationObserverRegistration>>* Node::Mutation
 
 const std::set<std::shared_ptr<MutationObserverRegistration>>* Node::TransientMutationObserverRegistry() {
   if (!HasNodeData()) return nullptr;
-  NodeMutationObserverData* data = NodeData().MutationObserverData();
+  NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();
   if (!data) {
     return nullptr;
   }

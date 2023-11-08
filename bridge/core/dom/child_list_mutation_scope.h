@@ -24,7 +24,8 @@ class ChildListMutationAccumulator final {
  public:
   static std::shared_ptr<ChildListMutationAccumulator> GetOrCreate(Node&);
 
-  ChildListMutationAccumulator(Node*, std::shared_ptr<MutationObserverInterestGroup> observers);
+  ChildListMutationAccumulator(Node*, const std::shared_ptr<MutationObserverInterestGroup>& observers);
+  ~ChildListMutationAccumulator();
 
   void ChildAdded(Node&);
   void WillRemoveChild(Node&);
@@ -61,7 +62,7 @@ class ChildListMutationScope final {
 
  public:
   explicit ChildListMutationScope(Node& target) {
-    if (target.ownerDocument()->HasMutationObserversOfType(
+    if (!target.IsDocumentNode() && target.ownerDocument()->HasMutationObserversOfType(
             kMutationTypeChildList)) {
       accumulator_ = ChildListMutationAccumulator::GetOrCreate(target);
       // Register another user of the accumulator.
@@ -80,13 +81,13 @@ class ChildListMutationScope final {
   }
 
   void ChildAdded(Node& child) {
-    if (accumulator_ && accumulator_->HasObservers())
-      accumulator_->ChildAdded(child);
+//    if (accumulator_ && accumulator_->HasObservers())
+//      accumulator_->ChildAdded(child);
   }
 
   void WillRemoveChild(Node& child) {
-    if (accumulator_ && accumulator_->HasObservers())
-      accumulator_->WillRemoveChild(child);
+//    if (accumulator_ && accumulator_->HasObservers())
+//      accumulator_->WillRemoveChild(child);
   }
 
  private:
