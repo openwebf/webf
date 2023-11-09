@@ -30,6 +30,14 @@ Pointer<NativeString> stringToNativeString(String string) {
   return nativeString;
 }
 
+Pointer<Uint8> uint8ListToPointer(Uint8List data) {
+  Pointer<Uint8> ptr = malloc.allocate<Uint8>(sizeOf<Uint8>() * data.length + 1);
+  Uint8List dataView = ptr.asTypedList(data.length + 1);
+  dataView.setAll(0, data);
+  dataView[data.length] = 0;
+  return ptr;
+}
+
 int doubleToUint64(double value) {
   var byteData = ByteData(8);
   byteData.setFloat64(0, value);

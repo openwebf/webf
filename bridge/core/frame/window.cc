@@ -232,6 +232,10 @@ void Window::cancelAnimationFrame(double request_id, ExceptionState& exception_s
   GetExecutingContext()->document()->CancelAnimationFrame(static_cast<uint32_t>(request_id), exception_state);
 }
 
+void Window::OnLoadEventFired() {
+  GetExecutingContext()->TurnOnJavaScriptGC();
+}
+
 bool Window::IsWindowOrWorkerGlobalScope() const {
   return true;
 }

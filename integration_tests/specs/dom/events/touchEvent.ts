@@ -234,4 +234,14 @@ describe('TouchEvent', () => {
       await simulatePointMove(12, 12);
     });
   });
+
+  it('should works when initialize TouchEvent from JS', () => {
+    const container = createElement('div', {}, []);
+    document.body.appendChild(container);
+    const touchEvent = new TouchEvent('touchstart');
+    container.dispatchEvent(touchEvent);
+
+    const touchEvent2 = new TouchEvent('touchstart', {});
+    container.dispatchEvent(touchEvent2);
+  })
 });
