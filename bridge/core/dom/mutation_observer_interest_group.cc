@@ -60,10 +60,6 @@ MutationObserverInterestGroup::MutationObserverInterestGroup(
 }
 
 MutationObserverInterestGroup::~MutationObserverInterestGroup() {
-  WEBF_LOG(VERBOSE) << "INTERST";
-  for(auto& observer : observers_) {
-    observer.first.Clear();
-  }
 }
 
 bool MutationObserverInterestGroup::IsOldValueRequested() {

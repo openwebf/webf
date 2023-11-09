@@ -36,18 +36,12 @@ class Member {
     raw_ = other.raw_;
     runtime_ = other.runtime_;
     js_object_ptr_ = other.js_object_ptr_;
+    ((JSRefCountHeader*) other.js_object_ptr_)->ref_count++;
   }
   ~Member() {
     if (raw_ != nullptr) {
       assert(runtime_ != nullptr);
-      // There are two ways to free the member values:
-      //  One is by GC marking and sweep stage.
-      //  Two is by free directly when running out of function body.
-      // We detect the GC phase to handle case two, and free our members by hand(call JS_FreeValueRT directly).
-      JSGCPhaseEnum phase = JS_GetEnginePhase(runtime_);
-      if (phase == JS_GC_PHASE_DECREF || phase == JS_GC_PHASE_REMOVE_CYCLES) {
-        JS_FreeValueRT(runtime_, JS_MKPTR(JS_TAG_OBJECT, js_object_ptr_));
-      }
+      JS_FreeValueRT(runtime_, JS_MKPTR(JS_TAG_OBJECT, js_object_ptr_));
     }
   };
 
@@ -75,6 +69,7 @@ class Member {
     raw_ = other.raw_;
     runtime_ = other.runtime_;
     js_object_ptr_ = other.js_object_ptr_;
+    ((JSRefCountHeader*) other.js_object_ptr_)->ref_count++;
     return *this;
   }
   // Move assignment.

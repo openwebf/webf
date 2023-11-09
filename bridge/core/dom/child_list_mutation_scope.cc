@@ -52,18 +52,6 @@ ChildListMutationAccumulator::ChildListMutationAccumulator(Node* target,
     : target_(target), last_added_(nullptr), observers_(observers), mutation_scopes_(0) {}
 
 ChildListMutationAccumulator::~ChildListMutationAccumulator() {
-  for(auto& node : removed_nodes_) {
-    node.Clear();
-  }
-
-  for(auto& node : added_nodes_) {
-    node.Clear();
-  }
-
-  target_.Clear();
-  previous_sibling_.Clear();
-  next_sibling_.Clear();
-  last_added_.Clear();
 }
 
 void ChildListMutationAccumulator::LeaveMutationScope() {

@@ -49,19 +49,11 @@ MutationObserverRegistration::MutationObserverRegistration(MutationObserver& obs
 }
 
 MutationObserverRegistration::~MutationObserverRegistration() {
-  registration_node_.Clear();
-  registration_node_keep_alive_.Clear();
-  observer_.Clear();
-
-  for(auto& node : transient_registration_nodes_) {
-    node.Clear();
-  }
 }
 
 void MutationObserverRegistration::Dispose() {
   ClearTransientRegistrations();
   observer_->ObservationEnded(shared_from_this());
-  observer_.Clear();
 }
 
 void MutationObserverRegistration::ResetObservation(

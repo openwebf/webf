@@ -81,13 +81,13 @@ class ChildListMutationScope final {
   }
 
   void ChildAdded(Node& child) {
-//    if (accumulator_ && accumulator_->HasObservers())
-//      accumulator_->ChildAdded(child);
+    if (accumulator_ && accumulator_->HasObservers())
+      accumulator_->ChildAdded(child);
   }
 
   void WillRemoveChild(Node& child) {
-//    if (accumulator_ && accumulator_->HasObservers())
-//      accumulator_->WillRemoveChild(child);
+    if (accumulator_ && accumulator_->HasObservers())
+      accumulator_->WillRemoveChild(child);
   }
 
  private:

@@ -107,8 +107,6 @@ void Performance::clearMarks(ExceptionState& exception_state) {
   while (it != entries_.end()) {
     if ((*it)->entryType() != performance_entry_names::kmark) {
       new_entries.emplace_back(*it);
-    } else {
-      it->Clear();
     }
     it++;
   }
@@ -123,8 +121,6 @@ void Performance::clearMarks(const AtomicString& name, ExceptionState& exception
   while (it != std::end(entries_)) {
     if (!((*it)->entryType() == performance_entry_names::kmark && (*it)->name() == name)) {
       new_entries.emplace_back(*it);
-    } else {
-      it->Clear();
     }
     it++;
   }
@@ -139,8 +135,6 @@ void Performance::clearMeasures(ExceptionState& exception_state) {
   while (it != std::end(entries_)) {
     if ((*it)->entryType() != performance_entry_names::kmeasure) {
       new_entries.emplace_back(*it);
-    } else {
-      it->Clear();
     }
     it++;
   }
@@ -155,8 +149,6 @@ void Performance::clearMeasures(const AtomicString& name, ExceptionState& except
   while (it != std::end(entries_)) {
     if (!((*it)->entryType() == performance_entry_names::kmeasure && (*it)->name() == name)) {
       new_entries.emplace_back(*it);
-    } else {
-      it->Clear();
     }
     it++;
   }
