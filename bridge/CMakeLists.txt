@@ -246,6 +246,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
     bindings/qjs/union_base.cc
+    bindings/qjs/microtask_queue.cc
     # Core sources
     core/executing_context.cc
     core/script_forbidden_scope.cc

@@ -64,6 +64,13 @@ class MutationObserver final : public ScriptWrappable {
     kCharacterDataOldValue = 1 << 6,
   };
 
+  struct ObserverLessThan {
+    bool operator()(const Member<MutationObserver>& lhs,
+                    const Member<MutationObserver>& rhs) {
+      return lhs->priority_ < rhs->priority_;
+    }
+  };
+
   static MutationObserver* Create(ExecutingContext* context,
                                   const std::shared_ptr<QJSFunction>& function,
                                   ExceptionState& exception_state);
@@ -78,6 +85,8 @@ class MutationObserver final : public ScriptWrappable {
   void ObservationStarted(const std::shared_ptr<MutationObserverRegistration>&);
   void ObservationEnded(const std::shared_ptr<MutationObserverRegistration>&);
   void EnqueueMutationRecord(MutationRecord*);
+  void Deliver();
+  void SetHasTransientRegistration();
 
   std::set<Member<Node>> GetObservedNodes() const;
 
@@ -88,6 +97,7 @@ class MutationObserver final : public ScriptWrappable {
  private:
   MutationRecordVector records_;
   MutationObserverRegistrationSet registrations_;
+  std::shared_ptr<QJSFunction> function_;
   unsigned priority_;
 };
 

@@ -70,6 +70,7 @@ void MutationObserverRegistration::ObservedSubtreeNodeWillDetach(Node& node) {
     return;
 
   node.RegisterTransientMutationObserver(shared_from_this());
+  observer_->SetHasTransientRegistration();
 
   transient_registration_nodes_ = std::set<Member<Node>>();
 

@@ -82,7 +82,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
       JS_FreeValue(ctx, errmsgValue);
     }
 
-    callbackContext->context->DrainPendingPromiseJobs();
+    callbackContext->context->DrainMicrotasks();
     JS_FreeValue(callbackContext->context->ctx(), callbackContext->callback);
     delete callbackContext;
   };
@@ -126,7 +126,7 @@ static void handleSimulatePointerCallback(void* p, int32_t contextId, const char
       JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
   JS_FreeValue(simulate_context->context->ctx(), return_value);
   JS_FreeValue(simulate_context->context->ctx(), simulate_context->callbackValue);
-  simulate_context->context->DrainPendingPromiseJobs();
+  simulate_context->context->DrainMicrotasks();
   delete simulate_context;
 }
 
@@ -311,7 +311,7 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
   ScriptValue result =
       execute_test_callback_->Invoke(context_->ctx(), ScriptValue::Empty(context_->ctx()), 1, arguments);
   context_->HandleException(&result);
-  context_->DrainPendingPromiseJobs();
+  context_->DrainMicrotasks();
   JS_FreeValue(context_->ctx(), callback);
   execute_test_callback_ = nullptr;
 }

@@ -9,6 +9,7 @@
 #include <type_traits>
 #include "bindings/qjs/qjs_engine_patch.h"
 #include "bindings/qjs/script_value.h"
+#include "core/executing_context.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "foundation/casting.h"
 #include "mutation_scope.h"

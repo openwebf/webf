@@ -280,7 +280,7 @@ static bool jsPool(webf::ExecutingContext* context) {
 
 void TEST_runLoop(webf::ExecutingContext* context) {
   for (;;) {
-    context->DrainPendingPromiseJobs();
+    context->DrainMicrotasks();
     if (jsPool(context))
       break;
   }

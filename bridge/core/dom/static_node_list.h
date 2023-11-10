@@ -14,7 +14,7 @@ class StaticNodeList final : public NodeList {
   ~StaticNodeList() override;
 
   unsigned length() const override;
-  Node* item(unsigned index, ExceptionState& exception_state) const;
+  Node* item(unsigned index, ExceptionState& exception_state) const override;
 
   void Trace(GCVisitor*) const override;
 

@@ -11,6 +11,7 @@
 #include "core/events/error_event.h"
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
+#include "core/dom/mutation_observer.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
 #include "qjs_window.h"
@@ -143,7 +144,7 @@ bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
   }
 
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -152,7 +153,7 @@ bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine) {
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -160,7 +161,7 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
 
 bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine) {
   JSValue result = JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -172,7 +173,7 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!HandleException(&obj))
     return false;
   val = JS_EvalFunction(script_state_.ctx(), obj);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   if (!HandleException(&val))
     return false;
   JS_FreeValue(script_state_.ctx(), val);
@@ -263,6 +264,15 @@ void ExecutingContext::ReportError(JSValueConst error) {
   JS_FreeCString(ctx, title);
   JS_FreeCString(ctx, stack);
   JS_FreeCString(ctx, type);
+}
+
+void ExecutingContext::DrainMicrotasks() {
+  microtask_queue_->DrainMicrotaskQueue();
+  DrainPendingPromiseJobs();
+}
+
+void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) {
+  microtask_queue_->EnqueueMicrotask(callback, data);
 }
 
 void ExecutingContext::DrainPendingPromiseJobs() {

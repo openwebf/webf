@@ -19,6 +19,7 @@
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
+#include "bindings/qjs/microtask_queue.h"
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
 
@@ -44,6 +45,7 @@ class Performance;
 class MemberMutationScope;
 class ErrorEvent;
 class DartContext;
+class MutationObserver;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
@@ -84,7 +86,8 @@ class ExecutingContext {
   bool HandleException(ScriptValue* exc);
   bool HandleException(ExceptionState& exception_state);
   void ReportError(JSValueConst error);
-  void DrainPendingPromiseJobs();
+  void DrainMicrotasks();
+  void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
   ExecutionContextData* contextData();
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, size_t* bytecodeLength);
@@ -152,6 +155,9 @@ class ExecutingContext {
   void InstallDocument();
   void InstallPerformance();
 
+  void DrainPendingPromiseJobs();
+  void EnsureEnqueueMicrotask();
+
   static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
                                    JSValueConst reason,
@@ -190,6 +196,7 @@ class ExecutingContext {
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::set<ScriptWrappable*> active_wrappers_;
+  std::unique_ptr<MicrotaskQueue> microtask_queue_ = std::make_unique<MicrotaskQueue>();
 };
 
 class ObjectProperty {

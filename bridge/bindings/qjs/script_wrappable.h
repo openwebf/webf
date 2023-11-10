@@ -8,7 +8,6 @@
 
 #include <quickjs/quickjs.h>
 #include "bindings/qjs/cppgc/garbage_collected.h"
-#include "core/executing_context.h"
 #include "foundation/macros.h"
 #include "wrapper_type_info.h"
 
