@@ -22,6 +22,15 @@ class Element : public ContainerNode {
 
  public:
   using ImplType = Element*;
+
+  enum class AttributeModificationReason {
+    kDirectly,
+    kByParser,
+    kByCloning,
+    kByMoveToNewDocument,
+    kBySynchronizationOfLazyAttribute
+  };
+
   Element(const AtomicString& namespace_uri,
           const AtomicString& local_name,
           const AtomicString& prefix,
@@ -53,6 +62,16 @@ class Element : public ContainerNode {
 
   ScriptPromise toBlob(double device_pixel_ratio, ExceptionState& exception_state);
   ScriptPromise toBlob(ExceptionState& exception_state);
+
+  void DidAddAttribute(const AtomicString&, const AtomicString&);
+  void WillModifyAttribute(const AtomicString&,
+                           const AtomicString& old_value,
+                           const AtomicString& new_value);
+  void DidModifyAttribute(const AtomicString&,
+                          const AtomicString& old_value,
+                          const AtomicString& new_value,
+                          AttributeModificationReason reason);
+  void DidRemoveAttribute(const AtomicString&, const AtomicString& old_value);
 
   std::string outerHTML();
   std::string innerHTML();
@@ -121,7 +140,6 @@ class Element : public ContainerNode {
   void _notifyChildRemoved();
   void _notifyNodeInsert(Node* insertNode);
   void _notifyChildInsert();
-  void _didModifyAttribute(const AtomicString& name, const AtomicString& oldId, const AtomicString& newId);
   void _beforeUpdateId(JSValue oldIdValue, JSValue newIdValue);
 
   mutable std::unique_ptr<ElementData> element_data_;

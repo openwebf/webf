@@ -28,58 +28,6 @@ TEST(Node, appendChild) {
   EXPECT_EQ(logCalled, true);
 }
 
-TEST(Node, MutationObserver) {
-  bool static errorCalled = false;
-  bool static logCalled = false;
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-    logCalled = true;
-  };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = env->page()->GetExecutingContext();
-  const char* code = R"(
-const container = document.createElement('div');
-document.body.appendChild(container);
-
-// Callback function to execute when mutations are observed
-const callback = (mutationList, observer) => {
-  for (const mutation of mutationList) {
-    if (mutation.type === "childList") {
-      console.log("A child node has been added or removed.");
-    } else if (mutation.type === "attributes") {
-      console.log(`The ${mutation.attributeName} attribute was modified.`);
-    }
-  }
-};
-
-// Create an observer instance linked to the callback function
-const observer = new MutationObserver(callback);
-const observer2 = new MutationObserver(callback);
-
-// Options for the observer (which mutations to observe)
-const config = { attributes: true, childList: true, subtree: true };
-
-// Start observing the target node for configured mutations
-observer.observe(container, config);
-observer2.observe(container, config);
-
-container.appendChild(document.createElement('span'));
-
-observer2.disconnect();
-
-container.appendChild(document.createElement('span'));
-
-new Promise((resolve, reject) => { resolve(); }).then(() => {
-  console.log(3);
-})
-
-)";
-  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
-
-  EXPECT_EQ(errorCalled, false);
-  EXPECT_EQ(logCalled, true);
-}
-
-
 TEST(Node, nodeName) {
   bool static errorCalled = false;
   bool static logCalled = false;

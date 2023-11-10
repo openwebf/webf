@@ -14,6 +14,7 @@
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
+#include "mutation_observer_interest_group.h"
 #include "element_attribute_names.h"
 #include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
@@ -34,11 +35,9 @@ Element::Element(const AtomicString& namespace_uri,
     buffer->addCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
                        nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    // TODO: SVG element
     buffer->addCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
                        (void*)bindingObject(), nullptr);
   } else {
-    // TODO: Unknown namespace uri
     buffer->addCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
                        namespace_uri.ToNativeString(ctx()).release());
   }
@@ -67,15 +66,19 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value) 
 void Element::setAttribute(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state) {
   if (EnsureElementAttributes().hasAttribute(name, exception_state)) {
     AtomicString&& oldAttribute = EnsureElementAttributes().getAttribute(name, exception_state);
+
+    WillModifyAttribute(name, oldAttribute, value);
+
     if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
       return;
-    };
-    _didModifyAttribute(name, oldAttribute, value);
+    }
+    DidModifyAttribute(name, oldAttribute, value, AttributeModificationReason::kDirectly);
   } else {
+    WillModifyAttribute(name, built_in_string::kempty_string, value);
     if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
       return;
-    };
-    _didModifyAttribute(name, AtomicString::Empty(), value);
+    }
+    DidModifyAttribute(name, AtomicString::Empty(), value, AttributeModificationReason::kDirectly);
   }
 }
 
@@ -418,6 +421,27 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
   return resolver->Promise();
 }
 
+void Element::DidAddAttribute(const AtomicString& name, const AtomicString& value) {
+
+}
+
+void Element::WillModifyAttribute(const AtomicString& name, const AtomicString& old_value, const AtomicString& new_value) {
+  if (std::shared_ptr<MutationObserverInterestGroup> recipients =
+          MutationObserverInterestGroup::CreateForAttributesMutation(*this,
+                                                                     name)) {
+    recipients->EnqueueMutationRecord(
+        MutationRecord::CreateAttributes(this, name, element_namespace_uris::khtml, old_value));
+  }
+}
+
+void Element::DidModifyAttribute(const AtomicString&, const AtomicString& old_value, const AtomicString& new_value, AttributeModificationReason reason) {
+
+}
+
+void Element::DidRemoveAttribute(const AtomicString& name, const AtomicString& old_value) {
+
+}
+
 std::string Element::outerHTML() {
   std::string tagname = local_name_.ToStdString(ctx());
   std::string s = "<" + tagname;
@@ -485,8 +509,6 @@ void Element::_notifyNodeInsert(Node* insertNode){
 };
 
 void Element::_notifyChildInsert() {}
-
-void Element::_didModifyAttribute(const AtomicString& name, const AtomicString& oldId, const AtomicString& newId) {}
 
 void Element::_beforeUpdateId(JSValue oldIdValue, JSValue newIdValue) {}
 

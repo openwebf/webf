@@ -52,6 +52,8 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
     return false;
   }
 
+  AtomicString existing_attribute = attributes_[name];
+
   attributes_[name] = value;
 
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
@@ -74,6 +76,8 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 }
 
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
+  element_->WillModifyAttribute(name, attributes_[name], built_in_string::kempty_string);
+
   attributes_.erase(name);
 
   std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString(ctx());

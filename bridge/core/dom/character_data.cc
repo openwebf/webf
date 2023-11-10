@@ -7,16 +7,29 @@
 #include "built_in_string.h"
 #include "core/dom/document.h"
 #include "qjs_character_data.h"
+#include "mutation_observer_interest_group.h"
 
 namespace webf {
 
 void CharacterData::setData(const AtomicString& data, ExceptionState& exception_state) {
+  AtomicString old_data = data_;
   data_ = data;
 
   std::unique_ptr<SharedNativeString> args_01 = data.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = stringToNativeString("data");
   GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetAttribute, std::move(args_01),
                                                        (void*)bindingObject(), args_02.release());
+
+  DidModifyData(old_data);
+}
+
+void CharacterData::DidModifyData(const webf::AtomicString& old_data) {
+  std::shared_ptr<MutationObserverInterestGroup> mutation_recipients =
+      MutationObserverInterestGroup::CreateForCharacterDataMutation(*this);
+  if (mutation_recipients != nullptr) {
+    mutation_recipients->EnqueueMutationRecord(
+        MutationRecord::CreateCharacterData(this, old_data));
+  }
 }
 
 AtomicString CharacterData::nodeValue() const {
