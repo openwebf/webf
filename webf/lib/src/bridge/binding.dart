@@ -49,7 +49,7 @@ void _dispatchEventToNative(Event event, bool isCapture) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr) {
+  if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr && event.target?.disposed != true) {
     BindingObject bindingObject = controller.view.getBindingObject(pointer);
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
