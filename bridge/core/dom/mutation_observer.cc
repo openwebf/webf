@@ -64,6 +64,7 @@ class MutationObserverAgent {
 
  private:
   void DeliverMutations() {
+    MemberMutationScope scopes{context_};
     // These steps are defined in DOM Standard's "notify mutation observers".
     // https://dom.spec.whatwg.org/#notify-mutation-observers
     MutationObserverVector observers(active_mutation_observers_.begin(), active_mutation_observers_.end());
@@ -144,10 +145,10 @@ void MutationObserver::observe(Node* node, const std::shared_ptr<MutationObserve
                          observer_init->hasCharacterDataOldValue()))
     options |= kMutationTypeCharacterData;
 
-  if (observer_init->childList())
+  if (observer_init->hasChildList() && observer_init->childList())
     options |= kMutationTypeChildList;
 
-  if (observer_init->subtree())
+  if (observer_init->hasSubtree() && observer_init->subtree())
     options |= kSubtree;
 
   if (!(options & kMutationTypeAttributes)) {

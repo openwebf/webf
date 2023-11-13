@@ -24,4 +24,8 @@ void MicrotaskQueue::EnqueueMicrotask(webf::MicrotaskCallback callback, void* da
   queue_.emplace_back(std::move(queue_item));
 }
 
+bool MicrotaskQueue::empty() {
+  return queue_.size() == 0;
+}
+
 }

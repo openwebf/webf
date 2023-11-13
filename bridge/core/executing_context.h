@@ -197,6 +197,7 @@ class ExecutingContext {
   MemberMutationScope* active_mutation_scope{nullptr};
   std::set<ScriptWrappable*> active_wrappers_;
   std::unique_ptr<MicrotaskQueue> microtask_queue_ = std::make_unique<MicrotaskQueue>();
+  bool is_draining_microtasks_ = false;
 };
 
 class ObjectProperty {

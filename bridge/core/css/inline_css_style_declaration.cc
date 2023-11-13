@@ -8,6 +8,9 @@
 #include "core/executing_context.h"
 #include "core/html/parser/html_parser.h"
 #include "css_property_list.h"
+#include "core/dom/mutation_observer_interest_group.h"
+#include "html_names.h"
+#include "element_namespace_uris.h"
 
 namespace webf {
 
@@ -153,6 +156,8 @@ void InlineCssStyleDeclaration::setCssText(const std::string& css_text, webf::Ex
       InternalSetProperty(css_key, AtomicString(ctx(), css_value));
     }
   }
+
+  InlineStyleChanged();
 }
 
 void InlineCssStyleDeclaration::Trace(GCVisitor* visitor) const {
@@ -171,6 +176,18 @@ std::string InlineCssStyleDeclaration::ToString() const {
 
   s += "\"";
   return s;
+}
+
+void InlineCssStyleDeclaration::InlineStyleChanged() {
+  assert(owner_element_->IsStyledElement());
+
+  if (std::shared_ptr<MutationObserverInterestGroup> recipients =
+          MutationObserverInterestGroup::CreateForAttributesMutation(
+              *owner_element_, html_names::kStyleAttr)) {
+    AtomicString old_value;
+    recipients->EnqueueMutationRecord(MutationRecord::CreateAttributes(
+        owner_element_, html_names::kStyleAttr, element_namespace_uris::khtml, old_value));
+  }
 }
 
 bool InlineCssStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {
@@ -199,7 +216,11 @@ bool InlineCssStyleDeclaration::InternalSetProperty(std::string& name, const Ato
     return true;
   }
 
+  AtomicString old_value = properties_[name];
+
   properties_[name] = value;
+
+  InlineStyleChanged();
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
   GetExecutingContext()->uiCommandBuffer()->addCommand(
@@ -217,6 +238,8 @@ AtomicString InlineCssStyleDeclaration::InternalRemoveProperty(std::string& name
 
   AtomicString return_value = properties_[name];
   properties_.erase(name);
+
+  InlineStyleChanged();
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
   GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetStyle, std::move(args_01),

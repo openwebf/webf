@@ -22,6 +22,7 @@ class MicrotaskQueue final {
 
   void DrainMicrotaskQueue();
   void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
+  bool empty();
 
  private:
 

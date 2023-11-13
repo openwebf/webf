@@ -267,8 +267,11 @@ void ExecutingContext::ReportError(JSValueConst error) {
 }
 
 void ExecutingContext::DrainMicrotasks() {
+  if (is_draining_microtasks_) return;
+  is_draining_microtasks_ = true;
   microtask_queue_->DrainMicrotaskQueue();
   DrainPendingPromiseJobs();
+  is_draining_microtasks_ = false;
 }
 
 void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) {
@@ -280,6 +283,12 @@ void ExecutingContext::DrainPendingPromiseJobs() {
   JSContext* pctx;
   int finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
   while (finished != 0) {
+    bool is_microtask_empty = microtask_queue_->empty();
+
+    if (!is_microtask_empty) {
+      microtask_queue_->DrainMicrotaskQueue();
+    }
+
     finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
     if (finished == -1) {
       break;

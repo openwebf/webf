@@ -36,6 +36,8 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
 
   [[nodiscard]] std::string ToString() const;
 
+  void InlineStyleChanged();
+
   bool NamedPropertyQuery(const AtomicString&, ExceptionState&) override;
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) override;
 
