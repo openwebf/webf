@@ -26,20 +26,19 @@ class NodeMutationObserverData final {
   NodeMutationObserverData& operator=(const NodeMutationObserverData&) = delete;
   ~NodeMutationObserverData();
 
-  const std::vector<std::shared_ptr<MutationObserverRegistration>>& Registry() { return registry_; }
+  const std::vector<Member<MutationObserverRegistration>>& Registry() { return registry_; }
+  const std::set<Member<MutationObserverRegistration>>& TransientRegistry() { return transient_registry_; }
 
-  const std::set<std::shared_ptr<MutationObserverRegistration>>& TransientRegistry() { return transient_registry_; }
-
-  void AddTransientRegistration(const std::shared_ptr<MutationObserverRegistration>& registration);
-  void RemoveTransientRegistration(const std::shared_ptr<MutationObserverRegistration>& registration);
-  void AddRegistration(const std::shared_ptr<MutationObserverRegistration>& registration);
-  void RemoveRegistration(const std::shared_ptr<MutationObserverRegistration>& registration);
+  void AddTransientRegistration(MutationObserverRegistration* registration);
+  void RemoveTransientRegistration(MutationObserverRegistration* registration);
+  void AddRegistration(MutationObserverRegistration* registration);
+  void RemoveRegistration(MutationObserverRegistration* registration);
 
   void Trace(GCVisitor* visitor) const;
 
  private:
-  std::vector<std::shared_ptr<MutationObserverRegistration>> registry_;
-  std::set<std::shared_ptr<MutationObserverRegistration>> transient_registry_;
+  std::vector<Member<MutationObserverRegistration>> registry_;
+  std::set<Member<MutationObserverRegistration>> transient_registry_;
 };
 
 class NodeData {

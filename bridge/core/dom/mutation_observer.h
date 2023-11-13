@@ -51,7 +51,9 @@ class MutationRecord;
 
 using MutationObserverSet = std::set<Member<MutationObserver>>;
 using MutationObserverRegistrationSet =
-    std::set<std::shared_ptr<MutationObserverRegistration>>;
+    std::set<Member<MutationObserverRegistration>>;
+using MutationObserverRegistrationVector =
+    std::vector<Member<MutationObserverRegistration>>;
 using MutationObserverVector = std::vector<Member<MutationObserver>>;
 using MutationRecordVector = std::vector<Member<MutationRecord>>;
 
@@ -82,8 +84,8 @@ class MutationObserver final : public ScriptWrappable {
   void observe(Node*, ExceptionState&);
   MutationRecordVector takeRecords(ExceptionState&);
   void disconnect(ExceptionState& exception_state);
-  void ObservationStarted(const std::shared_ptr<MutationObserverRegistration>&);
-  void ObservationEnded(const std::shared_ptr<MutationObserverRegistration>&);
+  void ObservationStarted(MutationObserverRegistration*);
+  void ObservationEnded(MutationObserverRegistration*);
   void EnqueueMutationRecord(MutationRecord*);
   void Deliver();
   void SetHasTransientRegistration();

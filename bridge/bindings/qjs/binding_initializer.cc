@@ -24,6 +24,7 @@
 #include "qjs_document_fragment.h"
 #include "qjs_mutation_observer.h"
 #include "qjs_mutation_record.h"
+#include "qjs_mutation_observer_registration.h"
 #include "qjs_dom_matrix.h"
 #include "qjs_dom_matrix_readonly.h"
 #include "qjs_dom_string_map.h"
@@ -170,6 +171,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSDOMStringMap::Install(context);
   QJSMutationObserver::Install(context);
   QJSMutationRecord::Install(context);
+  QJSMutationObserverRegistration::Install(context);
   QJSDOMTokenList::Install(context);
   QJSPerformance::Install(context);
   QJSPerformanceEntry::Install(context);

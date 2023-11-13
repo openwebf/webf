@@ -45,7 +45,8 @@ MutationObserverRegistration::MutationObserverRegistration(MutationObserver& obs
     : observer_(&observer),
       registration_node_(registration_node),
       options_(options),
-      attribute_filter_(attribute_filter){
+      attribute_filter_(attribute_filter),
+      ScriptWrappable(observer.ctx()) {
 }
 
 MutationObserverRegistration::~MutationObserverRegistration() {
@@ -53,7 +54,7 @@ MutationObserverRegistration::~MutationObserverRegistration() {
 
 void MutationObserverRegistration::Dispose() {
   ClearTransientRegistrations();
-  observer_->ObservationEnded(shared_from_this());
+  observer_->ObservationEnded(this);
 }
 
 void MutationObserverRegistration::ResetObservation(
@@ -69,29 +70,32 @@ void MutationObserverRegistration::ObservedSubtreeNodeWillDetach(Node& node) {
   if (!IsSubtree())
     return;
 
-  node.RegisterTransientMutationObserver(shared_from_this());
+  node.RegisterTransientMutationObserver(this);
   observer_->SetHasTransientRegistration();
 
-  transient_registration_nodes_ = std::set<Member<Node>>();
+  if (!transient_registration_nodes_) {
+    transient_registration_nodes_ = std::make_unique<std::set<Member<Node>>>();
 
-  assert(registration_node_);
-  assert(!registration_node_keep_alive_);
-  registration_node_keep_alive_ =
-      registration_node_.Get();  // Balanced in clearTransientRegistrations.
-  transient_registration_nodes_.insert(&node);
+    assert(registration_node_);
+    assert(!registration_node_keep_alive_);
+    registration_node_keep_alive_ =
+        registration_node_.Get();  // Balanced in clearTransientRegistrations.
+  }
+
+  transient_registration_nodes_->insert(&node);
 }
 
 
 void MutationObserverRegistration::ClearTransientRegistrations() {
-  if (transient_registration_nodes_.empty()){
+  if (!transient_registration_nodes_){
     assert(!registration_node_keep_alive_);
     return;
   }
 
-  for (auto& node : transient_registration_nodes_)
-    node->UnregisterTransientMutationObserver(shared_from_this());
+  for (auto& node : *transient_registration_nodes_)
+    node->UnregisterTransientMutationObserver(this);
 
-  transient_registration_nodes_.clear();
+  transient_registration_nodes_.reset();
 
   assert(registration_node_keep_alive_);
   registration_node_keep_alive_ =
@@ -102,7 +106,7 @@ void MutationObserverRegistration::ClearTransientRegistrations() {
 void MutationObserverRegistration::Unregister() {
   // |this| can outlives registration_node_.
   if (registration_node_)
-    registration_node_->UnregisterMutationObserver(shared_from_this());
+    registration_node_->UnregisterMutationObserver(this);
   else
     Dispose();
 }
@@ -130,9 +134,9 @@ void MutationObserverRegistration::AddRegistrationNodesToSet(
     std::set<Member<Node>>& nodes) const {
   assert(registration_node_);
   nodes.insert(registration_node_.Get());
-  if (transient_registration_nodes_.empty())
+  if (transient_registration_nodes_->empty())
     return;
-  for (const auto & transient_registration_node : transient_registration_nodes_)
+  for (const auto & transient_registration_node : *transient_registration_nodes_)
     nodes.insert(transient_registration_node.Get());
 }
 
@@ -140,8 +144,11 @@ void MutationObserverRegistration::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(observer_);
   visitor->TraceMember(registration_node_);
   visitor->TraceMember(registration_node_keep_alive_);
-  for(auto& n : transient_registration_nodes_) {
-    visitor->TraceMember(n);
+
+  if (transient_registration_nodes_ != nullptr) {
+    for(auto& n : *transient_registration_nodes_) {
+      visitor->TraceMember(n);
+    }
   }
 }
 

@@ -58,6 +58,8 @@ class MutationObserverAgent {
   }
 
   void ActivateObserver(MutationObserver* observer) {
+    if (!isContextValid(context_->contextId())) return;
+
     EnsureEnqueueMicrotask();
     active_mutation_observers_.insert(observer);
   }
@@ -76,7 +78,7 @@ class MutationObserverAgent {
   }
 
   void EnsureEnqueueMicrotask() {
-    if (active_mutation_observers_.empty()) {
+    if (active_mutation_observers_.empty() && context_->IsContextValid()) {
       context_->EnqueueMicrotask([](void* p) {
         auto* agent = static_cast<MutationObserverAgent*>(p);
         agent->DeliverMutations();
@@ -112,7 +114,6 @@ MutationObserver::~MutationObserver() {
 }
 
 void MutationObserver::observe(Node* node, const std::shared_ptr<MutationObserverInit>& observer_init, ExceptionState& exception_state) {
-
   assert(node != nullptr);
 
   MutationObserverOptions options = 0;
@@ -205,12 +206,12 @@ void MutationObserver::disconnect(ExceptionState& exception_state) {
   assert(registrations_.empty());
 }
 
-void MutationObserver::ObservationStarted(const std::shared_ptr<MutationObserverRegistration>& registration) {
+void MutationObserver::ObservationStarted(MutationObserverRegistration* registration) {
   assert(registrations_.count(registration) == 0);
   registrations_.insert(registration);
 }
 
-void MutationObserver::ObservationEnded(const std::shared_ptr<MutationObserverRegistration>& registration) {
+void MutationObserver::ObservationEnded(MutationObserverRegistration* registration) {
   assert(registrations_.count(registration) > 0);
   registrations_.erase(registration);
 }
@@ -227,7 +228,7 @@ void MutationObserver::Deliver() {
   // Calling ClearTransientRegistrations() can modify registrations_, so it's
   // necessary to make a copy of the transient registrations before operating on
   // them.
-  std::vector<std::shared_ptr<MutationObserverRegistration>> transient_registrations;
+  std::vector<Member<MutationObserverRegistration>> transient_registrations;
   for (auto& registration : registrations_) {
     if (registration->HasTransientRegistrations())
       transient_registrations.push_back(registration);
@@ -269,7 +270,7 @@ void MutationObserver::Trace(GCVisitor* visitor) const {
   }
 
   for(auto& re : registrations_) {
-    re->Trace(visitor);
+    visitor->TraceMember(re);
   }
   function_->Trace(visitor);
 }

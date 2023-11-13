@@ -154,10 +154,10 @@ void Node::GetRegisteredMutationObserversOfType(
 //  }
 }
 
-void Node::RegisterMutationObserver(webf::MutationObserver& observer,
-                                    webf::MutationObserverOptions options,
+void Node::RegisterMutationObserver(MutationObserver& observer,
+                                    MutationObserverOptions options,
                                     const std::set<AtomicString>& attribute_filter) {
-  std::shared_ptr<MutationObserverRegistration> registration = nullptr;
+  MutationObserverRegistration* registration = nullptr;
 
   for (const auto& item :
        EnsureNodeData().EnsureMutationObserverData().Registry()) {
@@ -168,7 +168,7 @@ void Node::RegisterMutationObserver(webf::MutationObserver& observer,
   }
 
   if (!registration) {
-    registration = std::make_shared<MutationObserverRegistration>(
+    registration = MakeGarbageCollected<MutationObserverRegistration>(
         observer, this, options, attribute_filter);
     observer.ObservationStarted(registration);
     EnsureNodeData().EnsureMutationObserverData().AddRegistration(registration);
@@ -177,8 +177,8 @@ void Node::RegisterMutationObserver(webf::MutationObserver& observer,
   GetDocument().AddMutationObserverTypes(registration->MutationTypes());
 }
 
-void Node::UnregisterMutationObserver(const std::shared_ptr<MutationObserverRegistration>& registration) {
-  const std::vector<std::shared_ptr<MutationObserverRegistration>>* registry =
+void Node::UnregisterMutationObserver(MutationObserverRegistration* registration) {
+  const std::vector<Member<MutationObserverRegistration>>* registry =
       MutationObserverRegistry();
   assert(registry);
   if (!registry)
@@ -189,13 +189,13 @@ void Node::UnregisterMutationObserver(const std::shared_ptr<MutationObserverRegi
       registration);
 }
 
-void Node::RegisterTransientMutationObserver(const std::shared_ptr<MutationObserverRegistration>& registration) {
+void Node::RegisterTransientMutationObserver(MutationObserverRegistration* registration) {
   EnsureNodeData().EnsureMutationObserverData().AddTransientRegistration(
       registration);
 }
 
-void Node::UnregisterTransientMutationObserver(const std::shared_ptr<MutationObserverRegistration>& registration) {
-  const std::set<std::shared_ptr<MutationObserverRegistration>>* transient_registry =
+void Node::UnregisterTransientMutationObserver(MutationObserverRegistration* registration) {
+  const MutationObserverRegistrationSet* transient_registry =
       TransientMutationObserverRegistry();
   assert(transient_registry != nullptr);
   if (!transient_registry)
@@ -211,13 +211,13 @@ void Node::NotifyMutationObserversNodeWillDetach() {
 
   ScriptForbiddenScope forbid_script_during_raw_iteration;
   for (Node* node = parentNode(); node; node = node->parentNode()) {
-    if (const std::vector<std::shared_ptr<MutationObserverRegistration>>* registry =
+    if (const MutationObserverRegistrationVector* registry =
             node->MutationObserverRegistry()) {
       for (const auto& registration : *registry)
         registration->ObservedSubtreeNodeWillDetach(*this);
     }
 
-    if (const std::set<std::shared_ptr<MutationObserverRegistration>>*
+    if (const MutationObserverRegistrationSet*
             transient_registry = node->TransientMutationObserverRegistry()) {
       for (auto& registration : *transient_registry)
         registration->ObservedSubtreeNodeWillDetach(*this);
@@ -237,7 +237,7 @@ NodeData& Node::EnsureNodeData() {
   return CreateNodeData();
 }
 
-const std::vector<std::shared_ptr<MutationObserverRegistration>>* Node::MutationObserverRegistry() {
+const std::vector<Member<MutationObserverRegistration>>* Node::MutationObserverRegistry() {
   if (!HasNodeData()) return nullptr;
   NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();
   if (!data) {
@@ -246,7 +246,7 @@ const std::vector<std::shared_ptr<MutationObserverRegistration>>* Node::Mutation
   return &data->Registry();
 }
 
-const std::set<std::shared_ptr<MutationObserverRegistration>>* Node::TransientMutationObserverRegistry() {
+const std::set<Member<MutationObserverRegistration>>* Node::TransientMutationObserverRegistry() {
   if (!HasNodeData()) return nullptr;
   NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();
   if (!data) {
@@ -369,7 +369,7 @@ static Node* ConvertNodesIntoNode(const Node* parent,
 }
 
 void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
-                   webf::ExceptionState& exception_state) {
+                   ExceptionState& exception_state) {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (!this_node) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "This node type does not support this method.");
@@ -381,7 +381,7 @@ void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& no
 }
 
 void Node::append(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
-                  webf::ExceptionState& exception_state) {
+                  ExceptionState& exception_state) {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (!this_node) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "This node type does not support this method.");
@@ -400,7 +400,7 @@ void Node::before(ExceptionState& exception_state) {
   before(std::vector<std::shared_ptr<QJSUnionDomStringNode>>(), exception_state);
 }
 
-void Node::after(webf::ExceptionState& exception_state) {
+void Node::after(ExceptionState& exception_state) {
   after(std::vector<std::shared_ptr<QJSUnionDomStringNode>>(), exception_state);
 }
 
@@ -430,7 +430,7 @@ static Node* FindViableNextSibling(const Node& node, const std::vector<std::shar
 }
 
 void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
-                  webf::ExceptionState& exception_state) {
+                  ExceptionState& exception_state) {
   ContainerNode* parent = parentNode();
   if (!parent)
     return;
@@ -442,7 +442,7 @@ void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nod
 }
 
 void Node::after(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
-                 webf::ExceptionState& exception_state) {
+                 ExceptionState& exception_state) {
   ContainerNode* parent = parentNode();
   if (!parent)
     return;

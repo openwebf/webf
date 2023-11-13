@@ -36,6 +36,7 @@
 #define WEBF_MUTATION_OBSERVER_REGISTRATION_H
 
 #include <set>
+#include "bindings/qjs/script_wrappable.h"
 #include "mutation_observer.h"
 #include "mutation_observer_options.h"
 
@@ -44,7 +45,8 @@ namespace webf {
 class MutationObserver;
 class Node;
 
-class MutationObserverRegistration : public std::enable_shared_from_this<MutationObserverRegistration> {
+class MutationObserverRegistration : public ScriptWrappable {
+  DEFINE_WRAPPERTYPEINFO();
  public:
   MutationObserverRegistration(MutationObserver&,
                                Node*,
@@ -56,7 +58,7 @@ class MutationObserverRegistration : public std::enable_shared_from_this<Mutatio
   void ObservedSubtreeNodeWillDetach(Node&);
   void ClearTransientRegistrations();
   bool HasTransientRegistrations() const {
-    return !transient_registration_nodes_.empty();
+    return transient_registration_nodes_.get() != nullptr && !transient_registration_nodes_->empty();
   }
   void Unregister();
 
@@ -73,13 +75,13 @@ class MutationObserverRegistration : public std::enable_shared_from_this<Mutatio
 
   void Dispose();
 
-  void Trace(GCVisitor*) const;
+  void Trace(GCVisitor*) const override;
 
  private:
   Member<MutationObserver> observer_;
   Member<Node> registration_node_;
   Member<Node> registration_node_keep_alive_;
-  std::set<Member<Node>> transient_registration_nodes_;
+  std::unique_ptr<std::set<Member<Node>>> transient_registration_nodes_;
 
   MutationObserverOptions options_;
   std::set<AtomicString> attribute_filter_;

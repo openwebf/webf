@@ -20,7 +20,7 @@
 namespace webf {
 
 using MutationObserverOptionsMap =
-    std::unordered_map<Member<MutationObserver>, MutationRecordDeliveryOptions, Member<MutationObserver>::KeyHasher>;
+    std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>;
 
 const int kDOMNodeTypeShift = 2;
 const int kElementNamespaceTypeShift = 4;
@@ -246,9 +246,9 @@ class Node : public EventTarget {
   void RegisterMutationObserver(MutationObserver&,
                                 MutationObserverOptions,
                                 const std::set<AtomicString>& attribute_filter);
-  void UnregisterMutationObserver(const std::shared_ptr<MutationObserverRegistration>&);
-  void RegisterTransientMutationObserver(const std::shared_ptr<MutationObserverRegistration>&);
-  void UnregisterTransientMutationObserver(const std::shared_ptr<MutationObserverRegistration>&);
+  void UnregisterMutationObserver(MutationObserverRegistration*);
+  void RegisterTransientMutationObserver(MutationObserverRegistration*);
+  void UnregisterTransientMutationObserver(MutationObserverRegistration*);
   void NotifyMutationObserversNodeWillDetach();
 
   NodeData& CreateNodeData();
@@ -257,8 +257,8 @@ class Node : public EventTarget {
   [[nodiscard]] NodeData* Data() const { return node_data_.get(); }
   NodeData& EnsureNodeData();
 
-  const std::vector<std::shared_ptr<MutationObserverRegistration>>* MutationObserverRegistry();
-  const std::set<std::shared_ptr<MutationObserverRegistration>>* TransientMutationObserverRegistry();
+  const MutationObserverRegistrationVector* MutationObserverRegistry();
+  const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
 
   void Trace(GCVisitor*) const override;
 

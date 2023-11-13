@@ -92,9 +92,6 @@ void MutationObserverInterestGroup::EnqueueMutationRecord(
 }
 
 void MutationObserverInterestGroup::Trace(GCVisitor* visitor) const {
-  for(auto& item : observers_) {
-    visitor->TraceMember(item.first);
-  }
 }
 
 }  // namespace webf

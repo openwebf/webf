@@ -15,31 +15,31 @@ namespace webf {
 
 void NodeMutationObserverData::Trace(GCVisitor* visitor) const {
   for(auto& entry : registry_) {
-    entry->Trace(visitor);
+    visitor->TraceMember(entry);
   }
 
   for(auto& entry : transient_registry_) {
-    entry->Trace(visitor);
+    visitor->TraceMember(entry);
   }
 }
 
 NodeMutationObserverData::~NodeMutationObserverData() {
 }
 
-void NodeMutationObserverData::AddTransientRegistration(const std::shared_ptr<MutationObserverRegistration>& registration) {
+void NodeMutationObserverData::AddTransientRegistration(MutationObserverRegistration* registration) {
   transient_registry_.insert(registration);
 }
 
-void NodeMutationObserverData::RemoveTransientRegistration(const std::shared_ptr<MutationObserverRegistration>& registration) {
+void NodeMutationObserverData::RemoveTransientRegistration(MutationObserverRegistration* registration) {
   assert(transient_registry_.count(registration) > 0);
   transient_registry_.erase(registration);
 }
 
-void NodeMutationObserverData::AddRegistration(const std::shared_ptr<MutationObserverRegistration>& registration) {
+void NodeMutationObserverData::AddRegistration(MutationObserverRegistration* registration) {
   registry_.emplace_back(registration);
 }
 
-void NodeMutationObserverData::RemoveRegistration(const std::shared_ptr<MutationObserverRegistration>& registration) {
+void NodeMutationObserverData::RemoveRegistration(MutationObserverRegistration* registration) {
   assert(std::find(registry_.begin(), registry_.end(), registration) != registry_.end());
   registry_.erase(std::find(registry_.begin(), registry_.end(), registration));
 }
@@ -68,6 +68,9 @@ EmptyNodeList* NodeData::EnsureEmptyChildNodeList(Node& node) {
 void NodeData::Trace(GCVisitor* visitor) const {
   if (node_list_ != nullptr) {
     visitor->TraceValue(node_list_->ToQuickJSUnsafe());
+  }
+  if (mutation_observer_data_ != nullptr) {
+    mutation_observer_data_->Trace(visitor);
   }
 }
 
