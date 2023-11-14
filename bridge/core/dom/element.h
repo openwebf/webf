@@ -31,6 +31,25 @@ class Element : public ContainerNode {
     kBySynchronizationOfLazyAttribute
   };
 
+  struct AttributeModificationParams {
+    WEBF_STACK_ALLOCATED();
+
+   public:
+    AttributeModificationParams(const AtomicString& qname,
+                                const AtomicString& old_value,
+                                const AtomicString& new_value,
+                                AttributeModificationReason reason)
+        : name(qname),
+          old_value(old_value),
+          new_value(new_value),
+          reason(reason) {}
+
+    const AtomicString& name;
+    const AtomicString& old_value;
+    const AtomicString& new_value;
+    const AttributeModificationReason reason;
+  };
+
   Element(const AtomicString& namespace_uri,
           const AtomicString& local_name,
           const AtomicString& prefix,
@@ -73,7 +92,17 @@ class Element : public ContainerNode {
                           AttributeModificationReason reason);
   void DidRemoveAttribute(const AtomicString&, const AtomicString& old_value);
 
-  std::string outerHTML();
+  void SynchronizeStyleAttributeInternal();
+  void SynchronizeAttribute(const AtomicString& name);
+
+  void InvalidateStyleAttribute();
+  void AttributeChanged(const AttributeModificationParams& params);
+  void StyleAttributeChanged(
+      const AtomicString& new_style_string,
+      AttributeModificationReason modification_reason);
+  void SetInlineStyleFromString(const AtomicString&);
+
+      std::string outerHTML();
   std::string innerHTML();
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
 
@@ -122,10 +151,13 @@ class Element : public ContainerNode {
   void Trace(GCVisitor* visitor) const override;
 
  protected:
+  void SetAttributeInternal(const AtomicString&, const AtomicString& value, AttributeModificationReason reason, ExceptionState& exception_state);
+
   const ElementData* GetElementData() const { return element_data_.get(); }
+  bool HasElementData() const { return element_data_ != nullptr; }
   const AtomicString& getQualifiedName() const { return local_name_; }
   const AtomicString getUppercasedQualifiedName() const;
-  ElementData& EnsureElementData() const;
+  ElementData& EnsureElementData();
   AtomicString namespace_uri_ = AtomicString::Null();
   AtomicString prefix_ = AtomicString::Null();
   AtomicString local_name_ = AtomicString::Empty();

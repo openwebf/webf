@@ -64,22 +64,8 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value) 
 }
 
 void Element::setAttribute(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state) {
-  if (EnsureElementAttributes().hasAttribute(name, exception_state)) {
-    AtomicString&& oldAttribute = EnsureElementAttributes().getAttribute(name, exception_state);
-
-    WillModifyAttribute(name, oldAttribute, value);
-
-    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
-      return;
-    }
-    DidModifyAttribute(name, oldAttribute, value, AttributeModificationReason::kDirectly);
-  } else {
-    WillModifyAttribute(name, built_in_string::kempty_string, value);
-    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
-      return;
-    }
-    DidModifyAttribute(name, AtomicString::Empty(), value, AttributeModificationReason::kDirectly);
-  }
+  SynchronizeAttribute(name);
+  SetAttributeInternal(name, value, AttributeModificationReason::kDirectly, exception_state);
 }
 
 void Element::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
@@ -330,7 +316,7 @@ const AtomicString Element::getUppercasedQualifiedName() const {
   return name;
 }
 
-ElementData& Element::EnsureElementData() const {
+ElementData& Element::EnsureElementData() {
   if (element_data_ == nullptr) {
     element_data_ = std::make_unique<ElementData>();
   }
@@ -434,12 +420,95 @@ void Element::WillModifyAttribute(const AtomicString& name, const AtomicString& 
   }
 }
 
-void Element::DidModifyAttribute(const AtomicString&, const AtomicString& old_value, const AtomicString& new_value, AttributeModificationReason reason) {
-
+void Element::DidModifyAttribute(const AtomicString& name,
+                                 const AtomicString& old_value,
+                                 const AtomicString& new_value,
+                                 AttributeModificationReason reason) {
+  AttributeChanged(AttributeModificationParams(name, old_value, new_value, reason));
 }
 
-void Element::DidRemoveAttribute(const AtomicString& name, const AtomicString& old_value) {
+void Element::DidRemoveAttribute(const AtomicString& name, const AtomicString& old_value) {}
 
+void Element::SynchronizeStyleAttributeInternal() {
+  assert(IsStyledElement());
+  assert(HasElementData());
+  assert(GetElementData()->style_attribute_is_dirty());
+  GetElementData()->SetStyleAttributeIsDirty(false);
+
+  InlineCssStyleDeclaration* inline_style = style();
+  SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(), AttributeModificationReason::kBySynchronizationOfLazyAttribute, ASSERT_NO_EXCEPTION());
+}
+
+void Element::SetAttributeInternal(const webf::AtomicString& name,
+                                   const webf::AtomicString& value,
+                                   AttributeModificationReason reason,
+                                   ExceptionState& exception_state) {
+  if (EnsureElementAttributes().hasAttribute(name, exception_state)) {
+    AtomicString&& oldAttribute = EnsureElementAttributes().getAttribute(name, exception_state);
+
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      WillModifyAttribute(name, oldAttribute, value);
+    }
+
+    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
+      return;
+    }
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      DidModifyAttribute(name, oldAttribute, value, AttributeModificationReason::kDirectly);
+    }
+  } else {
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      WillModifyAttribute(name, built_in_string::kempty_string, value);
+    }
+
+    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
+      return;
+    }
+
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      DidModifyAttribute(name, AtomicString::Empty(), value, AttributeModificationReason::kDirectly);
+    }
+  }
+}
+
+void Element::SynchronizeAttribute(const AtomicString& name) {
+  if (!cssom_wrapper_)
+    return;
+
+  if (UNLIKELY(name == html_names::kStyleAttr && EnsureElementData().style_attribute_is_dirty())) {
+    assert(IsStyledElement());
+    SynchronizeStyleAttributeInternal();
+    return;
+  }
+}
+
+void Element::InvalidateStyleAttribute() {
+  EnsureElementData().SetStyleAttributeIsDirty(true);
+}
+
+void Element::AttributeChanged(const AttributeModificationParams& params) {
+  const AtomicString& name = params.name;
+
+  if (IsStyledElement()) {
+    if (name == html_names::kStyleAttr) {
+      StyleAttributeChanged(params.new_value, params.reason);
+    }
+  }
+}
+
+void Element::StyleAttributeChanged(const AtomicString& new_style_string,
+                                    AttributeModificationReason modification_reason) {
+  assert(IsStyledElement());
+
+  if (new_style_string.IsNull() && cssom_wrapper_ != nullptr) {
+    EnsureCSSStyleDeclaration().Clear();
+  } else {
+    SetInlineStyleFromString(new_style_string);
+  }
+}
+
+void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
+  EnsureCSSStyleDeclaration().SetCSSTextInternal(new_style_string);
 }
 
 std::string Element::outerHTML() {

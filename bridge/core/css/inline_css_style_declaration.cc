@@ -55,6 +55,27 @@ static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
   return result;
 }
 
+static std::string convertCamelCaseToKebabCase(const std::string& propertyName) {
+  static std::unordered_map<std::string, std::string> propertyCache{};
+
+  if (propertyCache.count(propertyName) > 0) {
+    return propertyCache[propertyName];
+  }
+
+  std::string result;
+  for (char c : propertyName) {
+    if (std::isupper(c)) {
+      result += '-';
+      result += std::tolower(c);
+    } else {
+      result += c;
+    }
+  }
+
+  propertyCache[propertyName] = result;
+  return result;
+}
+
 InlineCssStyleDeclaration* InlineCssStyleDeclaration::Create(ExecutingContext* context,
                                                              ExceptionState& exception_state) {
   exception_state.ThrowException(context->ctx(), ErrorType::TypeError, "Illegal constructor.");
@@ -82,7 +103,9 @@ bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
   }
 
   std::string propertyName = key.ToStdString(ctx());
-  return InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
+  bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
+  InlineStyleChanged();
+  return success;
 }
 
 bool InlineCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
@@ -91,6 +114,10 @@ bool InlineCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::
 
 int64_t InlineCssStyleDeclaration::length() const {
   return properties_.size();
+}
+
+void InlineCssStyleDeclaration::Clear() {
+  InternalClearProperty();
 }
 
 AtomicString InlineCssStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
@@ -103,6 +130,7 @@ void InlineCssStyleDeclaration::setProperty(const AtomicString& key,
                                             ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
+  InlineStyleChanged();
 }
 
 AtomicString InlineCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
@@ -120,7 +148,7 @@ AtomicString InlineCssStyleDeclaration::cssText() const {
   std::string result;
   size_t index = 0;
   for (auto& attr : properties_) {
-    result += attr.first + ": " + attr.second.ToStdString(ctx()) + ";";
+    result += convertCamelCaseToKebabCase(attr.first) + ": " + attr.second.ToStdString(ctx()) + ";";
     index++;
     if (index < properties_.size()) {
       result += " ";
@@ -130,11 +158,12 @@ AtomicString InlineCssStyleDeclaration::cssText() const {
 }
 
 void InlineCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {
-  const std::string css_text = value.ToStdString(ctx());
-  setCssText(css_text, exception_state);
+  SetCSSTextInternal(value);
+  InlineStyleChanged();
 }
 
-void InlineCssStyleDeclaration::setCssText(const std::string& css_text, webf::ExceptionState& exception_state) {
+void InlineCssStyleDeclaration::SetCSSTextInternal(const AtomicString& value) {
+  const std::string css_text = value.ToStdString(ctx());
   InternalClearProperty();
 
   std::vector<std::string> styles;
@@ -156,8 +185,6 @@ void InlineCssStyleDeclaration::setCssText(const std::string& css_text, webf::Ex
       InternalSetProperty(css_key, AtomicString(ctx(), css_value));
     }
   }
-
-  InlineStyleChanged();
 }
 
 void InlineCssStyleDeclaration::Trace(GCVisitor* visitor) const {
@@ -181,12 +208,19 @@ std::string InlineCssStyleDeclaration::ToString() const {
 void InlineCssStyleDeclaration::InlineStyleChanged() {
   assert(owner_element_->IsStyledElement());
 
+  owner_element_->InvalidateStyleAttribute();
+
   if (std::shared_ptr<MutationObserverInterestGroup> recipients =
           MutationObserverInterestGroup::CreateForAttributesMutation(
               *owner_element_, html_names::kStyleAttr)) {
     AtomicString old_value;
+    if (owner_element_->attributes()->hasAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION())) {
+      old_value = owner_element_->attributes()->getAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION());
+    }
+
     recipients->EnqueueMutationRecord(MutationRecord::CreateAttributes(
         owner_element_, html_names::kStyleAttr, element_namespace_uris::khtml, old_value));
+    owner_element_->SynchronizeStyleAttributeInternal();
   }
 }
 
@@ -219,8 +253,6 @@ bool InlineCssStyleDeclaration::InternalSetProperty(std::string& name, const Ato
   AtomicString old_value = properties_[name];
 
   properties_[name] = value;
-
-  InlineStyleChanged();
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
   GetExecutingContext()->uiCommandBuffer()->addCommand(

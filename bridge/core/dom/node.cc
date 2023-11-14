@@ -140,18 +140,18 @@ void Node::GetRegisteredMutationObserversOfType(
          !attribute_name);
   CollectMatchingObserversForMutation(observers, MutationObserverRegistry(),
                                       *this, type, attribute_name);
-//  CollectMatchingObserversForMutation(observers,
-//                                      TransientMutationObserverRegistry(),
-//                                      *this, type, attribute_name);
-//  ScriptForbiddenScope forbid_script_during_raw_iteration;
-//  for (Node* node = parentNode(); node; node = node->parentNode()) {
-//    CollectMatchingObserversForMutation(observers,
-//                                        node->MutationObserverRegistry(), *this,
-//                                        type, attribute_name);
-//    CollectMatchingObserversForMutation(
-//        observers, node->TransientMutationObserverRegistry(), *this, type,
-//        attribute_name);
-//  }
+  CollectMatchingObserversForMutation(observers,
+                                      TransientMutationObserverRegistry(),
+                                      *this, type, attribute_name);
+  ScriptForbiddenScope forbid_script_during_raw_iteration;
+  for (Node* node = parentNode(); node; node = node->parentNode()) {
+    CollectMatchingObserversForMutation(observers,
+                                        node->MutationObserverRegistry(), *this,
+                                        type, attribute_name);
+    CollectMatchingObserversForMutation(
+        observers, node->TransientMutationObserverRegistry(), *this, type,
+        attribute_name);
+  }
 }
 
 void Node::RegisterMutationObserver(MutationObserver& observer,

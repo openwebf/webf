@@ -418,6 +418,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_mutation_record.cc
     out/qjs_mutation_observer.cc
     out/qjs_mutation_observer_init.cc
+    out/qjs_mutation_observer_registration.cc
     out/qjs_touch_event.cc
     out/qjs_touch_event_init.cc
     out/qjs_pointer_event.cc

@@ -7,6 +7,7 @@
 #include "bindings/qjs/exception_state.h"
 #include "built_in_string.h"
 #include "core/dom/element.h"
+#include "html_names.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
@@ -55,6 +56,9 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   AtomicString existing_attribute = attributes_[name];
 
   attributes_[name] = value;
+
+  // Style attribute will be parsed and separated into multiple setStyle command.
+  if (name == html_names::kStyleAttr) return true;
 
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());

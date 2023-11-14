@@ -28,6 +28,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
   bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
+  void Clear();
   [[nodiscard]] int64_t length() const override;
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
@@ -45,7 +46,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
 
   AtomicString cssText() const override;
   void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
-  void setCssText(const std::string& value, ExceptionState& exception_state);
+  void SetCSSTextInternal(const AtomicString& value);
 
   void Trace(GCVisitor* visitor) const override;
 
