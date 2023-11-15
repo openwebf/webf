@@ -13,6 +13,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "foundation/native_type.h"
 #include "foundation/native_value.h"
+#include "multi_threading/bridge/binding_object_wrapper.h"
 
 namespace webf {
 
@@ -39,7 +40,7 @@ using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_objec
 struct NativeBindingObject : public DartReadable {
   NativeBindingObject() = delete;
   explicit NativeBindingObject(BindingObject* target)
-      : binding_target_(target), invoke_binding_methods_from_dart(HandleCallFromDartSide){};
+      : binding_target_(target), invoke_binding_methods_from_dart(multi_threading::HandleCallFromDartSideWrapper){};
 
   static void HandleCallFromDartSide(NativeBindingObject* binding_object,
                                      NativeValue* return_value,
