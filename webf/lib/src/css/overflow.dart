@@ -67,6 +67,9 @@ mixin CSSOverflowMixin on RenderStyle {
   @override
   CSSOverflowType get effectiveOverflowX {
     if (overflowX == CSSOverflowType.visible && overflowY != CSSOverflowType.visible) {
+      if (isXPrecise()) {
+        return CSSOverflowType.hidden;
+      }
       return CSSOverflowType.auto;
     }
     if (overflowX == CSSOverflowType.clip && overflowY != CSSOverflowType.clip) {
@@ -81,12 +84,23 @@ mixin CSSOverflowMixin on RenderStyle {
   @override
   CSSOverflowType get effectiveOverflowY {
     if (overflowY == CSSOverflowType.visible && overflowX != CSSOverflowType.visible) {
+      if (isYPrecise()) {
+        return CSSOverflowType.hidden;
+      }
       return CSSOverflowType.auto;
     }
     if (overflowY == CSSOverflowType.clip && overflowX != CSSOverflowType.clip) {
       return CSSOverflowType.hidden;
     }
     return overflowY;
+  }
+
+  bool isXPrecise() {
+    return renderBoxModel?.renderStyle.width.isPrecise == true || renderBoxModel?.renderStyle.maxWidth.isPrecise == true;
+  }
+
+  bool isYPrecise() {
+    return renderBoxModel?.renderStyle.height.isPrecise == true || renderBoxModel?.renderStyle.maxHeight.isPrecise == true;
   }
 
   static CSSOverflowType resolveOverflowType(String definition) {
