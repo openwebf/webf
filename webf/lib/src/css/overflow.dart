@@ -277,6 +277,12 @@ mixin ElementOverflowMixin on ElementBase {
       case LINE_CLAMP:
         scrollingContentRenderStyle.lineClamp = renderStyle.lineClamp;
         break;
+      case HEIGHT:
+        scrollingContentRenderStyle.height = renderStyle.height;
+        break;
+      case WIDTH:
+        scrollingContentRenderStyle.height = renderStyle.height;
+        break;
     }
   }
 
