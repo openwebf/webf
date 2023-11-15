@@ -23,7 +23,7 @@ function checkRecords(target, mutationToCheck, expectedRecord) {
     if (isArray) {
       assert_array_equals(mr1[property], field, property + " didn't match");
     } else {
-      assert_equals(mr1[property], field, property + " didn't match");
+      expect(mr1[property]).toEqual(field, property + " didn't match");
     }
   }
 
@@ -44,10 +44,10 @@ function checkRecords(target, mutationToCheck, expectedRecord) {
     checkField("addedNodes", true);
     checkField("removedNodes", true);
     checkField("previousSibling");
-    // checkField("nextSibling");
-    // checkField("attributeName");
+    checkField("nextSibling");
+    checkField("attributeName");
     // checkField("attributeNamespace");
-    // checkField("oldValue");
+    checkField("oldValue");
   }
 }
 
@@ -228,6 +228,8 @@ describe("MutationObserver document", () => {
             previousSibling: function() {
               return undefined;
             },
+            attributeName: null,
+            oldValue: null,
             target: document.body
           }]);
       }
@@ -255,6 +257,8 @@ describe("MutationObserver document", () => {
             previousSibling: function () {
               return undefined;
             },
+            attributeName: null,
+            oldValue: null,
             target: document.body}]);
       }
     }
@@ -345,11 +349,12 @@ describe("MutationObserver takeRecords", function() {
     // @ts-ignore
     n00.firstChild.data = "new data";
 
-    checkRecords(n00, observer.takeRecords(), [{type: "attributes", attributeName: "id", oldValue: "n00"},
+    checkRecords(n00, observer.takeRecords(), [
+      {type: "attributes", attributeName: "id", oldValue: "n00"},
       {type: "attributes", attributeName: "id", oldValue: "foo"},
-      {type: "attributes", attributeName: "class"},
-      {type: "childList", addedNodes: [n00.firstChild]},
-      {type: "characterData", oldValue: "old data", target: n00.firstChild}
+      {type: "attributes", attributeName: "class", oldValue: ''},
+      {type: "childList", addedNodes: [n00.firstChild], attributeName: null, oldValue: null},
+      {type: "characterData", oldValue: "old data", target: n00.firstChild, attributeName: null}
     ]);
 
     checkRecords(n00, observer.takeRecords(), []);

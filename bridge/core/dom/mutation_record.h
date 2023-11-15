@@ -47,7 +47,7 @@ class MutationRecord : public ScriptWrappable {
   virtual const AtomicString attributeName() { return AtomicString::Null(); }
   virtual const AtomicString attributeNamespace() { return AtomicString::Null(); }
 
-  virtual AtomicString oldValue() { return AtomicString::Empty(); }
+  virtual AtomicString oldValue() { return AtomicString::Null(); }
 
  private:
 };

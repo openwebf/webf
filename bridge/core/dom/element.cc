@@ -416,7 +416,7 @@ void Element::WillModifyAttribute(const AtomicString& name, const AtomicString& 
           MutationObserverInterestGroup::CreateForAttributesMutation(*this,
                                                                      name)) {
     recipients->EnqueueMutationRecord(
-        MutationRecord::CreateAttributes(this, name, element_namespace_uris::khtml, old_value));
+        MutationRecord::CreateAttributes(this, name, AtomicString::Null(), old_value));
   }
 }
 

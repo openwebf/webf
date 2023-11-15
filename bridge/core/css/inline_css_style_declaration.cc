@@ -104,7 +104,7 @@ bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
 
   std::string propertyName = key.ToStdString(ctx());
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
-  InlineStyleChanged();
+  if (success) InlineStyleChanged();
   return success;
 }
 
@@ -129,8 +129,8 @@ void InlineCssStyleDeclaration::setProperty(const AtomicString& key,
                                             const ScriptValue& value,
                                             ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
-  InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
-  InlineStyleChanged();
+  bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
+  if (success) InlineStyleChanged();
 }
 
 AtomicString InlineCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
@@ -213,13 +213,13 @@ void InlineCssStyleDeclaration::InlineStyleChanged() {
   if (std::shared_ptr<MutationObserverInterestGroup> recipients =
           MutationObserverInterestGroup::CreateForAttributesMutation(
               *owner_element_, html_names::kStyleAttr)) {
-    AtomicString old_value;
+    AtomicString old_value = AtomicString::Null();
     if (owner_element_->attributes()->hasAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION())) {
       old_value = owner_element_->attributes()->getAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION());
     }
 
     recipients->EnqueueMutationRecord(MutationRecord::CreateAttributes(
-        owner_element_, html_names::kStyleAttr, element_namespace_uris::khtml, old_value));
+        owner_element_, html_names::kStyleAttr, AtomicString::Null(), old_value));
     owner_element_->SynchronizeStyleAttributeInternal();
   }
 }
@@ -247,7 +247,7 @@ AtomicString InlineCssStyleDeclaration::InternalGetPropertyValue(std::string& na
 bool InlineCssStyleDeclaration::InternalSetProperty(std::string& name, const AtomicString& value) {
   name = parseJavaScriptCSSPropertyName(name);
   if (properties_[name] == value) {
-    return true;
+    return false;
   }
 
   AtomicString old_value = properties_[name];
