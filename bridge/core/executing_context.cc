@@ -269,15 +269,36 @@ void ExecutingContext::ReportError(JSValueConst error) {
 }
 
 void ExecutingContext::DrainMicrotasks() {
-  if (is_draining_microtasks_) return;
-  is_draining_microtasks_ = true;
-  microtask_queue_->DrainMicrotaskQueue();
   DrainPendingPromiseJobs();
-  is_draining_microtasks_ = false;
+}
+
+namespace {
+
+struct MicroTaskDeliver {
+  MicrotaskCallback callback;
+  void* data;
+};
+
 }
 
 void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) {
-  microtask_queue_->EnqueueMicrotask(callback, data);
+  JSValue proxy_data = JS_NewObject(ctx());
+
+  auto* deliver = new MicroTaskDeliver();
+  deliver->data = data;
+  deliver->callback = callback;
+
+  JS_SetOpaque(proxy_data, deliver);
+
+  JS_EnqueueJob(ctx(), [](JSContext *ctx, int argc, JSValueConst *argv) -> JSValue {
+    auto* deliver = static_cast<MicroTaskDeliver*>(JS_GetOpaque(argv[0], JS_CLASS_OBJECT));
+
+    deliver->callback(deliver->data);
+
+    delete deliver;
+  }, 1, &proxy_data);
+
+  JS_FreeValue(ctx(), proxy_data);
 }
 
 void ExecutingContext::DrainPendingPromiseJobs() {
@@ -285,12 +306,6 @@ void ExecutingContext::DrainPendingPromiseJobs() {
   JSContext* pctx;
   int finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
   while (finished != 0) {
-    bool is_microtask_empty = microtask_queue_->empty();
-
-    if (!is_microtask_empty) {
-      microtask_queue_->DrainMicrotaskQueue();
-    }
-
     finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
     if (finished == -1) {
       break;

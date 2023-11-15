@@ -405,3 +405,98 @@ describe("Mutation Observer Styles", function() {
     assert_equals(elem.getAttribute("style"), "");
   });
 });
+
+function log_test(func, expected, description) {
+  it( description, async function(done) {
+    var actual: string[] = [];
+    function log(entry: string) {
+      actual.push(entry);
+      if (expected.length == actual.length) {
+        assert_array_equals(actual, expected);
+        done();
+      }
+    }
+    func(log);
+  });
+}
+
+describe("MutationObserver microtask looping", function() {
+  log_test(function(log) {
+    log('script start');
+
+    setTimeout(function() {
+      log('setTimeout');
+    }, 0);
+
+    Promise.resolve().then(function() {
+      log('promise1');
+    }).then(function() {
+      log('promise2');
+    });
+
+    log('script end');
+  }, [
+    'script start',
+    'script end',
+    'promise1',
+    'promise2',
+    'setTimeout'
+  ], 'Basic task and microtask ordering');
+
+  log_test(function(log) {
+    const container = createElement('div', {
+      className: 'outer'
+    }, [
+      createElement('div', {
+        className: 'inner'
+      })
+    ]);
+    document.body.appendChild(container);
+
+    // Let's get hold of those elements
+    var outer = document.querySelector('.outer');
+    var inner = document.querySelector('.inner');
+
+    // Let's listen for attribute changes on the
+    // outer element
+    new MutationObserver(function() {
+      log('mutate');
+    }).observe(outer!, {
+      attributes: true
+    });
+
+    // Here's a click listener...
+    function onClick() {
+      log('click');
+      //
+      setTimeout(function() {
+        log('timeout');
+      }, 0);
+
+      Promise.resolve().then(function() {
+        log('promise');
+      });
+      //
+      outer!.setAttribute('data-random', Math.random().toString());
+    }
+
+    // ...which we'll attach to both elements
+    inner!.addEventListener('click', onClick);
+    outer!.addEventListener('click', onClick);
+
+    // Note that this will behave differently than a real click,
+    // since the dispatch is synchronous and microtasks will not
+    // run between event bubbling steps.
+    // @ts-ignore
+    inner!.click();
+  }, [
+    'click',
+    'promise',
+    'mutate',
+    'click',
+    'promise',
+    'mutate',
+    'timeout',
+    'timeout'
+  ], 'Level 1 bossfight (synthetic click)');
+});

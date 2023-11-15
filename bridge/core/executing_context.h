@@ -19,7 +19,6 @@
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
-#include "bindings/qjs/microtask_queue.h"
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
 
@@ -49,6 +48,7 @@ class MutationObserver;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
+using MicrotaskCallback = void (*)(void* data);
 
 bool isContextValid(int32_t contextId);
 
@@ -199,8 +199,6 @@ class ExecutingContext {
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::set<ScriptWrappable*> active_wrappers_;
-  std::unique_ptr<MicrotaskQueue> microtask_queue_ = std::make_unique<MicrotaskQueue>();
-  bool is_draining_microtasks_ = false;
 };
 
 class ObjectProperty {
