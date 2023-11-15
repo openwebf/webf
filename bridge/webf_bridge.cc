@@ -127,25 +127,25 @@ WebFInfo* getWebFInfo() {
 
 void dispatchUITask(void* page_, void* context, void* callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  assert(std::this_thread::get_id() == page->currentThread());
+  // assert(std::this_thread::get_id() == page->currentThread());
   reinterpret_cast<void (*)(void*)>(callback)(context);
 }
 
 void* getUICommandItems(void* page_) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  assert(std::this_thread::get_id() == page->currentThread());
+  // assert(std::this_thread::get_id() == page->currentThread());
   return page->GetExecutingContext()->uiCommandBuffer()->data();
 }
 
 int64_t getUICommandItemSize(void* page_) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  assert(std::this_thread::get_id() == page->currentThread());
+  // assert(std::this_thread::get_id() == page->currentThread());
   return page->GetExecutingContext()->uiCommandBuffer()->size();
 }
 
 void clearUICommandItems(void* page_) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  assert(std::this_thread::get_id() == page->currentThread());
+  // assert(std::this_thread::get_id() == page->currentThread());
   page->GetExecutingContext()->uiCommandBuffer()->clear();
 }
 

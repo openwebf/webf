@@ -11,6 +11,8 @@
 
 namespace webf {
 
+void handleRAFTransientCallback(void* ptr, int32_t contextId, double highResTimeStamp, const char* errmsg);
+
 class ScriptAnimationController {
  public:
   // Animation frame callbacks are used for requestAnimationFrame().

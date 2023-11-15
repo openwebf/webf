@@ -97,6 +97,7 @@ class _MyHomePageState extends State<MyBrowser> {
                 viewportWidth: viewportSize.width - queryData.padding.horizontal,
                 viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
                 bundle: WebFBundle.fromUrl('assets:assets/bundle.html'),
+                dedicatedJSThread: true,
               ),
             ],
           ),
