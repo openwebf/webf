@@ -6,10 +6,11 @@
 #include "scripted_animation_controller.h"
 #include "document.h"
 #include "frame_request_callback_collection.h"
+#include "multi_threading/bridge/scripted_animation_controller_wrapper.h"
 
 namespace webf {
 
-static void handleRAFTransientCallback(void* ptr, int32_t contextId, double highResTimeStamp, const char* errmsg) {
+void handleRAFTransientCallback(void* ptr, int32_t contextId, double highResTimeStamp, const char* errmsg) {
   auto* frame_callback = static_cast<FrameCallback*>(ptr);
   auto* context = frame_callback->context();
 
@@ -48,7 +49,7 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
   frame_callback->SetStatus(FrameCallback::FrameStatus::kPending);
 
   uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(frame_callback.get(), context->contextId(),
-                                                                       handleRAFTransientCallback);
+                                                                       multi_threading::handleRAFTransientCallbackWrapper);
   frame_callback->SetFrameId(requestId);
   // Register frame callback to collection.
   frame_request_callback_collection_.RegisterFrameCallback(requestId, frame_callback);

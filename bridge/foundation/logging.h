@@ -16,7 +16,13 @@
 #define WEBF_EAT_STREAM_PARAMETERS(ignored) \
   true || (ignored) ? (void)0 : ::LogMessageVoidify() & ::LogMessage(::LOG_FATAL, 0, 0, nullptr).stream()
 
-#define WEBF_LOG(severity) WEBF_LAZY_STREAM(WEBF_LOG_STREAM(severity), true)
+#ifdef DDEBUG
+#define WEB_LOG_CONDITION(severity) true
+#else
+#define WEB_LOG_CONDITION(severity) severity >= ::webf::ERROR
+#endif
+
+#define WEBF_LOG(severity) WEBF_LAZY_STREAM(WEBF_LOG_STREAM(severity), WEB_LOG_CONDITION(severity))
 
 #define WEBF_CHECK(condition) \
   WEBF_LAZY_STREAM(::webf::LogMessage(::webf::FATAL, __FILE__, __LINE__, #condition).stream(), !(condition))
