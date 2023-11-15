@@ -779,6 +779,8 @@ class RenderBoxModel extends RenderBox
     scrollOffsetX?.removeListener(scrollXListener);
     scrollOffsetY?.removeListener(scrollYListener);
 
+    RenderIntersectionObserverMixin.copyTo(this, copiedRenderBoxModel);
+
     return copiedRenderBoxModel
     // Copy render style
       ..renderStyle = renderStyle
@@ -841,6 +843,9 @@ class RenderBoxModel extends RenderBox
   // Mirror debugDoingThisLayout flag in flutter.
   // [debugDoingThisLayout] indicate whether [performLayout] for this render object is currently running.
   bool doingThisLayout = false;
+
+  // A flag to detect the size of this renderBox had changed during this layout.
+  bool isSelfSizeChanged = false;
 
   // Mirror debugNeedsLayout flag in Flutter to use in layout performance optimization
   bool needsLayout = false;
@@ -1061,6 +1066,12 @@ class RenderBoxModel extends RenderBox
   @override
   set size(Size value) {
     _boxSize = value;
+
+    Size? previousSize = hasSize ? super.size : null;
+    if (previousSize != null && previousSize != value) {
+      isSelfSizeChanged = true;
+    }
+
     super.size = value;
   }
 
@@ -1110,6 +1121,7 @@ class RenderBoxModel extends RenderBox
     contentConstraints = renderStyle.deflatePaddingConstraints(contentConstraints);
     _contentConstraints = contentConstraints;
     clearOverflowLayout();
+    isSelfSizeChanged = false;
   }
 
   /// Find scroll container
@@ -1189,6 +1201,10 @@ class RenderBoxModel extends RenderBox
 
     needsLayout = false;
     dispatchResize(contentSize, boxSize ?? Size.zero);
+
+    if (isSelfSizeChanged) {
+      renderStyle.markTransformMatrixNeedsUpdate();
+    }
   }
 
   /// [RenderLayoutBox] real paint things after basiclly paint box model.

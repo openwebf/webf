@@ -9,6 +9,7 @@
 
 #include "bindings/qjs/native_string_utils.h"
 #include "core/dart_isolate_context.h"
+#include "core/html/parser/html_parser.h"
 #include "core/page.h"
 #include "foundation/logging.h"
 #include "foundation/ui_command_buffer.h"
@@ -64,17 +65,15 @@ void disposePage(void* dart_isolate_context, void* page_) {
 }
 
 int8_t evaluateScripts(void* page_,
-                       SharedNativeString* code,
+                       const char* code,
+                       uint64_t code_len,
                        uint8_t** parsed_bytecodes,
                        uint64_t* bytecode_len,
                        const char* bundleFilename,
                        int32_t startLine) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  return page->evaluateScript(reinterpret_cast<webf::SharedNativeString*>(code), parsed_bytecodes, bytecode_len,
-                              bundleFilename, startLine)
-             ? 1
-             : 0;
+  return page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine) ? 1 : 0;
 }
 
 int8_t evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
@@ -87,6 +86,15 @@ void parseHTML(void* page_, const char* code, int32_t length) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   page->parseHTML(code, length);
+}
+
+void* parseSVGResult(const char* code, int32_t length) {
+  auto* result = webf::HTMLParser::parseSVGResult(code, length);
+  return result;
+}
+
+void freeSVGResult(void* svgTree) {
+  webf::HTMLParser::freeSVGResult(reinterpret_cast<GumboOutput*>(svgTree));
 }
 
 NativeValue* invokeModuleEvent(void* page_,

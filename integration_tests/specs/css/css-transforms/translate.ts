@@ -223,4 +223,23 @@ describe('Transform translate', () => {
     expect(div.clientWidth === div.scrollWidth).toBe(true);
 
   });
+
+   it('should work when update size with transform percentage', async () => {
+    const div = createElement('div', {
+      style: {
+        position: 'absolute',
+        padding: '10px 20px',
+        border: '1px solid #000',
+        left: '50%',
+        transform: 'translate(-50%)'
+      }
+    }, [
+      createText('ABC')
+    ]);
+    document.body.appendChild(div);
+    await snapshot()
+
+    div.textContent = 'LONGER TEXT LONGER TEXT';
+    await snapshot();
+  });
 });

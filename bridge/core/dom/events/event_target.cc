@@ -371,6 +371,12 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   Event* event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
   assert(event->target() != nullptr);
   assert(event->currentTarget() != nullptr);
+
+  auto* window = DynamicTo<Window>(event->target());
+  if (window != nullptr && event->type() == event_type_names::kload) {
+    window->OnLoadEventFired();
+  }
+
   ExceptionState exception_state;
   event->SetTrusted(false);
   event->SetEventPhase(Event::kAtTarget);

@@ -1,25 +1,26 @@
 # [WebF](https://openwebf.com/) [![pub package](https://img.shields.io/pub/v/webf.svg)](https://pub.dev/packages/webf)
 
-WebF (Web on Flutter) is a W3C standards-compliant web rendering engine based on Flutter, allowing web applications to run natively on Flutter.
+WebF presents a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
 
-- **W3C Standards Compliant:** WebF uses HTML/CSS and JavaScript to render content on Flutter, achieving 100% consistency with browser rendering.
-- **Front-End Framework Supports:** As WebF is W3C standards compliant, it can be used with many front-end frameworks, such as [React](https://reactjs.org/), [Vue](https://vuejs.org/).
-- **Expand your Web App with Flutter:** WebF is fully customizable. You can define a customized HTML element with Flutter Widgets and use it in your application or add a JavaScript API for any Dart library from <pub.dev> registry.
-- **Web Development Experience:** WebF supports inspecting DOM structure, CSS styles and debugging JavaScript with Chrome DevTools, providing a browser-like web development experience.
-- **Write Once, Run Anywhere:** With the power of WebF, You can write your web application and run it on any device that Flutter supports. Additionally, you can still run your apps in Node.js and web browsers with the same codebase.
+- **Adherence to W3C Standards:** By leveraging HTML/CSS and JavaScript, WebF renders content on Flutter, ensuring impeccable alignment with standard browser rendering.
+  
+- **Compatible with Leading Front-End Frameworks:** Given its compliance with W3C standards, WebF seamlessly integrates with popular front-end frameworks, including [React](https://reactjs.org/) and [Vue](https://vuejs.org/).
+  
+- **Amplify Your Web Applications with Flutter:** WebF's adaptability shines through its customization capabilities. Craft bespoke HTML elements using Flutter Widgets or enhance your application by integrating a JavaScript API sourced from any Dart library on the `pub.dev` registry.
+  
+- **Authentic Web Development Environment:** Experience a traditional web development setting with WebF. It facilitates DOM structure inspection, CSS style evaluations, and JavaScript debugging via Chrome DevTools.
+  
+- **Craft Once, Deploy Everywhere:** Harness the versatility of WebF to design your web application and launch it across any Flutter-compatible device. What's more, maintain the flexibility to execute your apps within Node.js or web browsers, all from a unified codebase.
 
-## Check if a Web API or CSS is available in WebF
+## Join Our Mission
 
-Check [this yaml](https://github.com/openwebf/webf-available-apis/blob/main/data.yaml)
+We envision providing web developers with an innovative web rendering engine, surpassing WebView in performance and adaptability across both mobile and desktop platforms.
 
+WebF's journey is ambitious and enduring. We believe in the strength of collective effort. If you share our dream of a superior alternative to WebView for the future, your expertise could be invaluable to us.
 
-## The Relationship between WebF and Kraken
+Further, financial contributions can pave the way for erstwhile members of the Kraken team to rejoin our mission, bolstering our developmental pace and potential.
 
-The WebF project is a community support version of [Alibaba's Kraken Project](https://github.com/openkraken/kraken). On May 10, 2022, The Kraken Dev Team was dismissed and the project itself are discontinued.
-
-The core developer and architector: [andycall](https://github.com/andycall), who is from the original Kraken Team. Leave the Alibaba Group and launch this project, to keep following the original ambition of the Kraken project.
-
-For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510449
+If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
 
 ## Join the community (Beta)
 
@@ -128,6 +129,10 @@ WebF provides a rendering engine which follows the W3C standards like web browse
 With WebF, Web Apps and Flutter Apps share the same rendering context. It means that you can use Flutter Widgets to define your HTML elements and embed your Web App as a Flutter Widget in your flutter apps.
 
 <img src="https://user-images.githubusercontent.com/4409743/186230941-83b0aa1c-59d1-4d8d-be10-958a3ae64114.jpg" width="800" style="display: block; margin: 0 auto;" />
+
+## Contributors
+
+<a href="https://github.com/openwebf/webf/graphs/contributors"><img src="https://opencollective.com/webf/contributors.svg?width=890&button=false" /></a>
 
 ## 👏 Contributing [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/openwebf/webf/pulls)
 

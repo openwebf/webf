@@ -339,15 +339,6 @@ WebFTestContext::~WebFTestContext() {
   JS_FreeValue(context_->ctx(), execute_test_proxy_object_);
 }
 
-bool WebFTestContext::evaluateTestScripts(const uint16_t* code,
-                                          size_t codeLength,
-                                          const char* sourceURL,
-                                          int startLine) {
-  if (!context_->IsContextValid())
-    return false;
-  return context_->EvaluateJavaScript(code, codeLength, nullptr, nullptr, sourceURL, startLine);
-}
-
 bool WebFTestContext::parseTestHTML(const uint16_t* code, size_t codeLength) {
   if (!context_->IsContextValid())
     return false;

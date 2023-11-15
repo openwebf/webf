@@ -66,7 +66,7 @@ class ExecutingContext {
 
   static ExecutingContext* From(JSContext* ctx);
 
-  bool EvaluateJavaScript(const uint16_t* code,
+  bool EvaluateJavaScript(const char* code,
                           size_t codeLength,
                           uint8_t** parsed_bytecodes,
                           uint64_t* bytecode_len,
@@ -132,6 +132,9 @@ class ExecutingContext {
 
   // Force dart side to execute the pending ui commands.
   void FlushUICommand();
+
+  void TurnOnJavaScriptGC();
+  void TurnOffJavaScriptGC();
 
   void DispatchErrorEvent(ErrorEvent* error_event);
   void DispatchErrorEventInterval(ErrorEvent* error_event);
