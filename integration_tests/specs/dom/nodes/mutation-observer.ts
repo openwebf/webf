@@ -51,7 +51,7 @@ function checkRecords(target, mutationToCheck, expectedRecord) {
   }
 }
 
-function runMutationTest(node, mutationObserverOptions, mutationRecordSequence, mutationFunction, description, target) {
+function runMutationTest(node, mutationObserverOptions, mutationRecordSequence, mutationFunction, description, target?: any) {
   (new MutationObserver(moc)).observe(node, mutationObserverOptions);
 
   function moc(mrl, obs) {
@@ -228,8 +228,6 @@ describe("MutationObserver document", () => {
             previousSibling: function() {
               return undefined;
             },
-            attributeName: null,
-            oldValue: null,
             target: document.body
           }]);
       }
@@ -257,8 +255,6 @@ describe("MutationObserver document", () => {
             previousSibling: function () {
               return undefined;
             },
-            attributeName: null,
-            oldValue: null,
             target: document.body}]);
       }
     }
@@ -352,9 +348,9 @@ describe("MutationObserver takeRecords", function() {
     checkRecords(n00, observer.takeRecords(), [
       {type: "attributes", attributeName: "id", oldValue: "n00"},
       {type: "attributes", attributeName: "id", oldValue: "foo"},
-      {type: "attributes", attributeName: "class", oldValue: ''},
-      {type: "childList", addedNodes: [n00.firstChild], attributeName: null, oldValue: null},
-      {type: "characterData", oldValue: "old data", target: n00.firstChild, attributeName: null}
+      {type: "attributes", attributeName: "class"},
+      {type: "childList", addedNodes: [n00.firstChild]},
+      {type: "characterData", oldValue: "old data", target: n00.firstChild}
     ]);
 
     checkRecords(n00, observer.takeRecords(), []);
@@ -499,4 +495,498 @@ describe("MutationObserver microtask looping", function() {
     'timeout',
     'timeout'
   ], 'Level 1 bossfight (synthetic click)');
+});
+
+function createFragment() {
+  var fragment = document.createDocumentFragment();
+  fragment.appendChild(document.createTextNode("11"));
+  fragment.appendChild(document.createTextNode("22"));
+  return fragment;
+}
+
+fdescribe("MutationObserver childList", function() {
+  it('n00', async () => {
+    const n00 = createElement('div', {
+      id: 'n00',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    document.body.appendChild(n00);
+    runMutationTest(n00,
+      {"childList":true, "attributes":true},
+      [{type: "attributes", attributeName: "class"}],
+      function() { n00.nodeValue = ""; n00.setAttribute("class", "dummy");},
+      "childList Node.nodeValue: no mutation");
+    await Promise.resolve();
+  });
+
+  it('n10', async () => {
+    const n10 = createElement('div', {
+      id: 'n00',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    runMutationTest(n10,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n10.firstChild],
+        addedNodes: function() {return [n10.firstChild]}}],
+      function() { n10.textContent = "new data"; },
+      "childList Node.textContent: replace content mutation");
+  })
+
+  it('n11', async () => {
+    const n11 = createElement('p', {
+      id: 'n01',
+    });
+    runMutationTest(n11,
+      {"childList":true},
+      [{type: "childList",
+        addedNodes: function() {return [n11.firstChild]}}],
+      function() { n11.textContent = "new data"; },
+      "childList Node.textContent: no previous content mutation");
+  });
+
+  it('n12', async () => {
+    const n12 = createElement('p', {
+      id: 'n01',
+    });
+    runMutationTest(n12,
+      {"childList":true, "attributes":true},
+      [{type: "attributes", attributeName: "class"}],
+      function() { n12.textContent = ""; n12.setAttribute("class", "dummy");},
+      "childList Node.textContent: textContent no mutation");
+  });
+
+  it('n13', async () => {
+    const n13 = createElement('div', {
+      id: 'n13',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    runMutationTest(n13,
+      {"childList":true},
+      [{type: "childList", removedNodes: [n13.firstChild]}],
+      function() { n13.textContent = ""; },
+      "childList Node.textContent: empty string mutation");
+  });
+
+  // it('n20', async () => {
+  //   const n20 = createElement('div', {
+  //     id: 'n20',
+  //   }, [
+  //     createText('PAS')
+  //   ]);
+  //   n20.appendChild(document.createTextNode("S"));
+  //   runMutationTest(n20,
+  //     {"childList":true},
+  //     [{type: "childList",
+  //       removedNodes: [n20.lastChild],
+  //       previousSibling: n20.firstChild}],
+  //     function() { n20.normalize(); },
+  //     "childList Node.normalize mutation");
+  // });
+
+  it('n30', async () => {
+    const n30 = createElement('div', {
+      id: 'n30',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    document.body.appendChild(n30);
+    let d30;
+    const dummy = createElement('div', {
+      id: 'dummy'
+    }, [
+      d30 = createElement('span', {
+        id: 'd30'
+      }, [ createText('text content') ])
+    ]);
+    document.body.appendChild(dummy);
+
+    runMutationTest(n30,
+      {"childList":true},
+      [{type: "childList",
+        addedNodes: [d30],
+        nextSibling: n30.firstChild}],
+      function() { n30.insertBefore(d30, n30.firstChild); },
+      "childList Node.insertBefore: addition mutation");
+  });
+
+  it('n31', async () => {
+    const n31 = createElement('div', {
+      id: 'n31',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    document.body.appendChild(n31);
+    const dummies = createElement('div', {
+      id: 'dummy'
+    }, [
+      createElement('span', {
+        id: 'd30'
+      }, [ createText('text content') ])
+    ]);
+    runMutationTest(n31,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n31.firstChild]}],
+      function() { dummies.insertBefore(n31.firstChild!, dummies.firstChild); },
+      "childList Node.insertBefore: removal mutation");
+  });
+
+  it('n32', async () => {
+    const n32 = createElement('div', {
+      id: 'n32'
+    }, [
+      createElement('span', {}, [
+        createText('AN')
+      ]),
+      createElement('span', {}, [
+        createText('CH')
+      ]),
+      createElement('span', {}, [
+        createText('GED')
+      ]),
+    ]);
+    document.body.appendChild(n32);
+    runMutationTest(n32,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n32.firstChild!.nextSibling],
+        previousSibling: n32.firstChild, nextSibling: n32.lastChild},
+        {type: "childList",
+          addedNodes: [n32.firstChild!.nextSibling],
+          nextSibling: n32.firstChild}],
+      function() { n32.insertBefore(n32.firstChild!.nextSibling!, n32.firstChild); },
+      "childList Node.insertBefore: removal and addition mutations");
+  });
+
+  it('n33', async () => {
+    const n33 = createElement('div', {
+      id: 'n33',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n33);
+    var f33 = createFragment();
+    runMutationTest(n33,
+      {"childList":true},
+      [{type: "childList",
+        addedNodes: [f33.firstChild, f33.lastChild],
+        nextSibling: n33.firstChild}],
+      function() { n33.insertBefore(f33, n33.firstChild); },
+      "childList Node.insertBefore: fragment addition mutations");
+  });
+
+  it('n34', async () => {
+    const n34 = createElement('div', {
+      id: 'n34',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n34);
+    var f34 = createFragment();
+    runMutationTest(f34,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [f34.firstChild, f34.lastChild]}],
+      function() { n34.insertBefore(f34, n34.firstChild); },
+      "childList Node.insertBefore: fragment removal mutations");
+  });
+
+  it('n35', async () => {
+    const n35 = createElement('div', {
+      id: 'n35',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n35);
+
+    let d35;
+    const dummy = createElement('div', {
+      id: 'dummy'
+    }, [
+      d35 = createElement('span', {
+        id: 'd35'
+      }, [ createText('text content') ])
+    ]);
+    BODY.append(dummy);
+
+    runMutationTest(n35,
+      {"childList":true},
+      [{type: "childList",
+        addedNodes: [d35],
+        previousSibling: n35.firstChild}],
+      function() { n35.insertBefore(d35, null); },
+      "childList Node.insertBefore: last child addition mutation");
+  });
+
+  it('n40', async () => {
+    const n40 = createElement('div', {
+      id: 'n40',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n40);
+    let d40;
+    const dummy = createElement('div', {
+      id: 'dummy'
+    }, [
+      d40 = createElement('span', {
+        id: 'd40'
+      }, [ createText('text content') ])
+    ]);
+    BODY.append(dummy);
+
+    runMutationTest(n40,
+      {"childList":true},
+      [{type: "childList",
+        addedNodes: [d40],
+        previousSibling: n40.firstChild}],
+      function() { n40.appendChild(d40); },
+      "childList Node.appendChild: addition mutation");
+  });
+
+  it('n41', async () => {
+    const n41 = createElement('div', {
+      id: 'n41',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n41);
+
+    const dummies = createElement('div', {
+      id: 'dummy'
+    }, [
+      createElement('span', {
+        id: 'd35'
+      }, [ createText('text content') ])
+    ]);
+    BODY.append(dummies);
+
+    runMutationTest(n41,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n41.firstChild]}],
+      function() { dummies.appendChild(n41.firstChild!); },
+      "childList Node.appendChild: removal mutation");
+  });
+
+  it('n42', async () => {
+    const n42 = createElement('div', {
+      id: 'n42'
+    }, [
+      createElement('span', {}, [
+        createText('AN')
+      ]),
+      createElement('span', {}, [
+        createText('CH')
+      ]),
+      createElement('span', {}, [
+        createText('GED')
+      ]),
+    ]);
+    BODY.append(n42);
+    runMutationTest(n42,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n42.firstChild!.nextSibling],
+        previousSibling: n42.firstChild, nextSibling: n42.lastChild},
+        {type: "childList",
+          addedNodes: [n42.firstChild!.nextSibling],
+          previousSibling: n42.lastChild}],
+      function() { n42.appendChild(n42.firstChild!.nextSibling!); },
+      "childList Node.appendChild: removal and addition mutations");
+  });
+
+  it('n43', async () => {
+    const n43 = createElement('div', {
+      id: 'n43',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n43);
+
+    var f43 = createFragment();
+
+    runMutationTest(n43,
+      {"childList":true},
+      [{type: "childList",
+        addedNodes: [f43.firstChild, f43.lastChild],
+        previousSibling: n43.firstChild}],
+      function() { n43.appendChild(f43); },
+      "childList Node.appendChild: fragment addition mutations");
+  });
+
+  it('n44', async () => {
+    const n44 = createElement('div', {
+      id: 'n44',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n44);
+
+    var f44 = createFragment();
+
+    runMutationTest(f44,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [f44.firstChild, f44.lastChild]}],
+      function() { n44.appendChild(f44); },
+      "childList Node.appendChild: fragment removal mutations");
+
+  });
+
+  it('n45', async () => {
+    var n45 = document.createElement('p');
+    var d45 = document.createElement('span');
+    runMutationTest(n45,
+      {"childList":true},
+      [{type: "childList",
+        addedNodes: [d45]}],
+      function() { n45.appendChild(d45); },
+      "childList Node.appendChild: addition outside document tree mutation");
+  });
+
+  it('n50', async () => {
+    const n50 = createElement('div', {
+      id: 'n50',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n50);
+
+    let d50;
+    const dummies = createElement('div', {
+      id: 'dummy'
+    }, [
+      d50 = createElement('span', {
+        id: 'd35'
+      }, [ createText('text content') ])
+    ]);
+
+    runMutationTest(n50,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n50.firstChild],
+        addedNodes: [d50]}],
+      function() { n50.replaceChild(d50, n50.firstChild!); },
+      "childList Node.replaceChild: replacement mutation");
+  });
+
+  it('n51', async () => {
+    const n51 = createElement('div', {
+      id: 'n51',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n51);
+
+    let d51;
+    const dummies = createElement('div', {
+      id: 'dummy'
+    }, [
+      d51 = createElement('span', {
+        id: 'd35'
+      }, [ createText('text content') ])
+    ]);
+
+    runMutationTest(n51,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n51.firstChild]}],
+      function() { d51.parentNode.replaceChild(n51.firstChild, d51); },
+      "childList Node.replaceChild: removal mutation");
+  });
+
+  it('n52', async () => {
+    const n52 = createElement('div', {
+      id: 'n52'
+    }, [
+      createElement('span', {}, [
+        createText('NO ')
+      ]),
+      createElement('span', {}, [
+        createText('CHANGED')
+      ])
+    ]);
+    BODY.append(n52);
+    runMutationTest(n52,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n52.lastChild],
+        previousSibling: n52.firstChild},
+        {type: "childList",
+          removedNodes: [n52.firstChild],
+          addedNodes: [n52.lastChild]}],
+      function() { n52.replaceChild(n52.lastChild!, n52.firstChild!); },
+      "childList Node.replaceChild: internal replacement mutation");
+  });
+
+  it('n53', async () => {
+    const n53 = createElement('div', {
+      id: 'n53',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n53);
+
+    runMutationTest(n53,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n53.firstChild]},
+        {type: "childList",
+          addedNodes: [n53.firstChild]}],
+      function() { n53.replaceChild(n53.firstChild!, n53.firstChild!); },
+      "childList Node.replaceChild: self internal replacement mutation");
+  });
+
+  it('n60', async () => {
+    const n60 = createElement('div', {
+      id: 'n60',
+    }, [
+      createElement('span', {}, [
+        createText('text content')
+      ])
+    ]);
+    BODY.appendChild(n60);
+
+    runMutationTest(n60,
+      {"childList":true},
+      [{type: "childList",
+        removedNodes: [n60.firstChild]}],
+      function() { n60.removeChild(n60.firstChild!); },
+      "childList Node.removeChild: removal mutation");
+  });
 });

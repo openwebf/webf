@@ -169,7 +169,10 @@ Node* ContainerNode::InsertBefore(Node* new_child, Node* ref_child, ExceptionSta
 
   // 5. Insert node into parent before reference child.
   NodeVector post_insertion_notification_targets;
-  { InsertNodeVector(targets, ref_child, AdoptAndInsertBefore(), &post_insertion_notification_targets); }
+  {
+    ChildListMutationScope scope{*this};
+    InsertNodeVector(targets, ref_child, AdoptAndInsertBefore(), &post_insertion_notification_targets);
+  }
   DidInsertNodeVector(targets, ref_child, post_insertion_notification_targets);
   return new_child;
 }
@@ -208,6 +211,7 @@ Node* ContainerNode::ReplaceChild(Node* new_child, Node* old_child, ExceptionSta
   NodeVector post_insertion_notification_targets;
   post_insertion_notification_targets.reserve(kInitialNodeVectorSize);
   {
+    ChildListMutationScope scope{*this};
     // 9. Let previousSibling be child’s previous sibling.
     // 11. Let removedNodes be the empty list.
     // 15. Queue a mutation record of "childList" for target parent with

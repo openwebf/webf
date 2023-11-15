@@ -237,6 +237,10 @@ struct Converter<IDLOptional<IDLDOMString>> : public ConverterBase<IDLDOMString>
   }
   static JSValue ToValue(JSContext* ctx, const std::string& str) { return Converter<IDLDOMString>::ToValue(ctx, str); }
   static JSValue ToValue(JSContext* ctx, typename Converter<IDLDOMString>::ImplType value) {
+    if (value == AtomicString::Null()) {
+      return JS_UNDEFINED;
+    }
+
     return Converter<IDLDOMString>::ToValue(ctx, std::move(value));
   }
 };

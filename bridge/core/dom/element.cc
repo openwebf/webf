@@ -458,7 +458,7 @@ void Element::SetAttributeInternal(const webf::AtomicString& name,
     }
   } else {
     if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
-      WillModifyAttribute(name, built_in_string::kempty_string, value);
+      WillModifyAttribute(name, AtomicString::Null(), value);
     }
 
     if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
@@ -466,7 +466,7 @@ void Element::SetAttributeInternal(const webf::AtomicString& name,
     }
 
     if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
-      DidModifyAttribute(name, AtomicString::Empty(), value, AttributeModificationReason::kDirectly);
+      DidModifyAttribute(name, AtomicString::Null(), value, AttributeModificationReason::kDirectly);
     }
   }
 }

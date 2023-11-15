@@ -42,6 +42,7 @@
 #include "node_traversal.h"
 #include "qjs_node.h"
 #include "text.h"
+#include "child_list_mutation_scope.h"
 
 namespace webf {
 
@@ -546,6 +547,8 @@ void Node::setTextContent(const AtomicString& text, ExceptionState& exception_st
       // No need to do anything if the text is identical.
       if (container->HasOneTextChild() && To<Text>(container->firstChild())->data() == text && !text.IsEmpty())
         return;
+
+      ChildListMutationScope mutation(*this);
 
       // Note: This API will not insert empty text nodes:
       // https://dom.spec.whatwg.org/#dom-node-textcontent
