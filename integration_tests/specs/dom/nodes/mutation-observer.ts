@@ -17,7 +17,7 @@ function checkRecords(target, mutationToCheck, expectedRecord) {
       if (isArray) {
         field = new Array();
       } else {
-        field = undefined;
+        field = null;
       }
     }
     if (isArray) {
@@ -26,7 +26,6 @@ function checkRecords(target, mutationToCheck, expectedRecord) {
       expect(mr1[property]).toEqual(field, property + " didn't match");
     }
   }
-
   assert_equals(mutationToCheck.length, expectedRecord.length, "mutation records must match");
   for (var item = 0; item < mutationToCheck.length; item++) {
     mr1 = mutationToCheck[item];
@@ -55,7 +54,7 @@ function runMutationTest(node, mutationObserverOptions, mutationRecordSequence, 
   (new MutationObserver(moc)).observe(node, mutationObserverOptions);
 
   function moc(mrl, obs) {
-    console.log(mrl);
+    console.log(mrl[0], mrl[1]);
     if (target === undefined) target = node;
     checkRecords(target, mrl, mutationRecordSequence);
   }
@@ -226,7 +225,7 @@ describe("MutationObserver document", () => {
               return [newElement];
             },
             previousSibling: function() {
-              return undefined;
+              return null;
             },
             target: document.body
           }]);
@@ -253,7 +252,7 @@ describe("MutationObserver document", () => {
               return [ newElement];
             },
             previousSibling: function () {
-              return undefined;
+              return null;
             },
             target: document.body}]);
       }
@@ -504,13 +503,13 @@ function createFragment() {
   return fragment;
 }
 
-fdescribe("MutationObserver childList", function() {
-  it('n00', async () => {
-    const n00 = createElement('div', {
-      id: 'n00',
+describe("MutationObserver childList", function() {
+  it("n00", async () => {
+    const n00 = createElement("div", {
+      id: "n00"
     }, [
-      createElement('span', {}, [
-        createText('text content')
+      createElement("span", {}, [
+        createText("text content")
       ])
     ]);
     document.body.appendChild(n00);
@@ -983,10 +982,392 @@ fdescribe("MutationObserver childList", function() {
     BODY.appendChild(n60);
 
     runMutationTest(n60,
-      {"childList":true},
-      [{type: "childList",
-        removedNodes: [n60.firstChild]}],
-      function() { n60.removeChild(n60.firstChild!); },
+      { "childList": true },
+      [{
+        type: "childList",
+        removedNodes: [n60.firstChild]
+      }],
+      function() {
+        n60.removeChild(n60.firstChild!);
+      },
       "childList Node.removeChild: removal mutation");
+  });
+});
+
+fdescribe("MutationObserver Attributes", function() {
+  it("n", async () => {
+    const n = createElement("p", { id: "n" });
+    BODY.append(n);
+
+    runMutationTest(n,
+      { "attributes": true },
+      [{ type: "attributes", attributeName: "id" }],
+      function() {
+        n.id = "n000";
+      },
+      "attributes Element.id: update, no oldValue, mutation");
+
+  });
+
+  it("n00", async () => {
+    const n00 = createElement("p", { id: "n00" });
+    BODY.append(n00);
+
+    runMutationTest(n00,
+      { "attributes": true, "attributeOldValue": true },
+      [{ type: "attributes", oldValue: "n00", attributeName: "id" }],
+      function() {
+        n00.id = "n000";
+      },
+      "attributes Element.id: update mutation");
+  });
+
+  it("n01", async () => {
+    const n01 = createElement("p", { id: "n01" });
+    BODY.append(n01);
+    runMutationTest(n01,
+      { "attributes": true, "attributeOldValue": true },
+      [{ type: "attributes", oldValue: "n01", attributeName: "id" }],
+      function() {
+        n01.id = "";
+      },
+      "attributes Element.id: empty string update mutation");
+
+  });
+  it("n02", async () => {
+    const n02 = createElement("p", { id: "n02" });
+    BODY.append(n02);
+    runMutationTest(n02,
+      { "attributes": true, "attributeOldValue": true },
+      [{ type: "attributes", oldValue: "n02", attributeName: "id" }, { type: "attributes", attributeName: "class" }],
+      function() {
+        n02.id = "n02";
+        n02.setAttribute("class", "c01");
+      },
+      "attributes Element.id: same value mutation");
+
+
+  });
+  it("n03", async () => {
+    const n03 = createElement("p", { id: "n03" });
+    BODY.append(n03);
+    runMutationTest(n03,
+      { "attributes": true, "attributeOldValue": true },
+      [{ type: "attributes", oldValue: "n03", attributeName: "id" }],
+      function() {
+        // @ts-ignore
+        n03.unknown = "c02";
+        n03.id = "n030";
+      },
+      "attributes Element.unknown: IDL attribute no mutation");
+  });
+
+  it('n04', async () => {
+    const n04 = createElement('input', {id: 'n04', type: 'text'});
+    BODY.append(n04);
+    runMutationTest(n04,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "text", attributeName: "type"}, {type: "attributes", oldValue: "n04", attributeName: "id"}],
+
+      function() {
+      // @ts-ignore
+      n04.type = "unknown"; n04.id = "n040";},
+      "attributes HTMLInputElement.type: type update mutation");
+
+  });
+
+  it('n10', async () => {
+    const n10 = createElement("p", { id: "n10" });
+    BODY.append(n10);
+    runMutationTest(n10,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", attributeName: "class"}],
+      function() { n10.className = "c01";},
+      "attributes Element.className: new value mutation");
+  });
+
+  it('n11', async () => {
+    const n11 = createElement("p", { id: "n11" });
+    BODY.append(n11);
+    runMutationTest(n11,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", attributeName: "class"}],
+      function() { n11.className = "";},
+      "attributes Element.className: empty string update mutation");
+  });
+
+  it('n12', async () => {
+    const n12 = createElement("p", { id: "n12", className: 'c01' });
+    BODY.append(n12);
+
+    runMutationTest(n12,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01", attributeName: "class"}],
+      function() { n12.className = "c01";},
+      "attributes Element.className: same value mutation");
+  });
+  it('n13', async () => {
+    const n13 = createElement("p", { id: "n13", className: 'c01 c02' });
+    BODY.append(n13);
+
+    runMutationTest(n13,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}],
+      function() { n13.className = "c01 c02";},
+      "attributes Element.className: same multiple values mutation");
+  });
+
+  it('n20', async () => {
+    const n20 = createElement("p", { id: "n20"});
+    BODY.append(n20);
+    runMutationTest(n20,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", attributeName: "class"}],
+      function() { n20.classList.add("c01");},
+      "attributes Element.classList.add: single token addition mutation");
+  });
+  it('n21', async () => {
+    const n21 = createElement("p", { id: "n21"});
+    BODY.append(n21);
+    runMutationTest(n21,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", attributeName: "class"}],
+      function() { n21.classList.add("c01", "c02", "c03");},
+      "attributes Element.classList.add: multiple tokens addition mutation");
+  });
+  it('n22', async () => {
+    const n22 = createElement("p", { id: "n22"});
+    BODY.append(n22);
+    runMutationTest(n22,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "n22", attributeName: "id"}],
+      function() { try { n22.classList.add("c01", "", "c03"); } catch (e) { };
+        n22.id = "n220"; },
+      "attributes Element.classList.add: syntax err/no mutation");
+  });
+  it('n23', async () => {
+    const n23 = createElement("p", { id: "n23"});
+    BODY.append(n23);
+    runMutationTest(n23,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "n23", attributeName: "id"}],
+      function() { try { n23.classList.add("c01", "c 02", "c03"); } catch (e) { };
+        n23.id = "n230"; },
+      "attributes Element.classList.add: invalid character/no mutation");
+  });
+  it('n24', async () => {
+    const n24 = createElement("p", { id: "n24", className: 'c01 c02'});
+    BODY.append(n24);
+    runMutationTest(n24,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}, {type: "attributes", oldValue: "n24", attributeName: "id"}],
+      function() { n24.classList.add("c02"); n24.id = "n240";},
+      "attributes Element.classList.add: same value mutation");
+  });
+
+  it('n30', async () => {
+    const n30 = createElement("p", { id: "n30", className: 'c01 c02'});
+    BODY.append(n30);
+
+    runMutationTest(n30,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}],
+      function() { n30.classList.remove("c01");},
+      "attributes Element.classList.remove: single token removal mutation");
+  });
+
+  it('n31', async () => {
+    const n31 = createElement("p", { id: "n31", className: 'c01 c02'});
+    BODY.append(n31);
+
+    runMutationTest(n31,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}],
+      function() { n31.classList.remove("c01", "c02");},
+      "attributes Element.classList.remove: multiple tokens removal mutation");
+  });
+
+  it('n32', async () => {
+    const n32 = createElement("p", { id: "n32", className: 'c01 c02'});
+    BODY.append(n32);
+
+    runMutationTest(n32,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}, {type: "attributes", oldValue: "n32", attributeName: "id"}],
+      function() { n32.classList.remove("c03"); n32.id = "n320";},
+      "attributes Element.classList.remove: missing token removal mutation");
+  });
+
+
+  it('n40', async () => {
+    const n40 = createElement("p", { id: "n40", className: 'c01 c02'});
+    BODY.append(n40);
+
+    runMutationTest(n40,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}],
+      function() { n40.classList.toggle("c01");},
+      "attributes Element.classList.toggle: token removal mutation");
+  });
+
+  it('n41', async () => {
+    const n41 = createElement("p", { id: "n41", className: 'c01 c02'});
+    BODY.append(n41);
+
+    runMutationTest(n41,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}],
+      function() { n41.classList.toggle("c03");},
+      "attributes Element.classList.toggle: token addition mutation");
+  });
+
+  it('n42', async () => {
+    const n42 = createElement("p", { id: "n42", className: 'c01 c02'});
+    BODY.append(n42);
+
+    runMutationTest(n42,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}],
+      function() { n42.classList.toggle("c01", false);},
+      "attributes Element.classList.toggle: forced token removal mutation");
+  });
+
+  it('n43', async () => {
+    const n43 = createElement("p", { id: "n43", className: 'c01 c02'});
+    BODY.append(n43);
+
+    runMutationTest(n43,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "n43", attributeName: "id"}],
+      function() { n43.classList.toggle("c03", false); n43.id = "n430"; },
+      "attributes Element.classList.toggle: forced missing token removal no mutation");
+  });
+
+  it('n44', async () => {
+    const n44 = createElement("p", { id: "n44", className: 'c01 c02'});
+    BODY.append(n44);
+
+    runMutationTest(n44,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "n44", attributeName: "id"}],
+      function() { n44.classList.toggle("c01", true); n44.id = "n440"; },
+      "attributes Element.classList.toggle: forced existing token addition no mutation");
+  });
+
+  it('n45', async () => {
+    const n45 = createElement("p", { id: "n45", className: 'c01 c02'});
+    BODY.append(n45);
+
+    runMutationTest(n45,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}],
+      function() { n45.classList.toggle("c03", true);},
+      "attributes Element.classList.toggle: forced token addition mutation");
+  });
+
+  it('n50', async () => {
+    const n50 = createElement("p", { id: "n50", className: 'c01 c02'});
+    BODY.append(n50);
+
+    runMutationTest(n50,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01 c02", attributeName: "class"}],
+      function() {
+        for (var i = 0; i < n50.attributes.length; i++) {
+          var attr = n50.attributes[i];
+          if (attr.localName === "class") {
+            attr.value = "c03";
+          }
+        };
+      },
+      "attributes Element.attributes.value: update mutation");
+  });
+
+  // it('n51', async () => {
+  //   const n51 = createElement("p", { id: "n51"});
+  //   BODY.append(n51);
+  //   runMutationTest(n51,
+  //     {"attributes":true, "attributeOldValue": true},
+  //     [{type: "attributes", oldValue: "n51", attributeName: "id"}],
+  //     function() {
+  //       n51.attributes[0].value = "n51";
+  //     },
+  //     "attributes Element.attributes.value: same id mutation");
+  // });
+
+  it('n60', async () => {
+    const n60 = createElement("p", { id: "n60"});
+    BODY.append(n60);
+    runMutationTest(n60,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "n60", attributeName: "id"}],
+      function() {
+        n60.setAttribute("id", "n601");
+      },
+      "attributes Element.setAttribute: id mutation");
+  });
+
+  it('n61', async () => {
+    const n61 = createElement("p", { id: "n61", className: 'c01'});
+    BODY.append(n61);
+    runMutationTest(n61,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01", attributeName: "class"}],
+      function() {
+        n61.setAttribute("class", "c01");
+      },
+      "attributes Element.setAttribute: same class mutation");
+  });
+
+  it('n62', async () => {
+    const n62 = createElement("p", { id: "n62"});
+    BODY.append(n62);
+    runMutationTest(n62,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", attributeName: "classname"}],
+      function() {
+        n62.setAttribute("classname", "c01");
+      },
+      "attributes Element.setAttribute: classname mutation");
+  });
+
+  it('n70', async () => {
+    const n70 = createElement("p", { id: "n70", className: 'c01'});
+    BODY.append(n70);
+
+    runMutationTest(n70,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "c01", attributeName: "class"}],
+      function() {
+        n70.removeAttribute("class");
+      },
+      "attributes Element.removeAttribute: removal mutation");
+  });
+
+  it('n71', async () => {
+    const n71 = createElement("p", { id: "n71"});
+    BODY.append(n71);
+
+    runMutationTest(n71,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "n71", attributeName: "id"}],
+      function() {
+        n71.removeAttribute("class");
+        n71.id = "n710";
+      },
+      "attributes Element.removeAttribute: removal no mutation");
+  });
+
+  it('n72', async () => {
+    const n72 = createElement('input', {id: 'n72', type: 'text'});
+    BODY.append(n72);
+    runMutationTest(n72,
+      {"attributes":true, "attributeOldValue": true},
+      [{type: "attributes", oldValue: "text", attributeName: "type"}, {type: "attributes", oldValue: "n72", attributeName: "id"}],
+      function() {
+        n72.removeAttribute("type");
+        n72.id = "n720";
+      },
+      "childList HTMLInputElement.removeAttribute: type removal mutation");
   });
 });

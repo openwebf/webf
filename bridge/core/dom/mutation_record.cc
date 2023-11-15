@@ -128,7 +128,7 @@ class MutationRecordWithNullOldValue : public MutationRecord {
   const AtomicString attributeName() override { return record_->attributeName(); }
   const AtomicString attributeNamespace() override { return record_->attributeNamespace(); }
 
-  AtomicString oldValue() override { return AtomicString::Empty(); }
+  AtomicString oldValue() override { return AtomicString::Null(); }
 
   Member<MutationRecord> record_;
 };

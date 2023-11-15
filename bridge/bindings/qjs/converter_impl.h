@@ -254,7 +254,12 @@ struct Converter<IDLNullable<IDLDOMString>> : public ConverterBase<IDLDOMString>
   }
 
   static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(ctx, value).ToQuickJS(ctx); }
-  static JSValue ToValue(JSContext* ctx, const AtomicString& value) { return value.ToQuickJS(ctx); }
+  static JSValue ToValue(JSContext* ctx, const AtomicString& value) {
+    if (value == AtomicString::Null()) {
+      return JS_NULL;
+    }
+    return value.ToQuickJS(ctx);
+  }
 };
 
 template <>

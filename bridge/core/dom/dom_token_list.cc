@@ -39,11 +39,14 @@ bool CheckEmptyToken(JSContext* ctx, const AtomicString& token, ExceptionState& 
 }
 
 bool CheckTokenWithWhitespace(JSContext* ctx, const AtomicString& token, ExceptionState& exception_state) {
-  if (token.Is8Bit() && token.Find(IsHTMLSpace<char>) == -1) {
-    return true;
-  }
-  if (token.Find(IsHTMLSpace<uint16_t>) == -1) {
-    return true;
+  if (token.Is8Bit()) {
+    if (token.Find(IsHTMLSpace<char>) == -1) {
+      return true;
+    }
+  } else {
+    if (token.Find(IsHTMLSpace<uint16_t>) == -1) {
+      return true;
+    }
   }
 
   exception_state.ThrowException(ctx, ErrorType::TypeError,
