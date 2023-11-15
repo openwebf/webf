@@ -32,8 +32,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "bindings/qjs/cppgc/member.h"
 #include "mutation_observer_interest_group.h"
+#include "bindings/qjs/cppgc/member.h"
 #include "node.h"
 
 namespace webf {
@@ -52,15 +52,14 @@ std::shared_ptr<MutationObserverInterestGroup> MutationObserverInterestGroup::Cr
   return std::make_shared<MutationObserverInterestGroup>(observers, old_value_flag);
 }
 
-MutationObserverInterestGroup::MutationObserverInterestGroup(
-    MutationObserverOptionsMap& observers,
-    webf::MutationRecordDeliveryOptions old_value_flag): old_value_flag_(old_value_flag) {
+MutationObserverInterestGroup::MutationObserverInterestGroup(MutationObserverOptionsMap& observers,
+                                                             webf::MutationRecordDeliveryOptions old_value_flag)
+    : old_value_flag_(old_value_flag) {
   assert(!observers.empty());
   observers_.swap(observers);
 }
 
-MutationObserverInterestGroup::~MutationObserverInterestGroup() {
-}
+MutationObserverInterestGroup::~MutationObserverInterestGroup() {}
 
 bool MutationObserverInterestGroup::IsOldValueRequested() {
   for (auto& observer : observers_) {
@@ -70,8 +69,7 @@ bool MutationObserverInterestGroup::IsOldValueRequested() {
   return false;
 }
 
-void MutationObserverInterestGroup::EnqueueMutationRecord(
-    MutationRecord* mutation) {
+void MutationObserverInterestGroup::EnqueueMutationRecord(MutationRecord* mutation) {
   MutationRecord* mutation_with_null_old_value = nullptr;
 
   for (auto& iter : observers_) {
@@ -84,14 +82,12 @@ void MutationObserverInterestGroup::EnqueueMutationRecord(
       if (mutation->oldValue().IsNull())
         mutation_with_null_old_value = mutation;
       else
-        mutation_with_null_old_value =
-            MutationRecord::CreateWithNullOldValue(mutation);
+        mutation_with_null_old_value = MutationRecord::CreateWithNullOldValue(mutation);
     }
     observer->EnqueueMutationRecord(mutation_with_null_old_value);
   }
 }
 
-void MutationObserverInterestGroup::Trace(GCVisitor* visitor) const {
-}
+void MutationObserverInterestGroup::Trace(GCVisitor* visitor) const {}
 
 }  // namespace webf

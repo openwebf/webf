@@ -86,7 +86,7 @@ unsigned CollectionItemsCache<Collection, NodeType>::NodeCount(const Collection&
   unsigned current_index = 0;
   while (current_node) {
     cached_list_.emplace_back(current_node);
-//    cached_list_.push_back(current_node);
+    //    cached_list_.push_back(current_node);
     current_node = collection.TraverseForwardToOffset(current_index + 1, *current_node, current_index);
   }
 

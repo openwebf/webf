@@ -25,12 +25,8 @@ class ElementData {
   DOMStringMap* DataSet() const;
   void SetDataSet(DOMStringMap* data_set);
 
-  bool style_attribute_is_dirty() const {
-    return style_attribute_is_dirty_;
-  }
-  void SetStyleAttributeIsDirty(bool value) const {
-    style_attribute_is_dirty_ = value;
-  }
+  bool style_attribute_is_dirty() const { return style_attribute_is_dirty_; }
+  void SetStyleAttributeIsDirty(bool value) const { style_attribute_is_dirty_ = value; }
 
  private:
   Member<DOMTokenList> class_lists_;

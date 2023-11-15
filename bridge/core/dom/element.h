@@ -39,10 +39,7 @@ class Element : public ContainerNode {
                                 const AtomicString& old_value,
                                 const AtomicString& new_value,
                                 AttributeModificationReason reason)
-        : name(qname),
-          old_value(old_value),
-          new_value(new_value),
-          reason(reason) {}
+        : name(qname), old_value(old_value), new_value(new_value), reason(reason) {}
 
     const AtomicString& name;
     const AtomicString& old_value;
@@ -83,9 +80,7 @@ class Element : public ContainerNode {
   ScriptPromise toBlob(ExceptionState& exception_state);
 
   void DidAddAttribute(const AtomicString&, const AtomicString&);
-  void WillModifyAttribute(const AtomicString&,
-                           const AtomicString& old_value,
-                           const AtomicString& new_value);
+  void WillModifyAttribute(const AtomicString&, const AtomicString& old_value, const AtomicString& new_value);
   void DidModifyAttribute(const AtomicString&,
                           const AtomicString& old_value,
                           const AtomicString& new_value,
@@ -97,12 +92,10 @@ class Element : public ContainerNode {
 
   void InvalidateStyleAttribute();
   void AttributeChanged(const AttributeModificationParams& params);
-  void StyleAttributeChanged(
-      const AtomicString& new_style_string,
-      AttributeModificationReason modification_reason);
+  void StyleAttributeChanged(const AtomicString& new_style_string, AttributeModificationReason modification_reason);
   void SetInlineStyleFromString(const AtomicString&);
 
-      std::string outerHTML();
+  std::string outerHTML();
   std::string innerHTML();
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
 
@@ -151,7 +144,10 @@ class Element : public ContainerNode {
   void Trace(GCVisitor* visitor) const override;
 
  protected:
-  void SetAttributeInternal(const AtomicString&, const AtomicString& value, AttributeModificationReason reason, ExceptionState& exception_state);
+  void SetAttributeInternal(const AtomicString&,
+                            const AtomicString& value,
+                            AttributeModificationReason reason,
+                            ExceptionState& exception_state);
 
   const ElementData* GetElementData() const { return element_data_.get(); }
   bool HasElementData() const { return element_data_ != nullptr; }

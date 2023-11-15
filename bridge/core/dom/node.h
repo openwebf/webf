@@ -19,8 +19,7 @@
 
 namespace webf {
 
-using MutationObserverOptionsMap =
-    std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>;
+using MutationObserverOptionsMap = std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>;
 
 const int kDOMNodeTypeShift = 2;
 const int kElementNamespaceTypeShift = 4;
@@ -239,10 +238,9 @@ class Node : public EventTarget {
   void SetSelfOrAncestorHasDirAutoAttribute() { SetFlag(kSelfOrAncestorHasDirAutoAttribute); }
   void ClearSelfOrAncestorHasDirAutoAttribute() { ClearFlag(kSelfOrAncestorHasDirAutoAttribute); }
 
-  void GetRegisteredMutationObserversOfType(
-      MutationObserverOptionsMap&,
-      MutationType,
-      const AtomicString* attribute_name);
+  void GetRegisteredMutationObserversOfType(MutationObserverOptionsMap&,
+                                            MutationType,
+                                            const AtomicString* attribute_name);
   void RegisterMutationObserver(MutationObserver&,
                                 MutationObserverOptions,
                                 const std::set<AtomicString>& attribute_filter);

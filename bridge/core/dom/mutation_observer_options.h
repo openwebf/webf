@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 namespace webf {
 
@@ -14,9 +14,7 @@ enum MutationType {
   kMutationTypeAttributes = 1 << 1,
   kMutationTypeCharacterData = 1 << 2,
 
-  kMutationTypeAll = kMutationTypeChildList | kMutationTypeAttributes |
-                     kMutationTypeCharacterData
+  kMutationTypeAll = kMutationTypeChildList | kMutationTypeAttributes | kMutationTypeCharacterData
 };
 
-
-}
+}  // namespace webf

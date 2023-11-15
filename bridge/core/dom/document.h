@@ -100,13 +100,9 @@ class Document : public ContainerNode, public TreeScope {
 
   ScriptValue location() const;
 
-  bool HasMutationObserversOfType(MutationType type) const {
-    return mutation_observer_types_ & type;
-  }
+  bool HasMutationObserversOfType(MutationType type) const { return mutation_observer_types_ & type; }
   bool HasMutationObservers() const { return mutation_observer_types_; }
-  void AddMutationObserverTypes(MutationType types) {
-    mutation_observer_types_ |= types;
-  }
+  void AddMutationObserverTypes(MutationType types) { mutation_observer_types_ |= types; }
 
   // nodeWillBeRemoved is only safe when removing one node at a time.
   void NodeWillBeRemoved(Node&);

@@ -32,11 +32,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "bindings/qjs/converter_impl.h"
 #include "mutation_observer.h"
-#include "node.h"
+#include "bindings/qjs/converter_impl.h"
 #include "mutation_observer_registration.h"
 #include "mutation_record.h"
+#include "node.h"
 
 namespace webf {
 
@@ -48,7 +48,7 @@ static thread_local std::unordered_map<ExecutingContext*, std::shared_ptr<Mutati
 class MutationObserverAgent {
  public:
   MutationObserverAgent() = delete;
-  explicit MutationObserverAgent(ExecutingContext* context): context_(context) {};
+  explicit MutationObserverAgent(ExecutingContext* context) : context_(context){};
 
   static std::shared_ptr<MutationObserverAgent> From(ExecutingContext* context) {
     if (agent_map_.count(context) == 0) {
@@ -58,7 +58,8 @@ class MutationObserverAgent {
   }
 
   void ActivateObserver(MutationObserver* observer) {
-    if (!isContextValid(context_->contextId())) return;
+    if (!isContextValid(context_->contextId()))
+      return;
 
     EnsureEnqueueMicrotask();
     active_mutation_observers_.insert(observer);
@@ -71,18 +72,19 @@ class MutationObserverAgent {
     // https://dom.spec.whatwg.org/#notify-mutation-observers
     MutationObserverVector observers(active_mutation_observers_.begin(), active_mutation_observers_.end());
     active_mutation_observers_.clear();
-    std::sort(observers.begin(), observers.end(),
-              MutationObserver::ObserverLessThan());
+    std::sort(observers.begin(), observers.end(), MutationObserver::ObserverLessThan());
     for (const auto& observer : observers)
       observer->Deliver();
   }
 
   void EnsureEnqueueMicrotask() {
     if (active_mutation_observers_.empty() && context_->IsContextValid()) {
-      context_->EnqueueMicrotask([](void* p) {
-        auto* agent = static_cast<MutationObserverAgent*>(p);
-        agent->DeliverMutations();
-      }, this);
+      context_->EnqueueMicrotask(
+          [](void* p) {
+            auto* agent = static_cast<MutationObserverAgent*>(p);
+            agent->DeliverMutations();
+          },
+          this);
     }
   }
 
@@ -110,16 +112,16 @@ MutationObserver::MutationObserver(ExecutingContext* context, const std::shared_
   priority_ = g_observer_priority++;
 }
 
-MutationObserver::~MutationObserver() {
-}
+MutationObserver::~MutationObserver() {}
 
-void MutationObserver::observe(Node* node, const std::shared_ptr<MutationObserverInit>& observer_init, ExceptionState& exception_state) {
+void MutationObserver::observe(Node* node,
+                               const std::shared_ptr<MutationObserverInit>& observer_init,
+                               ExceptionState& exception_state) {
   assert(node != nullptr);
 
   MutationObserverOptions options = 0;
 
-  if (observer_init->hasAttributeOldValue() &&
-      observer_init->attributeOldValue())
+  if (observer_init->hasAttributeOldValue() && observer_init->attributeOldValue())
     options |= kAttributeOldValue;
 
   std::set<AtomicString> attribute_filter;
@@ -129,21 +131,16 @@ void MutationObserver::observe(Node* node, const std::shared_ptr<MutationObserve
     options |= kAttributeFilter;
   }
 
-  bool attributes =
-      observer_init->hasAttributes() && observer_init->attributes();
+  bool attributes = observer_init->hasAttributes() && observer_init->attributes();
   if (attributes || (!observer_init->hasAttributes() &&
-                     (observer_init->hasAttributeOldValue() ||
-                      observer_init->hasAttributeFilter())))
+                     (observer_init->hasAttributeOldValue() || observer_init->hasAttributeFilter())))
     options |= kMutationTypeAttributes;
 
-  if (observer_init->hasCharacterDataOldValue() &&
-      observer_init->characterDataOldValue())
+  if (observer_init->hasCharacterDataOldValue() && observer_init->characterDataOldValue())
     options |= kCharacterDataOldValue;
 
-  bool character_data =
-      observer_init->hasCharacterData() && observer_init->characterData();
-  if (character_data || (!observer_init->hasCharacterData() &&
-                         observer_init->hasCharacterDataOldValue()))
+  bool character_data = observer_init->hasCharacterData() && observer_init->characterData();
+  if (character_data || (!observer_init->hasCharacterData() && observer_init->hasCharacterDataOldValue()))
     options |= kMutationTypeCharacterData;
 
   if (observer_init->hasChildList() && observer_init->childList())
@@ -161,23 +158,22 @@ void MutationObserver::observe(Node* node, const std::shared_ptr<MutationObserve
     }
     if (options & kAttributeFilter) {
       exception_state.ThrowException(ctx(), ErrorType::TypeError,
-          "The options object may only set 'attributeFilter' when 'attributes' "
-          "is true or not present.");
+                                     "The options object may only set 'attributeFilter' when 'attributes' "
+                                     "is true or not present.");
       return;
     }
   }
-  if (!((options & kMutationTypeCharacterData) ||
-        !(options & kCharacterDataOldValue))) {
+  if (!((options & kMutationTypeCharacterData) || !(options & kCharacterDataOldValue))) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
-        "The options object may only set 'characterDataOldValue' to true when "
-        "'characterData' is true or not present.");
+                                   "The options object may only set 'characterDataOldValue' to true when "
+                                   "'characterData' is true or not present.");
     return;
   }
 
   if (!(options & kMutationTypeAll)) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
-        "The options object must set at least one of 'attributes', "
-        "'characterData', or 'childList' to true.");
+                                   "The options object must set at least one of 'attributes', "
+                                   "'characterData', or 'childList' to true.");
     return;
   }
 
@@ -244,10 +240,7 @@ void MutationObserver::Deliver() {
 
   assert(function_ != nullptr);
   JSValue v = Converter<IDLSequence<MutationRecord>>::ToValue(ctx(), records);
-  ScriptValue arguments[] = {
-    ScriptValue(ctx(), v),
-      ToValue()
-  };
+  ScriptValue arguments[] = {ScriptValue(ctx(), v), ToValue()};
 
   JS_FreeValue(ctx(), v);
   function_->Invoke(ctx(), ToValue(), 2, arguments);
@@ -265,15 +258,14 @@ std::set<Member<Node>> MutationObserver::GetObservedNodes() const {
 }
 
 void MutationObserver::Trace(GCVisitor* visitor) const {
-  for(auto& record : records_) {
+  for (auto& record : records_) {
     visitor->TraceMember(record);
   }
 
-  for(auto& re : registrations_) {
+  for (auto& re : registrations_) {
     visitor->TraceMember(re);
   }
   function_->Trace(visitor);
 }
-
 
 }  // namespace webf

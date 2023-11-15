@@ -8,10 +8,10 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "core/dom/events/event_target.h"
+#include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value_converter.h"
-#include "core/dom/mutation_observer_interest_group.h"
 
 namespace webf {
 
@@ -127,8 +127,7 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
 
   if (auto element = const_cast<WidgetElement*>(DynamicTo<WidgetElement>(this))) {
     if (std::shared_ptr<MutationObserverInterestGroup> recipients =
-            MutationObserverInterestGroup::CreateForAttributesMutation(*element,
-                                                                       prop)) {
+            MutationObserverInterestGroup::CreateForAttributesMutation(*element, prop)) {
       NativeValue old_native_value = GetBindingProperty(prop, exception_state);
       ScriptValue old_value = ScriptValue(ctx(), old_native_value);
       recipients->EnqueueMutationRecord(

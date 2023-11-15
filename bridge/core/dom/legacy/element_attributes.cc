@@ -5,10 +5,10 @@
 
 #include "element_attributes.h"
 #include "bindings/qjs/exception_state.h"
-#include "core/html/custom/widget_element.h"
 #include "core/dom/element.h"
-#include "html_names.h"
+#include "core/html/custom/widget_element.h"
 #include "foundation/native_value_converter.h"
+#include "html_names.h"
 
 namespace webf {
 
@@ -60,7 +60,8 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   attributes_[name] = value;
 
   // Style attribute will be parsed and separated into multiple setStyle command.
-  if (name == html_names::kStyleAttr) return true;
+  if (name == html_names::kStyleAttr)
+    return true;
 
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());
@@ -83,7 +84,7 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
   AtomicString old_value = getAttribute(name, exception_state);
-  element_->WillModifyAttribute(name,  old_value, AtomicString::Null());
+  element_->WillModifyAttribute(name, old_value, AtomicString::Null());
 
   attributes_.erase(name);
 

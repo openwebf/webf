@@ -47,6 +47,7 @@ class Node;
 
 class MutationObserverRegistration : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   MutationObserverRegistration(MutationObserver&,
                                Node*,
@@ -87,6 +88,6 @@ class MutationObserverRegistration : public ScriptWrappable {
   std::set<AtomicString> attribute_filter_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_MUTATION_OBSERVER_REGISTRATION_H

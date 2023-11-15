@@ -357,9 +357,7 @@ struct Converter<IDLOptional<IDLSequence<T>>> : public ConverterBase<IDLSequence
     return Converter<IDLSequence<T>>::FromValue(ctx, value, exception_state);
   }
 
-  static JSValue ToValue(JSContext* ctx, ImplType value) {
-    return Converter<IDLSequence<T>>::ToValue(ctx, value);
-  }
+  static JSValue ToValue(JSContext* ctx, ImplType value) { return Converter<IDLSequence<T>>::ToValue(ctx, value); }
 };
 
 template <typename T>

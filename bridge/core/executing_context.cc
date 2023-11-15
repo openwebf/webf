@@ -8,10 +8,10 @@
 #include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
+#include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
-#include "core/dom/mutation_observer.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
 #include "qjs_window.h"
@@ -279,7 +279,7 @@ struct MicroTaskDeliver {
   void* data;
 };
 
-}
+}  // namespace
 
 void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) {
   JSValue proxy_data = JS_NewObject(ctx());
@@ -290,13 +290,16 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
 
   JS_SetOpaque(proxy_data, deliver);
 
-  JS_EnqueueJob(ctx(), [](JSContext *ctx, int argc, JSValueConst *argv) -> JSValue {
-    auto* deliver = static_cast<MicroTaskDeliver*>(JS_GetOpaque(argv[0], JS_CLASS_OBJECT));
+  JS_EnqueueJob(
+      ctx(),
+      [](JSContext* ctx, int argc, JSValueConst* argv) -> JSValue {
+        auto* deliver = static_cast<MicroTaskDeliver*>(JS_GetOpaque(argv[0], JS_CLASS_OBJECT));
 
-    deliver->callback(deliver->data);
+        deliver->callback(deliver->data);
 
-    delete deliver;
-  }, 1, &proxy_data);
+        delete deliver;
+      },
+      1, &proxy_data);
 
   JS_FreeValue(ctx(), proxy_data);
 }

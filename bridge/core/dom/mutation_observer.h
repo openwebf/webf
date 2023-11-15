@@ -35,11 +35,11 @@
 #ifndef WEBF_MUTATION_OBSERVER_H
 #define WEBF_MUTATION_OBSERVER_H
 
+#include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"
-#include "bindings/qjs/cppgc/member.h"
-#include "qjs_mutation_observer_init.h"
 #include "mutation_record.h"
+#include "qjs_mutation_observer_init.h"
 
 namespace webf {
 
@@ -50,15 +50,14 @@ class MutationObserverRegistration;
 class MutationRecord;
 
 using MutationObserverSet = std::set<Member<MutationObserver>>;
-using MutationObserverRegistrationSet =
-    std::set<Member<MutationObserverRegistration>>;
-using MutationObserverRegistrationVector =
-    std::vector<Member<MutationObserverRegistration>>;
+using MutationObserverRegistrationSet = std::set<Member<MutationObserverRegistration>>;
+using MutationObserverRegistrationVector = std::vector<Member<MutationObserverRegistration>>;
 using MutationObserverVector = std::vector<Member<MutationObserver>>;
 using MutationRecordVector = std::vector<Member<MutationRecord>>;
 
 class MutationObserver final : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   enum ObservationFlags { kSubtree = 1 << 3, kAttributeFilter = 1 << 4 };
   enum DeliveryFlags {
@@ -67,8 +66,7 @@ class MutationObserver final : public ScriptWrappable {
   };
 
   struct ObserverLessThan {
-    bool operator()(const Member<MutationObserver>& lhs,
-                    const Member<MutationObserver>& rhs) {
+    bool operator()(const Member<MutationObserver>& lhs, const Member<MutationObserver>& rhs) {
       return lhs->priority_ < rhs->priority_;
     }
   };
@@ -94,7 +92,7 @@ class MutationObserver final : public ScriptWrappable {
 
   bool HasPendingActivity() const { return !records_.empty(); }
 
-  void Trace(webf::GCVisitor *visitor) const override;
+  void Trace(webf::GCVisitor* visitor) const override;
 
  private:
   MutationRecordVector records_;

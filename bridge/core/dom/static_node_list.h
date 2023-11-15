@@ -10,7 +10,7 @@ class StaticNodeList final : public NodeList {
  public:
   static StaticNodeList* Adopt(JSContext* ctx, std::vector<Member<Node>>& nodes);
 
-  explicit StaticNodeList(JSContext* ctx): NodeList(ctx) {};
+  explicit StaticNodeList(JSContext* ctx) : NodeList(ctx){};
   ~StaticNodeList() override;
 
   unsigned length() const override;
@@ -25,6 +25,6 @@ class StaticNodeList final : public NodeList {
   std::vector<Member<Node>> nodes_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_DOM_STATIC_NODE_LIST_H_

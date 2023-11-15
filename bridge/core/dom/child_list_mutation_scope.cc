@@ -47,12 +47,12 @@ static AccumulatorMap& GetAccumulatorMap() {
   return map;
 }
 
-ChildListMutationAccumulator::ChildListMutationAccumulator(Node* target,
-                                                           const std::shared_ptr<MutationObserverInterestGroup>& observers)
+ChildListMutationAccumulator::ChildListMutationAccumulator(
+    Node* target,
+    const std::shared_ptr<MutationObserverInterestGroup>& observers)
     : target_(target), last_added_(nullptr), observers_(observers), mutation_scopes_(0) {}
 
-ChildListMutationAccumulator::~ChildListMutationAccumulator() {
-}
+ChildListMutationAccumulator::~ChildListMutationAccumulator() {}
 
 void ChildListMutationAccumulator::LeaveMutationScope() {
   assert(mutation_scopes_ > 0u);
@@ -141,10 +141,10 @@ bool ChildListMutationAccumulator::IsEmpty() {
 void ChildListMutationAccumulator::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(target_);
 
-  for(auto& entry : removed_nodes_) {
+  for (auto& entry : removed_nodes_) {
     visitor->TraceMember(entry);
   }
-  for(auto& entry : added_nodes_) {
+  for (auto& entry : added_nodes_) {
     visitor->TraceMember(entry);
   }
 

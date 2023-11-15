@@ -14,11 +14,11 @@
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
-#include "mutation_observer_interest_group.h"
 #include "element_attribute_names.h"
 #include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
+#include "mutation_observer_interest_group.h"
 #include "qjs_element.h"
 #include "text.h"
 
@@ -407,16 +407,14 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
   return resolver->Promise();
 }
 
-void Element::DidAddAttribute(const AtomicString& name, const AtomicString& value) {
+void Element::DidAddAttribute(const AtomicString& name, const AtomicString& value) {}
 
-}
-
-void Element::WillModifyAttribute(const AtomicString& name, const AtomicString& old_value, const AtomicString& new_value) {
+void Element::WillModifyAttribute(const AtomicString& name,
+                                  const AtomicString& old_value,
+                                  const AtomicString& new_value) {
   if (std::shared_ptr<MutationObserverInterestGroup> recipients =
-          MutationObserverInterestGroup::CreateForAttributesMutation(*this,
-                                                                     name)) {
-    recipients->EnqueueMutationRecord(
-        MutationRecord::CreateAttributes(this, name, AtomicString::Null(), old_value));
+          MutationObserverInterestGroup::CreateForAttributesMutation(*this, name)) {
+    recipients->EnqueueMutationRecord(MutationRecord::CreateAttributes(this, name, AtomicString::Null(), old_value));
   }
 }
 
@@ -436,7 +434,8 @@ void Element::SynchronizeStyleAttributeInternal() {
   GetElementData()->SetStyleAttributeIsDirty(false);
 
   InlineCssStyleDeclaration* inline_style = style();
-  SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(), AttributeModificationReason::kBySynchronizationOfLazyAttribute, ASSERT_NO_EXCEPTION());
+  SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(),
+                       AttributeModificationReason::kBySynchronizationOfLazyAttribute, ASSERT_NO_EXCEPTION());
 }
 
 void Element::SetAttributeInternal(const webf::AtomicString& name,

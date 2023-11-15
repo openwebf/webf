@@ -3,9 +3,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "node_data.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "child_node_list.h"
 #include "container_node.h"
 #include "empty_node_list.h"
@@ -14,17 +14,16 @@
 namespace webf {
 
 void NodeMutationObserverData::Trace(GCVisitor* visitor) const {
-  for(auto& entry : registry_) {
+  for (auto& entry : registry_) {
     visitor->TraceMember(entry);
   }
 
-  for(auto& entry : transient_registry_) {
+  for (auto& entry : transient_registry_) {
     visitor->TraceMember(entry);
   }
 }
 
-NodeMutationObserverData::~NodeMutationObserverData() {
-}
+NodeMutationObserverData::~NodeMutationObserverData() {}
 
 void NodeMutationObserverData::AddTransientRegistration(MutationObserverRegistration* registration) {
   transient_registry_.insert(registration);

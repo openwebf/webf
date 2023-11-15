@@ -6,8 +6,8 @@
 #include "character_data.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
-#include "qjs_character_data.h"
 #include "mutation_observer_interest_group.h"
+#include "qjs_character_data.h"
 
 namespace webf {
 
@@ -27,8 +27,7 @@ void CharacterData::DidModifyData(const webf::AtomicString& old_data) {
   std::shared_ptr<MutationObserverInterestGroup> mutation_recipients =
       MutationObserverInterestGroup::CreateForCharacterDataMutation(*this);
   if (mutation_recipients != nullptr) {
-    mutation_recipients->EnqueueMutationRecord(
-        MutationRecord::CreateCharacterData(this, old_data));
+    mutation_recipients->EnqueueMutationRecord(MutationRecord::CreateCharacterData(this, old_data));
   }
 }
 

@@ -9,8 +9,8 @@
 #include <type_traits>
 #include "bindings/qjs/qjs_engine_patch.h"
 #include "bindings/qjs/script_value.h"
-#include "core/executing_context.h"
 #include "bindings/qjs/script_wrappable.h"
+#include "core/executing_context.h"
 #include "foundation/casting.h"
 #include "mutation_scope.h"
 
@@ -26,7 +26,6 @@ class ScriptWrappable;
 template <typename T, typename = std::is_base_of<ScriptWrappable, T>>
 class Member {
  public:
-
   struct KeyHasher {
     std::size_t operator()(const Member& k) const { return reinterpret_cast<std::size_t>(k.raw_); }
   };
@@ -37,7 +36,7 @@ class Member {
     raw_ = other.raw_;
     runtime_ = other.runtime_;
     js_object_ptr_ = other.js_object_ptr_;
-    ((JSRefCountHeader*) other.js_object_ptr_)->ref_count++;
+    ((JSRefCountHeader*)other.js_object_ptr_)->ref_count++;
   }
   ~Member() {
     if (raw_ != nullptr) {
@@ -70,7 +69,7 @@ class Member {
     raw_ = other.raw_;
     runtime_ = other.runtime_;
     js_object_ptr_ = other.js_object_ptr_;
-    ((JSRefCountHeader*) other.js_object_ptr_)->ref_count++;
+    ((JSRefCountHeader*)other.js_object_ptr_)->ref_count++;
     return *this;
   }
   // Move assignment.

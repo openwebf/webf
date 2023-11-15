@@ -21,7 +21,7 @@ Node* StaticNodeList::item(unsigned index, ExceptionState& exception_state) cons
 }
 
 void StaticNodeList::Trace(GCVisitor* visitor) const {
-  for(auto& entry : nodes_) {
+  for (auto& entry : nodes_) {
     visitor->TraceMember(entry);
   }
 
@@ -29,7 +29,7 @@ void StaticNodeList::Trace(GCVisitor* visitor) const {
 }
 
 void StaticNodeList::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::ExceptionState& exception_state) {
-  for (int i = 0; i < nodes_.size(); i ++) {
+  for (int i = 0; i < nodes_.size(); i++) {
     names.emplace_back(AtomicString(ctx(), std::to_string(i)));
   }
 }
@@ -44,4 +44,4 @@ bool StaticNodeList::NamedPropertyQuery(const webf::AtomicString& key, webf::Exc
   return nodes_[number];
 }
 
-}
+}  // namespace webf

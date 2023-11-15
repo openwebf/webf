@@ -1,12 +1,12 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_DOM_MUTATION_RECORD_H_
 #define WEBF_CORE_DOM_MUTATION_RECORD_H_
 
-#include "bindings/qjs/script_wrappable.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "bindings/qjs/script_wrappable.h"
 
 namespace webf {
 
@@ -27,8 +27,7 @@ class MutationRecord : public ScriptWrappable {
                                           const AtomicString& name,
                                           const AtomicString& namespaceURI,
                                           const AtomicString& old_value);
-  static MutationRecord* CreateCharacterData(Node* target,
-                                             const AtomicString& old_value);
+  static MutationRecord* CreateCharacterData(Node* target, const AtomicString& old_value);
   static MutationRecord* CreateWithNullOldValue(MutationRecord*);
 
   MutationRecord() = delete;
@@ -52,6 +51,6 @@ class MutationRecord : public ScriptWrappable {
  private:
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_DOM_MUTATION_RECORD_H_

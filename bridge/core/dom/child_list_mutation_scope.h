@@ -1,13 +1,13 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_DOM_CHILD_LIST_MUTATION_SCOPE_H_
 #define WEBF_CORE_DOM_CHILD_LIST_MUTATION_SCOPE_H_
 
+#include "document.h"
 #include "foundation/macros.h"
 #include "mutation_observer_interest_group.h"
-#include "document.h"
 #include "static_node_list.h"
 
 namespace webf {
@@ -62,8 +62,7 @@ class ChildListMutationScope final {
 
  public:
   explicit ChildListMutationScope(Node& target) {
-    if (!target.IsDocumentNode() && target.ownerDocument()->HasMutationObserversOfType(
-            kMutationTypeChildList)) {
+    if (!target.IsDocumentNode() && target.ownerDocument()->HasMutationObserversOfType(kMutationTypeChildList)) {
       accumulator_ = ChildListMutationAccumulator::GetOrCreate(target);
       // Register another user of the accumulator.
       accumulator_->EnterMutationScope();
@@ -94,7 +93,6 @@ class ChildListMutationScope final {
   std::shared_ptr<ChildListMutationAccumulator> accumulator_ = nullptr;
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_DOM_CHILD_LIST_MUTATION_SCOPE_H_

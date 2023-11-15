@@ -31,9 +31,10 @@
 
 #include "node.h"
 #include <unordered_map>
-#include "core/script_forbidden_scope.h"
 #include "character_data.h"
+#include "child_list_mutation_scope.h"
 #include "child_node_list.h"
+#include "core/script_forbidden_scope.h"
 #include "document.h"
 #include "document_fragment.h"
 #include "element.h"
@@ -42,7 +43,6 @@
 #include "node_traversal.h"
 #include "qjs_node.h"
 #include "text.h"
-#include "child_list_mutation_scope.h"
 
 namespace webf {
 
@@ -107,12 +107,11 @@ EventTargetData& Node::EnsureEventTargetData() {
 }
 
 template <typename Registry>
-static inline void CollectMatchingObserversForMutation(
-    MutationObserverOptionsMap& observers,
-    Registry* registry,
-    Node& target,
-    MutationType type,
-    const AtomicString* attribute_name) {
+static inline void CollectMatchingObserversForMutation(MutationObserverOptionsMap& observers,
+                                                       Registry* registry,
+                                                       Node& target,
+                                                       MutationType type,
+                                                       const AtomicString* attribute_name) {
   if (!registry)
     return;
 
@@ -133,25 +132,17 @@ static inline void CollectMatchingObserversForMutation(
   }
 }
 
-void Node::GetRegisteredMutationObserversOfType(
-    MutationObserverOptionsMap& observers,
-    MutationType type,
-    const AtomicString* attribute_name) {
-  assert((type == kMutationTypeAttributes && attribute_name) ||
-         !attribute_name);
-  CollectMatchingObserversForMutation(observers, MutationObserverRegistry(),
-                                      *this, type, attribute_name);
-  CollectMatchingObserversForMutation(observers,
-                                      TransientMutationObserverRegistry(),
-                                      *this, type, attribute_name);
+void Node::GetRegisteredMutationObserversOfType(MutationObserverOptionsMap& observers,
+                                                MutationType type,
+                                                const AtomicString* attribute_name) {
+  assert((type == kMutationTypeAttributes && attribute_name) || !attribute_name);
+  CollectMatchingObserversForMutation(observers, MutationObserverRegistry(), *this, type, attribute_name);
+  CollectMatchingObserversForMutation(observers, TransientMutationObserverRegistry(), *this, type, attribute_name);
   ScriptForbiddenScope forbid_script_during_raw_iteration;
   for (Node* node = parentNode(); node; node = node->parentNode()) {
-    CollectMatchingObserversForMutation(observers,
-                                        node->MutationObserverRegistry(), *this,
-                                        type, attribute_name);
-    CollectMatchingObserversForMutation(
-        observers, node->TransientMutationObserverRegistry(), *this, type,
-        attribute_name);
+    CollectMatchingObserversForMutation(observers, node->MutationObserverRegistry(), *this, type, attribute_name);
+    CollectMatchingObserversForMutation(observers, node->TransientMutationObserverRegistry(), *this, type,
+                                        attribute_name);
   }
 }
 
@@ -160,8 +151,7 @@ void Node::RegisterMutationObserver(MutationObserver& observer,
                                     const std::set<AtomicString>& attribute_filter) {
   MutationObserverRegistration* registration = nullptr;
 
-  for (const auto& item :
-       EnsureNodeData().EnsureMutationObserverData().Registry()) {
+  for (const auto& item : EnsureNodeData().EnsureMutationObserverData().Registry()) {
     if (item->Observer() == &observer) {
       registration = item;
       registration->ResetObservation(options, attribute_filter);
@@ -169,8 +159,7 @@ void Node::RegisterMutationObserver(MutationObserver& observer,
   }
 
   if (!registration) {
-    registration = MakeGarbageCollected<MutationObserverRegistration>(
-        observer, this, options, attribute_filter);
+    registration = MakeGarbageCollected<MutationObserverRegistration>(observer, this, options, attribute_filter);
     observer.ObservationStarted(registration);
     EnsureNodeData().EnsureMutationObserverData().AddRegistration(registration);
   }
@@ -179,31 +168,26 @@ void Node::RegisterMutationObserver(MutationObserver& observer,
 }
 
 void Node::UnregisterMutationObserver(MutationObserverRegistration* registration) {
-  const std::vector<Member<MutationObserverRegistration>>* registry =
-      MutationObserverRegistry();
+  const std::vector<Member<MutationObserverRegistration>>* registry = MutationObserverRegistry();
   assert(registry);
   if (!registry)
     return;
 
   registration->Dispose();
-  EnsureNodeData().EnsureMutationObserverData().RemoveRegistration(
-      registration);
+  EnsureNodeData().EnsureMutationObserverData().RemoveRegistration(registration);
 }
 
 void Node::RegisterTransientMutationObserver(MutationObserverRegistration* registration) {
-  EnsureNodeData().EnsureMutationObserverData().AddTransientRegistration(
-      registration);
+  EnsureNodeData().EnsureMutationObserverData().AddTransientRegistration(registration);
 }
 
 void Node::UnregisterTransientMutationObserver(MutationObserverRegistration* registration) {
-  const MutationObserverRegistrationSet* transient_registry =
-      TransientMutationObserverRegistry();
+  const MutationObserverRegistrationSet* transient_registry = TransientMutationObserverRegistry();
   assert(transient_registry != nullptr);
   if (!transient_registry)
     return;
 
-  EnsureNodeData().EnsureMutationObserverData().RemoveTransientRegistration(
-      registration);
+  EnsureNodeData().EnsureMutationObserverData().RemoveTransientRegistration(registration);
 }
 
 void Node::NotifyMutationObserversNodeWillDetach() {
@@ -212,14 +196,12 @@ void Node::NotifyMutationObserversNodeWillDetach() {
 
   ScriptForbiddenScope forbid_script_during_raw_iteration;
   for (Node* node = parentNode(); node; node = node->parentNode()) {
-    if (const MutationObserverRegistrationVector* registry =
-            node->MutationObserverRegistry()) {
+    if (const MutationObserverRegistrationVector* registry = node->MutationObserverRegistry()) {
       for (const auto& registration : *registry)
         registration->ObservedSubtreeNodeWillDetach(*this);
     }
 
-    if (const MutationObserverRegistrationSet*
-            transient_registry = node->TransientMutationObserverRegistry()) {
+    if (const MutationObserverRegistrationSet* transient_registry = node->TransientMutationObserverRegistry()) {
       for (auto& registration : *transient_registry)
         registration->ObservedSubtreeNodeWillDetach(*this);
     }
@@ -239,7 +221,8 @@ NodeData& Node::EnsureNodeData() {
 }
 
 const std::vector<Member<MutationObserverRegistration>>* Node::MutationObserverRegistry() {
-  if (!HasNodeData()) return nullptr;
+  if (!HasNodeData())
+    return nullptr;
   NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();
   if (!data) {
     return nullptr;
@@ -248,7 +231,8 @@ const std::vector<Member<MutationObserverRegistration>>* Node::MutationObserverR
 }
 
 const std::set<Member<MutationObserverRegistration>>* Node::TransientMutationObserverRegistry() {
-  if (!HasNodeData()) return nullptr;
+  if (!HasNodeData())
+    return nullptr;
   NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();
   if (!data) {
     return nullptr;
@@ -369,8 +353,7 @@ static Node* ConvertNodesIntoNode(const Node* parent,
   return fragment;
 }
 
-void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
-                   ExceptionState& exception_state) {
+void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, ExceptionState& exception_state) {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (!this_node) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "This node type does not support this method.");
@@ -381,8 +364,7 @@ void Node::prepend(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& no
     this_node->InsertBefore(node, this_node->firstChild(), exception_state);
 }
 
-void Node::append(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
-                  ExceptionState& exception_state) {
+void Node::append(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, ExceptionState& exception_state) {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (!this_node) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "This node type does not support this method.");
@@ -430,8 +412,7 @@ static Node* FindViableNextSibling(const Node& node, const std::vector<std::shar
   return nullptr;
 }
 
-void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
-                  ExceptionState& exception_state) {
+void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, ExceptionState& exception_state) {
   ContainerNode* parent = parentNode();
   if (!parent)
     return;
@@ -442,8 +423,7 @@ void Node::before(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nod
   }
 }
 
-void Node::after(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes,
-                 ExceptionState& exception_state) {
+void Node::after(const std::vector<std::shared_ptr<QJSUnionDomStringNode>>& nodes, ExceptionState& exception_state) {
   ContainerNode* parent = parentNode();
   if (!parent)
     return;

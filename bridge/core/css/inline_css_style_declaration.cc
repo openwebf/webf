@@ -5,12 +5,12 @@
 #include "inline_css_style_declaration.h"
 #include <vector>
 #include "core/dom/element.h"
+#include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
 #include "core/html/parser/html_parser.h"
 #include "css_property_list.h"
-#include "core/dom/mutation_observer_interest_group.h"
-#include "html_names.h"
 #include "element_namespace_uris.h"
+#include "html_names.h"
 
 namespace webf {
 
@@ -104,7 +104,8 @@ bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
 
   std::string propertyName = key.ToStdString(ctx());
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
-  if (success) InlineStyleChanged();
+  if (success)
+    InlineStyleChanged();
   return success;
 }
 
@@ -130,7 +131,8 @@ void InlineCssStyleDeclaration::setProperty(const AtomicString& key,
                                             ExceptionState& exception_state) {
   std::string propertyName = key.ToStdString(ctx());
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
-  if (success) InlineStyleChanged();
+  if (success)
+    InlineStyleChanged();
 }
 
 AtomicString InlineCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
@@ -211,15 +213,14 @@ void InlineCssStyleDeclaration::InlineStyleChanged() {
   owner_element_->InvalidateStyleAttribute();
 
   if (std::shared_ptr<MutationObserverInterestGroup> recipients =
-          MutationObserverInterestGroup::CreateForAttributesMutation(
-              *owner_element_, html_names::kStyleAttr)) {
+          MutationObserverInterestGroup::CreateForAttributesMutation(*owner_element_, html_names::kStyleAttr)) {
     AtomicString old_value = AtomicString::Null();
     if (owner_element_->attributes()->hasAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION())) {
       old_value = owner_element_->attributes()->getAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION());
     }
 
-    recipients->EnqueueMutationRecord(MutationRecord::CreateAttributes(
-        owner_element_, html_names::kStyleAttr, AtomicString::Null(), old_value));
+    recipients->EnqueueMutationRecord(
+        MutationRecord::CreateAttributes(owner_element_, html_names::kStyleAttr, AtomicString::Null(), old_value));
     owner_element_->SynchronizeStyleAttributeInternal();
   }
 }
