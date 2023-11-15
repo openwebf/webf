@@ -130,6 +130,10 @@ With WebF, Web Apps and Flutter Apps share the same rendering context. It means 
 
 <img src="https://user-images.githubusercontent.com/4409743/186230941-83b0aa1c-59d1-4d8d-be10-958a3ae64114.jpg" width="800" style="display: block; margin: 0 auto;" />
 
+## Contributors
+
+<a href="https://github.com/openwebf/webf/graphs/contributors"><img src="https://opencollective.com/webf/contributors.svg?width=890&button=false" /></a>
+
 ## 👏 Contributing [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/openwebf/webf/pulls)
 
 By contributing to WebF, you agree that your contributions will be licensed under its Apache-2.0 License.
