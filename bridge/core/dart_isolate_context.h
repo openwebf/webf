@@ -8,9 +8,9 @@
 #include <set>
 #include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
+#include "dart_method_wrapper.h"
 #include "dart_methods.h"
 #include "dispatcher.h"
-#include "dart_method_wrapper.h"
 
 namespace webf {
 
@@ -43,7 +43,9 @@ class DartIsolateContext {
     return dart_method_ptr_;
   }
   FORCE_INLINE const std::unique_ptr<multi_threading::Dispatcher>& dispatcher() const { return dispatcher_; }
-  FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) { dispatcher_ = std::move(dispatcher); }
+  FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
+    dispatcher_ = std::move(dispatcher);
+  }
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
