@@ -194,7 +194,7 @@ bool ExecutingContext::HandleException(JSValue* exc) {
       DispatchGlobalErrorEvent(this, error);
       JS_FreeValue(script_state_.ctx(), error);
     };
-    
+
     dart_isolate_context_->dispatcher()->postToJS(func);
     return false;
   }

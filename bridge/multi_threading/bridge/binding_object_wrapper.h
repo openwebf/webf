@@ -37,10 +37,10 @@ class BindingObjectWrapper {
 
   // This function were called when the anonymous function returned to the JS code has been called by users.
   static ScriptValue AnonymousFunctionCallbackWrapper(JSContext* ctx,
-                                               const ScriptValue& this_val,
-                                               uint32_t argc,
-                                               const ScriptValue* argv,
-                                               void* private_data);
+                                                      const ScriptValue& this_val,
+                                                      uint32_t argc,
+                                                      const ScriptValue* argv,
+                                                      void* private_data);
 
 };  // class BindingObjectWrapper
 

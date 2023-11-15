@@ -106,10 +106,10 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     return ScriptValue::Empty(context->ctx());
   }
 
-  WEBF_LOG(VERBOSE) << "invokeModule call, name= " << module_name.ToStdString(context->ctx()) << 
-                       " method= " << method.ToStdString(context->ctx()) <<
-                       " params= " << params_value.ToString(context->ctx()).ToStdString(context->ctx()) <<
-                       " callback= " << callback << std::endl;
+  WEBF_LOG(VERBOSE) << "invokeModule call, name= " << module_name.ToStdString(context->ctx())
+                    << " method= " << method.ToStdString(context->ctx())
+                    << " params= " << params_value.ToString(context->ctx()).ToStdString(context->ctx())
+                    << " callback= " << callback << std::endl;
   NativeValue* result;
   if (callback != nullptr) {
     auto module_callback = ModuleCallback::Create(callback);
