@@ -4,6 +4,7 @@
  */
 #include "window_or_worker_global_scope.h"
 #include "core/frame/dom_timer.h"
+#include "multi_threading/bridge/window_or_worker_global_scope_wrapper.h"
 
 namespace webf {
 
@@ -24,7 +25,7 @@ static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
   timer->Fire();
 }
 
-static void handleTransientCallback(void* ptr, int32_t contextId, const char* errmsg) {
+void handleTransientCallback(void* ptr, int32_t contextId, const char* errmsg) {
   if (!isContextValid(contextId))
     return;
 
@@ -45,7 +46,7 @@ static void handleTransientCallback(void* ptr, int32_t contextId, const char* er
   context->Timers()->removeTimeoutById(timer->timerId());
 }
 
-static void handlePersistentCallback(void* ptr, int32_t contextId, const char* errmsg) {
+void handlePersistentCallback(void* ptr, int32_t contextId, const char* errmsg) {
   if (!isContextValid(contextId))
     return;
 
@@ -95,8 +96,8 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
 
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kOnce);
-  auto timerId =
-      context->dartMethodPtr()->setTimeout(timer.get(), context->contextId(), handleTransientCallback, timeout);
+  auto timerId = context->dartMethodPtr()->setTimeout(timer.get(), context->contextId(),
+                                                      multi_threading::handleTransientCallbackWrapper, timeout);
 
   // Register timerId.
   timer->setTimerId(timerId);
@@ -125,8 +126,8 @@ int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kMultiple);
 
-  int32_t timerId =
-      context->dartMethodPtr()->setInterval(timer.get(), context->contextId(), handlePersistentCallback, timeout);
+  int32_t timerId = context->dartMethodPtr()->setInterval(timer.get(), context->contextId(),
+                                                          multi_threading::handlePersistentCallbackWrapper, timeout);
 
   // Register timerId.
   timer->setTimerId(timerId);

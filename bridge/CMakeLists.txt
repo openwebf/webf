@@ -189,6 +189,24 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-symbol.c
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
+
+  if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    add_definitions(-DDDEBUG)
+  endif ()
+
+  include_directories(
+    "${CMAKE_SOURCE_DIR}/multi_threading/"
+  )
+  include_directories(
+    "${CMAKE_SOURCE_DIR}/multi_threading/bridge"
+  )
+  file(GLOB MULTI_THREADING_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/multi_threading/*.cc"
+  )
+  file(GLOB MULTI_THREADING_BRIDGE_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/multi_threading/bridge/*.cc"
+  )
+  
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
@@ -545,8 +563,8 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
-add_library(webf SHARED ${BRIDGE_SOURCE})
-add_library(webf_static STATIC ${BRIDGE_SOURCE})
+add_library(webf SHARED ${BRIDGE_SOURCE} ${MULTI_THREADING_SOURCE} ${MULTI_THREADING_BRIDGE_SOURCE})
+add_library(webf_static STATIC ${BRIDGE_SOURCE} ${MULTI_THREADING_SOURCE} ${MULTI_THREADING_BRIDGE_SOURCE})
 
 if(MSVC)
   target_compile_options(webf PRIVATE /JMC)

@@ -196,10 +196,14 @@ void* ExecutingContext::owner() {
 
 bool ExecutingContext::HandleException(JSValue* exc) {
   if (JS_IsException(*exc)) {
-    JSValue error = JS_GetException(script_state_.ctx());
-    MemberMutationScope scope{this};
-    DispatchGlobalErrorEvent(this, error);
-    JS_FreeValue(script_state_.ctx(), error);
+    auto func = [&]() {
+      JSValue error = JS_GetException(script_state_.ctx());
+      MemberMutationScope scope{this};
+      DispatchGlobalErrorEvent(this, error);
+      JS_FreeValue(script_state_.ctx(), error);
+    };
+
+    dart_isolate_context_->dispatcher()->postToJS(func);
     return false;
   }
 
@@ -213,9 +217,13 @@ bool ExecutingContext::HandleException(ScriptValue* exc) {
 
 bool ExecutingContext::HandleException(ExceptionState& exception_state) {
   if (exception_state.HasException()) {
-    JSValue error = JS_GetException(ctx());
-    ReportError(error);
-    JS_FreeValue(ctx(), error);
+    auto func = [&]() {
+      JSValue error = JS_GetException(ctx());
+      ReportError(error);
+      JS_FreeValue(ctx(), error);
+    };
+
+    dart_isolate_context_->dispatcher()->postToJS(func);
     return false;
   }
   return true;

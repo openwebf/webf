@@ -11,6 +11,9 @@
 
 namespace webf {
 
+void handleTransientCallback(void* ptr, int32_t contextId, const char* errmsg);
+void handlePersistentCallback(void* ptr, int32_t contextId, const char* errmsg);
+
 class WindowOrWorkerGlobalScope {
  public:
   static int setTimeout(ExecutingContext* context,

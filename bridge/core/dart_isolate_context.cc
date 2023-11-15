@@ -7,6 +7,7 @@
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
+#include "logging.h"
 #include "names_installer.h"
 #include "page.h"
 #include "svg_element_factory.h"
@@ -56,7 +57,9 @@ void InitializeBuiltInStrings(JSContext* ctx) {
 DartIsolateContext::DartIsolateContext(bool dedicated_thread, const uint64_t* dart_methods, int32_t dart_methods_length)
     : is_valid_(true),
       running_thread_(std::this_thread::get_id()),
-      dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)) {
+      dart_method_ptr_(std::make_unique<DartMethodPointer>(dart_methods, dart_methods_length)),
+      dart_method_wrapper_(
+          std::make_unique<multi_threading::DartMethodWrapper>(this, dart_methods, dart_methods_length)) {
   if (runtime_ == nullptr) {
     runtime_ = JS_NewRuntime();
   }
