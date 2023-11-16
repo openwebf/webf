@@ -79,10 +79,20 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
     return false;
   }
 
-  return attributes_.count(name) > 0;
+  bool has_attribute = attributes_.count(name) > 0;
+
+  if (!has_attribute && element_->IsWidgetElement()) {
+    // Fallback to directly FFI access to dart.
+    NativeValue dart_result = element_->GetBindingProperty(name, exception_state);
+    return dart_result.tag != NativeTag::TAG_NULL;
+  }
+
+  return has_attribute;
 }
 
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
+  if (!hasAttribute(name, exception_state)) return;
+
   AtomicString old_value = getAttribute(name, exception_state);
   element_->WillModifyAttribute(name, old_value, AtomicString::Null());
 

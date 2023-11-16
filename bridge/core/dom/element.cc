@@ -14,6 +14,7 @@
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
+#include "child_list_mutation_scope.h"
 #include "element_attribute_names.h"
 #include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
@@ -561,6 +562,7 @@ std::string Element::innerHTML() {
 
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
   auto html = value.ToStdString(ctx());
+  ChildListMutationScope scope{*this};
   if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
     HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
   } else {

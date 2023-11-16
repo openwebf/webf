@@ -54,7 +54,6 @@ function runMutationTest(node, mutationObserverOptions, mutationRecordSequence, 
   (new MutationObserver(moc)).observe(node, mutationObserverOptions);
 
   function moc(mrl, obs) {
-    console.log(mrl[0], mrl[1]);
     if (target === undefined) target = node;
     checkRecords(target, mrl, mutationRecordSequence);
   }
@@ -994,7 +993,7 @@ describe("MutationObserver childList", function() {
   });
 });
 
-fdescribe("MutationObserver Attributes", function() {
+describe("MutationObserver Attributes", function() {
   it("n", async () => {
     const n = createElement("p", { id: "n" });
     BODY.append(n);
@@ -1369,5 +1368,137 @@ fdescribe("MutationObserver Attributes", function() {
         n72.id = "n720";
       },
       "childList HTMLInputElement.removeAttribute: type removal mutation");
+  });
+
+  it('n1000', async () => {
+    const n1000 = createElement("p", { id: "n1000",});
+    BODY.append(n1000);
+    runMutationTest(n1000,
+      {"attributes":true, "attributeOldValue": true,"attributeFilter": ["id"]},
+      [{type: "attributes", oldValue: "n1000", attributeName: "id"}],
+      function() { n1000.id = "abc"; n1000.className = "c01"},
+      "attributes/attributeFilter Element.id/Element.className: update mutation");
+  });
+
+  it('n1001', async () => {
+    const n1001 = createElement("p", { id: "n1001", className: 'c01' });
+    BODY.append(n1001);
+    runMutationTest(n1001,
+      {"attributes":true, "attributeOldValue": true,"attributeFilter": ["id", "class"]},
+      [{type: "attributes", oldValue: "n1001", attributeName: "id"},
+        {type: "attributes", oldValue: "c01", attributeName: "class"}],
+      function() { n1001.id = "abc"; n1001.className = "c02"; n1001.setAttribute("lang", "fr");},
+      "attributes/attributeFilter Element.id/Element.className: multiple filter update mutation");
+  });
+
+  it('n2000', async () => {
+    const n2000 = createElement("p", { id: "n2000" });
+    BODY.append(n2000);
+
+    runMutationTest(n2000,
+      {"attributeOldValue": true},
+      [{type: "attributes", oldValue: "n2000", attributeName: "id"}],
+      function() { n2000.id = "abc";},
+      "attributeOldValue alone Element.id: update mutation");
+  });
+
+  it('n2001', async () => {
+    const n2001 = createElement("p", { id: "n2001", className: 'c01' });
+    BODY.append(n2001);
+    runMutationTest(n2001,
+      {"attributeFilter": ["id", "class"]},
+      [{type: "attributes", attributeName: "id"},
+        {type: "attributes", attributeName: "class"}],
+      function() { n2001.id = "abcd"; n2001.className = "c02"; n2001.setAttribute("lang", "fr");},
+      "attributeFilter alone Element.id/Element.className: multiple filter update mutation");
+  });
+
+  it('n3000', async () => {
+    const n3000 = createElement("p", { id: "n3000" });
+    BODY.append(n3000);
+
+    runMutationTest(n3000,
+      {"subtree": true, "childList":false, "attributes" : true},
+      [{type: "attributes", attributeName: "id" }],
+      function() { n3000.textContent = "CHANGED"; n3000.id = "abc";},
+      "childList false: no childList mutation");
+  });
+});
+
+describe("MutationObserver inner outer", function() {
+  it('n00', async () => {
+    const n00 = createElement('p', {id: 'n00'}, [createText('old text')]);
+    BODY.append(n00);
+    var  n00oldText = n00.firstChild;
+
+    runMutationTest(n00,
+      {childList:true,attributes:true},
+      [{type: "childList",
+        removedNodes: [n00oldText],
+        addedNodes: function() {
+          return [n00.firstChild];
+        }},
+        {type: "attributes", attributeName: "class"}],
+      function() { n00.innerHTML = "new text"; n00.className = "c01"},
+      "innerHTML mutation");
+  });
+
+  it('n01', async () => {
+    const n01 = createElement('p', {id: 'n01'}, [createText('old text')]);
+    BODY.append(n01);
+    var n01oldText = n01.firstChild;
+    runMutationTest(n01,
+      {childList:true},
+      [{type: "childList",
+        removedNodes: [n01oldText],
+        addedNodes: function() {
+          return [n01.firstChild,
+            n01.lastChild];
+        }}],
+      function() { n01.innerHTML = "<span>new</span><span>text</span>"; },
+      "innerHTML with 2 children mutation");
+  });
+
+  it('n02', async () => {
+    const n02 = createElement('div', { id: 'n02'}, [
+      createElement('p', {}, [
+        createText('old text')
+      ])
+    ]);
+    BODY.append(n02);
+    runMutationTest(n02,
+      {childList:true},
+      [{type: "childList",
+        removedNodes: [n02.firstChild],
+        addedNodes: function() {
+          return [n02.firstChild];
+        }}],
+      // @ts-ignore
+      function() { n02.firstChild!.outerHTML = "<p>next text</p>"; },
+      "outerHTML mutation");
+
+  });
+});
+
+describe("MutationObserver CharacterData", function() {
+  it('n', async () => {
+    const n = createElement('p', {id: 'n'}, [createText('text content')]);
+    BODY.append(n);
+    runMutationTest(n.firstChild,
+      {"characterData":true},
+      [{type: "characterData"}],
+      // @ts-ignore
+      function() { n.firstChild.data = "NEW VALUE"; },
+      "characterData Text.data: simple mutation without oldValue");
+  });
+  it('n00', async () => {
+    const n00 = createElement('p', {id: 'n00'}, [createText('text content')]);
+    BODY.append(n00);
+    runMutationTest(n00.firstChild,
+      {"characterData":true,"characterDataOldValue":true},
+      [{type: "characterData", oldValue: "text content" }],
+      // @ts-ignore
+      function() { n00.firstChild.data = "CHANGED"; },
+      "characterData Text.data: simple mutation");
   });
 });
