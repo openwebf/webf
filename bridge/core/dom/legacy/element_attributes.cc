@@ -91,7 +91,8 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 }
 
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
-  if (!hasAttribute(name, exception_state)) return;
+  if (!hasAttribute(name, exception_state))
+    return;
 
   AtomicString old_value = getAttribute(name, exception_state);
   element_->WillModifyAttribute(name, old_value, AtomicString::Null());
