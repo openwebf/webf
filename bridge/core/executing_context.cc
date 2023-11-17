@@ -298,6 +298,7 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
         deliver->callback(deliver->data);
 
         delete deliver;
+        return JS_NULL;
       },
       1, &proxy_data);
 
