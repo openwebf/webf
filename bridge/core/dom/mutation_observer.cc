@@ -32,8 +32,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <algorithm>
 #include "mutation_observer.h"
+#include <algorithm>
 #include "bindings/qjs/converter_impl.h"
 #include "mutation_observer_registration.h"
 #include "mutation_record.h"
