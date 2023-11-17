@@ -222,6 +222,30 @@ class RenderLayoutBox extends RenderBoxModel
     super.move(child, after: after);
     _paintingOrder = null;
   }
+  
+  @override
+  BoxConstraints getConstraints() {
+    BoxConstraints boxConstraints = super.getConstraints();
+    if (isScrollingContentBox) {
+      // fix overflow:scroll/auto nested overflow:scroll/auto
+      BoxConstraints parentConstraints = (parent as RenderBoxModel).constraints;
+      RenderBox? childBox = firstChild;
+      while (childBox != null && childBox.parentData is RenderLayoutParentData) {
+        final RenderLayoutParentData childParentData = childBox.parentData as RenderLayoutParentData;
+        if (childBox is RenderLayoutBox && childBox.renderScrollingContent != null) {
+          boxConstraints = BoxConstraints(
+            minWidth: boxConstraints.minWidth,
+            maxWidth: parentConstraints.maxWidth,
+            minHeight: boxConstraints.minHeight,
+            maxHeight: parentConstraints.maxHeight,
+          );
+          break;
+        }
+        childBox = childParentData.nextSibling;
+      }
+    }
+    return boxConstraints;
+  }
 
   // iterate add child to overflowLayout
   void addOverflowLayoutFromChildren(List<RenderBox> children) {
