@@ -1181,11 +1181,18 @@ class RenderFlexLayout extends RenderLayoutBox {
       double initialFreeSpace = isMainSizeDefinite ? (maxMainSize ?? 0) - totalSpace : 0;
 
       double layoutContentMainSize = _isHorizontalFlexDirection ? contentSize.width : contentSize.height;
+      double minMainAxisSize = _getMinMainAxisSize(this);
       // Flexbox with minSize on main axis when maxMainSize < minSize && maxMainSize < RenderBox.Size, adapt freeSpace
       if (maxMainSize != null &&
-          (maxMainSize < _getMinMainAxisSize(this) || maxMainSize < layoutContentMainSize) &&
+          (maxMainSize < minMainAxisSize || maxMainSize < layoutContentMainSize) &&
           initialFreeSpace == 0) {
-        maxMainSize = math.max(layoutContentMainSize, _getMinMainAxisSize(this));
+        maxMainSize = math.max(layoutContentMainSize, minMainAxisSize);
+
+        double maxMainConstraints = _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
+        if (maxMainConstraints.isFinite && maxMainSize > maxMainConstraints) {
+          maxMainSize = maxMainConstraints;
+        }
+
         initialFreeSpace = maxMainSize - totalSpace;
       }
 
