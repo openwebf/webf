@@ -27,7 +27,8 @@ void disposePageWrapper(void* dart_isolate_context, void* page_);
 
 WEBF_EXPORT_C
 int8_t evaluateScriptsWrapper(void* page,
-                              SharedNativeString* code,
+                              const char* code,
+                              uint64_t code_len,
                               uint8_t** parsed_bytecodes,
                               uint64_t* bytecode_len,
                               const char* bundleFilename,

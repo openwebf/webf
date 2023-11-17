@@ -39,7 +39,8 @@ void disposePageWrapper(void* dart_isolate_context_, void* page_) {
 }
 
 int8_t evaluateScriptsWrapper(void* page_,
-                              ::SharedNativeString* code,
+                              const char* code,
+                              uint64_t code_len,
                               uint8_t** parsed_bytecodes,
                               uint64_t* bytecode_len,
                               const char* bundleFilename,
@@ -47,7 +48,7 @@ int8_t evaluateScriptsWrapper(void* page_,
   WEBF_LOG(VERBOSE) << "[Dart] evaluateScriptsWrapper call" << std::endl;
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   page->GetExecutingContext()->dartIsolateContext()->dispatcher()->postToJS(
-      evaluateScripts, page_, code, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
+      evaluateScripts, page_, code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
   return 1;
 }
 
