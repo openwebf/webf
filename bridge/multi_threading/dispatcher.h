@@ -39,15 +39,15 @@ class Dispatcher {
   explicit Dispatcher(Dart_Port dart_port, bool dedicated_thread = true);
   ~Dispatcher();
 
-  void start();
-  void stop();
-  void pause();
-  void resume();
+  void Start();
+  void Stop();
+  void Pause();
+  void Resume();
 
   bool isDedicatedThread() const { return dedicated_thread_; }
 
   template <typename Func, typename... Args>
-  void postToDart(Func&& func, Args&&... args) {
+  void PostToDart(Func&& func, Args&&... args) {
     if (looper_ == nullptr) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       return;
@@ -57,12 +57,12 @@ class Dispatcher {
     const DartWork work = [task]() { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
-    notifyDart(work_ptr);
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::postToDart end, dart_port= " << dart_port_ << std::endl;
+    NotifyDart(work_ptr);
+    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDart end, dart_port= " << dart_port_ << std::endl;
   }
 
   template <typename Func, typename... Args>
-  void postToDartAndCallback(Func&& func, Callback callback, Args&&... args) {
+  void PostToDartAndCallback(Func&& func, Callback callback, Args&&... args) {
     if (looper_ == nullptr) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       callback();
@@ -74,12 +74,12 @@ class Dispatcher {
     const DartWork work = [task]() { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
-    notifyDart(work_ptr);
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::postToDartAndCallback end, dart_port= " << dart_port_ << std::endl;
+    NotifyDart(work_ptr);
+    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartAndCallback end, dart_port= " << dart_port_ << std::endl;
   }
 
   template <typename Func, typename... Args>
-  auto postToDartSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
+  auto PostToDartSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
     if (looper_ == nullptr) {
       return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
@@ -89,16 +89,16 @@ class Dispatcher {
     const DartWork work = [task]() { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
-    notifyDart(work_ptr);
+    NotifyDart(work_ptr);
 
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::postToDartSync start waiting, dart_port= " << dart_port_ << std::endl;
+    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartSync Start waiting, dart_port= " << dart_port_ << std::endl;
     task->wait();
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::postToDartSync end waiting" << std::endl;
+    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartSync end waiting" << std::endl;
     return task->getResult();
   }
 
   template <typename Func, typename... Args>
-  void postToDartWithoutResSync(Func&& func, Args&&... args) {
+  void PostToDartWithoutResSync(Func&& func, Args&&... args) {
     if (looper_ == nullptr) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
@@ -108,47 +108,47 @@ class Dispatcher {
     const DartWork work = [task]() { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
-    notifyDart(work_ptr);
+    NotifyDart(work_ptr);
 
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::postToDartWithoutResSync start waiting, dart_port= " << dart_port_
+    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartWithoutResSync Start waiting, dart_port= " << dart_port_
                       << std::endl;
     task->wait();
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::postToDartWithoutResSync end waiting" << std::endl;
+    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartWithoutResSync end waiting" << std::endl;
   }
 
   template <typename Func, typename... Args>
-  void postToJS(Func&& func, Args&&... args) {
+  void PostToJs(Func&& func, Args&&... args) {
     if (looper_ == nullptr) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       return;
     }
 
-    looper_->postMessage(std::forward<Func>(func), std::forward<Args>(args)...);
+    looper_->PostMessage(std::forward<Func>(func), std::forward<Args>(args)...);
   }
 
   template <typename Func, typename... Args>
-  void postToJSAndCallback(Func&& func, Callback&& callback, Args&&... args) {
+  void PostToJsAndCallback(Func&& func, Callback&& callback, Args&&... args) {
     if (looper_ == nullptr) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       callback();
       return;
     }
 
-    looper_->postMessageAndCallback(std::forward<Func>(func), std::forward<Callback>(callback),
+    looper_->PostMessageAndCallback(std::forward<Func>(func), std::forward<Callback>(callback),
                                     std::forward<Args>(args)...);
   }
 
   template <typename Func, typename... Args>
-  auto postToJSSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
+  auto PostToJsSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
     if (looper_ == nullptr) {
       return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
 
-    return looper_->postMessageSync(std::forward<Func>(func), std::forward<Args>(args)...);
+    return looper_->PostMessageSync(std::forward<Func>(func), std::forward<Args>(args)...);
   }
 
  private:
-  void notifyDart(const DartWork* work_ptr);
+  void NotifyDart(const DartWork* work_ptr);
 
  private:
   Dart_Port dart_port_;

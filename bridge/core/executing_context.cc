@@ -203,7 +203,7 @@ bool ExecutingContext::HandleException(JSValue* exc) {
       JS_FreeValue(script_state_.ctx(), error);
     };
 
-    dart_isolate_context_->dispatcher()->postToJS(func);
+    dart_isolate_context_->dispatcher()->PostToJs(func);
     return false;
   }
 
@@ -223,7 +223,7 @@ bool ExecutingContext::HandleException(ExceptionState& exception_state) {
       JS_FreeValue(ctx(), error);
     };
 
-    dart_isolate_context_->dispatcher()->postToJS(func);
+    dart_isolate_context_->dispatcher()->PostToJs(func);
     return false;
   }
   return true;

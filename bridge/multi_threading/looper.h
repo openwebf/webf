@@ -19,7 +19,7 @@ namespace webf {
 namespace multi_threading {
 
 /**
- * @brief thread looper, used to run tasks in a thread.
+ * @brief thread looper, used to Run tasks in a thread.
  *
  */
 class Looper {
@@ -27,10 +27,10 @@ class Looper {
   Looper();
   ~Looper();
 
-  void start();
+  void Start();
 
   template <typename Func, typename... Args>
-  void postMessage(Func&& func, Args&&... args) {
+  void PostMessage(Func&& func, Args&&... args) {
     auto task = std::make_shared<ConcreteTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
     {
       std::unique_lock<std::mutex> lock(mutex_);
@@ -40,7 +40,7 @@ class Looper {
   }
 
   template <typename Func, typename... Args>
-  void postMessageAndCallback(Func&& func, Callback&& callback, Args&&... args) {
+  void PostMessageAndCallback(Func&& func, Callback&& callback, Args&&... args) {
     auto task = std::make_shared<ConcreteCallbackTask<Func, Args...>>(
         std::forward<Func>(func), std::forward<Args>(args)..., std::forward<Callback>(callback));
     {
@@ -51,7 +51,7 @@ class Looper {
   }
 
   template <typename Func, typename... Args>
-  auto postMessageSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
+  auto PostMessageSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
     auto task =
         std::make_shared<ConcreteSyncTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
     auto task_copy = task;
@@ -65,12 +65,12 @@ class Looper {
     return task_copy->getResult();
   }
 
-  void pause();
-  void resume();
-  void stop();
+  void Pause();
+  void Resume();
+  void Stop();
 
  private:
-  void run();
+  void Run();
 
   std::condition_variable cv_;
   std::mutex mutex_;

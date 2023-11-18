@@ -38,6 +38,12 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+if (${DENABLE_LOG})
+  add_definitions(-DENABLE_LOG=1)
+else()
+  add_definitions(-DENABLE_LOG=0)
+endif()
+
 if(NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
     include(CheckIPOSupported)
@@ -206,7 +212,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   file(GLOB MULTI_THREADING_BRIDGE_SOURCE
     "${CMAKE_CURRENT_SOURCE_DIR}/multi_threading/bridge/*.cc"
   )
-  
+
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()

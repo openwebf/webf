@@ -82,7 +82,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   NativeValue return_value = Native_NewNull();
   NativeValue native_method =
       NativeValueConverter<NativeTypeString>::ToNativeValue(GetExecutingContext()->ctx(), method);
-  GetDispatcher()->postToDartSync(
+  GetDispatcher()->PostToDartSync(
       [&](int32_t contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
           int32_t argc, const NativeValue* argv) {
         if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
@@ -110,7 +110,7 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 
   NativeValue return_value = Native_NewNull();
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
-  GetDispatcher()->postToDartSync(
+  GetDispatcher()->PostToDartSync(
       [&](int32_t contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
           int32_t argc, const NativeValue* argv) {
         if (binding_object_->invoke_bindings_methods_from_native == nullptr) {

@@ -17,7 +17,7 @@ void handleRAFTransientCallbackWrapper(void* ptr, int32_t contextId, double high
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->postToJS(webf::handleRAFTransientCallback, ptr, contextId,
+  context->dartIsolateContext()->dispatcher()->PostToJs(webf::handleRAFTransientCallback, ptr, contextId,
                                                         highResTimeStamp, errmsg);
 }
 
