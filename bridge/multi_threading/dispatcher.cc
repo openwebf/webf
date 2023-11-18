@@ -23,45 +23,45 @@ namespace multi_threading {
 
 Dispatcher::Dispatcher(Dart_Port dart_port, bool dedicated_thread)
     : dart_port_(dart_port), dedicated_thread_(dedicated_thread) {
-  start();
+  Start();
 }
 
 Dispatcher::~Dispatcher() {
   if (looper_ != nullptr) {
-    looper_->stop();
+    looper_->Stop();
     looper_ = nullptr;
   }
 }
 
-void Dispatcher::start() {
+void Dispatcher::Start() {
   if (dedicated_thread_ && looper_ == nullptr) {
     looper_ = std::make_unique<Looper>();
-    looper_->start();
+    looper_->Start();
   }
 }
 
-void Dispatcher::stop() {
+void Dispatcher::Stop() {
   if (looper_ != nullptr) {
-    looper_->stop();
+    looper_->Stop();
     looper_ = nullptr;
   }
 }
 
-void Dispatcher::pause() {
+void Dispatcher::Pause() {
   if (looper_ != nullptr) {
-    looper_->pause();
+    looper_->Pause();
   }
 }
 
-void Dispatcher::resume() {
+void Dispatcher::Resume() {
   if (looper_ != nullptr) {
-    looper_->resume();
+    looper_->Resume();
   }
 }
 
 // run in the cpp thread
-void Dispatcher::notifyDart(const DartWork* work_ptr) {
-  WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::notifyDart call from c++, dart_port= " << dart_port_ << std::endl;
+void Dispatcher::NotifyDart(const DartWork* work_ptr) {
+  WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::NotifyDart call from c++, dart_port= " << dart_port_ << std::endl;
   const intptr_t work_addr = reinterpret_cast<intptr_t>(work_ptr);
 
   Dart_CObject dart_object;
@@ -70,7 +70,7 @@ void Dispatcher::notifyDart(const DartWork* work_ptr) {
 
   const bool result = Dart_PostCObject_DL(dart_port_, &dart_object);
   if (!result) {
-    WEBF_LOG(ERROR) << "[CPP] Dispatcher::notifyDart failed" << std::endl;
+    WEBF_LOG(ERROR) << "[CPP] Dispatcher::NotifyDart failed" << std::endl;
     delete work_ptr;
   }
 }

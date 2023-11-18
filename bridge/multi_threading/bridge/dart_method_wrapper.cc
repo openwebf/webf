@@ -24,7 +24,7 @@ NativeValue* invokeModuleWrapper(void* callback_context,
   }
 
   InvokeModule originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->invokeModule;
-  return currentDartIsolateContext->dispatcher()->postToDartSync(originalPtr, callback_context, context_id, moduleName,
+  return currentDartIsolateContext->dispatcher()->PostToDartSync(originalPtr, callback_context, context_id, moduleName,
                                                                  method, params, callback);
 }
 
@@ -35,7 +35,7 @@ void requestBatchUpdateWrapper(int32_t context_id) {
   }
 
   RequestBatchUpdate originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->requestBatchUpdate;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, context_id);
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, context_id);
 }
 
 void reloadAppWrapper(int32_t context_id) {
@@ -45,7 +45,7 @@ void reloadAppWrapper(int32_t context_id) {
   }
 
   ReloadApp originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->reloadApp;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, context_id);
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, context_id);
 }
 
 int32_t SetTimeoutWrapper(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout) {
@@ -55,7 +55,7 @@ int32_t SetTimeoutWrapper(void* callback_context, int32_t context_id, AsyncCallb
   }
 
   SetTimeout originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->setTimeout;
-  return currentDartIsolateContext->dispatcher()->postToDartSync(originalPtr, callback_context, context_id, callback,
+  return currentDartIsolateContext->dispatcher()->PostToDartSync(originalPtr, callback_context, context_id, callback,
                                                                  timeout);
 }
 
@@ -66,7 +66,7 @@ int32_t SetIntervalWrapper(void* callback_context, int32_t context_id, AsyncCall
   }
 
   SetInterval originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->setInterval;
-  return currentDartIsolateContext->dispatcher()->postToDartSync(originalPtr, callback_context, context_id, callback,
+  return currentDartIsolateContext->dispatcher()->PostToDartSync(originalPtr, callback_context, context_id, callback,
                                                                  timeout);
 }
 
@@ -77,7 +77,7 @@ void ClearTimeoutWrapper(int32_t context_id, int32_t timerId) {
   }
 
   ClearTimeout originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->clearTimeout;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, context_id, timerId);
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, context_id, timerId);
 }
 
 int32_t RequestAnimationFrameWrapper(void* callback_context, int32_t context_id, AsyncRAFCallback callback) {
@@ -87,7 +87,7 @@ int32_t RequestAnimationFrameWrapper(void* callback_context, int32_t context_id,
   }
 
   RequestAnimationFrame originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->requestAnimationFrame;
-  return currentDartIsolateContext->dispatcher()->postToDartSync(originalPtr, callback_context, context_id, callback);
+  return currentDartIsolateContext->dispatcher()->PostToDartSync(originalPtr, callback_context, context_id, callback);
 }
 
 void CancelAnimationFrameWrapper(int32_t context_id, int32_t id) {
@@ -97,7 +97,7 @@ void CancelAnimationFrameWrapper(int32_t context_id, int32_t id) {
   }
 
   CancelAnimationFrame originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->cancelAnimationFrame;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, context_id, id);
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, context_id, id);
 }
 
 void ToBlobWrapper(void* callback_context,
@@ -111,7 +111,7 @@ void ToBlobWrapper(void* callback_context,
   }
 
   ToBlob originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->toBlob;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, callback_context, context_id, blobCallback,
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, callback_context, context_id, blobCallback,
                                                       element_ptr, devicePixelRatio);
 }
 
@@ -122,7 +122,7 @@ void OnJSErrorWrapper(int32_t context_id, const char* error) {
   }
 
   OnJSError originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->onJsError;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, context_id, error);
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, context_id, error);
 }
 
 void OnJSLogWrapper(int32_t context_id, int32_t level, const char* log) {
@@ -132,7 +132,7 @@ void OnJSLogWrapper(int32_t context_id, int32_t level, const char* log) {
   }
 
   OnJSLog originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->onJsLog;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, context_id, level, log);
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, context_id, level, log);
 }
 
 void FlushUICommandWrapper(int32_t context_id) {
@@ -142,7 +142,7 @@ void FlushUICommandWrapper(int32_t context_id) {
   }
 
   FlushUICommand originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->flushUICommand;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, context_id);
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, context_id);
 }
 
 void CreateBindingObjectWrapper(int32_t context_id,
@@ -156,7 +156,7 @@ void CreateBindingObjectWrapper(int32_t context_id,
   }
 
   CreateBindingObject originalPtr = currentDartIsolateContext->dartMethodOriginalPtr()->create_binding_object;
-  currentDartIsolateContext->dispatcher()->postToDart(originalPtr, context_id, native_binding_object, type, args, argc);
+  currentDartIsolateContext->dispatcher()->PostToDart(originalPtr, context_id, native_binding_object, type, args, argc);
 }
 
 #if ENABLE_PROFILE

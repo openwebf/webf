@@ -15,7 +15,7 @@ NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
                                                         const char* errmsg,
                                                         NativeValue* extra_data) {
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
-  return moduleContext->context->dartIsolateContext()->dispatcher()->postToJSSync(handleInvokeModuleTransientCallback,
+  return moduleContext->context->dartIsolateContext()->dispatcher()->PostToJsSync(handleInvokeModuleTransientCallback,
                                                                                   ptr, contextId, errmsg, extra_data);
 }
 

@@ -16,28 +16,28 @@ Looper::Looper() : running_(false), paused_(false) {}
 
 Looper::~Looper() {}
 
-void Looper::start() {
-  WEBF_LOG(DEBUG) << "Looper::start" << std::endl;
+void Looper::Start() {
+  WEBF_LOG(DEBUG) << "Looper::Start" << std::endl;
   std::lock_guard<std::mutex> lock(mutex_);
   if (!worker_.joinable()) {
     running_ = true;
-    worker_ = std::thread([this] { this->run(); });
+    worker_ = std::thread([this] { this->Run(); });
   }
 }
 
-void Looper::pause() {
-  WEBF_LOG(DEBUG) << "Looper::pause" << std::endl;
+void Looper::Pause() {
+  WEBF_LOG(DEBUG) << "Looper::Pause" << std::endl;
   paused_ = true;
 }
 
-void Looper::resume() {
-  WEBF_LOG(DEBUG) << "Looper::resume" << std::endl;
+void Looper::Resume() {
+  WEBF_LOG(DEBUG) << "Looper::Resume" << std::endl;
   paused_ = false;
   cv_.notify_one();  // wake up the worker thread.
 }
 
-void Looper::stop() {
-  WEBF_LOG(DEBUG) << "Looper::stop" << std::endl;
+void Looper::Stop() {
+  WEBF_LOG(DEBUG) << "Looper::Stop" << std::endl;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     running_ = false;
@@ -49,8 +49,8 @@ void Looper::stop() {
 }
 
 // private methods
-void Looper::run() {
-  WEBF_LOG(DEBUG) << "Looper::run" << std::endl;
+void Looper::Run() {
+  WEBF_LOG(DEBUG) << "Looper::Run" << std::endl;
   while (true) {
     std::shared_ptr<Task> task = nullptr;
     {
@@ -58,12 +58,12 @@ void Looper::run() {
       cv_.wait(lock, [this] { return !running_ || (!tasks_.empty() && !paused_); });
 
       if (!running_) {
-        WEBF_LOG(DEBUG) << "Looper::run, running_ is false, break" << std::endl;
+        WEBF_LOG(DEBUG) << "Looper::Run, running_ is false, break" << std::endl;
         return;
       }
 
       if (!paused_ && !tasks_.empty()) {
-        WEBF_LOG(INFO) << "Looper::run, pick up front task, size= " << tasks_.size() << std::endl;
+        WEBF_LOG(INFO) << "Looper::Run, pick up front task, size= " << tasks_.size() << std::endl;
         task = std::move(tasks_.front());
         tasks_.pop();
       }

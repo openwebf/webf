@@ -18,7 +18,7 @@ void handleTransientCallbackWrapper(void* ptr, int32_t contextId, const char* er
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->postToJS(webf::handleTransientCallback, ptr, contextId, errmsg);
+  context->dartIsolateContext()->dispatcher()->PostToJs(webf::handleTransientCallback, ptr, contextId, errmsg);
 }
 
 void handlePersistentCallbackWrapper(void* ptr, int32_t contextId, const char* errmsg) {
@@ -28,7 +28,7 @@ void handlePersistentCallbackWrapper(void* ptr, int32_t contextId, const char* e
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->postToJS(webf::handlePersistentCallback, ptr, contextId, errmsg);
+  context->dartIsolateContext()->dispatcher()->PostToJs(webf::handlePersistentCallback, ptr, contextId, errmsg);
 }
 
 }  // namespace multi_threading

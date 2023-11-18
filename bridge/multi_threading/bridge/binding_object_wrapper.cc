@@ -17,7 +17,7 @@ void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
                                    int32_t argc,
                                    NativeValue* argv,
                                    Dart_Handle dart_object) {
-  binding_object->binding_target_->GetDispatcher()->postToJSSync(
+  binding_object->binding_target_->GetDispatcher()->PostToJsSync(
       webf::NativeBindingObject::HandleCallFromDartSide, binding_object, return_value, method, argc, argv, dart_object);
 }
 
@@ -26,7 +26,7 @@ void BindingObjectWrapper::HandleAnonymousAsyncCalledFromDartWrapper(void* ptr,
                                                                      int32_t contextId,
                                                                      const char* errmsg) {
   auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
-  promise_context->context->dartIsolateContext()->dispatcher()->postToJS(
+  promise_context->context->dartIsolateContext()->dispatcher()->PostToJs(
       webf::BindingObject::HandleAnonymousAsyncCalledFromDart, promise_context, native_value, contextId, errmsg);
 }
 
