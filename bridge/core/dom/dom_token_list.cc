@@ -264,7 +264,8 @@ void DOMTokenList::UpdateWithTokenSet(const SpaceSplitString& token_set) {
 }
 
 AtomicString DOMTokenList::value() const {
-  return element_->getAttribute(attribute_name_, ASSERT_NO_EXCEPTION());
+  AtomicString result = element_->getAttribute(attribute_name_, ASSERT_NO_EXCEPTION());
+  return result == AtomicString::Null() ? AtomicString::Empty() : result;
 }
 
 void DOMTokenList::setValue(const AtomicString& new_value, ExceptionState& exception_state) {
