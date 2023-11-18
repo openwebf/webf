@@ -17,13 +17,9 @@ using namespace webf;
 void* initDartIsolateContextWrapper(int8_t dedicated_thread,
                                     int64_t dart_port,
                                     uint64_t* dart_methods,
-                                    int32_t dart_methods_len) {
+                                    int32_t dart_methods_len) {}
 
-}
-
-void* allocateNewPageWrapper(void* dart_isolate_context_, int32_t targetContextId) {
-
-}
+void* allocateNewPageWrapper(void* dart_isolate_context_, int32_t targetContextId) {}
 
 void disposePageWrapper(void* dart_isolate_context_, void* page_) {
   auto* dart_isolate_context = (webf::DartIsolateContext*)dart_isolate_context_;
