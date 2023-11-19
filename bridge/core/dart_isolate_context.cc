@@ -57,7 +57,7 @@ void InitializeBuiltInStrings(JSContext* ctx) {
 DartIsolateContext::DartIsolateContext(bool dedicated_thread, const uint64_t* dart_methods, int32_t dart_methods_length)
     : is_valid_(true),
       running_thread_(std::this_thread::get_id()),
-      dart_method_ptr_(std::make_unique<DartMethodPointer>(this,  dart_methods, dart_methods_length)) {
+      dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   if (runtime_ == nullptr) {
     runtime_ = JS_NewRuntime();
   }

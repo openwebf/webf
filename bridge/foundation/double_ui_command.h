@@ -33,7 +33,6 @@ class DoubleUICommand {
   std::atomic<bool> isSwapping;
 };
 
-
 }  // namespace webf
 
 #endif  // MULTI_THREADING_DOUBULE_UI_COMMAND_H_

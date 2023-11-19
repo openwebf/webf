@@ -95,6 +95,7 @@ using SimulateInputText = void (*)(SharedNativeString* nativeString);
 
 class DartMethodPointer {
   DartMethodPointer() = delete;
+
  public:
   explicit DartMethodPointer(void* dart_isolate_context, const uint64_t* dart_methods, int32_t dartMethodsLength);
   NativeValue* invokeModule(void* callback_context,
@@ -103,7 +104,6 @@ class DartMethodPointer {
                             SharedNativeString* method,
                             NativeValue* params,
                             AsyncModuleCallback callback);
-
 
   void requestBatchUpdate(int32_t context_id);
   void reloadApp(int32_t context_id);

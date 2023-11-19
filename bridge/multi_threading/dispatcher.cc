@@ -8,7 +8,6 @@
 
 using namespace webf;
 
-
 namespace webf {
 
 namespace multi_threading {

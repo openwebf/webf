@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_API_API_H_
 #define WEBF_CORE_API_API_H_
@@ -16,10 +16,6 @@
 #include "foundation/ui_command_buffer.h"
 #include "include/webf_bridge.h"
 
-namespace webf {
-
-
-
-}
+namespace webf {}
 
 #endif  // WEBF_CORE_API_API_H_

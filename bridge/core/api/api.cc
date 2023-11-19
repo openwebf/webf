@@ -99,8 +99,6 @@ static NativeValue* invokeModuleEvent(void* page_,
 
 static WebFInfo* webfInfo{nullptr};
 
-
-
 int32_t profileModeEnabled() {
 #if ENABLE_PROFILE
   return 1;
@@ -184,7 +182,6 @@ void parseHTML(void* page_, const char* code, int32_t length) {
   page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(parseHTMLInternal, page_, code, length);
 }
 
-
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
   webf::ExecutingContext::plugin_byte_code[pluginName] = webf::NativeByteCode{bytes, length};
 }
@@ -204,7 +201,6 @@ WebFInfo* getWebFInfo() {
 
   return webfInfo;
 }
-
 
 void dispatchUITask(void* page_, void* context, void* callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
@@ -242,7 +238,6 @@ void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate
   Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_isolate_context),
                                sizeof(webf::DartIsolateContext), finalize_dart_context);
 }
-
 
 // run in the dart isolate thread
 void executeNativeCallback(DartWork* work_ptr) {

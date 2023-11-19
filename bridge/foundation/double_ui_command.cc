@@ -9,7 +9,6 @@
 
 namespace webf {
 
-
 DoubleUICommand::DoubleUICommand(ExecutingContext* context)
     : frontBuffer(std::make_unique<UICommandBuffer>(context)), isSwapping(false) {
   auto* dart_isolate_context = context->dartIsolateContext();

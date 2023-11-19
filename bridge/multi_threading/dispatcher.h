@@ -5,8 +5,8 @@
 #ifndef MULTI_THREADING_DISPATCHER_H
 #define MULTI_THREADING_DISPATCHER_H
 
-#include <include/webf_bridge.h>
 #include <include/dart_api_dl.h>
+#include <include/webf_bridge.h>
 #include <condition_variable>
 #include <functional>
 #include <memory>

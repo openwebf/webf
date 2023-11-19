@@ -34,7 +34,10 @@ static void handleRAFTransientCallback(void* ptr, int32_t contextId, double high
   context->document()->script_animations()->callbackCollection()->RemoveFrameCallback(frame_callback->frameId());
 }
 
-static void handleRAFTransientCallbackWrapper(void* ptr, int32_t contextId, double highResTimeStamp, const char* errmsg) {
+static void handleRAFTransientCallbackWrapper(void* ptr,
+                                              int32_t contextId,
+                                              double highResTimeStamp,
+                                              const char* errmsg) {
   auto* frame_callback = static_cast<FrameCallback*>(ptr);
   auto* context = frame_callback->context();
 
@@ -51,8 +54,8 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kPending);
 
-  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(
-      frame_callback.get(), context->contextId(), handleRAFTransientCallbackWrapper);
+  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(frame_callback.get(), context->contextId(),
+                                                                       handleRAFTransientCallbackWrapper);
   frame_callback->SetFrameId(requestId);
   // Register frame callback to collection.
   frame_request_callback_collection_.RegisterFrameCallback(requestId, frame_callback);
