@@ -8,7 +8,6 @@
 #include <set>
 #include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
-#include "dart_method_wrapper.h"
 #include "dart_methods.h"
 #include "dispatcher.h"
 
@@ -36,11 +35,7 @@ class DartIsolateContext {
   FORCE_INLINE bool valid() { return is_valid_ && std::this_thread::get_id() == running_thread_; }
   FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() const {
     assert(std::this_thread::get_id() == running_thread_);
-    return dart_method_wrapper_->dartMethodPtr();
-  }
-  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodOriginalPtr() const {
-    assert(std::this_thread::get_id() == running_thread_);
-    return dart_method_ptr_;
+    return dart_method_wrapper_;
   }
   FORCE_INLINE const std::unique_ptr<multi_threading::Dispatcher>& dispatcher() const { return dispatcher_; }
   FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
@@ -63,7 +58,7 @@ class DartIsolateContext {
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
-  const std::unique_ptr<multi_threading::DartMethodWrapper> dart_method_wrapper_ = nullptr;
+  const std::unique_ptr<DartMethodPointer> dart_method_wrapper_ = nullptr;
 };
 
 }  // namespace webf

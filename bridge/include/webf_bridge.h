@@ -30,8 +30,14 @@ struct WebFInfo {
 };
 
 typedef void (*Task)(void*);
+typedef std::function<void()> DartWork;
+
 WEBF_EXPORT_C
-void* initDartIsolateContext(int8_t dedicated_thread, uint64_t* dart_methods, int32_t dart_methods_len);
+void* initDartIsolateContext(int8_t dedicated_thread,
+                             int64_t dart_port,
+                             uint64_t* dart_methods,
+                             int32_t dart_methods_len);
+
 WEBF_EXPORT_C
 void* allocateNewPage(void* dart_isolate_context, int32_t targetContextId);
 
@@ -79,6 +85,7 @@ void registerPluginCode(const char* code, int32_t length, const char* pluginName
 WEBF_EXPORT_C
 int32_t profileModeEnabled();
 
+WEBF_EXPORT_C void executeNativeCallback(DartWork* work_ptr);
 WEBF_EXPORT_C
 void init_dart_dynamic_linking(void* data);
 WEBF_EXPORT_C

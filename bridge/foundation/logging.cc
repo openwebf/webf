@@ -126,9 +126,7 @@ void printLog(ExecutingContext* context, std::stringstream& stream, std::string 
     webf::WebFPage::consoleMessageHandler(ctx, stream.str(), static_cast<int>(_log_level));
   }
 
-  if (context->dartMethodPtr()->onJsLog != nullptr) {
-    context->dartMethodPtr()->onJsLog(context->contextId(), static_cast<int>(_log_level), stream.str().c_str());
-  }
+  context->dartMethodPtr()->onJSLog(context->contextId(), static_cast<int>(_log_level), stream.str().c_str());
 }
 
 }  // namespace webf

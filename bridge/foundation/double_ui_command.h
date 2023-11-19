@@ -9,8 +9,6 @@
 
 namespace webf {
 
-namespace multi_threading {
-
 class DoubleUICommand {
  public:
   DoubleUICommand(ExecutingContext* context);
@@ -35,7 +33,6 @@ class DoubleUICommand {
   std::atomic<bool> isSwapping;
 };
 
-}  // namespace multi_threading
 
 }  // namespace webf
 

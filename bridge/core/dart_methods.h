@@ -93,31 +93,62 @@ using SimulatePointer =
     void (*)(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
 using SimulateInputText = void (*)(SharedNativeString* nativeString);
 
-struct DartMethodPointer {
+class DartMethodPointer {
   DartMethodPointer() = delete;
-  explicit DartMethodPointer(const uint64_t* dart_methods, int32_t dartMethodsLength);
+ public:
+  explicit DartMethodPointer(void* dart_isolate_context, const uint64_t* dart_methods, int32_t dartMethodsLength);
+  NativeValue* invokeModule(void* callback_context,
+                            int32_t context_id,
+                            SharedNativeString* moduleName,
+                            SharedNativeString* method,
+                            NativeValue* params,
+                            AsyncModuleCallback callback);
 
-  InvokeModule invokeModule{nullptr};
-  RequestBatchUpdate requestBatchUpdate{nullptr};
-  ReloadApp reloadApp{nullptr};
-  SetTimeout setTimeout{nullptr};
-  SetInterval setInterval{nullptr};
-  ClearTimeout clearTimeout{nullptr};
-  RequestAnimationFrame requestAnimationFrame{nullptr};
-  CancelAnimationFrame cancelAnimationFrame{nullptr};
-  ToBlob toBlob{nullptr};
-  OnJSError onJsError{nullptr};
-  OnJSLog onJsLog{nullptr};
-  MatchImageSnapshot matchImageSnapshot{nullptr};
-  MatchImageSnapshotBytes matchImageSnapshotBytes{nullptr};
-  Environment environment{nullptr};
-  SimulatePointer simulatePointer{nullptr};
-  SimulateInputText simulateInputText{nullptr};
-  FlushUICommand flushUICommand{nullptr};
-  CreateBindingObject create_binding_object{nullptr};
-#if ENABLE_PROFILE
-  GetPerformanceEntries getPerformanceEntries{nullptr};
-#endif
+
+  void requestBatchUpdate(int32_t context_id);
+  void reloadApp(int32_t context_id);
+  int32_t setTimeout(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout);
+  int32_t setInterval(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout);
+  void clearTimeout(int32_t context_id, int32_t timerId);
+  int32_t requestAnimationFrame(void* callback_context, int32_t context_id, AsyncRAFCallback callback);
+  void cancelAnimationFrame(int32_t context_id, int32_t id);
+  void toBlob(void* callback_context,
+              int32_t context_id,
+              AsyncBlobCallback blobCallback,
+              void* element_ptr,
+              double devicePixelRatio);
+  void flushUICommand(int32_t context_id);
+  void createBindingObject(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
+
+  void onJSError(int32_t context_id, const char*);
+  void onJSLog(int32_t context_id, int32_t level, const char*);
+
+  void matchImageSnapshot(void* callback_context,
+                          int32_t context_id,
+                          uint8_t* bytes,
+                          int32_t length,
+                          SharedNativeString* name,
+                          MatchImageSnapshotCallback callback);
+
+ private:
+  InvokeModule invoke_module_{nullptr};
+  RequestBatchUpdate request_batch_update_{nullptr};
+  ReloadApp reload_app_{nullptr};
+  SetTimeout set_timeout_{nullptr};
+  SetInterval set_interval_{nullptr};
+  ClearTimeout clear_timeout_{nullptr};
+  RequestAnimationFrame request_animation_frame_{nullptr};
+  CancelAnimationFrame cancel_animation_frame_{nullptr};
+  ToBlob to_blob_{nullptr};
+  FlushUICommand flush_ui_command_{nullptr};
+  CreateBindingObject create_binding_object_{nullptr};
+  OnJSError on_js_error_{nullptr};
+  OnJSLog on_js_log_{nullptr};
+  MatchImageSnapshot match_image_snapshot_{nullptr};
+  MatchImageSnapshotBytes match_image_snapshot_bytes_{nullptr};
+  Environment environment_{nullptr};
+  SimulatePointer simulate_pointer_{nullptr};
+  SimulateInputText simulate_input_text_{nullptr};
 };
 
 }  // namespace webf

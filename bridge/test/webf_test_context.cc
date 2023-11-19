@@ -59,11 +59,6 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 3 (callback) is not an function.");
   }
 
-  if (context->dartMethodPtr()->matchImageSnapshot == nullptr) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.");
-  }
-
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
   auto fn = [](void* ptr, int32_t contextId, int8_t result, const char* errmsg) {

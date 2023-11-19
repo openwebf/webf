@@ -8,14 +8,6 @@
 
 using namespace webf;
 
-// run in the dart isolate thread
-void executeNativeCallback(DartWork* work_ptr) {
-  WEBF_LOG(VERBOSE) << "[Dart] executeThreadingRequest call from dart" << std::endl;
-  const DartWork dart_work = *work_ptr;
-  dart_work();
-  WEBF_LOG(VERBOSE) << "[Dart] executeThreadingRequest end" << std::endl;
-  delete work_ptr;
-}
 
 namespace webf {
 

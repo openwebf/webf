@@ -4,17 +4,15 @@
 
 #include "double_ui_command.h"
 #include "core/executing_context.h"
-#include "dart_method_wrapper.h"
 #include "foundation/logging.h"
 #include "ui_command_buffer.h"
 
 namespace webf {
 
-namespace multi_threading {
 
 DoubleUICommand::DoubleUICommand(ExecutingContext* context)
     : frontBuffer(std::make_unique<UICommandBuffer>(context)), isSwapping(false) {
-  auto* dart_isolate_context = (DartIsolateContext*)DartMethodWrapper::GetDartIsolateContext();
+  auto* dart_isolate_context = context->dartIsolateContext();
 
   if (dart_isolate_context != nullptr && dart_isolate_context->dispatcher()->isDedicatedThread()) {
     WEBF_LOG(DEBUG) << "[CPP] DoubleUICommand::DoubleUICommand, create backBuffer" << std::endl;
@@ -82,7 +80,5 @@ void DoubleUICommand::swapBuffers() {
   std::swap(frontBuffer, backBuffer);
   isSwapping = false;
 }
-
-}  // namespace multi_threading
 
 }  // namespace webf
