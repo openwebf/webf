@@ -99,7 +99,7 @@ typedef DartInvokeEventListener = Pointer<NativeValue> Function(
     Pointer<Void>, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
 
 final DartInvokeEventListener _invokeModuleEvent =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEventWrapper').asFunction();
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
 
 dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
@@ -148,10 +148,10 @@ typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Uint8> code, Int3
 typedef DartParseHTML = void Function(Pointer<Void>, Pointer<Uint8> code, int length);
 
 final DartEvaluateScripts _evaluateScripts =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateScripts>>('evaluateScriptsWrapper').asFunction();
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateScripts>>('evaluateScripts').asFunction();
 
 final DartParseHTML _parseHTML =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeParseHTML>>('parseHTMLWrapper').asFunction();
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeParseHTML>>('parseHTML').asFunction();
 
 typedef NativeParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, Int32 length);
 typedef DartParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, int length);
@@ -220,7 +220,7 @@ typedef NativeEvaluateQuickjsByteCode = Int8 Function(Pointer<Void>, Pointer<Uin
 typedef DartEvaluateQuickjsByteCode = int Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen);
 
 final DartEvaluateQuickjsByteCode _evaluateQuickjsByteCode = WebFDynamicLibrary.ref
-    .lookup<NativeFunction<NativeEvaluateQuickjsByteCode>>('evaluateQuickjsByteCodeWrapper')
+    .lookup<NativeFunction<NativeEvaluateQuickjsByteCode>>('evaluateQuickjsByteCode')
     .asFunction();
 
 bool evaluateQuickjsByteCode(int contextId, Uint8List bytes) {
@@ -271,7 +271,7 @@ typedef NativeInitDartIsolateContext = Pointer<Void> Function(Int8 dedicated, In
 typedef DartInitDartIsolateContext = Pointer<Void> Function(int dedicated, int sendPort, Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartInitDartIsolateContext _initDartIsolateContext =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContextWrapper').asFunction();
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContext').asFunction();
 
 Pointer<Void> initDartIsolateContext(bool dedicatedThread, List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
@@ -284,7 +284,7 @@ typedef NativeDisposePage = Void Function(Pointer<Void>, Pointer<Void> page);
 typedef DartDisposePage = void Function(Pointer<Void>, Pointer<Void> page);
 
 final DartDisposePage _disposePage =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePageWrapper').asFunction();
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePage').asFunction();
 
 void disposePage(int contextId) {
   Pointer<Void> page = _allocatedPages[contextId]!;
@@ -305,7 +305,7 @@ typedef NativeAllocateNewPage = Pointer<Void> Function(Pointer<Void>, Int32);
 typedef DartAllocateNewPage = Pointer<Void> Function(Pointer<Void>, int);
 
 final DartAllocateNewPage _allocateNewPage =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPageWrapper').asFunction();
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
 void allocateNewPage(int targetContextId) {
   Pointer<Void> page = _allocateNewPage(dartContext!.pointer, targetContextId);

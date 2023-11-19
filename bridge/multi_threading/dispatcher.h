@@ -5,6 +5,7 @@
 #ifndef MULTI_THREADING_DISPATCHER_H
 #define MULTI_THREADING_DISPATCHER_H
 
+#include <include/webf_bridge.h>
 #include <include/dart_api_dl.h>
 #include <condition_variable>
 #include <functional>
@@ -21,10 +22,6 @@
 #define WEBF_EXPORT_C extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 #endif
-
-typedef std::function<void()> DartWork;
-
-WEBF_EXPORT_C void executeNativeCallback(DartWork* work_ptr);
 
 namespace webf {
 

@@ -16,6 +16,19 @@
 
 namespace webf {
 
+static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
+                                          NativeValue* return_value,
+                                          NativeValue* method,
+                                          int32_t argc,
+                                          NativeValue* argv,
+                                          Dart_Handle dart_object) {
+  binding_object->binding_target_->GetDispatcher()->PostToJsSync(
+      webf::NativeBindingObject::HandleCallFromDartSide, binding_object, return_value, method, argc, argv, dart_object);
+}
+
+NativeBindingObject::NativeBindingObject(webf::BindingObject* target)
+    : binding_target_(target), invoke_binding_methods_from_dart(HandleCallFromDartSideWrapper) {}
+
 void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
                                                  NativeValue* native_method,
@@ -222,6 +235,15 @@ void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr,
   delete promise_context;
 }
 
+static void HandleAnonymousAsyncCalledFromDartWrapper(void* ptr,
+                                                      NativeValue* native_value,
+                                                      int32_t contextId,
+                                                      const char* errmsg) {
+  auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
+  promise_context->context->dartIsolateContext()->dispatcher()->PostToJs(
+      webf::BindingObject::HandleAnonymousAsyncCalledFromDart, promise_context, native_value, contextId, errmsg);
+}
+
 ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
                                                           const ScriptValue& this_val,
                                                           uint32_t argc,
@@ -245,7 +267,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   arguments.emplace_back(
       NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context));
   arguments.emplace_back(NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
-      reinterpret_cast<void*>(multi_threading::BindingObjectWrapper::HandleAnonymousAsyncCalledFromDartWrapper)));
+      reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDartWrapper)));
 
   ExceptionState exception_state;
 

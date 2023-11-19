@@ -63,6 +63,15 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   return return_value;
 }
 
+static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
+                                                        int32_t contextId,
+                                                        const char* errmsg,
+                                                        NativeValue* extra_data) {
+  auto* moduleContext = static_cast<ModuleContext*>(ptr);
+  return moduleContext->context->dartIsolateContext()->dispatcher()->PostToJsSync(handleInvokeModuleTransientCallback,
+                                                                                  ptr, contextId, errmsg, extra_data);
+}
+
 NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,
                                                   int32_t contextId,
                                                   const char* errmsg,
@@ -99,17 +108,6 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     return ScriptValue::Empty(context->ctx());
   }
 
-  if (context->dartMethodPtr()->invokeModule == nullptr) {
-    exception.ThrowException(
-        context->ctx(), ErrorType::InternalError,
-        "Failed to execute '__webf_invoke_module__': dart method (invokeModule) is not registered.");
-    return ScriptValue::Empty(context->ctx());
-  }
-
-  WEBF_LOG(VERBOSE) << "invokeModule call, name= " << module_name.ToStdString(context->ctx())
-                    << " method= " << method.ToStdString(context->ctx())
-                    << " params= " << params_value.ToString(context->ctx()).ToStdString(context->ctx())
-                    << " callback= " << callback << std::endl;
   NativeValue* result;
   if (callback != nullptr) {
     auto module_callback = ModuleCallback::Create(callback);
@@ -117,7 +115,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     context->ModuleContexts()->AddModuleContext(module_context);
     result = context->dartMethodPtr()->invokeModule(
         module_context.get(), context->contextId(), module_name.ToNativeString(context->ctx()).release(),
-        method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleTransientCallback);
+        method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleTransientCallbackWrapper);
   } else {
     result = context->dartMethodPtr()->invokeModule(
         nullptr, context->contextId(), module_name.ToNativeString(context->ctx()).release(),

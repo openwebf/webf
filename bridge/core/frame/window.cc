@@ -207,13 +207,6 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
 }
 
 double Window::requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState) {
-  if (GetExecutingContext()->dartMethodPtr()->flushUICommand == nullptr) {
-    exceptionState.ThrowException(ctx(), ErrorType::InternalError,
-                                  "Failed to execute 'flushUICommand': dart method (flushUICommand) executed "
-                                  "with unexpected error.");
-    return 0;
-  }
-
   GetExecutingContext()->FlushUICommand();
   auto frame_callback = FrameCallback::Create(GetExecutingContext(), callback);
   uint32_t request_id = GetExecutingContext()->document()->RequestAnimationFrame(frame_callback, exceptionState);

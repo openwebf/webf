@@ -97,10 +97,10 @@ if (DEFINED PLATFORM)
 endif()
 
 list(APPEND BRIDGE_SOURCE
-  webf_bridge.cc
   foundation/logging.cc
   foundation/native_string.cc
   foundation/ui_task_queue.cc
+  foundation/double_ui_command.cc
   foundation/inspector_task_queue.cc
   foundation/task_queue.cc
   foundation/string_view.cc
@@ -203,14 +203,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   include_directories(
     "${CMAKE_SOURCE_DIR}/multi_threading/"
   )
-  include_directories(
-    "${CMAKE_SOURCE_DIR}/multi_threading/bridge"
-  )
   file(GLOB MULTI_THREADING_SOURCE
     "${CMAKE_CURRENT_SOURCE_DIR}/multi_threading/*.cc"
-  )
-  file(GLOB MULTI_THREADING_BRIDGE_SOURCE
-    "${CMAKE_CURRENT_SOURCE_DIR}/multi_threading/bridge/*.cc"
   )
 
   if(${STATIC_QUICKJS})
@@ -271,6 +265,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/rejected_promises.cc
     bindings/qjs/union_base.cc
     # Core sources
+    core/api/api.cc
     core/executing_context.cc
     core/script_forbidden_scope.cc
     core/script_state.cc
@@ -569,8 +564,8 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
-add_library(webf SHARED ${BRIDGE_SOURCE} ${MULTI_THREADING_SOURCE} ${MULTI_THREADING_BRIDGE_SOURCE})
-add_library(webf_static STATIC ${BRIDGE_SOURCE} ${MULTI_THREADING_SOURCE} ${MULTI_THREADING_BRIDGE_SOURCE})
+add_library(webf SHARED ${BRIDGE_SOURCE} ${MULTI_THREADING_SOURCE})
+add_library(webf_static STATIC ${BRIDGE_SOURCE} ${MULTI_THREADING_SOURCE})
 
 if(MSVC)
   target_compile_options(webf PRIVATE /JMC)

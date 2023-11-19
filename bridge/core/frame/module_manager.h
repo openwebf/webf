@@ -19,11 +19,6 @@ struct ModuleContext {
   std::shared_ptr<ModuleCallback> callback;
 };
 
-NativeValue* handleInvokeModuleTransientCallback(void* ptr,
-                                                 int32_t contextId,
-                                                 const char* errmsg,
-                                                 NativeValue* extra_data);
-
 class ModuleManager {
  public:
   static ScriptValue __webf_invoke_module__(ExecutingContext* context,

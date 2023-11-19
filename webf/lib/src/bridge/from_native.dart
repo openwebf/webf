@@ -357,9 +357,6 @@ void _flushUICommand(int contextId) {
 
 final Pointer<NativeFunction<NativeFlushUICommand>> _nativeFlushUICommand = Pointer.fromFunction(_flushUICommand);
 
-typedef NativePerformanceGetEntries = Pointer<NativePerformanceEntryList> Function(Int32 contextId);
-typedef DartPerformanceGetEntries = Pointer<NativePerformanceEntryList> Function(int contextId);
-
 typedef NativeCreateBindingObject = Void Function(Int32 contextId, Pointer<NativeBindingObject> nativeBindingObject, Int32 type, Pointer<NativeValue> args, Int32 argc);
 typedef DartCreateBindingObject = void Function(int contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc);
 
@@ -368,13 +365,6 @@ void _createBindingObject(int contextId, Pointer<NativeBindingObject> nativeBind
 }
 
 final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject = Pointer.fromFunction(_createBindingObject);
-
-Pointer<NativePerformanceEntryList> _performanceGetEntries(int contextId) {
-  return nullptr;
-}
-
-final Pointer<NativeFunction<NativePerformanceGetEntries>> _nativeGetEntries =
-    Pointer.fromFunction(_performanceGetEntries);
 
 typedef NativeJSError = Void Function(Int32 contextId, Pointer<Utf8>);
 
@@ -416,7 +406,6 @@ final List<int> _dartNativeMethods = [
   _nativeToBlob.address,
   _nativeFlushUICommand.address,
   _nativeCreateBindingObject.address,
-  _nativeGetEntries.address,
   _nativeOnJsError.address,
   _nativeOnJsLog.address,
 ];
