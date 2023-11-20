@@ -130,6 +130,25 @@ class DartMethodPointer {
                           SharedNativeString* name,
                           MatchImageSnapshotCallback callback);
 
+  void matchImageSnapshotBytes(void* callback_context,
+                               int32_t context_id,
+                               uint8_t* image_a_bytes,
+                               int32_t image_a_size,
+                               uint8_t* image_b_bytes,
+                               int32_t image_b_size,
+                               MatchImageSnapshotCallback callback);
+
+  const char* environment();
+  void simulatePointer(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
+  void simulateInputText(SharedNativeString* nativeString);
+
+  void SetOnJSError(OnJSError func);
+  void SetMatchImageSnapshot(MatchImageSnapshot func);
+  void SetMatchImageSnapshotBytes(MatchImageSnapshotBytes func);
+  void SetEnvironment(Environment func);
+  void SetSimulatePointer(SimulatePointer func);
+  void SetSimulateInputText(SimulateInputText func);
+
  private:
   InvokeModule invoke_module_{nullptr};
   RequestBatchUpdate request_batch_update_{nullptr};

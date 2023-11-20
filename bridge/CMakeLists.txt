@@ -108,6 +108,8 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_type.cc
   foundation/ui_command_buffer.cc
   polyfill/dist/polyfill.cc
+  multi_threading/dispatcher.cc
+  multi_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
@@ -199,13 +201,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     add_definitions(-DDDEBUG)
   endif ()
-
-  include_directories(
-    "${CMAKE_SOURCE_DIR}/multi_threading/"
-  )
-  file(GLOB MULTI_THREADING_SOURCE
-    "${CMAKE_CURRENT_SOURCE_DIR}/multi_threading/*.cc"
-  )
 
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
@@ -564,8 +559,8 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
-add_library(webf SHARED ${BRIDGE_SOURCE} ${MULTI_THREADING_SOURCE})
-add_library(webf_static STATIC ${BRIDGE_SOURCE} ${MULTI_THREADING_SOURCE})
+add_library(webf SHARED ${BRIDGE_SOURCE})
+add_library(webf_static STATIC ${BRIDGE_SOURCE})
 
 if(MSVC)
   target_compile_options(webf PRIVATE /JMC)
