@@ -39,6 +39,8 @@ void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_upda
 
 #if FLUTTER_BACKEND
   if (UNLIKELY(request_ui_update && !update_batched_ && context_->IsContextValid())) {
+    WEBF_LOG(VERBOSE) << context_->dartMethodPtr();
+
     context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
     update_batched_ = true;
   }

@@ -62,6 +62,8 @@ void DartMethodPointer::requestBatchUpdate(int32_t context_id) {
     return;
   }
 
+  WEBF_LOG(VERBOSE) << " THIS:" << this << " " << request_batch_update_;
+
   currentDartIsolateContext->dispatcher()->PostToDart(request_batch_update_, context_id);
 }
 

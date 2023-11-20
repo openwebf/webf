@@ -331,7 +331,7 @@ bool WebFTestContext::parseTestHTML(const uint16_t* code, size_t codeLength) {
 void WebFTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_t length) {
   size_t i = 0;
 
-  auto& dartMethodPtr = context_->dartMethodPtr();
+  auto dartMethodPtr = context_->dartMethodPtr();
 
   dartMethodPtr->SetOnJSError(reinterpret_cast<OnJSError>(methodBytes[i++]));
   dartMethodPtr->SetMatchImageSnapshot(reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]));
