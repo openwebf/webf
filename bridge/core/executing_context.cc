@@ -293,14 +293,8 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
   JS_EnqueueJob(
       ctx(),
       [](JSContext* ctx, int argc, JSValueConst* argv) -> JSValue {
-        WEBF_LOG(VERBOSE) << " CUSTOM MICROTASK EXEC ";
         auto* deliver = static_cast<MicroTaskDeliver*>(JS_GetOpaque(argv[0], JS_CLASS_OBJECT));
-        WEBF_LOG(VERBOSE) << " TRIGGER MUTATION OBSERVER CALLBACK" << deliver;
-        WEBF_LOG(VERBOSE) << " DELIVER DATA" << deliver->data;
-        WEBF_LOG(VERBOSE) << " DELIVER CALLBACK" << deliver->callback;
         deliver->callback(deliver->data);
-
-        WEBF_LOG(VERBOSE) << " DELETE DELIVER " << deliver;
 
         delete deliver;
         return JS_NULL;
@@ -311,7 +305,6 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
 }
 
 void ExecutingContext::DrainPendingPromiseJobs() {
-  WEBF_LOG(VERBOSE) << "DRAIN PENDING PROMISE JOBS";
   // should executing pending promise jobs.
   JSContext* pctx;
   int finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
@@ -321,8 +314,6 @@ void ExecutingContext::DrainPendingPromiseJobs() {
       break;
     }
   }
-
-  WEBF_LOG(VERBOSE) << "HANDLE REJECTED PROMISE, context: " << this;
 
   // Throw error when promise are not handled.
   rejected_promises_.Process(this);
@@ -367,8 +358,6 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
                                           JSValueConst promise,
                                           JSValueConst reason) {
   ExceptionState exception_state;
-
-  WEBF_LOG(VERBOSE) << " DISPATCH PROMISE REJECTION EVENT:" << context << " CTX: " << context->ctx();
 
   auto event_init = PromiseRejectionEventInit::Create();
   event_init->setPromise(Converter<IDLAny>::FromValue(context->ctx(), promise, exception_state));
@@ -443,7 +432,6 @@ void ExecutingContext::promiseRejectTracker(JSContext* ctx,
                                             int is_handled,
                                             void* opaque) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
-  WEBF_LOG(VERBOSE) << "ctx: " << ctx << " REPORT REJECTED PROMISE " << context << " " << is_handled;
   // The unhandledrejection event is the promise-equivalent of the global error event, which is fired for uncaught
   // exceptions. Because a rejected promise could be handled after the fact, by attaching catch(onRejected) or
   // then(onFulfilled, onRejected) to it, the additional rejectionhandled event is needed to indicate that a promise
