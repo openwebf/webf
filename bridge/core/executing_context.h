@@ -126,7 +126,7 @@ class ExecutingContext {
   FORCE_INLINE DartIsolateContext* dartIsolateContext() const { return dart_isolate_context_; };
   FORCE_INLINE Performance* performance() const { return performance_; }
   FORCE_INLINE DoubleUICommand* uiCommandBuffer() { return &ui_command_buffer_; };
-  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() {
+  FORCE_INLINE DartMethodPointer* dartMethodPtr() const {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
   }
