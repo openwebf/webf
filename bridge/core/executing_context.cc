@@ -293,9 +293,14 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
   JS_EnqueueJob(
       ctx(),
       [](JSContext* ctx, int argc, JSValueConst* argv) -> JSValue {
+        WEBF_LOG(VERBOSE) << " CUSTOM MICROTASK EXEC ";
         auto* deliver = static_cast<MicroTaskDeliver*>(JS_GetOpaque(argv[0], JS_CLASS_OBJECT));
-
+        WEBF_LOG(VERBOSE) << " TRIGGER MUTATION OBSERVER CALLBACK" << deliver;
+        WEBF_LOG(VERBOSE) << " DELIVER DATA" << deliver->data;
+        WEBF_LOG(VERBOSE) << " DELIVER CALLBACK" << deliver->callback;
         deliver->callback(deliver->data);
+
+        WEBF_LOG(VERBOSE) << " DELETE DELIVER " << deliver;
 
         delete deliver;
         return JS_NULL;
