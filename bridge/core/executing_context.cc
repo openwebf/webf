@@ -438,7 +438,7 @@ void ExecutingContext::promiseRejectTracker(JSContext* ctx,
                                             int is_handled,
                                             void* opaque) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
-  WEBF_LOG(VERBOSE) << "ctx: " << ctx <<  " REPORT REJECTED PROMISE " << context << " " << is_handled;
+  WEBF_LOG(VERBOSE) << "ctx: " << ctx << " REPORT REJECTED PROMISE " << context << " " << is_handled;
   // The unhandledrejection event is the promise-equivalent of the global error event, which is fired for uncaught
   // exceptions. Because a rejected promise could be handled after the fact, by attaching catch(onRejected) or
   // then(onFulfilled, onRejected) to it, the additional rejectionhandled event is needed to indicate that a promise
