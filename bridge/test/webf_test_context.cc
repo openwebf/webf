@@ -99,10 +99,6 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = ExecutingContext::From(ctx);
 #if FLUTTER_BACKEND
-  if (context->dartMethodPtr()->environment == nullptr) {
-    return JS_ThrowTypeError(ctx,
-                             "Failed to execute '__webf_environment__': dart method (environment) is not registered.");
-  }
   const char* env = context->dartMethodPtr()->environment();
   return JS_ParseJSON(ctx, env, strlen(env), "");
 #else
@@ -127,11 +123,6 @@ static void handleSimulatePointerCallback(void* p, int32_t contextId, const char
 
 static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
-  if (context->dartMethodPtr()->simulatePointer == nullptr) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_simulate_pointer__': dart method(simulatePointer) is not registered.");
-  }
-
   JSValue inputArrayValue = argv[0];
   if (!JS_IsObject(inputArrayValue)) {
     return JS_ThrowTypeError(ctx, "Failed to execute '__webf_simulate_pointer__': first arguments should be an array.");
@@ -218,10 +209,6 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
 
 static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
-  if (context->dartMethodPtr()->simulateInputText == nullptr) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_simulate_keypress__': dart method(simulateInputText) is not registered.");
-  }
 
   JSValue& charStringValue = argv[0];
 
@@ -346,12 +333,12 @@ void WebFTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_t 
 
   auto& dartMethodPtr = context_->dartMethodPtr();
 
-  dartMethodPtr->onJsError = reinterpret_cast<OnJSError>(methodBytes[i++]);
-  dartMethodPtr->matchImageSnapshot = reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]);
-  dartMethodPtr->matchImageSnapshotBytes = reinterpret_cast<MatchImageSnapshotBytes>(methodBytes[i++]);
-  dartMethodPtr->environment = reinterpret_cast<Environment>(methodBytes[i++]);
-  dartMethodPtr->simulatePointer = reinterpret_cast<SimulatePointer>(methodBytes[i++]);
-  dartMethodPtr->simulateInputText = reinterpret_cast<SimulateInputText>(methodBytes[i++]);
+  dartMethodPtr->SetOnJSError(reinterpret_cast<OnJSError>(methodBytes[i++]));
+  dartMethodPtr->SetMatchImageSnapshot(reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]));
+  dartMethodPtr->SetMatchImageSnapshotBytes(reinterpret_cast<MatchImageSnapshotBytes>(methodBytes[i++]));
+  dartMethodPtr->SetEnvironment(reinterpret_cast<Environment>(methodBytes[i++]));
+  dartMethodPtr->SetSimulatePointer(reinterpret_cast<SimulatePointer>(methodBytes[i++]));
+  dartMethodPtr->SetSimulateInputText( reinterpret_cast<SimulateInputText>(methodBytes[i++]));
 
   assert_m(i == length, "Dart native methods count is not equal with C++ side method registrations.");
 }

@@ -13,7 +13,7 @@ thread_local DartIsolateContext* currentDartIsolateContext = nullptr;
 
 namespace webf {
 
-webf::DartMethodPointer::DartMethodPointer(void* dart_isolate_context,
+DartMethodPointer::DartMethodPointer(void* dart_isolate_context,
                                            const uint64_t* dart_methods,
                                            int32_t dart_methods_length) {
   currentDartIsolateContext = static_cast<DartIsolateContext*>(dart_isolate_context);
@@ -38,10 +38,10 @@ webf::DartMethodPointer::DartMethodPointer(void* dart_isolate_context,
 
 NativeValue* DartMethodPointer::invokeModule(void* callback_context,
                                              int32_t context_id,
-                                             webf::SharedNativeString* moduleName,
-                                             webf::SharedNativeString* method,
-                                             webf::NativeValue* params,
-                                             webf::AsyncModuleCallback callback) {
+                                             SharedNativeString* moduleName,
+                                             SharedNativeString* method,
+                                             NativeValue* params,
+                                             AsyncModuleCallback callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] invokeModuleWrapper call" << std::endl;
 #endif
@@ -78,7 +78,7 @@ void DartMethodPointer::reloadApp(int32_t context_id) {
 
 int32_t DartMethodPointer::setTimeout(void* callback_context,
                                       int32_t context_id,
-                                      webf::AsyncCallback callback,
+                                      AsyncCallback callback,
                                       int32_t timeout) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] SetTimeoutWrapper call" << std::endl;
@@ -93,7 +93,7 @@ int32_t DartMethodPointer::setTimeout(void* callback_context,
 
 int32_t DartMethodPointer::setInterval(void* callback_context,
                                        int32_t context_id,
-                                       webf::AsyncCallback callback,
+                                       AsyncCallback callback,
                                        int32_t timeout) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] SetIntervalWrapper call" << std::endl;
@@ -119,7 +119,7 @@ void DartMethodPointer::clearTimeout(int32_t context_id, int32_t timerId) {
 
 int32_t DartMethodPointer::requestAnimationFrame(void* callback_context,
                                                  int32_t context_id,
-                                                 webf::AsyncRAFCallback callback) {
+                                                 AsyncRAFCallback callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] RequestAnimationFrameWrapper call" << std::endl;
 #endif
@@ -144,7 +144,7 @@ void DartMethodPointer::cancelAnimationFrame(int32_t context_id, int32_t id) {
 
 void DartMethodPointer::toBlob(void* callback_context,
                                int32_t context_id,
-                               webf::AsyncBlobCallback blobCallback,
+                               AsyncBlobCallback blobCallback,
                                void* element_ptr,
                                double devicePixelRatio) {
 #if ENABLE_LOG
@@ -214,7 +214,93 @@ void DartMethodPointer::matchImageSnapshot(void* callback_context,
                                            int32_t context_id,
                                            uint8_t* bytes,
                                            int32_t length,
-                                           webf::SharedNativeString* name,
-                                           webf::MatchImageSnapshotCallback callback) {}
+                                           SharedNativeString* name,
+                                           MatchImageSnapshotCallback callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[CPP] matchImageSnapshot call" << std::endl;
+#endif
+  if (currentDartIsolateContext == nullptr) {
+    return;
+  }
+  currentDartIsolateContext->dispatcher()->PostToDart(match_image_snapshot_, callback_context, context_id, bytes,
+                                                      length, name, callback);
+}
+
+void DartMethodPointer::matchImageSnapshotBytes(void* callback_context,
+                                                int32_t context_id,
+                                                uint8_t* image_a_bytes,
+                                                int32_t image_a_size,
+                                                uint8_t* image_b_bytes,
+                                                int32_t image_b_size,
+                                                MatchImageSnapshotCallback callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[CPP] matchImageSnapshotBytes call" << std::endl;
+#endif
+  if (currentDartIsolateContext == nullptr) {
+    return;
+  }
+  currentDartIsolateContext->dispatcher()->PostToDart(match_image_snapshot_bytes_, callback_context, context_id,
+                                                      image_a_bytes, image_a_size, image_b_bytes, image_b_size,
+                                                      callback);
+}
+
+const char* DartMethodPointer::environment() {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[CPP] matchImageSnapshotBytes call" << std::endl;
+#endif
+  if (currentDartIsolateContext == nullptr) {
+    return nullptr;
+  }
+  return currentDartIsolateContext->dispatcher()->PostToDartSync(environment_);
+}
+
+void DartMethodPointer::simulatePointer(void* ptr,
+                                        MousePointer* mouse_pointer,
+                                        int32_t length,
+                                        int32_t pointer,
+                                        AsyncCallback async_callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[CPP] simulatePointer call" << std::endl;
+#endif
+  if (currentDartIsolateContext == nullptr) {
+    return;
+  }
+  currentDartIsolateContext->dispatcher()->PostToDart(simulate_pointer_, ptr, mouse_pointer, length, pointer,
+                                                      async_callback);
+}
+
+void DartMethodPointer::simulateInputText(SharedNativeString* nativeString) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[CPP] simulatePointer call" << std::endl;
+#endif
+  if (currentDartIsolateContext == nullptr) {
+    return;
+  }
+  currentDartIsolateContext->dispatcher()->PostToDart(simulate_input_text_, nativeString);
+}
+
+void DartMethodPointer::SetOnJSError(webf::OnJSError func) {
+  on_js_error_ = func;
+}
+
+void DartMethodPointer::SetMatchImageSnapshot(MatchImageSnapshot func) {
+  match_image_snapshot_ = func;
+}
+
+void DartMethodPointer::SetMatchImageSnapshotBytes(MatchImageSnapshotBytes func) {
+  match_image_snapshot_bytes_ = func;
+}
+
+void DartMethodPointer::SetEnvironment(Environment func) {
+  environment_ = func;
+}
+
+void DartMethodPointer::SetSimulateInputText(SimulateInputText func) {
+  simulate_input_text_ = func;
+}
+
+void DartMethodPointer::SetSimulatePointer(SimulatePointer func) {
+  simulate_pointer_ = func;
+}
 
 }  // namespace webf

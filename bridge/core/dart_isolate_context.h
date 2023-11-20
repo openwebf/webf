@@ -9,7 +9,7 @@
 #include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
 #include "dart_methods.h"
-#include "dispatcher.h"
+#include "multi_threading/dispatcher.h"
 
 namespace webf {
 
