@@ -394,15 +394,14 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   };
 
   WatchDartWire(wire);
-  GetDispatcher()->PostToDart(GetExecutingContext()->is_dedicated(), [](Dart_Handle object,
-                                                void* peer,
-                                                intptr_t external_allocation_size,
-                                                Dart_HandleFinalizer callback) {
+  GetDispatcher()->PostToDart(
+      GetExecutingContext()->is_dedicated(),
+      [](Dart_Handle object, void* peer, intptr_t external_allocation_size, Dart_HandleFinalizer callback) {
         WEBF_LOG(VERBOSE) << " CALL DART FINAL";
         Dart_NewFinalizableHandle_DL(object, peer, external_allocation_size, callback);
         WEBF_LOG(VERBOSE) << " CALL DART FINAL DONE";
-      }, dart_object, reinterpret_cast<void*>(wire),
-                              sizeof(DartWireContext), dart_object_finalize_callback);
+      },
+      dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext), dart_object_finalize_callback);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx());

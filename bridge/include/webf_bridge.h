@@ -33,9 +33,7 @@ typedef void (*Task)(void*);
 typedef std::function<void()> DartWork;
 
 WEBF_EXPORT_C
-void* initDartIsolateContext(int64_t dart_port,
-                             uint64_t* dart_methods,
-                             int32_t dart_methods_len);
+void* initDartIsolateContext(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len);
 
 WEBF_EXPORT_C
 void* allocateNewPage(int8_t dedicated_thread, void* dart_isolate_context, int32_t targetContextId);

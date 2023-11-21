@@ -14,8 +14,8 @@ thread_local DartIsolateContext* currentDartIsolateContext = nullptr;
 namespace webf {
 
 DartMethodPointer::DartMethodPointer(void* dart_isolate_context,
-                                           const uint64_t* dart_methods,
-                                           int32_t dart_methods_length) {
+                                     const uint64_t* dart_methods,
+                                     int32_t dart_methods_length) {
   currentDartIsolateContext = static_cast<DartIsolateContext*>(dart_isolate_context);
 
   size_t i = 0;
@@ -91,8 +91,8 @@ int32_t DartMethodPointer::setTimeout(bool is_dedicated,
     return -1;
   }
 
-  return currentDartIsolateContext->dispatcher()->PostToDartSync(is_dedicated, set_timeout_, callback_context, context_id, callback,
-                                                                 timeout);
+  return currentDartIsolateContext->dispatcher()->PostToDartSync(is_dedicated, set_timeout_, callback_context,
+                                                                 context_id, callback, timeout);
 }
 
 int32_t DartMethodPointer::setInterval(bool is_dedicated,
@@ -107,8 +107,8 @@ int32_t DartMethodPointer::setInterval(bool is_dedicated,
     return -1;
   }
 
-  return currentDartIsolateContext->dispatcher()->PostToDartSync(is_dedicated, set_interval_, callback_context, context_id, callback,
-                                                                 timeout);
+  return currentDartIsolateContext->dispatcher()->PostToDartSync(is_dedicated, set_interval_, callback_context,
+                                                                 context_id, callback, timeout);
 }
 
 void DartMethodPointer::clearTimeout(bool is_dedicated, int32_t context_id, int32_t timerId) {
@@ -133,8 +133,8 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
     return -1;
   }
 
-  return currentDartIsolateContext->dispatcher()->PostToDartSync(is_dedicated, request_animation_frame_, callback_context, context_id,
-                                                                 callback);
+  return currentDartIsolateContext->dispatcher()->PostToDartSync(is_dedicated, request_animation_frame_,
+                                                                 callback_context, context_id, callback);
 }
 
 void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, int32_t context_id, int32_t id) {
@@ -145,7 +145,7 @@ void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, int32_t context_
     return;
   }
 
-  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated,cancel_animation_frame_, context_id, id);
+  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, cancel_animation_frame_, context_id, id);
 }
 
 void DartMethodPointer::toBlob(bool is_dedicated,
@@ -161,8 +161,8 @@ void DartMethodPointer::toBlob(bool is_dedicated,
     return;
   }
 
-  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, to_blob_, callback_context, context_id, blobCallback, element_ptr,
-                                                      devicePixelRatio);
+  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, to_blob_, callback_context, context_id,
+                                                      blobCallback, element_ptr, devicePixelRatio);
 }
 
 void DartMethodPointer::flushUICommand(bool is_dedicated, int32_t context_id) {
@@ -189,8 +189,8 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
     return;
   }
 
-  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, create_binding_object_, context_id, native_binding_object, type,
-                                                      args, argc);
+  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, create_binding_object_, context_id,
+                                                      native_binding_object, type, args, argc);
 }
 
 void DartMethodPointer::onJSError(bool is_dedicated, int32_t context_id, const char* error) {
@@ -201,7 +201,7 @@ void DartMethodPointer::onJSError(bool is_dedicated, int32_t context_id, const c
     return;
   }
 
-  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated , on_js_error_, context_id, error);
+  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, on_js_error_, context_id, error);
 }
 
 void DartMethodPointer::onJSLog(bool is_dedicated, int32_t context_id, int32_t level, const char* log) {
@@ -231,8 +231,8 @@ void DartMethodPointer::matchImageSnapshot(bool is_dedicated,
   if (currentDartIsolateContext == nullptr) {
     return;
   }
-  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, match_image_snapshot_, callback_context, context_id, bytes,
-                                                      length, name, callback);
+  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, match_image_snapshot_, callback_context, context_id,
+                                                      bytes, length, name, callback);
 }
 
 void DartMethodPointer::matchImageSnapshotBytes(bool is_dedicated,
@@ -249,9 +249,9 @@ void DartMethodPointer::matchImageSnapshotBytes(bool is_dedicated,
   if (currentDartIsolateContext == nullptr) {
     return;
   }
-  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, match_image_snapshot_bytes_, callback_context, context_id,
-                                                      image_a_bytes, image_a_size, image_b_bytes, image_b_size,
-                                                      callback);
+  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, match_image_snapshot_bytes_, callback_context,
+                                                      context_id, image_a_bytes, image_a_size, image_b_bytes,
+                                                      image_b_size, callback);
 }
 
 const char* DartMethodPointer::environment(bool is_dedicated) {
@@ -276,8 +276,8 @@ void DartMethodPointer::simulatePointer(bool is_dedicated,
   if (currentDartIsolateContext == nullptr) {
     return;
   }
-  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, simulate_pointer_, ptr, mouse_pointer, length, pointer,
-                                                      async_callback);
+  currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, simulate_pointer_, ptr, mouse_pointer, length,
+                                                      pointer, async_callback);
 }
 
 void DartMethodPointer::simulateInputText(bool is_dedicated, SharedNativeString* nativeString) {

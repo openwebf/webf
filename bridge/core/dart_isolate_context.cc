@@ -140,6 +140,6 @@ void DartIsolateContext::RemovePage(bool is_dedicated, const webf::WebFPage* pag
   }
 }
 
-thread_local std::unique_ptr<DartContextData> DartIsolateContext::data_ {};
+thread_local std::unique_ptr<DartContextData> DartIsolateContext::data_{};
 
 }  // namespace webf

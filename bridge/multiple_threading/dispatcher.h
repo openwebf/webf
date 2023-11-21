@@ -125,7 +125,11 @@ class Dispatcher {
   }
 
   template <typename Func, typename... Args>
-  void PostToJsAndCallback(bool dedicated_thread, int32_t js_context_id, Func&& func, Callback&& callback, Args&&... args) {
+  void PostToJsAndCallback(bool dedicated_thread,
+                           int32_t js_context_id,
+                           Func&& func,
+                           Callback&& callback,
+                           Args&&... args) {
     if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       callback();
@@ -135,11 +139,12 @@ class Dispatcher {
     assert(js_threads_.count(js_context_id) > 0);
     auto& looper = js_threads_[js_context_id];
     looper->PostMessageAndCallback(std::forward<Func>(func), std::forward<Callback>(callback),
-                                    std::forward<Args>(args)...);
+                                   std::forward<Args>(args)...);
   }
 
   template <typename Func, typename... Args>
-  auto PostToJsSync(bool dedicated_thread, int32_t js_context_id, Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
+  auto PostToJsSync(bool dedicated_thread, int32_t js_context_id, Func&& func, Args&&... args)
+      -> std::invoke_result_t<Func, Args...> {
     if (!dedicated_thread) {
       return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }

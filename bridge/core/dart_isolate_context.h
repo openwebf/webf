@@ -33,9 +33,7 @@ class DartIsolateContext {
 
   JSRuntime* runtime();
   FORCE_INLINE bool valid() { return is_valid_; }
-  FORCE_INLINE DartMethodPointer* dartMethodPtr() const {
-    return dart_method_ptr_.get();
-  }
+  FORCE_INLINE DartMethodPointer* dartMethodPtr() const { return dart_method_ptr_.get(); }
   FORCE_INLINE const std::unique_ptr<multi_threading::Dispatcher>& dispatcher() const { return dispatcher_; }
   FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
     dispatcher_ = std::move(dispatcher);
@@ -49,7 +47,6 @@ class DartIsolateContext {
   ~DartIsolateContext();
 
  private:
-
   static void InitializeJSRuntime();
   static void FinalizeJSRuntime();
 

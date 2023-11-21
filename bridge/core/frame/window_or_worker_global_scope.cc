@@ -82,7 +82,8 @@ static void handleTransientCallbackWrapper(void* ptr, int32_t contextId, const c
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->PostToJs(context->is_dedicated(), contextId, webf::handleTransientCallback, ptr, contextId, errmsg);
+  context->dartIsolateContext()->dispatcher()->PostToJs(context->is_dedicated(), contextId,
+                                                        webf::handleTransientCallback, ptr, contextId, errmsg);
 }
 
 static void handlePersistentCallbackWrapper(void* ptr, int32_t contextId, const char* errmsg) {
@@ -92,7 +93,8 @@ static void handlePersistentCallbackWrapper(void* ptr, int32_t contextId, const 
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->PostToJs(context->is_dedicated(), contextId, webf::handlePersistentCallback, ptr, contextId, errmsg);
+  context->dartIsolateContext()->dispatcher()->PostToJs(context->is_dedicated(), contextId,
+                                                        webf::handlePersistentCallback, ptr, contextId, errmsg);
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
@@ -107,8 +109,8 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
                                           ExceptionState& exception) {
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kOnce);
-  auto timerId =
-      context->dartMethodPtr()->setTimeout(context->is_dedicated(), timer.get(), context->contextId(), handleTransientCallbackWrapper, timeout);
+  auto timerId = context->dartMethodPtr()->setTimeout(context->is_dedicated(), timer.get(), context->contextId(),
+                                                      handleTransientCallbackWrapper, timeout);
 
   // Register timerId.
   timer->setTimerId(timerId);

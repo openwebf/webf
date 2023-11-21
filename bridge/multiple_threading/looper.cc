@@ -58,8 +58,6 @@ void Looper::Stop() {
   }
 }
 
-
-
 // private methods
 void Looper::Run() {
   WEBF_LOG(DEBUG) << "Looper::Run" << std::endl;
