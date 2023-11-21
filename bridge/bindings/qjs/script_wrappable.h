@@ -9,7 +9,7 @@
 #include <quickjs/quickjs.h>
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "foundation/macros.h"
-#include "multi_threading/dispatcher.h"
+#include "multiple_threading/dispatcher.h"
 #include "wrapper_type_info.h"
 
 namespace webf {

@@ -18,13 +18,15 @@ namespace webf {
 
 namespace multi_threading {
 
+typedef void (*OpaqueFinalizer)(void* p);
+
 /**
  * @brief thread looper, used to Run tasks in a thread.
  *
  */
 class Looper {
  public:
-  Looper();
+  Looper(int32_t js_id);
   ~Looper();
 
   void Start();
@@ -68,6 +70,12 @@ class Looper {
   void Pause();
   void Resume();
   void Stop();
+  void Kill();
+
+  void SetOpaque(void* p, OpaqueFinalizer finalizer);
+  void* opaque();
+
+  void ExecuteOpaqueFinalizer();
 
  private:
   void Run();
@@ -78,6 +86,9 @@ class Looper {
   std::thread worker_;
   bool paused_;
   bool running_;
+  void* opaque_;
+  OpaqueFinalizer opaque_finalizer_;
+  int32_t js_id_;
 };
 
 }  // namespace multi_threading

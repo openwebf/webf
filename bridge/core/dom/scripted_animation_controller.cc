@@ -44,7 +44,7 @@ static void handleRAFTransientCallbackWrapper(void* ptr,
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->PostToJs(webf::handleRAFTransientCallback, ptr, contextId,
+  context->dartIsolateContext()->dispatcher()->PostToJs(contextId, webf::handleRAFTransientCallback, ptr, contextId,
                                                         highResTimeStamp, errmsg);
 }
 

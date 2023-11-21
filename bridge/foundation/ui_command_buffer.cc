@@ -28,6 +28,7 @@ void UICommandBuffer::addCommand(UICommand type,
 }
 
 void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_update) {
+  WEBF_LOG(VERBOSE) << " DART ISOLATE CONTEXT: " << context_->dartIsolateContext();
   if (UNLIKELY(!context_->dartIsolateContext()->valid())) {
     return;
   }

@@ -3,6 +3,7 @@
  */
 
 #include "looper.h"
+#include <pthread.h>
 
 #include <cstddef>
 
@@ -12,7 +13,11 @@ namespace webf {
 
 namespace multi_threading {
 
-Looper::Looper() : running_(false), paused_(false) {}
+static void setThreadName(const std::string& name) {
+  pthread_setname_np(name.c_str());
+}
+
+Looper::Looper(int32_t js_id) : js_id_(js_id), running_(false), paused_(false) {}
 
 Looper::~Looper() {}
 
@@ -21,7 +26,12 @@ void Looper::Start() {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!worker_.joinable()) {
     running_ = true;
-    worker_ = std::thread([this] { this->Run(); });
+    worker_ = std::thread([this] {
+      WEBF_LOG(VERBOSE) << " WORKER RUN.. ";
+      std::string thread_name = "JS Worker " + std::to_string(js_id_);
+      setThreadName(thread_name.c_str());
+      this->Run();
+    });
   }
 }
 
@@ -43,10 +53,12 @@ void Looper::Stop() {
     running_ = false;
   }
   cv_.notify_one();
-  // if (worker_.joinable()) {
-  //     worker_.join();
-  // }
+  if (worker_.joinable()) {
+    worker_.join();
+  }
 }
+
+
 
 // private methods
 void Looper::Run() {
@@ -72,6 +84,19 @@ void Looper::Run() {
       (*task)();
     }
   }
+}
+
+void Looper::SetOpaque(void* p, OpaqueFinalizer finalizer) {
+  opaque_ = p;
+  opaque_finalizer_ = finalizer;
+}
+
+void* Looper::opaque() {
+  return opaque_;
+}
+
+void Looper::ExecuteOpaqueFinalizer() {
+  opaque_finalizer_(opaque_);
 }
 
 }  // namespace multi_threading

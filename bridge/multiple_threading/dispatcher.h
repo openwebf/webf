@@ -36,16 +36,18 @@ class Dispatcher {
   explicit Dispatcher(Dart_Port dart_port, bool dedicated_thread = true);
   ~Dispatcher();
 
-  void Start();
-  void Stop();
-  void Pause();
-  void Resume();
 
   bool isDedicatedThread() const { return dedicated_thread_; }
 
+  void AllocateNewJSThread(int32_t js_context_id);
+  void KillJSThread(int32_t js_context_id);
+  void SetOpaqueForJSThread(int32_t js_context_id, void* opaque, OpaqueFinalizer finalizer);
+
+  std::unique_ptr<Looper>& looper(int32_t js_context_id);
+
   template <typename Func, typename... Args>
   void PostToDart(Func&& func, Args&&... args) {
-    if (looper_ == nullptr) {
+    if (!dedicated_thread_) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       return;
     }
@@ -60,7 +62,7 @@ class Dispatcher {
 
   template <typename Func, typename... Args>
   void PostToDartAndCallback(Func&& func, Callback callback, Args&&... args) {
-    if (looper_ == nullptr) {
+    if (!dedicated_thread_) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       callback();
       return;
@@ -77,7 +79,7 @@ class Dispatcher {
 
   template <typename Func, typename... Args>
   auto PostToDartSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
-    if (looper_ == nullptr) {
+    if (!dedicated_thread_) {
       return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
 
@@ -96,7 +98,7 @@ class Dispatcher {
 
   template <typename Func, typename... Args>
   void PostToDartWithoutResSync(Func&& func, Args&&... args) {
-    if (looper_ == nullptr) {
+    if (!dedicated_thread_) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
 
@@ -114,34 +116,40 @@ class Dispatcher {
   }
 
   template <typename Func, typename... Args>
-  void PostToJs(Func&& func, Args&&... args) {
-    if (looper_ == nullptr) {
+  void PostToJs(int32_t js_context_id, Func&& func, Args&&... args) {
+    if (!dedicated_thread_) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       return;
     }
 
-    looper_->PostMessage(std::forward<Func>(func), std::forward<Args>(args)...);
+    assert(js_threads_.count(js_context_id) > 0);
+    auto& looper = js_threads_[js_context_id];
+    looper->PostMessage(std::forward<Func>(func), std::forward<Args>(args)...);
   }
 
   template <typename Func, typename... Args>
-  void PostToJsAndCallback(Func&& func, Callback&& callback, Args&&... args) {
-    if (looper_ == nullptr) {
+  void PostToJsAndCallback(int32_t js_context_id, Func&& func, Callback&& callback, Args&&... args) {
+    if (!dedicated_thread_) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       callback();
       return;
     }
 
-    looper_->PostMessageAndCallback(std::forward<Func>(func), std::forward<Callback>(callback),
+    assert(js_threads_.count(js_context_id) > 0);
+    auto& looper = js_threads_[js_context_id];
+    looper->PostMessageAndCallback(std::forward<Func>(func), std::forward<Callback>(callback),
                                     std::forward<Args>(args)...);
   }
 
   template <typename Func, typename... Args>
-  auto PostToJsSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
-    if (looper_ == nullptr) {
+  auto PostToJsSync(int32_t js_context_id, Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
+    if (!dedicated_thread_) {
       return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
 
-    return looper_->PostMessageSync(std::forward<Func>(func), std::forward<Args>(args)...);
+    assert(js_threads_.count(js_context_id) > 0);
+    auto& looper = js_threads_[js_context_id];
+    return looper->PostMessageSync(std::forward<Func>(func), std::forward<Args>(args)...);
   }
 
  private:
@@ -150,7 +158,7 @@ class Dispatcher {
  private:
   Dart_Port dart_port_;
   bool dedicated_thread_ = true;
-  std::unique_ptr<Looper> looper_ = nullptr;
+  std::unordered_map<int32_t, std::unique_ptr<Looper>> js_threads_;
 };
 
 }  // namespace multi_threading

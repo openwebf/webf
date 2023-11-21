@@ -3,7 +3,13 @@
  */
 
 #include "api.h"
+#include "core/dart_isolate_context.h"
+#include "core/html/parser/html_parser.h"
+#include "core/page.h"
 #include "foundation/logging.h"
+#include "foundation/ui_command_buffer.h"
+#include "include/webf_bridge.h"
+#include "multiple_threading/dispatcher.h"
 
 #if defined(_WIN32)
 #define SYSTEM_NAME "windows"  // Windows
@@ -39,17 +45,11 @@ static void* initDartIsolateContextInternal(int8_t dedicated_thread, uint64_t* d
 
 static void* allocateNewPageInternal(void* dart_isolate_context, int32_t targetContextId) {
   assert(dart_isolate_context != nullptr);
-  auto page =
-      std::make_unique<webf::WebFPage>((webf::DartIsolateContext*)dart_isolate_context, targetContextId, nullptr);
-  void* ptr = page.get();
-  ((webf::DartIsolateContext*)dart_isolate_context)->AddNewPage(std::move(page));
-  return ptr;
+  return static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPage(targetContextId);
 }
 
 static void disposePageInternal(void* dart_isolate_context, void* page_) {
-  auto* page = reinterpret_cast<webf::WebFPage*>(page_);
-  assert(std::this_thread::get_id() == page->currentThread());
-  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(page);
+  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(static_cast<WebFPage*>(page_));
 }
 
 static int8_t evaluateScriptsInternal(void* page_,
@@ -76,20 +76,11 @@ static void parseHTMLInternal(void* page_, const char* code, int32_t length) {
   page->parseHTML(code, length);
 }
 
-static void* parseSVGResult(const char* code, int32_t length) {
-  auto* result = webf::HTMLParser::parseSVGResult(code, length);
-  return result;
-}
-
-static void freeSVGResult(void* svgTree) {
-  webf::HTMLParser::freeSVGResult(reinterpret_cast<GumboOutput*>(svgTree));
-}
-
-static NativeValue* invokeModuleEvent(void* page_,
-                                      SharedNativeString* module_name,
-                                      const char* eventType,
-                                      void* event,
-                                      NativeValue* extra) {
+static NativeValue* invokeModuleEventInternal(void* page_,
+                                              SharedNativeString* module_name,
+                                              const char* eventType,
+                                              void* event,
+                                              NativeValue* extra) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   auto* result = page->invokeModuleEvent(reinterpret_cast<webf::SharedNativeString*>(module_name), eventType, event,
@@ -124,10 +115,7 @@ void* initDartIsolateContext(int8_t dedicated_thread,
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] allocateNewPageWrapper, targetContextId= " << targetContextId << std::endl;
 #endif
-
-  auto* ptr =
-      dispatcher->PostToJsSync(webf::initDartIsolateContextInternal, dedicated_thread, dart_methods, dart_methods_len);
-  auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
+  auto* dart_isolate_context = new webf::DartIsolateContext(dedicated_thread == 1, dart_methods, dart_methods_len);
   dart_isolate_context->SetDispatcher(std::move(dispatcher));
   return dart_isolate_context;
 }
@@ -137,12 +125,15 @@ void* allocateNewPage(void* ptr, int32_t targetContextId) {
   WEBF_LOG(VERBOSE) << "[Dart] allocateNewPageWrapper, targetContextId= " << targetContextId << std::endl;
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
-  return dart_isolate_context->dispatcher()->PostToJsSync(webf::allocateNewPageInternal, ptr, targetContextId);
+//  return dart_isolate_context->dispatcher()->PostToJsSync(targetContextId, webf::allocateNewPageInternal, ptr,
+//                                                          targetContextId);
+  assert(dart_isolate_context != nullptr);
+  return static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPage(targetContextId);
 }
 
-void disposePage(void* ptr, void* page) {
+void disposePage(void* ptr, void* page_) {
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
-  dart_isolate_context->dispatcher()->PostToJs(disposePageInternal, ptr, page);
+  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(static_cast<WebFPage*>(page_));
 }
 
 int8_t evaluateScripts(void* page_,
@@ -156,8 +147,9 @@ int8_t evaluateScripts(void* page_,
   WEBF_LOG(VERBOSE) << "[Dart] evaluateScriptsWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(
-      evaluateScriptsInternal, page_, code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
+  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->contextId, evaluateScriptsInternal,
+                                                                            page_, code, code_len, parsed_bytecodes,
+                                                                            bytecode_len, bundleFilename, startLine);
   return 1;
 }
 
@@ -170,7 +162,8 @@ int8_t evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
   uint8_t* bytes_copy = (uint8_t*)malloc(byteLen * sizeof(uint8_t));
   memcpy(bytes_copy, bytes, byteLen * sizeof(uint8_t));
   page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJsAndCallback(
-      evaluateQuickjsByteCodeInternal, [bytes_copy]() mutable { free(bytes_copy); }, page_, bytes_copy, byteLen);
+      page->contextId, evaluateQuickjsByteCodeInternal, [bytes_copy]() mutable { free(bytes_copy); }, page_, bytes_copy,
+      byteLen);
   return 1;
 }
 
@@ -179,7 +172,8 @@ void parseHTML(void* page_, const char* code, int32_t length) {
   WEBF_LOG(VERBOSE) << "[Dart] parseHTMLWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(parseHTMLInternal, page_, code, length);
+  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->contextId, parseHTMLInternal, page_,
+                                                                            code, length);
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
@@ -200,6 +194,25 @@ WebFInfo* getWebFInfo() {
   }
 
   return webfInfo;
+}
+
+void* parseSVGResult(const char* code, int32_t length) {
+  auto* result = webf::HTMLParser::parseSVGResult(code, length);
+  return result;
+}
+
+void freeSVGResult(void* svgTree) {
+  webf::HTMLParser::freeSVGResult(reinterpret_cast<GumboOutput*>(svgTree));
+}
+
+webf::NativeValue* invokeModuleEvent(void* page_,
+                                     webf::SharedNativeString* module,
+                                     const char* eventType,
+                                     void* event,
+                                     webf::NativeValue* extra) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->contextId, invokeModuleEventInternal,
+                                                                            page_, module, eventType, event, extra);
 }
 
 void dispatchUITask(void* page_, void* context, void* callback) {
