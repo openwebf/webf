@@ -68,8 +68,9 @@ static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
                                                                const char* errmsg,
                                                                NativeValue* extra_data) {
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
-  return moduleContext->context->dartIsolateContext()->dispatcher()->PostToJsSync(contextId, handleInvokeModuleTransientCallback,
-                                                                                  ptr, contextId, errmsg, extra_data);
+  return moduleContext->context->dartIsolateContext()->dispatcher()->PostToJsSync(
+      moduleContext->context->is_dedicated(), contextId, handleInvokeModuleTransientCallback, ptr, contextId, errmsg,
+      extra_data);
 }
 
 NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,
@@ -113,12 +114,13 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     auto module_callback = ModuleCallback::Create(callback);
     auto module_context = std::make_shared<ModuleContext>(context, module_callback);
     context->ModuleContexts()->AddModuleContext(module_context);
-    result = context->dartMethodPtr()->invokeModule(
-        module_context.get(), context->contextId(), module_name.ToNativeString(context->ctx()).release(),
-        method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleTransientCallbackWrapper);
+    result = context->dartMethodPtr()->invokeModule(context->is_dedicated(), module_context.get(), context->contextId(),
+                                                    module_name.ToNativeString(context->ctx()).release(),
+                                                    method.ToNativeString(context->ctx()).release(), &params,
+                                                    handleInvokeModuleTransientCallbackWrapper);
   } else {
     result = context->dartMethodPtr()->invokeModule(
-        nullptr, context->contextId(), module_name.ToNativeString(context->ctx()).release(),
+        context->is_dedicated(), nullptr, context->contextId(), module_name.ToNativeString(context->ctx()).release(),
         method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleUnexpectedCallback);
   }
 

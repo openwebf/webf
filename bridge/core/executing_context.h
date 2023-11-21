@@ -61,6 +61,7 @@ class ExecutingContext {
  public:
   ExecutingContext() = delete;
   ExecutingContext(DartIsolateContext* dart_isolate_context,
+                   bool is_dedicated,
                    int32_t contextId,
                    JSExceptionHandler handler,
                    void* owner);
@@ -130,6 +131,7 @@ class ExecutingContext {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
   }
+  FORCE_INLINE bool is_dedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.
@@ -201,6 +203,7 @@ class ExecutingContext {
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::set<ScriptWrappable*> active_wrappers_;
+  bool is_dedicated_;
 };
 
 class ObjectProperty {

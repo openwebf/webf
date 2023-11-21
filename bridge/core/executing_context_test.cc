@@ -274,12 +274,12 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
 
 TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
-  void* dart_context = initDartIsolateContext(false, 0, mockedDartMethods.data(), mockedDartMethods.size());
+  void* dart_context = initDartIsolateContext(0, mockedDartMethods.data(), mockedDartMethods.size());
   uint32_t contextId = 0;
-  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPage(dart_context, contextId));
+  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPage(false, dart_context, contextId));
   static bool disposed = false;
   page->disposeCallback = [](webf::WebFPage* bridge) { disposed = true; };
-  disposePage(dart_context, page);
+  disposePage(false, dart_context, page);
   EXPECT_EQ(disposed, true);
 }
 

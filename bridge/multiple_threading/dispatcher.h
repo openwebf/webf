@@ -33,11 +33,8 @@ namespace multi_threading {
  */
 class Dispatcher {
  public:
-  explicit Dispatcher(Dart_Port dart_port, bool dedicated_thread = true);
+  explicit Dispatcher(Dart_Port dart_port);
   ~Dispatcher();
-
-
-  bool isDedicatedThread() const { return dedicated_thread_; }
 
   void AllocateNewJSThread(int32_t js_context_id);
   void KillJSThread(int32_t js_context_id);
@@ -46,8 +43,8 @@ class Dispatcher {
   std::unique_ptr<Looper>& looper(int32_t js_context_id);
 
   template <typename Func, typename... Args>
-  void PostToDart(Func&& func, Args&&... args) {
-    if (!dedicated_thread_) {
+  void PostToDart(bool dedicated_thread, Func&& func, Args&&... args) {
+    if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       return;
     }
@@ -61,8 +58,8 @@ class Dispatcher {
   }
 
   template <typename Func, typename... Args>
-  void PostToDartAndCallback(Func&& func, Callback callback, Args&&... args) {
-    if (!dedicated_thread_) {
+  void PostToDartAndCallback(bool dedicated_thread, Func&& func, Callback callback, Args&&... args) {
+    if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       callback();
       return;
@@ -78,8 +75,8 @@ class Dispatcher {
   }
 
   template <typename Func, typename... Args>
-  auto PostToDartSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
-    if (!dedicated_thread_) {
+  auto PostToDartSync(bool dedicated_thread, Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
+    if (!dedicated_thread) {
       return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
 
@@ -97,8 +94,8 @@ class Dispatcher {
   }
 
   template <typename Func, typename... Args>
-  void PostToDartWithoutResSync(Func&& func, Args&&... args) {
-    if (!dedicated_thread_) {
+  void PostToDartWithoutResSync(bool dedicated_thread, Func&& func, Args&&... args) {
+    if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
 
@@ -116,8 +113,8 @@ class Dispatcher {
   }
 
   template <typename Func, typename... Args>
-  void PostToJs(int32_t js_context_id, Func&& func, Args&&... args) {
-    if (!dedicated_thread_) {
+  void PostToJs(bool dedicated_thread, int32_t js_context_id, Func&& func, Args&&... args) {
+    if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       return;
     }
@@ -128,8 +125,8 @@ class Dispatcher {
   }
 
   template <typename Func, typename... Args>
-  void PostToJsAndCallback(int32_t js_context_id, Func&& func, Callback&& callback, Args&&... args) {
-    if (!dedicated_thread_) {
+  void PostToJsAndCallback(bool dedicated_thread, int32_t js_context_id, Func&& func, Callback&& callback, Args&&... args) {
+    if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       callback();
       return;
@@ -142,8 +139,8 @@ class Dispatcher {
   }
 
   template <typename Func, typename... Args>
-  auto PostToJsSync(int32_t js_context_id, Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
-    if (!dedicated_thread_) {
+  auto PostToJsSync(bool dedicated_thread, int32_t js_context_id, Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
+    if (!dedicated_thread) {
       return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
     }
 
@@ -157,7 +154,6 @@ class Dispatcher {
 
  private:
   Dart_Port dart_port_;
-  bool dedicated_thread_ = true;
   std::unordered_map<int32_t, std::unique_ptr<Looper>> js_threads_;
 };
 

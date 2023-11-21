@@ -38,20 +38,6 @@ static std::atomic<int64_t> unique_page_id{0};
 
 namespace webf {
 
-static void* initDartIsolateContextInternal(int8_t dedicated_thread, uint64_t* dart_methods, int32_t dart_methods_len) {
-  void* ptr = new webf::DartIsolateContext(dedicated_thread == 1, dart_methods, dart_methods_len);
-  return ptr;
-}
-
-static void* allocateNewPageInternal(void* dart_isolate_context, int32_t targetContextId) {
-  assert(dart_isolate_context != nullptr);
-  return static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPage(targetContextId);
-}
-
-static void disposePageInternal(void* dart_isolate_context, void* page_) {
-  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(static_cast<WebFPage*>(page_));
-}
-
 static int8_t evaluateScriptsInternal(void* page_,
                                       const char* code,
                                       uint64_t code_len,
@@ -106,34 +92,30 @@ int64_t newPageId() {
 
 using namespace webf;
 
-void* initDartIsolateContext(int8_t dedicated_thread,
-                             int64_t dart_port,
-                             uint64_t* dart_methods,
-                             int32_t dart_methods_len) {
-  auto dispatcher = std::make_unique<webf::multi_threading::Dispatcher>(dart_port, dedicated_thread);
+void* initDartIsolateContext(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len) {
+  auto dispatcher = std::make_unique<webf::multi_threading::Dispatcher>(dart_port);
 
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] allocateNewPageWrapper, targetContextId= " << targetContextId << std::endl;
 #endif
-  auto* dart_isolate_context = new webf::DartIsolateContext(dedicated_thread == 1, dart_methods, dart_methods_len);
+  auto* dart_isolate_context = new webf::DartIsolateContext(dart_methods, dart_methods_len);
   dart_isolate_context->SetDispatcher(std::move(dispatcher));
   return dart_isolate_context;
 }
 
-void* allocateNewPage(void* ptr, int32_t targetContextId) {
+void* allocateNewPage(int8_t dedicated_thread, void* ptr, int32_t targetContextId) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] allocateNewPageWrapper, targetContextId= " << targetContextId << std::endl;
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
-//  return dart_isolate_context->dispatcher()->PostToJsSync(targetContextId, webf::allocateNewPageInternal, ptr,
-//                                                          targetContextId);
   assert(dart_isolate_context != nullptr);
-  return static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPage(targetContextId);
+  return static_cast<webf::DartIsolateContext*>(dart_isolate_context)
+      ->AddNewPage(dedicated_thread == 1, targetContextId);
 }
 
-void disposePage(void* ptr, void* page_) {
+void disposePage(int8_t dedicated_thread, void* ptr, void* page_) {
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
-  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(static_cast<WebFPage*>(page_));
+  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(dedicated_thread == 1, static_cast<WebFPage*>(page_));
 }
 
 int8_t evaluateScripts(void* page_,
@@ -147,9 +129,9 @@ int8_t evaluateScripts(void* page_,
   WEBF_LOG(VERBOSE) << "[Dart] evaluateScriptsWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->contextId, evaluateScriptsInternal,
-                                                                            page_, code, code_len, parsed_bytecodes,
-                                                                            bytecode_len, bundleFilename, startLine);
+  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(
+      page->is_dedicated(), page->contextId, evaluateScriptsInternal, page_, code, code_len, parsed_bytecodes,
+      bytecode_len, bundleFilename, startLine);
   return 1;
 }
 
@@ -162,8 +144,8 @@ int8_t evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
   uint8_t* bytes_copy = (uint8_t*)malloc(byteLen * sizeof(uint8_t));
   memcpy(bytes_copy, bytes, byteLen * sizeof(uint8_t));
   page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJsAndCallback(
-      page->contextId, evaluateQuickjsByteCodeInternal, [bytes_copy]() mutable { free(bytes_copy); }, page_, bytes_copy,
-      byteLen);
+      page->is_dedicated(), page->contextId, evaluateQuickjsByteCodeInternal,
+      [bytes_copy]() mutable { free(bytes_copy); }, page_, bytes_copy, byteLen);
   return 1;
 }
 
@@ -172,8 +154,8 @@ void parseHTML(void* page_, const char* code, int32_t length) {
   WEBF_LOG(VERBOSE) << "[Dart] parseHTMLWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->contextId, parseHTMLInternal, page_,
-                                                                            code, length);
+  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->is_dedicated(), page->contextId,
+                                                                            parseHTMLInternal, page_, code, length);
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
@@ -211,8 +193,8 @@ webf::NativeValue* invokeModuleEvent(void* page_,
                                      void* event,
                                      webf::NativeValue* extra) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->contextId, invokeModuleEventInternal,
-                                                                            page_, module, eventType, event, extra);
+  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(
+      page->is_dedicated(), page->contextId, invokeModuleEventInternal, page_, module, eventType, event, extra);
 }
 
 void dispatchUITask(void* page_, void* context, void* callback) {

@@ -392,7 +392,7 @@ void ElementSnapshotReader::Start() {
     delete reader;
   };
 
-  context_->dartMethodPtr()->toBlob(this, context_->contextId(), callback, element_->bindingObject(),
+  context_->dartMethodPtr()->toBlob(context_->is_dedicated(), this, context_->contextId(), callback, element_->bindingObject(),
                                     device_pixel_ratio_);
 }
 

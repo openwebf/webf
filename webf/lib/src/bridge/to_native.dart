@@ -267,28 +267,28 @@ void freeSVGResult(GumboOutput gumboOutput) {
 }
 
 // Register initJsEngine
-typedef NativeInitDartIsolateContext = Pointer<Void> Function(Int8 dedicated, Int64 sendPort, Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartInitDartIsolateContext = Pointer<Void> Function(int dedicated, int sendPort, Pointer<Uint64> dartMethods, int methodsLength);
+typedef NativeInitDartIsolateContext = Pointer<Void> Function(Int64 sendPort, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitDartIsolateContext = Pointer<Void> Function(int sendPort, Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartInitDartIsolateContext _initDartIsolateContext =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContext').asFunction();
 
-Pointer<Void> initDartIsolateContext(bool dedicatedThread, List<int> dartMethods) {
+Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  return _initDartIsolateContext(dedicatedThread ? 1 : 0, nativePort, bytes, dartMethods.length);
+  return _initDartIsolateContext(nativePort, bytes, dartMethods.length);
 }
 
-typedef NativeDisposePage = Void Function(Pointer<Void>, Pointer<Void> page);
-typedef DartDisposePage = void Function(Pointer<Void>, Pointer<Void> page);
+typedef NativeDisposePage = Void Function(Int8 dedicatedThread, Pointer<Void>, Pointer<Void> page);
+typedef DartDisposePage = void Function(int, Pointer<Void>, Pointer<Void> page);
 
 final DartDisposePage _disposePage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePage').asFunction();
 
-void disposePage(int contextId) {
+void disposePage(bool dedicatedThread, int contextId) {
   Pointer<Void> page = _allocatedPages[contextId]!;
-  _disposePage(dartContext!.pointer, page);
+  _disposePage(dedicatedThread ? 1 : 0, dartContext!.pointer, page);
   _allocatedPages.remove(contextId);
 }
 
@@ -301,14 +301,14 @@ int newPageId() {
   return _newPageId();
 }
 
-typedef NativeAllocateNewPage = Pointer<Void> Function(Pointer<Void>, Int32);
-typedef DartAllocateNewPage = Pointer<Void> Function(Pointer<Void>, int);
+typedef NativeAllocateNewPage = Pointer<Void> Function(Int8, Pointer<Void>, Int32);
+typedef DartAllocateNewPage = Pointer<Void> Function(int, Pointer<Void>, int);
 
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
-void allocateNewPage(int targetContextId) {
-  Pointer<Void> page = _allocateNewPage(dartContext!.pointer, targetContextId);
+void allocateNewPage(bool dedicatedThread, int targetContextId) {
+  Pointer<Void> page = _allocateNewPage(dedicatedThread ? 1 : 0, dartContext!.pointer, targetContextId);
   assert(!_allocatedPages.containsKey(targetContextId));
   _allocatedPages[targetContextId] = page;
 }

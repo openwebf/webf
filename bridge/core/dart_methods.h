@@ -98,39 +98,59 @@ class DartMethodPointer {
 
  public:
   explicit DartMethodPointer(void* dart_isolate_context, const uint64_t* dart_methods, int32_t dartMethodsLength);
-  NativeValue* invokeModule(void* callback_context,
+  NativeValue* invokeModule(bool is_dedicated,
+                            void* callback_context,
                             int32_t context_id,
                             SharedNativeString* moduleName,
                             SharedNativeString* method,
                             NativeValue* params,
                             AsyncModuleCallback callback);
 
-  void requestBatchUpdate(int32_t context_id);
-  void reloadApp(int32_t context_id);
-  int32_t setTimeout(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout);
-  int32_t setInterval(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout);
-  void clearTimeout(int32_t context_id, int32_t timerId);
-  int32_t requestAnimationFrame(void* callback_context, int32_t context_id, AsyncRAFCallback callback);
-  void cancelAnimationFrame(int32_t context_id, int32_t id);
-  void toBlob(void* callback_context,
+  void requestBatchUpdate(bool is_dedicated, int32_t context_id);
+  void reloadApp(bool is_dedicated, int32_t context_id);
+  int32_t setTimeout(bool is_dedicated,
+                     void* callback_context,
+                     int32_t context_id,
+                     AsyncCallback callback,
+                     int32_t timeout);
+  int32_t setInterval(bool is_dedicated,
+                      void* callback_context,
+                      int32_t context_id,
+                      AsyncCallback callback,
+                      int32_t timeout);
+  void clearTimeout(bool is_dedicated, int32_t context_id, int32_t timerId);
+  int32_t requestAnimationFrame(bool is_dedicated,
+                                void* callback_context,
+                                int32_t context_id,
+                                AsyncRAFCallback callback);
+  void cancelAnimationFrame(bool is_dedicated, int32_t context_id, int32_t id);
+  void toBlob(bool is_dedicated,
+              void* callback_context,
               int32_t context_id,
               AsyncBlobCallback blobCallback,
               void* element_ptr,
               double devicePixelRatio);
-  void flushUICommand(int32_t context_id);
-  void createBindingObject(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
+  void flushUICommand(bool is_dedicated, int32_t context_id);
+  void createBindingObject(bool is_dedicated,
+                           int32_t context_id,
+                           void* native_binding_object,
+                           int32_t type,
+                           void* args,
+                           int32_t argc);
 
-  void onJSError(int32_t context_id, const char*);
-  void onJSLog(int32_t context_id, int32_t level, const char*);
+  void onJSError(bool is_dedicated, int32_t context_id, const char*);
+  void onJSLog(bool is_dedicated, int32_t context_id, int32_t level, const char*);
 
-  void matchImageSnapshot(void* callback_context,
+  void matchImageSnapshot(bool is_dedicated,
+                          void* callback_context,
                           int32_t context_id,
                           uint8_t* bytes,
                           int32_t length,
                           SharedNativeString* name,
                           MatchImageSnapshotCallback callback);
 
-  void matchImageSnapshotBytes(void* callback_context,
+  void matchImageSnapshotBytes(bool is_dedicated,
+                               void* callback_context,
                                int32_t context_id,
                                uint8_t* image_a_bytes,
                                int32_t image_a_size,
@@ -138,9 +158,14 @@ class DartMethodPointer {
                                int32_t image_b_size,
                                MatchImageSnapshotCallback callback);
 
-  const char* environment();
-  void simulatePointer(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
-  void simulateInputText(SharedNativeString* nativeString);
+  const char* environment(bool is_dedicated);
+  void simulatePointer(bool is_dedicated,
+                       void* ptr,
+                       MousePointer*,
+                       int32_t length,
+                       int32_t pointer,
+                       AsyncCallback async_callback);
+  void simulateInputText(bool is_dedicated, SharedNativeString* nativeString);
 
   void SetOnJSError(OnJSError func);
   void SetMatchImageSnapshot(MatchImageSnapshot func);

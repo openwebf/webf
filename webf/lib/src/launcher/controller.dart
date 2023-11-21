@@ -314,7 +314,7 @@ class WebFViewController implements WidgetsBindingObserver {
     // Should clear previous page cached ui commands
     clearUICommand(_contextId);
 
-    disposePage(_contextId);
+    disposePage(rootController.dedicatedJSThread, _contextId);
 
     clearCssLength();
 

@@ -82,16 +82,12 @@ void DartIsolateContext::FinalizeJSRuntime() {
   is_name_installed_ = false;
 }
 
-DartIsolateContext::DartIsolateContext(bool dedicated_thread, const uint64_t* dart_methods, int32_t dart_methods_length)
+DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length)
     : is_valid_(true),
-      dedicated_thread_(dedicated_thread),
       running_thread_(std::this_thread::get_id()),
       dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
-
-  if (!dedicated_thread_) {
-    InitializeJSRuntime();
-  }
+  InitializeJSRuntime();
 }
 
 JSRuntime* DartIsolateContext::runtime() {
@@ -101,33 +97,47 @@ JSRuntime* DartIsolateContext::runtime() {
 DartIsolateContext::~DartIsolateContext() {
   is_valid_ = false;
   running_isolates_--;
+  dispatcher_.reset();
+  pages_in_ui_thread_.clear();
+  assert(running_isolates_ == 0);
+  FinalizeJSRuntime();
+}
 
-  if (dedicated_thread_) {
-    dispatcher_.reset();
+void* DartIsolateContext::AddNewPage(bool is_dedicated, int32_t new_page_context_id) {
+  if (is_dedicated) {
+    dispatcher_->AllocateNewJSThread(new_page_context_id);
+    auto* page = dispatcher_->PostToJsSync(
+        true, new_page_context_id,
+        [](DartIsolateContext* dart_isolate_context, int32_t page_context_id) -> void* {
+          InitializeJSRuntime();
+          return new webf::WebFPage(dart_isolate_context, true, page_context_id, nullptr);
+        },
+        this, new_page_context_id);
+    dispatcher_->SetOpaqueForJSThread(new_page_context_id, page, [](void* p) {
+      delete static_cast<webf::WebFPage*>(p);
+      DartIsolateContext::FinalizeJSRuntime();
+    });
+    return page;
   } else {
-    assert(running_isolates_ == 0);
-    FinalizeJSRuntime();
+    auto page = std::make_unique<webf::WebFPage>(this, false, new_page_context_id, nullptr);
+    void* p = page.get();
+    pages_in_ui_thread_.emplace(std::move(page));
+    return p;
   }
 }
 
-void* DartIsolateContext::AddNewPage(int32_t new_page_context_id) {
-  dispatcher_->AllocateNewJSThread(new_page_context_id);
-
-  auto* page = dispatcher_->PostToJsSync(new_page_context_id, [](DartIsolateContext* dart_isolate_context, int32_t page_context_id) -> void* {
-    InitializeJSRuntime();
-    return new webf::WebFPage(dart_isolate_context, page_context_id, nullptr);
-  }, this, new_page_context_id);
-  dispatcher_->SetOpaqueForJSThread(new_page_context_id, page, [](void* p) {
-    delete static_cast<webf::WebFPage*>(p);
-    DartIsolateContext::FinalizeJSRuntime();
-  });
-
-  return page;
-}
-
-void DartIsolateContext::RemovePage(const webf::WebFPage* page) {
-  int32_t page_context_id = page->contextId;
-  dispatcher_->KillJSThread(page_context_id);
+void DartIsolateContext::RemovePage(bool is_dedicated, const webf::WebFPage* page) {
+  if (is_dedicated) {
+    int32_t page_context_id = page->contextId;
+    dispatcher_->KillJSThread(page_context_id);
+  } else {
+    for (auto it = pages_in_ui_thread_.begin(); it != pages_in_ui_thread_.end(); ++it) {
+      if (it->get() == page) {
+        pages_in_ui_thread_.erase(it);
+        break;
+      }
+    }
+  }
 }
 
 thread_local std::unique_ptr<DartContextData> DartIsolateContext::data_ {};
