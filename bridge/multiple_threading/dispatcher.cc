@@ -36,9 +36,11 @@ void Dispatcher::AllocateNewJSThread(int32_t js_context_id) {
 }
 
 void Dispatcher::KillJSThread(int32_t js_context_id) {
-  assert(js_threads_.count(js_context_id) == 0);
+  assert(js_threads_.count(js_context_id) > 0);
   assert(dedicated_thread_);
   auto& looper = js_threads_[js_context_id];
+  PostToJsSync(
+      js_context_id, [](Looper* looper) { looper->ExecuteOpaqueFinalizer(); }, js_threads_[js_context_id].get());
   looper->Stop();
   js_threads_.erase(js_context_id);
 }
