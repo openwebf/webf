@@ -11,7 +11,7 @@ import 'from_native.dart';
 import 'to_native.dart';
 
 class DartContext {
-  DartContext(bool dedicatedThread) : pointer = initDartIsolateContext(dedicatedThread, makeDartMethodsData()) {
+  DartContext() : pointer = initDartIsolateContext(makeDartMethodsData()) {
     initDartDynamicLinking();
     registerDartContextFinalizer(this);
   }
@@ -22,13 +22,13 @@ DartContext? dartContext;
 
 /// Init bridge
 int initBridge(WebFViewController view, bool dedicatedThread) {
-  dartContext ??= DartContext(dedicatedThread);
+  dartContext ??= DartContext();
 
   // Setup binding bridge.
   BindingBridge.setup();
 
   int pageId = newPageId();
-  allocateNewPage(pageId);
+  allocateNewPage(dedicatedThread, pageId);
 
   return pageId;
 }

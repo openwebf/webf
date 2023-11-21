@@ -84,12 +84,12 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
   if (QJSBlob::HasInstance(context, screenShotValue)) {
     auto* expectedBlob = toScriptWrappable<Blob>(screenShotValue);
-    context->dartMethodPtr()->matchImageSnapshotBytes(callbackContext, context->contextId(), blob->bytes(),
+    context->dartMethodPtr()->matchImageSnapshotBytes(context->is_dedicated(), callbackContext, context->contextId(), blob->bytes(),
                                                       blob->size(), expectedBlob->bytes(), expectedBlob->size(), fn);
   } else {
     std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
 
-    context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),
+    context->dartMethodPtr()->matchImageSnapshot(context->is_dedicated(), callbackContext, context->contextId(), blob->bytes(), blob->size(),
                                                  screenShotNativeString.release(), fn);
   }
 
@@ -99,7 +99,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = ExecutingContext::From(ctx);
 #if FLUTTER_BACKEND
-  const char* env = context->dartMethodPtr()->environment();
+  const char* env = context->dartMethodPtr()->environment(context->is_dedicated());
   return JS_ParseJSON(ctx, env, strlen(env), "");
 #else
   return JS_NewObject(ctx);
@@ -199,7 +199,7 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   auto* simulate_context = new SimulatePointerCallbackContext();
   simulate_context->context = context;
   simulate_context->callbackValue = JS_DupValue(ctx, callbackValue);
-  context->dartMethodPtr()->simulatePointer(simulate_context, mousePointerList, length, pointer,
+  context->dartMethodPtr()->simulatePointer(context->is_dedicated(), simulate_context, mousePointerList, length, pointer,
                                             handleSimulatePointerCallback);
 
   delete[] mousePointerList;
@@ -218,7 +218,7 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
 
   std::unique_ptr<SharedNativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
   void* p = static_cast<void*>(nativeString.get());
-  context->dartMethodPtr()->simulateInputText(static_cast<SharedNativeString*>(p));
+  context->dartMethodPtr()->simulateInputText(context->is_dedicated(), static_cast<SharedNativeString*>(p));
   return JS_NULL;
 };
 

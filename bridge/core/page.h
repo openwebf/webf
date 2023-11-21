@@ -32,7 +32,10 @@ class WebFPage final {
  public:
   static ConsoleMessageHandler consoleMessageHandler;
   WebFPage() = delete;
-  WebFPage(DartIsolateContext* dart_isolate_context, int32_t jsContext, const JSExceptionHandler& handler);
+  WebFPage(DartIsolateContext* dart_isolate_context,
+           bool is_dedicated,
+           int32_t jsContext,
+           const JSExceptionHandler& handler);
   ~WebFPage();
 
   // Bytecodes which registered by webf plugins.
@@ -59,6 +62,8 @@ class WebFPage final {
                                  void* event,
                                  NativeValue* extra);
   void reportError(const char* errmsg);
+
+  FORCE_INLINE bool is_dedicated() { return context_->is_dedicated(); };
 
   int32_t contextId;
 #if IS_TEST

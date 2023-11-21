@@ -12,15 +12,12 @@ namespace webf {
 
 namespace multi_threading {
 
-Dispatcher::Dispatcher(Dart_Port dart_port, bool dedicated_thread)
-    : dart_port_(dart_port), dedicated_thread_(dedicated_thread) {
-}
+Dispatcher::Dispatcher(Dart_Port dart_port) : dart_port_(dart_port) {}
 
 Dispatcher::~Dispatcher() {
   for(auto&& thread : js_threads_) {
-    PostToJsSync(thread.first, [](Looper* looper) {
-      looper->ExecuteOpaqueFinalizer();
-    }, thread.second.get());
+    PostToJsSync(
+        true, thread.first, [](Looper* looper) { looper->ExecuteOpaqueFinalizer(); }, thread.second.get());
   }
 
   for(auto&& thread : js_threads_) {
@@ -30,24 +27,21 @@ Dispatcher::~Dispatcher() {
 
 void Dispatcher::AllocateNewJSThread(int32_t js_context_id) {
   assert(js_threads_.count(js_context_id) == 0);
-  assert(dedicated_thread_);
   js_threads_[js_context_id] = std::make_unique<Looper>(js_context_id);
   js_threads_[js_context_id]->Start();
 }
 
 void Dispatcher::KillJSThread(int32_t js_context_id) {
   assert(js_threads_.count(js_context_id) > 0);
-  assert(dedicated_thread_);
   auto& looper = js_threads_[js_context_id];
   PostToJsSync(
-      js_context_id, [](Looper* looper) { looper->ExecuteOpaqueFinalizer(); }, js_threads_[js_context_id].get());
+      true, js_context_id, [](Looper* looper) { looper->ExecuteOpaqueFinalizer(); }, js_threads_[js_context_id].get());
   looper->Stop();
   js_threads_.erase(js_context_id);
 }
 
 void Dispatcher::SetOpaqueForJSThread(int32_t js_context_id, void* opaque, OpaqueFinalizer finalizer) {
   assert(js_threads_.count(js_context_id) > 0);
-  assert(dedicated_thread_);
   js_threads_[js_context_id]->SetOpaque(opaque, finalizer);
 }
 

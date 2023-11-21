@@ -29,7 +29,7 @@ void DeleteDartWire(DartWireContext* wire);
 // DartIsolateContext has a 1:1 correspondence with a dart isolates.
 class DartIsolateContext {
  public:
-  explicit DartIsolateContext(bool dedicated_thread, const uint64_t* dart_methods, int32_t dart_methods_length);
+  explicit DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length);
 
   JSRuntime* runtime();
   FORCE_INLINE bool valid() { return is_valid_; }
@@ -43,8 +43,8 @@ class DartIsolateContext {
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
-  void* AddNewPage(int32_t new_page_context_id);
-  void RemovePage(const WebFPage* page);
+  void* AddNewPage(bool is_dedicated, int32_t new_page_context_id);
+  void RemovePage(bool is_dedicated, const WebFPage* page);
 
   ~DartIsolateContext();
 
@@ -56,7 +56,7 @@ class DartIsolateContext {
   int is_valid_{false};
   std::thread::id running_thread_;
   static thread_local std::unique_ptr<DartContextData> data_;
-  bool dedicated_thread_;
+  std::set<std::unique_ptr<WebFPage>> pages_in_ui_thread_;
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;

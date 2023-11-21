@@ -22,13 +22,13 @@ namespace webf {
 
 ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
-WebFPage::WebFPage(DartIsolateContext* dart_isolate_context, int32_t contextId, const JSExceptionHandler& handler)
+WebFPage::WebFPage(DartIsolateContext* dart_isolate_context, bool is_dedicated, int32_t contextId, const JSExceptionHandler& handler)
     : contextId(contextId), ownerThreadId(std::this_thread::get_id()) {
   context_ = new ExecutingContext(
-      dart_isolate_context, contextId,
+      dart_isolate_context, is_dedicated, contextId,
       [](ExecutingContext* context, const char* message) {
         if (context->IsContextValid()) {
-          context->dartMethodPtr()->onJSError(context->contextId(), message);
+            context->dartMethodPtr()->onJSError(context->is_dedicated(), context->contextId(), message);
         }
         WEBF_LOG(ERROR) << message << std::endl;
       },

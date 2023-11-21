@@ -27,6 +27,7 @@ bool valid_contexts[MAX_JS_CONTEXT];
 std::atomic<uint32_t> running_context_list{0};
 
 ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
+                                   bool is_dedicated,
                                    int32_t contextId,
                                    JSExceptionHandler handler,
                                    void* owner)
@@ -34,6 +35,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
       context_id_(contextId),
       handler_(std::move(handler)),
       owner_(owner),
+      is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
   //  #if ENABLE_PROFILE
@@ -203,7 +205,7 @@ bool ExecutingContext::HandleException(JSValue* exc) {
       JS_FreeValue(script_state_.ctx(), error);
     };
 
-    dart_isolate_context_->dispatcher()->PostToJs(context_id_, func);
+    dart_isolate_context_->dispatcher()->PostToJs(is_dedicated(), context_id_, func);
     return false;
   }
 
@@ -223,7 +225,7 @@ bool ExecutingContext::HandleException(ExceptionState& exception_state) {
       JS_FreeValue(ctx(), error);
     };
 
-    dart_isolate_context_->dispatcher()->PostToJs(context_id_, func);
+    dart_isolate_context_->dispatcher()->PostToJs(is_dedicated_, context_id_, func);
     return false;
   }
   return true;
@@ -380,7 +382,7 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
 
 void ExecutingContext::FlushUICommand() {
   if (!uiCommandBuffer()->empty()) {
-    dartMethodPtr()->flushUICommand(context_id_);
+    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_);
   }
 }
 

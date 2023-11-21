@@ -44,7 +44,7 @@ static void handleRAFTransientCallbackWrapper(void* ptr,
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->PostToJs(contextId, webf::handleRAFTransientCallback, ptr, contextId,
+  context->dartIsolateContext()->dispatcher()->PostToJs(context->is_dedicated(), contextId, webf::handleRAFTransientCallback, ptr, contextId,
                                                         highResTimeStamp, errmsg);
 }
 
@@ -54,7 +54,7 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kPending);
 
-  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(frame_callback.get(), context->contextId(),
+  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(context->is_dedicated(), frame_callback.get(), context->contextId(),
                                                                        handleRAFTransientCallbackWrapper);
   frame_callback->SetFrameId(requestId);
   // Register frame callback to collection.
@@ -66,7 +66,7 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
                                                     uint32_t callback_id,
                                                     ExceptionState& exception_state) {
-  context->dartMethodPtr()->cancelAnimationFrame(context->contextId(), callback_id);
+  context->dartMethodPtr()->cancelAnimationFrame(context->is_dedicated(), context->contextId(), callback_id);
 
   auto frame_callback = frame_request_callback_collection_.GetFrameCallback(callback_id);
   if (frame_callback != nullptr) {
