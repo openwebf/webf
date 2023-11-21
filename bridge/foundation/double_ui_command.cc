@@ -10,21 +10,17 @@
 namespace webf {
 
 DoubleUICommand::DoubleUICommand(ExecutingContext* context)
-    : frontBuffer(std::make_unique<UICommandBuffer>(context)), isSwapping(false) {
-  auto* dart_isolate_context = context->dartIsolateContext();
-
-  if (dart_isolate_context != nullptr && dart_isolate_context->dispatcher()->isDedicatedThread()) {
-    WEBF_LOG(DEBUG) << "[CPP] DoubleUICommand::DoubleUICommand, create backBuffer" << std::endl;
-    backBuffer = std::make_unique<UICommandBuffer>(context);
-  }
-}
+    : context_(context),
+      frontBuffer(std::make_unique<UICommandBuffer>(context)),
+      isSwapping(false),
+      backBuffer(std::make_unique<UICommandBuffer>(context)) {}
 
 void DoubleUICommand::addCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
                                  void* nativePtr,
                                  void* nativePtr2,
                                  bool request_ui_update) {
-  if (backBuffer == nullptr) {
+  if (!context_->dartIsolateContext()->dispatcher()->isDedicatedThread()) {
     frontBuffer->addCommand(type, std::move(args_01), nativePtr, nativePtr2, request_ui_update);
     return;
   }
@@ -37,7 +33,7 @@ void DoubleUICommand::addCommand(UICommand type,
 
 // first called by dart to begin read commands.
 UICommandItem* DoubleUICommand::data() {
-  if (backBuffer == nullptr) {
+  if (!context_->dartIsolateContext()->dispatcher()->isDedicatedThread()) {
     return frontBuffer->data();
   }
 
@@ -57,7 +53,7 @@ void DoubleUICommand::clear() {
 
 // called by c++ to check if there are commands.
 bool DoubleUICommand::empty() {
-  if (backBuffer == nullptr) {
+  if (!context_->dartIsolateContext()->dispatcher()->isDedicatedThread()) {
     return frontBuffer->empty();
   }
 

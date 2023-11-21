@@ -31,6 +31,7 @@ class DoubleUICommand {
   std::unique_ptr<UICommandBuffer> frontBuffer = nullptr;
   std::unique_ptr<UICommandBuffer> backBuffer = nullptr;
   std::atomic<bool> isSwapping;
+  ExecutingContext* context_;
 };
 
 }  // namespace webf

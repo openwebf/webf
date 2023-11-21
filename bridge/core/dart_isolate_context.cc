@@ -43,7 +43,7 @@ const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
   return data_;
 }
 
-thread_local JSRuntime* DartIsolateContext::runtime_{nullptr};
+thread_local JSRuntime* runtime_{nullptr};
 thread_local bool is_name_installed_ = false;
 thread_local int64_t running_isolates_ = 0;
 
@@ -54,14 +54,10 @@ void InitializeBuiltInStrings(JSContext* ctx) {
   }
 }
 
-DartIsolateContext::DartIsolateContext(bool dedicated_thread, const uint64_t* dart_methods, int32_t dart_methods_length)
-    : is_valid_(true),
-      running_thread_(std::this_thread::get_id()),
-      dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
+void DartIsolateContext::InitializeJSRuntime() {
   if (runtime_ == nullptr) {
     runtime_ = JS_NewRuntime();
   }
-  WEBF_LOG(VERBOSE) << " dedicated_thread :" << dedicated_thread;
   running_isolates_++;
   // Avoid stack overflow when running in multiple threads.
   JS_UpdateStackTop(runtime_);
@@ -70,39 +66,70 @@ DartIsolateContext::DartIsolateContext(bool dedicated_thread, const uint64_t* da
     JSClassID id{0};
     JS_NewClassID(&id);
   }
+}
+
+void DartIsolateContext::FinalizeJSRuntime() {
+  // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
+  names_installer::Dispose();
+  HTMLElementFactory::Dispose();
+  SVGElementFactory::Dispose();
+  EventFactory::Dispose();
+  ClearUpWires();
+  data_.reset();
+  JS_TurnOnGC(runtime_);
+  JS_FreeRuntime(runtime_);
+  runtime_ = nullptr;
+  is_name_installed_ = false;
+}
+
+DartIsolateContext::DartIsolateContext(bool dedicated_thread, const uint64_t* dart_methods, int32_t dart_methods_length)
+    : is_valid_(true),
+      dedicated_thread_(dedicated_thread),
+      running_thread_(std::this_thread::get_id()),
+      dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
+
+  if (!dedicated_thread_) {
+    InitializeJSRuntime();
+  }
+}
+
+JSRuntime* DartIsolateContext::runtime() {
+  return runtime_;
 }
 
 DartIsolateContext::~DartIsolateContext() {
   is_valid_ = false;
-  pages_.clear();
   running_isolates_--;
 
-  if (running_isolates_ == 0) {
-    // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
-    names_installer::Dispose();
-    HTMLElementFactory::Dispose();
-    SVGElementFactory::Dispose();
-    EventFactory::Dispose();
-    ClearUpWires();
-    data_.reset();
-    JS_FreeRuntime(runtime_);
-    runtime_ = nullptr;
-    is_name_installed_ = false;
+  if (dedicated_thread_) {
+    dispatcher_.reset();
+  } else {
+    assert(running_isolates_ == 0);
+    FinalizeJSRuntime();
   }
 }
 
-void DartIsolateContext::AddNewPage(std::unique_ptr<WebFPage>&& new_page) {
-  pages_.insert(std::move(new_page));
+void* DartIsolateContext::AddNewPage(int32_t new_page_context_id) {
+  dispatcher_->AllocateNewJSThread(new_page_context_id);
+
+  auto* page = dispatcher_->PostToJsSync(new_page_context_id, [](DartIsolateContext* dart_isolate_context, int32_t page_context_id) -> void* {
+    InitializeJSRuntime();
+    return new webf::WebFPage(dart_isolate_context, page_context_id, nullptr);
+  }, this, new_page_context_id);
+  dispatcher_->SetOpaqueForJSThread(new_page_context_id, page, [](void* p) {
+    delete static_cast<webf::WebFPage*>(p);
+    DartIsolateContext::FinalizeJSRuntime();
+  });
+
+  return page;
 }
 
 void DartIsolateContext::RemovePage(const webf::WebFPage* page) {
-  for (auto it = pages_.begin(); it != pages_.end(); ++it) {
-    if (it->get() == page) {
-      pages_.erase(it);
-      break;
-    }
-  }
+  int32_t page_context_id = page->contextId;
+  dispatcher_->KillJSThread(page_context_id);
 }
+
+thread_local std::unique_ptr<DartContextData> DartIsolateContext::data_ {};
 
 }  // namespace webf

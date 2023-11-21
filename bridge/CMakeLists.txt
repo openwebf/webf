@@ -108,8 +108,8 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_type.cc
   foundation/ui_command_buffer.cc
   polyfill/dist/polyfill.cc
-  multi_threading/dispatcher.cc
-  multi_threading/looper.cc
+  multiple_threading/dispatcher.cc
+  multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 

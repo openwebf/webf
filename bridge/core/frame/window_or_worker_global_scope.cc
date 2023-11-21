@@ -82,7 +82,7 @@ static void handleTransientCallbackWrapper(void* ptr, int32_t contextId, const c
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->PostToJs(webf::handleTransientCallback, ptr, contextId, errmsg);
+  context->dartIsolateContext()->dispatcher()->PostToJs(contextId, webf::handleTransientCallback, ptr, contextId, errmsg);
 }
 
 static void handlePersistentCallbackWrapper(void* ptr, int32_t contextId, const char* errmsg) {
@@ -92,7 +92,7 @@ static void handlePersistentCallbackWrapper(void* ptr, int32_t contextId, const 
   if (!context->IsContextValid())
     return;
 
-  context->dartIsolateContext()->dispatcher()->PostToJs(webf::handlePersistentCallback, ptr, contextId, errmsg);
+  context->dartIsolateContext()->dispatcher()->PostToJs(contextId, webf::handlePersistentCallback, ptr, contextId, errmsg);
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
