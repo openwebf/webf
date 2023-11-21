@@ -15,12 +15,12 @@ namespace multi_threading {
 Dispatcher::Dispatcher(Dart_Port dart_port) : dart_port_(dart_port) {}
 
 Dispatcher::~Dispatcher() {
-  for(auto&& thread : js_threads_) {
+  for (auto&& thread : js_threads_) {
     PostToJsSync(
         true, thread.first, [](Looper* looper) { looper->ExecuteOpaqueFinalizer(); }, thread.second.get());
   }
 
-  for(auto&& thread : js_threads_) {
+  for (auto&& thread : js_threads_) {
     thread.second->Stop();
   }
 }

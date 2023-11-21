@@ -84,13 +84,14 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
   if (QJSBlob::HasInstance(context, screenShotValue)) {
     auto* expectedBlob = toScriptWrappable<Blob>(screenShotValue);
-    context->dartMethodPtr()->matchImageSnapshotBytes(context->is_dedicated(), callbackContext, context->contextId(), blob->bytes(),
-                                                      blob->size(), expectedBlob->bytes(), expectedBlob->size(), fn);
+    context->dartMethodPtr()->matchImageSnapshotBytes(context->is_dedicated(), callbackContext, context->contextId(),
+                                                      blob->bytes(), blob->size(), expectedBlob->bytes(),
+                                                      expectedBlob->size(), fn);
   } else {
     std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
 
-    context->dartMethodPtr()->matchImageSnapshot(context->is_dedicated(), callbackContext, context->contextId(), blob->bytes(), blob->size(),
-                                                 screenShotNativeString.release(), fn);
+    context->dartMethodPtr()->matchImageSnapshot(context->is_dedicated(), callbackContext, context->contextId(),
+                                                 blob->bytes(), blob->size(), screenShotNativeString.release(), fn);
   }
 
   return JS_NULL;
@@ -199,8 +200,8 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   auto* simulate_context = new SimulatePointerCallbackContext();
   simulate_context->context = context;
   simulate_context->callbackValue = JS_DupValue(ctx, callbackValue);
-  context->dartMethodPtr()->simulatePointer(context->is_dedicated(), simulate_context, mousePointerList, length, pointer,
-                                            handleSimulatePointerCallback);
+  context->dartMethodPtr()->simulatePointer(context->is_dedicated(), simulate_context, mousePointerList, length,
+                                            pointer, handleSimulatePointerCallback);
 
   delete[] mousePointerList;
 
@@ -338,7 +339,7 @@ void WebFTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_t 
   dartMethodPtr->SetMatchImageSnapshotBytes(reinterpret_cast<MatchImageSnapshotBytes>(methodBytes[i++]));
   dartMethodPtr->SetEnvironment(reinterpret_cast<Environment>(methodBytes[i++]));
   dartMethodPtr->SetSimulatePointer(reinterpret_cast<SimulatePointer>(methodBytes[i++]));
-  dartMethodPtr->SetSimulateInputText( reinterpret_cast<SimulateInputText>(methodBytes[i++]));
+  dartMethodPtr->SetSimulateInputText(reinterpret_cast<SimulateInputText>(methodBytes[i++]));
 
   assert_m(i == length, "Dart native methods count is not equal with C++ side method registrations.");
 }
