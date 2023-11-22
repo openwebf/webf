@@ -100,6 +100,13 @@ class Document : public ContainerNode, public TreeScope {
 
   ScriptValue location() const;
 
+  bool HasMutationObserversOfType(MutationType type) const { return mutation_observer_types_ & type; }
+  bool HasMutationObservers() const { return mutation_observer_types_; }
+  void AddMutationObserverTypes(MutationType types) { mutation_observer_types_ |= types; }
+
+  // nodeWillBeRemoved is only safe when removing one node at a time.
+  void NodeWillBeRemoved(Node&);
+
   void IncrementNodeCount() { node_count_++; }
   void DecrementNodeCount() {
     assert(node_count_ > 0);
@@ -123,6 +130,7 @@ class Document : public ContainerNode, public TreeScope {
  private:
   int node_count_{0};
   ScriptAnimationController script_animation_controller_;
+  MutationObserverOptions mutation_observer_types_;
 };
 
 template <>

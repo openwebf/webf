@@ -72,9 +72,6 @@ template <typename Collection, typename NodeType>
 void CollectionItemsCache<Collection, NodeType>::Invalidate() {
   Base::Invalidate();
   if (list_valid_) {
-    for (auto& item : cached_list_) {
-      item.Clear();
-    }
     cached_list_.clear();
     list_valid_ = false;
   }
@@ -88,7 +85,8 @@ unsigned CollectionItemsCache<Collection, NodeType>::NodeCount(const Collection&
   NodeType* current_node = collection.TraverseToFirst();
   unsigned current_index = 0;
   while (current_node) {
-    cached_list_.push_back(current_node);
+    cached_list_.emplace_back(current_node);
+    //    cached_list_.push_back(current_node);
     current_node = collection.TraverseForwardToOffset(current_index + 1, *current_node, current_index);
   }
 

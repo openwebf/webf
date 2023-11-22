@@ -20,6 +20,8 @@ class CharacterData : public Node {
   int64_t length() const { return data_.length(); };
   void setData(const AtomicString& data, ExceptionState& exception_state);
 
+  void DidModifyData(const AtomicString& old_data);
+
   AtomicString nodeValue() const override;
   bool IsCharacterDataNode() const override;
   void setNodeValue(const AtomicString&, ExceptionState&) override;
