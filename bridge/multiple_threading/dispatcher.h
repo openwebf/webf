@@ -8,9 +8,9 @@
 #include <include/dart_api_dl.h>
 #include <include/webf_bridge.h>
 #include <condition_variable>
-#include <unordered_map>
 #include <functional>
 #include <memory>
+#include <unordered_map>
 
 #include "logging.h"
 #include "looper.h"

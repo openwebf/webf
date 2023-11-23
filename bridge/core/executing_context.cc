@@ -509,7 +509,8 @@ void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable)
 bool isContextValid(double contextId) {
   if (contextId > running_context_list)
     return false;
-  if (valid_contexts.count(contextId) == 0) return false;
+  if (valid_contexts.count(contextId) == 0)
+    return false;
   return valid_contexts[contextId];
 }
 

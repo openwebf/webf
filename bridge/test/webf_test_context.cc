@@ -84,13 +84,14 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
   if (QJSBlob::HasInstance(context, screenShotValue)) {
     auto* expectedBlob = toScriptWrappable<Blob>(screenShotValue);
-    context->dartMethodPtr()->matchImageSnapshotBytes(context->isDedicated(), callbackContext, context->contextId(), blob->bytes(),
-                                                      blob->size(), expectedBlob->bytes(), expectedBlob->size(), fn);
+    context->dartMethodPtr()->matchImageSnapshotBytes(context->isDedicated(), callbackContext, context->contextId(),
+                                                      blob->bytes(), blob->size(), expectedBlob->bytes(),
+                                                      expectedBlob->size(), fn);
   } else {
     std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
 
-    context->dartMethodPtr()->matchImageSnapshot(context->isDedicated(), callbackContext, context->contextId(), blob->bytes(), blob->size(),
-                                                 screenShotNativeString.release(), fn);
+    context->dartMethodPtr()->matchImageSnapshot(context->isDedicated(), callbackContext, context->contextId(),
+                                                 blob->bytes(), blob->size(), screenShotNativeString.release(), fn);
   }
 
   return JS_NULL;
