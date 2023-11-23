@@ -399,7 +399,6 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
       GetExecutingContext()->isDedicated(),
       [](Dart_Handle object, void* peer, intptr_t external_allocation_size, Dart_HandleFinalizer callback) {
         Dart_NewFinalizableHandle_DL(object, peer, external_allocation_size, callback);
-        Dart_DeletePersistentHandle_DL(object);
       },
       dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext), dart_object_finalize_callback);
 

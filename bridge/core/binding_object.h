@@ -21,6 +21,7 @@ struct NativeBindingObject;
 class ExceptionState;
 class GCVisitor;
 class ScriptPromiseResolver;
+class DartIsolateContext;
 
 using InvokeBindingsMethodsFromNative = void (*)(double contextId,
                                                  const NativeBindingObject* binding_object,
@@ -29,24 +30,26 @@ using InvokeBindingsMethodsFromNative = void (*)(double contextId,
                                                  int32_t argc,
                                                  const NativeValue* argv);
 
+using DartInvokeResultCallback = void (*)(Dart_Handle dart_object, NativeValue* result);
+
 using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_object,
-                                              NativeValue* return_value,
                                               NativeValue* method,
                                               int32_t argc,
                                               NativeValue* argv,
                                               Dart_Handle dart_object,
-                                              int8_t is_sync);
+                                              DartInvokeResultCallback result_callback);
 
 struct NativeBindingObject : public DartReadable {
   NativeBindingObject() = delete;
   explicit NativeBindingObject(BindingObject* target);
 
-  static void HandleCallFromDartSide(NativeBindingObject* binding_object,
-                                     NativeValue* return_value,
-                                     NativeValue* method,
-                                     int32_t argc,
-                                     NativeValue* argv,
-                                     Dart_Handle dart_object);
+  static void HandleCallFromDartSide(DartIsolateContext* dart_isolate_context,
+                                             NativeBindingObject* binding_object,
+                                             NativeValue* method,
+                                             int32_t argc,
+                                             NativeValue* argv,
+                                             Dart_PersistentHandle dart_object,
+                                             DartInvokeResultCallback result_callback);
 
   bool disposed_{false};
   BindingObject* binding_target_{nullptr};

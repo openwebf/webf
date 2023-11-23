@@ -98,7 +98,7 @@ class Window extends EventTarget {
   }
 
   @override
-  void dispatchEvent(Event event) {
+  Future<void> dispatchEvent(Event event) async {
     // Events such as EVENT_DOM_CONTENT_LOADED need to ensure that listeners are flushed and registered.
     if (contextId != null && event.type == EVENT_DOM_CONTENT_LOADED ||
         event.type == EVENT_LOAD ||
