@@ -110,8 +110,7 @@ void* allocateNewPage(double thread_identity, void* ptr) {
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   assert(dart_isolate_context != nullptr);
-  return static_cast<webf::DartIsolateContext*>(dart_isolate_context)
-      ->AddNewPage(thread_identity);
+  return static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPage(thread_identity);
 }
 
 void disposePage(double thread_identity, void* ptr, void* page_) {
