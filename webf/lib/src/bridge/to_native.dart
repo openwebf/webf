@@ -56,9 +56,9 @@ final DartGetWebFInfo _getWebFInfo =
 
 final WebFInfo _cachedInfo = WebFInfo(_getWebFInfo());
 
-final HashMap<int, Pointer<Void>> _allocatedPages = HashMap();
+final HashMap<double, Pointer<Void>> _allocatedPages = HashMap();
 
-Pointer<Void>? getAllocatedPage(int contextId) {
+Pointer<Void>? getAllocatedPage(double contextId) {
   return _allocatedPages[contextId];
 }
 
@@ -101,7 +101,7 @@ typedef DartInvokeEventListener = Pointer<NativeValue> Function(
 final DartInvokeEventListener _invokeModuleEvent =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
 
-dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra) {
+dynamic invokeModuleEvent(double contextId, String moduleName, Event? event, extra) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return null;
   }
@@ -119,10 +119,10 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   return result;
 }
 
-typedef DartDispatchEvent = int Function(int contextId, Pointer<NativeBindingObject> nativeBindingObject,
+typedef DartDispatchEvent = int Function(double contextId, Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeString> eventType, Pointer<Void> nativeEvent, int isCustomEvent);
 
-dynamic emitModuleEvent(int contextId, String moduleName, Event? event, extra) {
+dynamic emitModuleEvent(double contextId, String moduleName, Event? event, extra) {
   return invokeModuleEvent(contextId, moduleName, event, extra);
 }
 
@@ -170,7 +170,7 @@ class ScriptByteCode {
   late Uint8List bytes;
 }
 
-Future<bool> evaluateScripts(int contextId, Uint8List codeBytes, {String? url, int line = 0}) async {
+Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url, int line = 0}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -223,7 +223,7 @@ final DartEvaluateQuickjsByteCode _evaluateQuickjsByteCode = WebFDynamicLibrary.
     .lookup<NativeFunction<NativeEvaluateQuickjsByteCode>>('evaluateQuickjsByteCode')
     .asFunction();
 
-bool evaluateQuickjsByteCode(int contextId, Uint8List bytes) {
+bool evaluateQuickjsByteCode(double contextId, Uint8List bytes) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -235,7 +235,7 @@ bool evaluateQuickjsByteCode(int contextId, Uint8List bytes) {
   return result == 1;
 }
 
-void parseHTML(int contextId, Uint8List codeBytes) {
+void parseHTML(double contextId, Uint8List codeBytes) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return;
   }
@@ -280,15 +280,15 @@ Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   return _initDartIsolateContext(nativePort, bytes, dartMethods.length);
 }
 
-typedef NativeDisposePage = Void Function(Int8 dedicatedThread, Pointer<Void>, Pointer<Void> page);
-typedef DartDisposePage = void Function(int, Pointer<Void>, Pointer<Void> page);
+typedef NativeDisposePage = Void Function(Double contextId, Pointer<Void>, Pointer<Void> page);
+typedef DartDisposePage = void Function(double, Pointer<Void>, Pointer<Void> page);
 
 final DartDisposePage _disposePage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePage').asFunction();
 
-void disposePage(bool dedicatedThread, int contextId) {
+void disposePage(double contextId) {
   Pointer<Void> page = _allocatedPages[contextId]!;
-  _disposePage(dedicatedThread ? 1 : 0, dartContext!.pointer, page);
+  _disposePage(contextId, dartContext!.pointer, page);
   _allocatedPages.remove(contextId);
 }
 
@@ -301,16 +301,16 @@ int newPageId() {
   return _newPageId();
 }
 
-typedef NativeAllocateNewPage = Pointer<Void> Function(Int8, Pointer<Void>, Int32);
-typedef DartAllocateNewPage = Pointer<Void> Function(int, Pointer<Void>, int);
+typedef NativeAllocateNewPage = Pointer<Void> Function(Double, Pointer<Void>);
+typedef DartAllocateNewPage = Pointer<Void> Function(double, Pointer<Void>);
 
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
-void allocateNewPage(bool dedicatedThread, int targetContextId) {
-  Pointer<Void> page = _allocateNewPage(dedicatedThread ? 1 : 0, dartContext!.pointer, targetContextId);
-  assert(!_allocatedPages.containsKey(targetContextId));
-  _allocatedPages[targetContextId] = page;
+void allocateNewPage(double newContextId) {
+  Pointer<Void> page = _allocateNewPage(newContextId, dartContext!.pointer);
+  assert(!_allocatedPages.containsKey(newContextId));
+  _allocatedPages[newContextId] = page;
 }
 
 typedef NativeInitDartDynamicLinking = Void Function(Pointer<Void> data);
@@ -357,10 +357,10 @@ bool profileModeEnabled() {
   return _profileModeEnabled() == _CODE_ENABLED;
 }
 
-typedef NativeDispatchUITask = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
-typedef DartDispatchUITask = void Function(int contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef NativeDispatchUITask = Void Function(Double contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef DartDispatchUITask = void Function(double contextId, Pointer<Void> context, Pointer<Void> callback);
 
-void dispatchUITask(int contextId, Pointer<Void> context, Pointer<Void> callback) {
+void dispatchUITask(double contextId, Pointer<Void> context, Pointer<Void> callback) {
   // _dispatchUITask(contextId, context, callback);
 }
 
@@ -449,7 +449,7 @@ final bool isEnabledLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_
 // We found there are performance bottleneck of reading native memory with Dart FFI API.
 // So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,
 // To ensure the fastest subsequent random access.
-List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, int commandLength, int contextId) {
+List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, int commandLength, double contextId) {
   List<int> rawMemory =
       nativeCommandItems.cast<Int64>().asTypedList(commandLength * nativeCommandSize).toList(growable: false);
   List<UICommand> results = List.generate(commandLength, (int _i) {
@@ -495,12 +495,12 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
   return results;
 }
 
-void clearUICommand(int contextId) {
+void clearUICommand(double contextId) {
   assert(_allocatedPages.containsKey(contextId));
   _clearUICommandItems(_allocatedPages[contextId]!);
 }
 
-void flushUICommandWithContextId(int contextId) {
+void flushUICommandWithContextId(double contextId) {
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   if (controller != null) {
     flushUICommand(controller.view);

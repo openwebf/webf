@@ -17,50 +17,68 @@ import 'package:webf/css.dart';
 typedef OnControllerCreated = void Function(WebFController controller);
 
 class WebF extends StatefulWidget {
-  // The background color for viewport, default to transparent.
+  /// The background color for viewport, default to transparent.
   final Color? background;
 
-  // the width of webFWidget
+  /// the width of webFWidget
   final double? viewportWidth;
 
-  // the height of webFWidget
+  /// the height of webFWidget
   final double? viewportHeight;
 
-  //  The initial bundle to load.
+  ///  The initial bundle to load.
   final WebFBundle? bundle;
 
-  // The animationController of Flutter Route object.
-  // Pass this object to webFWidget to make sure webF execute JavaScripts scripts after route transition animation completed.
+  /// The animationController of Flutter Route object.
+  /// Pass this object to webFWidget to make sure webF execute JavaScripts scripts after route transition animation completed.
   final AnimationController? animationController;
 
-  // The methods of the webFNavigateDelegation help you implement custom behaviors that are triggered
-  // during a webf view's process of loading, and completing a navigation request.
+  /// The methods of the webFNavigateDelegation help you implement custom behaviors that are triggered
+  /// during a webf view's process of loading, and completing a navigation request.
   final WebFNavigationDelegate? navigationDelegate;
 
-  // A method channel for receiving messaged from JavaScript code and sending message to JavaScript.
+  /// A method channel for receiving messaged from JavaScript code and sending message to JavaScript.
   final WebFMethodChannel? javaScriptChannel;
 
-  // Register the RouteObserver to observer page navigation.
-  // This is useful if you wants to pause webf timers and callbacks when webf widget are hidden by page route.
-  // https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
+  /// Register the RouteObserver to observer page navigation.
+  /// This is useful if you wants to pause webf timers and callbacks when webf widget are hidden by page route.
+  /// https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
   final RouteObserver<ModalRoute<void>>? routeObserver;
 
-  // Trigger when webf controller once created.
+  /// Trigger when webf controller once created.
   final OnControllerCreated? onControllerCreated;
 
-  // Run the JavaScript engine in a dedicated Dart worker thread instead of the Flutter.ui thread.
-  // It cannot be updated once the WebF widget has been initialized.
-  // Advantage: Effectively avoids jank when running JavaScript code takes too much time during scrolling or executing animations.
-  // Appropriate use case: You have a page with a long list and you want the animations to run smoothly when loading more items.
-  // Disadvantage: It significantly increases the communication time between JS and Dart, potentially leading to performance reductions
-  // when heavily relying on data exchange between Dart and JavaScript.
-  final bool? dedicatedJSThread;
+  /// Specify the running thread for your JavaScript codes.
+  /// Default value: DedicatedThread();
+  ///
+  /// [DedicatedThread] : Executes your JavaScript code in a dedicated thread.
+  ///   Advantage: Ideal for developers building applications with hundreds of DOM elements in JavaScript,
+  ///     where common user interactions like scrolling and swiping do not heavily depend on the JavaScript.
+  ///   Disadvantages: Increase communicate overhead since the JavaScript is runs in a separate thread.
+  ///     Data exchanges between Dart and JavaScript requires mutex and synchronization.
+  ///
+  /// [DedicatedThreadGroup] : Executes multiple JavaScript contexts in a single thread.
+  ///     Rather than creating a new thread for each WebF instance, this option allows placing multiple WebF instances and their JavaScript contexts
+  ///     into one dedicated thread.
+  ///   Advantage: JavaScript contexts in the same group can share global class and string data, reducing initialization time
+  ///     for new WebF instances and their JavaScript contexts in this thread.
+  ///   Disadvantages: Since all group members run in the same thread, one can block the others, even if they are not strong related.
+  ///
+  /// [FlutterUIThread] : Executes your JavaScript code within the Flutter UI thread.
+  ///   Advantage: This is the best mode for minimizing communication time between Dart and JavaScript, especially when you have animations
+  ///     controlled by JavaScript and rendered by Flutter. If you're building animations influenced by user interactions, like figure gestures,
+  ///     setting the runningThread to [FlutterUIThread] is the optimal choice.
+  ///   Disadvantages: Any executing of JavaScript will block the executing of Dart codes.
+  ///     If a JavaScript function takes longer than a single frame, it could cause lag, as all Dart code executing will be blocked by your JavaScript.
+  ///     Be mindful of JavaScript executing times when using this mode.
+  ///
+  final WebFThread? runningThread;
 
   final LoadErrorHandler? onLoadError;
 
   final LoadHandler? onLoad;
 
-  // https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
+  /// https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
   final LoadHandler? onDOMContentLoaded;
 
   final JSErrorHandler? onJSError;
@@ -139,7 +157,7 @@ class WebF extends StatefulWidget {
       // webf's http client interceptor.
       this.httpClientInterceptor,
       this.uriParser,
-      this.dedicatedJSThread,
+      WebFThread? runningThread,
       this.routeObserver,
       this.initialCookies,
       this.preloadedBundles,
@@ -158,7 +176,8 @@ class WebF extends StatefulWidget {
       this.animationController,
       this.onJSError,
       this.resizeToAvoidBottomInsets = true})
-      : super(key: key);
+      : runningThread = runningThread ?? DedicatedThread(),
+        super(key: key);
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -361,7 +380,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
         onLoadError: _webfWidget.onLoadError,
         onJSError: _webfWidget.onJSError,
-        dedicatedJSThread: _webfWidget.dedicatedJSThread ?? false,
+        runningThread: _webfWidget.runningThread,
         methodChannel: _webfWidget.javaScriptChannel,
         gestureListener: _webfWidget.gestureListener,
         navigationDelegate: _webfWidget.navigationDelegate,

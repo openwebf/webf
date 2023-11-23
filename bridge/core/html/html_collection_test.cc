@@ -14,7 +14,7 @@ TEST(HTMLCollection, children) {
     EXPECT_STREQ(message.c_str(), "2 <div/> <p/>");
     logCalled = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -35,7 +35,7 @@ TEST(HTMLCollection, children) {
 TEST(HTMLCollection, childrenWillNotChangeWithNoElementsNodes) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });

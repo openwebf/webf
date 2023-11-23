@@ -76,13 +76,13 @@ void freeNativeString(Pointer<NativeString> pointer) {
 
 // Register InvokeModule
 typedef NativeAsyncModuleCallback = Pointer<NativeValue> Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
+    Pointer<Void> callbackContext, Double contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
 typedef DartAsyncModuleCallback = Pointer<NativeValue> Function(
-    Pointer<Void> callbackContext, int contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
+    Pointer<Void> callbackContext, double contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
 
 typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<Void> callbackContext,
-    Int32 contextId,
+    Double contextId,
     Pointer<NativeString> module,
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
@@ -147,7 +147,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
 
 Pointer<NativeValue> _invokeModule(
     Pointer<Void> callbackContext,
-    int contextId,
+    double contextId,
     Pointer<NativeString> module,
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
@@ -165,9 +165,9 @@ Pointer<NativeValue> _invokeModule(
 final Pointer<NativeFunction<NativeInvokeModule>> _nativeInvokeModule = Pointer.fromFunction(_invokeModule);
 
 // Register reloadApp
-typedef NativeReloadApp = Void Function(Int32 contextId);
+typedef NativeReloadApp = Void Function(Double contextId);
 
-void _reloadApp(int contextId) async {
+void _reloadApp(double contextId) async {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
 
   try {
@@ -179,16 +179,16 @@ void _reloadApp(int contextId) async {
 
 final Pointer<NativeFunction<NativeReloadApp>> _nativeReloadApp = Pointer.fromFunction(_reloadApp);
 
-typedef NativeAsyncCallback = Void Function(Pointer<Void> callbackContext, Int32 contextId, Pointer<Utf8> errmsg);
-typedef DartAsyncCallback = void Function(Pointer<Void> callbackContext, int contextId, Pointer<Utf8> errmsg);
+typedef NativeAsyncCallback = Void Function(Pointer<Void> callbackContext, Double contextId, Pointer<Utf8> errmsg);
+typedef DartAsyncCallback = void Function(Pointer<Void> callbackContext, double contextId, Pointer<Utf8> errmsg);
 typedef NativeRAFAsyncCallback = Void Function(
-    Pointer<Void> callbackContext, Int32 contextId, Double data, Pointer<Utf8> errmsg);
-typedef DartRAFAsyncCallback = void Function(Pointer<Void>, int contextId, double data, Pointer<Utf8> errmsg);
+    Pointer<Void> callbackContext, Double contextId, Double data, Pointer<Utf8> errmsg);
+typedef DartRAFAsyncCallback = void Function(Pointer<Void>, double contextId, double data, Pointer<Utf8> errmsg);
 
 // Register requestBatchUpdate
-typedef NativeRequestBatchUpdate = Void Function(Int32 contextId);
+typedef NativeRequestBatchUpdate = Void Function(Double contextId);
 
-void _requestBatchUpdate(int contextId) {
+void _requestBatchUpdate(double contextId) {
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   return controller?.module.requestBatchUpdate();
 }
@@ -198,10 +198,10 @@ final Pointer<NativeFunction<NativeRequestBatchUpdate>> _nativeRequestBatchUpdat
 
 // Register setTimeout
 typedef NativeSetTimeout = Int32 Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
+    Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
 
 int _setTimeout(
-    Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
+    Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
 
@@ -234,10 +234,10 @@ final Pointer<NativeFunction<NativeSetTimeout>> _nativeSetTimeout =
 
 // Register setInterval
 typedef NativeSetInterval = Int32 Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
+    Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
 
 int _setInterval(
-    Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
+    Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
   return controller.module.setInterval(timeout, () {
@@ -268,9 +268,9 @@ final Pointer<NativeFunction<NativeSetInterval>> _nativeSetInterval =
     Pointer.fromFunction(_setInterval, SET_INTERVAL_ERROR);
 
 // Register clearTimeout
-typedef NativeClearTimeout = Void Function(Int32 contextId, Int32);
+typedef NativeClearTimeout = Void Function(Double contextId, Int32);
 
-void _clearTimeout(int contextId, int timerId) {
+void _clearTimeout(double contextId, int timerId) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   return controller.module.clearTimeout(timerId);
 }
@@ -279,10 +279,10 @@ final Pointer<NativeFunction<NativeClearTimeout>> _nativeClearTimeout = Pointer.
 
 // Register requestAnimationFrame
 typedef NativeRequestAnimationFrame = Int32 Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>>);
+    Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>>);
 
 int _requestAnimationFrame(
-    Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>> callback) {
+    Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>> callback) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
   return controller.module.requestAnimationFrame((double highResTimeStamp) {
@@ -312,9 +312,9 @@ final Pointer<NativeFunction<NativeRequestAnimationFrame>> _nativeRequestAnimati
     Pointer.fromFunction(_requestAnimationFrame, RAF_ERROR_CODE);
 
 // Register cancelAnimationFrame
-typedef NativeCancelAnimationFrame = Void Function(Int32 contextId, Int32 id);
+typedef NativeCancelAnimationFrame = Void Function(Double contextId, Int32 id);
 
-void _cancelAnimationFrame(int contextId, int timerId) {
+void _cancelAnimationFrame(double contextId, int timerId) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   controller.module.cancelAnimationFrame(timerId);
 }
@@ -323,13 +323,13 @@ final Pointer<NativeFunction<NativeCancelAnimationFrame>> _nativeCancelAnimation
     Pointer.fromFunction(_cancelAnimationFrame);
 
 typedef NativeAsyncBlobCallback = Void Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<Utf8>, Pointer<Uint8>, Int32);
+    Pointer<Void> callbackContext, Double contextId, Pointer<Utf8>, Pointer<Uint8>, Int32);
 typedef DartAsyncBlobCallback = void Function(
-    Pointer<Void> callbackContext, int contextId, Pointer<Utf8>, Pointer<Uint8>, int);
+    Pointer<Void> callbackContext, double contextId, Pointer<Utf8>, Pointer<Uint8>, int);
 typedef NativeToBlob = Void Function(
-    Pointer<Void> callbackContext, Int32 contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>>, Pointer<Void>, Double);
+    Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>>, Pointer<Void>, Double);
 
-void _toBlob(Pointer<Void> callbackContext, int contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>> callback,
+void _toBlob(Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>> callback,
     Pointer<Void> elementPtr, double devicePixelRatio) {
   DartAsyncBlobCallback func = callback.asFunction();
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
@@ -348,27 +348,27 @@ void _toBlob(Pointer<Void> callbackContext, int contextId, Pointer<NativeFunctio
 
 final Pointer<NativeFunction<NativeToBlob>> _nativeToBlob = Pointer.fromFunction(_toBlob);
 
-typedef NativeFlushUICommand = Void Function(Int32 contextId);
-typedef DartFlushUICommand = void Function(int contextId);
+typedef NativeFlushUICommand = Void Function(Double contextId);
+typedef DartFlushUICommand = void Function(double contextId);
 
-void _flushUICommand(int contextId) {
+void _flushUICommand(double contextId) {
   flushUICommandWithContextId(contextId);
 }
 
 final Pointer<NativeFunction<NativeFlushUICommand>> _nativeFlushUICommand = Pointer.fromFunction(_flushUICommand);
 
-typedef NativeCreateBindingObject = Void Function(Int32 contextId, Pointer<NativeBindingObject> nativeBindingObject, Int32 type, Pointer<NativeValue> args, Int32 argc);
-typedef DartCreateBindingObject = void Function(int contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc);
+typedef NativeCreateBindingObject = Void Function(Double contextId, Pointer<NativeBindingObject> nativeBindingObject, Int32 type, Pointer<NativeValue> args, Int32 argc);
+typedef DartCreateBindingObject = void Function(double contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc);
 
-void _createBindingObject(int contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc) {
+void _createBindingObject(double contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc) {
   BindingBridge.createBindingObject(contextId, nativeBindingObject, CreateBindingObjectType.values[type], args, argc);
 }
 
 final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject = Pointer.fromFunction(_createBindingObject);
 
-typedef NativeJSError = Void Function(Int32 contextId, Pointer<Utf8>);
+typedef NativeJSError = Void Function(Double contextId, Pointer<Utf8>);
 
-void _onJSError(int contextId, Pointer<Utf8> charStr) {
+void _onJSError(double contextId, Pointer<Utf8> charStr) {
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   JSErrorHandler? handler = controller?.onJSError;
   if (handler != null) {
@@ -379,9 +379,9 @@ void _onJSError(int contextId, Pointer<Utf8> charStr) {
 
 final Pointer<NativeFunction<NativeJSError>> _nativeOnJsError = Pointer.fromFunction(_onJSError);
 
-typedef NativeJSLog = Void Function(Int32 contextId, Int32 level, Pointer<Utf8>);
+typedef NativeJSLog = Void Function(Double contextId, Int32 level, Pointer<Utf8>);
 
-void _onJSLog(int contextId, int level, Pointer<Utf8> charStr) {
+void _onJSLog(double contextId, int level, Pointer<Utf8> charStr) {
   String msg = charStr.toDartString();
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   if (controller != null) {

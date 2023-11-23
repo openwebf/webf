@@ -382,7 +382,7 @@ class ElementSnapshotReader {
 void ElementSnapshotReader::Start() {
   context_->FlushUICommand();
 
-  auto callback = [](void* ptr, int32_t contextId, const char* error, uint8_t* bytes, int32_t length) -> void {
+  auto callback = [](void* ptr, double contextId, const char* error, uint8_t* bytes, int32_t length) -> void {
     auto* reader = static_cast<ElementSnapshotReader*>(ptr);
     if (error != nullptr) {
       reader->HandleFailed(error);
@@ -392,8 +392,8 @@ void ElementSnapshotReader::Start() {
     delete reader;
   };
 
-  context_->dartMethodPtr()->toBlob(context_->is_dedicated(), this, context_->contextId(), callback,
-                                    element_->bindingObject(), device_pixel_ratio_);
+  context_->dartMethodPtr()->toBlob(context_->isDedicated(), this, context_->contextId(), callback, element_->bindingObject(),
+                                    device_pixel_ratio_);
 }
 
 void ElementSnapshotReader::HandleSnapshot(uint8_t* bytes, int32_t length) {

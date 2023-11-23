@@ -24,47 +24,47 @@
 
 namespace webf {
 
-using AsyncCallback = void (*)(void* callback_context, int32_t context_id, const char* errmsg);
-using AsyncRAFCallback = void (*)(void* callback_context, int32_t context_id, double result, const char* errmsg);
+using AsyncCallback = void (*)(void* callback_context, double context_id, const char* errmsg);
+using AsyncRAFCallback = void (*)(void* callback_context, double context_id, double result, const char* errmsg);
 using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
-                                             int32_t context_id,
+                                             double context_id,
                                              const char* errmsg,
                                              NativeValue* value);
 using AsyncBlobCallback =
-    void (*)(void* callback_context, int32_t context_id, const char* error, uint8_t* bytes, int32_t length);
+    void (*)(void* callback_context, double context_id, const char* error, uint8_t* bytes, int32_t length);
 typedef NativeValue* (*InvokeModule)(void* callback_context,
-                                     int32_t context_id,
+                                     double context_id,
                                      SharedNativeString* moduleName,
                                      SharedNativeString* method,
                                      NativeValue* params,
                                      AsyncModuleCallback callback);
-typedef void (*RequestBatchUpdate)(int32_t context_id);
-typedef void (*ReloadApp)(int32_t context_id);
-typedef int32_t (*SetTimeout)(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout);
-typedef int32_t (*SetInterval)(void* callback_context, int32_t context_id, AsyncCallback callback, int32_t timeout);
-typedef int32_t (*RequestAnimationFrame)(void* callback_context, int32_t context_id, AsyncRAFCallback callback);
-typedef void (*ClearTimeout)(int32_t context_id, int32_t timerId);
-typedef void (*CancelAnimationFrame)(int32_t context_id, int32_t id);
+typedef void (*RequestBatchUpdate)(double context_id);
+typedef void (*ReloadApp)(double context_id);
+typedef int32_t (*SetTimeout)(void* callback_context, double context_id, AsyncCallback callback, int32_t timeout);
+typedef int32_t (*SetInterval)(void* callback_context, double context_id, AsyncCallback callback, int32_t timeout);
+typedef int32_t (*RequestAnimationFrame)(void* callback_context, double context_id, AsyncRAFCallback callback);
+typedef void (*ClearTimeout)(double context_id, int32_t timerId);
+typedef void (*CancelAnimationFrame)(double context_id, int32_t id);
 typedef void (*ToBlob)(void* callback_context,
-                       int32_t context_id,
+                       double context_id,
                        AsyncBlobCallback blobCallback,
                        void* element_ptr,
                        double devicePixelRatio);
-typedef void (*OnJSError)(int32_t context_id, const char*);
-typedef void (*OnJSLog)(int32_t context_id, int32_t level, const char*);
-typedef void (*FlushUICommand)(int32_t context_id);
+typedef void (*OnJSError)(double context_id, const char*);
+typedef void (*OnJSLog)(double context_id, int32_t level, const char*);
+typedef void (*FlushUICommand)(double context_id);
 typedef void (
-    *CreateBindingObject)(int32_t context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
+    *CreateBindingObject)(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
 
-using MatchImageSnapshotCallback = void (*)(void* callback_context, int32_t context_id, int8_t, const char* errmsg);
+using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, const char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,
-                                    int32_t context_id,
+                                    double context_id,
                                     uint8_t* bytes,
                                     int32_t length,
                                     SharedNativeString* name,
                                     MatchImageSnapshotCallback callback);
 using MatchImageSnapshotBytes = void (*)(void* callback_context,
-                                         int32_t context_id,
+                                         double context_id,
                                          uint8_t* image_a_bytes,
                                          int32_t image_a_size,
                                          uint8_t* image_b_bytes,
@@ -81,7 +81,7 @@ typedef NativePerformanceEntryList* (*GetPerformanceEntries)(int32_t);
 #endif
 
 struct MousePointer {
-  int32_t context_id;
+  double context_id;
   double x;
   double y;
   double change;
@@ -100,50 +100,50 @@ class DartMethodPointer {
   explicit DartMethodPointer(void* dart_isolate_context, const uint64_t* dart_methods, int32_t dartMethodsLength);
   NativeValue* invokeModule(bool is_dedicated,
                             void* callback_context,
-                            int32_t context_id,
+                            double context_id,
                             SharedNativeString* moduleName,
                             SharedNativeString* method,
                             NativeValue* params,
                             AsyncModuleCallback callback);
 
-  void requestBatchUpdate(bool is_dedicated, int32_t context_id);
-  void reloadApp(bool is_dedicated, int32_t context_id);
+  void requestBatchUpdate(bool is_dedicated, double context_id);
+  void reloadApp(bool is_dedicated, double context_id);
   int32_t setTimeout(bool is_dedicated,
                      void* callback_context,
-                     int32_t context_id,
+                     double context_id,
                      AsyncCallback callback,
                      int32_t timeout);
   int32_t setInterval(bool is_dedicated,
                       void* callback_context,
-                      int32_t context_id,
+                      double context_id,
                       AsyncCallback callback,
                       int32_t timeout);
-  void clearTimeout(bool is_dedicated, int32_t context_id, int32_t timerId);
+  void clearTimeout(bool is_dedicated, double context_id, int32_t timerId);
   int32_t requestAnimationFrame(bool is_dedicated,
                                 void* callback_context,
-                                int32_t context_id,
+                                double context_id,
                                 AsyncRAFCallback callback);
-  void cancelAnimationFrame(bool is_dedicated, int32_t context_id, int32_t id);
+  void cancelAnimationFrame(bool is_dedicated, double context_id, int32_t id);
   void toBlob(bool is_dedicated,
               void* callback_context,
-              int32_t context_id,
+              double context_id,
               AsyncBlobCallback blobCallback,
               void* element_ptr,
               double devicePixelRatio);
-  void flushUICommand(bool is_dedicated, int32_t context_id);
+  void flushUICommand(bool is_dedicated, double context_id);
   void createBindingObject(bool is_dedicated,
-                           int32_t context_id,
+                           double context_id,
                            void* native_binding_object,
                            int32_t type,
                            void* args,
                            int32_t argc);
 
-  void onJSError(bool is_dedicated, int32_t context_id, const char*);
-  void onJSLog(bool is_dedicated, int32_t context_id, int32_t level, const char*);
+  void onJSError(bool is_dedicated, double context_id, const char*);
+  void onJSLog(bool is_dedicated, double context_id, int32_t level, const char*);
 
   void matchImageSnapshot(bool is_dedicated,
                           void* callback_context,
-                          int32_t context_id,
+                          double context_id,
                           uint8_t* bytes,
                           int32_t length,
                           SharedNativeString* name,
@@ -151,7 +151,7 @@ class DartMethodPointer {
 
   void matchImageSnapshotBytes(bool is_dedicated,
                                void* callback_context,
-                               int32_t context_id,
+                               double context_id,
                                uint8_t* image_a_bytes,
                                int32_t image_a_size,
                                uint8_t* image_b_bytes,

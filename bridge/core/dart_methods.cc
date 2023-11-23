@@ -38,7 +38,7 @@ DartMethodPointer::DartMethodPointer(void* dart_isolate_context,
 
 NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
                                              void* callback_context,
-                                             int32_t context_id,
+                                             double context_id,
                                              SharedNativeString* moduleName,
                                              SharedNativeString* method,
                                              NativeValue* params,
@@ -54,7 +54,7 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
                                                                  context_id, moduleName, method, params, callback);
 }
 
-void DartMethodPointer::requestBatchUpdate(bool is_dedicated, int32_t context_id) {
+void DartMethodPointer::requestBatchUpdate(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] requestBatchUpdateWrapper call" << std::endl;
 #endif
@@ -63,12 +63,10 @@ void DartMethodPointer::requestBatchUpdate(bool is_dedicated, int32_t context_id
     return;
   }
 
-  WEBF_LOG(VERBOSE) << " THIS:" << this << " " << request_batch_update_;
-
   currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, request_batch_update_, context_id);
 }
 
-void DartMethodPointer::reloadApp(bool is_dedicated, int32_t context_id) {
+void DartMethodPointer::reloadApp(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] reloadAppWrapper call" << std::endl;
 #endif
@@ -81,7 +79,7 @@ void DartMethodPointer::reloadApp(bool is_dedicated, int32_t context_id) {
 
 int32_t DartMethodPointer::setTimeout(bool is_dedicated,
                                       void* callback_context,
-                                      int32_t context_id,
+                                      double context_id,
                                       AsyncCallback callback,
                                       int32_t timeout) {
 #if ENABLE_LOG
@@ -97,7 +95,7 @@ int32_t DartMethodPointer::setTimeout(bool is_dedicated,
 
 int32_t DartMethodPointer::setInterval(bool is_dedicated,
                                        void* callback_context,
-                                       int32_t context_id,
+                                       double context_id,
                                        AsyncCallback callback,
                                        int32_t timeout) {
 #if ENABLE_LOG
@@ -111,7 +109,7 @@ int32_t DartMethodPointer::setInterval(bool is_dedicated,
                                                                  context_id, callback, timeout);
 }
 
-void DartMethodPointer::clearTimeout(bool is_dedicated, int32_t context_id, int32_t timerId) {
+void DartMethodPointer::clearTimeout(bool is_dedicated, double context_id, int32_t timerId) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] ClearTimeoutWrapper call" << std::endl;
 #endif
@@ -124,7 +122,7 @@ void DartMethodPointer::clearTimeout(bool is_dedicated, int32_t context_id, int3
 
 int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
                                                  void* callback_context,
-                                                 int32_t context_id,
+                                                 double context_id,
                                                  AsyncRAFCallback callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] RequestAnimationFrameWrapper call" << std::endl;
@@ -137,7 +135,7 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
                                                                  callback_context, context_id, callback);
 }
 
-void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, int32_t context_id, int32_t id) {
+void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, double context_id, int32_t id) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] CancelAnimationFrameWrapper call" << std::endl;
 #endif
@@ -150,7 +148,7 @@ void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, int32_t context_
 
 void DartMethodPointer::toBlob(bool is_dedicated,
                                void* callback_context,
-                               int32_t context_id,
+                               double context_id,
                                AsyncBlobCallback blobCallback,
                                void* element_ptr,
                                double devicePixelRatio) {
@@ -165,7 +163,7 @@ void DartMethodPointer::toBlob(bool is_dedicated,
                                                       blobCallback, element_ptr, devicePixelRatio);
 }
 
-void DartMethodPointer::flushUICommand(bool is_dedicated, int32_t context_id) {
+void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] FlushUICommandWrapper call" << std::endl;
 #endif
@@ -177,7 +175,7 @@ void DartMethodPointer::flushUICommand(bool is_dedicated, int32_t context_id) {
 }
 
 void DartMethodPointer::createBindingObject(bool is_dedicated,
-                                            int32_t context_id,
+                                            double context_id,
                                             void* native_binding_object,
                                             int32_t type,
                                             void* args,
@@ -193,7 +191,7 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
                                                       native_binding_object, type, args, argc);
 }
 
-void DartMethodPointer::onJSError(bool is_dedicated, int32_t context_id, const char* error) {
+void DartMethodPointer::onJSError(bool is_dedicated, double context_id, const char* error) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] OnJSErrorWrapper call" << std::endl;
 #endif
@@ -204,7 +202,7 @@ void DartMethodPointer::onJSError(bool is_dedicated, int32_t context_id, const c
   currentDartIsolateContext->dispatcher()->PostToDart(is_dedicated, on_js_error_, context_id, error);
 }
 
-void DartMethodPointer::onJSLog(bool is_dedicated, int32_t context_id, int32_t level, const char* log) {
+void DartMethodPointer::onJSLog(bool is_dedicated, double context_id, int32_t level, const char* log) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] OnJSLogWrapper call" << std::endl;
 #endif
@@ -220,7 +218,7 @@ void DartMethodPointer::onJSLog(bool is_dedicated, int32_t context_id, int32_t l
 
 void DartMethodPointer::matchImageSnapshot(bool is_dedicated,
                                            void* callback_context,
-                                           int32_t context_id,
+                                           double context_id,
                                            uint8_t* bytes,
                                            int32_t length,
                                            SharedNativeString* name,
@@ -237,7 +235,7 @@ void DartMethodPointer::matchImageSnapshot(bool is_dedicated,
 
 void DartMethodPointer::matchImageSnapshotBytes(bool is_dedicated,
                                                 void* callback_context,
-                                                int32_t context_id,
+                                                double context_id,
                                                 uint8_t* image_a_bytes,
                                                 int32_t image_a_size,
                                                 uint8_t* image_b_bytes,

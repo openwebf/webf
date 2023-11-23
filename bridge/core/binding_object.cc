@@ -22,10 +22,11 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
                                           int32_t argc,
                                           NativeValue* argv,
                                           Dart_Handle dart_object) {
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_object);
   binding_object->binding_target_->GetDispatcher()->PostToJsSync(
-      binding_object->binding_target_->GetExecutingContext()->is_dedicated(),
-      binding_object->binding_target_->contextId(), webf::NativeBindingObject::HandleCallFromDartSide, binding_object,
-      return_value, method, argc, argv, dart_object);
+      binding_object->binding_target_->GetExecutingContext()->isDedicated(),
+      binding_object->binding_target_->contextId(),
+      webf::NativeBindingObject::HandleCallFromDartSide, binding_object, return_value, method, argc, argv, persistent_handle);
 }
 
 NativeBindingObject::NativeBindingObject(webf::BindingObject* target)
@@ -98,8 +99,8 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   NativeValue native_method =
       NativeValueConverter<NativeTypeString>::ToNativeValue(GetExecutingContext()->ctx(), method);
   GetDispatcher()->PostToDartSync(
-      GetExecutingContext()->is_dedicated(),
-      [&](int32_t contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
+      GetExecutingContext()->isDedicated(),
+      [&](double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
           int32_t argc, const NativeValue* argv) {
         if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
           WEBF_LOG(DEBUG) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
@@ -127,8 +128,8 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
   NativeValue return_value = Native_NewNull();
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
   GetDispatcher()->PostToDartSync(
-      GetExecutingContext()->is_dedicated(),
-      [&](int32_t contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
+      GetExecutingContext()->isDedicated(),
+      [&](double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
           int32_t argc, const NativeValue* argv) {
         if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
           WEBF_LOG(DEBUG) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
@@ -213,7 +214,7 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
 
 void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr,
                                                        NativeValue* native_value,
-                                                       int32_t contextId,
+                                                       double contextId,
                                                        const char* errmsg) {
   auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
   if (!promise_context->context->IsContextValid())
@@ -241,12 +242,13 @@ void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr,
 
 static void HandleAnonymousAsyncCalledFromDartWrapper(void* ptr,
                                                       NativeValue* native_value,
-                                                      int32_t contextId,
+                                                      double contextId,
                                                       const char* errmsg) {
   auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
   promise_context->context->dartIsolateContext()->dispatcher()->PostToJs(
-      promise_context->context->is_dedicated(), contextId, webf::BindingObject::HandleAnonymousAsyncCalledFromDart,
-      promise_context, native_value, contextId, errmsg);
+      promise_context->context->isDedicated(),
+      contextId,
+      webf::BindingObject::HandleAnonymousAsyncCalledFromDart, promise_context, native_value, contextId, errmsg);
 }
 
 ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
@@ -268,7 +270,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
 
   arguments.emplace_back(NativeValueConverter<NativeTypeString>::ToNativeValue(data->method_name));
   arguments.emplace_back(
-      NativeValueConverter<NativeTypeInt64>::ToNativeValue(event_target->GetExecutingContext()->contextId()));
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(event_target->GetExecutingContext()->contextId()));
   arguments.emplace_back(
       NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context));
   arguments.emplace_back(NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(

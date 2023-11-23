@@ -62,8 +62,8 @@ abstract class DevToolsService {
   /// More detail see [InspectPageModule.handleReloadPage].
   static DevToolsService? prevDevTools;
 
-  static final Map<int, DevToolsService> _contextDevToolMap = {};
-  static DevToolsService? getDevToolOfContextId(int contextId) {
+  static final Map<double, DevToolsService> _contextDevToolMap = {};
+  static DevToolsService? getDevToolOfContextId(double contextId) {
     return _contextDevToolMap[contextId];
   }
 
@@ -152,7 +152,7 @@ class WebFViewController implements WidgetsBindingObserver {
       {this.background,
       this.enableDebug = false,
       required this.rootController,
-      required bool dedicatedJSThread,
+      required WebFThread runningThread,
       this.navigationDelegate,
       this.gestureListener,
       this.initialCookies,
@@ -163,7 +163,7 @@ class WebFViewController implements WidgetsBindingObserver {
       debugPaintSizeEnabled = true;
     }
     BindingBridge.setup();
-    _contextId = initBridge(this, dedicatedJSThread);
+    _contextId = initBridge(this, runningThread);
 
     if (originalViewport != null) {
       viewport = originalViewport;
@@ -211,8 +211,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   // Index value which identify javascript runtime context.
-  late int _contextId;
-  int get contextId => _contextId;
+  late double _contextId;
+  double get contextId => _contextId;
 
   // Enable print debug message when rendering.
   bool enableDebug;
@@ -314,7 +314,7 @@ class WebFViewController implements WidgetsBindingObserver {
     // Should clear previous page cached ui commands
     clearUICommand(_contextId);
 
-    disposePage(rootController.dedicatedJSThread, _contextId);
+    disposePage(_contextId);
 
     clearCssLength();
 
@@ -729,7 +729,7 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
   late ModuleManager _moduleManager;
   ModuleManager get moduleManager => _moduleManager;
 
-  WebFModuleController(WebFController controller, int contextId) {
+  WebFModuleController(WebFController controller, double contextId) {
     _moduleManager = ModuleManager(controller, contextId);
   }
 
@@ -745,12 +745,12 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
 }
 
 class WebFController {
-  static final Map<int, WebFController?> _controllerMap = {};
-  static final Map<String, int> _nameIdMap = {};
+  static final Map<double, WebFController?> _controllerMap = {};
+  static final Map<String, double> _nameIdMap = {};
 
   UriParser? uriParser;
 
-  static WebFController? getControllerOfJSContextId(int? contextId) {
+  static WebFController? getControllerOfJSContextId(double? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
       return null;
     }
@@ -758,13 +758,13 @@ class WebFController {
     return _controllerMap[contextId];
   }
 
-  static Map<int, WebFController?> getControllerMap() {
+  static Map<double, WebFController?> getControllerMap() {
     return _controllerMap;
   }
 
   static WebFController? getControllerOfName(String name) {
     if (!_nameIdMap.containsKey(name)) return null;
-    int? contextId = _nameIdMap[name];
+    double? contextId = _nameIdMap[name];
     return getControllerOfJSContextId(contextId);
   }
 
@@ -807,7 +807,7 @@ class WebFController {
   set name(String? value) {
     if (value == null) return;
     if (_name != null) {
-      int? contextId = _nameIdMap[_name];
+      double? contextId = _nameIdMap[_name];
       _nameIdMap.remove(_name);
       _nameIdMap[value] = contextId!;
     }
@@ -832,14 +832,7 @@ class WebFController {
   // The kraken view entrypoint bundle.
   WebFBundle? _entrypoint;
 
-
-  // Run the JavaScript engine in a dedicated Dart worker thread instead of the Flutter.ui thread.
-  // It cannot be updated once the WebF widget has been initialized.
-  // Advantage: Effectively avoids jank when running JavaScript code takes too much time during scrolling or executing animations.
-  // Appropriate use case: You have a page with a long list and you want the animations to run smoothly when loading more items.
-  // Disadvantage: It significantly increases the communication time between JS and Dart, potentially leading to performance reductions
-  // when heavily relying on data exchange between Dart and JavaScript.
-  final bool dedicatedJSThread;
+  final WebFThread runningThread;
 
   WebFController(
     String? name,
@@ -853,6 +846,7 @@ class WebFController {
     WebFNavigationDelegate? navigationDelegate,
     WebFMethodChannel? methodChannel,
     WebFBundle? entrypoint,
+    WebFThread? runningThread,
     this.onCustomElementAttached,
     this.onCustomElementDetached,
     this.onLoad,
@@ -866,9 +860,9 @@ class WebFController {
     this.initialCookies,
     required this.ownerFlutterView,
     this.resizeToAvoidBottomInsets = true,
-    this.dedicatedJSThread = false,
   })  : _name = name,
         _entrypoint = entrypoint,
+        runningThread = runningThread ?? DedicatedThread(),
         _gestureListener = gestureListener {
 
     _initializePreloadBundle();
@@ -882,13 +876,13 @@ class WebFController {
       background: background,
       enableDebug: enableDebug,
       rootController: this,
-      dedicatedJSThread: dedicatedJSThread,
+      runningThread: this.runningThread,
       navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
       gestureListener: _gestureListener,
       initialCookies: initialCookies
     );
 
-    final int contextId = _view.contextId;
+    final double contextId = _view.contextId;
 
     _module = WebFModuleController(this, contextId);
 
@@ -936,7 +930,7 @@ class WebFController {
 
   HistoryModule get history => _module.moduleManager.getModule('History')!;
 
-  static Uri fallbackBundleUri([int? id]) {
+  static Uri fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
   }
@@ -958,7 +952,7 @@ class WebFController {
       // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
       _view.viewport.reload();
 
-      int oldId = _view.contextId;
+      double oldId = _view.contextId;
 
       _view = WebFViewController(view.viewportWidth, view.viewportHeight,
           background: _view.background,
@@ -966,7 +960,7 @@ class WebFController {
           rootController: this,
           navigationDelegate: _view.navigationDelegate,
           gestureListener: _view.gestureListener,
-          dedicatedJSThread: dedicatedJSThread,
+          runningThread: runningThread,
           originalViewport: _view.viewport);
 
       _module = WebFModuleController(this, _view.contextId);
@@ -1153,7 +1147,7 @@ class WebFController {
     assert(!_view._disposed, 'WebF have already disposed');
     if (_entrypoint != null) {
       WebFBundle entrypoint = _entrypoint!;
-      int contextId = _view.contextId;
+      double contextId = _view.contextId;
       assert(entrypoint.isResolved, 'The webf bundle $entrypoint is not resolved to evaluate.');
 
       // entry point start parse.

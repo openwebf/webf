@@ -11,7 +11,7 @@ import 'package:webf/launcher.dart';
 // https://drafts.csswg.org/cssom-view/#the-screen-interface
 class Screen extends BindingObject {
   final FlutterView currentView;
-  Screen(int contextId, this.currentView, WebFViewController view) : super(BindingContext(view, contextId, allocateNewBindingObject()));
+  Screen(double contextId, this.currentView, WebFViewController view) : super(BindingContext(view, contextId, allocateNewBindingObject()));
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {

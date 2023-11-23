@@ -8,6 +8,7 @@
 #include <include/dart_api_dl.h>
 #include <include/webf_bridge.h>
 #include <condition_variable>
+#include <unordered_map>
 #include <functional>
 #include <memory>
 
@@ -37,8 +38,10 @@ class Dispatcher {
   ~Dispatcher();
 
   void AllocateNewJSThread(int32_t js_context_id);
+  bool IsThreadGroupExist(int32_t js_context_id);
   void KillJSThread(int32_t js_context_id);
   void SetOpaqueForJSThread(int32_t js_context_id, void* opaque, OpaqueFinalizer finalizer);
+  void* GetOpaque(int32_t js_context_id);
 
   std::unique_ptr<Looper>& looper(int32_t js_context_id);
 
@@ -54,7 +57,6 @@ class Dispatcher {
 
     const DartWork* work_ptr = new DartWork(work);
     NotifyDart(work_ptr);
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDart end, dart_port= " << dart_port_ << std::endl;
   }
 
   template <typename Func, typename... Args>
@@ -71,7 +73,6 @@ class Dispatcher {
 
     const DartWork* work_ptr = new DartWork(work);
     NotifyDart(work_ptr);
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartAndCallback end, dart_port= " << dart_port_ << std::endl;
   }
 
   template <typename Func, typename... Args>
@@ -87,9 +88,7 @@ class Dispatcher {
     const DartWork* work_ptr = new DartWork(work);
     NotifyDart(work_ptr);
 
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartSync Start waiting, dart_port= " << dart_port_ << std::endl;
     task->wait();
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartSync end waiting" << std::endl;
     return task->getResult();
   }
 
@@ -106,10 +105,7 @@ class Dispatcher {
     const DartWork* work_ptr = new DartWork(work);
     NotifyDart(work_ptr);
 
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartWithoutResSync Start waiting, dart_port= " << dart_port_
-                      << std::endl;
     task->wait();
-    WEBF_LOG(VERBOSE) << "[CPP] Dispatcher::PostToDartWithoutResSync end waiting" << std::endl;
   }
 
   template <typename Func, typename... Args>

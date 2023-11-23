@@ -10,7 +10,7 @@ namespace webf {
 
 TEST(ModuleManager, ShouldReturnCorrectValue) {
   bool static errorCalled = false;
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto env = TEST_init([](double contextId, const char* errmsg) { errorCalled = true; });
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
 
   auto context = env->page()->GetExecutingContext();
@@ -35,7 +35,7 @@ console.log(result);
 
 TEST(ModuleManager, shouldThrowErrorWhenBadJSON) {
   bool static errorCalled = false;
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     std::string stdErrorMsg = std::string(errmsg);
     EXPECT_EQ(stdErrorMsg.find("TypeError: circular reference") != std::string::npos, true);
     errorCalled = true;
@@ -64,7 +64,7 @@ webf.methodChannel.invokeMethod('abc', 'fn', object);
 
 TEST(ModuleManager, invokeModuleError) {
   bool static logCalled = false;
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {});
+  auto env = TEST_init([](double contextId, const char* errmsg) {});
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
     EXPECT_STREQ(

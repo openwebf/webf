@@ -15,7 +15,7 @@ TEST(HTMLElement, globalEventHandlerRegistered) {
     EXPECT_STREQ(message.c_str(), "1234");
     logCalled = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });

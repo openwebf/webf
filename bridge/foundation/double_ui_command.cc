@@ -20,7 +20,7 @@ void DoubleUICommand::addCommand(UICommand type,
                                  void* nativePtr,
                                  void* nativePtr2,
                                  bool request_ui_update) {
-  if (!context_->is_dedicated()) {
+  if (!context_->isDedicated()) {
     frontBuffer->addCommand(type, std::move(args_01), nativePtr, nativePtr2, request_ui_update);
     return;
   }
@@ -33,7 +33,7 @@ void DoubleUICommand::addCommand(UICommand type,
 
 // first called by dart to begin read commands.
 UICommandItem* DoubleUICommand::data() {
-  if (!context_->is_dedicated()) {
+  if (!context_->isDedicated()) {
     return frontBuffer->data();
   }
 
@@ -53,7 +53,7 @@ void DoubleUICommand::clear() {
 
 // called by c++ to check if there are commands.
 bool DoubleUICommand::empty() {
-  if (!context_->is_dedicated()) {
+  if (!context_->isDedicated()) {
     return frontBuffer->empty();
   }
 

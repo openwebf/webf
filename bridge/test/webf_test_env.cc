@@ -190,7 +190,7 @@ NativePerformanceEntryList* TEST_getPerformanceEntries(int32_t) {
 #endif
 
 std::once_flag testInitOnceFlag;
-int32_t contextId = 0;
+double contextId = 0;
 
 WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPage* page)
     : page_(page), isolate_context_(owner_isolate_context) {}
@@ -202,8 +202,8 @@ WebFTestEnv::~WebFTestEnv() {
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   auto* dart_isolate_context = initDartIsolateContext(0, mockedDartMethods.data(), mockedDartMethods.size());
-  int pageContextId = contextId++;
-  auto* page = allocateNewPage(false, dart_isolate_context, pageContextId);
+  double pageContextId = contextId += 0.1;
+  auto* page = allocateNewPage(pageContextId, dart_isolate_context);
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
@@ -223,8 +223,8 @@ std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   auto dart_isolate_context = std::unique_ptr<DartIsolateContext>(
       (DartIsolateContext*)initDartIsolateContext(0, mockedDartMethods.data(), mockedDartMethods.size()));
-  int pageContextId = contextId++;
-  auto* page = allocateNewPage(false, dart_isolate_context.get(), pageContextId);
+  int pageContextId = contextId += 0.1;
+  auto* page = allocateNewPage(pageContextId, dart_isolate_context.get());
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
 

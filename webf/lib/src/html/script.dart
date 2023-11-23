@@ -27,18 +27,18 @@ enum ScriptReadyState { loading, interactive, complete }
 typedef ScriptExecution = Future<void> Function(bool async);
 
 class ScriptRunner {
-  ScriptRunner(Document document, int contextId)
+  ScriptRunner(Document document, double contextId)
       : _document = document,
         _contextId = contextId;
   final Document _document;
-  final int _contextId;
+  final double _contextId;
 
   final List<ScriptExecution> _syncScriptTasks = [];
 
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
 
-  static Future<void> _evaluateScriptBundle(int contextId, WebFBundle bundle, {bool async = false}) async {
+  static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle, {bool async = false}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
@@ -261,7 +261,7 @@ class ScriptElement extends Element {
   }
 
   void _fetchAndExecuteSource() async {
-    int? contextId = ownerDocument.contextId;
+    double? contextId = ownerDocument.contextId;
     if (contextId == null) return;
     // Must
     if (src.isNotEmpty &&
@@ -283,7 +283,7 @@ class ScriptElement extends Element {
   @override
   void connectedCallback() async {
     super.connectedCallback();
-    int? contextId = ownerDocument.contextId;
+    double? contextId = ownerDocument.contextId;
     if (contextId == null) return;
     if (src.isNotEmpty) {
       _fetchAndExecuteSource();

@@ -11,7 +11,7 @@ import 'package:webf/foundation.dart';
 
 import '../../local_http_server.dart';
 
-const int contextId = 2;
+const double contextId = 2;
 void main() {
   var server = LocalHttpServer.getInstance();
   group('HttpClientInterceptor', () {
