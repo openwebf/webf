@@ -8,7 +8,6 @@
 
 #include <cinttypes>
 #include "bindings/qjs/native_string_utils.h"
-#include "native_value.h"
 
 namespace webf {
 

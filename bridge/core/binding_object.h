@@ -34,7 +34,8 @@ using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_objec
                                               NativeValue* method,
                                               int32_t argc,
                                               NativeValue* argv,
-                                              Dart_Handle dart_object);
+                                              Dart_Handle dart_object,
+                                              int8_t is_sync);
 
 struct NativeBindingObject : public DartReadable {
   NativeBindingObject() = delete;

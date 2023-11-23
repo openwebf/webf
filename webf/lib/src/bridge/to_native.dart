@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:collection';
 import 'dart:ffi';
 import 'dart:io';
@@ -68,55 +69,92 @@ WebFInfo getWebFInfo() {
 
 // Register Native Callback Port
 final interactiveCppRequests = ReceivePort()
-  ..listen(
-    requestExecuteCallback,
-    onError: (error) {
-      print('portForNativeCallback an error occurred: $error');
-    },
-    onDone: () => print('portForNativeCallback done')
-  );
+  ..listen(requestExecuteCallback,
+      onError: (error) {
+        print('portForNativeCallback an error occurred: $error');
+      },
+      onDone: () => print('portForNativeCallback done'));
 
 final int nativePort = interactiveCppRequests.sendPort.nativePort;
 
 class NativeWork extends Opaque {}
-final _executeNativeCallback = WebFDynamicLibrary.ref.lookupFunction<Void Function(Pointer<NativeWork>),
-    void Function(Pointer<NativeWork>)>('executeNativeCallback');
+
+final _executeNativeCallback = WebFDynamicLibrary.ref
+    .lookupFunction<Void Function(Pointer<NativeWork>), void Function(Pointer<NativeWork>)>('executeNativeCallback');
 
 void requestExecuteCallback(message) {
   try {
-  final int work_address = message;
-  final work = Pointer<NativeWork>.fromAddress(work_address);
-  _executeNativeCallback(work);
+    final int work_address = message;
+    final work = Pointer<NativeWork>.fromAddress(work_address);
+    _executeNativeCallback(work);
   } catch (e, stack) {
     print('requestExecuteCallback error: $e\n$stack');
   }
 }
 
 // Register invokeEventListener
-typedef NativeInvokeEventListener = Pointer<NativeValue> Function(
-    Pointer<Void>, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
-typedef DartInvokeEventListener = Pointer<NativeValue> Function(
-    Pointer<Void>, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeValue>);
+typedef NativeInvokeEventListener = Void Function(
+    Pointer<Void>,
+    Pointer<NativeString>,
+    Pointer<Utf8> eventType,
+    Pointer<Void> nativeEvent,
+    Pointer<NativeValue>,
+    Handle object,
+    Pointer<NativeFunction<NativeInvokeModuleCallback>> returnCallback);
+typedef DartInvokeEventListener = void Function(
+    Pointer<Void>,
+    Pointer<NativeString>,
+    Pointer<Utf8> eventType,
+    Pointer<Void> nativeEvent,
+    Pointer<NativeValue>,
+    Object object,
+    Pointer<NativeFunction<NativeInvokeModuleCallback>> returnCallback);
+typedef NativeInvokeModuleCallback = Void Function(Handle object, Pointer<NativeValue> result);
 
 final DartInvokeEventListener _invokeModuleEvent =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
+
+void invokeModuleCallback(_InvokeModuleCallbackContext context, Pointer<NativeValue> dispatchResult) {
+  dynamic result = fromNativeValue(context.controller.view, dispatchResult);
+  malloc.free(dispatchResult);
+  malloc.free(context.extraData);
+  context.completer.complete(result);
+}
+
+class _InvokeModuleCallbackContext {
+  Completer completer;
+  WebFController controller;
+  Pointer<NativeValue> extraData;
+  _InvokeModuleCallbackContext(this.completer, this.controller, this.extraData);
+}
 
 dynamic invokeModuleEvent(double contextId, String moduleName, Event? event, extra) {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return null;
   }
+  Completer<dynamic> completer = Completer();
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
   Pointer<Void> rawEvent = event == null ? nullptr : event.toRaw().cast<Void>();
   Pointer<NativeValue> extraData = malloc.allocate(sizeOf<NativeValue>());
   toNativeValue(extraData, extra);
   assert(_allocatedPages.containsKey(contextId));
-  Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
-      _allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
-  dynamic result = fromNativeValue(controller.view, dispatchResult);
-  malloc.free(dispatchResult);
-  malloc.free(extraData);
-  return result;
+
+  Pointer<NativeFunction<NativeInvokeModuleCallback>> callback =
+      Pointer.fromFunction<NativeInvokeModuleCallback>(invokeModuleCallback);
+
+  _InvokeModuleCallbackContext callbackContext = _InvokeModuleCallbackContext(completer, controller, extraData);
+
+  _invokeModuleEvent(
+      _allocatedPages[contextId]!,
+      nativeModuleName,
+      event == null ? nullptr : event.type.toNativeUtf8(),
+      rawEvent,
+      extraData,
+      callbackContext,
+      callback);
+
+  return completer.future;
 }
 
 typedef DartDispatchEvent = int Function(double contextId, Pointer<NativeBindingObject> nativeBindingObject,
@@ -138,10 +176,10 @@ Pointer<Void> createScreen(double width, double height) {
 }
 
 // Register evaluateScripts
-typedef NativeEvaluateScripts = Int8 Function(
-    Pointer<Void>, Pointer<Uint8> code, Uint64 code_len, Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url, Int32 startLine);
-typedef DartEvaluateScripts = int Function(
-    Pointer<Void>, Pointer<Uint8> code, int code_len, Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url, int startLine);
+typedef NativeEvaluateScripts = Int8 Function(Pointer<Void>, Pointer<Uint8> code, Uint64 code_len,
+    Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url, Int32 startLine);
+typedef DartEvaluateScripts = int Function(Pointer<Void>, Pointer<Uint8> code, int code_len,
+    Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url, int startLine);
 
 // Register parseHTML
 typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Uint8> code, Int32 length);
@@ -156,7 +194,8 @@ final DartParseHTML _parseHTML =
 typedef NativeParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, Int32 length);
 typedef DartParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, int length);
 
-final _parseSVGResult = WebFDynamicLibrary.ref.lookupFunction<NativeParseSVGResult, DartParseSVGResult>('parseSVGResult');
+final _parseSVGResult =
+    WebFDynamicLibrary.ref.lookupFunction<NativeParseSVGResult, DartParseSVGResult>('parseSVGResult');
 
 typedef NativeFreeSVGResult = Void Function(Pointer<NativeGumboOutput> ptr);
 typedef DartFreeSVGResult = void Function(Pointer<NativeGumboOutput> ptr);
@@ -167,6 +206,7 @@ int _anonymousScriptEvaluationId = 0;
 
 class ScriptByteCode {
   ScriptByteCode();
+
   late Uint8List bytes;
 }
 
@@ -181,7 +221,9 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url
   }
 
   QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(codeBytes);
-  if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT && cacheObject.valid && cacheObject.bytes != null) {
+  if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
+      cacheObject.valid &&
+      cacheObject.bytes != null) {
     bool result = evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
     // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
     if (!result) {
@@ -199,7 +241,8 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url
         // Export the bytecode from scripts
         Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
         Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
-        result = _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, _url, line);
+        result = _evaluateScripts(
+            _allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, _url, line);
         Uint8List bytes = bytecodes.value.asTypedList(bytecodeLen.value);
         // Save to disk cache
         QuickJSByteCodeCache.putObject(codeBytes, bytes);
@@ -251,6 +294,7 @@ void parseHTML(double contextId, Uint8List codeBytes) {
 class GumboOutput {
   final Pointer<NativeGumboOutput> ptr;
   final Pointer<Utf8> source;
+
   GumboOutput(this.ptr, this.source);
 }
 
@@ -266,8 +310,10 @@ void freeSVGResult(GumboOutput gumboOutput) {
 }
 
 // Register initJsEngine
-typedef NativeInitDartIsolateContext = Pointer<Void> Function(Int64 sendPort, Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartInitDartIsolateContext = Pointer<Void> Function(int sendPort, Pointer<Uint64> dartMethods, int methodsLength);
+typedef NativeInitDartIsolateContext = Pointer<Void> Function(
+    Int64 sendPort, Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitDartIsolateContext = Pointer<Void> Function(
+    int sendPort, Pointer<Uint64> dartMethods, int methodsLength);
 
 final DartInitDartIsolateContext _initDartIsolateContext =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContext').asFunction();
@@ -294,7 +340,8 @@ void disposePage(double contextId) {
 typedef NativeNewPageId = Int64 Function();
 typedef DartNewPageId = int Function();
 
-final DartNewPageId _newPageId = WebFDynamicLibrary.ref.lookup<NativeFunction<NativeNewPageId>>('newPageId').asFunction();
+final DartNewPageId _newPageId =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeNewPageId>>('newPageId').asFunction();
 
 int newPageId() {
   return _newPageId();
@@ -315,8 +362,9 @@ void allocateNewPage(double newContextId) {
 typedef NativeInitDartDynamicLinking = Void Function(Pointer<Void> data);
 typedef DartInitDartDynamicLinking = void Function(Pointer<Void> data);
 
-final DartInitDartDynamicLinking _initDartDynamicLinking =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartDynamicLinking>>('init_dart_dynamic_linking').asFunction();
+final DartInitDartDynamicLinking _initDartDynamicLinking = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeInitDartDynamicLinking>>('init_dart_dynamic_linking')
+    .asFunction();
 
 void initDartDynamicLinking() {
   _initDartDynamicLinking(NativeApi.initializeApiDLData);
@@ -325,8 +373,9 @@ void initDartDynamicLinking() {
 typedef NativeRegisterDartContextFinalizer = Void Function(Handle object, Pointer<Void> dart_context);
 typedef DartRegisterDartContextFinalizer = void Function(Object object, Pointer<Void> dart_context);
 
-final DartRegisterDartContextFinalizer _registerDartContextFinalizer =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterDartContextFinalizer>>('register_dart_context_finalizer').asFunction();
+final DartRegisterDartContextFinalizer _registerDartContextFinalizer = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeRegisterDartContextFinalizer>>('register_dart_context_finalizer')
+    .asFunction();
 
 void registerDartContextFinalizer(DartContext dartContext) {
   _registerDartContextFinalizer(dartContext, dartContext.pointer);
@@ -482,7 +531,8 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
     command.nativePtr2 = nativePtr2Value != 0 ? Pointer.fromAddress(nativePtr2Value) : nullptr;
 
     if (isEnabledLog) {
-      String printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} args: ${command.args} nativePtr2: ${command.nativePtr2}';
+      String printMsg =
+          'nativePtr: ${command.nativePtr} type: ${command.type} args: ${command.args} nativePtr2: ${command.nativePtr2}';
       print(printMsg);
     }
     return command;
@@ -550,7 +600,8 @@ void flushUICommand(WebFViewController view) {
           break;
         case UICommandType.addEvent:
           Pointer<AddEventListenerOptions> eventListenerOptions = command.nativePtr2.cast<AddEventListenerOptions>();
-          view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args, addEventListenerOptions: eventListenerOptions);
+          view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args,
+              addEventListenerOptions: eventListenerOptions);
           break;
         case UICommandType.removeEvent:
           bool isCapture = command.nativePtr2.address == 1;
@@ -558,10 +609,7 @@ void flushUICommand(WebFViewController view) {
           break;
         case UICommandType.insertAdjacentNode:
           view.insertAdjacentNode(
-            nativePtr.cast<NativeBindingObject>(),
-            command.args,
-            command.nativePtr2.cast<NativeBindingObject>()
-          );
+              nativePtr.cast<NativeBindingObject>(), command.args, command.nativePtr2.cast<NativeBindingObject>());
           break;
         case UICommandType.removeNode:
           view.removeNode(nativePtr.cast<NativeBindingObject>());
@@ -630,7 +678,7 @@ void flushUICommand(WebFViewController view) {
   for (var address in pendingRecalculateTargets) {
     try {
       view.recalculateStyle(address);
-    } catch(e, stack) {
+    } catch (e, stack) {
       print('$e\n$stack');
     }
   }
