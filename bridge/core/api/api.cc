@@ -60,6 +60,7 @@ static void parseHTMLInternal(void* page_, const char* code, int32_t length) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   page->parseHTML(code, length);
+  delete code;
 }
 
 static NativeValue* invokeModuleEventInternal(void* page_,

@@ -246,7 +246,6 @@ void parseHTML(double contextId, Uint8List codeBytes) {
   } catch (e, stack) {
     print('$e\n$stack');
   }
-  malloc.free(codePtr);
 }
 
 class GumboOutput {
