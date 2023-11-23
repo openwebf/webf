@@ -8,7 +8,6 @@
 #include "core/page.h"
 #include "multiple_threading/dispatcher.h"
 
-
 namespace webf {
 
 int8_t evaluateScriptsInternal(void* page_,

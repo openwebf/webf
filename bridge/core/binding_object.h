@@ -44,12 +44,12 @@ struct NativeBindingObject : public DartReadable {
   explicit NativeBindingObject(BindingObject* target);
 
   static void HandleCallFromDartSide(DartIsolateContext* dart_isolate_context,
-                                             NativeBindingObject* binding_object,
-                                             NativeValue* method,
-                                             int32_t argc,
-                                             NativeValue* argv,
-                                             Dart_PersistentHandle dart_object,
-                                             DartInvokeResultCallback result_callback);
+                                     NativeBindingObject* binding_object,
+                                     NativeValue* method,
+                                     int32_t argc,
+                                     NativeValue* argv,
+                                     Dart_PersistentHandle dart_object,
+                                     DartInvokeResultCallback result_callback);
 
   bool disposed_{false};
   BindingObject* binding_target_{nullptr};
