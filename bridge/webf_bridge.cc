@@ -144,7 +144,8 @@ void invokeModuleEvent(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(
-      page->isDedicated(), page->contextId(), webf::invokeModuleEventInternal, page_, module, eventType, event, extra, persistent_handle, result_callback);
+      page->isDedicated(), page->contextId(), webf::invokeModuleEventInternal, page_, module, eventType, event, extra,
+      persistent_handle, result_callback);
 }
 
 void dispatchUITask(void* page_, void* context, void* callback) {
