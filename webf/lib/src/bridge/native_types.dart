@@ -109,7 +109,7 @@ class NativeTouch extends Struct {
   external double azimuthAngle;
 }
 
-typedef InvokeBindingsMethodsFromNative = Void Function(Int32 contextId, Pointer<NativeBindingObject> binding_object,
+typedef InvokeBindingsMethodsFromNative = Void Function(Double contextId, Pointer<NativeBindingObject> binding_object,
     Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
 
 typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object,

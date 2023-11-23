@@ -22,7 +22,7 @@ class ExceptionState;
 class GCVisitor;
 class ScriptPromiseResolver;
 
-using InvokeBindingsMethodsFromNative = void (*)(int32_t contextId,
+using InvokeBindingsMethodsFromNative = void (*)(double contextId,
                                                  const NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
                                                  NativeValue* method,
@@ -88,7 +88,7 @@ class BindingObject : public ScriptWrappable {
                                                     void* private_data);
   static void HandleAnonymousAsyncCalledFromDart(void* ptr,
                                                  NativeValue* native_value,
-                                                 int32_t contextId,
+                                                 double contextId,
                                                  const char* errmsg);
 
   BindingObject() = delete;

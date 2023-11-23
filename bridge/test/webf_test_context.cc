@@ -61,7 +61,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
-  auto fn = [](void* ptr, int32_t contextId, int8_t result, const char* errmsg) {
+  auto fn = [](void* ptr, double contextId, int8_t result, const char* errmsg) {
     auto* callbackContext = static_cast<ImageSnapShotContext*>(ptr);
     JSContext* ctx = callbackContext->context->ctx();
 
@@ -84,14 +84,13 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
   if (QJSBlob::HasInstance(context, screenShotValue)) {
     auto* expectedBlob = toScriptWrappable<Blob>(screenShotValue);
-    context->dartMethodPtr()->matchImageSnapshotBytes(context->is_dedicated(), callbackContext, context->contextId(),
-                                                      blob->bytes(), blob->size(), expectedBlob->bytes(),
-                                                      expectedBlob->size(), fn);
+    context->dartMethodPtr()->matchImageSnapshotBytes(context->isDedicated(), callbackContext, context->contextId(), blob->bytes(),
+                                                      blob->size(), expectedBlob->bytes(), expectedBlob->size(), fn);
   } else {
     std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
 
-    context->dartMethodPtr()->matchImageSnapshot(context->is_dedicated(), callbackContext, context->contextId(),
-                                                 blob->bytes(), blob->size(), screenShotNativeString.release(), fn);
+    context->dartMethodPtr()->matchImageSnapshot(context->isDedicated(), callbackContext, context->contextId(), blob->bytes(), blob->size(),
+                                                 screenShotNativeString.release(), fn);
   }
 
   return JS_NULL;
@@ -100,7 +99,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = ExecutingContext::From(ctx);
 #if FLUTTER_BACKEND
-  const char* env = context->dartMethodPtr()->environment(context->is_dedicated());
+  const char* env = context->dartMethodPtr()->environment(context->isDedicated());
   return JS_ParseJSON(ctx, env, strlen(env), "");
 #else
   return JS_NewObject(ctx);
@@ -112,7 +111,7 @@ struct SimulatePointerCallbackContext {
   JSValue callbackValue{JS_NULL};
 };
 
-static void handleSimulatePointerCallback(void* p, int32_t contextId, const char* errmsg) {
+static void handleSimulatePointerCallback(void* p, double contextId, const char* errmsg) {
   auto* simulate_context = static_cast<SimulatePointerCallbackContext*>(p);
   JSValue return_value =
       JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
@@ -200,8 +199,8 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   auto* simulate_context = new SimulatePointerCallbackContext();
   simulate_context->context = context;
   simulate_context->callbackValue = JS_DupValue(ctx, callbackValue);
-  context->dartMethodPtr()->simulatePointer(context->is_dedicated(), simulate_context, mousePointerList, length,
-                                            pointer, handleSimulatePointerCallback);
+  context->dartMethodPtr()->simulatePointer(context->isDedicated(), simulate_context, mousePointerList, length, pointer,
+                                            handleSimulatePointerCallback);
 
   delete[] mousePointerList;
 
@@ -219,7 +218,7 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
 
   std::unique_ptr<SharedNativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
   void* p = static_cast<void*>(nativeString.get());
-  context->dartMethodPtr()->simulateInputText(context->is_dedicated(), static_cast<SharedNativeString*>(p));
+  context->dartMethodPtr()->simulateInputText(context->isDedicated(), static_cast<SharedNativeString*>(p));
   return JS_NULL;
 };
 

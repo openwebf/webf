@@ -9,6 +9,7 @@ import 'package:webf/launcher.dart';
 import 'binding.dart';
 import 'from_native.dart';
 import 'to_native.dart';
+import 'multiple_thread.dart';
 
 class DartContext {
   DartContext() : pointer = initDartIsolateContext(makeDartMethodsData()) {
@@ -21,14 +22,14 @@ class DartContext {
 DartContext? dartContext;
 
 /// Init bridge
-int initBridge(WebFViewController view, bool dedicatedThread) {
+double initBridge(WebFViewController view, WebFThread runningThread) {
   dartContext ??= DartContext();
 
   // Setup binding bridge.
   BindingBridge.setup();
 
-  int pageId = newPageId();
-  allocateNewPage(dedicatedThread, pageId);
+  double newContextId = runningThread.identity();
+  allocateNewPage(newContextId);
 
-  return pageId;
+  return newContextId;
 }

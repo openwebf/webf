@@ -28,7 +28,6 @@ void UICommandBuffer::addCommand(UICommand type,
 }
 
 void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_update) {
-  WEBF_LOG(VERBOSE) << " DART ISOLATE CONTEXT: " << context_->dartIsolateContext();
   if (UNLIKELY(!context_->dartIsolateContext()->valid())) {
     return;
   }
@@ -40,9 +39,7 @@ void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_upda
 
 #if FLUTTER_BACKEND
   if (UNLIKELY(request_ui_update && !update_batched_ && context_->IsContextValid())) {
-    WEBF_LOG(VERBOSE) << context_->dartMethodPtr();
-
-    context_->dartMethodPtr()->requestBatchUpdate(context_->is_dedicated(), context_->contextId());
+    context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
     update_batched_ = true;
   }
 #endif

@@ -14,7 +14,7 @@ import '../../local_http_server.dart';
 
 void main() {
   var server = LocalHttpServer.getInstance();
-  int contextId = 1;
+  double contextId = 1;
   HttpOverrides.global = null;
   setupHttpOverrides(null, contextId: contextId);
   HttpClient httpClient = HttpClient();

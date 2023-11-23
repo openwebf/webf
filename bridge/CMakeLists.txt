@@ -86,7 +86,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_C_FLAGS_RELEASE "/O1")
   else()
     # Avoid quickjs stackoverflow.
-    add_compile_options(-O1)
+#    add_compile_options(-O1)
   endif()
 endif()
 

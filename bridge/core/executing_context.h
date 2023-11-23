@@ -52,7 +52,7 @@ class ScriptWrappable;
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
 using MicrotaskCallback = void (*)(void* data);
 
-bool isContextValid(int32_t contextId);
+bool isContextValid(double contextId);
 
 // An environment in which script can execute. This class exposes the common
 // properties of script execution environments on the webf.
@@ -62,7 +62,7 @@ class ExecutingContext {
   ExecutingContext() = delete;
   ExecutingContext(DartIsolateContext* dart_isolate_context,
                    bool is_dedicated,
-                   int32_t contextId,
+                   double context_id,
                    JSExceptionHandler handler,
                    void* owner);
   ~ExecutingContext();
@@ -82,7 +82,7 @@ class ExecutingContext {
   bool IsCtxValid() const;
   JSValue Global();
   JSContext* ctx();
-  FORCE_INLINE int32_t contextId() const { return context_id_; };
+  FORCE_INLINE double contextId() const { return context_id_; };
   FORCE_INLINE int32_t uniqueId() const { return unique_id_; }
   void* owner();
   bool HandleException(JSValue* exc);
@@ -131,7 +131,7 @@ class ExecutingContext {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
   }
-  FORCE_INLINE bool is_dedicated() { return is_dedicated_; }
+  FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.
@@ -188,7 +188,7 @@ class ExecutingContext {
   // All members below will be free before ScriptState freed.
   // ----------------------------------------------------------------------
   bool is_context_valid_{false};
-  int32_t context_id_;
+  double context_id_;
   JSExceptionHandler handler_;
   void* owner_;
   JSValue global_object_{JS_NULL};

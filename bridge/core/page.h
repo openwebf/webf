@@ -34,7 +34,7 @@ class WebFPage final {
   WebFPage() = delete;
   WebFPage(DartIsolateContext* dart_isolate_context,
            bool is_dedicated,
-           int32_t jsContext,
+           double context_id,
            const JSExceptionHandler& handler);
   ~WebFPage();
 
@@ -63,9 +63,9 @@ class WebFPage final {
                                  NativeValue* extra);
   void reportError(const char* errmsg);
 
-  FORCE_INLINE bool is_dedicated() { return context_->is_dedicated(); };
+  FORCE_INLINE bool isDedicated() { return context_->isDedicated(); };
+  FORCE_INLINE double contextId() { return context_->contextId(); }
 
-  int32_t contextId;
 #if IS_TEST
   // the owner pointer which take JSBridge as property.
   void* owner;

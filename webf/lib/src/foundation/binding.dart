@@ -14,7 +14,7 @@ import 'package:webf/launcher.dart';
 typedef BindingObjectOperation = void Function(WebFViewController? view, BindingObject bindingObject);
 
 class BindingContext {
-  final int contextId;
+  final double contextId;
   final WebFViewController view;
   final Pointer<NativeBindingObject> pointer;
 
@@ -63,7 +63,7 @@ abstract class BindingObject<T> extends Iterable<T> {
 
   final BindingContext? _context;
 
-  int? get contextId => _context?.contextId;
+  double? get contextId => _context?.contextId;
   final WebFViewController? _ownerView;
   WebFViewController get ownerView => _ownerView!;
 
@@ -160,7 +160,7 @@ abstract class BindingObject<T> extends Iterable<T> {
     }
 
     if (fn is AsyncBindingObjectMethod) {
-      int contextId = args[0];
+      double contextId = args[0];
       // Async callback should hold a context to store the current execution environment.
       Pointer<Void> callbackContext = (args[1] as Pointer).cast<Void>();
       DartAsyncAnonymousFunctionCallback callback =
@@ -278,7 +278,7 @@ dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args
 }
 
 // This function receive calling from binding side.
-void invokeBindingMethodFromNativeImpl(int contextId, Pointer<NativeBindingObject> nativeBindingObject,
+void invokeBindingMethodFromNativeImpl(double contextId, Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   dynamic method = fromNativeValue(controller.view, nativeMethod);

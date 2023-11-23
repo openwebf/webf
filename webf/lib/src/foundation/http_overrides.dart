@@ -19,35 +19,35 @@ class WebFHttpOverrides extends HttpOverrides {
     return _instance!;
   }
 
-  static int? getContextHeader(HttpHeaders headers) {
+  static double? getContextHeader(HttpHeaders headers) {
     String? intVal = headers.value(HttpHeaderContext);
     if (intVal == null) {
       return null;
     }
-    return int.tryParse(intVal);
+    return double.tryParse(intVal);
   }
 
-  static void setContextHeader(HttpHeaders headers, int contextId) {
+  static void setContextHeader(HttpHeaders headers, double contextId) {
     headers.set(HttpHeaderContext, contextId.toString());
   }
 
   final HttpOverrides? parentHttpOverrides = HttpOverrides.current;
-  final Map<int, HttpClientInterceptor> _contextIdToHttpClientInterceptorMap = <int, HttpClientInterceptor>{};
+  final Map<double, HttpClientInterceptor> _contextIdToHttpClientInterceptorMap = <double, HttpClientInterceptor>{};
 
-  void registerWebFContext(int contextId, HttpClientInterceptor httpClientInterceptor) {
+  void registerWebFContext(double contextId, HttpClientInterceptor httpClientInterceptor) {
     _contextIdToHttpClientInterceptorMap[contextId] = httpClientInterceptor;
   }
 
-  bool unregisterWebFContext(int contextId) {
+  bool unregisterWebFContext(double contextId) {
     // Returns true if [value] was in the map, false otherwise.
     return _contextIdToHttpClientInterceptorMap.remove(contextId) != null;
   }
 
-  bool hasInterceptor(int contextId) {
+  bool hasInterceptor(double contextId) {
     return _contextIdToHttpClientInterceptorMap.containsKey(contextId);
   }
 
-  HttpClientInterceptor getInterceptor(int contextId) {
+  HttpClientInterceptor getInterceptor(double contextId) {
     return _contextIdToHttpClientInterceptorMap[contextId]!;
   }
 
@@ -77,7 +77,7 @@ class WebFHttpOverrides extends HttpOverrides {
   }
 }
 
-WebFHttpOverrides setupHttpOverrides(HttpClientInterceptor? httpClientInterceptor, {required int contextId}) {
+WebFHttpOverrides setupHttpOverrides(HttpClientInterceptor? httpClientInterceptor, {required double contextId}) {
   final WebFHttpOverrides httpOverrides = WebFHttpOverrides.instance();
 
   if (httpClientInterceptor != null) {
@@ -98,8 +98,8 @@ String getOrigin(Uri uri) {
 }
 
 // @TODO: Remove controller dependency.
-Uri getEntrypointUri(int? contextId) {
+Uri getEntrypointUri(double? contextId) {
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   String url = controller?.url ?? '';
-  return Uri.tryParse(url) ?? WebFController.fallbackBundleUri(contextId ?? 0);
+  return Uri.tryParse(url) ?? WebFController.fallbackBundleUri(contextId ?? 0.0);
 }

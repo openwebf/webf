@@ -9,7 +9,7 @@ namespace webf {
 
 void Location::__webf_location_reload__(ExecutingContext* context, ExceptionState& exception_state) {
   context->FlushUICommand();
-  context->dartMethodPtr()->reloadApp(context->is_dedicated(), context->contextId());
+  context->dartMethodPtr()->reloadApp(context->isDedicated(), context->contextId());
 }
 
 }  // namespace webf

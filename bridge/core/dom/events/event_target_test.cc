@@ -18,7 +18,7 @@ TEST(EventTarget, addEventListener) {
     EXPECT_STREQ(message.c_str(), "1234");
     logCalled = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -35,7 +35,7 @@ TEST(EventTarget, removeEventListener) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -55,7 +55,7 @@ TEST(EventTarget, setNoEventTargetProperties) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "{name: 1}");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -75,7 +75,7 @@ TEST(EventTarget, propertyEventHandler) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "ƒ () 1234");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -95,7 +95,7 @@ TEST(EventTarget, overwritePropertyEventHandler) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -116,7 +116,7 @@ TEST(EventTarget, propertyEventOnWindow) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "1234");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -136,7 +136,7 @@ TEST(EventTarget, asyncFunctionCallback) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "done");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -174,7 +174,7 @@ TEST(EventTarget, ClassInheritEventTarget) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });

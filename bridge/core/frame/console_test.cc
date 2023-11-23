@@ -27,7 +27,7 @@ TEST(Console, log) {
     WEBF_LOG(VERBOSE) << message;
     logExecuted = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     exit(1);
   });

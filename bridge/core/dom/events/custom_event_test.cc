@@ -16,7 +16,7 @@ TEST(CustomEvent, instanceofEvent) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });

@@ -24,9 +24,9 @@ enum BindingMethodCallOperations {
 }
 
 typedef NativeAsyncAnonymousFunctionCallback = Void Function(
-    Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, Int32 contextId, Pointer<Utf8> errmsg);
+    Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, Double contextId, Pointer<Utf8> errmsg);
 typedef DartAsyncAnonymousFunctionCallback = void Function(
-    Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, int contextId, Pointer<Utf8> errmsg);
+    Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, double contextId, Pointer<Utf8> errmsg);
 
 typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dynamic> args);
 
@@ -47,7 +47,7 @@ void _dispatchCaptureEventToNative(Event event) {
 }
 void _dispatchEventToNative(Event event, bool isCapture) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
-  int? contextId = event.target?.contextId;
+  double? contextId = event.target?.contextId;
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   if (contextId != null &&
       pointer != null &&
@@ -105,7 +105,7 @@ abstract class BindingBridge {
   static Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> get nativeInvokeBindingMethod =>
       _invokeBindingMethodFromNative;
 
-  static void createBindingObject(int contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
+  static void createBindingObject(double contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
     List<dynamic> arguments = List.generate(argc, (index) {
       return fromNativeValue(controller.view, args.elementAt(index));

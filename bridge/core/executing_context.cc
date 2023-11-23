@@ -23,16 +23,16 @@ namespace webf {
 static std::atomic<int32_t> context_unique_id{0};
 
 #define MAX_JS_CONTEXT 8192
-bool valid_contexts[MAX_JS_CONTEXT];
+thread_local std::unordered_map<double, bool> valid_contexts;
 std::atomic<uint32_t> running_context_list{0};
 
 ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    bool is_dedicated,
-                                   int32_t contextId,
+                                   double context_id,
                                    JSExceptionHandler handler,
                                    void* owner)
     : dart_isolate_context_(dart_isolate_context),
-      context_id_(contextId),
+      context_id_(context_id),
       handler_(std::move(handler)),
       owner_(owner),
       is_dedicated_(is_dedicated),
@@ -49,10 +49,10 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   //  #endif
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
-  assert_m(valid_contexts[contextId] != true, "Conflict context found!");
-  valid_contexts[contextId] = true;
-  if (contextId > running_context_list)
-    running_context_list = contextId;
+  assert_m(valid_contexts[context_id] != true, "Conflict context found!");
+  valid_contexts[context_id] = true;
+  if (context_id > running_context_list)
+    running_context_list = context_id;
 
   time_origin_ = std::chrono::system_clock::now();
 
@@ -205,7 +205,7 @@ bool ExecutingContext::HandleException(JSValue* exc) {
       JS_FreeValue(script_state_.ctx(), error);
     };
 
-    dart_isolate_context_->dispatcher()->PostToJs(is_dedicated(), context_id_, func);
+    dart_isolate_context_->dispatcher()->PostToJs(isDedicated(), context_id_, func);
     return false;
   }
 
@@ -506,9 +506,10 @@ void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable)
 }
 
 // A lock free context validator.
-bool isContextValid(int32_t contextId) {
+bool isContextValid(double contextId) {
   if (contextId > running_context_list)
     return false;
+  if (valid_contexts.count(contextId) == 0) return false;
   return valid_contexts[contextId];
 }
 

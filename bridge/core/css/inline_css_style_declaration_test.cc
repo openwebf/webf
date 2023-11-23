@@ -12,7 +12,7 @@ TEST(CSSStyleDeclaration, setStyleData) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -28,7 +28,7 @@ TEST(CSSStyleDeclaration, enumerateStyles) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -42,7 +42,7 @@ TEST(CSSStyleDeclaration, supportCSSVaraible) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -74,7 +74,7 @@ TEST(CSSStyleDeclaration, supportHyphen) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -92,7 +92,7 @@ TEST(InlineCSSStyleDeclaration, setNullValue) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });

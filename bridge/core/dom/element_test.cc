@@ -15,7 +15,7 @@ TEST(Element, setAttribute) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "1234");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -37,7 +37,7 @@ TEST(Element, getAttribute) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "helloworld");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -65,7 +65,7 @@ TEST(Element, setAttributeWithHTML) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "100%");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -94,7 +94,7 @@ TEST(Element, outerHTML) {
                  "attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>");
 #endif
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -119,7 +119,7 @@ TEST(Element, style) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true false");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -135,7 +135,7 @@ TEST(Element, instanceofNode) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -156,7 +156,7 @@ TEST(Element, instanceofEventTarget) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });

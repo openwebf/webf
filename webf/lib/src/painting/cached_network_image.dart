@@ -35,7 +35,7 @@ class CachedNetworkImage extends ImageProvider<CachedNetworkImageKey> {
 
   final double scale;
 
-  final int? contextId;
+  final double? contextId;
 
   final Map<String, String>? headers;
 
