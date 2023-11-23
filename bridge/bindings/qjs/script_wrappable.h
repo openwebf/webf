@@ -53,9 +53,7 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
 
   ScriptValue ToValue();
   FORCE_INLINE ExecutingContext* GetExecutingContext() const { return context_; };
-  FORCE_INLINE multi_threading::Dispatcher* GetDispatcher() const {
-    return context_->dartIsolateContext()->dispatcher().get();
-  };
+  multi_threading::Dispatcher* GetDispatcher() const;
   FORCE_INLINE JSContext* ctx() const { return ctx_; }
   FORCE_INLINE JSRuntime* runtime() const { return runtime_; }
   FORCE_INLINE int64_t contextId() const { return context_id_; }

@@ -32,7 +32,7 @@ TEST(Node, MutationObserver) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto env = TEST_init([](double contextId, const char* errmsg) { errorCalled = true; });
   auto context = env->page()->GetExecutingContext();
   const char* code = R"(
 const container = document.createElement('div');

@@ -30,6 +30,10 @@ ScriptValue ScriptWrappable::ToValue() {
   return ScriptValue(ctx_, jsObject_);
 }
 
+multi_threading::Dispatcher* ScriptWrappable::GetDispatcher() const {
+  return context_->dartIsolateContext()->dispatcher().get();
+}
+
 /// This callback will be called when QuickJS GC is running at marking stage.
 /// Users of this class should override `void TraceMember(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)` to
 /// tell GC which member of their class should be collected by GC.
