@@ -7,7 +7,7 @@ import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 
-typedef EventHandler = void Function(Event event);
+typedef EventHandler = Future<void> Function(Event event);
 
 abstract class EventTarget extends BindingObject {
   EventTarget(BindingContext? context) : super(context);
@@ -63,7 +63,7 @@ abstract class EventTarget extends BindingObject {
   }
 
   @mustCallSuper
-  void dispatchEvent(Event event) {
+  Future<void> dispatchEvent(Event event) async {
     if (_disposed) return;
     if (this is PseudoElement) {
       event.target = (this as PseudoElement).parent;
@@ -71,12 +71,11 @@ abstract class EventTarget extends BindingObject {
       event.target = this;
     }
 
-    _handlerCaptureEvent(event);
-    _dispatchEventInDOM(event);
+    await _handlerCaptureEvent(event);
+    await _dispatchEventInDOM(event);
   }
-  void _handlerCaptureEvent(Event event) {
-
-    parentEventTarget?._handlerCaptureEvent(event);
+  Future<void> _handlerCaptureEvent(Event event) async {
+    await parentEventTarget?._handlerCaptureEvent(event);
     String eventType = event.type;
     List<EventHandler>? existHandler = _eventCaptureHandlers[eventType];
     if (existHandler != null) {
@@ -86,7 +85,7 @@ abstract class EventTarget extends BindingObject {
       // with error, copy the handlers here.
       try {
         for (EventHandler handler in [...existHandler]) {
-          handler(event);
+          await handler(event);
         }
       } catch (e, stack) {
         print('$e\n$stack');
@@ -95,7 +94,7 @@ abstract class EventTarget extends BindingObject {
     }
   }
   // Refs: https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/EventDispatcher.cpp#L85
-  void _dispatchEventInDOM(Event event) {
+  Future<void> _dispatchEventInDOM(Event event) async {
     // TODO: Invoke capturing event listeners in the reverse order.
 
     String eventType = event.type;
@@ -107,7 +106,7 @@ abstract class EventTarget extends BindingObject {
       // with error, copy the handlers here.
       try {
         for (EventHandler handler in [...existHandler]) {
-          handler(event);
+          await handler(event);
         }
       } catch (e, stack) {
         print('$e\n$stack');
@@ -117,7 +116,7 @@ abstract class EventTarget extends BindingObject {
 
     // Invoke bubbling event listeners.
     if (event.bubbles && !event.propagationStopped) {
-      parentEventTarget?._dispatchEventInDOM(event);
+      await parentEventTarget?._dispatchEventInDOM(event);
     }
   }
 

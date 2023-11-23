@@ -353,7 +353,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   @override
-  void dispatchEvent(Event event) {
+  Future<void> dispatchEvent(Event event) async {
     if (disposed) return;
     super.dispatchEvent(event);
   }

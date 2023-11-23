@@ -239,19 +239,19 @@ class WebFViewController implements WidgetsBindingObserver {
     if (gestureListener != null) {
       GestureListener listener = gestureListener!;
       if (listener.onTouchStart != null) {
-        document.addEventListener(EVENT_TOUCH_START, (Event event) => listener.onTouchStart!(event as TouchEvent));
+        document.addEventListener(EVENT_TOUCH_START, (Event event) async => listener.onTouchStart!(event as TouchEvent));
       }
 
       if (listener.onTouchMove != null) {
-        document.addEventListener(EVENT_TOUCH_MOVE, (Event event) => listener.onTouchMove!(event as TouchEvent));
+        document.addEventListener(EVENT_TOUCH_MOVE, (Event event) async => listener.onTouchMove!(event as TouchEvent));
       }
 
       if (listener.onTouchEnd != null) {
-        document.addEventListener(EVENT_TOUCH_END, (Event event) => listener.onTouchEnd!(event as TouchEvent));
+        document.addEventListener(EVENT_TOUCH_END, (Event event) async => listener.onTouchEnd!(event as TouchEvent));
       }
 
       if (listener.onDrag != null) {
-        document.addEventListener(EVENT_DRAG, (Event event) => listener.onDrag!(event as GestureEvent));
+        document.addEventListener(EVENT_DRAG, (Event event) async => listener.onDrag!(event as GestureEvent));
       }
     }
   }
@@ -261,7 +261,7 @@ class WebFViewController implements WidgetsBindingObserver {
     _registerPlatformBrightnessChange();
 
     // Blur input element when new input focused.
-    window.addEventListener(EVENT_CLICK, (event) {
+    window.addEventListener(EVENT_CLICK, (event) async {
       if (event.target is Element) {
         Element? focusedElement = document.focusedElement;
         if (focusedElement != null && focusedElement != event.target) {

@@ -114,7 +114,7 @@ typedef NativeInvokeModuleCallback = Void Function(Handle object, Pointer<Native
 final DartInvokeEventListener _invokeModuleEvent =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
 
-void invokeModuleCallback(_InvokeModuleCallbackContext context, Pointer<NativeValue> dispatchResult) {
+void _invokeModuleCallback(_InvokeModuleCallbackContext context, Pointer<NativeValue> dispatchResult) {
   dynamic result = fromNativeValue(context.controller.view, dispatchResult);
   malloc.free(dispatchResult);
   malloc.free(context.extraData);
@@ -141,7 +141,7 @@ dynamic invokeModuleEvent(double contextId, String moduleName, Event? event, ext
   assert(_allocatedPages.containsKey(contextId));
 
   Pointer<NativeFunction<NativeInvokeModuleCallback>> callback =
-      Pointer.fromFunction<NativeInvokeModuleCallback>(invokeModuleCallback);
+      Pointer.fromFunction<NativeInvokeModuleCallback>(_invokeModuleCallback);
 
   _InvokeModuleCallbackContext callbackContext = _InvokeModuleCallbackContext(completer, controller, extraData);
 
@@ -492,7 +492,7 @@ const int args01StringMemOffset = 1;
 const int nativePtrMemOffset = 2;
 const int native2PtrMemOffset = 3;
 
-final bool isEnabledLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
+final bool isEnabledLog = true;
 
 // We found there are performance bottleneck of reading native memory with Dart FFI API.
 // So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,

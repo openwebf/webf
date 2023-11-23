@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:collection';
 import 'package:collection/collection.dart';
@@ -54,6 +55,20 @@ class AsyncBindingObjectMethod extends BindingObjectMethod {
 }
 
 
+void _onSyncPropertiesComplete(_SyncPropertiesContext context, Pointer<NativeValue> returnValue) {
+  malloc.free(context.arguments);
+  context.completer.complete(fromNativeValue(context.ownerView, returnValue) == true);
+}
+
+class _SyncPropertiesContext {
+  Completer<bool> completer;
+  Pointer<NativeValue> arguments;
+  WebFViewController ownerView;
+
+  _SyncPropertiesContext(this.completer, this.arguments, this.ownerView);
+}
+
+
 abstract class BindingObject<T> extends Iterable<T> {
   static BindingObjectOperation? bind;
   static BindingObjectOperation? unbind;
@@ -75,16 +90,19 @@ abstract class BindingObject<T> extends Iterable<T> {
     initializeMethods(_methods);
 
     if (this is WidgetElement && !_alreadySyncWidgetElements.containsKey(runtimeType)) {
-      bool success = _syncPropertiesAndMethodsToNativeSlow();
-      if (success) {
-        _alreadySyncWidgetElements[runtimeType] = true;
-      }
+      _syncPropertiesAndMethodsToNativeSlow().then((success) {
+        if (success) {
+          _alreadySyncWidgetElements[runtimeType] = true;
+        }
+      });
     }
   }
 
-  bool _syncPropertiesAndMethodsToNativeSlow() {
+  Future<bool> _syncPropertiesAndMethodsToNativeSlow() async {
     assert(pointer != null);
     if (pointer!.ref.invokeBindingMethodFromDart == nullptr) return false;
+
+    Completer<bool> completer = Completer();
 
     List<String> properties = _properties.keys.toList(growable: false);
     List<String> syncMethods = [];
@@ -104,13 +122,17 @@ abstract class BindingObject<T> extends Iterable<T> {
     toNativeValue(arguments.elementAt(2), asyncMethods);
 
     DartInvokeBindingMethodsFromDart f = pointer!.ref.invokeBindingMethodFromDart.asFunction();
-    Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
 
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
     toNativeValue(method, 'syncPropertiesAndMethods');
-    f(pointer!, returnValue, method, 3, arguments, {}, isJSRunningInDedicatedThread(contextId!) ? 0 : 1);
-    malloc.free(arguments);
-    return fromNativeValue(ownerView, returnValue) == true;
+
+    _SyncPropertiesContext context = _SyncPropertiesContext(completer, arguments, ownerView);
+
+    Pointer<NativeFunction<NativeInvokeResultCallback>> completeCallback = Pointer.fromFunction(_onSyncPropertiesComplete);
+
+    f(pointer!, method, 3, arguments, context, completeCallback);
+
+    return completer.future;
   }
 
   final SplayTreeMap<String, BindingObjectProperty> _properties = SplayTreeMap();

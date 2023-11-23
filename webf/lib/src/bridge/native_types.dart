@@ -111,11 +111,10 @@ class NativeTouch extends Struct {
 
 typedef InvokeBindingsMethodsFromNative = Void Function(Double contextId, Pointer<NativeBindingObject> binding_object,
     Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
+typedef NativeInvokeResultCallback = Void Function(Handle object, Pointer<NativeValue> result);
 
-typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv, Handle bindingDartObject, Int8 isSync);
-typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv, Object bindingDartObject, int isSync);
+typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv, Handle bindingDartObject, Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
+typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingObject> binding_object, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv, Object bindingDartObject, Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
 
 class NativeBindingObject extends Struct {
   @Bool()
