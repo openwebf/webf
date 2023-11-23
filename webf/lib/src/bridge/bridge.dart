@@ -21,6 +21,10 @@ class DartContext {
 
 DartContext? dartContext;
 
+bool isJSRunningInDedicatedThread(double contextId) {
+  return contextId >= 0;
+}
+
 /// Init bridge
 double initBridge(WebFViewController view, WebFThread runningThread) {
   dartContext ??= DartContext();

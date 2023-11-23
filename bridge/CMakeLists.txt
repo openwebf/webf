@@ -86,7 +86,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_C_FLAGS_RELEASE "/O1")
   else()
     # Avoid quickjs stackoverflow.
-#    add_compile_options(-O1)
+    add_compile_options(-O1)
   endif()
 endif()
 
@@ -260,6 +260,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/rejected_promises.cc
     bindings/qjs/union_base.cc
     # Core sources
+    webf_bridge.cc
     core/api/api.cc
     core/executing_context.cc
     core/script_forbidden_scope.cc

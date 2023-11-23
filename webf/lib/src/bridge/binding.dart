@@ -72,25 +72,25 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(bindingObject, dispatchEventArguments);
 
     Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
-    f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments, event);
-    Pointer<EventDispatchResult> dispatchResult = fromNativeValue(controller.view, returnValue).cast<EventDispatchResult>();
-    event.cancelable = dispatchResult.ref.canceled;
-    event.propagationStopped = dispatchResult.ref.propagationStopped;
-
-    event.sharedJSProps = Pointer.fromAddress(rawEvent.ref.bytes.elementAt(8).value);
-    event.propLen = rawEvent.ref.bytes.elementAt(9).value;
-    event.allocateLen = rawEvent.ref.bytes.elementAt(10).value;
-
-    if (isEnabledLog) {
-      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments time: ${stopwatch!.elapsedMicroseconds}us');
-    }
-
-    // Free the allocated arguments.
-    malloc.free(rawEvent);
-    malloc.free(method);
-    malloc.free(allocatedNativeArguments);
-    malloc.free(dispatchResult);
-    malloc.free(returnValue);
+    f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments, event, isJSRunningInDedicatedThread(contextId) ? 0 : 1);
+    // Pointer<EventDispatchResult> dispatchResult = fromNativeValue(controller.view, returnValue).cast<EventDispatchResult>();
+    // event.cancelable = dispatchResult.ref.canceled;
+    // event.propagationStopped = dispatchResult.ref.propagationStopped;
+    //
+    // event.sharedJSProps = Pointer.fromAddress(rawEvent.ref.bytes.elementAt(8).value);
+    // event.propLen = rawEvent.ref.bytes.elementAt(9).value;
+    // event.allocateLen = rawEvent.ref.bytes.elementAt(10).value;
+    //
+    // if (isEnabledLog) {
+    //   print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments time: ${stopwatch!.elapsedMicroseconds}us');
+    // }
+    //
+    // // Free the allocated arguments.
+    // malloc.free(rawEvent);
+    // malloc.free(method);
+    // malloc.free(allocatedNativeArguments);
+    // malloc.free(dispatchResult);
+    // malloc.free(returnValue);
   }
 }
 

@@ -21,12 +21,19 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
                                           NativeValue* method,
                                           int32_t argc,
                                           NativeValue* argv,
-                                          Dart_Handle dart_object) {
+                                          Dart_Handle dart_object,
+                                          int8_t is_sync) {
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_object);
-  binding_object->binding_target_->GetDispatcher()->PostToJsSync(
-      binding_object->binding_target_->GetExecutingContext()->isDedicated(),
-      binding_object->binding_target_->contextId(), webf::NativeBindingObject::HandleCallFromDartSide, binding_object,
-      return_value, method, argc, argv, persistent_handle);
+
+  if (is_sync) {
+    assert(!binding_object->binding_target_->GetExecutingContext()->isDedicated());
+    webf::NativeBindingObject::HandleCallFromDartSide(binding_object, return_value, method, argc, argv, persistent_handle);
+  } else {
+    binding_object->binding_target_->GetDispatcher()->PostToJs(
+        binding_object->binding_target_->GetExecutingContext()->isDedicated(),
+        binding_object->binding_target_->contextId(),
+        webf::NativeBindingObject::HandleCallFromDartSide, binding_object, return_value, method, argc, argv, persistent_handle);
+  }
 }
 
 NativeBindingObject::NativeBindingObject(webf::BindingObject* target)
@@ -64,7 +71,7 @@ BindingObject::~BindingObject() {
 
 BindingObject::BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object) : ScriptWrappable(ctx) {
   native_binding_object->binding_target_ = this;
-  native_binding_object->invoke_binding_methods_from_dart = NativeBindingObject::HandleCallFromDartSide;
+  native_binding_object->invoke_binding_methods_from_dart = HandleCallFromDartSideWrapper;
   binding_object_ = native_binding_object;
 }
 

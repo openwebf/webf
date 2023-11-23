@@ -31,6 +31,7 @@ struct WebFInfo {
 
 typedef void (*Task)(void*);
 typedef std::function<void()> DartWork;
+typedef void (*InvokeModuleEventCallback)(Dart_Handle dart_handle, void*);
 
 WEBF_EXPORT_C
 void* initDartIsolateContext(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len);
@@ -60,11 +61,13 @@ void* parseSVGResult(const char* code, int32_t length);
 WEBF_EXPORT_C
 void freeSVGResult(void* svgTree);
 WEBF_EXPORT_C
-NativeValue* invokeModuleEvent(void* page,
-                               SharedNativeString* module,
-                               const char* eventType,
-                               void* event,
-                               NativeValue* extra);
+void invokeModuleEvent(void* page,
+                       SharedNativeString* module,
+                       const char* eventType,
+                       void* event,
+                       NativeValue* extra,
+                       Dart_Handle dart_handle,
+                       InvokeModuleEventCallback result_callback);
 WEBF_EXPORT_C
 WebFInfo* getWebFInfo();
 WEBF_EXPORT_C
