@@ -146,8 +146,8 @@ void invokeModuleEvent(void* page_,
   auto dart_isolate_context = page->GetExecutingContext()->dartIsolateContext();
   auto is_dedicated = page->GetExecutingContext()->isDedicated();
   auto context_id = page->contextId();
-  dart_isolate_context->dispatcher()->PostToJs(
-      is_dedicated, context_id, webf::invokeModuleEventInternal, page_, module, eventType, event, extra, persistent_handle, result_callback);
+  dart_isolate_context->dispatcher()->PostToJs(is_dedicated, context_id, webf::invokeModuleEventInternal, page_, module,
+                                               eventType, event, extra, persistent_handle, result_callback);
 }
 
 void dispatchUITask(void* page_, void* context, void* callback) {
