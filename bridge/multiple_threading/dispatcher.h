@@ -49,6 +49,7 @@ class Dispatcher {
   void PostToDart(bool dedicated_thread, Func&& func, Args&&... args) {
     if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
+      WEBF_LOG(VERBOSE) << "POST TO DART DONE";
       return;
     }
 
