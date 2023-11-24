@@ -21,7 +21,7 @@ int8_t evaluateScriptsInternal(void* page_,
 int8_t evaluateQuickjsByteCodeInternal(void* page_, uint8_t* bytes, int32_t byteLen);
 void parseHTMLInternal(void* page_, const char* code, int32_t length);
 
-void* invokeModuleEventInternal(void* page_,
+void invokeModuleEventInternal(void* page_,
                                 void* module_name,
                                 const char* eventType,
                                 void* event,

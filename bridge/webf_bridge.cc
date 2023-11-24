@@ -32,7 +32,7 @@
 #define SYSTEM_NAME "unknown"
 #endif
 
-static std::atomic<int64_t> unique_page_id{0};
+static std::atomic<int64_t> unique_page_id{1};
 
 int64_t newPageId() {
   return unique_page_id++;
@@ -141,11 +141,13 @@ void invokeModuleEvent(void* page_,
                        NativeValue* extra,
                        Dart_Handle dart_handle,
                        InvokeModuleEventCallback result_callback) {
-  auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(
-      page->isDedicated(), page->contextId(), webf::invokeModuleEventInternal, page_, module, eventType, event, extra,
-      persistent_handle, result_callback);
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  auto dart_isolate_context = page->GetExecutingContext()->dartIsolateContext();
+  auto is_dedicated = page->GetExecutingContext()->isDedicated();
+  auto context_id = page->contextId();
+  dart_isolate_context->dispatcher()->PostToJs(
+      is_dedicated, context_id, webf::invokeModuleEventInternal, page_, module, eventType, event, extra, persistent_handle, result_callback);
 }
 
 void dispatchUITask(void* page_, void* context, void* callback) {

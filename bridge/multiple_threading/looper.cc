@@ -14,7 +14,11 @@ namespace webf {
 namespace multi_threading {
 
 static void setThreadName(const std::string& name) {
+#if defined(__APPLE__) && defined(__MACH__)  // Apple OSX and iOS (Darwin)
   pthread_setname_np(name.c_str());
+#elif defined(__ANDROID__)
+  pthread_setname_np(pthread_self(), name.c_str());
+#endif
 }
 
 Looper::Looper(int32_t js_id) : js_id_(js_id), running_(false), paused_(false) {}

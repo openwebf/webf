@@ -35,7 +35,13 @@ void parseHTMLInternal(void* page_, const char* code, int32_t length) {
   delete code;
 }
 
-void* invokeModuleEventInternal(void* page_,
+static void ReturnInvokeEventResultToDart(Dart_Handle persistent_handle, InvokeModuleEventCallback result_callback, webf::NativeValue* result) {
+  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  result_callback(handle, result);
+  Dart_DeletePersistentHandle_DL(persistent_handle);
+}
+
+void invokeModuleEventInternal(void* page_,
                                 void* module_name,
                                 const char* eventType,
                                 void* event,
@@ -43,16 +49,13 @@ void* invokeModuleEventInternal(void* page_,
                                 Dart_Handle persistent_handle,
                                 InvokeModuleEventCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  auto dart_isolate_context = page->GetExecutingContext()->dartIsolateContext();
   assert(std::this_thread::get_id() == page->currentThread());
   auto* result = page->invokeModuleEvent(reinterpret_cast<webf::SharedNativeString*>(module_name), eventType, event,
                                          reinterpret_cast<webf::NativeValue*>(extra));
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToDart(
+  dart_isolate_context->dispatcher()->PostToDart(
       page->isDedicated(),
-      [](Dart_Handle persistent_handle, InvokeModuleEventCallback result_callback, webf::NativeValue* result) {
-        Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
-        result_callback(handle, result);
-        Dart_DeletePersistentHandle_DL(persistent_handle);
-      },
+      ReturnInvokeEventResultToDart,
       persistent_handle, result_callback, result);
 }
 

@@ -70,7 +70,6 @@ class Looper {
   void Pause();
   void Resume();
   void Stop();
-  void Kill();
 
   void SetOpaque(void* p, OpaqueFinalizer finalizer);
   void* opaque();
