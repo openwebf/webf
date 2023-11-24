@@ -11,7 +11,12 @@ namespace webf {
 
 class Window;
 
-struct NativeScreen {};
+struct ScreenData {
+  int64_t availWidth;
+  int64_t availHeight;
+  int64_t width;
+  int64_t height;
+};
 
 class Screen : public EventTargetWithInlineData {
   DEFINE_WRAPPERTYPEINFO();
@@ -20,7 +25,13 @@ class Screen : public EventTargetWithInlineData {
   using ImplType = Screen*;
   explicit Screen(Window* window, NativeBindingObject* binding_object);
 
+  [[nodiscard]] int64_t availWidth() const { return extra_->availWidth; }
+  [[nodiscard]] int64_t availHeight() const { return extra_->availHeight; }
+  [[nodiscard]] int64_t width() const { return extra_->width; }
+  [[nodiscard]] int64_t height() const { return extra_->height; }
+
  private:
+  ScreenData* extra_;
 };
 
 }  // namespace webf

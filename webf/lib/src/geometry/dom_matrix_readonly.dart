@@ -4,7 +4,7 @@
 
 import 'package:webf/foundation.dart';
 
-class DOMMatrixReadonly extends BindingObject {
+class DOMMatrixReadonly extends DynamicBindingObject {
   DOMMatrixReadonly(BindingContext context, List<dynamic> domMatrixInit): super(context);
 
   @override

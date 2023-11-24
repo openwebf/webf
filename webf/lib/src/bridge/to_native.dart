@@ -492,7 +492,7 @@ const int args01StringMemOffset = 1;
 const int nativePtrMemOffset = 2;
 const int native2PtrMemOffset = 3;
 
-final bool isEnabledLog = true;
+bool enableWebFCommandLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
 
 // We found there are performance bottleneck of reading native memory with Dart FFI API.
 // So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,
@@ -530,7 +530,7 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
     int nativePtr2Value = rawMemory[i + native2PtrMemOffset];
     command.nativePtr2 = nativePtr2Value != 0 ? Pointer.fromAddress(nativePtr2Value) : nullptr;
 
-    if (isEnabledLog) {
+    if (enableWebFCommandLog) {
       String printMsg =
           'nativePtr: ${command.nativePtr} type: ${command.type} args: ${command.args} nativePtr2: ${command.nativePtr2}';
       print(printMsg);

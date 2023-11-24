@@ -13,7 +13,7 @@ BoundingClientRect* BoundingClientRect::Create(ExecutingContext* context, Native
 }
 
 BoundingClientRect::BoundingClientRect(ExecutingContext* context, NativeBindingObject* native_binding_object)
-    : BindingObject(context->ctx(), native_binding_object) {}
+    : BindingObject(context->ctx(), native_binding_object), extra_(static_cast<BoundingClientRectData*>(native_binding_object->extra)) {}
 
 NativeValue BoundingClientRect::HandleCallFromDartSide(const AtomicString& method,
                                                        int32_t argc,

@@ -56,7 +56,7 @@ void _handleDispatchResult(_DispatchEventResultContext context, Pointer<NativeVa
   event.propLen = context.rawEvent.ref.bytes.elementAt(9).value;
   event.allocateLen = context.rawEvent.ref.bytes.elementAt(10).value;
 
-  if (isEnabledLog && context.stopwatch != null) {
+  if (enableWebFCommandLog && context.stopwatch != null) {
     print('dispatch event to native side: target: ${event.target} arguments: ${context.dispatchEventArguments} time: ${context.stopwatch!.elapsedMicroseconds}us');
   }
 
@@ -111,7 +111,7 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
     List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCapture];
 
     Stopwatch? stopwatch;
-    if (isEnabledLog) {
+    if (enableWebFCommandLog) {
       stopwatch = Stopwatch()..start();
     }
 

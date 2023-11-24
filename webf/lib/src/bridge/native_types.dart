@@ -123,6 +123,7 @@ class NativeBindingObject extends Struct {
   external Pointer<NativeFunction<InvokeBindingMethodsFromDart>> invokeBindingMethodFromDart;
   // Shared method called by JS side.
   external Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> invokeBindingMethodFromNative;
+  external Pointer<Void> extra;
 }
 
 Pointer<NativeBindingObject> allocateNewBindingObject() {
