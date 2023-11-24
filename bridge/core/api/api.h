@@ -22,12 +22,12 @@ int8_t evaluateQuickjsByteCodeInternal(void* page_, uint8_t* bytes, int32_t byte
 void parseHTMLInternal(void* page_, const char* code, int32_t length);
 
 void invokeModuleEventInternal(void* page_,
-                                void* module_name,
-                                const char* eventType,
-                                void* event,
-                                void* extra,
-                                Dart_Handle dart_handle,
-                                InvokeModuleEventCallback result_callback);
+                               void* module_name,
+                               const char* eventType,
+                               void* event,
+                               void* extra,
+                               Dart_Handle dart_handle,
+                               InvokeModuleEventCallback result_callback);
 
 }  // namespace webf
 
