@@ -104,13 +104,6 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
                                                const NativeValue* argv,
                                                ExceptionState& exception_state) const {
   GetExecutingContext()->FlushUICommand();
-  // if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-  //   exception_state.ThrowException(GetExecutingContext()->ctx(), ErrorType::InternalError,
-  //                                  "Failed to call dart method: invoke_bindings_methods_from_native not
-  //                                  initialized.");
-  //   return Native_NewNull();
-  // }
-
   NativeValue return_value = Native_NewNull();
   NativeValue native_method =
       NativeValueConverter<NativeTypeString>::ToNativeValue(GetExecutingContext()->ctx(), method);
@@ -134,13 +127,6 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
                                                const NativeValue* argv,
                                                ExceptionState& exception_state) const {
   GetExecutingContext()->FlushUICommand();
-  // if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-  //   exception_state.ThrowException(GetExecutingContext()->ctx(), ErrorType::InternalError,
-  //                                  "Failed to call dart method: invoke_bindings_methods_from_native not
-  //                                  initialized.");
-  //   return Native_NewNull();
-  // }
-
   NativeValue return_value = Native_NewNull();
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
   GetDispatcher()->PostToDartSync(
@@ -309,7 +295,6 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
 }
 
 NativeValue BindingObject::GetAllBindingPropertyNames(ExceptionState& exception_state) const {
-  GetExecutingContext()->FlushUICommand();
   return InvokeBindingMethod(BindingMethodCallOperations::kGetAllPropertyNames, 0, nullptr, exception_state);
 }
 

@@ -14,6 +14,17 @@ namespace webf {
 
 class ExecutingContext;
 
+struct BoundingClientRectData {
+  double x;
+  double y;
+  double width;
+  double height;
+  double top;
+  double right;
+  double bottom;
+  double left;
+};
+
 class BoundingClientRect : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -28,24 +39,17 @@ class BoundingClientRect : public BindingObject {
                                      const NativeValue* argv,
                                      Dart_Handle dart_object) override;
 
-  double x() const { return x_; }
-  double y() const { return y_; }
-  double width() const { return width_; }
-  double height() const { return height_; }
-  double top() const { return top_; }
-  double right() const { return right_; }
-  double bottom() const { return bottom_; }
-  double left() const { return left_; }
+  double x() const { return extra_->x; }
+  double y() const { return extra_->y; }
+  double width() const { return extra_->width; }
+  double height() const { return extra_->height; }
+  double top() const { return extra_->top; }
+  double right() const { return extra_->right; }
+  double bottom() const { return extra_->bottom; }
+  double left() const { return extra_->left; }
 
  private:
-  double x_;
-  double y_;
-  double width_;
-  double height_;
-  double top_;
-  double right_;
-  double bottom_;
-  double left_;
+  BoundingClientRectData* extra_ = nullptr;
 };
 
 }  // namespace webf

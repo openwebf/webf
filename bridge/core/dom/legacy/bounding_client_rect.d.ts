@@ -1,12 +1,12 @@
 interface BoundingClientRect {
-  readonly x: DartImpl<double>;
-  readonly y: DartImpl<double>;
-  readonly width: DartImpl<double>;
-  readonly height: DartImpl<double>;
-  readonly top: DartImpl<double>;
-  readonly right: DartImpl<double>;
-  readonly bottom: DartImpl<double>;
-  readonly left: DartImpl<double>;
+  readonly x: double;
+  readonly y: double;
+  readonly width: double;
+  readonly height: double;
+  readonly top: double;
+  readonly right: double;
+  readonly bottom: double;
+  readonly left: double;
 
   new(): void;
 }

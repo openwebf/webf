@@ -9,7 +9,7 @@ import 'package:webf/foundation.dart';
 
 typedef EventHandler = Future<void> Function(Event event);
 
-abstract class EventTarget extends BindingObject {
+abstract class EventTarget extends DynamicBindingObject {
   EventTarget(BindingContext? context) : super(context);
 
   bool _disposed = false;

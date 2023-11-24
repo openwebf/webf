@@ -55,6 +55,7 @@ struct NativeBindingObject : public DartReadable {
   BindingObject* binding_target_{nullptr};
   InvokeBindingMethodsFromDart invoke_binding_methods_from_dart{nullptr};
   InvokeBindingsMethodsFromNative invoke_bindings_methods_from_native{nullptr};
+  void* extra{nullptr};
 };
 
 enum BindingMethodCallOperations {

@@ -94,7 +94,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
   dynamic result;
 
   Stopwatch? stopwatch;
-  if (isEnabledLog) {
+  if (enableWebFCommandLog) {
     stopwatch = Stopwatch()..start();
   }
 
@@ -118,7 +118,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
         }
 
         var returnValue = fromNativeValue(currentView, callbackResult);
-        if (isEnabledLog) {
+        if (enableWebFCommandLog) {
           print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: $returnValue time: ${stopwatch!.elapsedMicroseconds}us');
         }
 
@@ -131,14 +131,14 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
     result = controller.module.moduleManager.invokeModule(
         moduleName, method, params, invokeModuleCallback);
   } catch (e, stack) {
-    if (isEnabledLog) {
+    if (enableWebFCommandLog) {
       print('Invoke module failed: $e\n$stack');
     }
     String error = '$e\n$stack';
     callback(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr);
   }
 
-  if (isEnabledLog) {
+  if (enableWebFCommandLog) {
     print('Invoke module name: $moduleName method: $method, params: $params return: $result time: ${stopwatch!.elapsedMicroseconds}us');
   }
 

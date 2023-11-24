@@ -2,27 +2,41 @@
  * Copyright (C) 2022-present Alibaba Inc. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 import 'dart:ui';
 import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
 
+class ScreenData extends Struct {
+  @Int64()
+  external int availWidth;
+
+  @Int64()
+  external int availHeight;
+
+  @Int64()
+  external int width;
+
+  @Int64()
+  external int height;
+}
+
 // As its name suggests, the Screen interface represents information about the screen of the output device.
 // https://drafts.csswg.org/cssom-view/#the-screen-interface
-class Screen extends BindingObject {
+class Screen extends StaticBindingObject {
   final FlutterView currentView;
   Screen(double contextId, this.currentView, WebFViewController view) : super(BindingContext(view, contextId, allocateNewBindingObject()));
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['availWidth'] = BindingObjectProperty(getter: () => availWidth);
-    properties['availHeight'] = BindingObjectProperty(getter: () => availHeight);
-    properties['width'] = BindingObjectProperty(getter: () => width);
-    properties['height'] = BindingObjectProperty(getter: () => height);
+  Pointer<Void> buildExtraNativeData() {
+    Pointer<ScreenData> extraData = malloc.allocate(sizeOf<ScreenData>());
+    extraData.ref.width = currentView.physicalSize.width ~/ currentView.devicePixelRatio;
+    extraData.ref.height = currentView.physicalSize.height ~/ currentView.devicePixelRatio;
+    extraData.ref.availWidth = currentView.physicalSize.width ~/ currentView.devicePixelRatio;
+    extraData.ref.availHeight = currentView.physicalSize.height ~/ currentView.devicePixelRatio;
+    return extraData.cast<Void>();
   }
 
   // The availWidth attribute must return the width of the Web-exposed available screen area.
