@@ -210,8 +210,7 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
   JS_TurnOnGC(static_cast<DartIsolateContext*>(dart_isolate_context)->runtime());
   JSThreadState* th = new JSThreadState();
   JS_SetRuntimeOpaque(
-      reinterpret_cast<WebFTestContext*>(testContext)->page()->executingContext()->dartIsolateContext()->runtime(),
-      th);
+      reinterpret_cast<WebFTestContext*>(testContext)->page()->executingContext()->dartIsolateContext()->runtime(), th);
   return std::make_unique<WebFTestEnv>((webf::DartIsolateContext*)dart_isolate_context, (webf::WebFPage*)page);
 }
 

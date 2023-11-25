@@ -64,14 +64,14 @@ void disposePageSync(double thread_identity, void* ptr, void* page_) {
 }
 
 void evaluateScripts(void* page_,
-                       const char* code,
-                       uint64_t code_len,
-                       uint8_t** parsed_bytecodes,
-                       uint64_t* bytecode_len,
-                       const char* bundleFilename,
-                       int32_t startLine,
-                       Dart_Handle dart_handle,
-                       EvaluateScriptsCallback result_callback) {
+                     const char* code,
+                     uint64_t code_len,
+                     uint8_t** parsed_bytecodes,
+                     uint64_t* bytecode_len,
+                     const char* bundleFilename,
+                     int32_t startLine,
+                     Dart_Handle dart_handle,
+                     EvaluateScriptsCallback result_callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] evaluateScriptsWrapper call" << std::endl;
 #endif
