@@ -19,7 +19,7 @@ TEST(Performance, now) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(performance.now() < 20);";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
@@ -37,7 +37,7 @@ TEST(Performance, timeOrigin) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(typeof performance.timeOrigin === 'number');";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
@@ -55,7 +55,7 @@ TEST(Performance, toJSON) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let json = performance.toJSON();"
       "console.log('now' in json, 'timeOrigin' in json);";
@@ -75,7 +75,7 @@ TEST(Performance, mark) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc');"
       "let entries = performance.getEntries();"
@@ -96,7 +96,7 @@ TEST(Performance, markWithDetail) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc', { detail: {value: 1}});"
       "let entries = performance.getEntries();"
@@ -117,7 +117,7 @@ TEST(Performance, markWithName) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
@@ -140,7 +140,7 @@ TEST(Performance, clearMarks) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
@@ -164,7 +164,7 @@ TEST(Performance, clearMarksByName) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
@@ -188,7 +188,7 @@ TEST(Performance, measure) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = R"(
 performance.mark('A');
 

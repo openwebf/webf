@@ -20,7 +20,7 @@ TEST(Window, windowIsGlobalThis) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(window === globalThis)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
@@ -39,7 +39,7 @@ TEST(Window, instanceofEventTarget) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(window instanceof EventTarget)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
@@ -63,7 +63,7 @@ requestAnimationFrame(() => {
 )";
 
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
 
   EXPECT_EQ(logCalled, true);
 }
@@ -81,7 +81,7 @@ TEST(Window, cancelAnimationFrame) {
 )";
 
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
 }
 
 TEST(Window, postMessage) {

@@ -37,7 +37,7 @@ console.log('1234');
 )";
 
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
 }
 
 TEST(Timer, clearTimeout) {
@@ -65,7 +65,7 @@ clearTimeout(timer);
 )";
 
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
 
   EXPECT_EQ(log_called, false);
 }
@@ -82,5 +82,5 @@ let timer = setTimeout(() => {
 )";
 
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
 }

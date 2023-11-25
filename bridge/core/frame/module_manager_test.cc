@@ -13,7 +13,7 @@ TEST(ModuleManager, ShouldReturnCorrectValue) {
   auto env = TEST_init([](double contextId, const char* errmsg) { errorCalled = true; });
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
 
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
 
   std::string code = std::string(R"(
 let object = {
@@ -42,7 +42,7 @@ TEST(ModuleManager, shouldThrowErrorWhenBadJSON) {
   });
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {};
 
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
 
   std::string code = std::string(R"(
 let object = {
@@ -75,7 +75,7 @@ TEST(ModuleManager, invokeModuleError) {
         "'}");
   };
 
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
 
   std::string code = std::string(R"(
 function f() {

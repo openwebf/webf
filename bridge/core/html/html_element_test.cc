@@ -19,7 +19,7 @@ TEST(HTMLElement, globalEventHandlerRegistered) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div'); function f(){ console.log(1234); }; div.onclick = f; "
       "div.dispatchEvent(new Event('click'));";

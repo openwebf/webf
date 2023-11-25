@@ -35,7 +35,7 @@ std::string readTestSpec() {
 // Very useful to fix bridge bugs.
 TEST(IntegrationTest, runSpecs) {
   auto env = TEST_init();
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
 
   std::string code = readTestSpec();
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);

@@ -13,13 +13,13 @@ using namespace webf;
 TEST(Context, isValid) {
   {
     auto env = TEST_init();
-    EXPECT_EQ(env->page()->GetExecutingContext()->IsContextValid(), true);
-    EXPECT_EQ(env->page()->GetExecutingContext()->IsCtxValid(), true);
+    EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
+    EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
   }
   {
     auto env = TEST_init();
-    EXPECT_EQ(env->page()->GetExecutingContext()->IsContextValid(), true);
-    EXPECT_EQ(env->page()->GetExecutingContext()->IsCtxValid(), true);
+    EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
+    EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
   }
 }
 
@@ -237,7 +237,7 @@ generateRejectedPromise();
 )";
   env->page()->evaluateScript(code.c_str(), code.size(), "file://", 0);
 
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
   EXPECT_EQ(errorHandlerExecuted, false);
   EXPECT_EQ(logCalled, true);
   webf::WebFPage::consoleMessageHandler = nullptr;
@@ -274,12 +274,12 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
 
 TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
-  void* dart_context = initDartIsolateContext(0, mockedDartMethods.data(), mockedDartMethods.size());
+  void* dart_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size());
   double contextId = 0;
-  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPage(0.0, dart_context));
+  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPageSync(0.0, dart_context));
   static bool disposed = false;
   page->disposeCallback = [](webf::WebFPage* bridge) { disposed = true; };
-  disposePage(false, dart_context, page);
+  disposePageSync(false, dart_context, page);
   EXPECT_EQ(disposed, true);
 }
 
@@ -344,13 +344,13 @@ TEST(Context, evaluateByteCode) {
 
 TEST(jsValueToNativeString, utf8String) {
   auto env = TEST_init([](double contextId, const char* errmsg) {});
-  JSValue str = JS_NewString(env->page()->GetExecutingContext()->ctx(), "helloworld");
+  JSValue str = JS_NewString(env->page()->executingContext()->ctx(), "helloworld");
   std::unique_ptr<webf::SharedNativeString> nativeString =
-      webf::jsValueToNativeString(env->page()->GetExecutingContext()->ctx(), str);
+      webf::jsValueToNativeString(env->page()->executingContext()->ctx(), str);
   EXPECT_EQ(nativeString->length(), 10);
   uint8_t expectedString[10] = {104, 101, 108, 108, 111, 119, 111, 114, 108, 100};
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
   }
-  JS_FreeValue(env->page()->GetExecutingContext()->ctx(), str);
+  JS_FreeValue(env->page()->executingContext()->ctx(), str);
 }

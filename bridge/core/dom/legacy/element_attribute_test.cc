@@ -15,7 +15,7 @@ TEST(Element, overrideAttribute) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = R"(
  const text = document.createElement('div');
     text.setAttribute('value', 'Hello');

@@ -34,11 +34,11 @@
 
 static std::atomic<int64_t> unique_page_id{1};
 
-int64_t newPageId() {
+int64_t newPageIdSync() {
   return unique_page_id++;
 }
 
-void* initDartIsolateContext(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len) {
+void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len) {
   auto dispatcher = std::make_unique<webf::multi_threading::Dispatcher>(dart_port);
 
 #if ENABLE_LOG
@@ -49,7 +49,7 @@ void* initDartIsolateContext(int64_t dart_port, uint64_t* dart_methods, int32_t 
   return dart_isolate_context;
 }
 
-void* allocateNewPage(double thread_identity, void* ptr) {
+void* allocateNewPageSync(double thread_identity, void* ptr) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] allocateNewPageWrapper, targetContextId= " << targetContextId << std::endl;
 #endif
@@ -58,40 +58,43 @@ void* allocateNewPage(double thread_identity, void* ptr) {
   return static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPage(thread_identity);
 }
 
-void disposePage(double thread_identity, void* ptr, void* page_) {
+void disposePageSync(double thread_identity, void* ptr, void* page_) {
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(thread_identity, static_cast<webf::WebFPage*>(page_));
 }
 
-int8_t evaluateScripts(void* page_,
+void evaluateScripts(void* page_,
                        const char* code,
                        uint64_t code_len,
                        uint8_t** parsed_bytecodes,
                        uint64_t* bytecode_len,
                        const char* bundleFilename,
-                       int32_t startLine) {
+                       int32_t startLine,
+                       Dart_Handle dart_handle,
+                       EvaluateScriptsCallback result_callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] evaluateScriptsWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
       page->isDedicated(), page->contextId(), webf::evaluateScriptsInternal, page_, code, code_len, parsed_bytecodes,
-      bytecode_len, bundleFilename, startLine);
-  return 1;
+      bytecode_len, bundleFilename, startLine, persistent_handle, result_callback);
 }
 
-int8_t evaluateQuickjsByteCode(void* page_, uint8_t* bytes, int32_t byteLen) {
+void evaluateQuickjsByteCode(void* page_,
+                             uint8_t* bytes,
+                             int32_t byteLen,
+                             Dart_Handle dart_handle,
+                             EvaluateQuickjsByteCodeCallback result_callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] evaluateQuickjsByteCodeWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-
-  uint8_t* bytes_copy = (uint8_t*)malloc(byteLen * sizeof(uint8_t));
-  memcpy(bytes_copy, bytes, byteLen * sizeof(uint8_t));
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJsAndCallback(
-      page->isDedicated(), page->contextId(), webf::evaluateQuickjsByteCodeInternal,
-      [bytes_copy]() mutable { free(bytes_copy); }, page_, bytes_copy, byteLen);
-  return 1;
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
+                                                     webf::evaluateQuickjsByteCodeInternal, page_, bytes, byteLen,
+                                                     persistent_handle, result_callback);
 }
 
 void parseHTML(void* page_, const char* code, int32_t length) {
@@ -99,8 +102,8 @@ void parseHTML(void* page_, const char* code, int32_t length) {
   WEBF_LOG(VERBOSE) << "[Dart] parseHTMLWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->GetExecutingContext()->dartIsolateContext()->dispatcher()->PostToJs(
-      page->isDedicated(), page->contextId(), webf::parseHTMLInternal, page_, code, length);
+  page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
+                                                                         webf::parseHTMLInternal, page_, code, length);
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
@@ -143,8 +146,8 @@ void invokeModuleEvent(void* page_,
                        InvokeModuleEventCallback result_callback) {
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  auto dart_isolate_context = page->GetExecutingContext()->dartIsolateContext();
-  auto is_dedicated = page->GetExecutingContext()->isDedicated();
+  auto dart_isolate_context = page->executingContext()->dartIsolateContext();
+  auto is_dedicated = page->executingContext()->isDedicated();
   auto context_id = page->contextId();
   dart_isolate_context->dispatcher()->PostToJs(is_dedicated, context_id, webf::invokeModuleEventInternal, page_, module,
                                                eventType, event, extra, persistent_handle, result_callback);
@@ -157,17 +160,17 @@ void dispatchUITask(void* page_, void* context, void* callback) {
 
 void* getUICommandItems(void* page_) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  return page->GetExecutingContext()->uiCommandBuffer()->data();
+  return page->executingContext()->uiCommandBuffer()->data();
 }
 
 int64_t getUICommandItemSize(void* page_) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  return page->GetExecutingContext()->uiCommandBuffer()->size();
+  return page->executingContext()->uiCommandBuffer()->size();
 }
 
 void clearUICommandItems(void* page_) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->GetExecutingContext()->uiCommandBuffer()->clear();
+  page->executingContext()->uiCommandBuffer()->clear();
 }
 
 // Callbacks when dart context object was finalized by Dart GC.
