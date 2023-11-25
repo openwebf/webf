@@ -10,22 +10,48 @@
 
 namespace webf {
 
-int8_t evaluateScriptsInternal(void* page_,
-                               const char* code,
-                               uint64_t code_len,
-                               uint8_t** parsed_bytecodes,
-                               uint64_t* bytecode_len,
-                               const char* bundleFilename,
-                               int32_t startLine) {
-  auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  assert(std::this_thread::get_id() == page->currentThread());
-  return page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine) ? 1 : 0;
+static void ReturnEvaluateScriptsInternal(Dart_PersistentHandle persistent_handle,
+                                          EvaluateQuickjsByteCodeCallback result_callback,
+                                          bool is_success) {
+  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  result_callback(handle, is_success ? 1 : 0);
+  Dart_DeletePersistentHandle_DL(persistent_handle);
 }
 
-int8_t evaluateQuickjsByteCodeInternal(void* page_, uint8_t* bytes, int32_t byteLen) {
+void evaluateScriptsInternal(void* page_,
+                             const char* code,
+                             uint64_t code_len,
+                             uint8_t** parsed_bytecodes,
+                             uint64_t* bytecode_len,
+                             const char* bundleFilename,
+                             int32_t startLine,
+                             Dart_Handle persistent_handle,
+                             EvaluateScriptsCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  return page->evaluateByteCode(bytes, byteLen) ? 1 : 0;
+  bool is_success = page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
+  page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateScriptsInternal,
+                                                       persistent_handle, result_callback, is_success);
+}
+
+static void ReturnEvaluateQuickjsByteCodeResultToDart(Dart_PersistentHandle persistent_handle,
+                                                      EvaluateQuickjsByteCodeCallback result_callback,
+                                                      bool is_success) {
+  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  result_callback(handle, is_success ? 1 : 0);
+  Dart_DeletePersistentHandle_DL(persistent_handle);
+}
+
+void evaluateQuickjsByteCodeInternal(void* page_,
+                                     uint8_t* bytes,
+                                     int32_t byteLen,
+                                     Dart_PersistentHandle persistent_handle,
+                                     EvaluateQuickjsByteCodeCallback result_callback) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+  bool is_success = page->evaluateByteCode(bytes, byteLen);
+  page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
+                                                       persistent_handle, result_callback, is_success);
 }
 
 void parseHTMLInternal(void* page_, const char* code, int32_t length) {
@@ -51,7 +77,7 @@ void invokeModuleEventInternal(void* page_,
                                Dart_Handle persistent_handle,
                                InvokeModuleEventCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  auto dart_isolate_context = page->GetExecutingContext()->dartIsolateContext();
+  auto dart_isolate_context = page->executingContext()->dartIsolateContext();
   assert(std::this_thread::get_id() == page->currentThread());
   auto* result = page->invokeModuleEvent(reinterpret_cast<webf::SharedNativeString*>(module_name), eventType, event,
                                          reinterpret_cast<webf::NativeValue*>(extra));

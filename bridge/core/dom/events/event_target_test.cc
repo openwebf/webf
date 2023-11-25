@@ -22,7 +22,7 @@ TEST(EventTarget, addEventListener) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div'); function f(){ console.log(1234); }; div.addEventListener('click', f); "
       "div.dispatchEvent(new Event('click'));";
@@ -39,7 +39,7 @@ TEST(EventTarget, removeEventListener) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div'); function f(){ console.log(1234); }; div.addEventListener('click', f);"
       "div.removeEventListener('click', f); div.dispatchEvent(new Event('click'));";
@@ -60,7 +60,7 @@ TEST(EventTarget, setNoEventTargetProperties) {
     errorCalled = true;
   });
 
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div'); div._a = { name: 1}; console.log(div._a); "
       "document.body.appendChild(div);";
@@ -79,7 +79,7 @@ TEST(EventTarget, propertyEventHandler) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div'); "
       "div.onclick = function() { return 1234; };"
@@ -99,7 +99,7 @@ TEST(EventTarget, overwritePropertyEventHandler) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div'); "
       "div.onclick = function() { return 1234; };"
@@ -120,7 +120,7 @@ TEST(EventTarget, propertyEventOnWindow) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "window.onclick = function() { console.log(1234); };"
       "window.dispatchEvent(new Event('click'));";
@@ -140,7 +140,7 @@ TEST(EventTarget, asyncFunctionCallback) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   std::string code = R"(
     const img = document.createElement('img');
     img.style.width = '100px';
@@ -178,7 +178,7 @@ TEST(EventTarget, ClassInheritEventTarget) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   std::string code = std::string(R"(
  class Sample extends EventTarget {
   constructor() {
@@ -241,12 +241,12 @@ TEST(EventTarget, shouldKeepAtom) {
   };
   std::string code = "addEventListener('click', () => {console.log(1)});";
   env->page()->evaluateScript(code.c_str(), code.size(), "internal://", 0);
-  JS_RunGC(JS_GetRuntime(env->page()->GetExecutingContext()->ctx()));
+  JS_RunGC(JS_GetRuntime(env->page()->executingContext()->ctx()));
 
   std::string code2 = "addEventListener('appear', () => {console.log(2)});";
   env->page()->evaluateScript(code2.c_str(), code2.size(), "internal://", 0);
 
-  JS_RunGC(JS_GetRuntime(env->page()->GetExecutingContext()->ctx()));
+  JS_RunGC(JS_GetRuntime(env->page()->executingContext()->ctx()));
 
   std::string code3 = "(function() { var eeee = new Event('appear'); dispatchEvent(eeee); } )();";
   env->page()->evaluateScript(code3.c_str(), code3.size(), "internal://", 0);
@@ -274,6 +274,6 @@ proxy.dispatchEvent(new Event('click'));
 )";
   env->page()->evaluateScript(code.c_str(), code.size(), "internal://", 0);
 
-  JS_RunGC(JS_GetRuntime(env->page()->GetExecutingContext()->ctx()));
+  JS_RunGC(JS_GetRuntime(env->page()->executingContext()->ctx()));
   EXPECT_EQ(logCalled, true);
 }

@@ -93,11 +93,13 @@ using SimulatePointer =
     void (*)(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
 using SimulateInputText = void (*)(SharedNativeString* nativeString);
 
+class DartIsolateContext;
+
 class DartMethodPointer {
   DartMethodPointer() = delete;
 
  public:
-  explicit DartMethodPointer(void* dart_isolate_context, const uint64_t* dart_methods, int32_t dartMethodsLength);
+  explicit DartMethodPointer(DartIsolateContext* dart_isolate_context, const uint64_t* dart_methods, int32_t dartMethodsLength);
   NativeValue* invokeModule(bool is_dedicated,
                             void* callback_context,
                             double context_id,
@@ -175,6 +177,8 @@ class DartMethodPointer {
   void SetSimulateInputText(SimulateInputText func);
 
  private:
+
+  DartIsolateContext* dart_isolate_context_{nullptr};
   InvokeModule invoke_module_{nullptr};
   RequestBatchUpdate request_batch_update_{nullptr};
   ReloadApp reload_app_{nullptr};

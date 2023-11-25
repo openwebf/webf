@@ -32,7 +32,7 @@ void* initTestFramework(void* page_) {
   signal(SIGABRT, handler);
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  return new webf::WebFTestContext(page->GetExecutingContext());
+  return new webf::WebFTestContext(page->executingContext());
 }
 
 void executeTest(void* testContext, ExecuteCallback executeCallback) {

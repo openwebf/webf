@@ -18,7 +18,7 @@ TEST(HTMLCollection, children) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "let text = document.createTextNode('1234');"
@@ -39,7 +39,7 @@ TEST(HTMLCollection, childrenWillNotChangeWithNoElementsNodes) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('span');"
       "let text = document.createTextNode('1234');"

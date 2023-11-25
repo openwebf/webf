@@ -55,7 +55,8 @@ class WebFPage final {
 
   std::thread::id currentThread() const;
 
-  [[nodiscard]] ExecutingContext* GetExecutingContext() const { return context_; }
+  [[nodiscard]] ExecutingContext* executingContext() const { return context_; }
+  [[nodiscard]] DartIsolateContext* dartIsolateContext() const { return dart_isolate_context_; }
 
   NativeValue* invokeModuleEvent(SharedNativeString* moduleName,
                                  const char* eventType,
@@ -76,6 +77,7 @@ class WebFPage final {
   // FIXME: we must to use raw pointer instead of unique_ptr because we needs to access context_ when dispose page.
   // TODO: Raw pointer is dangerous and just works but it's fragile. We needs refactor this for more stable and
   // maintainable.
+  DartIsolateContext* dart_isolate_context_;
   ExecutingContext* context_;
   JSExceptionHandler handler_;
 };

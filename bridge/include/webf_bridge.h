@@ -32,28 +32,36 @@ struct WebFInfo {
 typedef void (*Task)(void*);
 typedef std::function<void()> DartWork;
 typedef void (*InvokeModuleEventCallback)(Dart_Handle dart_handle, void*);
+typedef void (*EvaluateQuickjsByteCodeCallback)(Dart_Handle dart_handle, int8_t);
+typedef void (*EvaluateScriptsCallback)(Dart_Handle dart_handle, int8_t);
 
 WEBF_EXPORT_C
-void* initDartIsolateContext(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len);
+void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len);
 
 WEBF_EXPORT_C
-void* allocateNewPage(double thread_identity, void* dart_isolate_context);
+void* allocateNewPageSync(double thread_identity, void* dart_isolate_context);
 
 WEBF_EXPORT_C
-int64_t newPageId();
+int64_t newPageIdSync();
 
 WEBF_EXPORT_C
-void disposePage(double dedicated_thread, void* dart_isolate_context, void* page);
+void disposePageSync(double dedicated_thread, void* dart_isolate_context, void* page);
 WEBF_EXPORT_C
-int8_t evaluateScripts(void* page,
-                       const char* code,
-                       uint64_t code_len,
-                       uint8_t** parsed_bytecodes,
-                       uint64_t* bytecode_len,
-                       const char* bundleFilename,
-                       int32_t startLine);
+void evaluateScripts(void* page,
+                     const char* code,
+                     uint64_t code_len,
+                     uint8_t** parsed_bytecodes,
+                     uint64_t* bytecode_len,
+                     const char* bundleFilename,
+                     int32_t startLine,
+                     Dart_Handle dart_handle,
+                     EvaluateQuickjsByteCodeCallback result_callback);
 WEBF_EXPORT_C
-int8_t evaluateQuickjsByteCode(void* page, uint8_t* bytes, int32_t byteLen);
+void evaluateQuickjsByteCode(void* page,
+                             uint8_t* bytes,
+                             int32_t byteLen,
+                             Dart_Handle dart_handle,
+                             EvaluateQuickjsByteCodeCallback result_callback);
 WEBF_EXPORT_C
 void parseHTML(void* page, const char* code, int32_t length);
 WEBF_EXPORT_C

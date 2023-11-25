@@ -160,7 +160,7 @@ class QuickJSByteCodeCache {
   }
 
   // Add or update the httpCacheObject to memory cache.
-  static void putObject(Uint8List codeBytes, Uint8List bytes) async {
+  static Future<void> putObject(Uint8List codeBytes, Uint8List bytes) async {
     final String key = _getCacheHash(codeBytes);
 
     final Directory cacheDirectory = await getCacheDirectory();

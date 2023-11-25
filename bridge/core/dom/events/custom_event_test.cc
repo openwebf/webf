@@ -20,7 +20,7 @@ TEST(CustomEvent, instanceofEvent) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let customEvent = new CustomEvent('abc', { detail: 'helloworld'});"
       "console.log(customEvent instanceof Event);";

@@ -16,7 +16,7 @@ TEST(CSSStyleDeclaration, setStyleData) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "document.documentElement.style.backgroundColor = 'white';"
       "document.documentElement.style.backgroundColor = 'white';";
@@ -32,7 +32,7 @@ TEST(CSSStyleDeclaration, enumerateStyles) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.assert(Object.keys(document.body.style).length > 400)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
@@ -46,7 +46,7 @@ TEST(CSSStyleDeclaration, supportCSSVaraible) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = R"(
 document.body.style.setProperty('--blue', 'lightblue'); console.assert(document.body.style['--blue'] === 'lightblue');
 document.body.style.setProperty('--main-color', 'lightblue'); console.assert(document.body.style.getPropertyValue('--main-color') === 'lightblue');
@@ -78,7 +78,7 @@ TEST(CSSStyleDeclaration, supportHyphen) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "document.body.style.setProperty('background-color', 'lightblue'); "
       "console.assert(document.body.style.backgroundColor == 'lightblue');"
@@ -96,7 +96,7 @@ TEST(InlineCSSStyleDeclaration, setNullValue) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "document.body.style.height = null;"
       "console.assert(document.body.style.height === '')";
