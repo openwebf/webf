@@ -10,9 +10,7 @@
 namespace webf {
 
 SharedUICommand::SharedUICommand(ExecutingContext* context)
-    : context_(context),
-      front_buffer_(std::make_unique<UICommandBuffer>(context)),
-      is_blocking_writing_(false) {}
+    : context_(context), front_buffer_(std::make_unique<UICommandBuffer>(context)), is_blocking_writing_(false) {}
 
 void SharedUICommand::addCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
@@ -27,7 +25,7 @@ void SharedUICommand::addCommand(UICommand type,
   while (is_blocking_writing_) {
     // simply spin wait for the swapBuffers to finish.
   }
-  
+
   front_buffer_->addCommand(type, std::move(args_01), nativePtr, nativePtr2, request_ui_update);
 }
 

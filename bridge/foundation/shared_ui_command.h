@@ -5,8 +5,8 @@
 #ifndef MULTI_THREADING_DOUBULE_UI_COMMAND_H_
 #define MULTI_THREADING_DOUBULE_UI_COMMAND_H_
 
-#include "foundation/ui_command_buffer.h"
 #include "foundation/native_type.h"
+#include "foundation/ui_command_buffer.h"
 
 namespace webf {
 
