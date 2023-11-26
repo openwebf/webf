@@ -146,8 +146,10 @@ dynamic invokeModuleEvent(double contextId, String moduleName, Event? event, ext
 
   _InvokeModuleCallbackContext callbackContext = _InvokeModuleCallbackContext(completer, controller, extraData);
 
-  _invokeModuleEvent(_allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(),
-      rawEvent, extraData, callbackContext, callback);
+  scheduleMicrotask(() {
+    _invokeModuleEvent(_allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(),
+        rawEvent, extraData, callbackContext, callback);
+  });
 
   return completer.future;
 }
@@ -516,6 +518,28 @@ class UICommandItem extends Struct {
   external Pointer nativePtr;
 }
 
+typedef NativeAcquireUiCommandLocks = Pointer<Void> Function(Pointer<Void>);
+typedef DartAcquireUiCommandLocks = Pointer<void> Function(Pointer<Void>);
+
+final DartAcquireUiCommandLocks _acquireUiCommandLocks =
+WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAcquireUiCommandLocks>>('acquireUiCommandLocks').asFunction();
+
+void acquireUICommandLocks(double contextId) {
+  // Stop the mutations from JavaScript thread.
+  _acquireUiCommandLocks(_allocatedPages[contextId]!);
+}
+
+typedef NativeReleaseUiCommandLocks = Pointer<Void> Function(Pointer<Void>);
+typedef DartReleaseUiCommandLocks = Pointer<void> Function(Pointer<Void>);
+
+final DartReleaseUiCommandLocks _releaseUiCommandLocks =
+WebFDynamicLibrary.ref.lookup<NativeFunction<NativeReleaseUiCommandLocks>>('releaseUiCommandLocks').asFunction();
+
+void releaseUICommandLocks(double contextId) {
+  // Stop the mutations from JavaScript thread.
+  _releaseUiCommandLocks(_allocatedPages[contextId]!);
+}
+
 typedef NativeGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
 typedef DartGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
 
@@ -564,9 +588,7 @@ bool enableWebFCommandLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_J
 // We found there are performance bottleneck of reading native memory with Dart FFI API.
 // So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,
 // To ensure the fastest subsequent random access.
-List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, int commandLength, double contextId) {
-  List<int> rawMemory =
-      nativeCommandItems.cast<Int64>().asTypedList(commandLength * nativeCommandSize).toList(growable: false);
+List<UICommand> nativeUICommandToDart(List<int> rawMemory, int commandLength, double contextId) {
   List<UICommand> results = List.generate(commandLength, (int _i) {
     int i = _i * nativeCommandSize;
     UICommand command = UICommand();
@@ -605,15 +627,19 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
     return command;
   }, growable: false);
 
-  // Clear native command.
-  _clearUICommandItems(_allocatedPages[contextId]!);
-
   return results;
 }
 
 void clearUICommand(double contextId) {
   assert(_allocatedPages.containsKey(contextId));
+
+  // Stop the mutations from JavaScript thread.
+  acquireUICommandLocks(contextId);
+
   _clearUICommandItems(_allocatedPages[contextId]!);
+
+  // Release the mutations from JavaScript thread.
+  releaseUICommandLocks(contextId);
 }
 
 void flushUICommandWithContextId(double contextId) {
@@ -623,16 +649,43 @@ void flushUICommandWithContextId(double contextId) {
   }
 }
 
-void flushUICommand(WebFViewController view) {
-  assert(_allocatedPages.containsKey(view.contextId));
-  Pointer<Uint64> nativeCommandItems = _getUICommandItems(_allocatedPages[view.contextId]!);
-  int commandLength = _getUICommandItemSize(_allocatedPages[view.contextId]!);
+class _NativeCommandData {
+  static _NativeCommandData empty() { return _NativeCommandData(0, []); }
 
-  if (commandLength == 0 || nativeCommandItems == nullptr) {
-    return;
+  int length;
+  List<int> rawMemory;
+  _NativeCommandData(this.length, this.rawMemory);
+}
+
+_NativeCommandData readNativeUICommandMemory(double contextId) {
+  // Stop the mutations from JavaScript thread.
+  acquireUICommandLocks(contextId);
+
+  Pointer<Uint64> nativeCommandItemPointer = _getUICommandItems(_allocatedPages[contextId]!);
+  int commandLength = _getUICommandItemSize(_allocatedPages[contextId]!);
+
+  if (commandLength == 0 || nativeCommandItemPointer == nullptr) {
+    releaseUICommandLocks(contextId);
+    return _NativeCommandData.empty();
   }
 
-  List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, view.contextId);
+  List<int> rawMemory = nativeCommandItemPointer.cast<Int64>().asTypedList(commandLength * nativeCommandSize).toList(growable: false);
+  _clearUICommandItems(_allocatedPages[contextId]!);
+
+  // Release the mutations from JavaScript thread.
+  releaseUICommandLocks(contextId);
+
+  return _NativeCommandData(commandLength, rawMemory);
+}
+
+void flushUICommand(WebFViewController view) {
+  assert(_allocatedPages.containsKey(view.contextId));
+
+  _NativeCommandData commandData = readNativeUICommandMemory(view.contextId);
+
+  if (commandData.rawMemory.isEmpty) return;
+
+  List<UICommand> commands = nativeUICommandToDart(commandData.rawMemory, commandData.length, view.contextId);
 
   SchedulerBinding.instance.scheduleFrame();
 
@@ -640,7 +693,7 @@ void flushUICommand(WebFViewController view) {
   Set<int> pendingRecalculateTargets = {};
 
   // For new ui commands, we needs to tell engine to update frames.
-  for (int i = 0; i < commandLength; i++) {
+  for (int i = 0; i < commandData.length; i++) {
     UICommand command = commands[i];
     UICommandType commandType = command.type;
     Pointer nativePtr = command.nativePtr;
