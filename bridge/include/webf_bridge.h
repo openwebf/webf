@@ -82,6 +82,13 @@ WEBF_EXPORT_C
 void dispatchUITask(void* page, void* context, void* callback);
 WEBF_EXPORT_C
 void* getUICommandItems(void* page);
+
+WEBF_EXPORT_C
+void acquireUiCommandLocks(void* page);
+
+WEBF_EXPORT_C
+void releaseUiCommandLocks(void* page);
+
 WEBF_EXPORT_C
 int64_t getUICommandItemSize(void* page);
 WEBF_EXPORT_C

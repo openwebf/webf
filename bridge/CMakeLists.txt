@@ -100,7 +100,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/logging.cc
   foundation/native_string.cc
   foundation/ui_task_queue.cc
-  foundation/double_ui_command.cc
+  foundation/shared_ui_command.cc
   foundation/inspector_task_queue.cc
   foundation/task_queue.cc
   foundation/string_view.cc

@@ -30,7 +30,7 @@
 #include "frame/module_listener_container.h"
 #include "script_state.h"
 
-#include "double_ui_command.h"
+#include "shared_ui_command.h"
 
 namespace webf {
 
@@ -126,7 +126,7 @@ class ExecutingContext {
   FORCE_INLINE Window* window() const { return window_; }
   FORCE_INLINE DartIsolateContext* dartIsolateContext() const { return dart_isolate_context_; };
   FORCE_INLINE Performance* performance() const { return performance_; }
-  FORCE_INLINE DoubleUICommand* uiCommandBuffer() { return &ui_command_buffer_; };
+  FORCE_INLINE SharedUICommand* uiCommandBuffer() { return &ui_command_buffer_; };
   FORCE_INLINE DartMethodPointer* dartMethodPtr() const {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
@@ -175,7 +175,7 @@ class ExecutingContext {
   // Members first initialized and destructed at the last.
   // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer
   // release.
-  DoubleUICommand ui_command_buffer_{this};
+  SharedUICommand ui_command_buffer_{this};
   DartIsolateContext* dart_isolate_context_{nullptr};
   // Keep uiCommandBuffer above ScriptState to make sure we can collect all disposedEventTarget command when free
   // JSContext. When call JSFreeContext(ctx) inside ScriptState, all eventTargets will be finalized and UICommandBuffer

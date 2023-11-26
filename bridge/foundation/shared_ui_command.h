@@ -6,12 +6,13 @@
 #define MULTI_THREADING_DOUBULE_UI_COMMAND_H_
 
 #include "foundation/ui_command_buffer.h"
+#include "foundation/native_type.h"
 
 namespace webf {
 
-class DoubleUICommand {
+class SharedUICommand : public DartReadable {
  public:
-  DoubleUICommand(ExecutingContext* context);
+  SharedUICommand(ExecutingContext* context);
 
   void addCommand(UICommand type,
                   std::unique_ptr<SharedNativeString>&& args_01,
@@ -24,13 +25,12 @@ class DoubleUICommand {
   bool empty();
   void clear();
 
-  UICommandBuffer* getFrontBuffer();
-  void swapBuffers();
+  void acquireLocks();
+  void releaseLocks();
 
  private:
-  std::unique_ptr<UICommandBuffer> frontBuffer = nullptr;
-  std::unique_ptr<UICommandBuffer> backBuffer = nullptr;
-  std::atomic<bool> isSwapping;
+  std::unique_ptr<UICommandBuffer> front_buffer_ = nullptr;
+  std::atomic<bool> is_blocking_writing_;
   ExecutingContext* context_;
 };
 
