@@ -1189,8 +1189,10 @@ class RenderFlexLayout extends RenderLayoutBox {
         maxMainSize = math.max(layoutContentMainSize, minMainAxisSize);
 
         double maxMainConstraints = _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
-        if (maxMainConstraints.isFinite && maxMainSize > maxMainConstraints) {
-          maxMainSize = maxMainConstraints;
+        // determining isScrollingContentBox is to reduce the scope of influence
+        if (isScrollingContentBox && maxMainConstraints.isFinite) {
+          maxMainSize = totalFlexShrink > 0 ? math.min(maxMainSize, maxMainConstraints) : maxMainSize;
+          maxMainSize = totalFlexGrow > 0 ? math.max(maxMainSize, maxMainConstraints) : maxMainSize;
         }
 
         initialFreeSpace = maxMainSize - totalSpace;
