@@ -225,22 +225,43 @@ class RenderLayoutBox extends RenderBoxModel
     if (isScrollingContentBox) {
       // fix overflow:scroll/auto nested overflow:scroll/auto
       BoxConstraints parentConstraints = (parent as RenderBoxModel).constraints;
-      RenderBox? childBox = firstChild;
-      while (childBox != null && childBox.parentData is RenderLayoutParentData) {
-        final RenderLayoutParentData childParentData = childBox.parentData as RenderLayoutParentData;
-        if (childBox is RenderLayoutBox && childBox.renderScrollingContent != null) {
-          boxConstraints = BoxConstraints(
-            minWidth: boxConstraints.minWidth,
-            maxWidth: parentConstraints.maxWidth,
-            minHeight: boxConstraints.minHeight,
-            maxHeight: parentConstraints.maxHeight,
-          );
-          break;
-        }
-        childBox = childParentData.nextSibling;
+      RenderStyle parentRenderStyle = (parent as RenderBoxModel).renderStyle;
+      CSSOverflowType effectiveOverflowY = parentRenderStyle.effectiveOverflowY;
+      CSSOverflowType effectiveOverflowX = parentRenderStyle.effectiveOverflowX;
+      // not processing effectiveOverflow=hidden/clip is to reduce the scope of influence
+      bool shouldInheritY = (effectiveOverflowY == CSSOverflowType.auto || effectiveOverflowY == CSSOverflowType.scroll) && scrollShouldInheritConstraints(this, false);
+      bool shouldInheritX = (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) && scrollShouldInheritConstraints(this, true);
+      if (shouldInheritY || shouldInheritX) {
+        boxConstraints = BoxConstraints(
+          minWidth: boxConstraints.minWidth,
+          maxWidth: shouldInheritX ? parentConstraints.maxWidth : boxConstraints.maxWidth,
+          minHeight: boxConstraints.minHeight,
+          maxHeight: shouldInheritY ? parentConstraints.maxHeight : boxConstraints.maxHeight,
+        );
       }
     }
     return boxConstraints;
+  }
+
+  bool scrollShouldInheritConstraints(RenderLayoutBox layoutBox, bool horizontal) {
+    RenderBox? childBox = layoutBox.firstChild;
+    while (childBox != null && childBox.parentData is RenderLayoutParentData) {
+      final RenderLayoutParentData childParentData = childBox.parentData as RenderLayoutParentData;
+      if (childBox is RenderLayoutBox) {
+        if (childBox.renderScrollingContent != null) {
+          return true;
+        }
+        CSSOverflowType childOverflow = horizontal ? childBox.renderStyle.overflowX : childBox.renderStyle.overflowY;
+        // this condition comes from h5 test
+        if (childOverflow == CSSOverflowType.hidden || childOverflow == CSSOverflowType.clip) {
+          if (scrollShouldInheritConstraints(childBox, horizontal)) {
+            return true;
+          }
+        }
+      }
+      childBox = childParentData.nextSibling;
+    }
+    return false;
   }
 
   // iterate add child to overflowLayout
