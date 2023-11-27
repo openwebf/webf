@@ -68,12 +68,9 @@ WebFInfo getWebFInfo() {
 }
 
 // Register Native Callback Port
-final interactiveCppRequests = ReceivePort()
-  ..listen(requestExecuteCallback,
-      onError: (error) {
-        print('portForNativeCallback an error occurred: $error');
-      },
-      onDone: () => print('portForNativeCallback done'));
+final interactiveCppRequests = RawReceivePort((message) {
+  requestExecuteCallback(message);
+});
 
 final int nativePort = interactiveCppRequests.sendPort.nativePort;
 
@@ -82,11 +79,27 @@ class NativeWork extends Opaque {}
 final _executeNativeCallback = WebFDynamicLibrary.ref
     .lookupFunction<Void Function(Pointer<NativeWork>), void Function(Pointer<NativeWork>)>('executeNativeCallback');
 
+Completer? _working_completer;
+
+FutureOr<void> waitingSyncTaskComplete() async {
+  if (_working_completer != null) {
+    return _working_completer!.future;
+  }
+}
+
 void requestExecuteCallback(message) {
   try {
-    final int work_address = message;
-    final work = Pointer<NativeWork>.fromAddress(work_address);
+    final List<dynamic> data = message;
+    final bool isSync = data[0] == 1;
+    if (isSync) {
+      _working_completer = Completer();
+    }
+
+    final int workAddress = data[1];
+    final work = Pointer<NativeWork>.fromAddress(workAddress);
     _executeNativeCallback(work);
+    _working_completer?.complete();
+    _working_completer = null;
   } catch (e, stack) {
     print('requestExecuteCallback error: $e\n$stack');
   }
@@ -400,7 +413,8 @@ typedef DartDisposePage = void Function(double, Pointer<Void>, Pointer<Void> pag
 final DartDisposePage _disposePage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePageSync').asFunction();
 
-void disposePage(double contextId) {
+FutureOr<void> disposePage(double contextId) async {
+  await waitingSyncTaskComplete();
   Pointer<Void> page = _allocatedPages[contextId]!;
   _disposePage(contextId, dartContext!.pointer, page);
   _allocatedPages.remove(contextId);
@@ -422,7 +436,9 @@ typedef DartAllocateNewPage = Pointer<Void> Function(double, Pointer<Void>);
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPageSync').asFunction();
 
-void allocateNewPage(double newContextId) {
+FutureOr<void> allocateNewPage(double newContextId) async {
+  await waitingSyncTaskComplete();
+
   Pointer<Void> page = _allocateNewPage(newContextId, dartContext!.pointer);
   assert(!_allocatedPages.containsKey(newContextId));
   _allocatedPages[newContextId] = page;

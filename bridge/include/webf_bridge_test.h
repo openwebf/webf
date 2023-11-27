@@ -11,7 +11,7 @@
 WEBF_EXPORT_C
 void* initTestFramework(void* page);
 
-using ExecuteCallback = void* (*)(int32_t contextId, void* status);
+using ExecuteCallback = void* (*)(double contextId, void* status);
 
 WEBF_EXPORT_C
 void executeTest(void* testContext, ExecuteCallback executeCallback);

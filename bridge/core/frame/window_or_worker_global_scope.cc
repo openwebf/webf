@@ -109,15 +109,15 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
                                           ExceptionState& exception) {
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kOnce);
-  auto timerId = context->dartMethodPtr()->setTimeout(context->isDedicated(), timer.get(), context->contextId(),
+  auto timer_id = context->dartMethodPtr()->setTimeout(context->isDedicated(), timer.get(), context->contextId(),
                                                       handleTransientCallbackWrapper, timeout);
 
   // Register timerId.
-  timer->setTimerId(timerId);
+  timer->setTimerId(timer_id);
 
-  context->Timers()->installNewTimer(context, timerId, timer);
+  context->Timers()->installNewTimer(context, timer_id, timer);
 
-  return timerId;
+  return timer_id;
 }
 
 int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,

@@ -147,30 +147,33 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   Color? background;
+  WebFThread runningThread;
 
   WebFViewController(this._viewportWidth, this._viewportHeight,
       {this.background,
       this.enableDebug = false,
       required this.rootController,
-      required WebFThread runningThread,
+      required this.runningThread,
       this.navigationDelegate,
       this.gestureListener,
       this.initialCookies,
       // Viewport won't change when kraken page reload, should reuse previous page's viewportBox.
       RenderViewportBox? originalViewport}) {
-    if (enableDebug) {
-      debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
-      debugPaintSizeEnabled = true;
-    }
-    BindingBridge.setup();
-    _contextId = initBridge(this, runningThread);
-
     if (originalViewport != null) {
       viewport = originalViewport;
     } else {
       viewport = RenderViewportBox(
           background: background, viewportSize: ui.Size(viewportWidth, viewportHeight), controller: rootController);
     }
+  }
+
+  Future<void> initialize() async {
+    if (enableDebug) {
+      debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
+      debugPaintSizeEnabled = true;
+    }
+    BindingBridge.setup();
+    _contextId = await initBridge(this, runningThread);
 
     _setupObserver();
 
@@ -280,7 +283,7 @@ class WebFViewController implements WidgetsBindingObserver {
     document.cookie.clearCookie();
   }
 
-  void evaluateJavaScripts(String code) async {
+  Future<void> evaluateJavaScripts(String code) async {
     assert(!_disposed, 'WebF have already disposed');
     List<int> data = utf8.encode(code);
     await evaluateScripts(_contextId, Uint8List.fromList(data));
@@ -304,7 +307,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   // Dispose controller and recycle all resources.
-  void dispose() {
+  Future<void> dispose() async {
     _disposed = true;
     debugDOMTreeChanged = null;
 
@@ -314,7 +317,7 @@ class WebFViewController implements WidgetsBindingObserver {
     // Should clear previous page cached ui commands
     clearUICommand(_contextId);
 
-    disposePage(_contextId);
+    await disposePage(_contextId);
 
     clearCssLength();
 
@@ -834,6 +837,8 @@ class WebFController {
 
   final WebFThread runningThread;
 
+  Completer controlledInitCompleter = Completer();
+
   WebFController(
     String? name,
     double viewportWidth,
@@ -882,33 +887,37 @@ class WebFController {
       initialCookies: initialCookies
     );
 
-    final double contextId = _view.contextId;
+    _view.initialize().then((_) {
+      final double contextId = _view.contextId;
 
-    _module = WebFModuleController(this, contextId);
+      _module = WebFModuleController(this, contextId);
 
-    if (entrypoint != null) {
-      HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
-      historyModule.add(entrypoint);
-    }
+      if (entrypoint != null) {
+        HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+        historyModule.add(entrypoint);
+      }
 
-    assert(!_controllerMap.containsKey(contextId), 'found exist contextId of WebFController, contextId: $contextId');
-    _controllerMap[contextId] = this;
-    assert(!_nameIdMap.containsKey(name), 'found exist name of WebFController, name: $name');
-    if (name != null) {
-      _nameIdMap[name] = contextId;
-    }
+      assert(!_controllerMap.containsKey(contextId), 'found exist contextId of WebFController, contextId: $contextId');
+      _controllerMap[contextId] = this;
+      assert(!_nameIdMap.containsKey(name), 'found exist name of WebFController, name: $name');
+      if (name != null) {
+        _nameIdMap[name] = contextId;
+      }
 
-    setupHttpOverrides(httpClientInterceptor, contextId: contextId);
+      setupHttpOverrides(httpClientInterceptor, contextId: contextId);
 
-    uriParser ??= UriParser();
+      uriParser ??= UriParser();
 
-    if (devToolsService != null) {
-      devToolsService!.init(this);
-    }
+      if (devToolsService != null) {
+        devToolsService!.init(this);
+      }
 
-    if (autoExecuteEntrypoint) {
-      executeEntrypoint();
-    }
+      controlledInitCompleter.complete();
+
+      if (autoExecuteEntrypoint) {
+        executeEntrypoint();
+      }
+    });
   }
 
   late WebFViewController _view;
@@ -946,9 +955,9 @@ class WebFController {
 
     // Wait for next microtask to make sure C++ native Elements are GC collected.
     Completer completer = Completer();
-    Future.microtask(() {
+    Future.microtask(() async {
       _module.dispose();
-      _view.dispose();
+      await _view.dispose();
       // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
       _view.viewport.reload();
 
@@ -1072,9 +1081,9 @@ class WebFController {
 
   bool _disposed = false;
   bool get disposed => _disposed;
-  void dispose() {
+  Future<void> dispose() async {
     _module.dispose();
-    _view.dispose();
+    await _view.dispose();
     _controllerMap[_view.contextId] = null;
     _controllerMap.remove(_view.contextId);
     _nameIdMap.remove(name);
@@ -1093,6 +1102,7 @@ class WebFController {
   Future<void> executeEntrypoint(
       {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
     if (_entrypoint != null && shouldResolve) {
+      await controlledInitCompleter.future;
       await Future.wait([
         _resolveEntrypoint(),
         _module.initialize()

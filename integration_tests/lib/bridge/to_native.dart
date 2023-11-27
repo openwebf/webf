@@ -23,7 +23,7 @@ typedef DartInitTestFramework = Pointer<Void> Function(Pointer<Void> page);
 final DartInitTestFramework _initTestFramework =
     WebFDynamicLibrary.testRef.lookup<NativeFunction<NativeInitTestFramework>>('initTestFramework').asFunction();
 
-Pointer<Void> initTestFramework(int contextId) {
+Pointer<Void> initTestFramework(double contextId) {
   return _initTestFramework(getAllocatedPage(contextId)!);
 }
 
@@ -34,13 +34,13 @@ typedef DartEvaluateTestScripts = int Function(Pointer<Void> testContext, Pointe
 final DartEvaluateTestScripts _evaluateTestScripts =
     WebFDynamicLibrary.testRef.lookup<NativeFunction<NativeEvaluateTestScripts>>('evaluateTestScripts').asFunction();
 
-void evaluateTestScripts(int contextId, String code, {String url = 'test://', int line = 0}) {
+void evaluateTestScripts(double contextId, String code, {String url = 'test://', int line = 0}) {
   Pointer<Utf8> _url = (url).toNativeUtf8();
   _evaluateTestScripts(getAllocatedPage(contextId)!, stringToNativeString(code), _url, line);
 }
 
-typedef NativeExecuteCallback = Void Function(Int32 contextId, Pointer<NativeString> status);
-typedef DartExecuteCallback = void Function(int);
+typedef NativeExecuteCallback = Void Function(Double contextId, Pointer<NativeString> status);
+typedef DartExecuteCallback = void Function(double);
 typedef NativeExecuteTest = Void Function(Pointer<Void>, Pointer<NativeFunction<NativeExecuteCallback>>);
 typedef DartExecuteTest = void Function(Pointer<Void>, Pointer<NativeFunction<NativeExecuteCallback>>);
 
@@ -49,15 +49,15 @@ final DartExecuteTest _executeTest =
 
 List<Completer<String>?> completerList = List.filled(10, null);
 
-void _executeTestCallback(int contextId, Pointer<NativeString> status) {
-  if (completerList[contextId] == null) return;
-  completerList[contextId]!.complete(nativeStringToString(status));
-  completerList[contextId] = null;
+void _executeTestCallback(double contextId, Pointer<NativeString> status) {
+  if (completerList[contextId.toInt()] == null) return;
+  completerList[contextId.toInt()]!.complete(nativeStringToString(status));
+  completerList[contextId.toInt()] = null;
 }
 
-Future<String> executeTest(Pointer<Void> testContext, int contextId) async {
-  completerList[contextId] = Completer();
+Future<String> executeTest(Pointer<Void> testContext, double contextId) async {
+  completerList[contextId.toInt()] = Completer();
   Pointer<NativeFunction<NativeExecuteCallback>> callback = Pointer.fromFunction(_executeTestCallback);
   _executeTest(testContext, callback);
-  return completerList[contextId]!.future;
+  return completerList[contextId.toInt()]!.future;
 }

@@ -56,7 +56,7 @@ class Dispatcher {
     const DartWork work = [task]() { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
-    NotifyDart(work_ptr);
+    NotifyDart(work_ptr, false);
   }
 
   template <typename Func, typename... Args>
@@ -72,7 +72,7 @@ class Dispatcher {
     const DartWork work = [task]() { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
-    NotifyDart(work_ptr);
+    NotifyDart(work_ptr, false);
   }
 
   template <typename Func, typename... Args>
@@ -86,7 +86,7 @@ class Dispatcher {
     const DartWork work = [task]() { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
-    NotifyDart(work_ptr);
+    NotifyDart(work_ptr, true);
 
     task->wait();
     return task->getResult();
@@ -103,7 +103,7 @@ class Dispatcher {
     const DartWork work = [task]() { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
-    NotifyDart(work_ptr);
+    NotifyDart(work_ptr, true);
 
     task->wait();
   }
@@ -151,7 +151,7 @@ class Dispatcher {
   }
 
  private:
-  void NotifyDart(const DartWork* work_ptr);
+  void NotifyDart(const DartWork* work_ptr, bool is_sync);
 
  private:
   Dart_Port dart_port_;

@@ -62,24 +62,33 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
   auto fn = [](void* ptr, double contextId, int8_t result, const char* errmsg) {
-    auto* callbackContext = static_cast<ImageSnapShotContext*>(ptr);
-    JSContext* ctx = callbackContext->context->ctx();
+    auto* callback_context = static_cast<ImageSnapShotContext*>(ptr);
+    auto* context = callback_context->context;
 
-    if (errmsg == nullptr) {
-      JSValue arguments[] = {JS_NewBool(ctx, result != 0), JS_NULL};
-      JSValue returnValue = JS_Call(ctx, callbackContext->callback, callbackContext->context->Global(), 1, arguments);
-      callbackContext->context->HandleException(&returnValue);
-    } else {
-      JSValue errmsgValue = JS_NewString(ctx, errmsg);
-      JSValue arguments[] = {JS_NewBool(ctx, false), errmsgValue};
-      JSValue returnValue = JS_Call(ctx, callbackContext->callback, callbackContext->context->Global(), 2, arguments);
-      callbackContext->context->HandleException(&returnValue);
-      JS_FreeValue(ctx, errmsgValue);
-    }
+    callback_context->context->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(),
+        [](ImageSnapShotContext* callback_context, int8_t result, const char* errmsg) {
+          JSContext* ctx = callback_context->context->ctx();
 
-    callbackContext->context->DrainMicrotasks();
-    JS_FreeValue(callbackContext->context->ctx(), callbackContext->callback);
-    delete callbackContext;
+          if (errmsg == nullptr) {
+            JSValue arguments[] = {JS_NewBool(ctx, result != 0), JS_NULL};
+            JSValue returnValue =
+                JS_Call(ctx, callback_context->callback, callback_context->context->Global(), 1, arguments);
+            callback_context->context->HandleException(&returnValue);
+          } else {
+            JSValue errmsgValue = JS_NewString(ctx, errmsg);
+            JSValue arguments[] = {JS_NewBool(ctx, false), errmsgValue};
+            JSValue returnValue =
+                JS_Call(ctx, callback_context->callback, callback_context->context->Global(), 2, arguments);
+            callback_context->context->HandleException(&returnValue);
+            JS_FreeValue(ctx, errmsgValue);
+          }
+
+          callback_context->context->DrainMicrotasks();
+          JS_FreeValue(callback_context->context->ctx(), callback_context->callback);
+          delete callback_context;
+        },
+        callback_context, result, errmsg);
   };
 
   if (QJSBlob::HasInstance(context, screenShotValue)) {
@@ -261,7 +270,7 @@ struct ExecuteCallbackContext {
   WebFTestContext* webf_context;
 };
 
-void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
+void WebFTestContext:: invokeExecuteTest(ExecuteCallback executeCallback) {
   if (execute_test_callback_ == nullptr) {
     return;
   }
@@ -279,11 +288,18 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
     WEBF_LOG(VERBOSE) << "Done..";
 
     std::unique_ptr<SharedNativeString> status = webf::jsValueToNativeString(ctx, statusValue);
-    callbackContext->executeCallback(callbackContext->context->contextId(), status.get());
+
+    callbackContext->context->dartIsolateContext()->dispatcher()->PostToDart(
+        callbackContext->context->isDedicated(),
+        [](ExecuteCallbackContext* callback_context, SharedNativeString* status) {
+          callback_context->executeCallback(callback_context->context->contextId(), status);
+          callback_context->webf_context->execute_test_proxy_object_ = JS_NULL;
+        },
+        callbackContext, status.release());
     JS_FreeValue(ctx, proxyObject);
-    callbackContext->webf_context->execute_test_proxy_object_ = JS_NULL;
     return JS_NULL;
   };
+
   auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback, this);
   execute_test_proxy_object_ = JS_NewObject(context_->ctx());
   JS_SetOpaque(execute_test_proxy_object_, callbackContext);
