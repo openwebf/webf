@@ -28,6 +28,52 @@ TEST(Node, appendChild) {
   EXPECT_EQ(logCalled, true);
 }
 
+TEST(Node, MutationObserver) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
+  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->GetExecutingContext();
+  const char* code = R"(
+const container = document.createElement('div');
+document.body.appendChild(container);
+
+// Callback function to execute when mutations are observed
+const callback = function (mutationList, observer) {
+  console.log('c');
+};
+
+// Create an observer instance linked to the callback function
+const observer = new MutationObserver(callback);
+
+// Options for the observer (which mutations to observe)
+const config = { attributes: true, childList: true, subtree: true, attributeOldValue: true };
+
+// Start observing the target node for configured mutations
+observer.observe(container, config);
+
+container.appendChild(document.createTextNode('TEXT'));
+
+Promise.resolve().then(() => {
+  console.log('1234');
+  container.appendChild(document.createTextNode('TEXT'));
+  Promise.resolve().then(() => {
+      console.log('444');
+      container.removeChild(container.firstChild);
+      Promise.resolve().then(() => {
+        console.log('555');
+      });
+  });
+});
+)";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+
+  TEST_runLoop(context);
+
+  EXPECT_EQ(errorCalled, false);
+  EXPECT_EQ(logCalled, true);
+}
+
 TEST(Node, nodeName) {
   bool static errorCalled = false;
   bool static logCalled = false;

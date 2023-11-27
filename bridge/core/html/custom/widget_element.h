@@ -54,6 +54,10 @@ class WidgetElement : public HTMLElement {
 template <>
 struct DowncastTraits<WidgetElement> {
   static bool AllowFrom(const Element& element) { return element.IsWidgetElement(); }
+  static bool AllowFrom(const BindingObject& binding_object) {
+    return binding_object.IsEventTarget() && To<EventTarget>(binding_object).IsNode() &&
+           To<Node>(binding_object).IsElementNode() && To<Element>(binding_object).IsWidgetElement();
+  }
 };
 
 }  // namespace webf

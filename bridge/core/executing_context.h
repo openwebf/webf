@@ -44,9 +44,11 @@ class Performance;
 class MemberMutationScope;
 class ErrorEvent;
 class DartContext;
+class MutationObserver;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
+using MicrotaskCallback = void (*)(void* data);
 
 bool isContextValid(int32_t contextId);
 
@@ -84,7 +86,8 @@ class ExecutingContext {
   bool HandleException(ScriptValue* exc);
   bool HandleException(ExceptionState& exception_state);
   void ReportError(JSValueConst error);
-  void DrainPendingPromiseJobs();
+  void DrainMicrotasks();
+  void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
   ExecutionContextData* contextData();
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, size_t* bytecodeLength);
@@ -154,6 +157,9 @@ class ExecutingContext {
 
   void InstallDocument();
   void InstallPerformance();
+
+  void DrainPendingPromiseJobs();
+  void EnsureEnqueueMicrotask();
 
   static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,

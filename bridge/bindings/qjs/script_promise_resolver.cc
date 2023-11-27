@@ -54,7 +54,7 @@ void ScriptPromiseResolver::ResolveOrRejectImmediately(JSValue value) {
       JS_FreeValue(context_->ctx(), return_value);
     }
   }
-  context_->DrainPendingPromiseJobs();
+  context_->DrainMicrotasks();
 }
 
 }  // namespace webf

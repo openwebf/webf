@@ -27,7 +27,7 @@ void FrameCallback::Fire(double highResTimeStamp) {
 
   ScriptValue return_value = callback_->Invoke(ctx, ScriptValue::Empty(ctx), 1, arguments);
 
-  context_->DrainPendingPromiseJobs();
+  context_->DrainMicrotasks();
   if (return_value.IsException()) {
     context_->HandleException(&return_value);
   }

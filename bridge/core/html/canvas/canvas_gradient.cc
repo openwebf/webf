@@ -3,6 +3,7 @@
  */
 
 #include "canvas_gradient.h"
+#include "core/executing_context.h"
 
 namespace webf {
 

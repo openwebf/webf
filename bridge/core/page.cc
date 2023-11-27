@@ -27,7 +27,7 @@ WebFPage::WebFPage(DartIsolateContext* dart_isolate_context, int32_t contextId, 
   context_ = new ExecutingContext(
       dart_isolate_context, contextId,
       [](ExecutingContext* context, const char* message) {
-        if (context->dartMethodPtr()->onJsError != nullptr) {
+        if (context->IsContextValid() && context->dartMethodPtr()->onJsError != nullptr) {
           context->dartMethodPtr()->onJsError(context->contextId(), message);
         }
         WEBF_LOG(ERROR) << message << std::endl;

@@ -207,6 +207,7 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
+  JS_TurnOnGC(static_cast<DartIsolateContext*>(dart_isolate_context)->runtime());
   JSThreadState* th = new JSThreadState();
   JS_SetRuntimeOpaque(
       reinterpret_cast<WebFTestContext*>(testContext)->page()->GetExecutingContext()->dartIsolateContext()->runtime(),
@@ -280,7 +281,7 @@ static bool jsPool(webf::ExecutingContext* context) {
 
 void TEST_runLoop(webf::ExecutingContext* context) {
   for (;;) {
-    context->DrainPendingPromiseJobs();
+    context->DrainMicrotasks();
     if (jsPool(context))
       break;
   }

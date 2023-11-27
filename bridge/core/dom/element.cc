@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
+#include "child_list_mutation_scope.h"
 #include "comment.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
@@ -18,6 +19,7 @@
 #include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
+#include "mutation_observer_interest_group.h"
 #include "qjs_element.h"
 #include "text.h"
 
@@ -34,11 +36,9 @@ Element::Element(const AtomicString& namespace_uri,
     buffer->addCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
                        nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    // TODO: SVG element
     buffer->addCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
                        (void*)bindingObject(), nullptr);
   } else {
-    // TODO: Unknown namespace uri
     buffer->addCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
                        namespace_uri.ToNativeString(ctx()).release());
   }
@@ -65,18 +65,8 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value) 
 }
 
 void Element::setAttribute(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state) {
-  if (EnsureElementAttributes().hasAttribute(name, exception_state)) {
-    AtomicString&& oldAttribute = EnsureElementAttributes().getAttribute(name, exception_state);
-    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
-      return;
-    };
-    _didModifyAttribute(name, oldAttribute, value);
-  } else {
-    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
-      return;
-    };
-    _didModifyAttribute(name, AtomicString::Empty(), value);
-  }
+  SynchronizeAttribute(name);
+  SetAttributeInternal(name, value, AttributeModificationReason::kDirectly, exception_state);
 }
 
 void Element::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
@@ -327,7 +317,7 @@ const AtomicString Element::getUppercasedQualifiedName() const {
   return name;
 }
 
-ElementData& Element::EnsureElementData() const {
+ElementData& Element::EnsureElementData() {
   if (element_data_ == nullptr) {
     element_data_ = std::make_unique<ElementData>();
   }
@@ -418,6 +408,109 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
   return resolver->Promise();
 }
 
+void Element::DidAddAttribute(const AtomicString& name, const AtomicString& value) {}
+
+void Element::WillModifyAttribute(const AtomicString& name,
+                                  const AtomicString& old_value,
+                                  const AtomicString& new_value) {
+  if (std::shared_ptr<MutationObserverInterestGroup> recipients =
+          MutationObserverInterestGroup::CreateForAttributesMutation(*this, name)) {
+    recipients->EnqueueMutationRecord(MutationRecord::CreateAttributes(this, name, AtomicString::Null(), old_value));
+  }
+}
+
+void Element::DidModifyAttribute(const AtomicString& name,
+                                 const AtomicString& old_value,
+                                 const AtomicString& new_value,
+                                 AttributeModificationReason reason) {
+  AttributeChanged(AttributeModificationParams(name, old_value, new_value, reason));
+}
+
+void Element::DidRemoveAttribute(const AtomicString& name, const AtomicString& old_value) {}
+
+void Element::SynchronizeStyleAttributeInternal() {
+  assert(IsStyledElement());
+  assert(HasElementData());
+  assert(GetElementData()->style_attribute_is_dirty());
+  GetElementData()->SetStyleAttributeIsDirty(false);
+
+  InlineCssStyleDeclaration* inline_style = style();
+  SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(),
+                       AttributeModificationReason::kBySynchronizationOfLazyAttribute, ASSERT_NO_EXCEPTION());
+}
+
+void Element::SetAttributeInternal(const webf::AtomicString& name,
+                                   const webf::AtomicString& value,
+                                   AttributeModificationReason reason,
+                                   ExceptionState& exception_state) {
+  if (EnsureElementAttributes().hasAttribute(name, exception_state)) {
+    AtomicString&& oldAttribute = EnsureElementAttributes().getAttribute(name, exception_state);
+
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      WillModifyAttribute(name, oldAttribute, value);
+    }
+
+    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
+      return;
+    }
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      DidModifyAttribute(name, oldAttribute, value, AttributeModificationReason::kDirectly);
+    }
+  } else {
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      WillModifyAttribute(name, AtomicString::Null(), value);
+    }
+
+    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
+      return;
+    }
+
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      DidModifyAttribute(name, AtomicString::Null(), value, AttributeModificationReason::kDirectly);
+    }
+  }
+}
+
+void Element::SynchronizeAttribute(const AtomicString& name) {
+  if (!cssom_wrapper_)
+    return;
+
+  if (UNLIKELY(name == html_names::kStyleAttr && EnsureElementData().style_attribute_is_dirty())) {
+    assert(IsStyledElement());
+    SynchronizeStyleAttributeInternal();
+    return;
+  }
+}
+
+void Element::InvalidateStyleAttribute() {
+  EnsureElementData().SetStyleAttributeIsDirty(true);
+}
+
+void Element::AttributeChanged(const AttributeModificationParams& params) {
+  const AtomicString& name = params.name;
+
+  if (IsStyledElement()) {
+    if (name == html_names::kStyleAttr) {
+      StyleAttributeChanged(params.new_value, params.reason);
+    }
+  }
+}
+
+void Element::StyleAttributeChanged(const AtomicString& new_style_string,
+                                    AttributeModificationReason modification_reason) {
+  assert(IsStyledElement());
+
+  if (new_style_string.IsNull() && cssom_wrapper_ != nullptr) {
+    EnsureCSSStyleDeclaration().Clear();
+  } else {
+    SetInlineStyleFromString(new_style_string);
+  }
+}
+
+void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
+  EnsureCSSStyleDeclaration().SetCSSTextInternal(new_style_string);
+}
+
 std::string Element::outerHTML() {
   std::string tagname = local_name_.ToStdString(ctx());
   std::string s = "<" + tagname;
@@ -469,6 +562,7 @@ std::string Element::innerHTML() {
 
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
   auto html = value.ToStdString(ctx());
+  ChildListMutationScope scope{*this};
   if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
     HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
   } else {
@@ -485,8 +579,6 @@ void Element::_notifyNodeInsert(Node* insertNode){
 };
 
 void Element::_notifyChildInsert() {}
-
-void Element::_didModifyAttribute(const AtomicString& name, const AtomicString& oldId, const AtomicString& newId) {}
 
 void Element::_beforeUpdateId(JSValue oldIdValue, JSValue newIdValue) {}
 

@@ -8,12 +8,14 @@
 #include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
+#include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
 #include "qjs_window.h"
+#include "script_forbidden_scope.h"
 #include "timing/performance.h"
 
 namespace webf {
@@ -123,6 +125,10 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
                                           uint64_t* bytecode_len,
                                           const char* sourceURL,
                                           int startLine) {
+  if (ScriptForbiddenScope::IsScriptForbidden()) {
+    return false;
+  }
+
   JSValue result;
   if (parsed_bytecodes == nullptr) {
     result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
@@ -140,7 +146,7 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
   }
 
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -149,7 +155,7 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine) {
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -157,7 +163,7 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
 
 bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine) {
   JSValue result = JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -169,7 +175,7 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!HandleException(&obj))
     return false;
   val = JS_EvalFunction(script_state_.ctx(), obj);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   if (!HandleException(&val))
     return false;
   JS_FreeValue(script_state_.ctx(), val);
@@ -260,6 +266,42 @@ void ExecutingContext::ReportError(JSValueConst error) {
   JS_FreeCString(ctx, title);
   JS_FreeCString(ctx, stack);
   JS_FreeCString(ctx, type);
+}
+
+void ExecutingContext::DrainMicrotasks() {
+  DrainPendingPromiseJobs();
+}
+
+namespace {
+
+struct MicroTaskDeliver {
+  MicrotaskCallback callback;
+  void* data;
+};
+
+}  // namespace
+
+void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) {
+  JSValue proxy_data = JS_NewObject(ctx());
+
+  auto* deliver = new MicroTaskDeliver();
+  deliver->data = data;
+  deliver->callback = callback;
+
+  JS_SetOpaque(proxy_data, deliver);
+
+  JS_EnqueueJob(
+      ctx(),
+      [](JSContext* ctx, int argc, JSValueConst* argv) -> JSValue {
+        auto* deliver = static_cast<MicroTaskDeliver*>(JS_GetOpaque(argv[0], JS_CLASS_OBJECT));
+        deliver->callback(deliver->data);
+
+        delete deliver;
+        return JS_NULL;
+      },
+      1, &proxy_data);
+
+  JS_FreeValue(ctx(), proxy_data);
 }
 
 void ExecutingContext::DrainPendingPromiseJobs() {
