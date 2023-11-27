@@ -378,12 +378,19 @@ void ElementSnapshotReader::Start() {
 
   auto callback = [](void* ptr, double contextId, const char* error, uint8_t* bytes, int32_t length) -> void {
     auto* reader = static_cast<ElementSnapshotReader*>(ptr);
-    if (error != nullptr) {
-      reader->HandleFailed(error);
-    } else {
-      reader->HandleSnapshot(bytes, length);
-    }
-    delete reader;
+    auto* context = reader->context_;
+
+    reader->context_->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(),
+        [](ElementSnapshotReader* reader, const char* error, uint8_t* bytes, int32_t length) {
+          if (error != nullptr) {
+            reader->HandleFailed(error);
+          } else {
+            reader->HandleSnapshot(bytes, length);
+          }
+          delete reader;
+        },
+        reader, error, bytes, length);
   };
 
   context_->dartMethodPtr()->toBlob(context_->isDedicated(), this, context_->contextId(), callback,

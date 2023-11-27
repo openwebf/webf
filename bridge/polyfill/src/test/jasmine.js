@@ -4142,6 +4142,7 @@ getJasmineRequireObj().toMatchSnapshot = function (j$) {
 
         return actualPromise.then(blob => {
           return new Promise((resolve, reject) => {
+            console.log('call match image snapshot');
             // @TODO: the C++ HostingObject of Blob, need to removed when jsa support constructor operation.
             __webf_match_image_snapshot__(blob, filename, (status, errmsg) => {
               // @NOTE: toMatchSnapshot should resolve before spec done.

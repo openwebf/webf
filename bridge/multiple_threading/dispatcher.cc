@@ -60,12 +60,23 @@ std::unique_ptr<Looper>& Dispatcher::looper(int32_t js_context_id) {
 }
 
 // run in the cpp thread
-void Dispatcher::NotifyDart(const DartWork* work_ptr) {
+void Dispatcher::NotifyDart(const DartWork* work_ptr, bool is_sync) {
   const intptr_t work_addr = reinterpret_cast<intptr_t>(work_ptr);
 
+  Dart_CObject** array = new Dart_CObject*[2];
+
+  array[0] = new Dart_CObject();
+  array[0]->type = Dart_CObject_Type::Dart_CObject_kInt64;
+  array[0]->value.as_int64 = is_sync ? 1 : 0;
+
+  array[1] = new Dart_CObject();
+  array[1]->type = Dart_CObject_Type::Dart_CObject_kInt64;
+  array[1]->value.as_int64 = work_addr;
+
   Dart_CObject dart_object;
-  dart_object.type = Dart_CObject_kInt64;
-  dart_object.value.as_int64 = work_addr;
+  dart_object.type = Dart_CObject_kArray;
+  dart_object.value.as_array.length = 2;
+  dart_object.value.as_array.values = array;
 
   const bool result = Dart_PostCObject_DL(dart_port_, &dart_object);
   if (!result) {
