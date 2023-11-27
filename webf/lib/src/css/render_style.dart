@@ -1623,7 +1623,8 @@ class CSSRenderStyle extends RenderStyle
         bool isGrandParentFlex = grandParentRenderStyle.display == CSSDisplay.flex ||
             grandParentRenderStyle.display == CSSDisplay.inlineFlex;
         bool isHorizontalDirection = CSSFlex.isHorizontalFlexDirection(grandParentRenderStyle.flexDirection);
-        if (isGrandParentFlex && isHorizontalDirection && parentRenderStyle.flexShrink == 0) {
+        if (isGrandParentFlex && isHorizontalDirection && parentRenderStyle.flexShrink == 0 &&
+            parentRenderStyle.contentBoxLogicalWidth == null && parentRenderStyle.maxWidth.value == null) {
           return null;
         }
       }
