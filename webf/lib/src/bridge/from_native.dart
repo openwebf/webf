@@ -76,9 +76,21 @@ void freeNativeString(Pointer<NativeString> pointer) {
 
 // Register InvokeModule
 typedef NativeAsyncModuleCallback = Pointer<NativeValue> Function(
-    Pointer<Void> callbackContext, Double contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
+    Pointer<Void> callbackContext,
+    Double contextId,
+    Pointer<Utf8> errmsg,
+    Pointer<NativeValue> ptr,
+    Handle context,
+    Pointer<NativeFunction<NativeHandleInvokeModuleResult>> handleResult);
 typedef DartAsyncModuleCallback = Pointer<NativeValue> Function(
-    Pointer<Void> callbackContext, double contextId, Pointer<Utf8> errmsg, Pointer<NativeValue> ptr);
+    Pointer<Void> callbackContext,
+    double contextId,
+    Pointer<Utf8> errmsg,
+    Pointer<NativeValue> ptr,
+    Object context,
+    Pointer<NativeFunction<NativeHandleInvokeModuleResult>> handleResult);
+
+typedef NativeHandleInvokeModuleResult = Void Function(Handle context, Pointer<NativeValue> result);
 
 typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<Void> callbackContext,
@@ -87,6 +99,39 @@ typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>>);
+
+class _InvokeModuleResultContext {
+  Completer<dynamic> completer;
+  Pointer<Utf8>? errmsgPtr;
+  Stopwatch? stopwatch;
+  WebFViewController currentView;
+  Pointer<NativeValue>? data;
+  String moduleName;
+  String method;
+  dynamic params;
+
+  _InvokeModuleResultContext(this.completer, this.currentView, this.moduleName, this.method, this.params,
+      {this.errmsgPtr, this.data, this.stopwatch});
+}
+
+void _handleInvokeModuleResult(_InvokeModuleResultContext context, Pointer<NativeValue> result) {
+  var returnValue = fromNativeValue(context.currentView, result);
+
+  if (enableWebFCommandLog && context.stopwatch != null) {
+    print(
+        'Invoke module callback from(name: ${context.moduleName} method: ${context.method}, params: ${context.params}) '
+            'return: $returnValue time: ${context.stopwatch!.elapsedMicroseconds}us');
+  }
+
+  malloc.free(result);
+  if (context.errmsgPtr != null) {
+    malloc.free(context.errmsgPtr!);
+  } else if (context.data != null) {
+    malloc.free(context.data!);
+  }
+
+  context.completer.complete(returnValue);
+}
 
 dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, String moduleName, String method, params,
     DartAsyncModuleCallback callback) {
@@ -105,41 +150,37 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
       // We should make callback always async.
       Future.microtask(() {
         if (controller.view != currentView || currentView.disposed) return;
-        Pointer<NativeValue> callbackResult = nullptr;
+
+        Pointer<NativeFunction<NativeHandleInvokeModuleResult>> handleResult =
+            Pointer.fromFunction(_handleInvokeModuleResult);
         if (error != null) {
           Pointer<Utf8> errmsgPtr = error.toNativeUtf8();
-          callbackResult = callback(callbackContext, currentView.contextId, errmsgPtr, nullptr);
-          malloc.free(errmsgPtr);
+          _InvokeModuleResultContext context =
+              _InvokeModuleResultContext(completer, currentView, moduleName, method, params, errmsgPtr: errmsgPtr, stopwatch: stopwatch);
+          callback(callbackContext, currentView.contextId, errmsgPtr, nullptr, context, handleResult);
         } else {
           Pointer<NativeValue> dataPtr = malloc.allocate(sizeOf<NativeValue>());
           toNativeValue(dataPtr, data);
-          callbackResult = callback(callbackContext, currentView.contextId, nullptr, dataPtr);
-          malloc.free(dataPtr);
+          _InvokeModuleResultContext context =
+              _InvokeModuleResultContext(completer, currentView, moduleName, method, params, data: dataPtr, stopwatch: stopwatch);
+          callback(callbackContext, currentView.contextId, nullptr, dataPtr, context, handleResult);
         }
-
-        var returnValue = fromNativeValue(currentView, callbackResult);
-        if (enableWebFCommandLog) {
-          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: $returnValue time: ${stopwatch!.elapsedMicroseconds}us');
-        }
-
-        malloc.free(callbackResult);
-        completer.complete(returnValue);
       });
       return completer.future;
     }
 
-    result = controller.module.moduleManager.invokeModule(
-        moduleName, method, params, invokeModuleCallback);
+    result = controller.module.moduleManager.invokeModule(moduleName, method, params, invokeModuleCallback);
   } catch (e, stack) {
     if (enableWebFCommandLog) {
       print('Invoke module failed: $e\n$stack');
     }
     String error = '$e\n$stack';
-    callback(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr);
+    callback(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr, {}, nullptr);
   }
 
   if (enableWebFCommandLog) {
-    print('Invoke module name: $moduleName method: $method, params: $params return: $result time: ${stopwatch!.elapsedMicroseconds}us');
+    print('Invoke module name: $moduleName method: $method, params: $params '
+        'return: $result time: ${stopwatch!.elapsedMicroseconds}us');
   }
 
   return result;
@@ -200,8 +241,8 @@ final Pointer<NativeFunction<NativeRequestBatchUpdate>> _nativeRequestBatchUpdat
 typedef NativeSetTimeout = Int32 Function(
     Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
 
-int _setTimeout(
-    Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
+int _setTimeout(Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback,
+    int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
 
@@ -236,8 +277,8 @@ final Pointer<NativeFunction<NativeSetTimeout>> _nativeSetTimeout =
 typedef NativeSetInterval = Int32 Function(
     Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
 
-int _setInterval(
-    Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
+int _setInterval(Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback,
+    int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
   return controller.module.setInterval(timeout, () {
@@ -326,8 +367,8 @@ typedef NativeAsyncBlobCallback = Void Function(
     Pointer<Void> callbackContext, Double contextId, Pointer<Utf8>, Pointer<Uint8>, Int32);
 typedef DartAsyncBlobCallback = void Function(
     Pointer<Void> callbackContext, double contextId, Pointer<Utf8>, Pointer<Uint8>, int);
-typedef NativeToBlob = Void Function(
-    Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>>, Pointer<Void>, Double);
+typedef NativeToBlob = Void Function(Pointer<Void> callbackContext, Double contextId,
+    Pointer<NativeFunction<NativeAsyncBlobCallback>>, Pointer<Void>, Double);
 
 void _toBlob(Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncBlobCallback>> callback,
     Pointer<Void> elementPtr, double devicePixelRatio) {
@@ -357,14 +398,18 @@ void _flushUICommand(double contextId) {
 
 final Pointer<NativeFunction<NativeFlushUICommand>> _nativeFlushUICommand = Pointer.fromFunction(_flushUICommand);
 
-typedef NativeCreateBindingObject = Void Function(Double contextId, Pointer<NativeBindingObject> nativeBindingObject, Int32 type, Pointer<NativeValue> args, Int32 argc);
-typedef DartCreateBindingObject = void Function(double contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc);
+typedef NativeCreateBindingObject = Void Function(Double contextId, Pointer<NativeBindingObject> nativeBindingObject,
+    Int32 type, Pointer<NativeValue> args, Int32 argc);
+typedef DartCreateBindingObject = void Function(
+    double contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc);
 
-void _createBindingObject(double contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc) {
+void _createBindingObject(
+    double contextId, Pointer<NativeBindingObject> nativeBindingObject, int type, Pointer<NativeValue> args, int argc) {
   BindingBridge.createBindingObject(contextId, nativeBindingObject, CreateBindingObjectType.values[type], args, argc);
 }
 
-final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject = Pointer.fromFunction(_createBindingObject);
+final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject =
+    Pointer.fromFunction(_createBindingObject);
 
 typedef NativeJSError = Void Function(Double contextId, Pointer<Utf8>);
 

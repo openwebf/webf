@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <thread>
+#include "include/dart_api.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
 
@@ -24,12 +25,16 @@
 
 namespace webf {
 
+using InvokeModuleResultCallback = void(*)(Dart_PersistentHandle persistent_handle, NativeValue* result);
 using AsyncCallback = void (*)(void* callback_context, double context_id, const char* errmsg);
 using AsyncRAFCallback = void (*)(void* callback_context, double context_id, double result, const char* errmsg);
 using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
                                              double context_id,
                                              const char* errmsg,
-                                             NativeValue* value);
+                                             NativeValue* value,
+                                             Dart_PersistentHandle persistent_handle,
+                                             InvokeModuleResultCallback result_callback);
+
 using AsyncBlobCallback =
     void (*)(void* callback_context, double context_id, const char* error, uint8_t* bytes, int32_t length);
 typedef NativeValue* (*InvokeModule)(void* callback_context,

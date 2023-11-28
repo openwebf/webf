@@ -5,6 +5,7 @@
 #include "module_manager.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
+#include "include/dart_api.h"
 #include "module_callback.h"
 
 namespace webf {
@@ -63,20 +64,41 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   return return_value;
 }
 
+static void ReturnResultToDart(Dart_PersistentHandle persistent_handle, NativeValue* result, InvokeModuleResultCallback result_callback) {
+  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  result_callback(handle, result);
+  Dart_DeletePersistentHandle_DL(persistent_handle);
+}
+
 static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
-                                                               double contextId,
+                                                               double context_id,
                                                                const char* errmsg,
-                                                               NativeValue* extra_data) {
+                                                               NativeValue* extra_data,
+                                                               Dart_Handle dart_handle,
+                                                               InvokeModuleResultCallback result_callback) {
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
-  return moduleContext->context->dartIsolateContext()->dispatcher()->PostToJsSync(
-      moduleContext->context->isDedicated(), contextId, handleInvokeModuleTransientCallback, ptr, contextId, errmsg,
-      extra_data);
+
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  moduleContext->context->dartIsolateContext()->dispatcher()->PostToJs(
+      moduleContext->context->isDedicated(),
+      moduleContext->context->contextId(),
+      [](ModuleContext* module_context, double context_id, const char* errmsg, NativeValue* extra_data,
+         Dart_PersistentHandle persistent_handle, InvokeModuleResultCallback result_callback) {
+
+        NativeValue* result = handleInvokeModuleTransientCallback(module_context, context_id, errmsg, extra_data);
+        module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
+            module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
+      },
+      moduleContext, context_id, errmsg, extra_data, persistent_handle, result_callback);
+  return nullptr;
 }
 
 NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,
                                                   double contextId,
                                                   const char* errmsg,
-                                                  NativeValue* extra_data) {
+                                                  NativeValue* extra_data,
+                                                  Dart_Handle dart_handle,
+                                                  InvokeModuleResultCallback result_callback) {
   static_assert("Unexpected module callback, please check your invokeModule implementation on the dart side.");
   return nullptr;
 }
