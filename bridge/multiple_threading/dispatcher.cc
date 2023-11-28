@@ -92,7 +92,7 @@ void Dispatcher::NotifyDart(const DartWork* work_ptr, bool is_sync) {
 
 #if ENABLE_LOG
   if (is_sync) {
-    WEBF_LOG(WARN) << " SYNC BLOCK THREAD" << std::this_thread::get_id() << " FOR A DART CALLBACK TO RECOVER";
+    WEBF_LOG(WARN) << " SYNC BLOCK THREAD " << std::this_thread::get_id() << " FOR A DART CALLBACK TO RECOVER";
   }
 #endif
 
