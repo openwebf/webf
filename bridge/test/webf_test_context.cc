@@ -109,7 +109,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = ExecutingContext::From(ctx);
 #if FLUTTER_BACKEND
-  const char* env = context->dartMethodPtr()->environment(context->isDedicated());
+  const char* env = context->dartMethodPtr()->environment(context->isDedicated(), context->contextId());
   return JS_ParseJSON(ctx, env, strlen(env), "");
 #else
   return JS_NewObject(ctx);

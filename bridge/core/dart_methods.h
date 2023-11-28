@@ -162,7 +162,7 @@ class DartMethodPointer {
                                int32_t image_b_size,
                                MatchImageSnapshotCallback callback);
 
-  const char* environment(bool is_dedicated);
+  const char* environment(bool is_dedicated, double context_id);
   void simulatePointer(bool is_dedicated,
                        void* ptr,
                        MousePointer*,

@@ -42,25 +42,40 @@ void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int3
   auto dispatcher = std::make_unique<webf::multi_threading::Dispatcher>(dart_port);
 
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[Dart] allocateNewPageWrapper, targetContextId= " << targetContextId << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher]: initDartIsolateContextSync Call BEGIN";
 #endif
   auto* dart_isolate_context = new webf::DartIsolateContext(dart_methods, dart_methods_len);
   dart_isolate_context->SetDispatcher(std::move(dispatcher));
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher]: initDartIsolateContextSync Call END";
+#endif
+
   return dart_isolate_context;
 }
 
 void* allocateNewPageSync(double thread_identity, void* ptr) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[Dart] allocateNewPageWrapper, targetContextId= " << targetContextId << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPageSync Call BEGIN";
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   assert(dart_isolate_context != nullptr);
-  return static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPage(thread_identity);
+  void* result = static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPage(thread_identity);
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPageSync Call END";
+#endif
+  return result;
 }
 
 void disposePageSync(double thread_identity, void* ptr, void* page_) {
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher]: disposePageSync Call BEGIN";
+#endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(thread_identity, static_cast<webf::WebFPage*>(page_));
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher]: disposePageSync Call END";
+#endif
 }
 
 void evaluateScripts(void* page_,
@@ -198,6 +213,12 @@ void init_dart_dynamic_linking(void* data) {
 void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context) {
   Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_isolate_context),
                                sizeof(webf::DartIsolateContext), finalize_dart_context);
+}
+
+int8_t isJSThreadBlocked(void* dart_isolate_context_, double context_id) {
+  auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(dart_isolate_context_);
+  auto thread_group_id = static_cast<int32_t>(context_id);
+  return dart_isolate_context->dispatcher()->IsThreadBlocked(thread_group_id) ? 1 : 0;
 }
 
 // run in the dart isolate thread

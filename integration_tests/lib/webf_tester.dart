@@ -91,13 +91,11 @@ class _WebFTesterState extends State<WebFTester> {
       mems.add([x += 1, ProcessInfo.currentRss / 1024 ~/ 1024]);
     });
 
-
     try {
       // Preload load test cases
       String result = await executeTest(testContext!, controller.view.contextId);
       // Manual dispose context for memory leak check.
       await controller.dispose();
-
 
       // Check running memorys
       // Temporary disabled due to exist memory leaks
