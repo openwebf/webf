@@ -81,9 +81,20 @@ final _executeNativeCallback = WebFDynamicLibrary.ref
 
 Completer? _working_completer;
 
-FutureOr<void> waitingSyncTaskComplete() async {
+FutureOr<void> waitingSyncTaskComplete(double contextId) async {
   if (_working_completer != null) {
     return _working_completer!.future;
+  }
+
+  bool isBlocked = isJSThreadBlocked(contextId);
+  if (isBlocked) {
+    Completer completer = Completer();
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      await waitingSyncTaskComplete(contextId);
+      completer.complete();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+    return completer.future;
   }
 }
 
@@ -414,7 +425,7 @@ final DartDisposePage _disposePage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePageSync').asFunction();
 
 FutureOr<void> disposePage(double contextId) async {
-  await waitingSyncTaskComplete();
+  await waitingSyncTaskComplete(contextId);
   Pointer<Void> page = _allocatedPages[contextId]!;
   _disposePage(contextId, dartContext!.pointer, page);
   _allocatedPages.remove(contextId);
@@ -437,7 +448,7 @@ final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPageSync').asFunction();
 
 FutureOr<void> allocateNewPage(double newContextId) async {
-  await waitingSyncTaskComplete();
+  await waitingSyncTaskComplete(newContextId);
 
   Pointer<Void> page = _allocateNewPage(newContextId, dartContext!.pointer);
   assert(!_allocatedPages.containsKey(newContextId));
@@ -573,6 +584,16 @@ typedef DartClearUICommandItems = void Function(Pointer<Void>);
 
 final DartClearUICommandItems _clearUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeClearUICommandItems>>('clearUICommandItems').asFunction();
+
+typedef NativeIsJSThreadBlocked = Int8 Function(Pointer<Void>, Double);
+typedef DartIsJSThreadBlocked = int Function(Pointer<Void>, double);
+
+final DartIsJSThreadBlocked _isJSThreadBlocked =
+WebFDynamicLibrary.ref.lookup<NativeFunction<NativeIsJSThreadBlocked>>('isJSThreadBlocked').asFunction();
+
+bool isJSThreadBlocked(double contextId) {
+  return _isJSThreadBlocked(dartContext!.pointer, contextId) == 1;
+}
 
 class UICommand {
   late final UICommandType type;

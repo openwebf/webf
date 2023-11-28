@@ -86,6 +86,10 @@ void Looper::SetOpaque(void* p, OpaqueFinalizer finalizer) {
   opaque_finalizer_ = finalizer;
 }
 
+bool Looper::isBlocked() {
+  return is_blocked_;
+}
+
 void* Looper::opaque() {
   return opaque_;
 }

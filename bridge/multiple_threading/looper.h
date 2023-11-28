@@ -20,6 +20,8 @@ namespace multi_threading {
 
 typedef void (*OpaqueFinalizer)(void* p);
 
+class Dispatcher;
+
 /**
  * @brief thread looper, used to Run tasks in a thread.
  *
@@ -74,6 +76,8 @@ class Looper {
   void SetOpaque(void* p, OpaqueFinalizer finalizer);
   void* opaque();
 
+  bool isBlocked();
+
   void ExecuteOpaqueFinalizer();
 
  private:
@@ -88,6 +92,8 @@ class Looper {
   void* opaque_;
   OpaqueFinalizer opaque_finalizer_;
   int32_t js_id_;
+  std::atomic<bool> is_blocked_;
+  friend Dispatcher;
 };
 
 }  // namespace multi_threading

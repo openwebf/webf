@@ -38,7 +38,7 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
-if (${DENABLE_LOG})
+if (${ENABLE_LOG})
   add_definitions(-DENABLE_LOG=1)
 else()
   add_definitions(-DENABLE_LOG=0)

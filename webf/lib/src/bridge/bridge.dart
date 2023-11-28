@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:ffi';
 import 'package:webf/launcher.dart';
 
@@ -26,14 +27,14 @@ bool isJSRunningInDedicatedThread(double contextId) {
 }
 
 /// Init bridge
-double initBridge(WebFViewController view, WebFThread runningThread) {
+FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) async {
   dartContext ??= DartContext();
 
   // Setup binding bridge.
   BindingBridge.setup();
 
   double newContextId = runningThread.identity();
-  allocateNewPage(newContextId);
+  await allocateNewPage(newContextId);
 
   return newContextId;
 }

@@ -398,7 +398,9 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
 
     OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
     if (onControllerCreated != null) {
-      onControllerCreated(controller);
+      controller.controlledInitCompleter.future.then((_) {
+        onControllerCreated(controller);
+      });
     }
 
     return controller.view.getRootRenderObject();

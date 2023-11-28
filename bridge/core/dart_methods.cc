@@ -41,15 +41,21 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
                                              NativeValue* params,
                                              AsyncModuleCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] invokeModuleWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::invokeModule callSync START";
 #endif
-  return dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, invoke_module_, callback_context, context_id,
+  NativeValue* result = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, invoke_module_, callback_context, context_id,
                                                              moduleName, method, params, callback);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::invokeModule callSync END";
+#endif
+
+  return result;
 }
 
 void DartMethodPointer::requestBatchUpdate(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] requestBatchUpdateWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestBatchUpdate Call";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_batch_update_, context_id);
@@ -57,7 +63,7 @@ void DartMethodPointer::requestBatchUpdate(bool is_dedicated, double context_id)
 
 void DartMethodPointer::reloadApp(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] reloadAppWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::reloadApp Call";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, reload_app_, context_id);
@@ -69,11 +75,17 @@ int32_t DartMethodPointer::setTimeout(bool is_dedicated,
                                       AsyncCallback callback,
                                       int32_t timeout) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] SetTimeoutWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setTimeout callSync START";
 #endif
 
-  return dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, set_timeout_, callback_context, context_id,
+  int32_t id = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, set_timeout_, callback_context, context_id,
                                                              callback, timeout);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setTimeout callSync END";
+#endif
+
+  return id;
 }
 
 int32_t DartMethodPointer::setInterval(bool is_dedicated,
@@ -82,11 +94,15 @@ int32_t DartMethodPointer::setInterval(bool is_dedicated,
                                        AsyncCallback callback,
                                        int32_t timeout) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] SetIntervalWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setInterval callSync START";
 #endif
 
-  return dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, set_interval_, callback_context, context_id,
+  int32_t id = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, set_interval_, callback_context, context_id,
                                                              callback, timeout);
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setInterval callSync END";
+#endif
+  return id;
 }
 
 void DartMethodPointer::clearTimeout(bool is_dedicated, double context_id, int32_t timerId) {
@@ -102,15 +118,20 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
                                                  double context_id,
                                                  AsyncRAFCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] RequestAnimationFrameWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame callSync START";
 #endif
-  return dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, request_animation_frame_, callback_context,
+  int32_t id = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, request_animation_frame_, callback_context,
                                                              context_id, callback);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame callSync END";
+#endif
+  return id;
 }
 
 void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, double context_id, int32_t id) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] CancelAnimationFrameWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::cancelAnimationFrame call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, cancel_animation_frame_, context_id, id);
@@ -123,7 +144,7 @@ void DartMethodPointer::toBlob(bool is_dedicated,
                                void* element_ptr,
                                double devicePixelRatio) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "ToBlobWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::toBlob call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, to_blob_, callback_context, context_id, blobCallback,
@@ -132,10 +153,14 @@ void DartMethodPointer::toBlob(bool is_dedicated,
 
 void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] FlushUICommandWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call START";
 #endif
 
-  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, flush_ui_command_, context_id);
+  dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, flush_ui_command_, context_id);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call END";
+#endif
 }
 
 void DartMethodPointer::createBindingObject(bool is_dedicated,
@@ -145,25 +170,22 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
                                             void* args,
                                             int32_t argc) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] CreateBindingObjectWrapper call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call START";
 #endif
 
-  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, create_binding_object_, context_id,
+  dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, create_binding_object_, context_id,
                                                   native_binding_object, type, args, argc);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call END";
+#endif
 }
 
 void DartMethodPointer::onJSError(bool is_dedicated, double context_id, const char* error) {
-#if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] OnJSErrorWrapper call" << std::endl;
-#endif
-
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, on_js_error_, context_id, error);
 }
 
 void DartMethodPointer::onJSLog(bool is_dedicated, double context_id, int32_t level, const char* log) {
-#if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] OnJSLogWrapper call" << std::endl;
-#endif
   if (on_js_log_ == nullptr)
     return;
 
@@ -178,7 +200,7 @@ void DartMethodPointer::matchImageSnapshot(bool is_dedicated,
                                            SharedNativeString* name,
                                            MatchImageSnapshotCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] matchImageSnapshot call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject call START";
 #endif
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, match_image_snapshot_, callback_context, context_id,
                                                   bytes, length, name, callback);
@@ -193,18 +215,24 @@ void DartMethodPointer::matchImageSnapshotBytes(bool is_dedicated,
                                                 int32_t image_b_size,
                                                 MatchImageSnapshotCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] matchImageSnapshotBytes call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::matchImageSnapshotBytes call START";
 #endif
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, match_image_snapshot_bytes_, callback_context,
                                                   context_id, image_a_bytes, image_a_size, image_b_bytes, image_b_size,
                                                   callback);
 }
 
-const char* DartMethodPointer::environment(bool is_dedicated) {
+const char* DartMethodPointer::environment(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] matchImageSnapshotBytes call" << std::endl;
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync START";
 #endif
-  return dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, environment_);
+  const char* result = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, environment_);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync END";
+#endif
+
+  return result;
 }
 
 void DartMethodPointer::simulatePointer(bool is_dedicated,
@@ -213,17 +241,11 @@ void DartMethodPointer::simulatePointer(bool is_dedicated,
                                         int32_t length,
                                         int32_t pointer,
                                         AsyncCallback async_callback) {
-#if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] simulatePointer call" << std::endl;
-#endif
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, simulate_pointer_, ptr, mouse_pointer, length, pointer,
                                                   async_callback);
 }
 
 void DartMethodPointer::simulateInputText(bool is_dedicated, SharedNativeString* nativeString) {
-#if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[CPP] simulatePointer call" << std::endl;
-#endif
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, simulate_input_text_, nativeString);
 }
 
