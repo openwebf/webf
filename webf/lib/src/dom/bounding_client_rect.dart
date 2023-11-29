@@ -10,10 +10,10 @@ import 'package:webf/foundation.dart';
 
 class BindingClientRectData extends Struct {
   @Double()
-  external double y;
+  external double x;
 
   @Double()
-  external double x;
+  external double y;
 
   @Double()
   external double width;

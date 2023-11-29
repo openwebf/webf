@@ -30,6 +30,8 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
                                           NativeValue* argv,
                                           Dart_Handle dart_object,
                                           DartInvokeResultCallback result_callback) {
+  if (binding_object->disposed_) return;
+
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_object);
   auto dart_isolate = binding_object->binding_target_->GetExecutingContext()->dartIsolateContext();
   auto is_dedicated = binding_object->binding_target_->GetExecutingContext()->isDedicated();
@@ -177,43 +179,6 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 #endif
 
   return return_value;
-}
-
-void BindingObject::InvokeBindingMethodAsync(webf::BindingMethodCallOperations binding_method_call_operation,
-                                             size_t argc,
-                                             const webf::NativeValue* args,
-                                             webf::ExceptionState& exception_state) const {
-  GetExecutingContext()->FlushUICommand();
-
-#if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Call Begin";
-#endif
-
-  NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
-  GetDispatcher()->PostToDartSync(
-      GetExecutingContext()->isDedicated(),
-      contextId(),
-      [&](double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
-          int32_t argc, const NativeValue* argv) {
-#if ENABLE_LOG
-        WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Callback Start";
-#endif
-
-        if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-          WEBF_LOG(DEBUG) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
-          return;
-        }
-        binding_object_->invoke_bindings_methods_from_native(contextId, binding_object, return_value, method, argc,
-                                                             argv);
-#if ENABLE_LOG
-        WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Callback End";
-#endif
-      },
-      GetExecutingContext()->contextId(), binding_object_, &return_value, &native_method, argc, argv);
-
-#if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Call End";
-#endif
 }
 
 NativeValue BindingObject::GetBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const {
