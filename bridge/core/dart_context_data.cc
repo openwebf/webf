@@ -7,6 +7,8 @@
 namespace webf {
 
 const WidgetElementShape* DartContextData::GetWidgetElementShape(const std::string& key) {
+  if (widget_element_shapes_.count(key) == 0)
+    return nullptr;
   assert(widget_element_shapes_.count(key) > 0);
   std::unique_lock<std::mutex> lock(context_data_mutex_);
   return widget_element_shapes_[key].get();

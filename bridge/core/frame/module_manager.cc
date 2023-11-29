@@ -81,6 +81,7 @@ static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
                                                                InvokeModuleResultCallback result_callback) {
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
 
+#if FLUTTER_BACKEND
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   moduleContext->context->dartIsolateContext()->dispatcher()->PostToJs(
       moduleContext->context->isDedicated(), moduleContext->context->contextId(),
@@ -92,6 +93,9 @@ static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
       },
       moduleContext, context_id, errmsg, extra_data, persistent_handle, result_callback);
   return nullptr;
+#else
+  return handleInvokeModuleTransientCallback(moduleContext, context_id, errmsg, extra_data);
+#endif
 }
 
 NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,

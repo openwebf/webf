@@ -7,6 +7,7 @@
 #define WEBF_BRIDGE_EXPORT_H
 
 #include <include/dart_api_dl.h>
+#include <functional>
 #include <thread>
 
 #if defined(_WIN32)
