@@ -30,6 +30,7 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   to_blob_ = reinterpret_cast<ToBlob>(dart_methods[i++]);
   flush_ui_command_ = reinterpret_cast<FlushUICommand>(dart_methods[i++]);
   create_binding_object_ = reinterpret_cast<CreateBindingObject>(dart_methods[i++]);
+  get_widget_element_shape_ = reinterpret_cast<GetWidgetElementShape>(dart_methods[i++]);
   on_js_error_ = reinterpret_cast<OnJSError>(dart_methods[i++]);
   on_js_log_ = reinterpret_cast<OnJSLog>(dart_methods[i++]);
 
@@ -189,6 +190,21 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call END";
 #endif
+}
+
+bool DartMethodPointer::getWidgetElementShape(bool is_dedicated, double context_id, void* native_binding_object, NativeValue* value) {
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::getWidgetElementShape SYNC call START";
+#endif
+
+  int8_t is_success = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, get_widget_element_shape_, context_id,
+                                                      native_binding_object, value);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::getWidgetElementShape SYNC call END";
+#endif
+
+  return is_success == 1;
 }
 
 void DartMethodPointer::onJSError(bool is_dedicated, double context_id, const char* error) {
