@@ -11,9 +11,9 @@
 
 #include <memory>
 #include <thread>
-#include "include/dart_api.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
+#include "include/dart_api.h"
 
 #if defined(_WIN32)
 #define WEBF_EXPORT_C extern "C" __declspec(dllexport)
@@ -25,7 +25,7 @@
 
 namespace webf {
 
-using InvokeModuleResultCallback = void(*)(Dart_PersistentHandle persistent_handle, NativeValue* result);
+using InvokeModuleResultCallback = void (*)(Dart_PersistentHandle persistent_handle, NativeValue* result);
 using AsyncCallback = void (*)(void* callback_context, double context_id, char* errmsg);
 using AsyncRAFCallback = void (*)(void* callback_context, double context_id, double result, char* errmsg);
 using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
@@ -45,9 +45,20 @@ typedef NativeValue* (*InvokeModule)(void* callback_context,
                                      AsyncModuleCallback callback);
 typedef void (*RequestBatchUpdate)(double context_id);
 typedef void (*ReloadApp)(double context_id);
-typedef void (*SetTimeout)(int32_t new_timer_id, void* callback_context, double context_id, AsyncCallback callback, int32_t timeout);
-typedef void (*SetInterval)(int32_t new_timer_id, void* callback_context, double context_id, AsyncCallback callback, int32_t timeout);
-typedef void (*RequestAnimationFrame)(int32_t new_frame_id, void* callback_context, double context_id, AsyncRAFCallback callback);
+typedef void (*SetTimeout)(int32_t new_timer_id,
+                           void* callback_context,
+                           double context_id,
+                           AsyncCallback callback,
+                           int32_t timeout);
+typedef void (*SetInterval)(int32_t new_timer_id,
+                            void* callback_context,
+                            double context_id,
+                            AsyncCallback callback,
+                            int32_t timeout);
+typedef void (*RequestAnimationFrame)(int32_t new_frame_id,
+                                      void* callback_context,
+                                      double context_id,
+                                      AsyncRAFCallback callback);
 typedef void (*ClearTimeout)(double context_id, int32_t timerId);
 typedef void (*CancelAnimationFrame)(double context_id, int32_t id);
 typedef void (*ToBlob)(void* callback_context,

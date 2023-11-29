@@ -275,7 +275,7 @@ struct ExecuteCallbackContext {
   WebFTestContext* webf_context;
 };
 
-void WebFTestContext:: invokeExecuteTest(ExecuteCallback executeCallback) {
+void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
   if (execute_test_callback_ == nullptr) {
     return;
   }

@@ -35,10 +35,7 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
   context->document()->script_animations()->callbackCollection()->RemoveFrameCallback(frame_callback->frameId());
 }
 
-static void handleRAFTransientCallbackWrapper(void* ptr,
-                                              double contextId,
-                                              double highResTimeStamp,
-                                              char* errmsg) {
+static void handleRAFTransientCallbackWrapper(void* ptr, double contextId, double highResTimeStamp, char* errmsg) {
   auto* frame_callback = static_cast<FrameCallback*>(ptr);
   auto* context = frame_callback->context();
 

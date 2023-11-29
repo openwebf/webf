@@ -47,8 +47,8 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::invokeModule callSync START";
 #endif
-  NativeValue* result = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, invoke_module_, callback_context, context_id,
-                                                             moduleName, method, params, callback);
+  NativeValue* result = dart_isolate_context_->dispatcher()->PostToDartSync(
+      is_dedicated, context_id, invoke_module_, callback_context, context_id, moduleName, method, params, callback);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::invokeModule callSync END";
@@ -84,8 +84,8 @@ int32_t DartMethodPointer::setTimeout(bool is_dedicated,
 
   int32_t new_timer_id = start_timer_id++;
 
-  dart_isolate_context_->dispatcher()->PostToDart(
-      is_dedicated,set_timeout_, new_timer_id, callback_context, context_id, callback, timeout);
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, set_timeout_, new_timer_id, callback_context,
+                                                  context_id, callback, timeout);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setTimeout callSync END";
@@ -105,8 +105,8 @@ int32_t DartMethodPointer::setInterval(bool is_dedicated,
 
   int32_t new_timer_id = start_timer_id++;
 
-  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, set_interval_, new_timer_id, callback_context, context_id,
-                                                             callback, timeout);
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, set_interval_, new_timer_id, callback_context,
+                                                  context_id, callback, timeout);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setInterval callSync END";
 #endif
@@ -131,8 +131,8 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
 
   int32_t new_frame_id = start_timer_id++;
 
-  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated,  request_animation_frame_, new_frame_id, callback_context,
-                                                             context_id, callback);
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_animation_frame_, new_frame_id,
+                                                  callback_context, context_id, callback);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame callSync END";
@@ -185,20 +185,23 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, create_binding_object_, context_id,
-                                                  native_binding_object, type, args, argc);
+                                                      native_binding_object, type, args, argc);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call END";
 #endif
 }
 
-bool DartMethodPointer::getWidgetElementShape(bool is_dedicated, double context_id, void* native_binding_object, NativeValue* value) {
+bool DartMethodPointer::getWidgetElementShape(bool is_dedicated,
+                                              double context_id,
+                                              void* native_binding_object,
+                                              NativeValue* value) {
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::getWidgetElementShape SYNC call START";
 #endif
 
-  int8_t is_success = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, get_widget_element_shape_, context_id,
-                                                      native_binding_object, value);
+  int8_t is_success = dart_isolate_context_->dispatcher()->PostToDartSync(
+      is_dedicated, context_id, get_widget_element_shape_, context_id, native_binding_object, value);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::getWidgetElementShape SYNC call END";
