@@ -376,17 +376,19 @@ class ElementSnapshotReader {
 void ElementSnapshotReader::Start() {
   context_->FlushUICommand();
 
-  auto callback = [](void* ptr, double contextId, const char* error, uint8_t* bytes, int32_t length) -> void {
+  auto callback = [](void* ptr, double contextId, char* error, uint8_t* bytes, int32_t length) -> void {
     auto* reader = static_cast<ElementSnapshotReader*>(ptr);
     auto* context = reader->context_;
 
     reader->context_->dartIsolateContext()->dispatcher()->PostToJs(
         context->isDedicated(), context->contextId(),
-        [](ElementSnapshotReader* reader, const char* error, uint8_t* bytes, int32_t length) {
+        [](ElementSnapshotReader* reader, char* error, uint8_t* bytes, int32_t length) {
           if (error != nullptr) {
             reader->HandleFailed(error);
+            dart_free(error);
           } else {
             reader->HandleSnapshot(bytes, length);
+            dart_free(bytes);
           }
           delete reader;
         },

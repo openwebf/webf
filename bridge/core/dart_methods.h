@@ -26,8 +26,8 @@
 namespace webf {
 
 using InvokeModuleResultCallback = void(*)(Dart_PersistentHandle persistent_handle, NativeValue* result);
-using AsyncCallback = void (*)(void* callback_context, double context_id, const char* errmsg);
-using AsyncRAFCallback = void (*)(void* callback_context, double context_id, double result, const char* errmsg);
+using AsyncCallback = void (*)(void* callback_context, double context_id, char* errmsg);
+using AsyncRAFCallback = void (*)(void* callback_context, double context_id, double result, char* errmsg);
 using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
                                              double context_id,
                                              const char* errmsg,
@@ -36,7 +36,7 @@ using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
                                              InvokeModuleResultCallback result_callback);
 
 using AsyncBlobCallback =
-    void (*)(void* callback_context, double context_id, const char* error, uint8_t* bytes, int32_t length);
+    void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);
 typedef NativeValue* (*InvokeModule)(void* callback_context,
                                      double context_id,
                                      SharedNativeString* moduleName,
@@ -45,9 +45,9 @@ typedef NativeValue* (*InvokeModule)(void* callback_context,
                                      AsyncModuleCallback callback);
 typedef void (*RequestBatchUpdate)(double context_id);
 typedef void (*ReloadApp)(double context_id);
-typedef int32_t (*SetTimeout)(void* callback_context, double context_id, AsyncCallback callback, int32_t timeout);
-typedef int32_t (*SetInterval)(void* callback_context, double context_id, AsyncCallback callback, int32_t timeout);
-typedef int32_t (*RequestAnimationFrame)(void* callback_context, double context_id, AsyncRAFCallback callback);
+typedef void (*SetTimeout)(int32_t new_timer_id, void* callback_context, double context_id, AsyncCallback callback, int32_t timeout);
+typedef void (*SetInterval)(int32_t new_timer_id, void* callback_context, double context_id, AsyncCallback callback, int32_t timeout);
+typedef void (*RequestAnimationFrame)(int32_t new_frame_id, void* callback_context, double context_id, AsyncRAFCallback callback);
 typedef void (*ClearTimeout)(double context_id, int32_t timerId);
 typedef void (*CancelAnimationFrame)(double context_id, int32_t id);
 typedef void (*ToBlob)(void* callback_context,
@@ -61,7 +61,7 @@ typedef void (*FlushUICommand)(double context_id);
 typedef void (
     *CreateBindingObject)(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
 
-using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, const char* errmsg);
+using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,
                                     double context_id,
                                     uint8_t* bytes,

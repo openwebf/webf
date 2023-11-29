@@ -5,6 +5,7 @@
 #include "module_manager.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
+#include "foundation/native_value.h"
 #include "include/dart_api.h"
 #include "module_callback.h"
 
@@ -132,18 +133,21 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   }
 
   NativeValue* result;
+  auto module_name_string = module_name.ToNativeString(context->ctx());
+  auto method_name_string = method.ToNativeString(context->ctx());
+
   if (callback != nullptr) {
     auto module_callback = ModuleCallback::Create(callback);
     auto module_context = std::make_shared<ModuleContext>(context, module_callback);
     context->ModuleContexts()->AddModuleContext(module_context);
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
-                                                    module_name.ToNativeString(context->ctx()).release(),
-                                                    method.ToNativeString(context->ctx()).release(), &params,
+                                                    module_name_string.get(),
+                                                    method_name_string.get(), &params,
                                                     handleInvokeModuleTransientCallbackWrapper);
   } else {
     result = context->dartMethodPtr()->invokeModule(
-        context->isDedicated(), nullptr, context->contextId(), module_name.ToNativeString(context->ctx()).release(),
-        method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleUnexpectedCallback);
+        context->isDedicated(), nullptr, context->contextId(), module_name_string.get(),
+        method_name_string.get(), &params, handleInvokeModuleUnexpectedCallback);
   }
 
   if (result == nullptr) {
@@ -151,7 +155,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   }
 
   ScriptValue return_value = ScriptValue(context->ctx(), *result);
-  delete result;
+  dart_free(result);
   return return_value;
 }
 

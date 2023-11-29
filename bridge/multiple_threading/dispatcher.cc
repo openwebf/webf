@@ -100,6 +100,11 @@ void Dispatcher::NotifyDart(const DartWork* work_ptr, bool is_sync) {
   if (!result) {
     delete work_ptr;
   }
+
+  delete array[0];
+  delete array[1];
+  delete array[2];
+  delete[] array;
 }
 
 }  // namespace multi_threading
