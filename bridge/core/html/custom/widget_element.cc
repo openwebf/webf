@@ -48,6 +48,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
   }
 
   std::string shape_key = tagName().ToStdString(ctx());
+  std::string property_key = key.ToStdString(ctx());
   bool have_shape = true;
 
   if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(shape_key)) {
@@ -74,11 +75,11 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
   }
 
   if (shape != nullptr) {
-    if (shape->built_in_properties_.find(shape_key) != shape->built_in_properties_.end()) {
+    if (shape->built_in_properties_.find(property_key) != shape->built_in_properties_.end()) {
       return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
     }
 
-    if (shape->built_in_methods_.find(shape_key) != shape->built_in_methods_.end()) {
+    if (shape->built_in_methods_.find(property_key) != shape->built_in_methods_.end()) {
       if (cached_methods_.count(key) > 0) {
         return cached_methods_[key];
       }
@@ -88,7 +89,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
       return func;
     }
 
-    if (shape->built_in_async_methods_.find(shape_key) != shape->built_in_async_methods_.end()) {
+    if (shape->built_in_async_methods_.find(property_key) != shape->built_in_async_methods_.end()) {
       if (async_cached_methods_.count(key) > 0) {
         return async_cached_methods_[key];
       }

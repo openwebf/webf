@@ -179,6 +179,7 @@ void _simulatePointer(Pointer<Void> context, Pointer<MousePointer> mousePointerL
   }
 
   sendPointerToWindow(dataList, 0);
+  malloc.free(mousePointerList);
 }
 
 final Pointer<NativeFunction<NativeSimulatePointer>> _nativeSimulatePointer = Pointer.fromFunction(_simulatePointer);
