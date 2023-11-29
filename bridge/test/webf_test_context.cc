@@ -124,12 +124,18 @@ struct SimulatePointerCallbackContext {
 
 static void handleSimulatePointerCallback(void* p, double contextId, char* errmsg) {
   auto* simulate_context = static_cast<SimulatePointerCallbackContext*>(p);
-  JSValue return_value =
-      JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
-  JS_FreeValue(simulate_context->context->ctx(), return_value);
-  JS_FreeValue(simulate_context->context->ctx(), simulate_context->callbackValue);
-  simulate_context->context->DrainMicrotasks();
-  delete simulate_context;
+  auto* context = simulate_context->context;
+  context->dartIsolateContext()->dispatcher()->PostToJs(
+      context->isDedicated(), context->contextId(),
+      [](SimulatePointerCallbackContext* simulate_context, double contextId, char* errmsg) {
+        JSValue return_value =
+            JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
+        JS_FreeValue(simulate_context->context->ctx(), return_value);
+        JS_FreeValue(simulate_context->context->ctx(), simulate_context->callbackValue);
+        simulate_context->context->DrainMicrotasks();
+        delete simulate_context;
+      },
+      simulate_context, contextId, errmsg);
 }
 
 static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
@@ -212,8 +218,6 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   simulate_context->callbackValue = JS_DupValue(ctx, callbackValue);
   context->dartMethodPtr()->simulatePointer(context->isDedicated(), simulate_context, mousePointerList, length, pointer,
                                             handleSimulatePointerCallback);
-
-  delete[] mousePointerList;
 
   return JS_NULL;
 }

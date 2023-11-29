@@ -137,6 +137,10 @@ class BindingObject : public ScriptWrappable {
                                   size_t argc,
                                   const NativeValue* args,
                                   ExceptionState& exception_state) const;
+  void InvokeBindingMethodAsync(BindingMethodCallOperations binding_method_call_operation,
+                                size_t argc,
+                                const NativeValue* args,
+                                ExceptionState& exception_state) const;
 
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.
   explicit BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object);
