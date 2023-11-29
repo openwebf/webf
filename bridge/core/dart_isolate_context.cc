@@ -45,6 +45,7 @@ const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
 }
 
 thread_local JSRuntime* runtime_{nullptr};
+thread_local uint32_t running_dart_isolates = 0;
 thread_local bool is_name_installed_ = false;
 
 void InitializeBuiltInStrings(JSContext* ctx) {
@@ -68,6 +69,9 @@ void DartIsolateContext::InitializeJSRuntime() {
 }
 
 void DartIsolateContext::FinalizeJSRuntime() {
+  if (running_dart_isolates > 0)
+    return;
+
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
   names_installer::Dispose();
   HTMLElementFactory::Dispose();
@@ -85,6 +89,7 @@ DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dar
       running_thread_(std::this_thread::get_id()),
       dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
+  running_dart_isolates++;
   InitializeJSRuntime();
 }
 
@@ -97,6 +102,7 @@ DartIsolateContext::~DartIsolateContext() {
   dispatcher_.reset();
   data_.reset();
   pages_in_ui_thread_.clear();
+  running_dart_isolates--;
   FinalizeJSRuntime();
 }
 

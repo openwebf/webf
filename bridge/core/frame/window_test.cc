@@ -97,7 +97,7 @@ TEST(Window, postMessage) {
  window.addEventListener('message', (message) => {
   console.log(JSON.stringify(message.data), message.origin);
 });
- window.PostMessage({
+ window.postMessage({
   data: 1234
 }, '*');
 )");
