@@ -120,7 +120,7 @@ void _handleInvokeModuleResult(_InvokeModuleResultContext context, Pointer<Nativ
   if (enableWebFCommandLog && context.stopwatch != null) {
     print(
         'Invoke module callback from(name: ${context.moduleName} method: ${context.method}, params: ${context.params}) '
-            'return: $returnValue time: ${context.stopwatch!.elapsedMicroseconds}us');
+        'return: $returnValue time: ${context.stopwatch!.elapsedMicroseconds}us');
   }
 
   malloc.free(result);
@@ -155,14 +155,16 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
             Pointer.fromFunction(_handleInvokeModuleResult);
         if (error != null) {
           Pointer<Utf8> errmsgPtr = error.toNativeUtf8();
-          _InvokeModuleResultContext context =
-              _InvokeModuleResultContext(completer, currentView, moduleName, method, params, errmsgPtr: errmsgPtr, stopwatch: stopwatch);
+          _InvokeModuleResultContext context = _InvokeModuleResultContext(
+              completer, currentView, moduleName, method, params,
+              errmsgPtr: errmsgPtr, stopwatch: stopwatch);
           callback(callbackContext, currentView.contextId, errmsgPtr, nullptr, context, handleResult);
         } else {
           Pointer<NativeValue> dataPtr = malloc.allocate(sizeOf<NativeValue>());
           toNativeValue(dataPtr, data);
-          _InvokeModuleResultContext context =
-              _InvokeModuleResultContext(completer, currentView, moduleName, method, params, data: dataPtr, stopwatch: stopwatch);
+          _InvokeModuleResultContext context = _InvokeModuleResultContext(
+              completer, currentView, moduleName, method, params,
+              data: dataPtr, stopwatch: stopwatch);
           callback(callbackContext, currentView.contextId, nullptr, dataPtr, context, handleResult);
         }
       });
@@ -198,8 +200,6 @@ Pointer<NativeValue> _invokeModule(
       fromNativeValue(controller.view, params), callback.asFunction());
   Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
   toNativeValue(returnValue, result);
-  freeNativeString(module);
-  freeNativeString(method);
   return returnValue;
 }
 
@@ -238,15 +238,15 @@ final Pointer<NativeFunction<NativeRequestBatchUpdate>> _nativeRequestBatchUpdat
     Pointer.fromFunction(_requestBatchUpdate);
 
 // Register setTimeout
-typedef NativeSetTimeout = Int32 Function(
-    Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
+typedef NativeSetTimeout = Void Function(Int32 newTimerId, Pointer<Void> callbackContext, Double contextId,
+    Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
 
-int _setTimeout(Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback,
-    int timeout) {
+void _setTimeout(int newTimerId, Pointer<Void> callbackContext, double contextId,
+    Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
 
-  return controller.module.setTimeout(timeout, () {
+  controller.module.setTimeout(newTimerId, timeout, () {
     DartAsyncCallback func = callback.asFunction();
     void _runCallback() {
       if (controller.view != currentView || currentView.disposed) return;
@@ -256,7 +256,6 @@ int _setTimeout(Pointer<Void> callbackContext, double contextId, Pointer<NativeF
       } catch (e, stack) {
         Pointer<Utf8> nativeErrorMessage = ('Error: $e\n$stack').toNativeUtf8();
         func(callbackContext, contextId, nativeErrorMessage);
-        malloc.free(nativeErrorMessage);
       }
     }
 
@@ -269,19 +268,17 @@ int _setTimeout(Pointer<Void> callbackContext, double contextId, Pointer<NativeF
   });
 }
 
-const int SET_TIMEOUT_ERROR = -1;
-final Pointer<NativeFunction<NativeSetTimeout>> _nativeSetTimeout =
-    Pointer.fromFunction(_setTimeout, SET_TIMEOUT_ERROR);
+final Pointer<NativeFunction<NativeSetTimeout>> _nativeSetTimeout = Pointer.fromFunction(_setTimeout);
 
 // Register setInterval
-typedef NativeSetInterval = Int32 Function(
-    Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
+typedef NativeSetInterval = Void Function(Int32 newTimerId, Pointer<Void> callbackContext, Double contextId,
+    Pointer<NativeFunction<NativeAsyncCallback>>, Int32);
 
-int _setInterval(Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeAsyncCallback>> callback,
-    int timeout) {
+void _setInterval(int newTimerId, Pointer<Void> callbackContext, double contextId,
+    Pointer<NativeFunction<NativeAsyncCallback>> callback, int timeout) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
-  return controller.module.setInterval(timeout, () {
+  controller.module.setInterval(newTimerId, timeout, () {
     void _runCallbacks() {
       if (controller.view != currentView || currentView.disposed) return;
 
@@ -291,7 +288,6 @@ int _setInterval(Pointer<Void> callbackContext, double contextId, Pointer<Native
       } catch (e, stack) {
         Pointer<Utf8> nativeErrorMessage = ('Dart Error: $e\n$stack').toNativeUtf8();
         func(callbackContext, contextId, nativeErrorMessage);
-        malloc.free(nativeErrorMessage);
       }
     }
 
@@ -304,9 +300,7 @@ int _setInterval(Pointer<Void> callbackContext, double contextId, Pointer<Native
   });
 }
 
-const int SET_INTERVAL_ERROR = -1;
-final Pointer<NativeFunction<NativeSetInterval>> _nativeSetInterval =
-    Pointer.fromFunction(_setInterval, SET_INTERVAL_ERROR);
+final Pointer<NativeFunction<NativeSetInterval>> _nativeSetInterval = Pointer.fromFunction(_setInterval);
 
 // Register clearTimeout
 typedef NativeClearTimeout = Void Function(Double contextId, Int32);
@@ -319,14 +313,14 @@ void _clearTimeout(double contextId, int timerId) {
 final Pointer<NativeFunction<NativeClearTimeout>> _nativeClearTimeout = Pointer.fromFunction(_clearTimeout);
 
 // Register requestAnimationFrame
-typedef NativeRequestAnimationFrame = Int32 Function(
-    Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>>);
+typedef NativeRequestAnimationFrame = Void Function(
+    Int32 newFrameId, Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>>);
 
-int _requestAnimationFrame(
-    Pointer<Void> callbackContext, double contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>> callback) {
+void _requestAnimationFrame(int newFrameId, Pointer<Void> callbackContext, double contextId,
+    Pointer<NativeFunction<NativeRAFAsyncCallback>> callback) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
-  return controller.module.requestAnimationFrame((double highResTimeStamp) {
+  controller.module.requestAnimationFrame(newFrameId, (double highResTimeStamp) {
     void _runCallback() {
       if (controller.view != currentView || currentView.disposed) return;
       DartRAFAsyncCallback func = callback.asFunction();
@@ -335,7 +329,6 @@ int _requestAnimationFrame(
       } catch (e, stack) {
         Pointer<Utf8> nativeErrorMessage = ('Error: $e\n$stack').toNativeUtf8();
         func(callbackContext, contextId, highResTimeStamp, nativeErrorMessage);
-        malloc.free(nativeErrorMessage);
       }
     }
 
@@ -348,9 +341,8 @@ int _requestAnimationFrame(
   });
 }
 
-const int RAF_ERROR_CODE = -1;
 final Pointer<NativeFunction<NativeRequestAnimationFrame>> _nativeRequestAnimationFrame =
-    Pointer.fromFunction(_requestAnimationFrame, RAF_ERROR_CODE);
+    Pointer.fromFunction(_requestAnimationFrame);
 
 // Register cancelAnimationFrame
 typedef NativeCancelAnimationFrame = Void Function(Double contextId, Int32 id);
@@ -379,11 +371,9 @@ void _toBlob(Pointer<Void> callbackContext, double contextId, Pointer<NativeFunc
     Uint8List byteList = bytePtr.asTypedList(bytes.length);
     byteList.setAll(0, bytes);
     func(callbackContext, contextId, nullptr, bytePtr, bytes.length);
-    malloc.free(bytePtr);
   }).catchError((error, stack) {
     Pointer<Utf8> nativeErrorMessage = ('$error\n$stack').toNativeUtf8();
     func(callbackContext, contextId, nativeErrorMessage, nullptr, 0);
-    malloc.free(nativeErrorMessage);
   });
 }
 
@@ -420,6 +410,7 @@ void _onJSError(double contextId, Pointer<Utf8> charStr) {
     String msg = charStr.toDartString();
     handler(msg);
   }
+  malloc.free(charStr);
 }
 
 final Pointer<NativeFunction<NativeJSError>> _nativeOnJsError = Pointer.fromFunction(_onJSError);
@@ -435,6 +426,7 @@ void _onJSLog(double contextId, int level, Pointer<Utf8> charStr) {
       jsLogHandler(level, msg);
     }
   }
+  malloc.free(charStr);
 }
 
 final Pointer<NativeFunction<NativeJSLog>> _nativeOnJsLog = Pointer.fromFunction(_onJSLog);

@@ -61,13 +61,13 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
-  auto fn = [](void* ptr, double contextId, int8_t result, const char* errmsg) {
+  auto fn = [](void* ptr, double contextId, int8_t result, char* errmsg) {
     auto* callback_context = static_cast<ImageSnapShotContext*>(ptr);
     auto* context = callback_context->context;
 
     callback_context->context->dartIsolateContext()->dispatcher()->PostToJs(
         context->isDedicated(), context->contextId(),
-        [](ImageSnapShotContext* callback_context, int8_t result, const char* errmsg) {
+        [](ImageSnapShotContext* callback_context, int8_t result, char* errmsg) {
           JSContext* ctx = callback_context->context->ctx();
 
           if (errmsg == nullptr) {
@@ -82,6 +82,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
                 JS_Call(ctx, callback_context->callback, callback_context->context->Global(), 2, arguments);
             callback_context->context->HandleException(&returnValue);
             JS_FreeValue(ctx, errmsgValue);
+            dart_free(errmsg);
           }
 
           callback_context->context->DrainMicrotasks();
@@ -121,7 +122,7 @@ struct SimulatePointerCallbackContext {
   JSValue callbackValue{JS_NULL};
 };
 
-static void handleSimulatePointerCallback(void* p, double contextId, const char* errmsg) {
+static void handleSimulatePointerCallback(void* p, double contextId, char* errmsg) {
   auto* simulate_context = static_cast<SimulatePointerCallbackContext*>(p);
   JSValue return_value =
       JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);

@@ -13,6 +13,9 @@
 
 namespace webf {
 
+void* dart_malloc(std::size_t size);
+void dart_free(void* ptr);
+
 // Shared C struct which can be read by dart through Dart FFI.
 struct DartReadable {
   // Dart FFI use ole32 as it's allocator, we need to override the default allocator to compact with Dart FFI.

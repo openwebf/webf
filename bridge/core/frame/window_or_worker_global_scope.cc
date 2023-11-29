@@ -7,13 +7,14 @@
 
 namespace webf {
 
-static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
+static void handleTimerCallback(DOMTimer* timer, char* errmsg) {
   auto* context = timer->context();
 
   if (errmsg != nullptr) {
     JSValue exception = JS_ThrowTypeError(context->ctx(), "%s", errmsg);
     context->HandleException(&exception);
     context->Timers()->forceStopTimeoutById(timer->timerId());
+    dart_free(errmsg);
     return;
   }
 
@@ -24,7 +25,7 @@ static void handleTimerCallback(DOMTimer* timer, const char* errmsg) {
   timer->Fire();
 }
 
-static void handleTransientCallback(void* ptr, double contextId, const char* errmsg) {
+static void handleTransientCallback(void* ptr, double contextId, char* errmsg) {
   if (!isContextValid(contextId))
     return;
 
@@ -45,7 +46,7 @@ static void handleTransientCallback(void* ptr, double contextId, const char* err
   context->Timers()->removeTimeoutById(timer->timerId());
 }
 
-static void handlePersistentCallback(void* ptr, double contextId, const char* errmsg) {
+static void handlePersistentCallback(void* ptr, double contextId, char* errmsg) {
   if (!isContextValid(contextId))
     return;
 
@@ -75,7 +76,7 @@ static void handlePersistentCallback(void* ptr, double contextId, const char* er
   timer->SetStatus(DOMTimer::TimerStatus::kFinished);
 }
 
-static void handleTransientCallbackWrapper(void* ptr, double contextId, const char* errmsg) {
+static void handleTransientCallbackWrapper(void* ptr, double contextId, char* errmsg) {
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 
@@ -86,7 +87,7 @@ static void handleTransientCallbackWrapper(void* ptr, double contextId, const ch
                                                         webf::handleTransientCallback, ptr, contextId, errmsg);
 }
 
-static void handlePersistentCallbackWrapper(void* ptr, double contextId, const char* errmsg) {
+static void handlePersistentCallbackWrapper(void* ptr, double contextId, char* errmsg) {
   auto* timer = static_cast<DOMTimer*>(ptr);
   auto* context = timer->context();
 

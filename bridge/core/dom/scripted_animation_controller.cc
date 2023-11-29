@@ -9,7 +9,7 @@
 
 namespace webf {
 
-static void handleRAFTransientCallback(void* ptr, double contextId, double highResTimeStamp, const char* errmsg) {
+static void handleRAFTransientCallback(void* ptr, double contextId, double highResTimeStamp, char* errmsg) {
   auto* frame_callback = static_cast<FrameCallback*>(ptr);
   auto* context = frame_callback->context();
 
@@ -19,6 +19,7 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
   if (errmsg != nullptr) {
     JSValue exception = JS_ThrowTypeError(frame_callback->context()->ctx(), "%s", errmsg);
     context->HandleException(&exception);
+    dart_free(errmsg);
     return;
   }
 
@@ -37,7 +38,7 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
 static void handleRAFTransientCallbackWrapper(void* ptr,
                                               double contextId,
                                               double highResTimeStamp,
-                                              const char* errmsg) {
+                                              char* errmsg) {
   auto* frame_callback = static_cast<FrameCallback*>(ptr);
   auto* context = frame_callback->context();
 

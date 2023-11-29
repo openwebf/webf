@@ -106,7 +106,7 @@ ExecutingContext::~ExecutingContext() {
   if (JS_IsObject(exception) || JS_IsException(exception)) {
     // There must be bugs in native functions from call stack frame. Someone needs to fix it if throws.
     ReportError(exception);
-    assert_m(false, "Unhandled exception found when Dispose JSContext.");
+    assert_m(false, "Unhandled exception found when Dispe JSContext.");
   }
 
   JS_FreeValue(script_state_.ctx(), global_object_);
@@ -198,14 +198,10 @@ void* ExecutingContext::owner() {
 
 bool ExecutingContext::HandleException(JSValue* exc) {
   if (JS_IsException(*exc)) {
-    auto func = [&]() {
-      JSValue error = JS_GetException(script_state_.ctx());
-      MemberMutationScope scope{this};
-      DispatchGlobalErrorEvent(this, error);
-      JS_FreeValue(script_state_.ctx(), error);
-    };
-
-    dart_isolate_context_->dispatcher()->PostToJs(isDedicated(), context_id_, func);
+    JSValue error = JS_GetException(script_state_.ctx());
+    MemberMutationScope scope{this};
+    DispatchGlobalErrorEvent(this, error);
+    JS_FreeValue(script_state_.ctx(), error);
     return false;
   }
 
@@ -219,13 +215,9 @@ bool ExecutingContext::HandleException(ScriptValue* exc) {
 
 bool ExecutingContext::HandleException(ExceptionState& exception_state) {
   if (exception_state.HasException()) {
-    auto func = [&]() {
-      JSValue error = JS_GetException(ctx());
-      ReportError(error);
-      JS_FreeValue(ctx(), error);
-    };
-
-    dart_isolate_context_->dispatcher()->PostToJs(is_dedicated_, context_id_, func);
+    JSValue error = JS_GetException(ctx());
+    ReportError(error);
+    JS_FreeValue(ctx(), error);
     return false;
   }
   return true;
@@ -258,16 +250,14 @@ void ExecutingContext::ReportError(JSValueConst error) {
   uint32_t messageLength = strlen(type) + strlen(title);
   if (stack != nullptr) {
     messageLength += 4 + strlen(stack);
-    char* message = new char[messageLength];
+    char* message = (char*) dart_malloc(messageLength * sizeof(char));
     snprintf(message, messageLength, "%s: %s\n%s", type, title, stack);
     handler_(this, message);
-    delete[] message;
   } else {
     messageLength += 3;
-    char* message = new char[messageLength];
+    char* message = (char*)dart_malloc(messageLength * sizeof(char));
     snprintf(message, messageLength, "%s: %s", type, title);
     handler_(this, message);
-    delete[] message;
   }
 
   JS_FreeValue(ctx, errorTypeValue);

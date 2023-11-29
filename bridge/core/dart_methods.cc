@@ -6,10 +6,13 @@
 #include "dart_methods.h"
 #include <cassert>
 #include "dart_isolate_context.h"
+#include "foundation/native_type.h"
 
 using namespace webf;
 
 namespace webf {
+
+int32_t start_timer_id = 1;
 
 DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
                                      const uint64_t* dart_methods,
@@ -78,14 +81,16 @@ int32_t DartMethodPointer::setTimeout(bool is_dedicated,
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setTimeout callSync START";
 #endif
 
-  int32_t id = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, set_timeout_, callback_context, context_id,
-                                                             callback, timeout);
+  int32_t new_timer_id = start_timer_id++;
+
+  dart_isolate_context_->dispatcher()->PostToDart(
+      is_dedicated,set_timeout_, new_timer_id, callback_context, context_id, callback, timeout);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setTimeout callSync END";
 #endif
 
-  return id;
+  return new_timer_id;
 }
 
 int32_t DartMethodPointer::setInterval(bool is_dedicated,
@@ -97,20 +102,22 @@ int32_t DartMethodPointer::setInterval(bool is_dedicated,
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setInterval callSync START";
 #endif
 
-  int32_t id = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, set_interval_, callback_context, context_id,
+  int32_t new_timer_id = start_timer_id++;
+
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, set_interval_, new_timer_id, callback_context, context_id,
                                                              callback, timeout);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setInterval callSync END";
 #endif
-  return id;
+  return new_timer_id;
 }
 
-void DartMethodPointer::clearTimeout(bool is_dedicated, double context_id, int32_t timerId) {
+void DartMethodPointer::clearTimeout(bool is_dedicated, double context_id, int32_t timer_id) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[CPP] ClearTimeoutWrapper call" << std::endl;
 #endif
 
-  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, clear_timeout_, context_id, timerId);
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, clear_timeout_, context_id, timer_id);
 }
 
 int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
@@ -120,13 +127,16 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame callSync START";
 #endif
-  int32_t id = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, request_animation_frame_, callback_context,
+
+  int32_t new_frame_id = start_timer_id++;
+
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated,  request_animation_frame_, new_frame_id, callback_context,
                                                              context_id, callback);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame callSync END";
 #endif
-  return id;
+  return new_frame_id;
 }
 
 void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, double context_id, int32_t id) {
@@ -189,7 +199,8 @@ void DartMethodPointer::onJSLog(bool is_dedicated, double context_id, int32_t le
   if (on_js_log_ == nullptr)
     return;
 
-  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, on_js_log_, context_id, level, log);
+  char* log_str = (char*)dart_malloc(sizeof(char) * strlen(log));
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, on_js_log_, context_id, level, log_str);
 }
 
 void DartMethodPointer::matchImageSnapshot(bool is_dedicated,
