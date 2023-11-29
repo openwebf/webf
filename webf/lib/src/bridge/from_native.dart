@@ -8,8 +8,11 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/widget/widget_element.dart';
 
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
@@ -401,6 +404,25 @@ void _createBindingObject(
 final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject =
     Pointer.fromFunction(_createBindingObject);
 
+typedef NativeGetWidgetElementShape = Int8 Function(Double contextId, Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> result);
+
+int _getWidgetElementShape(double contextId, Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> result) {
+  try {
+    WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+    DynamicBindingObject object = controller.view.getBindingObject<DynamicBindingObject>(nativeBindingObject)!;
+
+    if (object is WidgetElement) {
+      object.nativeGetPropertiesAndMethods(result);
+      return 1;
+    }
+  } catch (e, stack) {
+    print('$e\n$stack');
+  }
+  return 0;
+}
+
+final Pointer<NativeFunction<NativeGetWidgetElementShape>> _nativeGetWidgetElementShape = Pointer.fromFunction(_getWidgetElementShape, 0);
+
 typedef NativeJSError = Void Function(Double contextId, Pointer<Utf8>);
 
 void _onJSError(double contextId, Pointer<Utf8> charStr) {
@@ -443,6 +465,7 @@ final List<int> _dartNativeMethods = [
   _nativeToBlob.address,
   _nativeFlushUICommand.address,
   _nativeCreateBindingObject.address,
+  _nativeGetWidgetElementShape.address,
   _nativeOnJsError.address,
   _nativeOnJsLog.address,
 ];

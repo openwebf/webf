@@ -60,6 +60,7 @@ typedef void (*OnJSLog)(double context_id, int32_t level, const char*);
 typedef void (*FlushUICommand)(double context_id);
 typedef void (
     *CreateBindingObject)(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
+typedef int8_t (*GetWidgetElementShape)(double context_id, void* native_binding_object, NativeValue* value);
 
 using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,
@@ -146,6 +147,7 @@ class DartMethodPointer {
                            int32_t type,
                            void* args,
                            int32_t argc);
+  bool getWidgetElementShape(bool is_dedicated, double context_id, void* native_binding_object, NativeValue* value);
 
   void onJSError(bool is_dedicated, double context_id, const char*);
   void onJSLog(bool is_dedicated, double context_id, int32_t level, const char*);
@@ -196,6 +198,7 @@ class DartMethodPointer {
   ToBlob to_blob_{nullptr};
   FlushUICommand flush_ui_command_{nullptr};
   CreateBindingObject create_binding_object_{nullptr};
+  GetWidgetElementShape get_widget_element_shape_{nullptr};
   OnJSError on_js_error_{nullptr};
   OnJSLog on_js_log_{nullptr};
   MatchImageSnapshot match_image_snapshot_{nullptr};

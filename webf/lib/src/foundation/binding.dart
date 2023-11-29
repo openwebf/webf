@@ -55,20 +55,6 @@ class AsyncBindingObjectMethod extends BindingObjectMethod {
 }
 
 
-void _onSyncPropertiesComplete(_SyncPropertiesContext context, Pointer<NativeValue> returnValue) {
-  malloc.free(context.arguments);
-  context.completer.complete(fromNativeValue(context.ownerView, returnValue) == true);
-}
-
-class _SyncPropertiesContext {
-  Completer<bool> completer;
-  Pointer<NativeValue> arguments;
-  WebFViewController ownerView;
-
-  _SyncPropertiesContext(this.completer, this.arguments, this.ownerView);
-}
-
-
 abstract class BindingObject<T> extends Iterable<T> {
   static BindingObjectOperation? bind;
   static BindingObjectOperation? unbind;
@@ -122,13 +108,6 @@ abstract class DynamicBindingObject extends BindingObject {
   DynamicBindingObject([BindingContext? context]): super(context) {
     initializeProperties(_properties);
     initializeMethods(_methods);
-    if (this is WidgetElement && !_alreadySyncWidgetElements.containsKey(runtimeType)) {
-      _syncPropertiesAndMethodsToNativeSlow().then((success) {
-        if (success) {
-          _alreadySyncWidgetElements[runtimeType] = true;
-        }
-      });
-    }
   }
 
   final Map<String, BindingObjectProperty> _properties = {};
@@ -140,11 +119,9 @@ abstract class DynamicBindingObject extends BindingObject {
   @mustCallSuper
   void initializeMethods(Map<String, BindingObjectMethod> methods);
 
-  Future<bool> _syncPropertiesAndMethodsToNativeSlow() async {
+  void nativeGetPropertiesAndMethods(Pointer<NativeValue> data) async {
     assert(pointer != null);
-    if (pointer!.ref.invokeBindingMethodFromDart == nullptr) return false;
-
-    Completer<bool> completer = Completer();
+    if (pointer!.ref.invokeBindingMethodFromDart == nullptr) return;
 
     List<String> properties = _properties.keys.toList(growable: false);
     List<String> syncMethods = [];
@@ -158,23 +135,9 @@ abstract class DynamicBindingObject extends BindingObject {
       }
     });
 
-    Pointer<NativeValue> arguments = malloc.allocate(sizeOf<NativeValue>() * 3);
-    toNativeValue(arguments.elementAt(0), properties);
-    toNativeValue(arguments.elementAt(1), syncMethods);
-    toNativeValue(arguments.elementAt(2), asyncMethods);
-
-    DartInvokeBindingMethodsFromDart f = pointer!.ref.invokeBindingMethodFromDart.asFunction();
-
-    Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
-    toNativeValue(method, 'syncPropertiesAndMethods');
-
-    _SyncPropertiesContext context = _SyncPropertiesContext(completer, arguments, ownerView);
-
-    Pointer<NativeFunction<NativeInvokeResultCallback>> completeCallback = Pointer.fromFunction(_onSyncPropertiesComplete);
-
-    f(pointer!, method, 3, arguments, context, completeCallback);
-
-    return completer.future;
+    toNativeValue(data.elementAt(0), properties);
+    toNativeValue(data.elementAt(1), syncMethods);
+    toNativeValue(data.elementAt(2), asyncMethods);
   }
 
   // Call a method, eg:
@@ -191,8 +154,6 @@ abstract class DynamicBindingObject extends BindingObject {
 
     return null;
   }
-  // To make sure same kind of WidgetElement only sync once.
-  static final Map<Type, bool> _alreadySyncWidgetElements = {};
 
   dynamic _invokeBindingMethodAsync(String method, List<dynamic> args) {
     BindingObjectMethod? fn = _methods[method];

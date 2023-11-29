@@ -74,7 +74,6 @@ void DartIsolateContext::FinalizeJSRuntime() {
   SVGElementFactory::Dispose();
   EventFactory::Dispose();
   ClearUpWires();
-  data_.reset();
   JS_TurnOnGC(runtime_);
   JS_FreeRuntime(runtime_);
   runtime_ = nullptr;
@@ -96,6 +95,7 @@ JSRuntime* DartIsolateContext::runtime() {
 DartIsolateContext::~DartIsolateContext() {
   is_valid_ = false;
   dispatcher_.reset();
+  data_.reset();
   pages_in_ui_thread_.clear();
   FinalizeJSRuntime();
 }
@@ -183,7 +183,5 @@ void DartIsolateContext::RemovePage(double thread_identity, webf::WebFPage* page
     }
   }
 }
-
-thread_local std::unique_ptr<DartContextData> DartIsolateContext::data_{};
 
 }  // namespace webf

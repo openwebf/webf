@@ -52,7 +52,7 @@ class DartIsolateContext {
 
   int is_valid_{false};
   std::thread::id running_thread_;
-  static thread_local std::unique_ptr<DartContextData> data_;
+  mutable std::unique_ptr<DartContextData> data_;
   std::set<std::unique_ptr<WebFPage>> pages_in_ui_thread_;
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
