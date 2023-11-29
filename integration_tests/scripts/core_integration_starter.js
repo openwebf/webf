@@ -4,6 +4,7 @@
 const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const os = require('os');
+const { startWsServer } = require('./ws_server');
 
 function getRunningPlatform() {
   if (os.platform() == 'darwin') return 'macos';
@@ -48,7 +49,7 @@ function startIntegrationTest() {
   tester.stdout.on('data', (data) => {
     console.log(`${data && data.toString().trim()}`);
   });
-  
+
   tester.stderr.on('data', (data) => {
     console.error(`${data && data.toString().trim()}`);
   });
@@ -72,3 +73,4 @@ function startIntegrationTest() {
 }
 
 startIntegrationTest();
+startWsServer(8399);

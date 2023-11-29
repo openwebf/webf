@@ -36,7 +36,8 @@ bool Dispatcher::IsThreadGroupExist(int32_t js_context_id) {
 }
 
 bool Dispatcher::IsThreadBlocked(int32_t js_context_id) {
-  if (js_threads_.count(js_context_id) == 0) return false;
+  if (js_threads_.count(js_context_id) == 0)
+    return false;
 
   auto& loop = js_threads_[js_context_id];
   return loop->isBlocked();

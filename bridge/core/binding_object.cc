@@ -30,7 +30,8 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
                                           NativeValue* argv,
                                           Dart_Handle dart_object,
                                           DartInvokeResultCallback result_callback) {
-  if (binding_object->disposed_) return;
+  if (binding_object->disposed_)
+    return;
 
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_object);
   auto dart_isolate = binding_object->binding_target_->GetExecutingContext()->dartIsolateContext();
@@ -115,8 +116,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 #endif
 
   GetDispatcher()->PostToDartSync(
-      GetExecutingContext()->isDedicated(),
-      contextId(),
+      GetExecutingContext()->isDedicated(), contextId(),
       [&](double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
           int32_t argc, const NativeValue* argv) {
 #if ENABLE_LOG
@@ -154,8 +154,7 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
   GetDispatcher()->PostToDartSync(
-      GetExecutingContext()->isDedicated(),
-      contextId(),
+      GetExecutingContext()->isDedicated(), contextId(),
       [&](double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
           int32_t argc, const NativeValue* argv) {
 #if ENABLE_LOG

@@ -65,7 +65,9 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   return return_value;
 }
 
-static void ReturnResultToDart(Dart_PersistentHandle persistent_handle, NativeValue* result, InvokeModuleResultCallback result_callback) {
+static void ReturnResultToDart(Dart_PersistentHandle persistent_handle,
+                               NativeValue* result,
+                               InvokeModuleResultCallback result_callback) {
   Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
   result_callback(handle, result);
   Dart_DeletePersistentHandle_DL(persistent_handle);
@@ -81,11 +83,9 @@ static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
 
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   moduleContext->context->dartIsolateContext()->dispatcher()->PostToJs(
-      moduleContext->context->isDedicated(),
-      moduleContext->context->contextId(),
+      moduleContext->context->isDedicated(), moduleContext->context->contextId(),
       [](ModuleContext* module_context, double context_id, const char* errmsg, NativeValue* extra_data,
          Dart_PersistentHandle persistent_handle, InvokeModuleResultCallback result_callback) {
-
         NativeValue* result = handleInvokeModuleTransientCallback(module_context, context_id, errmsg, extra_data);
         module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
             module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
@@ -141,13 +141,12 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     auto module_context = std::make_shared<ModuleContext>(context, module_callback);
     context->ModuleContexts()->AddModuleContext(module_context);
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
-                                                    module_name_string.get(),
-                                                    method_name_string.get(), &params,
+                                                    module_name_string.get(), method_name_string.get(), &params,
                                                     handleInvokeModuleTransientCallbackWrapper);
   } else {
-    result = context->dartMethodPtr()->invokeModule(
-        context->isDedicated(), nullptr, context->contextId(), module_name_string.get(),
-        method_name_string.get(), &params, handleInvokeModuleUnexpectedCallback);
+    result = context->dartMethodPtr()->invokeModule(context->isDedicated(), nullptr, context->contextId(),
+                                                    module_name_string.get(), method_name_string.get(), &params,
+                                                    handleInvokeModuleUnexpectedCallback);
   }
 
   if (result == nullptr) {
