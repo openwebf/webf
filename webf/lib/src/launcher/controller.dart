@@ -972,6 +972,8 @@ class WebFController {
           runningThread: runningThread,
           originalViewport: _view.viewport);
 
+      await _view.initialize();
+
       _module = WebFModuleController(this, _view.contextId);
 
       // Reconnect the new contextId to the Controller
