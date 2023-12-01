@@ -42,9 +42,8 @@ void executeTest(void* testContext, Dart_Handle dart_handle, ExecuteResultCallba
 
   context->page()->dartIsolateContext()->dispatcher()->PostToJs(
       context->page()->isDedicated(), context->page()->contextId(),
-      [](webf::WebFTestContext* context, Dart_PersistentHandle persistent_handle, ExecuteResultCallback executeCallback) {
-        context->invokeExecuteTest(persistent_handle, executeCallback);
-      },
+      [](webf::WebFTestContext* context, Dart_PersistentHandle persistent_handle,
+         ExecuteResultCallback executeCallback) { context->invokeExecuteTest(persistent_handle, executeCallback); },
       context, persistent_handle, executeCallback);
 }
 
