@@ -11,10 +11,10 @@
 WEBF_EXPORT_C
 void* initTestFramework(void* page);
 
-using ExecuteCallback = void* (*)(double contextId, void* status);
+using ExecuteResultCallback = void (*)(Dart_Handle dart_handle, void* result);
 
 WEBF_EXPORT_C
-void executeTest(void* testContext, ExecuteCallback executeCallback);
+void executeTest(void* testContext, Dart_Handle dart_handle, ExecuteResultCallback executeCallback);
 
 WEBF_EXPORT_C
 void registerTestEnvDartMethods(void* testContext, uint64_t* methodBytes, int32_t length);

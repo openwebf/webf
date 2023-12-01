@@ -34,17 +34,9 @@ import 'test_input.dart';
 typedef NativeJSError = Void Function(Double contextId, Pointer<Utf8>);
 typedef JSErrorListener = void Function(String);
 
-List<JSErrorListener> _listenerList = List.filled(10, (String string) {
-  throw new Exception('unimplemented JS ErrorListener');
-});
-
-void addJSErrorListener(double contextId, JSErrorListener listener) {
-  _listenerList[contextId.toInt()] = listener;
-}
-
 void _onJSError(double contextId, Pointer<Utf8> charStr) {
   String msg = (charStr).toDartString();
-  _listenerList[contextId.toInt()](msg);
+  print(msg);
 }
 
 final Pointer<NativeFunction<NativeJSError>> _nativeOnJsError = Pointer.fromFunction(_onJSError);

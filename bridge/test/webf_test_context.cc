@@ -267,15 +267,17 @@ struct ExecuteCallbackContext {
   ExecuteCallbackContext() = delete;
 
   explicit ExecuteCallbackContext(ExecutingContext* context,
-                                  ExecuteCallback executeCallback,
-                                  WebFTestContext* webf_context)
-      : executeCallback(executeCallback), context(context), webf_context(webf_context){};
-  ExecuteCallback executeCallback;
+                                  ExecuteResultCallback executeCallback,
+                                  WebFTestContext* webf_context,
+                                  Dart_PersistentHandle persistent_handle)
+      : executeCallback(executeCallback), context(context), webf_context(webf_context), persistent_handle(persistent_handle) {};
+  ExecuteResultCallback executeCallback;
   ExecutingContext* context;
   WebFTestContext* webf_context;
+  Dart_PersistentHandle persistent_handle;
 };
 
-void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
+void WebFTestContext::invokeExecuteTest(Dart_PersistentHandle persistent_handle, ExecuteResultCallback executeCallback) {
   if (execute_test_callback_ == nullptr) {
     return;
   }
@@ -297,7 +299,9 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
     callbackContext->context->dartIsolateContext()->dispatcher()->PostToDart(
         callbackContext->context->isDedicated(),
         [](ExecuteCallbackContext* callback_context, SharedNativeString* status) {
-          callback_context->executeCallback(callback_context->context->contextId(), status);
+          Dart_Handle handle = Dart_HandleFromPersistent_DL(callback_context->persistent_handle);
+          callback_context->executeCallback(handle, status);
+          Dart_DeletePersistentHandle_DL(callback_context->persistent_handle);
           callback_context->webf_context->execute_test_proxy_object_ = JS_NULL;
         },
         callbackContext, status.release());
@@ -305,7 +309,7 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
     return JS_NULL;
   };
 
-  auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback, this);
+  auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback, this, persistent_handle);
   execute_test_proxy_object_ = JS_NewObject(context_->ctx());
   JS_SetOpaque(execute_test_proxy_object_, callbackContext);
   JSValue callbackData[]{execute_test_proxy_object_};

@@ -64,6 +64,7 @@ class _WebFTesterState extends State<WebFTester> {
       javaScriptChannel: javaScriptChannel,
       onControllerCreated: onControllerCreated,
       onLoad: onLoad,
+      // runningThread: FlutterUIThread(),
       gestureListener: GestureListener(
         onDrag: (GestureEvent gestureEvent) {
           if (gestureEvent.state == EVENT_STATE_START) {
@@ -80,7 +81,6 @@ class _WebFTesterState extends State<WebFTester> {
     double contextId = controller.view.contextId;
     testContext = initTestFramework(contextId);
     registerDartTestMethodsToCpp(contextId);
-    addJSErrorListener(contextId, print);
     await controller.view.evaluateJavaScripts(widget.preCode);
   }
 
