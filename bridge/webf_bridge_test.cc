@@ -36,15 +36,16 @@ void* initTestFramework(void* page_) {
       [](webf::WebFPage* page) -> void* { return new webf::WebFTestContext(page->executingContext()); }, page);
 }
 
-void executeTest(void* testContext, ExecuteCallback executeCallback) {
+void executeTest(void* testContext, Dart_Handle dart_handle, ExecuteResultCallback executeCallback) {
   auto context = reinterpret_cast<webf::WebFTestContext*>(testContext);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
 
   context->page()->dartIsolateContext()->dispatcher()->PostToJs(
       context->page()->isDedicated(), context->page()->contextId(),
-      [](webf::WebFTestContext* context, ExecuteCallback executeCallback) {
-        context->invokeExecuteTest(executeCallback);
+      [](webf::WebFTestContext* context, Dart_PersistentHandle persistent_handle, ExecuteResultCallback executeCallback) {
+        context->invokeExecuteTest(persistent_handle, executeCallback);
       },
-      context, executeCallback);
+      context, persistent_handle, executeCallback);
 }
 
 void registerTestEnvDartMethods(void* testContext, uint64_t* methodBytes, int32_t length) {

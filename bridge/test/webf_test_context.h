@@ -27,7 +27,7 @@ class WebFTestContext final {
 
   /// Evaluate JavaScript source code with build-in test frameworks, use in test only.
   bool parseTestHTML(const uint16_t* code, size_t codeLength);
-  void invokeExecuteTest(ExecuteCallback executeCallback);
+  void invokeExecuteTest(Dart_PersistentHandle persistent_handle, ExecuteResultCallback executeCallback);
   void registerTestEnvDartMethods(uint64_t* methodBytes, int32_t length);
 
   WebFPage* page() const { return page_; }
