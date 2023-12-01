@@ -270,14 +270,18 @@ struct ExecuteCallbackContext {
                                   ExecuteResultCallback executeCallback,
                                   WebFTestContext* webf_context,
                                   Dart_PersistentHandle persistent_handle)
-      : executeCallback(executeCallback), context(context), webf_context(webf_context), persistent_handle(persistent_handle) {};
+      : executeCallback(executeCallback),
+        context(context),
+        webf_context(webf_context),
+        persistent_handle(persistent_handle){};
   ExecuteResultCallback executeCallback;
   ExecutingContext* context;
   WebFTestContext* webf_context;
   Dart_PersistentHandle persistent_handle;
 };
 
-void WebFTestContext::invokeExecuteTest(Dart_PersistentHandle persistent_handle, ExecuteResultCallback executeCallback) {
+void WebFTestContext::invokeExecuteTest(Dart_PersistentHandle persistent_handle,
+                                        ExecuteResultCallback executeCallback) {
   if (execute_test_callback_ == nullptr) {
     return;
   }
