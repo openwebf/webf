@@ -242,6 +242,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
               desc->value = return_value;
               desc->getter = JS_NULL;
               desc->setter = JS_NULL;
+            } else {
+              JS_FreeValue(ctx, return_value);
             }
             return true;
           }
@@ -256,6 +258,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
               desc->value = return_value;
               desc->getter = JS_NULL;
               desc->setter = JS_NULL;
+            } else {
+              JS_FreeValue(ctx, return_value);
             }
             return true;
           }
