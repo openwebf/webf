@@ -27,7 +27,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "rax-app": [".rax/index.ts"]
-    }
+    },
+    "ignoreDeprecations":  "5.0"
   },
   "include": ["src", ".rax"],
   "exclude": ["node_modules", "build", "public"]

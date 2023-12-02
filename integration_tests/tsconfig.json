@@ -20,6 +20,7 @@
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "declaration": false
+    "declaration": false,
+    "ignoreDeprecations":  "5.0"
   }
 }
