@@ -53,6 +53,8 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
     // Apply the layout transform for renderBoxModel and fallback to paint transform for other renderObject type.
     if (parentRenderer is RenderBoxModel) {
       offset += parentRenderer.obtainLayoutTransform(childRenderer, excludeScrollOffset);
+    } else if (parentRenderer is RenderSliverRepaintProxy) {
+      parentRenderer.applyLayoutTransform(childRenderer, transform, excludeScrollOffset);
     } else if (parentRenderer is RenderBox) {
       assert(childRenderer.parent == parentRenderer);
       if (childRenderer.parentData is BoxParentData) {
