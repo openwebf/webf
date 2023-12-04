@@ -126,7 +126,7 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
                                                  double context_id,
                                                  AsyncRAFCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame callSync START";
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call START";
 #endif
 
   int32_t new_frame_id = start_timer_id++;
@@ -135,7 +135,7 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
                                                   callback_context, context_id, callback);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame callSync END";
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call END";
 #endif
   return new_frame_id;
 }

@@ -23,6 +23,8 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
     return;
   }
 
+  if (frame_callback->status() == FrameCallback::FrameStatus::kCanceled) return;
+
   assert(frame_callback->status() == FrameCallback::FrameStatus::kPending);
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kExecuting);
@@ -68,7 +70,7 @@ void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
 
   auto frame_callback = frame_request_callback_collection_.GetFrameCallback(callback_id);
   if (frame_callback != nullptr) {
-    if (frame_callback->status() != FrameCallback::FrameStatus::kExecuting) {
+    if (frame_callback->status() != FrameCallback::FrameStatus::kPending) {
       frame_request_callback_collection_.RemoveFrameCallback(callback_id);
     }
     frame_callback->SetStatus(FrameCallback::kCanceled);
