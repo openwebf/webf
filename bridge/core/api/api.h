@@ -25,7 +25,11 @@ void evaluateQuickjsByteCodeInternal(void* page_,
                                      int32_t byteLen,
                                      Dart_PersistentHandle persistent_handle,
                                      EvaluateQuickjsByteCodeCallback result_callback);
-void parseHTMLInternal(void* page_, char* code, int32_t length, Dart_PersistentHandle dart_handle, ParseHTMLCallback result_callback);
+void parseHTMLInternal(void* page_,
+                       char* code,
+                       int32_t length,
+                       Dart_PersistentHandle dart_handle,
+                       ParseHTMLCallback result_callback);
 
 void invokeModuleEventInternal(void* page_,
                                void* module_name,
