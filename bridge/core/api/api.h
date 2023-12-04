@@ -25,7 +25,7 @@ void evaluateQuickjsByteCodeInternal(void* page_,
                                      int32_t byteLen,
                                      Dart_PersistentHandle persistent_handle,
                                      EvaluateQuickjsByteCodeCallback result_callback);
-void parseHTMLInternal(void* page_, const char* code, int32_t length);
+void parseHTMLInternal(void* page_, char* code, int32_t length, Dart_PersistentHandle dart_handle, ParseHTMLCallback result_callback);
 
 void invokeModuleEventInternal(void* page_,
                                void* module_name,
@@ -34,6 +34,15 @@ void invokeModuleEventInternal(void* page_,
                                void* extra,
                                Dart_Handle dart_handle,
                                InvokeModuleEventCallback result_callback);
+
+void dumpQuickJsByteCodeInternal(void* page_,
+                                 const char* code,
+                                 int32_t code_len,
+                                 uint8_t** parsed_bytecodes,
+                                 uint64_t* bytecode_len,
+                                 const char* url,
+                                 Dart_PersistentHandle persistent_handle,
+                                 DumpQuickjsByteCodeCallback result_callback);
 
 }  // namespace webf
 

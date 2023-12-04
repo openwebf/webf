@@ -167,7 +167,7 @@ class ScriptRunner {
         });
       }
     } else {
-      bundle.preProcessing(_contextId);
+      await bundle.preProcessing(_contextId);
       _document.pendingPreloadingScriptCallbacks.add(() => task(shouldAsync));
 
       if (_document.controller.preloadStatus != PreloadingStatus.none) {
