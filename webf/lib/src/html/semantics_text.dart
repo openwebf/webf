@@ -68,7 +68,7 @@ class BRElement extends Element {
 
   @override
   RenderBox createRenderer() {
-    return _renderLineBreak ??= RenderLineBreak(renderStyle);
+    return _renderLineBreak = RenderLineBreak(renderStyle);
   }
 }
 
