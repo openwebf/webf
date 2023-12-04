@@ -54,19 +54,23 @@ void evaluateQuickjsByteCodeInternal(void* page_,
                                                        persistent_handle, result_callback, is_success);
 }
 
-static void ReturnParseHTMLToDart(Dart_PersistentHandle persistent_handle,
-                                                      ParseHTMLCallback result_callback) {
+static void ReturnParseHTMLToDart(Dart_PersistentHandle persistent_handle, ParseHTMLCallback result_callback) {
   Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
   result_callback(handle);
   Dart_DeletePersistentHandle_DL(persistent_handle);
 }
 
-void parseHTMLInternal(void* page_, char* code, int32_t length, Dart_PersistentHandle dart_handle, ParseHTMLCallback result_callback) {
+void parseHTMLInternal(void* page_,
+                       char* code,
+                       int32_t length,
+                       Dart_PersistentHandle dart_handle,
+                       ParseHTMLCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   page->parseHTML(code, length);
   dart_free(code);
-  page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnParseHTMLToDart, dart_handle, result_callback);
+  page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnParseHTMLToDart, dart_handle,
+                                                       result_callback);
 }
 
 static void ReturnInvokeEventResultToDart(Dart_Handle persistent_handle,
@@ -93,9 +97,7 @@ void invokeModuleEventInternal(void* page_,
                                                  result_callback, result);
 }
 
-
-static void ReturnDumpByteCodeResultToDart(Dart_Handle persistent_handle,
-                                          DumpQuickjsByteCodeCallback result_callback) {
+static void ReturnDumpByteCodeResultToDart(Dart_Handle persistent_handle, DumpQuickjsByteCodeCallback result_callback) {
   Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
   result_callback(handle);
   Dart_DeletePersistentHandle_DL(persistent_handle);
