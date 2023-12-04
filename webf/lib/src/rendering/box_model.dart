@@ -569,6 +569,11 @@ class RenderLayoutBox extends RenderBoxModel
 
     Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
     double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
+
+    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
+    // but in this stage, the parent's size will always to zero during the first initial layout.
+    if (maxScrollableX.isInfinite) return;
+
     if (transform != null) {
       maxScrollableX += transform.getTranslation()[0];
     }
@@ -588,6 +593,11 @@ class RenderLayoutBox extends RenderBoxModel
     }
 
     double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
+
+    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
+    // but in this stage, the parent's size will always to zero during the first initial layout.
+    if (maxScrollableY.isInfinite) return;
+
     if (transform != null) {
       maxScrollableY += transform.getTranslation()[1];
     }
