@@ -669,8 +669,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController
-              .load(rootController.getPreloadBundleFromUrl(action.target) ?? WebFBundle.fromUrl(action.target));
+          await rootController.load(rootController.getPreloadBundleFromUrl(action.target) ?? WebFBundle.fromUrl(action.target));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
@@ -697,7 +696,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   RenderBox? getRootRenderObject() {
-    return document.documentElement!.renderer;
+    return document.documentElement?.renderer;
   }
 
   @override
@@ -1188,11 +1187,13 @@ class WebFController {
   }
 
   bool get shouldBlockingFlushingResolvedStyleProperties {
+    if (mode != WebFLoadingMode.preRendering) return false;
+
     RenderBox? rootRenderObject = view.getRootRenderObject();
 
     if (rootRenderObject == null || !rootRenderObject.attached) return true;
 
-    return mode == WebFLoadingMode.preRendering && preRenderingStatus.index < PreRenderingStatus.done.index;
+    return preRenderingStatus.index < PreRenderingStatus.done.index;
   }
 
   PreRenderingStatus _preRenderingStatus = PreRenderingStatus.none;
