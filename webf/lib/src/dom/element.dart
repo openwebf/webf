@@ -305,7 +305,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     properties['className'] =
         BindingObjectProperty(getter: () => className, setter: (value) => className = castToType<String>(value));
     properties['classList'] = BindingObjectProperty(getter: () => classList);
-    properties['dir'] = BindingObjectProperty(getter: () => dir);
+    properties['dir'] = BindingObjectProperty(getter: () => dir, setter: (value) => {});
   }
 
   @override
