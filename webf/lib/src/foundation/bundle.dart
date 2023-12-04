@@ -106,10 +106,10 @@ abstract class WebFBundle {
   ContentType get contentType => _contentType ?? _resolveContentType(_uri);
 
   // Pre process the data before the data actual used.
-  void preProcessing(double contextId) {
+  Future<void> preProcessing(double contextId) async {
     if (isJavascript && data != null) {
       assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
-      data = dumpQuickjsByteCode(contextId, data!, url: _uri.toString());
+      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString());
       _contentType = webfBc1ContentType;
     }
   }

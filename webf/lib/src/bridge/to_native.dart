@@ -226,9 +226,11 @@ typedef DartEvaluateScripts = void Function(
 
 typedef NativeEvaluateJavaScriptCallback = Void Function(Handle object, Int8 result);
 
+
+typedef NativeParseHTMLCallback = Void Function(Handle object);
 // Register parseHTML
-typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Uint8> code, Int32 length);
-typedef DartParseHTML = void Function(Pointer<Void>, Pointer<Uint8> code, int length);
+typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Uint8> code, Int32 length, Handle context, Pointer<NativeFunction<NativeParseHTMLCallback>> result_callback);
+typedef DartParseHTML = void Function(Pointer<Void>, Pointer<Uint8> code, int length, Object context, Pointer<NativeFunction<NativeParseHTMLCallback>> result_callback);
 
 final DartEvaluateScripts _evaluateScripts =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateScripts>>('evaluateScripts').asFunction();
@@ -379,17 +381,31 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes) async {
   return completer.future;
 }
 
-void parseHTML(double contextId, Uint8List codeBytes) {
+void _handleParseHTMLContextResult(_ParseHTMLContext context) {
+  context.completer.complete();
+}
+
+class _ParseHTMLContext {
+  Completer<void> completer;
+  _ParseHTMLContext(this.completer);
+}
+
+Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
+  Completer completer = Completer();
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return;
   }
   Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
   try {
     assert(_allocatedPages.containsKey(contextId));
-    _parseHTML(_allocatedPages[contextId]!, codePtr, codeBytes.length);
+    _ParseHTMLContext context = _ParseHTMLContext(completer);
+    Pointer<NativeFunction<NativeParseHTMLCallback>> resultCallback = Pointer.fromFunction(_handleParseHTMLContextResult);
+    _parseHTML(_allocatedPages[contextId]!, codePtr, codeBytes.length, context, resultCallback);
   } catch (e, stack) {
     print('$e\n$stack');
   }
+
+  return completer.future;
 }
 
 class GumboOutput {
@@ -410,12 +426,44 @@ void freeSVGResult(GumboOutput gumboOutput) {
   malloc.free(gumboOutput.source);
 }
 
-typedef NativeDumpQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> code, Uint64 code_len, Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url);
-typedef DartDumpQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> code, int code_len, Pointer<Pointer<Uint8>> parsedBytecodes, Pointer<Uint64> bytecodeLen, Pointer<Utf8> url);
+typedef NativeDumpQuickjsByteCodeResultCallback = Void Function(Handle object);
 
-final DartDumpQuickjsByteCode _dumpQuickjsByteCode = WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDumpQuickjsByteCode>>('dumpQuickjsByteCode').asFunction();
+typedef NativeDumpQuickjsByteCode = Void Function(
+    Pointer<Void>,
+    Pointer<Uint8> code,
+    Int32 code_len,
+    Pointer<Pointer<Uint8>> parsedBytecodes,
+    Pointer<Uint64> bytecodeLen,
+    Pointer<Utf8> url,
+    Handle context,
+    Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback);
+typedef DartDumpQuickjsByteCode = void Function(
+  Pointer<Void>,
+  Pointer<Uint8> code,
+  int code_len,
+  Pointer<Pointer<Uint8>> parsedBytecodes,
+  Pointer<Uint64> bytecodeLen,
+  Pointer<Utf8> url,
+  Object context,
+  Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback);
 
-Uint8List dumpQuickjsByteCode(double contextId, Uint8List code, {String? url}) {
+final DartDumpQuickjsByteCode _dumpQuickjsByteCode =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDumpQuickjsByteCode>>('dumpQuickjsByteCode').asFunction();
+
+class _DumpQuickjsByteCodeContext {
+  Completer<Uint8List> completer;
+  Pointer<Pointer<Uint8>> bytecodes;
+  Pointer<Uint64> bytecodeLen;
+  _DumpQuickjsByteCodeContext(this.completer, this.bytecodes, this.bytecodeLen);
+}
+
+void _handleQuickjsByteCodeResults(_DumpQuickjsByteCodeContext context) {
+  Uint8List bytes = context.bytecodes.value.asTypedList(context.bytecodeLen.value);
+  context.completer.complete(bytes);
+}
+
+Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String? url}) async {
+  Completer<Uint8List> completer = Completer();
   // Assign `vm://$id` for no url (anonymous scripts).
   if (url == null) {
     url = 'vm://$_anonymousScriptEvaluationId';
@@ -428,10 +476,14 @@ Uint8List dumpQuickjsByteCode(double contextId, Uint8List code, {String? url}) {
   // Export the bytecode from scripts
   Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
   Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
-  _dumpQuickjsByteCode(_allocatedPages[contextId]!, codePtr, code.length, bytecodes, bytecodeLen, _url);
-  Uint8List bytes = bytecodes.value.asTypedList(bytecodeLen.value);
 
-  return bytes;
+  _DumpQuickjsByteCodeContext context = _DumpQuickjsByteCodeContext(completer, bytecodes, bytecodeLen);
+  Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback = Pointer.fromFunction(_handleQuickjsByteCodeResults);
+
+  _dumpQuickjsByteCode(_allocatedPages[contextId]!, codePtr, code.length, bytecodes, bytecodeLen, _url, context, resultCallback);
+
+  // return bytes;
+  return completer.future;
 }
 
 // Register initJsEngine
