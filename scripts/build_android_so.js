@@ -8,7 +8,6 @@ const { copyFileSync } = require('fs');
 
 
 const buildTasks = [
-  'android-so-clean',
   'compile-polyfill',
   'generate-bindings-code',
   'build-android-webf-lib'
