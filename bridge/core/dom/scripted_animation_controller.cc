@@ -23,8 +23,10 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
     return;
   }
 
-  if (frame_callback->status() == FrameCallback::FrameStatus::kCanceled)
+  if (frame_callback->status() == FrameCallback::FrameStatus::kCanceled) {
+    context->document()->script_animations()->callbackCollection()->RemoveFrameCallback(frame_callback->frameId());
     return;
+  }
 
   assert(frame_callback->status() == FrameCallback::FrameStatus::kPending);
 
