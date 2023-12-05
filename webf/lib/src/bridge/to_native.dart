@@ -657,8 +657,20 @@ List<UICommand> nativeUICommandToDart(List<int> rawMemory, int commandLength, do
     command.nativePtr2 = nativePtr2Value != 0 ? Pointer.fromAddress(nativePtr2Value) : nullptr;
 
     if (enableWebFCommandLog) {
-      String printMsg =
-          'nativePtr: ${command.nativePtr} type: ${command.type} args: ${command.args} nativePtr2: ${command.nativePtr2}';
+
+      String printMsg;
+      switch(command.type) {
+        case UICommandType.setStyle:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${nativeStringToString(command.nativePtr2.cast<NativeString>())}';
+          break;
+        case UICommandType.setAttribute:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${nativeStringToString(command.nativePtr2.cast<NativeString>())} value: ${command.args}';
+          break;
+        default:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} args: ${command.args} nativePtr2: ${command.nativePtr2}';
+      }
+
+
       print(printMsg);
     }
     return command;
