@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:io';
 
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
@@ -29,6 +30,7 @@ class HeadElement extends Element {
 }
 
 const String _REL_STYLESHEET = 'stylesheet';
+const String DNS_PREFETCH = 'dns-prefetch';
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html#the-link-element
 class LinkElement extends Element {
@@ -98,13 +100,18 @@ class LinkElement extends Element {
   set type(String value) {
     internalSetAttribute('type', value);
   }
-
-  void _resolveHyperlink() {
+  Future<void> _resolveHyperlink() async {
     String? href = getAttribute('href');
+    String? rel = getAttribute('rel');
     if (href != null) {
       String base = ownerDocument.controller.url;
       try {
-        _resolvedHyperlink = ownerDocument.controller.uriParser!.resolve(Uri.parse(base), Uri.parse(href));
+        Uri hrefUri = Uri.parse(href);
+        if (rel != null && rel == DNS_PREFETCH) {
+          await InternetAddress.lookup(hrefUri.host);
+        }
+
+        _resolvedHyperlink = ownerDocument.controller.uriParser!.resolve(Uri.parse(base), hrefUri);
       } catch (_) {
         // Ignoring the failure of resolving, but to remove the resolved hyperlink.
         _resolvedHyperlink = null;
