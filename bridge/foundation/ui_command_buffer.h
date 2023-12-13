@@ -13,7 +13,18 @@ namespace webf {
 
 class ExecutingContext;
 
+enum UICommandKind : uint32_t {
+  kNodeCreation = 1,
+  kNodeMutation = 1 << 2,
+  kStyleUpdate = 1 << 3,
+  kEvent = 1 << 4,
+  kAttributeUpdate = 1 << 5,
+  kDisposeBindingObject = 1 << 6,
+  kOperation = 1 << 7
+};
+
 enum class UICommand {
+  kStartRecordingCommand,
   kCreateElement,
   kCreateTextNode,
   kCreateComment,
@@ -32,6 +43,7 @@ enum class UICommand {
   kCreateDocumentFragment,
   kCreateSVGElement,
   kCreateElementNS,
+  kFinishRecordingCommand,
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2048
@@ -51,6 +63,13 @@ struct UICommandItem {
   int64_t nativePtr2{0};
 };
 
+UICommandKind GetKindFromUICommand(UICommand type);
+
+struct UICommandBufferStorage {
+  uint32_t kind_flag;
+  UICommandItem* buffer_{nullptr};
+};
+
 class UICommandBuffer {
  public:
   UICommandBuffer() = delete;
@@ -61,19 +80,22 @@ class UICommandBuffer {
                   void* nativePtr,
                   void* nativePtr2,
                   bool request_ui_update = true);
-  UICommandItem* data();
+  void* data();
+  bool isRecording();
   int64_t size();
   bool empty();
   void clear();
 
  private:
   void addCommand(const UICommandItem& item, bool request_ui_update = true);
+  void updateFlags(UICommand command);
 
   ExecutingContext* context_{nullptr};
-  UICommandItem* buffer_{nullptr};
+  UICommandBufferStorage storage_;
   bool update_batched_{false};
   int64_t size_{0};
   int64_t max_size_{MAXIMUM_UI_COMMAND_SIZE};
+  bool is_recording_{false};
 };
 
 }  // namespace webf

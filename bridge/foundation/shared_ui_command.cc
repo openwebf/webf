@@ -30,7 +30,7 @@ void SharedUICommand::addCommand(UICommand type,
 }
 
 // first called by dart to begin read commands.
-UICommandItem* SharedUICommand::data() {
+void* SharedUICommand::data() {
   return front_buffer_->data();
 }
 

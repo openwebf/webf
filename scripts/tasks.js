@@ -126,9 +126,9 @@ task('build-darwin-webf-lib', done => {
   if (targetJSEngine === 'quickjs') {
     webfTargets.push('webf_unit_test');
   }
-  // if (buildMode === 'Debug') {
-  //   webfTargets.push('webf_test');
-  // }
+  if (buildMode === 'Debug') {
+    webfTargets.push('webf_test');
+  }
 
   let cpus = os.cpus();
   execSync(`cmake --build ${paths.bridge}/cmake-build-macos-x86_64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {

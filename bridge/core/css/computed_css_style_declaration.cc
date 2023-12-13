@@ -22,7 +22,9 @@ ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, Exception
 
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
 
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetPropertyValue, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetPropertyValue, 1, arguments,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
 }
 
@@ -32,7 +34,7 @@ bool ComputedCssStyleDeclaration::SetItem(const AtomicString& key,
   NativeValue arguments[] = {
       NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key),
       NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value.ToLegacyDOMString(ctx()))};
-  InvokeBindingMethod(binding_call_methods::ksetProperty, 2, arguments, exception_state);
+  InvokeBindingMethod(binding_call_methods::ksetProperty, 2, arguments, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   return true;
 }
 
@@ -41,7 +43,7 @@ bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf
 }
 
 int64_t ComputedCssStyleDeclaration::length() const {
-  NativeValue result = GetBindingProperty(binding_call_methods::klength, ASSERT_NO_EXCEPTION());
+  NativeValue result = GetBindingProperty(binding_call_methods::klength, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeInt64>::FromNativeValue(result);
 }
 
@@ -57,19 +59,19 @@ void ComputedCssStyleDeclaration::setProperty(const AtomicString& key,
 
 AtomicString ComputedCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kremoveProperty, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kremoveProperty, 1, arguments, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result));
 }
 
 bool ComputedCssStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kcheckCSSProperty, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kcheckCSSProperty, 1, arguments, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
 }
 
 void ComputedCssStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names,
                                                           ExceptionState& exception_state) {
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetFullCSSPropertyList, 0, nullptr, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetFullCSSPropertyList, 0, nullptr, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   auto&& arr = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), result);
   for (auto& i : arr) {
     names.emplace_back(i);

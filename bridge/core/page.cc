@@ -42,14 +42,18 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
   if (!context_->IsContextValid())
     return false;
 
-  MemberMutationScope scope{context_};
+  {
+    MemberMutationScope scope{context_};
 
-  auto document_element = context_->document()->documentElement();
-  if (!document_element) {
-    return false;
+    auto document_element = context_->document()->documentElement();
+    if (!document_element) {
+      return false;
+    }
+
+    HTMLParser::parseHTML(code, length, context_->document()->documentElement());
   }
 
-  HTMLParser::parseHTML(code, length, context_->document()->documentElement());
+  context_->uiCommandBuffer()->addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 
   return true;
 }

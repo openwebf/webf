@@ -104,6 +104,7 @@ bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
 
   std::string propertyName = key.ToStdString(ctx());
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
+  WEBF_LOG(VERBOSE) << " ELEMENT.setStyle: " << propertyName << " " << value.ToString(ctx()).ToStdString(ctx());
   if (success)
     InlineStyleChanged();
   return success;

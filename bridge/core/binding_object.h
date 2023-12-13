@@ -13,6 +13,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "foundation/native_type.h"
 #include "foundation/native_value.h"
+#include "core/dart_methods.h"
 
 namespace webf {
 
@@ -109,8 +110,9 @@ class BindingObject : public ScriptWrappable {
   NativeValue InvokeBindingMethod(const AtomicString& method,
                                   int32_t argc,
                                   const NativeValue* args,
+                                  uint32_t reason,
                                   ExceptionState& exception_state) const;
-  NativeValue GetBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const;
+  NativeValue GetBindingProperty(const AtomicString& prop, uint32_t reason, ExceptionState& exception_state) const;
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
   NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
@@ -136,6 +138,7 @@ class BindingObject : public ScriptWrappable {
   NativeValue InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
                                   size_t argc,
                                   const NativeValue* args,
+                                  uint32_t reason,
                                   ExceptionState& exception_state) const;
 
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.

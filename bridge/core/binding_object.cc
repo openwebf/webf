@@ -105,8 +105,9 @@ NativeValue BindingObject::HandleCallFromDartSide(const AtomicString& method,
 NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
                                                int32_t argc,
                                                const NativeValue* argv,
+                                               uint32_t reason,
                                                ExceptionState& exception_state) const {
-  GetExecutingContext()->FlushUICommand();
+  GetExecutingContext()->FlushUICommand(this, reason);
   NativeValue return_value = Native_NewNull();
   NativeValue native_method =
       NativeValueConverter<NativeTypeString>::ToNativeValue(GetExecutingContext()->ctx(), method);
@@ -144,8 +145,9 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
                                                size_t argc,
                                                const NativeValue* argv,
+                                               uint32_t reason,
                                                ExceptionState& exception_state) const {
-  GetExecutingContext()->FlushUICommand();
+  GetExecutingContext()->FlushUICommand(this, reason);
   NativeValue return_value = Native_NewNull();
 
 #if ENABLE_LOG
@@ -180,16 +182,17 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
   return return_value;
 }
 
-NativeValue BindingObject::GetBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const {
+NativeValue BindingObject::GetBindingProperty(const AtomicString& prop,
+                                              uint32_t reason,
+                                              ExceptionState& exception_state) const {
   if (UNLIKELY(binding_object_->disposed_)) {
     exception_state.ThrowException(
         ctx(), ErrorType::InternalError,
         "Can not get binding property on BindingObject, dart binding object had been disposed");
     return Native_NewNull();
   }
-  GetExecutingContext()->FlushUICommand();
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release())};
-  return InvokeBindingMethod(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
+  return InvokeBindingMethod(BindingMethodCallOperations::kGetProperty, 1, argv, reason, exception_state);
 }
 
 NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
@@ -205,16 +208,17 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   if (auto element = const_cast<WidgetElement*>(DynamicTo<WidgetElement>(this))) {
     if (std::shared_ptr<MutationObserverInterestGroup> recipients =
             MutationObserverInterestGroup::CreateForAttributesMutation(*element, prop)) {
-      NativeValue old_native_value = GetBindingProperty(prop, exception_state);
+      NativeValue old_native_value =
+          GetBindingProperty(prop, FlushUICommandReason::kDependentsOnElement, exception_state);
       ScriptValue old_value = ScriptValue(ctx(), old_native_value);
       recipients->EnqueueMutationRecord(
           MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value.ToString(ctx())));
     }
   }
 
-  GetExecutingContext()->FlushUICommand();
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
-  return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv, exception_state);
+  return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv,
+                             FlushUICommandReason::kDependentsOnElement, exception_state);
 }
 
 ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
@@ -240,8 +244,9 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
     return ScriptValue::Empty(ctx);
   }
 
-  NativeValue result = event_target->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall,
-                                                         arguments.size(), arguments.data(), exception_state);
+  NativeValue result =
+      event_target->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall, arguments.size(),
+                                        arguments.data(), FlushUICommandReason::kDependentsOnElement, exception_state);
 
   if (exception_state.HasException()) {
     event_target->GetExecutingContext()->HandleException(exception_state);
@@ -320,7 +325,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   }
 
   event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(),
-                                    exception_state);
+                                    FlushUICommandReason::kDependentsOnElement, exception_state);
 
   if (exception_state.HasException()) {
     event_target->GetExecutingContext()->HandleException(exception_state);
@@ -331,7 +336,8 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
 }
 
 NativeValue BindingObject::GetAllBindingPropertyNames(ExceptionState& exception_state) const {
-  return InvokeBindingMethod(BindingMethodCallOperations::kGetAllPropertyNames, 0, nullptr, exception_state);
+  return InvokeBindingMethod(BindingMethodCallOperations::kGetAllPropertyNames, 0, nullptr,
+                             FlushUICommandReason::kDependentsOnElement, exception_state);
 }
 
 void BindingObject::Trace(GCVisitor* visitor) const {
