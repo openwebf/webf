@@ -128,6 +128,9 @@ class WebFViewController implements WidgetsBindingObserver {
 
   List<Cookie>? initialCookies;
 
+  // final UICommandIterator pendingUICommands = UICommandIterator();
+  final List<UICommand> pendingUICommands = [];
+
   double _viewportWidth;
   double get viewportWidth => _viewportWidth;
   set viewportWidth(double value) {
@@ -182,7 +185,7 @@ class WebFViewController implements WidgetsBindingObserver {
     // Wait viewport mounted on the outside renderObject tree.
     Future.microtask(() {
       // Execute UICommand.createDocument and UICommand.createWindow to initialize window and document.
-      flushUICommand(this);
+      flushUICommand(this, nullptr, dependentOnElementUICommandReason | dependentOnLayoutUICommandReason);
     });
 
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
@@ -190,7 +193,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void _postFrameCallback(Duration timeStamp) {
     if (disposed) return;
-    flushUICommand(this);
+    flushUICommand(this, window.pointer!, standardUICommandReason);
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
   }
 

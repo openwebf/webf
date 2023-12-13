@@ -269,6 +269,7 @@ void ExecutingContext::ReportError(JSValueConst error) {
 }
 
 void ExecutingContext::DrainMicrotasks() {
+  ui_command_buffer_.addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
   DrainPendingPromiseJobs();
 }
 
@@ -370,9 +371,9 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
   }
 }
 
-void ExecutingContext::FlushUICommand() {
+void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
   if (!uiCommandBuffer()->empty()) {
-    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_);
+    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject(), reason);
   }
 }
 

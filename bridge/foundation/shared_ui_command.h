@@ -21,7 +21,7 @@ class SharedUICommand : public DartReadable {
                   void* nativePtr2,
                   bool request_ui_update = true);
 
-  UICommandItem* data();
+  void* data();
   int64_t size();
   bool empty();
   void clear();

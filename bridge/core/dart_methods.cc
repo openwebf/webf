@@ -162,12 +162,12 @@ void DartMethodPointer::toBlob(bool is_dedicated,
                                                   element_ptr, devicePixelRatio);
 }
 
-void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id) {
+void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id, void* native_binding_object, uint32_t reason) {
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call START";
 #endif
 
-  dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, flush_ui_command_, context_id);
+  dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, flush_ui_command_, context_id, native_binding_object, reason);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call END";

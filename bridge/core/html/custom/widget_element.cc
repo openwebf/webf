@@ -52,7 +52,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
   bool have_shape = true;
 
   if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(shape_key)) {
-    GetExecutingContext()->FlushUICommand();
+    GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsOnElement);
     have_shape = false;
   }
 
@@ -76,7 +76,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 
   if (shape != nullptr) {
     if (shape->built_in_properties_.find(property_key) != shape->built_in_properties_.end()) {
-      return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
+      return ScriptValue(ctx(), GetBindingProperty(key, FlushUICommandReason::kDependentsOnElement, exception_state));
     }
 
     if (shape->built_in_methods_.find(property_key) != shape->built_in_methods_.end()) {
@@ -105,7 +105,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
   if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName().ToStdString(ctx()))) {
-    GetExecutingContext()->FlushUICommand();
+    GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsOnElement);
   }
 
   auto shape =

@@ -68,7 +68,7 @@ typedef void (*ToBlob)(void* callback_context,
                        double devicePixelRatio);
 typedef void (*OnJSError)(double context_id, const char*);
 typedef void (*OnJSLog)(double context_id, int32_t level, const char*);
-typedef void (*FlushUICommand)(double context_id);
+typedef void (*FlushUICommand)(double context_id, void* native_binding_object, uint32_t reason);
 typedef void (
     *CreateBindingObject)(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
 typedef int8_t (*GetWidgetElementShape)(double context_id, void* native_binding_object, NativeValue* value);
@@ -109,6 +109,13 @@ struct MousePointer {
 using SimulatePointer =
     void (*)(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
 using SimulateInputText = void (*)(SharedNativeString* nativeString);
+
+enum FlushUICommandReason : uint32_t {
+  kStandard = 1,
+  kDependentsOnElement = 1 << 2,
+  kDependentsOnLayout = 1 << 3,
+  kDependentsAll = 1 << 4
+};
 
 class DartIsolateContext;
 
@@ -151,7 +158,7 @@ class DartMethodPointer {
               AsyncBlobCallback blobCallback,
               void* element_ptr,
               double devicePixelRatio);
-  void flushUICommand(bool is_dedicated, double context_id);
+  void flushUICommand(bool is_dedicated, double context_id, void* native_binding_object, uint32_t reason);
   void createBindingObject(bool is_dedicated,
                            double context_id,
                            void* native_binding_object,

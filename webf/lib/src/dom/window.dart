@@ -103,7 +103,7 @@ class Window extends EventTarget {
     if (contextId != null && event.type == EVENT_DOM_CONTENT_LOADED ||
         event.type == EVENT_LOAD ||
         event.type == EVENT_ERROR) {
-      flushUICommandWithContextId(contextId!);
+      flushUICommandWithContextId(contextId!, pointer!, dependentOnElementUICommandReason | dependentOnLayoutUICommandReason);
     }
     super.dispatchEvent(event);
   }

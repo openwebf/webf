@@ -47,6 +47,7 @@ class MemberMutationScope;
 class ErrorEvent;
 class DartContext;
 class MutationObserver;
+class BindingObject;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
@@ -135,7 +136,7 @@ class ExecutingContext {
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.
-  void FlushUICommand();
+  void FlushUICommand(const BindingObject* self, uint32_t reason);
 
   void TurnOnJavaScriptGC();
   void TurnOffJavaScriptGC();
