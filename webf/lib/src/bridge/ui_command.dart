@@ -7,6 +7,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/dom.dart';
@@ -138,13 +139,13 @@ bool shouldExecUICommands(WebFViewController view, bool isFinishedRecording, Poi
   return isElementCreation || isElementMutation || isDependsOnElement || isDependsOnStyleLayout;
 }
 
-void execUICommands(WebFViewController view, List<UICommand> commands) {
+void execUICommands(WebFViewController view, UICommandIterator commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
   Set<int> pendingRecalculateTargets = {};
 
-  // final iterable = UICommandIterable(commands);
+  final iterable = UICommandIterable(commands);
 
-  for(UICommand? command in commands) {
+  for(UICommand? command in iterable) {
     if (command == null) continue;
 
     UICommandType commandType = command.type;

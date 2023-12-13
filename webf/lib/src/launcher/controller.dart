@@ -128,8 +128,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   List<Cookie>? initialCookies;
 
-  // final UICommandIterator pendingUICommands = UICommandIterator();
-  final List<UICommand> pendingUICommands = [];
+  final UICommandIterator pendingUICommands = UICommandIterator();
 
   double _viewportWidth;
   double get viewportWidth => _viewportWidth;
