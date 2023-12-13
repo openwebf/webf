@@ -683,16 +683,15 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   bool isFinishedRecording = _isFinishedRecording(commands.isEmpty ? null : commands.last);
 
   if (shouldExecUICommands(view, isFinishedRecording, selfPointer, rawCommands.flag, reason)) {
-    view.pendingUICommands.addAll(commands);
-    // view.pendingUICommands.addCommandChunks(commands);
+    view.pendingUICommands.addCommandChunks(commands);
     execUICommands(view, view.pendingUICommands);
     view.pendingUICommands.clear();
   } else {
     SchedulerBinding.instance.scheduleFrame();
     if (isBeginningRecording) {
-      assert(view.pendingUICommands.isEmpty);
+      assert(view.pendingUICommands.isEmpty());
     }
 
-    view.pendingUICommands.addAll(commands);
+    view.pendingUICommands.addCommandChunks(commands);
   }
 }
