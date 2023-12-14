@@ -8,7 +8,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/svg/rendering/container.dart';
-import 'package:webf/src/svg/rendering/root.dart';
 import 'package:webf/svg.dart';
 
 // Those size is get from chrome. I cannot found any specs for that. @XGHeaven
@@ -109,10 +108,14 @@ class SVGRenderBoxBuilder {
         element.renderStyle.height = CSSLengthValue.auto;
         element.renderStyle.width = CSSLengthValue.auto;
       }
+      element.tagName = tagName;
+      element.namespaceURI = SVG_ELEMENT_URI;
       return element.renderBoxModel!;
     }
     print('Unknown SVG element $tagName');
     final element = SVGUnknownElement(null);
+    element.tagName = tagName;
+    element.namespaceURI = SVG_ELEMENT_URI;
     return element.renderBoxModel!;
   }
 

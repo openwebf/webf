@@ -9,7 +9,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/svg.dart';
 import 'core/aspect_ratio.dart';
-import 'rendering/root.dart';
 
 const DEFAULT_VIEW_BOX_TOP = 0.0;
 const DEFAULT_VIEW_BOX_LEFT = 0.0;
