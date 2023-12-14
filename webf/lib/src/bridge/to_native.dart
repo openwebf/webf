@@ -675,23 +675,23 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
 
   _NativeCommandData rawCommands = readNativeUICommandMemory(view.contextId);
 
-  if (rawCommands.rawMemory.isEmpty) return;
+  List<UICommand>? commands;
+  if (rawCommands.rawMemory.isNotEmpty) {
+    commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
 
-  List<UICommand> commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
-
-  bool isBeginningRecording = _isStartRecording(commands.isEmpty ? null : commands.first);
-  bool isFinishedRecording = _isFinishedRecording(commands.isEmpty ? null : commands.last);
-
-  if (shouldExecUICommands(view, isFinishedRecording, selfPointer, rawCommands.flag, reason)) {
-    view.pendingUICommands.addCommandChunks(commands);
-    execUICommands(view, view.pendingUICommands);
-    view.pendingUICommands.clear();
-  } else {
+    bool isBeginningRecording = _isStartRecording(commands.isEmpty ? null : commands.first);
     SchedulerBinding.instance.scheduleFrame();
     if (isBeginningRecording) {
       assert(view.pendingUICommands.isEmpty());
     }
 
-    view.pendingUICommands.addCommandChunks(commands);
+    view.pendingUICommands.addCommandChunks(commands, rawCommands.flag);
+  }
+
+  bool isFinishedRecording = commands != null ? _isFinishedRecording(commands.isEmpty ? null : commands.last) : false;
+
+  if (shouldExecUICommands(view, isFinishedRecording, selfPointer, view.pendingUICommands.commandFlag, reason)) {
+    execUICommands(view, view.pendingUICommands);
+    view.pendingUICommands.clear();
   }
 }
