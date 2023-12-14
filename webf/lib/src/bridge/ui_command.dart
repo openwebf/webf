@@ -119,7 +119,6 @@ bool shouldExecUICommands(WebFViewController view, bool isFinishedRecording, Poi
 
   bool isElementCreation = isCommandsContainsNodeCreation(commandFlag);
   bool isElementMutation = isCommandsContainsNodeMutation(commandFlag);
-  bool isStyleUpdate = isCommandsContainsStyleUpdate(commandFlag);
 
   bool isDependsOnElement = isFlushUICommandReasonDependsOnElement(operationReason);
   if (isDependsOnElement) {
@@ -128,14 +127,16 @@ bool shouldExecUICommands(WebFViewController view, bool isFinishedRecording, Poi
 
   bool isDependsOnStyleLayout = isFlushUICommandReasonDependsLayoutStyle(operationReason);
 
-
-  print('''
+  if (enableWebFCommandLog) {
+    print('''
+UI COMMAND CONDITION CHECK:
+  REASON: $operationReason
   isElementCreation: $isElementCreation
   isElementMutation: $isElementMutation
-  isStyleUpdate: $isStyleUpdate
   isDependsOnElement: $isDependsOnElement
   isDependsOnStyleLayout: $isDependsOnStyleLayout
   ''');
+  }
   return isElementCreation || isElementMutation || isDependsOnElement || isDependsOnStyleLayout;
 }
 

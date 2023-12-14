@@ -9,10 +9,12 @@ class UICommandIterator extends Iterator<UICommand?> {
   int _chunkIndex = 0;
   int _commandIndex = 0;
   int _commandSize = 0;
+  int commandFlag = 0;
 
-  void addCommandChunks(List<UICommand> chunk) {
+  void addCommandChunks(List<UICommand> chunk, int flag) {
     _commandChunks.add(chunk);
     _commandSize += chunk.length;
+    commandFlag = commandFlag | flag;
   }
 
   bool isEmpty() {
