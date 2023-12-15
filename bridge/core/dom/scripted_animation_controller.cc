@@ -69,13 +69,8 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
                                                     uint32_t callback_id,
                                                     ExceptionState& exception_state) {
-  context->dartMethodPtr()->cancelAnimationFrame(context->isDedicated(), context->contextId(), callback_id);
-
   auto frame_callback = frame_request_callback_collection_.GetFrameCallback(callback_id);
   if (frame_callback != nullptr) {
-    if (frame_callback->status() != FrameCallback::FrameStatus::kPending) {
-      frame_request_callback_collection_.RemoveFrameCallback(callback_id);
-    }
     frame_callback->SetStatus(FrameCallback::kCanceled);
   }
 }
