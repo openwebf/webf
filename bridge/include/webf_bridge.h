@@ -32,6 +32,8 @@ struct WebFInfo {
 
 typedef void (*Task)(void*);
 typedef std::function<void()> DartWork;
+typedef void (*AllocateNewPageCallback)(Dart_Handle dart_handle, void*);
+typedef void (*DisposePageCallback)(Dart_Handle dart_handle);
 typedef void (*InvokeModuleEventCallback)(Dart_Handle dart_handle, void*);
 typedef void (*EvaluateQuickjsByteCodeCallback)(Dart_Handle dart_handle, int8_t);
 typedef void (*EvaluateScriptsCallback)(Dart_Handle dart_handle, int8_t);
@@ -40,13 +42,20 @@ WEBF_EXPORT_C
 void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len);
 
 WEBF_EXPORT_C
+void allocateNewPage(double thread_identity, void* dart_isolate_context, Dart_Handle dart_handle, AllocateNewPageCallback result_callback);
+
+WEBF_EXPORT_C
 void* allocateNewPageSync(double thread_identity, void* dart_isolate_context);
 
 WEBF_EXPORT_C
 int64_t newPageIdSync();
 
 WEBF_EXPORT_C
+void disposePage(double dedicated_thread, void* dart_isolate_context, void* page, Dart_Handle dart_handle, DisposePageCallback result_callback);
+
+WEBF_EXPORT_C
 void disposePageSync(double dedicated_thread, void* dart_isolate_context, void* page);
+
 WEBF_EXPORT_C
 void evaluateScripts(void* page,
                      const char* code,

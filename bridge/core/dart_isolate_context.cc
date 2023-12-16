@@ -127,65 +127,109 @@ class PageGroup {
   std::vector<WebFPage*> pages_;
 };
 
-void* DartIsolateContext::AddNewPage(double thread_identity) {
+void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
+                                                     DartIsolateContext* dart_isolate_context,
+                                                     double page_context_id,
+                                                     Dart_Handle dart_handle,
+                                                     AllocateNewPageCallback result_callback) {
+  DartIsolateContext::InitializeJSRuntime();
+  auto* page = new WebFPage(dart_isolate_context, true, page_context_id, nullptr);
+  dart_isolate_context->dispatcher_->PostToDart(true, HandleNewPageResult, page_group, dart_handle, result_callback,
+                                                page);
+}
+
+void DartIsolateContext::DisposePageAndKilledJSThread(DartIsolateContext* dart_isolate_context,
+                                                      WebFPage* page,
+                                                      int thread_group_id,
+                                                      Dart_Handle dart_handle,
+                                                      DisposePageCallback result_callback) {
+  delete page;
+  dart_isolate_context->dispatcher_->PostToDart(true, HandleDisposePage, dart_handle, result_callback);
+}
+
+void DartIsolateContext::DisposePageInJSThread(DartIsolateContext* dart_isolate_context,
+                                               WebFPage* page,
+                                               Dart_Handle dart_handle,
+                                               DisposePageCallback result_callback) {
+  delete page;
+  dart_isolate_context->dispatcher_->PostToDart(true, HandleDisposePage, dart_handle, result_callback);
+}
+
+void* DartIsolateContext::AddNewPage(double thread_identity,
+                                     Dart_Handle dart_handle,
+                                     AllocateNewPageCallback result_callback) {
   bool is_in_flutter_ui_thread = thread_identity < 0;
+  assert(is_in_flutter_ui_thread == false);
 
-  if (!is_in_flutter_ui_thread) {
-    int thread_group_id = static_cast<int>(thread_identity);
+  int thread_group_id = static_cast<int>(thread_identity);
 
-    PageGroup* page_group;
-    if (!dispatcher_->IsThreadGroupExist(thread_group_id)) {
-      dispatcher_->AllocateNewJSThread(thread_group_id);
-      page_group = new PageGroup();
-      dispatcher_->SetOpaqueForJSThread(thread_group_id, page_group, [](void* p) {
-        delete static_cast<PageGroup*>(p);
-        DartIsolateContext::FinalizeJSRuntime();
-      });
-    } else {
-      page_group = static_cast<PageGroup*>(dispatcher_->GetOpaque(thread_group_id));
-    }
-
-    auto* page = static_cast<WebFPage*>(dispatcher_->PostToJsSync(
-        true, thread_group_id,
-        [](DartIsolateContext* dart_isolate_context, double page_context_id) -> void* {
-          InitializeJSRuntime();
-          return new webf::WebFPage(dart_isolate_context, true, page_context_id, nullptr);
-        },
-        this, thread_identity));
-
-    page_group->AddNewPage(page);
-
-    return page;
+  PageGroup* page_group;
+  if (!dispatcher_->IsThreadGroupExist(thread_group_id)) {
+    dispatcher_->AllocateNewJSThread(thread_group_id);
+    page_group = new PageGroup();
+    dispatcher_->SetOpaqueForJSThread(thread_group_id, page_group, [](void* p) {
+      delete static_cast<PageGroup*>(p);
+      DartIsolateContext::FinalizeJSRuntime();
+    });
   } else {
-    auto page = std::make_unique<webf::WebFPage>(this, false, thread_identity, nullptr);
-    void* p = page.get();
-    pages_in_ui_thread_.emplace(std::move(page));
-    return p;
+    page_group = static_cast<PageGroup*>(dispatcher_->GetOpaque(thread_group_id));
+  }
+
+  dispatcher_->PostToJs(true, thread_group_id, InitializeNewPageInJSThread, page_group, this, thread_identity,
+                        dart_handle, result_callback);
+  return nullptr;
+}
+
+void* DartIsolateContext::AddNewPageSync(double thread_identity) {
+  auto page = std::make_unique<WebFPage>(this, false, thread_identity, nullptr);
+  void* p = page.get();
+  pages_in_ui_thread_.emplace(std::move(page));
+  return p;
+}
+
+void DartIsolateContext::HandleNewPageResult(PageGroup* page_group,
+                                             Dart_Handle persistent_handle,
+                                             AllocateNewPageCallback result_callback,
+                                             WebFPage* new_page) {
+  page_group->AddNewPage(new_page);
+  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  result_callback(handle, new_page);
+  Dart_DeletePersistentHandle_DL(persistent_handle);
+}
+
+void DartIsolateContext::HandleDisposePage(Dart_Handle persistent_handle, DisposePageCallback result_callback) {
+  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  result_callback(handle);
+  Dart_DeletePersistentHandle_DL(persistent_handle);
+}
+
+void DartIsolateContext::RemovePage(double thread_identity,
+                                    WebFPage* page,
+                                    Dart_Handle dart_handle,
+                                    DisposePageCallback result_callback) {
+  bool is_in_flutter_ui_thread = thread_identity < 0;
+  assert(is_in_flutter_ui_thread == false);
+
+  int thread_group_id = static_cast<int>(page->contextId());
+  auto page_group = static_cast<PageGroup*>(dispatcher_->GetOpaque(thread_group_id));
+
+  page_group->RemovePage(page);
+
+  if (page_group->Empty()) {
+    dispatcher_->PostToJsAndCallback(
+        true, thread_group_id, DisposePageAndKilledJSThread,
+        [this, thread_group_id]() { dispatcher_->KillJSThread(thread_group_id); }, this, page, thread_group_id,
+        dart_handle, result_callback);
+  } else {
+    dispatcher_->PostToJs(true, thread_group_id, DisposePageInJSThread, this, page, dart_handle, result_callback);
   }
 }
 
-void DartIsolateContext::RemovePage(double thread_identity, webf::WebFPage* page) {
-  bool is_in_flutter_ui_thread = thread_identity < 0;
-
-  if (!is_in_flutter_ui_thread) {
-    int thread_group_id = static_cast<int>(page->contextId());
-    auto page_group = static_cast<PageGroup*>(dispatcher_->GetOpaque(thread_group_id));
-    page_group->RemovePage(page);
-
-    if (page_group->Empty()) {
-      dispatcher_->PostToJsSync(
-          true, thread_group_id, [](WebFPage* page) { delete page; }, page);
-      dispatcher_->KillJSThread(thread_group_id);
-    } else {
-      dispatcher_->PostToJsSync(
-          true, thread_group_id, [](WebFPage* page) { delete page; }, page);
-    }
-  } else {
-    for (auto it = pages_in_ui_thread_.begin(); it != pages_in_ui_thread_.end(); ++it) {
-      if (it->get() == page) {
-        pages_in_ui_thread_.erase(it);
-        break;
-      }
+void DartIsolateContext::RemovePageSync(double thread_identity, WebFPage* page) {
+  for (auto it = pages_in_ui_thread_.begin(); it != pages_in_ui_thread_.end(); ++it) {
+    if (it->get() == page) {
+      pages_in_ui_thread_.erase(it);
+      break;
     }
   }
 }
