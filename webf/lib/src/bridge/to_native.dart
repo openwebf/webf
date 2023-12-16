@@ -420,17 +420,45 @@ Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   return _initDartIsolateContext(nativePort, bytes, dartMethods.length);
 }
 
-typedef NativeDisposePage = Void Function(Double contextId, Pointer<Void>, Pointer<Void> page);
-typedef DartDisposePage = void Function(double, Pointer<Void>, Pointer<Void> page);
+typedef HandleDisposePageResult = Void Function(Handle context);
+typedef NativeDisposePage = Void Function(Double contextId, Pointer<Void>, Pointer<Void> page, Handle context,
+    Pointer<NativeFunction<HandleDisposePageResult>> resultCallback);
+typedef DartDisposePage = void Function(double, Pointer<Void>, Pointer<Void> page, Object context,
+    Pointer<NativeFunction<HandleDisposePageResult>> resultCallback);
 
 final DartDisposePage _disposePage =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePageSync').asFunction();
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePage').asFunction();
 
-FutureOr<void> disposePage(double contextId) async {
+typedef NativeDisposePageSync = Void Function(Double contextId, Pointer<Void>, Pointer<Void> page);
+typedef DartDisposePageSync = void Function(double, Pointer<Void>, Pointer<Void> page);
+
+final DartDisposePageSync _disposePageSync =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePageSync>>('disposePageSync').asFunction();
+
+void _handleDisposePageResult(_DisposePageContext context) {
+  context.completer.complete();
+}
+
+class _DisposePageContext {
+  Completer<void> completer;
+
+  _DisposePageContext(this.completer);
+}
+
+FutureOr<void> disposePage(bool isSync, double contextId) async {
   await waitingSyncTaskComplete(contextId);
   Pointer<Void> page = _allocatedPages[contextId]!;
-  _disposePage(contextId, dartContext!.pointer, page);
-  _allocatedPages.remove(contextId);
+
+  if (isSync) {
+    _disposePageSync(contextId, dartContext!.pointer, page);
+    _allocatedPages.remove(contextId);
+  } else {
+    Completer<void> completer = Completer();
+    _DisposePageContext context = _DisposePageContext(completer);
+    Pointer<NativeFunction<HandleDisposePageResult>> f = Pointer.fromFunction(_handleDisposePageResult);
+    _disposePage(contextId, dartContext!.pointer, page, context, f);
+    return completer.future;
+  }
 }
 
 typedef NativeNewPageId = Int64 Function();
@@ -443,18 +471,47 @@ int newPageId() {
   return _newPageId();
 }
 
-typedef NativeAllocateNewPage = Pointer<Void> Function(Double, Pointer<Void>);
-typedef DartAllocateNewPage = Pointer<Void> Function(double, Pointer<Void>);
+typedef NativeAllocateNewPageSync = Pointer<Void> Function(Double, Pointer<Void>);
+typedef DartAllocateNewPageSync = Pointer<Void> Function(double, Pointer<Void>);
+typedef HandleAllocateNewPageResult = Void Function(Handle object, Pointer<Void> page);
+typedef NativeAllocateNewPage = Void Function(
+    Double, Pointer<Void>, Handle object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
+typedef DartAllocateNewPage = void Function(
+    double, Pointer<Void>, Object object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
+
+final DartAllocateNewPageSync _allocateNewPageSync =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPageSync>>('allocateNewPageSync').asFunction();
 
 final DartAllocateNewPage _allocateNewPage =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPageSync').asFunction();
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
-FutureOr<void> allocateNewPage(double newContextId) async {
+void _handleAllocateNewPageResult(_AllocateNewPageContext context, Pointer<Void> page) {
+  assert(!_allocatedPages.containsKey(context.contextId));
+  _allocatedPages[context.contextId] = page;
+  context.completer.complete();
+}
+
+class _AllocateNewPageContext {
+  Completer<void> completer;
+  double contextId;
+
+  _AllocateNewPageContext(this.completer, this.contextId);
+}
+
+Future<void> allocateNewPage(bool sync, double newContextId) async {
   await waitingSyncTaskComplete(newContextId);
 
-  Pointer<Void> page = _allocateNewPage(newContextId, dartContext!.pointer);
-  assert(!_allocatedPages.containsKey(newContextId));
-  _allocatedPages[newContextId] = page;
+  if (!sync) {
+    Completer<void> completer = Completer();
+    _AllocateNewPageContext context = _AllocateNewPageContext(completer, newContextId);
+    Pointer<NativeFunction<HandleAllocateNewPageResult>> f = Pointer.fromFunction(_handleAllocateNewPageResult);
+    _allocateNewPage(newContextId, dartContext!.pointer, context, f);
+    return completer.future;
+  } else {
+    Pointer<Void> page = _allocateNewPageSync(newContextId, dartContext!.pointer);
+    assert(!_allocatedPages.containsKey(newContextId));
+    _allocatedPages[newContextId] = page;
+  }
 }
 
 typedef NativeInitDartDynamicLinking = Void Function(Pointer<Void> data);
@@ -674,7 +731,6 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   assert(_allocatedPages.containsKey(view.contextId));
 
   _NativeCommandData rawCommands = readNativeUICommandMemory(view.contextId);
-
   List<UICommand>? commands;
   if (rawCommands.rawMemory.isNotEmpty) {
     commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
@@ -690,8 +746,8 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
 
   bool isFinishedRecording = commands != null ? _isFinishedRecording(commands.isEmpty ? null : commands.last) : false;
 
-  if (shouldExecUICommands(view, isFinishedRecording, selfPointer, view.pendingUICommands.commandFlag, reason)) {
+  // if (shouldExecUICommands(view, isFinishedRecording, selfPointer, view.pendingUICommands.commandFlag, reason)) {
     execUICommands(view, view.pendingUICommands);
     view.pendingUICommands.clear();
-  }
+  // }
 }

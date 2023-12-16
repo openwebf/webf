@@ -25,6 +25,8 @@ class UICommandIterator extends Iterator<UICommand?> {
     _commandChunks.clear();
     _chunkIndex = 0;
     _commandIndex = 0;
+    commandFlag = 0;
+    _commandSize = 0;
   }
 
   int size() {

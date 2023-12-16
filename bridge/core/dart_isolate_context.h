@@ -15,6 +15,7 @@ namespace webf {
 
 class WebFPage;
 class DartIsolateContext;
+class PageGroup;
 
 struct DartWireContext {
   ScriptValue jsObject;
@@ -41,14 +42,35 @@ class DartIsolateContext {
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
-  void* AddNewPage(double thread_identity);
-  void RemovePage(double thread_identity, WebFPage* page);
+  void* AddNewPage(double thread_identity, Dart_Handle dart_handle, AllocateNewPageCallback result_callback);
+  void* AddNewPageSync(double thread_identity);
+  void RemovePage(double thread_identity, WebFPage* page, Dart_Handle dart_handle, DisposePageCallback result_callback);
+  void RemovePageSync(double thread_identity, WebFPage* page);
 
   ~DartIsolateContext();
 
  private:
   static void InitializeJSRuntime();
   static void FinalizeJSRuntime();
+  static void InitializeNewPageInJSThread(PageGroup* page_group,
+                                          DartIsolateContext* dart_isolate_context,
+                                          double page_context_id,
+                                          Dart_Handle dart_handle,
+                                          AllocateNewPageCallback result_callback);
+  static void DisposePageAndKilledJSThread(DartIsolateContext* dart_isolate_context,
+                                           WebFPage* page,
+                                           int thread_group_id,
+                                           Dart_Handle dart_handle,
+                                           DisposePageCallback result_callback);
+  static void DisposePageInJSThread(DartIsolateContext* dart_isolate_context,
+                                    WebFPage* page,
+                                    Dart_Handle dart_handle,
+                                    DisposePageCallback result_callback);
+  static void HandleNewPageResult(PageGroup* page_group,
+                                  Dart_Handle persistent_handle,
+                                  AllocateNewPageCallback result_callback,
+                                  WebFPage* new_page);
+  static void HandleDisposePage(Dart_Handle persistent_handle, DisposePageCallback result_callback);
 
   int is_valid_{false};
   std::thread::id running_thread_;

@@ -319,7 +319,7 @@ class WebFViewController implements WidgetsBindingObserver {
     // Should clear previous page cached ui commands
     clearUICommand(_contextId);
 
-    await disposePage(_contextId);
+    await disposePage(runningThread is FlutterUIThread, _contextId);
 
     clearCssLength();
 

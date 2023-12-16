@@ -119,6 +119,7 @@ bool shouldExecUICommands(WebFViewController view, bool isFinishedRecording, Poi
 
   bool isElementCreation = isCommandsContainsNodeCreation(commandFlag);
   bool isElementMutation = isCommandsContainsNodeMutation(commandFlag);
+  bool isStyleUpdate = isCommandsContainsStyleUpdate(commandFlag);
 
   bool isDependsOnElement = isFlushUICommandReasonDependsOnElement(operationReason);
   if (isDependsOnElement) {
@@ -137,7 +138,7 @@ UI COMMAND CONDITION CHECK:
   isDependsOnStyleLayout: $isDependsOnStyleLayout
   ''');
   }
-  return isElementCreation || isElementMutation || isDependsOnElement || isDependsOnStyleLayout;
+  return isElementCreation || isElementMutation || isDependsOnElement || isDependsOnStyleLayout || isStyleUpdate;
 }
 
 void execUICommands(WebFViewController view, UICommandIterator commands) {
