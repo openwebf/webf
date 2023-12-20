@@ -46,6 +46,7 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
   renderers.add(ancestor);
   Offset offset = Offset.zero;
 
+  final Matrix4 transform = Matrix4.identity();
   for (int index = renderers.length - 1; index > 0; index -= 1) {
     RenderObject parentRenderer = renderers[index];
     RenderObject childRenderer = renderers[index - 1];
@@ -223,7 +224,7 @@ class RenderLayoutBox extends RenderBoxModel
     super.move(child, after: after);
     _paintingOrder = null;
   }
-  
+
   @override
   BoxConstraints getConstraints() {
     BoxConstraints boxConstraints = super.getConstraints();
