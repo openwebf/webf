@@ -144,7 +144,7 @@ void DartIsolateContext::DisposePageAndKilledJSThread(DartIsolateContext* dart_i
                                                       Dart_Handle dart_handle,
                                                       DisposePageCallback result_callback) {
   delete page;
-  dart_isolate_context->dispatcher_->PostToDart(true, HandleDisposePage, dart_handle, result_callback);
+  dart_isolate_context->dispatcher_->PostToDart(true, HandleDisposePageAndKillJSThread, dart_isolate_context, thread_group_id, dart_handle, result_callback);
 }
 
 void DartIsolateContext::DisposePageInJSThread(DartIsolateContext* dart_isolate_context,
@@ -203,6 +203,14 @@ void DartIsolateContext::HandleDisposePage(Dart_Handle persistent_handle, Dispos
   Dart_DeletePersistentHandle_DL(persistent_handle);
 }
 
+void DartIsolateContext::HandleDisposePageAndKillJSThread(DartIsolateContext* dart_isolate_context, int thread_group_id, Dart_Handle persistent_handle, DisposePageCallback result_callback) {
+  dart_isolate_context->dispatcher_->KillJSThreadSync(thread_group_id);
+
+  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  result_callback(handle);
+  Dart_DeletePersistentHandle_DL(persistent_handle);
+}
+
 void DartIsolateContext::RemovePage(double thread_identity,
                                     WebFPage* page,
                                     Dart_Handle dart_handle,
@@ -216,9 +224,10 @@ void DartIsolateContext::RemovePage(double thread_identity,
   page_group->RemovePage(page);
 
   if (page_group->Empty()) {
-    dispatcher_->PostToJsAndCallback(
+    page->executingContext()->SetContextInValid();
+    dispatcher_->PostToJs(
         true, thread_group_id, DisposePageAndKilledJSThread,
-        [this, thread_group_id]() { dispatcher_->KillJSThread(thread_group_id); }, this, page, thread_group_id,
+        this, page, thread_group_id,
         dart_handle, result_callback);
   } else {
     dispatcher_->PostToJs(true, thread_group_id, DisposePageInJSThread, this, page, dart_handle, result_callback);

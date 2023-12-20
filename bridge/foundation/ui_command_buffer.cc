@@ -44,12 +44,11 @@ UICommandKind GetKindFromUICommand(UICommand command) {
 }
 
 UICommandBuffer::UICommandBuffer(ExecutingContext* context)
-    : context_(context) {
-  storage_.buffer_ = (UICommandItem*)malloc(sizeof(UICommandItem) * MAXIMUM_UI_COMMAND_SIZE);
+    : context_(context), buffer_((UICommandItem*)malloc(sizeof(UICommandItem) * MAXIMUM_UI_COMMAND_SIZE)) {
 }
 
 UICommandBuffer::~UICommandBuffer() {
-  free(storage_.buffer_);
+  free(buffer_);
 }
 
 void UICommandBuffer::addCommand(UICommand command,
@@ -66,7 +65,7 @@ void UICommandBuffer::addCommand(UICommand command,
 
   if (command == UICommand::kFinishRecordingCommand) {
     if (size_ == 0) return;
-    if (storage_.buffer_[size_ - 1].type == static_cast<int32_t>(UICommand::kFinishRecordingCommand)) return;
+    if (buffer_[size_ - 1].type == static_cast<int32_t>(UICommand::kFinishRecordingCommand)) return;
   }
 
   UICommandItem item{static_cast<int32_t>(command), args_01.get(), nativePtr, nativePtr2};
@@ -76,7 +75,7 @@ void UICommandBuffer::addCommand(UICommand command,
 
 void UICommandBuffer::updateFlags(UICommand command) {
   UICommandKind type = GetKindFromUICommand(command);
-  storage_.kind_flag = storage_.kind_flag | type;
+  kind_flag = kind_flag | type;
 }
 
 
@@ -86,7 +85,7 @@ void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_upda
   }
 
   if (size_ >= max_size_) {
-    storage_.buffer_ = (UICommandItem*)realloc(storage_.buffer_, sizeof(UICommandItem) * max_size_ * 2);
+    buffer_ = (UICommandItem*)realloc(buffer_, sizeof(UICommandItem) * max_size_ * 2);
     max_size_ = max_size_ * 2;
   }
 
@@ -97,12 +96,16 @@ void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_upda
   }
 #endif
 
-  storage_.buffer_[size_] = item;
+  buffer_[size_] = item;
   size_++;
 }
 
-void* UICommandBuffer::data() {
-  return &storage_;
+UICommandItem* UICommandBuffer::data() {
+  return buffer_;
+}
+
+uint32_t UICommandBuffer::kindFlag() {
+  return kind_flag;
 }
 
 bool UICommandBuffer::isRecording() {
@@ -118,9 +121,9 @@ bool UICommandBuffer::empty() {
 }
 
 void UICommandBuffer::clear() {
-  memset(storage_.buffer_, 0, sizeof(UICommandItem) * size_);
+  memset(buffer_, 0, sizeof(UICommandItem) * size_);
   size_ = 0;
-  storage_.kind_flag = 0;
+  kind_flag = 0;
   update_batched_ = false;
 }
 

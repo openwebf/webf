@@ -10,7 +10,6 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/webf.dart';
 
@@ -158,6 +157,9 @@ dynamic invokeModuleEvent(double contextId, String moduleName, Event? event, ext
   }
   Completer<dynamic> completer = Completer();
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+
+  if (controller.view.disposed) return null;
+
   Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
   Pointer<Void> rawEvent = event == null ? nullptr : event.toRaw().cast<Void>();
   Pointer<NativeValue> extraData = malloc.allocate(sizeOf<NativeValue>());
@@ -170,6 +172,11 @@ dynamic invokeModuleEvent(double contextId, String moduleName, Event? event, ext
   _InvokeModuleCallbackContext callbackContext = _InvokeModuleCallbackContext(completer, controller, extraData);
 
   scheduleMicrotask(() {
+    if (controller.view.disposed) {
+      callbackContext.completer.complete(null);
+      return;
+    }
+
     _invokeModuleEvent(_allocatedPages[contextId]!, nativeModuleName,
         event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData, callbackContext, callback);
   });
@@ -446,7 +453,6 @@ class _DisposePageContext {
 }
 
 FutureOr<void> disposePage(bool isSync, double contextId) async {
-  await waitingSyncTaskComplete(contextId);
   Pointer<Void> page = _allocatedPages[contextId]!;
 
   if (isSync) {
@@ -628,18 +634,18 @@ void releaseUICommandLocks(double contextId) {
   _releaseUiCommandLocks(_allocatedPages[contextId]!);
 }
 
-class UICommandBufferStorage extends Struct {
-  @Uint32()
-  external int flag;
-
-  external Pointer<Uint64> buffer;
-}
-
-typedef NativeGetUICommandItems = Pointer<UICommandBufferStorage> Function(Pointer<Void>);
-typedef DartGetUICommandItems = Pointer<UICommandBufferStorage> Function(Pointer<Void>);
+typedef NativeGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
+typedef DartGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
 
 final DartGetUICommandItems _getUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandItems>>('getUICommandItems').asFunction();
+
+typedef NativeGetUICommandKindFlags = Uint32 Function(Pointer<Void>);
+typedef DartGetUICommandKindFlags = int Function(Pointer<Void>);
+
+final DartGetUICommandKindFlags _getUICommandKindFlags =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandKindFlags>>('getUICommandKindFlag').asFunction();
+
 
 typedef NativeGetUICommandItemSize = Int64 Function(Pointer<Void>);
 typedef DartGetUICommandItemSize = int Function(Pointer<Void>);
@@ -698,7 +704,8 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
   // Stop the mutations from JavaScript thread.
   acquireUICommandLocks(contextId);
 
-  Pointer<UICommandBufferStorage> nativeCommandItemPointer = _getUICommandItems(_allocatedPages[contextId]!);
+  Pointer<Uint64> nativeCommandItemPointer = _getUICommandItems(_allocatedPages[contextId]!);
+  int flag = _getUICommandKindFlags(_allocatedPages[contextId]!);
   int commandLength = _getUICommandItemSize(_allocatedPages[contextId]!);
 
   if (commandLength == 0 || nativeCommandItemPointer == nullptr) {
@@ -706,11 +713,10 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
     return _NativeCommandData.empty();
   }
 
-  List<int> rawMemory = nativeCommandItemPointer.ref.buffer
+  List<int> rawMemory = nativeCommandItemPointer
       .cast<Int64>()
       .asTypedList((commandLength) * nativeCommandSize)
       .toList(growable: false);
-  int flag = nativeCommandItemPointer.ref.flag;
   _clearUICommandItems(_allocatedPages[contextId]!);
 
   // Release the mutations from JavaScript thread.
@@ -723,12 +729,13 @@ bool _isStartRecording(UICommand? command) {
   return command?.type == UICommandType.startRecordingCommand;
 }
 
-bool _isFinishedRecording(UICommand? command) {
-  return command?.type == UICommandType.finishRecordingCommand;
-}
+// bool _isFinishedRecording(UICommand? command) {
+//   return command?.type == UICommandType.finishRecordingCommand;
+// }
 
 void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer, int reason) {
   assert(_allocatedPages.containsKey(view.contextId));
+  if (view.disposed) return;
 
   _NativeCommandData rawCommands = readNativeUICommandMemory(view.contextId);
   List<UICommand>? commands;
@@ -737,17 +744,25 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
 
     bool isBeginningRecording = _isStartRecording(commands.isEmpty ? null : commands.first);
     SchedulerBinding.instance.scheduleFrame();
-    if (isBeginningRecording) {
-      assert(view.pendingUICommands.isEmpty());
-    }
+    // if (isBeginningRecording) {
+    //   assert(view.pendingUICommands.isEmpty());
+    // }
 
-    view.pendingUICommands.addCommandChunks(commands, rawCommands.flag);
+    // view.pendingUICommands.add(commands, rawCommands.flag);
+    view.pendingUICommands.add(commands);
   }
 
-  bool isFinishedRecording = commands != null ? _isFinishedRecording(commands.isEmpty ? null : commands.last) : false;
+  // bool isFinishedRecording = commands != null ? _isFinishedRecording(commands.isEmpty ? null : commands.last) : false;
 
   // if (shouldExecUICommands(view, isFinishedRecording, selfPointer, view.pendingUICommands.commandFlag, reason)) {
+  // if (view.pendingUICommands.size() > 0) {
+  //   execUICommands(view, view.pendingUICommands);
+  //   view.pendingUICommands.clear();
+  // }
+  if (view.pendingUICommands.isNotEmpty) {
     execUICommands(view, view.pendingUICommands);
     view.pendingUICommands.clear();
+  }
+
   // }
 }

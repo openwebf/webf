@@ -69,8 +69,6 @@ class Looper {
     return task_copy->getResult();
   }
 
-  void Pause();
-  void Resume();
   void Stop();
 
   void SetOpaque(void* p, OpaqueFinalizer finalizer);

@@ -141,11 +141,12 @@ UI COMMAND CONDITION CHECK:
   return isElementCreation || isElementMutation || isDependsOnElement || isDependsOnStyleLayout || isStyleUpdate;
 }
 
-void execUICommands(WebFViewController view, UICommandIterator commands) {
+void execUICommands(WebFViewController view, List<List<UICommand>> commands) {
+  print('BEGIN EXEC UI COMMAND >>>>>> .');
   Map<int, bool> pendingStylePropertiesTargets = {};
   Set<int> pendingRecalculateTargets = {};
 
-  final iterable = UICommandIterable(commands);
+  // final iterable = UICommandIterable(commands);
 
   for(UICommand? command in iterable) {
     if (command == null) continue;

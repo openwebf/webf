@@ -95,6 +95,9 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   double? contextId = event.target?.contextId;
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+
+  if (controller.view.disposed) return;
+
   if (contextId != null &&
       pointer != null &&
       pointer.ref.invokeBindingMethodFromDart != nullptr &&

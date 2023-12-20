@@ -22,6 +22,7 @@ class SharedUICommand : public DartReadable {
                   bool request_ui_update = true);
 
   void* data();
+  uint32_t kindFlag();
   int64_t size();
   bool empty();
   void clear();

@@ -65,11 +65,6 @@ struct UICommandItem {
 
 UICommandKind GetKindFromUICommand(UICommand type);
 
-struct UICommandBufferStorage {
-  uint32_t kind_flag;
-  UICommandItem* buffer_{nullptr};
-};
-
 class UICommandBuffer {
  public:
   UICommandBuffer() = delete;
@@ -80,7 +75,8 @@ class UICommandBuffer {
                   void* nativePtr,
                   void* nativePtr2,
                   bool request_ui_update = true);
-  void* data();
+  UICommandItem* data();
+  uint32_t kindFlag();
   bool isRecording();
   int64_t size();
   bool empty();
@@ -91,7 +87,8 @@ class UICommandBuffer {
   void updateFlags(UICommand command);
 
   ExecutingContext* context_{nullptr};
-  UICommandBufferStorage storage_;
+  UICommandItem* buffer_{nullptr};
+  uint32_t kind_flag{0};
   bool update_batched_{false};
   int64_t size_{0};
   int64_t max_size_{MAXIMUM_UI_COMMAND_SIZE};
