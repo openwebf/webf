@@ -37,16 +37,6 @@ void Looper::Start() {
   }
 }
 
-void Looper::Pause() {
-  WEBF_LOG(DEBUG) << "Looper::Pause" << std::endl;
-  paused_ = true;
-}
-
-void Looper::Resume() {
-  paused_ = false;
-  cv_.notify_one();  // wake up the worker thread.
-}
-
 void Looper::Stop() {
   {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -75,7 +65,7 @@ void Looper::Run() {
         tasks_.pop();
       }
     }
-    if (task != nullptr) {
+    if (task != nullptr && running_) {
       (*task)();
     }
   }

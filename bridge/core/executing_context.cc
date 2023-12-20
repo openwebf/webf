@@ -188,6 +188,10 @@ bool ExecutingContext::IsContextValid() const {
   return is_context_valid_;
 }
 
+void ExecutingContext::SetContextInValid() {
+  is_context_valid_ = false;
+}
+
 bool ExecutingContext::IsCtxValid() const {
   return script_state_.Invalid();
 }

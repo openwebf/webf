@@ -34,6 +34,10 @@ void* SharedUICommand::data() {
   return front_buffer_->data();
 }
 
+uint32_t SharedUICommand::kindFlag() {
+  return front_buffer_->kindFlag();
+}
+
 // second called by dart to get the size of commands.
 int64_t SharedUICommand::size() {
   return front_buffer_->size();

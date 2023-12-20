@@ -120,7 +120,6 @@ abstract class DynamicBindingObject extends BindingObject {
 
   void nativeGetPropertiesAndMethods(Pointer<NativeValue> data) async {
     assert(pointer != null);
-    if (pointer!.ref.invokeBindingMethodFromDart == nullptr) return;
 
     List<String> properties = _properties.keys.toList(growable: false);
     List<String> syncMethods = [];

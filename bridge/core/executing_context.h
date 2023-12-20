@@ -80,6 +80,7 @@ class ExecutingContext {
   bool EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine);
   bool EvaluateByteCode(uint8_t* bytes, size_t byteLength);
   bool IsContextValid() const;
+  void SetContextInValid();
   bool IsCtxValid() const;
   JSValue Global();
   JSContext* ctx();
@@ -188,7 +189,7 @@ class ExecutingContext {
   // ----------------------------------------------------------------------
   // All members below will be free before ScriptState freed.
   // ----------------------------------------------------------------------
-  bool is_context_valid_{false};
+  std::atomic<bool> is_context_valid_{false};
   double context_id_;
   JSExceptionHandler handler_;
   void* owner_;

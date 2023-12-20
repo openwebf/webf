@@ -43,7 +43,7 @@ bool Dispatcher::IsThreadBlocked(int32_t js_context_id) {
   return loop->isBlocked();
 }
 
-void Dispatcher::KillJSThread(int32_t js_context_id) {
+void Dispatcher::KillJSThreadSync(int32_t js_context_id) {
   assert(js_threads_.count(js_context_id) > 0);
   auto& looper = js_threads_[js_context_id];
   PostToJsSync(

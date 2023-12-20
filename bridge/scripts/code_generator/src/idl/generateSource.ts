@@ -529,7 +529,8 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
 
   ExceptionState exception_state;
   ExecutingContext* context = ExecutingContext::From(ctx);
-  MemberMutationScope scope{ExecutingContext::From(ctx)};
+  if (!context->IsContextValid()) return JS_NULL;
+  MemberMutationScope scope{context};
   ${returnValueInit}
 
   do {  // Dummy loop for use of 'break'.

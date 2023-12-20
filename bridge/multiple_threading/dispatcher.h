@@ -40,7 +40,7 @@ class Dispatcher {
   void AllocateNewJSThread(int32_t js_context_id);
   bool IsThreadGroupExist(int32_t js_context_id);
   bool IsThreadBlocked(int32_t js_context_id);
-  void KillJSThread(int32_t js_context_id);
+  void KillJSThreadSync(int32_t js_context_id);
   void SetOpaqueForJSThread(int32_t js_context_id, void* opaque, OpaqueFinalizer finalizer);
   void* GetOpaque(int32_t js_context_id);
 

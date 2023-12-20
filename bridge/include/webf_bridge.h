@@ -92,6 +92,8 @@ WEBF_EXPORT_C
 void dispatchUITask(void* page, void* context, void* callback);
 WEBF_EXPORT_C
 void* getUICommandItems(void* page);
+WEBF_EXPORT_C
+uint32_t getUICommandKindFlag(void* page);
 
 WEBF_EXPORT_C
 void acquireUiCommandLocks(void* page);
