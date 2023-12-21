@@ -97,13 +97,17 @@ JSRuntime* DartIsolateContext::runtime() {
   return runtime_;
 }
 
-DartIsolateContext::~DartIsolateContext() {
-  is_valid_ = false;
-  dispatcher_.reset();
-  data_.reset();
-  pages_in_ui_thread_.clear();
-  running_dart_isolates--;
-  FinalizeJSRuntime();
+DartIsolateContext::~DartIsolateContext() {}
+
+void DartIsolateContext::Dispose(multi_threading::Callback callback) {
+  dispatcher_->Dispose([this, &callback]() {
+    is_valid_ = false;
+    data_.reset();
+    pages_in_ui_thread_.clear();
+    running_dart_isolates--;
+    FinalizeJSRuntime();
+    callback();
+ });
 }
 
 class PageGroup {

@@ -48,6 +48,7 @@ class DartIsolateContext {
   void RemovePageSync(double thread_identity, WebFPage* page);
 
   ~DartIsolateContext();
+  void Dispose(multi_threading::Callback callback);
 
  private:
   static void InitializeJSRuntime();

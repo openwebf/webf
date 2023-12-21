@@ -66,7 +66,7 @@ void Looper::Run() {
       }
     }
     if (task != nullptr && running_) {
-      (*task)();
+      (*task)(false);
     }
   }
 }

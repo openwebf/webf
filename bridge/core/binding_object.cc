@@ -118,8 +118,10 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 
   GetDispatcher()->PostToDartSync(
       GetExecutingContext()->isDedicated(), contextId(),
-      [&](double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
+      [&](bool cancel, double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
           int32_t argc, const NativeValue* argv) {
+        if (cancel) return;
+
 #if ENABLE_LOG
         WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Callback Start";
 #endif
@@ -157,8 +159,10 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
   GetDispatcher()->PostToDartSync(
       GetExecutingContext()->isDedicated(), contextId(),
-      [&](double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
+      [&](bool cancel, double contextId, const NativeBindingObject* binding_object, NativeValue* return_value, NativeValue* method,
           int32_t argc, const NativeValue* argv) {
+        if (cancel) return;
+
 #if ENABLE_LOG
         WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Callback Start";
 #endif

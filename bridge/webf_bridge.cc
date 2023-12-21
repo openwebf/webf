@@ -9,6 +9,7 @@
 #include "core/page.h"
 #include "include/dart_api.h"
 #include "multiple_threading/dispatcher.h"
+#include "multiple_threading/task.h"
 
 #if defined(_WIN32)
 #define SYSTEM_NAME "windows"  // Windows
@@ -94,6 +95,8 @@ void disposePage(double thread_identity,
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: disposePage Call BEGIN";
 #endif
+
+  WEBF_LOG(VERBOSE) << " DISPOSE PAGE START";
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
 
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
@@ -242,8 +245,12 @@ void clearUICommandItems(void* page_) {
 
 // Callbacks when dart context object was finalized by Dart GC.
 static void finalize_dart_context(void* isolate_callback_data, void* peer) {
+  WEBF_LOG(VERBOSE) << " BEGIN FINALIZE DART CONTEXT: ";
   auto* dart_isolate_context = (webf::DartIsolateContext*)peer;
-  delete dart_isolate_context;
+  dart_isolate_context->Dispose([dart_isolate_context]() {
+    free(dart_isolate_context);
+    WEBF_LOG(VERBOSE) << " SUCCESS FINALIZE DART CONTEXT";
+  });
 }
 
 void init_dart_dynamic_linking(void* data) {
@@ -264,8 +271,8 @@ int8_t isJSThreadBlocked(void* dart_isolate_context_, double context_id) {
 }
 
 // run in the dart isolate thread
-void executeNativeCallback(DartWork* work_ptr) {
-  const DartWork dart_work = *work_ptr;
-  dart_work();
+void executeNativeCallback(void* work_ptr) {
+  auto dart_work = *(static_cast<DartWork*>(work_ptr));
+  dart_work(false);
   delete work_ptr;
 }

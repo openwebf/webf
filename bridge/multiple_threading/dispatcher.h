@@ -9,6 +9,7 @@
 #include <include/webf_bridge.h>
 #include <condition_variable>
 #include <functional>
+#include <set>
 #include <memory>
 #include <unordered_map>
 
@@ -43,6 +44,7 @@ class Dispatcher {
   void KillJSThreadSync(int32_t js_context_id);
   void SetOpaqueForJSThread(int32_t js_context_id, void* opaque, OpaqueFinalizer finalizer);
   void* GetOpaque(int32_t js_context_id);
+  void Dispose(Callback callback);
 
   std::unique_ptr<Looper>& looper(int32_t js_context_id);
 
@@ -54,7 +56,7 @@ class Dispatcher {
     }
 
     auto task = std::make_shared<ConcreteTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
-    const DartWork work = [task]() { (*task)(); };
+    DartWork work = [task](bool cancel) { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
     NotifyDart(work_ptr, false);
@@ -78,28 +80,35 @@ class Dispatcher {
 
   template <typename Func, typename... Args>
   auto PostToDartSync(bool dedicated_thread, double js_context_id, Func&& func, Args&&... args)
-      -> std::invoke_result_t<Func, Args...> {
+      -> std::invoke_result_t<Func, bool, Args...> {
     if (!dedicated_thread) {
-      return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
+      return std::invoke(std::forward<Func>(func), false, std::forward<Args>(args)...);
     }
 
     auto task =
         std::make_shared<ConcreteSyncTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
     auto thread_group_id = static_cast<int32_t>(js_context_id);
     auto& looper = js_threads_[thread_group_id];
-    const DartWork work = [task, &looper]() {
+    const DartWork work = [task, &looper](bool cancel) {
 #if ENABLE_LOG
       WEBF_LOG(WARN) << " BLOCKED THREAD " << std::this_thread::get_id() << " HAD BEEN RESUMED";
 #endif
+
+      WEBF_LOG(WARN) << " BLOCKED THREAD " << std::this_thread::get_id() << " HAD BEEN RESUMED" << " is_cancel: " << cancel;
+
       looper->is_blocked_ = false;
-      (*task)();
+      (*task)(cancel);
     };
 
-    const DartWork* work_ptr = new DartWork(work);
+    DartWork* work_ptr = new DartWork(work);
+    pending_dart_tasks_.insert(work_ptr);
+
     NotifyDart(work_ptr, true);
 
     looper->is_blocked_ = true;
     task->wait();
+    pending_dart_tasks_.erase(work_ptr);
+
     return task->getResult();
   }
 
@@ -151,9 +160,9 @@ class Dispatcher {
 
   template <typename Func, typename... Args>
   auto PostToJsSync(bool dedicated_thread, int32_t js_context_id, Func&& func, Args&&... args)
-      -> std::invoke_result_t<Func, Args...> {
+      -> std::invoke_result_t<Func, bool, Args...> {
     if (!dedicated_thread) {
-      return std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
+      return std::invoke(std::forward<Func>(func), false, std::forward<Args>(args)...);
     }
 
     assert(js_threads_.count(js_context_id) > 0);
@@ -164,9 +173,13 @@ class Dispatcher {
  private:
   void NotifyDart(const DartWork* work_ptr, bool is_sync);
 
+  void FinalizeAllJSThreads(Callback callback);
+  void StopAllJSThreads();
+
  private:
   Dart_Port dart_port_;
   std::unordered_map<int32_t, std::unique_ptr<Looper>> js_threads_;
+  std::set<DartWork*> pending_dart_tasks_;
   friend Looper;
 };
 
