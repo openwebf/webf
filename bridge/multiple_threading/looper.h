@@ -55,7 +55,7 @@ class Looper {
   }
 
   template <typename Func, typename... Args>
-  auto PostMessageSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, Args...> {
+  auto PostMessageSync(Func&& func, Args&&... args) -> std::invoke_result_t<Func, bool, Args...> {
     auto task =
         std::make_shared<ConcreteSyncTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
     auto task_copy = task;

@@ -8,6 +8,7 @@
 #include <chrono>
 #include <functional>
 #include <future>
+#include <any>
 
 #include "foundation/logging.h"
 
@@ -20,7 +21,7 @@ using Callback = std::function<void()>;
 class Task {
  public:
   virtual ~Task() = default;
-  virtual void operator()() = 0;
+  virtual void operator()(bool cancel = false) = 0;
 };
 
 template <typename Func, typename... Args>
@@ -28,7 +29,7 @@ class ConcreteTask : public Task {
  public:
   ConcreteTask(Func&& f, Args&&... args) : func_(std::bind(std::forward<Func>(f), std::forward<Args>(args)...)) {}
 
-  void operator()() override {
+  void operator()(bool cancel = false) override {
     if (func_) {
       func_();
     }
@@ -45,7 +46,7 @@ class ConcreteCallbackTask : public Task {
       : func_(std::bind(std::forward<Func>(f), std::forward<Args>(args)...)),
         callback_(std::forward<Callback>(callback)) {}
 
-  void operator()() override {
+  void operator()(bool cancel = false) override {
     if (func_) {
       func_();
     }
@@ -68,12 +69,15 @@ class SyncTask : public Task {
 template <typename Func, typename... Args>
 class ConcreteSyncTask : public SyncTask {
  public:
-  using ReturnType = std::invoke_result_t<Func, Args...>;
+  using ReturnType = std::invoke_result_t<Func, bool, Args...>;
 
   ConcreteSyncTask(Func&& func, Args&&... args)
-      : task_(std::bind(std::forward<Func>(func), std::forward<Args>(args)...)), future_(task_.get_future()) {}
+      : task_(std::bind(std::forward<Func>(func), std::placeholders::_1, std::forward<Args>(args)...)), future_(task_.get_future()) {}
 
-  void operator()() override { task_(); }
+  void operator()(bool cancel = false) override {
+    WEBF_LOG(VERBOSE) << " CALL SYNC CONCRETE TASK";
+    task_(cancel);
+  }
 
   void wait() override {
 #ifdef DDEBUG
@@ -89,7 +93,7 @@ class ConcreteSyncTask : public SyncTask {
   ReturnType getResult() { return future_.get(); }
 
  private:
-  std::packaged_task<ReturnType()> task_;
+  std::packaged_task<ReturnType(bool)> task_;
   std::future<ReturnType> future_;
 };
 

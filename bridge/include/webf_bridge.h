@@ -31,7 +31,7 @@ struct WebFInfo {
 };
 
 typedef void (*Task)(void*);
-typedef std::function<void()> DartWork;
+typedef std::function<void(bool)> DartWork;
 typedef void (*AllocateNewPageCallback)(Dart_Handle dart_handle, void*);
 typedef void (*DisposePageCallback)(Dart_Handle dart_handle);
 typedef void (*InvokeModuleEventCallback)(Dart_Handle dart_handle, void*);
@@ -114,7 +114,7 @@ int32_t profileModeEnabled();
 
 WEBF_EXPORT_C int8_t isJSThreadBlocked(void* dart_isolate_context, double context_id);
 
-WEBF_EXPORT_C void executeNativeCallback(DartWork* work_ptr);
+WEBF_EXPORT_C void executeNativeCallback(void* work_ptr);
 WEBF_EXPORT_C
 void init_dart_dynamic_linking(void* data);
 WEBF_EXPORT_C
