@@ -114,7 +114,7 @@ int32_t profileModeEnabled();
 
 WEBF_EXPORT_C int8_t isJSThreadBlocked(void* dart_isolate_context, double context_id);
 
-WEBF_EXPORT_C void executeNativeCallback(void* work_ptr);
+WEBF_EXPORT_C void executeNativeCallback(DartWork* work_ptr);
 WEBF_EXPORT_C
 void init_dart_dynamic_linking(void* data);
 WEBF_EXPORT_C

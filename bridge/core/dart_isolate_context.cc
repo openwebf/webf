@@ -17,6 +17,21 @@ namespace webf {
 
 thread_local std::set<DartWireContext*> alive_wires;
 
+PageGroup::~PageGroup() {
+  for (auto page : pages_) {
+    delete page;
+  }
+}
+
+void PageGroup::AddNewPage(webf::WebFPage* new_page) {
+  assert(std::find(pages_.begin(), pages_.end(), new_page) == pages_.end());
+  pages_.push_back(new_page);
+}
+
+void PageGroup::RemovePage(webf::WebFPage* page) {
+  pages_.erase(std::find(pages_.begin(), pages_.end(), page));
+}
+
 void WatchDartWire(DartWireContext* wire) {
   alive_wires.emplace(wire);
 }
@@ -109,27 +124,6 @@ void DartIsolateContext::Dispose(multi_threading::Callback callback) {
     callback();
  });
 }
-
-class PageGroup {
- public:
-  ~PageGroup() {
-    for (auto page : pages_) {
-      delete page;
-    }
-  }
-
-  void AddNewPage(WebFPage* new_page) {
-    assert(std::find(pages_.begin(), pages_.end(), new_page) == pages_.end());
-    pages_.push_back(new_page);
-  }
-
-  void RemovePage(WebFPage* page) { pages_.erase(std::find(pages_.begin(), pages_.end(), page)); }
-
-  bool Empty() { return pages_.empty(); }
-
- private:
-  std::vector<WebFPage*> pages_;
-};
 
 void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      DartIsolateContext* dart_isolate_context,

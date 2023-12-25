@@ -60,6 +60,10 @@ struct NativeValueConverter<NativeTypeBool> : public NativeValueConverterBase<Na
   static NativeValue ToNativeValue(ImplType value) { return Native_NewBool(value); }
 
   static ImplType FromNativeValue(NativeValue value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return false;
+    }
+
     assert(value.tag == NativeTag::TAG_BOOL);
     return value.u.int64 == 1;
   }
@@ -70,6 +74,10 @@ struct NativeValueConverter<NativeTypeInt64> : public NativeValueConverterBase<N
   static NativeValue ToNativeValue(ImplType value) { return Native_NewInt64(value); }
 
   static ImplType FromNativeValue(NativeValue value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return 0;
+    }
+
     assert(value.tag == NativeTag::TAG_INT);
     return value.u.int64;
   }
@@ -80,6 +88,10 @@ struct NativeValueConverter<NativeTypeDouble> : public NativeValueConverterBase<
   static NativeValue ToNativeValue(ImplType value) { return Native_NewFloat64(value); }
 
   static ImplType FromNativeValue(NativeValue value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return 0.0;
+    }
+
     assert(value.tag == NativeTag::TAG_FLOAT64);
     double result;
     memcpy(&result, reinterpret_cast<void*>(&value.u.int64), sizeof(double));
@@ -93,6 +105,10 @@ struct NativeValueConverter<NativeTypeJSON> : public NativeValueConverterBase<Na
     return Native_NewJSON(ctx, value, exception_state);
   }
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return ScriptValue::Empty(ctx);
+    }
+
     assert(value.tag == NativeTag::TAG_JSON);
     auto* str = static_cast<const char*>(value.u.ptr);
     return ScriptValue::CreateJsonObject(ctx, str, strlen(str));
@@ -107,10 +123,18 @@ struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_void_
     : public NativeValueConverterBase<NativeTypePointer<T>> {
   static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::Others, value); }
   static T* FromNativeValue(NativeValue value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return nullptr;
+    }
+
     assert(value.tag == NativeTag::TAG_POINTER);
     return static_cast<T*>(value.u.ptr);
   }
   static T* FromNativeValue(JSContext* ctx, NativeValue value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return nullptr;
+    }
+
     assert(value.tag == NativeTag::TAG_POINTER);
     return static_cast<T*>(value.u.ptr);
   }
@@ -121,10 +145,18 @@ struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_
     : public NativeValueConverterBase<NativeTypePointer<T>> {
   static NativeValue ToNativeValue(T* value) { return Native_NewPtr(JSPointerType::Others, value); }
   static T* FromNativeValue(NativeValue value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return nullptr;
+    }
+
     assert(value.tag == NativeTag::TAG_POINTER);
     return static_cast<T*>(value.u.ptr);
   }
   static T* FromNativeValue(JSContext* ctx, NativeValue value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return nullptr;
+    }
+
     assert(value.tag == NativeTag::TAG_POINTER);
     return static_cast<T*>(value.u.ptr);
   }
@@ -186,6 +218,10 @@ struct NativeValueConverter<NativeTypeArray<T>> : public NativeValueConverterBas
   }
 
   static ImplType FromNativeValue(JSContext* ctx, NativeValue native_value) {
+    if (native_value.tag == NativeTag::TAG_NULL) {
+      return std::vector<typename T::ImplType>();
+    }
+
     assert(native_value.tag == NativeTag::TAG_LIST);
     size_t length = native_value.uint32;
     auto* arr = static_cast<NativeValue*>(native_value.u.ptr);
