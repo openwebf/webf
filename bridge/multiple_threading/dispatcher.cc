@@ -5,6 +5,8 @@
 #include "dispatcher.h"
 
 #include "foundation/logging.h"
+#include "core/dart_isolate_context.h"
+#include "core/page.h"
 
 using namespace webf;
 
@@ -14,21 +16,7 @@ namespace multi_threading {
 
 Dispatcher::Dispatcher(Dart_Port dart_port) : dart_port_(dart_port) {}
 
-Dispatcher::~Dispatcher() {
-  //  WEBF_LOG(VERBOSE) << " BEGIN EXE OPAQUE FINALIZER ";
-  //  for (auto&& thread : js_threads_) {
-  //    PostToJsSync(
-  //        true, thread.first, [](Looper* looper) { looper->ExecuteOpaqueFinalizer(); }, thread.second.get());
-  //  }
-  //
-  //
-  //
-  //  for (auto&& thread : js_threads_) {
-  //    thread.second->Stop();
-  //  }
-  //
-  //  WEBF_LOG(VERBOSE) << " ALL THREAD STOPPED";
-}
+Dispatcher::~Dispatcher() {}
 
 void Dispatcher::AllocateNewJSThread(int32_t js_context_id) {
   assert(js_threads_.count(js_context_id) == 0);
@@ -68,18 +56,33 @@ void* Dispatcher::GetOpaque(int32_t js_context_id) {
 }
 
 void Dispatcher::Dispose(webf::multi_threading::Callback callback) {
-  WEBF_LOG(VERBOSE) << " BEGIN EXE OPAQUE FINALIZER ";
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN EXE OPAQUE FINALIZER ";
+#endif
 
-  std::set<DartWork *> pending_tasks = pending_dart_tasks_;
+  for (auto&& thread : js_threads_) {
+    auto* page_group = static_cast<PageGroup*>(thread.second->opaque());
+    for(auto& page : (*page_group->pages())) {
+      page->executingContext()->SetContextInValid();
+    }
+  }
+
+  std::set<DartWork*> pending_tasks = pending_dart_tasks_;
 
   for(auto task : pending_tasks) {
     const DartWork dart_work = *task;
-    WEBF_LOG(VERBOSE) << " BEGIN EXEC SYNC DART WORKER";
+#if ENABLE_LOG
+    WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN EXEC SYNC DART WORKER";
+#endif
     dart_work(true);
-    WEBF_LOG(VERBOSE) << " FINISH EXEC SYNC DART WORKER";
+#if ENABLE_LOG
+    WEBF_LOG(VERBOSE) << "[Dispatcher]: FINISH EXEC SYNC DART WORKER";
+#endif
   }
 
-  WEBF_LOG(VERBOSE) << " BEGIN FINALIZE ALL JS THREAD";
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN FINALIZE ALL JS THREAD";
+#endif
 
   FinalizeAllJSThreads([this, &callback]() {
     StopAllJSThreads();
@@ -136,28 +139,52 @@ void Dispatcher::NotifyDart(const DartWork* work_ptr, bool is_sync) {
 void Dispatcher::FinalizeAllJSThreads(webf::multi_threading::Callback callback) {
   std::atomic<uint32_t> unfinished_thread = js_threads_.size();
 
+  std::atomic<bool> is_final_async_dart_task_complete{false};
+
   for (auto&& thread : js_threads_) {
     PostToJs(
         true, thread.first,
-        [&unfinished_thread, &callback, this](Looper* looper) {
+        [&unfinished_thread, &thread, &is_final_async_dart_task_complete](Looper* looper) {
+#if ENABLE_LOG
+          WEBF_LOG(VERBOSE) << "[Dispatcher]: RUN JS FINALIZER, context_id: " << thread.first;
+#endif
           looper->ExecuteOpaqueFinalizer();
           unfinished_thread--;
 
+#if ENABLE_LOG
+          WEBF_LOG(VERBOSE) << "[Dispatcher]: UNFINISHED THREAD: " << unfinished_thread;
+#endif
           if (unfinished_thread == 0) {
-            PostToDart(
-                true, [&callback]() { callback(); });
+            is_final_async_dart_task_complete = true;
+            return;
           }
         },
         thread.second.get());
+    WEBF_LOG(VERBOSE) << " POST TO JS THREAD";
   }
+
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: WAITING FOR JS THREAD COMPLETE";
+#endif
+  // Waiting for the final dart task return.
+  while(!is_final_async_dart_task_complete) {}
+
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: ALL JS THREAD FINALIZED SUCCESS";
+#endif
+  callback();
 }
 
 void Dispatcher::StopAllJSThreads() {
-  WEBF_LOG(VERBOSE) << " FINISH EXECU OPAQUE FINALIZER ";
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: FINISH EXEC OPAQUE FINALIZER ";
+#endif
   for (auto&& thread : js_threads_) {
     thread.second->Stop();
   }
-  WEBF_LOG(VERBOSE) << " ALL THREAD STOPPED";
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: ALL THREAD STOPPED";
+#endif
 }
 
 }  // namespace multi_threading

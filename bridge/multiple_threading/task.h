@@ -75,7 +75,9 @@ class ConcreteSyncTask : public SyncTask {
       : task_(std::bind(std::forward<Func>(func), std::placeholders::_1, std::forward<Args>(args)...)), future_(task_.get_future()) {}
 
   void operator()(bool cancel = false) override {
-    WEBF_LOG(VERBOSE) << " CALL SYNC CONCRETE TASK";
+#if ENABLE_LOG
+    WEBF_LOG(VERBOSE) << "[ConcreteSyncTask]: CALL SYNC CONCRETE TASK";
+#endif
     task_(cancel);
   }
 

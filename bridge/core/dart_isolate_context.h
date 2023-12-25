@@ -15,7 +15,20 @@ namespace webf {
 
 class WebFPage;
 class DartIsolateContext;
-class PageGroup;
+
+class PageGroup {
+ public:
+  ~PageGroup();
+  void AddNewPage(WebFPage* new_page);
+  void RemovePage(WebFPage* page);
+  bool Empty() { return pages_.empty(); }
+
+  std::vector<WebFPage*>* pages() { return &pages_; };
+
+ private:
+  std::vector<WebFPage*> pages_;
+};
+
 
 struct DartWireContext {
   ScriptValue jsObject;
