@@ -25,13 +25,13 @@ typedef IntersectionChangeCallback = void Function(IntersectionObserverEntry inf
 mixin RenderIntersectionObserverMixin on RenderBox {
   static copyTo(RenderIntersectionObserverMixin from, RenderIntersectionObserverMixin to) {
     to.intersectPadding = from.intersectPadding;
-    to._listeners = from._listeners;
-    to._onIntersectionChange = to._dispatchChange;
+    to.intersectionListeners = from.intersectionListeners;
+    to.onIntersectionChange = to._dispatchChange;
     to._intersectionObserverLayer.layer = from._intersectionObserverLayer.layer;
     to._intersectionObserverLayer.layer?.onIntersectionChange = to._dispatchChange;
   }
 
-  IntersectionChangeCallback? _onIntersectionChange;
+  IntersectionChangeCallback? onIntersectionChange;
 
   final LayerHandle<IntersectionObserverLayer> _intersectionObserverLayer = LayerHandle<IntersectionObserverLayer>();
 
