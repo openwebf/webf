@@ -550,6 +550,10 @@ class ImageElement extends Element {
         // When detach renderer, all listeners will be cleared.
         ..addIntersectionChangeListener(_handleIntersectionChange);
 
+      /// The method is foolproof to avoid IntersectionObserver not working
+      Future.delayed(Duration(seconds: 3), () {
+        _updateImageDataLazyCompleter?.complete();
+      });
       // Wait image is show. If has a error, should run dispose and return;
       final abort = await completer.future;
 
