@@ -16,6 +16,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/scheduler/debounce.dart';
 import 'package:webf/svg.dart';
 
 const String IMAGE = 'IMG';
@@ -663,12 +664,17 @@ class ImageElement extends Element {
     return data;
   }
 
+  /// Anti-shake and throttling
+  final _debounce = Debounce(milliseconds: 5);
+
   void _startLoadNewImage() {
     if (_resolvedUri == null) {
       // TODO: should use empty image;
       return;
     }
-    _updateImageData();
+    _debounce.run(() {
+      _updateImageData();
+    });
   }
 
   // Reload current image when width/height/boxFit changed.
@@ -677,7 +683,9 @@ class ImageElement extends Element {
     if (_isSVGMode) {
       // In svg mode, we don't need to reload
     } else {
-      _updateImageData();
+      _debounce.run(() {
+        _updateImageData();
+      });
     }
   }
 
