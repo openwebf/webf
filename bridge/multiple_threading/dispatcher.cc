@@ -141,6 +141,10 @@ void Dispatcher::FinalizeAllJSThreads(webf::multi_threading::Callback callback) 
 
   std::atomic<bool> is_final_async_dart_task_complete{false};
 
+  if (unfinished_thread == 0) {
+    is_final_async_dart_task_complete = true;
+  }
+
   for (auto&& thread : js_threads_) {
     PostToJs(
         true, thread.first,
@@ -160,7 +164,9 @@ void Dispatcher::FinalizeAllJSThreads(webf::multi_threading::Callback callback) 
           }
         },
         thread.second.get());
-    WEBF_LOG(VERBOSE) << " POST TO JS THREAD";
+#if ENABLE_LOG
+    WEBF_LOG(VERBOSE) << "[Dispatcher]: POST TO JS THREAD";
+#endif
   }
 
 #if ENABLE_LOG
