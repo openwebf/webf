@@ -39,13 +39,8 @@ class WebFPage final {
   static std::unordered_map<std::string, NativeByteCode> pluginByteCode;
 
   // evaluate JavaScript source codes in standard mode.
-  bool evaluateScript(const SharedNativeString* script,
-                      uint8_t** parsed_bytecodes,
-                      uint64_t* bytecode_len,
-                      const char* url,
-                      int startLine);
-  bool evaluateScript(const uint16_t* script,
-                      size_t length,
+  bool evaluateScript(const char* script,
+                      uint64_t script_len,
                       uint8_t** parsed_bytecodes,
                       uint64_t* bytecode_len,
                       const char* url,

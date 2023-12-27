@@ -6,6 +6,7 @@
 #ifndef FOUNDATION_LOGGING_H_
 #define FOUNDATION_LOGGING_H_
 
+#include <cstdint>
 #include <sstream>
 #include <string>
 

@@ -10,6 +10,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/svg.dart';
 
 const int DOCUMENT_NODE_ID = 0;
 const String DEFAULT_FRAME_ID = 'main_frame';
@@ -47,8 +48,19 @@ class InspectDOMModule extends UIInspectorModule {
     RenderBox rootRenderObject = document.renderer!;
     BoxHitTestResult result = BoxHitTestResult();
     rootRenderObject.hitTest(result, position: Offset(x.toDouble(), y.toDouble()));
-    if (result.path.first.target is RenderBoxModel) {
-      RenderBoxModel lastHitRenderBoxModel = result.path.first.target as RenderBoxModel;
+    var hitPath = result.path;
+    if (hitPath.isEmpty) {
+      sendToFrontend(id, null);
+      return;
+    }
+    // find real img element.
+    if (hitPath.first.target is WebFRenderImage || 
+          (hitPath.first.target is RenderSVGRoot && 
+          (hitPath.first.target as RenderBoxModel).renderStyle.target.pointer == null)) {
+      hitPath = hitPath.skip(1);
+    }
+    if (hitPath.isNotEmpty && hitPath.first.target is RenderBoxModel) {
+      RenderBoxModel lastHitRenderBoxModel = hitPath.first.target as RenderBoxModel;
       int? targetId = lastHitRenderBoxModel.renderStyle.target.pointer!.address;
       sendToFrontend(
           id,

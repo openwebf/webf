@@ -61,6 +61,9 @@
 #include "qjs_message_event.h"
 #include "qjs_module_manager.h"
 #include "qjs_mouse_event.h"
+#include "qjs_mutation_observer.h"
+#include "qjs_mutation_observer_registration.h"
+#include "qjs_mutation_record.h"
 #include "qjs_node.h"
 #include "qjs_node_list.h"
 #include "qjs_performance.h"
@@ -166,6 +169,9 @@ void InstallBindings(ExecutingContext* context) {
   QJSTouch::Install(context);
   QJSTouchList::Install(context);
   QJSDOMStringMap::Install(context);
+  QJSMutationObserver::Install(context);
+  QJSMutationRecord::Install(context);
+  QJSMutationObserverRegistration::Install(context);
   QJSDOMTokenList::Install(context);
   QJSPerformance::Install(context);
   QJSPerformanceEntry::Install(context);

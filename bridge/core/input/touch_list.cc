@@ -20,9 +20,15 @@ void TouchList::FromNativeTouchList(ExecutingContext* context,
   delete native_touch_list;
 }
 
+TouchList* TouchList::Create(webf::ExecutingContext* context) {
+  return MakeGarbageCollected<TouchList>(context);
+}
+
 TouchList::TouchList(ExecutingContext* context, NativeTouchList* native_touch_list) : ScriptWrappable(context->ctx()) {
   FromNativeTouchList(context, this, native_touch_list);
 }
+
+TouchList::TouchList(webf::ExecutingContext* context) : ScriptWrappable(context->ctx()) {}
 
 uint32_t TouchList::length() const {
   return values_.size();

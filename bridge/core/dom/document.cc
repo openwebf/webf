@@ -372,6 +372,8 @@ HTMLHeadElement* Document::head() const {
   return Traversal<HTMLHeadElement>::FirstChild(*de);
 }
 
+void Document::NodeWillBeRemoved(Node& node) {}
+
 uint32_t Document::RequestAnimationFrame(const std::shared_ptr<FrameCallback>& callback,
                                          ExceptionState& exception_state) {
   return script_animation_controller_.RegisterFrameCallback(callback, exception_state);

@@ -8,6 +8,7 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "core/dom/events/event_target.h"
+#include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value_converter.h"
@@ -123,6 +124,17 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
         "Can not set binding property on BindingObject, dart binding object had been disposed");
     return Native_NewNull();
   }
+
+  if (auto element = const_cast<WidgetElement*>(DynamicTo<WidgetElement>(this))) {
+    if (std::shared_ptr<MutationObserverInterestGroup> recipients =
+            MutationObserverInterestGroup::CreateForAttributesMutation(*element, prop)) {
+      NativeValue old_native_value = GetBindingProperty(prop, exception_state);
+      ScriptValue old_value = ScriptValue(ctx(), old_native_value);
+      recipients->EnqueueMutationRecord(
+          MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value.ToString(ctx())));
+    }
+  }
+
   GetExecutingContext()->FlushUICommand();
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
   return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv, exception_state);

@@ -10,8 +10,6 @@
 
 WEBF_EXPORT_C
 void* initTestFramework(void* page);
-WEBF_EXPORT_C
-int8_t evaluateTestScripts(void* testContext, void* code, const char* bundleFilename, int startLine);
 
 using ExecuteCallback = void* (*)(int32_t contextId, void* status);
 

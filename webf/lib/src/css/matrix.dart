@@ -90,7 +90,7 @@ List<double> _cross(v1, v2) {
 
 double _dot(v1, v2) {
   double result = 0;
-  for (var i = 0; i < v1._length; i++) {
+  for (var i = 0; i < v1.length; i++) {
     result += v1[i] * v2[i];
   }
   return result;
@@ -586,7 +586,8 @@ class CSSMatrix {
 
   static Matrix4 initial = Matrix4.identity();
 
-  static Matrix4? computeTransformMatrix(List<CSSFunctionalNotation> transform, RenderStyle renderStyle) {
+  static Matrix4? computeTransformMatrix(List<CSSFunctionalNotation>? transform, RenderStyle renderStyle) {
+    if (transform == null) return initial;
     Matrix4? matrix4;
     for (CSSFunctionalNotation method in transform) {
       Matrix4? transform = _computeMatrix(method, renderStyle);

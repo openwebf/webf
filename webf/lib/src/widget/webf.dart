@@ -51,6 +51,7 @@ class WebF extends StatefulWidget {
   final LoadErrorHandler? onLoadError;
 
   final LoadHandler? onLoad;
+
   // https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
   final LoadHandler? onDOMContentLoaded;
 
@@ -64,6 +65,10 @@ class WebF extends StatefulWidget {
   final HttpClientInterceptor? httpClientInterceptor;
 
   final UriParser? uriParser;
+
+  /// Remote resources (HTML, CSS, JavaScript, Images, and other content loadable via WebFBundle) can be pre-loaded before WebF is mounted in Flutter.
+  /// Use this property to reduce loading times when a WebF application attempts to load external resources on pages.
+  final List<WebFBundle>? preloadedBundles;
 
   /// The initial cookies to set.
   final List<Cookie>? initialCookies;
@@ -128,6 +133,7 @@ class WebF extends StatefulWidget {
       this.uriParser,
       this.routeObserver,
       this.initialCookies,
+      this.preloadedBundles,
       // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
       // Maybe got unexpected error when change to other values, use this at your own risk!
       // We will fixed this on next version released. (v0.6.0)
@@ -160,6 +166,7 @@ class WebFState extends State<WebF> with RouteAware {
   bool _disposed = false;
 
   final Set<WebFWidgetElementToWidgetAdapter> customElementWidgets = {};
+
   void onCustomElementWidgetAdd(WebFWidgetElementToWidgetAdapter adapter) {
     Future.microtask(() {
       if (!_disposed) {
@@ -337,7 +344,8 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
   @override
   RenderObject createRenderObject(BuildContext context) {
     double viewportWidth = _webfWidget.viewportWidth ?? currentView.physicalSize.width / currentView.devicePixelRatio;
-    double viewportHeight = _webfWidget.viewportHeight ?? currentView.physicalSize.height / currentView.devicePixelRatio;
+    double viewportHeight =
+        _webfWidget.viewportHeight ?? currentView.physicalSize.height / currentView.devicePixelRatio;
 
     WebFController controller = WebFController(shortHash(_webfWidget), viewportWidth, viewportHeight,
         background: _webfWidget.background,
@@ -357,6 +365,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         onCustomElementDetached: onCustomElementDetached,
         initialCookies: _webfWidget.initialCookies,
         uriParser: _webfWidget.uriParser,
+        preloadedBundles: _webfWidget.preloadedBundles,
         ownerFlutterView: currentView,
         resizeToAvoidBottomInsets: resizeToAvoidBottomInsets,
         buildContext: _buildContext);
@@ -383,7 +392,8 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
     bool viewportHeightHasChanged = controller.view.viewportHeight != _webfWidget.viewportHeight;
 
     double viewportWidth = _webfWidget.viewportWidth ?? currentView.physicalSize.width / currentView.devicePixelRatio;
-    double viewportHeight = _webfWidget.viewportHeight ?? currentView.physicalSize.height / currentView.devicePixelRatio;
+    double viewportHeight =
+        _webfWidget.viewportHeight ?? currentView.physicalSize.height / currentView.devicePixelRatio;
 
     if (controller.view.document.documentElement == null) return;
 

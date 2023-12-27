@@ -166,4 +166,20 @@ class RenderSliverRepaintProxy extends RenderProxyBox {
       }
     }
   }
+
+  void applyLayoutTransform(RenderObject child, Matrix4 transform, bool excludeScrollOffset) {
+    assert(child.parent == this);
+    assert(parentData is SliverMultiBoxAdaptorParentData);
+    assert(parent is WebFRenderSliverList);
+
+    SliverConstraints grandParentConstraints = (parent as WebFRenderSliverList).constraints;
+    Offset offset;
+    double? value = (parentData as SliverMultiBoxAdaptorParentData).layoutOffset;
+    if(grandParentConstraints.axisDirection == AxisDirection.right) {
+      offset = Offset(value ?? 0, 0);
+    } else {
+      offset = Offset(0, value ?? 0);
+    }
+    transform.translate(offset.dx, offset.dy);
+  }
 }

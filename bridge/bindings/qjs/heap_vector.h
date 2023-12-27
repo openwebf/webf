@@ -12,16 +12,24 @@ class HeapVector final {
  public:
   HeapVector() = default;
 
-  void Trace(GCVisitor* visitor) const;
+  void TraceValue(GCVisitor* visitor) const;
+  void TraceMember(GCVisitor* visitor) const;
 
  private:
   std::vector<V> entries_;
 };
 
 template <typename V>
-void HeapVector<V>::Trace(GCVisitor* visitor) const {
+void HeapVector<V>::TraceValue(GCVisitor* visitor) const {
   for (auto& item : entries_) {
     visitor->TraceValue(item);
+  }
+}
+
+template <typename V>
+void HeapVector<V>::TraceMember(GCVisitor* visitor) const {
+  for (auto& item : entries_) {
+    visitor->TraceMember(item);
   }
 }
 

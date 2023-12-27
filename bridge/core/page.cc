@@ -27,7 +27,7 @@ WebFPage::WebFPage(DartIsolateContext* dart_isolate_context, int32_t contextId, 
   context_ = new ExecutingContext(
       dart_isolate_context, contextId,
       [](ExecutingContext* context, const char* message) {
-        if (context->dartMethodPtr()->onJsError != nullptr) {
+        if (context->IsContextValid() && context->dartMethodPtr()->onJsError != nullptr) {
           context->dartMethodPtr()->onJsError(context->contextId(), message);
         }
         WEBF_LOG(ERROR) << message << std::endl;
@@ -97,26 +97,15 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
   return return_value;
 }
 
-bool WebFPage::evaluateScript(const SharedNativeString* script,
+bool WebFPage::evaluateScript(const char* script,
+                              uint64_t script_len,
                               uint8_t** parsed_bytecodes,
                               uint64_t* bytecode_len,
                               const char* url,
                               int startLine) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateJavaScript(script->string(), script->length(), parsed_bytecodes, bytecode_len, url,
-                                      startLine);
-}
-
-bool WebFPage::evaluateScript(const uint16_t* script,
-                              size_t length,
-                              uint8_t** parsed_bytecodes,
-                              uint64_t* bytecode_len,
-                              const char* url,
-                              int startLine) {
-  if (!context_->IsContextValid())
-    return false;
-  return context_->EvaluateJavaScript(script, length, parsed_bytecodes, bytecode_len, url, startLine);
+  return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
 }
 
 void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {

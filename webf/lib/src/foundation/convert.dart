@@ -7,6 +7,31 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+bool isValidUTF8String(Uint8List data) {
+  int count = 0;
+  for (int byte in data) {
+    if (count == 0) {
+      if ((byte >> 7) == 0) {
+        continue;
+      } else if ((byte >> 5) == 0x6) { // 0b110 in hex
+        count = 1;
+      } else if ((byte >> 4) == 0xE) { // 0b1110 in hex
+        count = 2;
+      } else if ((byte >> 3) == 0x1E) { // 0b11110 in hex
+        count = 3;
+      } else {
+        return false; // Invalid starting byte
+      }
+    } else {
+      if ((byte >> 6) != 0x2) { // 0b10 in hex
+        return false; // Not a valid continuation byte
+      }
+      count--;
+    }
+  }
+  return count == 0;
+}
+
 FutureOr<String> resolveStringFromData(final List<int> data, {Codec codec = utf8, bool preferSync = false}) async {
   if (codec == utf8) {
     return _resolveUtf8StringFromData(data, preferSync);

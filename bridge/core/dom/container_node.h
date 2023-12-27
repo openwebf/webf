@@ -41,6 +41,8 @@ class ContainerNode : public Node {
   Node* RemoveChild(Node* child, ExceptionState&);
   Node* AppendChild(Node* new_child, ExceptionState&);
   Node* AppendChild(Node* new_child);
+  void WillRemoveChildren();
+  void WillRemoveChild(Node& child);
   bool EnsurePreInsertionValidity(const Node& new_child,
                                   const Node* next,
                                   const Node* old_child,

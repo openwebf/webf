@@ -164,13 +164,17 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   }
 
   @override
+  T copyWith<T extends RenderBoxModel>(T copiedRenderBoxModel) {
+    final renderObject = super.copyWith(copiedRenderBoxModel) as RenderReplaced;
+    renderObject._isInLazyRendering = _isInLazyRendering;
+    return renderObject as T;
+  }
+
+  @override
   LogicInlineBox createLogicInlineBox() {
     return LogicInlineBox(renderObject: this);
   }
 }
-
-
-
 
 class RenderRepaintBoundaryReplaced extends RenderReplaced {
   RenderRepaintBoundaryReplaced(CSSRenderStyle renderStyle) : super(renderStyle);
