@@ -1259,7 +1259,7 @@ class WebFController {
 
       _preRenderingStatus = PreRenderingStatus.done;
 
-      flushUICommand(view);
+      flushUICommand(view, view.window.pointer!, standardUICommandReason);
 
     } else if (_entrypoint!.isHTML) {
       // Evaluate the HTML entry point, and loading the stylesheets and scripts.
