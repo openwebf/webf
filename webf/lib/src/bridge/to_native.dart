@@ -725,14 +725,6 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
   return _NativeCommandData(flag, commandLength, rawMemory);
 }
 
-bool _isStartRecording(UICommand? command) {
-  return command?.type == UICommandType.startRecordingCommand;
-}
-
-// bool _isFinishedRecording(UICommand? command) {
-//   return command?.type == UICommandType.finishRecordingCommand;
-// }
-
 void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer, int reason) {
   assert(_allocatedPages.containsKey(view.contextId));
   if (view.disposed) return;
@@ -742,27 +734,7 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   if (rawCommands.rawMemory.isNotEmpty) {
     commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
 
-    bool isBeginningRecording = _isStartRecording(commands.isEmpty ? null : commands.first);
+    execUICommands(view, commands);
     SchedulerBinding.instance.scheduleFrame();
-    // if (isBeginningRecording) {
-    //   assert(view.pendingUICommands.isEmpty());
-    // }
-
-    // view.pendingUICommands.add(commands, rawCommands.flag);
-    view.pendingUICommands.add(commands);
   }
-
-  // bool isFinishedRecording = commands != null ? _isFinishedRecording(commands.isEmpty ? null : commands.last) : false;
-
-  // if (shouldExecUICommands(view, isFinishedRecording, selfPointer, view.pendingUICommands.commandFlag, reason)) {
-  // if (view.pendingUICommands.size() > 0) {
-  //   execUICommands(view, view.pendingUICommands);
-  //   view.pendingUICommands.clear();
-  // }
-  if (view.pendingUICommands.isNotEmpty) {
-    execUICommands(view, view.pendingUICommands);
-    view.pendingUICommands.clear();
-  }
-
-  // }
 }

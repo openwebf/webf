@@ -141,16 +141,11 @@ UI COMMAND CONDITION CHECK:
   return isElementCreation || isElementMutation || isDependsOnElement || isDependsOnStyleLayout || isStyleUpdate;
 }
 
-void execUICommands(WebFViewController view, List<List<UICommand>> commands) {
-  print('BEGIN EXEC UI COMMAND >>>>>> .');
+void execUICommands(WebFViewController view, List<UICommand> commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
   Set<int> pendingRecalculateTargets = {};
 
-  // final iterable = UICommandIterable(commands);
-
-  for(UICommand? command in iterable) {
-    if (command == null) continue;
-
+  for(UICommand command in commands) {
     UICommandType commandType = command.type;
 
     if (enableWebFCommandLog) {
@@ -161,6 +156,9 @@ void execUICommands(WebFViewController view, List<List<UICommand>> commands) {
           break;
         case UICommandType.setAttribute:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${nativeStringToString(command.nativePtr2.cast<NativeString>())} value: ${command.args}';
+          break;
+        case UICommandType.createTextNode:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} data: ${command.args}';
           break;
         default:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} args: ${command.args} nativePtr2: ${command.nativePtr2}';
