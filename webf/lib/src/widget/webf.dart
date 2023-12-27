@@ -459,7 +459,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     }
 
     // Sync element state.
-    flushUICommand(controller!.view);
+    flushUICommand(controller!.view, controller!.view.window.pointer!, standardUICommandReason);
 
     // Should schedule to the next frame to make sure the RenderViewportBox(WebF's root renderObject) had been layout.
     try {
