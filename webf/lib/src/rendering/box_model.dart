@@ -1467,7 +1467,7 @@ class RenderBoxModel extends RenderBox
   }
 
   Offset getOffsetToRenderObjectAncestor(Offset point, RenderObject ancestor, {bool excludeScrollOffset = false}) {
-    return MatrixUtils.transformPoint(getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset), point);
+    return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point;
   }
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
