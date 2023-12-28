@@ -14,7 +14,6 @@
 #include "core/dart_methods.h"
 #include "foundation/native_type.h"
 #include "foundation/native_value.h"
-#include "core/dart_methods.h"
 
 namespace webf {
 
