@@ -82,8 +82,7 @@ BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_sta
 }
 
 std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetClientRects, 0, nullptr, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetClientRects, 0, nullptr, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
