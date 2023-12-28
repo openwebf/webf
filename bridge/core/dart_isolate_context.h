@@ -29,7 +29,6 @@ class PageGroup {
   std::vector<WebFPage*> pages_;
 };
 
-
 struct DartWireContext {
   ScriptValue jsObject;
 };
@@ -85,7 +84,10 @@ class DartIsolateContext {
                                   AllocateNewPageCallback result_callback,
                                   WebFPage* new_page);
   static void HandleDisposePage(Dart_Handle persistent_handle, DisposePageCallback result_callback);
-  static void HandleDisposePageAndKillJSThread(DartIsolateContext* dart_isolate_context, int thread_group_id, Dart_Handle persistent_handle, DisposePageCallback result_callback);
+  static void HandleDisposePageAndKillJSThread(DartIsolateContext* dart_isolate_context,
+                                               int thread_group_id,
+                                               Dart_Handle persistent_handle,
+                                               DisposePageCallback result_callback);
 
   int is_valid_{false};
   std::thread::id running_thread_;

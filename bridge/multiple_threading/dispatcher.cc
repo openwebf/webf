@@ -4,9 +4,9 @@
 
 #include "dispatcher.h"
 
-#include "foundation/logging.h"
 #include "core/dart_isolate_context.h"
 #include "core/page.h"
+#include "foundation/logging.h"
 
 using namespace webf;
 
@@ -40,7 +40,8 @@ void Dispatcher::KillJSThreadSync(int32_t js_context_id) {
   assert(js_threads_.count(js_context_id) > 0);
   auto& looper = js_threads_[js_context_id];
   PostToJsSync(
-      true, js_context_id, [](bool cancel, Looper* looper) { looper->ExecuteOpaqueFinalizer(); }, js_threads_[js_context_id].get());
+      true, js_context_id, [](bool cancel, Looper* looper) { looper->ExecuteOpaqueFinalizer(); },
+      js_threads_[js_context_id].get());
   looper->Stop();
   js_threads_.erase(js_context_id);
 }
@@ -62,14 +63,14 @@ void Dispatcher::Dispose(webf::multi_threading::Callback callback) {
 
   for (auto&& thread : js_threads_) {
     auto* page_group = static_cast<PageGroup*>(thread.second->opaque());
-    for(auto& page : (*page_group->pages())) {
+    for (auto& page : (*page_group->pages())) {
       page->executingContext()->SetContextInValid();
     }
   }
 
   std::set<DartWork*> pending_tasks = pending_dart_tasks_;
 
-  for(auto task : pending_tasks) {
+  for (auto task : pending_tasks) {
     const DartWork dart_work = *task;
 #if ENABLE_LOG
     WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN EXEC SYNC DART WORKER";
@@ -173,7 +174,8 @@ void Dispatcher::FinalizeAllJSThreads(webf::multi_threading::Callback callback) 
   WEBF_LOG(VERBOSE) << "[Dispatcher]: WAITING FOR JS THREAD COMPLETE";
 #endif
   // Waiting for the final dart task return.
-  while(!is_final_async_dart_task_complete) {}
+  while (!is_final_async_dart_task_complete) {
+  }
 
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher]: ALL JS THREAD FINALIZED SUCCESS";

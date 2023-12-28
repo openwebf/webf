@@ -5,10 +5,10 @@
 #ifndef MULTI_THREADING_TASK_H
 #define MULTI_THREADING_TASK_H
 
+#include <any>
 #include <chrono>
 #include <functional>
 #include <future>
-#include <any>
 
 #include "foundation/logging.h"
 
@@ -72,7 +72,8 @@ class ConcreteSyncTask : public SyncTask {
   using ReturnType = std::invoke_result_t<Func, bool, Args...>;
 
   ConcreteSyncTask(Func&& func, Args&&... args)
-      : task_(std::bind(std::forward<Func>(func), std::placeholders::_1, std::forward<Args>(args)...)), future_(task_.get_future()) {}
+      : task_(std::bind(std::forward<Func>(func), std::placeholders::_1, std::forward<Args>(args)...)),
+        future_(task_.get_future()) {}
 
   void operator()(bool cancel = false) override {
 #if ENABLE_LOG

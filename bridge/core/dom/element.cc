@@ -82,7 +82,9 @@ BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_sta
 }
 
 std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& exception_state) {
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetClientRects, 0, nullptr, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetClientRects, 0, nullptr,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -144,7 +146,9 @@ void Element::scrollBy(const std::shared_ptr<ScrollToOptions>& options, Exceptio
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scrollTo(ExceptionState& exception_state) {
@@ -387,7 +391,8 @@ class ElementSnapshotReader {
 };
 
 void ElementSnapshotReader::Start() {
-  context_->FlushUICommand(element_, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout);
+  context_->FlushUICommand(element_,
+                           FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout);
 
   auto callback = [](void* ptr, double contextId, char* error, uint8_t* bytes, int32_t length) -> void {
     auto* reader = static_cast<ElementSnapshotReader*>(ptr);
@@ -429,8 +434,9 @@ void ElementSnapshotReader::HandleFailed(const char* error) {
 
 ScriptPromise Element::toBlob(ExceptionState& exception_state) {
   Window* window = GetExecutingContext()->window();
-  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      window->GetBindingProperty(binding_call_methods::kdevicePixelRatio, FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state));
+  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(window->GetBindingProperty(
+      binding_call_methods::kdevicePixelRatio,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state));
   return toBlob(device_pixel_ratio, exception_state);
 }
 

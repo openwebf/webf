@@ -44,8 +44,7 @@ UICommandKind GetKindFromUICommand(UICommand command) {
 }
 
 UICommandBuffer::UICommandBuffer(ExecutingContext* context)
-    : context_(context), buffer_((UICommandItem*)malloc(sizeof(UICommandItem) * MAXIMUM_UI_COMMAND_SIZE)) {
-}
+    : context_(context), buffer_((UICommandItem*)malloc(sizeof(UICommandItem) * MAXIMUM_UI_COMMAND_SIZE)) {}
 
 UICommandBuffer::~UICommandBuffer() {
   free(buffer_);
@@ -64,8 +63,10 @@ void UICommandBuffer::addCommand(UICommand command,
   }
 
   if (command == UICommand::kFinishRecordingCommand) {
-    if (size_ == 0) return;
-    if (buffer_[size_ - 1].type == static_cast<int32_t>(UICommand::kFinishRecordingCommand)) return;
+    if (size_ == 0)
+      return;
+    if (buffer_[size_ - 1].type == static_cast<int32_t>(UICommand::kFinishRecordingCommand))
+      return;
   }
 
   UICommandItem item{static_cast<int32_t>(command), args_01.get(), nativePtr, nativePtr2};
@@ -77,7 +78,6 @@ void UICommandBuffer::updateFlags(UICommand command) {
   UICommandKind type = GetKindFromUICommand(command);
   kind_flag = kind_flag | type;
 }
-
 
 void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_update) {
   if (UNLIKELY(!context_->dartIsolateContext()->valid())) {

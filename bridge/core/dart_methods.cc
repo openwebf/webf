@@ -51,7 +51,8 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
       is_dedicated, context_id,
       [&](bool cancel, void* callback_context, double context_id, SharedNativeString* moduleName,
           SharedNativeString* method, NativeValue* params, AsyncModuleCallback callback) -> webf::NativeValue* {
-        if (cancel) return nullptr;
+        if (cancel)
+          return nullptr;
         return invoke_module_(callback_context, context_id, moduleName, method, params, callback);
       },
       callback_context, context_id, moduleName, method, params, callback);
@@ -168,7 +169,10 @@ void DartMethodPointer::toBlob(bool is_dedicated,
                                                   element_ptr, devicePixelRatio);
 }
 
-void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id, void* native_binding_object, uint32_t reason) {
+void DartMethodPointer::flushUICommand(bool is_dedicated,
+                                       double context_id,
+                                       void* native_binding_object,
+                                       uint32_t reason) {
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call START";
 #endif
@@ -176,7 +180,8 @@ void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id, voi
   dart_isolate_context_->dispatcher()->PostToDartSync(
       is_dedicated, context_id,
       [&](bool cancel, double context_id, void* native_binding_object, uint32_t reason) -> void {
-        if (cancel) return;
+        if (cancel)
+          return;
 
         flush_ui_command_(context_id, native_binding_object, reason);
       },
@@ -200,7 +205,8 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
   dart_isolate_context_->dispatcher()->PostToDartSync(
       is_dedicated, context_id,
       [&](bool cancel, double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc) -> void {
-        if (cancel) return;
+        if (cancel)
+          return;
         create_binding_object_(context_id, native_binding_object, type, args, argc);
       },
       context_id, native_binding_object, type, args, argc);
@@ -221,7 +227,8 @@ bool DartMethodPointer::getWidgetElementShape(bool is_dedicated,
   int8_t is_success = dart_isolate_context_->dispatcher()->PostToDartSync(
       is_dedicated, context_id,
       [&](bool cancel, double context_id, void* native_binding_object, NativeValue* value) -> int8_t {
-        if (cancel) return 0;
+        if (cancel)
+          return 0;
         return get_widget_element_shape_(context_id, native_binding_object, value);
       },
       context_id, native_binding_object, value);
@@ -279,10 +286,12 @@ const char* DartMethodPointer::environment(bool is_dedicated, double context_id)
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync START";
 #endif
-  const char* result = dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, [&](bool cancel) -> const char* {
-    if (cancel) return nullptr;
-    return environment_();
-  });
+  const char* result =
+      dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, [&](bool cancel) -> const char* {
+        if (cancel)
+          return nullptr;
+        return environment_();
+      });
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync END";
