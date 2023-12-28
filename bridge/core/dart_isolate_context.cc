@@ -122,7 +122,7 @@ void DartIsolateContext::Dispose(multi_threading::Callback callback) {
     running_dart_isolates--;
     FinalizeJSRuntime();
     callback();
- });
+  });
 }
 
 void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
@@ -142,7 +142,8 @@ void DartIsolateContext::DisposePageAndKilledJSThread(DartIsolateContext* dart_i
                                                       Dart_Handle dart_handle,
                                                       DisposePageCallback result_callback) {
   delete page;
-  dart_isolate_context->dispatcher_->PostToDart(true, HandleDisposePageAndKillJSThread, dart_isolate_context, thread_group_id, dart_handle, result_callback);
+  dart_isolate_context->dispatcher_->PostToDart(true, HandleDisposePageAndKillJSThread, dart_isolate_context,
+                                                thread_group_id, dart_handle, result_callback);
 }
 
 void DartIsolateContext::DisposePageInJSThread(DartIsolateContext* dart_isolate_context,
@@ -201,7 +202,10 @@ void DartIsolateContext::HandleDisposePage(Dart_Handle persistent_handle, Dispos
   Dart_DeletePersistentHandle_DL(persistent_handle);
 }
 
-void DartIsolateContext::HandleDisposePageAndKillJSThread(DartIsolateContext* dart_isolate_context, int thread_group_id, Dart_Handle persistent_handle, DisposePageCallback result_callback) {
+void DartIsolateContext::HandleDisposePageAndKillJSThread(DartIsolateContext* dart_isolate_context,
+                                                          int thread_group_id,
+                                                          Dart_Handle persistent_handle,
+                                                          DisposePageCallback result_callback) {
   dart_isolate_context->dispatcher_->KillJSThreadSync(thread_group_id);
 
   Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
@@ -223,10 +227,8 @@ void DartIsolateContext::RemovePage(double thread_identity,
 
   if (page_group->Empty()) {
     page->executingContext()->SetContextInValid();
-    dispatcher_->PostToJs(
-        true, thread_group_id, DisposePageAndKilledJSThread,
-        this, page, thread_group_id,
-        dart_handle, result_callback);
+    dispatcher_->PostToJs(true, thread_group_id, DisposePageAndKilledJSThread, this, page, thread_group_id, dart_handle,
+                          result_callback);
   } else {
     dispatcher_->PostToJs(true, thread_group_id, DisposePageInJSThread, this, page, dart_handle, result_callback);
   }

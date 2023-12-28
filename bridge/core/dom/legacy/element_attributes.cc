@@ -31,7 +31,8 @@ AtomicString ElementAttributes::getAttribute(const AtomicString& name, Exception
   if (attributes_.count(name) == 0) {
     if (element_->IsWidgetElement()) {
       // Fallback to directly FFI access to dart.
-      NativeValue dart_result = element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
+      NativeValue dart_result =
+          element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
       if (dart_result.tag == NativeTag::TAG_STRING) {
         return NativeValueConverter<NativeTypeString>::FromNativeValue(element_->ctx(), std::move(dart_result));
       }
@@ -83,7 +84,8 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 
   if (!has_attribute && element_->IsWidgetElement()) {
     // Fallback to directly FFI access to dart.
-    NativeValue dart_result = element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
+    NativeValue dart_result =
+        element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
     return dart_result.tag != NativeTag::TAG_NULL;
   }
 

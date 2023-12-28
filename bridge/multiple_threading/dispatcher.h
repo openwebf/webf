@@ -9,8 +9,8 @@
 #include <include/webf_bridge.h>
 #include <condition_variable>
 #include <functional>
-#include <set>
 #include <memory>
+#include <set>
 #include <unordered_map>
 
 #include "logging.h"
@@ -91,7 +91,8 @@ class Dispatcher {
     auto& looper = js_threads_[thread_group_id];
     const DartWork work = [task, &looper](bool cancel) {
 #if ENABLE_LOG
-      WEBF_LOG(WARN) << " BLOCKED THREAD " << std::this_thread::get_id() << " HAD BEEN RESUMED" << " is_cancel: " << cancel;
+      WEBF_LOG(WARN) << " BLOCKED THREAD " << std::this_thread::get_id() << " HAD BEEN RESUMED"
+                     << " is_cancel: " << cancel;
 #endif
 
       looper->is_blocked_ = false;

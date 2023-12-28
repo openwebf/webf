@@ -35,8 +35,9 @@ CanvasGradient* CanvasRenderingContext2D::createLinearGradient(double x0,
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(y0),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(x1),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(y1)};
-  NativeValue value = InvokeBindingMethod(binding_call_methods::kcreateLinearGradient,
-                                          sizeof(arguments) / sizeof(NativeValue), arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeValue value =
+      InvokeBindingMethod(binding_call_methods::kcreateLinearGradient, sizeof(arguments) / sizeof(NativeValue),
+                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   return MakeGarbageCollected<CanvasGradient>(GetExecutingContext(), native_binding_object);
@@ -57,8 +58,9 @@ CanvasGradient* CanvasRenderingContext2D::createRadialGradient(double x0,
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y1),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(r1),
   };
-  NativeValue value = InvokeBindingMethod(binding_call_methods::kcreateRadialGradient,
-                                          sizeof(arguments) / sizeof(NativeValue), arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeValue value =
+      InvokeBindingMethod(binding_call_methods::kcreateRadialGradient, sizeof(arguments) / sizeof(NativeValue),
+                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   return MakeGarbageCollected<CanvasGradient>(GetExecutingContext(), native_binding_object);

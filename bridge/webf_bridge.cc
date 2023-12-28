@@ -101,7 +101,8 @@ void disposePage(double thread_identity,
 
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
 
-  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(thread_identity, static_cast<webf::WebFPage*>(page_), persistent_handle, result_callback);
+  ((webf::DartIsolateContext*)dart_isolate_context)
+      ->RemovePage(thread_identity, static_cast<webf::WebFPage*>(page_), persistent_handle, result_callback);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: disposePage Call END";
 #endif
@@ -112,7 +113,8 @@ void disposePageSync(double thread_identity, void* ptr, void* page_) {
   WEBF_LOG(INFO) << "[Dispatcher]: disposePageSync Call BEGIN";
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
-  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePageSync(thread_identity, static_cast<webf::WebFPage*>(page_));
+  ((webf::DartIsolateContext*)dart_isolate_context)
+      ->RemovePageSync(thread_identity, static_cast<webf::WebFPage*>(page_));
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: disposePageSync Call END";
 #endif

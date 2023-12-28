@@ -33,7 +33,8 @@ void* initTestFramework(void* page_) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   return page->dartIsolateContext()->dispatcher()->PostToJsSync(
       page->isDedicated(), page->contextId(),
-      [](bool cancel, webf::WebFPage* page) -> void* { return new webf::WebFTestContext(page->executingContext()); }, page);
+      [](bool cancel, webf::WebFPage* page) -> void* { return new webf::WebFTestContext(page->executingContext()); },
+      page);
 }
 
 void executeTest(void* testContext, Dart_Handle dart_handle, ExecuteResultCallback executeCallback) {
