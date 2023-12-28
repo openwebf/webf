@@ -1,3 +1,7 @@
+## 0.16.0+2
+
+* Testing for dedicated threading.
+
 ## 0.15.0
 
 This version will support Flutter 3.10.x
