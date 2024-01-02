@@ -75,7 +75,7 @@ const config = {
           //   position: 'left',
           //   label: 'API'
           // },
-          // {to: '/blog', label: 'Blog', position: 'left'},
+          {to: '/blog', label: 'Blog', position: 'left', docId: 'blog'},
           {
             href: 'https://github.com/openwebf/webf',
             label: 'GitHub',
@@ -123,10 +123,10 @@ const config = {
           {
             title: 'More',
             items: [
-              // {
-              //   label: 'Blog',
-              //   to: '/blog',
-              // },
+              {
+                label: 'Blog',
+                to: '/blog',
+              },
               {
                 label: 'GitHub',
                 href: 'https://github.com/openwebf/webf',
