@@ -55,20 +55,6 @@ void UICommandBuffer::addCommand(UICommand command,
                                  void* nativePtr,
                                  void* nativePtr2,
                                  bool request_ui_update) {
-  if (!is_recording_) {
-    UICommandItem recording_item{static_cast<int32_t>(UICommand::kStartRecordingCommand), nullptr, nullptr, nullptr};
-    updateFlags(command);
-    addCommand(recording_item, false);
-    is_recording_ = true;
-  }
-
-  if (command == UICommand::kFinishRecordingCommand) {
-    if (size_ == 0)
-      return;
-    if (buffer_[size_ - 1].type == static_cast<int32_t>(UICommand::kFinishRecordingCommand))
-      return;
-  }
-
   UICommandItem item{static_cast<int32_t>(command), args_01.get(), nativePtr, nativePtr2};
   updateFlags(command);
   addCommand(item, request_ui_update);
@@ -106,10 +92,6 @@ UICommandItem* UICommandBuffer::data() {
 
 uint32_t UICommandBuffer::kindFlag() {
   return kind_flag;
-}
-
-bool UICommandBuffer::isRecording() {
-  return is_recording_;
 }
 
 int64_t UICommandBuffer::size() {

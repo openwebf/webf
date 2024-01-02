@@ -4,10 +4,10 @@
 
 import 'package:webf/bridge.dart';
 
-class UICommandIterator extends Iterator<UICommand?> {
+class UICommandIterator extends Iterator<UICommand> {
   final List<List<UICommand>> _commandChunks = [];
   int _chunkIndex = 0;
-  int _commandIndex = 0;
+  int _commandIndex = -1;
   int _commandSize = 0;
   int commandFlag = 0;
 
@@ -24,7 +24,7 @@ class UICommandIterator extends Iterator<UICommand?> {
   void clear() {
     _commandChunks.clear();
     _chunkIndex = 0;
-    _commandIndex = 0;
+    _commandIndex = -1;
     commandFlag = 0;
     _commandSize = 0;
   }
@@ -34,45 +34,29 @@ class UICommandIterator extends Iterator<UICommand?> {
   }
 
   @override
-  UICommand? get current {
-    if (_commandChunks.isEmpty) return null;
-
-    List<UICommand> currentCommandChunk = _commandChunks[_chunkIndex];
-    if (currentCommandChunk.isEmpty) return null;
-
-    UICommand result = currentCommandChunk[_commandIndex];
-
-    int nextCommandIndex = _commandIndex + 1;
-    if (nextCommandIndex == currentCommandChunk.length) {
-      _commandIndex = 0;
-      _chunkIndex++;
-    } else {
-      _commandIndex++;
-    }
-
-    return result;
+  UICommand get current  {
+    return _commandChunks[_chunkIndex][_commandIndex];
   }
 
   @override
   bool moveNext() {
     if (_commandChunks.isEmpty) return false;
-    if (_chunkIndex >= _commandChunks.length) {
-      return false;
+
+    if (_commandIndex < _commandChunks[_chunkIndex].length - 1) {
+      _commandIndex++;
+    } else {
+      _commandIndex = 0;
+      _chunkIndex++;
     }
 
-    List<UICommand> currentCommandChunk = _commandChunks[_chunkIndex];
-    if (currentCommandChunk.isEmpty) return false;
-    if (_commandIndex < currentCommandChunk.length) {
-      return true;
-    }
-    return false;
+    return _chunkIndex < _commandChunks.length && _commandIndex < _commandChunks[_chunkIndex].length;
   }
 }
 
-class UICommandIterable extends Iterable<UICommand?> {
+class UICommandIterable extends Iterable<UICommand> {
   final UICommandIterator _iterator;
   UICommandIterable(this._iterator);
 
   @override
-  Iterator<UICommand?> get iterator => _iterator;
+  Iterator<UICommand> get iterator => _iterator;
 }

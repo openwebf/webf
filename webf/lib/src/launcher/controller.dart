@@ -128,7 +128,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   List<Cookie>? initialCookies;
 
-  final List<List<UICommand>> pendingUICommands = [];
+  // final List<List<UICommand>> pendingUICommands = [];
   // final UICommandIterator pendingUICommands = UICommandIterator();
 
   double _viewportWidth;
@@ -353,7 +353,6 @@ class WebFViewController implements WidgetsBindingObserver {
     clearUICommand(_contextId);
 
     await disposePage(runningThread is FlutterUIThread, _contextId);
-    pendingUICommands.clear();
 
     clearCssLength();
 

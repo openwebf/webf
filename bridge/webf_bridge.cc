@@ -225,16 +225,6 @@ uint32_t getUICommandKindFlag(void* page_) {
   return page->executingContext()->uiCommandBuffer()->kindFlag();
 }
 
-void acquireUiCommandLocks(void* page_) {
-  auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->executingContext()->uiCommandBuffer()->acquireLocks();
-}
-
-void releaseUiCommandLocks(void* page_) {
-  auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->executingContext()->uiCommandBuffer()->releaseLocks();
-}
-
 int64_t getUICommandItemSize(void* page_) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   return page->executingContext()->uiCommandBuffer()->size();

@@ -103,12 +103,6 @@ WEBF_EXPORT_C
 uint32_t getUICommandKindFlag(void* page);
 
 WEBF_EXPORT_C
-void acquireUiCommandLocks(void* page);
-
-WEBF_EXPORT_C
-void releaseUiCommandLocks(void* page);
-
-WEBF_EXPORT_C
 int64_t getUICommandItemSize(void* page);
 WEBF_EXPORT_C
 void clearUICommandItems(void* page);

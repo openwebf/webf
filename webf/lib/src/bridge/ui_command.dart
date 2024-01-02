@@ -17,6 +17,9 @@ class UICommand {
   late final Pointer nativePtr;
   late final Pointer nativePtr2;
 
+  UICommand();
+  UICommand.from(this.type, this.args, this.nativePtr, this.nativePtr2);
+
   @override
   String toString() {
     return 'UICommand(type: $type, args: $args, nativePtr: $nativePtr, nativePtr2: $nativePtr2)';

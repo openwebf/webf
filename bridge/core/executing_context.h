@@ -48,6 +48,7 @@ class ErrorEvent;
 class DartContext;
 class MutationObserver;
 class BindingObject;
+class NativeBindingObject;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
@@ -138,6 +139,7 @@ class ExecutingContext {
 
   // Force dart side to execute the pending ui commands.
   void FlushUICommand(const BindingObject* self, uint32_t reason);
+  void FlushUICommand(const BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps);
 
   void TurnOnJavaScriptGC();
   void TurnOffJavaScriptGC();
