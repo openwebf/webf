@@ -1,5 +1,5 @@
 ---
-slug: welcome
+slug: 2023-recap
 title: WebF 2023 Recap
 authors: [ andycall ]
 tags: [ Recap ]
