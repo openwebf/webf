@@ -95,6 +95,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   //#if ENABLE_PROFILE
   //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_END);
   //#endif
+
+  ui_command_buffer_.addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -273,8 +275,8 @@ void ExecutingContext::ReportError(JSValueConst error) {
 }
 
 void ExecutingContext::DrainMicrotasks() {
-  ui_command_buffer_.addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
   DrainPendingPromiseJobs();
+  ui_command_buffer_.addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
 namespace {
@@ -376,7 +378,37 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
 }
 
 void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
+  std::vector<NativeBindingObject*> deps;
+  FlushUICommand(self, reason, deps);
+}
+
+void ExecutingContext::FlushUICommand(const webf::BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps) {
   if (!uiCommandBuffer()->empty()) {
+    bool should_swap_ui_commands = false;
+    if (isUICommandReasonDependsOnElement(reason)) {
+      bool element_mounted_on_dart = self->bindingObject()->invoke_bindings_methods_from_native != nullptr;
+      bool is_deps_elements_mounted_on_dart = true;
+
+      for(auto binding : deps) {
+        if (binding->invoke_bindings_methods_from_native == nullptr) {
+          is_deps_elements_mounted_on_dart = false;
+        }
+      }
+
+      if (!element_mounted_on_dart || !is_deps_elements_mounted_on_dart) {
+        should_swap_ui_commands = true;
+      }
+    }
+
+    if (isUICommandReasonDependsOnLayout(reason)) {
+      should_swap_ui_commands = true;
+    }
+
+    // Sync commands to dart when caller dependents on Element.
+    if (should_swap_ui_commands) {
+      ui_command_buffer_.swap();
+    }
+
     dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject(), reason);
   }
 }

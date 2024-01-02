@@ -107,7 +107,12 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
                                                const NativeValue* argv,
                                                uint32_t reason,
                                                ExceptionState& exception_state) const {
-  GetExecutingContext()->FlushUICommand(this, reason);
+  std::vector<NativeBindingObject*> invoke_elements_deps;
+  // Collect all DOM elements in arguments.
+  CollectElementDepsOnArgs(invoke_elements_deps, argc, argv);
+  // Make sure all these elements are ready in dart.
+  GetExecutingContext()->FlushUICommand(this, reason, invoke_elements_deps);
+
   NativeValue return_value = Native_NewNull();
   NativeValue native_method =
       NativeValueConverter<NativeTypeString>::ToNativeValue(GetExecutingContext()->ctx(), method);
@@ -150,7 +155,12 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
                                                const NativeValue* argv,
                                                uint32_t reason,
                                                ExceptionState& exception_state) const {
-  GetExecutingContext()->FlushUICommand(this, reason);
+  std::vector<NativeBindingObject*> invoke_elements_deps;
+  // Collect all DOM elements in arguments.
+  CollectElementDepsOnArgs(invoke_elements_deps, argc, argv);
+  // Make sure all these elements are ready in dart.
+  GetExecutingContext()->FlushUICommand(this, reason, invoke_elements_deps);
+
   NativeValue return_value = Native_NewNull();
 
 #if ENABLE_LOG
@@ -344,6 +354,19 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
 NativeValue BindingObject::GetAllBindingPropertyNames(ExceptionState& exception_state) const {
   return InvokeBindingMethod(BindingMethodCallOperations::kGetAllPropertyNames, 0, nullptr,
                              FlushUICommandReason::kDependentsOnElement, exception_state);
+}
+
+void BindingObject::CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps,
+                                             size_t argc,
+                                             const webf::NativeValue* args) const {
+  for (int i = 0; i < argc; i++) {
+    const NativeValue& native_value = args[i];
+    if (native_value.tag == NativeTag::TAG_POINTER &&
+        GetPointerTypeOfNativePointer(native_value) == JSPointerType::NativeBindingObject) {
+      NativeBindingObject* ptr = NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(native_value);
+      deps.emplace_back(ptr);
+    }
+  }
 }
 
 void BindingObject::Trace(GCVisitor* visitor) const {

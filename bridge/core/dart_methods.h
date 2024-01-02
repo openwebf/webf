@@ -117,6 +117,15 @@ enum FlushUICommandReason : uint32_t {
   kDependentsAll = 1 << 4
 };
 
+
+inline bool isUICommandReasonDependsOnElement(uint32_t reason) {
+  return (reason & kDependentsOnElement) != 0;
+}
+
+inline bool isUICommandReasonDependsOnLayout(uint32_t reason) {
+  return (reason & kDependentsOnLayout) != 0;
+}
+
 class DartIsolateContext;
 
 class DartMethodPointer {

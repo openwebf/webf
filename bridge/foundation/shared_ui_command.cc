@@ -10,7 +10,11 @@
 namespace webf {
 
 SharedUICommand::SharedUICommand(ExecutingContext* context)
-    : context_(context), front_buffer_(std::make_unique<UICommandBuffer>(context)), is_blocking_writing_(false) {}
+    : context_(context),
+      front_buffer_(std::make_unique<UICommandBuffer>(context)),
+      back_buffer(std::make_unique<UICommandBuffer>(context)),
+      is_blocking_writing_(false) {
+}
 
 void SharedUICommand::addCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
@@ -22,15 +26,23 @@ void SharedUICommand::addCommand(UICommand type,
     return;
   }
 
-  while (is_blocking_writing_) {
-    // simply spin wait for the swapBuffers to finish.
+  if (type == UICommand::kFinishRecordingCommand) {
+    if (front_buffer_->empty()) {
+      swap();
+    } else {
+      appendBackCommandToFront();
+    }
+  } else {
+    back_buffer->addCommand(type, std::move(args_01), nativePtr, nativePtr2, request_ui_update);
   }
-
-  front_buffer_->addCommand(type, std::move(args_01), nativePtr, nativePtr2, request_ui_update);
 }
 
-// first called by dart to begin read commands.
+// first called by dart to being read commands.
 void* SharedUICommand::data() {
+  // simply spin wait for the swapBuffers to finish.
+  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  }
+
   return front_buffer_->data();
 }
 
@@ -50,15 +62,28 @@ void SharedUICommand::clear() {
 
 // called by c++ to check if there are commands.
 bool SharedUICommand::empty() {
-  return front_buffer_->empty();
+  return back_buffer->empty();
 }
 
-void SharedUICommand::acquireLocks() {
-  is_blocking_writing_ = true;
+void SharedUICommand::swap() {
+  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
+  WEBF_LOG(VERBOSE) << " SWAP COMMAND TO DART ";
+  std::swap(front_buffer_, back_buffer);
+  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
 }
 
-void SharedUICommand::releaseLocks() {
-  is_blocking_writing_ = false;
+void SharedUICommand::appendBackCommandToFront() {
+  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
+
+  WEBF_LOG(VERBOSE) << " SWAP COMMAND TO DART ";
+  for(int i = 0; i < back_buffer->size(); i ++) {
+    UICommandItem* command_item = back_buffer->data();
+    front_buffer_->addCommand(command_item[i]);
+  }
+
+  back_buffer->clear();
+
+  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
 }
 
 }  // namespace webf

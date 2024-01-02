@@ -116,6 +116,8 @@ class BindingObject : public ScriptWrappable {
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
   NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
+  void CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps, size_t argc, const NativeValue* args) const;
+
   FORCE_INLINE NativeBindingObject* bindingObject() const { return binding_object_; }
 
   void Trace(GCVisitor* visitor) const;

@@ -612,28 +612,6 @@ class UICommandItem extends Struct {
   external Pointer nativePtr;
 }
 
-typedef NativeAcquireUiCommandLocks = Pointer<Void> Function(Pointer<Void>);
-typedef DartAcquireUiCommandLocks = Pointer<void> Function(Pointer<Void>);
-
-final DartAcquireUiCommandLocks _acquireUiCommandLocks =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAcquireUiCommandLocks>>('acquireUiCommandLocks').asFunction();
-
-void acquireUICommandLocks(double contextId) {
-  // Stop the mutations from JavaScript thread.
-  _acquireUiCommandLocks(_allocatedPages[contextId]!);
-}
-
-typedef NativeReleaseUiCommandLocks = Pointer<Void> Function(Pointer<Void>);
-typedef DartReleaseUiCommandLocks = Pointer<void> Function(Pointer<Void>);
-
-final DartReleaseUiCommandLocks _releaseUiCommandLocks =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeReleaseUiCommandLocks>>('releaseUiCommandLocks').asFunction();
-
-void releaseUICommandLocks(double contextId) {
-  // Stop the mutations from JavaScript thread.
-  _releaseUiCommandLocks(_allocatedPages[contextId]!);
-}
-
 typedef NativeGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
 typedef DartGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
 
@@ -672,13 +650,7 @@ bool isJSThreadBlocked(double contextId) {
 void clearUICommand(double contextId) {
   assert(_allocatedPages.containsKey(contextId));
 
-  // Stop the mutations from JavaScript thread.
-  acquireUICommandLocks(contextId);
-
   _clearUICommandItems(_allocatedPages[contextId]!);
-
-  // Release the mutations from JavaScript thread.
-  releaseUICommandLocks(contextId);
 }
 
 void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> selfPointer, int reason) {
@@ -694,22 +666,18 @@ class _NativeCommandData {
   }
 
   int length;
-  int flag;
+  int kindFlag;
   List<int> rawMemory;
 
-  _NativeCommandData(this.flag, this.length, this.rawMemory);
+  _NativeCommandData(this.kindFlag, this.length, this.rawMemory);
 }
 
 _NativeCommandData readNativeUICommandMemory(double contextId) {
-  // Stop the mutations from JavaScript thread.
-  acquireUICommandLocks(contextId);
-
   Pointer<Uint64> nativeCommandItemPointer = _getUICommandItems(_allocatedPages[contextId]!);
   int flag = _getUICommandKindFlags(_allocatedPages[contextId]!);
   int commandLength = _getUICommandItemSize(_allocatedPages[contextId]!);
 
   if (commandLength == 0 || nativeCommandItemPointer == nullptr) {
-    releaseUICommandLocks(contextId);
     return _NativeCommandData.empty();
   }
 
@@ -718,9 +686,6 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
       .asTypedList((commandLength) * nativeCommandSize)
       .toList(growable: false);
   _clearUICommandItems(_allocatedPages[contextId]!);
-
-  // Release the mutations from JavaScript thread.
-  releaseUICommandLocks(contextId);
 
   return _NativeCommandData(flag, commandLength, rawMemory);
 }

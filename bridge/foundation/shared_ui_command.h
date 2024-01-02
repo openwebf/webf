@@ -26,14 +26,16 @@ class SharedUICommand : public DartReadable {
   int64_t size();
   bool empty();
   void clear();
-
-  void acquireLocks();
-  void releaseLocks();
+  void swap();
+  void appendBackCommandToFront();
 
  private:
+
   std::unique_ptr<UICommandBuffer> front_buffer_ = nullptr;
+  std::unique_ptr<UICommandBuffer> back_buffer = nullptr;
   std::atomic<bool> is_blocking_writing_;
   ExecutingContext* context_;
+  friend class UICommandBuffer;
 };
 
 }  // namespace webf
