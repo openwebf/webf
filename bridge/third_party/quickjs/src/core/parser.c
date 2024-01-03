@@ -7533,6 +7533,10 @@ static void js_free_function_def(JSContext *ctx, JSFunctionDef *fd)
 
   free_bytecode_atoms(ctx->rt, fd->byte_code.buf, fd->byte_code.size,
                       fd->use_short_opcodes);
+  if(fd->ic) {
+    rebuild_ic(fd->ic);
+    free_ic(fd->ic);
+  }
   dbuf_free(&fd->byte_code);
   js_free(ctx, fd->jump_slots);
   js_free(ctx, fd->label_slots);
