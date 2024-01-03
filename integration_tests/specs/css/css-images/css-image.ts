@@ -269,7 +269,8 @@ describe('css-image', () => {
         }
       });
       div.appendChild(image2);
-      await snapshot(0.1);
+      await sleep(0.2);
+      await snapshot();
       done();
     }, 1000);
   });

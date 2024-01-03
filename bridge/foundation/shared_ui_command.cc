@@ -27,11 +27,7 @@ void SharedUICommand::addCommand(UICommand type,
   }
 
   if (type == UICommand::kFinishRecordingCommand) {
-    if (front_buffer_->empty()) {
-      swap();
-    } else {
-      appendBackCommandToFront();
-    }
+    sync();
   } else {
     back_buffer->addCommand(type, std::move(args_01), nativePtr, nativePtr2, request_ui_update);
   }
@@ -65,9 +61,18 @@ bool SharedUICommand::empty() {
   return back_buffer->empty();
 }
 
+void SharedUICommand::sync() {
+  if (back_buffer->empty()) return;
+
+  if (front_buffer_->empty()) {
+    swap();
+  } else {
+    appendBackCommandToFront();
+  }
+}
+
 void SharedUICommand::swap() {
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
-  WEBF_LOG(VERBOSE) << " SWAP COMMAND TO DART ";
   std::swap(front_buffer_, back_buffer);
   is_blocking_writing_.store(false, std::memory_order::memory_order_release);
 }
@@ -75,7 +80,6 @@ void SharedUICommand::swap() {
 void SharedUICommand::appendBackCommandToFront() {
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
 
-  WEBF_LOG(VERBOSE) << " SWAP COMMAND TO DART ";
   for(int i = 0; i < back_buffer->size(); i ++) {
     UICommandItem* command_item = back_buffer->data();
     front_buffer_->addCommand(command_item[i]);

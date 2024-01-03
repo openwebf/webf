@@ -126,6 +126,10 @@ inline bool isUICommandReasonDependsOnLayout(uint32_t reason) {
   return (reason & kDependentsOnLayout) != 0;
 }
 
+inline bool isUICommandReasonDependsOnAll(uint32_t reason) {
+  return (reason & kDependentsAll) != 0;
+}
+
 class DartIsolateContext;
 
 class DartMethodPointer {
