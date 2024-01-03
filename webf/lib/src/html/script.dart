@@ -69,6 +69,11 @@ class ScriptRunner {
     // Increment load event delay count before eval.
     _document.incrementDOMContentLoadedEventDelayCount();
 
+    // Increase the pending count for preloading resources.
+    if (_document.controller.preloadStatus != PreloadingStatus.none) {
+      _document.unfinishedPreloadResources++;
+    }
+
     // Obtain bundle.
     WebFBundle bundle;
 
@@ -147,18 +152,30 @@ class ScriptRunner {
       _document.decrementDOMContentLoadedEventDelayCount();
     }
 
-    // Script executing phrase.
-    if (shouldAsync) {
-      // @TODO: Use requestIdleCallback
-      SchedulerBinding.instance.scheduleFrameCallback((_) async {
-        await task(shouldAsync);
-      });
+    WebFLoadingMode loadingMode = _document.controller.mode;
+    if (loadingMode != WebFLoadingMode.preloading) {
+      // Script executing phrase.
+      if (shouldAsync) {
+        SchedulerBinding.instance.scheduleFrameCallback((_) async {
+          await task(shouldAsync);
+        });
+      } else {
+        scheduleMicrotask(() {
+          if (_resolvingCount == 0) {
+            _execute(_syncScriptTasks, async: false);
+          }
+        });
+      }
     } else {
-      scheduleMicrotask(() {
-        if (_resolvingCount == 0) {
-          _execute(_syncScriptTasks, async: false);
+      await bundle.preProcessing(_contextId);
+      _document.pendingPreloadingScriptCallbacks.add(() => task(shouldAsync));
+
+      if (_document.controller.preloadStatus != PreloadingStatus.none) {
+        _document.unfinishedPreloadResources--;
+        if (_document.unfinishedPreloadResources == 0 && _document.onPreloadingFinished != null) {
+          _document.onPreloadingFinished!();
         }
-      });
+      }
     }
   }
 }

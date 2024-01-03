@@ -457,9 +457,6 @@ class CSSStyleDeclaration extends DynamicBindingObject with IterableMixin {
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
-    // If target has no renderer attached, no need to flush.
-    if (!_target.isRendererAttached) return;
-
     RenderBoxModel? renderBoxModel = _target.renderBoxModel;
     if (_pendingProperties.isEmpty || renderBoxModel == null) {
       return;

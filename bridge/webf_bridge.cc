@@ -139,6 +139,25 @@ void evaluateScripts(void* page_,
       bytecode_len, bundleFilename, startLine, persistent_handle, result_callback);
 }
 
+void dumpQuickjsByteCode(void* page_,
+                         const char* code,
+                         int32_t code_len,
+                         uint8_t** parsed_bytecodes,
+                         uint64_t* bytecode_len,
+                         const char* url,
+                         Dart_Handle dart_handle,
+                         DumpQuickjsByteCodeCallback result_callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dart] dumpQuickjsByteCode call" << std::endl;
+#endif
+
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->dartIsolateContext()->dispatcher()->PostToJs(
+      page->isDedicated(), page->contextId(), webf::dumpQuickJsByteCodeInternal, page, code, code_len, parsed_bytecodes,
+      bytecode_len, url, persistent_handle, result_callback);
+}
+
 void evaluateQuickjsByteCode(void* page_,
                              uint8_t* bytes,
                              int32_t byteLen,
@@ -154,13 +173,15 @@ void evaluateQuickjsByteCode(void* page_,
                                                      persistent_handle, result_callback);
 }
 
-void parseHTML(void* page_, const char* code, int32_t length) {
+void parseHTML(void* page_, char* code, int32_t length, Dart_Handle dart_handle, ParseHTMLCallback result_callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] parseHTMLWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
-                                                                         webf::parseHTMLInternal, page_, code, length);
+                                                                         webf::parseHTMLInternal, page_, code, length,
+                                                                         persistent_handle, result_callback);
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {

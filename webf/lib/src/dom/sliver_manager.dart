@@ -62,7 +62,7 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
       _sliverListLayout.insertSliverChild(child, after: after);
     }
 
-    if (childNode is Element) {
+    if (childNode is Element && !_target.ownerDocument.controller.shouldBlockingFlushingResolvedStyleProperties) {
       childNode.style.flushPendingProperties();
     }
 
