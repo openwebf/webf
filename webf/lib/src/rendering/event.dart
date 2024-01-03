@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -14,7 +15,7 @@ mixin RenderEventListenerMixin on RenderBox {
   HandleGetEventTarget? getEventTarget;
 
   GestureDispatcher? get gestureDispatcher {
-    RenderObject? p = parent;
+    AbstractNode? p = parent;
     while(p != null) {
       if (p is RenderViewportBox) {
         return p.gestureDispatcher;

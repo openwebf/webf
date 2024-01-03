@@ -424,7 +424,7 @@ class ImageElement extends Element {
     }
   }
 
-  void _updateRenderObject({RenderBox? svg, Image? image}) {
+  void _updateRenderObject({RenderBox? svg, ui.Image? image}) {
     if (svg != null) {
       final oldSVG = _svgRenderObject;
       _svgRenderObject = svg;
@@ -615,15 +615,14 @@ class ImageElement extends Element {
       );
     }
 
-    FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
     // Try to make sure that this image can be encoded into a smaller size.
     int? cachedWidth =
         renderStyle.width.value != null && width > 0 && width.isFinite
-            ? (width * ownerFlutterView.devicePixelRatio).toInt()
+            ? (width * ui.window.devicePixelRatio).toInt()
             : null;
     int? cachedHeight =
         renderStyle.height.value != null && height > 0 && height.isFinite
-            ? (height * ownerFlutterView.devicePixelRatio).toInt()
+            ? (height * ui.window.devicePixelRatio).toInt()
             : null;
 
     if (cachedWidth != null && cachedHeight != null) {

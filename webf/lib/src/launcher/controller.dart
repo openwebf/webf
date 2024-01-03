@@ -653,7 +653,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       case AppLifecycleState.resumed:
         document.visibilityChange(VisibilityState.visible);
         break;
-      case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
         document.visibilityChange(VisibilityState.hidden);
         break;
@@ -668,12 +667,10 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   void didChangeLocales(List<Locale>? locales) {
   }
 
-  ui.WindowPadding _prevViewInsets = ui.window.viewInsets;
   static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
 
   @override
   void didChangeMetrics() {
-    double bottomInset = ui.window.viewInsets.bottom / ui.window.devicePixelRatio;
     final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
     final double bottomInsets;
     if (resizeToAvoidBottomInsets) {

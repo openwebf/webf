@@ -39,7 +39,7 @@ class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
 // coordinate system of `ancestor`.
 Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool excludeScrollOffset = false}) {
   final List<RenderObject> renderers = <RenderObject>[];
-  for (RenderObject renderer = current; renderer != ancestor; renderer = renderer.parent!) {
+  for (RenderObject renderer = current; renderer != ancestor; renderer = renderer.parent! as RenderObject) {
     renderers.add(renderer);
     assert(renderer.parent != null);
   }
@@ -898,7 +898,7 @@ class RenderBoxModel extends RenderBox
   // child has percentage length and parent's size can not be calculated by style
   // thus parent needs relayout for its child calculate percentage length.
   void markParentNeedsRelayout() {
-    RenderObject? parent = this.parent;
+    AbstractNode? parent = this.parent;
     if (parent is RenderBoxModel) {
       parent.needsRelayout = true;
     }
@@ -1191,7 +1191,7 @@ class RenderBoxModel extends RenderBox
   /// Find scroll container
   RenderBoxModel? findScrollContainer() {
     RenderBoxModel? scrollContainer;
-    RenderObject? parent = this.parent;
+    AbstractNode? parent = this.parent;
 
     while (parent != null && parent is RenderLayoutBox) {
       if (parent.isScrollingContentBox && parent.parent is RenderLayoutBox) {
@@ -1559,7 +1559,7 @@ class RenderBoxModel extends RenderBox
   Offset getTotalScrollOffset() {
     double top = scrollTop;
     double left = scrollLeft;
-    RenderObject? parentNode = parent;
+    AbstractNode? parentNode = parent;
     while (parentNode is RenderBoxModel) {
       top += parentNode.scrollTop;
       left += parentNode.scrollLeft;

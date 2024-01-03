@@ -83,9 +83,6 @@ abstract class BindingObject {
     }
   }
 
-  @override
-  Iterator<T> get iterator => Iterable<T>.empty().iterator;
-
   @mustCallSuper
   void dispose();
 }
