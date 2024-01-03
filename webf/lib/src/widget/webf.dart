@@ -196,6 +196,7 @@ class WebFState extends State<WebF> with RouteAware {
   final Set<WebFWidgetElementToWidgetAdapter> customElementWidgets = {};
 
   void onCustomElementWidgetAdd(WebFWidgetElementToWidgetAdapter adapter) {
+    scheduleDelayForFrameCallback();
     Future.microtask(() {
       if (!_disposed) {
         setState(() {
@@ -206,6 +207,7 @@ class WebFState extends State<WebF> with RouteAware {
   }
 
   void onCustomElementWidgetRemove(WebFWidgetElementToWidgetAdapter adapter) {
+    scheduleDelayForFrameCallback();
     Future.microtask(() {
       if (!_disposed) {
         setState(() {
