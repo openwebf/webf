@@ -20,14 +20,14 @@ typedef MessageCallback = void Function(Map<String, dynamic>?);
 
 typedef NativeInspectorMessageCallback = Void Function(Pointer<Void> rpcSession, Pointer<Utf8> message);
 typedef DartInspectorMessageCallback = void Function(Pointer<Void> rpcSession, Pointer<Utf8> message);
-typedef NativeRegisterInspectorMessageCallback = Void Function(Int32 contextId, Pointer<Void> rpcSession,
+typedef NativeRegisterInspectorMessageCallback = Void Function(Double contextId, Pointer<Void> rpcSession,
     Pointer<NativeFunction<NativeInspectorMessageCallback>> inspectorMessageCallback);
 typedef NativeAttachInspector = Void Function(Int32);
 typedef DartAttachInspector = void Function(int);
-typedef NativeInspectorMessage = Void Function(Int32 contextId, Pointer<Utf8>);
-typedef NativePostTaskToUIThread = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
-typedef NativeDispatchInspectorTask = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
-typedef DartDispatchInspectorTask = void Function(int? contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef NativeInspectorMessage = Void Function(Double contextId, Pointer<Utf8>);
+typedef NativePostTaskToUIThread = Void Function(Double contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef NativeDispatchInspectorTask = Void Function(Double contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef DartDispatchInspectorTask = void Function(double? contextId, Pointer<Void> context, Pointer<Void> callback);
 
 void serverIsolateEntryPoint(SendPort isolateToMainStream) {
   ReceivePort mainToIsolateStream = ReceivePort();

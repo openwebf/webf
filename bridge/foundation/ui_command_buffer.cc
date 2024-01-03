@@ -11,6 +11,38 @@
 
 namespace webf {
 
+UICommandKind GetKindFromUICommand(UICommand command) {
+  switch (command) {
+    case UICommand::kCreateElement:
+    case UICommand::kCreateTextNode:
+    case UICommand::kCreateComment:
+    case UICommand::kCreateDocument:
+    case UICommand::kCreateWindow:
+    case UICommand::kRemoveNode:
+    case UICommand::kCreateDocumentFragment:
+    case UICommand::kCreateSVGElement:
+    case UICommand::kCreateElementNS:
+    case UICommand::kCloneNode:
+      return UICommandKind::kNodeCreation;
+    case UICommand::kInsertAdjacentNode:
+      return UICommandKind::kNodeMutation;
+    case UICommand::kAddEvent:
+    case UICommand::kRemoveEvent:
+      return UICommandKind::kEvent;
+    case UICommand::kSetStyle:
+    case UICommand::kClearStyle:
+      return UICommandKind::kStyleUpdate;
+    case UICommand::kSetAttribute:
+    case UICommand::kRemoveAttribute:
+      return UICommandKind::kAttributeUpdate;
+    case UICommand::kDisposeBindingObject:
+      return UICommandKind::kDisposeBindingObject;
+    case UICommand::kStartRecordingCommand:
+    case UICommand::kFinishRecordingCommand:
+      return UICommandKind::kOperation;
+  }
+}
+
 UICommandBuffer::UICommandBuffer(ExecutingContext* context)
     : context_(context), buffer_((UICommandItem*)malloc(sizeof(UICommandItem) * MAXIMUM_UI_COMMAND_SIZE)) {}
 
@@ -18,13 +50,33 @@ UICommandBuffer::~UICommandBuffer() {
   free(buffer_);
 }
 
-void UICommandBuffer::addCommand(UICommand type,
+void UICommandBuffer::addCommand(UICommand command,
                                  std::unique_ptr<SharedNativeString>&& args_01,
                                  void* nativePtr,
                                  void* nativePtr2,
                                  bool request_ui_update) {
-  UICommandItem item{static_cast<int32_t>(type), args_01.get(), nativePtr, nativePtr2};
+  if (!is_recording_) {
+    UICommandItem recording_item{static_cast<int32_t>(UICommand::kStartRecordingCommand), nullptr, nullptr, nullptr};
+    updateFlags(command);
+    addCommand(recording_item, false);
+    is_recording_ = true;
+  }
+
+  if (command == UICommand::kFinishRecordingCommand) {
+    if (size_ == 0)
+      return;
+    if (buffer_[size_ - 1].type == static_cast<int32_t>(UICommand::kFinishRecordingCommand))
+      return;
+  }
+
+  UICommandItem item{static_cast<int32_t>(command), args_01.get(), nativePtr, nativePtr2};
+  updateFlags(command);
   addCommand(item, request_ui_update);
+}
+
+void UICommandBuffer::updateFlags(UICommand command) {
+  UICommandKind type = GetKindFromUICommand(command);
+  kind_flag = kind_flag | type;
 }
 
 void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_update) {
@@ -38,9 +90,8 @@ void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_upda
   }
 
 #if FLUTTER_BACKEND
-  if (UNLIKELY(request_ui_update && !update_batched_ && context_->IsContextValid() &&
-               context_->dartMethodPtr()->requestBatchUpdate != nullptr)) {
-    context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
+  if (UNLIKELY(request_ui_update && !update_batched_ && context_->IsContextValid())) {
+    context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
     update_batched_ = true;
   }
 #endif
@@ -53,6 +104,14 @@ UICommandItem* UICommandBuffer::data() {
   return buffer_;
 }
 
+uint32_t UICommandBuffer::kindFlag() {
+  return kind_flag;
+}
+
+bool UICommandBuffer::isRecording() {
+  return is_recording_;
+}
+
 int64_t UICommandBuffer::size() {
   return size_;
 }
@@ -62,8 +121,9 @@ bool UICommandBuffer::empty() {
 }
 
 void UICommandBuffer::clear() {
+  memset(buffer_, 0, sizeof(UICommandItem) * size_);
   size_ = 0;
-  memset(buffer_, 0, sizeof(buffer_));
+  kind_flag = 0;
   update_batched_ = false;
 }
 

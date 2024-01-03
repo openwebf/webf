@@ -14,11 +14,11 @@ TEST(Document, createElement) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "<div/>");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "console.log(div);";
@@ -34,11 +34,11 @@ TEST(Document, body) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "<body/>");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(document.body)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
@@ -49,8 +49,8 @@ TEST(Document, appendParentWillFail) {
   bool static errorCalled = false;
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
-  auto context = env->page()->GetExecutingContext();
+  auto env = TEST_init([](double contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->executingContext();
   const char* code = "document.body.appendChild(document.documentElement)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, true);
@@ -64,11 +64,11 @@ TEST(Document, createTextNode) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "<div>");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "div.setAttribute('hello', 1234);"
@@ -88,11 +88,11 @@ TEST(Document, createComment) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "<div>");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "div.setAttribute('hello', 1234);"
@@ -112,11 +112,11 @@ TEST(Document, instanceofNode) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "console.log(document instanceof Node, document instanceof Document, document instanceof EventTarget)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
@@ -130,11 +130,11 @@ TEST(Document, FreedByOutOfScope) {
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = false;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "(() => { let img = document.createElement('div');  })();";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
@@ -149,15 +149,15 @@ TEST(Document, createElementShouldWorkWithMultipleContext) {
   const char* code = "(() => { let img = document.createElement('img'); document.body.appendChild(img);  })();";
 
   {
-    auto env = TEST_init([](int32_t contextId, const char* errmsg) {});
-    auto context = env->page()->GetExecutingContext();
+    auto env = TEST_init([](double contextId, const char* errmsg) {});
+    auto context = env->page()->executingContext();
     env->page()->evaluateScript(code, strlen(code), "vm://", 0);
     env_1 = env.release();
   }
 
   {
-    auto env = TEST_init([](int32_t contextId, const char* errmsg) {});
-    auto context = env->page()->GetExecutingContext();
+    auto env = TEST_init([](double contextId, const char* errmsg) {});
+    auto context = env->page()->executingContext();
     const char* code = "(() => { let img = document.createElement('img'); document.body.appendChild(img);  })();";
     env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   }
@@ -174,11 +174,11 @@ TEST(document, all) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "3 <html>");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "console.log(document.all.length, document.all[0]);"
       "document.body.appendChild(document.createElement('div'));"

@@ -8,12 +8,14 @@
 #include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
+#include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
 #include "qjs_window.h"
+#include "script_forbidden_scope.h"
 #include "timing/performance.h"
 
 namespace webf {
@@ -21,17 +23,19 @@ namespace webf {
 static std::atomic<int32_t> context_unique_id{0};
 
 #define MAX_JS_CONTEXT 8192
-bool valid_contexts[MAX_JS_CONTEXT];
+thread_local std::unordered_map<double, bool> valid_contexts;
 std::atomic<uint32_t> running_context_list{0};
 
 ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
-                                   int32_t contextId,
+                                   bool is_dedicated,
+                                   double context_id,
                                    JSExceptionHandler handler,
                                    void* owner)
     : dart_isolate_context_(dart_isolate_context),
-      context_id_(contextId),
+      context_id_(context_id),
       handler_(std::move(handler)),
       owner_(owner),
+      is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
   //  #if ENABLE_PROFILE
@@ -45,16 +49,19 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   //  #endif
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
-  assert_m(valid_contexts[contextId] != true, "Conflict context found!");
-  valid_contexts[contextId] = true;
-  if (contextId > running_context_list)
-    running_context_list = contextId;
+  assert_m(valid_contexts[context_id] != true, "Conflict context found!");
+  valid_contexts[context_id] = true;
+  if (context_id > running_context_list)
+    running_context_list = context_id;
 
   time_origin_ = std::chrono::system_clock::now();
 
   JSContext* ctx = script_state_.ctx();
   global_object_ = JS_GetGlobalObject(script_state_.ctx());
 
+  // Turn off quickjs GC to avoid performance issue at loading status.
+  // When the `load` event fired in window, the GC will turn on.
+  JS_TurnOffGC(script_state_.runtime());
   JS_SetContextOpaque(ctx, this);
   JS_SetHostPromiseRejectionTracker(script_state_.runtime(), promiseRejectTracker, nullptr);
 
@@ -99,7 +106,7 @@ ExecutingContext::~ExecutingContext() {
   if (JS_IsObject(exception) || JS_IsException(exception)) {
     // There must be bugs in native functions from call stack frame. Someone needs to fix it if throws.
     ReportError(exception);
-    assert_m(false, "Unhandled exception found when Dispose JSContext.");
+    assert_m(false, "Unhandled exception found when Dispe JSContext.");
   }
 
   JS_FreeValue(script_state_.ctx(), global_object_);
@@ -114,19 +121,22 @@ ExecutingContext* ExecutingContext::From(JSContext* ctx) {
   return static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
 }
 
-bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
-                                          size_t codeLength,
+bool ExecutingContext::EvaluateJavaScript(const char* code,
+                                          size_t code_len,
                                           uint8_t** parsed_bytecodes,
                                           uint64_t* bytecode_len,
                                           const char* sourceURL,
                                           int startLine) {
-  std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), codeLength));
+  if (ScriptForbiddenScope::IsScriptForbidden()) {
+    return false;
+  }
+
   JSValue result;
   if (parsed_bytecodes == nullptr) {
-    result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
+    result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
   } else {
-    JSValue byte_object = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL,
-                                  JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+    JSValue byte_object =
+        JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
     if (JS_IsException(byte_object)) {
       HandleException(&byte_object);
       return false;
@@ -138,7 +148,7 @@ bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
   }
 
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -147,7 +157,7 @@ bool ExecutingContext::EvaluateJavaScript(const uint16_t* code,
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine) {
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -155,7 +165,7 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
 
 bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine) {
   JSValue result = JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
@@ -167,7 +177,7 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!HandleException(&obj))
     return false;
   val = JS_EvalFunction(script_state_.ctx(), obj);
-  DrainPendingPromiseJobs();
+  DrainMicrotasks();
   if (!HandleException(&val))
     return false;
   JS_FreeValue(script_state_.ctx(), val);
@@ -176,6 +186,10 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
 
 bool ExecutingContext::IsContextValid() const {
   return is_context_valid_;
+}
+
+void ExecutingContext::SetContextInValid() {
+  is_context_valid_ = false;
 }
 
 bool ExecutingContext::IsCtxValid() const {
@@ -240,16 +254,14 @@ void ExecutingContext::ReportError(JSValueConst error) {
   uint32_t messageLength = strlen(type) + strlen(title);
   if (stack != nullptr) {
     messageLength += 4 + strlen(stack);
-    char* message = new char[messageLength];
+    char* message = (char*)dart_malloc(messageLength * sizeof(char));
     snprintf(message, messageLength, "%s: %s\n%s", type, title, stack);
     handler_(this, message);
-    delete[] message;
   } else {
     messageLength += 3;
-    char* message = new char[messageLength];
+    char* message = (char*)dart_malloc(messageLength * sizeof(char));
     snprintf(message, messageLength, "%s: %s", type, title);
     handler_(this, message);
-    delete[] message;
   }
 
   JS_FreeValue(ctx, errorTypeValue);
@@ -258,6 +270,43 @@ void ExecutingContext::ReportError(JSValueConst error) {
   JS_FreeCString(ctx, title);
   JS_FreeCString(ctx, stack);
   JS_FreeCString(ctx, type);
+}
+
+void ExecutingContext::DrainMicrotasks() {
+  ui_command_buffer_.addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  DrainPendingPromiseJobs();
+}
+
+namespace {
+
+struct MicroTaskDeliver {
+  MicrotaskCallback callback;
+  void* data;
+};
+
+}  // namespace
+
+void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) {
+  JSValue proxy_data = JS_NewObject(ctx());
+
+  auto* deliver = new MicroTaskDeliver();
+  deliver->data = data;
+  deliver->callback = callback;
+
+  JS_SetOpaque(proxy_data, deliver);
+
+  JS_EnqueueJob(
+      ctx(),
+      [](JSContext* ctx, int argc, JSValueConst* argv) -> JSValue {
+        auto* deliver = static_cast<MicroTaskDeliver*>(JS_GetOpaque(argv[0], JS_CLASS_OBJECT));
+        deliver->callback(deliver->data);
+
+        delete deliver;
+        return JS_NULL;
+      },
+      1, &proxy_data);
+
+  JS_FreeValue(ctx(), proxy_data);
 }
 
 void ExecutingContext::DrainPendingPromiseJobs() {
@@ -326,10 +375,18 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
   }
 }
 
-void ExecutingContext::FlushUICommand() {
+void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
   if (!uiCommandBuffer()->empty()) {
-    dartMethodPtr()->flushUICommand(context_id_);
+    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject(), reason);
   }
+}
+
+void ExecutingContext::TurnOnJavaScriptGC() {
+  JS_TurnOnGC(script_state_.runtime());
+}
+
+void ExecutingContext::TurnOffJavaScriptGC() {
+  JS_TurnOffGC(script_state_.runtime());
 }
 
 void ExecutingContext::DispatchErrorEvent(ErrorEvent* error_event) {
@@ -444,8 +501,10 @@ void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable)
 }
 
 // A lock free context validator.
-bool isContextValid(int32_t contextId) {
+bool isContextValid(double contextId) {
   if (contextId > running_context_list)
+    return false;
+  if (valid_contexts.count(contextId) == 0)
     return false;
   return valid_contexts[contextId];
 }

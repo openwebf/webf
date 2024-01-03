@@ -28,6 +28,14 @@ if (process.env.SPEC_SCOPE) {
   } else {
     throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
   }
+} else {
+  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
+    cwd: context,
+    ignore: ['node_modules/**'],
+  }).map((file) => './' + file);
+  if (process.env.WEBF_TEST_FILTER) {
+    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
+  }
 }
 
 

@@ -15,11 +15,11 @@ TEST(HTMLElement, globalEventHandlerRegistered) {
     EXPECT_STREQ(message.c_str(), "1234");
     logCalled = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div'); function f(){ console.log(1234); }; div.onclick = f; "
       "div.dispatchEvent(new Event('click'));";

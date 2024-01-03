@@ -1,10 +1,10 @@
 import {EventTarget} from "../dom/events/event_target";
 
 export interface Screen extends EventTarget {
-  readonly availWidth: DartImpl<int64>;
-  readonly availHeight: DartImpl<int64>;
-  readonly width: DartImpl<int64>;
-  readonly height: DartImpl<int64>;
+  readonly availWidth: int64;
+  readonly availHeight: int64;
+  readonly width: int64;
+  readonly height: int64;
 
   new(): void;
 }

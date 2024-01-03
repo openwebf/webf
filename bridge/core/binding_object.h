@@ -11,6 +11,7 @@
 #include <set>
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
+#include "core/dart_methods.h"
 #include "foundation/native_type.h"
 #include "foundation/native_value.h"
 
@@ -21,37 +22,41 @@ struct NativeBindingObject;
 class ExceptionState;
 class GCVisitor;
 class ScriptPromiseResolver;
+class DartIsolateContext;
 
-using InvokeBindingsMethodsFromNative = void (*)(int32_t contextId,
+using InvokeBindingsMethodsFromNative = void (*)(double contextId,
                                                  const NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
                                                  NativeValue* method,
                                                  int32_t argc,
                                                  const NativeValue* argv);
 
+using DartInvokeResultCallback = void (*)(Dart_Handle dart_object, NativeValue* result);
+
 using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_object,
-                                              NativeValue* return_value,
                                               NativeValue* method,
                                               int32_t argc,
                                               NativeValue* argv,
-                                              Dart_Handle dart_object);
+                                              Dart_Handle dart_object,
+                                              DartInvokeResultCallback result_callback);
 
 struct NativeBindingObject : public DartReadable {
   NativeBindingObject() = delete;
-  explicit NativeBindingObject(BindingObject* target)
-      : binding_target_(target), invoke_binding_methods_from_dart(HandleCallFromDartSide){};
+  explicit NativeBindingObject(BindingObject* target);
 
-  static void HandleCallFromDartSide(NativeBindingObject* binding_object,
-                                     NativeValue* return_value,
+  static void HandleCallFromDartSide(DartIsolateContext* dart_isolate_context,
+                                     NativeBindingObject* binding_object,
                                      NativeValue* method,
                                      int32_t argc,
                                      NativeValue* argv,
-                                     Dart_Handle dart_object);
+                                     Dart_PersistentHandle dart_object,
+                                     DartInvokeResultCallback result_callback);
 
   bool disposed_{false};
   BindingObject* binding_target_{nullptr};
   InvokeBindingMethodsFromDart invoke_binding_methods_from_dart{nullptr};
   InvokeBindingsMethodsFromNative invoke_bindings_methods_from_native{nullptr};
+  void* extra{nullptr};
 };
 
 enum BindingMethodCallOperations {
@@ -89,7 +94,7 @@ class BindingObject : public ScriptWrappable {
                                                     void* private_data);
   static void HandleAnonymousAsyncCalledFromDart(void* ptr,
                                                  NativeValue* native_value,
-                                                 int32_t contextId,
+                                                 double contextId,
                                                  const char* errmsg);
 
   BindingObject() = delete;
@@ -105,8 +110,9 @@ class BindingObject : public ScriptWrappable {
   NativeValue InvokeBindingMethod(const AtomicString& method,
                                   int32_t argc,
                                   const NativeValue* args,
+                                  uint32_t reason,
                                   ExceptionState& exception_state) const;
-  NativeValue GetBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const;
+  NativeValue GetBindingProperty(const AtomicString& prop, uint32_t reason, ExceptionState& exception_state) const;
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
   NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
@@ -132,6 +138,7 @@ class BindingObject : public ScriptWrappable {
   NativeValue InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
                                   size_t argc,
                                   const NativeValue* args,
+                                  uint32_t reason,
                                   ExceptionState& exception_state) const;
 
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.

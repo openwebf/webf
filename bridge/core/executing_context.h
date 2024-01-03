@@ -30,6 +30,8 @@
 #include "frame/module_listener_container.h"
 #include "script_state.h"
 
+#include "shared_ui_command.h"
+
 namespace webf {
 
 struct NativeByteCode {
@@ -44,11 +46,14 @@ class Performance;
 class MemberMutationScope;
 class ErrorEvent;
 class DartContext;
+class MutationObserver;
+class BindingObject;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
+using MicrotaskCallback = void (*)(void* data);
 
-bool isContextValid(int32_t contextId);
+bool isContextValid(double contextId);
 
 // An environment in which script can execute. This class exposes the common
 // properties of script execution environments on the webf.
@@ -57,14 +62,15 @@ class ExecutingContext {
  public:
   ExecutingContext() = delete;
   ExecutingContext(DartIsolateContext* dart_isolate_context,
-                   int32_t contextId,
+                   bool is_dedicated,
+                   double context_id,
                    JSExceptionHandler handler,
                    void* owner);
   ~ExecutingContext();
 
   static ExecutingContext* From(JSContext* ctx);
 
-  bool EvaluateJavaScript(const uint16_t* code,
+  bool EvaluateJavaScript(const char* code,
                           size_t codeLength,
                           uint8_t** parsed_bytecodes,
                           uint64_t* bytecode_len,
@@ -74,17 +80,19 @@ class ExecutingContext {
   bool EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine);
   bool EvaluateByteCode(uint8_t* bytes, size_t byteLength);
   bool IsContextValid() const;
+  void SetContextInValid();
   bool IsCtxValid() const;
   JSValue Global();
   JSContext* ctx();
-  FORCE_INLINE int32_t contextId() const { return context_id_; };
+  FORCE_INLINE double contextId() const { return context_id_; };
   FORCE_INLINE int32_t uniqueId() const { return unique_id_; }
   void* owner();
   bool HandleException(JSValue* exc);
   bool HandleException(ScriptValue* exc);
   bool HandleException(ExceptionState& exception_state);
   void ReportError(JSValueConst error);
-  void DrainPendingPromiseJobs();
+  void DrainMicrotasks();
+  void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
   ExecutionContextData* contextData();
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, size_t* bytecodeLength);
@@ -120,15 +128,19 @@ class ExecutingContext {
   FORCE_INLINE Window* window() const { return window_; }
   FORCE_INLINE DartIsolateContext* dartIsolateContext() const { return dart_isolate_context_; };
   FORCE_INLINE Performance* performance() const { return performance_; }
-  FORCE_INLINE UICommandBuffer* uiCommandBuffer() { return &ui_command_buffer_; };
-  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() {
+  FORCE_INLINE SharedUICommand* uiCommandBuffer() { return &ui_command_buffer_; };
+  FORCE_INLINE DartMethodPointer* dartMethodPtr() const {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
   }
+  FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
   // Force dart side to execute the pending ui commands.
-  void FlushUICommand();
+  void FlushUICommand(const BindingObject* self, uint32_t reason);
+
+  void TurnOnJavaScriptGC();
+  void TurnOffJavaScriptGC();
 
   void DispatchErrorEvent(ErrorEvent* error_event);
   void DispatchErrorEventInterval(ErrorEvent* error_event);
@@ -152,6 +164,9 @@ class ExecutingContext {
   void InstallDocument();
   void InstallPerformance();
 
+  void DrainPendingPromiseJobs();
+  void EnsureEnqueueMicrotask();
+
   static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
                                    JSValueConst reason,
@@ -162,7 +177,7 @@ class ExecutingContext {
   // Members first initialized and destructed at the last.
   // Keep uiCommandBuffer below dartMethod ptr to make sure we can flush all disposeEventTarget when UICommandBuffer
   // release.
-  UICommandBuffer ui_command_buffer_{this};
+  SharedUICommand ui_command_buffer_{this};
   DartIsolateContext* dart_isolate_context_{nullptr};
   // Keep uiCommandBuffer above ScriptState to make sure we can collect all disposedEventTarget command when free
   // JSContext. When call JSFreeContext(ctx) inside ScriptState, all eventTargets will be finalized and UICommandBuffer
@@ -174,8 +189,8 @@ class ExecutingContext {
   // ----------------------------------------------------------------------
   // All members below will be free before ScriptState freed.
   // ----------------------------------------------------------------------
-  bool is_context_valid_{false};
-  int32_t context_id_;
+  std::atomic<bool> is_context_valid_{false};
+  double context_id_;
   JSExceptionHandler handler_;
   void* owner_;
   JSValue global_object_{JS_NULL};
@@ -190,6 +205,7 @@ class ExecutingContext {
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::set<ScriptWrappable*> active_wrappers_;
+  bool is_dedicated_;
 };
 
 class ObjectProperty {

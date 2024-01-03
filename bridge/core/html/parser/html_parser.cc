@@ -10,6 +10,7 @@
 #include "core/dom/text.h"
 #include "element_namespace_uris.h"
 #include "foundation/logging.h"
+#include "html_names.h"
 #include "html_parser.h"
 
 namespace webf {
@@ -21,7 +22,7 @@ std::string trim(const std::string& str) {
   return tmp;
 }
 
-// Parse html,isHTMLFragment should be false if need to automatically complete html, head, and body when they are
+// Parse html,isHTMLFragment should be false if you need to automatically complete html, head, and body when they are
 // missing.
 GumboOutput* parse(const std::string& html, bool isHTMLFragment = false) {
   // Gumbo-parser parse HTML.
@@ -53,9 +54,53 @@ GumboOutput* parse(const std::string& html, bool isHTMLFragment = false) {
   return htmlTree;
 }
 
+void transToSVG(GumboNode* node) {
+  if (node->type == GUMBO_NODE_ELEMENT) {
+    auto element = &node->v.element;
+    gumbo_tag_from_original_text(&element->original_tag);
+    const GumboVector* children = &element->children;
+    for (int i = 0; i < children->length; ++i) {
+      auto* child = (GumboNode*)children->data[i];
+      transToSVG(child);
+    }
+  }
+}
+
+GumboOutput* parseSVG(const char* buffer, size_t length) {
+  GumboOptions options = kGumboDefaultOptions;
+  options.fragment_namespace = GumboNamespaceEnum::GUMBO_NAMESPACE_SVG;
+  GumboOutput* svgTree = gumbo_parse_with_options(&options, buffer, length);
+
+  return svgTree;
+}
+
+GumboNode* findSVGRoot(GumboNode* node) {
+  if (node->type == GUMBO_NODE_ELEMENT) {
+    auto element = &node->v.element;
+    if (element->tag == GUMBO_TAG_SVG && element->tag_namespace == GUMBO_NAMESPACE_SVG) {
+      return node;
+    }
+    auto children = &element->children;
+    GumboNode* ret = nullptr;
+    for (int i = 0; i < children->length; i++) {
+      ret = findSVGRoot((GumboNode*)children->data[i]);
+      if (ret != nullptr) {
+        return ret;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
 void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
   auto* context = root_node->GetExecutingContext();
   JSContext* ctx = root_node->GetExecutingContext()->ctx();
+
+  auto* html_element = DynamicTo<Element>(root_node);
+  if (html_element != nullptr && html_element->localName() == html_names::khtml) {
+    parseProperty(html_element, &node->v.element);
+  }
 
   const GumboVector* children = &node->v.element.children;
   for (int i = 0; i < children->length; ++i) {
@@ -130,6 +175,21 @@ bool HTMLParser::parseHTMLFragment(const char* code, size_t codeLength, Node* ro
   return parseHTML(html, rootNode, true);
 }
 
+GumboOutput* HTMLParser::parseSVGResult(const char* code, size_t codeLength) {
+  std::string svg = std::string(code, codeLength);
+  auto result = parseSVG(code, codeLength);
+  auto root = findSVGRoot(result->root);
+  if (root != nullptr) {
+    transToSVG(root);
+  }
+
+  return result;
+}
+
+void HTMLParser::freeSVGResult(GumboOutput* svgTree) {
+  gumbo_destroy_output(&kGumboDefaultOptions, svgTree);
+}
+
 void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
   auto* context = element->GetExecutingContext();
   JSContext* ctx = context->ctx();
@@ -138,17 +198,9 @@ void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
   for (int j = 0; j < attributes->length; ++j) {
     auto* attribute = (GumboAttribute*)attributes->data[j];
 
-    if (strcmp(attribute->name, "style") == 0) {
-      auto* style = element->style();
-      if (style == nullptr) {
-        return;
-      }
-      style->setCssText(AtomicString(ctx, attribute->value), ASSERT_NO_EXCEPTION());
-    } else {
-      std::string strName = attribute->name;
-      std::string strValue = attribute->value;
-      element->setAttribute(AtomicString(ctx, strName), AtomicString(ctx, strValue), ASSERT_NO_EXCEPTION());
-    }
+    std::string strName = attribute->name;
+    std::string strValue = attribute->value;
+    element->setAttribute(AtomicString(ctx, strName), AtomicString(ctx, strValue), ASSERT_NO_EXCEPTION());
   }
 }
 

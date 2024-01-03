@@ -245,6 +245,15 @@ class BoxDecorationPainter extends BoxPainter {
 
   void _paintBackgroundImage(Canvas canvas, Rect rect, ImageConfiguration configuration) {
     if (_decoration.image == null) return;
+    if(_imagePainter == null) {
+      _imagePainter = BoxDecorationImagePainter._(
+          _decoration.image!,
+          renderStyle,
+          onChanged!
+      );
+    } else {
+      _imagePainter!.image = _decoration.image!;
+    }
     _imagePainter ??= BoxDecorationImagePainter._(_decoration.image!, renderStyle, onChanged!);
     Path? clipPath;
     switch (_decoration.shape) {
@@ -400,7 +409,11 @@ class BoxDecorationImagePainter {
   BoxDecorationImagePainter._(this._details, this._renderStyle, this._onChanged);
 
   final CSSRenderStyle _renderStyle;
-  final DecorationImage _details;
+  DecorationImage _details;
+
+  set image(DecorationImage detail){
+    _details = detail;
+  }
   CSSBackgroundPosition get _backgroundPositionX {
     return _renderStyle.backgroundPositionX;
   }

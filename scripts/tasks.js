@@ -18,6 +18,7 @@ const uploader = require('./utils/uploader');
 
 program
 .option('--static-quickjs', 'Build quickjs as static library and bundled into webf library.', false)
+.option('--enable-log', 'Enable log printing')
 .parse(process.argv);
 
 const SUPPORTED_JS_ENGINES = ['jsc', 'quickjs'];
@@ -104,6 +105,10 @@ task('build-darwin-webf-lib', done => {
   // Bundle quickjs into webf.
   if (program.staticQuickjs) {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
+  }
+
+  if (program.enableLog) {
+    externCmakeArgs.push('-DENABLE_LOG=true');
   }
 
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true ${externCmakeArgs.join(' ')} \
@@ -354,6 +359,10 @@ task(`build-ios-webf-lib`, (done) => {
     externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
   }
 
+  if (program.enableLog) {
+    externCmakeArgs.push('-DENABLE_LOG=true');
+  }
+
   // generate build scripts for simulator
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
     -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
@@ -484,6 +493,10 @@ task('build-linux-webf-lib', (done) => {
     externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
   }
 
+  if (program.enableLog) {
+    externCmakeArgs.push('-DENABLE_LOG=true');
+  }
+
   const soBinaryDirectory = path.join(paths.bridge, `build/linux/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-linux');
   // generate project
@@ -569,6 +582,10 @@ task('build-window-webf-lib', (done) => {
     externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
   }
 
+  if (program.enableLog) {
+    externCmakeArgs.push('-DENABLE_LOG=true');
+  }
+
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
@@ -633,6 +650,10 @@ task('build-android-webf-lib', (done) => {
 
   if (process.env.ENABLE_ASAN === 'true') {
     externCmakeArgs.push('-DENABLE_ASAN=true');
+  }
+
+  if (program.enableLog) {
+    externCmakeArgs.push('-DENABLE_LOG=true');
   }
 
   if (process.env.USE_SYSTEM_MALLOC === 'true') {

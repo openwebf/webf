@@ -425,6 +425,15 @@ describe('custom widget element', () => {
     await sleep(1);
     await snapshot();
   });
+
+  it('should ignore empty textNodes', async () => {
+    const container = document.createElement('flutter-container');
+    container.appendChild(document.createTextNode(''));
+    container.appendChild(document.createTextNode('A'));
+    container.appendChild(document.createTextNode(''));
+    document.body.appendChild(container);
+    await snapshot();
+  });
 });
 
 describe('custom html element', () => {
@@ -436,10 +445,17 @@ describe('custom html element', () => {
     await snapshot();
   });
 
+  it('works with setTextContent', async () => {
+    let sampleElement = document.createElement('flutter-container');
+    sampleElement.textContent = 'helloworld';
+    document.body.appendChild(sampleElement);
+    await snapshot();
+  });
+
   it('dart implements getAllBindingPropertyNames works', async () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
-    expect(attributes).toEqual(['classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'dir', 'fake', 'offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth', 'ping', 'scrollHeight', 'scrollLeft', 'scrollTop', 'scrollWidth', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete', 'click', 'closest', 'fn', 'getBoundingClientRect', 'getElementsByClassName', 'getElementsByTagName', 'matches', 'querySelector', 'querySelectorAll', 'scroll', 'scrollBy', 'scrollTo']);
+    expect(attributes).toEqual(['offsetTop', 'offsetLeft', 'offsetWidth', 'offsetHeight', 'scrollTop', 'scrollLeft', 'scrollWidth', 'scrollHeight', 'clientTop', 'clientLeft', 'clientWidth', 'clientHeight', 'className', 'classList', 'dir', 'ping', 'fake', 'getBoundingClientRect', 'getClientRects', 'scroll', 'scrollBy', 'scrollTo', 'click', 'getElementsByClassName', 'getElementsByTagName', 'querySelectorAll', 'querySelector', 'matches', 'closest', 'fn', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete']);
   });
 
   it('support custom properties in dart directly', () => {

@@ -77,7 +77,7 @@ class CSSPropertyValue {
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration extends BindingObject with IterableMixin {
+class CSSStyleDeclaration extends DynamicBindingObject with IterableMixin {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.

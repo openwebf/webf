@@ -57,17 +57,14 @@ class PausablePeriodicTimer implements Timer {
 }
 
 mixin TimerMixin {
-  int _timerId = 1;
   final Map<int, Timer> _timerMap = {};
 
-  int setTimeout(int timeout, void Function() callback) {
+  void setTimeout(int newTimerId, int timeout, void Function() callback) {
     Duration timeoutDurationMS = Duration(milliseconds: timeout);
-    int id = _timerId++;
-    _timerMap[id] = Timer(timeoutDurationMS, () {
+    _timerMap[newTimerId] = Timer(timeoutDurationMS, () {
       callback();
-      _timerMap.remove(id);
+      _timerMap.remove(newTimerId);
     });
-    return id;
   }
 
   void clearTimeout(int timerId) {
@@ -78,13 +75,11 @@ mixin TimerMixin {
     }
   }
 
-  int setInterval(int timeout, void Function() callback) {
+  void setInterval(int newTimerId, int timeout, void Function() callback) {
     Duration timeoutDurationMS = Duration(milliseconds: timeout);
-    int id = _timerId++;
-    _timerMap[id] = PausablePeriodicTimer(timeoutDurationMS, (_) {
+    _timerMap[newTimerId] = PausablePeriodicTimer(timeoutDurationMS, (_) {
       callback();
     });
-    return id;
   }
 
   void pauseInterval() {

@@ -18,7 +18,7 @@ class HTMLElement extends Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
-  void dispatchEvent(Event event) {
+  Future<void> dispatchEvent(Event event) async {
     // Scroll event proxy to document.
     if (event.type == EVENT_SCROLL) {
       // https://www.w3.org/TR/2014/WD-DOM-Level-3-Events-20140925/#event-type-scroll

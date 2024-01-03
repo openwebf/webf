@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
+#include "child_list_mutation_scope.h"
 #include "comment.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
@@ -18,6 +19,7 @@
 #include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
+#include "mutation_observer_interest_group.h"
 #include "qjs_element.h"
 #include "text.h"
 
@@ -34,11 +36,9 @@ Element::Element(const AtomicString& namespace_uri,
     buffer->addCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
                        nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    // TODO: SVG element
     buffer->addCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
                        (void*)bindingObject(), nullptr);
   } else {
-    // TODO: Unknown namespace uri
     buffer->addCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
                        namespace_uri.ToNativeString(ctx()).release());
   }
@@ -65,18 +65,8 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value) 
 }
 
 void Element::setAttribute(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state) {
-  if (EnsureElementAttributes().hasAttribute(name, exception_state)) {
-    AtomicString&& oldAttribute = EnsureElementAttributes().getAttribute(name, exception_state);
-    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
-      return;
-    };
-    _didModifyAttribute(name, oldAttribute, value);
-  } else {
-    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
-      return;
-    };
-    _didModifyAttribute(name, AtomicString::Empty(), value);
-  }
+  SynchronizeAttribute(name);
+  SetAttributeInternal(name, value, AttributeModificationReason::kDirectly, exception_state);
 }
 
 void Element::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
@@ -84,15 +74,33 @@ void Element::removeAttribute(const AtomicString& name, ExceptionState& exceptio
 }
 
 BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetBoundingClientRect, 0, nullptr, exception_state);
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetBoundingClientRect, 0, nullptr,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   return BoundingClientRect::Create(
       GetExecutingContext(), NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
 }
 
+std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& exception_state) {
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetClientRects, 0, nullptr,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+  if (exception_state.HasException()) {
+    return {};
+  }
+  auto&& nativeRects =
+      NativeValueConverter<NativeTypeArray<NativeTypePointer<NativeBindingObject>>>::FromNativeValue(ctx(), result);
+  std::vector<BoundingClientRect*> vecRects;
+  for (auto& nativeRect : nativeRects) {
+    BoundingClientRect* rect = BoundingClientRect::Create(GetExecutingContext(), nativeRect);
+    vecRects.push_back(rect);
+  }
+  return vecRects;
+}
+
 void Element::click(ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
-  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, exception_state);
+  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
+                      exception_state);
 }
 
 void Element::scroll(ExceptionState& exception_state) {
@@ -100,21 +108,23 @@ void Element::scroll(ExceptionState& exception_state) {
 }
 
 void Element::scroll(double x, double y, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
   };
-  InvokeBindingMethod(binding_call_methods::kscroll, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscroll, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscroll, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscroll, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scrollBy(ExceptionState& exception_state) {
@@ -122,21 +132,23 @@ void Element::scrollBy(ExceptionState& exception_state) {
 }
 
 void Element::scrollBy(double x, double y, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scrollBy(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scrollTo(ExceptionState& exception_state) {
@@ -181,8 +193,8 @@ void Element::setId(const AtomicString& value, ExceptionState& exception_state) 
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), class_name)};
-  NativeValue result =
-      InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments,
+                                           FlushUICommandReason::kDependentsOnElement, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -191,7 +203,8 @@ std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_
 
 std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), tag_name)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments,
+                                           FlushUICommandReason::kDependentsOnElement, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -200,7 +213,8 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
 
 Element* Element::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
+                                           FlushUICommandReason::kDependentsOnElement, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
   }
@@ -209,7 +223,8 @@ Element* Element::querySelector(const AtomicString& selectors, ExceptionState& e
 
 std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments,
+                                           FlushUICommandReason::kDependentsOnElement, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -218,7 +233,8 @@ std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, E
 
 bool Element::matches(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kmatches, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kmatches, 1, arguments,
+                                           FlushUICommandReason::kDependentsOnElement, exception_state);
   if (exception_state.HasException()) {
     return false;
   }
@@ -227,7 +243,8 @@ bool Element::matches(const AtomicString& selectors, ExceptionState& exception_s
 
 Element* Element::closest(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kclosest, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kclosest, 1, arguments,
+                                           FlushUICommandReason::kDependentsOnElement, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
   }
@@ -327,7 +344,7 @@ const AtomicString Element::getUppercasedQualifiedName() const {
   return name;
 }
 
-ElementData& Element::EnsureElementData() const {
+ElementData& Element::EnsureElementData() {
   if (element_data_ == nullptr) {
     element_data_ = std::make_unique<ElementData>();
   }
@@ -374,20 +391,30 @@ class ElementSnapshotReader {
 };
 
 void ElementSnapshotReader::Start() {
-  context_->FlushUICommand();
+  context_->FlushUICommand(element_,
+                           FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout);
 
-  auto callback = [](void* ptr, int32_t contextId, const char* error, uint8_t* bytes, int32_t length) -> void {
+  auto callback = [](void* ptr, double contextId, char* error, uint8_t* bytes, int32_t length) -> void {
     auto* reader = static_cast<ElementSnapshotReader*>(ptr);
-    if (error != nullptr) {
-      reader->HandleFailed(error);
-    } else {
-      reader->HandleSnapshot(bytes, length);
-    }
-    delete reader;
+    auto* context = reader->context_;
+
+    reader->context_->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(),
+        [](ElementSnapshotReader* reader, char* error, uint8_t* bytes, int32_t length) {
+          if (error != nullptr) {
+            reader->HandleFailed(error);
+            dart_free(error);
+          } else {
+            reader->HandleSnapshot(bytes, length);
+            dart_free(bytes);
+          }
+          delete reader;
+        },
+        reader, error, bytes, length);
   };
 
-  context_->dartMethodPtr()->toBlob(this, context_->contextId(), callback, element_->bindingObject(),
-                                    device_pixel_ratio_);
+  context_->dartMethodPtr()->toBlob(context_->isDedicated(), this, context_->contextId(), callback,
+                                    element_->bindingObject(), device_pixel_ratio_);
 }
 
 void ElementSnapshotReader::HandleSnapshot(uint8_t* bytes, int32_t length) {
@@ -407,8 +434,9 @@ void ElementSnapshotReader::HandleFailed(const char* error) {
 
 ScriptPromise Element::toBlob(ExceptionState& exception_state) {
   Window* window = GetExecutingContext()->window();
-  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      window->GetBindingProperty(binding_call_methods::kdevicePixelRatio, exception_state));
+  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(window->GetBindingProperty(
+      binding_call_methods::kdevicePixelRatio,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state));
   return toBlob(device_pixel_ratio, exception_state);
 }
 
@@ -416,6 +444,109 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
   new ElementSnapshotReader(GetExecutingContext(), this, resolver, device_pixel_ratio);
   return resolver->Promise();
+}
+
+void Element::DidAddAttribute(const AtomicString& name, const AtomicString& value) {}
+
+void Element::WillModifyAttribute(const AtomicString& name,
+                                  const AtomicString& old_value,
+                                  const AtomicString& new_value) {
+  if (std::shared_ptr<MutationObserverInterestGroup> recipients =
+          MutationObserverInterestGroup::CreateForAttributesMutation(*this, name)) {
+    recipients->EnqueueMutationRecord(MutationRecord::CreateAttributes(this, name, AtomicString::Null(), old_value));
+  }
+}
+
+void Element::DidModifyAttribute(const AtomicString& name,
+                                 const AtomicString& old_value,
+                                 const AtomicString& new_value,
+                                 AttributeModificationReason reason) {
+  AttributeChanged(AttributeModificationParams(name, old_value, new_value, reason));
+}
+
+void Element::DidRemoveAttribute(const AtomicString& name, const AtomicString& old_value) {}
+
+void Element::SynchronizeStyleAttributeInternal() {
+  assert(IsStyledElement());
+  assert(HasElementData());
+  assert(GetElementData()->style_attribute_is_dirty());
+  GetElementData()->SetStyleAttributeIsDirty(false);
+
+  InlineCssStyleDeclaration* inline_style = style();
+  SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(),
+                       AttributeModificationReason::kBySynchronizationOfLazyAttribute, ASSERT_NO_EXCEPTION());
+}
+
+void Element::SetAttributeInternal(const webf::AtomicString& name,
+                                   const webf::AtomicString& value,
+                                   AttributeModificationReason reason,
+                                   ExceptionState& exception_state) {
+  if (EnsureElementAttributes().hasAttribute(name, exception_state)) {
+    AtomicString&& oldAttribute = EnsureElementAttributes().getAttribute(name, exception_state);
+
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      WillModifyAttribute(name, oldAttribute, value);
+    }
+
+    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
+      return;
+    }
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      DidModifyAttribute(name, oldAttribute, value, AttributeModificationReason::kDirectly);
+    }
+  } else {
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      WillModifyAttribute(name, AtomicString::Null(), value);
+    }
+
+    if (!EnsureElementAttributes().setAttribute(name, value, exception_state)) {
+      return;
+    }
+
+    if (reason != AttributeModificationReason::kBySynchronizationOfLazyAttribute) {
+      DidModifyAttribute(name, AtomicString::Null(), value, AttributeModificationReason::kDirectly);
+    }
+  }
+}
+
+void Element::SynchronizeAttribute(const AtomicString& name) {
+  if (!cssom_wrapper_)
+    return;
+
+  if (UNLIKELY(name == html_names::kStyleAttr && EnsureElementData().style_attribute_is_dirty())) {
+    assert(IsStyledElement());
+    SynchronizeStyleAttributeInternal();
+    return;
+  }
+}
+
+void Element::InvalidateStyleAttribute() {
+  EnsureElementData().SetStyleAttributeIsDirty(true);
+}
+
+void Element::AttributeChanged(const AttributeModificationParams& params) {
+  const AtomicString& name = params.name;
+
+  if (IsStyledElement()) {
+    if (name == html_names::kStyleAttr) {
+      StyleAttributeChanged(params.new_value, params.reason);
+    }
+  }
+}
+
+void Element::StyleAttributeChanged(const AtomicString& new_style_string,
+                                    AttributeModificationReason modification_reason) {
+  assert(IsStyledElement());
+
+  if (new_style_string.IsNull() && cssom_wrapper_ != nullptr) {
+    EnsureCSSStyleDeclaration().Clear();
+  } else {
+    SetInlineStyleFromString(new_style_string);
+  }
+}
+
+void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
+  EnsureCSSStyleDeclaration().SetCSSTextInternal(new_style_string);
 }
 
 std::string Element::outerHTML() {
@@ -469,6 +600,7 @@ std::string Element::innerHTML() {
 
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
   auto html = value.ToStdString(ctx());
+  ChildListMutationScope scope{*this};
   if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
     HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
   } else {
@@ -485,8 +617,6 @@ void Element::_notifyNodeInsert(Node* insertNode){
 };
 
 void Element::_notifyChildInsert() {}
-
-void Element::_didModifyAttribute(const AtomicString& name, const AtomicString& oldId, const AtomicString& newId) {}
 
 void Element::_beforeUpdateId(JSValue oldIdValue, JSValue newIdValue) {}
 

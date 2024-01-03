@@ -109,13 +109,12 @@ class NativeTouch extends Struct {
   external double azimuthAngle;
 }
 
-typedef InvokeBindingsMethodsFromNative = Void Function(Int32 contextId, Pointer<NativeBindingObject> binding_object,
+typedef InvokeBindingsMethodsFromNative = Void Function(Double contextId, Pointer<NativeBindingObject> binding_object,
     Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
+typedef NativeInvokeResultCallback = Void Function(Handle object, Pointer<NativeValue> result);
 
-typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv, Handle bindingDartObject);
-typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv, Object bindingDartObject);
+typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv, Handle bindingDartObject, Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
+typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingObject> binding_object, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv, Object bindingDartObject, Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
 
 class NativeBindingObject extends Struct {
   @Bool()
@@ -124,6 +123,7 @@ class NativeBindingObject extends Struct {
   external Pointer<NativeFunction<InvokeBindingMethodsFromDart>> invokeBindingMethodFromDart;
   // Shared method called by JS side.
   external Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> invokeBindingMethodFromNative;
+  external Pointer<Void> extra;
 }
 
 Pointer<NativeBindingObject> allocateNewBindingObject() {

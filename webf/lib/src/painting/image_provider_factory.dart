@@ -23,7 +23,7 @@ class ImageProviderParams {
 }
 
 class CachedNetworkImageProviderParams extends ImageProviderParams {
-  int? contextId;
+  double? contextId;
 
   CachedNetworkImageProviderParams(this.contextId,
       {int? cachedWidth, int? cachedHeight, BoxFit objectFit = BoxFit.fill})
@@ -121,7 +121,7 @@ ImageType parseImageUrl(Uri resolvedUri, {String cache = 'auto'}) {
 }
 
 ImageProvider? getImageProvider(Uri resolvedUri,
-    {int? contextId, cache = 'auto', BoxFit objectFit = BoxFit.fill, int? cachedWidth, int? cachedHeight}) {
+    {double? contextId, cache = 'auto', BoxFit objectFit = BoxFit.fill, int? cachedWidth, int? cachedHeight}) {
   ImageType imageType = parseImageUrl(resolvedUri, cache: cache);
   ImageProviderFactory factory = _getImageProviderFactory(imageType);
 

@@ -26,7 +26,7 @@ class InspectorServerInit {
   final int port;
   final String address;
   final String bundleURL;
-  final int contextId;
+  final double contextId;
 
   InspectorServerInit(this.contextId, this.port, this.address, this.bundleURL);
 }
@@ -55,7 +55,7 @@ class InspectorMethodResult {
 }
 
 class InspectorReload {
-  int contextId;
+  double contextId;
   InspectorReload(this.contextId);
 }
 

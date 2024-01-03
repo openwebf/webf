@@ -61,7 +61,7 @@ void main() {
 
   group('HttpRequest', () {
     var server = LocalHttpServer.getInstance();
-    int contextId = 3;
+    double contextId = 3;
     HttpOverrides.global = null;
     setupHttpOverrides(null, contextId: contextId);
     HttpClient httpClient = HttpClient();

@@ -8,7 +8,6 @@ require('./tasks');
 
 // Run tasks
 series(
-  'macos-dylib-clean',
   'compile-polyfill',
   'generate-bindings-code',
   'build-darwin-webf-lib',

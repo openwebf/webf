@@ -173,5 +173,6 @@ __webf_execute_test__((done) => {
   // Trigger global js exception to test window.onerror.
   __webf_trigger_global_error__();
 
+  console.log('start exec test');
   env.execute();
 });

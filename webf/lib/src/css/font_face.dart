@@ -30,7 +30,7 @@ class _Font {
 }
 
 class CSSFontFace {
-  static Uri? _resolveFontSource(int contextId, String source, String? base) {
+  static Uri? _resolveFontSource(double contextId, String source, String? base) {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
     base = base ?? controller.url;
     try {
@@ -39,7 +39,7 @@ class CSSFontFace {
       return null;
     }
   }
-  static void resolveFontFaceRules(CSSFontFaceRule fontFaceRule, int contextId, String? baseHref) async {
+  static void resolveFontFaceRules(CSSFontFaceRule fontFaceRule, double contextId, String? baseHref) async {
     CSSStyleDeclaration declaration = fontFaceRule.declarations;
     String fontFamily = declaration.getPropertyValue('fontFamily');
     String url = declaration.getPropertyValue('src');
@@ -94,8 +94,10 @@ class CSSFontFace {
         } else {
           Uri? uri = _resolveFontSource(contextId, targetFont.src, baseHref);
           if (uri == null) return;
-          WebFBundle bundle = WebFBundle.fromUrl(uri.toString());
-          await bundle.resolve(contextId);
+          final WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+          WebFBundle bundle = controller.getPreloadBundleFromUrl(uri.toString()) ?? WebFBundle.fromUrl(uri.toString());
+          await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
+          await bundle.obtainData();
           assert(bundle.isResolved, 'Failed to obtain $url');
           FontLoader loader = FontLoader(removeQuotationMark(fontFamily));
           Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());

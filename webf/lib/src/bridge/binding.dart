@@ -5,6 +5,7 @@
 
 // Bind the JavaScript side object,
 // provide interface such as property setter/getter, call a property as function.
+import 'dart:async';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
@@ -24,9 +25,9 @@ enum BindingMethodCallOperations {
 }
 
 typedef NativeAsyncAnonymousFunctionCallback = Void Function(
-    Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, Int32 contextId, Pointer<Utf8> errmsg);
+    Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, Double contextId, Pointer<Utf8> errmsg);
 typedef DartAsyncAnonymousFunctionCallback = void Function(
-    Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, int contextId, Pointer<Utf8> errmsg);
+    Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, double contextId, Pointer<Utf8> errmsg);
 
 typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dynamic> args);
 
@@ -39,17 +40,72 @@ List<BindingCallFunc> bindingCallMethodDispatchTable = [
 ];
 
 // Dispatch the event to the binding side.
-void _dispatchNomalEventToNative(Event event) {
-  _dispatchEventToNative(event, false);
+Future<void> _dispatchNomalEventToNative(Event event) async {
+  await _dispatchEventToNative(event, false);
 }
-void _dispatchCaptureEventToNative(Event event) {
-  _dispatchEventToNative(event, true);
+Future<void> _dispatchCaptureEventToNative(Event event) async {
+  await _dispatchEventToNative(event, true);
 }
-void _dispatchEventToNative(Event event, bool isCapture) {
+
+void _handleDispatchResult(_DispatchEventResultContext context, Pointer<NativeValue> returnValue) {
+  Pointer<EventDispatchResult> dispatchResult = fromNativeValue(context.controller.view, returnValue).cast<EventDispatchResult>();
+  Event event = context.event;
+  event.cancelable = dispatchResult.ref.canceled;
+  event.propagationStopped = dispatchResult.ref.propagationStopped;
+  event.sharedJSProps = Pointer.fromAddress(context.rawEvent.ref.bytes.elementAt(8).value);
+  event.propLen = context.rawEvent.ref.bytes.elementAt(9).value;
+  event.allocateLen = context.rawEvent.ref.bytes.elementAt(10).value;
+
+  if (enableWebFCommandLog && context.stopwatch != null) {
+    print('dispatch event to native side: target: ${event.target} arguments: ${context.dispatchEventArguments} time: ${context.stopwatch!.elapsedMicroseconds}us');
+  }
+
+  // Free the allocated arguments.
+  malloc.free(context.rawEvent);
+  malloc.free(context.method);
+  malloc.free(context.allocatedNativeArguments);
+  malloc.free(dispatchResult);
+  malloc.free(returnValue);
+
+  context.completer.complete();
+}
+
+class _DispatchEventResultContext {
+  Completer completer;
+  Stopwatch? stopwatch;
+  Event event;
+  Pointer<NativeValue> method;
+  Pointer<NativeValue> allocatedNativeArguments;
+  Pointer<RawEvent> rawEvent;
+  List<dynamic> dispatchEventArguments;
+  WebFController controller;
+  _DispatchEventResultContext(
+    this.completer,
+    this.event,
+    this.method,
+    this.allocatedNativeArguments,
+    this.rawEvent,
+    this.controller,
+    this.dispatchEventArguments,
+    this.stopwatch
+  );
+}
+
+Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
-  int? contextId = event.target?.contextId;
+  double? contextId = event.target?.contextId;
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr) {
+
+  if (controller.view.disposed) return;
+
+  if (contextId != null &&
+      pointer != null &&
+      pointer.ref.invokeBindingMethodFromDart != nullptr &&
+      event.target?.pointer?.ref.disposed != true &&
+      event.currentTarget?.pointer?.ref.disposed != true
+  ) {
+    Completer completer = Completer();
+
     BindingObject bindingObject = controller.view.getBindingObject(pointer);
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
@@ -58,7 +114,7 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCapture];
 
     Stopwatch? stopwatch;
-    if (isEnabledLog) {
+    if (enableWebFCommandLog) {
       stopwatch = Stopwatch()..start();
     }
 
@@ -66,26 +122,24 @@ void _dispatchEventToNative(Event event, bool isCapture) {
     toNativeValue(method, 'dispatchEvent');
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(bindingObject, dispatchEventArguments);
 
-    Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
-    f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments, event);
-    Pointer<EventDispatchResult> dispatchResult = fromNativeValue(controller.view, returnValue).cast<EventDispatchResult>();
-    event.cancelable = dispatchResult.ref.canceled;
-    event.propagationStopped = dispatchResult.ref.propagationStopped;
+    _DispatchEventResultContext context = _DispatchEventResultContext(
+      completer,
+      event,
+      method,
+      allocatedNativeArguments,
+      rawEvent,
+      controller,
+      dispatchEventArguments,
+      stopwatch
+    );
 
-    event.sharedJSProps = Pointer.fromAddress(rawEvent.ref.bytes.elementAt(8).value);
-    event.propLen = rawEvent.ref.bytes.elementAt(9).value;
-    event.allocateLen = rawEvent.ref.bytes.elementAt(10).value;
+    Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback = Pointer.fromFunction(_handleDispatchResult);
 
-    if (isEnabledLog) {
-      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments time: ${stopwatch!.elapsedMicroseconds}us');
-    }
+    Future.microtask(() {
+      f(pointer, method, dispatchEventArguments.length, allocatedNativeArguments, context, resultCallback);
+    });
 
-    // Free the allocated arguments.
-    malloc.free(rawEvent);
-    malloc.free(method);
-    malloc.free(allocatedNativeArguments);
-    malloc.free(dispatchResult);
-    malloc.free(returnValue);
+    return completer.future;
   }
 }
 
@@ -100,7 +154,7 @@ abstract class BindingBridge {
   static Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> get nativeInvokeBindingMethod =>
       _invokeBindingMethodFromNative;
 
-  static void createBindingObject(int contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
+  static void createBindingObject(double contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
     List<dynamic> arguments = List.generate(argc, (index) {
       return fromNativeValue(controller.view, args.elementAt(index));

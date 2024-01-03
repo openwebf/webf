@@ -334,7 +334,7 @@ function generateCallMethodName(name: string) {
   return name;
 }
 
-function generateDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, args: FunctionArguments[]): string {
+function generateDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, isLayoutIndependent: boolean, args: FunctionArguments[]): string {
   let nativeArguments = args.map(i => {
     return `NativeValueConverter<${generateNativeValueTypeConverter(i.type)}>::ToNativeValue(${isDOMStringType(i.type) ? 'ctx, ' : ''}args_${i.name})`;
   });
@@ -350,7 +350,7 @@ auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ?
 ${nativeArguments.length > 0 ? `NativeValue arguments[] = {
   ${nativeArguments.join(',\n')}
 }` : 'NativeValue* arguments = nullptr;'};
-${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${nativeArguments.length}, arguments, exception_state);
+${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${nativeArguments.length}, arguments, FlushUICommandReason::kDependentsOnElement${isLayoutIndependent ? '| FlushUICommandReason::kDependentsOnElement' : ''}, exception_state);
 ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverter(declare.returnType)}>::ToValue(NativeValueConverter<${generateNativeValueTypeConverter(declare.returnType)}>::FromNativeValue(native_value))` : ''};
   `.trim();
 }
@@ -362,7 +362,7 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
     returnValueAssignment = 'return_value =';
   }
   if (declare.returnTypeMode?.dartImpl) {
-    call = generateDartImplCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
+    call = generateDartImplCallCode(blob, declare, declare.returnTypeMode?.layoutDependent ?? false, declare.args.slice(0, argsIndex + 1));
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
@@ -420,7 +420,7 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
     returnValueAssignment = 'return_value =';
   }
   if (declaration.returnTypeMode?.dartImpl) {
-    call = generateDartImplCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc));
+    call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${minimalRequiredArgc > 0 ? `${requiredArguments.join(',')}` : 'exception_state'});`;
@@ -529,7 +529,8 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
 
   ExceptionState exception_state;
   ExecutingContext* context = ExecutingContext::From(ctx);
-  MemberMutationScope scope{ExecutingContext::From(ctx)};
+  if (!context->IsContextValid()) return JS_NULL;
+  MemberMutationScope scope{context};
   ${returnValueInit}
 
   do {  // Dummy loop for use of 'break'.

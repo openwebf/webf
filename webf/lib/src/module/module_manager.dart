@@ -56,7 +56,7 @@ void _defineModule(ModuleCreator moduleCreator) {
 }
 
 class ModuleManager {
-  final int contextId;
+  final double contextId;
   final WebFController controller;
   final Map<String, BaseModule> _moduleMap = {};
   bool disposed = false;

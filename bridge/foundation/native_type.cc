@@ -10,7 +10,7 @@
 
 namespace webf {
 
-void* DartReadable::operator new(std::size_t size) {
+void* dart_malloc(std::size_t size) {
 #if WIN32
   return CoTaskMemAlloc(size);
 #else
@@ -18,12 +18,20 @@ void* DartReadable::operator new(std::size_t size) {
 #endif
 }
 
-void DartReadable::operator delete(void* memory) noexcept {
+void dart_free(void* ptr) {
 #if WIN32
-  return CoTaskMemFree(memory);
+  return CoTaskMemFree(ptr);
 #else
-  return free(memory);
+  return free(ptr);
 #endif
+}
+
+void* DartReadable::operator new(std::size_t size) {
+  return dart_malloc(size);
+}
+
+void DartReadable::operator delete(void* memory) noexcept {
+  dart_free(memory);
 }
 
 }  // namespace webf

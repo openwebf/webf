@@ -14,7 +14,6 @@ process.env.PATCH_PROMISE_POLYFILL = 'true';
 
 // Run tasks
 series(
-  'ios-framework-clean',
   'compile-polyfill',
   'generate-bindings-code',
   'build-ios-webf-lib'

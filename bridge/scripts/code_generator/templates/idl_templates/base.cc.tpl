@@ -19,6 +19,7 @@
 #include "core/dom/document_fragment.h"
 #include "core/dom/comment.h"
 #include "core/input/touch_list.h"
+#include "core/dom/static_node_list.h"
 #include "core/html/html_all_collection.h"
 #include "defined_properties.h"
 
