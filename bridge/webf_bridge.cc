@@ -8,12 +8,10 @@
 #include <thread>
 
 #include "bindings/qjs/native_string_utils.h"
-#include "core/dart_context.h"
+#include "core/dart_isolate_context.h"
 #include "core/page.h"
-#include "foundation/inspector_task_queue.h"
 #include "foundation/logging.h"
 #include "foundation/ui_command_buffer.h"
-#include "foundation/ui_task_queue.h"
 #include "include/webf_bridge.h"
 
 #if defined(_WIN32)
@@ -39,39 +37,30 @@
 #define SYSTEM_NAME "unknown"
 #endif
 
-// this is not thread safe
-thread_local std::atomic<bool> is_dart_hot_restart{false};
-thread_local webf::DartContext* dart_context{nullptr};
+static std::atomic<int64_t> unique_page_id{0};
 
-namespace webf {
-bool isDartHotRestart() {
-  return is_dart_hot_restart;
-}
-}  // namespace webf
-
-void initDartContext(uint64_t* dart_methods, int32_t dart_methods_len) {
-  // These could only be Happened with dart hot restart.
-  if (dart_context != nullptr) {
-    is_dart_hot_restart = true;
-    delete dart_context;
-    dart_context = nullptr;
-    is_dart_hot_restart = false;
-  }
-  dart_context = new webf::DartContext(dart_methods, dart_methods_len);
+void* initDartIsolateContext(uint64_t* dart_methods, int32_t dart_methods_len) {
+  void* ptr = new webf::DartIsolateContext(dart_methods, dart_methods_len);
+  return ptr;
 }
 
-void* allocateNewPage(int32_t targetContextId) {
-  assert(dart_context != nullptr);
-  auto* page = new webf::WebFPage(dart_context, targetContextId, nullptr);
-  dart_context->AddNewPage(page);
-  return reinterpret_cast<void*>(page);
+void* allocateNewPage(void* dart_isolate_context, int32_t targetContextId) {
+  assert(dart_isolate_context != nullptr);
+  auto page =
+      std::make_unique<webf::WebFPage>((webf::DartIsolateContext*)dart_isolate_context, targetContextId, nullptr);
+  void* ptr = page.get();
+  ((webf::DartIsolateContext*)dart_isolate_context)->AddNewPage(std::move(page));
+  return ptr;
 }
 
-void disposePage(void* page_) {
+int64_t newPageId() {
+  return unique_page_id++;
+}
+
+void disposePage(void* dart_isolate_context, void* page_) {
   auto* page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
-  dart_context->RemovePage(page);
-  delete page;
+  ((webf::DartIsolateContext*)dart_isolate_context)->RemovePage(page);
 }
 
 int8_t evaluateScripts(void* page_,
@@ -164,4 +153,21 @@ int32_t profileModeEnabled() {
 #else
   return 0;
 #endif
+}
+
+// Callbacks when dart context object was finalized by Dart GC.
+static void finalize_dart_context(void* isolate_callback_data, void* peer) {
+  auto* dart_isolate_context = (webf::DartIsolateContext*)peer;
+  delete dart_isolate_context;
+}
+
+void init_dart_dynamic_linking(void* data) {
+  if (Dart_InitializeApiDL(data) != 0) {
+    printf("Failed to initialize dart VM API\n");
+  }
+}
+
+void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context) {
+  Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_isolate_context),
+                               sizeof(webf::DartIsolateContext), finalize_dart_context);
 }

@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/rendering.dart';
 
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
@@ -18,7 +19,7 @@ import 'package:webf/launcher.dart';
 const String _singleQuote = '\'';
 const String _doubleQuote = '"';
 
-String _removeQuotationMark(String input) {
+String removeQuotationMark(String input) {
   if ((input.startsWith(_singleQuote) && input.endsWith(_singleQuote)) ||
       (input.startsWith(_doubleQuote) && input.endsWith(_doubleQuote))) {
     input = input.substring(1, input.length - 1);
@@ -99,11 +100,7 @@ enum CSSBackgroundPositionType {
   bottomRight,
 }
 
-enum CSSBackgroundBoundary {
-  borderBox,
-  paddingBox,
-  contentBox,
-}
+enum CSSBackgroundBoundary { borderBox, paddingBox, contentBox, text }
 
 extension CSSBackgroundBoundaryText on CSSBackgroundBoundary {
   String cssText() {
@@ -114,6 +111,8 @@ extension CSSBackgroundBoundaryText on CSSBackgroundBoundary {
         return 'padding-box';
       case CSSBackgroundBoundary.contentBox:
         return 'content-box';
+      case CSSBackgroundBoundary.text:
+        return 'text';
     }
   }
 }
@@ -134,9 +133,18 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSBackgroundBoundary? get backgroundClip => _backgroundClip;
   CSSBackgroundBoundary? _backgroundClip;
+
   set backgroundClip(CSSBackgroundBoundary? value) {
     if (value == _backgroundClip) return;
+    final isTextLayout = _backgroundClip == CSSBackgroundBoundary.text || value == CSSBackgroundBoundary.text;
     _backgroundClip = value;
+    if (isTextLayout) {
+      renderBoxModel?.visitChildren((child) {
+        if (child is RenderTextBox) {
+          child.markRenderParagraphNeedsLayout();
+        }
+      });
+    }
     renderBoxModel?.markNeedsPaint();
   }
 
@@ -144,6 +152,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSBackgroundBoundary? get backgroundOrigin => _backgroundOrigin;
   CSSBackgroundBoundary? _backgroundOrigin;
+
   set backgroundOrigin(CSSBackgroundBoundary? value) {
     if (value == _backgroundOrigin) return;
     _backgroundOrigin = value;
@@ -153,6 +162,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSColor? get backgroundColor => _backgroundColor;
   CSSColor? _backgroundColor;
+
   set backgroundColor(CSSColor? value) {
     if (value == _backgroundColor) return;
     _backgroundColor = value;
@@ -163,6 +173,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSBackgroundImage? get backgroundImage => _backgroundImage;
   CSSBackgroundImage? _backgroundImage;
+
   set backgroundImage(CSSBackgroundImage? value) {
     if (value == _backgroundImage) return;
     _backgroundImage = value;
@@ -173,6 +184,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSBackgroundPosition get backgroundPositionX => _backgroundPositionX ?? DEFAULT_BACKGROUND_POSITION;
   CSSBackgroundPosition? _backgroundPositionX;
+
   set backgroundPositionX(CSSBackgroundPosition? value) {
     if (value == _backgroundPositionX) return;
     _backgroundPositionX = value;
@@ -183,6 +195,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSBackgroundPosition get backgroundPositionY => _backgroundPositionY ?? DEFAULT_BACKGROUND_POSITION;
   CSSBackgroundPosition? _backgroundPositionY;
+
   set backgroundPositionY(CSSBackgroundPosition? value) {
     if (value == _backgroundPositionY) return;
     _backgroundPositionY = value;
@@ -193,6 +206,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSBackgroundSize get backgroundSize => _backgroundSize ?? DEFAULT_BACKGROUND_SIZE;
   CSSBackgroundSize? _backgroundSize;
+
   set backgroundSize(CSSBackgroundSize? value) {
     if (value == _backgroundSize) return;
     _backgroundSize = value;
@@ -203,6 +217,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSBackgroundAttachmentType? get backgroundAttachment => _backgroundAttachment;
   CSSBackgroundAttachmentType? _backgroundAttachment;
+
   set backgroundAttachment(CSSBackgroundAttachmentType? value) {
     if (value == _backgroundAttachment) return;
     _backgroundAttachment = value;
@@ -213,6 +228,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   @override
   CSSBackgroundRepeatType get backgroundRepeat => _backgroundRepeat ?? CSSBackgroundRepeatType.repeat;
   CSSBackgroundRepeatType? _backgroundRepeat;
+
   set backgroundRepeat(CSSBackgroundRepeatType? value) {
     if (value == _backgroundRepeat) return;
     _backgroundRepeat = value;
@@ -223,6 +239,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 class CSSColorStop {
   Color? color;
   double? stop;
+
   CSSColorStop(this.color, this.stop);
 }
 
@@ -232,9 +249,10 @@ class CSSBackgroundImage {
   WebFController controller;
   String? baseHref;
 
-  CSSBackgroundImage(this.functions, this.renderStyle, this.controller, { this.baseHref });
+  CSSBackgroundImage(this.functions, this.renderStyle, this.controller, {this.baseHref});
 
   ImageProvider? _image;
+
   ImageProvider? get image {
     if (_image != null) return _image;
     for (CSSFunctionalNotation method in functions) {
@@ -244,7 +262,7 @@ class CSSBackgroundImage {
           continue;
         }
         // Method may contain quotation mark, like ['"assets/foo.png"']
-        url = _removeQuotationMark(url);
+        url = removeQuotationMark(url);
 
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
@@ -613,7 +631,8 @@ class CSSBackground {
     }
   }
 
-  static resolveBackgroundImage(String present, RenderStyle renderStyle, String property, WebFController controller, String? baseHref) {
+  static resolveBackgroundImage(
+      String present, RenderStyle renderStyle, String property, WebFController controller, String? baseHref) {
     List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(present);
     return CSSBackgroundImage(functions, renderStyle, controller, baseHref: baseHref);
   }
@@ -638,6 +657,8 @@ class CSSBackground {
         return CSSBackgroundBoundary.paddingBox;
       case 'content-box':
         return CSSBackgroundBoundary.contentBox;
+      case 'text':
+        return CSSBackgroundBoundary.text;
       case 'border-box':
       default:
         return CSSBackgroundBoundary.borderBox;

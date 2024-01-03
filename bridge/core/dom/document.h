@@ -7,6 +7,7 @@
 
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
+#include "event_type_names.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
 
@@ -15,6 +16,7 @@ namespace webf {
 class HTMLBodyElement;
 class HTMLHeadElement;
 class HTMLHtmlElement;
+class HTMLAllCollection;
 class Text;
 class Comment;
 
@@ -69,6 +71,18 @@ class Document : public ContainerNode, public TreeScope {
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByName(const AtomicString& name, ExceptionState& exception_state);
 
+  Element* elementFromPoint(double x, double y, ExceptionState& exception_state);
+
+  Window* defaultView() const;
+  AtomicString domain();
+  void setDomain(const AtomicString& value, ExceptionState& exception_state);
+  AtomicString compatMode();
+
+  AtomicString readyState();
+  DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);
+
+  bool hidden();
+
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);
 
@@ -103,8 +117,6 @@ class Document : public ContainerNode, public TreeScope {
                                        const std::shared_ptr<EventListener>& listener,
                                        ExceptionState& exception_state);
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
-
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
 
   void Trace(GCVisitor* visitor) const override;
 

@@ -13,8 +13,14 @@ import { navigator } from './navigator';
 import { XMLHttpRequest } from './xhr';
 import { asyncStorage } from './async-storage';
 import { URLSearchParams } from './url-search-params';
+import { localStorage } from './local-storage';
+import { sessionStorage } from './session-storage';
+import { DOMException } from './dom-exception';
+import { Storage } from './storage';
 import { URL } from './url';
 import { webf } from './webf';
+import { WebSocket } from './websocket'
+import { ResizeObserver } from './resize-observer';
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -27,9 +33,15 @@ defineGlobalProperty('history', history);
 defineGlobalProperty('navigator', navigator);
 defineGlobalProperty('XMLHttpRequest', XMLHttpRequest);
 defineGlobalProperty('asyncStorage', asyncStorage);
+defineGlobalProperty('localStorage', localStorage);
+defineGlobalProperty('sessionStorage', sessionStorage);
+defineGlobalProperty('Storage', Storage);
 defineGlobalProperty('URLSearchParams', URLSearchParams);
+defineGlobalProperty('DOMException', DOMException);
 defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
+defineGlobalProperty('WebSocket', WebSocket);
+defineGlobalProperty('ResizeObserver', ResizeObserver);
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {

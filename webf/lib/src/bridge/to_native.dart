@@ -78,6 +78,7 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return null;
   }
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
   Pointer<Void> rawEvent = event == null ? nullptr : event.toRaw().cast<Void>();
   Pointer<NativeValue> extraData = malloc.allocate(sizeOf<NativeValue>());
@@ -85,7 +86,7 @@ dynamic invokeModuleEvent(int contextId, String moduleName, Event? event, extra)
   assert(_allocatedPages.containsKey(contextId));
   Pointer<NativeValue> dispatchResult = _invokeModuleEvent(
       _allocatedPages[contextId]!, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData);
-  dynamic result = fromNativeValue(dispatchResult);
+  dynamic result = fromNativeValue(controller.view, dispatchResult);
   malloc.free(dispatchResult);
   malloc.free(extraData);
   return result;
@@ -212,41 +213,70 @@ void parseHTML(int contextId, String code) {
 }
 
 // Register initJsEngine
-typedef NativeInitDartContext = Void Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
-typedef DartInitDartContext = void Function(Pointer<Uint64> dartMethods, int methodsLength);
+typedef NativeInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, Int32 methodsLength);
+typedef DartInitDartIsolateContext = Pointer<Void> Function(Pointer<Uint64> dartMethods, int methodsLength);
 
-final DartInitDartContext _initDartContext =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartContext>>('initDartContext').asFunction();
+final DartInitDartIsolateContext _initDartIsolateContext =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContext').asFunction();
 
-void initDartContext(List<int> dartMethods) {
+Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  _initDartContext(bytes, dartMethods.length);
+  return _initDartIsolateContext(bytes, dartMethods.length);
 }
 
-typedef NativeDisposePage = Void Function(Pointer<Void> page);
-typedef DartDisposePage = void Function(Pointer<Void> page);
+typedef NativeDisposePage = Void Function(Pointer<Void>, Pointer<Void> page);
+typedef DartDisposePage = void Function(Pointer<Void>, Pointer<Void> page);
 
 final DartDisposePage _disposePage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePage>>('disposePage').asFunction();
 
 void disposePage(int contextId) {
   Pointer<Void> page = _allocatedPages[contextId]!;
-  _disposePage(page);
+  _disposePage(dartContext.pointer, page);
   _allocatedPages.remove(contextId);
 }
 
-typedef NativeAllocateNewPage = Pointer<Void> Function(Int32);
-typedef DartAllocateNewPage = Pointer<Void> Function(int);
+typedef NativeNewPageId = Int64 Function();
+typedef DartNewPageId = int Function();
+
+final DartNewPageId _newPageId = WebFDynamicLibrary.ref.lookup<NativeFunction<NativeNewPageId>>('newPageId').asFunction();
+
+int newPageId() {
+  return _newPageId();
+}
+
+typedef NativeAllocateNewPage = Pointer<Void> Function(Pointer<Void>, Int32);
+typedef DartAllocateNewPage = Pointer<Void> Function(Pointer<Void>, int);
 
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
 void allocateNewPage(int targetContextId) {
-  Pointer<Void> page = _allocateNewPage(targetContextId);
+  Pointer<Void> page = _allocateNewPage(dartContext.pointer, targetContextId);
   assert(!_allocatedPages.containsKey(targetContextId));
   _allocatedPages[targetContextId] = page;
+}
+
+typedef NativeInitDartDynamicLinking = Void Function(Pointer<Void> data);
+typedef DartInitDartDynamicLinking = void Function(Pointer<Void> data);
+
+final DartInitDartDynamicLinking _initDartDynamicLinking =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInitDartDynamicLinking>>('init_dart_dynamic_linking').asFunction();
+
+void initDartDynamicLinking() {
+  _initDartDynamicLinking(NativeApi.initializeApiDLData);
+}
+
+typedef NativeRegisterDartContextFinalizer = Void Function(Handle object, Pointer<Void> dart_context);
+typedef DartRegisterDartContextFinalizer = void Function(Object object, Pointer<Void> dart_context);
+
+final DartRegisterDartContextFinalizer _registerDartContextFinalizer =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeRegisterDartContextFinalizer>>('register_dart_context_finalizer').asFunction();
+
+void registerDartContextFinalizer(DartContext dartContext) {
+  _registerDartContextFinalizer(dartContext, dartContext.pointer);
 }
 
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);
@@ -291,6 +321,7 @@ enum UICommandType {
   removeNode,
   insertAdjacentNode,
   setStyle,
+  clearStyle,
   setAttribute,
   removeAttribute,
   cloneNode,
@@ -431,17 +462,9 @@ void flushUICommand(WebFViewController view) {
     return;
   }
 
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
-  }
-
   List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, view.contextId);
 
   SchedulerBinding.instance.scheduleFrame();
-
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_END);
-  }
 
   Map<int, bool> pendingStylePropertiesTargets = {};
   Set<int> pendingRecalculateTargets = {};
@@ -458,10 +481,10 @@ void flushUICommand(WebFViewController view) {
           view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
           break;
         case UICommandType.createDocument:
-          view.initDocument(nativePtr.cast<NativeBindingObject>());
+          view.initDocument(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createWindow:
-          view.initWindow(nativePtr.cast<NativeBindingObject>());
+          view.initWindow(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createTextNode:
           view.createTextNode(nativePtr.cast<NativeBindingObject>(), command.args);
@@ -470,13 +493,15 @@ void flushUICommand(WebFViewController view) {
           view.createComment(nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.disposeBindingObject:
-          view.disposeBindingObject(nativePtr.cast<NativeBindingObject>());
+          view.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.addEvent:
-          view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args);
+          Pointer<AddEventListenerOptions> eventListenerOptions = command.nativePtr2.cast<AddEventListenerOptions>();
+          view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args, addEventListenerOptions: eventListenerOptions);
           break;
         case UICommandType.removeEvent:
-          view.removeEvent(nativePtr.cast<NativeBindingObject>(), command.args);
+          bool isCapture = command.nativePtr2.address == 1;
+          view.removeEvent(nativePtr.cast<NativeBindingObject>(), command.args, isCapture: isCapture);
           break;
         case UICommandType.insertAdjacentNode:
           view.insertAdjacentNode(
@@ -500,8 +525,11 @@ void flushUICommand(WebFViewController view) {
           } else {
             value = '';
           }
-
           view.setInlineStyle(nativePtr, command.args, value);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.clearStyle:
+          view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setAttribute:

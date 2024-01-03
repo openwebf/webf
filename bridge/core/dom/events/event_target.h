@@ -14,6 +14,8 @@
 #include "foundation/logging.h"
 #include "foundation/native_string.h"
 #include "qjs_add_event_listener_options.h"
+#include "qjs_unionadd_event_listener_options_boolean.h"
+#include "qjs_unionevent_listener_options_boolean.h"
 
 #if UNIT_TEST
 void TEST_invokeBindingMethod(void* nativePtr, void* returnValue, void* method, int32_t argc, void* argv);
@@ -69,6 +71,8 @@ class EventTargetData final {
   void Trace(GCVisitor* visitor) const;
 
   EventListenerMap event_listener_map;
+  EventListenerMap event_capture_listener_map;
+
   std::unique_ptr<FiringEventIteratorVector> firing_event_iterators;
 };
 
@@ -96,7 +100,7 @@ class EventTarget : public BindingObject {
 
   bool addEventListener(const AtomicString& event_type,
                         const std::shared_ptr<EventListener>& event_listener,
-                        const std::shared_ptr<AddEventListenerOptions>& options,
+                        const std::shared_ptr<QJSUnionAddEventListenerOptionsBoolean>& options,
                         ExceptionState& exception_state);
   bool addEventListener(const AtomicString& event_type,
                         const std::shared_ptr<EventListener>& event_listener,
@@ -106,7 +110,7 @@ class EventTarget : public BindingObject {
                            ExceptionState& exception_state);
   bool removeEventListener(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& event_listener,
-                           const std::shared_ptr<EventListenerOptions>& options,
+                           const std::shared_ptr<QJSUnionEventListenerOptionsBoolean>& options,
                            ExceptionState& exception_state);
   bool removeEventListener(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& event_listener,
@@ -115,6 +119,7 @@ class EventTarget : public BindingObject {
   bool dispatchEvent(Event* event, ExceptionState& exception_state);
 
   virtual DispatchEventResult FireEventListeners(Event&, ExceptionState&);
+  virtual DispatchEventResult FireEventListeners(Event&, bool isCapture, ExceptionState&);
 
   static DispatchEventResult GetDispatchEventResult(const Event&);
 
@@ -130,10 +135,10 @@ class EventTarget : public BindingObject {
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
 
-  // Check the attribute is defined in native.
-  virtual bool IsAttributeDefinedInternal(const AtomicString& key) const;
-
-  NativeValue HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) override;
+  NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 
   void Trace(GCVisitor* visitor) const override;
 
@@ -147,7 +152,7 @@ class EventTarget : public BindingObject {
 
   DispatchEventResult DispatchEventInternal(Event& event, ExceptionState& exception_state);
 
-  NativeValue HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv);
+  NativeValue HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv, Dart_Handle dart_object);
 
   // Subclasses should likely not override these themselves; instead, they
   // should subclass EventTargetWithInlineData.
@@ -207,6 +212,14 @@ class EventTargetWithInlineData : public EventTarget {
   }                                                                                                          \
   void setOn##lower_name(const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state) {  \
     GetDocument().SetWindowAttributeEventListener(event_type_names::symbol_name, listener, exception_state); \
+  }
+
+#define DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                                   \
+  std::shared_ptr<EventListener> on##lower_name() {                                                         \
+    return GetWindowAttributeEventListener(event_type_names::symbol_name);                                  \
+  }                                                                                                         \
+  void setOn##lower_name(const std::shared_ptr<EventListener>& listener, ExceptionState& exception_state) { \
+    SetWindowAttributeEventListener(event_type_names::symbol_name, listener, exception_state);              \
   }
 
 #define DEFINE_STATIC_WINDOW_ATTRIBUTE_EVENT_LISTENER(lower_name, symbol_name)                                       \

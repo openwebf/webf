@@ -3,6 +3,9 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "core/html/html_image_element.h"
+#include "core/html/canvas/html_canvas_element.h"
+#include "core/html/canvas/canvas_gradient.h"
 #include "<%= generateUnionTypeFileName(unionType) %>.h"
 #include "bindings/qjs/converter_impl.h"
 #include "core/html/html_image_element.h"
@@ -21,9 +24,16 @@ std::shared_ptr<<%= generateUnionTypeClassName(unionType) %>> <%= generateUnionT
       return std::make_shared<<%= generateUnionTypeClassName(unionType) %>>(v);
     }
     <% } %>
-
   <% }) %>
+<% if(isTypeHaveString(unionType)) { %>
+  auto&& v = Converter<IDLDOMString>::FromValue(ctx, value, exception_state);
+  if (UNLIKELY(exception_state.HasException())) {
+    return nullptr;
+  }
+  return std::make_shared<<%= generateUnionTypeClassName(unionType) %>>(v);
+<% } else { %>
   return nullptr;
+<% } %>
 }
 
 <% _.forEach(unionType, (type) => { %>

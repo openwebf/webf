@@ -22,10 +22,10 @@ namespace webf {
 
 ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
-WebFPage::WebFPage(DartContext* dart_context, int32_t contextId, const JSExceptionHandler& handler)
+WebFPage::WebFPage(DartIsolateContext* dart_isolate_context, int32_t contextId, const JSExceptionHandler& handler)
     : contextId(contextId), ownerThreadId(std::this_thread::get_id()) {
   context_ = new ExecutingContext(
-      dart_context, contextId,
+      dart_isolate_context, contextId,
       [](ExecutingContext* context, const char* message) {
         if (context->dartMethodPtr()->onJsError != nullptr) {
           context->dartMethodPtr()->onJsError(context->contextId(), message);
@@ -69,7 +69,7 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
     delete raw_event;
   }
 
-  ScriptValue extraObject = ScriptValue(ctx, *extra);
+  ScriptValue extraObject = ScriptValue(ctx, const_cast<const NativeValue&>(*extra));
   AtomicString module_name = AtomicString(
       ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
   auto listener = context_->ModuleListeners()->listener(module_name);
@@ -87,7 +87,7 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
 
   ExceptionState exception_state;
   auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
-  NativeValue tmp = result.ToNative(exception_state);
+  NativeValue tmp = result.ToNative(ctx, exception_state);
   if (exception_state.HasException()) {
     context_->HandleException(exception_state);
     return nullptr;

@@ -100,12 +100,12 @@ function genCodeFromJSONData() {
   });
 
   let blobs = jsonFiles.map(file => {
-    let filename = file.split('/').slice(-1)[0].replace('.json', '');
+    let filename = file.split(path.sep).slice(-1)[0].replace('.json', '');
     return new JSONBlob(path.join(source, file), dist, filename);
   });
 
   let templates = templateFiles.map(template => {
-    let filename = template.split('/').slice(-1)[0].replace('.tpl', '');
+    let filename = template.split(path.sep).slice(-1)[0].replace('.tpl', '');
     return new JSONTemplate(path.join(path.join(__dirname, '../templates/json_templates'), template), filename);
   });
 
@@ -117,7 +117,7 @@ function genCodeFromJSONData() {
       }
       let depsBlob = {};
       if (targetTemplate.deps) {
-        let cwdDir = blob.source.split('/').slice(0, -1).join('/');
+        let cwdDir = blob.source.split(path.sep).slice(0, -1).join(path.sep);
         targetTemplate.deps.forEach(depPath => {
           let filename = depPath.split('/').slice(-1)[0].replace('.json5', '');
           depsBlob[filename] = new JSONBlob(path.join(cwdDir, depPath), filename).json;
@@ -126,7 +126,7 @@ function genCodeFromJSONData() {
 
       // Inject allDefinedProperties set into the definedProperties source.
       if (targetTemplate.filename === 'defined_properties') {
-        blob.json.data = Array.from(definedPropertyCollector.properties);
+        blob.json.data = blob.json.data.concat(Array.from(definedPropertyCollector.properties));
       }
 
       if (targetTemplate.filename === 'defined_properties_initializer') {

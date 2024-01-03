@@ -24,8 +24,6 @@ class CharacterData : public Node {
   bool IsCharacterDataNode() const override;
   void setNodeValue(const AtomicString&, ExceptionState&) override;
 
-  bool IsAttributeDefinedInternal(const AtomicString& key) const override;
-
  protected:
   CharacterData(TreeScope& tree_scope, const AtomicString& text, ConstructionType type);
 

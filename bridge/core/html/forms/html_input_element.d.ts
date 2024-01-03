@@ -4,7 +4,7 @@ interface HTMLInputElement extends HTMLElement {
   width: DartImpl<number>;
   height: DartImpl<number>;
   defaultValue: DartImpl<string>;
-  value: DartImpl<string>;
+  value: DartImpl<LegacyNullToEmptyString>;
   accept: DartImpl<string>;
   autocomplete: DartImpl<string>;
   autofocus: DartImpl<boolean>;

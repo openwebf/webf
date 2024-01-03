@@ -24,7 +24,7 @@ class RenderViewportBox extends RenderBox
   WebFController controller;
 
   // Cache all the fixed children of renderBoxModel of root element.
-  List<RenderBoxModel> fixedChildren = [];
+  Set<RenderBoxModel> fixedChildren = {};
 
   @override
   void setupParentData(covariant RenderObject child) {

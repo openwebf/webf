@@ -113,13 +113,8 @@ class FetchModule extends BaseModule {
           return consolidateHttpClientResponseBytes(res);
         }
       }).then((Uint8List? bytes) {
-        if (bytes == null)
-          return Future.value(null);
-        else
-          return resolveStringFromData(bytes);
-      }).then((String? content) {
-        if (content != null) {
-          callback(data: [EMPTY_STRING, response?.statusCode, content]);
+        if (bytes != null) {
+          callback(data: [EMPTY_STRING, response?.statusCode, bytes]);
         } else {
           throw FlutterError('Failed to read response.');
         }

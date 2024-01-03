@@ -13,9 +13,9 @@ import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
-import 'package:webf/module.dart' hide EMPTY_STRING;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
@@ -110,7 +110,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   String? get id => _id;
 
   set id(String? id) {
-    final isNeedRecalculate = _checkRecalculateStyle([id, _id], ownerDocument.ruleSet.idRules);
+    final isNeedRecalculate = _checkRecalculateStyle([id, _id]);
     _updateIDMap(id, oldID: _id);
     _id = id;
     recalculateStyle(rebuildNested: isNeedRecalculate);
@@ -124,6 +124,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   // Holding reference if this element are managed by Flutter framework.
   WebFHTMLElementStatefulWidget? flutterWidget_;
+  WebFHTMLElementToFlutterElementAdaptor? flutterWidgetElement;
 
   @override
   WebFHTMLElementStatefulWidget? get flutterWidget => flutterWidget_;
@@ -156,7 +157,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   set className(String className) {
     List<String> classList = className.split(classNameSplitRegExp);
     final checkKeys = (_classList + classList).where((key) => !_classList.contains(key) || !classList.contains(key));
-    final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys), ownerDocument.ruleSet.classRules);
+    final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys));
     _classList.clear();
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
@@ -165,6 +166,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   String get className => _classList.join(_ONE_SPACE);
+
+  PseudoElement? _beforeElement;
+  PseudoElement? _afterElement;
 
   final bool isDefaultRepaintBoundary = false;
 
@@ -198,6 +202,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   bool _needRecalculateStyle = false;
+
+  final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
 
   Element(BindingContext? context) : super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
@@ -248,6 +254,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   final Map<String, ElementAttributeProperty> _attributeProperties = {};
+
   @mustCallSuper
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     attributes[_STYLE_PROPERTY] = ElementAttributeProperty(setter: (value) {
@@ -299,6 +306,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     properties['className'] =
         BindingObjectProperty(getter: () => className, setter: (value) => className = castToType<String>(value));
     properties['classList'] = BindingObjectProperty(getter: () => classList);
+    properties['dir'] = BindingObjectProperty(getter: () => dir);
   }
 
   @override
@@ -313,6 +321,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     methods['click'] = BindingObjectMethodSync(call: (_) => click());
     methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
+    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
+    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
+    methods['matches'] = BindingObjectMethodSync(call: (args) => matches(args));
+    methods['closest'] = BindingObjectMethodSync(call: (args) => closest(args));
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
@@ -321,6 +333,26 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   dynamic getElementsByTagName(List<dynamic> args) {
     return QuerySelector.querySelectorAll(this, args.first);
+  }
+
+  dynamic querySelector(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
+    return QuerySelector.querySelector(this, args.first);
+  }
+
+  dynamic querySelectorAll(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
+    return QuerySelector.querySelectorAll(this, args.first);
+  }
+
+  bool matches(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return false;
+    return QuerySelector.matches(this, args.first);
+  }
+
+  dynamic closest(List<dynamic> args) {
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
+    return QuerySelector.closest(this, args.first);
   }
 
   @visibleForOverriding
@@ -341,7 +373,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       RenderObject? parentRenderObject;
       RenderBox? after;
       if (previousRenderBoxModel != null) {
-        parentRenderObject = previousRenderBoxModel.parent as RenderObject?;
+        parentRenderObject = previousRenderBoxModel.parent;
 
         if (previousRenderBoxModel.parentData is ContainerParentDataMixin<RenderBox>) {
           after = (previousRenderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
@@ -524,10 +556,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     } else if (display == CSSDisplay.sliver) {
       if (previousRenderLayoutBox == null) {
         nextRenderLayoutBox = RenderSliverListLayout(
-          renderStyle: renderStyle,
-          manager: RenderSliverElementChildManager(this),
-          onScroll: _handleScroll,
-        );
+            renderStyle: renderStyle,
+            manager: RenderSliverElementChildManager(this),
+            onScroll: _handleScroll,
+            currentView: ownerDocument.controller.ownerFlutterView);
       } else if (previousRenderLayoutBox is RenderFlowLayout || previousRenderLayoutBox is RenderFlexLayout) {
         //  RenderFlow/FlexLayout --> RenderSliverListLayout
         nextRenderLayoutBox =
@@ -754,6 +786,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
       // Find the previous siblings to insert before renderBoxModel is detached.
       RenderBox? previousSibling = _renderBoxModel.getPreviousSibling();
+
+      // // If previousSibling is a renderBox than represent a fixed element. Should skipped it util reach a renderBox in normal layout tree.
+      while (previousSibling != null &&
+          _isRenderBoxFixed(previousSibling, ownerDocument.viewport!) &&
+          previousSibling is RenderBoxModel) {
+        previousSibling = previousSibling.getPreviousSibling(followPlaceHolder: false);
+      }
+
       // Detach renderBoxModel from its original parent.
       _renderBoxModel.detachFromContainingBlock();
       // Change renderBoxModel type in cases such as position changes to fixed which
@@ -789,6 +829,89 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
+  PseudoElement _createOrUpdatePseudoElement(
+      String contentValue, PseudoKind kind, PseudoElement? previousPseudoElement) {
+    var pseudoValue = CSSPseudo.resolveContent(contentValue);
+
+    bool shouldMutateBeforeElement =
+        previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
+
+    previousPseudoElement ??=
+        PseudoElement(kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
+    previousPseudoElement.style
+        .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
+
+    if (shouldMutateBeforeElement) {
+      switch (kind) {
+        case PseudoKind.kPseudoBefore:
+          if (previousPseudoElement.parentNode == null) {
+            if (firstChild != null) {
+              insertBefore(previousPseudoElement, firstChild!);
+            } else {
+              appendChild(previousPseudoElement);
+            }
+          }
+          break;
+        case PseudoKind.kPseudoAfter:
+          if (previousPseudoElement.parentNode == null) {
+            appendChild(previousPseudoElement);
+          }
+          break;
+      }
+    }
+
+    // We plan to support content values only with quoted strings.
+    if (pseudoValue is QuoteStringContentValue) {
+      if (previousPseudoElement.firstChild != null) {
+        (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
+      } else {
+        final textNode = ownerDocument.createTextNode(pseudoValue.value);
+        previousPseudoElement.appendChild(textNode);
+      }
+    }
+
+    previousPseudoElement.style.flushPendingProperties();
+
+    return previousPseudoElement;
+  }
+
+  bool _shouldBeforePseudoElementNeedsUpdate = false;
+
+  void markBeforePseudoElementNeedsUpdate() {
+    if (_shouldBeforePseudoElementNeedsUpdate) return;
+    _shouldBeforePseudoElementNeedsUpdate = true;
+    Future.microtask(_updateBeforePseudoElement);
+  }
+
+  void _updateBeforePseudoElement() {
+    // Add pseudo elements
+    String? beforeContent = style.pseudoBeforeStyle?.getPropertyValue('content');
+    if (beforeContent != null && beforeContent.isNotEmpty) {
+      _beforeElement = _createOrUpdatePseudoElement(beforeContent, PseudoKind.kPseudoBefore, _beforeElement);
+    } else if (_beforeElement != null) {
+      removeChild(_beforeElement!);
+    }
+    _shouldBeforePseudoElementNeedsUpdate = false;
+  }
+
+  bool _shouldAfterPseudoElementNeedsUpdate = false;
+
+  void markAfterPseudoElementNeedsUpdate() {
+    if (_shouldAfterPseudoElementNeedsUpdate) return;
+    _shouldAfterPseudoElementNeedsUpdate = true;
+    Future.microtask(_updateAfterPseudoElement);
+  }
+
+  void _updateAfterPseudoElement() {
+    String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
+    if (afterContent != null && afterContent.isNotEmpty) {
+      _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter, _afterElement);
+    } else if (_afterElement != null) {
+      removeChild(_afterElement!);
+    }
+    _shouldAfterPseudoElementNeedsUpdate = false;
+  }
+
   // Add element to its containing block which includes the steps of detach the renderBoxModel
   // from its original parent and attach to its new containing block.
   void addToContainingBlock() {
@@ -819,12 +942,19 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() async {
     renderStyle.detach();
     style.dispose();
     attributes.clear();
     disposeScrollable();
     _attributeProperties.clear();
+    flutterWidget = null;
+    flutterWidgetElement = null;
+    ownerDocument.inactiveRenderObjects.add(renderer);
+    _beforeElement?.dispose();
+    _beforeElement = null;
+    _afterElement?.dispose();
+    _afterElement = null;
     super.dispose();
   }
 
@@ -856,6 +986,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         if (renderStyle.position != CSSPositionType.static) {
           _updateRenderBoxModelWithPosition(CSSPositionType.static);
         }
+        markBeforePseudoElementNeedsUpdate();
+        markAfterPseudoElementNeedsUpdate();
       }
 
       // Flush pending style before child attached.
@@ -959,7 +1091,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         child.attachTo(this, after: after);
       }
     }
-
     return child;
   }
 
@@ -979,9 +1110,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
-    // Node.insertBefore will change element tree structure,
-    // so get the referenceIndex before calling it.
-    // int referenceIndex = childNodes.indexOf(referenceNode);
+    Node? originalPreviousSibling = referenceNode.previousSibling;
     Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
     if (child is Element) {
@@ -990,14 +1119,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     if (isRendererAttached) {
       // If afterRenderObject is null, which means insert child at the head of parent.
-      RenderBox? afterRenderObject = referenceNode.previousSibling?.renderer;
+      RenderBox? afterRenderObject = originalPreviousSibling?.renderer;
 
       // Only append child renderer when which is not attached.
       if (!child.isRendererAttached) {
         // Found the most closed
         if (afterRenderObject == null) {
-          Node? ref = referenceNode.previousSibling;
-          while(ref != null && afterRenderObject == null) {
+          Node? ref = originalPreviousSibling?.previousSibling;
+          while (ref != null && afterRenderObject == null) {
             afterRenderObject = ref.renderer;
             ref = ref.previousSibling;
           }
@@ -1005,14 +1134,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
         // Remove all element after the new node, when parent is sliver
         // Sliver's children if change sort need relayout
-        if(renderStyle.display == CSSDisplay.sliver
-            && referenceNode is Element
-            && referenceNode.renderer != null
-            && referenceNode.isRendererAttached) {
+        if (renderStyle.display == CSSDisplay.sliver &&
+            referenceNode is Element &&
+            referenceNode.renderer != null &&
+            referenceNode.isRendererAttached) {
           Node? reference = referenceNode;
-          while(reference != null) {
-            if(reference.isRendererAttached && reference is Element) {
-              if(reference.renderer != null &&
+          while (reference != null) {
+            if (reference.isRendererAttached && reference is Element) {
+              if (reference.renderer != null &&
                   reference.renderer!.parent != null &&
                   reference.renderer!.parent is RenderSliverRepaintProxy) {
                 (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
@@ -1147,12 +1276,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName], ownerDocument.ruleSet.attributeRules);
+    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
     _needRecalculateStyle = _needRecalculateStyle || isNeedRecalculate;
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
     attributes[qualifiedName] = value;
+    if (qualifiedName == 'class') {
+      className = value;
+      return;
+    }
+    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   @mustCallSuper
@@ -1183,7 +1318,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
-      unmountRenderObject(deep: true);
+      unmountRenderObject();
       return;
     }
 
@@ -1563,7 +1698,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         renderStyle.sliverDirection = value;
         break;
       case CARETCOLOR:
-        renderStyle.caretColor = value;
+        renderStyle.caretColor = (value as CSSColor).value;
         break;
       case FILL:
         renderStyle.fill = value;
@@ -1586,6 +1721,27 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       case RY:
         renderStyle.ry = value;
         break;
+      case CX:
+        renderStyle.cx = value;
+        break;
+      case CY:
+        renderStyle.cy = value;
+        break;
+      case R:
+        renderStyle.r = value;
+        break;
+      case X1:
+        renderStyle.x1 = value;
+        break;
+      case X2:
+        renderStyle.x2 = value;
+        break;
+      case Y1:
+        renderStyle.y1 = value;
+        break;
+      case Y2:
+        renderStyle.y2 = value;
+        break;
       case D:
         renderStyle.d = value;
         break;
@@ -1601,7 +1757,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
-  void setRenderStyle(String property, String present, { String? baseHref }) {
+  void setRenderStyle(String property, String present, {String? baseHref}) {
     dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present, baseHref: baseHref);
     setRenderStyleProperty(property, value);
   }
@@ -1650,7 +1806,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   void _applyDefaultStyle(CSSStyleDeclaration style) {
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
-        style.setProperty(propertyName, value);
+        if (style.contains(propertyName) == false) {
+          style.setProperty(propertyName, value);
+        }
       });
     }
   }
@@ -1664,19 +1822,12 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
-  final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
   void _applySheetStyle(CSSStyleDeclaration style) {
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_START);
-    }
     CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
-    if (kProfileMode) {
-      PerformanceTiming.instance().mark(PERF_MATCH_ELEMENT_RULE_END);
-    }
   }
 
-  void _onStyleChanged(String propertyName, String? prevValue, String currentValue, { String? baseHref }) {
+  void _onStyleChanged(String propertyName, String? prevValue, String currentValue, {String? baseHref}) {
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
       renderStyle.runTransition(propertyName, prevValue, currentValue);
     } else {
@@ -1710,15 +1861,28 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
   }
 
+  void clearInlineStyle() {
+    for (var key in inlineStyle.keys) {
+      style.removeProperty(key, true);
+    }
+    inlineStyle.clear();
+  }
+
+  void _applyPseudoStyle(CSSStyleDeclaration style) {
+    List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
+    style.handlePseudoRules(this, pseudoRules);
+  }
+
   void applyStyle(CSSStyleDeclaration style) {
     // Apply default style.
     _applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
-    renderStyle.initDisplay();
+    renderStyle.initDisplay(style);
 
     applyAttributeStyle(style);
     _applyInlineStyle(style);
     _applySheetStyle(style);
+    _applyPseudoStyle(style);
   }
 
   void applyAttributeStyle(CSSStyleDeclaration style) {
@@ -1768,7 +1932,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
-    BoundingClientRect boundingClientRect = BoundingClientRect.zero;
+    BoundingClientRect boundingClientRect = BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
       flushLayout();
       RenderBoxModel sizedBox = renderBoxModel!;
@@ -1782,6 +1946,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         Offset offset = _getOffset(sizedBox, ancestor: ownerDocument.documentElement, excludeScrollOffset: true);
         Size size = sizedBox.size;
         boundingClientRect = BoundingClientRect(
+            context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
             x: offset.dx,
             y: offset.dy,
             width: size.width,
@@ -1856,7 +2021,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (ancestor == null || ancestor.renderBoxModel == null) {
       return Offset.zero;
     }
-    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!, excludeScrollOffset: excludeScrollOffset);
+    return renderBox.getOffsetToAncestor(Offset.zero, ancestor.renderBoxModel!,
+        excludeScrollOffset: excludeScrollOffset);
   }
 
   void click() {
@@ -1892,7 +2058,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         // Return a blob with zero length.
         captured = Uint8List(0);
       } else {
-        Image image = await _renderBoxModel.toImage(pixelRatio: devicePixelRatio ?? window.devicePixelRatio);
+        Image image = await _renderBoxModel.toImage(
+            pixelRatio: devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
         ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
         captured = byteData!.buffer.asUint8List();
       }
@@ -1938,24 +2105,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return scrollingContentLayoutBox;
   }
 
-  bool _checkRecalculateStyle(List<String?> keys, CSSMap cssMap) {
-    if (keys.isEmpty || cssMap.values.isEmpty) {
+  bool _checkRecalculateStyle(List<String?> keys) {
+    if (keys.isEmpty) {
       return false;
     }
-    for(final rules in cssMap.values) {
-      for(int i = 0; i < rules.length; i ++) {
-        var rule = rules[i];
-        if (rule is! CSSStyleRule) {
-          continue;
-        }
-        for (Selector selector in rule.selectorGroup.selectors) {
-          if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
-            return true;
-          }
-        }
-      }
+    if (keys.isEmpty) {
+      return false;
     }
-    return false;
+    return keys.any((element) => selectorKeySet.contains(element));
   }
 
   RenderStyle? computedStyle(String? pseudoElementSpecifier) {
@@ -1987,7 +2144,7 @@ Element? _findContainingBlock(Element child, Element viewportElement) {
 
 // Cache fixed renderObject to root element
 void _addFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewport) {
-  List<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
   if (!fixedChildren.contains(childRenderBoxModel)) {
     fixedChildren.add(childRenderBoxModel);
   }
@@ -1995,10 +2152,15 @@ void _addFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewpo
 
 // Remove non fixed renderObject from root element
 void _removeFixedChild(RenderBoxModel childRenderBoxModel, RenderViewportBox viewport) {
-  List<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
   if (fixedChildren.contains(childRenderBoxModel)) {
     fixedChildren.remove(childRenderBoxModel);
   }
+}
+
+bool _isRenderBoxFixed(RenderBox renderBox, RenderViewportBox viewport) {
+  Set<RenderBoxModel> fixedChildren = viewport.fixedChildren;
+  return fixedChildren.contains(renderBox);
 }
 
 // Reflect attribute type as property.

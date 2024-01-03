@@ -37,13 +37,13 @@ typedef OnImageLoad = void Function(int naturalWidth, int naturalHeight);
 
 class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   BoxFitImage({
-    required this.loadImage,
+    required LoadImage loadImage,
     required this.url,
     required this.boxFit,
     this.onImageLoad,
-  });
+  }): _loadImage = loadImage;
 
-  final LoadImage loadImage;
+  final LoadImage _loadImage;
   final Uri url;
   final BoxFit boxFit;
   final OnImageLoad? onImageLoad;
@@ -59,9 +59,14 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
     Uint8List bytes;
     try {
-      bytes = await loadImage(url);
+      bytes = await _loadImage(url);
     } on FlutterError {
-      PaintingBinding.instance.imageCache.evict(key);
+      // Depending on where the exception was thrown, the image cache may not
+      // have had a chance to track the key in the cache at all.
+      // Schedule a microtask to give the cache a chance to add the key.
+      scheduleMicrotask(() {
+        PaintingBinding.instance.imageCache.evict(key);
+      });
       rethrow;
     }
 
@@ -92,7 +97,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   DimensionedMultiFrameImageStreamCompleter? _imageStreamCompleter;
 
   @override
-  ImageStreamCompleter loadBuffer(BoxFitImageKey key, DecoderBufferCallback decode) {
+  ImageStreamCompleter loadImage(BoxFitImageKey key, ImageDecoderCallback decode) {
     return _imageStreamCompleter = DimensionedMultiFrameImageStreamCompleter(
       codec: _loadAsync(key),
       scale: 1.0,
@@ -119,7 +124,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     }
     final ImageStreamCompleter? completer = PaintingBinding.instance.imageCache.putIfAbsent(
       key,
-      () => loadBuffer(key, PaintingBinding.instance.instantiateImageCodecFromBuffer),
+      () => loadImage(key, PaintingBinding.instance.instantiateImageCodecWithSize),
       onError: handleError,
     );
     if (_imageStreamCompleter == null &&

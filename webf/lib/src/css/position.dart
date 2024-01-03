@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -106,7 +105,7 @@ mixin CSSPositionMixin on RenderStyle {
 
   void _markNeedsSort() {
     if (renderBoxModel?.parentData is RenderLayoutParentData) {
-      AbstractNode? parent = renderBoxModel!.parent;
+      RenderObject? parent = renderBoxModel!.parent;
       if (parent is RenderLayoutBox) {
         parent.markChildrenNeedsSort();
       }
@@ -122,7 +121,7 @@ mixin CSSPositionMixin on RenderStyle {
     if (renderBoxModel?.parentData is RenderLayoutParentData) {
       RenderStyle renderStyle = renderBoxModel!.renderStyle;
       if (force || renderStyle.position != DEFAULT_POSITION_TYPE) {
-        AbstractNode? parent = renderBoxModel!.parent;
+        RenderObject? parent = renderBoxModel!.parent;
         if (parent is RenderObject) {
           parent.markNeedsLayout();
         }
@@ -141,7 +140,7 @@ mixin CSSPositionMixin on RenderStyle {
       if (renderStyle.position != DEFAULT_POSITION_TYPE ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.flex ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.inlineFlex) {
-        AbstractNode? parent = renderBoxModel!.parent;
+        RenderObject? parent = renderBoxModel!.parent;
         if (parent is RenderObject) {
           parent.markNeedsPaint();
         }

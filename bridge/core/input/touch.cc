@@ -40,6 +40,7 @@ Touch::Touch(ExecutingContext* context, const std::shared_ptr<TouchInit>& initia
 
 Touch::Touch(ExecutingContext* context, NativeTouch* native_touch)
     : ScriptWrappable(context->ctx()),
+      target_(DynamicTo<EventTarget>(BindingObject::From(native_touch->target))),
       identifier_(native_touch->identifier),
       clientX_(native_touch->clientX),
       clientY_(native_touch->clientY),
@@ -52,7 +53,9 @@ Touch::Touch(ExecutingContext* context, NativeTouch* native_touch)
       rotationAngle_(native_touch->rotationAngle),
       force_(native_touch->force),
       altitude_angle_(native_touch->altitudeAngle),
-      azimuth_angle_(native_touch->azimuthAngle) {}
+      azimuth_angle_(native_touch->azimuthAngle) {
+  assert(target_ != nullptr);
+}
 
 double Touch::altitudeAngle() const {
   return altitude_angle_;
@@ -111,7 +114,7 @@ EventTarget* Touch::target() const {
 }
 
 void Touch::Trace(GCVisitor* visitor) const {
-  visitor->Trace(target_);
+  visitor->TraceMember(target_);
 }
 
 }  // namespace webf

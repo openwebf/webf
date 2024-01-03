@@ -9,6 +9,8 @@ import 'package:webf/rendering.dart';
 
 final RegExp _commaRegExp = RegExp(r'\s*,\s*');
 
+typedef TextPainterCallback = Paint? Function(Rect bounds);
+
 // CSS Text: https://drafts.csswg.org/css-text-3/
 // CSS Text Decoration: https://drafts.csswg.org/css-text-decor-3/
 // CSS Box Alignment: https://drafts.csswg.org/css-align/
@@ -184,6 +186,9 @@ mixin CSSTextMixin on RenderStyle {
   void updateFontRelativeLength() {
     if (_fontRelativeProperties.isEmpty) return;
     renderBoxModel?.markNeedsLayout();
+    if (renderBoxModel?.isSizeTight == true && renderBoxModel?.parent != null) {
+      (renderBoxModel?.parent as RenderBox?)?.markNeedsLayout();
+    }
   }
 
   @override
@@ -194,6 +199,9 @@ mixin CSSTextMixin on RenderStyle {
   void updateRootFontRelativeLength() {
     if (_rootFontRelativeProperties.isEmpty) return;
     renderBoxModel?.markNeedsLayout();
+    if (renderBoxModel?.isSizeTight == true && renderBoxModel?.parent != null) {
+      (renderBoxModel?.parent as RenderBox?)?.markNeedsLayout();
+    }
   }
 
   CSSLengthValue? _lineHeight;
@@ -491,7 +499,7 @@ mixin CSSTextMixin on RenderStyle {
     //   background: The paint drawn as a background for the text.
     //   foreground: The paint used to draw the text. If this is specified, color must be null.
     TextStyle textStyle = TextStyle(
-        color: color ?? renderStyle.color.value,
+        color: renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null,
         decoration: renderStyle.textDecorationLine,
         decorationColor: renderStyle.textDecorationColor?.value,
         decorationStyle: renderStyle.textDecorationStyle,
@@ -506,7 +514,7 @@ mixin CSSTextMixin on RenderStyle {
         package: CSSText.getFontPackage(),
         locale: CSSText.getLocale(),
         background: CSSText.getBackground(),
-        foreground: CSSText.getForeground(),
+        foreground: null,
         height: height);
     return TextSpan(
       text: text,
@@ -810,11 +818,6 @@ class CSSText {
 
   static Paint? getBackground() {
     // TODO: Reserved port for customize text decoration background.
-    return null;
-  }
-
-  static Paint? getForeground() {
-    // TODO: Reserved port for customize text decoration foreground.
     return null;
   }
 

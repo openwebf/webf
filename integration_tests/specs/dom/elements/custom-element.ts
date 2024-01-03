@@ -410,6 +410,30 @@ describe('custom widget element', () => {
     await sleep(0.1);
     await snapshot();
   });
+
+  it('should works with swiper component', async () => {
+    const swiper = document.createElement('flutter-swiper');
+    for(let i = 0; i < 10; i ++) {
+      const container = document.createElement('div');
+      container.textContent = i.toString();
+      swiper.appendChild(container);
+    }
+    document.body.appendChild(swiper);
+    await snapshot();
+    // @ts-ignore
+    swiper.move(1);
+    await sleep(1);
+    await snapshot();
+  });
+
+  it('should ignore empty textNodes', async () => {
+    const container = document.createElement('flutter-container');
+    container.appendChild(document.createTextNode(''));
+    container.appendChild(document.createTextNode('A'));
+    container.appendChild(document.createTextNode(''));
+    document.body.appendChild(container);
+    await snapshot();
+  });
 });
 
 describe('custom html element', () => {
@@ -421,10 +445,17 @@ describe('custom html element', () => {
     await snapshot();
   });
 
+  it('works with setTextContent', async () => {
+    let sampleElement = document.createElement('flutter-container');
+    sampleElement.textContent = 'helloworld';
+    document.body.appendChild(sampleElement);
+    await snapshot();
+  });
+
   it('dart implements getAllBindingPropertyNames works', async () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
-    expect(attributes).toEqual(['classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'fake', 'offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth', 'ping', 'scrollHeight', 'scrollLeft', 'scrollTop', 'scrollWidth', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete', 'click', 'fn', 'getBoundingClientRect', 'getElementsByClassName', 'getElementsByTagName', 'scroll', 'scrollBy', 'scrollTo']);
+    expect(attributes).toEqual(['classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'dir', 'fake', 'offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth', 'ping', 'scrollHeight', 'scrollLeft', 'scrollTop', 'scrollWidth', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete', 'click', 'closest', 'fn', 'getBoundingClientRect', 'getElementsByClassName', 'getElementsByTagName', 'matches', 'querySelector', 'querySelectorAll', 'scroll', 'scrollBy', 'scrollTo']);
   });
 
   it('support custom properties in dart directly', () => {
@@ -515,7 +546,7 @@ describe('custom html element', () => {
     document.body.appendChild(sampleElement);
 
     // @ts-ignore
-    expect(sampleElement._fake).toBe(null);
+    expect(sampleElement._fake).toBe(undefined);
 
     // @ts-ignore
     sampleElement._fake = [1, 2, 3, 4, 5];
@@ -538,7 +569,7 @@ describe('custom html element', () => {
     document.body.appendChild(sampleElement);
 
     // @ts-ignore
-    expect(sampleElement._fake).toBe(null);
+    expect(sampleElement._fake).toBe(undefined);
 
     // @ts-ignore
     sampleElement._fake = [1, 2, 3, 4, 5];

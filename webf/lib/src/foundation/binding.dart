@@ -9,14 +9,16 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/launcher.dart';
 
-typedef BindingObjectOperation = void Function(BindingObject bindingObject);
+typedef BindingObjectOperation = void Function(WebFViewController? view, BindingObject bindingObject);
 
 class BindingContext {
   final int contextId;
+  final WebFViewController view;
   final Pointer<NativeBindingObject> pointer;
 
-  const BindingContext(this.contextId, this.pointer);
+  const BindingContext(this.view, this.contextId, this.pointer);
 }
 
 typedef BindingPropertyGetter = dynamic Function();
@@ -52,7 +54,7 @@ class AsyncBindingObjectMethod extends BindingObjectMethod {
 }
 
 
-abstract class BindingObject {
+abstract class BindingObject<T> extends Iterable<T> {
   static BindingObjectOperation? bind;
   static BindingObjectOperation? unbind;
 
@@ -62,11 +64,13 @@ abstract class BindingObject {
   final BindingContext? _context;
 
   int? get contextId => _context?.contextId;
+  final WebFViewController? _ownerView;
+  WebFViewController get ownerView => _ownerView!;
 
   Pointer<NativeBindingObject>? get pointer => _context?.pointer;
 
-  BindingObject([BindingContext? context]) : _context = context {
-    _bind();
+  BindingObject([BindingContext? context]) : _context = context, _ownerView = context?.view {
+    _bind(_ownerView);
     initializeProperties(_properties);
     initializeMethods(_methods);
 
@@ -104,9 +108,9 @@ abstract class BindingObject {
 
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
     toNativeValue(method, 'syncPropertiesAndMethods');
-    f(pointer!, returnValue, method, 3, arguments);
+    f(pointer!, returnValue, method, 3, arguments, {});
     malloc.free(arguments);
-    return fromNativeValue(returnValue) == true;
+    return fromNativeValue(ownerView, returnValue) == true;
   }
 
   final SplayTreeMap<String, BindingObjectProperty> _properties = SplayTreeMap();
@@ -119,15 +123,15 @@ abstract class BindingObject {
   void initializeMethods(Map<String, BindingObjectMethod> methods);
 
   // Bind dart side object method to receive invoking from native side.
-  void _bind() {
+  void _bind(WebFViewController? ownerView) {
     if (bind != null) {
-      bind!(this);
+      bind!(ownerView, this);
     }
   }
 
-  void _unbind() {
+  void _unbind(WebFViewController? ownerView) {
     if (unbind != null) {
-      unbind!(this);
+      unbind!(ownerView, this);
     }
   }
 
@@ -146,6 +150,9 @@ abstract class BindingObject {
     return null;
   }
 
+  @override
+  Iterator<T> get iterator => Iterable<T>.empty().iterator;
+
   dynamic _invokeBindingMethodAsync(String method, List<dynamic> args) {
     BindingObjectMethod? fn = _methods[method];
     if (fn == null) {
@@ -161,18 +168,26 @@ abstract class BindingObject {
       List<dynamic> functionArguments = args.sublist(3);
       Future<dynamic> p = fn.call(functionArguments);
       p.then((result) {
+        Stopwatch? stopwatch;
         if (isEnabledLog) {
-          print('AsyncAnonymousFunction call resolved callback: $method arguments:[$result]');
+          stopwatch = Stopwatch()..start();
         }
         Pointer<NativeValue> nativeValue = malloc.allocate(sizeOf<NativeValue>());
         toNativeValue(nativeValue, result, this);
         callback(callbackContext, nativeValue, contextId, nullptr);
+        if (isEnabledLog) {
+          print('AsyncAnonymousFunction call resolved callback: $method arguments:[$result] time: ${stopwatch!.elapsedMicroseconds}us');
+        }
       }).catchError((e, stack) {
         String errorMessage = '$e\n$stack';
+        Stopwatch? stopwatch;
         if (isEnabledLog) {
-          print('AsyncAnonymousFunction call rejected callback: $method, arguments:[$errorMessage]');
+          stopwatch = Stopwatch()..start();
         }
         callback(callbackContext, nullptr, contextId, errorMessage.toNativeUtf8());
+        if (isEnabledLog) {
+          print('AsyncAnonymousFunction call rejected callback: $method, arguments:[$errorMessage] time: ${stopwatch!.elapsedMicroseconds}us');
+        }
       });
     }
 
@@ -180,8 +195,8 @@ abstract class BindingObject {
   }
 
   @mustCallSuper
-  Future<void> dispose() async {
-    _unbind();
+  void dispose() async {
+    _unbind(_ownerView);
     _properties.clear();
     _methods.clear();
   }
@@ -192,12 +207,17 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
 
   BindingObjectProperty? property = bindingObject._properties[args[0]];
 
+  Stopwatch? stopwatch;
   if (isEnabledLog && property != null) {
-    print('$bindingObject getBindingProperty key: ${args[0]} result: ${property.getter()}');
+    stopwatch = Stopwatch()..start();
   }
 
   if (property != null) {
-    return property.getter();
+    dynamic result = property.getter();
+    if (isEnabledLog) {
+      print('$bindingObject getBindingProperty key: ${args[0]} result: ${property.getter()} time: ${stopwatch!.elapsedMicroseconds}us');
+    }
+    return result;
   }
   return null;
 }
@@ -239,10 +259,15 @@ dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> a
 }
 
 dynamic invokeBindingMethodSync(BindingObject bindingObject, List<dynamic> args) {
+  Stopwatch? stopwatch;
   if (isEnabledLog) {
-    print('$bindingObject invokeBindingMethodSync method: ${args[0]} args: ${args.slice(1)}');
+    stopwatch = Stopwatch()..start();
   }
-  return bindingObject._invokeBindingMethodSync(args[0], args.slice(1));
+  dynamic result = bindingObject._invokeBindingMethodSync(args[0], args.slice(1));
+  if (isEnabledLog) {
+    print('$bindingObject invokeBindingMethodSync method: ${args[0]} args: ${args.slice(1)} time: ${stopwatch!.elapsedMilliseconds}ms');
+  }
+  return result;
 }
 
 dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args) {
@@ -253,15 +278,17 @@ dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args
 }
 
 // This function receive calling from binding side.
-void invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindingObject,
+void invokeBindingMethodFromNativeImpl(int contextId, Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
-  dynamic method = fromNativeValue(nativeMethod);
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  dynamic method = fromNativeValue(controller.view, nativeMethod);
   List<dynamic> values = List.generate(argc, (i) {
     Pointer<NativeValue> nativeValue = argv.elementAt(i);
-    return fromNativeValue(nativeValue);
+    return fromNativeValue(controller.view, nativeValue);
   });
 
-  BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
+  BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
+
   var result = null;
   try {
     // Method is binding call method operations from internal.
@@ -269,12 +296,16 @@ void invokeBindingMethodFromNativeImpl(Pointer<NativeBindingObject> nativeBindin
       // Get and setter ops
       result = bindingCallMethodDispatchTable[method](bindingObject, values);
     } else {
-      BindingObject bindingObject = BindingBridge.getBindingObject(nativeBindingObject);
+      BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
       // invokeBindingMethod directly
+      Stopwatch? stopwatch;
       if (isEnabledLog) {
-        print('$bindingObject invokeBindingMethod method: $method args: $values');
+        stopwatch = Stopwatch()..start();
       }
       result = bindingObject._invokeBindingMethodSync(method, values);
+      if (isEnabledLog) {
+        print('$bindingObject invokeBindingMethod method: $method args: $values result: $result time: ${stopwatch!.elapsedMicroseconds}us');
+      }
     }
   } catch (e, stack) {
     print('$e\n$stack');

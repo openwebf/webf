@@ -3,11 +3,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:collection';
-
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
@@ -45,6 +44,8 @@ List<String> _propertyOrders = [
   COLOR,
   TRANSITION_DURATION,
   TRANSITION_PROPERTY,
+  TRANSITION_TIMING_FUNCTION,
+  TRANSITION_DELAY,
   OVERFLOW_X,
   OVERFLOW_Y
 ];
@@ -74,7 +75,7 @@ class CSSPropertyValue {
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration extends BindingObject with IterableMixin {
+class CSSStyleDeclaration extends BindingObject {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -82,7 +83,21 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
   StyleChangeListener? onStyleChanged;
   StyleFlushedListener? onStyleFlushed;
 
-  CSSStyleDeclaration([BindingContext? context]);
+  CSSStyleDeclaration? _pseudoBeforeStyle;
+  CSSStyleDeclaration? get pseudoBeforeStyle => _pseudoBeforeStyle;
+  set pseudoBeforeStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoBeforeStyle = newStyle;
+    target?.markBeforePseudoElementNeedsUpdate();
+  }
+
+  CSSStyleDeclaration? _pseudoAfterStyle;
+  CSSStyleDeclaration? get pseudoAfterStyle => _pseudoAfterStyle;
+  set pseudoAfterStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoAfterStyle = newStyle;
+    target?.markAfterPseudoElementNeedsUpdate();
+  }
+
+  CSSStyleDeclaration([BindingContext? context]): super(context);
 
   // ignore: prefer_initializing_formals
   CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
@@ -167,6 +182,8 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         return CSSStyleProperty.removeShorthandTransition(this, isImportant);
       case TEXT_DECORATION:
         return CSSStyleProperty.removeShorthandTextDecoration(this, isImportant);
+      case ANIMATION:
+        return CSSStyleProperty.removeShorthandAnimation(this, isImportant);
     }
 
     String present = EMPTY_STRING;
@@ -281,6 +298,11 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     if (propertyName.startsWith(ANIMATION) || propertyName == D) {
       return string;
     }
+
+    if (propertyName == CONTENT) {
+      return string;
+    }
+
     // Like url("http://path") declared with quotation marks and
     // custom property names are case sensitive.
     String lowerCase = string.toLowerCase();
@@ -299,6 +321,8 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     // lazy calculated.
     // Eg. var(--x), calc(1 + 1)
     if (CSSFunction.isFunction(normalizedValue)) return true;
+
+    if (CSSLength.isInitial(normalizedValue)) return true;
 
     // Validate value.
     switch (propertyName) {
@@ -367,6 +391,10 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
         break;
       case BACKGROUND_REPEAT:
         if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
+        break;
+      case FONT_SIZE:
+        CSSLengthValue parsedFontSize = CSSLength.parseLength(normalizedValue, null);
+        if (parsedFontSize == CSSLengthValue.unknown && !CSSText.isValidFontSizeValue(normalizedValue)) return false;
         break;
     }
     return true;
@@ -498,6 +526,60 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
     }
   }
 
+  void handlePseudoRules(Element parentElement, List<CSSStyleRule> rules) {
+    if (rules.isEmpty) return;
+
+    List<CSSStyleRule> beforeRules = [];
+    List<CSSStyleRule> afterRules = [];
+
+    for (CSSStyleRule style in rules) {
+      for (Selector selector in style.selectorGroup.selectors) {
+        for (SimpleSelectorSequence sequence in selector.simpleSelectorSequences) {
+          if (sequence.simpleSelector is PseudoElementSelector) {
+            if (sequence.simpleSelector.name == 'before') {
+              beforeRules.add(style);
+            } else if (sequence.simpleSelector.name == 'after') {
+              afterRules.add(style);
+            }
+          }
+        }
+      }
+    }
+
+    int sortRules(leftRule, rightRule) {
+      int isCompare = leftRule.selectorGroup.matchSpecificity.compareTo(rightRule.selectorGroup.matchSpecificity);
+      if (isCompare == 0) {
+        return leftRule.position.compareTo(rightRule.position);
+      }
+      return isCompare;
+    }
+
+    // sort selector
+    beforeRules.sort(sortRules);
+    afterRules.sort(sortRules);
+
+    if (beforeRules.isNotEmpty) {
+      pseudoBeforeStyle ??= CSSStyleDeclaration();
+      // Merge all the rules
+      for (CSSStyleRule rule in beforeRules) {
+        pseudoBeforeStyle!.union(rule.declaration);
+      }
+      parentElement.markBeforePseudoElementNeedsUpdate();
+    } else if (beforeRules.isEmpty && pseudoBeforeStyle != null) {
+      pseudoBeforeStyle = null;
+    }
+
+    if (afterRules.isNotEmpty) {
+      pseudoAfterStyle ??= CSSStyleDeclaration();
+      for (CSSStyleRule rule in afterRules) {
+        pseudoAfterStyle!.union(rule.declaration);
+      }
+      parentElement.markAfterPseudoElementNeedsUpdate();
+    } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
+      pseudoAfterStyle = null;
+    }
+  }
+
   // Merge the difference between the declarations and return the updated status
   bool merge(CSSStyleDeclaration other) {
     Map<String, CSSPropertyValue> properties = {}
@@ -534,12 +616,17 @@ class CSSStyleDeclaration extends BindingObject with IterableMixin {
       }
     }
 
+    if (other.pseudoBeforeStyle != null) {
+      pseudoBeforeStyle?.merge(other.pseudoBeforeStyle!);
+    }
+    if (other.pseudoAfterStyle != null) {
+      pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
+    }
+
     return updateStatus;
   }
 
-  /// Override [] and []= operator to get/set style properties.
   operator [](String property) => getPropertyValue(property);
-
   operator []=(String property, value) {
     setProperty(property, value);
   }

@@ -96,34 +96,21 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     return success;
   };
     <% } %>
+     bool QJS<%= className %>::StringPropertyDeleterCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
+      auto* self = toScriptWrappable<<%= className %>>(obj);
+      ExceptionState exception_state;
+      MemberMutationScope scope{ExecutingContext::From(ctx)};
+      if (UNLIKELY(exception_state.HasException())) {
+        return false;
+      }
+      bool success = self->DeleteItem(AtomicString(ctx, key), exception_state);
+      if (UNLIKELY(exception_state.HasException())) {
+        return false;
+      }
+      return success;
+    };
   <% } %>
  <% } %>
-
-
-static thread_local AttributeMap* internal_properties = nullptr;
-
-void QJS<%= className %>::InitAttributeMap() {
-  internal_properties = new AttributeMap();
-
-  for(int i = 0; i < <%= object.props.length %>; i ++) {
-  <% object.props.forEach(prop => { %>
-    internal_properties->emplace(std::make_pair(defined_properties::k<%= prop.name %>, true));
-  <% }) %>
-  }
-}
-
-void QJS<%= className %>::DisposeAttributeMap() {
-  delete internal_properties;
-}
-
-AttributeMap* QJS<%= className %>::definedAttributeMap() {
-  assert(internal_properties != nullptr);
-  return internal_properties;
-}
-
-bool QJS<%= className %>::IsAttributeDefinedInternal(const AtomicString& key) {
-  return definedAttributeMap()->count(key) > 0;
-}
 
 <% _.forEach(filtedMethods, function(method, index) { %>
 

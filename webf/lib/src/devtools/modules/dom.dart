@@ -5,7 +5,6 @@
 import 'dart:ffi';
 import 'dart:ui' as ui;
 
-import 'package:webf/bridge.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -20,6 +19,7 @@ class InspectDOMModule extends UIInspectorModule {
   String get name => 'DOM';
 
   Document get document => devtoolsService.controller!.view.document;
+  WebFViewController get view => devtoolsService.controller!.view;
   InspectDOMModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
@@ -67,8 +67,9 @@ class InspectDOMModule extends UIInspectorModule {
   Node? inspectedNode;
 
   void onSetInspectedNode(int? id, Map<String, dynamic> params) {
-    int nodeId = params['nodeId'];
-    Node? node = BindingBridge.getBindingObject<Node>(Pointer.fromAddress(nodeId));
+    int? nodeId = params['nodeId'];
+    if (nodeId == null) return;
+    Node? node = view.getBindingObject<Node>(Pointer.fromAddress(nodeId));
     if (node != null) {
       inspectedNode = node;
     }
@@ -84,8 +85,12 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onGetBoxModel(int? id, Map<String, dynamic> params) {
-    int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    int? nodeId = params['nodeId'];
+    if (nodeId == null) return;
+    Node? node = view.getBindingObject<Node>(Pointer.fromAddress(nodeId));
+
+    Element? element = null;
+    if (node is Element) element = node;
 
     // BoxModel design to BorderBox in kraken.
     if (element != null && element.renderBoxModel != null && element.renderBoxModel!.hasSize) {
@@ -190,11 +195,11 @@ class InspectorNode extends JSONEncodable {
   /// Node identifier that is passed into the rest of the DOM messages as the nodeId.
   /// Backend will only push node with given id once. It is aware of all requested nodes
   /// and will only fire DOM events for nodes known to the client.
-  int? get nodeId => referencedNode.pointer!.address;
+  int? get nodeId => referencedNode.pointer?.address;
 
   /// Optional. The id of the parent node if any.
   int get parentId {
-    if (referencedNode.parentNode != null) {
+    if (referencedNode.parentNode != null && referencedNode.parentNode!.pointer != null) {
       return referencedNode.parentNode!.pointer!.address;
     } else {
       return 0;
@@ -257,7 +262,9 @@ class InspectorNode extends JSONEncodable {
       'childNodeCount': childNodeCount,
       'attributes': attributes,
       if (childNodeCount > 0)
-        'children': referencedNode.childNodes.map((Node node) => InspectorNode(node).toJson()).toList(),
+        'children': referencedNode.childNodes.where((node) {
+          return node is Element || (node is TextNode && node.data.isNotEmpty);
+        }).map((Node node) => InspectorNode(node).toJson()).toList(),
     };
   }
 }

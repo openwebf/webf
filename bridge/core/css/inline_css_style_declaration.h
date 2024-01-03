@@ -25,12 +25,13 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   static InlineCssStyleDeclaration* Create(ExecutingContext* context, ExceptionState& exception_state);
   explicit InlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_);
 
-  AtomicString item(const AtomicString& key, ExceptionState& exception_state) override;
-  bool SetItem(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) override;
+  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
+  bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
+  bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
   [[nodiscard]] int64_t length() const override;
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
-  void setProperty(const AtomicString& key, const AtomicString& value, ExceptionState& exception_state) override;
+  void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
   AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 
   [[nodiscard]] std::string ToString() const;
@@ -40,8 +41,9 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
 
   void CopyWith(InlineCssStyleDeclaration* inline_style);
 
-  //  AtomicString cssText() const override;
-  //  void setCssText(const AtomicString &value, ExceptionState &exception_state) override;
+  AtomicString cssText() const override;
+  void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
+  void setCssText(const std::string& value, ExceptionState& exception_state);
 
   void Trace(GCVisitor* visitor) const override;
 
@@ -49,6 +51,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   AtomicString InternalGetPropertyValue(std::string& name);
   bool InternalSetProperty(std::string& name, const AtomicString& value);
   AtomicString InternalRemoveProperty(std::string& name);
+  void InternalClearProperty();
   std::unordered_map<std::string, AtomicString> properties_;
   Member<Element> owner_element_;
 };

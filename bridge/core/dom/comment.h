@@ -25,6 +25,11 @@ class Comment : public CharacterData {
   Node* Clone(Document&, CloneChildrenFlag) const override;
 };
 
+template <>
+struct DowncastTraits<Comment> {
+  static bool AllowFrom(const Node& node) { return node.IsOtherNode(); }
+};
+
 }  // namespace webf
 
 #endif  // BRIDGE_COMMENT_H

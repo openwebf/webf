@@ -195,6 +195,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   String get nodeName;
 
   NodeData? _node_data;
+  NodeData? get nodeData => _node_data;
   NodeData ensureNodeData() {
     _node_data ??= NodeData();
     return _node_data!;
@@ -217,9 +218,8 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     ownerDocument.updateStyleIfNeeded();
   }
 
-  // FIXME: The ownerDocument getter steps are to return null, if this is a document; otherwise this’s node document.
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
-  late Document ownerDocument;
+  Document get ownerDocument => ownerView.document;
 
   /// The Node.parentElement read-only property returns the DOM node's parent Element,
   /// or null if the node either has no parent, or its parent isn't a DOM Element.
@@ -280,11 +280,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   // Is child renderObject attached.
   bool get isRendererAttached => renderer != null && renderer!.attached;
 
-  bool contains(Node? node) {
-    if (node == null) return false;
-    return this == node || node.isDescendantOf(this);
-  }
-
   bool isDescendantOf(Node? other) {
     // Return true if other is an ancestor of this, otherwise false
     if (other == null || isConnected != other.isConnected) {
@@ -311,7 +306,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   /// Release any resources held by this node.
   @override
-  Future<void> dispose() async {
+  void dispose() async {
     parentNode?.removeChild(this);
     assert(!isRendererAttached, 'Should unmount $this before calling dispose.');
     super.dispose();

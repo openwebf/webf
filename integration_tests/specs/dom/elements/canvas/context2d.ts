@@ -491,4 +491,225 @@ describe('Canvas context 2d', () => {
     await snapshot(canvas);
     done();
   });
+
+  it('should work with createPattern from a canvas when repetition is repeat', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+    const patternCanvas = document.createElement("canvas");
+    const patternContext = patternCanvas.getContext("2d");
+    if (!patternContext) {
+      throw new Error('canvas context is null');
+    }
+
+    // Give the pattern a width and height of 50
+    patternCanvas.width = 50;
+    patternCanvas.height = 50;
+
+    // Give the pattern a background color and draw an arc
+    patternContext.fillStyle = "#fec";
+    patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
+    patternContext.stroke();
+
+
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+    const pattern = context.createPattern(patternCanvas, "repeat");
+    context.fillStyle = pattern;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    await snapshot(canvas);
+    done();
+
+  });
+
+  it('should work with createPattern from a canvas when repetition is repeat-x', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+    const patternCanvas = document.createElement("canvas");
+    const patternContext = patternCanvas.getContext("2d");
+    if (!patternContext) {
+      throw new Error('canvas context is null');
+    }
+
+    // Give the pattern a width and height of 50
+    patternCanvas.width = 50;
+    patternCanvas.height = 50;
+
+    // Give the pattern a background color and draw an arc
+    patternContext.fillStyle = "#fec";
+    patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
+    patternContext.stroke();
+
+
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+    const pattern = context.createPattern(patternCanvas, "repeat-x");
+    context.fillStyle = pattern;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    await snapshot(canvas);
+    done();
+
+  });
+
+  it('should work with createPattern from a canvas when repetition is repeat-y', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+    const patternCanvas = document.createElement("canvas");
+    const patternContext = patternCanvas.getContext("2d");
+    if (!patternContext) {
+      throw new Error('canvas context is null');
+    }
+
+    // Give the pattern a width and height of 50
+    patternCanvas.width = 50;
+    patternCanvas.height = 50;
+
+    // Give the pattern a background color and draw an arc
+    patternContext.fillStyle = "#fec";
+    patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
+    patternContext.stroke();
+
+
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+    const pattern = context.createPattern(patternCanvas, "repeat-y");
+    context.fillStyle = pattern;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    await snapshot(canvas);
+    done();
+
+  });
+
+  it('should work with createPattern from a canvas when repetition is no-repeat', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+    const patternCanvas = document.createElement("canvas");
+    const patternContext = patternCanvas.getContext("2d");
+    if (!patternContext) {
+      throw new Error('canvas context is null');
+    }
+
+    // Give the pattern a width and height of 50
+    patternCanvas.width = 50;
+    patternCanvas.height = 50;
+
+    // Give the pattern a background color and draw an arc
+    patternContext.fillStyle = "#fec";
+    patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
+    patternContext.stroke();
+
+
+    if (!context) {
+      throw new Error('canvas context is null');
+    }
+
+    const pattern = context.createPattern(patternCanvas, "no-repeat");
+    context.fillStyle = pattern;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    await snapshot(canvas);
+    done();
+
+  });
+
+  it('should work with createPattern from an image when repetition is repeat', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+
+    const img = new Image();
+    img.src = 'assets/cat.png';
+    // Only use the image after it's loaded
+    img.onload = async () => {
+      const pattern = context.createPattern(img, "repeat");
+      context.fillStyle = pattern;
+      context.fillRect(0, 0, 300, 300);
+      await snapshot(canvas);
+      done();
+    };
+
+  })
+
+  it('should work with createPattern from an image when repetition is repeat-x', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+
+    const img = new Image();
+    img.src = 'assets/cat.png';
+    // Only use the image after it's loaded
+    img.onload = async () => {
+      const pattern = context.createPattern(img, "repeat-x");
+      context.fillStyle = pattern;
+      context.fillRect(0, 0, 300, 300);
+      await snapshot(canvas);
+      done();
+    };
+
+  })
+
+  it('should work with createPattern from an image when repetition is repeat-y', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+
+    const img = new Image();
+    img.src = 'assets/cat.png';
+    // Only use the image after it's loaded
+    img.onload = async () => {
+      const pattern = context.createPattern(img, "repeat-y");
+      context.fillStyle = pattern;
+      context.fillRect(0, 0, 300, 300);
+      await snapshot(canvas);
+      done();
+    };
+
+  })
+
+  it('should work with createPattern from an image when repetition is no-repeat', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');
+
+
+    const img = new Image();
+    img.src = 'assets/cat.png';
+    // Only use the image after it's loaded
+    img.onload = async () => {
+      const pattern = context.createPattern(img, "no-repeat");
+      context.fillStyle = pattern;
+      context.fillRect(0, 0, 300, 300);
+      await snapshot(canvas);
+      done();
+    };
+
+  })
+
 });

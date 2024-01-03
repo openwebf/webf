@@ -10,7 +10,7 @@
 namespace webf {
 
 RejectedPromises::Message::Message(ExecutingContext* context, JSValue promise, JSValue reason)
-    : m_runtime(context->dartContext()->runtime()),
+    : m_runtime(context->dartIsolateContext()->runtime()),
       m_promise(JS_DupValue(context->ctx(), promise)),
       m_reason(JS_DupValue(context->ctx(), reason)) {}
 

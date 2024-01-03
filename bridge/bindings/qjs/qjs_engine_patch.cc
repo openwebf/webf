@@ -8,6 +8,10 @@
 #include <quickjs/list.h>
 #include <cstring>
 
+#if WIN32
+#include <Windows.h>
+#endif
+
 typedef struct JSProxyData {
   JSValue target;
   JSValue handler;
@@ -250,15 +254,35 @@ uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
 
   if (!string->is_wide_char) {
     uint8_t* p = string->u.str8;
+#if WIN32
+    int utf16_str_len = MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, NULL, 0) - 1;
+    if (utf16_str_len == -1) {
+      return nullptr;
+    }
+    // Allocate memory for the UTF-16 string, including the null terminator
+    buffer = (uint16_t*)CoTaskMemAlloc((utf16_str_len + 1) * sizeof(WCHAR));
+    if (buffer == nullptr) {
+      return nullptr;
+    }
+
+    // Convert the ASCII string to UTF-16
+    MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, (WCHAR*)buffer, utf16_str_len + 1);
+    *length = utf16_str_len;
+#else
     uint32_t len = *length = string->len;
     buffer = (uint16_t*)malloc(sizeof(uint16_t) * len * 2);
     for (size_t i = 0; i < len; i++) {
       buffer[i] = p[i];
       buffer[i + 1] = 0x00;
     }
+#endif
   } else {
     *length = string->len;
+#if WIN32
+    buffer = (uint16_t*)CoTaskMemAlloc(sizeof(uint16_t) * string->len);
+#else
     buffer = (uint16_t*)malloc(sizeof(uint16_t) * string->len);
+#endif
     memcpy(buffer, string->u.str16, sizeof(uint16_t) * string->len);
   }
 

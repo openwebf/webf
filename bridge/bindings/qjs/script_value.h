@@ -12,13 +12,14 @@
 #include "exception_state.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
+#include "foundation/native_value.h"
 #include "qjs_engine_patch.h"
 
 namespace webf {
 
 class ExecutingContext;
 class WrapperTypeInfo;
-class NativeValue;
+struct NativeValue;
 class GCVisitor;
 
 // ScriptValue is a stack allocate only QuickJS JSValue wrapper ScriptValuewhich hold all information to hide out
@@ -35,15 +36,17 @@ class ScriptValue final {
 
   // Create an empty ScriptValue;
   static ScriptValue Empty(JSContext* ctx);
+  // Create an undefined ScriptValue;
+  static ScriptValue Undefined(JSContext* ctx);
   // Wrap an Quickjs JSValue to ScriptValue.
-  explicit ScriptValue(JSContext* ctx, JSValue value)
-      : ctx_(ctx), value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
+  explicit ScriptValue(JSContext* ctx, JSValue value) : value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
+  explicit ScriptValue(JSContext* ctx, const AtomicString& value)
+      : value_(JS_AtomToString(ctx, value.Impl())), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const SharedNativeString* string)
-      : ctx_(ctx), value_(JS_NewUnicodeString(ctx, string->string(), string->length())), runtime_(JS_GetRuntime(ctx)) {}
-  explicit ScriptValue(JSContext* ctx, double v)
-      : ctx_(ctx), value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
-  explicit ScriptValue(JSContext* ctx) : ctx_(ctx), runtime_(JS_GetRuntime(ctx)){};
-  explicit ScriptValue(JSContext* ctx, const NativeValue& native_value);
+      : value_(JS_NewUnicodeString(ctx, string->string(), string->length())), runtime_(JS_GetRuntime(ctx)) {}
+  explicit ScriptValue(JSContext* ctx, double v) : value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
+  explicit ScriptValue(JSContext* ctx) : runtime_(JS_GetRuntime(ctx)){};
+  explicit ScriptValue(JSContext* ctx, const NativeValue& native_value, bool shared_js_value = false);
   ScriptValue() = default;
 
   // Copy and assignment
@@ -54,14 +57,15 @@ class ScriptValue final {
   ScriptValue(ScriptValue&& value) noexcept;
   ScriptValue& operator=(ScriptValue&& value) noexcept;
 
-  ~ScriptValue() { JS_FreeValue(ctx_, value_); };
+  ~ScriptValue() { JS_FreeValueRT(runtime_, value_); };
 
   JSValue QJSValue() const;
   // Create a new ScriptValue from call JSON.stringify to current value.
-  ScriptValue ToJSONStringify(ExceptionState* exception) const;
-  AtomicString ToString() const;
-  std::unique_ptr<SharedNativeString> ToNativeString() const;
-  NativeValue ToNative(ExceptionState& exception_state) const;
+  ScriptValue ToJSONStringify(JSContext* ctx, ExceptionState* exception) const;
+  AtomicString ToString(JSContext* ctx) const;
+  AtomicString ToLegacyDOMString(JSContext* ctx) const;
+  std::unique_ptr<SharedNativeString> ToNativeString(JSContext* ctx) const;
+  NativeValue ToNative(JSContext* ctx, ExceptionState& exception_state, bool shared_js_value = false) const;
 
   bool IsException() const;
   bool IsEmpty() const;
@@ -74,7 +78,6 @@ class ScriptValue final {
   void Trace(GCVisitor* visitor) const;
 
  private:
-  JSContext* ctx_{nullptr};
   JSRuntime* runtime_{nullptr};
   JSValue value_{JS_NULL};
 };

@@ -9,14 +9,20 @@ import '../core/aspect_ratio.dart';
 import 'container.dart';
 
 class RenderSVGRoot extends RenderSVGContainer {
-  Rect _viewBox;
+  Rect? _viewBox;
 
+  // the developer provided viewbox, maybe is null
   get viewBox => _viewBox;
 
   set viewBox(value) {
     _viewBox = value;
     markNeedsPaint();
   }
+
+  Rect _renderViewBox = DEFAULT_VIEW_BOX;
+
+  // the final viewbox to render
+  get renderViewBox => _renderViewBox;
 
   SVGPreserveAspectRatio _ratio;
 
@@ -37,16 +43,20 @@ class RenderSVGRoot extends RenderSVGContainer {
   RenderSVGRoot({
     required super.renderStyle,
     super.element,
-    Rect viewBox = const Rect.fromLTWH(0, 0, 300, 150),
+    Rect? viewBox,
     SVGPreserveAspectRatio ratio = const SVGPreserveAspectRatio(),
   })  : _viewBox = viewBox,
         _ratio = ratio {}
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
-    _outerClipLayer.layer = context.pushClipRect(true, offset, Offset.zero & size, (context, offset) {
-      _transformLayer.layer = context.pushTransform(false, offset, _ratio.getMatrix(_viewBox, size), (context, offset) {
-        _innerClipLayer.layer = context.pushClipRect(false, offset, _viewBox, (context, offset) {
+    _outerClipLayer.layer = context
+        .pushClipRect(true, offset, Offset.zero & size, (context, offset) {
+      _transformLayer.layer = context
+          .pushTransform(false, offset, _ratio.getMatrix(_renderViewBox, size),
+              (context, offset) {
+        _innerClipLayer.layer = context
+            .pushClipRect(false, offset, _renderViewBox, (context, offset) {
           // Draw debug rect
           // context.canvas.drawRect(_viewBox, Paint()..color = Color.fromARGB(255, 255, 0, 0)..style = PaintingStyle.stroke);
           visitChildren((child) {
@@ -61,22 +71,35 @@ class RenderSVGRoot extends RenderSVGContainer {
 
   @override
   void performLayout() {
-    var width = renderStyle.width.isAuto ? DEFAULT_VIEW_BOX_WIDTH : renderStyle.width.computedValue;
-    var height = renderStyle.height.isAuto ? DEFAULT_VIEW_BOX_HEIGHT : renderStyle.height.computedValue;
+    var width = renderStyle.width.isAuto
+        ? DEFAULT_VIEW_BOX_WIDTH
+        : renderStyle.width.computedValue;
+    var height = renderStyle.height.isAuto
+        ? DEFAULT_VIEW_BOX_HEIGHT
+        : renderStyle.height.computedValue;
 
     width = width.isInfinite ? DEFAULT_VIEW_BOX_WIDTH : width;
     height = height.isInfinite ? DEFAULT_VIEW_BOX_HEIGHT : height;
 
     size = Size(width, height);
 
+    if (_viewBox == null) {
+      // When viewBox is not valid, should use width/height
+      // To keep same behavior with Chrome
+      _renderViewBox = Rect.fromLTWH(0, 0, width, height);
+    } else {
+      _renderViewBox = viewBox;
+    }
+
     visitChildren((child) {
       // unconstraint child size
       child.layout(BoxConstraints());
     });
-
     // HACK: must be call this function otherwise the BoxModel cannot works correctly.
     // Improve it in the future.
-    initOverflowLayout(Rect.fromLTWH(0, 0, size.width, size.height), Rect.fromLTWH(0, 0, size.width, size.height));
+    initOverflowLayout(Rect.fromLTWH(0, 0, size.width, size.height),
+        Rect.fromLTWH(0, 0, size.width, size.height));
+    dispatchResize(contentSize, boxSize ?? Size.zero);
   }
 
   @override

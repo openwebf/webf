@@ -1,3 +1,165 @@
+## 0.15.0
+
+This version will support Flutter 3.10.x
+
+**Break Changes**
+
+1. Remove `navigator.connection` API. https://github.com/openwebf/webf/pull/411
+
+**Features**
+
+1. Upgrade Flutter support to 3.10.x. https://github.com/openwebf/webf/pull/345
+2. Optimize location API for better performance results. https://github.com/openwebf/webf/pull/420
+3. Optimize the size of webf_bridge.xcframework and quickjs.xcframework. https://github.com/openwebf/webf/pull/414
+4. Support CSS initial length value. https://github.com/openwebf/webf/pull/421
+5. Optimize Element.children() and Document.all() performance. https://github.com/openwebf/webf/pull/424
+6. Support base64 format font data in `@font-face` src. https://github.com/openwebf/webf/pull/399
+7. Support Element.dir API. https://github.com/openwebf/webf/pull/418
+8. Add `<circle />` and `<ellipse>` tags for SVG. https://github.com/openwebf/webf/pull/423
+9. Support share customized JS properties in event object. https://github.com/openwebf/webf/pull/427
+10. Support `window.pageXOffset` and `window.pageYOffset` API. https://github.com/openwebf/webf/pull/428/files
+11. Optimize layout/paint performance when block box size is fixed. https://github.com/openwebf/webf/pull/450
+12. Optimize performance when update Element.className.  https://github.com/openwebf/webf/pull/452
+13. Support CanvasRenderingContext2D.createPattern() API. https://github.com/openwebf/webf/pull/464
+
+**Bug Fixed**
+
+1. Fix use css vars with initial. https://github.com/openwebf/webf/pull/421
+2. Fix toggle position: fixed on bodyElement with other fixed elements. https://github.com/openwebf/webf/pull/416
+3. Fss nth-child not work. https://github.com/openwebf/webf/pull/417
+4. Fix Node.childNodes didn't update when nodes changed. https://github.com/openwebf/webf/pull/419
+5. Fix loading fonts cause assertion when remove or attach RenderObjects. https://github.com/openwebf/webf/pull/425
+6. Fix percentage width and height not working under inline block box. https://github.com/openwebf/webf/pull/430
+7. Fix Node.insertBefore with SVGElement error. https://github.com/openwebf/webf/pull/431
+8. Fix cookie delete file error when it's not available. https://github.com/openwebf/webf/pull/429
+9. Fix read ANDROID_SDK_HOME before implying to platform defaults. https://github.com/openwebf/webf/pull/422
+10. Fix cookie delete file error.  https://github.com/openwebf/webf/pull/429
+11. Fix percentage width and height not working under inline block box. https://github.com/openwebf/webf/pull/430
+12. Fix Node.insertBefore with SVGElement error. https://github.com/openwebf/webf/pull/431
+13. Fix DevTool's network panel not working. https://github.com/openwebf/webf/pull/435
+14. Losen intl dependency constraint. https://github.com/openwebf/webf/pull/439
+15. Fix built-in methods in the event object cannot be overridden. https://github.com/openwebf/webf/pull/443
+16. Fix crash when touching pseduo elements.  https://github.com/openwebf/webf/pull/445
+17. Fix event not responding when multiple flutter engine created. https://github.com/openwebf/webf/pull/451
+18. Fix Element.style.cssText API not works. https://github.com/openwebf/webf/pull/455
+19. Fix use-of-free crash of shared string property in event object. https://github.com/openwebf/webf/pull/458
+20. Fix dynamic build items in WidgetElement. https://github.com/openwebf/webf/pull/461
+21. Fix CSS content property have sequences of unicode chars. https://github.com/openwebf/webf/pull/463
+22. Fix crash when create unsupported svg element with style. https://github.com/openwebf/webf/pull/465
+
+## 0.14.1
+
+**Features**
+
+1. Add CSS @font-face support. https://github.com/openwebf/webf/pull/380
+2. Support ::before/::after selector. https://github.com/openwebf/webf/pull/332
+3. Add document.elementFromPoint API. https://github.com/openwebf/webf/pull/381
+4. Support set textContent on textArea elements. https://github.com/openwebf/webf/pull/369
+5. Support receive binary data from fetch and XMLHttpRequest. https://github.com/openwebf/webf/pull/397
+6. Add support for event capture phases. https://github.com/openwebf/webf/pull/404
+7. Support change the current animation stage for transition animations. https://github.com/openwebf/webf/pull/401
+8. Add CSSStyleDeclaration.cssText support. https://github.com/openwebf/webf/pull/410
+9. Move the webf_websocket plugin into webf. https://github.com/openwebf/webf/pull/398
+
+**Bug Fixed**
+
+1. Fix error when setting display:none for input and textarea. https://github.com/openwebf/webf/pull/369
+2. Fix focus state didn't cleared when input unmount from the DOM Tree. https://github.com/openwebf/webf/pull/369
+3. Fix defaultStyle for textarea elements. https://github.com/openwebf/webf/pull/369
+4. Fix a crash when a JSObject was finalized after the ExecutingContext was freed. https://github.com/openwebf/webf/pull/372
+5. Fix a crash when ExecutingContext is not alive at timer callbacks. https://github.com/openwebf/webf/pull/373
+6. Fix a crashed when running in multiple flutter engine instance. https://github.com/openwebf/webf/pull/377
+7. Fix the size of the input is wrong when using a unit other than px. https://github.com/openwebf/webf/pull/378
+8. Fix crashed when shutdown the app. https://github.com/openwebf/webf/pull/383
+9. Fix Resource temporarily unavailable for Hive lock file. https://github.com/openwebf/webf/pull/387
+10. Fix a memory leaks in TouchList. https://github.com/openwebf/webf/pull/388
+11. Fix match error for animation time. https://github.com/openwebf/webf/pull/390/files
+12. Fix built-in string initialized multiples and cause leaks.  https://github.com/openwebf/webf/pull/391
+13. Fix constructor property on DOM elements. https://github.com/openwebf/webf/pull/402
+
+## 0.14.0
+
+**Big News**
+
+1. Add Flutter 3.3/3.7 support. https://github.com/openwebf/webf/pull/246
+2. Add SVG suppport. https://github.com/openwebf/webf/pull/279
+3. Add Windows support. https://github.com/openwebf/webf/pull/162
+4. Add multiple flutter engine group support. https://github.com/openwebf/webf/pull/338
+
+**Features**
+
+2. Support transform property for computedstyle. https://github.com/openwebf/webf/pull/245
+3. Add `btoa()` and `atob()` API support. https://github.com/openwebf/webf/pull/253
+4. Add Vue SSR support. https://github.com/openwebf/webf/pull/256
+5. Replace malloc to mimalloc. https://github.com/openwebf/webf/pull/267
+6. Add CanvasRenderingContext2D.createLinearGradients and CanvasRenderingContext2D.createRadialGradient support. https://github.com/openwebf/webf/pull/269
+7. Optimize Fetch() API performance. https://github.com/openwebf/webf/pull/287
+8. Add Blob.base64() to export base64 string from Blob directly. https://github.com/openwebf/webf/pull/278
+9. Expand quickjs default prop size and realloc capacity. https://github.com/openwebf/webf/pull/270
+10. Add context API for WidgetElement. https://github.com/openwebf/webf/pull/264
+11. Add kbc file type support for script element. https://github.com/openwebf/webf/pull/250
+12. Support react.js without any polyfill. https://github.com/openwebf/webf/pull/257
+13. Auto cache parsed bytecode for the first load. https://github.com/openwebf/webf/pull/280
+14. Invalidate cache when expect Http request errors https://github.com/openwebf/webf/pull/305
+15. Optimize dart dom and CSS selector performance. https://github.com/openwebf/webf/pull/309
+16. Support background-clip text. https://github.com/openwebf/webf/pull/318
+17. Remove ios armv7 armv7s support. https://github.com/openwebf/webf/pull/331
+18. Add DOMContentLoaded API. https://github.com/openwebf/webf/pull/330
+19. Optimize image load performance. https://github.com/openwebf/webf/pull/335
+20. Validate bytecode cache with CRC32 checksum. https://github.com/openwebf/webf/pull/336
+21. Add Element.querySelectorAll and Element.querySelector API. https://github.com/openwebf/webf/pull/342
+22. Support document.domain and document.compatMode. https://github.com/openwebf/webf/pull/343
+23. Support document.readyState. https://github.com/openwebf/webf/pull/347
+24. Add localStorage and sessionStorage support. https://github.com/openwebf/webf/pull/344
+25. Support document.visibilityState and document.hidden.  https://github.com/openwebf/webf/pull/350
+26. Add document.defaultView API. https://github.com/openwebf/webf/pull/346
+27. Add support for Element.dataset API. https://github.com/openwebf/webf/pull/348
+28. Add Element.matches API.  https://github.com/openwebf/webf/pull/365
+29. Add append() and prepend() support for Element, Document and DocumentElement. https://github.com/openwebf/webf/pull/361
+30. Add before() and after() support for Element and CharaterData. https://github.com/openwebf/webf/pull/361
+31. Add Element.closest API. https://github.com/openwebf/webf/pull/364
+32. Add HTMLScriptElement.readyState API. https://github.com/openwebf/webf/pull/367
+
+
+**Bug Fixed**
+
+1. fix: fix pan scroll on desktop versions. https://github.com/openwebf/webf/pull/248
+2. fix: canvas should clip overflowed element. https://github.com/openwebf/webf/pull/263
+3. fix: ic should use none instead of atom flag and free it to prevent double delete. https://github.com/openwebf/webf/pull/277
+4. fix: pending promise crash for early gc and add lto to quickjs. https://github.com/openwebf/webf/pull/283
+5. fix update className property on hidden element. https://github.com/openwebf/webf/pull/255
+6. fix bytecode read should free atom to prevent leak. https://github.com/openwebf/webf/pull/285
+7. fix empty src on image. https://github.com/openwebf/webf/pull/286
+8. fix <img /> can not be GC even if it's detached or removed from the DOM tree. https://github.com/openwebf/webf/pull/291
+9. fix change size of canvas element didn't works. https://github.com/openwebf/webf/pull/276
+10. fix: ic free atom crash when ctx early free. https://github.com/openwebf/webf/pull/293
+11. fix: fix script execution order with inline script element. https://github.com/openwebf/webf/pull/273
+12. fix css function resolve base url. https://github.com/openwebf/webf/pull/282
+13. fix: rules didn't match which start with undefine at-rules. https://github.com/openwebf/webf/pull/294
+14. fix: fix child_node_list can be null.  https://github.com/openwebf/webf/pull/297
+15. fix native memory leaks. https://github.com/openwebf/webf/pull/292
+16. fix renderObject memory leaks. https://github.com/openwebf/webf/pull/298
+17. fix dom content loaded event trigger condition. https://github.com/openwebf/webf/pull/274
+18. fix Element.toBlob() is not default to current pixel_ratio. https://github.com/openwebf/webf/pull/306
+19. fix scrollable size when update. https://github.com/openwebf/webf/pull/301
+20. fix layout error when using percentage value on transform. https://github.com/openwebf/webf/pull/307
+21. fix: css priority error. https://github.com/openwebf/webf/pull/310
+22. fix atob empty string cause crash. https://github.com/openwebf/webf/pull/311
+23. fix canvas element get multiple context error. https://github.com/openwebf/webf/pull/312
+24. fix http cache control parse error. https://github.com/openwebf/webf/pull/313
+25. fix image width/height attribute. https://github.com/openwebf/webf/pull/315
+26. fix crash when cancelAnimationFrame in frame callbacks. https://github.com/openwebf/webf/pull/317
+27. fix style didn't take effect and offsetLeftToScrollContainer value is calculated incorrectly. https://github.com/openwebf/webf/pull/322
+28. fix GIF images cause rendering performance overhead. https://github.com/openwebf/webf/pull/325
+29. fix: remove flushLayout when reading contentSize. https://github.com/openwebf/webf/pull/326
+30. fix setting lazy loading for an image didn't work. https://github.com/openwebf/webf/pull/328
+31. fix remounting widgetElement in the same frame to the DOM tree causes renderWidgets to be unmounted from the renderObject tree. https://github.com/openwebf/webf/pull/329
+32. fix: make sure renderObject had been layout before read view module properties. https://github.com/openwebf/webf/pull/333
+33. fix: protect DOMTimers until the ExecutingContext exits. https://github.com/openwebf/webf/pull/334
+34. fix reading target property on Touch caused crash. https://github.com/openwebf/webf/pull/340
+35. fix css vars() and calc() in some user cases. https://github.com/openwebf/webf/pull/355
+36. fix template element's content property cause mem leaks. https://github.com/openwebf/webf/pull/349
+
 ## 0.14.0-beta.1
 
 * Support flutter 3.3.10/3.7.3

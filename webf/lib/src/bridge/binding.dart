@@ -5,7 +5,6 @@
 
 // Bind the JavaScript side object,
 // provide interface such as property setter/getter, call a property as function.
-import 'dart:collection';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
@@ -13,6 +12,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
 enum BindingMethodCallOperations {
@@ -39,19 +39,27 @@ List<BindingCallFunc> bindingCallMethodDispatchTable = [
 ];
 
 // Dispatch the event to the binding side.
-void _dispatchEventToNative(Event event) {
+void _dispatchNomalEventToNative(Event event) {
+  _dispatchEventToNative(event, false);
+}
+void _dispatchCaptureEventToNative(Event event) {
+  _dispatchEventToNative(event, true);
+}
+void _dispatchEventToNative(Event event, bool isCapture) {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   int? contextId = event.target?.contextId;
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   if (contextId != null && pointer != null && pointer.ref.invokeBindingMethodFromDart != nullptr) {
-    BindingObject bindingObject = BindingBridge.getBindingObject(pointer);
+    BindingObject bindingObject = controller.view.getBindingObject(pointer);
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart f = pointer.ref.invokeBindingMethodFromDart.asFunction();
 
-    Pointer<Void> rawEvent = event.toRaw().cast<Void>();
-    List<dynamic> dispatchEventArguments = [event.type, rawEvent];
+    Pointer<RawEvent> rawEvent = event.toRaw().cast<RawEvent>();
+    List<dynamic> dispatchEventArguments = [event.type, rawEvent, isCapture];
 
+    Stopwatch? stopwatch;
     if (isEnabledLog) {
-      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments');
+      stopwatch = Stopwatch()..start();
     }
 
     Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
@@ -59,10 +67,18 @@ void _dispatchEventToNative(Event event) {
     Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(bindingObject, dispatchEventArguments);
 
     Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
-    f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments);
-    Pointer<EventDispatchResult> dispatchResult = fromNativeValue(returnValue).cast<EventDispatchResult>();
+    f(pointer, returnValue, method, dispatchEventArguments.length, allocatedNativeArguments, event);
+    Pointer<EventDispatchResult> dispatchResult = fromNativeValue(controller.view, returnValue).cast<EventDispatchResult>();
     event.cancelable = dispatchResult.ref.canceled;
     event.propagationStopped = dispatchResult.ref.propagationStopped;
+
+    event.sharedJSProps = Pointer.fromAddress(rawEvent.ref.bytes.elementAt(8).value);
+    event.propLen = rawEvent.ref.bytes.elementAt(9).value;
+    event.allocateLen = rawEvent.ref.bytes.elementAt(10).value;
+
+    if (isEnabledLog) {
+      print('dispatch event to native side: target: ${event.target} arguments: $dispatchEventArguments time: ${stopwatch!.elapsedMicroseconds}us');
+    }
 
     // Free the allocated arguments.
     malloc.free(rawEvent);
@@ -84,42 +100,40 @@ abstract class BindingBridge {
   static Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> get nativeInvokeBindingMethod =>
       _invokeBindingMethodFromNative;
 
-  static final SplayTreeMap<int, BindingObject> _nativeObjects = SplayTreeMap();
-
-  static T? getBindingObject<T>(Pointer pointer) {
-    return _nativeObjects[pointer.address] as T?;
-  }
-  static bool hasBindingObject(Pointer pointer) {
-    return _nativeObjects.containsKey(pointer.address);
-  }
-
   static void createBindingObject(int contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
+    WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
     List<dynamic> arguments = List.generate(argc, (index) {
-      return fromNativeValue(args.elementAt(index));
+      return fromNativeValue(controller.view, args.elementAt(index));
     });
     switch(type) {
       case CreateBindingObjectType.createDOMMatrix: {
-        DOMMatrix domMatrix = DOMMatrix(BindingContext(contextId, pointer), arguments);
-        _nativeObjects[pointer.address] = domMatrix;
+        DOMMatrix domMatrix = DOMMatrix(BindingContext(controller.view, contextId, pointer), arguments);
+        controller.view.setBindingObject(pointer, domMatrix);
         return;
       }
     }
   }
 
-  static void _bindObject(BindingObject object) {
+  // For compatible requirement, we set the WebFViewController to nullable due to the historical reason.
+  // exp: We can not break the types for WidgetElement which will break all the codes for Users.
+  static void _bindObject(WebFViewController? view, BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
     if (nativeBindingObject != null) {
-      _nativeObjects[nativeBindingObject.address] = object;
+      if (view != null) {
+        view.setBindingObject(nativeBindingObject, object);
+      }
+
       if (!nativeBindingObject.ref.disposed) {
         nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
       }
     }
   }
 
-  static void _unbindObject(BindingObject object) {
+  // For compatible requirement, we set the WebFViewController to nullable due to the historical reason.
+  // exp: We can not break the types for WidgetElement which will break all the codes for Users.
+  static void _unbindObject(WebFViewController? view, BindingObject object) {
     Pointer<NativeBindingObject>? nativeBindingObject = object.pointer;
     if (nativeBindingObject != null) {
-      _nativeObjects.remove(nativeBindingObject.address);
       nativeBindingObject.ref.invokeBindingMethodFromNative = nullptr;
     }
   }
@@ -134,21 +148,31 @@ abstract class BindingBridge {
     BindingObject.unbind = null;
   }
 
-  static void listenEvent(EventTarget target, String type) {
-    if (!hasListener(target, type)) {
-      target.addEventListener(type, _dispatchEventToNative);
+  static void listenEvent(EventTarget target, String type, {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
+    bool isCapture = addEventListenerOptions != null ? addEventListenerOptions.ref.capture : false;
+    if (!hasListener(target, type, isCapture: isCapture)) {
+      EventListenerOptions? eventListenerOptions;
+      if (addEventListenerOptions != null && addEventListenerOptions.ref.capture) {
+        eventListenerOptions = EventListenerOptions(addEventListenerOptions.ref.capture, addEventListenerOptions.ref.passive, addEventListenerOptions.ref.once);
+        target.addEventListener(type, _dispatchCaptureEventToNative, addEventListenerOptions: eventListenerOptions);
+      } else
+        target.addEventListener(type, _dispatchNomalEventToNative, addEventListenerOptions: eventListenerOptions);
     }
   }
 
-  static void unlistenEvent(EventTarget target, String type) {
-    target.removeEventListener(type, _dispatchEventToNative);
+  static void unlistenEvent(EventTarget target, String type, {bool isCapture = false}) {
+    if (isCapture)
+      target.removeEventListener(type, _dispatchCaptureEventToNative, isCapture: isCapture);
+    else
+      target.removeEventListener(type, _dispatchNomalEventToNative, isCapture: isCapture);
+
   }
 
-  static bool hasListener(EventTarget target, String type) {
-    Map<String, List<EventHandler>> eventHandlers = target.getEventHandlers();
+  static bool hasListener(EventTarget target, String type, {bool isCapture = false}) {
+    Map<String, List<EventHandler>> eventHandlers = isCapture ? target.getCaptureEventHandlers() : target.getEventHandlers();
     List<EventHandler>? handlers = eventHandlers[type];
     if (handlers != null) {
-      return handlers.contains(_dispatchEventToNative);
+      return isCapture ? handlers.contains(_dispatchCaptureEventToNative) : handlers.contains(_dispatchNomalEventToNative);
     }
     return false;
   }

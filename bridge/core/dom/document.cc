@@ -25,10 +25,11 @@
 #include "foundation/ascii_types.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
-#include "qjs_document.h"
 #include "svg_element_factory.h"
 
 namespace webf {
+
+class HTMLAllCollection;
 
 Document* Document::Create(ExecutingContext* context, ExceptionState& exception_state) {
   return MakeGarbageCollected<Document>(context);
@@ -95,6 +96,7 @@ Element* Document::createElementNS(const AtomicString& uri, const AtomicString& 
     if (auto* element = SVGElementFactory::Create(qualified_name, *this)) {
       return element;
     }
+    return MakeGarbageCollected<SVGElement>(qualified_name, this);
   }
 
   return MakeGarbageCollected<Element>(_uri, qualified_name, prefix, this);
@@ -215,6 +217,48 @@ std::vector<Element*> Document::getElementsByName(const AtomicString& name, Exce
     return {};
   }
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
+}
+
+Element* Document::elementFromPoint(double x, double y, ExceptionState& exception_state) {
+  GetExecutingContext()->FlushUICommand();
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kelementFromPoint, 2, args, exception_state);
+  if (exception_state.HasException()) {
+    return nullptr;
+  }
+  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
+}
+
+Window* Document::defaultView() const {
+  return GetExecutingContext()->window();
+}
+
+AtomicString Document::domain() {
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::kdomain, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+void Document::setDomain(const AtomicString& value, ExceptionState& exception_state) {
+  SetBindingProperty(binding_call_methods::kdomain, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
+                     exception_state);
+}
+
+AtomicString Document::compatMode() {
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::kcompatMode, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+AtomicString Document::readyState() {
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::kreadyState, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+bool Document::hidden() {
+  NativeValue dart_result = GetBindingProperty(binding_call_methods::khidden, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeBool>::FromNativeValue(dart_result);
 }
 
 template <typename CharType>
@@ -351,10 +395,6 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
   if (!window)
     return nullptr;
   return window->GetAttributeEventListener(event_type);
-}
-
-bool Document::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSDocument::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
 }
 
 void Document::Trace(GCVisitor* visitor) const {

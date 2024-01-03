@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
+#include "comment.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
@@ -197,6 +198,42 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
   return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
 }
 
+Element* Element::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return nullptr;
+  }
+  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
+}
+
+std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return {};
+  }
+  return NativeValueConverter<NativeTypeArray<NativeTypePointer<Element>>>::FromNativeValue(ctx(), result);
+}
+
+bool Element::matches(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kmatches, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return false;
+  }
+  return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+}
+
+Element* Element::closest(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kclosest, 1, arguments, exception_state);
+  if (exception_state.HasException()) {
+    return nullptr;
+  }
+  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
+}
+
 InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
@@ -219,6 +256,15 @@ DOMTokenList* Element::classList() {
     element_data.SetClassList(class_list);
   }
   return element_data.GetClassList();
+}
+
+DOMStringMap* Element::dataset() {
+  ElementData& element_data = EnsureElementData();
+  if (element_data.DataSet() == nullptr) {
+    auto* data_set = MakeGarbageCollected<DOMStringMap>(this);
+    element_data.SetDataSet(data_set);
+  }
+  return element_data.DataSet();
 }
 
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {
@@ -261,13 +307,9 @@ bool Element::IsWidgetElement() const {
   return false;
 }
 
-bool Element::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSElement::IsAttributeDefinedInternal(key) || Node::IsAttributeDefinedInternal(key);
-}
-
 void Element::Trace(GCVisitor* visitor) const {
-  visitor->Trace(attributes_);
-  visitor->Trace(cssom_wrapper_);
+  visitor->TraceMember(attributes_);
+  visitor->TraceMember(cssom_wrapper_);
   if (element_data_ != nullptr) {
     element_data_->Trace(visitor);
   }
@@ -416,6 +458,8 @@ std::string Element::innerHTML() {
       s += element->outerHTML();
     } else if (auto* text = DynamicTo<Text>(child)) {
       s += text->data().ToStdString(ctx());
+    } else if (auto* comment = DynamicTo<Comment>(child)) {
+      s += "<!--" + comment->data().ToStdString(ctx()) + "-->";
     }
     child = child->nextSibling();
   }

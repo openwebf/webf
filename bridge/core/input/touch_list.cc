@@ -3,6 +3,7 @@
  */
 
 #include "touch_list.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "touch.h"
 
 namespace webf {
@@ -40,6 +41,10 @@ bool TouchList::SetItem(uint32_t index, Touch* touch, ExceptionState& exception_
   return true;
 }
 
+bool TouchList::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  return true;
+}
+
 bool TouchList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
   uint32_t index = std::stoi(key.ToStdString(ctx()));
   return index >= 0 && index < values_.size();
@@ -53,7 +58,7 @@ void TouchList::NamedPropertyEnumerator(std::vector<AtomicString>& props, Except
 
 void TouchList::Trace(GCVisitor* visitor) const {
   for (auto& item : values_) {
-    item->Trace(visitor);
+    visitor->TraceMember(item);
   }
 }
 

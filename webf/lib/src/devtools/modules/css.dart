@@ -7,6 +7,7 @@ import 'dart:ffi';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/launcher.dart';
 
@@ -15,6 +16,9 @@ const String ZERO_PX = '0px';
 
 class InspectCSSModule extends UIInspectorModule {
   Document get document => devtoolsService.controller!.view.document;
+
+  WebFViewController get view => devtoolsService.controller!.view;
+
   InspectCSSModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
@@ -40,8 +44,8 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
-    if (element != null) {
+    BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+    if (element is Element) {
       MatchedStyles matchedStyles = MatchedStyles(
         inlineStyle: buildMatchedStyle(element),
       );
@@ -51,7 +55,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   void handleGetComputedStyleForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    Element? element = view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       ComputedStyle computedStyle = ComputedStyle(
@@ -65,7 +69,7 @@ class InspectCSSModule extends UIInspectorModule {
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
   void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
     int nodeId = params['nodeId'];
-    Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    Element? element = view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
 
     if (element != null) {
       InlinedStyle inlinedStyle = InlinedStyle(
@@ -87,7 +91,7 @@ class InspectCSSModule extends UIInspectorModule {
       int nodeId = edit['styleSheetId'];
       String text = edit['text'] ?? '';
       List<String> texts = text.split(';');
-      Element? element = BindingBridge.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+      Element? element = document.controller.view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
       if (element != null) {
         for (String kv in texts) {
           kv = kv.trim();
@@ -177,7 +181,8 @@ class InspectCSSModule extends UIInspectorModule {
     List<CSSComputedStyleProperty> computedStyle = [];
     Map<CSSPropertyID, String> reverse(Map map) => {for (var e in map.entries) e.value: e.key};
     final propertyMap = reverse(CSSPropertyNameMap);
-    ComputedCSSStyleDeclaration computedStyleDeclaration = ComputedCSSStyleDeclaration(element, null);
+    ComputedCSSStyleDeclaration computedStyleDeclaration = ComputedCSSStyleDeclaration(
+        BindingContext(element.ownerView, element.ownerView.contextId, allocateNewBindingObject()), element, null);
     for (CSSPropertyID id in ComputedProperties) {
       final propertyName = propertyMap[id];
       if (propertyName != null) {
@@ -185,11 +190,11 @@ class InspectCSSModule extends UIInspectorModule {
         if (value.isEmpty) {
           continue;
         }
-        computedStyle.add(CSSComputedStyleProperty(name: propertyName, value:value));
+        computedStyle.add(CSSComputedStyleProperty(name: propertyName, value: value));
         if (id == CSSPropertyID.Top) {
-          computedStyle.add(CSSComputedStyleProperty(name: 'y', value:value));
+          computedStyle.add(CSSComputedStyleProperty(name: 'y', value: value));
         } else if (id == CSSPropertyID.Left) {
-          computedStyle.add(CSSComputedStyleProperty(name: 'x', value:value));
+          computedStyle.add(CSSComputedStyleProperty(name: 'x', value: value));
         }
       }
     }

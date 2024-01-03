@@ -485,4 +485,52 @@ describe('querySelector api', () => {
 
     expect(document.querySelectorAll('[data-id="one"]')?.length).toBe(1);
   });
+
+  it('element querySelector cant find element', () => {
+    ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
+      const div = document.createElement('div')
+      div.style.width = '100px';
+      div.style.height = '100px';
+      div.style.backgroundColor = item;
+      div.setAttribute('id', `id-${index}`);
+      document.body.appendChild(div);
+    });
+
+    expect(document.body.querySelector('span')).toBeNull();
+  });
+
+  it('element querySelectorAll length of elements', () => {
+    const szEle = ['red', 'black', 'green', 'yellow', 'blue'];
+    szEle.forEach((item, index) => {
+      const div = document.createElement('div')
+      div.style.width = '100px';
+      div.style.height = '100px';
+      div.style.backgroundColor = item;
+      div.setAttribute('id', `id-${index}`);
+      document.body.appendChild(div);
+    });
+
+    const eles = document.body.querySelectorAll('div');
+    expect(eles.length).toBe(szEle.length);
+  });
+
+  it('element closest cant find element', () => {
+    const parentDiv = document.createElement('div')
+    parentDiv.style.width = '100px';
+    parentDiv.style.height = '100px';
+    parentDiv.style.backgroundColor = 'red';
+    parentDiv.setAttribute('id', 'id-0');
+    parentDiv.className = 'class-parent';
+
+    const childDiv = document.createElement('div')
+    childDiv.style.width = '50px';
+    childDiv.style.height = '50px';
+    childDiv.style.backgroundColor = 'yellow';
+    childDiv.setAttribute('id', 'id-1');
+
+    parentDiv.appendChild(childDiv);
+    document.body.appendChild(parentDiv);
+    const ele = childDiv.closest('.class-parent');
+    expect(ele?.getAttribute('id')).toBe('id-0');
+  });
 });

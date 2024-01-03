@@ -4,11 +4,13 @@ import {ScrollToOptions} from "./scroll_to_options";
 import { ElementAttributes } from './legacy/element_attributes';
 import {CSSStyleDeclaration} from "../css/css_style_declaration";
 import {ParentNode} from "./parent_node";
+import {ChildNode} from "./child_node";
 
-interface Element extends Node, ParentNode {
+interface Element extends Node, ParentNode, ChildNode {
   id: string;
   className: string;
   readonly classList: DOMTokenList;
+  readonly dataset: DOMStringMap;
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;
   readonly style: CSSStyleDeclaration;
@@ -30,6 +32,7 @@ interface Element extends Node, ParentNode {
    * Returns the HTML-uppercased qualified name.
    */
   readonly tagName: string;
+  readonly dir: DartImpl<string>;
   /**
    * Returns element's first attribute whose qualified name is qualifiedName, and null if there is no such attribute otherwise.
    */
@@ -54,6 +57,12 @@ interface Element extends Node, ParentNode {
 
   getElementsByClassName(className: string) : Element[];
   getElementsByTagName(tagName: string): Element[];
+
+  querySelector(selectors: string): Element | null;
+  querySelectorAll(selectors: string): Element[];
+  matches(selectors: string): boolean;
+
+  closest(selectors: string): Element | null;
 
   scroll(options?: ScrollToOptions): void;
   scroll(x: number, y: number): void;

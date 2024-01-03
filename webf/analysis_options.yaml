@@ -40,7 +40,6 @@ linter:
     - prefer_collection_literals
     - prefer_conditional_assignment
     - prefer_contains
-    - prefer_equal_for_default_values
     - prefer_final_fields
     - prefer_for_elements_to_map_fromIterable
     - prefer_function_declarations_over_variables
@@ -67,6 +66,5 @@ linter:
     - void_checks
     - no_duplicate_case_values
     - hash_and_equals
-    - iterable_contains_unrelated_type
-    - list_remove_unrelated_type
+    - collection_methods_unrelated_type
     - use_function_type_syntax_for_parameters

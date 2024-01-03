@@ -312,6 +312,9 @@ const String X = 'x';
 const String Y = 'y';
 const String RX = 'rx';
 const String RY = 'ry';
+const String CX = 'cx';
+const String CY = 'cy';
+const String R = 'r';
 const String CONTEXT_FILL = 'context-fill';
 const String CONTEXT_STROKE = 'context-stroke';
 const String STROKE = 'stroke';
@@ -320,3 +323,10 @@ const String D = 'd';
 const String FILL_RULE = 'fillRule';
 const String STROKE_LINECAP = 'strokeLinecap';
 const String STROKE_LINEJOIN = 'strokeLinejoin';
+const String X1 = 'x1';
+const String Y1 = 'y1';
+const String X2 = 'x2';
+const String Y2 = 'y2';
+
+// Pseudo
+const String CONTENT = 'content';

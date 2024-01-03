@@ -23,5 +23,6 @@ interface MouseEvent extends UIEvent {
     // readonly shiftKey: boolean;
     // readonly x: number;
     // readonly y: number;
+    [key: string]: any;
     new(type: string, init?: MouseEventInit): MouseEvent;
 }

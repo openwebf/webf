@@ -15,6 +15,8 @@ class Node;
 class Element;
 class ExecutingContext;
 
+std::string trim(const std::string& str);
+
 class HTMLParser {
  public:
   static bool parseHTML(const char* code, size_t codeLength, Node* rootNode);

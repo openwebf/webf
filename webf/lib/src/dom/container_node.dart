@@ -5,7 +5,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/src/css/query_selector.dart';
 import 'package:webf/src/dom/node_traversal.dart';
 
 typedef InsertNodeHandler = void Function(ContainerNode container, Node child, Node? next);
@@ -313,6 +312,19 @@ abstract class ContainerNode extends Node {
       return;
     }
 
+    if (nodeData != null) {
+      if (nodeData!.nodeList is ChildNodeList) {
+        if (change != null) {
+          (nodeData!.nodeList as ChildNodeList).childrenChanged(change);
+        } else {
+          (nodeData!.nodeList as ChildNodeList).invalidateCache();
+        }
+      }
+      if (parentNode != null) {
+        ownerDocument.nthIndexCache.invalidateWithParentNode(parentNode!);
+      }
+    }
+
     // This is a performance optimization, NodeList cache invalidation is
     // not necessary for non-element nodes.
     if (change != null &&
@@ -329,7 +341,7 @@ abstract class ContainerNode extends Node {
       node = node.parentNode;
     }
     if (parentNode != null) {
-      SelectorEvaluator.nthIndexCache.invalidateWithParentNode(parentNode!);
+      ownerDocument.nthIndexCache.invalidateWithParentNode(parentNode!);
     }
   }
 

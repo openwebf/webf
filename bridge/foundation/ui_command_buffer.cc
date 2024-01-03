@@ -11,37 +11,34 @@
 
 namespace webf {
 
-UICommandBuffer::UICommandBuffer(ExecutingContext* context) : context_(context) {}
+UICommandBuffer::UICommandBuffer(ExecutingContext* context)
+    : context_(context), buffer_((UICommandItem*)malloc(sizeof(UICommandItem) * MAXIMUM_UI_COMMAND_SIZE)) {}
 
 UICommandBuffer::~UICommandBuffer() {
-#if FLUTTER_BACKEND
-  // Flush and execute all disposeEventTarget commands when context released.
-  if (context_->dartMethodPtr()->flushUICommand != nullptr && !isDartHotRestart()) {
-    context_->dartMethodPtr()->flushUICommand(context_->contextId());
-  }
-#endif
+  free(buffer_);
 }
 
 void UICommandBuffer::addCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
                                  void* nativePtr,
-                                 void* nativePtr2) {
+                                 void* nativePtr2,
+                                 bool request_ui_update) {
   UICommandItem item{static_cast<int32_t>(type), args_01.get(), nativePtr, nativePtr2};
-  addCommand(item);
+  addCommand(item, request_ui_update);
 }
 
-void UICommandBuffer::addCommand(const UICommandItem& item) {
-  if (size_ >= MAXIMUM_UI_COMMAND_SIZE) {
-    if (UNLIKELY(isDartHotRestart())) {
-      clear();
-    } else {
-      context_->FlushUICommand();
-    }
-    assert(size_ == 0);
+void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_update) {
+  if (UNLIKELY(!context_->dartIsolateContext()->valid())) {
+    return;
+  }
+
+  if (size_ >= max_size_) {
+    buffer_ = (UICommandItem*)realloc(buffer_, sizeof(UICommandItem) * max_size_ * 2);
+    max_size_ = max_size_ * 2;
   }
 
 #if FLUTTER_BACKEND
-  if (UNLIKELY(!update_batched_ && context_->IsContextValid() &&
+  if (UNLIKELY(request_ui_update && !update_batched_ && context_->IsContextValid() &&
                context_->dartMethodPtr()->requestBatchUpdate != nullptr)) {
     context_->dartMethodPtr()->requestBatchUpdate(context_->contextId());
     update_batched_ = true;

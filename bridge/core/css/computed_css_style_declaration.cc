@@ -6,6 +6,7 @@
 #include "binding_call_methods.h"
 #include "core/binding_object.h"
 #include "core/dom/element.h"
+#include "foundation/native_value.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
@@ -14,19 +15,28 @@ ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* conte
                                                          NativeBindingObject* native_binding_object)
     : CSSStyleDeclaration(context->ctx(), native_binding_object) {}
 
-AtomicString ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
+ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
+  if (IsPrototypeMethods(key)) {
+    return ScriptValue::Undefined(ctx());
+  }
+
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
 
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetPropertyValue, 1, arguments, exception_state);
-  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result));
+  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
 }
 
 bool ComputedCssStyleDeclaration::SetItem(const AtomicString& key,
-                                          const AtomicString& value,
+                                          const ScriptValue& value,
                                           ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key),
-                             NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value)};
+  NativeValue arguments[] = {
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key),
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value.ToLegacyDOMString(ctx()))};
   InvokeBindingMethod(binding_call_methods::ksetProperty, 2, arguments, exception_state);
+  return true;
+}
+
+bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
   return true;
 }
 
@@ -36,11 +46,11 @@ int64_t ComputedCssStyleDeclaration::length() const {
 }
 
 AtomicString ComputedCssStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
-  return item(key, exception_state);
+  return item(key, exception_state).ToLegacyDOMString(ctx());
 }
 
 void ComputedCssStyleDeclaration::setProperty(const AtomicString& key,
-                                              const AtomicString& value,
+                                              const ScriptValue& value,
                                               ExceptionState& exception_state) {
   SetItem(key, value, exception_state);
 }
@@ -69,5 +79,11 @@ void ComputedCssStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicStri
 bool ComputedCssStyleDeclaration::IsComputedCssStyleDeclaration() const {
   return true;
 }
+
+AtomicString ComputedCssStyleDeclaration::cssText() const {
+  return AtomicString::Empty();
+}
+
+void ComputedCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {}
 
 }  // namespace webf

@@ -5,10 +5,12 @@
 
 import 'dart:ui';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
+import 'package:webf/svg.dart';
 
 // https://drafts.csswg.org/css-values-3/#absolute-lengths
 const _1in = 96; // 1in = 2.54cm = 96px
@@ -50,9 +52,11 @@ class CSSLengthValue {
   final double? value;
   final CSSLengthType type;
 
-  CSSLengthValue.calc(this.calcValue, this.renderStyle, this.propertyName): value = null, type = CSSLengthType.PX;
+  CSSLengthValue.calc(this.calcValue, this.renderStyle, this.propertyName)
+      : value = null,
+        type = CSSLengthType.PX;
 
-  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]): calcValue = null {
+  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]) : calcValue = null {
     if (propertyName != null) {
       if (type == CSSLengthType.EM) {
         renderStyle!.addFontRelativeProperty(propertyName!);
@@ -63,7 +67,7 @@ class CSSLengthValue {
   }
 
   String cssText() {
-    switch(type) {
+    switch (type) {
       case CSSLengthType.PX:
       case CSSLengthType.EM:
         return '${computedValue.cssText()}px';
@@ -71,7 +75,7 @@ class CSSLengthValue {
         return '${value?.cssText()}rem';
       case CSSLengthType.VH:
         return '${value?.cssText()}vh';
-     case CSSLengthType.VW:
+      case CSSLengthType.VW:
         return '${value?.cssText()}vw';
       case CSSLengthType.VMIN:
         return '${value?.cssText()}vmin';
@@ -94,6 +98,7 @@ class CSSLengthValue {
   static final CSSLengthValue auto = CSSLengthValue(null, CSSLengthType.AUTO);
   static final CSSLengthValue initial = CSSLengthValue(null, CSSLengthType.INITIAL);
   static final CSSLengthValue unknown = CSSLengthValue(null, CSSLengthType.UNKNOWN);
+
   // Used in https://www.w3.org/TR/css-inline-3/#valdef-line-height-normal
   static final CSSLengthValue normal = CSSLengthValue(null, CSSLengthType.NORMAL);
   static final CSSLengthValue none = CSSLengthValue(null, CSSLengthType.NONE);
@@ -104,6 +109,15 @@ class CSSLengthValue {
   RenderStyle? renderStyle;
   String? propertyName;
   double? _computedValue;
+
+  static bool _isPercentageRelativeContainer(RenderBoxModel containerRenderBox) {
+    CSSRenderStyle renderStyle = containerRenderBox.renderStyle;
+    bool isBlockLevelBox = renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
+    bool isBlockInlineHaveSize = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
+            renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
+        renderStyle.width.value != null;
+    return isBlockLevelBox || isBlockInlineHaveSize;
+  }
 
   // Note return value of double.infinity means the value is resolved as the initial value
   // which can not be computed to a specific value, eg. percentage height is sometimes parsed
@@ -174,14 +188,18 @@ class CSSLengthValue {
         RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
-        RenderStyle? parentRenderStyle;
-        if (renderBoxModel?.parent is RenderBoxModel) {
-          RenderBoxModel parentRenderBoxModel = renderBoxModel?.parent as RenderBoxModel;
-          // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
-          // content box is only a fraction of the complete renderStyle.
-          parentRenderStyle = parentRenderBoxModel.isScrollingContentBox
-              ? (parentRenderBoxModel.parent as RenderBoxModel).renderStyle
-              : parentRenderBoxModel.renderStyle;
+        RenderObject? containerRenderBox = renderBoxModel?.parent;
+        CSSRenderStyle? parentRenderStyle;
+        while (containerRenderBox != null) {
+          if (containerRenderBox is RenderBoxModel && (_isPercentageRelativeContainer(containerRenderBox))) {
+            // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
+            // content box is only a fraction of the complete renderStyle.
+            parentRenderStyle = containerRenderBox.isScrollingContentBox
+                ? (containerRenderBox.parent as RenderBoxModel).renderStyle
+                : containerRenderBox.renderStyle;
+            break;
+          }
+          containerRenderBox = containerRenderBox.parent;
         }
 
         // Percentage relative width priority: logical width > renderer width
@@ -367,6 +385,26 @@ class CSSLengthValue {
               _computedValue = value!;
             }
             break;
+
+          case RX:
+            final target = renderStyle!.target;
+            if (target is SVGElement) {
+              final viewBox = target.findRoot()?.viewBox;
+              if (viewBox != null) {
+                _computedValue = viewBox.width * value!;
+              }
+            }
+            break;
+
+          case RY:
+            final target = renderStyle!.target;
+            if (target is SVGElement) {
+              final viewBox = target.findRoot()?.viewBox;
+              if (viewBox != null) {
+                _computedValue = viewBox.height * value!;
+              }
+            }
+            break;
         }
         break;
       default:
@@ -417,6 +455,16 @@ class CSSLengthValue {
     return !isAuto;
   }
 
+  bool get isPrecise {
+    return type == CSSLengthType.PX ||
+        type == CSSLengthType.VW ||
+        type == CSSLengthType.VH ||
+        type == CSSLengthType.VMIN ||
+        type == CSSLengthType.VMAX ||
+        type == CSSLengthType.EM ||
+        type == CSSLengthType.REM || type == CSSLengthType.PERCENTAGE;
+  }
+
   bool get isNone {
     return type == CSSLengthType.NONE;
   }
@@ -437,14 +485,18 @@ class CSSLengthValue {
   @override
   bool operator ==(Object? other) {
     return (other == null && (type == CSSLengthType.UNKNOWN || type == CSSLengthType.INITIAL)) ||
-        (other is CSSLengthValue && other.value == value && other.calcValue == calcValue && (isZero || other.type == type));
+        (other is CSSLengthValue &&
+            other.value == value &&
+            other.calcValue == calcValue &&
+            (isZero || other.type == type));
   }
 
   @override
   int get hashCode => Object.hash(value, type);
 
   @override
-  String toString() => 'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue, calcValue: $calcValue)';
+  String toString() =>
+      'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue, calcValue: $calcValue)';
 }
 
 // Cache computed length value during perform layout.
@@ -516,6 +568,10 @@ class CSSLength {
     return value == AUTO;
   }
 
+  static bool isInitial(String? value) {
+    return value == INITIAL;
+  }
+
   static bool isLength(String? value) {
     return value != null && (value == ZERO || _lengthRegExp.hasMatch(value));
   }
@@ -528,7 +584,7 @@ class CSSLength {
             _nonNegativeLengthRegExp.hasMatch(value));
   }
 
-  static CSSLengthValue? resolveLength(String text, RenderStyle? renderStyle, String propertyName) {
+  static CSSLengthValue? resolveLength(String text, RenderStyle renderStyle, String propertyName) {
     if (text.isEmpty) {
       // Empty string means delete value.
       return null;
@@ -538,6 +594,7 @@ class CSSLength {
   }
 
   static CSSLengthValue parseLength(String text, RenderStyle? renderStyle, [String? propertyName, Axis? axisType]) {
+    FlutterView? window = renderStyle?.currentFlutterView;
     double? value;
     CSSLengthType unit = CSSLengthType.PX;
     if (text == ZERO) {
@@ -546,7 +603,11 @@ class CSSLength {
     } else if (text == INITIAL) {
       return CSSLengthValue.initial;
     } else if (text == INHERIT) {
-      return renderStyle?.fontSize ?? CSSLengthValue(1, CSSLengthType.EM);
+      if (renderStyle != null && propertyName != null && renderStyle.target.parentElement != null) {
+        return parseLength(renderStyle.target.parentElement!.style.getPropertyValue(propertyName), renderStyle,
+            propertyName, axisType);
+      }
+      return CSSLengthValue.zero;
     } else if (text == AUTO) {
       return CSSLengthValue.auto;
     } else if (text == NONE) {
@@ -559,7 +620,7 @@ class CSSLength {
       unit = CSSLengthType.EM;
     } else if (text.endsWith(RPX)) {
       value = double.tryParse(text.split(RPX)[0]);
-      if (value != null) value = value / 750.0 * window.physicalSize.width / window.devicePixelRatio;
+      if (value != null && window != null) value = value / 750.0 * window.physicalSize.width / window.devicePixelRatio;
     } else if (text.endsWith(PX)) {
       value = double.tryParse(text.split(PX)[0]);
     } else if (text.endsWith(VW)) {
@@ -601,7 +662,6 @@ class CSSLength {
       if (value != null) value = value / 100;
       unit = CSSLengthType.PERCENTAGE;
     } else if (CSSFunction.isFunction(text)) {
-
       if (renderStyle != null) {
         CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', text);
         if (calcValue != null) {
@@ -612,7 +672,7 @@ class CSSLength {
       List<CSSFunctionalNotation> notations = CSSFunction.parseFunction(text);
       // https://drafts.csswg.org/css-env/#env-function
       // Using Environment Variables: the env() notation
-      if (notations.length == 1 && notations[0].name == ENV && notations[0].args.length == 1) {
+      if (notations.length == 1 && notations[0].name == ENV && notations[0].args.length == 1 && window != null) {
         switch (notations[0].args.first) {
           case SAFE_AREA_INSET_TOP:
             value = window.viewPadding.top / window.devicePixelRatio;

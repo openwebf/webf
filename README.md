@@ -15,9 +15,9 @@ Check [this yaml](https://github.com/openwebf/webf-available-apis/blob/main/data
 
 ## The Relationship between WebF and Kraken
 
-The WebF project is a community support version of [Alibaba's Kraken Project](https://github.com/openkraken/kraken). On May 10, 2022, The Kraken Dev Team was dismissed and the project itself are discontinued. 
+The WebF project is a community support version of [Alibaba's Kraken Project](https://github.com/openkraken/kraken). On May 10, 2022, The Kraken Dev Team was dismissed and the project itself are discontinued.
 
-The core developer and architector: [andycall](https://github.com/andycall), who is from the original Kraken Team. Leave the Alibaba Group and launch this project, to keep following the original ambition of the Kraken project. 
+The core developer and architector: [andycall](https://github.com/andycall), who is from the original Kraken Team. Leave the Alibaba Group and launch this project, to keep following the original ambition of the Kraken project.
 
 For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510449
 
@@ -25,12 +25,22 @@ For more details(zh_CN): https://www.zhihu.com/question/534811524/answer/2595510
 
 [![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=banner1)](https://discord.gg/DvUBtXZ5rK)
 
-## Version requirement
+## The update and maintenance policy for WebF versions 
+
+Each version of WebF will be maintained for the lifespan of three minor WebF releases. For instance, WebF 0.15.0 was released to be compatible with Flutter 3.10.x. Its support will conclude once WebF 0.18.0 is introduced. Any updates applied to versions 0.16.x and 0.17.x will be cherry-picked for the subsequent update of 0.15.x.
+
+This ensures that users can reliably receive updates for three minor WebF versions without the necessity to upgrade the Flutter version in their app.
 
 | WebF                 | Flutter |
 | -------------------- | ------- |
 | `>= 0.12.0 < 0.14.0` | `3.0.5` |
-| `>= 0.14.0` | `3.3.10` and `3.7.3` |
+| `>= 0.14.0 < 0.15.0` | `3.3.10` and `3.7.3` |
+| `>= 0.15.0 < 0.16.0` | `3.10.x` |
+| `>= 0.16.0 < 0.17.0` | `3.13.x` |
+| `>= 0.17.0 < 0.18.0` | `3.16.x` |
+
+
+<img width="817" alt="image" src="https://github.com/openwebf/webf/assets/4409743/2d5cf5a1-e670-424b-8766-324f475bbc0a">
 
 ## How to use
 
@@ -55,21 +65,19 @@ And the Vue development server will be hosted at `http://<yourip>:8080/`.
 ```yaml
 dependencies:
   webf: <lastest version>
-  webf_websocket: <lastest version>
 ```
 
 **import**
 
 ```dart
 import 'package:webf/webf.dart';
-import 'package:webf_websocket/webf_websocket.dart';
+import 'package:webf/devtools.dart';
 ```
 
 **init**
 
 ```dart
 void main() {
-  WebFWebSocket.initialize();
   runApp(MyApp());
 }
 ```

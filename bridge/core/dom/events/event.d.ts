@@ -45,5 +45,7 @@ interface Event {
    */
   stopPropagation(): void;
 
+  [key: string]: any;
+
   new(type: string, options?: EventInit) : Event;
 }

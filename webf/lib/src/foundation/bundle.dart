@@ -88,7 +88,10 @@ abstract class WebFBundle {
 
   // Uri parsed by uriParser, assigned after resolving.
   Uri? _uri;
-  Uri? get resolvedUri => _uri;
+  Uri? get resolvedUri {
+    _uri ??= Uri.tryParse(url);
+    return _uri;
+  }
 
   // The bundle data of raw.
   Uint8List? data;

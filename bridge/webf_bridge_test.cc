@@ -4,13 +4,32 @@
  */
 
 #include "webf_bridge_test.h"
+#include <execinfo.h>
+#include <signal.h>
+#include <unistd.h>
 #include <atomic>
 #include "bindings/qjs/native_string_utils.h"
+#include "logging.h"
 #include "webf_test_context.h"
 
 std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();
 
+void handler(int sig) {
+  void* array[10];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  exit(1);
+}
+
 void* initTestFramework(void* page_) {
+  signal(SIGSEGV, handler);  // install handler when crashed.
+  signal(SIGABRT, handler);
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
   return new webf::WebFTestContext(page->GetExecutingContext());

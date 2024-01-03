@@ -46,7 +46,10 @@ class CookieJar {
     Uri uri = Uri.parse(url);
     List<String> pathSegements = uri.pathSegments;
 
-    cookie.path ??= '/' + pathSegements.sublist(0, pathSegements.length - 1).join('/');
+    if (pathSegements.isNotEmpty) {
+      cookie.path ??= '/' + pathSegements.sublist(0, pathSegements.length - 1).join('/');
+    }
+
     cookie.domain ??= uri.host;
 
     if (uri.host.isNotEmpty && _cookieJar != null) {

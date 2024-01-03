@@ -5,6 +5,7 @@
 #ifndef BRIDGE_CORE_INPUT_TOUCH_LIST_H_
 #define BRIDGE_CORE_INPUT_TOUCH_LIST_H_
 
+#include "bindings/qjs/atomic_string.h"
 #include "touch.h"
 
 namespace webf {
@@ -28,6 +29,7 @@ class TouchList : public ScriptWrappable {
   uint32_t length() const;
   Touch* item(uint32_t index, ExceptionState& exception_state) const;
   bool SetItem(uint32_t index, Touch* touch, ExceptionState& exception_state);
+  bool DeleteItem(const AtomicString& key, ExceptionState& exception_state);
 
   bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
   void NamedPropertyEnumerator(std::vector<AtomicString>& props, ExceptionState& exception_state);

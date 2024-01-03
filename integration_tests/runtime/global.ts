@@ -41,6 +41,10 @@ function test(fn, title) {
   it(title, fn);
 }
 
+function ftest(fn, title) {
+  fit(title, fn);
+}
+
 function xtest(fn, title) {
   xit(title, fn)
 }
@@ -57,6 +61,13 @@ function assert_true(value: any, message?: string) {
   expect(value).toBe(true, message)
 }
 
+function assert_throws_exactly(error: any, fn: Function) {
+  expect(fn).toThrow(error);
+}
+
+function assert_not_equals(a: any, b: any, message?: string) {
+  expect(a !== b).toBe(true, message)
+}
 function assert_false(value: any, message?: string) {
   expect(value).toBe(false, message)
 }
@@ -66,7 +77,7 @@ function format_value(v: any) {
 }
 
 function assert_array_equals(value, result, message?: string) {
-  expect(value).toEqual(result, message);
+  expect([].slice.call(value)).toEqual(result, message);
 }
 
 // Avoid overwrited by jasmine.
@@ -365,12 +376,15 @@ Object.assign(global, {
   nextFrames,
   snapshot,
   test,
+  ftest,
   xtest,
   assert_equals,
   assert_true,
   format_value,
   assert_array_equals,
   assert_false,
+  assert_not_equals,
+  assert_throws_exactly,
   assert_class_string,
   simulatePointDown,
   simulatePointUp,

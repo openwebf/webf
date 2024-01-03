@@ -45,6 +45,14 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
     assert(value.tag == NativeTag::TAG_STRING);
     return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
   }
+
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue& value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return AtomicString::Empty();
+    }
+    assert(value.tag == NativeTag::TAG_STRING);
+    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
+  }
 };
 
 template <>
@@ -81,8 +89,8 @@ struct NativeValueConverter<NativeTypeDouble> : public NativeValueConverterBase<
 
 template <>
 struct NativeValueConverter<NativeTypeJSON> : public NativeValueConverterBase<NativeTypeJSON> {
-  static NativeValue ToNativeValue(ImplType value, ExceptionState& exception_state) {
-    return Native_NewJSON(value, exception_state);
+  static NativeValue ToNativeValue(JSContext* ctx, ImplType value, ExceptionState& exception_state) {
+    return Native_NewJSON(ctx, value, exception_state);
   }
   static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
     assert(value.tag == NativeTag::TAG_JSON);

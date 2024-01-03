@@ -4,13 +4,19 @@
  */
 
 #include "script_wrappable.h"
+#include <quickjs/quickjs.h>
+#include "built_in_string.h"
 #include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
 ScriptWrappable::ScriptWrappable(JSContext* ctx)
-    : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), context_(ExecutingContext::From(ctx)) {}
+    : ctx_(ctx),
+      runtime_(JS_GetRuntime(ctx)),
+      context_(ExecutingContext::From(ctx)),
+      context_id_(context_->contextId()) {}
 
 JSValue ScriptWrappable::ToQuickJS() const {
   return JS_DupValue(ctx_, jsObject_);
@@ -25,7 +31,7 @@ ScriptValue ScriptWrappable::ToValue() {
 }
 
 /// This callback will be called when QuickJS GC is running at marking stage.
-/// Users of this class should override `void Trace(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)` to
+/// Users of this class should override `void TraceMember(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)` to
 /// tell GC which member of their class should be collected by GC.
 static void HandleJSObjectGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func) {
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JSValueGetClassId(val)));
@@ -38,8 +44,15 @@ static void HandleJSObjectGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* m
 /// completed.
 static void HandleJSObjectFinalized(JSRuntime* rt, JSValue val) {
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JSValueGetClassId(val)));
-  MemberMutationScope scope{object->GetExecutingContext()};
-  delete object;
+  // When a JSObject got finalized by QuickJS GC, we can not guarantee the ExecutingContext are still alive and
+  // accessible.
+  if (isContextValid(object->contextId())) {
+    ExecutingContext* context = object->GetExecutingContext();
+    MemberMutationScope scope{object->GetExecutingContext()};
+    delete object;
+  } else {
+    delete object;
+  }
 }
 
 /// This callback will be called when JS code access this object using [] or `.` operator.
@@ -50,19 +63,19 @@ static JSValue HandleJSPropertyGetterCallback(JSContext* ctx, JSValueConst obj, 
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
-  JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
-  if (JS_HasProperty(ctx, prototypeObject, atom)) {
-    JSValue ret = JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
-    return ret;
-  }
-
+  JSValue getterValue = JS_UNDEFINED;
   if (wrapper_type_info->indexed_property_getter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
-    return wrapper_type_info->indexed_property_getter_handler_(ctx, obj, JS_AtomToUInt32(atom));
+    getterValue = wrapper_type_info->indexed_property_getter_handler_(ctx, obj, JS_AtomToUInt32(atom));
   } else if (wrapper_type_info->string_property_getter_handler_ != nullptr) {
-    return wrapper_type_info->string_property_getter_handler_(ctx, obj, atom);
+    getterValue = wrapper_type_info->string_property_getter_handler_(ctx, obj, atom);
   }
 
-  return JS_UNDEFINED;
+  if (!JS_IsUndefined(getterValue)) {
+    return getterValue;
+  }
+
+  JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
+  return JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
 }
 
 /// This callback will be called when JS code set property on this object using [] or `.` operator.
@@ -76,12 +89,24 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
   auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
+  bool is_success = false;
+
+  if (wrapper_type_info->indexed_property_setter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
+    is_success = wrapper_type_info->indexed_property_setter_handler_(ctx, obj, JS_AtomToUInt32(atom), value);
+  } else if (wrapper_type_info->string_property_setter_handler_ != nullptr) {
+    is_success = wrapper_type_info->string_property_setter_handler_(ctx, obj, atom, value);
+  }
+
+  if (is_success) {
+    return is_success;
+  }
+
   ExecutingContext* context = ExecutingContext::From(ctx);
   JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
   if (JS_HasProperty(ctx, prototypeObject, atom)) {
     JSValue target = JS_DupValue(ctx, prototypeObject);
     JSValue setterFunc = JS_UNDEFINED;
-    while (JS_IsUndefined(setterFunc)) {
+    while (JS_IsUndefined(setterFunc) && JS_IsObject(target)) {
       JSPropertyDescriptor descriptor;
       descriptor.setter = JS_UNDEFINED;
       descriptor.getter = JS_UNDEFINED;
@@ -90,6 +115,7 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
       setterFunc = descriptor.setter;
       if (JS_IsFunction(ctx, setterFunc)) {
         JS_FreeValue(ctx, descriptor.getter);
+        JS_FreeValue(ctx, descriptor.value);
         break;
       }
 
@@ -98,23 +124,22 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
       target = new_target;
       JS_FreeValue(ctx, descriptor.getter);
       JS_FreeValue(ctx, descriptor.setter);
+      JS_FreeValue(ctx, descriptor.value);
+    }
+
+    if (!JS_IsFunction(ctx, setterFunc)) {
+      return false;
     }
 
     assert_m(JS_IsFunction(ctx, setterFunc), "Setter on prototype should be an function.");
     JSValue ret = JS_Call(ctx, setterFunc, obj, 1, &value);
     if (JS_IsException(ret))
-      return -1;
+      return false;
 
     JS_FreeValue(ctx, ret);
     JS_FreeValue(ctx, setterFunc);
     JS_FreeValue(ctx, target);
-    return 0;
-  }
-
-  if (wrapper_type_info->indexed_property_setter_handler_ != nullptr && JS_AtomIsTaggedInt(atom)) {
-    return wrapper_type_info->indexed_property_setter_handler_(ctx, obj, JS_AtomToUInt32(atom), value);
-  } else if (wrapper_type_info->string_property_setter_handler_ != nullptr) {
-    return wrapper_type_info->string_property_setter_handler_(ctx, obj, atom, value);
+    return true;
   }
 
   return false;
@@ -136,6 +161,15 @@ static int HandleJSPropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** pt
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
   return wrapper_type_info->property_enumerate_handler_(ctx, ptab, plen, obj);
+}
+
+/// This callback will be called when JS code delete properties on this object.
+/// Exp: delete obj['name']
+static int HandleJSPropertyDelete(JSContext* ctx, JSValueConst obj, JSAtom prop) {
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* wrapper_type_info = object->GetWrapperTypeInfo();
+
+  return wrapper_type_info->property_delete_handler_(ctx, obj, prop);
 }
 
 static int HandleJSGetOwnPropertyNames(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj) {
@@ -199,10 +233,12 @@ void ScriptWrappable::InitializeQuickJSObject() {
         if (wrapper_type_info->string_property_getter_handler_ != nullptr) {
           JSValue return_value = wrapper_type_info->string_property_getter_handler_(ctx, obj, prop);
           if (!JS_IsNull(return_value)) {
-            desc->flags = JS_PROP_ENUMERABLE;
-            desc->value = return_value;
-            desc->getter = JS_NULL;
-            desc->setter = JS_NULL;
+            if (desc != nullptr) {
+              desc->flags = JS_PROP_ENUMERABLE;
+              desc->value = return_value;
+              desc->getter = JS_NULL;
+              desc->setter = JS_NULL;
+            }
             return true;
           }
         }
@@ -211,10 +247,12 @@ void ScriptWrappable::InitializeQuickJSObject() {
           uint32_t index = JS_AtomToUInt32(prop);
           JSValue return_value = wrapper_type_info->indexed_property_getter_handler_(ctx, obj, index);
           if (!JS_IsNull(return_value)) {
-            desc->flags = JS_PROP_ENUMERABLE;
-            desc->value = return_value;
-            desc->getter = JS_NULL;
-            desc->setter = JS_NULL;
+            if (desc != nullptr) {
+              desc->flags = JS_PROP_ENUMERABLE;
+              desc->value = return_value;
+              desc->getter = JS_NULL;
+              desc->setter = JS_NULL;
+            }
             return true;
           }
         }
@@ -225,6 +263,10 @@ void ScriptWrappable::InitializeQuickJSObject() {
       // Support iterate script wrappable defined properties.
       exotic_methods->get_own_property_names = HandleJSGetOwnPropertyNames;
       exotic_methods->get_own_property = HandleJSGetOwnProperty;
+    }
+
+    if (UNLIKELY(wrapper_type_info->property_delete_handler_ != nullptr)) {
+      exotic_methods->delete_property = HandleJSPropertyDelete;
     }
 
     def.exotic = exotic_methods;

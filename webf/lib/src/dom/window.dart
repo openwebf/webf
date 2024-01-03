@@ -18,7 +18,7 @@ class Window extends EventTarget {
   final Screen screen;
 
   Window(BindingContext? context, this.document)
-      : screen = Screen(context!.contextId),
+      : screen = Screen(context!.contextId, document.controller.ownerFlutterView, document.controller.view),
         super(context);
 
   @override
@@ -40,6 +40,8 @@ class Window extends EventTarget {
     properties['innerHeight'] = BindingObjectProperty(getter: () => innerHeight);
     properties['scrollX'] = BindingObjectProperty(getter: () => scrollX);
     properties['scrollY'] = BindingObjectProperty(getter: () => scrollY);
+    properties['pageXOffset'] = BindingObjectProperty(getter: () => scrollX);
+    properties['pageYOffset'] = BindingObjectProperty(getter: () => scrollY);
     properties['screen'] = BindingObjectProperty(getter: () => screen);
     properties['colorScheme'] = BindingObjectProperty(getter: () => colorScheme);
     properties['devicePixelRatio'] = BindingObjectProperty(getter: () => devicePixelRatio);
@@ -51,7 +53,7 @@ class Window extends EventTarget {
   }
 
   ComputedCSSStyleDeclaration getComputedStyle(Element element) {
-    return ComputedCSSStyleDeclaration(element, element.tagName);
+    return ComputedCSSStyleDeclaration(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), element, element.tagName);
   }
 
   double get scrollX => document.documentElement!.scrollLeft;
@@ -72,9 +74,9 @@ class Window extends EventTarget {
       ..scrollBy(x, y, withAnimation);
   }
 
-  String get colorScheme => window.platformBrightness == Brightness.light ? 'light' : 'dark';
+  String get colorScheme => document.controller.ownerFlutterView.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
 
-  double get devicePixelRatio => window.devicePixelRatio;
+  double get devicePixelRatio => document.controller.ownerFlutterView.devicePixelRatio;
 
   // The innerWidth/innerHeight attribute must return the viewport width/height
   // including the size of a rendered scroll bar (if any), or zero if there is no viewport.
@@ -105,19 +107,19 @@ class Window extends EventTarget {
   }
 
   @override
-  void addEventListener(String eventType, EventHandler handler) {
-    super.addEventListener(eventType, handler);
+  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
+    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
     switch (eventType) {
       case EVENT_SCROLL:
         // Fired at the Document or element when the viewport or element is scrolled, respectively.
-        document.documentElement?.addEventListener(eventType, handler);
+        document.documentElement?.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
         break;
     }
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler) {
-    super.removeEventListener(eventType, handler);
+  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
+    super.removeEventListener(eventType, handler, isCapture: isCapture);
     switch (eventType) {
       case EVENT_SCROLL:
         document.documentElement?.removeEventListener(eventType, handler);

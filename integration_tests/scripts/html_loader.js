@@ -58,7 +58,7 @@ const loader = function(source) {
   return `
     describe('HTMLSpec/${testRelativePath}', () => {
       // Use html_parse to parser html in html file.
-      const html_parse = () => __webf_parse_html__('${htmlString}');
+      const html_parse = () => __webf_parse_html__(\`${htmlString}\`);
       var index = 0;
       const snapshotAction = async () => { await snapshot(null, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
       ${isFit ? 'fit' : isXit ? 'xit' : 'it'}("should work", async (done) => {\

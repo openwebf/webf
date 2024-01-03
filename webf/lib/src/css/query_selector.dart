@@ -32,7 +32,6 @@ import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
-import 'nth_index_cache.dart';
 
 typedef IndexCounter = int Function(Element element);
 
@@ -46,6 +45,13 @@ List<Element> querySelectorAll(Node node, String selector) {
   return results;
 }
 
+bool matches(Element element, String selector) =>
+    SelectorEvaluator().matchSelector(_parseSelectorGroup(selector), element);
+
+Element? closest(Node node, String selector) =>
+    SelectorEvaluator().closest(node, _parseSelectorGroup(selector));
+
+
 // http://dev.w3.org/csswg/selectors-4/#grouping
 SelectorGroup? _parseSelectorGroup(String selector) {
   CSSParser parser = CSSParser(selector)..tokenizer.inSelector = true;
@@ -55,9 +61,6 @@ SelectorGroup? _parseSelectorGroup(String selector) {
 class SelectorEvaluator extends SelectorVisitor {
   Element? _element;
   SelectorGroup? _selectorGroup;
-
-  static final NthIndexCache _nthIndexCache = NthIndexCache();
-  static NthIndexCache get nthIndexCache => _nthIndexCache;
 
   bool matchSelector(SelectorGroup? selectorGroup, Element? element) {
     if (selectorGroup == null || element == null) {
@@ -83,6 +86,17 @@ class SelectorEvaluator extends SelectorVisitor {
       if (matchSelector(selector, element)) results.add(element);
       querySelectorAll(element, selector, results);
     }
+  }
+
+  Element? closest(Node node, SelectorGroup? selector) {
+    Node? targetNode = node;
+    while (targetNode != null) {
+      if (targetNode is Element) {
+        if (matchSelector(selector, targetNode)) return targetNode;
+      }
+      targetNode = targetNode.parentNode;
+    }
+    return null;
   }
 
   @override
@@ -229,8 +243,7 @@ class SelectorEvaluator extends SelectorVisitor {
         return false;
     }
 
-    // :before, :after, :first-letter/line can't match DOM elements.
-    if (_isLegacyPsuedoClass(node.name)) return false;
+    if (_isLegacyPsuedoClass(node.name)) return true;
 
     if (kDebugMode) throw _unimplemented(node);
     return false;
@@ -238,20 +251,20 @@ class SelectorEvaluator extends SelectorVisitor {
 
   @override
   bool visitPseudoElementSelector(PseudoElementSelector node) {
-    // :before, :after, :first-letter/line can't match DOM elements.
-    if (_isLegacyPsuedoClass(node.name)) return false;
+    if (_isLegacyPsuedoClass(node.name)) return true;
 
     if (kDebugMode) throw _unimplemented(node);
     return false;
   }
 
   static bool _isLegacyPsuedoClass(String name) {
+    // TODO: :first-letter/line match elements.
     switch (name) {
       case 'before':
       case 'after':
+        return true;
       case 'first-line':
       case 'first-letter':
-        return true;
       default:
         return false;
     }
@@ -289,12 +302,12 @@ class SelectorEvaluator extends SelectorVisitor {
   bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector, num? a, num b, IndexCounter finder) {
     int index = 0;
 
-    int? cacheIndex = SelectorEvaluator._nthIndexCache.getChildrenIndexFromCache(_element!.parentNode!, _element!, selector.name);
+    int? cacheIndex = element.ownerDocument.nthIndexCache.getChildrenIndexFromCache(_element!.parentNode!, _element!, selector.name);
     if (cacheIndex != null) {
       index = cacheIndex;
     } else {
       index = finder(element);
-      SelectorEvaluator._nthIndexCache.setChildrenIndexWithParentNode(_element!.parentNode!, _element!, selector.name, index);
+      element.ownerDocument.nthIndexCache.setChildrenIndexWithParentNode(_element!.parentNode!, _element!, selector.name, index);
     }
 
     return _indexSatisfiesEquation(index + 1, a, b);

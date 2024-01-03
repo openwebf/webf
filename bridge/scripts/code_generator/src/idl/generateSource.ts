@@ -26,6 +26,8 @@ import {
   getUnionTypeName
 } from "./generateUnionTypes";
 
+const dictionaryClasses: string[] = [];
+
 function generateMethodArgumentsCheck(m: FunctionDeclaration) {
   if (m.args.length == 0) return '';
 
@@ -33,6 +35,10 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
   m.args.forEach(m => {
     if (m.required) requiredArgsCount++;
   });
+
+  if (requiredArgsCount > 0 && m.args[0].isDotDotDot) {
+    return '';
+  }
 
   return `  if (argc < ${requiredArgsCount}) {
     return JS_ThrowTypeError(ctx, "Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but %d present.", argc);
@@ -78,6 +84,10 @@ export function generateCoreTypeValue(type: ParameterType): string {
     case FunctionArgumentType.any: {
       return 'ScriptValue';
     }
+  }
+
+  if (isDictionary(type)) {
+    return `std::shared_ptr<${getPointerType(type)}>`;
   }
 
   if (isPointerType(type)) {
@@ -138,6 +148,16 @@ export function isTypeHaveNull(type: ParameterType): boolean {
   return type.value.some(t => t.value === FunctionArgumentType.null);
 }
 
+export function isTypeHaveString(types: ParameterType[]): boolean {
+  return types.some(t => {
+    if (t.isArray) return isTypeHaveString(t.value as ParameterType[]);
+    if (!Array.isArray(t.value)) {
+      return t.value === FunctionArgumentType.dom_string;
+    }
+    return t.value.some(t => t.value === FunctionArgumentType.dom_string);
+  });
+}
+
 export function isPointerType(type: ParameterType): boolean {
   if (type.isArray) return false;
   if (typeof type.value === 'string') {
@@ -149,7 +169,15 @@ export function isPointerType(type: ParameterType): boolean {
   return false;
 }
 
-function getPointerType(type: ParameterType): string {
+export function isDictionary(type: ParameterType): boolean {
+  if (type.isArray) return false;
+  if (typeof type.value === 'string') {
+    return dictionaryClasses.indexOf(type.value) >= 0;
+  }
+  return false;
+}
+
+export function getPointerType(type: ParameterType): string {
   if (typeof type.value === 'string') {
     return type.value;
   }
@@ -287,10 +315,10 @@ function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number
   let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0;
 
   let body = '';
-  if (hasArgumentCheck) {
-    body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`;
-  } else if (argument.isDotDotDot) {
+  if (argument.isDotDotDot) {
     body = `Converter<${type}>::FromValue(ctx, argv + ${argsIndex}, argc - ${argsIndex}, exception_state)`
+  } else if (hasArgumentCheck) {
+    body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`;
   } else {
     body = `Converter<${type}>::FromValue(ctx, argv[${argsIndex}], exception_state)`;
   }
@@ -319,9 +347,9 @@ function generateDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, a
 
   return `
 auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
-NativeValue arguments[] = {
+${nativeArguments.length > 0 ? `NativeValue arguments[] = {
   ${nativeArguments.join(',\n')}
-};
+}` : 'NativeValue* arguments = nullptr;'};
 ${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${nativeArguments.length}, arguments, exception_state);
 ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverter(declare.returnType)}>::ToValue(NativeValueConverter<${generateNativeValueTypeConverter(declare.returnType)}>::FromNativeValue(native_value))` : ''};
   `.trim();
@@ -400,7 +428,7 @@ ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${min
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
 
-  let minimalRequiredCall = declaration.args.length == 0 ? call : `if (argc <= ${minimalRequiredArgc}) {
+  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (argc <= ${minimalRequiredArgc}) {
   ${call}
   break;
 }`;
@@ -591,6 +619,11 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
 
           wrapperTypeRegisterList.push('PropertyCheckerCallback');
           wrapperTypeRegisterList.push('PropertyEnumerateCallback');
+          if (!object.indexedProp.readonly) {
+            wrapperTypeRegisterList.push('StringPropertyDeleterCallback')
+          } else {
+            wrapperTypeRegisterList.push('nullptr');
+          }
         }
 
         let mixinParent = object.mixinParent;
@@ -626,6 +659,7 @@ const WrapperTypeInfo& ${className}::wrapper_type_info_ = QJS${className}::wrapp
         });
       }
       case TemplateKind.Dictionary: {
+        dictionaryClasses.push(className);
         let props = (object as ClassObject).props;
         return _.template(readTemplate('dictionary'))({
           className,
@@ -672,7 +706,8 @@ export function generateUnionTypeSource(unionType: ParameterType): string {
     generateUnionConstructorImpl,
     generateUnionTypeSetter,
     getUnionTypeName,
-    isTypeHaveNull
+    isTypeHaveNull,
+    isTypeHaveString
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

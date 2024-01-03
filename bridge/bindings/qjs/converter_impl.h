@@ -10,7 +10,6 @@
 #include "atomic_string.h"
 #include "bindings/qjs/union_base.h"
 #include "converter.h"
-#include "core/dom/document.h"
 #include "core/dom/events/event.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/node_list.h"
@@ -314,6 +313,20 @@ struct Converter<IDLSequence<T>> : public ConverterBase<IDLSequence<T>> {
     return v;
   };
 
+  static ImplType ArgumentsValue(ExecutingContext* context,
+                                 JSValue value,
+                                 uint32_t argv_index,
+                                 ExceptionState& exception_state) {
+    assert(!JS_IsException(value));
+    if (JS_IsArray(context->ctx(), value)) {
+      return FromValue(context->ctx(), value, exception_state);
+    }
+    ImplType v;
+    exception_state.ThrowException(context->ctx(), ErrorType::TypeError,
+                                   ExceptionMessage::ArgumentNotOfType(argv_index, "Array"));
+    return v;
+  }
+
   static JSValue ToValue(JSContext* ctx, ImplType value) {
     JSValue array = JS_NewArray(ctx);
     JS_SetPropertyStr(ctx, array, "length", Converter<IDLInt64>::ToValue(ctx, value.size()));
@@ -446,6 +459,8 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<DictionaryBase, T>
     assert(!JS_IsException(value));
     return T::Create(ctx, value, exception_state);
   }
+
+  static JSValue ToValue(JSContext* ctx, typename T::ImplType value) { return value->toQuickJS(ctx); }
 };
 
 template <typename T>

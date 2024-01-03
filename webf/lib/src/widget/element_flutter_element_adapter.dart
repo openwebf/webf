@@ -16,9 +16,7 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
 
   @override
   void mount(Element? parent, Object? newSlot) {
-    widget.webFElement.createRenderer();
     super.mount(parent, newSlot);
-
     widget.webFElement.ensureChildAttached();
 
     dom.Element element = widget.webFElement;
@@ -34,7 +32,9 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     dom.Element element = widget.webFElement;
-    element.unmountRenderObject(dispose: false, fromFlutterWidget: true);
+    if (element.flutterWidgetElement == this) {
+      element.unmountRenderObject(dispose: false, fromFlutterWidget: true);
+    }
     super.unmount();
   }
 

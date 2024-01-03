@@ -4,9 +4,7 @@
  */
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 
@@ -271,6 +269,17 @@ class RenderFlexLayout extends RenderLayoutBox {
           ? childRenderBoxModel.renderStyle.marginRight.computedValue
           : childRenderBoxModel.renderStyle.marginLeft.computedValue;
     }
+  }
+
+  bool isFlexNone(RenderBox child) {
+    // Placeholder have the safe effect to flex: none.
+    if (child is RenderPositionPlaceholder) {
+      return true;
+    }
+    double flexGrow = _getFlexGrow(child);
+    double flexShrink = _getFlexShrink(child);
+    double? flexBasis = _getFlexBasis(child);
+    return flexBasis == null && flexGrow == 0 && flexShrink == 0;
   }
 
   double _getFlexGrow(RenderBox child) {
@@ -574,22 +583,12 @@ class RenderFlexLayout extends RenderLayoutBox {
   @override
   void performLayout() {
     doingThisLayout = true;
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      childLayoutDuration = 0;
-      PerformanceTiming.instance().mark(PERF_FLEX_LAYOUT_START, uniqueId: hashCode);
-    }
 
     _doPerformLayout();
 
     if (needsRelayout) {
       _doPerformLayout();
       needsRelayout = false;
-    }
-
-    if (kProfileMode && PerformanceTiming.enabled()) {
-      DateTime flexLayoutEndTime = DateTime.now();
-      int amendEndTime = flexLayoutEndTime.microsecondsSinceEpoch - childLayoutDuration;
-      PerformanceTiming.instance().mark(PERF_FLEX_LAYOUT_END, uniqueId: hashCode, startTime: amendEndTime);
     }
     doingThisLayout = false;
   }
@@ -791,10 +790,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
 
       if (isChildNeedsLayout) {
-        late DateTime childLayoutStart;
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          childLayoutStart = DateTime.now();
-        }
         _childrenOldConstraints[child.hashCode] = childConstraints;
 
         // Inflate constraints of percentage renderBoxModel to force it layout after percentage resolved
@@ -809,11 +804,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
 
         child.layout(childConstraints, parentUsesSize: true);
-
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          DateTime childLayoutEnd = DateTime.now();
-          childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
-        }
         Size? childSize = _getChildSize(child);
         _childrenIntrinsicMainSizes[child.hashCode] = _isHorizontalFlexDirection ? childSize!.width : childSize!.height;
       }
@@ -1265,11 +1255,6 @@ class RenderFlexLayout extends RenderLayoutBox {
           continue;
         }
 
-        late DateTime childLayoutStart;
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          childLayoutStart = DateTime.now();
-        }
-
         BoxConstraints childConstraints = _getChildAdjustedConstraints(
           child,
           childFlexedMainSize,
@@ -1292,11 +1277,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Child main size needs to recalculated after layouted.
         childMainAxisExtent = _getMainAxisExtent(child);
         mainAxisExtent += childMainAxisExtent;
-
-        if (kProfileMode && PerformanceTiming.enabled()) {
-          DateTime childLayoutEnd = DateTime.now();
-          childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
-        }
       }
 
       // Update run main axis extent after child is relayouted.

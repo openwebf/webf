@@ -6,7 +6,9 @@
 import 'dart:ui' as ui show LineMetrics, Gradient, Shader, TextBox, TextHeightBehavior;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/css.dart';
 
 const String _kEllipsis = '\u2026';
 
@@ -18,8 +20,7 @@ const String _kEllipsis = '\u2026';
 class WebFRenderParagraph extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TextParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, TextParentData>,
-        RelayoutWhenSystemFontsChangeMixin {
+        RenderInlineChildrenContainerDefaults, RelayoutWhenSystemFontsChangeMixin {
   /// Creates a paragraph render object.
   ///
   /// The [text], [textAlign], [textDirection], [overflow], [softWrap], and
@@ -40,10 +41,12 @@ class WebFRenderParagraph extends RenderBox
     TextWidthBasis textWidthBasis = TextWidthBasis.parent,
     ui.TextHeightBehavior? textHeightBehavior,
     List<RenderBox>? children,
+    TextPainterCallback? foregroundCallback,
   })  : assert(text.debugAssertIsValid()),
         assert(maxLines == null || maxLines > 0),
         _softWrap = softWrap,
         _overflow = overflow,
+        _foregroundCallback = foregroundCallback,
         _textPainter = TextPainter(
             text: text,
             textAlign: textAlign,
@@ -140,6 +143,8 @@ class WebFRenderParagraph extends RenderBox
     _softWrap = value;
     markNeedsLayout();
   }
+
+  final TextPainterCallback? _foregroundCallback;
 
   /// How visual overflow should be handled.
   TextOverflow get overflow => _overflow;
@@ -247,37 +252,14 @@ class WebFRenderParagraph extends RenderBox
   bool hitTestSelf(Offset position) => true;
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
-    RenderBox? child = firstChild;
-    while (child != null) {
-      final TextParentData textParentData = child.parentData as TextParentData;
-      final Matrix4 transform = Matrix4.translationValues(
-        textParentData.offset.dx,
-        textParentData.offset.dy,
-        0.0,
-      )..scale(
-          textParentData.scale,
-          textParentData.scale,
-          textParentData.scale,
-        );
-      final bool isHit = result.addWithPaintTransform(
-        transform: transform,
-        position: position!,
-        hitTest: (BoxHitTestResult result, Offset transformed) {
-          assert(() {
-            final Offset manualPosition = (position - textParentData.offset) / textParentData.scale!;
-            return (transformed.dx - manualPosition.dx).abs() < precisionErrorTolerance &&
-                (transformed.dy - manualPosition.dy).abs() < precisionErrorTolerance;
-          }());
-          return child!.hitTest(result, position: transformed);
-        },
-      );
-      if (isHit) {
-        return true;
-      }
-      child = childAfter(child);
+  bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
+    final TextPosition textPosition = _textPainter.getPositionForOffset(position);
+    final Object? span = _textPainter.text!.getSpanForPosition(textPosition);
+    if (span is HitTestTarget) {
+      result.add(HitTestEntry(span));
+      return true;
     }
-    return false;
+    return hitTestInlineChildren(result, position);
   }
 
   @override
@@ -448,6 +430,18 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void performLayout() {
+    if (_foregroundCallback != null) {
+      _textPainter.layout();
+      Size size = _textPainter.size;
+      final paint = _foregroundCallback!(Rect.fromLTWH(0, 0, size.width, size.height));
+      if (paint != null) {
+        text = TextSpan(
+            text: text.text,
+            style: text.style?.copyWith(foreground: paint)
+        );
+      }
+    }
+
     layoutText();
 
     // We grab _textPainter.size and _textPainter.didExceedMaxLines here because

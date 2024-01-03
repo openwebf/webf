@@ -10,5 +10,6 @@ interface GestureEvent extends Event {
   readonly velocityY: number;
   readonly scale: number;
   readonly rotation: number;
+  [key: string]: any;
   new(type: string, init?: GestureEventInit): GestureEvent;
 }

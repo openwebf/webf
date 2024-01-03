@@ -5,6 +5,8 @@
 #include "canvas_rendering_context_2d.h"
 #include "binding_call_methods.h"
 #include "canvas_gradient.h"
+#include "core/html/canvas/html_canvas_element.h"
+#include "core/html/html_image_element.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
@@ -19,7 +21,8 @@ CanvasRenderingContext2D::CanvasRenderingContext2D(ExecutingContext* context,
 
 NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(const AtomicString& method,
                                                              int32_t argc,
-                                                             const NativeValue* argv) {
+                                                             const NativeValue* argv,
+                                                             Dart_Handle dart_object) {
   return Native_NewNull();
 }
 

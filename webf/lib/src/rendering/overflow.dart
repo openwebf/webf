@@ -249,10 +249,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     double? candidate = getDistanceToActualBaseline(baseline);
     if (candidate != null) {
       candidate += childParentData!.offset.dy;
-      if (result != null)
-        result = math.min(result, candidate);
-      else
-        result = candidate;
+      result = candidate;
     }
     return result;
   }

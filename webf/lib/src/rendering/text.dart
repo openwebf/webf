@@ -30,6 +30,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     _renderParagraph = child = WebFRenderParagraph(
       text,
       textDirection: TextDirection.ltr,
+      foregroundCallback: _getForeground,
     );
   }
 
@@ -60,7 +61,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       // pre-wrap  Preserve  Preserve  Wrap     Hang
       // pre-line  Preserve  Collapse  Wrap     Remove
       // break-spaces  Preserve  Preserve  Wrap  Wrap
-      CSSRenderStyle parentRenderStyle = (parent as RenderLayoutBox).renderStyle;
+      CSSRenderStyle parentRenderStyle = (parent as RenderBoxModel).renderStyle;
       WhiteSpace whiteSpace = parentRenderStyle.whiteSpace;
       if (whiteSpace == WhiteSpace.pre ||
           whiteSpace == WhiteSpace.preLine ||
@@ -168,6 +169,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     String clippedText = _getClippedText(_trimmedData);
     // FIXME(yuanyan): do not create text span every time.
     return CSSTextMixin.createTextSpan(clippedText, renderStyle);
+  }
+
+  Paint? _getForeground(Rect bounds) {
+    CSSBackgroundImage? backgroundImage = renderStyle.backgroundImage;
+    if (backgroundImage?.gradient != null && renderStyle.backgroundClip == CSSBackgroundBoundary.text) {
+      return Paint()..shader = backgroundImage?.gradient?.createShader(bounds);
+    }
+    return null;
   }
 
   // Mirror debugNeedsLayout flag in Flutter to use in layout performance optimization

@@ -32,13 +32,9 @@ CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, 
 
 void HTMLCanvasElement::Trace(GCVisitor* visitor) const {
   for (auto&& context : running_context_2ds_) {
-    visitor->Trace(context);
+    visitor->TraceMember(context);
   }
   HTMLElement::Trace(visitor);
-}
-
-bool HTMLCanvasElement::IsAttributeDefinedInternal(const AtomicString& key) const {
-  return QJSHTMLCanvasElement::IsAttributeDefinedInternal(key) || HTMLElement::IsAttributeDefinedInternal(key);
 }
 
 }  // namespace webf

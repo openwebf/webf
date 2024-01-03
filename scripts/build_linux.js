@@ -9,6 +9,7 @@ const chalk = require('chalk');
 series(
   'clean',
   'compile-polyfill',
+  'generate-bindings-code',
   'build-linux-webf-lib'
 )((err) => {
   if (err) {

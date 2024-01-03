@@ -541,7 +541,7 @@ JSValue JS_GetPropertyInternal(JSContext *ctx, JSValueConst obj,
   }
 }
 
-force_inline JSValue JS_GetPropertyInternalWithIC(JSContext *ctx, JSValueConst obj,
+JSValue JS_GetPropertyInternalWithIC(JSContext *ctx, JSValueConst obj,
                                JSAtom prop, JSValueConst this_obj,
                                InlineCache *ic, int32_t offset, 
                                BOOL throw_ref_error) 
@@ -880,7 +880,7 @@ int JS_DefinePrivateField(JSContext* ctx, JSValueConst obj, JSValueConst name, J
     JS_ThrowTypeErrorNotASymbol(ctx);
     goto fail;
   }
-  prop = js_symbol_to_atom(ctx, (JSValue)name);
+  prop = js_symbol_to_atom(ctx, name);
   p = JS_VALUE_GET_OBJ(obj);
   prs = find_own_property(&pr, p, prop);
   if (prs) {
@@ -908,7 +908,7 @@ JSValue JS_GetPrivateField(JSContext* ctx, JSValueConst obj, JSValueConst name) 
   /* safety check */
   if (unlikely(JS_VALUE_GET_TAG(name) != JS_TAG_SYMBOL))
     return JS_ThrowTypeErrorNotASymbol(ctx);
-  prop = js_symbol_to_atom(ctx, (JSValue)name);
+  prop = js_symbol_to_atom(ctx, name);
   p = JS_VALUE_GET_OBJ(obj);
   prs = find_own_property(&pr, p, prop);
   if (!prs) {
@@ -933,7 +933,7 @@ int JS_SetPrivateField(JSContext* ctx, JSValueConst obj, JSValueConst name, JSVa
     JS_ThrowTypeErrorNotASymbol(ctx);
     goto fail;
   }
-  prop = js_symbol_to_atom(ctx, (JSValue)name);
+  prop = js_symbol_to_atom(ctx, name);
   p = JS_VALUE_GET_OBJ(obj);
   prs = find_own_property(&pr, p, prop);
   if (!prs) {
@@ -1021,7 +1021,7 @@ int JS_CheckBrand(JSContext* ctx, JSValueConst obj, JSValueConst func) {
   if (unlikely(JS_VALUE_GET_TAG(obj) != JS_TAG_OBJECT))
     goto not_obj;
   p = JS_VALUE_GET_OBJ(obj);
-  prs = find_own_property(&pr, p, js_symbol_to_atom(ctx, (JSValue)brand));
+  prs = find_own_property(&pr, p, js_symbol_to_atom(ctx, brand));
   if (!prs) {
     JS_ThrowTypeError(ctx, "invalid brand on object");
     return -1;
@@ -1371,7 +1371,7 @@ redo_prop_update:
         return -1;
       }
       /* this code relies on the fact that Uint32 are never allocated */
-      val = (JSValueConst)JS_NewUint32(ctx, array_length);
+      val = JS_NewUint32(ctx, array_length);
       /* prs may have been modified */
       prs = find_own_property(&pr, p, prop);
       assert(prs != NULL);
@@ -1982,7 +1982,7 @@ retry:
   return TRUE;
 }
 
-force_inline int JS_SetPropertyInternalWithIC(JSContext* ctx, JSValueConst this_obj, JSAtom prop, JSValue val, int flags, InlineCache *ic, int32_t offset) {
+int JS_SetPropertyInternalWithIC(JSContext* ctx, JSValueConst this_obj, JSAtom prop, JSValue val, int flags, InlineCache *ic, int32_t offset) {
   uint32_t tag;
   JSObject *p, *proto;
   tag = JS_VALUE_GET_TAG(this_obj);

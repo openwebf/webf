@@ -76,3 +76,16 @@ class CSSKeyframesRule extends CSSRule {
     return null;
   }
 }
+
+class CSSFontFaceRule extends CSSRule {
+  final CSSStyleDeclaration declarations;
+
+  CSSFontFaceRule(this.declarations): super();
+
+  @override
+  int get type => CSSRule.FONT_FACE_RULE;
+
+  String? get keyFrameName {
+    return '@font-face';
+  }
+}

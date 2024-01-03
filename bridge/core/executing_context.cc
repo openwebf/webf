@@ -20,15 +20,15 @@ namespace webf {
 
 static std::atomic<int32_t> context_unique_id{0};
 
-#define MAX_JS_CONTEXT 1024
+#define MAX_JS_CONTEXT 8192
 bool valid_contexts[MAX_JS_CONTEXT];
 std::atomic<uint32_t> running_context_list{0};
 
-ExecutingContext::ExecutingContext(DartContext* dart_context,
+ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    int32_t contextId,
                                    JSExceptionHandler handler,
                                    void* owner)
-    : dart_context_(dart_context),
+    : dart_isolate_context_(dart_isolate_context),
       context_id_(contextId),
       handler_(std::move(handler)),
       owner_(owner),
@@ -45,6 +45,7 @@ ExecutingContext::ExecutingContext(DartContext* dart_context,
   //  #endif
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
+  assert_m(valid_contexts[contextId] != true, "Conflict context found!");
   valid_contexts[contextId] = true;
   if (contextId > running_context_list)
     running_context_list = contextId;
@@ -166,6 +167,7 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!HandleException(&obj))
     return false;
   val = JS_EvalFunction(script_state_.ctx(), obj);
+  DrainPendingPromiseJobs();
   if (!HandleException(&val))
     return false;
   JS_FreeValue(script_state_.ctx(), val);
@@ -238,14 +240,16 @@ void ExecutingContext::ReportError(JSValueConst error) {
   uint32_t messageLength = strlen(type) + strlen(title);
   if (stack != nullptr) {
     messageLength += 4 + strlen(stack);
-    char message[messageLength];
-    sprintf(message, "%s: %s\n%s", type, title, stack);
+    char* message = new char[messageLength];
+    snprintf(message, messageLength, "%s: %s\n%s", type, title, stack);
     handler_(this, message);
+    delete[] message;
   } else {
     messageLength += 3;
-    char message[messageLength];
-    sprintf(message, "%s: %s", type, title);
+    char* message = new char[messageLength];
+    snprintf(message, messageLength, "%s: %s", type, title);
     handler_(this, message);
+    delete[] message;
   }
 
   JS_FreeValue(ctx, errorTypeValue);
@@ -439,7 +443,7 @@ void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable)
   active_wrappers_.erase(script_wrappable);
 }
 
-// An lock free context validator.
+// A lock free context validator.
 bool isContextValid(int32_t contextId) {
   if (contextId > running_context_list)
     return false;

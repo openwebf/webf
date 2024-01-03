@@ -18,11 +18,12 @@ void NativeBindingObject::HandleCallFromDartSide(NativeBindingObject* binding_ob
                                                  NativeValue* return_value,
                                                  NativeValue* native_method,
                                                  int32_t argc,
-                                                 NativeValue* argv) {
+                                                 NativeValue* argv,
+                                                 Dart_Handle dart_object) {
   AtomicString method = AtomicString(
       binding_object->binding_target_->ctx(),
       std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)));
-  NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv);
+  NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv, dart_object);
   if (return_value != nullptr)
     *return_value = result;
 }
@@ -35,8 +36,12 @@ BindingObject::~BindingObject() {
   binding_object_->invoke_binding_methods_from_dart = nullptr;
   binding_object_->invoke_bindings_methods_from_native = nullptr;
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kDisposeBindingObject, nullptr, bindingObject(),
-                                                       nullptr);
+  // When a JSObject got finalized by QuickJS GC, we can not guarantee the ExecutingContext are still alive and
+  // accessible.
+  if (isContextValid(contextId())) {
+    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kDisposeBindingObject, nullptr, bindingObject(),
+                                                         nullptr, false);
+  }
 }
 
 BindingObject::BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object) : ScriptWrappable(ctx) {
@@ -53,7 +58,10 @@ void BindingObject::FullFillPendingPromise(BindingObjectPromiseContext* binding_
   pending_promise_contexts_.erase(binding_object_promise_context);
 }
 
-NativeValue BindingObject::HandleCallFromDartSide(const AtomicString& method, int32_t argc, const NativeValue* argv) {
+NativeValue BindingObject::HandleCallFromDartSide(const AtomicString& method,
+                                                  int32_t argc,
+                                                  const NativeValue* argv,
+                                                  Dart_Handle dart_object) {
   return Native_NewNull();
 }
 
@@ -71,7 +79,8 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   NativeValue return_value = Native_NewNull();
   NativeValue native_method =
       NativeValueConverter<NativeTypeString>::ToNativeValue(GetExecutingContext()->ctx(), method);
-  binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
+  binding_object_->invoke_bindings_methods_from_native(GetExecutingContext()->contextId(), binding_object_,
+                                                       &return_value, &native_method, argc, argv);
   return return_value;
 }
 
@@ -88,7 +97,8 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 
   NativeValue return_value = Native_NewNull();
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
-  binding_object_->invoke_bindings_methods_from_native(binding_object_, &return_value, &native_method, argc, argv);
+  binding_object_->invoke_bindings_methods_from_native(GetExecutingContext()->contextId(), binding_object_,
+                                                       &return_value, &native_method, argc, argv);
   return return_value;
 }
 
@@ -133,7 +143,7 @@ ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
   ExceptionState exception_state;
 
   for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative(exception_state));
+    arguments.emplace_back(argv[i].ToNative(ctx, exception_state));
   }
 
   if (exception_state.HasException()) {
@@ -207,7 +217,7 @@ ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
   ExceptionState exception_state;
 
   for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative(exception_state));
+    arguments.emplace_back(argv[i].ToNative(ctx, exception_state));
   }
 
   event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(),

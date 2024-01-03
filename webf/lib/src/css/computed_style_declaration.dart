@@ -17,9 +17,9 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
-  ComputedCSSStyleDeclaration(this._element, this._pseudoElementName)
-      : _pointer = allocateNewBindingObject(),
-        super();
+  ComputedCSSStyleDeclaration(BindingContext context, this._element, this._pseudoElementName)
+      : _pointer = context.pointer,
+        super(context);
 
   @override
   get pointer => _pointer;
@@ -563,6 +563,11 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     final beforeValue = beforeSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
     final afterValue = afterSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
     return backgroundColor + ' ' + beforeValue + ' / ' + afterValue;
+  }
+
+  @override
+  String toString() {
+    return 'ComputedCSSStyleDeclaration($_element)';
   }
 }
 

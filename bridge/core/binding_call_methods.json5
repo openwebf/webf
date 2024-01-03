@@ -166,6 +166,18 @@
     "addColorStop",
     "createLinearGradient",
     "createRadialGradient",
-    "createPattern"
+    "createPattern",
+    "domain",
+    "compatMode",
+    "readyState",
+    "visibilityState",
+    "hidden",
+    "matches",
+    "closest",
+    "elementFromPoint",
+    "dir",
+    "pageXOffset",
+    "pageYOffset",
+    "title"
   ]
 }

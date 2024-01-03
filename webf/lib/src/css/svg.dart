@@ -138,6 +138,30 @@ mixin CSSSvgMixin on RenderStyle {
     _markShapeUpdate();
   }
 
+  CSSLengthValue? _cx;
+  @override get cx => _cx ?? CSSLengthValue.zero;
+  set cx(CSSLengthValue? value) {
+    if (_cx == value) return;
+    _cx = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _cy;
+  @override get cy => _cy ?? CSSLengthValue.zero;
+  set cy(CSSLengthValue? value) {
+    if (_cy == value) return;
+    _cy = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _r;
+  @override get r => _r ?? CSSLengthValue.zero;
+  set r(CSSLengthValue? value) {
+    if (_r == value) return;
+    _r = value;
+    _markShapeUpdate();
+  }
+
   CSSPath? _d;
   @override get d => _d ?? CSSPath.None;
   set d(CSSPath value) {
@@ -152,6 +176,38 @@ mixin CSSSvgMixin on RenderStyle {
     if (_fillRule == value) return;
     _fillRule = value;
     _markRepaint();
+  }
+
+  CSSLengthValue? _x1;
+  @override get x1 => _x1 ?? CSSLengthValue.zero;
+  set x1(CSSLengthValue value){
+    if(_x1 == value) return;
+    _x1 = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _y1;
+  @override get y1 => _y1 ?? CSSLengthValue.zero;
+  set y1(CSSLengthValue value){
+    if(_y1 == value) return;
+    _y1 = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _x2;
+  @override get x2 => _x2 ?? CSSLengthValue.zero;
+  set x2(CSSLengthValue value){
+    if(_x2 == value) return;
+    _x2 = value;
+    _markShapeUpdate();
+  }
+
+  CSSLengthValue? _y2;
+  @override get y2 => _y2 ?? CSSLengthValue.zero;
+  set y2(CSSLengthValue value){
+    if(_y2 == value) return;
+    _y2 = value;
+    _markShapeUpdate();
   }
 
   static resolveFillRule(String value) {

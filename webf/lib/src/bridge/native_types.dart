@@ -49,6 +49,17 @@ class EventDispatchResult extends Struct {
   external bool propagationStopped;
 }
 
+class AddEventListenerOptions extends Struct {
+  @Bool()
+  external bool capture;
+
+  @Bool()
+  external bool passive;
+
+  @Bool()
+  external bool once;
+}
+
 class NativeTouchList extends Struct {
   @Int64()
   external int length;
@@ -98,13 +109,13 @@ class NativeTouch extends Struct {
   external double azimuthAngle;
 }
 
-typedef InvokeBindingsMethodsFromNative = Void Function(Pointer<NativeBindingObject> binding_object,
+typedef InvokeBindingsMethodsFromNative = Void Function(Int32 contextId, Pointer<NativeBindingObject> binding_object,
     Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
 
 typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
+    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv, Handle bindingDartObject);
 typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv);
+    Pointer<NativeValue> return_value, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv, Object bindingDartObject);
 
 class NativeBindingObject extends Struct {
   @Bool()

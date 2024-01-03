@@ -237,7 +237,7 @@ bool Window::IsWindowOrWorkerGlobalScope() const {
 }
 
 void Window::Trace(GCVisitor* visitor) const {
-  visitor->Trace(screen_);
+  visitor->TraceMember(screen_);
   EventTargetWithInlineData::Trace(visitor);
 }
 

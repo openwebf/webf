@@ -25,6 +25,7 @@ enum NativeTag {
   TAG_POINTER = 7,
   TAG_FUNCTION = 8,
   TAG_ASYNC_FUNCTION = 9,
+  TAG_UINT8_BYTES = 10,
 };
 
 enum class JSPointerType { NativeBindingObject = 0, Others = 1 };
@@ -74,7 +75,7 @@ NativeValue Native_NewBool(bool value);
 NativeValue Native_NewInt64(int64_t value);
 NativeValue Native_NewList(uint32_t argc, NativeValue* argv);
 NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr);
-NativeValue Native_NewJSON(const ScriptValue& value, ExceptionState& exception_state);
+NativeValue Native_NewJSON(JSContext* ctx, const ScriptValue& value, ExceptionState& exception_state);
 
 }  // namespace webf
 

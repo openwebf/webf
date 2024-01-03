@@ -23,7 +23,7 @@ class CSSPaint {
   static const contextStroke = CSSPaint(CSSPaintType.contextStroke);
   static const blackPaint = CSSPaint(CSSPaintType.color, color: _blackColor);
 
-  static CSSPaint? parsePaint(String paint) {
+  static CSSPaint? parsePaint(String paint, { required RenderStyle renderStyle }) {
     if (paint == NONE) {
       return none;
     }
@@ -34,7 +34,7 @@ class CSSPaint {
       case CONTEXT_STROKE: return contextStroke;
     }
 
-    final color = CSSColor.parseColor(paint);
+    final color = CSSColor.parseColor(paint, renderStyle: renderStyle);
     if (color != null) {
       return CSSPaint(CSSPaintType.color, color: color);
     }

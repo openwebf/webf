@@ -4,9 +4,11 @@
  */
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/launcher.dart';
 import 'package:webf/foundation.dart';
 
 class NativeValue extends Struct {
@@ -30,7 +32,8 @@ enum JSValueType {
   TAG_LIST,
   TAG_POINTER,
   TAG_FUNCTION,
-  TAG_ASYNC_FUNCTION
+  TAG_ASYNC_FUNCTION,
+  TAG_UINT8_BYTES
 }
 
 enum JSPointerType {
@@ -41,7 +44,7 @@ enum JSPointerType {
 typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);
 typedef AsyncAnonymousNativeFunction = Future<dynamic> Function(List<dynamic> args);
 
-dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
+dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValue) {
   if (nativeValue == nullptr) return null;
 
   JSValueType type = JSValueType.values[nativeValue.ref.tag];
@@ -62,14 +65,14 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
     case JSValueType.TAG_POINTER:
       JSPointerType pointerType = JSPointerType.values[nativeValue.ref.uint32];
       if (pointerType == JSPointerType.NativeBindingObject) {
-        return BindingBridge.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
+        return view.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
       }
 
       return Pointer.fromAddress(nativeValue.ref.u);
     case JSValueType.TAG_LIST:
       Pointer<NativeValue> head = Pointer.fromAddress(nativeValue.ref.u).cast<NativeValue>();
       List result = List.generate(nativeValue.ref.uint32, (index) {
-        return fromNativeValue(head.elementAt(index));
+        return fromNativeValue(view, head.elementAt(index));
       });
       malloc.free(head);
       return result;
@@ -81,6 +84,9 @@ dynamic fromNativeValue(Pointer<NativeValue> nativeValue) {
       dynamic value = jsonDecode(nativeStringToString(nativeString));
       freeNativeString(nativeString);
       return value;
+    case JSValueType.TAG_UINT8_BYTES:
+      Pointer<Uint8> buffer = Pointer.fromAddress(nativeValue.ref.u);
+      return buffer.asTypedList(nativeValue.ref.uint32);
   }
 }
 
@@ -104,6 +110,13 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     target.ref.tag = JSValueType.TAG_POINTER.index;
     target.ref.uint32 = JSPointerType.Others.index;
     target.ref.u = value.address;
+  } else if (value is Uint8List) {
+    Pointer<Uint8> buffer = malloc.allocate(sizeOf<Uint8>() * value.length);
+    final bytes = buffer.asTypedList(value.length);
+    bytes.setAll(0, value);
+    target.ref.tag = JSValueType.TAG_UINT8_BYTES.index;
+    target.ref.uint32 = value.length;
+    target.ref.u = buffer.address;
   } else if (value is BindingObject) {
     assert((value.pointer)!.address != nullptr);
     target.ref.tag = JSValueType.TAG_POINTER.index;

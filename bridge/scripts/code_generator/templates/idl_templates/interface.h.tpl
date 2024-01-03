@@ -33,15 +33,9 @@ Native<%= parentClassName %> native_event;
 #endif
 <% } %>
 
-using AttributeMap = std::unordered_map<AtomicString, bool, AtomicString::KeyHasher>;
-
 class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= className%>> {
  public:
   static void Install(ExecutingContext* context);
-  static void InitAttributeMap();
-  static void DisposeAttributeMap();
-  static AttributeMap* definedAttributeMap();
-  static bool IsAttributeDefinedInternal(const AtomicString& key);
   static WrapperTypeInfo* GetWrapperTypeInfo() {
     return const_cast<WrapperTypeInfo*>(&wrapper_type_info_);
   }
@@ -62,12 +56,12 @@ class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= c
   static JSValue StringPropertyGetterCallback(JSContext* ctx, JSValue obj, JSAtom key);
   <% } %>
   <% if (!object.indexedProp.readonly) { %>
-
     <% if (object.indexedProp.indexKeyType == 'number') { %>
   static bool IndexedPropertySetterCallback(JSContext* ctx, JSValueConst obj, uint32_t index, JSValueConst value);
     <% } else { %>
   static bool StringPropertySetterCallback(JSContext* ctx, JSValueConst obj, JSAtom key, JSValueConst value);
     <% } %>
+    static bool StringPropertyDeleterCallback(JSContext* ctx, JSValueConst obj, JSAtom key);
   <% } %>
  <% } %>
 };

@@ -38,6 +38,7 @@ const String EVENT_FOCUS = 'focus';
 const String EVENT_BLUR = 'blur';
 const String EVENT_LOAD = 'load';
 const String EVENT_DOM_CONTENT_LOADED = 'DOMContentLoaded';
+const String EVENT_READY_STATE_CHANGE = 'readystatechange';
 const String EVENT_UNLOAD = 'unload';
 const String EVENT_CHANGE = 'change';
 const String EVENT_CAN_PLAY = 'canplay';
@@ -89,6 +90,11 @@ mixin ElementEventMixin on ElementBase {
         // Remove listener when no intersection related event
         renderBox.removeIntersectionChangeListener(handleIntersectionChange);
       }
+      if(_hasResizeObserverEvent()) {
+        renderBox.addResizeListener(handleResizeChange);
+      } else {
+        renderBox.removeResizeListener(handleResizeChange);
+      }
     }
   }
 
@@ -98,9 +104,13 @@ mixin ElementEventMixin on ElementBase {
         hasEventListener(EVENT_INTERSECTION_CHANGE);
   }
 
+  bool _hasResizeObserverEvent() {
+    return hasEventListener(EVENT_RESIZE);
+  }
+
   @override
-  void addEventListener(String eventType, EventHandler handler) {
-    super.addEventListener(eventType, handler);
+  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
+    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox != null) {
       ensureEventResponderBound();
@@ -108,8 +118,8 @@ mixin ElementEventMixin on ElementBase {
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler) {
-    super.removeEventListener(eventType, handler);
+  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
+    super.removeEventListener(eventType, handler, isCapture: isCapture);
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox != null) {
       ensureEventResponderBound();
@@ -142,6 +152,10 @@ mixin ElementEventMixin on ElementBase {
       handleDisappear();
     }
   }
+
+  void handleResizeChange(ResizeObserverEntry entry) {
+    dispatchEvent(ResizeEvent(entry).toCustomEvent());
+  }
 }
 
 // @TODO: inherit BindingObject to receive value from Cpp side.
@@ -163,6 +177,10 @@ class Event {
   bool defaultPrevented = false;
   bool _immediateBubble = true;
   bool propagationStopped = false;
+
+  Pointer<Void> sharedJSProps = nullptr;
+  int propLen = 0;
+  int allocateLen = 0;
 
   Event(
     this.type, {
@@ -202,6 +220,9 @@ class Event {
       defaultPrevented ? 1 : 0,
       (_target != null && _target.pointer != null) ? _target.pointer!.address : nullptr.address,
       (_currentTarget != null && _currentTarget.pointer != null) ? _currentTarget.pointer!.address : nullptr.address,
+      sharedJSProps.address, // EventProps* props
+      propLen,  // int64_t props_len
+      allocateLen   // int64_t alloc_size;
     ];
 
     // Allocate extra bytes to store subclass's members.
@@ -461,6 +482,14 @@ class AppearEvent extends Event {
 
 class DisappearEvent extends Event {
   DisappearEvent() : super(EVENT_DISAPPEAR);
+}
+
+class ResizeEvent extends Event {
+  ResizeObserverEntry entry;
+  ResizeEvent(this.entry):super(EVENT_RESIZE);
+  toCustomEvent() {
+    return CustomEvent(EVENT_RESIZE, detail: entry.toJson());
+  }
 }
 
 class ColorSchemeChangeEvent extends Event {

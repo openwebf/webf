@@ -131,7 +131,6 @@ int JS_FindCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatc
 int JS_FindWCharacterInAtom(JSRuntime* runtime, JSAtom atom, bool (*CharacterMatchFunction)(uint16_t));
 JSValue JS_GetProxyTarget(JSValue value);
 JSGCPhaseEnum JS_GetEnginePhase(JSRuntime* runtime);
-webf::StringView JSAtomToStringView(JSRuntime* runtime, JSAtom atom);
 
 static inline bool JS_AtomIsTaggedInt(JSAtom v) {
   return (v & JS_ATOM_TAG_INT) != 0;
@@ -148,5 +147,7 @@ static inline uint32_t JS_AtomToUInt32(JSAtom atom) {
 #ifdef __cplusplus
 }
 #endif
+
+webf::StringView JSAtomToStringView(JSRuntime* runtime, JSAtom atom);
 
 #endif  // BRIDGE_QJS_PATCH_H

@@ -41,17 +41,14 @@ class CanvasRenderingContext2DSettings {
   bool desynchronized = false;
 }
 
-enum FillStyleType {
-  string,
-  canvasGradient
-}
+enum FillStyleType { string, canvasGradient }
 
 typedef CanvasAction = void Function(Canvas, Size);
 
 class CanvasRenderingContext2D extends BindingObject {
-  CanvasRenderingContext2D(this.canvas)
-      : _pointer = allocateNewBindingObject(),
-        super();
+  CanvasRenderingContext2D(BindingContext context, this.canvas)
+      : _pointer = context.pointer,
+        super(context);
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
@@ -79,27 +76,42 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble()));
     methods['fillRect'] = BindingObjectMethodSync(
-        call: (args) => fillRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+        call: (args) => fillRect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble()));
     methods['clearRect'] = BindingObjectMethodSync(
-        call: (args) => clearRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+        call: (args) => clearRect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble()));
     methods['strokeRect'] = BindingObjectMethodSync(
-        call: (args) => strokeRect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+        call: (args) => strokeRect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble()));
     methods['fillText'] = BindingObjectMethodSync(call: (args) {
       if (args.length > 3) {
         double maxWidth = castToType<num>(args[3]).toDouble();
         if (!maxWidth.isNaN) {
           return fillText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
+              castToType<String>(args[0]),
+              castToType<num>(args[1]).toDouble(),
+              castToType<num>(args[2]).toDouble(),
               maxWidth: maxWidth);
         }
         return fillText(
-            castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+            castToType<String>(args[0]),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble());
       } else {
         return fillText(
-            castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+            castToType<String>(args[0]),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble());
       }
     });
     methods['strokeText'] = BindingObjectMethodSync(call: (args) {
@@ -107,14 +119,20 @@ class CanvasRenderingContext2D extends BindingObject {
         double maxWidth = castToType<num>(args[3]).toDouble();
         if (!maxWidth.isNaN) {
           return strokeText(
-              castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble(),
+              castToType<String>(args[0]),
+              castToType<num>(args[1]).toDouble(),
+              castToType<num>(args[2]).toDouble(),
               maxWidth: maxWidth);
         }
         return strokeText(
-            castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+            castToType<String>(args[0]),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble());
       } else {
         return strokeText(
-            castToType<String>(args[0]), castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+            castToType<String>(args[0]),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble());
       }
     });
     methods['save'] = BindingObjectMethodSync(call: (_) => save());
@@ -130,14 +148,23 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[5]).toDouble()));
     methods['clip'] = BindingObjectMethodSync(call: (args) {
       PathFillType fillType =
-          (args.isNotEmpty && castToType<String>(args[0]) == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
+          (args.isNotEmpty && castToType<String>(args[0]) == EVENODD)
+              ? PathFillType.evenOdd
+              : PathFillType.nonZero;
       return clip(fillType);
     });
     methods['closePath'] = BindingObjectMethodSync(call: (_) => closePath());
     methods['drawImage'] = BindingObjectMethodSync(call: (args) {
       BindingObject imageElement = args[0];
       if (imageElement is ImageElement) {
-        double sx = 0.0, sy = 0.0, sWidth = 0.0, sHeight = 0.0, dx = 0.0, dy = 0.0, dWidth = 0.0, dHeight = 0.0;
+        double sx = 0.0,
+            sy = 0.0,
+            sWidth = 0.0,
+            sHeight = 0.0,
+            dx = 0.0,
+            dy = 0.0,
+            dWidth = 0.0,
+            dHeight = 0.0;
 
         if (args.length == 3) {
           dx = castToType<num>(args[1]).toDouble();
@@ -158,27 +185,41 @@ class CanvasRenderingContext2D extends BindingObject {
           dHeight = castToType<num>(args[8]).toDouble();
         }
 
-        return drawImage(args.length, imageElement.image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+        return drawImage(args.length, imageElement, sx, sy, sWidth,
+            sHeight, dx, dy, dWidth, dHeight);
       }
     });
     methods['fill'] = BindingObjectMethodSync(call: (args) {
-      PathFillType fillType = (args.isNotEmpty && args[0] == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
+      PathFillType fillType = (args.isNotEmpty && args[0] == EVENODD)
+          ? PathFillType.evenOdd
+          : PathFillType.nonZero;
       return fill(fillType);
     });
     methods['lineTo'] = BindingObjectMethodSync(
-        call: (args) => lineTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
+        call: (args) => lineTo(castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble()));
     methods['moveTo'] = BindingObjectMethodSync(
-        call: (args) => moveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
+        call: (args) => moveTo(castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble()));
     methods['quadraticCurveTo'] = BindingObjectMethodSync(
-        call: (args) => quadraticCurveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
+        call: (args) => quadraticCurveTo(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble()));
     methods['rect'] = BindingObjectMethodSync(
-        call: (args) => rect(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(), castToType<num>(args[3]).toDouble()));
-    methods['rotate'] = BindingObjectMethodSync(call: (args) => rotate(castToType<num>(args[0]).toDouble()));
-    methods['resetTransform'] = BindingObjectMethodSync(call: (_) => resetTransform());
+        call: (args) => rect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble()));
+    methods['rotate'] = BindingObjectMethodSync(
+        call: (args) => rotate(castToType<num>(args[0]).toDouble()));
+    methods['resetTransform'] =
+        BindingObjectMethodSync(call: (_) => resetTransform());
     methods['scale'] = BindingObjectMethodSync(
-        call: (args) => scale(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
+        call: (args) => scale(castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble()));
     methods['stroke'] = BindingObjectMethodSync(call: (args) => stroke());
     methods['setTransform'] = BindingObjectMethodSync(
         call: (args) => setTransform(
@@ -188,15 +229,17 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble()));
-    methods['transform'] = BindingObjectMethodSync(call: (args) => transform(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble(),
-        castToType<num>(args[2]).toDouble(),
-        castToType<num>(args[3]).toDouble(),
-        castToType<num>(args[4]).toDouble(),
-        castToType<num>(args[5]).toDouble()));
+    methods['transform'] = BindingObjectMethodSync(
+        call: (args) => transform(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble(),
+            castToType<num>(args[5]).toDouble()));
     methods['translate'] = BindingObjectMethodSync(
-        call: (args) => translate(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble()));
+        call: (args) => translate(castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble()));
     methods['reset'] = BindingObjectMethodSync(call: (_) => reset());
     methods['createLinearGradient'] = BindingObjectMethodSync(
         call: (args) => createLinearGradient(
@@ -212,54 +255,71 @@ class CanvasRenderingContext2D extends BindingObject {
             castToType<num>(args[3]).toDouble(),
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble()));
+    methods['createPattern'] = BindingObjectMethodSync(
+        call: (args) => createPattern(
+            CanvasImageSource(args[0]), castToType<String>(args[1])));
   }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['fillStyle'] = BindingObjectProperty(
-        getter: () {
-          if (fillStyle is CanvasGradient) {
-            return fillStyle;
-          }
-          return CSSColor.convertToHex(fillStyle as Color);
-        },
-        setter: (value) {
-          if (value is String) {
-            Color? color = CSSColor.parseColor(castToType<String>(value));
-            if (color != null) fillStyle = color;
-          } else if (value is CanvasGradient) {
-            fillStyle = value;
-          }
-        });
+    properties['fillStyle'] = BindingObjectProperty(getter: () {
+      if (fillStyle is CanvasGradient) {
+        return fillStyle;
+      }
+      return CSSColor.convertToHex(fillStyle as Color);
+    }, setter: (value) {
+      if (value is String) {
+        Color? color = CSSColor.parseColor(castToType<String>(value),
+            renderStyle: canvas.renderStyle);
+        if (color != null) fillStyle = color;
+      } else if (value is CanvasGradient || value is CanvasPattern) {
+        fillStyle = value;
+      }
+    });
     properties['direction'] = BindingObjectProperty(
-        getter: () => _textDirectionInString, setter: (value) => direction = parseDirection(castToType<String>(value)));
-    properties['font'] = BindingObjectProperty(getter: () => font, setter: (value) => font = castToType<String>(value));
-    properties['strokeStyle'] = BindingObjectProperty(
-        getter: () {
-          if (strokeStyle is CanvasGradient) {
-            return strokeStyle;
-          }
-          return CSSColor.convertToHex(strokeStyle as Color);
-        },
-        setter: (value) {
-          if (value is String) {
-            Color? color = CSSColor.parseColor(castToType<String>(value));
-            if (color != null) strokeStyle = color;
-          } else if (value is CanvasGradient) {
-            strokeStyle = value;
-          }
-        });
+        getter: () => _textDirectionInString,
+        setter: (value) =>
+            direction = parseDirection(castToType<String>(value)));
+    properties['font'] = BindingObjectProperty(
+        getter: () => font,
+        setter: (value) => font = castToType<String>(value));
+    properties['strokeStyle'] = BindingObjectProperty(getter: () {
+      if (strokeStyle is CanvasGradient) {
+        return strokeStyle;
+      }
+      return CSSColor.convertToHex(strokeStyle as Color);
+    }, setter: (value) {
+      if (value is String) {
+        Color? color = CSSColor.parseColor(castToType<String>(value),
+            renderStyle: canvas.renderStyle);
+        if (color != null) strokeStyle = color;
+      } else if (value is CanvasGradient) {
+        strokeStyle = value;
+      }
+    });
     properties['lineCap'] = BindingObjectProperty(
-        getter: () => lineCap, setter: (value) => lineCap = parseLineCap(castToType<String>(value)));
+        getter: () => lineCap,
+        setter: (value) => lineCap = parseLineCap(castToType<String>(value)));
     properties['lineDashOffset'] = BindingObjectProperty(
-        getter: () => lineDashOffset, setter: (value) => lineDashOffset = castToType<num>(value).toDouble());
+        getter: () => lineDashOffset,
+        setter: (value) => lineDashOffset = castToType<num>(value).toDouble());
     properties['lineJoin'] = BindingObjectProperty(
-        getter: () => lineJoin, setter: (value) => lineJoin = parseLineJoin(castToType<String>(value)));
+        getter: () => lineJoin,
+        setter: (value) => lineJoin = parseLineJoin(castToType<String>(value)));
     properties['lineWidth'] = BindingObjectProperty(
-        getter: () => lineWidth, setter: (value) => lineWidth = castToType<num>(value).toDouble());
-    properties['miterLimit'] = BindingObjectProperty(getter: () => miterLimit, setter: (value) => miterLimit = castToType<num>(value).toDouble());
-    properties['textAlign'] = BindingObjectProperty(getter: () => textAlign.toString(), setter: (value) => textAlign = parseTextAlign(castToType<String>(value)));
-    properties['textBaseline'] = BindingObjectProperty(getter: () => textBaseline.toString(), setter: (value) => textBaseline = parseTextBaseline(castToType<String>(value)));
+        getter: () => lineWidth,
+        setter: (value) => lineWidth = castToType<num>(value).toDouble());
+    properties['miterLimit'] = BindingObjectProperty(
+        getter: () => miterLimit,
+        setter: (value) => miterLimit = castToType<num>(value).toDouble());
+    properties['textAlign'] = BindingObjectProperty(
+        getter: () => textAlign.toString(),
+        setter: (value) =>
+            textAlign = parseTextAlign(castToType<String>(value)));
+    properties['textBaseline'] = BindingObjectProperty(
+        getter: () => textBaseline.toString(),
+        setter: (value) =>
+            textBaseline = parseTextBaseline(castToType<String>(value)));
   }
 
   @override
@@ -269,7 +329,8 @@ class CanvasRenderingContext2D extends BindingObject {
     super.dispose();
   }
 
-  final CanvasRenderingContext2DSettings _settings = CanvasRenderingContext2DSettings();
+  final CanvasRenderingContext2DSettings _settings =
+      CanvasRenderingContext2DSettings();
 
   CanvasRenderingContext2DSettings getContextAttributes() => _settings;
 
@@ -290,6 +351,16 @@ class CanvasRenderingContext2D extends BindingObject {
     // Must trigger repaint after action
     canvas.repaintNotifier
         .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
+  }
+
+  // For CanvasRenderingContext2D: createPattern() method; Creating a pattern from a canvas need to replay the actions because the canvas element may be not drawn.
+  void replayActions(Canvas canvas, Size size) {
+    Path2D paintTemp = path2d;
+    path2d = Path2D();
+    _actions.forEach((action) {
+      action.call(canvas, size);
+    });
+    path2d = paintTemp;
   }
 
   // Perform canvas drawing.
@@ -358,7 +429,8 @@ class CanvasRenderingContext2D extends BindingObject {
     return null;
   }
 
-  CanvasTextBaseline _textBaseline = CanvasTextBaseline.alphabetic; // (default: "alphabetic")
+  CanvasTextBaseline _textBaseline =
+      CanvasTextBaseline.alphabetic; // (default: "alphabetic")
   set textBaseline(CanvasTextBaseline? value) {
     if (value == null) return;
     addAction((Canvas canvas, Size size) {
@@ -419,7 +491,9 @@ class CanvasRenderingContext2D extends BindingObject {
           _fontSize = percentage * canvas.renderStyle.fontSize.computedValue;
         }
       } else {
-        _fontSize = CSSLength.parseLength(properties[FONT_SIZE]!, canvas.renderStyle).computedValue;
+        _fontSize =
+            CSSLength.parseLength(properties[FONT_SIZE]!, canvas.renderStyle)
+                .computedValue;
       }
     }
     return true;
@@ -530,9 +604,12 @@ class CanvasRenderingContext2D extends BindingObject {
     return path2d.path.contains(Offset(x, y));
   }
 
-  void arc(double x, double y, double radius, double startAngle, double endAngle, {bool anticlockwise = false}) {
+  void arc(
+      double x, double y, double radius, double startAngle, double endAngle,
+      {bool anticlockwise = false}) {
     addAction((Canvas canvas, Size size) {
-      path2d.arc(x, y, radius, startAngle, endAngle, anticlockwise: anticlockwise);
+      path2d.arc(x, y, radius, startAngle, endAngle,
+          anticlockwise: anticlockwise);
     });
   }
 
@@ -542,7 +619,8 @@ class CanvasRenderingContext2D extends BindingObject {
     });
   }
 
-  void bezierCurveTo(double cp1x, double cp1y, double cp2x, double cp2y, double x, double y) {
+  void bezierCurveTo(
+      double cp1x, double cp1y, double cp2x, double cp2y, double x, double y) {
     addAction((Canvas canvas, Size size) {
       path2d.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
     });
@@ -554,11 +632,22 @@ class CanvasRenderingContext2D extends BindingObject {
     });
   }
 
-  void drawImage(int argumentCount, Image? img, double sx, double sy, double sWidth, double sHeight, double dx,
-      double dy, double dWidth, double dHeight) {
-    if (img == null) return;
+  void drawImage(
+      int argumentCount,
+      ImageElement? imgElement,
+      double sx,
+      double sy,
+      double sWidth,
+      double sHeight,
+      double dx,
+      double dy,
+      double dWidth,
+      double dHeight) {
 
     addAction((Canvas canvas, Size size) {
+      if (imgElement?.image == null) return;
+      
+      Image img = imgElement!.image!;
       // ctx.drawImage(image, dx, dy);
       if (argumentCount == 3) {
         canvas.drawImage(img, Offset(dx, dy), Paint());
@@ -571,16 +660,18 @@ class CanvasRenderingContext2D extends BindingObject {
           sHeight = img.height.toDouble();
         }
 
-        canvas.drawImageRect(
-            img, Rect.fromLTWH(sx, sy, sWidth, sHeight), Rect.fromLTWH(dx, dy, dWidth, dHeight), Paint());
+        canvas.drawImageRect(img, Rect.fromLTWH(sx, sy, sWidth, sHeight),
+            Rect.fromLTWH(dx, dy, dWidth, dHeight), Paint());
       }
     });
   }
 
-  void ellipse(double x, double y, double radiusX, double radiusY, double rotation, double startAngle, double endAngle,
+  void ellipse(double x, double y, double radiusX, double radiusY,
+      double rotation, double startAngle, double endAngle,
       {bool anticlockwise = false}) {
     addAction((Canvas canvas, Size size) {
-      path2d.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise: anticlockwise);
+      path2d.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle,
+          anticlockwise: anticlockwise);
     });
   }
 
@@ -724,7 +815,8 @@ class CanvasRenderingContext2D extends BindingObject {
   }
 
   // https://github.com/WebKit/WebKit/blob/a77a158d4e2086fbe712e488ed147e8a54d44d3c/Source/WebCore/html/canvas/CanvasRenderingContext2DBase.cpp#L843
-  void setTransform(double a, double b, double c, double d, double e, double f) {
+  void setTransform(
+      double a, double b, double c, double d, double e, double f) {
     resetTransform();
     transform(a, b, c, d, e, f);
   }
@@ -775,6 +867,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   Object _strokeStyle = CSSColor.initial; // default black
   Object get strokeStyle => _strokeStyle;
+
   set strokeStyle(Object? newValue) {
     if (newValue == null) return;
     addAction((Canvas canvas, Size size) {
@@ -784,6 +877,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
   Object _fillStyle = CSSColor.initial; // default black
   Object get fillStyle => _fillStyle;
+
   set fillStyle(Object? newValue) {
     if (newValue == null) return;
     addAction((Canvas canvas, Size size) {
@@ -791,17 +885,18 @@ class CanvasRenderingContext2D extends BindingObject {
     });
   }
 
-  CanvasGradient createLinearGradient(double x0, double y0, double x1, double y1) {
-    return CanvasLinearGradient(x0, y0, x1, y1);
+  CanvasGradient createLinearGradient(
+      double x0, double y0, double x1, double y1) {
+    return CanvasLinearGradient(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), canvas, x0, y0, x1, y1);
   }
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
-    // TODO: implement createPattern
-    return CanvasPattern(image, repetition);
+    return CanvasPattern(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), image, repetition);
   }
 
-  CanvasGradient createRadialGradient(double x0, double y0, double r0, double x1, double y1, double r1) {
-    return CanvasRadialGradient(x0, y0, r0, x1, y1, r1);
+  CanvasGradient createRadialGradient(
+      double x0, double y0, double r0, double x1, double y1, double r1) {
+    return CanvasRadialGradient(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), canvas, x0, y0, r0, x1, y1, r1);
   }
 
   void clearRect(double x, double y, double w, double h) {
@@ -819,20 +914,97 @@ class CanvasRenderingContext2D extends BindingObject {
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction((Canvas canvas, Size size) {
       Paint paint = Paint();
-      if (fillStyle is Color) {
-        paint..color = fillStyle as Color;
-      } else if (fillStyle is CanvasRadialGradient) {
-        paint
-          ..shader =
-              _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h)
-                  .createShader(rect);
-      } else if (fillStyle is CanvasLinearGradient) {
-        paint
-          ..shader =
-              _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h)
-                  .createShader(rect);
+      if (fillStyle is Color ||
+          fillStyle is CanvasRadialGradient ||
+          fillStyle is CanvasLinearGradient) {
+        if (fillStyle is Color) {
+          paint..color = fillStyle as Color;
+        } else if (fillStyle is CanvasRadialGradient) {
+          paint
+            ..shader = _drawRadialGradient(
+                    fillStyle as CanvasRadialGradient, x, y, w, h)
+                .createShader(rect);
+        } else if (fillStyle is CanvasLinearGradient) {
+          paint
+            ..shader = _drawLinearGradient(
+                    fillStyle as CanvasLinearGradient, x, y, w, h)
+                .createShader(rect);
+        }
+        canvas.drawRect(rect, paint);
+      } else if (fillStyle is CanvasPattern) {
+        var canvasPattern = fillStyle as CanvasPattern;
+        if (canvasPattern.image.image_element == null &&
+            canvasPattern.image.canvas_element == null) {
+          throw AssertionError(
+              'CanvasPattern must be created from a canvas or image');
+        }
+
+        String repetition = canvasPattern.repetition;
+        int patternWidth = canvasPattern.image.image_element != null
+            ? canvasPattern.image.image_element!.width
+            : canvasPattern.image.canvas_element!.width;
+        int patternHeight = canvasPattern.image.image_element != null
+            ? canvasPattern.image.image_element!.height
+            : canvasPattern.image.canvas_element!.height;
+        double xRepeatNum = ((w - x) / patternWidth);
+        double yRepeatNum = ((h - y) / patternHeight);
+        // CanvasPattern created from an image
+        if (canvasPattern.image.image_element != null ||
+            (canvasPattern.image.canvas_element != null &&
+                canvasPattern.image.canvas_element?.painter.snapshot != null)) {
+          Image? repeatImg = canvasPattern.image.image_element?.image ??
+              canvasPattern.image.canvas_element?.painter.snapshot;
+
+          if (repetition == 'no-repeat') {
+            xRepeatNum = 1;
+            yRepeatNum = 1;
+          } else if (repetition == 'repeat-x') {
+            yRepeatNum = 1;
+          } else if (repetition == 'repeat-y') {
+            xRepeatNum = 1;
+          }
+
+          for (int i = 0; i < xRepeatNum; i++) {
+            for (int j = 0; j < yRepeatNum; j++) {
+              canvas.drawImage(repeatImg!,
+                  Offset(x + i * patternWidth, y + j * patternHeight), paint);
+            }
+          }
+        } else {
+          // CanvasPattern created from a canvas
+          canvas.translate(x, y);
+          switch (repetition) {
+            case 'no-repeat':
+              canvasPattern.image.canvas_element?.context2d!
+                  .replayActions(canvas, size);
+              break;
+            case 'repeat-x':
+              for (int i = 0; i < xRepeatNum; i++) {
+                canvasPattern.image.canvas_element?.context2d!
+                    .replayActions(canvas, size);
+                canvas.translate(patternWidth.toDouble(), 0);
+              }
+              break;
+            case 'repeat-y':
+              for (int j = 0; j < yRepeatNum; j++) {
+                canvasPattern.image.canvas_element?.context2d!
+                    .replayActions(canvas, size);
+                canvas.translate(0, patternHeight.toDouble());
+              }
+              break;
+            case 'repeat':
+              for (int i = 0; i < xRepeatNum; i++) {
+                for (int j = 0; j < yRepeatNum; j++) {
+                  canvasPattern.image.canvas_element?.context2d!
+                      .replayActions(canvas, size);
+                  canvas.translate(0, patternHeight.toDouble());
+                }
+                canvas.translate(patternWidth.toDouble(), y - h);
+              }
+              break;
+          }
+        }
       }
-      canvas.drawRect(rect, paint);
     });
   }
 
@@ -844,16 +1016,17 @@ class CanvasRenderingContext2D extends BindingObject {
         paint..color = strokeStyle as Color;
       } else if (strokeStyle is CanvasRadialGradient) {
         paint
-          ..shader =
-          _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h)
+          ..shader = _drawRadialGradient(
+                  strokeStyle as CanvasRadialGradient, x, y, w, h)
               .createShader(rect);
       } else if (strokeStyle is CanvasLinearGradient) {
         paint
-          ..shader =
-          _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h)
+          ..shader = _drawLinearGradient(
+                  strokeStyle as CanvasLinearGradient, x, y, w, h)
               .createShader(rect);
       }
-      paint..strokeJoin = lineJoin
+      paint
+        ..strokeJoin = lineJoin
         ..strokeCap = lineCap
         ..strokeWidth = lineWidth
         ..strokeMiterLimit = miterLimit
@@ -866,8 +1039,10 @@ class CanvasRenderingContext2D extends BindingObject {
     if (_fontProperties.isEmpty) {
       _parseFont(_DEFAULT_FONT);
     }
-    var fontFamilyFallback = CSSText.resolveFontFamilyFallback(_fontProperties[FONT_FAMILY]);
-    FontWeight fontWeight = CSSText.resolveFontWeight(_fontProperties[FONT_WEIGHT]);
+    var fontFamilyFallback =
+        CSSText.resolveFontFamilyFallback(_fontProperties[FONT_FAMILY]);
+    FontWeight fontWeight =
+        CSSText.resolveFontWeight(_fontProperties[FONT_WEIGHT]);
     if (shouldStrokeText) {
       return TextStyle(
           fontSize: _fontSize ?? 10,
@@ -889,7 +1064,8 @@ class CanvasRenderingContext2D extends BindingObject {
     }
   }
 
-  TextPainter _getTextPainter(String text, Color color, {bool shouldStrokeText = false}) {
+  TextPainter _getTextPainter(String text, Color color,
+      {bool shouldStrokeText = false}) {
     TextStyle textStyle = _getTextStyle(color, shouldStrokeText);
     TextSpan span = TextSpan(text: text, style: textStyle);
     TextPainter textPainter = TextPainter(
@@ -914,9 +1090,13 @@ class CanvasRenderingContext2D extends BindingObject {
         // For example, if textAlign is "center", then the text's left edge will be at x - (textWidth / 2).
         return Offset(width / 2.0, 0.0);
       case TextAlign.start:
-        return direction == TextDirection.rtl ? Offset(width, 0.0) : Offset.zero;
+        return direction == TextDirection.rtl
+            ? Offset(width, 0.0)
+            : Offset.zero;
       case TextAlign.end:
-        return direction == TextDirection.rtl ? Offset.zero : Offset(width, 0.0);
+        return direction == TextDirection.rtl
+            ? Offset.zero
+            : Offset(width, 0.0);
     }
   }
 
@@ -933,8 +1113,10 @@ class CanvasRenderingContext2D extends BindingObject {
         textPainter.layout();
       }
       // Paint text start with baseline.
-      double offsetToBaseline = textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      textPainter.paint(canvas, Offset(x, y - offsetToBaseline) - _getAlignOffset(textPainter.width));
+      double offsetToBaseline =
+          textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      textPainter.paint(canvas,
+          Offset(x, y - offsetToBaseline) - _getAlignOffset(textPainter.width));
     });
   }
 
@@ -952,9 +1134,11 @@ class CanvasRenderingContext2D extends BindingObject {
         textPainter.layout();
       }
 
-      double offsetToBaseline = textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      double offsetToBaseline =
+          textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
       // Paint text start with baseline.
-      textPainter.paint(canvas, Offset(x, y - offsetToBaseline) - _getAlignOffset(textPainter.width));
+      textPainter.paint(canvas,
+          Offset(x, y - offsetToBaseline) - _getAlignOffset(textPainter.width));
     });
   }
 

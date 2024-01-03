@@ -8,11 +8,8 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/module.dart';
-import 'package:webf/src/module/performance_timing.dart';
 
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
@@ -83,11 +80,15 @@ typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>>);
 
-dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String moduleName, String method, params,
+dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, String moduleName, String method, params,
     DartAsyncModuleCallback callback) {
-  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
   dynamic result;
+
+  Stopwatch? stopwatch;
+  if (isEnabledLog) {
+    stopwatch = Stopwatch()..start();
+  }
 
   try {
     Future<dynamic> invokeModuleCallback({String? error, data}) {
@@ -99,19 +100,20 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
         Pointer<NativeValue> callbackResult = nullptr;
         if (error != null) {
           Pointer<Utf8> errmsgPtr = error.toNativeUtf8();
-          callbackResult = callback(callbackContext, contextId, errmsgPtr, nullptr);
+          callbackResult = callback(callbackContext, currentView.contextId, errmsgPtr, nullptr);
           malloc.free(errmsgPtr);
         } else {
           Pointer<NativeValue> dataPtr = malloc.allocate(sizeOf<NativeValue>());
           toNativeValue(dataPtr, data);
-          callbackResult = callback(callbackContext, contextId, nullptr, dataPtr);
+          callbackResult = callback(callbackContext, currentView.contextId, nullptr, dataPtr);
           malloc.free(dataPtr);
         }
+
+        var returnValue = fromNativeValue(currentView, callbackResult);
         if (isEnabledLog) {
-          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: ${fromNativeValue(callbackResult)}');
+          print('Invoke module callback from(name: $moduleName method: $method, params: $params) return: $returnValue time: ${stopwatch!.elapsedMicroseconds}us');
         }
 
-        var returnValue = fromNativeValue(callbackResult);
         malloc.free(callbackResult);
         completer.complete(returnValue);
       });
@@ -125,11 +127,11 @@ dynamic invokeModule(Pointer<Void> callbackContext, int contextId, String module
       print('Invoke module failed: $e\n$stack');
     }
     String error = '$e\n$stack';
-    callback(callbackContext, contextId, error.toNativeUtf8(), nullptr);
+    callback(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr);
   }
 
   if (isEnabledLog) {
-    print('Invoke module name: $moduleName method: $method, params: $params return: $result');
+    print('Invoke module name: $moduleName method: $method, params: $params return: $result time: ${stopwatch!.elapsedMicroseconds}us');
   }
 
   return result;
@@ -142,8 +144,9 @@ Pointer<NativeValue> _invokeModule(
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>> callback) {
-  dynamic result = invokeModule(callbackContext, contextId, nativeStringToString(module), nativeStringToString(method),
-      fromNativeValue(params), callback.asFunction());
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  dynamic result = invokeModule(callbackContext, controller, nativeStringToString(module), nativeStringToString(method),
+      fromNativeValue(controller.view, params), callback.asFunction());
   Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
   toNativeValue(returnValue, result);
   freeNativeString(module);
@@ -341,13 +344,7 @@ typedef NativeFlushUICommand = Void Function(Int32 contextId);
 typedef DartFlushUICommand = void Function(int contextId);
 
 void _flushUICommand(int contextId) {
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_DOM_FLUSH_UI_COMMAND_START);
-  }
   flushUICommandWithContextId(contextId);
-  if (kProfileMode) {
-    PerformanceTiming.instance().mark(PERF_DOM_FLUSH_UI_COMMAND_END);
-  }
 }
 
 final Pointer<NativeFunction<NativeFlushUICommand>> _nativeFlushUICommand = Pointer.fromFunction(_flushUICommand);
@@ -365,9 +362,6 @@ void _createBindingObject(int contextId, Pointer<NativeBindingObject> nativeBind
 final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject = Pointer.fromFunction(_createBindingObject);
 
 Pointer<NativePerformanceEntryList> _performanceGetEntries(int contextId) {
-  if (kProfileMode) {
-    return PerformanceTiming.instance().toNative();
-  }
   return nullptr;
 }
 

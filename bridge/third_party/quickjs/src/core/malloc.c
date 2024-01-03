@@ -46,7 +46,22 @@ void js_trigger_gc(JSRuntime* rt, size_t size) {
 
 /* default memory allocation functions with memory limitation */
 static inline size_t js_def_malloc_usable_size(void* ptr) {
+#if ENABLE_MI_MALLOC
   return mi_usable_size(ptr);
+#else
+#if defined(__APPLE__)
+  return malloc_size(ptr);
+#elif defined(_WIN32)
+  return _msize(ptr);
+#elif defined(EMSCRIPTEN)
+  return 0;
+#elif defined(__linux__)
+  return malloc_usable_size(ptr);
+#else
+  /* change this to `return 0;` if compilation fails */
+  return malloc_usable_size(ptr);
+#endif
+#endif
 }
 
 size_t js_malloc_usable_size_unknown(const void* ptr) {
@@ -180,7 +195,12 @@ void* js_def_malloc(JSMallocState* s, size_t size) {
   if (unlikely(s->malloc_size + size > s->malloc_limit))
     return NULL;
 
+#if ENABLE_MI_MALLOC
   ptr = mi_malloc(size);
+#else
+  ptr = malloc(size);
+#endif
+
   if (!ptr)
     return NULL;
 
@@ -195,7 +215,11 @@ void js_def_free(JSMallocState* s, void* ptr) {
 
   s->malloc_count--;
   s->malloc_size -= js_def_malloc_usable_size(ptr) + MALLOC_OVERHEAD;
+#if ENABLE_MI_MALLOC
   mi_free(ptr);
+#else
+  free(ptr);
+#endif
 }
 
 void* js_def_realloc(JSMallocState* s, void* ptr, size_t size) {
@@ -210,13 +234,21 @@ void* js_def_realloc(JSMallocState* s, void* ptr, size_t size) {
   if (size == 0) {
     s->malloc_count--;
     s->malloc_size -= old_size + MALLOC_OVERHEAD;
+#if ENABLE_MI_MALLOC
     mi_free(ptr);
+#else
+    free(ptr);
+#endif
     return NULL;
   }
   if (s->malloc_size + size - old_size > s->malloc_limit)
     return NULL;
 
+#if ENABLE_MI_MALLOC
   ptr = mi_realloc(ptr, size);
+#else
+  ptr = realloc(ptr, size);
+#endif
   if (!ptr)
     return NULL;
 

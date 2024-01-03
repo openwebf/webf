@@ -197,14 +197,14 @@ class IntersectionObserverLayer extends ContainerLayer {
     super.addToScene(builder);
   }
 
-  /// See [AbstractNode.attach].
+  /// See [RenderObject.attach].
   @override
   void attach(Object owner) {
     super.attach(owner);
     _scheduleIntersectionObservationUpdate();
   }
 
-  /// See [AbstractNode.detach].
+  /// See [RenderObject.detach].
   @override
   void detach() {
     super.detach();

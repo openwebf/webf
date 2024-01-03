@@ -3,9 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "event.h"
+#include <quickjs/quickjs.h>
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/executing_context.h"
 #include "event_target.h"
+#include "foundation/native_value_converter.h"
 
 namespace webf {
 
@@ -52,6 +54,7 @@ Event::Event(ExecutingContext* context,
 
 Event::Event(ExecutingContext* context, const AtomicString& event_type, NativeEvent* native_event)
     : ScriptWrappable(context->ctx()),
+      raw_event_(native_event),
       type_(event_type),
       bubbles_(native_event->bubbles),
       composed_(native_event->composed),
@@ -102,6 +105,145 @@ EventTarget* Event::srcElement() const {
 
 void Event::SetCurrentTarget(EventTarget* target) {
   current_target_ = target;
+}
+
+void Event::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::ExceptionState&) {
+  if (raw_event_ == nullptr)
+    return;
+
+#if ANDROID_32_BIT
+  auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+  auto* raw_event_props = raw_event_->props;
+#endif
+  for (int i = 0; i < raw_event_->props_len; i++) {
+    AtomicString key = AtomicString(ctx(), raw_event_props[i].key_atom);
+    names.emplace_back(key);
+  }
+}
+
+bool Event::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+  if (raw_event_ == nullptr)
+    return false;
+
+#if ANDROID_32_BIT
+  auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+  auto* raw_event_props = raw_event_->props;
+#endif
+  for (int i = 0; i < raw_event_->props_len; i++) {
+    if (key.Impl() == raw_event_props[i].key_atom) {
+      return true;
+    }
+  }
+  return false;
+}
+
+ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state) {
+  if (raw_event_ == nullptr)
+    return ScriptValue::Undefined(ctx());
+
+#if ANDROID_32_BIT
+  auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+  auto* raw_event_props = raw_event_->props;
+#endif
+
+  if (raw_event_props != nullptr) {
+    for (int i = 0; i < raw_event_->props_len; i++) {
+      if (key.Impl() == raw_event_props[i].key_atom) {
+        return ScriptValue(ctx(), raw_event_props[i].value, true);
+      }
+    }
+  }
+
+  return ScriptValue::Undefined(ctx());
+}
+
+void set_event_prop(JSContext* ctx,
+                    EventProp* prop,
+                    Event* event,
+                    const AtomicString& key,
+                    const ScriptValue& value,
+                    ExceptionState& exception_state) {
+  event->customized_event_props_.emplace_back(value);
+  prop->key_atom = key.Impl();
+  prop->value = value.ToNative(ctx, exception_state, true);
+}
+
+#define DEFAULT_EVENT_PROP_LEN 2
+
+bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::ExceptionState& exception_state) {
+  if (raw_event_ == nullptr)
+    return false;
+
+  if (raw_event_->props == 0x00) {
+    auto* event_props = (EventProp*)js_malloc_rt(runtime(), sizeof(EventProp) * DEFAULT_EVENT_PROP_LEN);
+    set_event_prop(ctx(), event_props, this, key, value, exception_state);
+#if ANDROID_32_BIT
+    raw_event_->props = reinterpret_cast<int64_t>(event_props);
+#else
+    raw_event_->props = event_props;
+#endif
+
+    raw_event_->props_len = 1;
+    raw_event_->alloc_size = DEFAULT_EVENT_PROP_LEN;
+  } else {
+    int64_t prop_index = raw_event_->props_len;
+#if ANDROID_32_BIT
+    auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+    auto* raw_event_props = raw_event_->props;
+#endif
+
+    for (int i = 0; i < raw_event_->props_len; i++) {
+      if (raw_event_props[i].key_atom == key.Impl()) {
+        prop_index = i;
+        break;
+      }
+    }
+
+    bool need_expand = prop_index + 1 > raw_event_->alloc_size;
+    if (need_expand) {
+      size_t new_size = std::max(raw_event_->alloc_size * 9 / 2, raw_event_->props_len + 1);
+      raw_event_props = (EventProp*)js_realloc(ctx(), raw_event_props, sizeof(EventProp) * new_size);
+#if ANDROID_32_BIT
+      raw_event_->props = (int64_t)raw_event_props;
+#else
+      raw_event_->props = raw_event_props;
+#endif
+      raw_event_->alloc_size = new_size;
+    }
+    set_event_prop(ctx(), &(raw_event_props[prop_index]), this, key, value, exception_state);
+    if (prop_index == raw_event_->props_len) {
+      raw_event_->props_len = raw_event_->props_len + 1;
+    }
+  }
+
+  return true;
+}
+
+bool Event::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  if (raw_event_ == nullptr)
+    return false;
+
+#if ANDROID_32_BIT
+  auto* raw_event_props = reinterpret_cast<EventProp*>(raw_event_->props);
+#else
+  auto* raw_event_props = raw_event_->props;
+#endif
+  for (int i = 0; i < raw_event_->props_len; i++) {
+    if (raw_event_props[i].key_atom == key.Impl()) {
+      for (int j = i + 1; j < raw_event_->props_len; j++) {
+        memcpy(&raw_event_props[j - 1], &raw_event_props[j], sizeof(EventProp));
+      }
+      memset(&raw_event_props[raw_event_->props_len - 1], 0x00, sizeof(EventProp));
+      raw_event_->props_len--;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool Event::IsUiEvent() const {
@@ -208,8 +350,11 @@ void Event::SetHandlingPassive(PassiveMode mode) {
 }
 
 void Event::Trace(GCVisitor* visitor) const {
-  visitor->Trace(target_);
-  visitor->Trace(current_target_);
+  visitor->TraceMember(target_);
+  visitor->TraceMember(current_target_);
+  for (auto& prop : customized_event_props_) {
+    prop.Trace(visitor);
+  }
 }
 
 }  // namespace webf
