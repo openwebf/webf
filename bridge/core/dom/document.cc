@@ -166,7 +166,7 @@ bool Document::ChildTypeAllowed(NodeType type) const {
 Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
   }
@@ -176,7 +176,7 @@ Element* Document::querySelector(const AtomicString& selectors, ExceptionState& 
 std::vector<Element*> Document::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -186,7 +186,7 @@ std::vector<Element*> Document::querySelectorAll(const AtomicString& selectors, 
 Element* Document::getElementById(const AtomicString& id, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), id)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementById, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -197,7 +197,7 @@ std::vector<Element*> Document::getElementsByClassName(const AtomicString& class
                                                        ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), class_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -207,7 +207,7 @@ std::vector<Element*> Document::getElementsByClassName(const AtomicString& class
 std::vector<Element*> Document::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), tag_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -217,7 +217,7 @@ std::vector<Element*> Document::getElementsByTagName(const AtomicString& tag_nam
 std::vector<Element*> Document::getElementsByName(const AtomicString& name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByName, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }

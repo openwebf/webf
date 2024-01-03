@@ -400,13 +400,13 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self, uint32_t 
       }
     }
 
-    if (isUICommandReasonDependsOnLayout(reason)) {
+    if (isUICommandReasonDependsOnLayout(reason) || isUICommandReasonDependsOnAll(reason)) {
       should_swap_ui_commands = true;
     }
 
     // Sync commands to dart when caller dependents on Element.
     if (should_swap_ui_commands) {
-      ui_command_buffer_.swap();
+      ui_command_buffer_.sync();
     }
 
     dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject(), reason);

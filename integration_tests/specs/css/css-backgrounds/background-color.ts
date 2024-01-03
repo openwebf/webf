@@ -106,13 +106,13 @@ it("computed", async () => {
     'background-color',
     'rgb(100%, 100%, 0%)',
   'rgb(255, 255, 0)'
-);
-test_computed_value(
-  'background-color',
-  'hsl(120, 100%, 50%)',
-  'rgb(0, 255, 0)'
-);
-test_computed_value('background-color', 'transparent', 'rgba(0, 0, 0, 0)');
+  );
+  test_computed_value(
+    'background-color',
+    'hsl(120, 100%, 50%)',
+    'rgb(0, 255, 0)'
+  );
+  test_computed_value('background-color', 'transparent', 'rgba(0, 0, 0, 0)');
 
 
 

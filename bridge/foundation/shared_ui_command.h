@@ -26,11 +26,13 @@ class SharedUICommand : public DartReadable {
   int64_t size();
   bool empty();
   void clear();
-  void swap();
-  void appendBackCommandToFront();
+  void sync();
+
 
  private:
 
+  void swap();
+  void appendBackCommandToFront();
   std::unique_ptr<UICommandBuffer> front_buffer_ = nullptr;
   std::unique_ptr<UICommandBuffer> back_buffer = nullptr;
   std::atomic<bool> is_blocking_writing_;

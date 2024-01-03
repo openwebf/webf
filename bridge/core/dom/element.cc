@@ -194,7 +194,7 @@ void Element::setId(const AtomicString& value, ExceptionState& exception_state) 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), class_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -204,7 +204,7 @@ std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_
 std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), tag_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -214,7 +214,7 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
 Element* Element::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
   }
@@ -224,7 +224,7 @@ Element* Element::querySelector(const AtomicString& selectors, ExceptionState& e
 std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -234,7 +234,7 @@ std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, E
 bool Element::matches(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kmatches, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return false;
   }
@@ -244,7 +244,7 @@ bool Element::matches(const AtomicString& selectors, ExceptionState& exception_s
 Element* Element::closest(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kclosest, 1, arguments,
-                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
   }
