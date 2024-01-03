@@ -363,7 +363,8 @@ void BindingObject::CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& 
     const NativeValue& native_value = args[i];
     if (native_value.tag == NativeTag::TAG_POINTER &&
         GetPointerTypeOfNativePointer(native_value) == JSPointerType::NativeBindingObject) {
-      NativeBindingObject* ptr = NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(native_value);
+      NativeBindingObject* ptr =
+          NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(native_value);
       deps.emplace_back(ptr);
     }
   }

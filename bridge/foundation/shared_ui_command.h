@@ -28,9 +28,7 @@ class SharedUICommand : public DartReadable {
   void clear();
   void sync();
 
-
  private:
-
   void swap();
   void appendBackCommandToFront();
   std::unique_ptr<UICommandBuffer> front_buffer_ = nullptr;

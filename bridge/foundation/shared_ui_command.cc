@@ -13,8 +13,7 @@ SharedUICommand::SharedUICommand(ExecutingContext* context)
     : context_(context),
       front_buffer_(std::make_unique<UICommandBuffer>(context)),
       back_buffer(std::make_unique<UICommandBuffer>(context)),
-      is_blocking_writing_(false) {
-}
+      is_blocking_writing_(false) {}
 
 void SharedUICommand::addCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
@@ -62,7 +61,8 @@ bool SharedUICommand::empty() {
 }
 
 void SharedUICommand::sync() {
-  if (back_buffer->empty()) return;
+  if (back_buffer->empty())
+    return;
 
   if (front_buffer_->empty()) {
     swap();
@@ -80,7 +80,7 @@ void SharedUICommand::swap() {
 void SharedUICommand::appendBackCommandToFront() {
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
 
-  for(int i = 0; i < back_buffer->size(); i ++) {
+  for (int i = 0; i < back_buffer->size(); i++) {
     UICommandItem* command_item = back_buffer->data();
     front_buffer_->addCommand(command_item[i]);
   }

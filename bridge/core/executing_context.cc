@@ -382,14 +382,16 @@ void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason
   FlushUICommand(self, reason, deps);
 }
 
-void ExecutingContext::FlushUICommand(const webf::BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps) {
+void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
+                                      uint32_t reason,
+                                      std::vector<NativeBindingObject*>& deps) {
   if (!uiCommandBuffer()->empty()) {
     bool should_swap_ui_commands = false;
     if (isUICommandReasonDependsOnElement(reason)) {
       bool element_mounted_on_dart = self->bindingObject()->invoke_bindings_methods_from_native != nullptr;
       bool is_deps_elements_mounted_on_dart = true;
 
-      for(auto binding : deps) {
+      for (auto binding : deps) {
         if (binding->invoke_bindings_methods_from_native == nullptr) {
           is_deps_elements_mounted_on_dart = false;
         }

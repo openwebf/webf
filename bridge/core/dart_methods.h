@@ -117,7 +117,6 @@ enum FlushUICommandReason : uint32_t {
   kDependentsAll = 1 << 4
 };
 
-
 inline bool isUICommandReasonDependsOnElement(uint32_t reason) {
   return (reason & kDependentsOnElement) != 0;
 }
