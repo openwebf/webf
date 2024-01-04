@@ -72,5 +72,4 @@ int ic_watchpoint_delete_handler(JSRuntime* rt, intptr_t ref, JSAtom atom, void*
 int ic_watchpoint_free_handler(JSRuntime* rt, intptr_t ref, JSAtom atom);
 int ic_delete_shape_proto_watchpoints(JSRuntime *rt, JSShape *shape, JSAtom atom);
 int ic_free_shape_proto_watchpoints(JSRuntime *rt, JSShape *shape);
-
 #endif

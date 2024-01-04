@@ -1588,6 +1588,9 @@ restart:
       }
       BREAK;
 
+      CASE(OP_debugger):
+      BREAK;
+
       CASE(OP_private_symbol) : {
         JSAtom atom;
         JSValue val;
