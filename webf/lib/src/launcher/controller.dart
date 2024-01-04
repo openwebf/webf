@@ -967,10 +967,10 @@ class WebFController {
 
       _module = WebFModuleController(this, contextId);
 
-    if (bundle != null) {
-      HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
-      historyModule.add(bundle);
-    }
+      if (bundle != null) {
+        HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+        historyModule.add(bundle);
+      }
 
       assert(!_controllerMap.containsKey(contextId), 'found exist contextId of WebFController, contextId: $contextId');
       _controllerMap[contextId] = this;
@@ -988,6 +988,10 @@ class WebFController {
       }
 
       controlledInitCompleter.complete();
+    }).then((_) {
+      if (externalController && _entrypoint != null) {
+        preload(_entrypoint!);
+      }
     });
   }
 
@@ -1137,11 +1141,12 @@ class WebFController {
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
   Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize}) async {
-    if (_preloadStatus != PreloadingStatus.none) return;
-
     Completer completer = Completer();
 
     await controlledInitCompleter.future;
+
+    if (_preloadStatus != PreloadingStatus.none) return;
+    if (_preRenderingStatus != PreRenderingStatus.none) return;
 
     // Update entrypoint.
     _entrypoint = bundle;
@@ -1208,11 +1213,12 @@ class WebFController {
   /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
   /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
   Future<void> preRendering(WebFBundle bundle) async {
-    if (_preRenderingStatus != PreRenderingStatus.none) return;
-
     Completer completer = Completer();
 
     await controlledInitCompleter.future;
+
+    if (_preRenderingStatus != PreRenderingStatus.none) return;
+    if (_preloadStatus != PreloadingStatus.none) return;
 
     // Update entrypoint.
     _entrypoint = bundle;
