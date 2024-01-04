@@ -229,8 +229,9 @@ Element* Document::elementFromPoint(double x, double y, ExceptionState& exceptio
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
   };
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kelementFromPoint, 2, args,
-                                           FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kelementFromPoint, 2, args,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
   }
