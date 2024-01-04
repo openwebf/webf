@@ -32,20 +32,18 @@ class WebFPage final {
  public:
   static ConsoleMessageHandler consoleMessageHandler;
   WebFPage() = delete;
-  WebFPage(DartIsolateContext* dart_isolate_context, int32_t jsContext, const JSExceptionHandler& handler);
+  WebFPage(DartIsolateContext* dart_isolate_context,
+           bool is_dedicated,
+           double context_id,
+           const JSExceptionHandler& handler);
   ~WebFPage();
 
   // Bytecodes which registered by webf plugins.
   static std::unordered_map<std::string, NativeByteCode> pluginByteCode;
 
   // evaluate JavaScript source codes in standard mode.
-  bool evaluateScript(const SharedNativeString* script,
-                      uint8_t** parsed_bytecodes,
-                      uint64_t* bytecode_len,
-                      const char* url,
-                      int startLine);
-  bool evaluateScript(const uint16_t* script,
-                      size_t length,
+  bool evaluateScript(const char* script,
+                      uint64_t script_len,
                       uint8_t** parsed_bytecodes,
                       uint64_t* bytecode_len,
                       const char* url,
@@ -57,7 +55,8 @@ class WebFPage final {
 
   std::thread::id currentThread() const;
 
-  [[nodiscard]] ExecutingContext* GetExecutingContext() const { return context_; }
+  [[nodiscard]] ExecutingContext* executingContext() const { return context_; }
+  [[nodiscard]] DartIsolateContext* dartIsolateContext() const { return dart_isolate_context_; }
 
   NativeValue* invokeModuleEvent(SharedNativeString* moduleName,
                                  const char* eventType,
@@ -65,7 +64,9 @@ class WebFPage final {
                                  NativeValue* extra);
   void reportError(const char* errmsg);
 
-  int32_t contextId;
+  FORCE_INLINE bool isDedicated() { return context_->isDedicated(); };
+  FORCE_INLINE double contextId() { return context_->contextId(); }
+
 #if IS_TEST
   // the owner pointer which take JSBridge as property.
   void* owner;
@@ -76,6 +77,7 @@ class WebFPage final {
   // FIXME: we must to use raw pointer instead of unique_ptr because we needs to access context_ when dispose page.
   // TODO: Raw pointer is dangerous and just works but it's fragile. We needs refactor this for more stable and
   // maintainable.
+  DartIsolateContext* dart_isolate_context_;
   ExecutingContext* context_;
   JSExceptionHandler handler_;
 };

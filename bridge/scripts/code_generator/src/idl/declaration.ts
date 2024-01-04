@@ -32,6 +32,7 @@ export class FunctionArguments {
 export class ParameterMode {
   newObject?: boolean;
   dartImpl?: boolean;
+  layoutDependent?: boolean;
   static?: boolean;
 }
 

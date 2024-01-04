@@ -45,7 +45,7 @@ enum FillStyleType { string, canvasGradient }
 
 typedef CanvasAction = void Function(Canvas, Size);
 
-class CanvasRenderingContext2D extends BindingObject {
+class CanvasRenderingContext2D extends DynamicBindingObject {
   CanvasRenderingContext2D(BindingContext context, this.canvas)
       : _pointer = context.pointer,
         super(context);
@@ -646,7 +646,7 @@ class CanvasRenderingContext2D extends BindingObject {
 
     addAction((Canvas canvas, Size size) {
       if (imgElement?.image == null) return;
-      
+
       Image img = imgElement!.image!;
       // ctx.drawImage(image, dx, dy);
       if (argumentCount == 3) {

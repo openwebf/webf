@@ -16,11 +16,11 @@ TEST(Window, windowIsGlobalThis) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(window === globalThis)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
@@ -35,11 +35,11 @@ TEST(Window, instanceofEventTarget) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(window instanceof EventTarget)";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
@@ -63,7 +63,7 @@ requestAnimationFrame(() => {
 )";
 
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
 
   EXPECT_EQ(logCalled, true);
 }
@@ -81,7 +81,7 @@ TEST(Window, cancelAnimationFrame) {
 )";
 
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
 }
 
 TEST(Window, postMessage) {
@@ -125,7 +125,7 @@ TEST(Window, location) {
 
 TEST(Window, onloadShouldExist) {
   static bool errorCalled = false;
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -140,7 +140,7 @@ TEST(Window, onloadShouldExist) {
 
 TEST(Window, atob) {
   static bool errorCalled = false;
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -156,7 +156,7 @@ console.log(a.charCodeAt(1))
 
 TEST(Window, btoaToEmpty) {
   static bool errorCalled = false;
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });

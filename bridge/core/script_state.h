@@ -24,7 +24,7 @@ class ScriptState {
 
   inline bool Invalid() const { return !ctx_invalid_; }
   inline JSContext* ctx() {
-    assert(!ctx_invalid_ && "GetExecutingContext has been released");
+    assert(!ctx_invalid_ && "executingContext has been released");
     return ctx_;
   }
   JSRuntime* runtime();

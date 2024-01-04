@@ -109,13 +109,16 @@ Window* Window::open(const AtomicString& url, ExceptionState& exception_state) {
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), url),
   };
-  InvokeBindingMethod(binding_call_methods::kopen, 1, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kopen, 1, args, FlushUICommandReason::kDependentsOnElement,
+                      exception_state);
   return this;
 }
 
 Screen* Window::screen() {
   if (screen_ == nullptr) {
-    NativeValue value = GetBindingProperty(binding_call_methods::kscreen, ASSERT_NO_EXCEPTION());
+    NativeValue value = GetBindingProperty(
+        binding_call_methods::kscreen,
+        FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, ASSERT_NO_EXCEPTION());
     screen_ = MakeGarbageCollected<Screen>(
         this, NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value));
   }
@@ -131,7 +134,9 @@ void Window::scroll(double x, double y, ExceptionState& exception_state) {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
   };
-  InvokeBindingMethod(binding_call_methods::kscroll, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscroll, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Window::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
@@ -139,7 +144,9 @@ void Window::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionSt
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscroll, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscroll, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Window::scrollBy(ExceptionState& exception_state) {
@@ -151,7 +158,9 @@ void Window::scrollBy(double x, double y, ExceptionState& exception_state) {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Window::scrollBy(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
@@ -159,7 +168,9 @@ void Window::scrollBy(const std::shared_ptr<ScrollToOptions>& options, Exception
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Window::scrollTo(ExceptionState& exception_state) {
@@ -195,7 +206,9 @@ void Window::postMessage(const ScriptValue& message,
 
 ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Element>>::ToNativeValue(element)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetComputedStyle, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetComputedStyle, 1, arguments,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   return MakeGarbageCollected<ComputedCssStyleDeclaration>(
       GetExecutingContext(), NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
 }
@@ -207,14 +220,7 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
 }
 
 double Window::requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState) {
-  if (GetExecutingContext()->dartMethodPtr()->flushUICommand == nullptr) {
-    exceptionState.ThrowException(ctx(), ErrorType::InternalError,
-                                  "Failed to execute 'flushUICommand': dart method (flushUICommand) executed "
-                                  "with unexpected error.");
-    return 0;
-  }
-
-  GetExecutingContext()->FlushUICommand();
+  GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kStandard);
   auto frame_callback = FrameCallback::Create(GetExecutingContext(), callback);
   uint32_t request_id = GetExecutingContext()->document()->RequestAnimationFrame(frame_callback, exceptionState);
   // `-1` represents some error occurred.
@@ -230,6 +236,10 @@ double Window::requestAnimationFrame(const std::shared_ptr<QJSFunction>& callbac
 
 void Window::cancelAnimationFrame(double request_id, ExceptionState& exception_state) {
   GetExecutingContext()->document()->CancelAnimationFrame(static_cast<uint32_t>(request_id), exception_state);
+}
+
+void Window::OnLoadEventFired() {
+  GetExecutingContext()->TurnOnJavaScriptGC();
 }
 
 bool Window::IsWindowOrWorkerGlobalScope() const {

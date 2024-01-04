@@ -4,18 +4,13 @@
  */
 #include "location.h"
 #include "core/executing_context.h"
+#include "core/frame/window.h"
 
 namespace webf {
 
 void Location::__webf_location_reload__(ExecutingContext* context, ExceptionState& exception_state) {
-  if (context->dartMethodPtr()->reloadApp == nullptr) {
-    exception_state.ThrowException(context->ctx(), ErrorType::InternalError,
-                                   "Failed to execute 'reload': dart method (reloadApp) is not registered.");
-    return;
-  }
-
-  context->FlushUICommand();
-  context->dartMethodPtr()->reloadApp(context->contextId());
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsOnElement);
+  context->dartMethodPtr()->reloadApp(context->isDedicated(), context->contextId());
 }
 
 }  // namespace webf

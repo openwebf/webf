@@ -21,7 +21,10 @@ TouchEvent* TouchEvent::Create(ExecutingContext* context,
 }
 
 TouchEvent::TouchEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
-    : UIEvent(context, type, exception_state) {}
+    : UIEvent(context, type, exception_state),
+      changed_touches_(TouchList::Create(context)),
+      touches_(TouchList::Create(context)),
+      target_touches_(TouchList::Create(context)) {}
 
 TouchEvent::TouchEvent(ExecutingContext* context,
                        const AtomicString& type,
@@ -29,12 +32,12 @@ TouchEvent::TouchEvent(ExecutingContext* context,
                        ExceptionState& exception_state)
     : UIEvent(context, type, initializer, exception_state),
       alt_key_(initializer->hasAltKey() && initializer->altKey()),
-      changed_touches_(initializer->hasChangedTouches() ? initializer->changedTouches() : nullptr),
+      changed_touches_(initializer->hasChangedTouches() ? initializer->changedTouches() : TouchList::Create(context)),
       ctrl_key_(initializer->hasCtrlKey() && initializer->ctrlKey()),
       meta_key_(initializer->hasMetaKey() && initializer->metaKey()),
       shift_key_(initializer->hasShiftKey() && initializer->shiftKey()),
-      target_touches_(initializer->hasTargetTouches() ? initializer->targetTouches() : nullptr),
-      touches_(initializer->hasTouches() ? initializer->touches() : nullptr) {}
+      target_touches_(initializer->hasTargetTouches() ? initializer->targetTouches() : TouchList::Create(context)),
+      touches_(initializer->hasTouches() ? initializer->touches() : TouchList::Create(context)) {}
 
 TouchEvent::TouchEvent(ExecutingContext* context, const AtomicString& type, NativeTouchEvent* native_touch_event)
     : UIEvent(context, type, &native_touch_event->native_event),

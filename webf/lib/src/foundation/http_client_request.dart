@@ -104,7 +104,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
 
   @override
   Future<HttpClientResponse> close() async {
-    int? contextId = WebFHttpOverrides.getContextHeader(headers);
+    double? contextId = WebFHttpOverrides.getContextHeader(headers);
     HttpClientRequest request = this;
 
     if (contextId != null) {

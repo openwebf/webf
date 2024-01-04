@@ -246,7 +246,7 @@ describe('MouseEvent', () => {
     await simulateClick(10.0, 10.0, 1);
   });
 
-  it('should work with fixed node which be scolled', async (done) => {
+  it('should work with fixed node which be scolled', async () => {
     const div = document.createElement('div')
     document.body.appendChild(div)
     div.style.width = '100%';
@@ -254,7 +254,6 @@ describe('MouseEvent', () => {
     div.style.backgroundColor = 'red';
 
     div.appendChild(document.createTextNode('aaa'));
-
 
     const mask = document.createElement('div');
     mask.style.width = '100%';
@@ -267,10 +266,12 @@ describe('MouseEvent', () => {
 
     window.scrollTo(0, '100vh');
 
+    let clicked = false;
     mask.addEventListener('click', function handleClick() {
       mask.removeEventListener('click', handleClick);
-      done();
-    })
+      clicked = true;
+    });
     await simulateClick(10.0, 10.0, 0);
+    expect(clicked).toBe(true);
   });
 });

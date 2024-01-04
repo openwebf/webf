@@ -237,6 +237,10 @@ struct Converter<IDLOptional<IDLDOMString>> : public ConverterBase<IDLDOMString>
   }
   static JSValue ToValue(JSContext* ctx, const std::string& str) { return Converter<IDLDOMString>::ToValue(ctx, str); }
   static JSValue ToValue(JSContext* ctx, typename Converter<IDLDOMString>::ImplType value) {
+    if (value == AtomicString::Null()) {
+      return JS_UNDEFINED;
+    }
+
     return Converter<IDLDOMString>::ToValue(ctx, std::move(value));
   }
 };
@@ -250,7 +254,12 @@ struct Converter<IDLNullable<IDLDOMString>> : public ConverterBase<IDLDOMString>
   }
 
   static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(ctx, value).ToQuickJS(ctx); }
-  static JSValue ToValue(JSContext* ctx, const AtomicString& value) { return value.ToQuickJS(ctx); }
+  static JSValue ToValue(JSContext* ctx, const AtomicString& value) {
+    if (value == AtomicString::Null()) {
+      return JS_NULL;
+    }
+    return value.ToQuickJS(ctx);
+  }
 };
 
 template <>
@@ -347,6 +356,8 @@ struct Converter<IDLOptional<IDLSequence<T>>> : public ConverterBase<IDLSequence
 
     return Converter<IDLSequence<T>>::FromValue(ctx, value, exception_state);
   }
+
+  static JSValue ToValue(JSContext* ctx, ImplType value) { return Converter<IDLSequence<T>>::ToValue(ctx, value); }
 };
 
 template <typename T>

@@ -7,6 +7,7 @@ import 'package:archive/archive.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/foundation.dart';
 import 'package:quiver/collection.dart';
+import 'package:quiver/core.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 
@@ -132,19 +133,19 @@ class QuickJSByteCodeCache {
     return _cacheDirectory = cacheDirectory;
   }
 
-  static String _getCacheHash(String code) {
+  static String _getCacheHash(Uint8List code) {
     WebFInfo webFInfo = getWebFInfo();
     // Uri uriWithoutFragment = uri;
     // return uriWithoutFragment.toString();
-    return '%${code.hashCode}_${webFInfo.appRevision}%';
+    return '%${hashObjects(code)}_${webFInfo.appRevision}%';
   }
 
   // Get the CacheObject by uri, no validation needed here.
-  static Future<QuickJSByteCodeCacheObject> getCacheObject(String code) async {
+  static Future<QuickJSByteCodeCacheObject> getCacheObject(Uint8List codeBytes) async {
     QuickJSByteCodeCacheObject cacheObject;
 
     // L2 cache in memory.
-    final String hash = _getCacheHash(code);
+    final String hash = _getCacheHash(codeBytes);
     if (_caches.containsKey(hash)) {
       cacheObject = _caches[hash]!;
     } else {
@@ -159,8 +160,8 @@ class QuickJSByteCodeCache {
   }
 
   // Add or update the httpCacheObject to memory cache.
-  static void putObject(String code, Uint8List bytes) async {
-    final String key = _getCacheHash(code);
+  static Future<void> putObject(Uint8List codeBytes, Uint8List bytes) async {
+    final String key = _getCacheHash(codeBytes);
 
     final Directory cacheDirectory = await getCacheDirectory();
     QuickJSByteCodeCacheObject cacheObject =
@@ -170,13 +171,13 @@ class QuickJSByteCodeCache {
     await cacheObject.write();
   }
 
-  static void removeObject(String code) {
+  static void removeObject(Uint8List code) {
     final String key = _getCacheHash(code);
     _caches.remove(key);
   }
 
-  static bool isCodeNeedCache(String source) {
+  static bool isCodeNeedCache(Uint8List codeBytes) {
     return QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
-        source.length > 1024 * 10; // >= 50 KB
+        codeBytes.length > 1024 * 10; // >= 50 KB
   }
 }

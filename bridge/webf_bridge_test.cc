@@ -31,18 +31,21 @@ void* initTestFramework(void* page_) {
   signal(SIGSEGV, handler);  // install handler when crashed.
   signal(SIGABRT, handler);
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  assert(std::this_thread::get_id() == page->currentThread());
-  return new webf::WebFTestContext(page->GetExecutingContext());
+  return page->dartIsolateContext()->dispatcher()->PostToJsSync(
+      page->isDedicated(), page->contextId(),
+      [](bool cancel, webf::WebFPage* page) -> void* { return new webf::WebFTestContext(page->executingContext()); },
+      page);
 }
 
-int8_t evaluateTestScripts(void* testContext, void* code, const char* bundleFilename, int startLine) {
-  return reinterpret_cast<webf::WebFTestContext*>(testContext)
-      ->evaluateTestScripts(static_cast<webf::SharedNativeString*>(code)->string(),
-                            static_cast<webf::SharedNativeString*>(code)->length(), bundleFilename, startLine);
-}
+void executeTest(void* testContext, Dart_Handle dart_handle, ExecuteResultCallback executeCallback) {
+  auto context = reinterpret_cast<webf::WebFTestContext*>(testContext);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
 
-void executeTest(void* testContext, ExecuteCallback executeCallback) {
-  reinterpret_cast<webf::WebFTestContext*>(testContext)->invokeExecuteTest(executeCallback);
+  context->page()->dartIsolateContext()->dispatcher()->PostToJs(
+      context->page()->isDedicated(), context->page()->contextId(),
+      [](webf::WebFTestContext* context, Dart_PersistentHandle persistent_handle,
+         ExecuteResultCallback executeCallback) { context->invokeExecuteTest(persistent_handle, executeCallback); },
+      context, persistent_handle, executeCallback);
 }
 
 void registerTestEnvDartMethods(void* testContext, uint64_t* methodBytes, int32_t length) {

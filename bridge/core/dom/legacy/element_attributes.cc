@@ -5,9 +5,10 @@
 
 #include "element_attributes.h"
 #include "bindings/qjs/exception_state.h"
-#include "built_in_string.h"
 #include "core/dom/element.h"
+#include "core/html/custom/widget_element.h"
 #include "foundation/native_value_converter.h"
+#include "html_names.h"
 
 namespace webf {
 
@@ -23,20 +24,23 @@ ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element
 AtomicString ElementAttributes::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
   bool numberIndex = IsNumberIndex(name.ToStringView());
 
-  if (numberIndex || attributes_.count(name) == 0) {
-    return AtomicString::Empty();
+  if (numberIndex) {
+    return AtomicString::Null();
+  }
+
+  if (attributes_.count(name) == 0) {
+    if (element_->IsWidgetElement()) {
+      // Fallback to directly FFI access to dart.
+      NativeValue dart_result =
+          element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
+      if (dart_result.tag == NativeTag::TAG_STRING) {
+        return NativeValueConverter<NativeTypeString>::FromNativeValue(element_->ctx(), std::move(dart_result));
+      }
+    }
+    return AtomicString::Null();
   }
 
   AtomicString value = attributes_[name];
-
-  // Fallback to directly FFI access to dart.
-  if (value.IsEmpty()) {
-    NativeValue dart_result = element_->GetBindingProperty(name, exception_state);
-    if (dart_result.tag == NativeTag::TAG_STRING) {
-      return NativeValueConverter<NativeTypeString>::FromNativeValue(element_->ctx(), std::move(dart_result));
-    }
-  }
-
   return value;
 }
 
@@ -52,7 +56,13 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
     return false;
   }
 
+  AtomicString existing_attribute = attributes_[name];
+
   attributes_[name] = value;
+
+  // Style attribute will be parsed and separated into multiple setStyle command.
+  if (name == html_names::kStyleAttr)
+    return true;
 
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());
@@ -70,10 +80,25 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
     return false;
   }
 
-  return attributes_.count(name) > 0;
+  bool has_attribute = attributes_.count(name) > 0;
+
+  if (!has_attribute && element_->IsWidgetElement()) {
+    // Fallback to directly FFI access to dart.
+    NativeValue dart_result =
+        element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
+    return dart_result.tag != NativeTag::TAG_NULL;
+  }
+
+  return has_attribute;
 }
 
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
+  if (!hasAttribute(name, exception_state))
+    return;
+
+  AtomicString old_value = getAttribute(name, exception_state);
+  element_->WillModifyAttribute(name, old_value, AtomicString::Null());
+
   attributes_.erase(name);
 
   std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString(ctx());

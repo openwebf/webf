@@ -65,6 +65,10 @@ function assert_throws_exactly(error: any, fn: Function) {
   expect(fn).toThrow(error);
 }
 
+function assert_throws(error: any, fn: Function) {
+  expect(fn).toThrow();
+}
+
 function assert_not_equals(a: any, b: any, message?: string) {
   expect(a !== b).toBe(true, message)
 }

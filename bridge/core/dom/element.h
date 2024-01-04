@@ -22,6 +22,31 @@ class Element : public ContainerNode {
 
  public:
   using ImplType = Element*;
+
+  enum class AttributeModificationReason {
+    kDirectly,
+    kByParser,
+    kByCloning,
+    kByMoveToNewDocument,
+    kBySynchronizationOfLazyAttribute
+  };
+
+  struct AttributeModificationParams {
+    WEBF_STACK_ALLOCATED();
+
+   public:
+    AttributeModificationParams(const AtomicString& qname,
+                                const AtomicString& old_value,
+                                const AtomicString& new_value,
+                                AttributeModificationReason reason)
+        : name(qname), old_value(old_value), new_value(new_value), reason(reason) {}
+
+    const AtomicString& name;
+    const AtomicString& old_value;
+    const AtomicString& new_value;
+    const AttributeModificationReason reason;
+  };
+
   Element(const AtomicString& namespace_uri,
           const AtomicString& local_name,
           const AtomicString& prefix,
@@ -40,6 +65,7 @@ class Element : public ContainerNode {
   void setAttribute(const AtomicString&, const AtomicString& value, ExceptionState&);
   void removeAttribute(const AtomicString&, ExceptionState& exception_state);
   BoundingClientRect* getBoundingClientRect(ExceptionState& exception_state);
+  std::vector<BoundingClientRect*> getClientRects(ExceptionState& exception_state);
   void click(ExceptionState& exception_state);
   void scroll(ExceptionState& exception_state);
   void scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
@@ -53,6 +79,22 @@ class Element : public ContainerNode {
 
   ScriptPromise toBlob(double device_pixel_ratio, ExceptionState& exception_state);
   ScriptPromise toBlob(ExceptionState& exception_state);
+
+  void DidAddAttribute(const AtomicString&, const AtomicString&);
+  void WillModifyAttribute(const AtomicString&, const AtomicString& old_value, const AtomicString& new_value);
+  void DidModifyAttribute(const AtomicString&,
+                          const AtomicString& old_value,
+                          const AtomicString& new_value,
+                          AttributeModificationReason reason);
+  void DidRemoveAttribute(const AtomicString&, const AtomicString& old_value);
+
+  void SynchronizeStyleAttributeInternal();
+  void SynchronizeAttribute(const AtomicString& name);
+
+  void InvalidateStyleAttribute();
+  void AttributeChanged(const AttributeModificationParams& params);
+  void StyleAttributeChanged(const AtomicString& new_style_string, AttributeModificationReason modification_reason);
+  void SetInlineStyleFromString(const AtomicString&);
 
   std::string outerHTML();
   std::string innerHTML();
@@ -103,10 +145,16 @@ class Element : public ContainerNode {
   void Trace(GCVisitor* visitor) const override;
 
  protected:
+  void SetAttributeInternal(const AtomicString&,
+                            const AtomicString& value,
+                            AttributeModificationReason reason,
+                            ExceptionState& exception_state);
+
   const ElementData* GetElementData() const { return element_data_.get(); }
+  bool HasElementData() const { return element_data_ != nullptr; }
   const AtomicString& getQualifiedName() const { return local_name_; }
   const AtomicString getUppercasedQualifiedName() const;
-  ElementData& EnsureElementData() const;
+  ElementData& EnsureElementData();
   AtomicString namespace_uri_ = AtomicString::Null();
   AtomicString prefix_ = AtomicString::Null();
   AtomicString local_name_ = AtomicString::Empty();
@@ -121,7 +169,6 @@ class Element : public ContainerNode {
   void _notifyChildRemoved();
   void _notifyNodeInsert(Node* insertNode);
   void _notifyChildInsert();
-  void _didModifyAttribute(const AtomicString& name, const AtomicString& oldId, const AtomicString& newId);
   void _beforeUpdateId(JSValue oldIdValue, JSValue newIdValue);
 
   mutable std::unique_ptr<ElementData> element_data_;

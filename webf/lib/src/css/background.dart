@@ -5,10 +5,12 @@
 
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/painting.dart';
+import 'package:webf/html.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
@@ -253,6 +255,18 @@ class CSSBackgroundImage {
 
   ImageProvider? _image;
 
+  Future<ImageLoadResponse> _obtainImage(Uri url) async {
+    ImageRequest request = ImageRequest.fromUri(url);
+    // Increment count when request.
+    controller.view.document.incrementRequestCount();
+
+    ImageLoadResponse data = await request.obtainImage(controller);
+
+    // Decrement count when response.
+    controller.view.document.decrementRequestCount();
+    return data;
+  }
+
   ImageProvider? get image {
     if (_image != null) return _image;
     for (CSSFunctionalNotation method in functions) {
@@ -267,8 +281,13 @@ class CSSBackgroundImage {
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
           uri = controller.uriParser!.resolve(Uri.parse(baseHref ?? controller.url), uri);
-          _image = getImageProvider(uri, contextId: controller.view.contextId);
-          return _image;
+          FlutterView ownerFlutterView = controller.ownerFlutterView;
+          return BoxFitImage(
+            boxFit: renderStyle.backgroundSize.fit,
+            url: uri,
+            loadImage: _obtainImage,
+            devicePixelRatio: ownerFlutterView.devicePixelRatio
+          );
         }
       }
     }
@@ -678,7 +697,7 @@ class CSSBackground {
   }
 }
 
-void _applyColorAndStops(int start, List<String> args, List<Color?> colors, List<double?> stops,
+void _applyColorAndStops(int start, List<String> args, List<Color> colors, List<double> stops,
     RenderStyle renderStyle, String propertyName,
     [double? gradientLength]) {
   // colors should more than one, otherwise invalid
@@ -688,8 +707,10 @@ void _applyColorAndStops(int start, List<String> args, List<Color?> colors, List
       List<CSSColorStop> colorGradients =
           _parseColorAndStop(args[i].trim(), renderStyle, propertyName, (i - start) * grow, gradientLength);
       for (var colorStop in colorGradients) {
-        colors.add(colorStop.color);
-        stops.add(colorStop.stop);
+        if (colorStop.color != null) {
+          colors.add(colorStop.color!);
+          stops.add(colorStop.stop!);
+        }
       }
     }
   }
@@ -701,15 +722,8 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
   List<CSSColorStop> colorGradients = [];
   // rgba may contain space, color should handle special
   if (src.startsWith('rgba(') || src.startsWith('rgb(')) {
-    int indexOfRgbaEnd = src.indexOf(')');
-    if (indexOfRgbaEnd == -1) {
-      // rgba parse error
-      return colorGradients;
-    }
+    int indexOfRgbaEnd = src.lastIndexOf(')');
     strings.add(src.substring(0, indexOfRgbaEnd + 1));
-    if (indexOfRgbaEnd + 1 < src.length) {
-      strings.addAll(src.substring(indexOfRgbaEnd + 1).trim().split(' '));
-    }
   } else {
     strings = src.split(' ');
   }

@@ -192,6 +192,7 @@ struct JSRuntime {
     struct list_head gc_zero_ref_count_list;
     struct list_head tmp_obj_list; /* used during GC */
     JSGCPhaseEnum gc_phase : 8;
+    BOOL gc_off: 8;
     size_t malloc_gc_threshold;
 #ifdef DUMP_LEAKS
     struct list_head string_list; /* list of JSString.link */

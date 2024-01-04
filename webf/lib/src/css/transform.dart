@@ -11,6 +11,12 @@ import 'package:vector_math/vector_math_64.dart';
 const Offset _DEFAULT_TRANSFORM_OFFSET = Offset.zero;
 const Alignment _DEFAULT_TRANSFORM_ALIGNMENT = Alignment.center;
 
+// A temporary value
+class TransformAnimationValue {
+  dynamic value;
+  TransformAnimationValue(this.value);
+}
+
 // CSS Transforms: https://drafts.csswg.org/css-transforms/
 mixin CSSTransformMixin on RenderStyle {
   // https://drafts.csswg.org/css-transforms-1/#propdef-transform
@@ -55,6 +61,11 @@ mixin CSSTransformMixin on RenderStyle {
     return CSSFunction.parseFunction(present);
   }
 
+  static TransformAnimationValue resolveTransformForAnimation(String present) {
+    List<CSSFunctionalNotation>? notation = resolveTransform(present);
+    return TransformAnimationValue(notation);
+  }
+
   Matrix4? _transformMatrix;
   Matrix4? get transformMatrix {
     if (_transformMatrix == null && _transform != null) {
@@ -65,6 +76,10 @@ mixin CSSTransformMixin on RenderStyle {
       }
     }
     return _transformMatrix;
+  }
+
+  void markTransformMatrixNeedsUpdate() {
+    _transformMatrix = null;
   }
 
   // Transform animation drived by transformMatrix.

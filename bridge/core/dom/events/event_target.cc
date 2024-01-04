@@ -371,6 +371,12 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   Event* event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
   assert(event->target() != nullptr);
   assert(event->currentTarget() != nullptr);
+
+  auto* window = DynamicTo<Window>(event->target());
+  if (window != nullptr && event->type() == event_type_names::kload) {
+    window->OnLoadEventFired();
+  }
+
   ExceptionState exception_state;
   event->SetTrusted(false);
   event->SetEventPhase(Event::kAtTarget);
@@ -388,8 +394,13 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   };
 
   WatchDartWire(wire);
-  Dart_NewFinalizableHandle_DL(dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext),
-                               dart_object_finalize_callback);
+
+  GetDispatcher()->PostToDart(
+      GetExecutingContext()->isDedicated(),
+      [](Dart_Handle object, void* peer, intptr_t external_allocation_size, Dart_HandleFinalizer callback) {
+        Dart_NewFinalizableHandle_DL(object, peer, external_allocation_size, callback);
+      },
+      dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext), dart_object_finalize_callback);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx());

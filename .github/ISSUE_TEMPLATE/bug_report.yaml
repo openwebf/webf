@@ -10,6 +10,13 @@ body:
       label: Affected version
       description: Please specify which version of webf you are using.
       placeholder: 0.12.0 or main
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: Flutter versions
+      description: Please specify which version of flutter you are using.
+      placeholder: 3.13.5
   
   - type: checkboxes
     validations:

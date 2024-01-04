@@ -64,6 +64,7 @@ class _WebFTesterState extends State<WebFTester> {
       javaScriptChannel: javaScriptChannel,
       onControllerCreated: onControllerCreated,
       onLoad: onLoad,
+      // runningThread: FlutterUIThread(),
       gestureListener: GestureListener(
         onDrag: (GestureEvent gestureEvent) {
           if (gestureEvent.state == EVENT_STATE_START) {
@@ -77,11 +78,10 @@ class _WebFTesterState extends State<WebFTester> {
 
   onControllerCreated(WebFController controller) async {
     this.controller = controller;
-    int contextId = controller.view.contextId;
+    double contextId = controller.view.contextId;
     testContext = initTestFramework(contextId);
     registerDartTestMethodsToCpp(contextId);
-    addJSErrorListener(contextId, print);
-    controller.view.evaluateJavaScripts(widget.preCode);
+    await controller.view.evaluateJavaScripts(widget.preCode);
   }
 
   onLoad(WebFController controller) async {
@@ -91,19 +91,23 @@ class _WebFTesterState extends State<WebFTester> {
       mems.add([x += 1, ProcessInfo.currentRss / 1024 ~/ 1024]);
     });
 
-    // Preload load test cases
-    String result = await executeTest(testContext!, controller.view.contextId);
-    // Manual dispose context for memory leak check.
-    controller.dispose();
+    try {
+      // Preload load test cases
+      String result = await executeTest(testContext!, controller.view.contextId);
+      // Manual dispose context for memory leak check.
+      await controller.dispose();
 
-    // Check running memorys
-    // Temporary disabled due to exist memory leaks
-    // if (isMemLeaks(mems)) {
-    //   print('Memory leaks found. ${mems.map((e) => e[1]).toList()}');
-    //   exit(1);
-    // }
-    widget.onWillFinish?.call();
+      // Check running memorys
+      // Temporary disabled due to exist memory leaks
+      // if (isMemLeaks(mems)) {
+      //   print('Memory leaks found. ${mems.map((e) => e[1]).toList()}');
+      //   exit(1);
+      // }
+      widget.onWillFinish?.call();
 
-    exit(result == 'failed' ? 1 : 0);
+      exit(result == 'failed' ? 1 : 0);
+    } catch (e) {
+      print(e);
+    }
   }
 }

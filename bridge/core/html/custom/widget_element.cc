@@ -28,7 +28,7 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
 }
 
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  return GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key);
+  return GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key.ToStdString(ctx()));
 }
 
 void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
@@ -42,39 +42,44 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
   }
 }
 
-NativeValue WidgetElement::HandleCallFromDartSide(const AtomicString& method,
-                                                  int32_t argc,
-                                                  const NativeValue* argv,
-                                                  Dart_Handle dart_object) {
-  MemberMutationScope mutation_scope{GetExecutingContext()};
-
-  if (method == binding_call_methods::ksyncPropertiesAndMethods) {
-    return HandleSyncPropertiesAndMethodsFromDart(argc, argv);
-  }
-
-  return Element::HandleCallFromDartSide(method, argc, argv, dart_object);
-}
-
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
   if (unimplemented_properties_.count(key) > 0) {
     return unimplemented_properties_[key];
   }
 
-  if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName())) {
-    GetExecutingContext()->FlushUICommand();
+  std::string shape_key = tagName().ToStdString(ctx());
+  std::string property_key = key.ToStdString(ctx());
+  bool have_shape = true;
+
+  if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(shape_key)) {
+    GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsOnElement);
+    have_shape = false;
   }
 
   if (key == built_in_string::kSymbol_toStringTag) {
     return ScriptValue(ctx(), tagName().ToNativeString(ctx()).release());
   }
 
-  auto shape = GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName());
+  const WidgetElementShape* shape = nullptr;
+
+  if (have_shape) {
+    shape = GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(shape_key);
+  } else {
+    NativeValue raw_shapes[3];
+    bool is_success = GetExecutingContext()->dartMethodPtr()->getWidgetElementShape(
+        GetExecutingContext()->isDedicated(), contextId(), bindingObject(),
+        reinterpret_cast<NativeValue*>(&raw_shapes));
+    if (is_success) {
+      shape = SaveWidgetElementsShapeData(raw_shapes);
+    }
+  }
+
   if (shape != nullptr) {
-    if (shape->built_in_properties_.find(key) != shape->built_in_properties_.end()) {
-      return ScriptValue(ctx(), GetBindingProperty(key, exception_state));
+    if (shape->built_in_properties_.find(property_key) != shape->built_in_properties_.end()) {
+      return ScriptValue(ctx(), GetBindingProperty(key, FlushUICommandReason::kDependentsOnElement, exception_state));
     }
 
-    if (shape->built_in_methods_.find(key) != shape->built_in_methods_.end()) {
+    if (shape->built_in_methods_.find(property_key) != shape->built_in_methods_.end()) {
       if (cached_methods_.count(key) > 0) {
         return cached_methods_[key];
       }
@@ -84,7 +89,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
       return func;
     }
 
-    if (shape->built_in_async_methods_.find(key) != shape->built_in_async_methods_.end()) {
+    if (shape->built_in_async_methods_.find(property_key) != shape->built_in_async_methods_.end()) {
       if (async_cached_methods_.count(key) > 0) {
         return async_cached_methods_[key];
       }
@@ -99,13 +104,14 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
-  if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName())) {
-    GetExecutingContext()->FlushUICommand();
+  if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName().ToStdString(ctx()))) {
+    GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsOnElement);
   }
 
-  auto shape = GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName());
+  auto shape =
+      GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName().ToStdString(ctx()));
   // This property is defined in the Dart side
-  if (shape != nullptr && shape->built_in_properties_.count(key) > 0) {
+  if (shape != nullptr && shape->built_in_properties_.count(key.ToStdString(ctx())) > 0) {
     NativeValue result = SetBindingProperty(key, value.ToNative(ctx(), exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
@@ -152,10 +158,9 @@ void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneC
   }
 }
 
-NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv) {
-  assert(argc == 3);
+const WidgetElementShape* WidgetElement::SaveWidgetElementsShapeData(const NativeValue* argv) {
   AtomicString key = tagName();
-  assert(!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key));
+  assert(!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key.ToStdString(ctx())));
 
   auto shape = std::make_shared<WidgetElementShape>();
 
@@ -164,20 +169,20 @@ NativeValue WidgetElement::HandleSyncPropertiesAndMethodsFromDart(int32_t argc, 
   auto&& async_methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[2]);
 
   for (auto& property : properties) {
-    shape->built_in_properties_.emplace(property);
+    shape->built_in_properties_.emplace(property.ToStdString(ctx()));
   }
 
   for (auto& method : sync_methods) {
-    shape->built_in_methods_.emplace(method);
+    shape->built_in_methods_.emplace(method.ToStdString(ctx()));
   }
 
   for (auto& method : async_methods) {
-    shape->built_in_async_methods_.emplace(method);
+    shape->built_in_async_methods_.emplace(method.ToStdString(ctx()));
   }
 
-  GetExecutingContext()->dartIsolateContext()->EnsureData()->SetWidgetElementShape(key, shape);
+  GetExecutingContext()->dartIsolateContext()->EnsureData()->SetWidgetElementShape(key.ToStdString(ctx()), shape);
 
-  return Native_NewBool(true);
+  return shape.get();
 }
 
 ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {

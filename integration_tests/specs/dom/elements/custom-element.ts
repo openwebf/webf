@@ -455,7 +455,7 @@ describe('custom html element', () => {
   it('dart implements getAllBindingPropertyNames works', async () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
-    expect(attributes).toEqual(['classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'dir', 'fake', 'offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth', 'ping', 'scrollHeight', 'scrollLeft', 'scrollTop', 'scrollWidth', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete', 'click', 'closest', 'fn', 'getBoundingClientRect', 'getElementsByClassName', 'getElementsByTagName', 'matches', 'querySelector', 'querySelectorAll', 'scroll', 'scrollBy', 'scrollTo']);
+    expect(attributes).toEqual(['offsetTop', 'offsetLeft', 'offsetWidth', 'offsetHeight', 'scrollTop', 'scrollLeft', 'scrollWidth', 'scrollHeight', 'clientTop', 'clientLeft', 'clientWidth', 'clientHeight', 'className', 'classList', 'dir', 'ping', 'fake', 'getBoundingClientRect', 'getClientRects', 'scroll', 'scrollBy', 'scrollTo', 'click', 'getElementsByClassName', 'getElementsByTagName', 'querySelectorAll', 'querySelector', 'matches', 'closest', 'fn', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete']);
   });
 
   it('support custom properties in dart directly', () => {

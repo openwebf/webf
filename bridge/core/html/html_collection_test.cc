@@ -14,11 +14,11 @@ TEST(HTMLCollection, children) {
     EXPECT_STREQ(message.c_str(), "2 <div/> <p/>");
     logCalled = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "let text = document.createTextNode('1234');"
@@ -35,11 +35,11 @@ TEST(HTMLCollection, children) {
 TEST(HTMLCollection, childrenWillNotChangeWithNoElementsNodes) {
   bool static errorCalled = false;
   bool static logCalled = false;
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('span');"
       "let text = document.createTextNode('1234');"

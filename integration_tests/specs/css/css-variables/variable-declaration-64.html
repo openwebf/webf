@@ -1,0 +1,26 @@
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE html>
+<title>CSS Test: Test declaring a variable with a trailing invalid token.</title>
+<link rel="author" title="Cameron McCormack" href="mailto:cam@mcc.id.au">
+<link rel="help" href="http://www.w3.org/TR/css-variables-1/#defining-variables">
+<link rel="match" href="support/color-green-ref.html">
+<style>
+:root {
+    --color-value-1: 120;
+    --color-value-2: 100%;
+    --color-value-3: 50%;
+}
+
+:root {
+  --color: rgba(var(--color-value-1), var(--color-value-2), var(--color-value-3), 0.5);
+}
+div {
+    width: 500px;
+    height: 300px;
+    background-color: var(--color);
+}
+</style>
+<div>This box should be green</div>

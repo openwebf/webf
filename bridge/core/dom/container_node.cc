@@ -29,6 +29,7 @@
 #include "container_node.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "child_list_mutation_scope.h"
 #include "child_node_list.h"
 #include "core/html/html_all_collection.h"
 #include "document.h"
@@ -168,7 +169,10 @@ Node* ContainerNode::InsertBefore(Node* new_child, Node* ref_child, ExceptionSta
 
   // 5. Insert node into parent before reference child.
   NodeVector post_insertion_notification_targets;
-  { InsertNodeVector(targets, ref_child, AdoptAndInsertBefore(), &post_insertion_notification_targets); }
+  {
+    ChildListMutationScope scope{*this};
+    InsertNodeVector(targets, ref_child, AdoptAndInsertBefore(), &post_insertion_notification_targets);
+  }
   DidInsertNodeVector(targets, ref_child, post_insertion_notification_targets);
   return new_child;
 }
@@ -207,6 +211,7 @@ Node* ContainerNode::ReplaceChild(Node* new_child, Node* old_child, ExceptionSta
   NodeVector post_insertion_notification_targets;
   post_insertion_notification_targets.reserve(kInitialNodeVectorSize);
   {
+    ChildListMutationScope scope{*this};
     // 9. Let previousSibling be child’s previous sibling.
     // 11. Let removedNodes be the empty list.
     // 15. Queue a mutation record of "childList" for target parent with
@@ -260,6 +265,8 @@ Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_stat
     return nullptr;
   }
 
+  WillRemoveChild(*child);
+
   {
     Node* prev = child->previousSibling();
     Node* next = child->nextSibling();
@@ -285,13 +292,39 @@ Node* ContainerNode::AppendChild(Node* new_child, ExceptionState& exception_stat
 
   NodeVector post_insertion_notification_targets;
   post_insertion_notification_targets.reserve(kInitialNodeVectorSize);
-  { InsertNodeVector(targets, nullptr, AdoptAndAppendChild(), &post_insertion_notification_targets); }
+  {
+    ChildListMutationScope mutation_scope(*this);
+    InsertNodeVector(targets, nullptr, AdoptAndAppendChild(), &post_insertion_notification_targets);
+  }
   DidInsertNodeVector(targets, nullptr, post_insertion_notification_targets);
   return new_child;
 }
 
 Node* ContainerNode::AppendChild(Node* new_child) {
   return AppendChild(new_child, ASSERT_NO_EXCEPTION());
+}
+
+void ContainerNode::WillRemoveChild(Node& child) {
+  assert(child.parentNode() == this);
+  ChildListMutationScope(*this).WillRemoveChild(child);
+  child.NotifyMutationObserversNodeWillDetach();
+  if (&GetDocument() != &child.GetDocument()) {
+    // |child| was moved to another document by the DOM mutation event handler.
+    return;
+  }
+}
+
+void ContainerNode::WillRemoveChildren() {
+  NodeVector children;
+  GetChildNodes(*this, children);
+
+  ChildListMutationScope mutation(*this);
+  for (const auto& node : children) {
+    assert(node);
+    Node& child = *node;
+    mutation.WillRemoveChild(child);
+    child.NotifyMutationObserversNodeWillDetach();
+  }
 }
 
 bool ContainerNode::EnsurePreInsertionValidity(const Node& new_child,
@@ -349,6 +382,10 @@ bool ContainerNode::EnsurePreInsertionValidity(const Node& new_child,
 void ContainerNode::RemoveChildren() {
   if (!first_child_)
     return;
+
+  // Do any prep work needed before actually starting to detach
+  // and remove... e.g. stop loading frames, fire unload events.
+  WillRemoveChildren();
 
   bool has_element_child = false;
 
@@ -415,6 +452,7 @@ void ContainerNode::InsertNodeVector(const NodeVector& targets,
       assert(!target_node->parentNode());
       Node& child = *target_node;
       mutator(*this, child, next);
+      ChildListMutationScope(*this).ChildAdded(child);
       NotifyNodeInsertedInternal(child);
     }
   }

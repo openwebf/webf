@@ -15,11 +15,11 @@ TEST(Element, setAttribute) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "1234");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "div.setAttribute('hello', 1234);"
@@ -37,11 +37,11 @@ TEST(Element, getAttribute) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "helloworld");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "let string = 'helloworld';"
@@ -65,11 +65,11 @@ TEST(Element, setAttributeWithHTML) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "100%");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "div.innerHTML = '<img src=\"https://miniapp-nikestore-demo.oss-cn-beijing.aliyuncs.com/white_shoes_v1.png\" "
@@ -94,11 +94,11 @@ TEST(Element, outerHTML) {
                  "attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>");
 #endif
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   std::string code = R"(
 const div = document.createElement('div');
 div.style.width = '100px';
@@ -119,7 +119,7 @@ TEST(Element, style) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true false");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
@@ -135,11 +135,11 @@ TEST(Element, instanceofNode) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "console.log(div instanceof Node)";
@@ -156,11 +156,11 @@ TEST(Element, instanceofEventTarget) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let div = document.createElement('div');"
       "console.log(div instanceof EventTarget)";

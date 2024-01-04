@@ -11,11 +11,15 @@
 
 #include "events/event_target.h"
 #include "foundation/macros.h"
+#include "mutation_observer.h"
+#include "mutation_observer_registration.h"
 #include "node_data.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
 
 namespace webf {
+
+using MutationObserverOptionsMap = std::unordered_map<MutationObserver*, MutationRecordDeliveryOptions>;
 
 const int kDOMNodeTypeShift = 2;
 const int kElementNamespaceTypeShift = 4;
@@ -234,11 +238,25 @@ class Node : public EventTarget {
   void SetSelfOrAncestorHasDirAutoAttribute() { SetFlag(kSelfOrAncestorHasDirAutoAttribute); }
   void ClearSelfOrAncestorHasDirAutoAttribute() { ClearFlag(kSelfOrAncestorHasDirAutoAttribute); }
 
+  void GetRegisteredMutationObserversOfType(MutationObserverOptionsMap&,
+                                            MutationType,
+                                            const AtomicString* attribute_name);
+  void RegisterMutationObserver(MutationObserver&,
+                                MutationObserverOptions,
+                                const std::set<AtomicString>& attribute_filter);
+  void UnregisterMutationObserver(MutationObserverRegistration*);
+  void RegisterTransientMutationObserver(MutationObserverRegistration*);
+  void UnregisterTransientMutationObserver(MutationObserverRegistration*);
+  void NotifyMutationObserversNodeWillDetach();
+
   NodeData& CreateNodeData();
   [[nodiscard]] bool HasNodeData() const { return GetFlag(kHasDataFlag); }
   // |RareData| cannot be replaced or removed once assigned.
   [[nodiscard]] NodeData* Data() const { return node_data_.get(); }
   NodeData& EnsureNodeData();
+
+  const MutationObserverRegistrationVector* MutationObserverRegistry();
+  const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
 
   void Trace(GCVisitor*) const override;
 

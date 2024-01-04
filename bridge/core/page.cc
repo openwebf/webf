@@ -22,13 +22,16 @@ namespace webf {
 
 ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
-WebFPage::WebFPage(DartIsolateContext* dart_isolate_context, int32_t contextId, const JSExceptionHandler& handler)
-    : contextId(contextId), ownerThreadId(std::this_thread::get_id()) {
+WebFPage::WebFPage(DartIsolateContext* dart_isolate_context,
+                   bool is_dedicated,
+                   double context_id,
+                   const JSExceptionHandler& handler)
+    : ownerThreadId(std::this_thread::get_id()), dart_isolate_context_(dart_isolate_context) {
   context_ = new ExecutingContext(
-      dart_isolate_context, contextId,
+      dart_isolate_context, is_dedicated, context_id,
       [](ExecutingContext* context, const char* message) {
-        if (context->dartMethodPtr()->onJsError != nullptr) {
-          context->dartMethodPtr()->onJsError(context->contextId(), message);
+        if (context->IsContextValid()) {
+          context->dartMethodPtr()->onJSError(context->isDedicated(), context->contextId(), message);
         }
         WEBF_LOG(ERROR) << message << std::endl;
       },
@@ -39,14 +42,18 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
   if (!context_->IsContextValid())
     return false;
 
-  MemberMutationScope scope{context_};
+  {
+    MemberMutationScope scope{context_};
 
-  auto document_element = context_->document()->documentElement();
-  if (!document_element) {
-    return false;
+    auto document_element = context_->document()->documentElement();
+    if (!document_element) {
+      return false;
+    }
+
+    HTMLParser::parseHTML(code, length, context_->document()->documentElement());
   }
 
-  HTMLParser::parseHTML(code, length, context_->document()->documentElement());
+  context_->uiCommandBuffer()->addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 
   return true;
 }
@@ -97,26 +104,15 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
   return return_value;
 }
 
-bool WebFPage::evaluateScript(const SharedNativeString* script,
+bool WebFPage::evaluateScript(const char* script,
+                              uint64_t script_len,
                               uint8_t** parsed_bytecodes,
                               uint64_t* bytecode_len,
                               const char* url,
                               int startLine) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateJavaScript(script->string(), script->length(), parsed_bytecodes, bytecode_len, url,
-                                      startLine);
-}
-
-bool WebFPage::evaluateScript(const uint16_t* script,
-                              size_t length,
-                              uint8_t** parsed_bytecodes,
-                              uint64_t* bytecode_len,
-                              const char* url,
-                              int startLine) {
-  if (!context_->IsContextValid())
-    return false;
-  return context_->EvaluateJavaScript(script, length, parsed_bytecodes, bytecode_len, url, startLine);
+  return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
 }
 
 void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {

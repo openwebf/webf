@@ -19,7 +19,9 @@ class Window extends EventTarget {
 
   Window(BindingContext? context, this.document)
       : screen = Screen(context!.contextId, document.controller.ownerFlutterView, document.controller.view),
-        super(context);
+        super(context) {
+    BindingBridge.listenEvent(this, 'load');
+  }
 
   @override
   EventTarget? get parentEventTarget => null;
@@ -96,12 +98,12 @@ class Window extends EventTarget {
   }
 
   @override
-  void dispatchEvent(Event event) {
+  Future<void> dispatchEvent(Event event) async {
     // Events such as EVENT_DOM_CONTENT_LOADED need to ensure that listeners are flushed and registered.
     if (contextId != null && event.type == EVENT_DOM_CONTENT_LOADED ||
         event.type == EVENT_LOAD ||
         event.type == EVENT_ERROR) {
-      flushUICommandWithContextId(contextId!);
+      flushUICommandWithContextId(contextId!, pointer!, dependentOnElementUICommandReason | dependentOnLayoutUICommandReason);
     }
     super.dispatchEvent(event);
   }

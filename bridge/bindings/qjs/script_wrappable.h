@@ -8,8 +8,8 @@
 
 #include <quickjs/quickjs.h>
 #include "bindings/qjs/cppgc/garbage_collected.h"
-#include "core/executing_context.h"
 #include "foundation/macros.h"
+#include "multiple_threading/dispatcher.h"
 #include "wrapper_type_info.h"
 
 namespace webf {
@@ -53,6 +53,7 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
 
   ScriptValue ToValue();
   FORCE_INLINE ExecutingContext* GetExecutingContext() const { return context_; };
+  multi_threading::Dispatcher* GetDispatcher() const;
   FORCE_INLINE JSContext* ctx() const { return ctx_; }
   FORCE_INLINE JSRuntime* runtime() const { return runtime_; }
   FORCE_INLINE int64_t contextId() const { return context_id_; }

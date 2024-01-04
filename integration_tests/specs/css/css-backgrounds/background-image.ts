@@ -66,6 +66,33 @@ describe('background image', function() {
     await snapshot(0.1);
   });
 
+  it('should work with css vars', async () => {
+    const style = `
+      :root {
+       --background-end-rgb: 255, 255, 255;
+       --background-end-rgb-2: 0,0,0;
+      }
+      
+      .box {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(
+            to bottom,
+            rgb(var(--background-end-rgb)),
+            rgb(var(--background-end-rgb-2)));
+      }
+    `;
+    const styleEle = document.createElement('style');
+    styleEle.innerHTML = style;
+    document.head.appendChild(styleEle);
+
+    const container = createElement('div', {
+      className: 'box'
+    });
+    document.body.appendChild(container);
+    await snapshot();
+  });
+
   it("computed", async () => {
     let target;
     target = createElement('div', {

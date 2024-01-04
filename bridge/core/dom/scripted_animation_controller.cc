@@ -9,7 +9,7 @@
 
 namespace webf {
 
-static void handleRAFTransientCallback(void* ptr, int32_t contextId, double highResTimeStamp, const char* errmsg) {
+static void handleRAFTransientCallback(void* ptr, double contextId, double highResTimeStamp, char* errmsg) {
   auto* frame_callback = static_cast<FrameCallback*>(ptr);
   auto* context = frame_callback->context();
 
@@ -19,6 +19,12 @@ static void handleRAFTransientCallback(void* ptr, int32_t contextId, double high
   if (errmsg != nullptr) {
     JSValue exception = JS_ThrowTypeError(frame_callback->context()->ctx(), "%s", errmsg);
     context->HandleException(&exception);
+    dart_free(errmsg);
+    return;
+  }
+
+  if (frame_callback->status() == FrameCallback::FrameStatus::kCanceled) {
+    context->document()->script_animations()->callbackCollection()->RemoveFrameCallback(frame_callback->frameId());
     return;
   }
 
@@ -34,21 +40,25 @@ static void handleRAFTransientCallback(void* ptr, int32_t contextId, double high
   context->document()->script_animations()->callbackCollection()->RemoveFrameCallback(frame_callback->frameId());
 }
 
+static void handleRAFTransientCallbackWrapper(void* ptr, double contextId, double highResTimeStamp, char* errmsg) {
+  auto* frame_callback = static_cast<FrameCallback*>(ptr);
+  auto* context = frame_callback->context();
+
+  if (!context->IsContextValid())
+    return;
+
+  context->dartIsolateContext()->dispatcher()->PostToJs(
+      context->isDedicated(), contextId, webf::handleRAFTransientCallback, ptr, contextId, highResTimeStamp, errmsg);
+}
+
 uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<FrameCallback>& frame_callback,
                                                           ExceptionState& exception_state) {
   auto* context = frame_callback->context();
 
-  if (context->dartMethodPtr()->requestAnimationFrame == nullptr) {
-    exception_state.ThrowException(
-        context->ctx(), ErrorType::InternalError,
-        "Failed to execute 'requestAnimationFrame': dart method (requestAnimationFrame) is not registered.");
-    return -1;
-  }
-
   frame_callback->SetStatus(FrameCallback::FrameStatus::kPending);
 
-  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(frame_callback.get(), context->contextId(),
-                                                                       handleRAFTransientCallback);
+  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(
+      context->isDedicated(), frame_callback.get(), context->contextId(), handleRAFTransientCallbackWrapper);
   frame_callback->SetFrameId(requestId);
   // Register frame callback to collection.
   frame_request_callback_collection_.RegisterFrameCallback(requestId, frame_callback);
@@ -59,20 +69,8 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 void ScriptAnimationController::CancelFrameCallback(ExecutingContext* context,
                                                     uint32_t callback_id,
                                                     ExceptionState& exception_state) {
-  if (context->dartMethodPtr()->cancelAnimationFrame == nullptr) {
-    exception_state.ThrowException(
-        context->ctx(), ErrorType::InternalError,
-        "Failed to execute 'cancelAnimationFrame': dart method (cancelAnimationFrame) is not registered.");
-    return;
-  }
-
-  context->dartMethodPtr()->cancelAnimationFrame(context->contextId(), callback_id);
-
   auto frame_callback = frame_request_callback_collection_.GetFrameCallback(callback_id);
   if (frame_callback != nullptr) {
-    if (frame_callback->status() != FrameCallback::FrameStatus::kExecuting) {
-      frame_request_callback_collection_.RemoveFrameCallback(callback_id);
-    }
     frame_callback->SetStatus(FrameCallback::kCanceled);
   }
 }

@@ -30,6 +30,10 @@ ScriptValue ScriptWrappable::ToValue() {
   return ScriptValue(ctx_, jsObject_);
 }
 
+multi_threading::Dispatcher* ScriptWrappable::GetDispatcher() const {
+  return context_->dartIsolateContext()->dispatcher().get();
+}
+
 /// This callback will be called when QuickJS GC is running at marking stage.
 /// Users of this class should override `void TraceMember(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)` to
 /// tell GC which member of their class should be collected by GC.
@@ -238,6 +242,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
               desc->value = return_value;
               desc->getter = JS_NULL;
               desc->setter = JS_NULL;
+            } else {
+              JS_FreeValue(ctx, return_value);
             }
             return true;
           }
@@ -252,6 +258,8 @@ void ScriptWrappable::InitializeQuickJSObject() {
               desc->value = return_value;
               desc->getter = JS_NULL;
               desc->setter = JS_NULL;
+            } else {
+              JS_FreeValue(ctx, return_value);
             }
             return true;
           }

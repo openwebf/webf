@@ -38,6 +38,12 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+if (${ENABLE_LOG})
+  add_definitions(-DENABLE_LOG=1)
+else()
+  add_definitions(-DENABLE_LOG=0)
+endif()
+
 if(NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
     include(CheckIPOSupported)
@@ -91,10 +97,10 @@ if (DEFINED PLATFORM)
 endif()
 
 list(APPEND BRIDGE_SOURCE
-  webf_bridge.cc
   foundation/logging.cc
   foundation/native_string.cc
   foundation/ui_task_queue.cc
+  foundation/shared_ui_command.cc
   foundation/inspector_task_queue.cc
   foundation/task_queue.cc
   foundation/string_view.cc
@@ -102,6 +108,8 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_type.cc
   foundation/ui_command_buffer.cc
   polyfill/dist/polyfill.cc
+  multiple_threading/dispatcher.cc
+  multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
@@ -189,6 +197,11 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-symbol.c
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
+
+  if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    add_definitions(-DDDEBUG)
+  endif ()
+
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
@@ -247,7 +260,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/rejected_promises.cc
     bindings/qjs/union_base.cc
     # Core sources
+    webf_bridge.cc
+    core/api/api.cc
     core/executing_context.cc
+    core/script_forbidden_scope.cc
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
@@ -287,6 +303,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/binding_object.cc
     core/dom/node.cc
     core/dom/node_list.cc
+    core/dom/static_node_list.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
     core/dom/character_data.cc
@@ -305,6 +322,11 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/document_fragment.cc
     core/dom/child_node_list.cc
     core/dom/empty_node_list.cc
+    core/dom/mutation_observer.cc
+    core/dom/mutation_observer_registration.cc
+    core/dom/mutation_observer_interest_group.cc
+    core/dom/mutation_record.cc
+    core/dom/child_list_mutation_scope.cc
     core/dom/container_node.cc
     core/html/custom/widget_element.cc
     core/events/error_event.cc
@@ -407,6 +429,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_touch.cc
     out/qjs_touch_init.cc
     out/qjs_touch_list.cc
+    out/qjs_mutation_record.cc
+    out/qjs_mutation_observer.cc
+    out/qjs_mutation_observer_init.cc
+    out/qjs_mutation_observer_registration.cc
     out/qjs_touch_event.cc
     out/qjs_touch_event_init.cc
     out/qjs_pointer_event.cc
@@ -444,6 +470,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_node_list.cc
     out/event_type_names.cc
     out/built_in_string.cc
+    out/mutation_record_types.cc
     out/binding_call_methods.cc
     out/qjs_scroll_options.cc
     out/qjs_scroll_to_options.cc

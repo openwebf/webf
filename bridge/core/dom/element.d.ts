@@ -14,17 +14,17 @@ interface Element extends Node, ParentNode, ChildNode {
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;
   readonly style: CSSStyleDeclaration;
-  readonly clientHeight: DartImpl<number>;
-  readonly clientLeft: DartImpl<number>;
-  readonly clientTop: DartImpl<number>;
-  readonly clientWidth: DartImpl<number>;
+  readonly clientHeight: DartImpl<DependentsOnLayout<number>>;
+  readonly clientLeft: DartImpl<DependentsOnLayout<number>>;
+  readonly clientTop: DartImpl<DependentsOnLayout<number>>;
+  readonly clientWidth: DartImpl<DependentsOnLayout<number>>;
   readonly outerHTML: string;
   innerHTML: string;
   readonly ownerDocument: Document;
-  scrollLeft: DartImpl<number>;
-  scrollTop: DartImpl<number>;
-  readonly scrollWidth: DartImpl<number>;
-  readonly scrollHeight: DartImpl<number>;
+  scrollLeft: DartImpl<DependentsOnLayout<number>>;
+  scrollTop: DartImpl<DependentsOnLayout<number>>;
+  readonly scrollWidth: DartImpl<DependentsOnLayout<number>>;
+  readonly scrollHeight: DartImpl<DependentsOnLayout<number>>;
   readonly prefix: string | null;
   readonly localName: string;
   readonly namespaceURI: string | null;
@@ -32,7 +32,7 @@ interface Element extends Node, ParentNode, ChildNode {
    * Returns the HTML-uppercased qualified name.
    */
   readonly tagName: string;
-  readonly dir: DartImpl<string>;
+  dir: DartImpl<string>;
   /**
    * Returns element's first attribute whose qualified name is qualifiedName, and null if there is no such attribute otherwise.
    */
@@ -54,6 +54,7 @@ interface Element extends Node, ParentNode, ChildNode {
   // CSSOM View Module
   // https://drafts.csswg.org/cssom-view/#extension-to-the-element-interface
   getBoundingClientRect(): BoundingClientRect;
+  getClientRects(): BoundingClientRect[];
 
   getElementsByClassName(className: string) : Element[];
   getElementsByTagName(tagName: string): Element[];

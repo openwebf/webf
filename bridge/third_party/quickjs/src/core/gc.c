@@ -795,6 +795,9 @@ void gc_free_cycles(JSRuntime* rt) {
 }
 
 void JS_RunGC(JSRuntime* rt) {
+  /* Turn off the GC running for some special reasons. */
+  if (rt->gc_off) return;
+
   /* decrement the reference of the children of each object. mark =
      1 after this pass. */
   gc_decref(rt);
@@ -804,6 +807,14 @@ void JS_RunGC(JSRuntime* rt) {
 
   /* free the GC objects in a cycle */
   gc_free_cycles(rt);
+}
+
+void JS_TurnOffGC(JSRuntime *rt) {
+    rt->gc_off = TRUE;
+}
+
+void JS_TurnOnGC(JSRuntime *rt) {
+    rt->gc_off = FALSE;
 }
 
 /* Return false if not an object or if the object has already been

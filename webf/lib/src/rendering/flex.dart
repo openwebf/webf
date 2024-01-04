@@ -1055,18 +1055,19 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       flexedMainSize = computedSize;
 
+      double minFlexPrecision = 0.5;
       // Find all the violations by comparing min and max size of flex items.
       if (child is RenderBoxModel && !_isChildMainAxisClip(child)) {
         double minMainAxisSize = _getMinMainAxisSize(child);
         double maxMainAxisSize = _getMaxMainAxisSize(child);
-        if (computedSize < minMainAxisSize) {
+        if (computedSize < minMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision ) {
           flexedMainSize = minMainAxisSize;
-        } else if (computedSize > maxMainAxisSize) {
+        } else if (computedSize > maxMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision ) {
           flexedMainSize = maxMainAxisSize;
         }
       }
 
-      double violation = flexedMainSize - computedSize;
+      double violation = (flexedMainSize - computedSize).abs() >= minFlexPrecision ? flexedMainSize - computedSize : 0;
 
       // Collect all the flex items with violations.
       if (violation > 0) {
@@ -1181,11 +1182,20 @@ class RenderFlexLayout extends RenderLayoutBox {
       double initialFreeSpace = isMainSizeDefinite ? (maxMainSize ?? 0) - totalSpace : 0;
 
       double layoutContentMainSize = _isHorizontalFlexDirection ? contentSize.width : contentSize.height;
+      double minMainAxisSize = _getMinMainAxisSize(this);
       // Flexbox with minSize on main axis when maxMainSize < minSize && maxMainSize < RenderBox.Size, adapt freeSpace
       if (maxMainSize != null &&
-          (maxMainSize < _getMinMainAxisSize(this) || maxMainSize < layoutContentMainSize) &&
+          (maxMainSize < minMainAxisSize || maxMainSize < layoutContentMainSize) &&
           initialFreeSpace == 0) {
-        maxMainSize = math.max(layoutContentMainSize, _getMinMainAxisSize(this));
+        maxMainSize = math.max(layoutContentMainSize, minMainAxisSize);
+
+        double maxMainConstraints = _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
+        // determining isScrollingContentBox is to reduce the scope of influence
+        if (isScrollingContentBox && maxMainConstraints.isFinite) {
+          maxMainSize = totalFlexShrink > 0 ? math.min(maxMainSize, maxMainConstraints) : maxMainSize;
+          maxMainSize = totalFlexGrow > 0 ? math.max(maxMainSize, maxMainConstraints) : maxMainSize;
+        }
+
         initialFreeSpace = maxMainSize - totalSpace;
       }
 

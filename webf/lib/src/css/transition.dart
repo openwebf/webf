@@ -20,23 +20,12 @@ String _stringifyColor(Color color) {
 }
 
 Color _updateColor(Color oldColor, Color newColor, double progress, String property, RenderStyle renderStyle) {
-  int alphaDiff = newColor.alpha - oldColor.alpha;
-  int redDiff = newColor.red - oldColor.red;
-  int greenDiff = newColor.green - oldColor.green;
-  int blueDiff = newColor.blue - oldColor.blue;
-
-  int alpha = (alphaDiff * progress).toInt() + oldColor.alpha;
-  int red = (redDiff * progress).toInt() + oldColor.red;
-  int blue = (blueDiff * progress).toInt() + oldColor.blue;
-  int green = (greenDiff * progress).toInt() + oldColor.green;
-  Color color = Color.fromARGB(alpha, red, green, blue);
-
-  renderStyle.target.setRenderStyleProperty(property, CSSColor(color));
-
-  return color;
+  Color? result = Color.lerp(oldColor, newColor, progress);
+  renderStyle.target.setRenderStyleProperty(property, CSSColor(result!));
+  return result;
 }
 
-double? _parseLength(String length, RenderStyle renderStyle, String property) {
+double _parseLength(String length, RenderStyle renderStyle, String property) {
   return CSSLength.parseLength(length, renderStyle, property).computedValue;
 }
 
@@ -49,6 +38,37 @@ double _updateLength(
   double value = oldLengthValue * (1 - progress) + newLengthValue * progress;
   renderStyle.target.setRenderStyleProperty(property, CSSLengthValue(value, CSSLengthType.PX));
   return value;
+}
+
+CSSBorderRadius? _parseBorderLength(String length, RenderStyle renderStyle, String property) {
+  return CSSBorderRadius.parseBorderRadius(length, renderStyle, property);
+}
+
+String _stringifyBorderLength(CSSBorderRadius? value) {
+  return value?.toString() ?? '';
+}
+
+CSSBorderRadius? _updateBorderLength(
+    CSSBorderRadius startRadius, CSSBorderRadius endRadius, double progress, String property, CSSRenderStyle renderStyle) {
+  Radius? radius = Radius.lerp(startRadius.computedRadius, endRadius.computedRadius, progress);
+  if (radius != null) {
+    CSSLengthValue oldX = startRadius.x;
+    CSSLengthValue oldY = startRadius.y;
+    CSSLengthValue newX = CSSLength.parseLength(_stringifyLength(radius.x), oldX.renderStyle, oldX.propertyName, oldX.axisType);
+    CSSLengthValue newY = CSSLength.parseLength(_stringifyLength(radius.y), oldY.renderStyle, oldY.propertyName, oldY.axisType);
+    CSSBorderRadius newRadius = CSSBorderRadius(newX, newY);
+    //fix optimization current value and the last value have not changed
+    dynamic lastValueObj = renderStyle.getProperty(property);
+    if (lastValueObj is CSSBorderRadius) {
+      if (lastValueObj.computedRadius.x == newRadius.computedRadius.x
+          && lastValueObj.computedRadius.y == newRadius.computedRadius.y) {
+        return newRadius;
+      }
+    }
+    renderStyle.target.setRenderStyleProperty(property, newRadius);
+    return newRadius;
+  }
+  return null;
 }
 
 FontWeight _parseFontWeight(String fontWeight, RenderStyle renderStyle, String property) {
@@ -106,18 +126,29 @@ CSSLengthValue _updateLineHeight(double oldValue, double newValue, double progre
   return lengthValue;
 }
 
-Matrix4? _parseTransform(String value, RenderStyle renderStyle, String property) {
-  return CSSMatrix.computeTransformMatrix(CSSFunction.parseFunction(value), renderStyle);
+TransformAnimationValue _parseTransform(String value, RenderStyle renderStyle, String property) {
+  return CSSTransformMixin.resolveTransformForAnimation(value);
 }
 
 String _stringifyTransform(Matrix4 value) {
   return value.cssText();
 }
 
-Matrix4 _updateTransform(Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle) {
-  Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(begin, end, t);
-  renderStyle.transformMatrix = newMatrix4;
-  return newMatrix4;
+Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue end, double t, String property, CSSRenderStyle renderStyle) {
+  var beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle);
+  var endMatrix = CSSMatrix.computeTransformMatrix(end.value, renderStyle);
+
+  if (!renderStyle.renderBoxModel!.isRepaintBoundary) {
+    renderStyle.target.updateRenderBoxModel();
+  }
+
+  if (beginMatrix != null && endMatrix != null) {
+    Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
+    renderStyle.transformMatrix = newMatrix4;
+    return newMatrix4;
+  }
+
+  return Matrix4.identity();
 }
 
 CSSOrigin? _parseTransformOrigin(String value, RenderStyle renderStyle, String property) {
@@ -139,6 +170,7 @@ CSSOrigin _updateTransformOrigin(
 
 const List<Function> _colorHandler = [_parseColor, _updateColor, _stringifyColor];
 const List<Function> _lengthHandler = [_parseLength, _updateLength, _stringifyLength];
+const List<Function> _borderLengthHandler = [_parseBorderLength, _updateBorderLength, _stringifyBorderLength];
 const List<Function> _fontWeightHandler = [_parseFontWeight, _updateFontWeight, _stringifyFontWeight];
 const List<Function> _numberHandler = [_parseNumber, _updateNumber, _stringifyNumber];
 const List<Function> _lineHeightHandler = [_parseLineHeight, _updateLineHeight, _stringifyLineHeight];
@@ -162,10 +194,10 @@ Map<String, List<Function>> CSSTransitionHandlers = {
   LINE_HEIGHT: _lineHeightHandler,
   TRANSFORM: _transformHandler,
   TRANSFORM_ORIGIN: _transformOriginHandler,
-  BORDER_BOTTOM_LEFT_RADIUS: _lengthHandler,
-  BORDER_BOTTOM_RIGHT_RADIUS: _lengthHandler,
-  BORDER_TOP_LEFT_RADIUS: _lengthHandler,
-  BORDER_TOP_RIGHT_RADIUS: _lengthHandler,
+  BORDER_BOTTOM_LEFT_RADIUS: _borderLengthHandler,
+  BORDER_BOTTOM_RIGHT_RADIUS: _borderLengthHandler,
+  BORDER_TOP_LEFT_RADIUS: _borderLengthHandler,
+  BORDER_TOP_RIGHT_RADIUS: _borderLengthHandler,
   RIGHT: _lengthHandler,
   TOP: _lengthHandler,
   BOTTOM: _lengthHandler,

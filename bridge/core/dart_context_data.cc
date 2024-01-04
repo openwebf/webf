@@ -6,15 +6,21 @@
 
 namespace webf {
 
-const WidgetElementShape* DartContextData::GetWidgetElementShape(const AtomicString& key) {
+const WidgetElementShape* DartContextData::GetWidgetElementShape(const std::string& key) {
+  if (widget_element_shapes_.count(key) == 0)
+    return nullptr;
+  assert(widget_element_shapes_.count(key) > 0);
+  std::unique_lock<std::mutex> lock(context_data_mutex_);
   return widget_element_shapes_[key].get();
 }
 
-bool DartContextData::HasWidgetElementShape(const AtomicString& key) {
+bool DartContextData::HasWidgetElementShape(const std::string& key) {
+  std::unique_lock<std::mutex> lock(context_data_mutex_);
   return widget_element_shapes_.count(key) > 0;
 }
 
-void DartContextData::SetWidgetElementShape(const AtomicString& key, const std::shared_ptr<WidgetElementShape>& shape) {
+void DartContextData::SetWidgetElementShape(const std::string& key, const std::shared_ptr<WidgetElementShape>& shape) {
+  std::unique_lock<std::mutex> lock(context_data_mutex_);
   widget_element_shapes_[key] = shape;
 }
 
