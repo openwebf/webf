@@ -16,6 +16,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/scheduler/debounce.dart';
 import 'package:webf/svg.dart';
 
 const String IMAGE = 'IMG';
@@ -84,6 +85,7 @@ class ImageElement extends Element {
   // as different images. However, in most cases, using the same image with different sizes is much rarer than using images with different URL.
   bool get _shouldScaling => true;
 
+  ImageStreamCompleterHandle? _completerHandle;
   // only the last task works
   Future<void>? _updateImageDataTaskFuture;
   int _updateImageDataTaskId = 0;
@@ -256,7 +258,7 @@ class ImageElement extends Element {
   void _watchAnimatedImageWhenVisible() {
     RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
     if (_isListeningStream && !_didWatchAnimationImage) {
-      _stopListeningStream();
+      _stopListeningStream(keepStreamAlive: true);
       renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
       _didWatchAnimationImage = true;
     }
@@ -271,6 +273,9 @@ class ImageElement extends Element {
 
     // Stop and remove image stream reference.
     _stopListeningStream();
+    _completerHandle?.dispose();
+    _completerHandle = null;
+    _imageStreamListener = null;
     _cachedImageStream = null;
     _cachedImageInfo = null;
     _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
@@ -353,7 +358,7 @@ class ImageElement extends Element {
       _updateImageDataLazyCompleter?.complete();
       _listenToStream();
     } else {
-      _stopListeningStream();
+      _stopListeningStream(keepStreamAlive: true);
     }
   }
 
@@ -453,11 +458,13 @@ class ImageElement extends Element {
     }
   }
 
-  void _stopListeningStream() {
+  void _stopListeningStream({bool keepStreamAlive = false}) {
     if (!_isListeningStream) return;
 
+    if (keepStreamAlive && _completerHandle == null && _cachedImageStream?.completer != null) {
+      _completerHandle = _cachedImageStream!.completer!.keepAlive();
+    }
     _cachedImageStream?.removeListener(_listener);
-    _imageStreamListener = null;
     _isListeningStream = false;
   }
 
@@ -547,6 +554,10 @@ class ImageElement extends Element {
         // When detach renderer, all listeners will be cleared.
         ..addIntersectionChangeListener(_handleIntersectionChange);
 
+      /// The method is foolproof to avoid IntersectionObserver not working
+      Future.delayed(Duration(seconds: 3), () {
+        _updateImageDataLazyCompleter?.complete();
+      });
       // Wait image is show. If has a error, should run dispose and return;
       final abort = await completer.future;
 
@@ -661,12 +672,17 @@ class ImageElement extends Element {
     return data;
   }
 
+  /// Anti-shake and throttling
+  final _debounce = Debounce(milliseconds: 5);
+
   void _startLoadNewImage() {
     if (_resolvedUri == null) {
       // TODO: should use empty image;
       return;
     }
-    _updateImageData();
+    _debounce.run(() {
+      _updateImageData();
+    });
   }
 
   // Reload current image when width/height/boxFit changed.
@@ -675,7 +691,9 @@ class ImageElement extends Element {
     if (_isSVGMode) {
       // In svg mode, we don't need to reload
     } else {
-      _updateImageData();
+      _debounce.run(() {
+        _updateImageData();
+      });
     }
   }
 
