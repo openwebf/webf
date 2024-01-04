@@ -581,9 +581,9 @@ static int JS_WriteFunctionTag(BCWriterState* s, JSValueConst obj) {
     bc_put_leb128(s, b->debug.line_num);
     bc_put_leb128(s, b->debug.pc2line_len);
     dbuf_put(&s->dbuf, b->debug.pc2line_buf, b->debug.pc2line_len);
-    /**
+    /** 
      * purely for compatibility with WebF/Kraken V1 quickjs compiler (kbc1 file format).
-     * determination of whether a column number is available by
+     * determination of whether a column number is available by 
      * adding a special sequence of characters.
      */
     dbuf_putc(&s->dbuf, 255);

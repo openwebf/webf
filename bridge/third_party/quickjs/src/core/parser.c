@@ -1085,7 +1085,7 @@ redo:
     s->token.column_num = calc_column_position(s);
   }
 
-  //    dump_token(s, &s->token);
+  // dump_token(s, &s->token);
   return 0;
 
 fail:
@@ -7533,7 +7533,7 @@ static void js_free_function_def(JSContext *ctx, JSFunctionDef *fd)
 
   free_bytecode_atoms(ctx->rt, fd->byte_code.buf, fd->byte_code.size,
                       fd->use_short_opcodes);
-  if(fd->ic) {
+  if (fd->ic) {
     rebuild_ic(fd->ic);
     free_ic(fd->ic);
   }
@@ -11495,6 +11495,7 @@ fail:
   return JS_EXCEPTION;
 }
 
+/* parse "use strict/math/strip" and determine if has semi */
 static __exception int js_parse_directives(JSParseState *s)
 {
   char str[20];

@@ -162,7 +162,6 @@ JSValue JS_GetPropertyStr(JSContext* ctx, JSValueConst this_obj, const char* pro
    error. */
 JSProperty* add_property(JSContext* ctx, JSObject* p, JSAtom prop, int prop_flags) {
   JSShape *sh, *new_sh;
-
   sh = p->shape;
   if (sh->is_hashed) {
     /* try to find an existing shape */
@@ -274,7 +273,6 @@ redo:
       pr->flags = 0;
       pr->atom = JS_ATOM_NULL;
       pr1->u.value = JS_UNDEFINED;
-
       if (ic_delete_shape_proto_watchpoints(ctx->rt, sh, atom))
         return -1;
       /* compact the properties if too many deleted properties */
@@ -463,7 +461,7 @@ JSValue JS_GetPropertyInternal(JSContext *ctx, JSValueConst obj,
         }
       } else {
         // basic poly ic is only used for fast path
-        if (ic && p->shape->is_hashed) {
+        if (ic && p1->shape->is_hashed && p->shape->is_hashed) {
           ic->updated = TRUE;
           ic->updated_offset = add_ic_slot(ic, prop, p1, offset, proto_depth > 0 ? p : NULL);
         }
@@ -541,7 +539,7 @@ JSValue JS_GetPropertyInternal(JSContext *ctx, JSValueConst obj,
   }
 }
 
-JSValue JS_GetPropertyInternalWithIC(JSContext *ctx, JSValueConst obj,
+force_inline JSValue JS_GetPropertyInternalWithIC(JSContext *ctx, JSValueConst obj,
                                JSAtom prop, JSValueConst this_obj,
                                InlineCache *ic, int32_t offset, 
                                BOOL throw_ref_error) 
@@ -1982,7 +1980,7 @@ retry:
   return TRUE;
 }
 
-int JS_SetPropertyInternalWithIC(JSContext* ctx, JSValueConst this_obj, JSAtom prop, JSValue val, int flags, InlineCache *ic, int32_t offset) {
+force_inline int JS_SetPropertyInternalWithIC(JSContext* ctx, JSValueConst this_obj, JSAtom prop, JSValue val, int flags, InlineCache *ic, int32_t offset) {
   uint32_t tag;
   JSObject *p, *proto;
   tag = JS_VALUE_GET_TAG(this_obj);
