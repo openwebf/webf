@@ -1150,7 +1150,7 @@ class WebFController {
     mode = WebFLoadingMode.preloading;
 
     // Initialize document, window and the documentElement.
-    flushUICommand(view, view.window.pointer!, standardUICommandReason);
+    flushUICommand(view, nullptr, standardUICommandReason);
 
     // Set the status value for preloading.
     _preloadStatus = PreloadingStatus.preloading;
@@ -1221,7 +1221,7 @@ class WebFController {
     mode = WebFLoadingMode.preRendering;
 
     // Initialize document, window and the documentElement.
-    flushUICommand(view, view.window.pointer!, standardUICommandReason);
+    flushUICommand(view, nullptr, standardUICommandReason);
 
     // Set the status value for preloading.
     _preRenderingStatus = PreRenderingStatus.preloading;

@@ -4,7 +4,8 @@
  */
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
+import 'dart:ffi';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
@@ -225,7 +226,7 @@ class WebFState extends State<WebF> with RouteAware {
   bool _flutterScreenIsReady = false;
 
   watchWindowIsReady() {
-    FlutterView view = PlatformDispatcher.instance.views.first;
+    ui.FlutterView view = PlatformDispatcher.instance.views.first;
 
     double viewportWidth = view.physicalSize.width / view.devicePixelRatio;
     double viewportHeight = view.physicalSize.height / view.devicePixelRatio;
@@ -235,7 +236,7 @@ class WebFState extends State<WebF> with RouteAware {
       // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
       VoidCallback? _ordinaryOnMetricsChanged = PlatformDispatcher.instance.onMetricsChanged;
       PlatformDispatcher.instance.onMetricsChanged = () async {
-        if (view.physicalSize == Size.zero) {
+        if (view.physicalSize == ui.Size.zero) {
           return;
         }
         setState(() {
@@ -409,7 +410,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
     RenderViewportBox root = RenderViewportBox(
         background: _webfWidget.background,
         viewportSize: (_webfWidget.viewportWidth != null && _webfWidget.viewportHeight != null)
-            ? Size(_webfWidget.viewportWidth!, _webfWidget.viewportHeight!)
+            ? ui.Size(_webfWidget.viewportWidth!, _webfWidget.viewportHeight!)
             : null,
         controller: controller);
     controller.view.viewport = root;
@@ -461,7 +462,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     }
 
     // Sync element state.
-    flushUICommand(controller!.view, controller!.view.window.pointer!, standardUICommandReason);
+    flushUICommand(controller!.view, nullptr, standardUICommandReason);
 
     // Should schedule to the next frame to make sure the RenderViewportBox(WebF's root renderObject) had been layout.
     try {
