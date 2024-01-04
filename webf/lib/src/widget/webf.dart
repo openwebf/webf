@@ -149,6 +149,12 @@ class WebF extends StatefulWidget {
       {Key? key,
       this.viewportWidth,
       this.viewportHeight,
+      @Deprecated(
+        'Initialize WebFController instance before using WebF() widget.'
+        'To help you get remote resource preloaded before rendering WebF pages.'
+        'Setting this param to WebFController instead.'
+        'This feature was deprecated after v0.16.0-beta.1.'
+      )
       this.bundle,
       this.onControllerCreated,
       this.onLoad,
@@ -459,6 +465,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
       controller!.resume();
     }
 
+    await controller!.controlledInitCompleter.future;
     // Sync element state.
     flushUICommand(controller!.view, nullptr, standardUICommandReason);
 
