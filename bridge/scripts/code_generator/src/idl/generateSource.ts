@@ -350,7 +350,7 @@ auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ?
 ${nativeArguments.length > 0 ? `NativeValue arguments[] = {
   ${nativeArguments.join(',\n')}
 }` : 'NativeValue* arguments = nullptr;'};
-${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${nativeArguments.length}, arguments, FlushUICommandReason::kDependentsOnElement${isLayoutIndependent ? '| FlushUICommandReason::kDependentsOnElement' : ''}, exception_state);
+${returnValueAssignment}self->InvokeBindingMethod(binding_call_methods::k${declare.name}, ${nativeArguments.length}, arguments, FlushUICommandReason::kDependentsOnElement${isLayoutIndependent ? '| FlushUICommandReason::kDependentsOnLayout' : ''}, exception_state);
 ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverter(declare.returnType)}>::ToValue(NativeValueConverter<${generateNativeValueTypeConverter(declare.returnType)}>::FromNativeValue(native_value))` : ''};
   `.trim();
 }
