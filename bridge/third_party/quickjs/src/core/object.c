@@ -539,10 +539,17 @@ JSValue JS_GetPropertyInternal(JSContext *ctx, JSValueConst obj,
   }
 }
 
+#if _MSC_VER
+JSValue JS_GetPropertyInternalWithIC(JSContext *ctx, JSValueConst obj,
+                                                  JSAtom prop, JSValueConst this_obj,
+                                                  InlineCache *ic, int32_t offset,
+                                                  BOOL throw_ref_error)
+#else
 force_inline JSValue JS_GetPropertyInternalWithIC(JSContext *ctx, JSValueConst obj,
-                               JSAtom prop, JSValueConst this_obj,
-                               InlineCache *ic, int32_t offset, 
-                               BOOL throw_ref_error) 
+                                                  JSAtom prop, JSValueConst this_obj,
+                                                  InlineCache *ic, int32_t offset,
+                                                  BOOL throw_ref_error)
+#endif
 {
   uint32_t tag;
   JSObject *p, *proto;
@@ -557,7 +564,7 @@ force_inline JSValue JS_GetPropertyInternalWithIC(JSContext *ctx, JSValueConst o
     return JS_DupValue(ctx, p->prop[offset].u.value);
   }
 slow_path:
-  return JS_GetPropertyInternal(ctx, obj, prop, this_obj, ic, throw_ref_error);      
+  return JS_GetPropertyInternal(ctx, obj, prop, this_obj, ic, throw_ref_error);
 }
 
 JSValue JS_GetOwnPropertyNames2(JSContext* ctx, JSValueConst obj1, int flags, int kind) {
@@ -1980,7 +1987,11 @@ retry:
   return TRUE;
 }
 
+#if _MSC_VER
+int JS_SetPropertyInternalWithIC(JSContext* ctx, JSValueConst this_obj, JSAtom prop, JSValue val, int flags, InlineCache *ic, int32_t offset) {
+#else
 force_inline int JS_SetPropertyInternalWithIC(JSContext* ctx, JSValueConst this_obj, JSAtom prop, JSValue val, int flags, InlineCache *ic, int32_t offset) {
+#endif
   uint32_t tag;
   JSObject *p, *proto;
   tag = JS_VALUE_GET_TAG(this_obj);
