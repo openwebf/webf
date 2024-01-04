@@ -136,8 +136,14 @@ int free_ic(InlineCache *ic) {
   return 0;
 }
 
+#if _MSC_VER
+uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object,
+                     uint32_t prop_offset, JSObject* prototype)
+#else
 force_inline uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object,
-                     uint32_t prop_offset, JSObject* prototype) {
+                                  uint32_t prop_offset, JSObject* prototype)
+#endif
+{
   int32_t i;
   uint32_t h;
   InlineCacheHashSlot *ch;
@@ -185,7 +191,7 @@ force_inline uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object
     // the atom and prototype SHOULE BE freed by watchpoint_remove/clear_callback
     JS_DupValue(ic->ctx, JS_MKPTR(JS_TAG_OBJECT, prototype));
     ci->proto = prototype;
-    ci->watchpoint_ref = js_shape_create_watchpoint(rt, ci->shape, (intptr_t)ci, 
+    ci->watchpoint_ref = js_shape_create_watchpoint(rt, ci->shape, (intptr_t)ci,
                           JS_DupAtom(ic->ctx, atom),
                           ic_watchpoint_delete_handler,
                           ic_watchpoint_free_handler);
@@ -194,7 +200,12 @@ end:
   return ch->index;
 }
 
-uint32_t add_ic_slot1(InlineCache *ic, JSAtom atom) {
+#if _MSC_VER
+uint32_t add_ic_slot1(InlineCache *ic, JSAtom atom)
+#else
+force_inline uint32_t add_ic_slot1(InlineCache *ic, JSAtom atom)
+#endif
+{
   uint32_t h;
   InlineCacheHashSlot *ch;
   if (ic->count + 1 >= ic->capacity && resize_ic_hash(ic))
