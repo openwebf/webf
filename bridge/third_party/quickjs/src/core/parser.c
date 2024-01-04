@@ -6993,6 +6993,7 @@ static __exception int js_parse_statement_or_decl(JSParseState *s, int decl_mask
         goto fail;
       if (js_parse_expect_semi(s))
         goto fail;
+      emit_u8(s, OP_debugger);
       break;
 
     case TOK_ENUM:
