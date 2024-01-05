@@ -37,8 +37,7 @@ This ensures that users can reliably receive updates for three minor WebF versio
 | `>= 0.12.0 < 0.14.0` | `3.0.5` |
 | `>= 0.14.0 < 0.15.0` | `3.3.10` and `3.7.3` |
 | `>= 0.15.0 < 0.16.0` | `3.10.x` |
-| `>= 0.16.0 < 0.17.0` | `3.13.x` |
-| `>= 0.17.0 < 0.18.0` | `3.16.x` |
+| `>= 0.16.0 < 0.17.0` | `3.13.x` and `3.16.x` |
 
 
 <img width="817" alt="image" src="https://github.com/openwebf/webf/assets/4409743/2d5cf5a1-e670-424b-8766-324f475bbc0a">
