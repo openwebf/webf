@@ -6,8 +6,7 @@ import 'package:webf/src/svg/rendering/line.dart';
 import 'package:webf/svg.dart';
 
 class SVGLineElement extends SVGGeometryElement {
-
-  late final RenderSVGLine _renderer;
+  RenderSVGLine? _renderer;
 
   @override
   get renderBoxModel => _renderer;
@@ -21,7 +20,16 @@ class SVGLineElement extends SVGGeometryElement {
       SVGPresentationAttributeConfig('y2'),
     ]);
 
-  SVGLineElement(super.context) {
-    _renderer = RenderSVGLine(renderStyle: renderStyle, element: this);
+  SVGLineElement(super.context) {}
+
+  @override
+  createRenderer() {
+    return _renderer = RenderSVGLine(renderStyle: renderStyle, element: this);
+  }
+
+  @override
+  void didDetachRenderer() {
+    super.didDetachRenderer();
+    _renderer = null;
   }
 }
