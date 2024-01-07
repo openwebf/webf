@@ -7,12 +7,21 @@ import 'package:webf/svg.dart';
 import 'rendering/container.dart';
 
 class SVGGElement extends SVGGraphicsElement {
-  late final RenderSVGContainer _renderer;
+  RenderSVGContainer? _renderer;
 
   @override
   get renderBoxModel => _renderer;
 
-  SVGGElement(super.context) {
-    _renderer = RenderSVGContainer(renderStyle: renderStyle, element: this);
+  SVGGElement(super.context) {}
+
+  @override
+  createRenderer() {
+    return _renderer = RenderSVGContainer(renderStyle: renderStyle, element: this);
+  }
+
+  @override
+  void didDetachRenderer() {
+    super.didDetachRenderer();
+    _renderer = null;
   }
 }

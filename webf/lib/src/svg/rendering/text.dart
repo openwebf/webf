@@ -6,8 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
-class RenderSVGText extends RenderBoxModel
-    with RenderObjectWithChildMixin<RenderTextBox> {
+class RenderSVGText extends RenderBoxModel with RenderObjectWithChildMixin<RenderTextBox> {
   SVGTextElement? element;
 
   var _baseline = 0.0;

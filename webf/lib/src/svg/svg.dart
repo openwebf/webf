@@ -18,12 +18,10 @@ const DEFAULT_VIEW_BOX = Rect.fromLTWH(DEFAULT_VIEW_BOX_LEFT,
     DEFAULT_VIEW_BOX_TOP, DEFAULT_VIEW_BOX_WIDTH, DEFAULT_VIEW_BOX_HEIGHT);
 
 class SVGSVGElement extends SVGGraphicsElement {
-  late final RenderSVGRoot _renderer;
-  @override
-  get renderBoxModel => _renderer;
+  RenderSVGRoot? _renderer;
 
   @override
-  bool get isReplacedElement => false;
+  get renderBoxModel => _renderer;
 
   @override
   bool get isRepaintBoundary => true;
@@ -48,8 +46,17 @@ class SVGSVGElement extends SVGGraphicsElement {
       SVGPresentationAttributeConfig('height', property: true),
     ]);
 
-  SVGSVGElement(super.context) {
-    _renderer = RenderSVGRoot(renderStyle: renderStyle, element: this);
+  SVGSVGElement(super.context) {}
+
+  @override
+  RenderBox createRenderer() {
+    return _renderer = RenderSVGRoot(renderStyle: renderStyle, element: this)..viewBox = viewBox..ratio = ratio;
+  }
+
+  @override
+  void didDetachRenderer() {
+    super.didDetachRenderer();
+    _renderer = null;
   }
 
   @override
@@ -61,9 +68,9 @@ class SVGSVGElement extends SVGGraphicsElement {
               '${_viewBox?.left ?? 0} ${_viewBox?.top ?? 0} ${_viewBox?.width ?? 0} ${_viewBox?.height ?? 0}',
           setter: (val) {
             final nextViewBox = parseViewBox(val);
-            if (nextViewBox != _renderer.viewBox) {
-              _viewBox = nextViewBox;
-              _renderer.viewBox = nextViewBox;
+            _viewBox = nextViewBox;
+            if (nextViewBox != _renderer?.viewBox) {
+              _renderer?.viewBox = nextViewBox;
             }
           }),
       'preserveAspectRatio': ElementAttributeProperty(setter: (val) {

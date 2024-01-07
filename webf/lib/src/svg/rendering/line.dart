@@ -1,4 +1,3 @@
-
 import 'dart:ui';
 
 import 'package:webf/src/svg/rendering/shape.dart';

@@ -6,12 +6,21 @@ import 'package:webf/src/svg/rendering/empty.dart';
 import 'package:webf/svg.dart';
 
 class SVGUnknownElement extends SVGElement {
-  late final RenderSVGEmpty _renderer;
+  RenderSVGEmpty? _renderer;
 
   @override
   get renderBoxModel => _renderer;
 
-  SVGUnknownElement(super.context) {
-    _renderer = RenderSVGEmpty(renderStyle: renderStyle, element: this);
+  SVGUnknownElement(super.context) {}
+
+  @override
+  createRenderer() {
+    return _renderer = RenderSVGEmpty(renderStyle: renderStyle, element: this);
+  }
+
+  @override
+  void didDetachRenderer() {
+    super.didDetachRenderer();
+    _renderer = null;
   }
 }

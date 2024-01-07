@@ -6,7 +6,7 @@ import 'package:webf/svg.dart';
 import 'rendering/rect.dart';
 
 class SVGRectElement extends SVGGeometryElement {
-  late final RenderSVGRect _renderer;
+  RenderSVGRect? _renderer;
 
   @override
   get renderBoxModel => _renderer;
@@ -22,7 +22,16 @@ class SVGRectElement extends SVGGeometryElement {
       SVGPresentationAttributeConfig('ry', property: true)
     ]);
 
-  SVGRectElement(super.context) {
-    _renderer = RenderSVGRect(renderStyle: renderStyle, element: this);
+  SVGRectElement(super.context) {}
+
+  @override
+  createRenderer() {
+    return _renderer = RenderSVGRect(renderStyle: renderStyle, element: this);
+  }
+
+  @override
+  void didDetachRenderer() {
+    super.didDetachRenderer();
+    _renderer = null;
   }
 }
