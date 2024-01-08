@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
+import 'package:webf/bridge.dart';
 
 const String DEFAULT_URL = 'about:blank';
 const String UTF_8 = 'utf-8';
@@ -97,10 +98,21 @@ abstract class WebFBundle {
 
   // Indicate the bundle is resolved.
   bool get isResolved => _uri != null;
+  bool get isDataObtained => data != null;
 
   // Content type for data.
   // The default value is plain text.
-  ContentType contentType = ContentType.text;
+  ContentType? _contentType;
+  ContentType get contentType => _contentType ?? _resolveContentType(_uri);
+
+  // Pre process the data before the data actual used.
+  Future<void> preProcessing(double contextId) async {
+    if (isJavascript && data != null) {
+      assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
+      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString());
+      _contentType = webfBc1ContentType;
+    }
+  }
 
   @mustCallSuper
   Future<void> resolve({ String? baseUrl, UriParser? uriParser }) async {
@@ -148,6 +160,26 @@ abstract class WebFBundle {
     }
   }
 
+  static ContentType _resolveContentType(Uri? uri) {
+    if (_isUriExt(uri, '.js')) {
+      return _javascriptApplicationContentType;
+    } else if (_isUriExt(uri, '.html')) {
+      return ContentType.html;
+    } else if (_isSupportedBytecode('', uri)) {
+      return webfBc1ContentType;
+    } else if (_isUriExt(uri, '.css')) {
+      return _cssContentType;
+    }
+    return ContentType.text;
+  }
+
+  static bool _isUriExt(Uri? uri, String ext) {
+    if (uri == null) {
+      return false;
+    }
+    return uri.path.toLowerCase().endsWith(ext);
+  }
+
   static WebFBundle fromContent(String content, {String url = DEFAULT_URL, ContentType? contentType}) {
     return DataBundle.fromString(content, url, contentType: contentType ?? javascriptContentType);
   }
@@ -162,26 +194,26 @@ abstract class WebFBundle {
       contentType.mimeType == javascriptContentType.mimeType ||
       contentType.mimeType == _javascriptApplicationContentType.mimeType ||
       contentType.mimeType == _xJavascriptContentType.mimeType;
-  bool get isBytecode => _isSupportedBytecode(contentType.mimeType, _uri);
+  bool get isBytecode => contentType.mimeType == webfBc1ContentType || _isSupportedBytecode(contentType.mimeType, _uri);
 }
 
 // The bundle that output input data.
 class DataBundle extends WebFBundle {
   DataBundle(Uint8List data, String url, {ContentType? contentType}) : super(url) {
     this.data = data;
-    this.contentType = contentType ?? ContentType.binary;
+    _contentType = contentType ?? ContentType.binary;
   }
 
   DataBundle.fromString(String content, String url, {ContentType? contentType}) : super(url) {
     // Encode string to data by utf8.
     data = Uint8List.fromList(utf8.encode(content));
-    this.contentType = contentType ?? ContentType.text;
+    _contentType = contentType ?? ContentType.text;
   }
 
   DataBundle.fromDataUrl(String dataUrl, {ContentType? contentType}) : super(dataUrl) {
     UriData uriData = UriData.parse(dataUrl);
     data = uriData.contentAsBytes();
-    this.contentType = contentType ?? ContentType.parse('${uriData.mimeType}; charset=${uriData.charset}');
+    _contentType = contentType ?? ContentType.parse('${uriData.mimeType}; charset=${uriData.charset}');
   }
 
   @override
@@ -228,11 +260,11 @@ class NetworkBundle extends WebFBundle {
     }
 
     data = bytes.buffer.asUint8List();
-    contentType = response.headers.contentType ?? ContentType.binary;
+    _contentType = response.headers.contentType ?? ContentType.binary;
   }
 }
 
-class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
+class AssetsBundle extends WebFBundle {
   AssetsBundle(String url) : super(url);
 
   @override
@@ -264,7 +296,7 @@ class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
 }
 
 /// The bundle that source from local io.
-class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
+class FileBundle extends WebFBundle {
   FileBundle(String url) : super(url);
 
   @override
@@ -280,34 +312,5 @@ class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
     } else {
       _failedToResolveBundle(url);
     }
-  }
-}
-
-/// [_ExtensionContentTypeResolver] is useful for [WebFBundle] to determine
-/// content-type by uri's extension.
-mixin _ExtensionContentTypeResolver on WebFBundle {
-  ContentType? _contentType;
-
-  @override
-  ContentType get contentType => _contentType ??= _resolveContentType(_uri);
-
-  static ContentType _resolveContentType(Uri? uri) {
-    if (_isUriExt(uri, '.js')) {
-      return _javascriptApplicationContentType;
-    } else if (_isUriExt(uri, '.html')) {
-      return ContentType.html;
-    } else if (_isSupportedBytecode('', uri)) {
-      return webfBc1ContentType;
-    } else if (_isUriExt(uri, '.css')) {
-      return _cssContentType;
-    }
-    return ContentType.text;
-  }
-
-  static bool _isUriExt(Uri? uri, String ext) {
-    if (uri == null) {
-      return false;
-    }
-    return uri.path.toLowerCase().endsWith(ext);
   }
 }

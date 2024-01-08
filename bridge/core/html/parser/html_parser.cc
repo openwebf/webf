@@ -145,7 +145,10 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
 bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTMLFragment) {
   if (root_node != nullptr) {
     if (auto* root_container_node = DynamicTo<ContainerNode>(root_node)) {
-      root_container_node->RemoveChildren();
+      {
+        MemberMutationScope scope{root_node->GetExecutingContext()};
+        root_container_node->RemoveChildren();
+      }
 
       if (!trim(html).empty()) {
         GumboOutput* htmlTree = parse(html, isHTMLFragment);

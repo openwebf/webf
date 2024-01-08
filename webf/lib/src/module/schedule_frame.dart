@@ -10,10 +10,19 @@ typedef VoidCallback = void Function();
 
 mixin ScheduleFrameMixin {
   final Map<int, bool> _animationFrameCallbackMap = {};
+  bool _paused = false;
+  final List<VoidCallback> _pendingFrameCallbacks = [];
 
   void requestAnimationFrame(int newFrameId, DoubleCallback callback) {
     _animationFrameCallbackMap[newFrameId] = true;
     SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
+      if (_paused) {
+        _pendingFrameCallbacks.add(() {
+          callback(0);
+        });
+        return;
+      }
+
       if (_animationFrameCallbackMap.containsKey(newFrameId)) {
         _animationFrameCallbackMap.remove(newFrameId);
         double highResTimeStamp = timeStamp.inMicroseconds / 1000;
@@ -27,6 +36,19 @@ mixin ScheduleFrameMixin {
     if (_animationFrameCallbackMap.containsKey(id)) {
       _animationFrameCallbackMap.remove(id);
     }
+  }
+
+  void pauseAnimationFrame() {
+    _paused = true;
+    _pendingFrameCallbacks.clear();
+  }
+
+  void resumeAnimationFrame() {
+    _paused = false;
+    _pendingFrameCallbacks.forEach((callback) {
+      callback();
+    });
+    _pendingFrameCallbacks.clear();
   }
 
   void requestBatchUpdate() {
