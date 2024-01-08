@@ -463,6 +463,8 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
       controller!.resume();
     }
 
+    await controller!.controlledInitCompleter.future;
+
     // Sync element state.
     flushUICommand(controller!.view, ffi.nullptr, standardUICommandReason);
 
