@@ -14,7 +14,7 @@ Window, Document, and other APIs defined in W3C/WhatWG standards.
 This allows developers to utilize popular web frameworks, libraries, and other utilities to build apps compatible with
 both WebF and web browsers.
 
-By embedding an [optimized QuickJS engine](https://github.com/openwebf/quickjs), WebF can reduce loading time by 50%
+By embedding an [optimized QuickJS engine](https://github.com/openwebf/quickjs), which is 40% faster than [offical version](https://github.com/bellard/quickjs/). WebF can reduce loading time by 50%
 compared to WebView.
 
 All Flutter capabilities and its ecosystem are fully accessible to web developers.

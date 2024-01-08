@@ -20,7 +20,7 @@ Ensure that you select the correct Flutter version that matches both WebF and Fl
 | >= 0.12.0 < 0.14.0 | 3.0.x           |
 | >= 0.14.0 < 0.15.0 | 3.3.x and 3.7.x |
 | >= 0.15.0 < 0.16.0 | 3.10.x          |
-| >= 0.16.0 < 0.17.0 | 3.13.x          |
+| >= 0.16.0 < 0.17.0 | 3.13.x  and 3.16.x  |
 
 :::tip
 
