@@ -136,7 +136,6 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
     *parsed_bytecodes = JS_WriteObject(script_state_.ctx(), &len, byte_object, JS_WRITE_OBJ_BYTECODE);
     *bytecode_len = len;
 
-    JS_FreeValue(ctx(), byte_object);
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
   }
 
