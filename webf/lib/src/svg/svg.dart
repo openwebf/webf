@@ -18,9 +18,9 @@ const DEFAULT_VIEW_BOX = Rect.fromLTWH(DEFAULT_VIEW_BOX_LEFT,
     DEFAULT_VIEW_BOX_TOP, DEFAULT_VIEW_BOX_WIDTH, DEFAULT_VIEW_BOX_HEIGHT);
 
 class SVGSVGElement extends SVGGraphicsElement {
-  late final RenderSVGRoot _renderer;
+
   @override
-  get renderBoxModel => _renderer;
+  get renderBoxModel => renderSVGBox;
 
   @override
   bool get isReplacedElement => false;
@@ -31,8 +31,6 @@ class SVGSVGElement extends SVGGraphicsElement {
   @override
   Map<String, dynamic> get defaultStyle => {
         DISPLAY: INLINE,
-        WIDTH: DEFAULT_VIEW_BOX_WIDTH.toString(),
-        HEIGHT: DEFAULT_VIEW_BOX_HEIGHT.toString(),
       };
 
   Rect? _viewBox;
@@ -48,8 +46,24 @@ class SVGSVGElement extends SVGGraphicsElement {
       SVGPresentationAttributeConfig('height', property: true),
     ]);
 
-  SVGSVGElement(super.context) {
-    _renderer = RenderSVGRoot(renderStyle: renderStyle, element: this);
+  SVGSVGElement(super.context);
+
+  @override
+  dynamic createRenderBoxModel() {
+    return RenderSVGRoot(renderStyle: renderStyle, element: this, viewBox: viewBox, ratio: ratio);
+  }
+
+  @override
+  void willAttachRenderer() {
+    super.willAttachRenderer();
+    style.addStyleChangeListener(_stylePropertyChanged);
+  }
+
+  void _stylePropertyChanged(String property, String? original, String present,
+      {String? baseHref}) {
+    if (property == COLOR) {
+      renderSVGBox?.markNeedsPaint();
+    }
   }
 
   @override
@@ -61,9 +75,11 @@ class SVGSVGElement extends SVGGraphicsElement {
               '${_viewBox?.left ?? 0} ${_viewBox?.top ?? 0} ${_viewBox?.width ?? 0} ${_viewBox?.height ?? 0}',
           setter: (val) {
             final nextViewBox = parseViewBox(val);
-            if (nextViewBox != _renderer.viewBox) {
-              _viewBox = nextViewBox;
-              _renderer.viewBox = nextViewBox;
+            if (renderBoxModel is RenderSVGRoot) {
+              if (nextViewBox != (renderBoxModel as RenderSVGRoot).viewBox) {
+                _viewBox = nextViewBox;
+                (renderBoxModel as RenderSVGRoot).viewBox = nextViewBox;
+              }
             }
           }),
       'preserveAspectRatio': ElementAttributeProperty(setter: (val) {

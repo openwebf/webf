@@ -7,10 +7,9 @@ import 'package:webf/svg.dart';
 import 'rendering/circle.dart';
 
 class SVGCircleElement extends SVGGeometryElement {
-  late final RenderSVGCircle _renderer;
 
   @override
-  get renderBoxModel => _renderer;
+  get renderBoxModel => renderSVGBox;
 
   @override
   get presentationAttributeConfigs => super.presentationAttributeConfigs
@@ -20,7 +19,10 @@ class SVGCircleElement extends SVGGeometryElement {
       SVGPresentationAttributeConfig('r'),
     ]);
 
-  SVGCircleElement(super.context) {
-    _renderer = RenderSVGCircle(renderStyle: renderStyle, element: this);
+  SVGCircleElement(super.context);
+
+  @override
+  dynamic createRenderBoxModel() {
+    return RenderSVGCircle(renderStyle: renderStyle, element: this);
   }
 }

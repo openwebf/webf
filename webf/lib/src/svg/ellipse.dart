@@ -8,7 +8,6 @@ import 'package:webf/svg.dart';
 import 'rendering/ellipse.dart';
 
 class SVGEllipseElement extends SVGGeometryElement {
-  late final RenderSVGEllipse _renderer;
 
   @override
   // TODO: implement defaultStyle
@@ -19,7 +18,7 @@ class SVGEllipseElement extends SVGGeometryElement {
     });
 
   @override
-  get renderBoxModel => _renderer;
+  get renderBoxModel => renderSVGBox;
 
   @override
   get presentationAttributeConfigs => super.presentationAttributeConfigs
@@ -31,7 +30,10 @@ class SVGEllipseElement extends SVGGeometryElement {
       SVGPresentationAttributeConfig('r'),
     ]);
 
-  SVGEllipseElement(super.context) {
-    _renderer = RenderSVGEllipse(renderStyle: renderStyle, element: this);
+  SVGEllipseElement(super.context);
+
+  @override
+  dynamic createRenderBoxModel() {
+    return RenderSVGEllipse(renderStyle: renderStyle, element: this);
   }
 }
