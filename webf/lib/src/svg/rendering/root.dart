@@ -12,7 +12,7 @@ class RenderSVGRoot extends RenderSVGContainer {
   Rect? _viewBox;
 
   // the developer provided viewbox, maybe is null
-  get viewBox => _viewBox;
+  Rect? get viewBox => _viewBox;
 
   set viewBox(value) {
     _viewBox = value;
@@ -44,9 +44,9 @@ class RenderSVGRoot extends RenderSVGContainer {
     required super.renderStyle,
     super.element,
     Rect? viewBox,
-    SVGPreserveAspectRatio ratio = const SVGPreserveAspectRatio(),
+    SVGPreserveAspectRatio? ratio,
   })  : _viewBox = viewBox,
-        _ratio = ratio {}
+        _ratio = ratio ?? const SVGPreserveAspectRatio() {}
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
@@ -90,7 +90,7 @@ class RenderSVGRoot extends RenderSVGContainer {
       // To keep same behavior with Chrome
       _renderViewBox = Rect.fromLTWH(0, 0, width, height);
     } else {
-      _renderViewBox = viewBox;
+      _renderViewBox = viewBox ?? _renderViewBox;
     }
 
     visitChildren((child) {

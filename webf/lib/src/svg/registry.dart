@@ -15,4 +15,8 @@ final Map<String, ElementCreator> svgElementsRegistry = {
   TAG_ELLIPSE: (context) => SVGEllipseElement(context),
   TAG_STYLE: (context) => SVGStyleElement(context),
   TAG_LINE: (context) => SVGLineElement(context),
+  TAG_DEFS: (context) => SVGDefsElement(context),
+  TAG_LINEAR_GRADIENT: (context) => SVGLinearGradientElement(context),
+  TAG_STOP: (context) => SVGGradientStopElement(context),
+  TAG_CLIP_PATH: (context) => SVGClipPathElement(context),
 };

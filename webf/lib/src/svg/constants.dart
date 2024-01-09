@@ -7,3 +7,7 @@ const TAG_CIRCLE = 'CIRCLE';
 const TAG_ELLIPSE = 'ELLIPSE';
 const TAG_STYLE = 'STYLE';
 const TAG_LINE = 'line';
+const TAG_DEFS = 'DEFS';
+const TAG_LINEAR_GRADIENT = 'linearGradient';
+const TAG_STOP = 'stop';
+const TAG_CLIP_PATH = 'clipPath';

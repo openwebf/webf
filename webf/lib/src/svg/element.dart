@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
 class SVGPresentationAttributeConfig {
@@ -32,7 +33,13 @@ class SVGElement extends Element {
   @visibleForOverriding
   List<SVGPresentationAttributeConfig> get presentationAttributeConfigs => [];
 
-  SVGElement([BindingContext? context]) : super(context);
+  RenderBoxModel? _renderSVGBox;
+
+  RenderBoxModel? get renderSVGBox => isRenderBoxDispose() ? null : _renderSVGBox;
+
+  SVGElement([BindingContext? context]) : super(context) {
+    _renderSVGBox = createRenderBoxModel();
+  }
 
   SVGSVGElement? findRoot() {
     var parent = parentElement;
@@ -47,6 +54,9 @@ class SVGElement extends Element {
   }
 
   setAttributeStyle(String property, String value) {
+    if (style.contains(property)) {
+      return;
+    }
     internalSetAttribute(property, value);
     // TODO: This have some problems about cascading order. I will fixed it later. @XGHeaven
     attributeStyle[property] = value;
@@ -54,7 +64,24 @@ class SVGElement extends Element {
 
   @override
   void updateRenderBoxModel({ bool forceUpdate = false }) {
-    // do not needs to update
+    if (isRenderBoxDispose()) {
+      _renderSVGBox = createRenderBoxModel();
+    }
+  }
+
+  dynamic createRenderBoxModel() {
+    return null;
+  }
+
+  bool isRenderBoxDispose() {
+    if (_renderSVGBox?.isDispose == true) {
+      return true;
+    }
+    return false;
+  }
+
+  String getLog() {
+    return '$renderer (root:${findRoot()?.className ?? renderStyle.parent?.target.className}, ---> $className)';
   }
 
   @override

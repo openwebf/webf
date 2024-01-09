@@ -21,4 +21,8 @@ export 'src/svg/line.dart';
 export 'src/svg/constants.dart';
 export 'src/svg/svg_render_object_builder.dart';
 export 'src/svg/rendering/root.dart';
-
+export 'src/svg/defs/attribute.dart';
+export 'src/svg/defs/defs.dart';
+export 'src/svg/defs/linear_gradient.dart';
+export 'src/svg/defs/gradient_stop.dart';
+export 'src/svg/defs/clip_path.dart';
