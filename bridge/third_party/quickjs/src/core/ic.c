@@ -101,13 +101,25 @@ fail:
 
 int free_ic(InlineCache *ic) {
   uint32_t i, j;
+  JSRuntime *rt;
+  JSShape *sh;
   InlineCacheHashSlot *ch, *ch_next;
   InlineCacheRingItem *buffer;
+  ICWatchpoint *o;
+  rt = ic->ctx->rt;
   for (i = 0; i < ic->count; i++) {
     buffer = ic->cache[i].buffer;
     JS_FreeAtom(ic->ctx, ic->cache[i].atom);
     for (j = 0; j < IC_CACHE_ITEM_CAPACITY; j++) {
-      js_free_shape_null(ic->ctx->rt, buffer[j].shape);
+      sh = buffer[j].shape;
+      o = buffer[j].watchpoint_ref;
+      if (o) {
+        if (o->free_callback)
+          o->free_callback(rt, o->ref, o->atom);
+        list_del(&o->link);
+        js_free_rt(rt, o);
+      }
+      js_free_shape_null(rt, sh);
     }
   }
   for (i = 0; i < ic->capacity; i++) {
@@ -124,14 +136,26 @@ int free_ic(InlineCache *ic) {
   return 0;
 }
 
+#if _MSC_VER
 uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object,
-                     uint32_t prop_offset) {
+                     uint32_t prop_offset, JSObject* prototype)
+#else
+force_inline uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object,
+                                  uint32_t prop_offset, JSObject* prototype)
+#endif
+{
   int32_t i;
   uint32_t h;
   InlineCacheHashSlot *ch;
   InlineCacheRingSlot *cr;
+  InlineCacheRingItem *ci;
+  JSRuntime* rt;
   JSShape *sh;
+  JSObject *proto;
   cr = NULL;
+  rt = ic->ctx->rt;
+  sh = NULL;
+  proto = NULL;
   h = get_index_hash(atom, ic->hash_bits);
   for (ch = ic->hash[h]; ch != NULL; ch = ch->next)
     if (ch->atom == atom) {
@@ -142,25 +166,46 @@ uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object,
   assert(cr != NULL);
   i = cr->index;
   for (;;) {
-    if (object->shape == cr->buffer[i].shape) {
-      cr->buffer[i].prop_offset = prop_offset;
+    ci = cr->buffer + i;
+    if (object->shape == ci->shape && prototype == ci->proto) {
+      ci->prop_offset = prop_offset;
       goto end;
     }
 
     i = (i + 1) % IC_CACHE_ITEM_CAPACITY;
-    if (unlikely(i == cr->index))
+    if (unlikely(i == cr->index)) {
+      cr->index = (cr->index + 1) % IC_CACHE_ITEM_CAPACITY;
       break;
+    }
   }
 
-  sh = cr->buffer[i].shape;
-  cr->buffer[i].shape = js_dup_shape(object->shape);
-  js_free_shape_null(ic->ctx->rt, sh);
-  cr->buffer[i].prop_offset = prop_offset;
+  ci = cr->buffer + cr->index;
+  sh = ci->shape;
+  if (ci->watchpoint_ref)
+    // must be called before js_free_shape_null
+    js_shape_delete_watchpoints(rt, sh, ci);
+  ci->prop_offset = prop_offset;
+  ci->shape = js_dup_shape(object->shape);
+  js_free_shape_null(rt, sh);
+  if (prototype) {
+    // the atom and prototype SHOULE BE freed by watchpoint_remove/clear_callback
+    JS_DupValue(ic->ctx, JS_MKPTR(JS_TAG_OBJECT, prototype));
+    ci->proto = prototype;
+    ci->watchpoint_ref = js_shape_create_watchpoint(rt, ci->shape, (intptr_t)ci,
+                          JS_DupAtom(ic->ctx, atom),
+                          ic_watchpoint_delete_handler,
+                          ic_watchpoint_free_handler);
+  }
 end:
   return ch->index;
 }
 
-uint32_t add_ic_slot1(InlineCache *ic, JSAtom atom) {
+#if _MSC_VER
+uint32_t add_ic_slot1(InlineCache *ic, JSAtom atom)
+#else
+force_inline uint32_t add_ic_slot1(InlineCache *ic, JSAtom atom)
+#endif
+{
   uint32_t h;
   InlineCacheHashSlot *ch;
   if (ic->count + 1 >= ic->capacity && resize_ic_hash(ic))
@@ -178,5 +223,90 @@ uint32_t add_ic_slot1(InlineCache *ic, JSAtom atom) {
   ic->hash[h] = ch;
   ic->count += 1;
 end:
+  return 0;
+}
+
+int ic_watchpoint_delete_handler(JSRuntime* rt, intptr_t ref, JSAtom atom, void* target) {
+  InlineCacheRingItem *ci;
+  ci = (InlineCacheRingItem *)ref;
+  if(ref != (intptr_t)target)
+    return 1;
+  assert(ci->proto != NULL);
+  // the shape and prop_offset WILL BE handled by add_ic_slot
+  // !!! MUST NOT CALL js_free_shape0 TO DOUBLE FREE HERE !!!
+  JS_FreeValueRT(rt, JS_MKPTR(JS_TAG_OBJECT, ci->proto));
+  JS_FreeAtomRT(rt, atom);
+  ci->watchpoint_ref = NULL;
+  ci->proto = NULL;
+  ci->prop_offset = 0;
+  ci->shape = NULL;
+  return 0;
+}
+
+int ic_watchpoint_free_handler(JSRuntime* rt, intptr_t ref, JSAtom atom) {
+  InlineCacheRingItem *ci;
+  ci = (InlineCacheRingItem *)ref;
+  assert(ci->watchpoint_ref != NULL);
+  assert(ci->proto != NULL);
+  // the watchpoint_clear_callback ONLY CAN BE called by js_free_shape0
+  // !!! MUST NOT CALL js_free_shape0 TO DOUBLE FREE HERE !!!
+  JS_FreeValueRT(rt, JS_MKPTR(JS_TAG_OBJECT, ci->proto));
+  JS_FreeAtomRT(rt, atom);
+  ci->watchpoint_ref = NULL;
+  ci->proto = NULL;
+  ci->prop_offset = 0;
+  ci->shape = NULL;
+  return 0;
+}
+
+int ic_delete_shape_proto_watchpoints(JSRuntime *rt, JSShape *shape, JSAtom atom) {
+  struct list_head *el, *el1;
+  JSObject *p;
+  JSAtom *prop;
+  InlineCacheRingItem *ci;
+  JSShape *sh;
+  p = shape->proto;
+  while(likely(p)) {
+    if (p->shape->watchpoint)
+      list_for_each_safe(el, el1, p->shape->watchpoint) {
+        ICWatchpoint *o = list_entry(el, ICWatchpoint, link);
+        if (o->atom == atom) {
+          ci = (InlineCacheRingItem *)o->ref;
+          sh = ci->shape;
+          o->delete_callback = NULL;
+          o->free_callback = NULL;
+          ic_watchpoint_free_handler(rt, o->ref, o->atom);
+          js_free_shape_null(rt, shape);
+          list_del(el);
+          js_free_rt(rt, o);
+        }
+      }
+    p = p->shape->proto;
+  }
+  return 0;
+}
+
+int ic_free_shape_proto_watchpoints(JSRuntime *rt, JSShape *shape) {
+  struct list_head *el, *el1;
+  JSObject *p;
+  JSAtom *prop;
+  InlineCacheRingItem *ci;
+  JSShape *sh;
+  p = shape->proto;
+  while(likely(p)) {
+    if (p->shape->watchpoint)
+      list_for_each_safe(el, el1, p->shape->watchpoint) {
+        ICWatchpoint *o = list_entry(el, ICWatchpoint, link);
+        ci = (InlineCacheRingItem *)o->ref;
+        sh = ci->shape;
+        o->delete_callback = NULL;
+        o->free_callback = NULL;
+        ic_watchpoint_free_handler(rt, o->ref, o->atom);
+        js_free_shape_null(rt, shape);
+        list_del(el);
+        js_free_rt(rt, o);
+      }
+    p = p->shape->proto;
+  }
   return 0;
 }
