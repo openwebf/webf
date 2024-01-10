@@ -54,14 +54,14 @@ class InspectDOMModule extends UIInspectorModule {
       return;
     }
     // find real img element.
-    if (hitPath.first.target is WebFRenderImage || 
-          (hitPath.first.target is RenderSVGRoot && 
+    if (hitPath.first.target is WebFRenderImage ||
+          (hitPath.first.target is RenderSVGRoot &&
           (hitPath.first.target as RenderBoxModel).renderStyle.target.pointer == null)) {
       hitPath = hitPath.skip(1);
     }
     if (hitPath.isNotEmpty && hitPath.first.target is RenderBoxModel) {
-      RenderBoxModel lastHitRenderBoxModel = hitPath.first.target as RenderBoxModel;
-      int? targetId = lastHitRenderBoxModel.renderStyle.target.pointer!.address;
+      RenderBoxModel lastHitRenderBoxModel = result.path.first.target as RenderBoxModel;
+      int? targetId = view.forDevtoolsNodeId(lastHitRenderBoxModel.renderStyle.target);
       sendToFrontend(
           id,
           JSONEncodableMap({
@@ -81,7 +81,8 @@ class InspectDOMModule extends UIInspectorModule {
   void onSetInspectedNode(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     if (nodeId == null) return;
-    Node? node = view.getBindingObject<Node>(Pointer.fromAddress(nodeId));
+    Node? node = view.getBindingObject<Node>(
+        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
     if (node != null) {
       inspectedNode = node;
     }
@@ -99,7 +100,8 @@ class InspectDOMModule extends UIInspectorModule {
   void onGetBoxModel(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     if (nodeId == null) return;
-    Node? node = view.getBindingObject<Node>(Pointer.fromAddress(nodeId));
+    Node? node = view.getBindingObject<Node>(
+        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
 
     Element? element = null;
     if (node is Element) element = node;
@@ -207,12 +209,14 @@ class InspectorNode extends JSONEncodable {
   /// Node identifier that is passed into the rest of the DOM messages as the nodeId.
   /// Backend will only push node with given id once. It is aware of all requested nodes
   /// and will only fire DOM events for nodes known to the client.
-  int? get nodeId => referencedNode.pointer?.address;
+  int? get nodeId => referencedNode.ownerView.forDevtoolsNodeId(referencedNode);
 
   /// Optional. The id of the parent node if any.
   int get parentId {
-    if (referencedNode.parentNode != null && referencedNode.parentNode!.pointer != null) {
-      return referencedNode.parentNode!.pointer!.address;
+    if (referencedNode.parentNode != null &&
+        referencedNode.parentNode!.pointer != null) {
+      return referencedNode.parentNode!.ownerView
+          .forDevtoolsNodeId(referencedNode.parentNode!);
     } else {
       return 0;
     }
