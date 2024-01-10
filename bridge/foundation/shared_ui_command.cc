@@ -67,7 +67,8 @@ bool SharedUICommand::empty() {
 }
 
 void SharedUICommand::SyncToReserve() {
-  if (waiting_buffer_->empty()) return;
+  if (waiting_buffer_->empty())
+    return;
 
   if (reserve_buffer_->empty()) {
     swap(waiting_buffer_, reserve_buffer_);
@@ -97,7 +98,8 @@ void SharedUICommand::swap(std::unique_ptr<UICommandBuffer>& original, std::uniq
   is_blocking_writing_.store(false, std::memory_order::memory_order_release);
 }
 
-void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target) {
+void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& original,
+                                    std::unique_ptr<UICommandBuffer>& target) {
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
 
   for (int i = 0; i < original->size(); i++) {

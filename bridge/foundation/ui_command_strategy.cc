@@ -2,11 +2,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "ui_command_strategy.h"
 #include <math.h>
 #include "core/binding_object.h"
-#include "ui_command_strategy.h"
-#include "shared_ui_command.h"
 #include "logging.h"
+#include "shared_ui_command.h"
 
 namespace webf {
 
@@ -20,7 +20,7 @@ uint64_t WaitingStatus::MaxSize() {
 }
 
 void WaitingStatus::Reset() {
-  for(auto& i : storage) {
+  for (auto& i : storage) {
     i = UINT64_MAX;
   }
 }
@@ -37,7 +37,7 @@ void WaitingStatus::SetActiveAtIndex(uint64_t index) {
   }
 }
 
-UICommandSyncStrategy::UICommandSyncStrategy(SharedUICommand* host): host_(host) {}
+UICommandSyncStrategy::UICommandSyncStrategy(SharedUICommand* host) : host_(host) {}
 
 bool UICommandSyncStrategy::ShouldSync() {
   return should_sync;
@@ -58,9 +58,10 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kCreateDocument:
     case UICommand::kRemoveNode:
     case UICommand::kCreateWindow:
-    case UICommand::kRemoveAttribute:{
+    case UICommand::kRemoveAttribute: {
       SyncToReserve();
-      host_->reserve_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2, request_ui_update);
+      host_->reserve_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
+                                         request_ui_update);
       break;
     }
     case UICommand::kCreateElement:
@@ -73,7 +74,8 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kSetStyle:
     case UICommand::kClearStyle:
     case UICommand::kSetAttribute: {
-      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2, request_ui_update);
+      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
+                                         request_ui_update);
 
       RecordOperationForPointer(native_binding_object);
       SyncToReserveIfNecessary();
@@ -83,14 +85,16 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kRemoveEvent:
     case UICommand::kAddEvent:
     case UICommand::kDisposeBindingObject: {
-      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2, request_ui_update);
+      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
+                                         request_ui_update);
       break;
     }
     case UICommand::kInsertAdjacentNode: {
-      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2, request_ui_update);
+      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
+                                         request_ui_update);
 
       RecordOperationForPointer(native_binding_object);
-      RecordOperationForPointer((NativeBindingObject*) native_ptr2);
+      RecordOperationForPointer((NativeBindingObject*)native_ptr2);
 
       SyncToReserveIfNecessary();
       break;

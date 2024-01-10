@@ -35,9 +35,10 @@ class SharedUICommand : public DartReadable {
  private:
   void swap(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target);
   void appendCommand(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target);
-  std::unique_ptr<UICommandBuffer> active_buffer = nullptr; // The ui commands which accessible from Dart side
-  std::unique_ptr<UICommandBuffer> reserve_buffer_ = nullptr; // The ui commands which are ready to swap to active.
-  std::unique_ptr<UICommandBuffer> waiting_buffer_ = nullptr; // The ui commands which recorded from JS operations and sync to reserve_buffer by once.
+  std::unique_ptr<UICommandBuffer> active_buffer = nullptr;    // The ui commands which accessible from Dart side
+  std::unique_ptr<UICommandBuffer> reserve_buffer_ = nullptr;  // The ui commands which are ready to swap to active.
+  std::unique_ptr<UICommandBuffer> waiting_buffer_ =
+      nullptr;  // The ui commands which recorded from JS operations and sync to reserve_buffer by once.
   std::atomic<bool> is_blocking_writing_;
   ExecutingContext* context_;
   std::unique_ptr<UICommandSyncStrategy> ui_command_sync_strategy_ = nullptr;
