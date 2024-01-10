@@ -59,19 +59,9 @@ class _InactiveRenderObjects {
     if (renderObject == null) return;
 
     if (renderObject is RenderBoxModel && renderObject.isDispose) {
-      if (kDebugMode) {
-        print('finalizeInactiveRenderObjects has dispose ---> $renderObject');
-        print(' ---> ${renderObject.renderStyle.target.tagName},class ${renderObject.renderStyle.target.className}');
-      }
       return;
     }
     if (_renderObjects.contains(renderObject)) {
-      if (kDebugMode) {
-        print('finalizeInactiveRenderObjects has added ---> $renderObject');
-        if (renderObject is RenderBoxModel) {
-          print(' ---> ${renderObject.renderStyle.target.tagName},class ${renderObject.renderStyle.target.className}');
-        }
-      }
       return;
     }
 
@@ -91,11 +81,6 @@ class _InactiveRenderObjects {
   void finalizeInactiveRenderObjects() {
     for(RenderObject object in _renderObjects) {
       if (object.attached) {
-        if (kDebugMode) {
-          if (object is RenderBoxModel) {
-            print('end finalizeInactiveRenderObjects ---> ${object.renderStyle.target.tagName},class ${object.renderStyle.target.className}');
-          }
-        }
       } else {
         object.dispose();
       }
