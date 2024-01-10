@@ -36,7 +36,7 @@ class SVGClipPathElement extends DefsAttributeElement {
           return SVGClipPath(renderBox.asDefNodePath(), BoxShape.rectangle);
         }
       } else if (iterator.current is SVGCircleElement) {
-        RenderBox? renderBox = (iterator.current as SVGRectElement).renderer;
+        RenderBox? renderBox = (iterator.current as SVGCircleElement).renderer;
         if (renderBox is RenderSVGCircle) {
           return SVGClipPath(renderBox.asDefNodePath(), BoxShape.circle);
         }

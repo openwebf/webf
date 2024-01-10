@@ -116,7 +116,7 @@ abstract class RenderSVGShape extends RenderBoxModel {
     if (nodeList != null) {
       Iterator iterator = nodeList.iterator;
       while (iterator.moveNext()) {
-        if (iterator.current  is SVGDefsElement) {
+        if (iterator.current is SVGDefsElement) {
           SVGDefsElement element = iterator.current ;
           if (fillAttr != null && _shader == null) {
             _shader = element.getShader(fillAttr, rect);
