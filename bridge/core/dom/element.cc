@@ -36,8 +36,8 @@ Element::Element(const AtomicString& namespace_uri,
     buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
                        nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    buffer->AddCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
-                       bindingObject(), nullptr);
+    buffer->AddCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
+                       nullptr);
   } else {
     buffer->AddCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), bindingObject(),
                        namespace_uri.ToNativeString(ctx()).release());

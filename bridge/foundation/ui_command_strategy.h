@@ -1,12 +1,12 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef MULTI_THREADING_UI_COMMAND_STRATEGY_H
 #define MULTI_THREADING_UI_COMMAND_STRATEGY_H
 
-#include <unordered_map>
 #include <array>
+#include <unordered_map>
 #include "foundation/ui_command_buffer.h"
 
 namespace webf {
@@ -16,12 +16,7 @@ class SharedNativeString;
 class NativeBindingObject;
 
 struct WaitingStatus {
-  std::array<uint64_t, 4> storage{
-      UINT64_MAX,
-      UINT64_MAX,
-      UINT64_MAX,
-      UINT64_MAX
-  };
+  std::array<uint64_t, 4> storage{UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX};
 
   uint64_t MaxSize();
   void Reset();
@@ -42,7 +37,6 @@ class UICommandSyncStrategy {
                        bool request_ui_update);
 
  private:
-
   void SyncToReserve();
   void SyncToReserveIfNecessary();
   void RecordOperationForPointer(NativeBindingObject* ptr);
@@ -54,6 +48,6 @@ class UICommandSyncStrategy {
   friend class SharedUICommand;
 };
 
-}
+}  // namespace webf
 
-#endif // MULTI_THREADING_UI_COMMAND_STRATEGY_H
+#endif  // MULTI_THREADING_UI_COMMAND_STRATEGY_H
