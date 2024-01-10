@@ -19,11 +19,11 @@ SharedUICommand::SharedUICommand(ExecutingContext* context)
 
 void SharedUICommand::AddCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
-                                 void* nativePtr,
+                                 NativeBindingObject* native_binding_object,
                                  void* nativePtr2,
                                  bool request_ui_update) {
   if (!context_->isDedicated()) {
-    active_buffer->addCommand(type, std::move(args_01), nativePtr, nativePtr2, request_ui_update);
+    active_buffer->addCommand(type, std::move(args_01), native_binding_object, nativePtr2, request_ui_update);
     return;
   }
 
@@ -31,7 +31,7 @@ void SharedUICommand::AddCommand(UICommand type,
     SyncToActive();
   }
 
-  ui_command_sync_strategy_->RecordUICommand(type, args_01, nativePtr, nativePtr2, request_ui_update);
+  ui_command_sync_strategy_->RecordUICommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
 }
 
 // first called by dart to being read commands.

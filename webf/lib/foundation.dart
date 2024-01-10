@@ -17,4 +17,3 @@ export 'src/foundation/http_overrides.dart';
 export 'src/foundation/type.dart';
 export 'src/foundation/uri_parser.dart';
 export 'src/foundation/bytecode_cache.dart';
-export 'src/foundation/ui_command_iterator.dart';

@@ -653,10 +653,10 @@ void clearUICommand(double contextId) {
   _clearUICommandItems(_allocatedPages[contextId]!);
 }
 
-void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> selfPointer, int reason) {
+void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> selfPointer) {
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   if (controller != null) {
-    flushUICommand(controller.view, selfPointer, reason);
+    flushUICommand(controller.view, selfPointer);
   }
 }
 
@@ -690,7 +690,7 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
   return _NativeCommandData(flag, commandLength, rawMemory);
 }
 
-void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer, int reason) {
+void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer) {
   assert(_allocatedPages.containsKey(view.contextId));
   if (view.disposed) return;
 
@@ -699,6 +699,9 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   if (rawCommands.rawMemory.isNotEmpty) {
     commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
 
+    if (commands.length > 100) {
+      print('exec commands length: ${commands.length}');
+    }
     execUICommands(view, commands);
     SchedulerBinding.instance.scheduleFrame();
   }

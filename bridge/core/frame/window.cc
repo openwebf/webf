@@ -18,7 +18,7 @@
 namespace webf {
 
 Window::Window(ExecutingContext* context) : EventTargetWithInlineData(context) {
-  context->uiCommandBuffer()->AddCommand(UICommand::kCreateWindow, nullptr, (void*)bindingObject(), nullptr);
+  context->uiCommandBuffer()->AddCommand(UICommand::kCreateWindow, nullptr, bindingObject(), nullptr);
 }
 
 // https://infra.spec.whatwg.org/#ascii-whitespace

@@ -171,21 +171,20 @@ void DartMethodPointer::toBlob(bool is_dedicated,
 
 void DartMethodPointer::flushUICommand(bool is_dedicated,
                                        double context_id,
-                                       void* native_binding_object,
-                                       uint32_t reason) {
+                                       void* native_binding_object) {
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDartSync(
       is_dedicated, context_id,
-      [&](bool cancel, double context_id, void* native_binding_object, uint32_t reason) -> void {
+      [&](bool cancel, double context_id, void* native_binding_object) -> void {
         if (cancel)
           return;
 
-        flush_ui_command_(context_id, native_binding_object, reason);
+        flush_ui_command_(context_id, native_binding_object);
       },
-      context_id, native_binding_object, reason);
+      context_id, native_binding_object);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call END";

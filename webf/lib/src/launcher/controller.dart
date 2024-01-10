@@ -185,7 +185,7 @@ class WebFViewController implements WidgetsBindingObserver {
     // Wait viewport mounted on the outside renderObject tree.
     Future.microtask(() {
       // Execute UICommand.createDocument and UICommand.createWindow to initialize window and document.
-      flushUICommand(this, nullptr, dependentOnElementUICommandReason | dependentOnLayoutUICommandReason);
+      flushUICommand(this, nullptr);
     });
 
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
@@ -193,7 +193,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void _postFrameCallback(Duration timeStamp) {
     if (disposed) return;
-    flushUICommand(this, window.pointer!, standardUICommandReason);
+    flushUICommand(this, window.pointer!);
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
   }
 
