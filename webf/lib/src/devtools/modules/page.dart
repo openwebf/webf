@@ -4,6 +4,7 @@
  */
 
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -188,6 +189,8 @@ class InspectPageModule extends UIInspectorModule {
     switch (method) {
       case 'startScreencast':
         sendToFrontend(id, null);
+        _devToolsMaxWidth = params?['maxWidth'] ?? 0;
+        _devToolsMaxHeight = params?['maxHeight'] ?? 0;
         startScreenCast();
         break;
       case 'stopScreencast':
@@ -222,10 +225,20 @@ class InspectPageModule extends UIInspectorModule {
 
   int? _lastSentSessionID;
   bool _isFramingScreenCast = false;
+  int _devToolsMaxWidth = 0;
+  int _devToolsMaxHeight = 0;
 
   void _frameScreenCast(Duration timeStamp) {
     Element root = document.documentElement!;
-    root.toBlob().then((Uint8List screenShot) {
+    // the devtools of some pc do not automatically scale. so modify devicePixelRatio for it
+    double? devicePixelRatio;
+    double viewportWidth = document.viewport!.viewportSize.width;
+    double viewportHeight = document.viewport!.viewportSize.height;
+    if (_devToolsMaxWidth > 0 && _devToolsMaxHeight > 0 && viewportWidth > 0 && viewportHeight > 0) {
+      devicePixelRatio = math.min(_devToolsMaxHeight / viewportHeight, _devToolsMaxHeight / viewportHeight);
+      devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView.devicePixelRatio);
+    }
+    root.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List screenShot) {
       String encodedImage = base64Encode(screenShot);
       _lastSentSessionID = timeStamp.inMilliseconds;
       InspectorEvent event = PageScreenCastFrameEvent(ScreenCastFrame(
