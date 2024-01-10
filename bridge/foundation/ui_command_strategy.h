@@ -6,12 +6,33 @@
 #define MULTI_THREADING_UI_COMMAND_STRATEGY_H
 
 #include <unordered_map>
+#include <array>
 #include "foundation/ui_command_buffer.h"
 
 namespace webf {
 
 class SharedUICommand;
 class SharedNativeString;
+
+struct WaitingStatus {
+  std::array<uint64_t, 4> storage{
+      UINT64_MAX,
+      UINT64_MAX,
+      UINT64_MAX,
+      UINT64_MAX,
+//      UINT64_MAX,
+//      UINT64_MAX,
+//      UINT64_MAX,
+//      UINT64_MAX,
+//      UINT64_MAX,
+//      UINT64_MAX,
+  };
+
+  uint64_t MaxSize();
+  void Reset();
+  bool IsFullActive();
+  void SetActiveAtIndex(uint64_t index);
+};
 
 class UICommandSyncStrategy {
  public:
@@ -33,7 +54,7 @@ class UICommandSyncStrategy {
 
   bool should_sync{false};
   SharedUICommand* host_;
-  uint64_t waiting_status{UINT64_MAX};
+  WaitingStatus waiting_status{UINT64_MAX, UINT64_MAX};
   std::unordered_map<void*, size_t> frequency_map_;
   friend class SharedUICommand;
 };
