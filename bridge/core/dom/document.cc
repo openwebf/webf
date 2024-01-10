@@ -37,7 +37,7 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
 
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCreateDocument, nullptr, (void*)bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocument, nullptr, (void*)bindingObject(),
                                                        nullptr);
 }
 

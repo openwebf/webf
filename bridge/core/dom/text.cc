@@ -30,7 +30,7 @@ std::string Text::nodeName() const {
 
 Node* Text::Clone(Document& document, CloneChildrenFlag flag) const {
   Node* copy = Create(document, data());
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCloneNode, nullptr, bindingObject(),
                                                        copy->bindingObject());
   return copy;
 }

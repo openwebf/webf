@@ -279,7 +279,7 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
       listener_options->passive = options->passive();
     }
 
-    GetExecutingContext()->uiCommandBuffer()->addCommand(
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(
         UICommand::kAddEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), listener_options);
   }
 
@@ -327,7 +327,7 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   if (listener_count == 0) {
     bool has_capture = options->hasCapture() && options->capture();
 
-    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveEvent,
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveEvent,
                                                          std::move(event_type.ToNativeString(ctx())), bindingObject(),
                                                          has_capture ? (void*)0x01 : nullptr);
   }

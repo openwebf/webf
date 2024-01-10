@@ -8,6 +8,7 @@
 #include <atomic>
 #include "foundation/native_type.h"
 #include "foundation/ui_command_buffer.h"
+#include "foundation/ui_command_strategy.h"
 
 namespace webf {
 
@@ -15,7 +16,7 @@ class SharedUICommand : public DartReadable {
  public:
   SharedUICommand(ExecutingContext* context);
 
-  void addCommand(UICommand type,
+  void AddCommand(UICommand type,
                   std::unique_ptr<SharedNativeString>&& args_01,
                   void* nativePtr,
                   void* nativePtr2,
@@ -26,16 +27,20 @@ class SharedUICommand : public DartReadable {
   int64_t size();
   bool empty();
   void clear();
-  void sync();
+  void SyncToActive();
+  void SyncToReserve();
 
  private:
-  void swap();
-  void appendBackCommandToFront();
-  std::unique_ptr<UICommandBuffer> front_buffer_ = nullptr;
-  std::unique_ptr<UICommandBuffer> back_buffer = nullptr;
+  void swap(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target);
+  void appendCommand(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target);
+  std::unique_ptr<UICommandBuffer> active_buffer = nullptr;
+  std::unique_ptr<UICommandBuffer> waiting_buffer_ = nullptr;
+  std::unique_ptr<UICommandBuffer> reserve_buffer_ = nullptr;
   std::atomic<bool> is_blocking_writing_;
   ExecutingContext* context_;
+  std::unique_ptr<UICommandSyncStrategy> ui_command_sync_strategy_ = nullptr;
   friend class UICommandBuffer;
+  friend class UICommandSyncStrategy;
 };
 
 }  // namespace webf

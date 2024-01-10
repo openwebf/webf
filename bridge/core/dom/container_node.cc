@@ -436,7 +436,7 @@ void ContainerNode::RemoveBetween(Node* previous_child, Node* next_child, Node& 
   old_child.SetNextSibling(nullptr);
   old_child.SetParentOrShadowHostNode(nullptr);
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveNode, nullptr, old_child.bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveNode, nullptr, old_child.bindingObject(),
                                                        nullptr);
 }
 
@@ -490,7 +490,7 @@ void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
   new_child.SetNextSibling(&next_child);
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString("beforebegin");
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kInsertAdjacentNode, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kInsertAdjacentNode, std::move(args_01),
                                                        next_child.bindingObject(), new_child.bindingObject());
 }
 
@@ -505,7 +505,7 @@ void ContainerNode::AppendChildCommon(Node& child) {
   SetLastChild(&child);
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString("beforeend");
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kInsertAdjacentNode, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kInsertAdjacentNode, std::move(args_01),
                                                        bindingObject(), child.bindingObject());
 }
 
