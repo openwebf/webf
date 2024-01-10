@@ -13,19 +13,14 @@ namespace webf {
 
 class SharedUICommand;
 class SharedNativeString;
+class NativeBindingObject;
 
 struct WaitingStatus {
   std::array<uint64_t, 4> storage{
       UINT64_MAX,
       UINT64_MAX,
       UINT64_MAX,
-      UINT64_MAX,
-//      UINT64_MAX,
-//      UINT64_MAX,
-//      UINT64_MAX,
-//      UINT64_MAX,
-//      UINT64_MAX,
-//      UINT64_MAX,
+      UINT64_MAX
   };
 
   uint64_t MaxSize();
@@ -42,7 +37,7 @@ class UICommandSyncStrategy {
   void Reset();
   void RecordUICommand(UICommand type,
                        std::unique_ptr<SharedNativeString>& args_01,
-                       void* native_ptr,
+                       NativeBindingObject* native_ptr,
                        void* native_ptr2,
                        bool request_ui_update);
 
@@ -50,11 +45,11 @@ class UICommandSyncStrategy {
 
   void SyncToReserve();
   void SyncToReserveIfNecessary();
-  void RecordOperationForPointer(void* ptr);
+  void RecordOperationForPointer(NativeBindingObject* ptr);
 
   bool should_sync{false};
   SharedUICommand* host_;
-  WaitingStatus waiting_status{UINT64_MAX, UINT64_MAX};
+  WaitingStatus waiting_status;
   std::unordered_map<void*, size_t> frequency_map_;
   friend class SharedUICommand;
 };

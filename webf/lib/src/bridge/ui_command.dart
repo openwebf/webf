@@ -6,7 +6,6 @@ import 'dart:io';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/dom.dart';
@@ -24,38 +23,6 @@ class UICommand {
   String toString() {
     return 'UICommand(type: $type, args: $args, nativePtr: $nativePtr, nativePtr2: $nativePtr2)';
   }
-}
-
-const int nodeCreationFlag = 1;
-const int nodeMutationFlag = 1 << 2;
-const int styleUpdateFlag = 1 << 3;
-const int eventFlag = 1 << 4;
-const int attributeUpdateFlag = 1 << 5;
-const int disposeBindingObjectFlag = 1 << 6;
-const int otherOperationFlag = 1 << 7;
-
-bool isCommandsContainsNodeCreation(int flag) {
-  return flag & nodeCreationFlag != 0;
-}
-
-bool isCommandsContainsNodeMutation(int flag) {
-  return flag & nodeMutationFlag != 0;
-}
-
-bool isCommandsContainsStyleUpdate(int flag) {
-  return flag & styleUpdateFlag != 0;
-}
-
-const int standardUICommandReason = 1;
-const int dependentOnElementUICommandReason = 1 << 2;
-const int dependentOnLayoutUICommandReason = 1 << 3;
-
-bool isFlushUICommandReasonDependsOnElement(int reason) {
-  return reason & dependentOnElementUICommandReason != 0;
-}
-
-bool isFlushUICommandReasonDependsLayoutStyle(int reason) {
-  return reason & dependentOnLayoutUICommandReason != 0;
 }
 
 // struct UICommandItem {
@@ -112,35 +79,6 @@ List<UICommand> nativeUICommandToDart(List<int> rawMemory, int commandLength, do
   }, growable: false);
 
   return results;
-}
-
-bool shouldExecUICommands(WebFViewController view, bool isFinishedRecording, Pointer<NativeBindingObject> self, int commandFlag, int operationReason) {
-  if (isFinishedRecording) {
-    SchedulerBinding.instance.scheduleFrame();
-  }
-
-  bool isElementCreation = isCommandsContainsNodeCreation(commandFlag);
-  bool isElementMutation = isCommandsContainsNodeMutation(commandFlag);
-  bool isStyleUpdate = isCommandsContainsStyleUpdate(commandFlag);
-
-  bool isDependsOnElement = isFlushUICommandReasonDependsOnElement(operationReason);
-  if (isDependsOnElement) {
-    isDependsOnElement = !view.hasBindingObject(self);
-  }
-
-  bool isDependsOnStyleLayout = isFlushUICommandReasonDependsLayoutStyle(operationReason);
-
-  if (enableWebFCommandLog) {
-    print('''
-UI COMMAND CONDITION CHECK:
-  REASON: $operationReason
-  isElementCreation: $isElementCreation
-  isElementMutation: $isElementMutation
-  isDependsOnElement: $isDependsOnElement
-  isDependsOnStyleLayout: $isDependsOnStyleLayout
-  ''');
-  }
-  return isElementCreation || isElementMutation || isDependsOnElement || isDependsOnStyleLayout || isStyleUpdate;
 }
 
 void execUICommands(WebFViewController view, List<UICommand> commands) {

@@ -381,11 +381,11 @@ void _toBlob(Pointer<Void> callbackContext, double contextId, Pointer<NativeFunc
 
 final Pointer<NativeFunction<NativeToBlob>> _nativeToBlob = Pointer.fromFunction(_toBlob);
 
-typedef NativeFlushUICommand = Void Function(Double contextId, Pointer<NativeBindingObject> selfPointer, Uint32 reason);
-typedef DartFlushUICommand = void Function(double contextId, Pointer<NativeBindingObject> selfPointer, int reason);
+typedef NativeFlushUICommand = Void Function(Double contextId, Pointer<NativeBindingObject> selfPointer);
+typedef DartFlushUICommand = void Function(double contextId, Pointer<NativeBindingObject> selfPointer);
 
-void _flushUICommand(double contextId, Pointer<NativeBindingObject> selfPointer, int reason) {
-  flushUICommandWithContextId(contextId, selfPointer, reason);
+void _flushUICommand(double contextId, Pointer<NativeBindingObject> selfPointer) {
+  flushUICommandWithContextId(contextId, selfPointer);
 }
 
 final Pointer<NativeFunction<NativeFlushUICommand>> _nativeFlushUICommand = Pointer.fromFunction(_flushUICommand);

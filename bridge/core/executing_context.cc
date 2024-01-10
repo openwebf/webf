@@ -413,7 +413,7 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
       }
     }
 
-    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject(), reason);
+    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
   }
 }
 

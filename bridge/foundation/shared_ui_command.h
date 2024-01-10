@@ -12,13 +12,15 @@
 
 namespace webf {
 
+class NativeBindingObject;
+
 class SharedUICommand : public DartReadable {
  public:
   SharedUICommand(ExecutingContext* context);
 
   void AddCommand(UICommand type,
                   std::unique_ptr<SharedNativeString>&& args_01,
-                  void* nativePtr,
+                  NativeBindingObject* native_binding_object,
                   void* nativePtr2,
                   bool request_ui_update = true);
 
