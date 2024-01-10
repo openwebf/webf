@@ -20,7 +20,7 @@ Comment* Comment::Create(Document& document, const AtomicString& data) {
 
 Comment::Comment(TreeScope& tree_scope, const AtomicString& data, ConstructionType type)
     : CharacterData(tree_scope, data, type) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCreateComment, nullptr, (void*)bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateComment, nullptr, (void*)bindingObject(),
                                                        nullptr);
 }
 
@@ -33,7 +33,7 @@ std::string Comment::nodeName() const {
 
 Node* Comment::Clone(Document& factory, CloneChildrenFlag flag) const {
   Node* copy = Create(factory, data());
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCloneNode, nullptr, bindingObject(),
                                                        copy->bindingObject());
   return copy;
 }

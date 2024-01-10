@@ -17,7 +17,7 @@ void CharacterData::setData(const AtomicString& data, ExceptionState& exception_
 
   std::unique_ptr<SharedNativeString> args_01 = data.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = stringToNativeString("data");
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetAttribute, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01),
                                                        (void*)bindingObject(), args_02.release());
 
   DidModifyData(old_data);

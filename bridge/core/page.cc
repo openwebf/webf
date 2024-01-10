@@ -53,7 +53,7 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
     HTMLParser::parseHTML(code, length, context_->document()->documentElement());
   }
 
-  context_->uiCommandBuffer()->addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  context_->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 
   return true;
 }

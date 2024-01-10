@@ -96,7 +96,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_END);
   //#endif
 
-  ui_command_buffer_.addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -276,7 +276,7 @@ void ExecutingContext::ReportError(JSValueConst error) {
 
 void ExecutingContext::DrainMicrotasks() {
   DrainPendingPromiseJobs();
-  ui_command_buffer_.addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
 namespace {
@@ -386,29 +386,31 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
                                       uint32_t reason,
                                       std::vector<NativeBindingObject*>& deps) {
   if (!uiCommandBuffer()->empty()) {
-    bool should_swap_ui_commands = false;
-    if (isUICommandReasonDependsOnElement(reason)) {
-      bool element_mounted_on_dart = self->bindingObject()->invoke_bindings_methods_from_native != nullptr;
-      bool is_deps_elements_mounted_on_dart = true;
+    if (is_dedicated_) {
+      bool should_swap_ui_commands = false;
+      if (isUICommandReasonDependsOnElement(reason)) {
+        bool element_mounted_on_dart = self->bindingObject()->invoke_bindings_methods_from_native != nullptr;
+        bool is_deps_elements_mounted_on_dart = true;
 
-      for (auto binding : deps) {
-        if (binding->invoke_bindings_methods_from_native == nullptr) {
-          is_deps_elements_mounted_on_dart = false;
+        for (auto binding : deps) {
+          if (binding->invoke_bindings_methods_from_native == nullptr) {
+            is_deps_elements_mounted_on_dart = false;
+          }
+        }
+
+        if (!element_mounted_on_dart || !is_deps_elements_mounted_on_dart) {
+          should_swap_ui_commands = true;
         }
       }
 
-      if (!element_mounted_on_dart || !is_deps_elements_mounted_on_dart) {
+      if (isUICommandReasonDependsOnLayout(reason) || isUICommandReasonDependsOnAll(reason)) {
         should_swap_ui_commands = true;
       }
-    }
 
-    if (isUICommandReasonDependsOnLayout(reason) || isUICommandReasonDependsOnAll(reason)) {
-      should_swap_ui_commands = true;
-    }
-
-    // Sync commands to dart when caller dependents on Element.
-    if (should_swap_ui_commands) {
-      ui_command_buffer_.sync();
+      // Sync commands to dart when caller dependents on Element.
+      if (should_swap_ui_commands) {
+        ui_command_buffer_.SyncToActive();
+      }
     }
 
     dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject(), reason);
