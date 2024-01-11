@@ -57,7 +57,8 @@ class MutationObserverRegistration : public ScriptWrappable {
                                const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter);
   ~MutationObserverRegistration();
 
-  void ResetObservation(MutationObserverOptions, const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter);
+  void ResetObservation(MutationObserverOptions,
+                        const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter);
   void ObservedSubtreeNodeWillDetach(Node&);
   void ClearTransientRegistrations();
   bool HasTransientRegistrations() const {
