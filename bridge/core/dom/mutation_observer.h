@@ -49,8 +49,8 @@ class MutationObserverInit;
 class MutationObserverRegistration;
 class MutationRecord;
 
-using MutationObserverSet = std::set<Member<MutationObserver>>;
-using MutationObserverRegistrationSet = std::set<Member<MutationObserverRegistration>>;
+using MutationObserverSet = std::unordered_set<Member<MutationObserver>, Member<MutationObserver>::KeyHasher>;
+using MutationObserverRegistrationSet = std::unordered_set<Member<MutationObserverRegistration>, Member<MutationObserverRegistration>::KeyHasher>;
 using MutationObserverRegistrationVector = std::vector<Member<MutationObserverRegistration>>;
 using MutationObserverVector = std::vector<Member<MutationObserver>>;
 using MutationRecordVector = std::vector<Member<MutationRecord>>;
@@ -88,7 +88,7 @@ class MutationObserver final : public ScriptWrappable {
   void Deliver();
   void SetHasTransientRegistration();
 
-  std::set<Member<Node>> GetObservedNodes() const;
+  [[nodiscard]] std::unordered_set<Member<Node>, Member<Node>::KeyHasher> GetObservedNodes() const;
 
   bool HasPendingActivity() const { return !records_.empty(); }
 

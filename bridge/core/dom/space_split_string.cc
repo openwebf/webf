@@ -47,7 +47,7 @@
  */
 
 #include "space_split_string.h"
-#include <set>
+#include <unordered_set>
 #include <sstream>
 #include "built_in_string.h"
 
@@ -129,7 +129,7 @@ inline void SpaceSplitString::Data::CreateVector(JSContext* ctx,
                                                  const CharacterType* characters,
                                                  unsigned int length) {
   assert(vector_.empty());
-  std::set<JSAtom> token_set;
+  std::unordered_set<JSAtom> token_set;
   unsigned start = 0;
   while (true) {
     while (start < length && IsHTMLSpace<CharacterType>(characters[start]))

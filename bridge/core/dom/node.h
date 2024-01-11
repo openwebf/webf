@@ -243,7 +243,7 @@ class Node : public EventTarget {
                                             const AtomicString* attribute_name);
   void RegisterMutationObserver(MutationObserver&,
                                 MutationObserverOptions,
-                                const std::set<AtomicString>& attribute_filter);
+                                const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter);
   void UnregisterMutationObserver(MutationObserverRegistration*);
   void RegisterTransientMutationObserver(MutationObserverRegistration*);
   void UnregisterTransientMutationObserver(MutationObserverRegistration*);

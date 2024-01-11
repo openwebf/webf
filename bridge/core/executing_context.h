@@ -204,7 +204,7 @@ class ExecutingContext {
   bool in_dispatch_error_event_{false};
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
-  std::set<ScriptWrappable*> active_wrappers_;
+  std::unordered_set<ScriptWrappable*> active_wrappers_;
   bool is_dedicated_;
 };
 
