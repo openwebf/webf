@@ -32,9 +32,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <unordered_set>
 #include "mutation_observer.h"
 #include <algorithm>
+#include <unordered_set>
 #include "bindings/qjs/converter_impl.h"
 #include "mutation_observer_registration.h"
 #include "mutation_record.h"

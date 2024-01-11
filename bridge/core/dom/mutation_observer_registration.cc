@@ -38,10 +38,11 @@
 
 namespace webf {
 
-MutationObserverRegistration::MutationObserverRegistration(MutationObserver& observer,
-                                                           Node* registration_node,
-                                                           MutationObserverOptions options,
-                                                           const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter)
+MutationObserverRegistration::MutationObserverRegistration(
+    MutationObserver& observer,
+    Node* registration_node,
+    MutationObserverOptions options,
+    const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter)
     : observer_(&observer),
       registration_node_(registration_node),
       options_(options),
@@ -55,8 +56,9 @@ void MutationObserverRegistration::Dispose() {
   observer_->ObservationEnded(this);
 }
 
-void MutationObserverRegistration::ResetObservation(MutationObserverOptions options,
-                                                    const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter) {
+void MutationObserverRegistration::ResetObservation(
+    MutationObserverOptions options,
+    const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter) {
   ClearTransientRegistrations();
   options_ = options;
   attribute_filter_ = attribute_filter;

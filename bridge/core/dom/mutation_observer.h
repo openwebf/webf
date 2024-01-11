@@ -50,7 +50,8 @@ class MutationObserverRegistration;
 class MutationRecord;
 
 using MutationObserverSet = std::unordered_set<Member<MutationObserver>, Member<MutationObserver>::KeyHasher>;
-using MutationObserverRegistrationSet = std::unordered_set<Member<MutationObserverRegistration>, Member<MutationObserverRegistration>::KeyHasher>;
+using MutationObserverRegistrationSet =
+    std::unordered_set<Member<MutationObserverRegistration>, Member<MutationObserverRegistration>::KeyHasher>;
 using MutationObserverRegistrationVector = std::vector<Member<MutationObserverRegistration>>;
 using MutationObserverVector = std::vector<Member<MutationObserver>>;
 using MutationRecordVector = std::vector<Member<MutationRecord>>;
