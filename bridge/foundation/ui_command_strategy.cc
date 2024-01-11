@@ -56,7 +56,6 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
   switch (type) {
     case UICommand::kStartRecordingCommand:
     case UICommand::kCreateDocument:
-    case UICommand::kRemoveNode:
     case UICommand::kCreateWindow:
     case UICommand::kRemoveAttribute: {
       SyncToReserve();
@@ -70,10 +69,8 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kCreateDocumentFragment:
     case UICommand::kCreateSVGElement:
     case UICommand::kCreateElementNS:
-    case UICommand::kCloneNode:
-    case UICommand::kSetStyle:
-    case UICommand::kClearStyle:
-    case UICommand::kSetAttribute: {
+    case UICommand::kRemoveNode:
+    case UICommand::kCloneNode: {
       host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
                                          request_ui_update);
 
@@ -82,6 +79,9 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
 
       break;
     }
+    case UICommand::kSetStyle:
+    case UICommand::kClearStyle:
+    case UICommand::kSetAttribute:
     case UICommand::kRemoveEvent:
     case UICommand::kAddEvent:
     case UICommand::kDisposeBindingObject: {
