@@ -210,9 +210,11 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, Exceptio
       binding_call_methods::kgetComputedStyle, 1, arguments,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
 
-  NativeBindingObject* native_binding_object = NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result);
 
-  if (native_binding_object == nullptr) return nullptr;
+  if (native_binding_object == nullptr)
+    return nullptr;
 
   return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
 }
