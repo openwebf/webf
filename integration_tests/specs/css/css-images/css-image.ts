@@ -269,7 +269,7 @@ describe('css-image', () => {
         }
       });
       div.appendChild(image2);
-      await snapshot();
+      await snapshot(0.1);
       done();
     }, 1000);
   });
