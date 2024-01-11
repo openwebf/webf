@@ -3,7 +3,7 @@
  */
 
 #include "dart_isolate_context.h"
-#include <set>
+#include <unordered_set>
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
@@ -15,7 +15,7 @@
 
 namespace webf {
 
-thread_local std::set<DartWireContext*> alive_wires;
+thread_local std::unordered_set<DartWireContext*> alive_wires;
 
 PageGroup::~PageGroup() {
   for (auto page : pages_) {

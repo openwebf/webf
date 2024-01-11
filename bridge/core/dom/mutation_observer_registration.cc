@@ -41,7 +41,7 @@ namespace webf {
 MutationObserverRegistration::MutationObserverRegistration(MutationObserver& observer,
                                                            Node* registration_node,
                                                            MutationObserverOptions options,
-                                                           const std::set<AtomicString>& attribute_filter)
+                                                           const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter)
     : observer_(&observer),
       registration_node_(registration_node),
       options_(options),
@@ -56,7 +56,7 @@ void MutationObserverRegistration::Dispose() {
 }
 
 void MutationObserverRegistration::ResetObservation(MutationObserverOptions options,
-                                                    const std::set<AtomicString>& attribute_filter) {
+                                                    const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter) {
   ClearTransientRegistrations();
   options_ = options;
   attribute_filter_ = attribute_filter;
@@ -70,7 +70,7 @@ void MutationObserverRegistration::ObservedSubtreeNodeWillDetach(Node& node) {
   observer_->SetHasTransientRegistration();
 
   if (!transient_registration_nodes_) {
-    transient_registration_nodes_ = std::make_unique<std::set<Member<Node>>>();
+    transient_registration_nodes_ = std::make_unique<NodeSet>();
 
     assert(registration_node_);
     assert(!registration_node_keep_alive_);
@@ -119,7 +119,7 @@ bool MutationObserverRegistration::ShouldReceiveMutationFrom(Node& node,
   return attribute_filter_.count(*attribute_name) > 0;
 }
 
-void MutationObserverRegistration::AddRegistrationNodesToSet(std::set<Member<Node>>& nodes) const {
+void MutationObserverRegistration::AddRegistrationNodesToSet(NodeSet& nodes) const {
   assert(registration_node_);
   nodes.insert(registration_node_.Get());
   if (transient_registration_nodes_->empty())

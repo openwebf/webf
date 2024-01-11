@@ -8,7 +8,7 @@
 
 #include <include/dart_api_dl.h>
 #include <cinttypes>
-#include <set>
+#include <unordered_set>
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/dart_methods.h"
@@ -146,7 +146,7 @@ class BindingObject : public ScriptWrappable {
 
  private:
   NativeBindingObject* binding_object_ = nullptr;
-  std::set<BindingObjectPromiseContext*> pending_promise_contexts_;
+  std::unordered_set<BindingObjectPromiseContext*> pending_promise_contexts_;
 };
 
 }  // namespace webf

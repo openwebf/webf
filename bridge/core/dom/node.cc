@@ -148,7 +148,7 @@ void Node::GetRegisteredMutationObserversOfType(MutationObserverOptionsMap& obse
 
 void Node::RegisterMutationObserver(MutationObserver& observer,
                                     MutationObserverOptions options,
-                                    const std::set<AtomicString>& attribute_filter) {
+                                    const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter) {
   MutationObserverRegistration* registration = nullptr;
 
   for (const auto& item : EnsureNodeData().EnsureMutationObserverData().Registry()) {
@@ -230,7 +230,7 @@ const std::vector<Member<MutationObserverRegistration>>* Node::MutationObserverR
   return &data->Registry();
 }
 
-const std::set<Member<MutationObserverRegistration>>* Node::TransientMutationObserverRegistry() {
+const MutationObserverRegistrationSet* Node::TransientMutationObserverRegistry() {
   if (!HasNodeData())
     return nullptr;
   NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();

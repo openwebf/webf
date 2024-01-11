@@ -7,16 +7,16 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <set>
+#include <unordered_set>
 #include <unordered_map>
 #include "bindings/qjs/atomic_string.h"
 
 namespace webf {
 
 struct WidgetElementShape {
-  std::set<std::string> built_in_properties_;
-  std::set<std::string> built_in_methods_;
-  std::set<std::string> built_in_async_methods_;
+  std::unordered_set<std::string> built_in_properties_;
+  std::unordered_set<std::string> built_in_methods_;
+  std::unordered_set<std::string> built_in_async_methods_;
 };
 
 class DartContextData {
