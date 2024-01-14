@@ -487,9 +487,9 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
           assert(controller!.entrypoint!.isResolved);
           assert(controller!.entrypoint!.isDataObtained);
           if (controller!.view.document.unfinishedPreloadResources == 0 && controller!.entrypoint!.isHTML) {
-            List<VoidCallback> pendingScriptCallbacks = controller!.view.document.pendingPreloadingScriptCallbacks;
+            List<AsyncCallback> pendingScriptCallbacks = controller!.view.document.pendingPreloadingScriptCallbacks;
             for (int i = 0; i < pendingScriptCallbacks.length; i ++) {
-              pendingScriptCallbacks[i]();
+              await pendingScriptCallbacks[i]();
             }
           } else if (controller!.entrypoint!.isJavascript || controller!.entrypoint!.isBytecode) {
             await controller!.evaluateEntrypoint();
