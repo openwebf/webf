@@ -91,7 +91,7 @@ class Document extends ContainerNode {
   // Cache all the fixed children of renderBoxModel of root element.
   Set<RenderBoxModel> fixedChildren = {};
 
-  final List<VoidCallback> pendingPreloadingScriptCallbacks = [];
+  final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
   Set<Element> styleDirtyElements = {};
 

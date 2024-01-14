@@ -168,7 +168,7 @@ class ScriptRunner {
       }
     } else {
       await bundle.preProcessing(_contextId);
-      _document.pendingPreloadingScriptCallbacks.add(() => task(shouldAsync));
+      _document.pendingPreloadingScriptCallbacks.add(() async => await task(shouldAsync));
 
       if (_document.controller.preloadStatus != PreloadingStatus.none) {
         _document.unfinishedPreloadResources--;
