@@ -913,6 +913,8 @@ class WebFController {
   final WebFThread runningThread;
 
   Completer controlledInitCompleter = Completer();
+  Completer controllerPreloadingCompleter = Completer();
+  Completer controllerPreRenderingCompleter = Completer();
 
   bool externalController;
 
@@ -1141,7 +1143,7 @@ class WebFController {
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
   Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize}) async {
-    Completer completer = Completer();
+    controllerPreloadingCompleter = Completer();
 
     await controlledInitCompleter.future;
 
@@ -1175,7 +1177,7 @@ class WebFController {
       if (_entrypoint!.isJavascript) {
         await _entrypoint!.preProcessing(view.contextId);
       }
-      completer.complete();
+      controllerPreloadingCompleter.complete();
     } else if (_entrypoint!.isHTML) {
       // Evaluate the HTML entry point, and loading the stylesheets and scripts.
       await evaluateEntrypoint();
@@ -1185,11 +1187,11 @@ class WebFController {
 
       view.document.onPreloadingFinished = () {
         _preloadStatus = PreloadingStatus.done;
-        completer.complete();
+        controllerPreloadingCompleter.complete();
       };
     }
 
-    return completer.future;
+    return controllerPreloadingCompleter.future;
   }
 
   bool get shouldBlockingFlushingResolvedStyleProperties {
@@ -1213,7 +1215,7 @@ class WebFController {
   /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
   /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
   Future<void> preRendering(WebFBundle bundle) async {
-    Completer completer = Completer();
+    controllerPreRenderingCompleter = Completer();
 
     await controlledInitCompleter.future;
 
@@ -1249,51 +1251,26 @@ class WebFController {
     // Pause the animation timeline.
     view.stopAnimationsTimeLine();
 
+    view.window.addEventListener(EVENT_LOAD, (event) async {
+      _preRenderingStatus = PreRenderingStatus.done;
+    });
+
     if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
       // Convert the JavaScript code into bytecode.
       if (_entrypoint!.isJavascript) {
         await _entrypoint!.preProcessing(view.contextId);
       }
-
-      view.window.addEventListener(EVENT_LOAD, (event) async {
-        completer.complete();
-      });
-
-      _preRenderingStatus = PreRenderingStatus.evaluate;
-
-      await evaluateEntrypoint();
-
-      _preRenderingStatus = PreRenderingStatus.done;
-
-      flushUICommand(view, view.window.pointer!, standardUICommandReason);
-
-    } else if (_entrypoint!.isHTML) {
-      // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-      await evaluateEntrypoint();
-
-      // Initialize document, window and the documentElement.
-      flushUICommand(view, view.window.pointer!, standardUICommandReason);
-
-      _preRenderingStatus = PreRenderingStatus.evaluate;
-      //
-      // view.document.onPreRenderingFinished = () async {
-      //
-      //   if (view.document.unfinishedPreloadResources == 0 && entrypoint!.isHTML) {
-      //     List<VoidCallback> pendingScriptCallbacks = view.document.pendingPreloadingScriptCallbacks;
-      //     for (int i = 0; i < pendingScriptCallbacks.length; i ++) {
-      //       pendingScriptCallbacks[i]();
-      //     }
-      //   }
-      //
-      //   _preRenderingStatus = PreRenderingStatus.done;
-      //
-      //   flushUICommand(view);
-      //
-      //   completer.complete();
-      // };
     }
 
-    return completer.future;
+    _preRenderingStatus = PreRenderingStatus.evaluate;
+
+    // Evaluate the entry point, and loading the stylesheets and scripts.
+    await evaluateEntrypoint();
+
+    // Initialize document, window and the documentElement.
+    flushUICommand(view, view.window.pointer!, standardUICommandReason);
+
+    return controllerPreRenderingCompleter.future;
   }
 
   String? getResourceContent(String? url) {
@@ -1500,6 +1477,8 @@ class WebFController {
     if (mode != WebFLoadingMode.preRendering) {
       dispatchWindowLoadEvent();
       _view.document.readyState = DocumentReadyState.complete;
+    } else {
+      controllerPreRenderingCompleter.complete();
     }
   }
 
@@ -1524,5 +1503,10 @@ class WebFController {
       }
     });
     SchedulerBinding.instance.scheduleFrame();
+  }
+
+  Future<void> dispatchWindowResizeEvent() async {
+    Event event = Event(EVENT_RESIZE);
+    await _view.window.dispatchEvent(event);
   }
 }
