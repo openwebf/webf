@@ -105,7 +105,7 @@ class Window extends EventTarget {
         event.type == EVENT_ERROR) {
       flushUICommandWithContextId(contextId!, pointer!);
     }
-    super.dispatchEvent(event);
+    return super.dispatchEvent(event);
   }
 
   @override

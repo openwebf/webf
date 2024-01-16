@@ -484,6 +484,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
         if (controller!.mode == WebFLoadingMode.standard) {
           await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
         } else if (controller!.mode == WebFLoadingMode.preloading) {
+          await controller!.controllerPreloadingCompleter.future;
           assert(controller!.entrypoint!.isResolved);
           assert(controller!.entrypoint!.isDataObtained);
           if (controller!.view.document.unfinishedPreloadResources == 0 && controller!.entrypoint!.isHTML) {
@@ -495,6 +496,14 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
             await controller!.evaluateEntrypoint();
           }
         } else if (controller!.mode == WebFLoadingMode.preRendering) {
+          await controller!.controllerPreRenderingCompleter.future;
+
+          // Make sure fontSize of HTMLElement are correct
+          await controller!.dispatchWindowResizeEvent();
+
+          // Sync element state.
+          flushUICommand(controller!.view, nullptr, standardUICommandReason);
+
           controller!.module.resumeAnimationFrame();
 
           HTMLElement rootElement = controller!.view.document.documentElement as HTMLElement;
