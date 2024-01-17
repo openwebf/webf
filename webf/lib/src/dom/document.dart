@@ -374,6 +374,8 @@ class Document extends ContainerNode {
       return;
     }
 
+    bool documentElementChanged = element != null && element != _documentElement;
+
     // When document is disposed, viewport is null.
     if (viewport != null) {
       if (element != null) {
@@ -386,6 +388,10 @@ class Document extends ContainerNode {
     }
 
     _documentElement = element;
+
+    if (viewport?.hasSize == true && documentElementChanged) {
+      initializeRootElementSize();
+    }
   }
 
   void initializeRootElementSize() {
@@ -405,6 +411,11 @@ class Document extends ContainerNode {
       throw UnsupportedError('Only Element can be appended to Document');
     }
     return super.appendChild(child);
+  }
+
+  @override
+  String toString() {
+    return 'Document($hashCode)';
   }
 
   @override
