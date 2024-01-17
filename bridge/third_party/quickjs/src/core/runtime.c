@@ -352,8 +352,7 @@ int JS_SetPrototypeInternal(JSContext* ctx, JSValueConst obj, JSValueConst proto
   if (js_shape_prepare_update(ctx, p, NULL))
     return -1;
   sh = p->shape;
-  if (ic_free_shape_proto_watchpoints(ctx->rt, p->shape))
-    return -1;
+  ic_free_shape_proto_watchpoints(ctx->rt, p->shape);
   if (sh->proto)
     JS_FreeValue(ctx, JS_MKPTR(JS_TAG_OBJECT, sh->proto));
   sh->proto = proto;

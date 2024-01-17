@@ -273,8 +273,7 @@ redo:
       pr->flags = 0;
       pr->atom = JS_ATOM_NULL;
       pr1->u.value = JS_UNDEFINED;
-      if (ic_delete_shape_proto_watchpoints(ctx->rt, sh, atom))
-        return -1;
+      ic_delete_shape_proto_watchpoints(ctx->rt, sh, atom);
       /* compact the properties if too many deleted properties */
       if (sh->deleted_prop_count >= 8 && sh->deleted_prop_count >= ((unsigned)sh->prop_count / 2))
         compact_properties(ctx, p);
@@ -1781,7 +1780,8 @@ int JS_SetPropertyInternal(JSContext* ctx, JSValueConst this_obj, JSAtom prop, J
   JSProperty* pr;
   uint32_t tag;
   JSPropertyDescriptor desc;
-  int ret, offset;
+  uint32_t offset;
+  int ret;
 #if 0
     printf("JS_SetPropertyInternal: "); print_atom(ctx, prop); printf("\n");
 #endif
@@ -1976,14 +1976,18 @@ retry:
     }
   }
 
-  if (ic_delete_shape_proto_watchpoints(ctx->rt, p->shape, prop))
-    return -1;
+  ic_delete_shape_proto_watchpoints(ctx->rt, p->shape, prop);
   pr = add_property(ctx, p, prop, JS_PROP_C_W_E);
   if (unlikely(!pr)) {
     JS_FreeValue(ctx, val);
     return -1;
   }
   pr->u.value = val;
+  /* fast case */
+  if (ic && p->shape->is_hashed) {
+    ic->updated = TRUE;
+    ic->updated_offset = add_ic_slot(ic, prop, p, p->shape->prop_count - 1, NULL);
+  }
   return TRUE;
 }
 
