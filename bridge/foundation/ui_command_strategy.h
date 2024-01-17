@@ -5,7 +5,7 @@
 #ifndef MULTI_THREADING_UI_COMMAND_STRATEGY_H
 #define MULTI_THREADING_UI_COMMAND_STRATEGY_H
 
-#include <array>
+#include <vector>
 #include <unordered_map>
 #include "foundation/ui_command_buffer.h"
 
