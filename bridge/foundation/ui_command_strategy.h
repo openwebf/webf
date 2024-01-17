@@ -16,8 +16,7 @@ class SharedNativeString;
 class NativeBindingObject;
 
 struct WaitingStatus {
-  std::array<uint64_t, 4> storage{UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX};
-
+  std::vector<uint64_t> storage;
   uint64_t MaxSize();
   void Reset();
   bool IsFullActive();
@@ -35,6 +34,7 @@ class UICommandSyncStrategy {
                        NativeBindingObject* native_ptr,
                        void* native_ptr2,
                        bool request_ui_update);
+  void ConfigWaitingBufferSize(size_t size);
 
  private:
   void SyncToReserve();
@@ -44,6 +44,7 @@ class UICommandSyncStrategy {
   bool should_sync{false};
   SharedUICommand* host_;
   WaitingStatus waiting_status;
+  size_t sync_buffer_size_;
   std::unordered_map<void*, size_t> frequency_map_;
   friend class SharedUICommand;
 };

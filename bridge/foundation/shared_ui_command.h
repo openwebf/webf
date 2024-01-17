@@ -32,6 +32,8 @@ class SharedUICommand : public DartReadable {
   void SyncToActive();
   void SyncToReserve();
 
+  void ConfigureSyncCommandBufferSize(size_t size);
+
  private:
   void swap(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target);
   void appendCommand(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target);

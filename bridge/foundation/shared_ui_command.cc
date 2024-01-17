@@ -77,6 +77,10 @@ void SharedUICommand::SyncToReserve() {
   }
 }
 
+void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
+  ui_command_sync_strategy_->ConfigWaitingBufferSize(size);
+}
+
 void SharedUICommand::SyncToActive() {
   SyncToReserve();
 

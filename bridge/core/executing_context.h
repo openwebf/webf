@@ -64,6 +64,7 @@ class ExecutingContext {
   ExecutingContext() = delete;
   ExecutingContext(DartIsolateContext* dart_isolate_context,
                    bool is_dedicated,
+                   size_t sync_buffer_size,
                    double context_id,
                    JSExceptionHandler handler,
                    void* owner);

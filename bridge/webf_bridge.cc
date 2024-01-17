@@ -70,6 +70,7 @@ void* allocateNewPageSync(double thread_identity, void* ptr) {
 }
 
 void allocateNewPage(double thread_identity,
+                     int32_t sync_buffer_size,
                      void* ptr,
                      Dart_Handle dart_handle,
                      AllocateNewPageCallback result_callback) {
@@ -81,7 +82,7 @@ void allocateNewPage(double thread_identity,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
 
   static_cast<webf::DartIsolateContext*>(dart_isolate_context)
-      ->AddNewPage(thread_identity, persistent_handle, result_callback);
+      ->AddNewPage(thread_identity, sync_buffer_size, persistent_handle, result_callback);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPage Call END";
 #endif
