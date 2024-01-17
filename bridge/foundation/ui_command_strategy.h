@@ -12,8 +12,8 @@
 namespace webf {
 
 class SharedUICommand;
-class SharedNativeString;
-class NativeBindingObject;
+struct SharedNativeString;
+struct NativeBindingObject;
 
 struct WaitingStatus {
   std::vector<uint64_t> storage;
