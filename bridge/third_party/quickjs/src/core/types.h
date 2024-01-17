@@ -516,7 +516,7 @@ typedef struct JSVarDef {
 #define PC2COLUMN_RANGE 5
 #define PC2COLUMN_OP_FIRST 1
 #define PC2COLUMN_DIFF_PC_MAX ((255 - PC2COLUMN_OP_FIRST) / PC2COLUMN_RANGE)
-#define IC_CACHE_ITEM_CAPACITY 2
+#define IC_CACHE_ITEM_CAPACITY 4
 
 typedef enum JSFunctionKindEnum {
     JS_FUNC_NORMAL = 0,
