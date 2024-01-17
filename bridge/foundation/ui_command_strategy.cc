@@ -37,7 +37,8 @@ void WaitingStatus::SetActiveAtIndex(uint64_t index) {
   }
 }
 
-UICommandSyncStrategy::UICommandSyncStrategy(SharedUICommand* host) : host_(host) {}
+UICommandSyncStrategy::UICommandSyncStrategy(SharedUICommand* host)
+    : host_(host) {}
 
 bool UICommandSyncStrategy::ShouldSync() {
   return should_sync;
@@ -104,6 +105,13 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
   }
 }
 
+void UICommandSyncStrategy::ConfigWaitingBufferSize(size_t size) {
+  waiting_status.storage.reserve(size);
+  for(int i = 0; i < size; i ++) {
+    waiting_status.storage.emplace_back(UINT64_MAX);
+  }
+}
+
 void UICommandSyncStrategy::SyncToReserve() {
   host_->SyncToReserve();
   waiting_status.Reset();
@@ -113,7 +121,6 @@ void UICommandSyncStrategy::SyncToReserve() {
 
 void UICommandSyncStrategy::SyncToReserveIfNecessary() {
   if (frequency_map_.size() > waiting_status.MaxSize() && waiting_status.IsFullActive()) {
-    WEBF_LOG(VERBOSE) << "SYNC TO RESERVE";
     SyncToReserve();
   }
 }

@@ -481,9 +481,9 @@ typedef NativeAllocateNewPageSync = Pointer<Void> Function(Double, Pointer<Void>
 typedef DartAllocateNewPageSync = Pointer<Void> Function(double, Pointer<Void>);
 typedef HandleAllocateNewPageResult = Void Function(Handle object, Pointer<Void> page);
 typedef NativeAllocateNewPage = Void Function(
-    Double, Pointer<Void>, Handle object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
+    Double, Int32, Pointer<Void>, Handle object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
 typedef DartAllocateNewPage = void Function(
-    double, Pointer<Void>, Object object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
+    double, int, Pointer<Void>, Object object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
 
 final DartAllocateNewPageSync _allocateNewPageSync =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPageSync>>('allocateNewPageSync').asFunction();
@@ -504,14 +504,14 @@ class _AllocateNewPageContext {
   _AllocateNewPageContext(this.completer, this.contextId);
 }
 
-Future<void> allocateNewPage(bool sync, double newContextId) async {
+Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize) async {
   await waitingSyncTaskComplete(newContextId);
 
   if (!sync) {
     Completer<void> completer = Completer();
     _AllocateNewPageContext context = _AllocateNewPageContext(completer, newContextId);
     Pointer<NativeFunction<HandleAllocateNewPageResult>> f = Pointer.fromFunction(_handleAllocateNewPageResult);
-    _allocateNewPage(newContextId, dartContext!.pointer, context, f);
+    _allocateNewPage(newContextId, syncBufferSize, dartContext!.pointer, context, f);
     return completer.future;
   } else {
     Pointer<Void> page = _allocateNewPageSync(newContextId, dartContext!.pointer);
@@ -698,10 +698,6 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   List<UICommand>? commands;
   if (rawCommands.rawMemory.isNotEmpty) {
     commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
-
-    if (commands.length > 100) {
-      print('exec commands length: ${commands.length}');
-    }
     execUICommands(view, commands);
     SchedulerBinding.instance.scheduleFrame();
   }

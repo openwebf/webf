@@ -28,6 +28,7 @@ std::atomic<uint32_t> running_context_list{0};
 
 ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    bool is_dedicated,
+                                   size_t sync_buffer_size,
                                    double context_id,
                                    JSExceptionHandler handler,
                                    void* owner)
@@ -38,15 +39,13 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
-  //  #if ENABLE_PROFILE
-  //    auto jsContextStartTime =
-  //        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
-  //            .count();
-  //    auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
-  //    nativePerformance.mark(PERF_JS_CONTEXT_INIT_START, jsContextStartTime);
-  //    nativePerformance.mark(PERF_JS_CONTEXT_INIT_END);
-  //    nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
-  //  #endif
+
+  if (is_dedicated) {
+    // Set up the sync command size for dedicated thread mode.
+    // Bigger size introduce more ui consistence and lower size led to more high performance by the reason of
+    // concurrency.
+    ui_command_buffer_.ConfigureSyncCommandBufferSize(sync_buffer_size);
+  }
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
   assert_m(valid_contexts[context_id] != true, "Conflict context found!");
@@ -77,11 +76,6 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   // Install performance
   InstallPerformance();
 
-  //#if ENABLE_PROFILE
-  //  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_END);
-  //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_START);
-  //#endif
-
   initWebFPolyFill(this);
 
   for (auto& p : plugin_byte_code) {
@@ -91,10 +85,6 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   for (auto& p : plugin_string_code) {
     EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
   }
-
-  //#if ENABLE_PROFILE
-  //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_END);
-  //#endif
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }

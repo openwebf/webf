@@ -1209,7 +1209,7 @@ class WebFController {
         // Prefer sync decode in loading entrypoint.
         await evaluateScripts(contextId, data, url: url);
       } else if (entrypoint.isBytecode) {
-        evaluateQuickjsByteCode(contextId, data);
+        await evaluateQuickjsByteCode(contextId, data);
       } else if (entrypoint.isHTML) {
         assert(isValidUTF8String(data), 'The HTML codes should be in UTF-8 encoding format');
         parseHTML(contextId, data);
