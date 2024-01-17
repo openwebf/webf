@@ -37,8 +37,7 @@ void WaitingStatus::SetActiveAtIndex(uint64_t index) {
   }
 }
 
-UICommandSyncStrategy::UICommandSyncStrategy(SharedUICommand* host)
-    : host_(host) {}
+UICommandSyncStrategy::UICommandSyncStrategy(SharedUICommand* host) : host_(host) {}
 
 bool UICommandSyncStrategy::ShouldSync() {
   return should_sync;
@@ -107,7 +106,7 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
 
 void UICommandSyncStrategy::ConfigWaitingBufferSize(size_t size) {
   waiting_status.storage.reserve(size);
-  for(int i = 0; i < size; i ++) {
+  for (int i = 0; i < size; i++) {
     waiting_status.storage.emplace_back(UINT64_MAX);
   }
 }

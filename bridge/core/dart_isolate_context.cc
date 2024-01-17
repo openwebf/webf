@@ -176,8 +176,8 @@ void* DartIsolateContext::AddNewPage(double thread_identity,
     page_group = static_cast<PageGroup*>(dispatcher_->GetOpaque(thread_group_id));
   }
 
-  dispatcher_->PostToJs(true, thread_group_id, InitializeNewPageInJSThread, page_group, this, thread_identity, sync_buffer_size,
-                        dart_handle, result_callback);
+  dispatcher_->PostToJs(true, thread_group_id, InitializeNewPageInJSThread, page_group, this, thread_identity,
+                        sync_buffer_size, dart_handle, result_callback);
   return nullptr;
 }
 

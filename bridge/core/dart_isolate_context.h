@@ -54,7 +54,10 @@ class DartIsolateContext {
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
-  void* AddNewPage(double thread_identity, int32_t sync_buffer_size, Dart_Handle dart_handle, AllocateNewPageCallback result_callback);
+  void* AddNewPage(double thread_identity,
+                   int32_t sync_buffer_size,
+                   Dart_Handle dart_handle,
+                   AllocateNewPageCallback result_callback);
   void* AddNewPageSync(double thread_identity);
   void RemovePage(double thread_identity, WebFPage* page, Dart_Handle dart_handle, DisposePageCallback result_callback);
   void RemovePageSync(double thread_identity, WebFPage* page);
