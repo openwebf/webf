@@ -13,6 +13,7 @@
 #include <cstring>
 #include <locale>
 #include <memory>
+#include <vector>
 #include <mutex>
 #include <set>
 #include <unordered_map>
@@ -48,7 +49,7 @@ class ErrorEvent;
 class DartContext;
 class MutationObserver;
 class BindingObject;
-class NativeBindingObject;
+struct NativeBindingObject;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;

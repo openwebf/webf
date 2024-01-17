@@ -6,13 +6,14 @@
 #define MULTI_THREADING_DOUBULE_UI_COMMAND_H_
 
 #include <atomic>
+#include <memory>
 #include "foundation/native_type.h"
 #include "foundation/ui_command_buffer.h"
 #include "foundation/ui_command_strategy.h"
 
 namespace webf {
 
-class NativeBindingObject;
+struct NativeBindingObject;
 
 class SharedUICommand : public DartReadable {
  public:
