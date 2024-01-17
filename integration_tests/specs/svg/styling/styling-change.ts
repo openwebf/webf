@@ -118,7 +118,7 @@ describe('Style change', () => {
   afterAll(() => {
     resizeViewport()
   })
-  
+
   for (const [styleName, [element, defaltAttributes, from, to]] of Object.entries(cases)) {
     it(`should support "${styleName}" from "${from}" to "${to}"`, async () => {
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -132,10 +132,12 @@ describe('Style change', () => {
       ele.setAttribute(styleName, from)
       document.body.appendChild(svg)
       svg.appendChild(ele);
-      const old = await getSnapshot();
+
+      await snapshot(svg, `./snapshots/svg/styling/should support "${styleName}" from "${from}" to "${to}"`);
 
       ele.setAttribute(styleName, to);
-      await expectAsync(getSnapshot()).not.toMatchSnapshot(old);
+
+      await snapshot(svg);
     })
   }
 })

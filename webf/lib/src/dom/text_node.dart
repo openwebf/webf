@@ -105,8 +105,12 @@ class TextNode extends CharacterData {
   void _detachRenderTextBox() {
     if (isRendererAttachedToSegmentTree) {
       RenderTextBox renderTextBox = _renderTextBox!;
-      ContainerRenderObjectMixin parent = renderTextBox.parent as ContainerRenderObjectMixin;
-      parent.remove(renderTextBox);
+      RenderBox parent = renderTextBox.parent as RenderBox;
+      if (parent is ContainerRenderObjectMixin) {
+        (parent as ContainerRenderObjectMixin).remove(renderTextBox);
+      } else if (parent is RenderObjectWithChildMixin<RenderBox>) {
+        (parent as RenderObjectWithChildMixin).child = null;
+      }
     }
   }
 
