@@ -16,9 +16,7 @@ abstract class WebFThread {
   /// generated UI commands will be executed on the UI thread immediately while the JS thread is still running.
   /// However, this concurrency sometimes leads to inconsistent UI rendering results,
   /// so it's advisable to adjust this value based on specific use cases.
-  int syncBufferSize() {
-    return 4;
-  }
+  int syncBufferSize();
 }
 
 /// Executes your JavaScript code within the Flutter UI thread.
@@ -38,9 +36,16 @@ class FlutterUIThread extends WebFThread {
 
 /// Executes your JavaScript code in a dedicated thread.
 class DedicatedThread extends WebFThread {
-  final double? _identity;
+  double? _identity;
+  final int _syncBufferSize;
 
-  DedicatedThread([this._identity]);
+  DedicatedThread({ int syncBufferSize = 4 }): _syncBufferSize = syncBufferSize;
+  DedicatedThread._(this._identity, { int syncBufferSize = 4 }): _syncBufferSize = syncBufferSize;
+
+  @override
+  int syncBufferSize() {
+    return _syncBufferSize;
+  }
 
   @override
   double identity() {
@@ -55,8 +60,8 @@ class DedicatedThreadGroup {
 
   DedicatedThreadGroup();
 
-  DedicatedThread slave() {
+  DedicatedThread slave({ int syncBufferSize = 4 }) {
     String input = '$_identity.${_slaveCount++}';
-    return DedicatedThread(double.parse(input));
+    return DedicatedThread._(double.parse(input), syncBufferSize: syncBufferSize);
   }
 }
