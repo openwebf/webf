@@ -1,78 +1,101 @@
 # OpenWebf Contributing Guide
 
-0. Prerequisites
-    * [Node.js](https://nodejs.org/) v12.0 or later
-    * [Flutter](https://flutter.dev/docs/get-started/install) version in the `webf/pubspec.yaml`
-    * [CMake](https://cmake.org/) v3.10.0 or later
-    * [Xcode](https://developer.apple.com/xcode/) (10.12) or later (Running on macOS or iOS)
-    * [Android NDK](https://developer.android.com/studio/projects/install-ndk) version `22.1.7171670` (Running on Android)]
-    * [Visual Studio 2019 or above](https://visualstudio.microsoft.com/) (Running on Windows)
+## Prerequisites
 
-   Get the code:
-   ```
-   git clone git@github.com:openwebf/webf.git
-   git submodule update --init --recursive
-   ```
+* [Node.js](https://nodejs.org/) v12.0 or later
+* [Flutter](https://flutter.dev/docs/get-started/install) version in the `webf/pubspec.yaml`
+* [CMake](https://cmake.org/) v3.10.0 or later
+* [Xcode](https://developer.apple.com/xcode/) (10.12) or later (Running on macOS or iOS)
+* [Android NDK](https://developer.android.com/studio/projects/install-ndk) version `22.1.7171670` (Running on Android)]
+* [Visual Studio 2019 or above](https://visualstudio.microsoft.com/) (Running on Windows)
 
-1. Install
+## Get the code:
 
-    ```shell
-    $ npm install
-    ```
+```
+git clone git@github.com:openwebf/webf.git
+git submodule update --init --recursive
+```
 
-2. Building bridge
+## Install
 
-    Building bridge for all supported platform (macOS, linux, iOS, Android)
-    
-    > Debug is the default build type, if you want to have a release build, please add `:release` after your command.
-    > 
-    > Exp: Execute `npm run build:bridge:macos:release` to build a release bridge for the macOS platform.
+```shell
+$ npm install
+```
 
-    ```shell
-    $ npm run build:bridge:all:release
-    ```
+## Building bridge
 
-    Building bridge for one platform
-    
-    
-    **Windows**
+> Debug is the default build type, if you want to have a release build, please add `:release` after your command.
+>
+> Exp: Execute `npm run build:bridge:macos:release` to build a release bridge for the macOS platform.
 
-    ```shell
-    $ npm run build:bridge:windows:release
-    ```
+**Windows**
 
-    **macOS**
+```shell
+$ npm run build:bridge:windows:release
+```
 
-    ```shell
-    $ npm run build:bridge:macos:release
-    ```
+**macOS**
 
-    **linux**
+```shell
+$ npm run build:bridge:macos:release
+```
 
-    ```shell
-    $ npm run build:bridge:linux:release
-    ```
+**linux**
 
-    **iOS**
+```shell
+$ npm run build:bridge:linux:release
+```
 
-    ```shell
-    $ npm run build:bridge:ios:release
-    ```
+**iOS**
 
-    **Android**
+```shell
+$ npm run build:bridge:ios:release
+```
 
-    ```shell
-    $ npm run build:bridge:android:release
-    ```
+**Android**
 
-3. Start example
-    ```shell
-    $ cd webf/example
-    $ flutter run
-    ```
+```shell
+$ npm run build:bridge:android:release
+```
 
-4. Test (Unit Test and Integration Test)
-    ```shell
-    $ npm test
-    ```
+### Run Example
+
+```shell
+$ cd webf/example
+$ flutter run -d <platform>
+```
+
+## Run integration Test
+
+```shell
+cd integration_tests
+npm run integration
+```
+
+### Run specific group of test specs in integration test
+
+To run specify groups of test specs:
+
+```shell
+SPEC_SCOPE=DOM npm run integration // match pattern is located in `spec_group.json`
+```
+
+### Run integration test without build test apps
+
+> Quicker start up if you changed the test specs only.
+
+```shell
+npm run integration -- --skip-build
+```
+
+### Run one test spec only
+
+Change the `it` into `fit` to running this test spec only.
+
+```typescript
+fit('document.all', () => { 
+  expect(document.all).not.toBeUndefined();
+  expect(document.all.length).toBeGreaterThan(0);
+});
+```
 
