@@ -67,6 +67,7 @@ class SVGElement extends Element {
     if (isRenderBoxDispose()) {
       _renderSVGBox = createRenderBoxModel();
     }
+    ensureEventResponderBound();
   }
 
   dynamic createRenderBoxModel() {
