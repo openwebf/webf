@@ -6,7 +6,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
-import 'dart:typed_data';
 
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
