@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'dart:developer' show Timeline;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -301,7 +300,7 @@ class RenderLayoutBox extends RenderBoxModel
       final Matrix4 transform = Matrix4.identity();
       applyLayoutTransform(child, transform, false);
       Offset tlOffset =
-      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+          MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
       overflowRect = Rect.fromLTRB(
           math.min(overflowRect.left, tlOffset.dx),
           math.min(overflowRect.top, tlOffset.dy),
@@ -366,6 +365,13 @@ class RenderLayoutBox extends RenderBoxModel
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackPaintStep('performPaint');
+      WebFProfiler.instance.startTrackPaintSubStep('sortPaintingOrder');
+      WebFProfiler.instance.finishTrackPaintSubStep(paintingOrder.length);
+      WebFProfiler.instance.finishTrackPaintStep();
+    }
+
     for (int i = 0; i < paintingOrder.length; i++) {
       RenderBox child = paintingOrder[i];
       if (!isPositionPlaceholder(child)) {
@@ -375,6 +381,7 @@ class RenderLayoutBox extends RenderBoxModel
         }
       }
     }
+
   }
 
   bool _childrenNeedsSort = false;
@@ -403,7 +410,7 @@ class RenderLayoutBox extends RenderBoxModel
     // Layout positioned element
     while (child != null) {
       final ContainerParentDataMixin<RenderBox>? childParentData =
-      child.parentData as ContainerParentDataMixin<RenderBox>?;
+          child.parentData as ContainerParentDataMixin<RenderBox>?;
       if (child is! RenderBoxModel) {
         child = childParentData!.nextSibling;
         continue;
@@ -706,6 +713,9 @@ class RenderLayoutBox extends RenderBoxModel
 mixin RenderBoxModelBase on RenderBox {
   late CSSRenderStyle renderStyle;
   Size? boxSize;
+  Size? contentSize;
+  // The maximum possible paint-able size for a box
+  Size? visualAvailableSize;
 }
 
 class RenderBoxModel extends RenderBox
@@ -764,12 +774,14 @@ class RenderBoxModel extends RenderBox
   bool get isSizeTight {
     bool isDefinedSize = (renderStyle.width.value != null &&
         renderStyle.height.value != null &&
-        renderStyle.width.isPrecise && renderStyle.height.isPrecise);
+        renderStyle.width.isPrecise &&
+        renderStyle.height.isPrecise);
     bool isFixedMinAndMaxSize = (renderStyle.minWidth.value == renderStyle.maxWidth.value &&
-        renderStyle.minWidth.value != null && renderStyle.minWidth.isPrecise) && (
-        renderStyle.minHeight.value == renderStyle.maxHeight.value && renderStyle.minHeight.value != null &&
-            renderStyle.minHeight.isPrecise
-    );
+            renderStyle.minWidth.value != null &&
+            renderStyle.minWidth.isPrecise) &&
+        (renderStyle.minHeight.value == renderStyle.maxHeight.value &&
+            renderStyle.minHeight.value != null &&
+            renderStyle.minHeight.isPrecise);
 
     return isDefinedSize || isFixedMinAndMaxSize;
   }
@@ -843,25 +855,25 @@ class RenderBoxModel extends RenderBox
     RenderIntersectionObserverMixin.copyTo(this, copiedRenderBoxModel);
 
     return copiedRenderBoxModel
-    // Copy render style
+      // Copy render style
       ..renderStyle = renderStyle
 
-    // Copy box decoration
+      // Copy box decoration
       ..boxPainter = boxPainter
 
-    // Copy overflow
+      // Copy overflow
       ..scrollListener = scrollListener
       ..scrollablePointerListener = scrollablePointerListener
       ..scrollOffsetX = scrollOffsetX
       ..scrollOffsetY = scrollOffsetY
 
-    // Copy event hook
+      // Copy event hook
       ..getEventTarget = getEventTarget
 
-    // Copy renderPositionHolder
+      // Copy renderPositionHolder
       ..renderPositionPlaceholder = renderPositionPlaceholder
 
-    // Copy parentData
+      // Copy parentData
       ..parentData = parentData;
   }
 
@@ -921,6 +933,7 @@ class RenderBoxModel extends RenderBox
       SchedulerBinding.instance.scheduleFrame();
     } else {
       needsLayout = true;
+
       super.markNeedsLayout();
       if ((isScrollingContentBox || !isSizeTight) && parent != null) {
         markParentNeedsLayout();
@@ -1055,7 +1068,8 @@ class RenderBoxModel extends RenderBox
       }
     }
 
-    double maxConstraintWidth = renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
+    double maxConstraintWidth =
+        renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight = renderStyle.effectiveBorderTopWidth.computedValue +
@@ -1146,6 +1160,7 @@ class RenderBoxModel extends RenderBox
   // The contentSize of layout box
   Size? _contentSize;
 
+  @override
   Size get contentSize {
     return _contentSize ?? Size.zero;
   }
@@ -1277,6 +1292,32 @@ class RenderBoxModel extends RenderBox
     if (isSelfSizeChanged) {
       renderStyle.markTransformMatrixNeedsUpdate();
     }
+
+    // Update visualAvailableSize properties for children.
+    // Prepare children of different type for layout.
+    bool isOverFlowXHidden = renderStyle.effectiveOverflowX == CSSOverflowType.hidden;
+    bool isOverFlowYHidden = renderStyle.effectiveOverflowY == CSSOverflowType.hidden;
+    bool containsOverFlowHidden = isOverFlowXHidden || isOverFlowYHidden;
+
+    if (this is RenderLayoutBox) {
+      RenderLayoutBox self = this as RenderLayoutBox;
+      RenderBox? child = self.firstChild;
+
+      while (child != null) {
+        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+        if (child is RenderBoxModel) {
+          if (containsOverFlowHidden) {
+            child.visualAvailableSize = Size(
+                isOverFlowXHidden ? contentSize.width : constraints.maxWidth,
+                isOverFlowYHidden ? contentSize.height : constraints.maxHeight
+            );
+          } else {
+            child.visualAvailableSize = Size(constraints.maxWidth, constraints.maxHeight);
+          }
+        }
+        child = childParentData.nextSibling;
+      }
+    }
   }
 
   /// [RenderLayoutBox] real paint things after basiclly paint box model.
@@ -1291,15 +1332,19 @@ class RenderBoxModel extends RenderBox
   @override
   void paint(PaintingContext context, Offset offset) {
     if (!kReleaseMode) {
-      Timeline.startSync(
-        'RenderBoxModel paint',
-        arguments: {'ownerElement': renderStyle.target.toString()},
-      );
+      WebFProfiler.instance.startPaint(this);
     }
 
     if (!shouldPaint) {
       if (!kReleaseMode) {
-        Timeline.finishSync();
+        WebFProfiler.instance.finishPaint();
+      }
+      return;
+    }
+
+    if (visualAvailableSize?.isEmpty == true) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishPaint();
       }
       return;
     }
@@ -1307,7 +1352,7 @@ class RenderBoxModel extends RenderBox
     paintBoxModel(context, offset);
 
     if (!kReleaseMode) {
-      Timeline.finishSync();
+      WebFProfiler.instance.finishPaint();
     }
   }
 
@@ -1324,8 +1369,20 @@ class RenderBoxModel extends RenderBox
   void paintColorFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     ColorFilter? colorFilter = renderStyle.colorFilter;
     if (colorFilter != null) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.startTrackPaintStep('paintColorFilter', {
+          'offset': offset.toString(),
+          'colorFilter': colorFilter.toString()
+        });
+      }
+
       _colorFilterLayer.layer =
-          context.pushColorFilter(offset, colorFilter, callback, oldLayer: _colorFilterLayer.layer);
+          context.pushColorFilter(offset, colorFilter, (context, offset) {
+            if (!kReleaseMode) {
+              WebFProfiler.instance.finishTrackPaintStep();
+            }
+            callback(context, offset);
+          }, oldLayer: _colorFilterLayer.layer);
     } else {
       callback(context, offset);
     }
@@ -1353,9 +1410,24 @@ class RenderBoxModel extends RenderBox
 
   void paintImageFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     if (renderStyle.imageFilter != null) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.startTrackPaintStep('paintImageFilter');
+        WebFProfiler.instance.startTrackPaintSubStep('renderStyle.imageFilter');
+      }
+
       _imageFilterLayer.layer ??= ImageFilterLayer();
       _imageFilterLayer.layer!.imageFilter = renderStyle.imageFilter;
-      context.pushLayer(_imageFilterLayer.layer!, callback, offset);
+
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintSubStep(renderStyle.imageFilter.toString());
+      }
+
+      context.pushLayer(_imageFilterLayer.layer!, (PaintingContext context, Offset offset) {
+        if (!kReleaseMode) {
+          WebFProfiler.instance.finishTrackPaintStep();
+        }
+        callback(context, offset);
+      }, offset);
     } else {
       callback(context, offset);
     }
@@ -1674,6 +1746,7 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
+    properties.add(DiagnosticsProperty('visualAvailableSize', visualAvailableSize));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('needsLayout', needsLayout, missingIfNull: true));

@@ -4,9 +4,11 @@
  */
 
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a replaced element whose content is outside the scope of the CSS formatting model,
@@ -125,11 +127,30 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   /// override it to layout box model paint.
   @override
   void paint(PaintingContext context, Offset offset) {
+    if (!kReleaseMode) {
+      // Timeline.startSync(
+      //   'RenderReplaced paint',
+      //   arguments: {'ownerElement': renderStyle.target.toString()},
+      // );
+      WebFProfiler.instance.startPaint(this);
+    }
+
+    if (visualAvailableSize?.isEmpty == true) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishPaint();
+      }
+      return;
+    }
+
     // In lazy rendering, only paint intersection observer for triggering intersection change callback.
     if (_isInLazyRendering) {
       paintIntersectionObserver(context, offset, paintNothing);
     } else if (shouldPaint) {
       paintBoxModel(context, offset);
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishPaint();
     }
   }
 

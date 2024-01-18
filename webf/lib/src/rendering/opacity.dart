@@ -4,7 +4,9 @@
  */
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 mixin RenderOpacityMixin on RenderBoxModelBase {
@@ -35,7 +37,18 @@ mixin RenderOpacityMixin on RenderBoxModelBase {
       return;
     }
 
-    _opacityLayer.layer = context.pushOpacity(offset, alpha, callback, oldLayer: _opacityLayer.layer);
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackPaintStep('paintOpacity', {
+        'alpha': alpha
+      });
+    }
+
+    _opacityLayer.layer = context.pushOpacity(offset, alpha, (PaintingContext context, Offset offset) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintStep();
+      }
+      callback(context, offset);
+    }, oldLayer: _opacityLayer.layer);
   }
 
   void debugOpacityProperties(DiagnosticPropertiesBuilder properties) {

@@ -2,10 +2,13 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:developer';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
@@ -103,7 +106,28 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
   /// override it to layout box model paint.
   @override
   void paint(PaintingContext context, Offset offset) {
+    if (!kReleaseMode) {
+      Timeline.startSync(
+        'RenderBoxModel paint',
+        arguments: {'ownerElement': renderStyle.target.toString()},
+      );
+      WebFProfiler.instance.startPaint(this);
+    }
+
+    if (visualAvailableSize?.isEmpty == true) {
+      if (!kReleaseMode) {
+        // Timeline.finishSync();
+        WebFProfiler.instance.finishPaint();
+      }
+      return;
+    }
+
     paintBoxModel(context, offset);
+
+    if (!kReleaseMode) {
+      // Timeline.finishSync();
+      WebFProfiler.instance.finishPaint();
+    }
   }
 
   @override
