@@ -13,10 +13,10 @@
 #include <cstring>
 #include <locale>
 #include <memory>
-#include <vector>
 #include <mutex>
 #include <set>
 #include <unordered_map>
+#include <vector>
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
