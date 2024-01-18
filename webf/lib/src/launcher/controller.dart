@@ -960,6 +960,7 @@ class WebFController {
         runningThread = runningThread ?? DedicatedThread(),
         ownerFlutterView = View.of(context) {
     _initializePreloadBundle();
+    WebFProfiler.initialize();
 
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);

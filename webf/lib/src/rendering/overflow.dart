@@ -4,7 +4,9 @@
  */
 
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
@@ -191,6 +193,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   void paintOverflow(PaintingContext context, Offset offset, EdgeInsets borderEdge, CSSBoxDecoration? decoration,
       PaintingContextCallback callback) {
     if (clipX == false && clipY == false) return callback(context, offset);
+    // Stop further paint if there are no visible contents in here.
+    if (contentSize!.isEmpty) {
+      return;
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackPaintStep('paintOverflow');
+    }
 
     final double paintOffsetX = _paintOffsetX;
     final double paintOffsetY = _paintOffsetY;
@@ -204,6 +214,9 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     if (_shouldClipAtPaintOffset(paintOffset, size)) {
       // ignore: prefer_function_declarations_over_variables
       PaintingContextCallback painter = (PaintingContext context, Offset offset) {
+        if (!kReleaseMode) {
+          WebFProfiler.instance.finishTrackPaintStep();
+        }
         callback(context, offset + paintOffset);
       };
 
@@ -213,6 +226,10 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       bool _needsCompositing = needsCompositing;
 
       if (decoration != null && decoration.hasBorderRadius) {
+        if (kReleaseMode) {
+          WebFProfiler.instance.startTrackPaintSubStep('clipWithBorderRadius');
+        }
+
         BorderRadius radius = decoration.borderRadius!;
         Rect rect = Offset.zero & size;
         RRect borderRRect = radius.toRRect(rect);
@@ -229,6 +246,11 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
           double paddingTop = renderStyle.paddingTop.computedValue;
           clipRRect = clipRRect.deflate(paddingTop);
         }
+
+        if (kReleaseMode) {
+          WebFProfiler.instance.finishTrackPaintSubStep(null);
+        }
+
         _clipRRectLayer.layer = context.pushClipRRect(_needsCompositing, offset, clipRect, clipRRect, painter,
             oldLayer: _clipRRectLayer.layer);
       } else {
@@ -238,6 +260,11 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     } else {
       _clipRectLayer.layer = null;
       _clipRRectLayer.layer = null;
+
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintStep();
+      }
+
       callback(context, offset);
     }
   }

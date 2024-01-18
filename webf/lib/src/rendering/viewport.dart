@@ -93,6 +93,7 @@ class RenderViewportBox extends RenderBox
           child.parentData as ContainerBoxParentData<RenderObject>;
 
       RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
+      rootRenderLayoutBox.visualAvailableSize = Size(double.infinity, double.infinity);
       child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
 
       assert(child.parentData == childParentData);

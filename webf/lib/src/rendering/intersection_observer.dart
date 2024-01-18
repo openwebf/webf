@@ -9,6 +9,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:webf/foundation.dart';
 
 /// Returns a sequence containing the specified [Layer] and all of its
 /// ancestors.  The returned sequence is in [parent, child] order.
@@ -95,6 +96,14 @@ mixin RenderIntersectionObserverMixin on RenderBox {
       return;
     }
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackPaintStep('paintIntersectionObserver', {
+        'size': semanticBounds.size.toString(),
+        'intersectPadding': intersectPadding.toString(),
+        'paintOffset': offset.toString()
+      });
+    }
+
     if (_intersectionObserverLayer.layer == null) {
       _intersectionObserverLayer.layer = IntersectionObserverLayer(
           elementSize: size,
@@ -106,7 +115,13 @@ mixin RenderIntersectionObserverMixin on RenderBox {
       _intersectionObserverLayer.layer!.paintOffset = offset;
     }
 
-    context.pushLayer(_intersectionObserverLayer.layer!, callback, offset);
+    context.pushLayer(_intersectionObserverLayer.layer!, (PaintingContext context, Offset offset) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintStep();
+      }
+
+      callback(context, offset);
+    }, offset);
   }
 }
 

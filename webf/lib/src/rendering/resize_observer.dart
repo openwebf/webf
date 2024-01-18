@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
@@ -47,11 +48,13 @@ mixin ResizeObserverMixin on RenderBox {
     preContentSize = newContentSize;
     preBorderSize = newBorderSize;
 
-    _dispatchResizeChange(ResizeObserverEntry(
-        borderBoxSize: newBorderSize,
-        contentBoxSize: newContentSize,
-        devicePixelContentBoxSize: newContentSize,
-        contentRect: newBorderSize));
+    scheduleMicrotask(() {
+      _dispatchResizeChange(ResizeObserverEntry(
+          borderBoxSize: newBorderSize,
+          contentBoxSize: newContentSize,
+          devicePixelContentBoxSize: newContentSize,
+          contentRect: newBorderSize));
+    });
   }
 
   void _dispatchResizeChange(ResizeObserverEntry info) {

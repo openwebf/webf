@@ -2,7 +2,9 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 mixin RenderTransformMixin on RenderBoxModelBase {
@@ -14,18 +16,35 @@ mixin RenderTransformMixin on RenderBoxModelBase {
 
   void paintTransform(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     if (renderStyle.transformMatrix != null) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.startTrackPaintStep('paintTransform');
+        WebFProfiler.instance.startTrackPaintSubStep('renderStyle.effectiveTransformMatrix');
+      }
+
       final Matrix4 transform = renderStyle.effectiveTransformMatrix;
+
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintSubStep(transform.toString());
+      }
+
+      finishPaintTransform(PaintingContext context, Offset offset) {
+        if (!kReleaseMode) {
+          WebFProfiler.instance.finishTrackPaintStep();
+        }
+        callback(context, offset);
+      }
+
       final Offset? childOffset = MatrixUtils.getAsTranslation(transform);
       if (childOffset == null) {
         _transformLayer.layer = context.pushTransform(
           needsCompositing,
           offset,
           transform,
-          callback,
+          finishPaintTransform,
           oldLayer: _transformLayer.layer,
         );
       } else {
-        callback(context, offset + childOffset);
+        finishPaintTransform(context, offset + childOffset);
         _transformLayer.layer = null;
       }
     } else {

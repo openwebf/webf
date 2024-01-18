@@ -1773,7 +1773,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   String toString() {
-    return '$tagName Element($hashCode)';
+    String printText = '$tagName Element(${shortHash(this)}';
+    if (className.isNotEmpty) {
+      printText += ' className(.$className)';
+    }
+    if (id != null) {
+      printText += ' id($id)';
+    }
+    return printText;
   }
 
   // Create a new RenderLayoutBox for the scrolling content.
