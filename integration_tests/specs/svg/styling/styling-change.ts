@@ -137,7 +137,7 @@ describe('Style change', () => {
 
       ele.setAttribute(styleName, to);
 
-      await snapshot(svg);
+      await snapshot(svg, `./snapshots/svg/styling/should support "${styleName}" from "${from}" to "${to}"`);
     })
   }
 })
