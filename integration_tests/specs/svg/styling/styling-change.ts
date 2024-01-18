@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 const defaultRect = {
   fill: 'green',
   x: '10',
@@ -133,11 +135,11 @@ describe('Style change', () => {
       document.body.appendChild(svg)
       svg.appendChild(ele);
 
-      await snapshot(svg, `./snapshots/svg/styling/should support "${styleName}" from "${from}" to "${to}"`);
+      await snapshot(svg, `./snapshots/svg/styling/should support_${styleName}_from_${_.snakeCase(from)}_to_${_.snakeCase(to)}`);
 
       ele.setAttribute(styleName, to);
 
-      await snapshot(svg, `./snapshots/svg/styling/should support "${styleName}" from "${from}" to "${to}"`);
+      await snapshot(svg, `./snapshots/svg/styling/should support_${styleName}_from_${_.snakeCase(from)}_to_${_.snakeCase(to)}`);
     })
   }
 })
