@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
+import 'package:webf/widget.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
@@ -100,6 +101,8 @@ class Document extends ContainerNode {
 
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
+
+  Set<WidgetElement> aliveWidgetElements = {};
 
   late RuleSet ruleSet;
 
@@ -524,6 +527,12 @@ class Document extends ContainerNode {
     }
     styleDirtyElements.clear();
     _recalculating = false;
+  }
+
+  void reactiveWidgetElements() {
+    for(WidgetElement widgetElement in aliveWidgetElements) {
+      widgetElement.reactiveRenderer();
+    }
   }
 
   @override

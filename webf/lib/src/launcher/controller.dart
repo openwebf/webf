@@ -1157,7 +1157,7 @@ class WebFController {
     mode = WebFLoadingMode.preloading;
 
     // Initialize document, window and the documentElement.
-    flushUICommand(view, nullptr, standardUICommandReason);
+    flushUICommand(view, nullptr);
 
     // Set the status value for preloading.
     _preloadStatus = PreloadingStatus.preloading;
@@ -1183,7 +1183,7 @@ class WebFController {
       await evaluateEntrypoint();
 
       // Initialize document, window and the documentElement.
-      flushUICommand(view, view.window.pointer!, standardUICommandReason);
+      flushUICommand(view, view.window.pointer!);
 
       view.document.onPreloadingFinished = () {
         _preloadStatus = PreloadingStatus.done;
@@ -1229,7 +1229,7 @@ class WebFController {
     mode = WebFLoadingMode.preRendering;
 
     // Initialize document, window and the documentElement.
-    flushUICommand(view, nullptr, standardUICommandReason);
+    flushUICommand(view, nullptr);
 
     // Set the status value for preloading.
     _preRenderingStatus = PreRenderingStatus.preloading;
@@ -1268,7 +1268,7 @@ class WebFController {
     await evaluateEntrypoint();
 
     // Initialize document, window and the documentElement.
-    flushUICommand(view, view.window.pointer!, standardUICommandReason);
+    flushUICommand(view, view.window.pointer!);
 
     return controllerPreRenderingCompleter.future;
   }
@@ -1298,6 +1298,20 @@ class WebFController {
     _pendingCallbacks.clear();
   }
 
+  final List<WebFWidgetElementToWidgetAdapter> pendingWidgetElements = [];
+
+  void flushPendingUnAttachedWidgetElements() {
+    assert(onCustomElementAttached != null);
+    for (int i = 0; i < pendingWidgetElements.length; i ++) {
+      onCustomElementAttached!(pendingWidgetElements[i]);
+    }
+    pendingWidgetElements.clear();
+  }
+
+  void reactiveWidgetElements() {
+
+  }
+
   // Pause all timers and callbacks if kraken page are invisible.
   void pause() {
     _paused = true;
@@ -1313,6 +1327,7 @@ class WebFController {
     module.resumeTimer();
     module.resumeAnimationFrame();
     view.resumeAnimationTimeline();
+    view.document.reactiveWidgetElements();
   }
 
   bool _disposed = false;
