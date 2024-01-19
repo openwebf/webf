@@ -107,6 +107,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_value.cc
   foundation/native_type.cc
   foundation/ui_command_buffer.cc
+  foundation/ui_command_strategy.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc

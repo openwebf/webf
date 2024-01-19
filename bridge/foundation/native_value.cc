@@ -142,4 +142,9 @@ NativeValue Native_NewJSON(JSContext* ctx, const ScriptValue& value, ExceptionSt
 #endif
 }
 
+JSPointerType GetPointerTypeOfNativePointer(NativeValue native_value) {
+  assert(native_value.tag == NativeTag::TAG_POINTER);
+  return static_cast<JSPointerType>(native_value.uint32);
+}
+
 }  // namespace webf

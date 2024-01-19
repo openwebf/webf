@@ -34,6 +34,7 @@ class WebFPage final {
   WebFPage() = delete;
   WebFPage(DartIsolateContext* dart_isolate_context,
            bool is_dedicated,
+           size_t sync_buffer_size,
            double context_id,
            const JSExceptionHandler& handler);
   ~WebFPage();

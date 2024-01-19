@@ -481,9 +481,9 @@ typedef NativeAllocateNewPageSync = Pointer<Void> Function(Double, Pointer<Void>
 typedef DartAllocateNewPageSync = Pointer<Void> Function(double, Pointer<Void>);
 typedef HandleAllocateNewPageResult = Void Function(Handle object, Pointer<Void> page);
 typedef NativeAllocateNewPage = Void Function(
-    Double, Pointer<Void>, Handle object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
+    Double, Int32, Pointer<Void>, Handle object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
 typedef DartAllocateNewPage = void Function(
-    double, Pointer<Void>, Object object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
+    double, int, Pointer<Void>, Object object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
 
 final DartAllocateNewPageSync _allocateNewPageSync =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPageSync>>('allocateNewPageSync').asFunction();
@@ -504,14 +504,14 @@ class _AllocateNewPageContext {
   _AllocateNewPageContext(this.completer, this.contextId);
 }
 
-Future<void> allocateNewPage(bool sync, double newContextId) async {
+Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize) async {
   await waitingSyncTaskComplete(newContextId);
 
   if (!sync) {
     Completer<void> completer = Completer();
     _AllocateNewPageContext context = _AllocateNewPageContext(completer, newContextId);
     Pointer<NativeFunction<HandleAllocateNewPageResult>> f = Pointer.fromFunction(_handleAllocateNewPageResult);
-    _allocateNewPage(newContextId, dartContext!.pointer, context, f);
+    _allocateNewPage(newContextId, syncBufferSize, dartContext!.pointer, context, f);
     return completer.future;
   } else {
     Pointer<Void> page = _allocateNewPageSync(newContextId, dartContext!.pointer);
@@ -612,28 +612,6 @@ class UICommandItem extends Struct {
   external Pointer nativePtr;
 }
 
-typedef NativeAcquireUiCommandLocks = Pointer<Void> Function(Pointer<Void>);
-typedef DartAcquireUiCommandLocks = Pointer<void> Function(Pointer<Void>);
-
-final DartAcquireUiCommandLocks _acquireUiCommandLocks =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAcquireUiCommandLocks>>('acquireUiCommandLocks').asFunction();
-
-void acquireUICommandLocks(double contextId) {
-  // Stop the mutations from JavaScript thread.
-  _acquireUiCommandLocks(_allocatedPages[contextId]!);
-}
-
-typedef NativeReleaseUiCommandLocks = Pointer<Void> Function(Pointer<Void>);
-typedef DartReleaseUiCommandLocks = Pointer<void> Function(Pointer<Void>);
-
-final DartReleaseUiCommandLocks _releaseUiCommandLocks =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeReleaseUiCommandLocks>>('releaseUiCommandLocks').asFunction();
-
-void releaseUICommandLocks(double contextId) {
-  // Stop the mutations from JavaScript thread.
-  _releaseUiCommandLocks(_allocatedPages[contextId]!);
-}
-
 typedef NativeGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
 typedef DartGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
 
@@ -672,19 +650,13 @@ bool isJSThreadBlocked(double contextId) {
 void clearUICommand(double contextId) {
   assert(_allocatedPages.containsKey(contextId));
 
-  // Stop the mutations from JavaScript thread.
-  acquireUICommandLocks(contextId);
-
   _clearUICommandItems(_allocatedPages[contextId]!);
-
-  // Release the mutations from JavaScript thread.
-  releaseUICommandLocks(contextId);
 }
 
-void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> selfPointer, int reason) {
+void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> selfPointer) {
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   if (controller != null) {
-    flushUICommand(controller.view, selfPointer, reason);
+    flushUICommand(controller.view, selfPointer);
   }
 }
 
@@ -694,22 +666,18 @@ class _NativeCommandData {
   }
 
   int length;
-  int flag;
+  int kindFlag;
   List<int> rawMemory;
 
-  _NativeCommandData(this.flag, this.length, this.rawMemory);
+  _NativeCommandData(this.kindFlag, this.length, this.rawMemory);
 }
 
 _NativeCommandData readNativeUICommandMemory(double contextId) {
-  // Stop the mutations from JavaScript thread.
-  acquireUICommandLocks(contextId);
-
   Pointer<Uint64> nativeCommandItemPointer = _getUICommandItems(_allocatedPages[contextId]!);
   int flag = _getUICommandKindFlags(_allocatedPages[contextId]!);
   int commandLength = _getUICommandItemSize(_allocatedPages[contextId]!);
 
   if (commandLength == 0 || nativeCommandItemPointer == nullptr) {
-    releaseUICommandLocks(contextId);
     return _NativeCommandData.empty();
   }
 
@@ -719,13 +687,10 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
       .toList(growable: false);
   _clearUICommandItems(_allocatedPages[contextId]!);
 
-  // Release the mutations from JavaScript thread.
-  releaseUICommandLocks(contextId);
-
   return _NativeCommandData(flag, commandLength, rawMemory);
 }
 
-void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer, int reason) {
+void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer) {
   assert(_allocatedPages.containsKey(view.contextId));
   if (view.disposed) return;
 
@@ -733,7 +698,6 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   List<UICommand>? commands;
   if (rawCommands.rawMemory.isNotEmpty) {
     commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
-
     execUICommands(view, commands);
     SchedulerBinding.instance.scheduleFrame();
   }

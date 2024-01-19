@@ -5,7 +5,6 @@
 import 'dart:collection';
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/webf.dart';
@@ -33,14 +32,16 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
   dom.Node get webFElement => _webFElement;
 
   void addWidgetChild(Widget widget) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
+    scheduleDelayForFrameCallback();
+    Future.microtask(() {
       setState(() {
         customElementWidgets.add(widget);
       });
     });
   }
   void removeWidgetChild(Widget widget) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
+    scheduleDelayForFrameCallback();
+    Future.microtask(() {
       if (_disposed) return;
       setState(() {
         customElementWidgets.remove(widget);

@@ -50,5 +50,23 @@ void main() {
       await bundle.resolve();
       expect(bundle.contentType.mimeType, 'application/vnd.webf.bc1');
     });
+
+    test('set contentType for FileBundle should works', () async {
+      var filename = '${Directory.current.path}/example/assets/bundle.js';
+      var bundle = FileBundle('file://$filename', contentType: ContentType.text);
+      expect(bundle.contentType.mimeType, 'text/plain');
+    });
+
+    test('set contentType for NetworkBundle should works', () async {
+      var filename = '${Directory.current.path}/example/assets/bundle.js';
+      var bundle = NetworkBundle('http://$filename', contentType: ContentType.text);
+      expect(bundle.contentType.mimeType, 'text/plain');
+    });
+
+    test('set contentType for AssetBundle should works', () async {
+      var filename = '${Directory.current.path}/example/assets/bundle.js';
+      var bundle = AssetsBundle('http://$filename', contentType: ContentType.text);
+      expect(bundle.contentType.mimeType, 'text/plain');
+    });
   });
 }

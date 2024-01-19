@@ -16,6 +16,7 @@
 #include <mutex>
 #include <set>
 #include <unordered_map>
+#include <vector>
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
@@ -48,6 +49,7 @@ class ErrorEvent;
 class DartContext;
 class MutationObserver;
 class BindingObject;
+struct NativeBindingObject;
 class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
@@ -63,6 +65,7 @@ class ExecutingContext {
   ExecutingContext() = delete;
   ExecutingContext(DartIsolateContext* dart_isolate_context,
                    bool is_dedicated,
+                   size_t sync_buffer_size,
                    double context_id,
                    JSExceptionHandler handler,
                    void* owner);
@@ -138,6 +141,7 @@ class ExecutingContext {
 
   // Force dart side to execute the pending ui commands.
   void FlushUICommand(const BindingObject* self, uint32_t reason);
+  void FlushUICommand(const BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps);
 
   void TurnOnJavaScriptGC();
   void TurnOffJavaScriptGC();
@@ -204,7 +208,7 @@ class ExecutingContext {
   bool in_dispatch_error_event_{false};
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
-  std::set<ScriptWrappable*> active_wrappers_;
+  std::unordered_set<ScriptWrappable*> active_wrappers_;
   bool is_dedicated_;
 };
 

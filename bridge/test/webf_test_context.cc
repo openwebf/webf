@@ -8,6 +8,7 @@
 #include "bindings/qjs/qjs_interface_bridge.h"
 #include "core/dom/document.h"
 #include "core/fileapi/blob.h"
+#include "core/frame/window.h"
 #include "core/html/html_body_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
@@ -60,6 +61,8 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
   }
 
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
+
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
 
   auto fn = [](void* ptr, double contextId, int8_t result, char* errmsg) {
     auto* callback_context = static_cast<ImageSnapShotContext*>(ptr);
@@ -216,6 +219,8 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   auto* simulate_context = new SimulatePointerCallbackContext();
   simulate_context->context = context;
   simulate_context->callbackValue = JS_DupValue(ctx, callbackValue);
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
+
   context->dartMethodPtr()->simulatePointer(context->isDedicated(), simulate_context, mousePointerList, length, pointer,
                                             handleSimulatePointerCallback);
 
@@ -233,6 +238,9 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
 
   std::unique_ptr<SharedNativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
   void* p = static_cast<void*>(nativeString.get());
+
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
+
   context->dartMethodPtr()->simulateInputText(context->isDedicated(), static_cast<SharedNativeString*>(p));
   return JS_NULL;
 };

@@ -128,7 +128,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   List<Cookie>? initialCookies;
 
-  final List<List<UICommand>> pendingUICommands = [];
+  // final List<List<UICommand>> pendingUICommands = [];
   // final UICommandIterator pendingUICommands = UICommandIterator();
 
   double _viewportWidth;
@@ -185,7 +185,7 @@ class WebFViewController implements WidgetsBindingObserver {
     // Wait viewport mounted on the outside renderObject tree.
     Future.microtask(() {
       // Execute UICommand.createDocument and UICommand.createWindow to initialize window and document.
-      flushUICommand(this, nullptr, dependentOnElementUICommandReason | dependentOnLayoutUICommandReason);
+      flushUICommand(this, nullptr);
     });
 
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
@@ -193,7 +193,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void _postFrameCallback(Duration timeStamp) {
     if (disposed) return;
-    flushUICommand(this, window.pointer!, standardUICommandReason);
+    flushUICommand(this, window.pointer!);
     SchedulerBinding.instance.addPostFrameCallback(_postFrameCallback);
   }
 
@@ -215,6 +215,37 @@ class WebFViewController implements WidgetsBindingObserver {
   void removeBindingObject(Pointer pointer) {
     _nativeObjects.remove(pointer.address);
   }
+
+  // fix New version of chrome devTools castrating the last three digits of long targetId num strings and replacing them with 0
+  int _nodeIdCount = 0;
+  final Map<int, int> _targetIdToDevNodeIdMap = {};
+  Map<int, int> get targetIdToDevNodeIdMap => _targetIdToDevNodeIdMap;
+
+  int getTargetIdByNodeId(int? address) {
+    if (address == null) {
+      return 0;
+    }
+    int targetId = targetIdToDevNodeIdMap.keys.firstWhere((k) => targetIdToDevNodeIdMap[k] == address, orElse: () => 0);
+    return targetId;
+  }
+
+  void disposeTargetIdToDevNodeIdMap(BindingObject? object) {
+    _targetIdToDevNodeIdMap.remove(object?.pointer?.address);
+  }
+
+  int forDevtoolsNodeId(BindingObject object) {
+    int? nativeAddress = object.pointer?.address;
+    if (nativeAddress != null) {
+      if (targetIdToDevNodeIdMap[nativeAddress] != null) {
+        return targetIdToDevNodeIdMap[nativeAddress]!;
+      }
+      _nodeIdCount ++;
+      targetIdToDevNodeIdMap[nativeAddress] = _nodeIdCount;
+      return _nodeIdCount;
+    }
+    return 0;
+  }
+  // fix New version of chrome devTools end
 
   // Index value which identify javascript runtime context.
   late double _contextId;
@@ -322,7 +353,6 @@ class WebFViewController implements WidgetsBindingObserver {
     clearUICommand(_contextId);
 
     await disposePage(runningThread is FlutterUIThread, _contextId);
-    pendingUICommands.clear();
 
     clearCssLength();
 
@@ -333,6 +363,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
     document.dispose();
     window.dispose();
+
+    _targetIdToDevNodeIdMap.clear();
   }
 
   VoidCallback? _originalOnPlatformBrightnessChanged;
@@ -628,6 +660,7 @@ class WebFViewController implements WidgetsBindingObserver {
     BindingObject? bindingObject = getBindingObject(pointer);
     bindingObject?.dispose();
     view.removeBindingObject(pointer);
+    view.disposeTargetIdToDevNodeIdMap(bindingObject);
     malloc.free(pointer);
   }
 
@@ -1176,7 +1209,7 @@ class WebFController {
         // Prefer sync decode in loading entrypoint.
         await evaluateScripts(contextId, data, url: url);
       } else if (entrypoint.isBytecode) {
-        evaluateQuickjsByteCode(contextId, data);
+        await evaluateQuickjsByteCode(contextId, data);
       } else if (entrypoint.isHTML) {
         assert(isValidUTF8String(data), 'The HTML codes should be in UTF-8 encoding format');
         parseHTML(contextId, data);

@@ -77,6 +77,8 @@ NativeValue Native_NewList(uint32_t argc, NativeValue* argv);
 NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr);
 NativeValue Native_NewJSON(JSContext* ctx, const ScriptValue& value, ExceptionState& exception_state);
 
+JSPointerType GetPointerTypeOfNativePointer(NativeValue native_value);
+
 }  // namespace webf
 
 #endif  // BRIDGE_NATIVE_VALUE_H

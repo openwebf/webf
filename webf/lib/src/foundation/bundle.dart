@@ -80,7 +80,7 @@ void _failedToResolveBundle(String url) {
 }
 
 abstract class WebFBundle {
-  WebFBundle(this.url);
+  WebFBundle(this.url, { ContentType? contentType }): _contentType = contentType;
 
   // Unique resource locator.
   final String url;
@@ -100,7 +100,8 @@ abstract class WebFBundle {
 
   // Content type for data.
   // The default value is plain text.
-  ContentType contentType = ContentType.text;
+  ContentType get contentType => _contentType ?? ContentType.text;
+  ContentType? _contentType;
 
   @mustCallSuper
   Future<void> resolve({ String? baseUrl, UriParser? uriParser }) async {
@@ -132,15 +133,15 @@ abstract class WebFBundle {
     await cacheObject.remove();
   }
 
-  static WebFBundle fromUrl(String url, {Map<String, String>? additionalHttpHeaders}) {
+  static WebFBundle fromUrl(String url, {Map<String, String>? additionalHttpHeaders, ContentType? contentType}) {
     if (_isHttpScheme(url)) {
-      return NetworkBundle(url, additionalHttpHeaders: additionalHttpHeaders);
+      return NetworkBundle(url, additionalHttpHeaders: additionalHttpHeaders, contentType: contentType);
     } else if (_isAssetsScheme(url)) {
-      return AssetsBundle(url);
+      return AssetsBundle(url, contentType: contentType);
     } else if (_isFileScheme(url)) {
-      return FileBundle(url);
+      return FileBundle(url, contentType: contentType);
     } else if (_isDataScheme(url)) {
-      return DataBundle.fromDataUrl(url);
+      return DataBundle.fromDataUrl(url, contentType: contentType);
     } else if (_isDefaultUrl(url)) {
       return DataBundle.fromString('', url, contentType: javascriptContentType);
     } else {
@@ -169,19 +170,19 @@ abstract class WebFBundle {
 class DataBundle extends WebFBundle {
   DataBundle(Uint8List data, String url, {ContentType? contentType}) : super(url) {
     this.data = data;
-    this.contentType = contentType ?? ContentType.binary;
+    _contentType = contentType ?? ContentType.binary;
   }
 
   DataBundle.fromString(String content, String url, {ContentType? contentType}) : super(url) {
     // Encode string to data by utf8.
     data = Uint8List.fromList(utf8.encode(content));
-    this.contentType = contentType ?? ContentType.text;
+    _contentType = contentType ?? ContentType.text;
   }
 
   DataBundle.fromDataUrl(String dataUrl, {ContentType? contentType}) : super(dataUrl) {
     UriData uriData = UriData.parse(dataUrl);
     data = uriData.contentAsBytes();
-    this.contentType = contentType ?? ContentType.parse('${uriData.mimeType}; charset=${uriData.charset}');
+    _contentType = contentType ?? ContentType.parse('${uriData.mimeType}; charset=${uriData.charset}');
   }
 
   @override
@@ -194,7 +195,7 @@ class NetworkBundle extends WebFBundle {
   static final HttpClient _sharedHttpClient = HttpClient()
     ..userAgent = NavigatorModule.getUserAgent();
 
-  NetworkBundle(String url, {this.additionalHttpHeaders}) : super(url);
+  NetworkBundle(String url, {this.additionalHttpHeaders, ContentType? contentType}) : super(url, contentType: contentType);
 
   Map<String, String>? additionalHttpHeaders = {};
 
@@ -228,12 +229,12 @@ class NetworkBundle extends WebFBundle {
     }
 
     data = bytes.buffer.asUint8List();
-    contentType = response.headers.contentType ?? ContentType.binary;
+    _contentType = response.headers.contentType ?? ContentType.binary;
   }
 }
 
 class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
-  AssetsBundle(String url) : super(url);
+  AssetsBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
   Future<void> obtainData() async {
@@ -265,7 +266,7 @@ class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
 
 /// The bundle that source from local io.
 class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
-  FileBundle(String url) : super(url);
+  FileBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
   Future<void> obtainData() async {
@@ -286,8 +287,6 @@ class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
 /// [_ExtensionContentTypeResolver] is useful for [WebFBundle] to determine
 /// content-type by uri's extension.
 mixin _ExtensionContentTypeResolver on WebFBundle {
-  ContentType? _contentType;
-
   @override
   ContentType get contentType => _contentType ??= _resolveContentType(_uri);
 

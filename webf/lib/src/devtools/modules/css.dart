@@ -43,7 +43,7 @@ class InspectCSSModule extends UIInspectorModule {
   }
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
-    int nodeId = params['nodeId'];
+    int nodeId = view.getTargetIdByNodeId(params['nodeId']);
     BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
     if (element is Element) {
       MatchedStyles matchedStyles = MatchedStyles(
@@ -54,10 +54,10 @@ class InspectCSSModule extends UIInspectorModule {
   }
 
   void handleGetComputedStyleForNode(int? id, Map<String, dynamic> params) {
-    int nodeId = params['nodeId'];
-    Element? element = view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    int nodeId = view.getTargetIdByNodeId(params['nodeId']);
+    BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
 
-    if (element != null) {
+    if (element is Element) {
       ComputedStyle computedStyle = ComputedStyle(
         computedStyle: buildComputedStyle(element),
       );
@@ -68,10 +68,10 @@ class InspectCSSModule extends UIInspectorModule {
   // Returns the styles defined inline (explicitly in the "style" attribute and
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
   void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
-    int nodeId = params['nodeId'];
-    Element? element = view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    int nodeId = view.getTargetIdByNodeId(params['nodeId']);
+    BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
 
-    if (element != null) {
+    if (element is Element) {
       InlinedStyle inlinedStyle = InlinedStyle(
         inlineStyle: buildInlineStyle(element),
         attributesStyle: buildAttributesStyle(element.attributes),
@@ -88,11 +88,11 @@ class InspectCSSModule extends UIInspectorModule {
     // @TODO: support comments for inline style.
     for (Map<String, dynamic> edit in edits) {
       // Use styleSheetId to identity element.
-      int nodeId = edit['styleSheetId'];
+      int nodeId = view.getTargetIdByNodeId(edit['styleSheetId']);
       String text = edit['text'] ?? '';
       List<String> texts = text.split(';');
-      Element? element = document.controller.view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
-      if (element != null) {
+      BindingObject? element = document.controller.view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+      if (element is Element) {
         for (String kv in texts) {
           kv = kv.trim();
           List<String> _kv = kv.split(':');
@@ -139,7 +139,7 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.pointer!.address,
+        styleSheetId: element.ownerView.forDevtoolsNodeId(element),
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
@@ -170,7 +170,7 @@ class InspectCSSModule extends UIInspectorModule {
     return CSSStyle(
         // Absent for user agent stylesheet and user-specified stylesheet rules.
         // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.pointer!.address,
+        styleSheetId: element.ownerView.forDevtoolsNodeId(element),
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,

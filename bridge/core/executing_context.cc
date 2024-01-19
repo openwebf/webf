@@ -28,6 +28,7 @@ std::atomic<uint32_t> running_context_list{0};
 
 ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    bool is_dedicated,
+                                   size_t sync_buffer_size,
                                    double context_id,
                                    JSExceptionHandler handler,
                                    void* owner)
@@ -38,15 +39,12 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
-  //  #if ENABLE_PROFILE
-  //    auto jsContextStartTime =
-  //        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
-  //            .count();
-  //    auto nativePerformance = Performance::instance(context_)->m_nativePerformance;
-  //    nativePerformance.mark(PERF_JS_CONTEXT_INIT_START, jsContextStartTime);
-  //    nativePerformance.mark(PERF_JS_CONTEXT_INIT_END);
-  //    nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_START);
-  //  #endif
+  if (is_dedicated) {
+    // Set up the sync command size for dedicated thread mode.
+    // Bigger size introduce more ui consistence and lower size led to more high performance by the reason of
+    // concurrency.
+    ui_command_buffer_.ConfigureSyncCommandBufferSize(sync_buffer_size);
+  }
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
   assert_m(valid_contexts[context_id] != true, "Conflict context found!");
@@ -77,11 +75,6 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   // Install performance
   InstallPerformance();
 
-  //#if ENABLE_PROFILE
-  //  nativePerformance.mark(PERF_JS_NATIVE_METHOD_INIT_END);
-  //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_START);
-  //#endif
-
   initWebFPolyFill(this);
 
   for (auto& p : plugin_byte_code) {
@@ -92,9 +85,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
     EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
   }
 
-  //#if ENABLE_PROFILE
-  //  nativePerformance.mark(PERF_JS_POLYFILL_INIT_END);
-  //#endif
+  ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -273,8 +264,8 @@ void ExecutingContext::ReportError(JSValueConst error) {
 }
 
 void ExecutingContext::DrainMicrotasks() {
-  ui_command_buffer_.addCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
   DrainPendingPromiseJobs();
+  ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
 namespace {
@@ -376,8 +367,42 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
 }
 
 void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
+  std::vector<NativeBindingObject*> deps;
+  FlushUICommand(self, reason, deps);
+}
+
+void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
+                                      uint32_t reason,
+                                      std::vector<NativeBindingObject*>& deps) {
   if (!uiCommandBuffer()->empty()) {
-    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject(), reason);
+    if (is_dedicated_) {
+      bool should_swap_ui_commands = false;
+      if (isUICommandReasonDependsOnElement(reason)) {
+        bool element_mounted_on_dart = self->bindingObject()->invoke_bindings_methods_from_native != nullptr;
+        bool is_deps_elements_mounted_on_dart = true;
+
+        for (auto binding : deps) {
+          if (binding->invoke_bindings_methods_from_native == nullptr) {
+            is_deps_elements_mounted_on_dart = false;
+          }
+        }
+
+        if (!element_mounted_on_dart || !is_deps_elements_mounted_on_dart) {
+          should_swap_ui_commands = true;
+        }
+      }
+
+      if (isUICommandReasonDependsOnLayout(reason) || isUICommandReasonDependsOnAll(reason)) {
+        should_swap_ui_commands = true;
+      }
+
+      // Sync commands to dart when caller dependents on Element.
+      if (should_swap_ui_commands) {
+        ui_command_buffer_.SyncToActive();
+      }
+    }
+
+    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
   }
 }
 

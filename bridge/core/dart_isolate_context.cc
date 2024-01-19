@@ -3,7 +3,7 @@
  */
 
 #include "dart_isolate_context.h"
-#include <set>
+#include <unordered_set>
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
@@ -15,7 +15,7 @@
 
 namespace webf {
 
-thread_local std::set<DartWireContext*> alive_wires;
+thread_local std::unordered_set<DartWireContext*> alive_wires;
 
 PageGroup::~PageGroup() {
   for (auto page : pages_) {
@@ -128,10 +128,11 @@ void DartIsolateContext::Dispose(multi_threading::Callback callback) {
 void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      DartIsolateContext* dart_isolate_context,
                                                      double page_context_id,
+                                                     int32_t sync_buffer_size,
                                                      Dart_Handle dart_handle,
                                                      AllocateNewPageCallback result_callback) {
   DartIsolateContext::InitializeJSRuntime();
-  auto* page = new WebFPage(dart_isolate_context, true, page_context_id, nullptr);
+  auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, nullptr);
   dart_isolate_context->dispatcher_->PostToDart(true, HandleNewPageResult, page_group, dart_handle, result_callback,
                                                 page);
 }
@@ -155,6 +156,7 @@ void DartIsolateContext::DisposePageInJSThread(DartIsolateContext* dart_isolate_
 }
 
 void* DartIsolateContext::AddNewPage(double thread_identity,
+                                     int32_t sync_buffer_size,
                                      Dart_Handle dart_handle,
                                      AllocateNewPageCallback result_callback) {
   bool is_in_flutter_ui_thread = thread_identity < 0;
@@ -175,12 +177,12 @@ void* DartIsolateContext::AddNewPage(double thread_identity,
   }
 
   dispatcher_->PostToJs(true, thread_group_id, InitializeNewPageInJSThread, page_group, this, thread_identity,
-                        dart_handle, result_callback);
+                        sync_buffer_size, dart_handle, result_callback);
   return nullptr;
 }
 
 void* DartIsolateContext::AddNewPageSync(double thread_identity) {
-  auto page = std::make_unique<WebFPage>(this, false, thread_identity, nullptr);
+  auto page = std::make_unique<WebFPage>(this, false, 0, thread_identity, nullptr);
   void* p = page.get();
   pages_in_ui_thread_.emplace(std::move(page));
   return p;

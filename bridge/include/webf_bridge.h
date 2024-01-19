@@ -43,6 +43,7 @@ void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int3
 
 WEBF_EXPORT_C
 void allocateNewPage(double thread_identity,
+                     int32_t sync_buffer_size,
                      void* dart_isolate_context,
                      Dart_Handle dart_handle,
                      AllocateNewPageCallback result_callback);
@@ -101,12 +102,6 @@ WEBF_EXPORT_C
 void* getUICommandItems(void* page);
 WEBF_EXPORT_C
 uint32_t getUICommandKindFlag(void* page);
-
-WEBF_EXPORT_C
-void acquireUiCommandLocks(void* page);
-
-WEBF_EXPORT_C
-void releaseUiCommandLocks(void* page);
 
 WEBF_EXPORT_C
 int64_t getUICommandItemSize(void* page);

@@ -34,7 +34,7 @@ FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) a
   BindingBridge.setup();
 
   double newContextId = runningThread.identity();
-  await allocateNewPage(runningThread is FlutterUIThread, newContextId);
+  await allocateNewPage(runningThread is FlutterUIThread, newContextId, runningThread.syncBufferSize());
 
   return newContextId;
 }

@@ -8,7 +8,7 @@
 
 #include <include/dart_api_dl.h>
 #include <cinttypes>
-#include <set>
+#include <unordered_set>
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/dart_methods.h"
@@ -116,6 +116,8 @@ class BindingObject : public ScriptWrappable {
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
   NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
+  void CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps, size_t argc, const NativeValue* args) const;
+
   FORCE_INLINE NativeBindingObject* bindingObject() const { return binding_object_; }
 
   void Trace(GCVisitor* visitor) const;
@@ -146,7 +148,7 @@ class BindingObject : public ScriptWrappable {
 
  private:
   NativeBindingObject* binding_object_ = nullptr;
-  std::set<BindingObjectPromiseContext*> pending_promise_contexts_;
+  std::unordered_set<BindingObjectPromiseContext*> pending_promise_contexts_;
 };
 
 }  // namespace webf

@@ -18,7 +18,7 @@
 namespace webf {
 
 Window::Window(ExecutingContext* context) : EventTargetWithInlineData(context) {
-  context->uiCommandBuffer()->addCommand(UICommand::kCreateWindow, nullptr, (void*)bindingObject(), nullptr);
+  context->uiCommandBuffer()->AddCommand(UICommand::kCreateWindow, nullptr, bindingObject(), nullptr);
 }
 
 // https://infra.spec.whatwg.org/#ascii-whitespace
@@ -209,8 +209,14 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, Exceptio
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kgetComputedStyle, 1, arguments,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
-  return MakeGarbageCollected<ComputedCssStyleDeclaration>(
-      GetExecutingContext(), NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
+
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result);
+
+  if (native_binding_object == nullptr)
+    return nullptr;
+
+  return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
 }
 
 ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
