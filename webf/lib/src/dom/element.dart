@@ -355,10 +355,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return QuerySelector.closest(this, args.first);
   }
 
-  void updateRenderBoxModel() {
+  void updateRenderBoxModel({ bool forceUpdate = false }) {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
-      nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget);
+      nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget, forceUpdate: forceUpdate);
     } else if (isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
@@ -427,10 +427,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return nextReplaced;
   }
 
-  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget}) {
+  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool forceUpdate = false }) {
     RenderWidget nextReplaced;
 
-    if (previousRenderWidget == null) {
+    if (previousRenderWidget == null || forceUpdate) {
       nextReplaced = RenderWidget(
         renderStyle: renderStyle,
       );

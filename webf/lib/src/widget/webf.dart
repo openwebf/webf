@@ -406,6 +406,9 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
 
     (context as _WebFRenderObjectElement).controller = controller;
 
+    controller.onCustomElementAttached = onCustomElementAttached;
+    controller.onCustomElementDetached = onCustomElementDetached;
+
     OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
     if (onControllerCreated != null) {
       controller.controlledInitCompleter.future.then((_) {
@@ -461,29 +464,40 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
       throw FlutterError('Consider providing a WebFBundle resource as the entry point for WebF');
     }
 
-    RenderViewportBox rootRenderObject = renderObject as RenderViewportBox;
-    if (!controller!.view.firstLoad) {
-      rootRenderObject.insert(controller!.view.getRootRenderObject()!);
-      controller!.resume();
-    }
-
     await controller!.controlledInitCompleter.future;
+
     // Sync element state.
-    flushUICommand(controller!.view, nullptr, standardUICommandReason);
+    flushUICommand(controller!.view, nullptr);
 
     // Should schedule to the next frame to make sure the RenderViewportBox(WebF's root renderObject) had been layout.
     try {
       SchedulerBinding.instance.addPostFrameCallback((_) async {
-        if (controller!.evaluated) return;
+        if (controller!.evaluated) {
+          RenderViewportBox rootRenderObject = renderObject as RenderViewportBox;
+          if (!controller!.view.firstLoad) {
+            controller!.resume();
+            rootRenderObject.insert(controller!.view.getRootRenderObject()!);
+          }
+          return;
+        }
         // Sync viewport size to the documentElement.
         controller!.view.document.initializeRootElementSize();
         // Starting to flush ui commands every frames.
         controller!.view.flushPendingCommandsPerFrame();
 
+        RenderViewportBox rootRenderObject = renderObject as RenderViewportBox;
+
         // Bundle could be executed before mount to the flutter tree.
         if (controller!.mode == WebFLoadingMode.standard) {
           await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
         } else if (controller!.mode == WebFLoadingMode.preloading) {
+
+          await controller!.controllerPreloadingCompleter.future;
+
+          rootRenderObject.insert(controller!.view.getRootRenderObject()!);
+
+          controller!.flushPendingUnAttachedWidgetElements();
+
           await controller!.controllerPreloadingCompleter.future;
           assert(controller!.entrypoint!.isResolved);
           assert(controller!.entrypoint!.isDataObtained);
@@ -502,12 +516,19 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
           await controller!.dispatchWindowResizeEvent();
 
           // Sync element state.
-          flushUICommand(controller!.view, nullptr, standardUICommandReason);
+          flushUICommand(controller!.view, nullptr);
+
+          // Attach root renderObjects into Flutter tree
+          rootRenderObject.insert(controller!.view.getRootRenderObject()!);
+
+          // Attach WidgetElements
+          controller!.flushPendingUnAttachedWidgetElements();
 
           controller!.module.resumeAnimationFrame();
 
           HTMLElement rootElement = controller!.view.document.documentElement as HTMLElement;
           rootElement.flushPendingStylePropertiesForWholeTree();
+
 
           controller!.view.resumeAnimationTimeline();
 
