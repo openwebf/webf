@@ -725,38 +725,37 @@ class WebFViewController implements WidgetsBindingObserver {
 
   @override
   void didChangeMetrics() {
-    // final ownerView = rootController.ownerFlutterView;
-    //
-    // final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
-    // final double bottomInsets;
-    // if (resizeToAvoidBottomInsets) {
-    //   bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
-    // } else {
-    //   bottomInsets = 0;
-    // }
-    //
-    // if (resizeToAvoidBottomInsets && viewportHeight != null) {
-    //   bool shouldScrollByToCenter = false;
-    //   Element? focusedElement = document.focusedElement;
-    //   double scrollOffset = 0;
-    //   if (focusedElement != null) {
-    //     RenderBox? renderer = focusedElement.renderer;
-    //     if (renderer != null && renderer.attached && renderer.hasSize) {
-    //       Offset focusOffset = renderer.localToGlobal(Offset.zero);
-    //       // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
-    //       if (focusOffset.dy > viewportHeight! - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
-    //         shouldScrollByToCenter = true;
-    //         scrollOffset =
-    //             focusOffset.dy - (viewportHeight! - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
-    //       }
-    //     }
-    //   }
-    //   // Show keyboard
-    //   if (shouldScrollByToCenter) {
-    //     window.scrollBy(0, scrollOffset, true);
-    //   }
-    // }
-    // viewport.bottomInset = bottomInsets;
+    final ownerView = rootController.ownerFlutterView;
+    final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
+    final double bottomInsets;
+    if (resizeToAvoidBottomInsets) {
+      bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
+    } else {
+      bottomInsets = 0;
+    }
+
+    if (resizeToAvoidBottomInsets && viewport?.hasSize == true) {
+      bool shouldScrollByToCenter = false;
+      Element? focusedElement = document.focusedElement;
+      double scrollOffset = 0;
+      if (focusedElement != null) {
+        RenderBox? renderer = focusedElement.renderer;
+        if (renderer != null && renderer.attached && renderer.hasSize) {
+          Offset focusOffset = renderer.localToGlobal(Offset.zero);
+          // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
+          if (focusOffset.dy > viewport!.size.height - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
+            shouldScrollByToCenter = true;
+            scrollOffset =
+                focusOffset.dy - (viewport!.size.height - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
+          }
+        }
+      }
+      // Show keyboard
+      if (shouldScrollByToCenter) {
+        window.scrollBy(0, scrollOffset, true);
+      }
+    }
+    viewport?.bottomInset = bottomInsets;
   }
 
   @override
