@@ -307,12 +307,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     properties['className'] =
         BindingObjectProperty(getter: () => className, setter: (value) => className = castToType<String>(value));
     properties['classList'] = BindingObjectProperty(getter: () => classList);
-    properties['dir'] = BindingObjectProperty(getter: () => dir);
+    properties['dir'] = BindingObjectProperty(getter: () => dir, setter: (value) => {});
   }
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     methods['getBoundingClientRect'] = BindingObjectMethodSync(call: (_) => getBoundingClientRect());
+    methods['getClientRects'] = BindingObjectMethodSync(call: (_) => getClientRects());
     methods['scroll'] =
         BindingObjectMethodSync(call: (args) => scroll(castToType<double>(args[0]), castToType<double>(args[1])));
     methods['scrollBy'] =
@@ -643,6 +644,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   BoundingClientRect getBoundingClientRect() => boundingClientRect;
+
+  List<BoundingClientRect> getClientRects() {
+    return [boundingClientRect];
+  }
 
   bool _shouldConsumeScrollTicker = false;
 
@@ -1363,6 +1368,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void setRenderStyleProperty(String name, value) {
+    if (renderStyle.target.disposed) return;
+
     dynamic oldValue;
 
     switch(name) {

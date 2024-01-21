@@ -1098,18 +1098,19 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       flexedMainSize = computedSize;
 
+      double minFlexPrecision = 0.5;
       // Find all the violations by comparing min and max size of flex items.
       if (child is RenderBoxModel && !_isChildMainAxisClip(child)) {
         double minMainAxisSize = _getMinMainAxisSize(child);
         double maxMainAxisSize = _getMaxMainAxisSize(child);
-        if (computedSize < minMainAxisSize) {
+        if (computedSize < minMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision ) {
           flexedMainSize = minMainAxisSize;
-        } else if (computedSize > maxMainAxisSize) {
+        } else if (computedSize > maxMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision ) {
           flexedMainSize = maxMainAxisSize;
         }
       }
 
-      double violation = flexedMainSize - computedSize;
+      double violation = (flexedMainSize - computedSize).abs() >= minFlexPrecision ? flexedMainSize - computedSize : 0;
 
       // Collect all the flex items with violations.
       if (violation > 0) {

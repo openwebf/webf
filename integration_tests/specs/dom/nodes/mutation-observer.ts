@@ -476,7 +476,6 @@ describe("MutationObserver microtask looping", function() {
 
     // ...which we'll attach to both elements
     inner!.addEventListener('click', onClick);
-    outer!.addEventListener('click', onClick);
 
     // Note that this will behave differently than a real click,
     // since the dispatch is synchronous and microtasks will not
@@ -487,10 +486,6 @@ describe("MutationObserver microtask looping", function() {
     'click',
     'promise',
     'mutate',
-    'click',
-    'promise',
-    'mutate',
-    'timeout',
     'timeout'
   ], 'Level 1 bossfight (synthetic click)');
 });

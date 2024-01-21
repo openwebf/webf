@@ -24,6 +24,7 @@
     "scrollWidth",
     "scrollHeight",
     "getBoundingClientRect",
+    "getClientRects",
     ["getPropertyMagic", "%g"],
     ["setPropertyMagic", "%s"],
     "open",

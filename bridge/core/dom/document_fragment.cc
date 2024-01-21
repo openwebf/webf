@@ -17,8 +17,8 @@ DocumentFragment* DocumentFragment::Create(ExecutingContext* context, ExceptionS
 }
 
 DocumentFragment::DocumentFragment(Document* document, ConstructionType type) : ContainerNode(document, type) {
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCreateDocumentFragment, nullptr,
-                                                       (void*)bindingObject(), nullptr);
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocumentFragment, nullptr, bindingObject(),
+                                                       nullptr);
 }
 
 std::string DocumentFragment::nodeName() const {
@@ -37,7 +37,7 @@ Node* DocumentFragment::Clone(Document& factory, CloneChildrenFlag flag) const {
   DocumentFragment* clone = Create(factory);
   if (flag != CloneChildrenFlag::kSkip)
     clone->CloneChildNodesFrom(*this, flag);
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCloneNode, nullptr, bindingObject(),
                                                        clone->bindingObject());
   return clone;
 }

@@ -256,7 +256,7 @@ bool InlineCssStyleDeclaration::InternalSetProperty(std::string& name, const Ato
   properties_[name] = value;
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
-  GetExecutingContext()->uiCommandBuffer()->addCommand(
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(
       UICommand::kSetStyle, std::move(args_01), owner_element_->bindingObject(), value.ToNativeString(ctx()).release());
 
   return true;
@@ -275,7 +275,7 @@ AtomicString InlineCssStyleDeclaration::InternalRemoveProperty(std::string& name
   InlineStyleChanged();
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetStyle, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01),
                                                        owner_element_->bindingObject(), nullptr);
 
   return return_value;
@@ -285,7 +285,7 @@ void InlineCssStyleDeclaration::InternalClearProperty() {
   if (properties_.empty())
     return;
   properties_.clear();
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kClearStyle, nullptr, owner_element_->bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, owner_element_->bindingObject(),
                                                        nullptr);
 }
 

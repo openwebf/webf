@@ -8,6 +8,7 @@
 #include "bindings/qjs/qjs_interface_bridge.h"
 #include "core/dom/document.h"
 #include "core/fileapi/blob.h"
+#include "core/frame/window.h"
 #include "core/html/html_body_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
@@ -59,43 +60,51 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 3 (callback) is not an function.");
   }
 
-  if (context->dartMethodPtr()->matchImageSnapshot == nullptr) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.");
-  }
-
   auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
 
-  auto fn = [](void* ptr, int32_t contextId, int8_t result, const char* errmsg) {
-    auto* callbackContext = static_cast<ImageSnapShotContext*>(ptr);
-    JSContext* ctx = callbackContext->context->ctx();
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
 
-    if (errmsg == nullptr) {
-      JSValue arguments[] = {JS_NewBool(ctx, result != 0), JS_NULL};
-      JSValue returnValue = JS_Call(ctx, callbackContext->callback, callbackContext->context->Global(), 1, arguments);
-      callbackContext->context->HandleException(&returnValue);
-    } else {
-      JSValue errmsgValue = JS_NewString(ctx, errmsg);
-      JSValue arguments[] = {JS_NewBool(ctx, false), errmsgValue};
-      JSValue returnValue = JS_Call(ctx, callbackContext->callback, callbackContext->context->Global(), 2, arguments);
-      callbackContext->context->HandleException(&returnValue);
-      JS_FreeValue(ctx, errmsgValue);
-    }
+  auto fn = [](void* ptr, double contextId, int8_t result, char* errmsg) {
+    auto* callback_context = static_cast<ImageSnapShotContext*>(ptr);
+    auto* context = callback_context->context;
 
-    callbackContext->context->DrainMicrotasks();
-    JS_FreeValue(callbackContext->context->ctx(), callbackContext->callback);
-    delete callbackContext;
+    callback_context->context->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(),
+        [](ImageSnapShotContext* callback_context, int8_t result, char* errmsg) {
+          JSContext* ctx = callback_context->context->ctx();
+
+          if (errmsg == nullptr) {
+            JSValue arguments[] = {JS_NewBool(ctx, result != 0), JS_NULL};
+            JSValue returnValue =
+                JS_Call(ctx, callback_context->callback, callback_context->context->Global(), 1, arguments);
+            callback_context->context->HandleException(&returnValue);
+          } else {
+            JSValue errmsgValue = JS_NewString(ctx, errmsg);
+            JSValue arguments[] = {JS_NewBool(ctx, false), errmsgValue};
+            JSValue returnValue =
+                JS_Call(ctx, callback_context->callback, callback_context->context->Global(), 2, arguments);
+            callback_context->context->HandleException(&returnValue);
+            JS_FreeValue(ctx, errmsgValue);
+            dart_free(errmsg);
+          }
+
+          callback_context->context->DrainMicrotasks();
+          JS_FreeValue(callback_context->context->ctx(), callback_context->callback);
+          delete callback_context;
+        },
+        callback_context, result, errmsg);
   };
 
   if (QJSBlob::HasInstance(context, screenShotValue)) {
     auto* expectedBlob = toScriptWrappable<Blob>(screenShotValue);
-    context->dartMethodPtr()->matchImageSnapshotBytes(callbackContext, context->contextId(), blob->bytes(),
-                                                      blob->size(), expectedBlob->bytes(), expectedBlob->size(), fn);
+    context->dartMethodPtr()->matchImageSnapshotBytes(context->isDedicated(), callbackContext, context->contextId(),
+                                                      blob->bytes(), blob->size(), expectedBlob->bytes(),
+                                                      expectedBlob->size(), fn);
   } else {
     std::unique_ptr<SharedNativeString> screenShotNativeString = webf::jsValueToNativeString(ctx, screenShotValue);
 
-    context->dartMethodPtr()->matchImageSnapshot(callbackContext, context->contextId(), blob->bytes(), blob->size(),
-                                                 screenShotNativeString.release(), fn);
+    context->dartMethodPtr()->matchImageSnapshot(context->isDedicated(), callbackContext, context->contextId(),
+                                                 blob->bytes(), blob->size(), screenShotNativeString.release(), fn);
   }
 
   return JS_NULL;
@@ -104,11 +113,7 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = ExecutingContext::From(ctx);
 #if FLUTTER_BACKEND
-  if (context->dartMethodPtr()->environment == nullptr) {
-    return JS_ThrowTypeError(ctx,
-                             "Failed to execute '__webf_environment__': dart method (environment) is not registered.");
-  }
-  const char* env = context->dartMethodPtr()->environment();
+  const char* env = context->dartMethodPtr()->environment(context->isDedicated(), context->contextId());
   return JS_ParseJSON(ctx, env, strlen(env), "");
 #else
   return JS_NewObject(ctx);
@@ -120,23 +125,24 @@ struct SimulatePointerCallbackContext {
   JSValue callbackValue{JS_NULL};
 };
 
-static void handleSimulatePointerCallback(void* p, int32_t contextId, const char* errmsg) {
+static void handleSimulatePointerCallback(void* p, double contextId, char* errmsg) {
   auto* simulate_context = static_cast<SimulatePointerCallbackContext*>(p);
-  JSValue return_value =
-      JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
-  JS_FreeValue(simulate_context->context->ctx(), return_value);
-  JS_FreeValue(simulate_context->context->ctx(), simulate_context->callbackValue);
-  simulate_context->context->DrainMicrotasks();
-  delete simulate_context;
+  auto* context = simulate_context->context;
+  context->dartIsolateContext()->dispatcher()->PostToJs(
+      context->isDedicated(), context->contextId(),
+      [](SimulatePointerCallbackContext* simulate_context, double contextId, char* errmsg) {
+        JSValue return_value =
+            JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
+        JS_FreeValue(simulate_context->context->ctx(), return_value);
+        JS_FreeValue(simulate_context->context->ctx(), simulate_context->callbackValue);
+        simulate_context->context->DrainMicrotasks();
+        delete simulate_context;
+      },
+      simulate_context, contextId, errmsg);
 }
 
 static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
-  if (context->dartMethodPtr()->simulatePointer == nullptr) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_simulate_pointer__': dart method(simulatePointer) is not registered.");
-  }
-
   JSValue inputArrayValue = argv[0];
   if (!JS_IsObject(inputArrayValue)) {
     return JS_ThrowTypeError(ctx, "Failed to execute '__webf_simulate_pointer__': first arguments should be an array.");
@@ -213,20 +219,16 @@ static JSValue simulatePointer(JSContext* ctx, JSValueConst this_val, int argc, 
   auto* simulate_context = new SimulatePointerCallbackContext();
   simulate_context->context = context;
   simulate_context->callbackValue = JS_DupValue(ctx, callbackValue);
-  context->dartMethodPtr()->simulatePointer(simulate_context, mousePointerList, length, pointer,
-                                            handleSimulatePointerCallback);
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
 
-  delete[] mousePointerList;
+  context->dartMethodPtr()->simulatePointer(context->isDedicated(), simulate_context, mousePointerList, length, pointer,
+                                            handleSimulatePointerCallback);
 
   return JS_NULL;
 }
 
 static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
-  if (context->dartMethodPtr()->simulateInputText == nullptr) {
-    return JS_ThrowTypeError(
-        ctx, "Failed to execute '__webf_simulate_keypress__': dart method(simulateInputText) is not registered.");
-  }
 
   JSValue& charStringValue = argv[0];
 
@@ -236,7 +238,10 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
 
   std::unique_ptr<SharedNativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
   void* p = static_cast<void*>(nativeString.get());
-  context->dartMethodPtr()->simulateInputText(static_cast<SharedNativeString*>(p));
+
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
+
+  context->dartMethodPtr()->simulateInputText(context->isDedicated(), static_cast<SharedNativeString*>(p));
   return JS_NULL;
 };
 
@@ -270,15 +275,21 @@ struct ExecuteCallbackContext {
   ExecuteCallbackContext() = delete;
 
   explicit ExecuteCallbackContext(ExecutingContext* context,
-                                  ExecuteCallback executeCallback,
-                                  WebFTestContext* webf_context)
-      : executeCallback(executeCallback), context(context), webf_context(webf_context){};
-  ExecuteCallback executeCallback;
+                                  ExecuteResultCallback executeCallback,
+                                  WebFTestContext* webf_context,
+                                  Dart_PersistentHandle persistent_handle)
+      : executeCallback(executeCallback),
+        context(context),
+        webf_context(webf_context),
+        persistent_handle(persistent_handle){};
+  ExecuteResultCallback executeCallback;
   ExecutingContext* context;
   WebFTestContext* webf_context;
+  Dart_PersistentHandle persistent_handle;
 };
 
-void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
+void WebFTestContext::invokeExecuteTest(Dart_PersistentHandle persistent_handle,
+                                        ExecuteResultCallback executeCallback) {
   if (execute_test_callback_ == nullptr) {
     return;
   }
@@ -296,12 +307,21 @@ void WebFTestContext::invokeExecuteTest(ExecuteCallback executeCallback) {
     WEBF_LOG(VERBOSE) << "Done..";
 
     std::unique_ptr<SharedNativeString> status = webf::jsValueToNativeString(ctx, statusValue);
-    callbackContext->executeCallback(callbackContext->context->contextId(), status.get());
+
+    callbackContext->context->dartIsolateContext()->dispatcher()->PostToDart(
+        callbackContext->context->isDedicated(),
+        [](ExecuteCallbackContext* callback_context, SharedNativeString* status) {
+          Dart_Handle handle = Dart_HandleFromPersistent_DL(callback_context->persistent_handle);
+          callback_context->executeCallback(handle, status);
+          Dart_DeletePersistentHandle_DL(callback_context->persistent_handle);
+          callback_context->webf_context->execute_test_proxy_object_ = JS_NULL;
+        },
+        callbackContext, status.release());
     JS_FreeValue(ctx, proxyObject);
-    callbackContext->webf_context->execute_test_proxy_object_ = JS_NULL;
     return JS_NULL;
   };
-  auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback, this);
+
+  auto* callbackContext = new ExecuteCallbackContext(context_, executeCallback, this, persistent_handle);
   execute_test_proxy_object_ = JS_NewObject(context_->ctx());
   JS_SetOpaque(execute_test_proxy_object_, callbackContext);
   JSValue callbackData[]{execute_test_proxy_object_};
@@ -349,14 +369,14 @@ bool WebFTestContext::parseTestHTML(const uint16_t* code, size_t codeLength) {
 void WebFTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_t length) {
   size_t i = 0;
 
-  auto& dartMethodPtr = context_->dartMethodPtr();
+  auto dartMethodPtr = context_->dartMethodPtr();
 
-  dartMethodPtr->onJsError = reinterpret_cast<OnJSError>(methodBytes[i++]);
-  dartMethodPtr->matchImageSnapshot = reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]);
-  dartMethodPtr->matchImageSnapshotBytes = reinterpret_cast<MatchImageSnapshotBytes>(methodBytes[i++]);
-  dartMethodPtr->environment = reinterpret_cast<Environment>(methodBytes[i++]);
-  dartMethodPtr->simulatePointer = reinterpret_cast<SimulatePointer>(methodBytes[i++]);
-  dartMethodPtr->simulateInputText = reinterpret_cast<SimulateInputText>(methodBytes[i++]);
+  dartMethodPtr->SetOnJSError(reinterpret_cast<OnJSError>(methodBytes[i++]));
+  dartMethodPtr->SetMatchImageSnapshot(reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]));
+  dartMethodPtr->SetMatchImageSnapshotBytes(reinterpret_cast<MatchImageSnapshotBytes>(methodBytes[i++]));
+  dartMethodPtr->SetEnvironment(reinterpret_cast<Environment>(methodBytes[i++]));
+  dartMethodPtr->SetSimulatePointer(reinterpret_cast<SimulatePointer>(methodBytes[i++]));
+  dartMethodPtr->SetSimulateInputText(reinterpret_cast<SimulateInputText>(methodBytes[i++]));
 
   assert_m(i == length, "Dart native methods count is not equal with C++ side method registrations.");
 }

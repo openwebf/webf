@@ -5,19 +5,14 @@
 #include "module_manager.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
+#include "foundation/native_value.h"
+#include "include/dart_api.h"
 #include "module_callback.h"
 
 namespace webf {
 
-struct ModuleContext {
-  ModuleContext(ExecutingContext* context, const std::shared_ptr<ModuleCallback>& callback)
-      : context(context), callback(callback) {}
-  ExecutingContext* context;
-  std::shared_ptr<ModuleCallback> callback;
-};
-
 NativeValue* handleInvokeModuleTransientCallback(void* ptr,
-                                                 int32_t contextId,
+                                                 double contextId,
                                                  const char* errmsg,
                                                  NativeValue* extra_data) {
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
@@ -70,10 +65,45 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   return return_value;
 }
 
+static void ReturnResultToDart(Dart_PersistentHandle persistent_handle,
+                               NativeValue* result,
+                               InvokeModuleResultCallback result_callback) {
+  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  result_callback(handle, result);
+  Dart_DeletePersistentHandle_DL(persistent_handle);
+}
+
+static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
+                                                               double context_id,
+                                                               const char* errmsg,
+                                                               NativeValue* extra_data,
+                                                               Dart_Handle dart_handle,
+                                                               InvokeModuleResultCallback result_callback) {
+  auto* moduleContext = static_cast<ModuleContext*>(ptr);
+
+#if FLUTTER_BACKEND
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  moduleContext->context->dartIsolateContext()->dispatcher()->PostToJs(
+      moduleContext->context->isDedicated(), moduleContext->context->contextId(),
+      [](ModuleContext* module_context, double context_id, const char* errmsg, NativeValue* extra_data,
+         Dart_PersistentHandle persistent_handle, InvokeModuleResultCallback result_callback) {
+        NativeValue* result = handleInvokeModuleTransientCallback(module_context, context_id, errmsg, extra_data);
+        module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
+            module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
+      },
+      moduleContext, context_id, errmsg, extra_data, persistent_handle, result_callback);
+  return nullptr;
+#else
+  return handleInvokeModuleTransientCallback(moduleContext, context_id, errmsg, extra_data);
+#endif
+}
+
 NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,
-                                                  int32_t contextId,
+                                                  double contextId,
                                                   const char* errmsg,
-                                                  NativeValue* extra_data) {
+                                                  NativeValue* extra_data,
+                                                  Dart_Handle dart_handle,
+                                                  InvokeModuleResultCallback result_callback) {
   static_assert("Unexpected module callback, please check your invokeModule implementation on the dart side.");
   return nullptr;
 }
@@ -106,25 +136,21 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     return ScriptValue::Empty(context->ctx());
   }
 
-  if (context->dartMethodPtr()->invokeModule == nullptr) {
-    exception.ThrowException(
-        context->ctx(), ErrorType::InternalError,
-        "Failed to execute '__webf_invoke_module__': dart method (invokeModule) is not registered.");
-    return ScriptValue::Empty(context->ctx());
-  }
-
   NativeValue* result;
+  auto module_name_string = module_name.ToNativeString(context->ctx());
+  auto method_name_string = method.ToNativeString(context->ctx());
+
   if (callback != nullptr) {
     auto module_callback = ModuleCallback::Create(callback);
     auto module_context = std::make_shared<ModuleContext>(context, module_callback);
     context->ModuleContexts()->AddModuleContext(module_context);
-    result = context->dartMethodPtr()->invokeModule(
-        module_context.get(), context->contextId(), module_name.ToNativeString(context->ctx()).release(),
-        method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleTransientCallback);
+    result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
+                                                    module_name_string.get(), method_name_string.get(), &params,
+                                                    handleInvokeModuleTransientCallbackWrapper);
   } else {
-    result = context->dartMethodPtr()->invokeModule(
-        nullptr, context->contextId(), module_name.ToNativeString(context->ctx()).release(),
-        method.ToNativeString(context->ctx()).release(), &params, handleInvokeModuleUnexpectedCallback);
+    result = context->dartMethodPtr()->invokeModule(context->isDedicated(), nullptr, context->contextId(),
+                                                    module_name_string.get(), method_name_string.get(), &params,
+                                                    handleInvokeModuleUnexpectedCallback);
   }
 
   if (result == nullptr) {
@@ -132,7 +158,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   }
 
   ScriptValue return_value = ScriptValue(context->ctx(), *result);
-  delete result;
+  dart_free(result);
   return return_value;
 }
 

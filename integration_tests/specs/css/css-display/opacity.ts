@@ -1,5 +1,5 @@
 describe('Opacity', () => {
-  
+
   it('opacity', done => {
     const container1 = document.createElement('div');
     document.body.appendChild(container1);

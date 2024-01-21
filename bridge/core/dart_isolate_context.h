@@ -9,11 +9,25 @@
 #include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
 #include "dart_methods.h"
+#include "multiple_threading/dispatcher.h"
 
 namespace webf {
 
 class WebFPage;
 class DartIsolateContext;
+
+class PageGroup {
+ public:
+  ~PageGroup();
+  void AddNewPage(WebFPage* new_page);
+  void RemovePage(WebFPage* page);
+  bool Empty() { return pages_.empty(); }
+
+  std::vector<WebFPage*>* pages() { return &pages_; };
+
+ private:
+  std::vector<WebFPage*> pages_;
+};
 
 struct DartWireContext {
   ScriptValue jsObject;
@@ -30,26 +44,60 @@ class DartIsolateContext {
  public:
   explicit DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length);
 
-  FORCE_INLINE JSRuntime* runtime() { return runtime_; }
-  FORCE_INLINE bool valid() { return is_valid_ && std::this_thread::get_id() == running_thread_; }
-  FORCE_INLINE const std::unique_ptr<DartMethodPointer>& dartMethodPtr() const {
-    assert(std::this_thread::get_id() == running_thread_);
-    return dart_method_ptr_;
+  JSRuntime* runtime();
+  FORCE_INLINE bool valid() { return is_valid_; }
+  FORCE_INLINE DartMethodPointer* dartMethodPtr() const { return dart_method_ptr_.get(); }
+  FORCE_INLINE const std::unique_ptr<multi_threading::Dispatcher>& dispatcher() const { return dispatcher_; }
+  FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
+    dispatcher_ = std::move(dispatcher);
   }
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
-  void AddNewPage(std::unique_ptr<WebFPage>&& new_page);
-  void RemovePage(const WebFPage* page);
+  void* AddNewPage(double thread_identity,
+                   int32_t sync_buffer_size,
+                   Dart_Handle dart_handle,
+                   AllocateNewPageCallback result_callback);
+  void* AddNewPageSync(double thread_identity);
+  void RemovePage(double thread_identity, WebFPage* page, Dart_Handle dart_handle, DisposePageCallback result_callback);
+  void RemovePageSync(double thread_identity, WebFPage* page);
 
   ~DartIsolateContext();
+  void Dispose(multi_threading::Callback callback);
 
  private:
+  static void InitializeJSRuntime();
+  static void FinalizeJSRuntime();
+  static void InitializeNewPageInJSThread(PageGroup* page_group,
+                                          DartIsolateContext* dart_isolate_context,
+                                          double page_context_id,
+                                          int32_t sync_buffer_size,
+                                          Dart_Handle dart_handle,
+                                          AllocateNewPageCallback result_callback);
+  static void DisposePageAndKilledJSThread(DartIsolateContext* dart_isolate_context,
+                                           WebFPage* page,
+                                           int thread_group_id,
+                                           Dart_Handle dart_handle,
+                                           DisposePageCallback result_callback);
+  static void DisposePageInJSThread(DartIsolateContext* dart_isolate_context,
+                                    WebFPage* page,
+                                    Dart_Handle dart_handle,
+                                    DisposePageCallback result_callback);
+  static void HandleNewPageResult(PageGroup* page_group,
+                                  Dart_Handle persistent_handle,
+                                  AllocateNewPageCallback result_callback,
+                                  WebFPage* new_page);
+  static void HandleDisposePage(Dart_Handle persistent_handle, DisposePageCallback result_callback);
+  static void HandleDisposePageAndKillJSThread(DartIsolateContext* dart_isolate_context,
+                                               int thread_group_id,
+                                               Dart_Handle persistent_handle,
+                                               DisposePageCallback result_callback);
+
   int is_valid_{false};
-  std::set<std::unique_ptr<WebFPage>> pages_;
   std::thread::id running_thread_;
   mutable std::unique_ptr<DartContextData> data_;
-  static thread_local JSRuntime* runtime_;
+  std::unordered_set<std::unique_ptr<WebFPage>> pages_in_ui_thread_;
+  std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
 };

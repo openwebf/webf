@@ -18,8 +18,13 @@ describe('DOM EventTarget', () => {
     div.click();
     div.click();
 
+    await sleep(0.1);
+
     div.removeEventListener('click', clickHandler);
+
+    await sleep(0.1);
     div.click();
+    await sleep(0.1);
 
     // Only 2 times recorded.
     expect(clickTime).toBe(2);
@@ -34,15 +39,16 @@ describe('DOM EventTarget', () => {
     div.click();
   });
 
-  it('addEventListener should work without connected into element tree', done => {
+  it('addEventListener should work without connected into element tree', async done => {
     let div = createElementWithStyle('div', {});
     div.addEventListener('click', () => {
       done();
     });
     div.click();
+    await snapshot(0.1);
   });
 
-  it('addEventListener should work with multi event handler', done => {
+  it('addEventListener should work with multi event handler', async done => {
     let count = 0;
     let div1 = createElementWithStyle('div', {});
     let div2 = createElementWithStyle('div', {});
@@ -61,9 +67,10 @@ describe('DOM EventTarget', () => {
     BODY.appendChild(div2);
     div1.click();
     div2.click();
+    await sleep(0.1);
   });
 
-  it('addEventListener should work with removeEventListeners', () => {
+  it('addEventListener should work with removeEventListeners', async () => {
     let div = createElementWithStyle('div', {});
     let count = 0;
     function onClick() {
@@ -76,20 +83,22 @@ describe('DOM EventTarget', () => {
     div.click();
     div.click();
     div.click();
+    await sleep(0.1);
     div.addEventListener('click', onClick);
     expect(count).toBe(1);
   });
 
-  it('should work with build in property handler', (done) => {
+  it('should work with build in property handler', async (done) => {
     let div = createElementWithStyle('div', {});
     div.onclick = () => {
       done();
     };
     BODY.appendChild(div);
     div.click();
+    await sleep(0.1);
   });
 
-  it('event object should have type', done => {
+  it('event object should have type', async done => {
     let div = createElementWithStyle('div', {});
     div.addEventListener('click', (event: any) => {
       expect(event.type).toBe('click');
@@ -97,9 +106,10 @@ describe('DOM EventTarget', () => {
     });
     BODY.appendChild(div);
     div.click();
+    await sleep(0.1);
   });
 
-  it('event object target should equal to element itself', done => {
+  it('event object target should equal to element itself', async done => {
     let div = createElementWithStyle('div', {});
     div.addEventListener('click', (event: any) => {
       expect(div === event.target);
@@ -107,9 +117,10 @@ describe('DOM EventTarget', () => {
     });
     BODY.appendChild(div);
     div.click();
+    await sleep(0.1);
   });
 
-  it('event object currentTarget should equal to element itself', done => {
+  it('event object currentTarget should equal to element itself', async done => {
     let div = createElementWithStyle('div', {});
     div.addEventListener('click', (event: any) => {
       expect(div === event.currentTarget);
@@ -117,9 +128,10 @@ describe('DOM EventTarget', () => {
     });
     BODY.appendChild(div);
     div.click();
+    await sleep(0.1);
   });
 
-  it('trigger twice when onclick and bind addEventListener', () => {
+  it('trigger twice when onclick and bind addEventListener', async () => {
     let div = createElementWithStyle('div', {});
     let count = 0;
     div.addEventListener('click', (event: any) => {
@@ -130,10 +142,11 @@ describe('DOM EventTarget', () => {
     }
     BODY.appendChild(div);
     div.click();
+    await sleep(0.1);
     expect(count).toBe(2);
   });
 
-  it('stop propagation', () => {
+  it('stop propagation', async () => {
     let count1 = 0, count2 = 0;
 
     const div1 = document.createElement('div');
@@ -150,6 +163,7 @@ describe('DOM EventTarget', () => {
 
     div2.click();
     div2.click();
+    await sleep(0.1);
 
     expect(count1).toBe(0);
     expect(count2).toBe(2);
@@ -172,7 +186,7 @@ describe('DOM EventTarget', () => {
   });
 
 
-  it('removeEventListener should work', (done) => {
+  it('removeEventListener should work', async (done) => {
     let num = 0;
     var ele = createElement('div', {
       style: {
@@ -197,6 +211,7 @@ describe('DOM EventTarget', () => {
     }
 
     ele.click();
+    await sleep(0.1);
   });
 
 });

@@ -279,7 +279,7 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
       listener_options->passive = options->passive();
     }
 
-    GetExecutingContext()->uiCommandBuffer()->addCommand(
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(
         UICommand::kAddEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), listener_options);
   }
 
@@ -327,7 +327,7 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
   if (listener_count == 0) {
     bool has_capture = options->hasCapture() && options->capture();
 
-    GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveEvent,
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveEvent,
                                                          std::move(event_type.ToNativeString(ctx())), bindingObject(),
                                                          has_capture ? (void*)0x01 : nullptr);
   }
@@ -394,8 +394,13 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   };
 
   WatchDartWire(wire);
-  Dart_NewFinalizableHandle_DL(dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext),
-                               dart_object_finalize_callback);
+
+  GetDispatcher()->PostToDart(
+      GetExecutingContext()->isDedicated(),
+      [](Dart_Handle object, void* peer, intptr_t external_allocation_size, Dart_HandleFinalizer callback) {
+        Dart_NewFinalizableHandle_DL(object, peer, external_allocation_size, callback);
+      },
+      dart_object, reinterpret_cast<void*>(wire), sizeof(DartWireContext), dart_object_finalize_callback);
 
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx());

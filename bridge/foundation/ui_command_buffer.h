@@ -8,13 +8,23 @@
 
 #include <cinttypes>
 #include "bindings/qjs/native_string_utils.h"
-#include "native_value.h"
 
 namespace webf {
 
 class ExecutingContext;
 
+enum UICommandKind : uint32_t {
+  kNodeCreation = 1,
+  kNodeMutation = 1 << 2,
+  kStyleUpdate = 1 << 3,
+  kEvent = 1 << 4,
+  kAttributeUpdate = 1 << 5,
+  kDisposeBindingObject = 1 << 6,
+  kOperation = 1 << 7
+};
+
 enum class UICommand {
+  kStartRecordingCommand,
   kCreateElement,
   kCreateTextNode,
   kCreateComment,
@@ -33,6 +43,7 @@ enum class UICommand {
   kCreateDocumentFragment,
   kCreateSVGElement,
   kCreateElementNS,
+  kFinishRecordingCommand,
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2048
@@ -52,6 +63,8 @@ struct UICommandItem {
   int64_t nativePtr2{0};
 };
 
+UICommandKind GetKindFromUICommand(UICommand type);
+
 class UICommandBuffer {
  public:
   UICommandBuffer() = delete;
@@ -63,18 +76,22 @@ class UICommandBuffer {
                   void* nativePtr2,
                   bool request_ui_update = true);
   UICommandItem* data();
+  uint32_t kindFlag();
   int64_t size();
   bool empty();
   void clear();
 
  private:
   void addCommand(const UICommandItem& item, bool request_ui_update = true);
+  void updateFlags(UICommand command);
 
   ExecutingContext* context_{nullptr};
   UICommandItem* buffer_{nullptr};
+  uint32_t kind_flag{0};
   bool update_batched_{false};
   int64_t size_{0};
   int64_t max_size_{MAXIMUM_UI_COMMAND_SIZE};
+  friend class SharedUICommand;
 };
 
 }  // namespace webf

@@ -139,10 +139,9 @@ global.simulatePointer = function simulatePointer(list, pointer) {
 global.simulateInputText = __webf_simulate_inputtext__;
 
 function resetDocumentElement() {
-  window.scrollTo(0, 0);
-
   document.removeChild(document.documentElement);
-  let html = document.createElement('html');
+
+  let html  = document.createElement('html');
   document.appendChild(html);
 
   let head = document.createElement('head');
@@ -151,6 +150,7 @@ function resetDocumentElement() {
   let body = document.createElement('body');
   document.documentElement.appendChild(body);
 
+  window.scrollTo(0, 0);
   document.documentElement.style.backgroundColor = 'white';
 }
 
@@ -173,5 +173,6 @@ __webf_execute_test__((done) => {
   // Trigger global js exception to test window.onerror.
   __webf_trigger_global_error__();
 
+  console.log('start exec test');
   env.execute();
 });

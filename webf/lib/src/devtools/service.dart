@@ -8,8 +8,8 @@ import 'dart:ffi';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 
-typedef NativePostTaskToInspectorThread = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
-typedef DartPostTaskToInspectorThread = void Function(int contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef NativePostTaskToInspectorThread = Void Function(Double contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef DartPostTaskToInspectorThread = void Function(double contextId, Pointer<Void> context, Pointer<Void> callback);
 
 void spawnIsolateInspectorServer(DevToolsService devTool, WebFController controller,
     {int port = INSPECTOR_DEFAULT_PORT, String? address}) {

@@ -31,7 +31,8 @@ AtomicString ElementAttributes::getAttribute(const AtomicString& name, Exception
   if (attributes_.count(name) == 0) {
     if (element_->IsWidgetElement()) {
       // Fallback to directly FFI access to dart.
-      NativeValue dart_result = element_->GetBindingProperty(name, exception_state);
+      NativeValue dart_result =
+          element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
       if (dart_result.tag == NativeTag::TAG_STRING) {
         return NativeValueConverter<NativeTypeString>::FromNativeValue(element_->ctx(), std::move(dart_result));
       }
@@ -66,7 +67,7 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kSetAttribute, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01),
                                                        element_->bindingObject(), args_02.release());
 
   return true;
@@ -83,7 +84,8 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 
   if (!has_attribute && element_->IsWidgetElement()) {
     // Fallback to directly FFI access to dart.
-    NativeValue dart_result = element_->GetBindingProperty(name, exception_state);
+    NativeValue dart_result =
+        element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
     return dart_result.tag != NativeTag::TAG_NULL;
   }
 
@@ -100,7 +102,7 @@ void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState
   attributes_.erase(name);
 
   std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString(ctx());
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kRemoveAttribute, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, std::move(args_01),
                                                        element_->bindingObject(), nullptr);
 }
 

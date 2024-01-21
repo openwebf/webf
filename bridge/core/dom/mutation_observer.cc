@@ -34,6 +34,7 @@
 
 #include "mutation_observer.h"
 #include <algorithm>
+#include <unordered_set>
 #include "bindings/qjs/converter_impl.h"
 #include "mutation_observer_registration.h"
 #include "mutation_record.h"
@@ -125,7 +126,7 @@ void MutationObserver::observe(Node* node,
   if (observer_init->hasAttributeOldValue() && observer_init->attributeOldValue())
     options |= kAttributeOldValue;
 
-  std::set<AtomicString> attribute_filter;
+  std::unordered_set<AtomicString, AtomicString::KeyHasher> attribute_filter;
   if (observer_init->hasAttributeFilter()) {
     for (const auto& name : observer_init->attributeFilter())
       attribute_filter.insert(AtomicString(name));
@@ -251,8 +252,8 @@ void MutationObserver::SetHasTransientRegistration() {
   ActivateObserver(this);
 }
 
-std::set<Member<Node>> MutationObserver::GetObservedNodes() const {
-  std::set<Member<Node>> observed_nodes;
+std::unordered_set<Member<Node>, Member<Node>::KeyHasher> MutationObserver::GetObservedNodes() const {
+  std::unordered_set<Member<Node>, Member<Node>::KeyHasher> observed_nodes;
   for (const auto& registration : registrations_)
     registration->AddRegistrationNodesToSet(observed_nodes);
   return observed_nodes;

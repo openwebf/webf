@@ -15,11 +15,11 @@ TEST(WidgetElement, setPropertyEventHandler) {
     EXPECT_STREQ(message.c_str(), "1111");
     logCalled = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let checkbox = document.createElement('flutter-checkbox'); "
       "function f(){ console.log(1111); }; "
@@ -37,11 +37,11 @@ TEST(WidgetElement, getPropertyWithSymbolToStringTag) {
     EXPECT_STREQ(message.c_str(), "FLUTTER-CHECKBOX");
     logCalled = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let checkbox = document.createElement('flutter-checkbox'); "
       "console.log(checkbox[Symbol.toStringTag])";

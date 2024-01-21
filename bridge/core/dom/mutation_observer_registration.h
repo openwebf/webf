@@ -45,6 +45,8 @@ namespace webf {
 class MutationObserver;
 class Node;
 
+using NodeSet = std::unordered_set<Member<Node>, Member<Node>::KeyHasher>;
+
 class MutationObserverRegistration : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -52,10 +54,11 @@ class MutationObserverRegistration : public ScriptWrappable {
   MutationObserverRegistration(MutationObserver&,
                                Node*,
                                MutationObserverOptions,
-                               const std::set<AtomicString>& attribute_filter);
+                               const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter);
   ~MutationObserverRegistration();
 
-  void ResetObservation(MutationObserverOptions, const std::set<AtomicString>& attribute_filter);
+  void ResetObservation(MutationObserverOptions,
+                        const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter);
   void ObservedSubtreeNodeWillDetach(Node&);
   void ClearTransientRegistrations();
   bool HasTransientRegistrations() const {
@@ -72,7 +75,7 @@ class MutationObserverRegistration : public ScriptWrappable {
   }
   MutationType MutationTypes() const { return static_cast<MutationType>(options_ & kMutationTypeAll); }
 
-  void AddRegistrationNodesToSet(std::set<Member<Node>>&) const;
+  void AddRegistrationNodesToSet(NodeSet&) const;
 
   void Dispose();
 
@@ -82,10 +85,10 @@ class MutationObserverRegistration : public ScriptWrappable {
   Member<MutationObserver> observer_;
   Member<Node> registration_node_;
   Member<Node> registration_node_keep_alive_;
-  std::unique_ptr<std::set<Member<Node>>> transient_registration_nodes_;
+  std::unique_ptr<NodeSet> transient_registration_nodes_;
 
   MutationObserverOptions options_;
-  std::set<AtomicString> attribute_filter_;
+  std::unordered_set<AtomicString, AtomicString::KeyHasher> attribute_filter_;
 };
 
 }  // namespace webf

@@ -38,6 +38,12 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+if (${ENABLE_LOG})
+  add_definitions(-DENABLE_LOG=1)
+else()
+  add_definitions(-DENABLE_LOG=0)
+endif()
+
 if(NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
     include(CheckIPOSupported)
@@ -91,17 +97,20 @@ if (DEFINED PLATFORM)
 endif()
 
 list(APPEND BRIDGE_SOURCE
-  webf_bridge.cc
   foundation/logging.cc
   foundation/native_string.cc
   foundation/ui_task_queue.cc
+  foundation/shared_ui_command.cc
   foundation/inspector_task_queue.cc
   foundation/task_queue.cc
   foundation/string_view.cc
   foundation/native_value.cc
   foundation/native_type.cc
   foundation/ui_command_buffer.cc
+  foundation/ui_command_strategy.cc
   polyfill/dist/polyfill.cc
+  multiple_threading/dispatcher.cc
+  multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
@@ -189,6 +198,11 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-symbol.c
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
+
+  if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    add_definitions(-DDDEBUG)
+  endif ()
+
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
   else()
@@ -247,6 +261,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/rejected_promises.cc
     bindings/qjs/union_base.cc
     # Core sources
+    webf_bridge.cc
+    core/api/api.cc
     core/executing_context.cc
     core/script_forbidden_scope.cc
     core/script_state.cc

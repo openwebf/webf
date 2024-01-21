@@ -15,11 +15,11 @@ TEST(Performance, now) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(performance.now() < 20);";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
@@ -33,11 +33,11 @@ TEST(Performance, timeOrigin) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = "console.log(typeof performance.timeOrigin === 'number');";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
@@ -51,11 +51,11 @@ TEST(Performance, toJSON) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let json = performance.toJSON();"
       "console.log('now' in json, 'timeOrigin' in json);";
@@ -71,11 +71,11 @@ TEST(Performance, mark) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "PerformanceMark {detail: null}");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc');"
       "let entries = performance.getEntries();"
@@ -92,11 +92,11 @@ TEST(Performance, markWithDetail) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "PerformanceMark {detail: {...}}");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc', { detail: {value: 1}});"
       "let entries = performance.getEntries();"
@@ -113,11 +113,11 @@ TEST(Performance, markWithName) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "[PerformanceMark {...}, PerformanceMark {...}]");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
@@ -136,11 +136,11 @@ TEST(Performance, clearMarks) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "[]");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
@@ -160,11 +160,11 @@ TEST(Performance, clearMarksByName) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "[PerformanceMark {...}]");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "performance.mark('abc', { detail: 1});"
       "performance.mark('efg', { detail: 2});"
@@ -184,11 +184,11 @@ TEST(Performance, measure) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code = R"(
 performance.mark('A');
 

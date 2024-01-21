@@ -18,6 +18,9 @@ class PseudoElement extends Element {
   final PseudoKind kind;
   final Element parent;
 
+  @override
+  String tagName = 'Pseudo';
+
   PseudoElement(this.kind, this.parent, [BindingContext? context]) : super(context);
 
   @override

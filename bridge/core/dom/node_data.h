@@ -26,8 +26,8 @@ class NodeMutationObserverData final {
   NodeMutationObserverData& operator=(const NodeMutationObserverData&) = delete;
   ~NodeMutationObserverData();
 
-  const std::vector<Member<MutationObserverRegistration>>& Registry() { return registry_; }
-  const std::set<Member<MutationObserverRegistration>>& TransientRegistry() { return transient_registry_; }
+  const MutationObserverRegistrationVector& Registry() { return registry_; }
+  const MutationObserverRegistrationSet& TransientRegistry() { return transient_registry_; }
 
   void AddTransientRegistration(MutationObserverRegistration* registration);
   void RemoveTransientRegistration(MutationObserverRegistration* registration);
@@ -37,8 +37,8 @@ class NodeMutationObserverData final {
   void Trace(GCVisitor* visitor) const;
 
  private:
-  std::vector<Member<MutationObserverRegistration>> registry_;
-  std::set<Member<MutationObserverRegistration>> transient_registry_;
+  MutationObserverRegistrationVector registry_;
+  MutationObserverRegistrationSet transient_registry_;
 };
 
 class NodeData {

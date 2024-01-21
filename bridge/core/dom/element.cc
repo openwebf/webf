@@ -33,13 +33,13 @@ Element::Element(const AtomicString& namespace_uri,
     : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
-    buffer->addCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
+    buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
                        nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    buffer->addCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())),
-                       (void*)bindingObject(), nullptr);
+    buffer->AddCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
+                       nullptr);
   } else {
-    buffer->addCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), (void*)bindingObject(),
+    buffer->AddCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), bindingObject(),
                        namespace_uri.ToNativeString(ctx()).release());
   }
 }
@@ -74,15 +74,33 @@ void Element::removeAttribute(const AtomicString& name, ExceptionState& exceptio
 }
 
 BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetBoundingClientRect, 0, nullptr, exception_state);
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetBoundingClientRect, 0, nullptr,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
   return BoundingClientRect::Create(
       GetExecutingContext(), NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result));
 }
 
+std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& exception_state) {
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetClientRects, 0, nullptr,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+  if (exception_state.HasException()) {
+    return {};
+  }
+  auto&& nativeRects =
+      NativeValueConverter<NativeTypeArray<NativeTypePointer<NativeBindingObject>>>::FromNativeValue(ctx(), result);
+  std::vector<BoundingClientRect*> vecRects;
+  for (auto& nativeRect : nativeRects) {
+    BoundingClientRect* rect = BoundingClientRect::Create(GetExecutingContext(), nativeRect);
+    vecRects.push_back(rect);
+  }
+  return vecRects;
+}
+
 void Element::click(ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
-  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, exception_state);
+  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
+                      exception_state);
 }
 
 void Element::scroll(ExceptionState& exception_state) {
@@ -90,21 +108,23 @@ void Element::scroll(ExceptionState& exception_state) {
 }
 
 void Element::scroll(double x, double y, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
   };
-  InvokeBindingMethod(binding_call_methods::kscroll, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscroll, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscroll, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscroll, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scrollBy(ExceptionState& exception_state) {
@@ -112,21 +132,23 @@ void Element::scrollBy(ExceptionState& exception_state) {
 }
 
 void Element::scrollBy(double x, double y, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scrollBy(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand();
   const NativeValue args[] = {
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args, exception_state);
+  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
+                      exception_state);
 }
 
 void Element::scrollTo(ExceptionState& exception_state) {
@@ -171,8 +193,8 @@ void Element::setId(const AtomicString& value, ExceptionState& exception_state) 
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), class_name)};
-  NativeValue result =
-      InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments,
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -181,7 +203,8 @@ std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_
 
 std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), tag_name)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments,
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -190,7 +213,8 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
 
 Element* Element::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
   }
@@ -199,7 +223,8 @@ Element* Element::querySelector(const AtomicString& selectors, ExceptionState& e
 
 std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments,
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return {};
   }
@@ -208,7 +233,8 @@ std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, E
 
 bool Element::matches(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kmatches, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kmatches, 1, arguments,
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return false;
   }
@@ -217,7 +243,8 @@ bool Element::matches(const AtomicString& selectors, ExceptionState& exception_s
 
 Element* Element::closest(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kclosest, 1, arguments, exception_state);
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kclosest, 1, arguments,
+                                           FlushUICommandReason::kDependentsAll, exception_state);
   if (exception_state.HasException()) {
     return nullptr;
   }
@@ -332,7 +359,7 @@ Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
     copy = &CloneWithChildren(flag, &factory);
   }
 
-  GetExecutingContext()->uiCommandBuffer()->addCommand(UICommand::kCloneNode, nullptr, bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCloneNode, nullptr, bindingObject(),
                                                        copy->bindingObject());
 
   return copy;
@@ -364,20 +391,30 @@ class ElementSnapshotReader {
 };
 
 void ElementSnapshotReader::Start() {
-  context_->FlushUICommand();
+  context_->FlushUICommand(element_,
+                           FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout);
 
-  auto callback = [](void* ptr, int32_t contextId, const char* error, uint8_t* bytes, int32_t length) -> void {
+  auto callback = [](void* ptr, double contextId, char* error, uint8_t* bytes, int32_t length) -> void {
     auto* reader = static_cast<ElementSnapshotReader*>(ptr);
-    if (error != nullptr) {
-      reader->HandleFailed(error);
-    } else {
-      reader->HandleSnapshot(bytes, length);
-    }
-    delete reader;
+    auto* context = reader->context_;
+
+    reader->context_->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(),
+        [](ElementSnapshotReader* reader, char* error, uint8_t* bytes, int32_t length) {
+          if (error != nullptr) {
+            reader->HandleFailed(error);
+            dart_free(error);
+          } else {
+            reader->HandleSnapshot(bytes, length);
+            dart_free(bytes);
+          }
+          delete reader;
+        },
+        reader, error, bytes, length);
   };
 
-  context_->dartMethodPtr()->toBlob(this, context_->contextId(), callback, element_->bindingObject(),
-                                    device_pixel_ratio_);
+  context_->dartMethodPtr()->toBlob(context_->isDedicated(), this, context_->contextId(), callback,
+                                    element_->bindingObject(), device_pixel_ratio_);
 }
 
 void ElementSnapshotReader::HandleSnapshot(uint8_t* bytes, int32_t length) {
@@ -397,8 +434,9 @@ void ElementSnapshotReader::HandleFailed(const char* error) {
 
 ScriptPromise Element::toBlob(ExceptionState& exception_state) {
   Window* window = GetExecutingContext()->window();
-  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(
-      window->GetBindingProperty(binding_call_methods::kdevicePixelRatio, exception_state));
+  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(window->GetBindingProperty(
+      binding_call_methods::kdevicePixelRatio,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state));
   return toBlob(device_pixel_ratio, exception_state);
 }
 

@@ -15,7 +15,7 @@ TEST(MouseEvent, init) {
     EXPECT_STREQ(message.c_str(), "10");
     logCalled = true;
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) { errorCalled = true; });
+  auto env = TEST_init([](double contextId, const char* errmsg) { errorCalled = true; });
   auto context = env->page()->getContext();
   const char* code =
       "let mouseEvent = new MouseEvent('click', {clientX: 10, clientY: 20}); console.log(mouseEvent.clientX);";

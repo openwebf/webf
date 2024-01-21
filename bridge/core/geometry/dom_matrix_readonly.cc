@@ -17,16 +17,15 @@ DOMMatrixReadonly::DOMMatrixReadonly(ExecutingContext* context,
                                      const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
                                      ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
-  assert(GetExecutingContext()->dartMethodPtr()->create_binding_object != nullptr);
-
   NativeValue arguments[1];
   if (init->IsDomString()) {
     arguments[0] = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), init->GetAsDomString());
   } else if (init->IsSequenceDouble()) {
     arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(init->GetAsSequenceDouble());
   }
-  GetExecutingContext()->dartMethodPtr()->create_binding_object(
-      GetExecutingContext()->contextId(), bindingObject(), CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
+  GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),
+                                                              GetExecutingContext()->contextId(), bindingObject(),
+                                                              CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
 }
 
 NativeValue DOMMatrixReadonly::HandleCallFromDartSide(const AtomicString& method,

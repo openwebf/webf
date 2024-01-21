@@ -21,8 +21,8 @@ class Text : public CharacterData {
   static Text* Create(ExecutingContext* context, const AtomicString& value, ExceptionState& executing_context);
 
   Text(TreeScope& tree_scope, const AtomicString& data, ConstructionType type) : CharacterData(tree_scope, data, type) {
-    GetExecutingContext()->uiCommandBuffer()->addCommand(
-        UICommand::kCreateTextNode, std::move(data.ToNativeString(ctx())), (void*)bindingObject(), nullptr);
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(
+        UICommand::kCreateTextNode, std::move(data.ToNativeString(ctx())), bindingObject(), nullptr);
   }
 
   NodeType nodeType() const override;

@@ -27,11 +27,6 @@ class WidgetElement : public HTMLElement {
   bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
 
-  NativeValue HandleCallFromDartSide(const AtomicString& method,
-                                     int32_t argc,
-                                     const NativeValue* argv,
-                                     Dart_Handle dart_object) override;
-
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
   bool DeleteItem(const AtomicString& key, ExceptionState& exception_state);
@@ -45,7 +40,7 @@ class WidgetElement : public HTMLElement {
  private:
   ScriptValue CreateSyncMethodFunc(const AtomicString& method_name);
   ScriptValue CreateAsyncMethodFunc(const AtomicString& method_name);
-  NativeValue HandleSyncPropertiesAndMethodsFromDart(int32_t argc, const NativeValue* argv);
+  const WidgetElementShape* SaveWidgetElementsShapeData(const NativeValue* argv);
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> async_cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;

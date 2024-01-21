@@ -13,19 +13,19 @@ using namespace webf;
 TEST(Context, isValid) {
   {
     auto env = TEST_init();
-    EXPECT_EQ(env->page()->GetExecutingContext()->IsContextValid(), true);
-    EXPECT_EQ(env->page()->GetExecutingContext()->IsCtxValid(), true);
+    EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
+    EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
   }
   {
     auto env = TEST_init();
-    EXPECT_EQ(env->page()->GetExecutingContext()->IsContextValid(), true);
-    EXPECT_EQ(env->page()->GetExecutingContext()->IsCtxValid(), true);
+    EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
+    EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
   }
 }
 
 TEST(Context, evalWithError) {
   static bool errorHandlerExecuted = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {
+  auto errorHandler = [](double contextId, const char* errmsg) {
     errorHandlerExecuted = true;
     EXPECT_STREQ(errmsg,
                  "TypeError: cannot read property 'toString' of null\n"
@@ -39,7 +39,7 @@ TEST(Context, evalWithError) {
 
 TEST(Context, recursionThrowError) {
   static bool errorHandlerExecuted = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
+  auto errorHandler = [](double contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto env = TEST_init(errorHandler);
   const char* code =
       "addEventListener('click', (evt) => {\n"
@@ -53,7 +53,7 @@ TEST(Context, recursionThrowError) {
 
 TEST(Context, unrejectPromiseError) {
   static bool errorHandlerExecuted = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {
+  auto errorHandler = [](double contextId, const char* errmsg) {
     errorHandlerExecuted = true;
     EXPECT_STREQ(errmsg,
                  "TypeError: cannot read property 'forceNullError' of null\n"
@@ -76,7 +76,7 @@ TEST(Context, unrejectPromiseError) {
 
 TEST(Context, globalErrorHandlerTargetReturnToWindow) {
   static bool logCalled = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {};
+  auto errorHandler = [](double contextId, const char* errmsg) {};
   auto env = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
@@ -98,7 +98,7 @@ throw oldError;
 TEST(Context, unrejectPromiseWillTriggerUnhandledRejectionEvent) {
   static bool errorHandlerExecuted = false;
   static bool logCalled = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {
+  auto errorHandler = [](double contextId, const char* errmsg) {
     errorHandlerExecuted = true;
     EXPECT_STREQ(errmsg,
                  "TypeError: cannot read property 'forceNullError' of null\n"
@@ -139,7 +139,7 @@ var p = new Promise(function (resolve, reject) {
 TEST(Context, handledRejectionWillNotTriggerUnHandledRejectionEvent) {
   static bool errorHandlerExecuted = false;
   static bool logCalled = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
+  auto errorHandler = [](double contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto env = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
@@ -174,7 +174,7 @@ generateRejectedPromise(true);
 
 TEST(Context, unhandledRejectionEventWillTriggerWhenNotHandled) {
   static bool logCalled = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {};
+  auto errorHandler = [](double contextId, const char* errmsg) {};
   auto env = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
@@ -205,7 +205,7 @@ generateRejectedPromise(true);
 TEST(Context, handledRejectionEventWillTriggerWhenUnHandledRejectHandled) {
   static bool errorHandlerExecuted = false;
   static bool logCalled = false;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
+  auto errorHandler = [](double contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto env = TEST_init(errorHandler);
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
 
@@ -237,7 +237,7 @@ generateRejectedPromise();
 )";
   env->page()->evaluateScript(code.c_str(), code.size(), "file://", 0);
 
-  TEST_runLoop(env->page()->GetExecutingContext());
+  TEST_runLoop(env->page()->executingContext());
   EXPECT_EQ(errorHandlerExecuted, false);
   EXPECT_EQ(logCalled, true);
   webf::WebFPage::consoleMessageHandler = nullptr;
@@ -246,7 +246,7 @@ generateRejectedPromise();
 TEST(Context, unrejectPromiseErrorWithMultipleContext) {
   static bool errorHandlerExecuted = false;
   static int32_t errorCalledCount = 0;
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {
+  auto errorHandler = [](double contextId, const char* errmsg) {
     errorHandlerExecuted = true;
     errorCalledCount++;
     EXPECT_STREQ(errmsg,
@@ -274,12 +274,12 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
 
 TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
-  void* dart_context = initDartIsolateContext(mockedDartMethods.data(), mockedDartMethods.size());
-  uint32_t contextId = 0;
-  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPage(dart_context, contextId));
+  void* dart_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size());
+  double contextId = 0;
+  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPageSync(0.0, dart_context));
   static bool disposed = false;
   page->disposeCallback = [](webf::WebFPage* bridge) { disposed = true; };
-  disposePage(dart_context, page);
+  disposePageSync(false, dart_context, page);
   EXPECT_EQ(disposed, true);
 }
 
@@ -291,7 +291,7 @@ TEST(Context, window) {
     EXPECT_STREQ(message.c_str(), "true");
   };
 
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {
+  auto errorHandler = [](double contextId, const char* errmsg) {
     errorHandlerExecuted = true;
     WEBF_LOG(VERBOSE) << errmsg;
   };
@@ -310,7 +310,7 @@ TEST(Context, windowInheritEventTarget) {
     EXPECT_STREQ(message.c_str(), "ƒ () ƒ () ƒ () true");
   };
 
-  auto errorHandler = [](int32_t contextId, const char* errmsg) {
+  auto errorHandler = [](double contextId, const char* errmsg) {
     errorHandlerExecuted = true;
     WEBF_LOG(VERBOSE) << errmsg;
   };
@@ -331,7 +331,7 @@ TEST(Context, evaluateByteCode) {
     EXPECT_STREQ(message.c_str(), "Arguments {0: 1, 1: 2, 2: 3, 3: 4, callee: ƒ (), length: 4}");
   };
 
-  auto errorHandler = [](int32_t contextId, const char* errmsg) { errorHandlerExecuted = true; };
+  auto errorHandler = [](double contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto env = TEST_init(errorHandler);
   const char* code = "function f() { console.log(arguments)} f(1,2,3,4);";
   size_t byteLen;
@@ -343,14 +343,14 @@ TEST(Context, evaluateByteCode) {
 }
 
 TEST(jsValueToNativeString, utf8String) {
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {});
-  JSValue str = JS_NewString(env->page()->GetExecutingContext()->ctx(), "helloworld");
+  auto env = TEST_init([](double contextId, const char* errmsg) {});
+  JSValue str = JS_NewString(env->page()->executingContext()->ctx(), "helloworld");
   std::unique_ptr<webf::SharedNativeString> nativeString =
-      webf::jsValueToNativeString(env->page()->GetExecutingContext()->ctx(), str);
+      webf::jsValueToNativeString(env->page()->executingContext()->ctx(), str);
   EXPECT_EQ(nativeString->length(), 10);
   uint8_t expectedString[10] = {104, 101, 108, 108, 111, 119, 111, 114, 108, 100};
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(expectedString[i], *(nativeString->string() + i));
   }
-  JS_FreeValue(env->page()->GetExecutingContext()->ctx(), str);
+  JS_FreeValue(env->page()->executingContext()->ctx(), str);
 }

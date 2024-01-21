@@ -16,11 +16,11 @@ TEST(CustomEvent, instanceofEvent) {
     logCalled = true;
     EXPECT_STREQ(message.c_str(), "true");
   };
-  auto env = TEST_init([](int32_t contextId, const char* errmsg) {
+  auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;
     errorCalled = true;
   });
-  auto context = env->page()->GetExecutingContext();
+  auto context = env->page()->executingContext();
   const char* code =
       "let customEvent = new CustomEvent('abc', { detail: 'helloworld'});"
       "console.log(customEvent instanceof Event);";

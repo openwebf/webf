@@ -65,6 +65,7 @@ class Element : public ContainerNode {
   void setAttribute(const AtomicString&, const AtomicString& value, ExceptionState&);
   void removeAttribute(const AtomicString&, ExceptionState& exception_state);
   BoundingClientRect* getBoundingClientRect(ExceptionState& exception_state);
+  std::vector<BoundingClientRect*> getClientRects(ExceptionState& exception_state);
   void click(ExceptionState& exception_state);
   void scroll(ExceptionState& exception_state);
   void scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);

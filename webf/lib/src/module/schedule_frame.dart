@@ -8,22 +8,31 @@ import 'package:flutter/scheduler.dart';
 typedef DoubleCallback = void Function(double);
 typedef VoidCallback = void Function();
 
+int _frameDelayCount = 0;
+
+void scheduleDelayForFrameCallback() {
+  _frameDelayCount++;
+}
+
 mixin ScheduleFrameMixin {
-  int _id = 1;
   final Map<int, bool> _animationFrameCallbackMap = {};
 
-  int requestAnimationFrame(DoubleCallback callback) {
-    int id = _id++;
-    _animationFrameCallbackMap[id] = true;
+  void requestAnimationFrame(int newFrameId, DoubleCallback callback) {
+    _animationFrameCallbackMap[newFrameId] = true;
     SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
-      if (_animationFrameCallbackMap.containsKey(id)) {
-        _animationFrameCallbackMap.remove(id);
+      if (_frameDelayCount > 0) {
+        _frameDelayCount--;
+        requestAnimationFrame(newFrameId, callback);
+        return;
+      }
+
+      if (_animationFrameCallbackMap.containsKey(newFrameId)) {
+        _animationFrameCallbackMap.remove(newFrameId);
         double highResTimeStamp = timeStamp.inMicroseconds / 1000;
         callback(highResTimeStamp);
       }
     });
     SchedulerBinding.instance.scheduleFrame();
-    return id;
   }
 
   void cancelAnimationFrame(int id) {

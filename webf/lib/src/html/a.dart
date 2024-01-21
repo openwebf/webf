@@ -13,7 +13,7 @@ class HTMLAnchorElement extends Element {
     addEventListener(EVENT_CLICK, _handleClick);
   }
 
-  void _handleClick(Event event) {
+  Future<void> _handleClick(Event event) async {
     String? href = attributes['href'];
     if (href != null && href.isNotEmpty) {
       String baseUrl = ownerDocument.controller.url;

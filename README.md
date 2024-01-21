@@ -3,13 +3,13 @@
 WebF presents a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
 
 - **Adherence to W3C Standards:** By leveraging HTML/CSS and JavaScript, WebF renders content on Flutter, ensuring impeccable alignment with standard browser rendering.
-  
+
 - **Compatible with Leading Front-End Frameworks:** Given its compliance with W3C standards, WebF seamlessly integrates with popular front-end frameworks, including [React](https://reactjs.org/) and [Vue](https://vuejs.org/).
-  
+
 - **Amplify Your Web Applications with Flutter:** WebF's adaptability shines through its customization capabilities. Craft bespoke HTML elements using Flutter Widgets or enhance your application by integrating a JavaScript API sourced from any Dart library on the `pub.dev` registry.
-  
+
 - **Authentic Web Development Environment:** Experience a traditional web development setting with WebF. It facilitates DOM structure inspection, CSS style evaluations, and JavaScript debugging via Chrome DevTools.
-  
+
 - **Craft Once, Deploy Everywhere:** Harness the versatility of WebF to design your web application and launch it across any Flutter-compatible device. What's more, maintain the flexibility to execute your apps within Node.js or web browsers, all from a unified codebase.
 
 ## Join Our Mission
@@ -26,7 +26,7 @@ If you or your team are interested in supporting us, please contact @andycall on
 
 [![Discord Shield](https://discordapp.com/api/guilds/1008119434688344134/widget.png?style=banner1)](https://discord.gg/DvUBtXZ5rK)
 
-## The update and maintenance policy for WebF versions 
+## The update and maintenance policy for WebF versions
 
 Each version of WebF will be maintained for the lifespan of three minor WebF releases. For instance, WebF 0.15.0 was released to be compatible with Flutter 3.10.x. Its support will conclude once WebF 0.18.0 is introduced. Any updates applied to versions 0.16.x and 0.17.x will be cherry-picked for the subsequent update of 0.15.x.
 
@@ -37,8 +37,7 @@ This ensures that users can reliably receive updates for three minor WebF versio
 | `>= 0.12.0 < 0.14.0` | `3.0.5` |
 | `>= 0.14.0 < 0.15.0` | `3.3.10` and `3.7.3` |
 | `>= 0.15.0 < 0.16.0` | `3.10.x` |
-| `>= 0.16.0 < 0.17.0` | `3.13.x` |
-| `>= 0.17.0 < 0.18.0` | `3.16.x` |
+| `>= 0.16.0 < 0.17.0` | `3.13.x` and `3.16.x` |
 
 
 <img width="817" alt="image" src="https://github.com/openwebf/webf/assets/4409743/2d5cf5a1-e670-424b-8766-324f475bbc0a">
