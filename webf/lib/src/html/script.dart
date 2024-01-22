@@ -34,6 +34,7 @@ class ScriptRunner {
   final double _contextId;
 
   final List<ScriptExecution> _syncScriptTasks = [];
+  final List<ScriptExecution> _preloadScriptTasks = [];
 
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
@@ -76,6 +77,8 @@ class ScriptRunner {
 
     // Obtain bundle.
     WebFBundle bundle;
+    bool isInPreLoading = _document.controller.mode == WebFLoadingMode.preloading &&
+        _document.controller.preloadStatus != PreloadingStatus.done;
 
     if (isInline) {
       String? scriptCode = element.collectElementChildText();
@@ -118,7 +121,12 @@ class ScriptRunner {
     // @TODO: Differ async and defer.
     final bool shouldAsync = element.async || element.defer;
     if (!shouldAsync) {
-      _syncScriptTasks.add(task);
+      if (isInPreLoading) {
+        _preloadScriptTasks.add(task);
+      } else {
+        _syncScriptTasks.add(task);
+      }
+
       _resolvingCount++;
     }
 
@@ -140,7 +148,9 @@ class ScriptRunner {
       });
       _document.decrementDOMContentLoadedEventDelayCount();
       // Cancel failed task.
-      _syncScriptTasks.remove(task);
+      if (!isInPreLoading) {
+        _syncScriptTasks.remove(task);
+      }
       return;
     } finally {
       // Decrease the resolving count.
@@ -152,8 +162,7 @@ class ScriptRunner {
       _document.decrementDOMContentLoadedEventDelayCount();
     }
 
-    WebFLoadingMode loadingMode = _document.controller.mode;
-    if (loadingMode != WebFLoadingMode.preloading) {
+    if (!isInPreLoading) {
       // Script executing phrase.
       if (shouldAsync) {
         SchedulerBinding.instance.scheduleFrameCallback((_) async {
@@ -178,6 +187,10 @@ class ScriptRunner {
       }
     }
   }
+
+  Future<void> executePreloadedBundles() async {
+    _execute(_preloadScriptTasks);
+  }
 }
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html
@@ -199,11 +212,15 @@ class ScriptElement extends Element {
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['async'] =
         BindingObjectProperty(getter: () => async, setter: (value) => async = castToType<bool>(value));
-    properties['defer'] = BindingObjectProperty(getter: () => defer, setter: (value) => defer = castToType<bool>(value));
-    properties['charset'] = BindingObjectProperty(getter: () => charset, setter: (value) => charset = castToType<String>(value));
+    properties['defer'] =
+        BindingObjectProperty(getter: () => defer, setter: (value) => defer = castToType<bool>(value));
+    properties['charset'] =
+        BindingObjectProperty(getter: () => charset, setter: (value) => charset = castToType<String>(value));
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
     properties['text'] = BindingObjectProperty(getter: () => text, setter: (value) => text = castToType<String>(value));
-    properties['readyState'] = BindingObjectProperty(getter: () => readyState.name,);
+    properties['readyState'] = BindingObjectProperty(
+      getter: () => readyState.name,
+    );
   }
 
   @override
