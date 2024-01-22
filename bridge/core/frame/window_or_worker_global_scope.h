@@ -14,12 +14,12 @@ namespace webf {
 class WindowOrWorkerGlobalScope {
  public:
   static int setTimeout(ExecutingContext* context,
-                        std::shared_ptr<QJSFunction> handler,
+                        const std::shared_ptr<QJSFunction>& handler,
                         int32_t timeout,
                         ExceptionState& exception);
-  static int setTimeout(ExecutingContext* context, std::shared_ptr<QJSFunction> handler, ExceptionState& exception);
+  static int setTimeout(ExecutingContext* context, const std::shared_ptr<QJSFunction>& handler, ExceptionState& exception);
   static int setInterval(ExecutingContext* context,
-                         std::shared_ptr<QJSFunction> handler,
+                         const std::shared_ptr<QJSFunction>& handler,
                          int32_t timeout,
                          ExceptionState& exception);
   static int setInterval(ExecutingContext* context, std::shared_ptr<QJSFunction> handler, ExceptionState& exception);
