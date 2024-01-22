@@ -120,6 +120,7 @@ void UICommandSyncStrategy::SyncToReserve() {
 
 void UICommandSyncStrategy::SyncToReserveIfNecessary() {
   if (frequency_map_.size() > waiting_status.MaxSize() && waiting_status.IsFullActive()) {
+    WEBF_LOG(VERBOSE) << " SYNC TO RESERVE";
     SyncToReserve();
   }
 }

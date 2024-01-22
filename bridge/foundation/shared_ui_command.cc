@@ -27,6 +27,10 @@ void SharedUICommand::AddCommand(UICommand type,
     return;
   }
 
+  if (type == UICommand::kFinishRecordingCommand) {
+    WEBF_LOG(VERBOSE) << " UI COMMAND Type: kFinishRecordingCommand";
+  }
+
   if (type == UICommand::kFinishRecordingCommand || ui_command_sync_strategy_->ShouldSync()) {
     SyncToActive();
   }
@@ -82,6 +86,7 @@ void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
 }
 
 void SharedUICommand::SyncToActive() {
+  WEBF_LOG(VERBOSE) << " SYNC TO ACTIVE";
   SyncToReserve();
 
   if (reserve_buffer_->empty())
