@@ -215,8 +215,11 @@ class WebFViewController implements WidgetsBindingObserver {
     _pendingAnimationTimesLines.clear();
   }
 
+  bool _isFrameBindingAttached = false;
+
   void flushPendingCommandsPerFrame() {
-    if (disposed) return;
+    if (disposed && _isFrameBindingAttached) return;
+    _isFrameBindingAttached = true;
     flushUICommand(this, window.pointer!);
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
@@ -1266,8 +1269,7 @@ class WebFController {
     // Evaluate the entry point, and loading the stylesheets and scripts.
     await evaluateEntrypoint();
 
-    // Initialize document, window and the documentElement.
-    flushUICommand(view, view.window.pointer!);
+    view.flushPendingCommandsPerFrame();
 
     return controllerPreRenderingCompleter.future;
   }
