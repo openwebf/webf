@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/rendering/logic_box.dart';
 
 /// RenderLeaderLayer of [TextFormControlElement] used for toolbar overlay
 /// which includes [Cut], [Copy], [Paste], [Select All] shortcuts to float with.
@@ -107,5 +108,9 @@ class RenderTextControlLeaderLayer extends RenderLeaderLayer {
   void paint(PaintingContext context, Offset offset) {
     final Offset transformedOffset = offset.translate(_offset!.dx, _offset!.dy);
     super.paint(context, transformedOffset);
+  }
+
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
   }
 }

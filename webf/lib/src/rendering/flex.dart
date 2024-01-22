@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/rendering/logic_box.dart';
 
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines
@@ -248,6 +249,13 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
   }
 
+  double _calculateMainAxisMarginForJustContentType(double margin) {
+    if (renderStyle.justifyContent == JustifyContent.spaceBetween && margin < 0) {
+      return margin / 2;
+    }
+    return margin;
+  }
+
   // Get start/end margin of child in the cross axis according to flex direction.
   double? _flowAwareChildCrossAxisMargin(RenderBox child, {bool isEnd = false}) {
     RenderBoxModel? childRenderBoxModel;
@@ -364,6 +372,13 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     return minMainSize ?? 0;
+  }
+
+  @override
+  bool get isNegativeMarginChangeHSize {
+    double? marginLeft = renderStyle.marginLeft.computedValue;
+    double? marginRight = renderStyle.marginRight.computedValue;
+    return renderStyle.width.isAuto && marginLeft < 0 && marginRight < 0;
   }
 
   // Calculate automatic minimum size of flex item.
@@ -528,6 +543,9 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (_isHorizontalFlexDirection) {
       return childSize!.height + marginVertical;
     } else {
+      if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
+        return _horizontalMarginNegativeSet(childSize!.width, child);
+      }
       return childSize!.width + marginHorizontal;
     }
   }
@@ -541,6 +559,28 @@ class RenderFlexLayout extends RenderLayoutBox {
     } else {
       return renderBoxModel.renderStyle.overflowY != CSSOverflowType.visible;
     }
+  }
+
+  double _horizontalMarginNegativeSet(double baseSize, RenderBoxModel box, {bool isHorizontal = false}) {
+    CSSRenderStyle boxStyle = box.renderStyle;
+    double? marginLeft = boxStyle.marginLeft.computedValue;
+    double? marginRight = boxStyle.marginRight.computedValue;
+    double? marginTop = boxStyle.marginTop.computedValue;
+    double? marginBottom = boxStyle.marginBottom.computedValue;
+    if (isHorizontal) {
+      if (box is RenderLayoutBox && box.isNegativeMarginChangeHSize) {
+        baseSize += marginLeft > 0 ? marginLeft : 0;
+        baseSize += marginRight > 0 ? marginRight : 0;
+        return baseSize;
+      }
+      return baseSize + box.renderStyle.margin.horizontal;
+    }
+    if (box is RenderLayoutBox && box.isMarginNegativeVertical()) {
+      baseSize += marginTop > 0 ? marginTop : 0;
+      baseSize += marginBottom > 0 ? marginBottom : 0;
+      return baseSize;
+    }
+    return baseSize + box.renderStyle.margin.vertical;
   }
 
   double _getMainAxisExtent(RenderBox child, {bool shouldUseIntrinsicMainSize = false}) {
@@ -565,6 +605,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     double baseSize = _getMainSize(child, shouldUseIntrinsicMainSize: shouldUseIntrinsicMainSize);
     if (_isHorizontalFlexDirection) {
+      if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
+        return _horizontalMarginNegativeSet(baseSize, child);
+      }
       return baseSize + marginHorizontal;
     } else {
       return baseSize + marginVertical;
@@ -772,7 +815,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       } else if (child is RenderBoxModel) {
         childConstraints = child.getConstraints();
       } else if (child is RenderTextBox) {
-        childConstraints = child.getConstraints();
+        childConstraints = child.getConstraints(webfTextMaxLines);
       } else {
         childConstraints = BoxConstraints();
       }
@@ -1253,8 +1296,14 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Child cross size adjusted due to align-items/align-self style.
         double? childStretchedCrossSize;
 
+        //TODO 为处理margin负数的情况 待补充check-child.isMarginNegativeChangeSize()
         if (_needToStretchChildCrossSize(child)) {
           childStretchedCrossSize = _getChildStretchedCrossSize(child, metrics.crossAxisExtent, runBetweenSpace);
+          if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
+            double childCrossAxisMargin =
+                _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
+            childStretchedCrossSize += childCrossAxisMargin.abs();
+          }
           childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
         }
 
@@ -1388,10 +1437,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     BoxConstraints oldConstraints = child.constraints;
-    double maxConstraintWidth =
-        child.hasOverrideContentLogicalWidth ? math.max(0, child.renderStyle.borderBoxLogicalWidth!) : oldConstraints.maxWidth;
-    double maxConstraintHeight =
-        child.hasOverrideContentLogicalHeight ? math.max(0, child.renderStyle.borderBoxLogicalHeight!) : oldConstraints.maxHeight;
+    double maxConstraintWidth = child.hasOverrideContentLogicalWidth
+        ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
+        : oldConstraints.maxWidth;
+    double maxConstraintHeight = child.hasOverrideContentLogicalHeight
+        ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
+        : oldConstraints.maxHeight;
 
     double minConstraintWidth =
         oldConstraints.minWidth > maxConstraintWidth ? maxConstraintWidth : oldConstraints.minWidth;
@@ -1904,7 +1955,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         RenderBox child = runChild.child;
         double childMainAxisMargin = _flowAwareChildMainAxisMargin(child)!;
         // Add start margin of main axis when setting offset.
-        childMainPosition += childMainAxisMargin;
+        childMainPosition += _calculateMainAxisMarginForJustContentType(childMainAxisMargin);
         double? childCrossPosition;
         AlignSelf alignSelf = _getAlignSelf(child);
 
@@ -2058,7 +2109,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (flipMainAxis) {
           childMainPosition -= betweenSpace + childMainAxisMargin;
         } else {
-          childMainPosition += _getMainAxisExtent(child) - childMainAxisMargin + betweenSpace;
+          childMainPosition += _getMainAxisExtent(child) + betweenSpace;
         }
       }
 
@@ -2101,8 +2152,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runBetweenSpace,
   ) {
     bool isFlexWrap = renderStyle.flexWrap == FlexWrap.wrap || renderStyle.flexWrap == FlexWrap.wrapReverse;
-    double childCrossAxisMargin =
-        _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
+    double childCrossAxisMargin = _horizontalMarginNegativeSet(0, child, isHorizontal: !_isHorizontalFlexDirection);
+    _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
     double maxCrossSizeConstraints = _isHorizontalFlexDirection ? constraints.maxHeight : constraints.maxWidth;
     double flexLineCrossSize = _getFlexLineCrossSize(child, runCrossAxisExtent, runBetweenSpace);
     // Should subtract margin when stretch flex item.
@@ -2381,6 +2432,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       case FlexDirection.columnReverse:
         return false;
     }
+  }
+
+  @override
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
   }
 }
 

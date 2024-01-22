@@ -271,6 +271,7 @@ class WebFState extends State<WebF> with RouteAware {
           onCustomElementDetached: onCustomElementWidgetRemove,
           children: customElementWidgets.toList(),
           resizeToAvoidBottomInsets: widget.resizeToAvoidBottomInsets,
+          buildContext: context,
         ),
       ),
     );
@@ -362,10 +363,13 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
     required this.onCustomElementAttached,
     required this.onCustomElementDetached,
     this.resizeToAvoidBottomInsets = true,
+    required BuildContext buildContext
   })  : _webfWidget = widget,
+        _buildContext = buildContext,
         super(key: key, children: children);
 
   final WebF _webfWidget;
+  final BuildContext _buildContext;
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -394,7 +398,8 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         uriParser: _webfWidget.uriParser,
         preloadedBundles: _webfWidget.preloadedBundles,
         ownerFlutterView: currentView,
-        resizeToAvoidBottomInsets: resizeToAvoidBottomInsets);
+        resizeToAvoidBottomInsets: resizeToAvoidBottomInsets,
+        buildContext: _buildContext);
 
     (context as _WebFRenderObjectElement).controller = controller;
 

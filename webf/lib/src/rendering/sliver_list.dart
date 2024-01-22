@@ -2,7 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -63,6 +63,22 @@ class RenderSliverListLayout extends RenderLayoutBox {
     );
     manager.setupSliverListLayout(this);
     super.insert(_renderViewport);
+  }
+  void refreshAxis() {
+    axis = renderStyle.sliverDirection;
+    scrollable.axisDirection = getAxisDirection(axis);
+    switch (axis) {
+      case Axis.horizontal:
+        scrollOffsetX = scrollable.position;
+        scrollOffsetY = null;
+        break;
+      case Axis.vertical:
+        scrollOffsetX = null;
+        scrollOffsetY = scrollable.position;
+        break;
+    }
+    _renderViewport.axisDirection = scrollable.axisDirection;
+    _renderViewport.crossAxisDirection = getCrossAxisDirection(axis);
   }
 
   // Override the scrollable pointer listener.
@@ -143,6 +159,10 @@ class RenderSliverListLayout extends RenderLayoutBox {
     _renderSliverList?.markNeedsLayout();
   }
 
+  void markContentLayout() {
+    viewport.markNeedsLayout();
+  }
+
   /// Child count should rely on element's childNodes, the real
   /// child renderObject count is not exactly.
   @override
@@ -168,14 +188,14 @@ class RenderSliverListLayout extends RenderLayoutBox {
     switch (sliverAxis) {
       case Axis.horizontal:
         childConstraints = BoxConstraints(
-          maxWidth: width ?? 0.0,
-          maxHeight: height ?? _screenSize.height,
+          maxWidth: width ?? (constraints.maxWidth != double.infinity ? constraints.maxWidth : 0.0),
+          maxHeight: math.min(constraints.maxHeight, height ?? _screenSize.height),
         );
         break;
       case Axis.vertical:
         childConstraints = BoxConstraints(
-          maxWidth: width ?? _screenSize.width,
-          maxHeight: height ?? 0.0,
+          maxWidth: math.min(constraints.maxWidth, width ?? _screenSize.width) ,
+          maxHeight: height ?? (constraints.maxHeight != double.infinity ? constraints.maxHeight : 0.0),
         );
         break;
     }

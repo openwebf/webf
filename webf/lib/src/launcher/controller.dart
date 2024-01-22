@@ -17,7 +17,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
-    show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController;
+    show AnimationController, BuildContext, RouteInformation, WidgetsBinding, WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -842,6 +842,7 @@ class WebFController {
 
   final ui.FlutterView ownerFlutterView;
   bool resizeToAvoidBottomInsets;
+  final BuildContext buildContext;
 
   String? _name;
   String? get name => _name;
@@ -903,6 +904,7 @@ class WebFController {
     this.initialCookies,
     required this.ownerFlutterView,
     this.resizeToAvoidBottomInsets = true,
+    required this.buildContext
   })  : _name = name,
         _entrypoint = entrypoint,
         runningThread = runningThread ?? DedicatedThread(),
