@@ -99,7 +99,7 @@ static void handlePersistentCallbackWrapper(void* ptr, double contextId, char* e
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
-                                          const std::shared_ptr<QJSFunction> &handler,
+                                          const std::shared_ptr<QJSFunction>& handler,
                                           ExceptionState& exception) {
   return setTimeout(context, handler, 0.0, exception);
 }
@@ -140,7 +140,6 @@ int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
     exception.ThrowException(context->ctx(), ErrorType::InternalError, "Timeout callback is null");
     return -1;
   }
-
 
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kMultiple);
