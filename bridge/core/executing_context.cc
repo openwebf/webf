@@ -265,6 +265,7 @@ void ExecutingContext::ReportError(JSValueConst error) {
 
 void ExecutingContext::DrainMicrotasks() {
   DrainPendingPromiseJobs();
+  WEBF_LOG(VERBOSE) << " DRAIN MICRO TASK";
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
