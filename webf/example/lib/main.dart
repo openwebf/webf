@@ -44,7 +44,7 @@ class FirstPageState extends State<FirstPage> {
       context,
       devToolsService: ChromeDevToolsService(),
     );
-    controller.preRendering(WebFBundle.fromUrl('assets:assets/bundle.html'));
+    controller.preload(WebFBundle.fromUrl('assets:assets/bundle.html'));
   }
 
   @override
