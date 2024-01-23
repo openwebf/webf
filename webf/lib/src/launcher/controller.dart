@@ -1333,6 +1333,7 @@ class WebFController {
 
   // Pause all timers and callbacks if kraken page are invisible.
   void pause() {
+    if (_paused) return;
     _paused = true;
     module.pauseTimer();
     module.pauseAnimationFrame();
@@ -1341,6 +1342,7 @@ class WebFController {
 
   // Resume all timers and callbacks if kraken page now visible.
   void resume() {
+    if (!_paused) return;
     _paused = false;
     flushPendingCallbacks();
     module.resumeTimer();
