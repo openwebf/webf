@@ -29,6 +29,7 @@ void SharedUICommand::AddCommand(UICommand type,
 
   if (type == UICommand::kFinishRecordingCommand || ui_command_sync_strategy_->ShouldSync()) {
     SyncToActive();
+    context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
   }
 
   ui_command_sync_strategy_->RecordUICommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
