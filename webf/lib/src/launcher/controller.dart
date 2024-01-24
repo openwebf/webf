@@ -1137,6 +1137,9 @@ class WebFController {
 
   PreloadingStatus _preloadStatus = PreloadingStatus.none;
   PreloadingStatus get preloadStatus => _preloadStatus;
+  VoidCallback? _onPreloadingFinished;
+  int unfinishedPreloadResources = 0;
+
   /// Preloads remote resources into memory and begins execution when the WebF widget is mounted into the Flutter tree.
   /// If the entrypoint is an HTML file, the HTML will be parsed, and its elements will be organized into a DOM tree.
   /// CSS files loaded through `<style>` and `<link>` elements will be parsed and the calculated styles applied to the corresponding DOM elements.
@@ -1179,16 +1182,17 @@ class WebFController {
       if (_entrypoint!.isJavascript) {
         await _entrypoint!.preProcessing(view.contextId);
       }
+      _preloadStatus = PreloadingStatus.done;
       controllerPreloadingCompleter.complete();
     } else if (_entrypoint!.isHTML) {
       // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-      await evaluateEntrypoint();
+      await parseHTML(view.contextId, _entrypoint!.data!);
 
       // Initialize document, window and the documentElement.
       flushUICommand(view, view.window.pointer!);
 
       if (view.document.scriptRunner.hasPreloadScripts()) {
-        view.document.onPreloadingFinished = () {
+        _onPreloadingFinished = () {
           _preloadStatus = PreloadingStatus.done;
           controllerPreloadingCompleter.complete();
         };
@@ -1479,7 +1483,7 @@ class WebFController {
     // Are all script element complete?
     if (_view.document.isDelayingDOMContentLoadedEvent) return;
 
-    if (mode != WebFLoadingMode.preRendering) {
+    if (mode == WebFLoadingMode.standard || mode == WebFLoadingMode.preloading) {
       _view.document.readyState = DocumentReadyState.interactive;
       dispatchDOMContentLoadedEvent();
     }
@@ -1495,15 +1499,26 @@ class WebFController {
 
     _isComplete = true;
 
-    if (mode != WebFLoadingMode.preRendering) {
+    if (mode == WebFLoadingMode.standard || mode == WebFLoadingMode.preloading) {
       dispatchWindowLoadEvent();
       _view.document.readyState = DocumentReadyState.complete;
-    } else {
+    } else if (mode == WebFLoadingMode.preRendering) {
       controllerPreRenderingCompleter.complete();
     }
   }
 
+  // Check whether the load was complete in preload mode.
+  void checkPreloadCompleted() {
+    if (unfinishedPreloadResources == 0 && _onPreloadingFinished != null) {
+      _onPreloadingFinished!();
+    }
+  }
+
+  bool _domContentLoadedEventDispatched = false;
   void dispatchDOMContentLoadedEvent() {
+    if (_domContentLoadedEventDispatched) return;
+
+    _domContentLoadedEventDispatched = true;
     Event event = Event(EVENT_DOM_CONTENT_LOADED);
     EventTarget window = view.window;
     window.dispatchEvent(event);
@@ -1513,7 +1528,10 @@ class WebFController {
     }
   }
 
+  bool _loadEventDispatched = false;
   void dispatchWindowLoadEvent() {
+    if (_loadEventDispatched) return;
+    _loadEventDispatched = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       // DOM element are created at next frame, so we should trigger onload callback in the next frame.
       Event event = Event(EVENT_LOAD);

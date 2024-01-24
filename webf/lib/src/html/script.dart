@@ -76,7 +76,7 @@ class ScriptRunner {
 
     // Increase the pending count for preloading resources.
     if (_document.controller.preloadStatus != PreloadingStatus.none) {
-      _document.unfinishedPreloadResources++;
+      _document.controller.unfinishedPreloadResources++;
     }
 
     // Obtain bundle.
@@ -184,10 +184,8 @@ class ScriptRunner {
       _document.pendingPreloadingScriptCallbacks.add(() async => await task(shouldAsync));
 
       if (_document.controller.preloadStatus != PreloadingStatus.none) {
-        _document.unfinishedPreloadResources--;
-        if (_document.unfinishedPreloadResources == 0 && _document.onPreloadingFinished != null) {
-          _document.onPreloadingFinished!();
-        }
+        _document.controller.unfinishedPreloadResources--;
+        _document.controller.checkPreloadCompleted();
       }
     }
   }
