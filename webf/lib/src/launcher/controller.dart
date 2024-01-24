@@ -1187,10 +1187,15 @@ class WebFController {
       // Initialize document, window and the documentElement.
       flushUICommand(view, view.window.pointer!);
 
-      view.document.onPreloadingFinished = () {
+      if (view.document.scriptRunner.hasPreloadScripts()) {
+        view.document.onPreloadingFinished = () {
+          _preloadStatus = PreloadingStatus.done;
+          controllerPreloadingCompleter.complete();
+        };
+      } else {
         _preloadStatus = PreloadingStatus.done;
         controllerPreloadingCompleter.complete();
-      };
+      }
     }
 
     return controllerPreloadingCompleter.future;

@@ -97,7 +97,6 @@ void disposePage(double thread_identity,
   WEBF_LOG(INFO) << "[Dispatcher]: disposePage Call BEGIN";
 #endif
 
-  WEBF_LOG(VERBOSE) << " DISPOSE PAGE START";
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
 
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
