@@ -55,6 +55,7 @@ class PreRenderingPageState extends State<PreRenderingPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    print('Loading ${widget.name}');
     controller = WebFController(context,
         viewportWidth: 360,
         viewportHeight: 640,
@@ -281,7 +282,6 @@ class FirstRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(codes);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Memory Leak Home'),
