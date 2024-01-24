@@ -142,7 +142,7 @@ class LinkElement extends Element {
 
       // Increase the pending count for preloading resources.
       if (ownerDocument.controller.preloadStatus != PreloadingStatus.none) {
-        ownerDocument.unfinishedPreloadResources++;
+        ownerDocument.controller.unfinishedPreloadResources++;
       }
 
       String url = _resolvedHyperlink.toString();
@@ -180,10 +180,8 @@ class LinkElement extends Element {
         bundle.dispose();
 
         if (ownerDocument.controller.preloadStatus != PreloadingStatus.none) {
-          ownerDocument.unfinishedPreloadResources--;
-          if (ownerDocument.unfinishedPreloadResources == 0 && ownerDocument.onPreloadingFinished != null) {
-            ownerDocument.onPreloadingFinished!();
-          }
+          ownerDocument.controller.unfinishedPreloadResources--;
+          ownerDocument.controller.checkPreloadCompleted();
         }
 
       }

@@ -83,8 +83,6 @@ class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
   GestureListener? gestureListener;
-  int unfinishedPreloadResources = 0;
-  VoidCallback? onPreloadingFinished;
 
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
