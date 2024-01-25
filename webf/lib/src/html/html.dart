@@ -2,7 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-
+import 'package:flutter/widgets.dart' show FocusManager;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -15,7 +15,12 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class HTMLElement extends Element {
-  HTMLElement([BindingContext? context]) : super(context);
+  HTMLElement([BindingContext? context]) : super(context) {
+    // Add default behavior unfocus focused input or textarea elements.
+    addEventListener('click', (event) async {
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
+  }
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
