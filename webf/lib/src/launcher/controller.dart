@@ -1222,7 +1222,7 @@ class WebFController {
   /// In this mode, all remote resources are loaded and executed similarly to the standard mode, but with an offline-like behavior.
   /// Given that JavaScript is executed in this mode, properties like `clientWidth` and `clientHeight` from the viewModule always return 0. This is because
   /// no layout or paint processes occur during preRendering.
-  /// If your application depends on viewModule properties, ensure that the related code is placed within the `load` and `DOMContentLoaded` event callbacks of the window.
+  /// If your application depends on viewModule properties, ensure that the related code is placed within the `load` and `DOMContentLoaded` or `prerendered` event callbacks of the window.
   /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
   /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
   Future<void> preRendering(WebFBundle bundle) async {
@@ -1542,6 +1542,22 @@ class WebFController {
       }
     });
     SchedulerBinding.instance.scheduleFrame();
+  }
+
+  bool _preloadEventDispatched = false;
+  void dispatchWindowPreloadedEvent() {
+    if (_preloadEventDispatched) return;
+    _preloadEventDispatched = true;
+    Event event = Event(EVENT_PRELOADED);
+    _view.window.dispatchEvent(event);
+  }
+
+  bool _preRenderedEventDispatched = false;
+  void dispatchWindowPreRenderedEvent() {
+    if (_preRenderedEventDispatched) return;
+    _preRenderedEventDispatched = true;
+    Event event = Event(EVENT_PRERENDERED);
+    _view.window.dispatchEvent(event);
   }
 
   Future<void> dispatchWindowResizeEvent() async {
