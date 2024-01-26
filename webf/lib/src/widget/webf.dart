@@ -506,8 +506,10 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
             await controller!.evaluateEntrypoint();
           }
 
-          controller!.checkCompleted();
+          flushUICommand(controller!.view, nullptr);
 
+          controller!.checkCompleted();
+          controller!.dispatchWindowPreloadedEvent();
         } else if (controller!.mode == WebFLoadingMode.preRendering) {
           await controller!.controllerPreRenderingCompleter.future;
 
@@ -528,11 +530,11 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
           HTMLElement rootElement = controller!.view.document.documentElement as HTMLElement;
           rootElement.flushPendingStylePropertiesForWholeTree();
 
-
           controller!.view.resumeAnimationTimeline();
 
           controller!.dispatchDOMContentLoadedEvent();
           controller!.dispatchWindowLoadEvent();
+          controller!.dispatchWindowPreRenderedEvent();
         }
 
         controller!.evaluated = true;
