@@ -20,10 +20,11 @@ final GlobalKey<RootPageState> rootPageKey = GlobalKey();
 
 final bool isPreloadMode = Platform.environment['LOAD_MODE'] == 'preload';
 final String specFolder =
-    isPreloadMode ? 'preload_page_specs' : 'prerender_page_specs';
+    isPreloadMode ? 'preload_page_specs' : 'prerendering_page_specs';
 final specDir = Directory(path.join(testDirectory, specFolder));
 final List<FileSystemEntity> specs = specDir.listSync();
-final List<CodeUnit> codes = specs.where((element) => !element.path.contains('.DS_Store')).map((spec) {
+final List<CodeUnit> codes =
+    specs.where((element) => !element.path.contains('.DS_Store')).map((spec) {
   final fileName = getFileName(spec.path);
   final List<FileSystemEntity> files = Directory(spec.path).listSync();
 
@@ -58,17 +59,16 @@ class PreRenderingPageState extends State<PreRenderingPage> {
     print('Loading ${widget.name}');
     controller = WebFController(context,
         viewportWidth: 360,
-        viewportHeight: 640,
-        onDOMContentLoaded: (controller) async {
-          await sleep(Duration(seconds: 1));
-          Uint8List snapshot = await controller.view.document.documentElement!.toBlob(devicePixelRatio: 1);
-          bool isMatch = await matchImageSnapshot(snapshot, widget.path);
-          if (!isMatch) {
-            throw FlutterError('Snapshot of ${widget.name} is not match');
-          }
-          Navigator.pop(context);
-        },
-        uriParser: IntegrationTestUriParser());
+        viewportHeight: 640, onDOMContentLoaded: (controller) async {
+      await sleep(Duration(seconds: 1));
+      Uint8List snapshot = await controller.view.document.documentElement!
+          .toBlob(devicePixelRatio: 1);
+      bool isMatch = await matchImageSnapshot(snapshot, widget.path);
+      if (!isMatch) {
+        throw FlutterError('Snapshot of ${widget.name} is not match');
+      }
+      Navigator.pop(context);
+    }, uriParser: IntegrationTestUriParser());
   }
 
   void navigateBack() {
@@ -92,6 +92,7 @@ class PreRenderingPageState extends State<PreRenderingPage> {
             : controller.preRendering(entrypoint),
         builder: (BuildContext context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
+            print('Current Load mode: ${controller.mode}');
             return WebF(controller: controller);
           }
 
@@ -287,12 +288,19 @@ class FirstRoute extends StatelessWidget {
         title: const Text('Memory Leak Home'),
       ),
       body: Center(
-        child: ElevatedButton(
-          child: const Text('Open route'),
-          onPressed: () {
-            Navigator.pushNamed(context, '/' + codes[6].name);
-          },
-        ),
+        child: ListView(
+            children: codes.map((code) {
+          return Container(
+            padding: EdgeInsets.fromLTRB(50, 20, 50, 20),
+            child: ElevatedButton(
+              style: ButtonStyle(),
+              child: Text('Open ${code.name}'),
+              onPressed: () {
+                Navigator.pushNamed(context, '/' + code.name);
+              },
+            ),
+          );
+        }).toList()),
       ),
     );
   }
