@@ -155,7 +155,33 @@ jobs:
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
-      run: cd integration_tests && node scripts/preload_page_integration.js
+      run: cd integration_tests && LOAD_MODE=preload node scripts/preload_prerendering_page_integration.js
+      id: test
+      continue-on-error: true
+    - name: Check on failures
+      if: steps.test.outcome != 'success'
+      run: exit 1
+  prerendering_page_test:
+    runs-on: self-hosted
+    needs: [ build_bridge ]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.nodeVersion }}
+    - uses: actions/download-artifact@v2
+      with:
+        name: macos_bridge_binary
+        path: bridge/build/macos/
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.flutter310 }}
+    - run: flutter config --enable-macos-desktop
+    - run: flutter doctor -v
+    - name: Run MultiplePageTest Test
+      run: cd integration_tests && LOAD_MODE=prerendering node scripts/preload_prerendering_page_integration.js
       id: test
       continue-on-error: true
     - name: Check on failures

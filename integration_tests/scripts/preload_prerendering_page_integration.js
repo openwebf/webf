@@ -28,7 +28,7 @@ function startIntegrationTest() {
     env: {
       ...process.env,
       WEBF_ENABLE_TEST: 'true',
-      LOAD_MODE: 'preload',
+      LOAD_MODE: process.env.LOAD_MODE || 'preload',
       'enable-software-rendering': true,
       'skia-deterministic-rendering': true,
       WEBF_TEST_DIR: path.join(__dirname, '../')
