@@ -472,8 +472,6 @@ class CSSBackgroundImage {
       switch (image.runtimeType) {
         case NetworkImage:
           return (image as NetworkImage).url;
-        case CachedNetworkImage:
-          return (image as CachedNetworkImage).url;
         case FileImage:
           return (image as FileImage).file.uri.path;
         case MemoryImage:

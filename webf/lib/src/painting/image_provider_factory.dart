@@ -7,44 +7,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/painting.dart';
-import 'package:webf/src/module/navigator.dart';
-
-/// This class allows user to customize Kraken's image loading.
-
-class ImageProviderParams {
-  int? cachedWidth;
-  int? cachedHeight;
-  BoxFit objectFit = BoxFit.fill;
-
-  ImageProviderParams({this.cachedWidth, this.cachedHeight, required this.objectFit});
-}
-
-class CachedNetworkImageProviderParams extends ImageProviderParams {
-  double? contextId;
-
-  CachedNetworkImageProviderParams(this.contextId,
-      {int? cachedWidth, int? cachedHeight, BoxFit objectFit = BoxFit.fill})
-      : super(cachedWidth: cachedWidth, cachedHeight: cachedHeight, objectFit: objectFit);
-}
-
-class FileImageProviderParams extends ImageProviderParams {
-  File file;
-
-  FileImageProviderParams(this.file, {int? cachedWidth, int? cachedHeight, BoxFit objectFit = BoxFit.fill})
-      : super(cachedWidth: cachedWidth, cachedHeight: cachedHeight, objectFit: objectFit);
-}
-
-class DataUrlImageProviderParams extends ImageProviderParams {
-  Uint8List bytes;
-
-  DataUrlImageProviderParams(this.bytes, {int? cachedWidth, int? cachedHeight, BoxFit objectFit = BoxFit.fill})
-      : super(cachedWidth: cachedWidth, cachedHeight: cachedHeight, objectFit: objectFit);
-}
-
-/// A factory function allow user to build an customized ImageProvider class.
-typedef ImageProviderFactory = ImageProvider? Function(Uri uri, ImageProviderParams params);
 
 /// defines the types of supported image source.
 enum ImageType {
@@ -83,98 +45,10 @@ enum ImageType {
 
   /// Blob image source which created by URL.createObjectURL()
   ///
-  /// NOTE:
-  /// default ImageProviderFactory implementation is [defaultBlobProviderFactory]
-  /// [blobPath] @TODO
   blob,
 
   /// Assets image source.
-  ///
-  /// NOTE:
-  /// default ImageProviderFactory implementation is [defaultAssetsProvider]
-  /// Current, this type only has asset image source, [assets] should treat as asset image.
   assets
-}
-
-ImageProviderFactory _cachedProviderFactory = defaultCachedProviderFactory;
-ImageProviderFactory _networkProviderFactory = defaultNetworkProviderFactory;
-ImageProviderFactory _fileProviderFactory = defaultFileProviderFactory;
-ImageProviderFactory _dataUrlProviderFactory = defaultDataUrlProviderFactory;
-ImageProviderFactory _blobProviderFactory = defaultBlobProviderFactory;
-ImageProviderFactory _assetsProviderFactory = defaultAssetsProvider;
-
-ImageType parseImageUrl(Uri resolvedUri, {String cache = 'auto'}) {
-  if (resolvedUri.isScheme('HTTP') || resolvedUri.isScheme('HTTPS')) {
-    return (cache == 'store' || cache == 'auto') ? ImageType.cached : ImageType.network;
-  } else if (resolvedUri.isScheme('FILE')) {
-    return ImageType.file;
-  } else if (resolvedUri.isScheme('DATA')) {
-    return ImageType.dataUrl;
-  } else if (resolvedUri.isScheme('BLOB')) {
-    return ImageType.blob;
-  } else if (resolvedUri.isScheme('ASSETS')) {
-    return ImageType.assets;
-  } else {
-    throw FlutterError('Uri must have it\'s scheme. $resolvedUri');
-  }
-}
-
-ImageProvider? getImageProvider(Uri resolvedUri,
-    {double? contextId, cache = 'auto', BoxFit objectFit = BoxFit.fill, int? cachedWidth, int? cachedHeight}) {
-  ImageType imageType = parseImageUrl(resolvedUri, cache: cache);
-  ImageProviderFactory factory = _getImageProviderFactory(imageType);
-
-  switch (imageType) {
-    case ImageType.cached:
-      return factory(
-          resolvedUri,
-          CachedNetworkImageProviderParams(contextId,
-              cachedWidth: cachedWidth, cachedHeight: cachedHeight, objectFit: objectFit));
-    case ImageType.network:
-      return factory(
-          resolvedUri,
-          CachedNetworkImageProviderParams(contextId,
-              cachedWidth: cachedWidth, cachedHeight: cachedHeight, objectFit: objectFit));
-    case ImageType.file:
-      File file = File.fromUri(resolvedUri);
-      return factory(resolvedUri,
-          FileImageProviderParams(file, cachedWidth: cachedWidth, cachedHeight: cachedHeight, objectFit: objectFit));
-    case ImageType.dataUrl:
-      // Data URL:  https://tools.ietf.org/html/rfc2397
-      // dataurl    := "data:" [ mediatype ] [ ";base64" ] "," data
-      UriData data = UriData.fromUri(resolvedUri);
-      if (data.isBase64) {
-        return factory(
-            resolvedUri,
-            DataUrlImageProviderParams(data.contentAsBytes(),
-                cachedWidth: cachedWidth, cachedHeight: cachedHeight, objectFit: objectFit));
-      }
-      return null;
-    case ImageType.blob:
-      // TODO: support blob data type
-      return null;
-    case ImageType.assets:
-      return factory(
-          resolvedUri, ImageProviderParams(cachedWidth: cachedWidth, cachedHeight: cachedHeight, objectFit: objectFit));
-  }
-}
-
-ImageProviderFactory _getImageProviderFactory(ImageType imageType) {
-  switch (imageType) {
-    case ImageType.cached:
-      return _cachedProviderFactory;
-    case ImageType.network:
-      return _networkProviderFactory;
-    case ImageType.file:
-      return _fileProviderFactory;
-    case ImageType.dataUrl:
-      return _dataUrlProviderFactory;
-    case ImageType.blob:
-      return _blobProviderFactory;
-    case ImageType.assets:
-    default:
-      return _assetsProviderFactory;
-  }
 }
 
 class WebFResizeImage extends ResizeImage {
@@ -218,44 +92,4 @@ class WebFResizeImage extends ResizeImage {
       stream.setCompleter(completer);
     }
   }
-}
-
-/// default ImageProviderFactory implementation of [ImageType.cached]
-ImageProvider defaultCachedProviderFactory(Uri uri, ImageProviderParams params) {
-  return WebFResizeImage.resizeIfNeeded(params.cachedWidth, params.cachedHeight, params.objectFit,
-      CachedNetworkImage(uri.toString(), contextId: (params as CachedNetworkImageProviderParams).contextId));
-}
-
-/// default ImageProviderFactory implementation of [ImageType.network]
-ImageProvider defaultNetworkProviderFactory(Uri uri, ImageProviderParams params) {
-  NetworkImage networkImage = NetworkImage(uri.toString(), headers: {
-    HttpHeaders.userAgentHeader: NavigatorModule.getUserAgent(),
-    HttpHeaderContext: (params as CachedNetworkImageProviderParams).contextId.toString(),
-  });
-  return WebFResizeImage.resizeIfNeeded(params.cachedWidth, params.cachedHeight, params.objectFit, networkImage);
-}
-
-/// default ImageProviderFactory implementation of [ImageType.file]
-ImageProvider? defaultFileProviderFactory(Uri uri, ImageProviderParams params) {
-  return WebFResizeImage.resizeIfNeeded(
-      params.cachedWidth, params.cachedHeight, params.objectFit, FileImage((params as FileImageProviderParams).file));
-}
-
-/// default ImageProviderFactory implementation of [ImageType.dataUrl].
-ImageProvider? defaultDataUrlProviderFactory(Uri uri, ImageProviderParams params) {
-  return WebFResizeImage.resizeIfNeeded(params.cachedWidth, params.cachedHeight, params.objectFit,
-      MemoryImage((params as DataUrlImageProviderParams).bytes));
-}
-
-/// default ImageProviderFactory implementation of [ImageType.blob].
-ImageProvider? defaultBlobProviderFactory(Uri uri, ImageProviderParams params) {
-  // @TODO: support blob file url
-  return null;
-}
-
-/// default ImageProviderFactory implementation of [ImageType.assets].
-ImageProvider defaultAssetsProvider(Uri uri, ImageProviderParams params) {
-  final String assetName = AssetsBundle.getAssetName(uri);
-  return WebFResizeImage.resizeIfNeeded(
-      params.cachedWidth, params.cachedHeight, params.objectFit, AssetImage(assetName));
 }
