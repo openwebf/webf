@@ -1280,6 +1280,12 @@ class WebFController {
 
     view.flushPendingCommandsPerFrame();
 
+    // If there are no <script /> elements, finish this prerendering process.
+    if (!view.document.scriptRunner.hasPendingScripts()) {
+      controllerPreRenderingCompleter.complete();
+      return;
+    }
+
     return controllerPreRenderingCompleter.future;
   }
 
@@ -1503,7 +1509,9 @@ class WebFController {
       dispatchWindowLoadEvent();
       _view.document.readyState = DocumentReadyState.complete;
     } else if (mode == WebFLoadingMode.preRendering) {
-      controllerPreRenderingCompleter.complete();
+      if (!controllerPreRenderingCompleter.isCompleted) {
+        controllerPreRenderingCompleter.complete();
+      }
     }
   }
 
@@ -1519,13 +1527,17 @@ class WebFController {
     if (_domContentLoadedEventDispatched) return;
 
     _domContentLoadedEventDispatched = true;
-    Event event = Event(EVENT_DOM_CONTENT_LOADED);
-    EventTarget window = view.window;
-    window.dispatchEvent(event);
-    _view.document.dispatchEvent(event);
-    if (onDOMContentLoaded != null) {
-      onDOMContentLoaded!(this);
-    }
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      Event event = Event(EVENT_DOM_CONTENT_LOADED);
+      EventTarget window = view.window;
+      window.dispatchEvent(event);
+      _view.document.dispatchEvent(event);
+      if (onDOMContentLoaded != null) {
+        onDOMContentLoaded!(this);
+      }
+    });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   bool _loadEventDispatched = false;

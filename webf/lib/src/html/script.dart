@@ -70,6 +70,10 @@ class ScriptRunner {
     return _preloadScriptTasks.isNotEmpty;
   }
 
+  bool hasPendingScripts() {
+    return _syncScriptTasks.isNotEmpty;
+  }
+
   void _queueScriptForExecution(ScriptElement element, {bool isInline = false}) async {
     // Increment load event delay count before eval.
     _document.incrementDOMContentLoadedEventDelayCount();
