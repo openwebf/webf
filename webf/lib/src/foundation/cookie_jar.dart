@@ -26,7 +26,7 @@ class CookieJar {
 
   static Future<PersistCookieJar> afterCookieJarLoaded(PersistCookieJar cookieJar, { Uri? uri, List<Cookie>? initialCookies }) async {
     if (initialCookies != null && uri != null) {
-      cookieJar.saveFromAPISync(uri, initialCookies);
+      cookieJar.saveFromAPI(uri, initialCookies);
     }
     _cookieJar = cookieJar;
     return cookieJar;
@@ -53,14 +53,14 @@ class CookieJar {
     cookie.domain ??= uri.host;
 
     if (uri.host.isNotEmpty && _cookieJar != null) {
-      _cookieJar!.saveFromAPISync(uri, [cookie]);
+      _cookieJar!.saveFromAPI(uri, [cookie]);
     }
   }
 
   void setCookie(List<Cookie> cookies, [Uri? uri]) {
     if (_cookieJar != null) {
       uri = uri ?? Uri.parse(url);
-      _cookieJar!.saveFromAPISync(uri, cookies);
+      _cookieJar!.saveFromAPI(uri, cookies);
     }
   }
 
