@@ -59,7 +59,7 @@ class QuickJSByteCodeCacheObject {
 
     try {
       bytes = await cacheFile.readAsBytes();
-      int fileCheckSum = getCrc32(bytes!.toList());
+      int fileCheckSum = getCrc32(bytes as List<int>);
 
       bool isCheckSumExist = await _checksum.exists();
 
