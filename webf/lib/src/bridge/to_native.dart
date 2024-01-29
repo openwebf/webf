@@ -257,20 +257,21 @@ class ScriptByteCode {
 
 class _EvaluateScriptsContext {
   Completer completer;
+  String? cacheKey;
   Pointer<Uint8> codePtr;
   Pointer<Utf8> url;
   Pointer<Pointer<Uint8>>? bytecodes;
   Pointer<Uint64>? bytecodeLen;
   Uint8List originalCodeBytes;
 
-  _EvaluateScriptsContext(this.completer, this.originalCodeBytes, this.codePtr, this.url);
+  _EvaluateScriptsContext(this.completer, this.originalCodeBytes, this.codePtr, this.url, this.cacheKey);
 }
 
 void handleEvaluateScriptsResult(_EvaluateScriptsContext context, int result) {
   if (context.bytecodes != null) {
     Uint8List bytes = context.bytecodes!.value.asTypedList(context.bytecodeLen!.value);
     // Save to disk cache
-    QuickJSByteCodeCache.putObject(context.originalCodeBytes, bytes).then((_) {
+    QuickJSByteCodeCache.putObject(context.originalCodeBytes, bytes, cacheKey: context.cacheKey).then((_) {
       malloc.free(context.codePtr);
       malloc.free(context.url);
       context.completer.complete(result == 1);
@@ -282,7 +283,7 @@ void handleEvaluateScriptsResult(_EvaluateScriptsContext context, int result) {
   }
 }
 
-Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url, int line = 0}) async {
+Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url, String? cacheKey, int line = 0}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -292,7 +293,7 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url
     _anonymousScriptEvaluationId++;
   }
 
-  QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(codeBytes);
+  QuickJSByteCodeCacheObject cacheObject = await QuickJSByteCodeCache.getCacheObject(codeBytes, cacheKey: cacheKey);
   if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
       cacheObject.valid &&
       cacheObject.bytes != null) {
@@ -308,7 +309,7 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url
     Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
     Completer<bool> completer = Completer();
 
-    _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, _url);
+    _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, _url, cacheKey);
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback =
         Pointer.fromFunction(handleEvaluateScriptsResult);
 

@@ -98,6 +98,14 @@ abstract class WebFBundle {
   // Indicate the bundle is resolved.
   bool get isResolved => _uri != null;
 
+  bool _hitCache = false;
+  set hitCache(bool value) => _hitCache = value;
+
+  String? get cacheKey {
+    if (!_hitCache) return null;
+    return HttpCacheController.getCacheKey(resolvedUri!).hashCode.toString();
+  }
+
   // Content type for data.
   // The default value is plain text.
   ContentType get contentType => _contentType ?? ContentType.text;
@@ -216,6 +224,8 @@ class NetworkBundle extends WebFBundle {
         ErrorSummary('Unable to load asset: $url'),
         IntProperty('HTTP status code', response.statusCode),
       ]);
+
+    hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
     Uint8List bytes = await consolidateHttpClientResponseBytes(response);
 
     // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes

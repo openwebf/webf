@@ -42,7 +42,7 @@ class ScriptRunner {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
-      bool result = await evaluateScripts(contextId, bundle.data!, url: bundle.url);
+      bool result = await evaluateScripts(contextId, bundle.data!, url: bundle.url, cacheKey: bundle.cacheKey);
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');
       }
