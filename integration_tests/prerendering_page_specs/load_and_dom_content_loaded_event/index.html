@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <div>
+    <span>DOMContentLoaded Event: </span>
+    <span id="dom_content_loaded"></span>
+  </div>
+  <br>
+  <br>
+  <div>
+    <span>Load Event:</span>
+    <span id="load"></span>
+  </div>
+</body>
+<script>
+
+  window.addEventListener('DOMContentLoaded', () => {
+     const dom_content_loaded = document.querySelector('#dom_content_loaded');
+     dom_content_loaded.textContent = 'true_1 window width: ' + window.innerWidth;
+  });
+
+  window.addEventListener('load', () => {
+    const load = document.querySelector('#load');
+    load.textContent = 'true_2 window width:' + window.innerWidth ;
+  });
+</script>
+</html>
