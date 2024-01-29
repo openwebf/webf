@@ -133,19 +133,22 @@ class QuickJSByteCodeCache {
     return _cacheDirectory = cacheDirectory;
   }
 
-  static String _getCacheHash(Uint8List code) {
+  static String _getCacheHashSlow(Uint8List code) {
     WebFInfo webFInfo = getWebFInfo();
-    // Uri uriWithoutFragment = uri;
-    // return uriWithoutFragment.toString();
     return '%${hashObjects(code)}_${webFInfo.appRevision}%';
   }
 
+  static String _getCacheHashFast(String originalCacheKey) {
+    WebFInfo webFInfo = getWebFInfo();
+    return '%${originalCacheKey}_${webFInfo.appRevision}%';
+  }
+
   // Get the CacheObject by uri, no validation needed here.
-  static Future<QuickJSByteCodeCacheObject> getCacheObject(Uint8List codeBytes) async {
+  static Future<QuickJSByteCodeCacheObject> getCacheObject(Uint8List codeBytes, { String? cacheKey }) async {
     QuickJSByteCodeCacheObject cacheObject;
 
     // L2 cache in memory.
-    final String hash = _getCacheHash(codeBytes);
+    final String hash = cacheKey != null ? _getCacheHashFast(cacheKey) : _getCacheHashSlow(codeBytes);
     if (_caches.containsKey(hash)) {
       cacheObject = _caches[hash]!;
     } else {
@@ -160,8 +163,8 @@ class QuickJSByteCodeCache {
   }
 
   // Add or update the httpCacheObject to memory cache.
-  static Future<void> putObject(Uint8List codeBytes, Uint8List bytes) async {
-    final String key = _getCacheHash(codeBytes);
+  static Future<void> putObject(Uint8List codeBytes, Uint8List bytes, { String? cacheKey }) async {
+    final String key = cacheKey != null ? _getCacheHashFast(cacheKey) : _getCacheHashSlow(codeBytes);
 
     final Directory cacheDirectory = await getCacheDirectory();
     QuickJSByteCodeCacheObject cacheObject =
@@ -169,11 +172,6 @@ class QuickJSByteCodeCache {
 
     _caches.update(key, (value) => cacheObject, ifAbsent: () => cacheObject);
     await cacheObject.write();
-  }
-
-  static void removeObject(Uint8List code) {
-    final String key = _getCacheHash(code);
-    _caches.remove(key);
   }
 
   static bool isCodeNeedCache(Uint8List codeBytes) {
