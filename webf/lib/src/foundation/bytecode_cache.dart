@@ -87,7 +87,7 @@ class QuickJSByteCodeCacheObject {
 
   Future<void> write() async {
     if (bytes != null) {
-      int fileSum = getCrc32(bytes!.toList());
+      int fileSum = getCrc32(bytes!);
       File tmp = File(path.join(cacheDirectory, '$hash.tmp'));
 
       await Future.wait([
