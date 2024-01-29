@@ -770,7 +770,7 @@ class ImageRequest {
     final WebFBundle bundle =
         controller.getPreloadBundleFromUrl(currentUri.toString()) ?? WebFBundle.fromUrl(currentUri.toString());
     await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
-    await bundle.obtainData();
+    await bundle.obtainData(controller.view.contextId);
 
     if (!bundle.isResolved) {
       throw FlutterError('Failed to load $currentUri');

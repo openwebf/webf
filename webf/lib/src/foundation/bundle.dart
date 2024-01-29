@@ -116,7 +116,7 @@ abstract class WebFBundle {
     }
   }
 
-  Future<void> obtainData();
+  Future<void> obtainData(double contextId);
 
   // Dispose the memory obtained by bundle.
   @mustCallSuper
@@ -186,7 +186,7 @@ class DataBundle extends WebFBundle {
   }
 
   @override
-  Future<void> obtainData() async {}
+  Future<void> obtainData(double contextId) async {}
 }
 
 // The bundle that source from http or https.
@@ -200,7 +200,7 @@ class NetworkBundle extends WebFBundle {
   Map<String, String>? additionalHttpHeaders = {};
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData(double contextId) async {
     if (data != null) return;
 
     final HttpClientRequest request = await _sharedHttpClient.getUrl(_uri!);
@@ -208,6 +208,7 @@ class NetworkBundle extends WebFBundle {
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
+    WebFHttpOverrides.setContextHeader(request.headers, contextId);
 
     final HttpClientResponse response = await request.close();
     if (response.statusCode != HttpStatus.ok)
@@ -237,7 +238,7 @@ class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
   AssetsBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData(double contextId) async {
     if (data != null) return;
 
     final Uri? _resolvedUri = resolvedUri;
@@ -269,7 +270,7 @@ class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
   FileBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData(double contextId) async {
     if (data != null) return;
 
     Uri uri = _uri!;
