@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   webf: ^0.10.0
+  flutter_staggered_grid_view: ^0.7.0
 
 # When depending on this package from a real application,
 # you should remove the following overrides.
