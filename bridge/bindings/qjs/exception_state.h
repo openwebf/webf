@@ -13,6 +13,8 @@
 
 namespace webf {
 
+class ExceptionStateRustMethods;
+
 enum ErrorType { TypeError, InternalError, RangeError, ReferenceError, SyntaxError };
 
 // ExceptionState is a scope-like class and provides a way to store an exception.
@@ -21,6 +23,9 @@ class ExceptionState {
   WEBF_DISALLOW_NEW();
 
  public:
+
+  static ExceptionStateRustMethods* rustMethodPointer();
+
   void ThrowException(JSContext* ctx, ErrorType type, const std::string& message);
   void ThrowException(JSContext* ctx, JSValue exception);
   bool HasException();

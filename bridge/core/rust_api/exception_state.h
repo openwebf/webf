@@ -1,0 +1,40 @@
+/*
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
+
+#ifndef WEBF_CORE_RUST_API_EXCEPTION_STATE_H_
+#define WEBF_CORE_RUST_API_EXCEPTION_STATE_H_
+
+#include <cinttypes>
+#include "core/rust_api/rust_value.h"
+#include "bindings/qjs/exception_state.h"
+
+namespace webf {
+
+typedef struct ExecutingContext ExecutingContext;
+
+struct SharedExceptionState {
+  webf::ExceptionState exception_state;
+};
+
+using RustExceptionStateHasException = bool (*)(SharedExceptionState* shared_exception_state);
+using RustExceptionStateStringify = void (*)(ExecutingContext* context,
+                                             SharedExceptionState* shared_exception_state,
+                                             char** errmsg,
+                                             uint32_t* strlen);
+
+struct ExceptionStateRustMethods : public RustMethods {
+  static bool has_exception(SharedExceptionState* shared_exception_state);
+  static void stringify(ExecutingContext* context,
+                        SharedExceptionState* shared_exception_state,
+                        char** errmsg,
+                        uint32_t* strlen);
+
+  double version{1.0};
+  RustExceptionStateHasException has_exception_{has_exception};
+  RustExceptionStateStringify stringify_{stringify};
+};
+
+}
+
+#endif  // WEBF_CORE_RUST_API_EXCEPTION_STATE_H_

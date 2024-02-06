@@ -56,6 +56,11 @@ EventTarget* EventTarget::Create(ExecutingContext* context, ExceptionState& exce
   return MakeGarbageCollected<EventTargetWithInlineData>(context);
 }
 
+EventTargetRustMethods* EventTarget::rustMethodPointer() {
+  static auto* rust_methods = new EventTargetRustMethods();
+  return rust_methods;
+}
+
 EventTarget::~EventTarget() {
 #if UNIT_TEST
   // Callback to unit test specs before eventTarget finalized.
@@ -97,6 +102,13 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
                                    ExceptionState& exception_state) {
   std::shared_ptr<AddEventListenerOptions> options = AddEventListenerOptions::Create();
+  return AddEventListenerInternal(event_type, event_listener, options);
+}
+
+bool EventTarget::addEventListener(const webf::AtomicString& event_type,
+                                   const std::shared_ptr<EventListener>& event_listener,
+                                   const std::shared_ptr<AddEventListenerOptions>& options,
+                                   ExceptionState& exception_state) {
   return AddEventListenerInternal(event_type, event_listener, options);
 }
 

@@ -6,6 +6,7 @@
 #define BRIDGE_DOCUMENT_H
 
 #include "bindings/qjs/cppgc/local_handle.h"
+#include "core/rust_api/document.h"
 #include "container_node.h"
 #include "event_type_names.h"
 #include "scripted_animation_controller.h"
@@ -44,6 +45,7 @@ class Document : public ContainerNode, public TreeScope {
   explicit Document(ExecutingContext* context);
 
   static Document* Create(ExecutingContext* context, ExceptionState& exception_state);
+  static DocumentRustMethods* rustMethodPointer();
 
   Element* createElement(const AtomicString& name, ExceptionState& exception_state);
   Element* createElement(const AtomicString& name, const ScriptValue& options, ExceptionState& exception_state);

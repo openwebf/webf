@@ -17,6 +17,11 @@
 
 namespace webf {
 
+WindowRustMethods* Window::rustMethodPointer() {
+  static auto* rust_method = new WindowRustMethods();
+  return rust_method;
+}
+
 Window::Window(ExecutingContext* context) : EventTargetWithInlineData(context) {
   context->uiCommandBuffer()->AddCommand(UICommand::kCreateWindow, nullptr, bindingObject(), nullptr);
 }
