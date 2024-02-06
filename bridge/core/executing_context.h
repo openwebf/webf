@@ -16,12 +16,14 @@
 #include <mutex>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
+#include "core/rust_api/executing_context.h"
 
 #include "dart_isolate_context.h"
 #include "dart_methods.h"
@@ -93,7 +95,9 @@ class ExecutingContext {
   bool HandleException(JSValue* exc);
   bool HandleException(ScriptValue* exc);
   bool HandleException(ExceptionState& exception_state);
+  bool HandleException(ExceptionState& exception_state, char** rust_error_msg, uint32_t* rust_errmsg_len);
   void ReportError(JSValueConst error);
+  void ReportError(JSValueConst error, char** rust_errmsg, uint32_t* rust_errmsg_length);
   void DrainMicrotasks();
   void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
@@ -169,7 +173,6 @@ class ExecutingContext {
   void InstallPerformance();
 
   void DrainPendingPromiseJobs();
-  void EnsureEnqueueMicrotask();
 
   static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
@@ -195,7 +198,7 @@ class ExecutingContext {
   // ----------------------------------------------------------------------
   std::atomic<bool> is_context_valid_{false};
   double context_id_;
-  JSExceptionHandler handler_;
+  JSExceptionHandler dart_error_report_handler_;
   void* owner_;
   JSValue global_object_{JS_NULL};
   Document* document_{nullptr};
@@ -210,6 +213,9 @@ class ExecutingContext {
   MemberMutationScope* active_mutation_scope{nullptr};
   std::unordered_set<ScriptWrappable*> active_wrappers_;
   bool is_dedicated_;
+
+  // Rust methods ptr should keep alive when ExecutingContext is disposing.
+  const std::unique_ptr<ExecutingContextRustMethods> rust_method_ptr_ = nullptr;
 };
 
 class ObjectProperty {

@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
 #include "core/css/inline_css_style_declaration.h"
+#include "core/rust_api/element.h"
 #include "element_data.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
@@ -46,6 +47,8 @@ class Element : public ContainerNode {
     const AtomicString& new_value;
     const AttributeModificationReason reason;
   };
+
+  static ElementRustMethods* rustMethodPointer();
 
   Element(const AtomicString& namespace_uri,
           const AtomicString& local_name,
