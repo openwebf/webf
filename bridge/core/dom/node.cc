@@ -59,6 +59,11 @@ Node* Node::Create(ExecutingContext* context, ExceptionState& exception_state) {
   return nullptr;
 }
 
+NodeRustMethods* Node::rustMethodPointer() {
+  static auto* rust_methods = new NodeRustMethods();
+  return rust_methods;
+}
+
 Node* Node::ToNode() {
   return this;
 }

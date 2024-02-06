@@ -35,6 +35,11 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
   return MakeGarbageCollected<Document>(context);
 }
 
+DocumentRustMethods* Document::rustMethodPointer() {
+  static auto* rust_method = new DocumentRustMethods();
+  return rust_method;
+}
+
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocument, nullptr, bindingObject(), nullptr);

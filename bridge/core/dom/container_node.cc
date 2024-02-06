@@ -38,6 +38,11 @@
 
 namespace webf {
 
+ContainerNodeRustMethods* ContainerNode::rustMethodPointer() {
+  static auto* rust_method = new ContainerNodeRustMethods();
+  return rust_method;
+}
+
 // Legacy impls due to limited time, should remove this func in the future.
 HTMLCollection* ContainerNode::Children() {
   return EnsureCachedCollection<HTMLCollection>(CollectionType::kNodeChildren);
