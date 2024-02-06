@@ -45,7 +45,7 @@ add_executable(webf_unit_test
 )
 
 target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
-target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS})
+target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS} ${CMAKE_CURRENT_SOURCE_DIR}/core_rs/target/debug/libwebf_core_rs.a)
 
 target_compile_options(quickjs PUBLIC -DDUMP_LEAKS=1)
 target_compile_options(webf PUBLIC -DDUMP_LEAKS=1)

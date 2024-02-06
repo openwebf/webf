@@ -7,6 +7,7 @@
 #include <utility>
 #include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
+#include "core_rs/include/core_rs.h"
 #include "core/dom/document.h"
 #include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
@@ -34,8 +35,9 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    void* owner)
     : dart_isolate_context_(dart_isolate_context),
       context_id_(context_id),
-      handler_(std::move(handler)),
+      dart_error_report_handler_(std::move(handler)),
       owner_(owner),
+      rust_method_ptr_(std::make_unique<ExecutingContextRustMethods>()),
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
@@ -90,6 +92,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
 
   initWebFPolyFill(this);
+  init_webf_polyfill({.value = this, .method_pointer = rust_method_ptr_.get()});
 
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializePlugin");
@@ -277,6 +280,16 @@ bool ExecutingContext::HandleException(ExceptionState& exception_state) {
   return true;
 }
 
+bool ExecutingContext ::HandleException(webf::ExceptionState& exception_state, char** rust_error_msg, uint32_t* rust_errmsg_len) {
+  if (exception_state.HasException()) {
+    JSValue error = JS_GetException(ctx());
+    ReportError(error, rust_error_msg, rust_errmsg_len);
+    JS_FreeValue(ctx(), error);
+    return false;
+  }
+  return true;
+}
+
 JSValue ExecutingContext::Global() {
   return global_object_;
 }
@@ -286,37 +299,50 @@ JSContext* ExecutingContext::ctx() {
   return script_state_.ctx();
 }
 
-void ExecutingContext::ReportError(JSValueConst error) {
+void ExecutingContext::ReportError(JSValue error) {
+  ReportError(error, nullptr, nullptr);
+}
+
+void ExecutingContext::ReportError(JSValueConst error, char** rust_errmsg, uint32_t* rust_errmsg_length) {
   JSContext* ctx = script_state_.ctx();
   if (!JS_IsError(ctx, error))
     return;
 
-  JSValue messageValue = JS_GetPropertyStr(ctx, error, "message");
-  JSValue errorTypeValue = JS_GetPropertyStr(ctx, error, "name");
-  const char* title = JS_ToCString(ctx, messageValue);
-  const char* type = JS_ToCString(ctx, errorTypeValue);
+  JSValue message_value = JS_GetPropertyStr(ctx, error, "message");
+  JSValue error_type_value = JS_GetPropertyStr(ctx, error, "name");
+  const char* title = JS_ToCString(ctx, message_value);
+  const char* type = JS_ToCString(ctx, error_type_value);
   const char* stack = nullptr;
-  JSValue stackValue = JS_GetPropertyStr(ctx, error, "stack");
-  if (!JS_IsUndefined(stackValue)) {
-    stack = JS_ToCString(ctx, stackValue);
+  JSValue stack_value = JS_GetPropertyStr(ctx, error, "stack");
+  if (!JS_IsUndefined(stack_value)) {
+    stack = JS_ToCString(ctx, stack_value);
   }
 
-  uint32_t messageLength = strlen(type) + strlen(title);
+  uint32_t message_length = strlen(type) + strlen(title);
+  char* message;
   if (stack != nullptr) {
-    messageLength += 4 + strlen(stack);
-    char* message = (char*)dart_malloc(messageLength * sizeof(char));
-    snprintf(message, messageLength, "%s: %s\n%s", type, title, stack);
-    handler_(this, message);
+    message_length += 4 + strlen(stack);
+    message = (char*)dart_malloc(message_length * sizeof(char));
+    snprintf(message, message_length, "%s: %s\n%s", type, title, stack);
   } else {
-    messageLength += 3;
-    char* message = (char*)dart_malloc(messageLength * sizeof(char));
-    snprintf(message, messageLength, "%s: %s", type, title);
-    handler_(this, message);
+    message_length += 3;
+    message = (char*)dart_malloc(message_length * sizeof(char));
+    snprintf(message, message_length, "%s: %s", type, title);
   }
 
-  JS_FreeValue(ctx, errorTypeValue);
-  JS_FreeValue(ctx, messageValue);
-  JS_FreeValue(ctx, stackValue);
+  // Report errmsg to rust side
+  if (rust_errmsg != nullptr && rust_errmsg_length != nullptr) {
+    *rust_errmsg = (char*)malloc(sizeof(char) * message_length);
+    *rust_errmsg_length = message_length;
+    memcpy(*rust_errmsg, message, sizeof(char) * message_length);
+  } else {
+    // Report errmsg to dart side
+    dart_error_report_handler_(this, message);
+  }
+
+  JS_FreeValue(ctx, error_type_value);
+  JS_FreeValue(ctx, message_value);
+  JS_FreeValue(ctx, stack_value);
   JS_FreeCString(ctx, title);
   JS_FreeCString(ctx, stack);
   JS_FreeCString(ctx, type);

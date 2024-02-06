@@ -9,6 +9,7 @@
 #include <set>
 #include <utility>
 
+#include "core/rust_api/node.h"
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "mutation_observer.h"
@@ -74,6 +75,7 @@ class Node : public EventTarget {
 
   using ImplType = Node*;
   static Node* Create(ExecutingContext* context, ExceptionState& exception_state);
+  static NodeRustMethods* rustMethodPointer();
 
   Node* ToNode() override;
 

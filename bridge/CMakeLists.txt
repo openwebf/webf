@@ -138,6 +138,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
+  ${CMAKE_CURRENT_LIST_DIR}/core_rs/include
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${ADDITIONAL_INCLUDE_DIRS}
   )
@@ -271,6 +272,14 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
+    core/rust_api/exception_state.cc
+    core/rust_api/event_target.cc
+    core/rust_api/node.cc
+    core/rust_api/executing_context.cc
+    core/rust_api/container_node.cc
+    core/rust_api/document.cc
+    core/rust_api/element.cc
+    core/rust_api/window.cc
     core/dart_isolate_context.cc
     core/dart_context_data.cc
     core/executing_context_data.cc
@@ -569,6 +578,7 @@ list(APPEND PUBLIC_HEADER
 
 add_library(webf SHARED ${BRIDGE_SOURCE})
 add_library(webf_static STATIC ${BRIDGE_SOURCE})
+target_link_libraries(webf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/core_rs/target/release/libwebf_core_rs.a)
 
 if(MSVC)
   target_compile_options(webf PRIVATE /JMC)

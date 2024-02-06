@@ -25,6 +25,11 @@
 
 namespace webf {
 
+ElementRustMethods* Element::rustMethodPointer() {
+  static auto* rust_methods = new ElementRustMethods();
+  return rust_methods;
+}
+
 Element::Element(const AtomicString& namespace_uri,
                  const AtomicString& local_name,
                  const AtomicString& prefix,
