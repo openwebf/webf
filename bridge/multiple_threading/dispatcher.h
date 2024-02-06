@@ -50,6 +50,7 @@ class Dispatcher {
 
   template <typename Func, typename... Args>
   void PostToDart(bool dedicated_thread, Func&& func, Args&&... args) {
+#if FLUTTER_BACKEND
     if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       return;
@@ -60,6 +61,7 @@ class Dispatcher {
 
     const DartWork* work_ptr = new DartWork(work);
     NotifyDart(work_ptr, false);
+#endif
   }
 
   template <typename Func, typename... Args>

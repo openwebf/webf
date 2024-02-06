@@ -7,6 +7,7 @@
 
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/wrapper_type_info.h"
+#include "core/rust_api/window.h"
 #include "core/css/computed_css_style_declaration.h"
 #include "core/dom/events/event_target.h"
 #include "qjs_scroll_to_options.h"
@@ -20,6 +21,8 @@ class Window : public EventTargetWithInlineData {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  static WindowRustMethods* rustMethodPointer();
+
   Window() = delete;
   Window(ExecutingContext* context);
 

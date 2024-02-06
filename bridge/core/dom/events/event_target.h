@@ -10,6 +10,7 @@
 #include "bindings/qjs/qjs_function.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
+#include "core/rust_api/event_target.h"
 #include "event_listener_map.h"
 #include "foundation/logging.h"
 #include "foundation/native_string.h"
@@ -90,6 +91,7 @@ class EventTarget : public BindingObject {
   using ImplType = EventTarget*;
 
   static EventTarget* Create(ExecutingContext* context, ExceptionState& exception_state);
+  static EventTargetRustMethods* rustMethodPointer();
 
   EventTarget() = delete;
   ~EventTarget();
@@ -104,6 +106,10 @@ class EventTarget : public BindingObject {
                         ExceptionState& exception_state);
   bool addEventListener(const AtomicString& event_type,
                         const std::shared_ptr<EventListener>& event_listener,
+                        ExceptionState& exception_state);
+  bool addEventListener(const AtomicString& event_type,
+                        const std::shared_ptr<EventListener>& event_listener,
+                        const std::shared_ptr<AddEventListenerOptions>& options,
                         ExceptionState& exception_state);
   bool removeEventListener(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& event_listener,

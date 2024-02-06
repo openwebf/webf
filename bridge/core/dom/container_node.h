@@ -10,6 +10,7 @@
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/heap_vector.h"
 #include "core/html/collection_type.h"
+#include "core/rust_api/container_node.h"
 #include "node.h"
 
 namespace webf {
@@ -23,6 +24,8 @@ using NodeVector = std::vector<Node*>;
 
 class ContainerNode : public Node {
  public:
+  static ContainerNodeRustMethods* rustMethodPointer();
+
   Node* firstChild() const { return first_child_.Get(); }
   Node* lastChild() const { return last_child_.Get(); }
   bool hasChildren() const { return first_child_.Get(); }
