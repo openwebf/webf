@@ -17,11 +17,6 @@
 
 namespace webf {
 
-WindowRustMethods* Window::rustMethodPointer() {
-  static auto* rust_method = new WindowRustMethods();
-  return rust_method;
-}
-
 Window::Window(ExecutingContext* context) : EventTargetWithInlineData(context) {
   context->uiCommandBuffer()->AddCommand(UICommand::kCreateWindow, nullptr, bindingObject(), nullptr);
 }
@@ -268,6 +263,13 @@ void Window::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(screen_);
   EventTargetWithInlineData::Trace(visitor);
 }
+
+RustMethods* Window::rustMethodPointer() {
+  auto* super_rust_method = EventTarget::rustMethodPointer();
+  static auto* rust_method = new WindowRustMethods(static_cast<EventTargetRustMethods*>(super_rust_method));
+  return rust_method;
+}
+
 
 JSValue Window::ToQuickJS() const {
   return JS_GetGlobalObject(ctx());

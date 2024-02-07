@@ -59,11 +59,6 @@ Node* Node::Create(ExecutingContext* context, ExceptionState& exception_state) {
   return nullptr;
 }
 
-NodeRustMethods* Node::rustMethodPointer() {
-  static auto* rust_methods = new NodeRustMethods();
-  return rust_methods;
-}
-
 Node* Node::ToNode() {
   return this;
 }
@@ -716,6 +711,12 @@ void Node::Trace(GCVisitor* visitor) const {
     event_target_data_->Trace(visitor);
   }
   EventTarget::Trace(visitor);
+}
+
+RustMethods* Node::rustMethodPointer() {
+  auto* super_rust_methods = EventTarget::rustMethodPointer();
+  static auto* rust_methods = new NodeRustMethods(static_cast<EventTargetRustMethods*>(super_rust_methods));
+  return rust_methods;
 }
 
 }  // namespace webf

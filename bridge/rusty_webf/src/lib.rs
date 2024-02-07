@@ -13,6 +13,8 @@ pub mod event_target;
 pub mod event;
 pub mod container_node;
 pub mod exception_state;
+pub mod text;
+pub mod character_data;
 
 #[repr(C)]
 pub struct OpaquePtr;

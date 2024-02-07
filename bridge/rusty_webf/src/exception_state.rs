@@ -35,6 +35,8 @@ impl ExceptionState {
     }
   }
 
+  /// DOM operations may be failed due to other reasons.
+  /// Check the if this operation was success
   pub fn has_exception(&self) -> bool {
     return unsafe {
       ((*self.method_pointer).has_exception)(self.ptr)

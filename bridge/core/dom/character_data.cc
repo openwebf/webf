@@ -48,4 +48,10 @@ CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, No
   assert(type == kCreateOther || type == kCreateText);
 }
 
+RustMethods* CharacterData::rustMethodPointer() {
+  auto* super_rust_method = Node::rustMethodPointer();
+  static auto* rust_methods = new CharacterDataRustMethods(static_cast<NodeRustMethods*>(super_rust_method));
+  return rust_methods;
+}
+
 }  // namespace webf
