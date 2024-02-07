@@ -21,7 +21,6 @@ class Window : public EventTargetWithInlineData {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  static WindowRustMethods* rustMethodPointer();
 
   Window() = delete;
   Window(ExecutingContext* context);
@@ -63,6 +62,7 @@ class Window : public EventTargetWithInlineData {
   bool IsWindowOrWorkerGlobalScope() const override;
 
   void Trace(GCVisitor* visitor) const override;
+  RustMethods* rustMethodPointer() override;
 
   // Override default ToQuickJS() to return Global object when access `window` property.
   JSValue ToQuickJS() const override;

@@ -6,6 +6,7 @@ use std::ffi::{c_double, c_void};
 use libc::{boolean_t, c_char};
 use crate::{OpaquePtr};
 use crate::executing_context::{ExecutingContext};
+use crate::node::{Node, NodeRustMethods};
 
 #[repr(C)]
 pub struct EventListener {
@@ -19,6 +20,8 @@ pub struct AddEventListenerOptions {
   pub capture: boolean_t,
 }
 
+pub trait RustMethods {}
+
 #[repr(C)]
 pub struct EventTargetRustMethods {
   pub version: c_double,
@@ -31,6 +34,8 @@ pub struct EventTargetRustMethods {
   pub release: extern "C" fn(event_target: *const OpaquePtr),
 }
 
+impl RustMethods for EventTargetRustMethods {}
+
 
 pub struct EventTarget {
   pub ptr: *const OpaquePtr,
@@ -38,23 +43,23 @@ pub struct EventTarget {
   method_pointer: *const EventTargetRustMethods,
 }
 
-type EventListenerCallback = fn(name: c_char) -> c_void;
+pub type EventListenerCallback = fn(name: c_char) -> c_void;
 
 impl EventTarget {
-  /// Initialize the instance from cpp raw pointer.
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const EventTargetRustMethods) -> EventTarget {
-    EventTarget {
-      ptr,
-      context,
-      method_pointer,
-    }
+  fn ptr(&self) -> *const OpaquePtr {
+    self.ptr
   }
 
   pub fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions) {}
 }
 
 pub trait EventTargetMethods {
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized;
+
+  fn ptr(&self) -> *const OpaquePtr;
+
   // fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions);
+  fn add_event_listener(&self, event_name: &str, callback: crate::event_target::EventListenerCallback, options: &mut AddEventListenerOptions);
 }
 
 impl Drop for EventTarget {
@@ -67,8 +72,21 @@ impl Drop for EventTarget {
 }
 
 impl EventTargetMethods for EventTarget {
-  // fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions) {
-  //   self.add_event_listener(event_name, callback, options);
-  // }
+  /// Initialize the instance from cpp raw pointer.
+  fn initialize<T>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> EventTarget {
+    EventTarget {
+      ptr,
+      context,
+      method_pointer: method_pointer as *const EventTargetRustMethods,
+    }
+  }
+
+  fn ptr(&self) -> *const OpaquePtr {
+    self.ptr
+  }
+
+  fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions) {
+    self.add_event_listener(event_name, callback, options);
+  }
 }
 

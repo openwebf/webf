@@ -45,7 +45,6 @@ class Document : public ContainerNode, public TreeScope {
   explicit Document(ExecutingContext* context);
 
   static Document* Create(ExecutingContext* context, ExceptionState& exception_state);
-  static DocumentRustMethods* rustMethodPointer();
 
   Element* createElement(const AtomicString& name, ExceptionState& exception_state);
   Element* createElement(const AtomicString& name, const ScriptValue& options, ExceptionState& exception_state);
@@ -128,6 +127,7 @@ class Document : public ContainerNode, public TreeScope {
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const override;
+  RustMethods* rustMethodPointer() override;
 
  private:
   int node_count_{0};

@@ -91,8 +91,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
 
-  initWebFPolyFill(this);
   init_webf_polyfill({.value = this, .method_pointer = rust_method_ptr_.get()});
+  initWebFPolyFill(this);
 
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializePlugin");
