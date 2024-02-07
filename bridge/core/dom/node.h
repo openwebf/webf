@@ -75,7 +75,6 @@ class Node : public EventTarget {
 
   using ImplType = Node*;
   static Node* Create(ExecutingContext* context, ExceptionState& exception_state);
-  static NodeRustMethods* rustMethodPointer();
 
   Node* ToNode() override;
 
@@ -261,6 +260,7 @@ class Node : public EventTarget {
   const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
 
   void Trace(GCVisitor*) const override;
+  RustMethods* rustMethodPointer() override;
 
  private:
   enum NodeFlags : uint32_t {

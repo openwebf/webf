@@ -24,7 +24,6 @@ using NodeVector = std::vector<Node*>;
 
 class ContainerNode : public Node {
  public:
-  static ContainerNodeRustMethods* rustMethodPointer();
 
   Node* firstChild() const { return first_child_.Get(); }
   Node* lastChild() const { return last_child_.Get(); }
@@ -154,6 +153,7 @@ class ContainerNode : public Node {
   Collection* EnsureCachedCollection(CollectionType);
 
   void Trace(GCVisitor* visitor) const override;
+  RustMethods* rustMethodPointer() override;
 
  protected:
   ContainerNode(TreeScope* tree_scope, ConstructionType = kCreateContainer);

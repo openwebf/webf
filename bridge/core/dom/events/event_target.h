@@ -91,7 +91,6 @@ class EventTarget : public BindingObject {
   using ImplType = EventTarget*;
 
   static EventTarget* Create(ExecutingContext* context, ExceptionState& exception_state);
-  static EventTargetRustMethods* rustMethodPointer();
 
   EventTarget() = delete;
   ~EventTarget();
@@ -140,6 +139,8 @@ class EventTarget : public BindingObject {
   virtual bool IsWindowOrWorkerGlobalScope() const { return false; }
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
+
+  virtual RustMethods* rustMethodPointer();
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,

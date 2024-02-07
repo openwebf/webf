@@ -38,11 +38,6 @@
 
 namespace webf {
 
-ContainerNodeRustMethods* ContainerNode::rustMethodPointer() {
-  static auto* rust_method = new ContainerNodeRustMethods();
-  return rust_method;
-}
-
 // Legacy impls due to limited time, should remove this func in the future.
 HTMLCollection* ContainerNode::Children() {
   return EnsureCachedCollection<HTMLCollection>(CollectionType::kNodeChildren);
@@ -576,6 +571,12 @@ void ContainerNode::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(last_child_);
 
   Node::Trace(visitor);
+}
+
+RustMethods* ContainerNode::rustMethodPointer() {
+  auto* super_rust_method = Node::rustMethodPointer();
+  static auto* rust_method = new ContainerNodeRustMethods(static_cast<NodeRustMethods*>(super_rust_method));
+  return rust_method;
 }
 
 }  // namespace webf

@@ -24,15 +24,15 @@ using RustExceptionStateStringify = void (*)(ExecutingContext* context,
                                              uint32_t* strlen);
 
 struct ExceptionStateRustMethods : public RustMethods {
-  static bool has_exception(SharedExceptionState* shared_exception_state);
-  static void stringify(ExecutingContext* context,
+  static bool HasException(SharedExceptionState* shared_exception_state);
+  static void Stringify(ExecutingContext* context,
                         SharedExceptionState* shared_exception_state,
                         char** errmsg,
                         uint32_t* strlen);
 
   double version{1.0};
-  RustExceptionStateHasException has_exception_{has_exception};
-  RustExceptionStateStringify stringify_{stringify};
+  RustExceptionStateHasException has_exception_{HasException};
+  RustExceptionStateStringify stringify_{Stringify};
 };
 
 }

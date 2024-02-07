@@ -35,11 +35,6 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
   return MakeGarbageCollected<Document>(context);
 }
 
-DocumentRustMethods* Document::rustMethodPointer() {
-  static auto* rust_method = new DocumentRustMethods();
-  return rust_method;
-}
-
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocument, nullptr, bindingObject(), nullptr);
@@ -416,6 +411,12 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
 void Document::Trace(GCVisitor* visitor) const {
   script_animation_controller_.Trace(visitor);
   ContainerNode::Trace(visitor);
+}
+
+RustMethods* Document::rustMethodPointer() {
+  auto* super_rust_method = ContainerNode::rustMethodPointer();
+  static auto* rust_method = new DocumentRustMethods(static_cast<ContainerNodeRustMethods*>(super_rust_method));
+  return rust_method;
 }
 
 }  // namespace webf

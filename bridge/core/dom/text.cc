@@ -24,6 +24,12 @@ Node::NodeType Text::nodeType() const {
   return Node::kTextNode;
 }
 
+RustMethods* Text::rustMethodPointer() {
+  auto* super_rust_method = CharacterData::rustMethodPointer();
+  static auto* rust_method = new TextNodeRustMethods(static_cast<CharacterDataRustMethods*>(super_rust_method));
+  return rust_method;
+}
+
 std::string Text::nodeName() const {
   return "#text";
 }

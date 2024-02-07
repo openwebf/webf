@@ -8,6 +8,7 @@ use libc;
 use libc::c_uint;
 use crate::{OpaquePtr, RustValue};
 use crate::document::{Document, DocumentRustMethods};
+use crate::event_target::EventTargetMethods;
 use crate::exception_state::{ExceptionState, ExceptionStateRustMethods};
 use crate::window::{Window, WindowRustMethods};
 
@@ -61,7 +62,7 @@ impl ExecutingContext {
     let result = unsafe {
       ((*self.method_pointer).get_document)(self.ptr)
     };
-    return Document::initialize(result.value, self, result.method_pointer);
+    return Document::initialize::<DocumentRustMethods>(result.value, self, result.method_pointer);
   }
 
   pub fn create_exception_state(&self) -> ExceptionState {
