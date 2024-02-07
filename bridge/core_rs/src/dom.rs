@@ -6,18 +6,24 @@ use std::ffi::{c_void, CString};
 use libc::labs;
 use webf::document::Document;
 use webf::executing_context::ExecutingContext;
+use webf::node::NodeMethods;
 
 pub fn init_webf_dom(context: &ExecutingContext) {
   let document = context.document();
   let exception_state = context.create_exception_state();
 
+  let html_tag_name = CString::new("html");
+  let html_element = document.create_element(&html_tag_name.unwrap(), &exception_state).unwrap();
+
+  let _ = document.append_child(&html_element, &exception_state);
+
   let head_tag_name = CString::new("head");
-  let head_element = document.create_element(&head_tag_name.unwrap(), &exception_state);
+  let head_element = document.create_element(&head_tag_name.unwrap(), &exception_state).unwrap();
+  let _ = document.document_element().append_child(&head_element, &exception_state);
 
-  let body_tag_name = CString::new("这是23");
-  let body_element = document.create_element(&body_tag_name.unwrap(), &exception_state);
-
-  println!("!");
+  let body_tag_name = CString::new("body");
+  let body_element = document.create_element(&body_tag_name.unwrap(), &exception_state).unwrap();
+  let _ = document.document_element().append_child(&body_element, &exception_state);
 
   // let exception_state = unsafe {
   //   ExceptionState {

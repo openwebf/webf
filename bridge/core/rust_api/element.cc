@@ -7,8 +7,7 @@
 
 namespace webf {
 
-ElementRustMethods::ElementRustMethods() {
-  container_node = ContainerNode::rustMethodPointer();
-}
+ElementRustMethods::ElementRustMethods(ContainerNodeRustMethods* super_rust_methods)
+    : container_node(super_rust_methods) {}
 
 }

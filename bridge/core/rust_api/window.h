@@ -14,8 +14,8 @@ typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
 
-struct WindowRustMethods {
-  WindowRustMethods();
+struct WindowRustMethods : RustMethods {
+  WindowRustMethods(EventTargetRustMethods* super_rust_method);
 
   double version{1.0};
   EventTargetRustMethods* event_target;

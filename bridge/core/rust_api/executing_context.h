@@ -25,12 +25,12 @@ using RustContextGetExceptionState = RustValue<SharedExceptionState, ExceptionSt
 struct ExecutingContextRustMethods {
   static RustValue<Document, DocumentRustMethods> document(ExecutingContext* context);
   static RustValue<Window, WindowRustMethods> window(ExecutingContext* context);
-  static RustValue<SharedExceptionState, ExceptionStateRustMethods> create_exception_state();
+  static RustValue<SharedExceptionState, ExceptionStateRustMethods> CreateExceptionState();
 
   double version{1.0};
   RustContextGetDocument rust_context_get_document_{document};
   RustContextGetWindow rust_context_get_window_{window};
-  RustContextGetExceptionState rust_context_get_exception_state_{create_exception_state};
+  RustContextGetExceptionState rust_context_get_exception_state_{CreateExceptionState};
 };
 
 }

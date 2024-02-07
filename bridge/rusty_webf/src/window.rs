@@ -3,7 +3,7 @@
 */
 
 use std::ffi::c_double;
-use crate::event_target::EventTargetRustMethods;
+use crate::event_target::{EventTargetRustMethods, RustMethods};
 use crate::OpaquePtr;
 
 #[repr(C)]
@@ -11,6 +11,8 @@ pub struct WindowRustMethods {
   pub version: c_double,
   pub event_target: *const EventTargetRustMethods,
 }
+
+impl RustMethods for WindowRustMethods {}
 
 pub struct Window {
   ptr: *const OpaquePtr,

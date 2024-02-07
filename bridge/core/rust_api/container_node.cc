@@ -7,6 +7,6 @@
 
 namespace webf {
 
-ContainerNodeRustMethods::ContainerNodeRustMethods(): node(Node::rustMethodPointer()) {}
+ContainerNodeRustMethods::ContainerNodeRustMethods(NodeRustMethods* super_rust_method): node(super_rust_method) {}
 
 }
