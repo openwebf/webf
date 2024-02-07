@@ -6,6 +6,7 @@
 #ifndef BRIDGE_CHARACTER_DATA_H
 #define BRIDGE_CHARACTER_DATA_H
 
+#include "core/rust_api/character_data.h"
 #include "node.h"
 
 namespace webf {
@@ -16,6 +17,8 @@ class CharacterData : public Node {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+//  static CharacterDataRustMethods* rustMethodPointer();
+
   const AtomicString& data() const { return data_; }
   int64_t length() const { return data_.length(); };
   void setData(const AtomicString& data, ExceptionState& exception_state);
@@ -25,6 +28,8 @@ class CharacterData : public Node {
   AtomicString nodeValue() const override;
   bool IsCharacterDataNode() const override;
   void setNodeValue(const AtomicString&, ExceptionState&) override;
+
+  RustMethods* rustMethodPointer() override;
 
  protected:
   CharacterData(TreeScope& tree_scope, const AtomicString& text, ConstructionType type);

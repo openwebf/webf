@@ -280,6 +280,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/rust_api/document.cc
     core/rust_api/element.cc
     core/rust_api/window.cc
+    core/rust_api/text.cc
+    core/rust_api/character_data.cc
     core/dart_isolate_context.cc
     core/dart_context_data.cc
     core/executing_context_data.cc

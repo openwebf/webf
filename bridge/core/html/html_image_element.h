@@ -24,6 +24,7 @@ class HTMLImageElement : public HTMLElement {
   ScriptPromise decode(ExceptionState& exception_state) const;
 
  private:
+  bool keep_alive = true;
 };
 
 }  // namespace webf

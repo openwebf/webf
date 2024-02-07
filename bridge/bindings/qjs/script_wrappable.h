@@ -68,7 +68,7 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
   void ReleaseAlive();
 
  private:
-  bool is_alive = false;
+  uint32_t alive_count = 0;
   JSValue jsObject_{JS_NULL};
   JSContext* ctx_{nullptr};
   ExecutingContext* context_{nullptr};

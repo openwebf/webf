@@ -56,11 +56,6 @@ EventTarget* EventTarget::Create(ExecutingContext* context, ExceptionState& exce
   return MakeGarbageCollected<EventTargetWithInlineData>(context);
 }
 
-EventTargetRustMethods* EventTarget::rustMethodPointer() {
-  static auto* rust_methods = new EventTargetRustMethods();
-  return rust_methods;
-}
-
 EventTarget::~EventTarget() {
 #if UNIT_TEST
   // Callback to unit test specs before eventTarget finalized.
@@ -256,6 +251,11 @@ EventListenerVector* EventTarget::GetEventListeners(const AtomicString& event_ty
 
 bool EventTarget::IsEventTarget() const {
   return true;
+}
+
+RustMethods* EventTarget::rustMethodPointer() {
+  static auto* rust_methods = new EventTargetRustMethods();
+  return rust_methods;
 }
 
 void EventTarget::Trace(GCVisitor* visitor) const {
