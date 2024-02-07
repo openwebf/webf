@@ -12,18 +12,18 @@ namespace webf {
 RustValue<Document, DocumentRustMethods> ExecutingContextRustMethods::document(webf::ExecutingContext* context) {
   return {
       .value = context->document(),
-      .method_pointer = Document::rustMethodPointer(),
+      .method_pointer = To<DocumentRustMethods>(context->document()->rustMethodPointer()),
   };
 }
 
 RustValue<Window, WindowRustMethods> ExecutingContextRustMethods::window(webf::ExecutingContext* context) {
   return {
       .value = context->window(),
-      .method_pointer = Window::rustMethodPointer(),
+      .method_pointer = To<WindowRustMethods>(context->window()->rustMethodPointer())
   };
 }
 
-RustValue<SharedExceptionState, ExceptionStateRustMethods> ExecutingContextRustMethods::create_exception_state() {
+RustValue<SharedExceptionState, ExceptionStateRustMethods> ExecutingContextRustMethods::CreateExceptionState() {
   return {.value = new SharedExceptionState{webf::ExceptionState()},
           .method_pointer = ExceptionState::rustMethodPointer()};
 }

@@ -15,8 +15,8 @@ typedef struct ExecutingContext ExecutingContext;
 typedef struct Element Element;
 typedef struct Document Document;
 
-struct ElementRustMethods {
-  ElementRustMethods();
+struct ElementRustMethods : RustMethods {
+  ElementRustMethods(ContainerNodeRustMethods* super_rust_methods);
 
   double version{1.0};
   ContainerNodeRustMethods* container_node;

@@ -48,8 +48,6 @@ class Element : public ContainerNode {
     const AttributeModificationReason reason;
   };
 
-  static ElementRustMethods* rustMethodPointer();
-
   Element(const AtomicString& namespace_uri,
           const AtomicString& local_name,
           const AtomicString& prefix,
@@ -146,6 +144,7 @@ class Element : public ContainerNode {
   virtual bool IsWidgetElement() const;
 
   void Trace(GCVisitor* visitor) const override;
+  RustMethods* rustMethodPointer() override;
 
  protected:
   void SetAttributeInternal(const AtomicString&,
