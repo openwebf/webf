@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "node.h"
@@ -24,4 +24,4 @@ RustValue<Node, NodeRustMethods> NodeRustMethods::AppendChild(Node* self_node,
   return {.value = returned_node, .method_pointer = To<NodeRustMethods>(returned_node->rustMethodPointer())};
 }
 
-}
+}  // namespace webf

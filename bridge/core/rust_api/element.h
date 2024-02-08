@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_CORE_RUST_API_ELEMENT_H_
@@ -22,6 +22,6 @@ struct ElementRustMethods : RustMethods {
   ContainerNodeRustMethods* container_node;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_RUST_API_ELEMENT_H_

@@ -24,7 +24,6 @@ using NodeVector = std::vector<Node*>;
 
 class ContainerNode : public Node {
  public:
-
   Node* firstChild() const { return first_child_.Get(); }
   Node* lastChild() const { return last_child_.Get(); }
   bool hasChildren() const { return first_child_.Get(); }

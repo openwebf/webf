@@ -6,8 +6,8 @@
 #define BRIDGE_DOCUMENT_H
 
 #include "bindings/qjs/cppgc/local_handle.h"
-#include "core/rust_api/document.h"
 #include "container_node.h"
+#include "core/rust_api/document.h"
 #include "event_type_names.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
