@@ -3,10 +3,10 @@
 */
 
 use std::ffi::c_double;
+use webf_sys::OpaquePtr;
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTargetMethods, RustMethods};
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeRustMethods};
-use crate::OpaquePtr;
 use crate::text::{Text, TextNodeRustMethods};
 
 #[repr(C)]
