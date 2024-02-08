@@ -3,12 +3,12 @@
 */
 
 use std::ffi::c_double;
+use webf_sys::OpaquePtr;
 use crate::document::{Document, DocumentRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTargetMethods, EventTargetRustMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeMethods, NodeRustMethods};
-use crate::OpaquePtr;
 
 #[repr(C)]
 pub struct ContainerNodeRustMethods {

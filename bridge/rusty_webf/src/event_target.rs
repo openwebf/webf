@@ -4,7 +4,7 @@
 
 use std::ffi::{c_double, c_void};
 use libc::{boolean_t, c_char};
-use crate::{OpaquePtr};
+use webf_sys::OpaquePtr;
 use crate::executing_context::{ExecutingContext};
 use crate::node::{Node, NodeRustMethods};
 

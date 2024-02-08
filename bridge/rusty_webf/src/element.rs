@@ -3,7 +3,7 @@
 */
 
 use std::ffi::{c_double, c_void};
-use crate::{OpaquePtr, RustValue};
+use webf_sys::OpaquePtr;
 use crate::container_node::{ContainerNode, ContainerNodeMethods, ContainerNodeRustMethods};
 use crate::document::Document;
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTargetMethods, EventTargetRustMethods, RustMethods};
