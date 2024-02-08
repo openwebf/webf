@@ -270,7 +270,6 @@ RustMethods* Window::rustMethodPointer() {
   return rust_method;
 }
 
-
 JSValue Window::ToQuickJS() const {
   return JS_GetGlobalObject(ctx());
 }

@@ -7,7 +7,6 @@
 
 namespace webf {
 
-WindowRustMethods::WindowRustMethods(EventTargetRustMethods* super_rust_method): event_target(super_rust_method) {
-}
+WindowRustMethods::WindowRustMethods(EventTargetRustMethods* super_rust_method) : event_target(super_rust_method) {}
 
 }  // namespace webf

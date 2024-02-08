@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_CORE_RUST_API_EVENT_TARGET_H_
@@ -34,7 +34,7 @@ using RustEventTargetAddEventListener = void (*)(EventTarget* event_target,
 
 using RustEventTargetRelease = void (*)(EventTarget*);
 
-struct EventTargetRustMethods: public RustMethods {
+struct EventTargetRustMethods : public RustMethods {
   static void AddEventListener(EventTarget* event_target,
                                const char* event_name_str,
                                RustEventListener* event_listener,
@@ -47,7 +47,6 @@ struct EventTargetRustMethods: public RustMethods {
   RustEventTargetRelease event_target_release{Release};
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_RUST_API_EVENT_TARGET_H_

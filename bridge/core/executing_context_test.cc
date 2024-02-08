@@ -17,11 +17,11 @@ TEST(Context, isValid) {
     EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
     WEBF_LOG(VERBOSE) << env->page()->dartIsolateContext()->profiler()->ToJSON();
   }
-//  {
-//    auto env = TEST_init();
-//    EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
-//    EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
-//  }
+  //  {
+  //    auto env = TEST_init();
+  //    EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
+  //    EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
+  //  }
 }
 
 TEST(Context, evalWithError) {
