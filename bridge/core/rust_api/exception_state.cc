@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "exception_state.h"
@@ -19,4 +19,4 @@ void ExceptionStateRustMethods::Stringify(webf::ExecutingContext* context,
   context->HandleException(shared_exception_state->exception_state, errmsg, strlen);
 }
 
-}
+}  // namespace webf

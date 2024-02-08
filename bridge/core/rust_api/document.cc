@@ -9,11 +9,13 @@
 
 namespace webf {
 
-DocumentRustMethods::DocumentRustMethods(ContainerNodeRustMethods* super_rust_method) : container_node(super_rust_method) {}
+DocumentRustMethods::DocumentRustMethods(ContainerNodeRustMethods* super_rust_method)
+    : container_node(super_rust_method) {}
 
-RustValue<Element, ElementRustMethods> DocumentRustMethods::CreateElement(webf::Document* ptr,
-                                            const char* tag_name,
-                                            webf::SharedExceptionState* shared_exception_state) {
+RustValue<Element, ElementRustMethods> DocumentRustMethods::CreateElement(
+    webf::Document* ptr,
+    const char* tag_name,
+    webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
   webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
@@ -46,10 +48,8 @@ RustValue<Text, TextNodeRustMethods> DocumentRustMethods::CreateTextNode(
 }
 
 RustValue<Element, ElementRustMethods> DocumentRustMethods::DocumentElement(webf::Document* document) {
-  return {
-    .value = document->documentElement(),
-    .method_pointer = To<ElementRustMethods>(document->documentElement()->rustMethodPointer())
-  };
+  return {.value = document->documentElement(),
+          .method_pointer = To<ElementRustMethods>(document->documentElement()->rustMethodPointer())};
 }
 
 }  // namespace webf
