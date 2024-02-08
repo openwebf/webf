@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_CORE_RUST_API_CHARACTER_DATA_H_
@@ -21,6 +21,6 @@ struct CharacterDataRustMethods : RustMethods {
   NodeRustMethods* node;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_RUST_API_CHARACTER_DATA_H_

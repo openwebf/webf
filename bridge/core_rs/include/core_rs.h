@@ -4,9 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <ostream>
 #include <new>
-
+#include <ostream>
 
 namespace webf {
 
@@ -14,6 +13,6 @@ extern "C" {
 
 void init_webf_polyfill(RustValue<void, void> handle);
 
-} // extern "C"
+}  // extern "C"
 
-} // namespace webf
+}  // namespace webf

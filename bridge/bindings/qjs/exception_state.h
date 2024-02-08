@@ -23,7 +23,6 @@ class ExceptionState {
   WEBF_DISALLOW_NEW();
 
  public:
-
   static ExceptionStateRustMethods* rustMethodPointer();
 
   void ThrowException(JSContext* ctx, ErrorType type, const std::string& message);
