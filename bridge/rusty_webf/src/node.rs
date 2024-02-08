@@ -4,9 +4,9 @@
 
 use std::ffi::{c_double, c_void};
 use libc::c_char;
+use webf_sys::{OpaquePtr, RustValue};
 use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventTarget, EventTargetMethods, EventTargetRustMethods, RustMethods};
-use crate::{OpaquePtr, RustValue};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 
