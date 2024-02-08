@@ -4,7 +4,7 @@
 
 use std::ffi::{c_char, c_double, CString};
 use std::mem;
-use crate::{OpaquePtr, RustValue};
+use webf_sys::{OpaquePtr, RustValue};
 use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
 use crate::element::{Element, ElementRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};

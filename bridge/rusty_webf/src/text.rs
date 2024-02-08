@@ -3,11 +3,11 @@
 */
 
 use std::ffi::c_double;
+use webf_sys::OpaquePtr;
 use crate::character_data::{CharacterData, CharacterDataRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeRustMethods};
-use crate::OpaquePtr;
 
 #[repr(C)]
 pub struct TextNodeRustMethods {
