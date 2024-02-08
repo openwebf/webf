@@ -17,10 +17,7 @@ RustValue<Document, DocumentRustMethods> ExecutingContextRustMethods::document(w
 }
 
 RustValue<Window, WindowRustMethods> ExecutingContextRustMethods::window(webf::ExecutingContext* context) {
-  return {
-      .value = context->window(),
-      .method_pointer = To<WindowRustMethods>(context->window()->rustMethodPointer())
-  };
+  return {.value = context->window(), .method_pointer = To<WindowRustMethods>(context->window()->rustMethodPointer())};
 }
 
 RustValue<SharedExceptionState, ExceptionStateRustMethods> ExecutingContextRustMethods::CreateExceptionState() {

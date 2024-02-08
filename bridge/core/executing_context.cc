@@ -7,11 +7,11 @@
 #include <utility>
 #include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
-#include "core_rs/include/core_rs.h"
 #include "core/dom/document.h"
 #include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
 #include "core/events/promise_rejection_event.h"
+#include "core_rs/include/core_rs.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
@@ -280,7 +280,9 @@ bool ExecutingContext::HandleException(ExceptionState& exception_state) {
   return true;
 }
 
-bool ExecutingContext ::HandleException(webf::ExceptionState& exception_state, char** rust_error_msg, uint32_t* rust_errmsg_len) {
+bool ExecutingContext ::HandleException(webf::ExceptionState& exception_state,
+                                        char** rust_error_msg,
+                                        uint32_t* rust_errmsg_len) {
   if (exception_state.HasException()) {
     JSValue error = JS_GetException(ctx());
     ReportError(error, rust_error_msg, rust_errmsg_len);

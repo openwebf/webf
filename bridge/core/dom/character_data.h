@@ -17,7 +17,7 @@ class CharacterData : public Node {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-//  static CharacterDataRustMethods* rustMethodPointer();
+  //  static CharacterDataRustMethods* rustMethodPointer();
 
   const AtomicString& data() const { return data_; }
   int64_t length() const { return data_.length(); };
