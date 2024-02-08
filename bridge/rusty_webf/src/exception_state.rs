@@ -6,8 +6,8 @@
 use std::ffi::{c_char, c_double, c_void};
 use std::ptr;
 use libc::c_uint;
+use webf_sys::OpaquePtr;
 use crate::executing_context::ExecutingContext;
-use crate::OpaquePtr;
 
 #[repr(C)]
 pub struct ExceptionStateRustMethods {

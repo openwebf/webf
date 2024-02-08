@@ -2,6 +2,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
+use webf_sys::RustValue;
 use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
 
 pub mod executing_context;
@@ -15,15 +16,6 @@ pub mod container_node;
 pub mod exception_state;
 pub mod text;
 pub mod character_data;
-
-#[repr(C)]
-pub struct OpaquePtr;
-
-#[repr(C)]
-pub struct RustValue<T> {
-  pub value: *const OpaquePtr,
-  pub method_pointer: *const T,
-}
 
 pub fn initialize_webf_api(value: RustValue<ExecutingContextRustMethods>) -> ExecutingContext {
   ExecutingContext::initialize(value.value, value.method_pointer)

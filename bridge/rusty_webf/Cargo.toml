@@ -9,4 +9,8 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+webf-sys = "0.1.0"
 libc = "0.2.0"
+
+[patch.crates-io]
+webf-sys = { path = "../rusty_webf_sys" }
