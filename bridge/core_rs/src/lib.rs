@@ -1,6 +1,7 @@
 use std::ffi::c_void;
 use libc::{c_char, c_uint};
-use webf::{initialize_webf_api, RustValue};
+use webf_sys::RustValue;
+use webf::{initialize_webf_api};
 use webf::executing_context::{ExecutingContextRustMethods};
 use crate::dom::init_webf_dom;
 
