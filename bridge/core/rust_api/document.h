@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_CORE_RUST_API_DOCUMENT_H_
@@ -19,16 +19,18 @@ typedef struct Element Element;
 typedef struct Document Document;
 typedef struct Text Text;
 
-using RustDocumentCreateElement = RustValue<Element, ElementRustMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
-using RustDocumentCreateTextNode = RustValue<Text, TextNodeRustMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using RustDocumentCreateElement =
+    RustValue<Element, ElementRustMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using RustDocumentCreateTextNode =
+    RustValue<Text, TextNodeRustMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
 using RustDocumentGetDocumentElement = RustValue<Element, ElementRustMethods> (*)(Document*);
 
 struct DocumentRustMethods : public RustMethods {
   DocumentRustMethods(ContainerNodeRustMethods* super_rust_method);
 
   static RustValue<Element, ElementRustMethods> CreateElement(Document* document,
-                            const char* tag_name,
-                            SharedExceptionState* shared_exception_state);
+                                                              const char* tag_name,
+                                                              SharedExceptionState* shared_exception_state);
   static RustValue<Text, TextNodeRustMethods> CreateTextNode(Document* document,
                                                              const char* data,
                                                              SharedExceptionState* shared_exception_state);
@@ -41,6 +43,6 @@ struct DocumentRustMethods : public RustMethods {
   RustDocumentGetDocumentElement rust_document_get_document_element{DocumentElement};
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_RUST_API_DOCUMENT_H_

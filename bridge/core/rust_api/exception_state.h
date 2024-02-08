@@ -1,13 +1,13 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_RUST_API_EXCEPTION_STATE_H_
 #define WEBF_CORE_RUST_API_EXCEPTION_STATE_H_
 
 #include <cinttypes>
-#include "core/rust_api/rust_value.h"
 #include "bindings/qjs/exception_state.h"
+#include "core/rust_api/rust_value.h"
 
 namespace webf {
 
@@ -35,6 +35,6 @@ struct ExceptionStateRustMethods : public RustMethods {
   RustExceptionStateStringify stringify_{Stringify};
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_RUST_API_EXCEPTION_STATE_H_

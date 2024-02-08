@@ -7,6 +7,7 @@
 
 namespace webf {
 
-TextNodeRustMethods::TextNodeRustMethods(CharacterDataRustMethods* super_rust_method) : character_data(super_rust_method) {}
+TextNodeRustMethods::TextNodeRustMethods(CharacterDataRustMethods* super_rust_method)
+    : character_data(super_rust_method) {}
 
 }  // namespace webf
