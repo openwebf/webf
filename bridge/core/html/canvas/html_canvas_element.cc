@@ -21,6 +21,8 @@ CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, 
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
 
+  if (native_binding_object == nullptr) return nullptr;
+
   if (type == canvas_types::k2d) {
     CanvasRenderingContext* context =
         MakeGarbageCollected<CanvasRenderingContext2D>(GetExecutingContext(), native_binding_object);
