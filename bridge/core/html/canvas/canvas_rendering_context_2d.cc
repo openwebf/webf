@@ -41,7 +41,8 @@ CanvasGradient* CanvasRenderingContext2D::createLinearGradient(double x0,
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
 
-  if (native_binding_object == nullptr) return nullptr;
+  if (native_binding_object == nullptr)
+    return nullptr;
 
   return MakeGarbageCollected<CanvasGradient>(GetExecutingContext(), native_binding_object);
 }
@@ -67,7 +68,8 @@ CanvasGradient* CanvasRenderingContext2D::createRadialGradient(double x0,
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
 
-  if (native_binding_object == nullptr) return nullptr;
+  if (native_binding_object == nullptr)
+    return nullptr;
 
   return MakeGarbageCollected<CanvasGradient>(GetExecutingContext(), native_binding_object);
 }
@@ -92,7 +94,8 @@ CanvasPattern* CanvasRenderingContext2D::createPattern(
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
 
-  if (native_binding_object == nullptr) return nullptr;
+  if (native_binding_object == nullptr)
+    return nullptr;
 
   return MakeGarbageCollected<CanvasPattern>(GetExecutingContext(), native_binding_object);
 }
