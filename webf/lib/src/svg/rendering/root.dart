@@ -2,7 +2,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/svg.dart';
 
 import '../core/aspect_ratio.dart';
@@ -57,6 +59,10 @@ class RenderSVGRoot extends RenderSVGContainer {
               (context, offset) {
         _innerClipLayer.layer = context
             .pushClipRect(false, offset, _renderViewBox, (context, offset) {
+          if (!kReleaseMode) {
+            WebFProfiler.instance.finishPaint(this);
+          }
+
           // Draw debug rect
           // context.canvas.drawRect(_renderViewBox, Paint()..color = Color.fromARGB(255, 255, 0, 0)..style = PaintingStyle.stroke);
           visitChildren((child) {

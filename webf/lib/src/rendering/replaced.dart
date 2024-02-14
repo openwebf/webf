@@ -128,29 +128,22 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   @override
   void paint(PaintingContext context, Offset offset) {
     if (!kReleaseMode) {
-      // Timeline.startSync(
-      //   'RenderReplaced paint',
-      //   arguments: {'ownerElement': renderStyle.target.toString()},
-      // );
       WebFProfiler.instance.startPaint(this);
     }
 
     if (visualAvailableSize?.isEmpty == true) {
       if (!kReleaseMode) {
-        WebFProfiler.instance.finishPaint();
+        WebFProfiler.instance.finishPaint(this);
       }
       return;
     }
 
+    WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
     // In lazy rendering, only paint intersection observer for triggering intersection change callback.
     if (_isInLazyRendering) {
-      paintIntersectionObserver(context, offset, paintNothing);
+      pipeline.paintIntersectionObserver(pipeline, offset, RenderBoxModel.paintNothing);
     } else if (shouldPaint) {
-      paintBoxModel(context, offset);
-    }
-
-    if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint();
+      paintBoxModel(pipeline, offset);
     }
   }
 
@@ -160,6 +153,10 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
     offset +=
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishPaint(this);
+    }
 
     if (child != null) {
       context.paintChild(child!, offset);

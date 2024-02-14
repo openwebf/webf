@@ -32,6 +32,29 @@ class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
   }
 }
 
+typedef WebFPaintingContextCallback = void Function(WebFPaintingPipeline pipeline, Offset offset);
+typedef WebFPaintingContextFunction = void Function(WebFPaintingPipeline pipeline, Offset offset,
+    [WebFPaintingContextCallback? callback]);
+
+class WebFPaintingPipeline {
+  PaintingContext context;
+  RenderBoxModel renderBoxModel;
+
+  WebFPaintingPipeline(this.context, this.renderBoxModel);
+
+  WebFPaintingContextFunction get paintColorFilter => RenderBoxModel.paintColorFilter;
+  WebFPaintingContextFunction get paintIntersectionObserver =>
+      RenderIntersectionObserverMixin.paintIntersectionObserver;
+  WebFPaintingContextFunction get paintTransform => RenderTransformMixin.paintTransform;
+  WebFPaintingContextFunction get paintOpacity => RenderOpacityMixin.paintOpacity;
+  WebFPaintingContextFunction get paintDecoration => RenderBoxDecorationMixin.paintDecoration;
+  WebFPaintingContextFunction get paintOverflow => RenderOverflowMixin.paintOverflow;
+  WebFPaintingContextFunction get paintBackground => RenderBoxDecorationMixin.paintBackground;
+  WebFPaintingContextFunction get paintImageFilter => RenderBoxModel.paintImageFilter;
+  WebFPaintingContextFunction get paintOverlay => RenderBoxModel.paintOverlay;
+  WebFPaintingContextFunction get paintContentVisibility => RenderContentVisibilityMixin.paintContentVisibility;
+}
+
 // Applies the layout transform up the tree to `ancestor`.
 //
 // ReturgetLayoutTransformTolocal layout coordinate system to the
@@ -234,8 +257,12 @@ class RenderLayoutBox extends RenderBoxModel
       CSSOverflowType effectiveOverflowY = parentRenderStyle.effectiveOverflowY;
       CSSOverflowType effectiveOverflowX = parentRenderStyle.effectiveOverflowX;
       // not processing effectiveOverflow=hidden/clip is to reduce the scope of influence
-      bool shouldInheritY = (effectiveOverflowY == CSSOverflowType.auto || effectiveOverflowY == CSSOverflowType.scroll) && scrollShouldInheritConstraints(this, false);
-      bool shouldInheritX = (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) && scrollShouldInheritConstraints(this, true);
+      bool shouldInheritY =
+          (effectiveOverflowY == CSSOverflowType.auto || effectiveOverflowY == CSSOverflowType.scroll) &&
+              scrollShouldInheritConstraints(this, false);
+      bool shouldInheritX =
+          (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) &&
+              scrollShouldInheritConstraints(this, true);
       if (shouldInheritY || shouldInheritX) {
         boxConstraints = BoxConstraints(
           minWidth: boxConstraints.minWidth,
@@ -331,6 +358,10 @@ class RenderLayoutBox extends RenderBoxModel
       // Sort by zIndex.
       List<RenderBox> children = getChildren();
       if (_childrenNeedsSort) {
+        if (!kReleaseMode) {
+          WebFProfiler.instance.startTrackPaintStep('sortPaintingOrder');
+          print('start');
+        }
         children.sort((RenderBox left, RenderBox right) {
           // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
           // this logic after Kraken has implemented stacking context tree.
@@ -358,18 +389,22 @@ class RenderLayoutBox extends RenderBoxModel
             return -1;
           }
         });
+        if (!kReleaseMode) {
+          print('finish');
+          WebFProfiler.instance.finishTrackPaintStep();
+        }
       }
+
       return _paintingOrder = children;
     }
   }
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
+    List<RenderBox> paintingOrder = this.paintingOrder;
+
     if (!kReleaseMode) {
-      WebFProfiler.instance.startTrackPaintStep('performPaint');
-      WebFProfiler.instance.startTrackPaintSubStep('sortPaintingOrder');
-      WebFProfiler.instance.finishTrackPaintSubStep(paintingOrder.length);
-      WebFProfiler.instance.finishTrackPaintStep();
+      WebFProfiler.instance.finishPaint(this);
     }
 
     for (int i = 0; i < paintingOrder.length; i++) {
@@ -381,7 +416,6 @@ class RenderLayoutBox extends RenderBoxModel
         }
       }
     }
-
   }
 
   bool _childrenNeedsSort = false;
@@ -714,6 +748,7 @@ mixin RenderBoxModelBase on RenderBox {
   late CSSRenderStyle renderStyle;
   Size? boxSize;
   Size? contentSize;
+
   // The maximum possible paint-able size for a box
   Size? visualAvailableSize;
 }
@@ -1055,7 +1090,8 @@ class RenderBoxModel extends RenderBox
     double? parentBoxContentConstraintsWidth;
     if (parent is RenderBoxModel && this is RenderLayoutBox) {
       RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
-      parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
+      parentBoxContentConstraintsWidth =
+          parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
 
       // When inner minimal content size are larger that parent's constraints.
       if (parentBoxContentConstraintsWidth < minConstraintWidth) {
@@ -1307,10 +1343,8 @@ class RenderBoxModel extends RenderBox
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
         if (child is RenderBoxModel) {
           if (containsOverFlowHidden) {
-            child.visualAvailableSize = Size(
-                isOverFlowXHidden ? contentSize.width : constraints.maxWidth,
-                isOverFlowYHidden ? contentSize.height : constraints.maxHeight
-            );
+            child.visualAvailableSize = Size(isOverFlowXHidden ? contentSize.width : constraints.maxWidth,
+                isOverFlowYHidden ? contentSize.height : constraints.maxHeight);
           } else {
             child.visualAvailableSize = Size(constraints.maxWidth, constraints.maxHeight);
           }
@@ -1331,29 +1365,27 @@ class RenderBoxModel extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
+    WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
+
     if (!kReleaseMode) {
       WebFProfiler.instance.startPaint(this);
     }
 
     if (!shouldPaint) {
       if (!kReleaseMode) {
-        WebFProfiler.instance.finishPaint();
+        WebFProfiler.instance.finishPaint(this);
       }
       return;
     }
 
     if (visualAvailableSize?.isEmpty == true) {
       if (!kReleaseMode) {
-        WebFProfiler.instance.finishPaint();
+        WebFProfiler.instance.finishPaint(this);
       }
       return;
     }
 
-    paintBoxModel(context, offset);
-
-    if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint();
-    }
+    paintBoxModel(pipeline, offset);
   }
 
   void debugPaintOverlay(PaintingContext context, Offset offset) {
@@ -1366,124 +1398,88 @@ class RenderBoxModel extends RenderBox
   // Repaint native EngineLayer sources with LayerHandle.
   final LayerHandle<ColorFilterLayer> _colorFilterLayer = LayerHandle<ColorFilterLayer>();
 
-  void paintColorFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
+  static void paintColorFilter(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
+    RenderStyle renderStyle = pipeline.renderBoxModel.renderStyle;
+
     ColorFilter? colorFilter = renderStyle.colorFilter;
     if (colorFilter != null) {
       if (!kReleaseMode) {
-        WebFProfiler.instance.startTrackPaintStep('paintColorFilter', {
-          'offset': offset.toString(),
-          'colorFilter': colorFilter.toString()
-        });
+        WebFProfiler.instance.startTrackPaintStep(
+            'paintColorFilter', {'offset': offset.toString(), 'colorFilter': colorFilter.toString()});
       }
 
-      _colorFilterLayer.layer =
-          context.pushColorFilter(offset, colorFilter, (context, offset) {
-            if (!kReleaseMode) {
-              WebFProfiler.instance.finishTrackPaintStep();
-            }
-            callback(context, offset);
-          }, oldLayer: _colorFilterLayer.layer);
+      pipeline.renderBoxModel._colorFilterLayer.layer =
+          pipeline.context.pushColorFilter(offset, colorFilter, (context, offset) {
+        if (!kReleaseMode) {
+          WebFProfiler.instance.finishTrackPaintStep();
+        }
+
+        pipeline.paintImageFilter(pipeline, offset);
+      }, oldLayer: pipeline.renderBoxModel._colorFilterLayer.layer);
     } else {
-      callback(context, offset);
+      pipeline.paintImageFilter(pipeline, offset);
     }
   }
 
-  void paintNothing(PaintingContext context, Offset offset) {}
+  static void paintNothing(WebFPaintingPipeline pipeline, Offset offset) {
+    if (kReleaseMode) {
+      WebFProfiler.instance.finishPaint(pipeline.renderBoxModel);
+    }
+  }
 
-  void paintBoxModel(PaintingContext context, Offset offset) {
+  void paintBoxModel(WebFPaintingPipeline pipeline, Offset offset) {
     // If opacity to zero, only paint intersection observer.
     if (alpha == 0) {
-      paintIntersectionObserver(context, offset, paintNothing);
+      pipeline.paintIntersectionObserver(pipeline, offset, paintNothing);
     } else if (isScrollingContentBox) {
       // Scrolling content box should only size painted.
-      performPaint(context, offset);
+      performPaint(pipeline.context, offset);
     } else {
       // Paint fixed element to fixed position by compensating scroll offset
       double offsetY = scrollingOffsetY != null ? offset.dy + scrollingOffsetY! : offset.dy;
       double offsetX = scrollingOffsetX != null ? offset.dx + scrollingOffsetX! : offset.dx;
       offset = Offset(offsetX, offsetY);
-      paintColorFilter(context, offset, _chainPaintImageFilter);
+      pipeline.paintColorFilter(pipeline, offset);
     }
   }
 
   final LayerHandle<ImageFilterLayer> _imageFilterLayer = LayerHandle<ImageFilterLayer>();
 
-  void paintImageFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
+  static void paintImageFilter(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackPaintStep('paintImageFilter');
+    }
+
+    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
+    RenderStyle renderStyle = renderBoxModel.renderStyle;
+    LayerHandle<ImageFilterLayer> imageFilterLayer = renderBoxModel._imageFilterLayer;
+
     if (renderStyle.imageFilter != null) {
-      if (!kReleaseMode) {
-        WebFProfiler.instance.startTrackPaintStep('paintImageFilter');
-        WebFProfiler.instance.startTrackPaintSubStep('renderStyle.imageFilter');
-      }
+      imageFilterLayer.layer ??= ImageFilterLayer();
+      imageFilterLayer.layer!.imageFilter = renderStyle.imageFilter;
 
-      _imageFilterLayer.layer ??= ImageFilterLayer();
-      _imageFilterLayer.layer!.imageFilter = renderStyle.imageFilter;
-
-      if (!kReleaseMode) {
-        WebFProfiler.instance.finishTrackPaintSubStep(renderStyle.imageFilter.toString());
-      }
-
-      context.pushLayer(_imageFilterLayer.layer!, (PaintingContext context, Offset offset) {
+      pipeline.context.pushLayer(imageFilterLayer.layer!, (PaintingContext context, Offset offset) {
         if (!kReleaseMode) {
           WebFProfiler.instance.finishTrackPaintStep();
         }
-        callback(context, offset);
+
+        pipeline.paintIntersectionObserver(pipeline, offset);
       }, offset);
     } else {
-      callback(context, offset);
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintStep();
+      }
+
+      pipeline.paintIntersectionObserver(pipeline, offset);
     }
   }
 
-  void _chainPaintImageFilter(PaintingContext context, Offset offset) {
-    paintImageFilter(context, offset, _chainPaintIntersectionObserver);
-  }
+  static void paintOverlay(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
+    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
+    pipeline.renderBoxModel.performPaint(pipeline.context, offset);
 
-  void _chainPaintIntersectionObserver(PaintingContext context, Offset offset) {
-    paintIntersectionObserver(context, offset, _chainPaintTransform);
-  }
-
-  void _chainPaintTransform(PaintingContext context, Offset offset) {
-    paintTransform(context, offset, _chainPaintOpacity);
-  }
-
-  void _chainPaintOpacity(PaintingContext context, Offset offset) {
-    paintOpacity(context, offset, _chainPaintDecoration);
-  }
-
-  void _chainPaintDecoration(PaintingContext context, Offset offset) {
-    paintDecoration(context, offset, _chainPaintOverflow);
-  }
-
-  void _chainPaintOverflow(PaintingContext context, Offset offset) {
-    EdgeInsets borderEdge = EdgeInsets.fromLTRB(
-        renderStyle.effectiveBorderLeftWidth.computedValue,
-        renderStyle.effectiveBorderTopWidth.computedValue,
-        renderStyle.effectiveBorderRightWidth.computedValue,
-        renderStyle.effectiveBorderLeftWidth.computedValue);
-    CSSBoxDecoration? decoration = renderStyle.decoration;
-
-    bool hasLocalAttachment = _hasLocalBackgroundImage(renderStyle);
-    if (hasLocalAttachment) {
-      paintOverflow(context, offset, borderEdge, decoration, _chainPaintBackground);
-    } else {
-      paintOverflow(context, offset, borderEdge, decoration, _chainPaintContentVisibility);
-    }
-  }
-
-  void _chainPaintBackground(PaintingContext context, Offset offset) {
-    EdgeInsets resolvedPadding = renderStyle.padding.resolve(TextDirection.ltr);
-    paintBackground(context, offset, resolvedPadding);
-    _chainPaintContentVisibility(context, offset);
-  }
-
-  void _chainPaintContentVisibility(PaintingContext context, Offset offset) {
-    paintContentVisibility(context, offset, _chainPaintOverlay);
-  }
-
-  void _chainPaintOverlay(PaintingContext context, Offset offset) {
-    performPaint(context, offset);
-
-    if (_debugShouldPaintOverlay) {
-      debugPaintOverlay(context, offset);
+    if (renderBoxModel._debugShouldPaintOverlay) {
+      renderBoxModel.debugPaintOverlay(pipeline.context, offset);
     }
   }
 
@@ -1500,10 +1496,6 @@ class RenderBoxModel extends RenderBox
     Offset ancestorBorderWidth = Offset(ancestorBorderLeft, ancestorBorderTop);
 
     return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point - ancestorBorderWidth;
-  }
-
-  bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
-    return renderStyle.backgroundImage != null && renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.local;
   }
 
   // Detach renderBoxModel from its containing block.
