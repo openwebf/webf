@@ -131,9 +131,6 @@ mixin RenderBoxDecorationMixin on RenderBoxModelBase {
       }());
       if (decoration.isComplex) context.setIsComplexHint();
     }
-    Offset contentOffset;
-    EdgeInsets borderEdge = renderStyle.border;
-    contentOffset = offset.translate(borderEdge.left, borderEdge.top);
     if (decorationPosition == DecorationPosition.foreground) {
       renderBoxModel._painter!.paint(context.canvas, offset, filledConfiguration);
       if (decoration.isComplex) context.setIsComplexHint();
