@@ -1773,7 +1773,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   String toString() {
-    String printText = '$tagName Element(${shortHash(this)}';
+    String printText = '$tagName Element(${shortHash(this)})';
     if (className.isNotEmpty) {
       printText += ' className(.$className)';
     }

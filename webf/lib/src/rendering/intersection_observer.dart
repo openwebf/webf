@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
 
 /// Returns a sequence containing the specified [Layer] and all of its
 /// ancestors.  The returned sequence is in [parent, child] order.
@@ -89,38 +90,47 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     }
   }
 
-  void paintIntersectionObserver(PaintingContext context, Offset offset, PaintingContextCallback callback) {
-    // Skip to next if not has intersection observer
-    if (_onIntersectionChange == null) {
-      callback(context, offset);
-      return;
-    }
+  static void paintIntersectionObserver(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
+    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
+    callback ??= pipeline.paintTransform;
 
     if (!kReleaseMode) {
       WebFProfiler.instance.startTrackPaintStep('paintIntersectionObserver', {
-        'size': semanticBounds.size.toString(),
-        'intersectPadding': intersectPadding.toString(),
+        'size': renderBoxModel.semanticBounds.size.toString(),
+        'intersectPadding': renderBoxModel.intersectPadding.toString(),
         'paintOffset': offset.toString()
       });
     }
 
-    if (_intersectionObserverLayer.layer == null) {
-      _intersectionObserverLayer.layer = IntersectionObserverLayer(
-          elementSize: size,
-          paintOffset: offset,
-          onIntersectionChange: _onIntersectionChange!,
-          intersectPadding: intersectPadding);
-    } else {
-      _intersectionObserverLayer.layer!.elementSize = semanticBounds.size;
-      _intersectionObserverLayer.layer!.paintOffset = offset;
-    }
-
-    context.pushLayer(_intersectionObserverLayer.layer!, (PaintingContext context, Offset offset) {
+    // Skip to next if not has intersection observer
+    if (renderBoxModel._onIntersectionChange == null) {
       if (!kReleaseMode) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
 
-      callback(context, offset);
+      callback(pipeline, offset);
+      return;
+    }
+
+    LayerHandle<IntersectionObserverLayer> intersectionObserverLayer = renderBoxModel._intersectionObserverLayer;
+
+    if (intersectionObserverLayer.layer == null) {
+      intersectionObserverLayer.layer = IntersectionObserverLayer(
+          elementSize: renderBoxModel.size,
+          paintOffset: offset,
+          onIntersectionChange: renderBoxModel._onIntersectionChange!,
+          intersectPadding: renderBoxModel.intersectPadding);
+    } else {
+      intersectionObserverLayer.layer!.elementSize = renderBoxModel.semanticBounds.size;
+      intersectionObserverLayer.layer!.paintOffset = offset;
+    }
+
+    pipeline.context.pushLayer(intersectionObserverLayer.layer!, (PaintingContext context, Offset offset) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintStep();
+      }
+
+      callback!(pipeline, offset);
     }, offset);
   }
 }

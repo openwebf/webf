@@ -107,27 +107,18 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
   @override
   void paint(PaintingContext context, Offset offset) {
     if (!kReleaseMode) {
-      Timeline.startSync(
-        'RenderBoxModel paint',
-        arguments: {'ownerElement': renderStyle.target.toString()},
-      );
       WebFProfiler.instance.startPaint(this);
     }
 
     if (visualAvailableSize?.isEmpty == true) {
       if (!kReleaseMode) {
-        // Timeline.finishSync();
-        WebFProfiler.instance.finishPaint();
+        WebFProfiler.instance.finishPaint(this);
       }
       return;
     }
 
-    paintBoxModel(context, offset);
-
-    if (!kReleaseMode) {
-      // Timeline.finishSync();
-      WebFProfiler.instance.finishPaint();
-    }
+    WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
+    paintBoxModel(pipeline, offset);
   }
 
   @override
@@ -136,6 +127,10 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
 
     offset +=
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishPaint(this);
+    }
 
     if (child != null) {
       context.paintChild(child!, offset);

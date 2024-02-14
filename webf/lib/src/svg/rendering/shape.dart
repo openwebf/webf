@@ -2,7 +2,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
@@ -61,8 +63,11 @@ abstract class RenderSVGShape extends RenderBoxModel {
   }
 
   @override
-  void paintBoxModel(PaintingContext context, Offset offset) {
-    performPaint(context, offset);
+  void paintBoxModel(WebFPaintingPipeline pipeline, Offset offset) {
+    performPaint(pipeline.context, offset);
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishPaint(this);
+    }
   }
 
   Path asPath();

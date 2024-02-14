@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/css.dart';
 
 mixin RenderTransformMixin on RenderBoxModelBase {
   final LayerHandle<TransformLayer> _transformLayer = LayerHandle<TransformLayer>();
@@ -14,41 +15,43 @@ mixin RenderTransformMixin on RenderBoxModelBase {
     _transformLayer.layer = null;
   }
 
-  void paintTransform(PaintingContext context, Offset offset, PaintingContextCallback callback) {
+  static void paintTransform(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackPaintStep('paintTransform');
+    }
+
+    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
+    CSSRenderStyle renderStyle = renderBoxModel.renderStyle;
+    LayerHandle<TransformLayer> transformLayer = renderBoxModel._transformLayer;
+
     if (renderStyle.transformMatrix != null) {
-      if (!kReleaseMode) {
-        WebFProfiler.instance.startTrackPaintStep('paintTransform');
-        WebFProfiler.instance.startTrackPaintSubStep('renderStyle.effectiveTransformMatrix');
-      }
-
       final Matrix4 transform = renderStyle.effectiveTransformMatrix;
-
-      if (!kReleaseMode) {
-        WebFProfiler.instance.finishTrackPaintSubStep(transform.toString());
-      }
 
       finishPaintTransform(PaintingContext context, Offset offset) {
         if (!kReleaseMode) {
           WebFProfiler.instance.finishTrackPaintStep();
         }
-        callback(context, offset);
+        pipeline.paintOpacity(pipeline, offset);
       }
 
       final Offset? childOffset = MatrixUtils.getAsTranslation(transform);
       if (childOffset == null) {
-        _transformLayer.layer = context.pushTransform(
-          needsCompositing,
+        transformLayer.layer = pipeline.context.pushTransform(
+          renderBoxModel.needsCompositing,
           offset,
           transform,
           finishPaintTransform,
-          oldLayer: _transformLayer.layer,
+          oldLayer: transformLayer.layer,
         );
       } else {
-        finishPaintTransform(context, offset + childOffset);
-        _transformLayer.layer = null;
+        finishPaintTransform(pipeline.context, offset + childOffset);
+        transformLayer.layer = null;
       }
     } else {
-      callback(context, offset);
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintStep();
+      }
+      pipeline.paintOpacity(pipeline, offset);
     }
   }
 

@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -29,26 +30,35 @@ mixin RenderOpacityMixin on RenderBoxModelBase {
     _opacityLayer.layer = null;
   }
 
-  void paintOpacity(PaintingContext context, Offset offset, PaintingContextCallback callback) {
-    if (alpha == 255) {
-      _opacityLayer.layer = null;
-      // No need to keep the layer. We'll create a new one if necessary.
-      callback(context, offset);
-      return;
-    }
+  static void paintOpacity(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
+    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
 
     if (!kReleaseMode) {
       WebFProfiler.instance.startTrackPaintStep('paintOpacity', {
-        'alpha': alpha
+        'alpha': renderBoxModel.alpha
       });
     }
 
-    _opacityLayer.layer = context.pushOpacity(offset, alpha, (PaintingContext context, Offset offset) {
+    int alpha = renderBoxModel.alpha;
+    LayerHandle<OpacityLayer> opacityLayer = renderBoxModel._opacityLayer;
+
+    if (alpha == 255) {
+      renderBoxModel._opacityLayer.layer = null;
       if (!kReleaseMode) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
-      callback(context, offset);
-    }, oldLayer: _opacityLayer.layer);
+
+      // No need to keep the layer. We'll create a new one if necessary.
+      pipeline.paintDecoration(pipeline, offset);
+      return;
+    }
+
+    opacityLayer.layer = pipeline.context.pushOpacity(offset, alpha, (PaintingContext context, Offset offset) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackPaintStep();
+      }
+      pipeline.paintDecoration(pipeline, offset);
+    }, oldLayer: opacityLayer.layer);
   }
 
   void debugOpacityProperties(DiagnosticPropertiesBuilder properties) {
