@@ -223,7 +223,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return callback(pipeline, offset);
     }
     // Stop further paint if there are no visible contents in here.
-    if (renderBoxModel.contentSize!.isEmpty) {
+    if (renderBoxModel.contentSize.isEmpty) {
       if (!kReleaseMode) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
