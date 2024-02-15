@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
@@ -80,10 +81,10 @@ class _LayoutSteps {
   String label;
   _LayoutSteps(this.startClock, this.label);
 
-  List<_LayoutSteps> childrenSteps = [];
+  List<_LayoutSteps> childSteps = [];
 
-  void addChildSteps() {
-
+  void addChildSteps(String label, _LayoutSteps step) {
+    childSteps.add(step);
   }
 
   @override
@@ -95,6 +96,7 @@ class _LayoutSteps {
     return {
       'duration': '${duration.inMicroseconds} us', //  Time elapsed for this paint step.
       'label': label,
+      'childSteps': childSteps
     };
   }
 }
@@ -104,10 +106,11 @@ class LayoutOP {
   String renderBox;
   String ownerElement;
 
-  final Map<String, _LayoutSteps> steps = {};
+  final Map<String, _LayoutSteps> _stepMap = {};
 
   List<String> stepStack = [];
-  _LayoutSteps? get currentStep => steps[stepStack.last];
+  List<_LayoutSteps> steps = [];
+  _LayoutSteps? get currentStep => _stepMap[stepStack.last];
 
   late Duration duration;
   late Duration selfPaintDuration;
@@ -117,24 +120,25 @@ class LayoutOP {
   LayoutOP(this.selfLayoutClock, this.renderBox, this.ownerElement);
 
   void recordLayoutStep(String label, _LayoutSteps step) {
-    bool isChildSteps = false;
+    bool isChildStep = false;
     if (stepStack.isNotEmpty) {
-      currentStep!.startClock.stop();
-      isChildSteps = true;
+      isChildStep = true;
+    }
+
+    if (isChildStep) {
+      currentStep!.addChildSteps(label, step);
+    } else {
+      steps.add(step);
     }
 
     stepStack.add(label);
-
-    steps[label] = step;
+    _stepMap[label] = step;
   }
 
   void finishLayoutStep() {
     currentStep!.startClock.stop();
     currentStep!.duration = currentStep!.startClock.elapsed;
     stepStack.removeLast();
-    if (stepStack.isNotEmpty) {
-      currentStep!.startClock.start();
-    }
   }
 
   @override
@@ -339,26 +343,26 @@ class WebFProfiler {
     };
   }
 
-  void startLayout(RenderBoxModel targetRenderObject) {
-    print('$targetRenderObject start layout');
+  void startLayout(RenderBox targetRenderBox) {
+    print('$targetRenderBox start layout');
+    String ownerElement = targetRenderBox is RenderBoxModel ? targetRenderBox.renderStyle.target.toString() : '<Root>';
     Timeline.startSync(
-      'WebF Layout ${targetRenderObject.runtimeType}',
+      'WebF Layout ${targetRenderBox.runtimeType}',
       arguments: {
-        'ownerElement': targetRenderObject.renderStyle.target.toString(),
-        'isRepaintBoundary': targetRenderObject.isRepaintBoundary,
-        'isScrollingContentBox': targetRenderObject.isScrollingContentBox
+        'ownerElement': ownerElement,
+        'isRepaintBoundary': targetRenderBox.isRepaintBoundary,
+        'isScrollingContentBox': targetRenderBox is RenderBoxModel ? targetRenderBox.isScrollingContentBox : false
       },
     );
 
     LayoutOP op = LayoutOP(
-        Stopwatch()..start(), describeIdentity(targetRenderObject), targetRenderObject.renderStyle.target.toString());
+        Stopwatch()..start(), describeIdentity(targetRenderBox), ownerElement);
 
     currentPipeline.recordLayoutOp(op);
 
   }
 
-  void finishLayout(RenderBoxModel targetRenderObject) {
-    print('finish layout $targetRenderObject');
+  void finishLayout(RenderBox renderBox) {
     Timeline.finishSync();
 
     assert(_paintPipeLines.isNotEmpty);
@@ -378,6 +382,20 @@ class WebFProfiler {
     Timeline.finishSync();
     LayoutOP activeOp = currentPipeline.currentLayoutOp;
     activeOp.finishLayoutStep();
+  }
+
+  void pauseCurrentLayoutOp() {
+    currentPipeline.currentLayoutOp.selfLayoutClock.stop();
+    currentPipeline.currentLayoutOp._stepMap.forEach((key, step) {
+      step.startClock.stop();
+    });
+  }
+
+  void resumeCurrentLayoutOp() {
+    currentPipeline.currentLayoutOp.selfLayoutClock.start();
+    currentPipeline.currentLayoutOp._stepMap.forEach((key, step) {
+      step.startClock.start();
+    });
   }
 
   Map<String, dynamic> report() {

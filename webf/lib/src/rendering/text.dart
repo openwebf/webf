@@ -3,9 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 // White space processing in CSS affects only the document white space characters:
@@ -198,7 +200,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   BoxConstraints getConstraints() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderTextBox.getConstraints()');
+    }
+
     if (renderStyle.whiteSpace == WhiteSpace.nowrap && renderStyle.effectiveTextOverflow != TextOverflow.ellipsis) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackLayoutStep();
+      }
       return BoxConstraints();
     }
 
@@ -233,6 +242,10 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
         maxConstraintWidth = parentConstraints.maxWidth - horizontalPaddingLength - horizontalBorderLength;
       }
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
     }
 
     // Text will not overflow from container, so it can inherit

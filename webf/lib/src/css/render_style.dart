@@ -1353,7 +1353,7 @@ class CSSRenderStyle extends RenderStyle
   @override
   double get contentMaxConstraintsWidth {
     if (!kReleaseMode) {
-      WebFProfiler.instance.startTrackLayoutStep('contentMaxConstraintsWidth');
+      WebFProfiler.instance.startTrackLayoutStep('RenderStyle.contentMaxConstraintsWidth');
     }
 
     // If renderBoxModel definite content constraints, use it as max constrains width of content.
