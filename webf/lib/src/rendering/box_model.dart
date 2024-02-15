@@ -367,9 +367,6 @@ class RenderLayoutBox extends RenderBoxModel
       // Sort by zIndex.
       List<RenderBox> children = getChildren();
       if (_childrenNeedsSort) {
-        if (!kReleaseMode) {
-          WebFProfiler.instance.startTrackPaintStep('sortPaintingOrder');
-        }
         children.sort((RenderBox left, RenderBox right) {
           // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
           // this logic after Kraken has implemented stacking context tree.
@@ -397,9 +394,6 @@ class RenderLayoutBox extends RenderBoxModel
             return -1;
           }
         });
-        if (!kReleaseMode) {
-          WebFProfiler.instance.finishTrackPaintStep();
-        }
       }
 
       return _paintingOrder = children;
@@ -1443,7 +1437,7 @@ class RenderBoxModel extends RenderBox
   }
 
   static void paintNothing(WebFPaintingPipeline pipeline, Offset offset) {
-    if (kReleaseMode) {
+    if (!kReleaseMode) {
       WebFProfiler.instance.finishPaint(pipeline.renderBoxModel);
     }
   }
