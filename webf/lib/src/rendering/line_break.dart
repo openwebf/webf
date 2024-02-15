@@ -3,8 +3,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 class RenderLineBreak extends RenderReplaced {
@@ -53,6 +55,10 @@ class RenderLineBreak extends RenderReplaced {
 
   @override
   BoxConstraints getConstraints() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderLineBreak.getConstraints()');
+    }
+
     // BR element is a special element in HTML which accepts no style,
     // it dimension is only affected by the line-height of its parent.
     // https://www.w3.org/TR/CSS1/#br-elements
@@ -63,6 +69,11 @@ class RenderLineBreak extends RenderReplaced {
       minHeight: height,
       maxHeight: height,
     );
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+
     return constraints;
   }
 

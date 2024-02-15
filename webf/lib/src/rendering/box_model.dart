@@ -249,6 +249,10 @@ class RenderLayoutBox extends RenderBoxModel
 
   @override
   BoxConstraints getConstraints() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderLayoutBox.getConstraints()');
+    }
+
     BoxConstraints boxConstraints = super.getConstraints();
     if (isScrollingContentBox) {
       // fix overflow:scroll/auto nested overflow:scroll/auto
@@ -272,6 +276,11 @@ class RenderLayoutBox extends RenderBoxModel
         );
       }
     }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+
     return boxConstraints;
   }
 
@@ -1033,6 +1042,10 @@ class RenderBoxModel extends RenderBox
   // Calculate constraints of renderBoxModel on layout stage and
   // only needed to be executed once on every layout.
   BoxConstraints getConstraints() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderBoxModel.getConstraints');
+    }
+
     // Inner scrolling content box of overflow element inherits constraints from parent
     // but has indefinite max constraints to allow children overflow
     if (isScrollingContentBox) {
@@ -1063,6 +1076,11 @@ class RenderBoxModel extends RenderBox
           maxHeight: double.infinity,
         );
       }
+
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackLayoutStep();
+      }
+
       return constraints;
     }
 
@@ -1153,6 +1171,11 @@ class RenderBoxModel extends RenderBox
       minHeight: minConstraintHeight,
       maxHeight: maxConstraintHeight,
     );
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+
     return constraints;
   }
 

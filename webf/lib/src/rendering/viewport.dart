@@ -4,7 +4,9 @@
  */
 import 'dart:ui';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
@@ -67,6 +69,11 @@ class RenderViewportBox extends RenderBox
 
   @override
   void performLayout() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startLayout(this);
+      WebFProfiler.instance.startTrackLayoutStep('Root Get Constraints');
+    }
+
     if (_viewportSize != null) {
       double width = _viewportSize!.width;
       double height = _viewportSize!.height - _bottomInset;
@@ -87,6 +94,10 @@ class RenderViewportBox extends RenderBox
       }
     }
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+
     RenderObject? child = firstChild;
     while (child != null) {
       final ContainerBoxParentData<RenderObject> childParentData =
@@ -94,10 +105,24 @@ class RenderViewportBox extends RenderBox
 
       RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
       rootRenderLayoutBox.visualAvailableSize = Size(double.infinity, double.infinity);
-      child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
+      BoxConstraints childConstraints = rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height);
+
+      if (!kReleaseMode) {
+        WebFProfiler.instance.pauseCurrentLayoutOp();
+      }
+
+      child.layout(childConstraints);
+
+      if (!kReleaseMode) {
+        WebFProfiler.instance.resumeCurrentLayoutOp();
+      }
 
       assert(child.parentData == childParentData);
       child = childParentData.nextSibling;
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishLayout(this);
     }
   }
 
