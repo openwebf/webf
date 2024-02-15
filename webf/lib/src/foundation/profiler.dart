@@ -13,77 +13,17 @@ import 'package:webf/rendering.dart';
 
 /// Collect performance details of core components in WebF.
 
-// Represent a paint step from a paint operation.
-class _PaintSteps {
-  DateTime startTime;
-  late Duration duration;
-  String label;
-  _PaintSteps(this.startTime, this.label);
-
-  @override
-  String toString() {
-    return jsonEncode(toJson());
-  }
-
-  Map toJson() {
-    return {
-      'duration': '${duration.inMicroseconds} us', //  Time elapsed for this paint step.
-      'label': label,
-    };
-  }
-}
-
-// Represent a single paint operation in a single frame
-class PaintOP {
-  Stopwatch selfPaintClock;
-  late Duration duration;
-  late Duration selfPaintDuration;
-  String renderBox;
-  String ownerElement;
-  final List<_PaintSteps> steps = [];
-  final List<PaintOP> childrenPaintOp = [];
-
-  _PaintSteps get currentStep => steps.last;
-
-  PaintOP(this.selfPaintClock, this.renderBox, this.ownerElement);
-
-  void recordPaintStep(_PaintSteps step) {
-    steps.add(step);
-  }
-
-  void finishPaintStep() {
-    DateTime currentTime = DateTime.now();
-
-    _PaintSteps targetStep = currentStep;
-
-    targetStep.duration = currentTime.difference(targetStep.startTime);
-  }
-
-  @override
-  String toString() {
-    return jsonEncode(toJson());
-  }
-
-  Map toJson() {
-    return {
-      'duration': '${duration.inMicroseconds} us', // Time elapsed for this paint operation.
-      'renderObject': renderBox, // Target renderBox
-      'ownerElement': ownerElement,
-      'steps': steps
-    };
-  }
-}
-
 // Represent a layout step from a layout operation.
-class _LayoutSteps {
+class _OpSteps {
   Stopwatch startClock;
   late Duration duration;
   String label;
-  _LayoutSteps(this.startClock, this.label);
 
-  List<_LayoutSteps> childSteps = [];
+  _OpSteps(this.startClock, this.label);
 
-  void addChildSteps(String label, _LayoutSteps step) {
+  List<_OpSteps> childSteps = [];
+
+  void addChildSteps(String label, _OpSteps step) {
     childSteps.add(step);
   }
 
@@ -101,25 +41,24 @@ class _LayoutSteps {
   }
 }
 
-class LayoutOP {
-  Stopwatch selfLayoutClock;
+class LayoutOrPaintOp {
+  Stopwatch selfClock;
   String renderBox;
   String ownerElement;
 
-  final Map<String, _LayoutSteps> _stepMap = {};
+  final Map<String, _OpSteps> _stepMap = {};
 
   List<String> stepStack = [];
-  List<_LayoutSteps> steps = [];
-  _LayoutSteps? get currentStep => _stepMap[stepStack.last];
+  List<_OpSteps> steps = [];
+
+  _OpSteps? get currentStep => _stepMap[stepStack.last];
 
   late Duration duration;
   late Duration selfPaintDuration;
 
-  final List<LayoutOP> childrenLayoutOp = [];
+  LayoutOrPaintOp(this.selfClock, this.renderBox, this.ownerElement);
 
-  LayoutOP(this.selfLayoutClock, this.renderBox, this.ownerElement);
-
-  void recordLayoutStep(String label, _LayoutSteps step) {
+  void recordStep(String label, _OpSteps step) {
     bool isChildStep = false;
     if (stepStack.isNotEmpty) {
       isChildStep = true;
@@ -135,7 +74,7 @@ class LayoutOP {
     _stepMap[label] = step;
   }
 
-  void finishLayoutStep() {
+  void finishStep() {
     currentStep!.startClock.stop();
     currentStep!.duration = currentStep!.startClock.elapsed;
     stepStack.removeLast();
@@ -158,64 +97,56 @@ class LayoutOP {
 
 // Represent a series of paints in a single frame.
 class _PaintPipeLine {
-  final List<PaintOP> paintOp = [];
-  final List<PaintOP> _paintStack = [];
-  final List<LayoutOP> layoutOp = [];
-  final List<LayoutOP> _layoutStack = [];
+  final List<LayoutOrPaintOp> paintOp = [];
+  final List<LayoutOrPaintOp> _paintStack = [];
+  final List<LayoutOrPaintOp> layoutOp = [];
+  final List<LayoutOrPaintOp> _layoutStack = [];
 
-  DateTime startTime;
+  LayoutOrPaintOp get currentPaintOp => _paintStack.last;
 
-  PaintOP get currentPaintOp => _paintStack.last;
-  LayoutOP get currentLayoutOp => _layoutStack.last;
+  LayoutOrPaintOp get currentLayoutOp => _layoutStack.last;
 
-  _PaintPipeLine() : startTime = DateTime.now();
+  _PaintPipeLine();
 
   Set<String> paintRenderObjects = {};
   Set<String> layoutRenderObjects = {};
   int paintCount = 0;
   int layoutCount = 0;
 
-  void recordPaintOp(PaintOP op) {
+  void recordPaintOp(LayoutOrPaintOp op) {
     paintOp.add(op);
 
     paintRenderObjects.add(describeIdentity(op.renderBox));
 
     paintCount++;
 
-    if (_paintStack.isNotEmpty) {
-      _paintStack.last.childrenPaintOp.add(op);
-    }
-
     _paintStack.add(op);
   }
 
-  void recordLayoutOp(LayoutOP op) {
+  void recordLayoutOp(LayoutOrPaintOp op) {
     layoutOp.add(op);
 
     layoutRenderObjects.add(describeIdentity(op.renderBox));
 
     layoutCount++;
 
-    if (_layoutStack.isNotEmpty) {
-      _layoutStack.last.childrenLayoutOp.add(op);
-    }
-
     _layoutStack.add(op);
   }
 
   bool finishPaintOp() {
-    PaintOP targetOp = _paintStack.last;
-    targetOp.selfPaintClock.stop();
-    targetOp.duration = targetOp.selfPaintClock.elapsed;
+    LayoutOrPaintOp targetOp = _paintStack.last;
+    targetOp.selfClock.stop();
+    targetOp.duration = targetOp.selfClock.elapsed;
+
     _paintStack.removeLast();
 
     return _paintStack.isEmpty;
   }
 
   bool finishLayoutOp() {
-    LayoutOP targetOp = _layoutStack.last;
-    targetOp.selfLayoutClock.stop();
-    targetOp.duration = targetOp.selfLayoutClock.elapsed;
+    LayoutOrPaintOp targetOp = _layoutStack.last;
+    targetOp.selfClock.stop();
+    targetOp.duration = targetOp.selfClock.elapsed;
 
     _layoutStack.removeLast();
 
@@ -272,6 +203,7 @@ class WebFProfiler {
   static WebFProfiler get instance => _instance!;
 
   final List<_PaintPipeLine> _paintPipeLines = [];
+
   _PaintPipeLine get currentPipeline => _paintPipeLines.last;
 
   void _recordForFrameCallback() {
@@ -304,7 +236,7 @@ class WebFProfiler {
       },
     );
 
-    PaintOP op = PaintOP(
+    LayoutOrPaintOp op = LayoutOrPaintOp(
         Stopwatch()..start(), describeIdentity(targetRenderObject), targetRenderObject.renderStyle.target.toString());
 
     currentPipeline.recordPaintOp(op);
@@ -324,16 +256,16 @@ class WebFProfiler {
 
   void startTrackPaintStep(String label, [Map<String, dynamic>? arguments]) {
     Timeline.startSync(label, arguments: arguments);
-    PaintOP activeOp = currentPipeline.currentPaintOp;
-    _PaintSteps step;
-    step = _PaintSteps(DateTime.now(), label);
-    activeOp.recordPaintStep(step);
+    LayoutOrPaintOp activeOp = currentPipeline.currentPaintOp;
+    _OpSteps step;
+    step = _OpSteps(Stopwatch()..start(), label);
+    activeOp.recordStep(label, step);
   }
 
   void finishTrackPaintStep() {
     Timeline.finishSync();
-    PaintOP activeOp = currentPipeline.currentPaintOp;
-    activeOp.finishPaintStep();
+    LayoutOrPaintOp activeOp = currentPipeline.currentPaintOp;
+    activeOp.finishStep();
   }
 
   Map<String, dynamic> frameReport() {
@@ -344,7 +276,6 @@ class WebFProfiler {
   }
 
   void startLayout(RenderBox targetRenderBox) {
-    print('$targetRenderBox start layout');
     String ownerElement = targetRenderBox is RenderBoxModel ? targetRenderBox.renderStyle.target.toString() : '<Root>';
     Timeline.startSync(
       'WebF Layout ${targetRenderBox.runtimeType}',
@@ -355,11 +286,9 @@ class WebFProfiler {
       },
     );
 
-    LayoutOP op = LayoutOP(
-        Stopwatch()..start(), describeIdentity(targetRenderBox), ownerElement);
+    LayoutOrPaintOp op = LayoutOrPaintOp(Stopwatch()..start(), describeIdentity(targetRenderBox), ownerElement);
 
     currentPipeline.recordLayoutOp(op);
-
   }
 
   void finishLayout(RenderBox renderBox) {
@@ -372,28 +301,42 @@ class WebFProfiler {
 
   void startTrackLayoutStep(String label, [Map<String, dynamic>? arguments]) {
     Timeline.startSync(label, arguments: arguments);
-    LayoutOP activeOp = currentPipeline.currentLayoutOp;
-    _LayoutSteps step;
-    step = _LayoutSteps(Stopwatch()..start(), label);
-    activeOp.recordLayoutStep(label, step);
+    LayoutOrPaintOp activeOp = currentPipeline.currentLayoutOp;
+    _OpSteps step;
+    step = _OpSteps(Stopwatch()..start(), label);
+    activeOp.recordStep(label, step);
   }
 
   void finishTrackLayoutStep() {
     Timeline.finishSync();
-    LayoutOP activeOp = currentPipeline.currentLayoutOp;
-    activeOp.finishLayoutStep();
+    LayoutOrPaintOp activeOp = currentPipeline.currentLayoutOp;
+    activeOp.finishStep();
   }
 
   void pauseCurrentLayoutOp() {
-    currentPipeline.currentLayoutOp.selfLayoutClock.stop();
+    currentPipeline.currentLayoutOp.selfClock.stop();
     currentPipeline.currentLayoutOp._stepMap.forEach((key, step) {
       step.startClock.stop();
     });
   }
 
+  void pauseCurrentPaintOp() {
+    currentPipeline.currentPaintOp.selfClock.stop();
+    currentPipeline.currentPaintOp._stepMap.forEach((key, step) {
+      step.startClock.stop();
+    });
+  }
+
   void resumeCurrentLayoutOp() {
-    currentPipeline.currentLayoutOp.selfLayoutClock.start();
+    currentPipeline.currentLayoutOp.selfClock.start();
     currentPipeline.currentLayoutOp._stepMap.forEach((key, step) {
+      step.startClock.start();
+    });
+  }
+
+  void resumeCurrentPaintOp() {
+    currentPipeline.currentPaintOp.selfClock.start();
+    currentPipeline.currentPaintOp._stepMap.forEach((key, step) {
       step.startClock.start();
     });
   }

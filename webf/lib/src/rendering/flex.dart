@@ -5,6 +5,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:flutter/foundation.dart';
@@ -583,6 +584,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startLayout(this);
+    }
     doingThisLayout = true;
 
     _doPerformLayout();
@@ -592,6 +596,9 @@ class RenderFlexLayout extends RenderLayoutBox {
       needsRelayout = false;
     }
     doingThisLayout = false;
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishLayout(this);
+    }
   }
 
   void _doPerformLayout() {
