@@ -73,23 +73,108 @@ class PaintOP {
   }
 }
 
+// Represent a layout step from a layout operation.
+class _LayoutSteps {
+  Stopwatch startClock;
+  late Duration duration;
+  String label;
+  _LayoutSteps(this.startClock, this.label);
+
+  List<_LayoutSteps> childrenSteps = [];
+
+  void addChildSteps() {
+
+  }
+
+  @override
+  String toString() {
+    return jsonEncode(toJson());
+  }
+
+  Map toJson() {
+    return {
+      'duration': '${duration.inMicroseconds} us', //  Time elapsed for this paint step.
+      'label': label,
+    };
+  }
+}
+
+class LayoutOP {
+  Stopwatch selfLayoutClock;
+  String renderBox;
+  String ownerElement;
+
+  final Map<String, _LayoutSteps> steps = {};
+
+  List<String> stepStack = [];
+  _LayoutSteps? get currentStep => steps[stepStack.last];
+
+  late Duration duration;
+  late Duration selfPaintDuration;
+
+  final List<LayoutOP> childrenLayoutOp = [];
+
+  LayoutOP(this.selfLayoutClock, this.renderBox, this.ownerElement);
+
+  void recordLayoutStep(String label, _LayoutSteps step) {
+    bool isChildSteps = false;
+    if (stepStack.isNotEmpty) {
+      currentStep!.startClock.stop();
+      isChildSteps = true;
+    }
+
+    stepStack.add(label);
+
+    steps[label] = step;
+  }
+
+  void finishLayoutStep() {
+    currentStep!.startClock.stop();
+    currentStep!.duration = currentStep!.startClock.elapsed;
+    stepStack.removeLast();
+    if (stepStack.isNotEmpty) {
+      currentStep!.startClock.start();
+    }
+  }
+
+  @override
+  String toString() {
+    return jsonEncode(toJson());
+  }
+
+  Map toJson() {
+    return {
+      'duration': '${duration.inMicroseconds} us', // Time elapsed for this paint operation.
+      'renderObject': renderBox, // Target renderBox
+      'ownerElement': ownerElement,
+      'steps': steps
+    };
+  }
+}
+
 // Represent a series of paints in a single frame.
 class _PaintPipeLine {
   final List<PaintOP> paintOp = [];
   final List<PaintOP> _paintStack = [];
+  final List<LayoutOP> layoutOp = [];
+  final List<LayoutOP> _layoutStack = [];
+
   DateTime startTime;
 
-  PaintOP get currentOp => paintOp.last;
+  PaintOP get currentPaintOp => _paintStack.last;
+  LayoutOP get currentLayoutOp => _layoutStack.last;
 
   _PaintPipeLine() : startTime = DateTime.now();
 
-  Set<String> renderObjects = {};
+  Set<String> paintRenderObjects = {};
+  Set<String> layoutRenderObjects = {};
   int paintCount = 0;
+  int layoutCount = 0;
 
   void recordPaintOp(PaintOP op) {
     paintOp.add(op);
 
-    renderObjects.add(describeIdentity(op.renderBox));
+    paintRenderObjects.add(describeIdentity(op.renderBox));
 
     paintCount++;
 
@@ -98,6 +183,20 @@ class _PaintPipeLine {
     }
 
     _paintStack.add(op);
+  }
+
+  void recordLayoutOp(LayoutOP op) {
+    layoutOp.add(op);
+
+    layoutRenderObjects.add(describeIdentity(op.renderBox));
+
+    layoutCount++;
+
+    if (_layoutStack.isNotEmpty) {
+      _layoutStack.last.childrenLayoutOp.add(op);
+    }
+
+    _layoutStack.add(op);
   }
 
   bool finishPaintOp() {
@@ -109,11 +208,31 @@ class _PaintPipeLine {
     return _paintStack.isEmpty;
   }
 
-  Duration get frameDuration {
+  bool finishLayoutOp() {
+    LayoutOP targetOp = _layoutStack.last;
+    targetOp.selfLayoutClock.stop();
+    targetOp.duration = targetOp.selfLayoutClock.elapsed;
+
+    _layoutStack.removeLast();
+
+    return _layoutStack.isEmpty;
+  }
+
+  Duration get paintDurations {
     Duration duration = Duration.zero;
 
     for (int i = 0; i < paintOp.length; i++) {
       duration += paintOp[i].duration;
+    }
+
+    return duration;
+  }
+
+  Duration get layoutDurations {
+    Duration duration = Duration.zero;
+
+    for (int i = 0; i < layoutOp.length; i++) {
+      duration += layoutOp[i].duration;
     }
 
     return duration;
@@ -126,10 +245,14 @@ class _PaintPipeLine {
 
   Map toJson() {
     return {
-      'frameDuration': '${frameDuration.inMicroseconds} us', // Time elapsed for this paint
+      'layoutDuration': '${layoutDurations.inMicroseconds} us',
+      'layouts': layoutOp,
+      'layoutCount': layoutCount,
+      'layoutRenderObjects': layoutRenderObjects.length,
+      'paintDuration': '${paintDurations.inMicroseconds} us', // Time elapsed for this paint
       'paintCount': paintCount, // Count for paint operations
       'paints': paintOp,
-      'paintedRenderObjects': renderObjects.length, // Active renderObjects which was painted in this paint.
+      'paintedRenderObjects': paintRenderObjects.length, // Active renderObjects which was painted in this paint.
     };
   }
 }
@@ -169,7 +292,7 @@ class WebFProfiler {
 
   void startPaint(RenderBoxModel targetRenderObject) {
     Timeline.startSync(
-      'WebF Paint Steps ${targetRenderObject.runtimeType}',
+      'WebF Paint ${targetRenderObject.runtimeType}',
       arguments: {
         'ownerElement': targetRenderObject.renderStyle.target.toString(),
         'isRepaintBoundary': targetRenderObject.isRepaintBoundary,
@@ -197,7 +320,7 @@ class WebFProfiler {
 
   void startTrackPaintStep(String label, [Map<String, dynamic>? arguments]) {
     Timeline.startSync(label, arguments: arguments);
-    PaintOP activeOp = currentPipeline.currentOp;
+    PaintOP activeOp = currentPipeline.currentPaintOp;
     _PaintSteps step;
     step = _PaintSteps(DateTime.now(), label);
     activeOp.recordPaintStep(step);
@@ -205,18 +328,59 @@ class WebFProfiler {
 
   void finishTrackPaintStep() {
     Timeline.finishSync();
-    PaintOP activeOp = currentPipeline.currentOp;
+    PaintOP activeOp = currentPipeline.currentPaintOp;
     activeOp.finishPaintStep();
   }
 
-  Map<String, dynamic> paintReport() {
+  Map<String, dynamic> frameReport() {
     return {
       'totalFrames': _paintPipeLines.length, // Collected frame counts
       'frameDetails': _paintPipeLines
     };
   }
 
+  void startLayout(RenderBoxModel targetRenderObject) {
+    print('$targetRenderObject start layout');
+    Timeline.startSync(
+      'WebF Layout ${targetRenderObject.runtimeType}',
+      arguments: {
+        'ownerElement': targetRenderObject.renderStyle.target.toString(),
+        'isRepaintBoundary': targetRenderObject.isRepaintBoundary,
+        'isScrollingContentBox': targetRenderObject.isScrollingContentBox
+      },
+    );
+
+    LayoutOP op = LayoutOP(
+        Stopwatch()..start(), describeIdentity(targetRenderObject), targetRenderObject.renderStyle.target.toString());
+
+    currentPipeline.recordLayoutOp(op);
+
+  }
+
+  void finishLayout(RenderBoxModel targetRenderObject) {
+    print('finish layout $targetRenderObject');
+    Timeline.finishSync();
+
+    assert(_paintPipeLines.isNotEmpty);
+    _PaintPipeLine currentActivePipeline = currentPipeline;
+    currentActivePipeline.finishLayoutOp();
+  }
+
+  void startTrackLayoutStep(String label, [Map<String, dynamic>? arguments]) {
+    Timeline.startSync(label, arguments: arguments);
+    LayoutOP activeOp = currentPipeline.currentLayoutOp;
+    _LayoutSteps step;
+    step = _LayoutSteps(Stopwatch()..start(), label);
+    activeOp.recordLayoutStep(label, step);
+  }
+
+  void finishTrackLayoutStep() {
+    Timeline.finishSync();
+    LayoutOP activeOp = currentPipeline.currentLayoutOp;
+    activeOp.finishLayoutStep();
+  }
+
   Map<String, dynamic> report() {
-    return {'paint': paintReport()};
+    return {'frames': frameReport()};
   }
 }

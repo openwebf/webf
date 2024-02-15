@@ -360,7 +360,6 @@ class RenderLayoutBox extends RenderBoxModel
       if (_childrenNeedsSort) {
         if (!kReleaseMode) {
           WebFProfiler.instance.startTrackPaintStep('sortPaintingOrder');
-          print('start');
         }
         children.sort((RenderBox left, RenderBox right) {
           // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
@@ -390,7 +389,6 @@ class RenderLayoutBox extends RenderBoxModel
           }
         });
         if (!kReleaseMode) {
-          print('finish');
           WebFProfiler.instance.finishTrackPaintStep();
         }
       }

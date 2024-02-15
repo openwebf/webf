@@ -230,10 +230,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return;
     }
 
-    if (!kReleaseMode) {
-      WebFProfiler.instance.startTrackPaintStep('paintOverflow');
-    }
-
     final double paintOffsetX = renderBoxModel._paintOffsetX;
     final double paintOffsetY = renderBoxModel._paintOffsetY;
     final Size size = renderBoxModel.size;
