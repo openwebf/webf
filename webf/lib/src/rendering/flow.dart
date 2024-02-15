@@ -4,8 +4,10 @@
  */
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 // Position and size of each run (line box) in flow layout.
@@ -128,6 +130,10 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startLayout(this);
+    }
+
     doingThisLayout = true;
 
     _doPerformLayout();
@@ -137,14 +143,22 @@ class RenderFlowLayout extends RenderLayoutBox {
       needsRelayout = false;
     }
     doingThisLayout = false;
-  }
 
-  void performDryLayout() {
-
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishLayout(this);
+    }
   }
 
   void _doPerformLayout() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackLayoutStep('beforeLayout');
+    }
+
     beforeLayout();
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
 
     List<RenderBoxModel> _positionedChildren = [];
     List<RenderBox> _nonPositionedChildren = [];
@@ -172,15 +186,34 @@ class RenderFlowLayout extends RenderLayoutBox {
       CSSPositionedLayout.layoutPositionedChild(this, child);
     }
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackLayoutStep('_layoutChildren');
+    }
+
     // Layout non positioned element (include element in flow and
     // placeholder of positioned element).
     _layoutChildren(_nonPositionedChildren);
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('initOverflowLayout');
+    }
+
     // init overflowLayout size
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('addOverflowLayoutFromChildren');
+    }
+
     // calculate all flexItem child overflow size
     addOverflowLayoutFromChildren(_nonPositionedChildren);
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('applyPositionedChildOffset');
+    }
 
     // Set offset of positioned element after flex box size is set.
     for (RenderBoxModel child in _positionedChildren) {
@@ -188,6 +221,11 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Position of positioned element affect the scroll size of container.
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('applyStickyChildOffset');
     }
 
     // Set offset of sticky element on each layout.
@@ -213,7 +251,16 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
     }
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('didLayout');
+    }
+
     didLayout();
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
   }
 
   // There are 3 steps for layout children.
@@ -289,7 +336,16 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       if (isChildNeedsLayout) {
         bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
+
+        if (!kReleaseMode) {
+          WebFProfiler.instance.currentPipeline.currentLayoutOp.selfLayoutClock.stop();
+        }
+
         child.layout(childConstraints, parentUsesSize: parentUseSize);
+
+        if (!kReleaseMode) {
+          WebFProfiler.instance.currentPipeline.currentLayoutOp.selfLayoutClock.start();
+        }
       }
 
       double childMainAxisExtent = _getMainAxisExtent(child);
@@ -495,7 +551,16 @@ class RenderFlowLayout extends RenderLayoutBox {
                 minHeight: child.constraints.minHeight,
                 maxHeight: child.constraints.maxHeight,
               );
+
+              if (!kReleaseMode) {
+                WebFProfiler.instance.currentPipeline.currentLayoutOp.selfLayoutClock.stop();
+              }
+
               child.layout(childConstraints, parentUsesSize: true);
+
+              if (!kReleaseMode) {
+                WebFProfiler.instance.currentPipeline.currentLayoutOp.selfLayoutClock.start();
+              }
             }
           }
         }
