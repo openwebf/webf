@@ -39,6 +39,7 @@ const paths = {
   webf: resolveWebF('webf'),
   bridge: resolveWebF('bridge'),
   polyfill: resolveWebF('bridge/polyfill'),
+  rs_core: resolveWebF('bridge/core_rs'),
   codeGen: resolveWebF('bridge/scripts/code_generator'),
   thirdParty: resolveWebF('third_party'),
   tests: resolveWebF('integration_tests'),
@@ -82,6 +83,21 @@ task('clean', () => {
 });
 
 const libOutputPath = join(TARGET_PATH, platform, 'lib');
+
+task('compile-webf-core', done => {
+  let buildType = 'Debug';
+  if (process.env.WEBF_BUILD === 'Release') {
+    buildType = 'RelWithDebInfo';
+  }
+
+  execSync(`cargo build ${buildType == 'RelWithDebInfo' ? '--release' : ''}`, {
+    cwd: paths.rs_core,
+    env: process.env,
+    stdio: 'inherit'
+  });
+
+  done();
+});
 
 task('build-darwin-webf-lib', done => {
   let externCmakeArgs = [];
