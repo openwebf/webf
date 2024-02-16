@@ -19,13 +19,31 @@ pub struct ElementRustMethods {
 
 impl RustMethods for ElementRustMethods {}
 
+enum ElementType {
+  kHTMLDIVElement,
+  kHTMLAnchorElement,
+  kHTMLHeadElement,
+  kHTMLBodyElement,
+  kHTMLHTMLElement,
+  kHTMLImageElement,
+  kHTMLLinkElement,
+  kHTMLScriptElement,
+  kHTMLTemplateElement,
+  kHTMLUnknownElement,
+  kHTMLCanvasElement,
+  kHTMLWidgetElement,
+  kHTMLButtonElement,
+  kHTMLFormElement,
+  kHTMLInputElement,
+  kHTMLTextAreaElement
+}
+
 pub struct Element {
   container_node: ContainerNode,
   method_pointer: *const ElementRustMethods,
 }
 
-impl Element {
-}
+impl Element {}
 
 pub trait ElementMethods: ContainerNodeMethods {}
 
