@@ -831,6 +831,9 @@ class CSSRenderStyle extends RenderStyle
 
   @override
   dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('RenderStyle.resolveValue');
+    }
     RenderStyle renderStyle = this;
 
     if (propertyValue == INITIAL) {
@@ -840,6 +843,9 @@ class CSSRenderStyle extends RenderStyle
     // Process CSSVariable.
     dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
       return value;
     }
 
@@ -1105,6 +1111,10 @@ class CSSRenderStyle extends RenderStyle
       case STROKE_LINEJOIN:
         value = CSSSvgMixin.resolveStrokeLinejoin(propertyValue);
         break;
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
 
     // --x: foo;

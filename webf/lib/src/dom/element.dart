@@ -1468,6 +1468,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _applyDefaultStyle(CSSStyleDeclaration style) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('Element._applyDefaultStyle');
+    }
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
         if (style.contains(propertyName) == false) {
@@ -1475,20 +1478,35 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
       });
     }
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void _applyInlineStyle(CSSStyleDeclaration style) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('Element._applyInlineStyle');
+    }
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
         // Force inline style to be applied as important priority.
         style.setProperty(propertyName, value, isImportant: true);
       });
     }
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void _applySheetStyle(CSSStyleDeclaration style) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('Element._applySheetStyle');
+    }
     CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   bool _scheduledRunTransitions = false;

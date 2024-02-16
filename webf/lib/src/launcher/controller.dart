@@ -1219,10 +1219,18 @@ class WebFController {
     // Set the status value for preloading.
     _preloadStatus = PreloadingStatus.preloading;
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
+
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
     view.document.documentElement!.createRenderer();
     view.document.documentElement!.ensureChildAttached();
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
 
     await Future.wait([
       _resolveEntrypoint(),
@@ -1297,10 +1305,18 @@ class WebFController {
     // Set the status value for preloading.
     _preRenderingStatus = PreRenderingStatus.preloading;
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
+
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
     view.document.documentElement!.createRenderer();
     view.document.documentElement!.ensureChildAttached();
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
 
     // Preparing the entrypoint
     await Future.wait([

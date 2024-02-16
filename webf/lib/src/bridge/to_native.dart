@@ -10,6 +10,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/webf.dart';
 
@@ -771,11 +772,40 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   assert(_allocatedPages.containsKey(view.contextId));
   if (view.disposed) return;
 
+  if (!kReleaseMode) {
+    WebFProfiler.instance.startTrackUICommand();
+    WebFProfiler.instance.startTrackUICommandStep('readNativeUICommandMemory');
+  }
+
   _NativeCommandData rawCommands = readNativeUICommandMemory(view.contextId);
+
+  if (!kReleaseMode) {
+    WebFProfiler.instance.finishTrackUICommandStep();
+  }
+
   List<UICommand>? commands;
   if (rawCommands.rawMemory.isNotEmpty) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('nativeUICommandToDart');
+    }
+
     commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+      WebFProfiler.instance.startTrackUICommandStep('execUICommands');
+    }
+
     execUICommands(view, commands);
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
+
     SchedulerBinding.instance.scheduleFrame();
+  }
+
+  if (!kReleaseMode) {
+    WebFProfiler.instance.finishTrackUICommand();
   }
 }

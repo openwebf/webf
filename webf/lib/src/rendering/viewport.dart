@@ -70,7 +70,7 @@ class RenderViewportBox extends RenderBox
   @override
   void performLayout() {
     if (!kReleaseMode) {
-      WebFProfiler.instance.startLayout(this);
+      WebFProfiler.instance.startTrackLayout(this);
       WebFProfiler.instance.startTrackLayoutStep('Root Get Constraints');
     }
 
@@ -122,7 +122,7 @@ class RenderViewportBox extends RenderBox
     }
 
     if (!kReleaseMode) {
-      WebFProfiler.instance.finishLayout(this);
+      WebFProfiler.instance.finishTrackLayout(this);
     }
   }
 
