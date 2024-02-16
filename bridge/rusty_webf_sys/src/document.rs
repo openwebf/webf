@@ -4,7 +4,7 @@
 
 use std::ffi::{c_char, c_double, CString};
 use std::mem;
-use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
+use crate::container_node::{ContainerNode, ContainerNodeMethods, ContainerNodeRustMethods};
 use crate::element::{Element, ElementMethods, ElementRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
 use crate::exception_state::ExceptionState;
@@ -73,7 +73,7 @@ impl Document {
   }
 }
 
-trait DocumentMethods : NodeMethods {}
+trait DocumentMethods : ContainerNodeMethods {}
 
 impl NodeMethods for Document {
   fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
@@ -108,5 +108,7 @@ impl EventTargetMethods for Document {
     self.container_node.node.event_target.add_event_listener(event_name, callback, options)
   }
 }
+
+impl ContainerNodeMethods for Document {}
 
 impl DocumentMethods for Document {}

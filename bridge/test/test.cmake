@@ -45,7 +45,11 @@ add_executable(webf_unit_test
 )
 
 target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
-target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS} ${CMAKE_CURRENT_SOURCE_DIR}/core_rs/target/debug/libwebf_core_rs.a)
+if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+    target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS} ${CMAKE_CURRENT_SOURCE_DIR}/core_rs/target/release/libwebf_core_rs.a)
+else ()
+    target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS} ${CMAKE_CURRENT_SOURCE_DIR}/core_rs/target/debug/libwebf_core_rs.a)
+endif ()
 
 target_compile_options(quickjs PUBLIC -DDUMP_LEAKS=1)
 target_compile_options(webf PUBLIC -DDUMP_LEAKS=1)
