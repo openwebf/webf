@@ -3,8 +3,8 @@
 */
 
 use std::ffi::c_double;
-use webf_sys::OpaquePtr;
 use crate::event_target::{EventTargetRustMethods, RustMethods};
+use crate::OpaquePtr;
 
 #[repr(C)]
 pub struct WindowRustMethods {
