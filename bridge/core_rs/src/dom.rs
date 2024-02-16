@@ -2,11 +2,9 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-use std::ffi::{c_void, CString};
-use libc::labs;
-use webf::document::Document;
-use webf::executing_context::ExecutingContext;
-use webf::node::NodeMethods;
+use std::ffi::{CString};
+use webf_sys::executing_context::ExecutingContext;
+use webf_sys::node::NodeMethods;
 
 pub fn init_webf_dom(context: &ExecutingContext) {
   let document = context.document();
