@@ -4,13 +4,13 @@
 
 use std::ffi::{c_char, c_double, CString};
 use std::mem;
-use webf_sys::{OpaquePtr, RustValue};
 use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
-use crate::element::{Element, ElementRustMethods};
+use crate::element::{Element, ElementMethods, ElementRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeMethods};
+use crate::{OpaquePtr, RustValue};
 use crate::text::{Text, TextNodeRustMethods};
 
 #[repr(C)]
@@ -78,6 +78,10 @@ trait DocumentMethods : NodeMethods {}
 impl NodeMethods for Document {
   fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
     self.container_node.node.append_child(new_node, exception_state)
+  }
+
+  fn as_node(&self) -> &Node {
+    &self.container_node.node
   }
 }
 

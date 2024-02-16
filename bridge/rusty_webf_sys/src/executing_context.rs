@@ -6,10 +6,10 @@ use std::ffi::{c_char, c_double, c_void};
 use std::ptr;
 use libc;
 use libc::c_uint;
-use webf_sys::{OpaquePtr, RustValue};
 use crate::document::{Document, DocumentRustMethods};
 use crate::event_target::EventTargetMethods;
 use crate::exception_state::{ExceptionState, ExceptionStateRustMethods};
+use crate::{OpaquePtr, RustValue};
 use crate::window::{Window, WindowRustMethods};
 
 #[repr(C)]
