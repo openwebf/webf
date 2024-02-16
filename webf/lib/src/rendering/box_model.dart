@@ -404,16 +404,18 @@ class RenderLayoutBox extends RenderBoxModel
   void performPaint(PaintingContext context, Offset offset) {
     List<RenderBox> paintingOrder = this.paintingOrder;
 
-    if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint(this);
-    }
-
     for (int i = 0; i < paintingOrder.length; i++) {
       RenderBox child = paintingOrder[i];
       if (!isPositionPlaceholder(child)) {
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
         if (child.hasSize) {
+          if (!kReleaseMode) {
+            WebFProfiler.instance.pauseCurrentPaintOp();
+          }
           context.paintChild(child, childParentData.offset + offset);
+          if (!kReleaseMode) {
+            WebFProfiler.instance.resumeCurrentPaintOp();
+          }
         }
       }
     }
@@ -1401,6 +1403,10 @@ class RenderBoxModel extends RenderBox
     }
 
     paintBoxModel(pipeline, offset);
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishPaint(this);
+    }
   }
 
   void debugPaintOverlay(PaintingContext context, Offset offset) {
@@ -1436,11 +1442,7 @@ class RenderBoxModel extends RenderBox
     }
   }
 
-  static void paintNothing(WebFPaintingPipeline pipeline, Offset offset) {
-    if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint(pipeline.renderBoxModel);
-    }
-  }
+  static void paintNothing(WebFPaintingPipeline pipeline, Offset offset) {}
 
   void paintBoxModel(WebFPaintingPipeline pipeline, Offset offset) {
     // If opacity to zero, only paint intersection observer.

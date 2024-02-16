@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 
 const String _kEllipsis = '\u2026';
 
@@ -520,6 +521,9 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startPaint(this);
+    }
     assert(() {
       if (debugRepaintTextRainbowEnabled) {
         final Paint paint = Paint()..color = debugCurrentRepaintColor.toColor();
@@ -566,6 +570,10 @@ class WebFRenderParagraph extends RenderBox
         context.canvas.drawRect(Offset.zero & size, paint);
       }
       context.canvas.restore();
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishPaint(this);
     }
   }
 

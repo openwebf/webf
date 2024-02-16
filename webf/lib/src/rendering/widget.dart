@@ -118,6 +118,10 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
 
     WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
     paintBoxModel(pipeline, offset);
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishPaint(this);
+    }
   }
 
   @override
@@ -127,12 +131,14 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
     offset +=
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
-    if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint(this);
-    }
-
     if (child != null) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.pauseCurrentPaintOp();
+      }
       context.paintChild(child!, offset);
+      if (!kReleaseMode) {
+        WebFProfiler.instance.resumeCurrentPaintOp();
+      }
     }
   }
 
