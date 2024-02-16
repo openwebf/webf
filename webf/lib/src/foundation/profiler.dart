@@ -41,10 +41,16 @@ class _OpSteps {
   }
 }
 
-class LayoutOrPaintOp {
+enum OpItemType {
+  uiCommand,
+  layout,
+  paint
+}
+
+class OpItem {
   Stopwatch selfClock;
-  String renderBox;
-  String ownerElement;
+  String? renderBox;
+  String? ownerElement;
 
   final Map<String, _OpSteps> _stepMap = {};
 
@@ -54,9 +60,8 @@ class LayoutOrPaintOp {
   _OpSteps? get currentStep => _stepMap[stepStack.last];
 
   late Duration duration;
-  late Duration selfPaintDuration;
 
-  LayoutOrPaintOp(this.selfClock, this.renderBox, this.ownerElement);
+  OpItem(this.selfClock, { this.renderBox, this.ownerElement });
 
   void recordStep(String label, _OpSteps step) {
     bool isChildStep = false;
@@ -86,25 +91,54 @@ class LayoutOrPaintOp {
   }
 
   Map toJson() {
-    return {
+    Map map = {
       'duration': '${duration.inMicroseconds} us', // Time elapsed for this paint operation.
-      'renderObject': renderBox, // Target renderBox
-      'ownerElement': ownerElement,
       'steps': steps
     };
+    if (renderBox != null) {
+      map['renderObject'] = renderBox;
+    }
+    if (ownerElement != null) {
+      map['ownerElement'] = ownerElement;
+    }
+    return map;
   }
 }
 
 // Represent a series of paints in a single frame.
 class _PaintPipeLine {
-  final List<LayoutOrPaintOp> paintOp = [];
-  final List<LayoutOrPaintOp> _paintStack = [];
-  final List<LayoutOrPaintOp> layoutOp = [];
-  final List<LayoutOrPaintOp> _layoutStack = [];
+  final List<OpItem> paintOp = [];
+  final List<OpItem> _paintStack = [];
+  final List<OpItem> layoutOp = [];
+  final List<OpItem> _layoutStack = [];
+  final List<OpItem> uiCommandOp = [];
+  final List<OpItem> _uiCommandStack = [];
 
-  LayoutOrPaintOp get currentPaintOp => _paintStack.last;
+  List<OpItem> _getOp(OpItemType type) {
+    switch(type) {
+      case OpItemType.paint:
+        return paintOp;
+      case OpItemType.uiCommand:
+        return uiCommandOp;
+      case OpItemType.layout:
+        return layoutOp;
+    }
+  }
 
-  LayoutOrPaintOp get currentLayoutOp => _layoutStack.last;
+  List<OpItem> _getOpStack(OpItemType type) {
+    switch(type) {
+      case OpItemType.uiCommand:
+        return _uiCommandStack;
+      case OpItemType.layout:
+        return _layoutStack;
+      case OpItemType.paint:
+        return _paintStack;
+    }
+  }
+
+  OpItem get currentPaintOp => _paintStack.last;
+  OpItem get currentLayoutOp => _layoutStack.last;
+  OpItem get currentUICommandOp => _uiCommandStack.last;
 
   _PaintPipeLine();
 
@@ -112,62 +146,40 @@ class _PaintPipeLine {
   Set<String> layoutRenderObjects = {};
   int paintCount = 0;
   int layoutCount = 0;
+  int uiCommandCount = 0;
 
-  void recordPaintOp(LayoutOrPaintOp op) {
-    paintOp.add(op);
+  void recordOp(OpItemType type, OpItem op) {
+    _getOp(type).add(op);
 
-    paintRenderObjects.add(describeIdentity(op.renderBox));
-
-    paintCount++;
-
-    _paintStack.add(op);
-  }
-
-  void recordLayoutOp(LayoutOrPaintOp op) {
-    layoutOp.add(op);
-
-    layoutRenderObjects.add(describeIdentity(op.renderBox));
-
-    layoutCount++;
-
-    _layoutStack.add(op);
-  }
-
-  bool finishPaintOp() {
-    LayoutOrPaintOp targetOp = _paintStack.last;
-    targetOp.selfClock.stop();
-    targetOp.duration = targetOp.selfClock.elapsed;
-
-    _paintStack.removeLast();
-
-    return _paintStack.isEmpty;
-  }
-
-  bool finishLayoutOp() {
-    LayoutOrPaintOp targetOp = _layoutStack.last;
-    targetOp.selfClock.stop();
-    targetOp.duration = targetOp.selfClock.elapsed;
-
-    _layoutStack.removeLast();
-
-    return _layoutStack.isEmpty;
-  }
-
-  Duration get paintDurations {
-    Duration duration = Duration.zero;
-
-    for (int i = 0; i < paintOp.length; i++) {
-      duration += paintOp[i].duration;
+    if (type == OpItemType.paint) {
+      paintRenderObjects.add(describeIdentity(op.renderBox));
+      paintCount++;
+    } else if (type == OpItemType.layout) {
+      layoutRenderObjects.add(describeIdentity(op.renderBox));
+      layoutCount++;
+    } else if (type == OpItemType.uiCommand) {
+      uiCommandCount++;
     }
 
-    return duration;
+    _getOpStack(type).add(op);
   }
 
-  Duration get layoutDurations {
+  bool finishOp(OpItemType type) {
+    List<OpItem> opStack = _getOpStack(type);
+    OpItem targetOp = opStack.last;
+    targetOp.selfClock.stop();
+    targetOp.duration = targetOp.selfClock.elapsed;
+
+    opStack.removeLast();
+
+    return opStack.isEmpty;
+  }
+
+  Duration totalOpDuration(List<OpItem> opList) {
     Duration duration = Duration.zero;
 
-    for (int i = 0; i < layoutOp.length; i++) {
-      duration += layoutOp[i].duration;
+    for (int i = 0; i < opList.length; i++) {
+      duration += opList[i].duration;
     }
 
     return duration;
@@ -180,11 +192,15 @@ class _PaintPipeLine {
 
   Map toJson() {
     return {
-      'layoutDuration': '${layoutDurations.inMicroseconds} us',
+      'totalDuration': '${totalOpDuration(uiCommandOp).inMicroseconds + totalOpDuration(layoutOp).inMicroseconds + totalOpDuration(paintOp).inMicroseconds} us',
+      'uiCommandDuration': '${totalOpDuration(uiCommandOp).inMicroseconds} us',
+      'uiCommands': uiCommandOp,
+      'uiCommandCount': uiCommandCount,
+      'layoutDuration': '${totalOpDuration(layoutOp).inMicroseconds} us',
       'layouts': layoutOp,
       'layoutCount': layoutCount,
       'layoutRenderObjects': layoutRenderObjects.length,
-      'paintDuration': '${paintDurations.inMicroseconds} us', // Time elapsed for this paint
+      'paintDuration': '${totalOpDuration(paintOp).inMicroseconds} us', // Time elapsed for this paint
       'paintCount': paintCount, // Count for paint operations
       'paints': paintOp,
       'paintedRenderObjects': paintRenderObjects.length, // Active renderObjects which was painted in this paint.
@@ -221,12 +237,12 @@ class WebFProfiler {
   }
 
   void _paintEndInFrame() {
-    if (currentPipeline.paintCount == 0) {
+    if (currentPipeline.paintCount == 0 && currentPipeline.uiCommandCount == 0) {
       _paintPipeLines.removeLast();
     }
   }
 
-  void startPaint(RenderBox renderBox) {
+  void startTrackPaint(RenderBox renderBox) {
     String ownerElement = renderBox is RenderBoxModel ? renderBox.renderStyle.target.toString() : '';
     Timeline.startSync(
       'WebF Paint ${renderBox.runtimeType}',
@@ -237,18 +253,18 @@ class WebFProfiler {
       },
     );
 
-    LayoutOrPaintOp op = LayoutOrPaintOp(
-        Stopwatch()..start(), describeIdentity(renderBox), ownerElement);
+    OpItem op = OpItem(
+        Stopwatch()..start(), ownerElement: ownerElement, renderBox: describeIdentity(renderBox));
 
-    currentPipeline.recordPaintOp(op);
+    currentPipeline.recordOp(OpItemType.paint, op);
   }
 
-  void finishPaint(RenderBox renderBox) {
+  void finishTrackPaint(RenderBox renderBox) {
     Timeline.finishSync();
 
     assert(_paintPipeLines.isNotEmpty);
     _PaintPipeLine currentActivePipeline = currentPipeline;
-    bool isPipeLineFinished = currentActivePipeline.finishPaintOp();
+    bool isPipeLineFinished = currentActivePipeline.finishOp(OpItemType.paint);
 
     if (isPipeLineFinished) {
       _paintBeginInFrame();
@@ -257,7 +273,7 @@ class WebFProfiler {
 
   void startTrackPaintStep(String label, [Map<String, dynamic>? arguments]) {
     Timeline.startSync(label, arguments: arguments);
-    LayoutOrPaintOp activeOp = currentPipeline.currentPaintOp;
+    OpItem activeOp = currentPipeline.currentPaintOp;
     _OpSteps step;
     step = _OpSteps(Stopwatch()..start(), label);
     activeOp.recordStep(label, step);
@@ -265,7 +281,7 @@ class WebFProfiler {
 
   void finishTrackPaintStep() {
     Timeline.finishSync();
-    LayoutOrPaintOp activeOp = currentPipeline.currentPaintOp;
+    OpItem activeOp = currentPipeline.currentPaintOp;
     activeOp.finishStep();
   }
 
@@ -276,7 +292,7 @@ class WebFProfiler {
     };
   }
 
-  void startLayout(RenderBox targetRenderBox) {
+  void startTrackLayout(RenderBox targetRenderBox) {
     String ownerElement = targetRenderBox is RenderBoxModel ? targetRenderBox.renderStyle.target.toString() : '<Root>';
     Timeline.startSync(
       'WebF Layout ${targetRenderBox.runtimeType}',
@@ -287,22 +303,22 @@ class WebFProfiler {
       },
     );
 
-    LayoutOrPaintOp op = LayoutOrPaintOp(Stopwatch()..start(), describeIdentity(targetRenderBox), ownerElement);
+    OpItem op = OpItem(Stopwatch()..start(), ownerElement: ownerElement, renderBox: describeIdentity(targetRenderBox));
 
-    currentPipeline.recordLayoutOp(op);
+    currentPipeline.recordOp(OpItemType.layout, op);
   }
 
-  void finishLayout(RenderBox renderBox) {
+  void finishTrackLayout(RenderBox renderBox) {
     Timeline.finishSync();
 
     assert(_paintPipeLines.isNotEmpty);
     _PaintPipeLine currentActivePipeline = currentPipeline;
-    currentActivePipeline.finishLayoutOp();
+    currentActivePipeline.finishOp(OpItemType.layout);
   }
 
   void startTrackLayoutStep(String label, [Map<String, dynamic>? arguments]) {
     Timeline.startSync(label, arguments: arguments);
-    LayoutOrPaintOp activeOp = currentPipeline.currentLayoutOp;
+    OpItem activeOp = currentPipeline.currentLayoutOp;
     _OpSteps step;
     step = _OpSteps(Stopwatch()..start(), label);
     activeOp.recordStep(label, step);
@@ -310,8 +326,44 @@ class WebFProfiler {
 
   void finishTrackLayoutStep() {
     Timeline.finishSync();
-    LayoutOrPaintOp activeOp = currentPipeline.currentLayoutOp;
+    OpItem activeOp = currentPipeline.currentLayoutOp;
     activeOp.finishStep();
+  }
+
+  void startTrackUICommand() {
+    Timeline.startSync(
+      'WebF FlushUICommand'
+    );
+
+    if (_paintPipeLines.isEmpty) {
+      _paintBeginInFrame();
+    }
+
+    OpItem op = OpItem(Stopwatch()..start());
+
+    currentPipeline.recordOp(OpItemType.uiCommand, op);
+  }
+
+  void startTrackUICommandStep(String label, [Map<String, dynamic>? arguments]) {
+    Timeline.startSync(label, arguments: arguments);
+    OpItem activeOp = currentPipeline.currentUICommandOp;
+    _OpSteps step;
+    step = _OpSteps(Stopwatch()..start(), label);
+    activeOp.recordStep(label, step);
+  }
+
+  void finishTrackUICommandStep() {
+    Timeline.finishSync();
+    OpItem activeOp = currentPipeline.currentUICommandOp;
+    activeOp.finishStep();
+  }
+
+  void finishTrackUICommand() {
+    Timeline.finishSync();
+
+    assert(_paintPipeLines.isNotEmpty);
+    _PaintPipeLine currentActivePipeline = currentPipeline;
+    currentActivePipeline.finishOp(OpItemType.uiCommand);
   }
 
   void pauseCurrentLayoutOp() {

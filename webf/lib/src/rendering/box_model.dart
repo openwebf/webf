@@ -1385,19 +1385,19 @@ class RenderBoxModel extends RenderBox
     WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
 
     if (!kReleaseMode) {
-      WebFProfiler.instance.startPaint(this);
+      WebFProfiler.instance.startTrackPaint(this);
     }
 
     if (!shouldPaint) {
       if (!kReleaseMode) {
-        WebFProfiler.instance.finishPaint(this);
+        WebFProfiler.instance.finishTrackPaint(this);
       }
       return;
     }
 
     if (visualAvailableSize?.isEmpty == true) {
       if (!kReleaseMode) {
-        WebFProfiler.instance.finishPaint(this);
+        WebFProfiler.instance.finishTrackPaint(this);
       }
       return;
     }
@@ -1405,7 +1405,7 @@ class RenderBoxModel extends RenderBox
     paintBoxModel(pipeline, offset);
 
     if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint(this);
+      WebFProfiler.instance.finishTrackPaint(this);
     }
   }
 

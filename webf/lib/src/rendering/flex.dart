@@ -585,7 +585,7 @@ class RenderFlexLayout extends RenderLayoutBox {
   @override
   void performLayout() {
     if (!kReleaseMode) {
-      WebFProfiler.instance.startLayout(this);
+      WebFProfiler.instance.startTrackLayout(this);
     }
     doingThisLayout = true;
 
@@ -597,7 +597,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
     doingThisLayout = false;
     if (!kReleaseMode) {
-      WebFProfiler.instance.finishLayout(this);
+      WebFProfiler.instance.finishTrackLayout(this);
     }
   }
 

@@ -522,7 +522,7 @@ class WebFRenderParagraph extends RenderBox
   @override
   void paint(PaintingContext context, Offset offset) {
     if (!kReleaseMode) {
-      WebFProfiler.instance.startPaint(this);
+      WebFProfiler.instance.startTrackPaint(this);
     }
     assert(() {
       if (debugRepaintTextRainbowEnabled) {
@@ -573,7 +573,7 @@ class WebFRenderParagraph extends RenderBox
     }
 
     if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint(this);
+      WebFProfiler.instance.finishTrackPaint(this);
     }
   }
 

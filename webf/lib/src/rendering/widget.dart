@@ -106,12 +106,12 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
   @override
   void paint(PaintingContext context, Offset offset) {
     if (!kReleaseMode) {
-      WebFProfiler.instance.startPaint(this);
+      WebFProfiler.instance.startTrackPaint(this);
     }
 
     if (visualAvailableSize?.isEmpty == true) {
       if (!kReleaseMode) {
-        WebFProfiler.instance.finishPaint(this);
+        WebFProfiler.instance.finishTrackPaint(this);
       }
       return;
     }
@@ -120,7 +120,7 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
     paintBoxModel(pipeline, offset);
 
     if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint(this);
+      WebFProfiler.instance.finishTrackPaint(this);
     }
   }
 

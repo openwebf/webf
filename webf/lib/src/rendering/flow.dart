@@ -147,7 +147,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   @override
   void performLayout() {
     if (!kReleaseMode) {
-      WebFProfiler.instance.startLayout(this);
+      WebFProfiler.instance.startTrackLayout(this);
     }
 
     doingThisLayout = true;
@@ -161,7 +161,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     doingThisLayout = false;
 
     if (!kReleaseMode) {
-      WebFProfiler.instance.finishLayout(this);
+      WebFProfiler.instance.finishTrackLayout(this);
     }
   }
 
