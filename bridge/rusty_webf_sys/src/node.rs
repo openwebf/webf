@@ -4,11 +4,11 @@
 
 use std::ffi::{c_double, c_void};
 use libc::c_char;
-use webf_sys::{OpaquePtr, RustValue};
 use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventTarget, EventTargetMethods, EventTargetRustMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
+use crate::{OpaquePtr, RustValue};
 
 enum NodeType {
   ElementNode,
@@ -65,6 +65,8 @@ impl Node {
 
 pub trait NodeMethods : EventTargetMethods {
   fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String>;
+
+  fn as_node(&self) -> &Node;
 }
 
 impl EventTargetMethods for Node {
@@ -94,5 +96,9 @@ impl EventTargetMethods for Node {
 impl NodeMethods for Node {
   fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
     self.append_child(new_node, exception_state)
+  }
+
+  fn as_node(&self) -> &Node {
+    self
   }
 }
