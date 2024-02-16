@@ -1,9 +1,11 @@
 [package]
 name = "webf-sys"
-version = "0.1.0"
-description = "Rust bindings to WebF"
+version = "0.16.0"
 edition = "2021"
-
+repository = "https://github.com/openwebf/webf"
+homepage = "https://openwebf.com"
+description = "Rust bindings to Web API which provided by WebF"
+license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
