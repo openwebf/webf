@@ -226,23 +226,24 @@ class WebFProfiler {
     }
   }
 
-  void startPaint(RenderBoxModel targetRenderObject) {
+  void startPaint(RenderBox renderBox) {
+    String ownerElement = renderBox is RenderBoxModel ? renderBox.renderStyle.target.toString() : '';
     Timeline.startSync(
-      'WebF Paint ${targetRenderObject.runtimeType}',
+      'WebF Paint ${renderBox.runtimeType}',
       arguments: {
-        'ownerElement': targetRenderObject.renderStyle.target.toString(),
-        'isRepaintBoundary': targetRenderObject.isRepaintBoundary,
-        'isScrollingContentBox': targetRenderObject.isScrollingContentBox
+        'ownerElement': ownerElement,
+        'isRepaintBoundary': renderBox.isRepaintBoundary,
+        'isScrollingContentBox': renderBox is RenderBoxModel ? renderBox.isScrollingContentBox : false
       },
     );
 
     LayoutOrPaintOp op = LayoutOrPaintOp(
-        Stopwatch()..start(), describeIdentity(targetRenderObject), targetRenderObject.renderStyle.target.toString());
+        Stopwatch()..start(), describeIdentity(renderBox), ownerElement);
 
     currentPipeline.recordPaintOp(op);
   }
 
-  void finishPaint(RenderBoxModel targetRenderObject) {
+  void finishPaint(RenderBox renderBox) {
     Timeline.finishSync();
 
     assert(_paintPipeLines.isNotEmpty);

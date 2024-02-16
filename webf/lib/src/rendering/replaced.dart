@@ -145,6 +145,10 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     } else if (shouldPaint) {
       paintBoxModel(pipeline, offset);
     }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishPaint(this);
+    }
   }
 
   @override
@@ -154,12 +158,14 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     offset +=
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
-    if (!kReleaseMode) {
-      WebFProfiler.instance.finishPaint(this);
-    }
-
     if (child != null) {
+      if (!kReleaseMode) {
+        WebFProfiler.instance.pauseCurrentPaintOp();
+      }
       context.paintChild(child!, offset);
+      if (!kReleaseMode) {
+        WebFProfiler.instance.resumeCurrentPaintOp();
+      }
     }
   }
 
