@@ -69,9 +69,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! RenderLayoutParentData) {
-      child.parentData = RenderLayoutParentData();
-    }
+    child.parentData = RenderLayoutParentData();
     if (child is RenderBoxModel) {
       child.parentData = CSSPositionedLayout.getPositionParentData(child, child.parentData as RenderLayoutParentData);
     }
@@ -819,7 +817,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     // Use margin bottom as baseline if layout has no children.
     if (_lineBoxMetrics.isEmpty) {
-      if (isDisplayInline) {
+      if (isDisplayInline && (parent as RenderBoxModel).hasSize) {
         // Flex item baseline does not includes margin-bottom.
         Size? boxSize = isScrollingContentBox ? (parent as RenderBoxModel).boxSize : this.boxSize;
         lineDistance = isParentFlowLayout ? marginTop + boxSize!.height + marginBottom : marginTop + boxSize!.height;
