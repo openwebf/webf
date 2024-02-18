@@ -55,7 +55,7 @@ final DartGetWebFInfo _getWebFInfo =
 
 final WebFInfo _cachedInfo = WebFInfo(_getWebFInfo());
 
-final HashMap<double, Pointer<Void>> _allocatedPages = HashMap();
+final Map<int, Pointer<Void>> _allocatedPages = {};
 
 Pointer<Void>? getAllocatedPage(double contextId) {
   return _allocatedPages[contextId];
