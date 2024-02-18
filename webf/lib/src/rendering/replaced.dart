@@ -41,13 +41,11 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! RenderLayoutParentData) {
-      if (child is RenderBoxModel) {
-        RenderLayoutParentData parentData = RenderLayoutParentData();
-        child.parentData = CSSPositionedLayout.getPositionParentData(child, parentData);
-      } else {
-        child.parentData = RenderLayoutParentData();
-      }
+    if (child is RenderBoxModel) {
+      RenderLayoutParentData parentData = RenderLayoutParentData();
+      child.parentData = CSSPositionedLayout.getPositionParentData(child, parentData);
+    } else {
+      child.parentData = RenderLayoutParentData();
     }
   }
 

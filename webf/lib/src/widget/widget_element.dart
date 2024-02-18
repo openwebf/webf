@@ -204,23 +204,48 @@ abstract class WidgetElement extends dom.Element {
     return child;
   }
 
+  // Locate the closest `WebFHTMLElementStatefulWidget` widget for this element.
   static dom.Node? _getAncestorWidgetNode(WidgetElement element) {
     dom.Node? parent = element.parentNode;
+    dom.Node? current = element;
 
     while(parent != null) {
-      if (parent.flutterWidget != null) {
-        return parent;
+      // The `WebFCharacterDataToWidgetAdaptor` always be the child of WidgetElement.
+      if (parent is WidgetElement) {
+        return current;
       }
 
+      current = parent;
       parent = parent.parentNode;
     }
 
     return null;
   }
 
+  // void _attachWidget(Widget widget) {
+  //   if (attachedAdapter == null) return;
+  //   // Attach the current widget to the root WebF or WebFHTMLElementStatefulWidget as a child in the current widget tree.
+  //   dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
+  //   if (ancestorWidgetNode != null) {
+  //     dom.Element element = ancestorWidgetNode as dom.Element;
+  //     // The ancestor may no be initialized
+  //     if (element.flutterWidgetState == null) {
+  //       element.pendingSubWidgets.add(attachedAdapter!);
+  //     } else {
+  //       element.flutterWidgetState!.addWidgetChild(attachedAdapter!);
+  //     }
+  //   } else {
+  //     ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
+  //   }
+  //   // Flush the build and layout to initialize the renderObject.
+  //   WidgetsBinding.instance.buildOwner!.buildScope(WidgetsBinding.instance.rootElement!);
+  //   WidgetsBinding.instance.pipelineOwner.flushLayout();
+  // }
+
+
   void _attachWidget(Widget widget) {
     if (attachedAdapter == null) return;
-
+    // Attach the current widget to the root WebF or WebFHTMLElementStatefulWidget as a child in the current widget tree.
     dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
     if (ancestorWidgetNode != null) {
       (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);
@@ -230,6 +255,23 @@ abstract class WidgetElement extends dom.Element {
       ownerDocument.controller.pendingWidgetElements.add(attachedAdapter!);
     }
   }
+
+  // void _detachWidget() {
+  //   if (attachedAdapter != null) {
+  //     dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
+  //     if (ancestorWidgetNode != null) {
+  //       dom.Element element = ancestorWidgetNode as dom.Element;
+  //       if (element.flutterWidgetState == null) {
+  //         element.pendingSubWidgets.remove(attachedAdapter!);
+  //       } else {
+  //         element.flutterWidgetState!.removeWidgetChild(attachedAdapter!);
+  //       }
+  //     } else {
+  //       ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
+  //     }
+  //     attachedAdapter = null;
+  //   }
+  // }
 
   void _detachWidget() {
     if (attachedAdapter != null) {
