@@ -66,8 +66,7 @@ class _WebFElement extends MultiChildRenderObjectElement {
         fullFillInlineStyle(widget.inlineStyle!);
       }
 
-      htmlElement.ensureChildAttached();
-      htmlElement.setNeedsStyleRecalc(StyleChangeType.localStyleChange);
+      htmlElement!.ensureChildAttached();
     }
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();

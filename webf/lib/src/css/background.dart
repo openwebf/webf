@@ -508,7 +508,6 @@ class CSSBackgroundPosition {
   CSSBackgroundPosition({
     this.length,
     this.percentage,
-    this.calcValue,
   });
 
   /// Absolute position to image container when length type is set.
@@ -517,18 +516,12 @@ class CSSBackgroundPosition {
   /// Relative position to image container when keyword or percentage type is set.
   double? percentage;
 
-  /// Relative position to image container when keyword or calcValue type is set.
-  CSSCalcValue? calcValue;
-
   String cssText() {
     if (length != null) {
       return length!.cssText();
     }
     if (percentage != null) {
       return '${((percentage! * 100 + 100) / 100 * 50).cssText()}%';
-    }
-    if (calcValue != null) {
-      return '${(calcValue!.computedValue('') as double).cssText()}px';
     }
     return '';
   }

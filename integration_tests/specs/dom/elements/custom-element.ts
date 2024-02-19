@@ -283,6 +283,48 @@ describe('custom widget element', () => {
     await snapshot();
   });
 
+  it('should works with list-view and pseudo elements', async () => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .box::before {
+        content: 'A';
+        background-color: yellow;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const flutterContainer = document.createElement('flutter-listview');
+    flutterContainer.style.height = '100vh';
+    flutterContainer.style.display = 'block';
+
+    document.body.appendChild(flutterContainer);
+
+    const colors = ['red', 'yellow', 'black', 'blue', 'green'];
+
+    const promise_loading: Promise<void>[] = [];
+
+    for (let i = 0; i < 10; i++) {
+      const div = document.createElement('div');
+      div.style.width = '100%';
+      div.style.border = `1px solid ${colors[i % colors.length]}`;
+      div.className = 'box';
+      div.appendChild(document.createTextNode(`${i}`));
+
+      const img = document.createElement('img');
+      img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
+      div.appendChild(img);
+      img.style.width = '100px';
+      promise_loading.push(new Promise((resolve, reject) => {
+        img.onload = () => {resolve();}
+      }));
+
+      flutterContainer.appendChild(div);
+    }
+    await Promise.all(promise_loading);
+
+    await snapshot();
+  });
+
   it('getBoundingClientRect should work with items in listview', async (done) => {
     const flutterContainer = document.createElement('flutter-listview');
     flutterContainer.style.height = '100vh';
@@ -295,11 +337,14 @@ describe('custom widget element', () => {
     div.style.height = '100px';
     div.style.border = `1px solid red`;
 
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(div);
+
     const img = document.createElement('img');
     img.src = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
     div.appendChild(img);
 
-    flutterContainer.appendChild(div);
+    flutterContainer.appendChild(wrapper);
 
     requestAnimationFrame(async () => {
        const rect = div.getBoundingClientRect();

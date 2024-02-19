@@ -203,28 +203,20 @@ class CanvasElement extends Element {
     }
   }
 
+  int? _width;
   /// Element property width.
   int get width {
-    String? attrWidth = getAttribute(WIDTH);
-    if (attrWidth != null) {
-      return attributeToProperty<int>(attrWidth);
-    } else {
-      return _ELEMENT_DEFAULT_WIDTH_IN_PIXEL;
-    }
+    return _width ?? _ELEMENT_DEFAULT_WIDTH_IN_PIXEL;
   }
 
   set width(int value) {
-    _setDimensions(value, null);
+    _width = value;
   }
 
+  int? _height;
   /// Element property height.
   int get height {
-    String? attrHeight = getAttribute(HEIGHT);
-    if (attrHeight != null) {
-      return attributeToProperty<int>(attrHeight);
-    } else {
-      return _ELEMENT_DEFAULT_HEIGHT_IN_PIXEL;
-    }
+    return _height ?? _ELEMENT_DEFAULT_HEIGHT_IN_PIXEL;
   }
 
   set height(int value) {
@@ -240,16 +232,16 @@ class CanvasElement extends Element {
     // 3. If the numeric value of canvas's width content attribute differs from width,
     // then set canvas's width content attribute to the shortest possible string representing width as
     // a valid non-negative integer.
-    if (width != null && width.toString() != getAttribute(WIDTH)) {
+    if (width != null) {
       if (width < 0) width = 0;
-      internalSetAttribute(WIDTH, width.toString());
+      _width = width.toInt();
     }
     // 5. If the numeric value of canvas's height content attribute differs from height,
     // then set canvas's height content attribute to the shortest possible string representing height as
     // a valid non-negative integer.
-    if (height != null && height.toString() != getAttribute(HEIGHT)) {
+    if (height != null) {
       if (height < 0) height = 0;
-      internalSetAttribute(HEIGHT, height.toString());
+      _height = height.toInt();
     }
 
     // 4. Resize the output bitmap to the new width and height and clear it to transparent black.
@@ -273,19 +265,6 @@ class CanvasElement extends Element {
       case BORDER_BOTTOM_STYLE:
       case BORDER_BOTTOM_WIDTH:
         resize();
-        break;
-    }
-  }
-
-  @override
-  void setAttribute(String qualifiedName, String value) {
-    super.setAttribute(qualifiedName, value);
-    switch (qualifiedName) {
-      case 'width':
-        width = attributeToProperty<int>(value);
-        break;
-      case 'height':
-        height = attributeToProperty<int>(value);
         break;
     }
   }

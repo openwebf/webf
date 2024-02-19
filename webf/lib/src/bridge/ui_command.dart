@@ -94,9 +94,6 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
         case UICommandType.setStyle:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${nativeStringToString(command.nativePtr2.cast<NativeString>())}';
           break;
-        case UICommandType.setAttribute:
-          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${nativeStringToString(command.nativePtr2.cast<NativeString>())} value: ${command.args}';
-          break;
         case UICommandType.createTextNode:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} data: ${command.args}';
           break;
@@ -255,31 +252,6 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
           view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
-          break;
-        case UICommandType.setAttribute:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setAttribute');
-          }
-          Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
-          String key = nativeStringToString(nativeKey);
-          freeNativeString(nativeKey);
-          view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
-          break;
-        case UICommandType.removeAttribute:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setAttribute');
-          }
-          String key = command.args;
-          view.removeAttribute(nativePtr, key);
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.createDocumentFragment:
           if (enableWebFProfileTracking) {

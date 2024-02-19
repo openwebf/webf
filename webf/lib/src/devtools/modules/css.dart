@@ -33,9 +33,9 @@ class InspectCSSModule extends UIInspectorModule {
       case 'getComputedStyleForNode':
         handleGetComputedStyleForNode(id, params!);
         break;
-      case 'getInlineStylesForNode':
-        handleGetInlineStylesForNode(id, params!);
-        break;
+      // case 'getInlineStylesForNode':
+      //   handleGetInlineStylesForNode(id, params!);
+      //   break;
       case 'setStyleTexts':
         handleSetStyleTexts(id, params!);
         break;
@@ -67,18 +67,18 @@ class InspectCSSModule extends UIInspectorModule {
 
   // Returns the styles defined inline (explicitly in the "style" attribute and
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
-  void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
-    int nodeId = view.getTargetIdByNodeId(params['nodeId']);
-    BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
-
-    if (element is Element) {
-      InlinedStyle inlinedStyle = InlinedStyle(
-        inlineStyle: buildInlineStyle(element),
-        attributesStyle: buildAttributesStyle(element.attributes),
-      );
-      sendToFrontend(id, inlinedStyle);
-    }
-  }
+  // void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
+  //   int nodeId = view.getTargetIdByNodeId(params['nodeId']);
+  //   BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+  //
+  //   if (element is Element) {
+  //     InlinedStyle inlinedStyle = InlinedStyle(
+  //       inlineStyle: buildInlineStyle(element),
+  //       attributesStyle: buildAttributesStyle(element.attributes),
+  //     );
+  //     sendToFrontend(id, inlinedStyle);
+  //   }
+  // }
 
   void handleSetStyleTexts(int? id, Map<String, dynamic> params) {
     List edits = params['edits'];

@@ -55,7 +55,7 @@ final DartGetWebFInfo _getWebFInfo =
 
 final WebFInfo _cachedInfo = WebFInfo(_getWebFInfo());
 
-final Map<int, Pointer<Void>> _allocatedPages = {};
+final Map<double, Pointer<Void>> _allocatedPages = {};
 
 Pointer<Void>? getAllocatedPage(double contextId) {
   return _allocatedPages[contextId];
@@ -683,8 +683,6 @@ enum UICommandType {
   insertAdjacentNode,
   setStyle,
   clearStyle,
-  setAttribute,
-  removeAttribute,
   cloneNode,
   removeEvent,
   createDocumentFragment,

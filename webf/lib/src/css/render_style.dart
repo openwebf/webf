@@ -457,17 +457,6 @@ class CSSRenderStyle extends RenderStyle
       value = value.computedValue(name);
     }
 
-    if (value is CSSCalcValue) {
-      if (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y) {
-        value = CSSBackgroundPosition(calcValue: value);
-      } else {
-        value = value.computedValue(name);
-        if (value != null) {
-          value = CSSLengthValue(value, CSSLengthType.PX);
-        }
-      }
-    }
-
     switch (name) {
       case DISPLAY:
         display = value;
