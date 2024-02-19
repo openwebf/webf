@@ -44,7 +44,8 @@ class _OpSteps {
 enum OpItemType {
   uiCommand,
   layout,
-  paint
+  paint,
+  network
 }
 
 class OpItem {
@@ -115,6 +116,8 @@ class _PaintPipeLine {
   final List<OpItem> _layoutStack = [];
   final List<OpItem> uiCommandOp = [];
   final List<OpItem> _uiCommandStack = [];
+  final List<OpItem> networkOp = [];
+  final List<OpItem> _networkStack = [];
 
   bool containsActiveUICommand() {
     return _uiCommandStack.isNotEmpty;
@@ -128,6 +131,8 @@ class _PaintPipeLine {
         return uiCommandOp;
       case OpItemType.layout:
         return layoutOp;
+      case OpItemType.network:
+        return networkOp;
     }
   }
 
@@ -139,12 +144,15 @@ class _PaintPipeLine {
         return _layoutStack;
       case OpItemType.paint:
         return _paintStack;
+      case OpItemType.network:
+        return _networkStack;
     }
   }
 
   OpItem get currentPaintOp => _paintStack.last;
   OpItem get currentLayoutOp => _layoutStack.last;
   OpItem get currentUICommandOp => _uiCommandStack.last;
+  OpItem get currentNetworkOp => _networkStack.last;
 
   _PaintPipeLine();
 
@@ -153,6 +161,7 @@ class _PaintPipeLine {
   int paintCount = 0;
   int layoutCount = 0;
   int uiCommandCount = 0;
+  int networkCount = 0;
 
   void recordOp(OpItemType type, OpItem op) {
     _getOp(type).add(op);
@@ -165,6 +174,8 @@ class _PaintPipeLine {
       layoutCount++;
     } else if (type == OpItemType.uiCommand) {
       uiCommandCount++;
+    } else if (type == OpItemType.network) {
+      networkCount++;
     }
 
     _getOpStack(type).add(op);
@@ -370,6 +381,20 @@ class WebFProfiler {
     assert(_paintPipeLines.isNotEmpty);
     _PaintPipeLine currentActivePipeline = currentPipeline;
     currentActivePipeline.finishOp(OpItemType.uiCommand);
+  }
+
+  void startTrackNetwork() {
+    Timeline.startSync(
+        'WebF Networking'
+    );
+
+    if (_paintPipeLines.isEmpty) {
+      _paintBeginInFrame();
+    }
+
+    OpItem op = OpItem(Stopwatch()..start());
+
+    currentPipeline.recordOp(OpItemType.network, op);
   }
 
   void pauseCurrentLayoutOp() {
