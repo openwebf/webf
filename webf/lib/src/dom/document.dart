@@ -397,7 +397,6 @@ class Document extends ContainerNode {
     }
 
     bool documentElementChanged = element != null && element != _documentElement;
-
     // When document is disposed, viewport is null.
     if (viewport != null) {
       if (element != null) {
@@ -421,8 +420,14 @@ class Document extends ContainerNode {
     assert(viewport!.hasSize);
     documentElement!.renderStyle.width = CSSLengthValue(viewport!.viewportSize.width, CSSLengthType.PX);
     documentElement!.renderStyle.height = CSSLengthValue(viewport!.viewportSize.height, CSSLengthType.PX);
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     documentElement!.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
     documentElement!.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   @override

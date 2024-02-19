@@ -356,6 +356,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void updateRenderBoxModel({ bool forceUpdate = false }) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('$this.updateRenderBoxModel');
+    }
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget, forceUpdate: forceUpdate);
@@ -391,6 +394,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
       // Ensure that the event responder is bound.
       ensureEventResponderBound();
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
@@ -792,6 +799,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateRenderBoxModelWithPosition(CSSPositionType oldPosition) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('$this._updateRenderBoxModelWithPosition');
+    }
     CSSPositionType currentPosition = renderStyle.position;
 
     // No need to detach and reattach renderBoxMode when its position
@@ -848,6 +858,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       directPositionAbsoluteChildren.forEach((Element child) {
         child.addToContainingBlock();
       });
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
@@ -906,6 +920,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateBeforePseudoElement() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     // Add pseudo elements
     String? beforeContent = style.pseudoBeforeStyle?.getPropertyValue('content');
     if (beforeContent != null && beforeContent.isNotEmpty) {
@@ -914,6 +931,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       removeChild(_beforeElement!);
     }
     _shouldBeforePseudoElementNeedsUpdate = false;
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   bool _shouldAfterPseudoElementNeedsUpdate = false;
@@ -925,6 +945,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateAfterPseudoElement() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
     if (afterContent != null && afterContent.isNotEmpty) {
       _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter, _afterElement);
@@ -932,6 +955,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       removeChild(_afterElement!);
     }
     _shouldAfterPseudoElementNeedsUpdate = false;
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   // Add element to its containing block which includes the steps of detach the renderBoxModel
@@ -1137,11 +1163,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node removeChild(Node child) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('Element.removeChild');
+    }
     super.removeChild(child);
 
     // Update renderStyle tree.
     if (child is Element) {
       child.renderStyle.detach();
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
 
     return child;
@@ -1150,6 +1183,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('Element.insertBefore');
+    }
     Node? originalPreviousSibling = referenceNode.previousSibling;
     Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
@@ -1206,18 +1242,28 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
 
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
+
     return node;
   }
 
   @override
   @mustCallSuper
   Node? replaceChild(Node newNode, Node oldNode) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('Element.replaceChild');
+    }
     // Update renderStyle tree.
     if (newNode is Element) {
       newNode.renderStyle.parent = renderStyle;
     }
     if (oldNode is Element) {
       oldNode.renderStyle.parent = null;
+    }
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
     return super.replaceChild(newNode, oldNode);
   }
@@ -1356,6 +1402,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateRenderBoxModelWithDisplay() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('$this._updateRenderBoxModelWithDisplay');
+    }
     CSSDisplay presentDisplay = renderStyle.display;
 
     if (parentElement == null || !parentElement!.isConnected) return;
@@ -1363,6 +1412,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
       unmountRenderObject();
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
       return;
     }
 
@@ -1386,10 +1438,23 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
 
     didAttachRenderer();
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void setRenderStyleProperty(String name, value) {
     if (renderStyle.target.disposed) return;
+
+    bool uiCommandTracked = false;
+    if (!kReleaseMode) {
+      if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
+        WebFProfiler.instance.startTrackUICommand();
+        uiCommandTracked = true;
+      }
+      WebFProfiler.instance.startTrackUICommandStep('$this.setRenderStyleProperty[$name]');
+    }
 
     dynamic oldValue;
 
@@ -1450,6 +1515,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       case TRANSFORM:
         updateRenderBoxModel();
         break;
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+      if (uiCommandTracked) {
+        WebFProfiler.instance.finishTrackUICommand();
+      }
     }
   }
 
