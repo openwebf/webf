@@ -4,6 +4,7 @@
  */
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -161,11 +162,26 @@ class LinkElement extends Element {
         ownerDocument.decrementRequestCount();
 
         final String cssString = await resolveStringFromData(bundle.data!);
+
+        if (!kReleaseMode) {
+          WebFProfiler.instance.startTrackUICommand();
+          WebFProfiler.instance.startTrackUICommandStep('Style.parseCSS');
+        }
+
         _styleSheet = CSSParser(cssString, href: href).parse();
         _styleSheet?.href = href;
+
+        if (!kReleaseMode) {
+          WebFProfiler.instance.finishTrackUICommandStep();
+        }
+
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
+
+        if (!kReleaseMode) {
+          WebFProfiler.instance.finishTrackUICommand();
+        }
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -263,6 +279,9 @@ mixin StyleElementMixin on Element {
   }
 
   void _recalculateStyle() {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('$this.parseInlineStyle');
+    }
     String? text = collectElementChildText();
     if (text != null) {
       if (_styleSheet != null) {
@@ -275,6 +294,10 @@ mixin StyleElementMixin on Element {
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
       }
+    }
+
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
