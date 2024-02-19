@@ -83,7 +83,6 @@ List<UICommand> nativeUICommandToDart(List<int> rawMemory, int commandLength, do
 
 void execUICommands(WebFViewController view, List<UICommand> commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
-  Set<int> pendingRecalculateTargets = {};
 
   for(UICommand command in commands) {
     UICommandType commandType = command.type;
@@ -93,9 +92,6 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
       switch(command.type) {
         case UICommandType.setStyle:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${nativeStringToString(command.nativePtr2.cast<NativeString>())}';
-          break;
-        case UICommandType.setAttribute:
-          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${nativeStringToString(command.nativePtr2.cast<NativeString>())} value: ${command.args}';
           break;
         case UICommandType.createTextNode:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} data: ${command.args}';
@@ -165,17 +161,6 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
-        case UICommandType.setAttribute:
-          Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
-          String key = nativeStringToString(nativeKey);
-          freeNativeString(nativeKey);
-          view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
-          pendingRecalculateTargets.add(nativePtr.address);
-          break;
-        case UICommandType.removeAttribute:
-          String key = command.args;
-          view.removeAttribute(nativePtr, key);
-          break;
         case UICommandType.createDocumentFragment:
           view.createDocumentFragment(nativePtr.cast<NativeBindingObject>());
           break;
@@ -209,13 +194,4 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     }
     pendingStylePropertiesTargets.clear();
   }
-
-  for (var address in pendingRecalculateTargets) {
-    try {
-      view.recalculateStyle(address);
-    } catch (e, stack) {
-      print('$e\n$stack');
-    }
-  }
-  pendingRecalculateTargets.clear();
 }

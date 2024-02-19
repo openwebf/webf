@@ -90,9 +90,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   }
 
   String _valueForPropertyInStyle(CSSPropertyID propertyID, {bool needUpdateStyle = false}) {
-    if (needUpdateStyle) {
-      _element.ownerDocument.updateStyleIfNeeded();
-    }
     RenderStyle? style = _element.computedStyle(_pseudoElementName);
 
     if (style == null) {

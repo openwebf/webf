@@ -77,7 +77,7 @@ class ImageElement extends Element {
   // until some conditions associated with the element are met, according to the attribute's
   // current state.
   // https://html.spec.whatwg.org/multipage/urls-and-fetching.html#lazy-loading-attributes
-  bool get _shouldLazyLoading => getAttribute(LOADING) == LAZY;
+  bool get _shouldLazyLoading => loading == LAZY;
 
   // Resize the rendering image to a fixed size if the original image is much larger than the display size.
   // This feature could save memory if the original image is much larger than it's actual display size.
@@ -128,32 +128,6 @@ class ImageElement extends Element {
   }
 
   @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['src'] = ElementAttributeProperty(
-        setter: (value) => src = attributeToProperty<String>(value));
-    attributes['loading'] = ElementAttributeProperty(
-        setter: (value) => loading = attributeToProperty<String>(value));
-    attributes['width'] = ElementAttributeProperty(setter: (value) {
-      CSSLengthValue input = CSSLength.parseLength(
-          attributeToProperty<String>(value), renderStyle);
-      if (input.value != null) {
-        width = input.value!.toInt();
-      }
-    });
-    attributes['height'] = ElementAttributeProperty(setter: (value) {
-      CSSLengthValue input = CSSLength.parseLength(
-          attributeToProperty<String>(value), renderStyle);
-      if (input.value != null) {
-        height = input.value!.toInt();
-      }
-    });
-    attributes['scaling'] = ElementAttributeProperty(
-        setter: (value) => scaling = attributeToProperty<String>(value));
-  }
-
-  @override
   void willAttachRenderer() {
     super.willAttachRenderer();
     style.addStyleChangeListener(_stylePropertyChanged);
@@ -177,16 +151,15 @@ class ImageElement extends Element {
     }
   }
 
-  String get scaling => getAttribute(SCALING) ?? '';
-
+  String _scaling = '';
+  String get scaling => _scaling;
   set scaling(String value) {
-    internalSetAttribute(SCALING, value);
+    _scaling = value;
   }
 
   String get src => _resolvedUri?.toString() ?? '';
 
   set src(String value) {
-    internalSetAttribute('src', value);
     final resolvedUri = _resolveResourceUri(value);
     if (_resolvedUri != resolvedUri) {
       _loaded = false;
@@ -195,18 +168,19 @@ class ImageElement extends Element {
     }
   }
 
-  String get loading => getAttribute(LOADING) ?? '';
-
+  String _loading = '';
+  String get loading => _loading;
   set loading(String value) {
     if (loading == LAZY && value != LAZY) {
       _updateImageDataLazyCompleter?.complete();
     }
-    internalSetAttribute(LOADING, value);
+    _loading = value;
   }
 
+  double? _width;
   set width(int value) {
     if (value == width) return;
-    internalSetAttribute(WIDTH, '${value}px');
+    _width = value.toDouble();
     if (_shouldScaling) {
       _reloadImage();
     } else {
@@ -214,9 +188,10 @@ class ImageElement extends Element {
     }
   }
 
+  double? _height;
   set height(int value) {
     if (value == height) return;
-    internalSetAttribute(HEIGHT, '${value}px');
+    _height = value.toDouble();
     if (_shouldScaling) {
       _reloadImage();
     } else {
@@ -307,23 +282,11 @@ class ImageElement extends Element {
 
   // Width and height set through attributes.
   double? get _attrWidth {
-    if (hasAttribute(WIDTH)) {
-      final width = getAttribute(WIDTH);
-      if (width != null) {
-        return CSSLength.parseLength(width, renderStyle, WIDTH).computedValue;
-      }
-    }
-    return null;
+    return _width;
   }
 
   double? get _attrHeight {
-    if (hasAttribute(HEIGHT)) {
-      final height = getAttribute(HEIGHT);
-      if (height != null) {
-        return CSSLength.parseLength(height, renderStyle, HEIGHT).computedValue;
-      }
-    }
-    return null;
+    return _height;
   }
 
   int get width {
@@ -408,14 +371,6 @@ class ImageElement extends Element {
       fit: renderStyle.objectFit,
       alignment: renderStyle.objectPosition,
     );
-  }
-
-  @override
-  void removeAttribute(String key) {
-    super.removeAttribute(key);
-    if (key == 'loading') {
-      _updateImageDataLazyCompleter?.complete();
-    }
   }
 
   void _reattachRenderObject() {

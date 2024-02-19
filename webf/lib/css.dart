@@ -25,9 +25,7 @@ export 'src/css/rule.dart';
 export 'src/css/css_rule.dart';
 export 'src/css/style_declaration.dart';
 export 'src/css/style_property.dart';
-export 'src/css/style_sheet.dart';
 export 'src/css/rule_set.dart';
-export 'src/css/parser/parser.dart';
 export 'src/css/text.dart';
 export 'src/css/origin.dart';
 export 'src/css/matrix.dart';
@@ -44,10 +42,9 @@ export 'src/css/variable.dart';
 export 'src/css/keywords.dart';
 export 'src/css/input.dart';
 export 'src/css/font_face.dart';
-export 'src/css/nth_index_cache.dart';
+export 'src/css/token_kind.dart';
 
 export 'src/css/computed_style_declaration.dart';
-export 'src/css/element_rule_collector.dart';
 export 'src/css/css_property_name.dart';
 
 // CSS Values
@@ -63,7 +60,6 @@ export 'src/css/values/time.dart';
 export 'src/css/values/percentage.dart';
 export 'src/css/values/textual.dart';
 export 'src/css/values/variable.dart';
-export 'src/css/values/calc.dart';
 export 'src/css/values/paint.dart';
 export 'src/css/values/path.dart';
 export 'src/css/pseudo.dart';

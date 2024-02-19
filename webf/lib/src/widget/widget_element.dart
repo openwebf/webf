@@ -133,28 +133,6 @@ abstract class WidgetElement extends dom.Element {
     styleDidUpdate(property, value);
   }
 
-  @mustCallSuper
-  @override
-  void removeAttribute(String key) {
-    super.removeAttribute(key);
-    bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), null);
-    if (_state != null && shouldRebuild) {
-      _state!.requestUpdateState();
-    }
-    attributeDidUpdate(key, '');
-  }
-
-  @mustCallSuper
-  @override
-  void setAttribute(String key, value) {
-    super.setAttribute(key, value);
-    bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), value);
-    if (_state != null && shouldRebuild) {
-      _state!.requestUpdateState();
-    }
-    attributeDidUpdate(key, value);
-  }
-
   @nonVirtual
   @override
   dom.Node appendChild(dom.Node child) {

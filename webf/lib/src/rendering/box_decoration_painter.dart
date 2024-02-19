@@ -638,16 +638,12 @@ void _paintImage({
   final double halfHeightDelta = (outputSize.height - destinationSize.height) / 2.0;
 
   // Use position as length type if specified in positionX/ positionY, otherwise use as percentage type.
-  final double dx = positionX.calcValue != null
-      ? positionX.calcValue!.computedValue(BACKGROUND_POSITION_X) ?? 0
-      : positionX.length != null
-          ? positionX.length!.computedValue
-          : halfWidthDelta + (flipHorizontally ? -positionX.percentage! : positionX.percentage!) * halfWidthDelta;
-  final double dy = positionY.calcValue != null
-      ? positionY.calcValue!.computedValue(BACKGROUND_POSITION_Y) ?? 0
-      : positionY.length != null
-          ? positionY.length!.computedValue
-          : halfHeightDelta + positionY.percentage! * halfHeightDelta;
+  final double dx = positionX.length != null
+      ? positionX.length!.computedValue
+      : halfWidthDelta + (flipHorizontally ? -positionX.percentage! : positionX.percentage!) * halfWidthDelta;
+  final double dy = positionY.length != null
+      ? positionY.length!.computedValue
+      : halfHeightDelta + positionY.percentage! * halfHeightDelta;
 
   final Offset destinationPosition = rect.topLeft.translate(dx, dy);
   final Rect destinationRect = destinationPosition & destinationSize;
@@ -749,16 +745,8 @@ void _paintImage({
     final double halfHeightDelta = (inputSize.height - sourceSize.height) / 2.0;
     // Always to draw image on 0 when position length type is specified.
     final Rect sourceRect = Rect.fromLTWH(
-      positionX.calcValue != null
-          ? 0
-          : positionX.length != null
-              ? 0
-              : halfWidthDelta + positionX.percentage! * halfWidthDelta,
-      positionY.calcValue != null
-          ? 0
-          : positionY.length != null
-              ? 0
-              : halfHeightDelta + positionY.percentage! * halfHeightDelta,
+      positionX.length != null ? 0 : halfWidthDelta + positionX.percentage! * halfWidthDelta,
+      positionY.length != null ? 0 : halfHeightDelta + positionY.percentage! * halfHeightDelta,
       sourceSize.width,
       sourceSize.height,
     );
