@@ -831,8 +831,13 @@ class CSSRenderStyle extends RenderStyle
 
   @override
   dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
+    bool uiCommandTracked = false;
     if (!kReleaseMode) {
-      WebFProfiler.instance.startTrackUICommandStep('RenderStyle.resolveValue');
+      if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
+        WebFProfiler.instance.startTrackUICommand();
+        uiCommandTracked = true;
+      }
+      WebFProfiler.instance.startTrackUICommandStep('$this.renderStyle.resolveValue');
     }
     RenderStyle renderStyle = this;
 
@@ -845,6 +850,9 @@ class CSSRenderStyle extends RenderStyle
     if (value != null) {
       if (!kReleaseMode) {
         WebFProfiler.instance.finishTrackUICommandStep();
+        if (uiCommandTracked) {
+          WebFProfiler.instance.finishTrackUICommand();
+        }
       }
       return value;
     }
@@ -1115,6 +1123,9 @@ class CSSRenderStyle extends RenderStyle
 
     if (!kReleaseMode) {
       WebFProfiler.instance.finishTrackUICommandStep();
+      if (uiCommandTracked) {
+        WebFProfiler.instance.finishTrackUICommand();
+      }
     }
 
     // --x: foo;
