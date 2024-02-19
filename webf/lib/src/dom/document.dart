@@ -527,13 +527,22 @@ class Document extends ContainerNode {
   }
 
   void flushStyle({bool rebuild = false}) {
+    if (!kReleaseMode) {
+      WebFProfiler.instance.startTrackUICommandStep('Document.flushStyle');
+    }
     if (_styleDirtyElements.isEmpty) {
       _recalculating = false;
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
       return;
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
       _styleDirtyElements.clear();
+      if (!kReleaseMode) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
       return;
     }
     if (_styleDirtyElements.any((address) {
@@ -550,6 +559,9 @@ class Document extends ContainerNode {
     }
     _styleDirtyElements.clear();
     _recalculating = false;
+    if (!kReleaseMode) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void reactiveWidgetElements() {

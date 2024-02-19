@@ -543,8 +543,8 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
 
         controller!.evaluated = true;
       });
-    } catch (e, s) {
-      print(s);
+    } catch (e, stack) {
+      print('$e\n$stack');
     }
   }
 

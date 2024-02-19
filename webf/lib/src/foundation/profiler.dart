@@ -76,12 +76,14 @@ class OpItem {
     }
 
     stepStack.add(label);
+    assert(!_stepMap.containsKey(label), 'exiting label = $label found');
     _stepMap[label] = step;
   }
 
   void finishStep() {
     currentStep!.startClock.stop();
     currentStep!.duration = currentStep!.startClock.elapsed;
+    _stepMap.remove(currentStep!.label);
     stepStack.removeLast();
   }
 
@@ -113,6 +115,10 @@ class _PaintPipeLine {
   final List<OpItem> _layoutStack = [];
   final List<OpItem> uiCommandOp = [];
   final List<OpItem> _uiCommandStack = [];
+
+  bool containsActiveUICommand() {
+    return _uiCommandStack.isNotEmpty;
+  }
 
   List<OpItem> _getOp(OpItemType type) {
     switch(type) {
