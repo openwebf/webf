@@ -200,6 +200,10 @@ struct DowncastTraits<Element> {
   }
 };
 
+inline Element* Node::parentElement() const {
+  return DynamicTo<Element>(parentNode());
+}
+
 }  // namespace webf
 
 #endif  // BRIDGE_ELEMENT_H

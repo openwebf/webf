@@ -71,10 +71,6 @@ ContainerNode* Node::parentNode() const {
   return ParentOrShadowHostNode();
 }
 
-Element* Node::parentElement() const {
-  return nullptr;
-}
-
 NodeList* Node::childNodes() {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (this_node)
