@@ -45,13 +45,13 @@ enum OpItemType {
   uiCommand,
   layout,
   paint,
-  network
 }
 
 class OpItem {
   Stopwatch selfClock;
   String? renderBox;
   String? ownerElement;
+  String? url;
 
   final Map<String, _OpSteps> _stepMap = {};
 
@@ -62,7 +62,7 @@ class OpItem {
 
   late Duration duration;
 
-  OpItem(this.selfClock, { this.renderBox, this.ownerElement });
+  OpItem(this.selfClock, { this.renderBox, this.ownerElement, this.url });
 
   void recordStep(String label, _OpSteps step) {
     bool isChildStep = false;
@@ -104,7 +104,49 @@ class OpItem {
     if (ownerElement != null) {
       map['ownerElement'] = ownerElement;
     }
+    if (url != null) {
+      map['url'] = url;
+    }
     return map;
+  }
+}
+
+class NetworkOpItem extends OpItem {
+  NetworkOpItem(super.selfClock, { super.url });
+
+  bool pending = false;
+
+  @override
+  Map toJson() {
+    try {
+      Map map = {
+        'pending': pending,
+        'duration': '${pending ? 'NaN' : duration.inMicroseconds} us', // Time elapsed for this paint operation.
+        'steps': steps
+      };
+      if (url != null) {
+        map['url'] = url;
+      }
+      return map;
+    } catch (e, stack) {
+      print('$e\n$stack');
+      return {};
+    }
+  }
+}
+
+class _NetworkOpSteps extends _OpSteps {
+  bool pending = false;
+
+  _NetworkOpSteps(super.startClock, super.label);
+
+  @override
+  Map toJson() {
+    return {
+      'duration': '${pending ? 'NaN' : duration.inMicroseconds} us', //  Time elapsed for this paint step.
+      'label': label,
+      'childSteps': childSteps
+    };
   }
 }
 
@@ -116,8 +158,6 @@ class _PaintPipeLine {
   final List<OpItem> _layoutStack = [];
   final List<OpItem> uiCommandOp = [];
   final List<OpItem> _uiCommandStack = [];
-  final List<OpItem> networkOp = [];
-  final List<OpItem> _networkStack = [];
 
   bool containsActiveUICommand() {
     return _uiCommandStack.isNotEmpty;
@@ -131,8 +171,6 @@ class _PaintPipeLine {
         return uiCommandOp;
       case OpItemType.layout:
         return layoutOp;
-      case OpItemType.network:
-        return networkOp;
     }
   }
 
@@ -144,15 +182,12 @@ class _PaintPipeLine {
         return _layoutStack;
       case OpItemType.paint:
         return _paintStack;
-      case OpItemType.network:
-        return _networkStack;
     }
   }
 
   OpItem get currentPaintOp => _paintStack.last;
   OpItem get currentLayoutOp => _layoutStack.last;
   OpItem get currentUICommandOp => _uiCommandStack.last;
-  OpItem get currentNetworkOp => _networkStack.last;
 
   _PaintPipeLine();
 
@@ -161,7 +196,6 @@ class _PaintPipeLine {
   int paintCount = 0;
   int layoutCount = 0;
   int uiCommandCount = 0;
-  int networkCount = 0;
 
   void recordOp(OpItemType type, OpItem op) {
     _getOp(type).add(op);
@@ -174,8 +208,6 @@ class _PaintPipeLine {
       layoutCount++;
     } else if (type == OpItemType.uiCommand) {
       uiCommandCount++;
-    } else if (type == OpItemType.network) {
-      networkCount++;
     }
 
     _getOpStack(type).add(op);
@@ -236,6 +268,8 @@ class WebFProfiler {
   static WebFProfiler get instance => _instance!;
 
   final List<_PaintPipeLine> _paintPipeLines = [];
+  final Map<String, NetworkOpItem> _networkOpMap = {};
+  final List<NetworkOpItem> _networkOp = [];
 
   _PaintPipeLine get currentPipeline => _paintPipeLines.last;
 
@@ -383,18 +417,42 @@ class WebFProfiler {
     currentActivePipeline.finishOp(OpItemType.uiCommand);
   }
 
-  void startTrackNetwork() {
-    Timeline.startSync(
-        'WebF Networking'
-    );
+  NetworkOpItem startTrackNetwork(String url) {
+    Timeline.startSync('WebF Networking');
 
-    if (_paintPipeLines.isEmpty) {
-      _paintBeginInFrame();
-    }
+    NetworkOpItem op = NetworkOpItem(Stopwatch()..start(), url: url);
+    _networkOp.add(op);
+    op.pending = true;
 
-    OpItem op = OpItem(Stopwatch()..start());
+    _networkOpMap[url] = op;
 
-    currentPipeline.recordOp(OpItemType.network, op);
+    return op;
+  }
+
+  NetworkOpItem? getCurrentOpFromUrl(String url) {
+    return _networkOpMap[url];
+  }
+
+  void startTrackNetworkStep(NetworkOpItem activeOp, String label, [Map<String, dynamic>? arguments]) {
+    Timeline.startSync(label, arguments: arguments);
+    _NetworkOpSteps step =  _NetworkOpSteps(Stopwatch()..start(), label);
+    step.pending = true;
+    activeOp.recordStep(label, step);
+  }
+
+  void finishTrackNetworkStep(NetworkOpItem activeOp) {
+    Timeline.finishSync();
+    (activeOp.currentStep as _NetworkOpSteps).pending = false;
+    activeOp.finishStep();
+  }
+
+  void finishTrackNetwork(NetworkOpItem targetOp) {
+    Timeline.finishSync();
+
+    targetOp.selfClock.stop();
+    targetOp.duration = targetOp.selfClock.elapsed;
+    targetOp.pending = false;
+    _networkOpMap.remove(targetOp.url);
   }
 
   void pauseCurrentLayoutOp() {
@@ -426,6 +484,9 @@ class WebFProfiler {
   }
 
   Map<String, dynamic> report() {
-    return {'frames': frameReport()};
+    return {
+      'networks': _networkOp,
+      'frames': frameReport(),
+    };
   }
 }
