@@ -77,14 +77,14 @@ BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_sta
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kgetBoundingClientRect, 0, nullptr,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
-  NativeBindingObject* native_binding_object = NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result);
 
   if (native_binding_object == nullptr) {
     return nullptr;
   }
 
-  return BoundingClientRect::Create(
-      GetExecutingContext(), native_binding_object);
+  return BoundingClientRect::Create(GetExecutingContext(), native_binding_object);
 }
 
 std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& exception_state) {
