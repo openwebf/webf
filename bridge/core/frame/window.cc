@@ -119,8 +119,10 @@ Screen* Window::screen() {
     NativeValue value = GetBindingProperty(
         binding_call_methods::kscreen,
         FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, ASSERT_NO_EXCEPTION());
+    NativeBindingObject* native_binding_object = NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
+    if (native_binding_object == nullptr) return nullptr;
     screen_ = MakeGarbageCollected<Screen>(
-        this, NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value));
+        this, native_binding_object);
   }
   return screen_;
 }
