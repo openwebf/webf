@@ -7,6 +7,7 @@
 #include "core/dart_isolate_context.h"
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
+#include "foundation/native_type.h"
 #include "include/dart_api.h"
 #include "multiple_threading/dispatcher.h"
 #include "multiple_threading/task.h"
@@ -132,7 +133,8 @@ void evaluateScripts(void* page_,
                      uint8_t** parsed_bytecodes,
                      uint64_t* bytecode_len,
                      const char* bundleFilename,
-                     int32_t startLine,
+                     int32_t start_line,
+                     int64_t profile_id,
                      Dart_Handle dart_handle,
                      EvaluateScriptsCallback result_callback) {
 #if ENABLE_LOG
@@ -142,7 +144,7 @@ void evaluateScripts(void* page_,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
       page->isDedicated(), page->contextId(), webf::evaluateScriptsInternal, page_, code, code_len, parsed_bytecodes,
-      bytecode_len, bundleFilename, startLine, persistent_handle, result_callback);
+      bytecode_len, bundleFilename, start_line, profile_id, persistent_handle, result_callback);
 }
 
 void dumpQuickjsByteCode(void* page_,
@@ -167,6 +169,7 @@ void dumpQuickjsByteCode(void* page_,
 void evaluateQuickjsByteCode(void* page_,
                              uint8_t* bytes,
                              int32_t byteLen,
+                             int64_t profile_id,
                              Dart_Handle dart_handle,
                              EvaluateQuickjsByteCodeCallback result_callback) {
 #if ENABLE_LOG
@@ -175,18 +178,18 @@ void evaluateQuickjsByteCode(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
-                                                     webf::evaluateQuickjsByteCodeInternal, page_, bytes, byteLen,
+                                                     webf::evaluateQuickjsByteCodeInternal, page_, bytes, byteLen, profile_id,
                                                      persistent_handle, result_callback);
 }
 
-void parseHTML(void* page_, char* code, int32_t length, Dart_Handle dart_handle, ParseHTMLCallback result_callback) {
+void parseHTML(void* page_, char* code, int32_t length, int64_t profile_id, Dart_Handle dart_handle, ParseHTMLCallback result_callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] parseHTMLWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
-                                                                         webf::parseHTMLInternal, page_, code, length,
+                                                                         webf::parseHTMLInternal, page_, code, length, profile_id,
                                                                          persistent_handle, result_callback);
 }
 
@@ -235,6 +238,15 @@ void invokeModuleEvent(void* page_,
   auto context_id = page->contextId();
   dart_isolate_context->dispatcher()->PostToJs(is_dedicated, context_id, webf::invokeModuleEventInternal, page_, module,
                                                eventType, event, extra, persistent_handle, result_callback);
+}
+
+void collectNativeProfileData(void* ptr, const char** data, uint32_t* len) {
+  auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(ptr);
+  std::string result = dart_isolate_context->profiler()->ToJSON();
+
+  *data = static_cast<const char*>(webf::dart_malloc(sizeof(char) * result.size() + 1));
+  memcpy((void*)*data, result.c_str(), sizeof(char) * result.size() + 1);
+  *len = result.size();
 }
 
 void dispatchUITask(void* page_, void* context, void* callback) {

@@ -25,11 +25,18 @@ void evaluateScriptsInternal(void* page_,
                              uint64_t* bytecode_len,
                              const char* bundleFilename,
                              int32_t startLine,
+                             int64_t profile_id,
                              Dart_Handle persistent_handle,
                              EvaluateScriptsCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
+
+  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+
   bool is_success = page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
+
+  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateScriptsInternal,
                                                        persistent_handle, result_callback, is_success);
 }
@@ -45,11 +52,18 @@ static void ReturnEvaluateQuickjsByteCodeResultToDart(Dart_PersistentHandle pers
 void evaluateQuickjsByteCodeInternal(void* page_,
                                      uint8_t* bytes,
                                      int32_t byteLen,
+                                     int64_t profile_id,
                                      Dart_PersistentHandle persistent_handle,
                                      EvaluateQuickjsByteCodeCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
+
+  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+
   bool is_success = page->evaluateByteCode(bytes, byteLen);
+
+  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
                                                        persistent_handle, result_callback, is_success);
 }
@@ -63,12 +77,19 @@ static void ReturnParseHTMLToDart(Dart_PersistentHandle persistent_handle, Parse
 void parseHTMLInternal(void* page_,
                        char* code,
                        int32_t length,
+                       int64_t profile_id,
                        Dart_PersistentHandle dart_handle,
                        ParseHTMLCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
+
+  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+
   page->parseHTML(code, length);
   dart_free(code);
+
+  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnParseHTMLToDart, dart_handle,
                                                        result_callback);
 }

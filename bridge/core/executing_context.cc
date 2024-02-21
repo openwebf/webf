@@ -63,36 +63,36 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   JS_SetContextOpaque(ctx, this);
   JS_SetHostPromiseRejectionTracker(script_state_.runtime(), promiseRejectTracker, nullptr);
 
-  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InstallBindings");
+  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallBindings");
 
   // Register all built-in native bindings.
   InstallBindings(this);
 
-  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
-  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InstallDocument");
+  dart_isolate_context->profiler()->FinishTrackSteps();
+  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallDocument");
 
   // Install document.
   InstallDocument();
 
-  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
-  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InstallGlobal");
+  dart_isolate_context->profiler()->FinishTrackSteps();
+  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallGlobal");
 
   // Binding global object and window.
   InstallGlobal();
 
-  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
-  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InstallPerformance");
+  dart_isolate_context->profiler()->FinishTrackSteps();
+  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallPerformance");
 
   // Install performance
   InstallPerformance();
 
-  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
-  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::initWebFPolyFill");
+  dart_isolate_context->profiler()->FinishTrackSteps();
+  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
 
   initWebFPolyFill(this);
 
-  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
-  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InitializePlugin");
+  dart_isolate_context->profiler()->FinishTrackSteps();
+  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializePlugin");
 
   for (auto& p : plugin_byte_code) {
     EvaluateByteCode(p.second.bytes, p.second.length);
@@ -102,7 +102,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
     EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
   }
 
-  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
+  dart_isolate_context->profiler()->FinishTrackSteps();
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
@@ -140,31 +140,54 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
+  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateJavaScript");
 
   JSValue result;
   if (parsed_bytecodes == nullptr) {
+
+    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
+
     result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
+
+    dart_isolate_context_->profiler()->FinishTrackSteps();
   } else {
+    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
+
     JSValue byte_object =
         JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+
+    dart_isolate_context_->profiler()->FinishTrackSteps();
+
     if (JS_IsException(byte_object)) {
       HandleException(&byte_object);
+      dart_isolate_context_->profiler()->FinishTrackSteps();
       return false;
     }
+
+    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
     size_t len;
     *parsed_bytecodes = JS_WriteObject(script_state_.ctx(), &len, byte_object, JS_WRITE_OBJ_BYTECODE);
     *bytecode_len = len;
 
+    dart_isolate_context_->profiler()->FinishTrackSteps();
+    dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
+
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
+
+    dart_isolate_context_->profiler()->FinishTrackSteps();
   }
 
   DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
+
+  dart_isolate_context_->profiler()->FinishTrackSteps();
+
   return success;
 }
 
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine) {
+
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
   DrainMicrotasks();
@@ -182,22 +205,34 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
 }
 
 bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
-  dart_isolate_context_->profiler()->StartTrackInitializeSteps("ExecutingContext::EvaluateByteCode");
+  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateByteCode");
 
   JSValue obj, val;
+
+  dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
+
   obj = JS_ReadObject(script_state_.ctx(), bytes, byteLength, JS_READ_OBJ_BYTECODE);
+
+  dart_isolate_context_->profiler()->FinishTrackSteps();
+
   if (!HandleException(&obj)) {
-    dart_isolate_context_->profiler()->FinishTrackInitializeSteps();
+    dart_isolate_context_->profiler()->FinishTrackSteps();
     return false;
   }
+
+  dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
+
   val = JS_EvalFunction(script_state_.ctx(), obj);
+
+  dart_isolate_context_->profiler()->FinishTrackSteps();
+
   DrainMicrotasks();
   if (!HandleException(&val)) {
-    dart_isolate_context_->profiler()->FinishTrackInitializeSteps();
+    dart_isolate_context_->profiler()->FinishTrackSteps();
     return false;
   }
   JS_FreeValue(script_state_.ctx(), val);
-  dart_isolate_context_->profiler()->FinishTrackInitializeSteps();
+  dart_isolate_context_->profiler()->FinishTrackSteps();
   return true;
 }
 

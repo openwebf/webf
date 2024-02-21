@@ -209,8 +209,15 @@ NativeValue BindingObject::GetBindingProperty(const AtomicString& prop,
         "Can not get binding property on BindingObject, dart binding object had been disposed");
     return Native_NewNull();
   }
+
+  GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps("BindingObject::GetBindingProperty");
+
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release())};
-  return InvokeBindingMethod(BindingMethodCallOperations::kGetProperty, 1, argv, reason, exception_state);
+  NativeValue result = InvokeBindingMethod(BindingMethodCallOperations::kGetProperty, 1, argv, reason, exception_state);
+
+  GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
+
+  return result;
 }
 
 NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
