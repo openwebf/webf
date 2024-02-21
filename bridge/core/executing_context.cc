@@ -63,19 +63,36 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   JS_SetContextOpaque(ctx, this);
   JS_SetHostPromiseRejectionTracker(script_state_.runtime(), promiseRejectTracker, nullptr);
 
+  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InstallBindings");
+
   // Register all built-in native bindings.
   InstallBindings(this);
+
+  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
+  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InstallDocument");
 
   // Install document.
   InstallDocument();
 
+  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
+  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InstallGlobal");
+
   // Binding global object and window.
   InstallGlobal();
+
+  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
+  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InstallPerformance");
 
   // Install performance
   InstallPerformance();
 
+  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
+  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::initWebFPolyFill");
+
   initWebFPolyFill(this);
+
+  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
+  dart_isolate_context->profiler()->StartTrackInitializeSteps("ExecutingContext::InitializePlugin");
 
   for (auto& p : plugin_byte_code) {
     EvaluateByteCode(p.second.bytes, p.second.length);
@@ -84,6 +101,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   for (auto& p : plugin_string_code) {
     EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
   }
+
+  dart_isolate_context->profiler()->FinishTrackInitializeSteps();
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
@@ -163,15 +182,22 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
 }
 
 bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
+  dart_isolate_context_->profiler()->StartTrackInitializeSteps("ExecutingContext::EvaluateByteCode");
+
   JSValue obj, val;
   obj = JS_ReadObject(script_state_.ctx(), bytes, byteLength, JS_READ_OBJ_BYTECODE);
-  if (!HandleException(&obj))
+  if (!HandleException(&obj)) {
+    dart_isolate_context_->profiler()->FinishTrackInitializeSteps();
     return false;
+  }
   val = JS_EvalFunction(script_state_.ctx(), obj);
   DrainMicrotasks();
-  if (!HandleException(&val))
+  if (!HandleException(&val)) {
+    dart_isolate_context_->profiler()->FinishTrackInitializeSteps();
     return false;
+  }
   JS_FreeValue(script_state_.ctx(), val);
+  dart_isolate_context_->profiler()->FinishTrackInitializeSteps();
   return true;
 }
 

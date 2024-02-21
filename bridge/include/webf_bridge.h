@@ -41,7 +41,7 @@ typedef void (*ParseHTMLCallback)(Dart_Handle);
 typedef void (*EvaluateScriptsCallback)(Dart_Handle dart_handle, int8_t);
 
 WEBF_EXPORT_C
-void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len);
+void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len, int8_t enable_profile);
 
 WEBF_EXPORT_C
 void allocateNewPage(double thread_identity,
