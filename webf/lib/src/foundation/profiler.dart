@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/bridge.dart';
 
 /// Collect performance details of core components in WebF.
 
@@ -118,20 +119,33 @@ class NetworkOpItem extends OpItem {
 
   @override
   Map toJson() {
-    try {
-      Map map = {
-        'pending': pending,
-        'duration': '${pending ? 'NaN' : duration.inMicroseconds} us', // Time elapsed for this paint operation.
-        'steps': steps
-      };
-      if (url != null) {
-        map['url'] = url;
-      }
-      return map;
-    } catch (e, stack) {
-      print('$e\n$stack');
-      return {};
+    Map map = {
+      'pending': pending,
+      'duration': '${pending ? 'NaN' : duration.inMicroseconds} us', // Time elapsed for this paint operation.
+      'steps': steps
+    };
+    if (url != null) {
+      map['url'] = url;
     }
+    return map;
+  }
+}
+
+class EvaluateOpItem extends OpItem {
+  EvaluateOpItem(super.selfClock, this.label);
+
+  String label;
+
+  List<dynamic> nativeSteps = [];
+
+  @override
+  Map toJson() {
+    Map map = {
+      'label': label,
+      'duration': '${duration.inMicroseconds} us', // Time elapsed for this paint operation.
+      'steps': nativeSteps
+    };
+    return map;
   }
 }
 
@@ -270,6 +284,9 @@ class WebFProfiler {
   final List<_PaintPipeLine> _paintPipeLines = [];
   final Map<String, NetworkOpItem> _networkOpMap = {};
   final List<NetworkOpItem> _networkOp = [];
+
+  final Map<int, EvaluateOpItem> _evaluateOpMap = {};
+  final List<EvaluateOpItem> _evaluateOp = [];
 
   _PaintPipeLine get currentPipeline => _paintPipeLines.last;
 
@@ -418,7 +435,6 @@ class WebFProfiler {
   }
 
   NetworkOpItem startTrackNetwork(String url) {
-    Timeline.startSync('WebF Networking');
 
     NetworkOpItem op = NetworkOpItem(Stopwatch()..start(), url: url);
     _networkOp.add(op);
@@ -434,25 +450,35 @@ class WebFProfiler {
   }
 
   void startTrackNetworkStep(NetworkOpItem activeOp, String label, [Map<String, dynamic>? arguments]) {
-    Timeline.startSync(label, arguments: arguments);
     _NetworkOpSteps step =  _NetworkOpSteps(Stopwatch()..start(), label);
     step.pending = true;
     activeOp.recordStep(label, step);
   }
 
   void finishTrackNetworkStep(NetworkOpItem activeOp) {
-    Timeline.finishSync();
     (activeOp.currentStep as _NetworkOpSteps).pending = false;
     activeOp.finishStep();
   }
 
   void finishTrackNetwork(NetworkOpItem targetOp) {
-    Timeline.finishSync();
-
     targetOp.selfClock.stop();
     targetOp.duration = targetOp.selfClock.elapsed;
     targetOp.pending = false;
     _networkOpMap.remove(targetOp.url);
+  }
+
+  EvaluateOpItem startTrackEvaluate(String label) {
+    EvaluateOpItem op = EvaluateOpItem(Stopwatch()..start(), label);
+    _evaluateOp.add(op);
+
+    _evaluateOpMap[op.hashCode] = op;
+
+    return op;
+  }
+
+  void finishTrackEvaluate(EvaluateOpItem targetOp) {
+    targetOp.selfClock.stop();
+    targetOp.duration = targetOp.selfClock.elapsed;
   }
 
   void pauseCurrentLayoutOp() {
@@ -483,9 +509,26 @@ class WebFProfiler {
     });
   }
 
+  void _mergeNativeProfileData(Map<String, dynamic> nativeData) {
+    nativeData.forEach((key, value) {
+      EvaluateOpItem? opItem = _evaluateOpMap[int.parse(key)];
+
+      var matches = RegExp(r'\d+').firstMatch(value['duration']);
+      opItem!.duration = Duration(microseconds: int.parse(matches!.group(0)!));
+      opItem.nativeSteps = value['steps'];
+    });
+  }
+
   Map<String, dynamic> report() {
+    String nativeProfileData = collectNativeProfileData();
+    Map<String, dynamic> profileData = jsonDecode(nativeProfileData);
+
+    _mergeNativeProfileData(profileData['evaluate']);
+
     return {
       'networks': _networkOp,
+      'native_initialize': profileData['initialize'],
+      'evaluate': _evaluateOp,
       'frames': frameReport(),
     };
   }

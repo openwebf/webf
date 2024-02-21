@@ -17,17 +17,20 @@ void evaluateScriptsInternal(void* page_,
                              uint64_t* bytecode_len,
                              const char* bundleFilename,
                              int32_t startLine,
+                             int64_t profile_id,
                              Dart_Handle dart_handle,
                              EvaluateScriptsCallback result_callback);
 
 void evaluateQuickjsByteCodeInternal(void* page_,
                                      uint8_t* bytes,
                                      int32_t byteLen,
+                                     int64_t profile_id,
                                      Dart_PersistentHandle persistent_handle,
                                      EvaluateQuickjsByteCodeCallback result_callback);
 void parseHTMLInternal(void* page_,
                        char* code,
                        int32_t length,
+                       int64_t profile_id,
                        Dart_PersistentHandle dart_handle,
                        ParseHTMLCallback result_callback);
 

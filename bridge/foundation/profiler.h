@@ -23,7 +23,7 @@ class ProfileStep {
  public:
   explicit ProfileStep(std::string label);
 
-  ScriptValue ToJSON(ExecutingContext* context);
+  ScriptValue ToJSON(JSContext* ctx);
   void AddChildSteps(std::shared_ptr<ProfileStep> step);
 
  private:
@@ -40,7 +40,7 @@ class ProfileOpItem {
   void RecordStep(const std::string& label, const std::shared_ptr<ProfileStep>& step);
   void FinishStep();
 
-  ScriptValue ToJSON(ExecutingContext* context);
+  ScriptValue ToJSON(JSContext* ctx);
 
  private:
   Stopwatch stopwatch_;
@@ -59,15 +59,21 @@ class WebFProfiler {
   void StartTrackInitialize();
   void FinishTrackInitialize();
 
-  void StartTrackInitializeSteps(const std::string& label);
-  void FinishTrackInitializeSteps();
+  void StartTrackEvaluation(int64_t evaluate_id);
+  void FinishTrackEvaluation(int64_t evaluate_id);
 
-  std::string ToJSON(ExecutingContext* context);
+  void StartTrackSteps(const std::string& label);
+  void FinishTrackSteps();
+
+  std::string ToJSON();
 
  private:
   bool enabled_{false};
-  std::stack<std::shared_ptr<ProfileOpItem>> initialize_profile_stacks_;
+  std::stack<std::shared_ptr<ProfileOpItem>> profile_stacks_;
   std::vector<std::shared_ptr<ProfileOpItem>> initialize_profile_items_;
+
+  std::unordered_map<int64_t, std::shared_ptr<ProfileOpItem>> evaluate_profile_items_;
+
   friend ProfileOpItem;
 };
 
