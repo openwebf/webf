@@ -338,6 +338,8 @@ void WebFTestContext::invokeExecuteTest(Dart_PersistentHandle persistent_handle,
 
 WebFTestContext::WebFTestContext(ExecutingContext* context)
     : context_(context), page_(static_cast<WebFPage*>(context->owner())) {
+  context->dartIsolateContext()->profiler()->StartTrackInitialize();
+
   page_->owner = this;
   page_->disposeCallback = [](WebFPage* bridge) { delete static_cast<WebFTestContext*>(bridge->owner); };
 
@@ -353,6 +355,8 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
 
   MemberInstaller::InstallFunctions(context, context->Global(), functionConfig);
   initWebFTestFramework(context);
+
+  context->dartIsolateContext()->profiler()->FinishTrackInitialize();
 }
 
 WebFTestContext::~WebFTestContext() {

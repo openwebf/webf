@@ -490,9 +490,9 @@ Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String?
 
 // Register initJsEngine
 typedef NativeInitDartIsolateContext = Pointer<Void> Function(
-    Int64 sendPort, Pointer<Uint64> dartMethods, Int32 methodsLength);
+    Int64 sendPort, Pointer<Uint64> dartMethods, Int32 methodsLength, Int8 enableProfile);
 typedef DartInitDartIsolateContext = Pointer<Void> Function(
-    int sendPort, Pointer<Uint64> dartMethods, int methodsLength);
+    int sendPort, Pointer<Uint64> dartMethods, int methodsLength, int enableProfile);
 
 final DartInitDartIsolateContext _initDartIsolateContext = WebFDynamicLibrary.ref
     .lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContextSync')
@@ -502,7 +502,7 @@ Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  return _initDartIsolateContext(nativePort, bytes, dartMethods.length);
+  return _initDartIsolateContext(nativePort, bytes, dartMethods.length, (kDebugMode || kProfileMode) ? 1 : 0);
 }
 
 typedef HandleDisposePageResult = Void Function(Handle context);

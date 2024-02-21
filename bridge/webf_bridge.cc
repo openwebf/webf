@@ -40,13 +40,13 @@ int64_t newPageIdSync() {
   return unique_page_id++;
 }
 
-void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len) {
+void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len, int8_t enable_profile) {
   auto dispatcher = std::make_unique<webf::multi_threading::Dispatcher>(dart_port);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: initDartIsolateContextSync Call BEGIN";
 #endif
-  auto* dart_isolate_context = new webf::DartIsolateContext(dart_methods, dart_methods_len);
+  auto* dart_isolate_context = new webf::DartIsolateContext(dart_methods, dart_methods_len, enable_profile == 1);
   dart_isolate_context->SetDispatcher(std::move(dispatcher));
 
 #if ENABLE_LOG
@@ -62,10 +62,16 @@ void* allocateNewPageSync(double thread_identity, void* ptr) {
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   assert(dart_isolate_context != nullptr);
+
+  dart_isolate_context->profiler()->StartTrackInitialize();
+
   void* result = static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPageSync(thread_identity);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPageSync Call END";
 #endif
+
+  dart_isolate_context->profiler()->FinishTrackInitialize();
+
   return result;
 }
 
