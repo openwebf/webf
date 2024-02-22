@@ -21,6 +21,11 @@ mixin RenderBoxDecorationMixin on RenderBoxModelBase {
     _painter = null;
   }
 
+  void invalidateBoxPainter() {
+    _painter?.dispose();
+    _painter = null;
+  }
+
   void paintBackground(PaintingContext context, Offset offset, EdgeInsets? padding) {
     CSSBoxDecoration? decoration = renderStyle.decoration;
     DecorationPosition decorationPosition = renderStyle.decorationPosition;

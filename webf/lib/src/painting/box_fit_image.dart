@@ -39,7 +39,7 @@ class ImageLoadResponse {
 }
 
 typedef LoadImage = Future<ImageLoadResponse> Function(Uri url);
-typedef OnImageLoad = void Function(int naturalWidth, int naturalHeight);
+typedef OnImageLoad = void Function(int naturalWidth, int naturalHeight, int frameCount);
 
 class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   BoxFitImage({
@@ -104,9 +104,9 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     // Fire image on load after codec created.
     scheduleMicrotask(() {
       if (onImageLoad != null) {
-        onImageLoad!(descriptor.width, descriptor.height);
+        onImageLoad!(descriptor.width, descriptor.height, codec.frameCount);
       }
-      _imageStreamCompleter!.setDimension(Dimension(descriptor.width, descriptor.height));
+      _imageStreamCompleter!.setDimension(Dimension(descriptor.width, descriptor.height, codec.frameCount));
     });
     return codec;
   }
@@ -148,7 +148,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
         completer is DimensionedMultiFrameImageStreamCompleter &&
         onImageLoad != null) {
       completer.dimension.then((Dimension dimension) {
-        onImageLoad!(dimension.width, dimension.height);
+        onImageLoad!(dimension.width, dimension.height, dimension.frameCount);
       });
     }
     if (completer != null) {
