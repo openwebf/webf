@@ -282,10 +282,16 @@ class CSSBackgroundImage {
         if (url.isNotEmpty) {
           uri = controller.uriParser!.resolve(Uri.parse(baseHref ?? controller.url), uri);
           FlutterView ownerFlutterView = controller.ownerFlutterView;
-          return BoxFitImage(
+          return _image = BoxFitImage(
             boxFit: renderStyle.backgroundSize.fit,
             url: uri,
             loadImage: _obtainImage,
+              onImageLoad: (int naturalWidth, int naturalHeight, int frameCount) {
+                if (frameCount > 1) {
+                   renderStyle.target.forceToRepaintBoundary = true;
+                   renderStyle.target.renderBoxModel!.invalidateBoxPainter();
+                }
+              },
             devicePixelRatio: ownerFlutterView.devicePixelRatio
           );
         }
