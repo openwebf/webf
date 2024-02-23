@@ -1,13 +1,12 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "dart_readable.h"
 
 #if WIN32
 #include <Windows.h>
 #endif
-
 
 namespace webf {
 
@@ -35,5 +34,4 @@ void DartReadable::operator delete(void* memory) noexcept {
   dart_free(memory);
 }
 
-
-}
+}  // namespace webf
