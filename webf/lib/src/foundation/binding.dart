@@ -8,6 +8,7 @@ import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
 
@@ -280,16 +281,35 @@ dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args
 }
 
 // This function receive calling from binding side.
-void invokeBindingMethodFromNativeImpl(double contextId, Pointer<NativeBindingObject> nativeBindingObject,
+void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
+
+  BindingOpItem? currentProfileOp;
+  if (!kReleaseMode) {
+    currentProfileOp = WebFProfiler.instance.startTrackBinding(profileId);
+  }
+
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+
+  if (!kReleaseMode) {
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'fromNativeValue');
+  }
+
   dynamic method = fromNativeValue(controller.view, nativeMethod);
   List<dynamic> values = List.generate(argc, (i) {
     Pointer<NativeValue> nativeValue = argv.elementAt(i);
     return fromNativeValue(controller.view, nativeValue);
   });
 
+  if (!kReleaseMode) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+  }
+
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
+
+  if (!kReleaseMode) {
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'invokeDartMethods');
+  }
 
   var result = null;
   try {
@@ -313,5 +333,13 @@ void invokeBindingMethodFromNativeImpl(double contextId, Pointer<NativeBindingOb
     print('$e\n$stack');
   } finally {
     toNativeValue(returnValue, result, bindingObject);
+  }
+
+  if (!kReleaseMode) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+  }
+
+  if (!kReleaseMode) {
+    WebFProfiler.instance.finishTrackBinding(profileId);
   }
 }

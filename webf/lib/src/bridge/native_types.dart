@@ -109,7 +109,7 @@ class NativeTouch extends Struct {
   external double azimuthAngle;
 }
 
-typedef InvokeBindingsMethodsFromNative = Void Function(Double contextId, Pointer<NativeBindingObject> binding_object,
+typedef InvokeBindingsMethodsFromNative = Void Function(Double contextId, Int64 profileId, Pointer<NativeBindingObject> binding_object,
     Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
 typedef NativeInvokeResultCallback = Void Function(Handle object, Pointer<NativeValue> result);
 
