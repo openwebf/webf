@@ -13,11 +13,14 @@
 
 namespace webf {
 
-ProfileStep::ProfileStep(std::string label): label_(std::move(label)) {
+static int64_t unique_profile_step_id_ = 0;
+
+ProfileStep::ProfileStep(ProfileOpItem* owner, std::string label)
+    : owner_(owner), label_(std::move(label)), id_(unique_profile_step_id_++) {
   stopwatch_.Begin();
 }
 
-ScriptValue ProfileStep::ToJSON(JSContext* ctx) {
+ScriptValue ProfileStep::ToJSON(JSContext* ctx, const std::string& path) {
   JSValue json = JS_NewObject(ctx);
 
   JSValue duration_string = JS_NewString(ctx, (std::to_string(stopwatch_.elapsed()) + " us").c_str());
@@ -26,7 +29,7 @@ ScriptValue ProfileStep::ToJSON(JSContext* ctx) {
   JSValue child_steps_array = JS_NewArray(ctx);
 
   for(int i = 0; i < child_steps_.size(); i ++) {
-    ScriptValue child_step_json = child_steps_[i]->ToJSON(ctx);
+    ScriptValue child_step_json = child_steps_[i]->ToJSON(ctx, path + "/" + std::to_string(i));
     JS_SetPropertyUint32(ctx, child_steps_array, i, JS_DupValue(ctx, child_step_json.QJSValue()));
   }
 
@@ -44,7 +47,20 @@ void ProfileStep::AddChildSteps(std::shared_ptr<ProfileStep> step) {
   child_steps_.emplace_back(step);
 }
 
-ProfileOpItem::ProfileOpItem() {
+int64_t ProfileStep::id() {
+  return id_;
+}
+
+ScriptValue LinkProfileStep::ToJSON(JSContext* ctx, const std::string& path) {
+  ScriptValue json = ProfileStep::ToJSON(ctx, path);
+  owner_->owner()->link_paths_[id()] = path;
+  JS_SetPropertyStr(ctx, json.QJSValue(), "profileId", JS_NewInt64(ctx, id()));
+  return json;
+}
+
+LinkProfileStep::LinkProfileStep(ProfileOpItem* owner, std::string label) : ProfileStep(owner, label) {}
+
+ProfileOpItem::ProfileOpItem(WebFProfiler* owner) : owner_(owner) {
   stopwatch_.Begin();
 }
 
@@ -55,7 +71,7 @@ void ProfileOpItem::RecordStep(const std::string& label, const std::shared_ptr<P
   }
 
   if (is_child_step) {
-    step_map_[step_stack_.top()]->AddChildSteps(step);
+    current_step()->AddChildSteps(step);
   } else {
     steps_.emplace_back(step);
   }
@@ -72,14 +88,14 @@ void ProfileOpItem::FinishStep() {
   step_stack_.pop();
 }
 
-ScriptValue ProfileOpItem::ToJSON(JSContext* ctx) {
+ScriptValue ProfileOpItem::ToJSON(JSContext* ctx, const std::string& path) {
   JSValue json = JS_NewObject(ctx);
 
   JSValue duration_string = JS_NewString(ctx, (std::to_string(stopwatch_.elapsed()) + " us").c_str());
   JSValue steps = JS_NewArray(ctx);
 
   for(int i = 0; i < steps_.size(); i ++) {
-    ScriptValue child_step_json = steps_[i]->ToJSON(ctx);
+    ScriptValue child_step_json = steps_[i]->ToJSON(ctx, path + "/" + std::to_string(i));
     JS_SetPropertyUint32(ctx, steps, i, JS_DupValue(ctx, child_step_json.QJSValue()));
   }
 
@@ -96,7 +112,7 @@ WebFProfiler::WebFProfiler(bool enable): enabled_(enable) {}
 
 void WebFProfiler::StartTrackInitialize() {
   if (UNLIKELY(enabled_)) {
-    std::shared_ptr<ProfileOpItem> profile_item = std::make_shared<ProfileOpItem>();
+    std::shared_ptr<ProfileOpItem> profile_item = std::make_shared<ProfileOpItem>(this);
     profile_stacks_.emplace(profile_item);
     initialize_profile_items_.emplace_back(profile_item);
   }
@@ -112,7 +128,7 @@ void WebFProfiler::FinishTrackInitialize() {
 
 void WebFProfiler::StartTrackEvaluation(int64_t evaluate_id) {
   if (UNLIKELY(enabled_)) {
-    std::shared_ptr<ProfileOpItem> profile_item = std::make_shared<ProfileOpItem>();
+    std::shared_ptr<ProfileOpItem> profile_item = std::make_shared<ProfileOpItem>(this);
     assert(evaluate_profile_items_.count(evaluate_id) == 0);
     evaluate_profile_items_[evaluate_id] = profile_item;
     profile_stacks_.emplace(profile_item);
@@ -133,12 +149,30 @@ void WebFProfiler::StartTrackSteps(const std::string& label) {
 
     assert(current_profile != nullptr);
 
-    auto step = std::make_shared<ProfileStep>(label);
+    auto step = std::make_shared<ProfileStep>(current_profile.get(), label);
     current_profile->RecordStep(label, step);
   }
 }
 
 void WebFProfiler::FinishTrackSteps() {
+  if (UNLIKELY(enabled_)) {
+    auto&& current_profile = profile_stacks_.top();
+    current_profile->FinishStep();
+  }
+}
+
+void WebFProfiler::StartTrackLinkSteps(const std::string& label) {
+  if (UNLIKELY(enabled_)) {
+    auto&& current_profile = profile_stacks_.top();
+
+    assert(current_profile != nullptr);
+
+    auto step = std::make_shared<LinkProfileStep>(current_profile.get(), label);
+    current_profile->RecordStep(label, step);
+  }
+}
+
+void WebFProfiler::FinishTrackLinkSteps() {
   if (UNLIKELY(enabled_)) {
     auto&& current_profile = profile_stacks_.top();
     current_profile->FinishStep();
@@ -156,7 +190,7 @@ std::string WebFProfiler::ToJSON() {
     {
       JSValue array_object = JS_NewArray(ctx);
       for (int i = 0; i < initialize_profile_items_.size(); i++) {
-        ScriptValue json_item = initialize_profile_items_[i]->ToJSON(ctx);
+        ScriptValue json_item = initialize_profile_items_[i]->ToJSON(ctx, "");
         JS_SetPropertyUint32(ctx, array_object, i, JS_DupValue(ctx, json_item.QJSValue()));
       }
 
@@ -166,10 +200,19 @@ std::string WebFProfiler::ToJSON() {
     {
       JSValue evaluate_object = JS_NewObject(ctx);
       for(auto&& item : evaluate_profile_items_) {
-        ScriptValue json_item = item.second->ToJSON(ctx);
+        ScriptValue json_item = item.second->ToJSON(ctx, std::to_string(item.first));
         JS_SetPropertyStr(ctx, evaluate_object, std::to_string(item.first).c_str(), JS_DupValue(ctx, json_item.QJSValue()));
       }
       JS_SetPropertyStr(ctx, object, "evaluate", evaluate_object);
+    }
+
+    {
+      JSValue link_path_object = JS_NewObject(ctx);
+      for (auto&& item : link_paths_) {
+        JS_SetPropertyStr(ctx, link_path_object, std::to_string(item.first).c_str(),
+                          JS_NewString(ctx, item.second.c_str()));
+      }
+      JS_SetPropertyStr(ctx, object, "link", link_path_object);
     }
 
     ExceptionState exception_state;

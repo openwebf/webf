@@ -149,6 +149,19 @@ class EvaluateOpItem extends OpItem {
   }
 }
 
+class BindingOpItem extends OpItem {
+  BindingOpItem(super.selfClock, this.profileId);
+
+  int profileId;
+
+  @override
+  Map toJson() {
+    Map map = super.toJson();
+    map['profileId'] = profileId;
+    return map;
+  }
+}
+
 class _NetworkOpSteps extends _OpSteps {
   bool pending = false;
 
@@ -287,6 +300,9 @@ class WebFProfiler {
 
   final Map<int, EvaluateOpItem> _evaluateOpMap = {};
   final List<EvaluateOpItem> _evaluateOp = [];
+
+  final Map<String, BindingOpItem> _bindingOpMap = {};
+  final List<BindingOpItem> _bindingOpSack = [];
 
   _PaintPipeLine get currentPipeline => _paintPipeLines.last;
 
@@ -481,6 +497,30 @@ class WebFProfiler {
     targetOp.duration = targetOp.selfClock.elapsed;
   }
 
+  BindingOpItem startTrackBinding(int profileId) {
+    BindingOpItem op = BindingOpItem(Stopwatch()..start(), profileId);
+    assert(!_bindingOpMap.containsKey(profileId));
+    _bindingOpMap[profileId.toString()] = op;
+    _bindingOpSack.add(op);
+    return op;
+  }
+
+  void startTrackBindingSteps(BindingOpItem targetOp, String label) {
+    _OpSteps step = _OpSteps(Stopwatch()..start(), label);
+    targetOp.recordStep(label, step);
+  }
+
+  void finishTrackBindingSteps(BindingOpItem targetOp) {
+    targetOp.finishStep();
+  }
+
+  void finishTrackBinding(int profileId) {
+    BindingOpItem op = _bindingOpMap[profileId.toString()]!;
+    op.selfClock.stop();
+    op.duration = op.selfClock.elapsed;
+    _bindingOpSack.removeLast();
+  }
+
   void pauseCurrentLayoutOp() {
     currentPipeline.currentLayoutOp.selfClock.stop();
     currentPipeline.currentLayoutOp._stepMap.forEach((key, step) {
@@ -509,7 +549,7 @@ class WebFProfiler {
     });
   }
 
-  void _mergeNativeProfileData(Map<String, dynamic> nativeData) {
+  void _mergeEvaluateProfileData(Map<String, dynamic> nativeData) {
     nativeData.forEach((key, value) {
       EvaluateOpItem? opItem = _evaluateOpMap[int.parse(key)];
 
@@ -519,11 +559,30 @@ class WebFProfiler {
     });
   }
 
+  void _mergeBindingProfileData(Map<String, dynamic> source, Map<String, dynamic> linkData) {
+    print(linkData);
+    linkData.forEach((key, pathString) {
+      List<String> paths = (pathString as String).split('/');
+
+      dynamic profileItem = source[paths[0]]['steps'];
+
+      dynamic target = profileItem;
+      for(int i = 1; i < paths.length - 1; i ++) {
+        Map stepMap = target[int.parse(paths[i])];
+        target = stepMap['childSteps'];
+      }
+
+      int targetProfileId = target[0]['profileId'];
+      target[0]['childSteps'].add(_bindingOpMap[targetProfileId.toString()]!.toJson());
+    });
+  }
+
   Map<String, dynamic> report() {
     String nativeProfileData = collectNativeProfileData();
     Map<String, dynamic> profileData = jsonDecode(nativeProfileData);
 
-    _mergeNativeProfileData(profileData['evaluate']);
+    _mergeBindingProfileData(profileData['evaluate'], profileData['link']);
+    _mergeEvaluateProfileData(profileData['evaluate']);
 
     return {
       'networks': _networkOp,
