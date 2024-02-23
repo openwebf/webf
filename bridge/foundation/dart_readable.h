@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_DART_READABLE_H
 #define WEBF_DART_READABLE_H
@@ -19,6 +19,6 @@ struct DartReadable {
   static void operator delete(void* memory) noexcept;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_DART_READABLE_H
