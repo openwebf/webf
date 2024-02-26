@@ -1,0 +1,71 @@
+# This config was automatically generated from your source code
+# Stacks detected: cicd:github-actions:.github/workflows,deps:node:.,deps:python:bridge/third_party/benchmark,file:setup.py:bridge/third_party/benchmark
+version: 2.1
+orbs:
+  node: circleci/node@5
+  python: circleci/python@2
+jobs:
+  test-node:
+    # Install node dependencies and run tests
+    executor: node/default
+    steps:
+      - checkout
+      - node/install-packages:
+          cache-path: ~/project/node_modules
+          override-ci-command: npm install
+      - run:
+          name: Run tests
+          command: npm test --passWithNoTests
+  test-python:
+    # Install dependencies and run tests
+    docker:
+      - image: cimg/python:3.8-node
+    working_directory: ~/project/bridge/third_party/benchmark
+    steps:
+      - checkout:
+          path: ~/project
+      - python/install-packages:
+          pkg-manager: pip-dist
+      - run:
+          name: Run tests
+          command: pytest --junitxml=junit.xml || ((($? == 5)) && echo 'Did not find any tests to run.')
+      - store_test_results:
+          path: junit.xml
+  build-package:
+    # build python package
+    docker:
+      - image: cimg/python:3.8-node
+    steps:
+      - checkout:
+          path: ~/project
+      - run:
+          name: Create the ~/artifacts directory if it doesn't exist
+          command: mkdir -p ~/artifacts
+      - python/dist
+      - store_artifacts:
+          path: dist
+          destination: ~/artifacts
+  deploy:
+    # This is an example deploy job, not actually used by the workflow
+    docker:
+      - image: cimg/base:stable
+    steps:
+      # Replace this with steps to deploy to users
+      - run:
+          name: deploy
+          command: '#e.g. ./deploy.sh'
+      - run:
+          name: found github actions config
+          command: ':'
+workflows:
+  build-and-test:
+    jobs:
+      - test-node
+      - test-python
+      - build-package:
+          requires:
+            - test-node
+            - test-python
+    # - deploy:
+    #     requires:
+    #       - build-package
