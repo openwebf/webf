@@ -4,7 +4,6 @@
  */
 
 import 'package:flutter/animation.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -123,7 +122,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void updateRenderBoxModelWithOverflowX(ScrollListener scrollListener) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.updateRenderBoxModelWithOverflowX');
     }
     if (renderBoxModel is RenderSliverListLayout) {
@@ -162,7 +161,7 @@ mixin ElementOverflowMixin on ElementBase {
       renderBoxModel.scrollListener = scrollListener;
       renderBoxModel.scrollablePointerListener = _scrollablePointerListener;
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
@@ -290,7 +289,7 @@ mixin ElementOverflowMixin on ElementBase {
 
   // Update renderBox according to overflow value.
   void updateOverflowRenderBox() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.updateOverflowRenderBox');
     }
     CSSOverflowType effectiveOverflowY = renderStyle.effectiveOverflowY;
@@ -308,7 +307,7 @@ mixin ElementOverflowMixin on ElementBase {
         _detachScrollingContentBox();
       }
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }

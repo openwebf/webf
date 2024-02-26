@@ -4,7 +4,6 @@
  */
 
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -127,12 +126,12 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   /// override it to layout box model paint.
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaint(this);
     }
 
     if (visualAvailableSize?.isEmpty == true) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaint(this);
       }
       return;
@@ -146,7 +145,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       paintBoxModel(pipeline, offset);
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackPaint(this);
     }
   }
@@ -159,11 +158,11 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
     if (child != null) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.pauseCurrentPaintOp();
       }
       context.paintChild(child!, offset);
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.resumeCurrentPaintOp();
       }
     }

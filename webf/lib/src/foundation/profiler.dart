@@ -14,6 +14,8 @@ import 'package:webf/bridge.dart';
 
 /// Collect performance details of core components in WebF.
 
+bool enableWebFProfileTracking = kDebugMode || kProfileMode;
+
 // Represent a layout step from a layout operation.
 class _OpSteps {
   Stopwatch startClock;
@@ -560,7 +562,6 @@ class WebFProfiler {
   }
 
   void _mergeBindingProfileData(Map<String, dynamic> source, Map<String, dynamic> linkData) {
-    print(linkData);
     linkData.forEach((key, pathString) {
       List<String> paths = (pathString as String).split('/');
 

@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -200,12 +199,12 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   BoxConstraints getConstraints() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayoutStep('RenderTextBox.getConstraints()');
     }
 
     if (renderStyle.whiteSpace == WhiteSpace.nowrap && renderStyle.effectiveTextOverflow != TextOverflow.ellipsis) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackLayoutStep();
       }
       return BoxConstraints();
@@ -244,7 +243,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       }
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayoutStep();
     }
 

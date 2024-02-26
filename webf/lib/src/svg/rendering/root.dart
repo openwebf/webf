@@ -2,7 +2,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/svg.dart';
@@ -62,11 +61,11 @@ class RenderSVGRoot extends RenderSVGContainer {
           // Draw debug rect
           // context.canvas.drawRect(_renderViewBox, Paint()..color = Color.fromARGB(255, 255, 0, 0)..style = PaintingStyle.stroke);
           visitChildren((child) {
-            if (!kReleaseMode) {
+            if (enableWebFProfileTracking) {
               WebFProfiler.instance.pauseCurrentPaintOp();
             }
             context.paintChild(child, offset);
-            if (!kReleaseMode) {
+            if (enableWebFProfileTracking) {
               WebFProfiler.instance.resumeCurrentPaintOp();
             }
           });

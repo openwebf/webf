@@ -25,6 +25,7 @@ static void ReturnEventResultToDart(Dart_Handle persistent_handle,
 }
 
 static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
+                                          int64_t profile_id,
                                           NativeValue* method,
                                           int32_t argc,
                                           NativeValue* argv,
@@ -39,7 +40,7 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
   auto context_id = binding_object->binding_target_->contextId();
 
   dart_isolate->dispatcher()->PostToJs(is_dedicated, context_id, NativeBindingObject::HandleCallFromDartSide,
-                                       dart_isolate, binding_object, method, argc, argv, persistent_handle,
+                                       dart_isolate, binding_object, profile_id, method, argc, argv, persistent_handle,
                                        result_callback);
 }
 
@@ -48,6 +49,7 @@ NativeBindingObject::NativeBindingObject(BindingObject* target)
 
 void NativeBindingObject::HandleCallFromDartSide(DartIsolateContext* dart_isolate_context,
                                                  NativeBindingObject* binding_object,
+                                                 int64_t profile_id,
                                                  NativeValue* native_method,
                                                  int32_t argc,
                                                  NativeValue* argv,
@@ -55,6 +57,9 @@ void NativeBindingObject::HandleCallFromDartSide(DartIsolateContext* dart_isolat
                                                  DartInvokeResultCallback result_callback) {
   if (binding_object->disposed_)
     return;
+
+  dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
+
   AtomicString method = AtomicString(
       binding_object->binding_target_->ctx(),
       std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)));
@@ -62,6 +67,8 @@ void NativeBindingObject::HandleCallFromDartSide(DartIsolateContext* dart_isolat
 
   auto* return_value = new NativeValue();
   std::memcpy(return_value, &result, sizeof(NativeValue));
+
+  dart_isolate_context->profiler()->FinishTrackEvaluation(profile_id);
 
   dart_isolate_context->dispatcher()->PostToDart(binding_object->binding_target_->GetExecutingContext()->isDedicated(),
                                                  ReturnEventResultToDart, dart_object, return_value, result_callback);

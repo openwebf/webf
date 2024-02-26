@@ -4,7 +4,6 @@
  */
 import 'dart:ui';
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
@@ -69,7 +68,7 @@ class RenderViewportBox extends RenderBox
 
   @override
   void performLayout() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayout(this);
       WebFProfiler.instance.startTrackLayoutStep('Root Get Constraints');
     }
@@ -94,7 +93,7 @@ class RenderViewportBox extends RenderBox
       }
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayoutStep();
     }
 
@@ -107,13 +106,13 @@ class RenderViewportBox extends RenderBox
       rootRenderLayoutBox.visualAvailableSize = Size(double.infinity, double.infinity);
       BoxConstraints childConstraints = rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height);
 
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.pauseCurrentLayoutOp();
       }
 
       child.layout(childConstraints);
 
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.resumeCurrentLayoutOp();
       }
 
@@ -121,7 +120,7 @@ class RenderViewportBox extends RenderBox
       child = childParentData.nextSibling;
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayout(this);
     }
   }

@@ -103,7 +103,7 @@ class FetchModule extends BaseModule {
     } else {
       HttpClientResponse? response;
       NetworkOpItem? currentNetworkOp;
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         currentNetworkOp = WebFProfiler.instance.startTrackNetwork(uri.toString());
       }
 
@@ -124,7 +124,7 @@ class FetchModule extends BaseModule {
           throw FlutterError('Failed to read response.');
         }
       }).catchError(_handleError).then((value) {
-        if (!kReleaseMode) {
+        if (enableWebFProfileTracking) {
           WebFProfiler.instance.finishTrackNetwork(currentNetworkOp!);
         }
       });

@@ -19,17 +19,17 @@ mixin RenderContentVisibilityMixin on RenderBoxModelBase {
   }
 
   static void paintContentVisibility(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaintStep('paintContentVisibility');
     }
     ContentVisibility? _contentVisibility = pipeline.renderBoxModel.renderStyle.contentVisibility;
     if (_contentVisibility == ContentVisibility.hidden) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
       return;
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackPaintStep();
     }
     pipeline.paintOverlay(pipeline, offset);

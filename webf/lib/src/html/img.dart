@@ -500,7 +500,7 @@ class ImageElement extends Element {
   // Callback when image are loaded, encoded and available to use.
   // This callback may fire multiple times when image have multiple frames (such as an animated GIF).
   void _handleImageFrame(ImageInfo imageInfo, bool synchronousCall) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommand();
     }
     _cachedImageInfo = imageInfo;
@@ -521,7 +521,7 @@ class ImageElement extends Element {
       });
       SchedulerBinding.instance.scheduleFrame();
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }
   }

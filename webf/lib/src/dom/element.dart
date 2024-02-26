@@ -356,7 +356,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void updateRenderBoxModel({ bool forceUpdate = false }) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.updateRenderBoxModel');
     }
     RenderBoxModel nextRenderBoxModel;
@@ -396,7 +396,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       ensureEventResponderBound();
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
@@ -589,7 +589,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   void willAttachRenderer() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.willAttachRenderer');
     }
     super.willAttachRenderer();
@@ -597,14 +597,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (renderStyle.display != CSSDisplay.none) {
       createRenderer();
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
   @override
   void didAttachRenderer() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.didAttachRenderer');
     }
     super.didAttachRenderer();
@@ -626,14 +626,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (needUpdateOverflowRenderBox) {
       updateOverflowRenderBox();
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
   @override
   void willDetachRenderer() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.willDetachRenderer');
     }
     super.willDetachRenderer();
@@ -663,7 +663,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       renderBoxModel.disposeScrollable();
       disposeScrollable();
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
@@ -799,7 +799,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateRenderBoxModelWithPosition(CSSPositionType oldPosition) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this._updateRenderBoxModelWithPosition');
     }
     CSSPositionType currentPosition = renderStyle.position;
@@ -860,7 +860,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       });
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
@@ -920,7 +920,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateBeforePseudoElement() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommand();
     }
     // Add pseudo elements
@@ -931,7 +931,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       removeChild(_beforeElement!);
     }
     _shouldBeforePseudoElementNeedsUpdate = false;
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }
   }
@@ -945,7 +945,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateAfterPseudoElement() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommand();
     }
     String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
@@ -955,7 +955,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       removeChild(_afterElement!);
     }
     _shouldAfterPseudoElementNeedsUpdate = false;
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }
   }
@@ -1019,7 +1019,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // Attach renderObject of current node to parent
   @override
   void attachTo(Node parent, {RenderBox? after}) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.attachTo');
     }
     applyStyle(style);
@@ -1051,7 +1051,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       didAttachRenderer();
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
@@ -1124,7 +1124,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node appendChild(Node child) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.appendChild');
     }
     super.appendChild(child);
@@ -1154,7 +1154,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
     return child;
@@ -1163,7 +1163,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node removeChild(Node child) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.removeChild');
     }
     super.removeChild(child);
@@ -1173,7 +1173,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       child.renderStyle.detach();
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
 
@@ -1183,7 +1183,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.insertBefore');
     }
     Node? originalPreviousSibling = referenceNode.previousSibling;
@@ -1242,7 +1242,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
 
@@ -1252,7 +1252,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node? replaceChild(Node newNode, Node oldNode) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.replaceChild');
     }
     // Update renderStyle tree.
@@ -1262,7 +1262,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (oldNode is Element) {
       oldNode.renderStyle.parent = null;
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
     return super.replaceChild(newNode, oldNode);
@@ -1402,7 +1402,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateRenderBoxModelWithDisplay() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this._updateRenderBoxModelWithDisplay');
     }
     CSSDisplay presentDisplay = renderStyle.display;
@@ -1412,7 +1412,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
       unmountRenderObject();
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackUICommandStep();
       }
       return;
@@ -1439,7 +1439,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     didAttachRenderer();
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
@@ -1448,7 +1448,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (renderStyle.target.disposed) return;
 
     bool uiCommandTracked = false;
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
         WebFProfiler.instance.startTrackUICommand();
         uiCommandTracked = true;
@@ -1517,7 +1517,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         break;
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
       if (uiCommandTracked) {
         WebFProfiler.instance.finishTrackUICommand();
@@ -1572,7 +1572,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _applyDefaultStyle(CSSStyleDeclaration style) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this._applyDefaultStyle');
     }
     if (defaultStyle.isNotEmpty) {
@@ -1582,13 +1582,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
       });
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
   void _applyInlineStyle(CSSStyleDeclaration style) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this._applyInlineStyle');
     }
     if (inlineStyle.isNotEmpty) {
@@ -1597,18 +1597,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         style.setProperty(propertyName, value, isImportant: true);
       });
     }
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
   void _applySheetStyle(CSSStyleDeclaration style) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this._applySheetStyle');
     }
     CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
@@ -1672,20 +1672,20 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _applyPseudoStyle(CSSStyleDeclaration style) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this._applyPseudoStyle');
     }
 
     List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
     style.handlePseudoRules(this, pseudoRules);
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
   void applyStyle(CSSStyleDeclaration style) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.applyStyle');
     }
     // Apply default style.
@@ -1698,7 +1698,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _applySheetStyle(style);
     _applyPseudoStyle(style);
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
@@ -1716,7 +1716,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
     if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.startTrackUICommandStep('$this.recalculateStyle');
       }
       // Diff style.
@@ -1736,7 +1736,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
           child.recalculateStyle(rebuildNested: rebuildNested);
         });
       }
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackUICommandStep();
       }
     }

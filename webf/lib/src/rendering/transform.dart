@@ -16,7 +16,7 @@ mixin RenderTransformMixin on RenderBoxModelBase {
   }
 
   static void paintTransform(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaintStep('paintTransform');
     }
 
@@ -28,7 +28,7 @@ mixin RenderTransformMixin on RenderBoxModelBase {
       final Matrix4 transform = renderStyle.effectiveTransformMatrix;
 
       finishPaintTransform(PaintingContext context, Offset offset) {
-        if (!kReleaseMode) {
+        if (enableWebFProfileTracking) {
           WebFProfiler.instance.finishTrackPaintStep();
         }
         pipeline.paintOpacity(pipeline, offset);
@@ -48,7 +48,7 @@ mixin RenderTransformMixin on RenderBoxModelBase {
         transformLayer.layer = null;
       }
     } else {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
       pipeline.paintOpacity(pipeline, offset);

@@ -57,9 +57,13 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
     argv[0 + i] = arguments[i].QJSValue();
   }
 
+  ExecutingContext* context = ExecutingContext::From(ctx);
+  context->dartIsolateContext()->profiler()->StartTrackSteps("JS_Call");
+
   JSValue returnValue = JS_Call(ctx, function_, this_val.QJSValue(), argc, argv);
 
-  ExecutingContext* context = ExecutingContext::From(ctx);
+  context->dartIsolateContext()->profiler()->FinishTrackSteps();
+
   context->DrainMicrotasks();
 
   // Free the previous duplicated function.
