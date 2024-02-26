@@ -249,7 +249,7 @@ class RenderLayoutBox extends RenderBoxModel
 
   @override
   BoxConstraints getConstraints() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayoutStep('RenderLayoutBox.getConstraints()');
     }
 
@@ -277,7 +277,7 @@ class RenderLayoutBox extends RenderBoxModel
       }
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayoutStep();
     }
 
@@ -409,11 +409,11 @@ class RenderLayoutBox extends RenderBoxModel
       if (!isPositionPlaceholder(child)) {
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
         if (child.hasSize) {
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.pauseCurrentPaintOp();
           }
           context.paintChild(child, childParentData.offset + offset);
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.resumeCurrentPaintOp();
           }
         }
@@ -1038,7 +1038,7 @@ class RenderBoxModel extends RenderBox
   // Calculate constraints of renderBoxModel on layout stage and
   // only needed to be executed once on every layout.
   BoxConstraints getConstraints() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayoutStep('RenderBoxModel.getConstraints');
     }
 
@@ -1073,7 +1073,7 @@ class RenderBoxModel extends RenderBox
         );
       }
 
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackLayoutStep();
       }
 
@@ -1168,7 +1168,7 @@ class RenderBoxModel extends RenderBox
       maxHeight: maxConstraintHeight,
     );
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayoutStep();
     }
 
@@ -1384,19 +1384,19 @@ class RenderBoxModel extends RenderBox
   void paint(PaintingContext context, Offset offset) {
     WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaint(this);
     }
 
     if (!shouldPaint) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaint(this);
       }
       return;
     }
 
     if (visualAvailableSize?.isEmpty == true) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaint(this);
       }
       return;
@@ -1404,7 +1404,7 @@ class RenderBoxModel extends RenderBox
 
     paintBoxModel(pipeline, offset);
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackPaint(this);
     }
   }
@@ -1424,14 +1424,14 @@ class RenderBoxModel extends RenderBox
 
     ColorFilter? colorFilter = renderStyle.colorFilter;
     if (colorFilter != null) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.startTrackPaintStep(
             'paintColorFilter', {'offset': offset.toString(), 'colorFilter': colorFilter.toString()});
       }
 
       pipeline.renderBoxModel._colorFilterLayer.layer =
           pipeline.context.pushColorFilter(offset, colorFilter, (context, offset) {
-        if (!kReleaseMode) {
+        if (enableWebFProfileTracking) {
           WebFProfiler.instance.finishTrackPaintStep();
         }
 
@@ -1463,7 +1463,7 @@ class RenderBoxModel extends RenderBox
   final LayerHandle<ImageFilterLayer> _imageFilterLayer = LayerHandle<ImageFilterLayer>();
 
   static void paintImageFilter(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaintStep('paintImageFilter');
     }
 
@@ -1476,14 +1476,14 @@ class RenderBoxModel extends RenderBox
       imageFilterLayer.layer!.imageFilter = renderStyle.imageFilter;
 
       pipeline.context.pushLayer(imageFilterLayer.layer!, (PaintingContext context, Offset offset) {
-        if (!kReleaseMode) {
+        if (enableWebFProfileTracking) {
           WebFProfiler.instance.finishTrackPaintStep();
         }
 
         pipeline.paintIntersectionObserver(pipeline, offset);
       }, offset);
     } else {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
 

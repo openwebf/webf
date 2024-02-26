@@ -147,7 +147,7 @@ void WebFProfiler::StartTrackSteps(const std::string& label) {
   if (UNLIKELY(enabled_)) {
     auto&& current_profile = profile_stacks_.top();
 
-    assert(current_profile != nullptr);
+    assert_m(current_profile != nullptr, "Tracks not started");
 
     auto step = std::make_shared<ProfileStep>(current_profile.get(), label);
     current_profile->RecordStep(label, step);

@@ -114,74 +114,74 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     try {
       switch (commandType) {
         case UICommandType.createElement:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createElement');
           }
 
           view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
 
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
 
           break;
         case UICommandType.createDocument:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createDocument');
           }
 
           view.initDocument(view, nativePtr.cast<NativeBindingObject>());
 
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.createWindow:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
           }
 
           view.initWindow(view, nativePtr.cast<NativeBindingObject>());
 
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.createTextNode:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
           }
 
           view.createTextNode(nativePtr.cast<NativeBindingObject>(), command.args);
 
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.createComment:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
           }
 
           view.createComment(nativePtr.cast<NativeBindingObject>());
 
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.disposeBindingObject:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
           }
 
           view.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
 
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.addEvent:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.addEvent');
           }
 
@@ -189,51 +189,51 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args,
               addEventListenerOptions: eventListenerOptions);
 
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
 
           break;
         case UICommandType.removeEvent:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.removeEvent');
           }
           bool isCapture = command.nativePtr2.address == 1;
           view.removeEvent(nativePtr.cast<NativeBindingObject>(), command.args, isCapture: isCapture);
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.insertAdjacentNode:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.insertAdjacentNode');
           }
           view.insertAdjacentNode(
               nativePtr.cast<NativeBindingObject>(), command.args, command.nativePtr2.cast<NativeBindingObject>());
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.removeNode:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.removeNode');
           }
           view.removeNode(nativePtr.cast<NativeBindingObject>());
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.cloneNode:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.cloneNode');
           }
           view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.setStyle:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.cloneNode');
           }
           String value;
@@ -246,22 +246,22 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
           view.setInlineStyle(nativePtr, command.args, value);
           pendingStylePropertiesTargets[nativePtr.address] = true;
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.clearStyle:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.clearStyle');
           }
           view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.setAttribute:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setAttribute');
           }
           Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
@@ -269,40 +269,40 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           freeNativeString(nativeKey);
           view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
           pendingRecalculateTargets.add(nativePtr.address);
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.removeAttribute:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setAttribute');
           }
           String key = command.args;
           view.removeAttribute(nativePtr, key);
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.createDocumentFragment:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createDocumentFragment');
           }
           view.createDocumentFragment(nativePtr.cast<NativeBindingObject>());
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.createSVGElement:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createSVGElement');
           }
           view.createElementNS(nativePtr.cast<NativeBindingObject>(), SVG_ELEMENT_URI, command.args);
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
         case UICommandType.createElementNS:
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createElementNS');
           }
           Pointer<NativeString> nativeNameSpaceUri = command.nativePtr2.cast<NativeString>();
@@ -310,7 +310,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           freeNativeString(nativeNameSpaceUri);
 
           view.createElementNS(nativePtr.cast<NativeBindingObject>(), namespaceUri, command.args);
-          if (!kReleaseMode) {
+          if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
@@ -322,7 +322,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     }
   }
 
-  if (!kReleaseMode) {
+  if (enableWebFProfileTracking) {
     WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.flushPendingStyleProperties');
   }
   // For pending style properties, we needs to flush to render style.
@@ -338,7 +338,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     pendingStylePropertiesTargets.clear();
   }
 
-  if (!kReleaseMode) {
+  if (enableWebFProfileTracking) {
     WebFProfiler.instance.finishTrackUICommandStep();
     WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.recalculateStyle');
   }
@@ -352,7 +352,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
   }
   pendingRecalculateTargets.clear();
 
-  if (!kReleaseMode) {
+  if (enableWebFProfileTracking) {
     WebFProfiler.instance.finishTrackUICommandStep();
   }
 }

@@ -94,7 +94,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
     callback ??= pipeline.paintTransform;
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaintStep('paintIntersectionObserver', {
         'size': renderBoxModel.semanticBounds.size.toString(),
         'intersectPadding': renderBoxModel.intersectPadding.toString(),
@@ -104,7 +104,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
 
     // Skip to next if not has intersection observer
     if (renderBoxModel._onIntersectionChange == null) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
 
@@ -126,7 +126,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     }
 
     pipeline.context.pushLayer(intersectionObserverLayer.layer!, (PaintingContext context, Offset offset) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
 

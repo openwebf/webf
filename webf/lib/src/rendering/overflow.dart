@@ -195,7 +195,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   static void paintOverflow(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaintStep('paintOverflow');
     }
 
@@ -217,14 +217,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     WebFPaintingContextCallback callback = hasLocalAttachment ? pipeline.paintBackground : pipeline.paintContentVisibility;
 
     if (clipX == false && clipY == false) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
       return callback(pipeline, offset);
     }
     // Stop further paint if there are no visible contents in here.
     if (renderBoxModel.contentSize.isEmpty) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
       return;
@@ -243,7 +243,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     if (renderBoxModel._shouldClipAtPaintOffset(paintOffset, size)) {
       // ignore: prefer_function_declarations_over_variables
       PaintingContextCallback painter = (PaintingContext context, Offset offset) {
-        if (!kReleaseMode) {
+        if (enableWebFProfileTracking) {
           WebFProfiler.instance.finishTrackPaintStep();
         }
         callback(pipeline, offset + paintOffset);
@@ -282,7 +282,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       renderBoxModel._clipRectLayer.layer = null;
       renderBoxModel._clipRRectLayer.layer = null;
 
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
 

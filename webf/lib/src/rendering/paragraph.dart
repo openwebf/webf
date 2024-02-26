@@ -521,7 +521,7 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaint(this);
     }
     assert(() {
@@ -572,7 +572,7 @@ class WebFRenderParagraph extends RenderBox
       context.canvas.restore();
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackPaint(this);
     }
   }

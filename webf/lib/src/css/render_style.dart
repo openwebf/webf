@@ -6,7 +6,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -832,7 +831,7 @@ class CSSRenderStyle extends RenderStyle
   @override
   dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
     bool uiCommandTracked = false;
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
         WebFProfiler.instance.startTrackUICommand();
         uiCommandTracked = true;
@@ -848,7 +847,7 @@ class CSSRenderStyle extends RenderStyle
     // Process CSSVariable.
     dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackUICommandStep();
         if (uiCommandTracked) {
           WebFProfiler.instance.finishTrackUICommand();
@@ -1121,7 +1120,7 @@ class CSSRenderStyle extends RenderStyle
         break;
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
       if (uiCommandTracked) {
         WebFProfiler.instance.finishTrackUICommand();
@@ -1373,14 +1372,14 @@ class CSSRenderStyle extends RenderStyle
   // Max width to constrain its children, used in deciding the line wrapping timing of layout.
   @override
   double get contentMaxConstraintsWidth {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayoutStep('RenderStyle.contentMaxConstraintsWidth');
     }
 
     // If renderBoxModel definite content constraints, use it as max constrains width of content.
     BoxConstraints? contentConstraints = renderBoxModel!.contentConstraints;
     if (contentConstraints != null && contentConstraints.maxWidth != double.infinity) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackLayoutStep();
       }
       return contentConstraints.maxWidth;
@@ -1409,7 +1408,7 @@ class CSSRenderStyle extends RenderStyle
       contentMaxConstraintsWidth = math.max(0, contentMaxConstraintsWidth);
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayoutStep();
     }
 

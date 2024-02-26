@@ -202,11 +202,11 @@ class RenderSliverListLayout extends RenderLayoutBox {
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
     if (firstChild != null) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.pauseCurrentPaintOp();
       }
       context.paintChild(firstChild!, offset);
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.resumeCurrentPaintOp();
       }
     }

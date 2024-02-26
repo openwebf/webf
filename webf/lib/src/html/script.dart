@@ -106,7 +106,7 @@ class ScriptRunner {
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
       EvaluateOpItem? evaluateOpItem;
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('ScriptRunner._evaluateScriptBundle');
       }
 
@@ -130,7 +130,7 @@ class ScriptRunner {
       // Decrement load event delay count after eval.
       _document.decrementDOMContentLoadedEventDelayCount();
 
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
       }
     }

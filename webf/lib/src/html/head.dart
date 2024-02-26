@@ -4,7 +4,6 @@
  */
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -163,7 +162,7 @@ class LinkElement extends Element {
 
         final String cssString = await resolveStringFromData(bundle.data!);
 
-        if (!kReleaseMode) {
+        if (enableWebFProfileTracking) {
           WebFProfiler.instance.startTrackUICommand();
           WebFProfiler.instance.startTrackUICommandStep('Style.parseCSS');
         }
@@ -171,7 +170,7 @@ class LinkElement extends Element {
         _styleSheet = CSSParser(cssString, href: href).parse();
         _styleSheet?.href = href;
 
-        if (!kReleaseMode) {
+        if (enableWebFProfileTracking) {
           WebFProfiler.instance.finishTrackUICommandStep();
         }
 
@@ -179,7 +178,7 @@ class LinkElement extends Element {
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
 
-        if (!kReleaseMode) {
+        if (enableWebFProfileTracking) {
           WebFProfiler.instance.finishTrackUICommand();
         }
 
@@ -279,7 +278,7 @@ mixin StyleElementMixin on Element {
   }
 
   void _recalculateStyle() {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.parseInlineStyle');
     }
     String? text = collectElementChildText();
@@ -296,7 +295,7 @@ mixin StyleElementMixin on Element {
       }
     }
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
   }

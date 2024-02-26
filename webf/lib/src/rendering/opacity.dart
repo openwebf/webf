@@ -32,7 +32,7 @@ mixin RenderOpacityMixin on RenderBoxModelBase {
   static void paintOpacity(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
     RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaintStep('paintOpacity', {
         'alpha': renderBoxModel.alpha
       });
@@ -43,7 +43,7 @@ mixin RenderOpacityMixin on RenderBoxModelBase {
 
     if (alpha == 255) {
       renderBoxModel._opacityLayer.layer = null;
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
 
@@ -53,7 +53,7 @@ mixin RenderOpacityMixin on RenderBoxModelBase {
     }
 
     opacityLayer.layer = pipeline.context.pushOpacity(offset, alpha, (PaintingContext context, Offset offset) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackPaintStep();
       }
       pipeline.paintDecoration(pipeline, offset);

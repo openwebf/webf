@@ -510,7 +510,7 @@ Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  return _initDartIsolateContext(nativePort, bytes, dartMethods.length, (kDebugMode || kProfileMode) ? 1 : 0);
+  return _initDartIsolateContext(nativePort, bytes, dartMethods.length, enableWebFProfileTracking ? 1 : 0);
 }
 
 typedef HandleDisposePageResult = Void Function(Handle context);
@@ -776,40 +776,40 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   assert(_allocatedPages.containsKey(view.contextId));
   if (view.disposed) return;
 
-  if (!kReleaseMode) {
+  if (enableWebFProfileTracking) {
     WebFProfiler.instance.startTrackUICommand();
     WebFProfiler.instance.startTrackUICommandStep('readNativeUICommandMemory');
   }
 
   _NativeCommandData rawCommands = readNativeUICommandMemory(view.contextId);
 
-  if (!kReleaseMode) {
+  if (enableWebFProfileTracking) {
     WebFProfiler.instance.finishTrackUICommandStep();
   }
 
   List<UICommand>? commands;
   if (rawCommands.rawMemory.isNotEmpty) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('nativeUICommandToDart');
     }
 
     commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
       WebFProfiler.instance.startTrackUICommandStep('execUICommands');
     }
 
     execUICommands(view, commands);
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
 
     SchedulerBinding.instance.scheduleFrame();
   }
 
-  if (!kReleaseMode) {
+  if (enableWebFProfileTracking) {
     WebFProfiler.instance.finishTrackUICommand();
   }
 }

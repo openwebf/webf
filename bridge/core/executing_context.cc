@@ -325,7 +325,12 @@ void ExecutingContext::ReportError(JSValueConst error) {
 }
 
 void ExecutingContext::DrainMicrotasks() {
+  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::DrainMicrotasks");
+
   DrainPendingPromiseJobs();
+
+  dart_isolate_context_->profiler()->FinishTrackSteps();
+
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
@@ -364,9 +369,17 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
 void ExecutingContext::DrainPendingPromiseJobs() {
   // should executing pending promise jobs.
   JSContext* pctx;
+
+  dart_isolate_context_->profiler()->StartTrackSteps("JS_ExecutePendingJob");
+
   int finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
+
+  dart_isolate_context_->profiler()->FinishTrackSteps();
+
   while (finished != 0) {
+    dart_isolate_context_->profiler()->StartTrackSteps("JS_ExecutePendingJob");
     finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
+    dart_isolate_context_->profiler()->FinishTrackSteps();
     if (finished == -1) {
       break;
     }

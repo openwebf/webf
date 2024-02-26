@@ -81,14 +81,14 @@ abstract class ContainerNode extends Node {
     // 3. If reference child is node, set it to node’s next sibling.
     // Already done at C++ side.
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('ContainerNode.insertBefore');
     }
 
     // 4. Adopt node into parent’s node document.
     List<Node> targets = [];
     if (!collectChildrenAndRemoveFromOldParent(newChild, targets)) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackUICommandStep();
       }
 
@@ -113,7 +113,7 @@ abstract class ContainerNode extends Node {
     // https://dom.spec.whatwg.org/#concept-node-insert
     didInsertNode(targets, referenceNode);
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
 
@@ -226,13 +226,13 @@ abstract class ContainerNode extends Node {
   @mustCallSuper
   @override
   Node appendChild(Node newChild) {
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('ContainerNode.appendChild');
     }
 
     List<Node> targets = [];
     if (!collectChildrenAndRemoveFromOldParent(newChild, targets)) {
-      if (!kReleaseMode) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackUICommandStep();
       }
       return newChild;
@@ -250,7 +250,7 @@ abstract class ContainerNode extends Node {
 
     didInsertNode(targets, null);
 
-    if (!kReleaseMode) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
 

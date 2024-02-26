@@ -35,6 +35,7 @@ using InvokeBindingsMethodsFromNative = void (*)(double contextId,
 using DartInvokeResultCallback = void (*)(Dart_Handle dart_object, NativeValue* result);
 
 using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_object,
+                                              int64_t profile_id,
                                               NativeValue* method,
                                               int32_t argc,
                                               NativeValue* argv,
@@ -47,6 +48,7 @@ struct NativeBindingObject : public DartReadable {
 
   static void HandleCallFromDartSide(DartIsolateContext* dart_isolate_context,
                                      NativeBindingObject* binding_object,
+                                     int64_t profile_id,
                                      NativeValue* method,
                                      int32_t argc,
                                      NativeValue* argv,
