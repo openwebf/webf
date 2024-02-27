@@ -3,10 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 mixin RenderBoxDecorationMixin on RenderBoxModelBase {
@@ -28,34 +26,22 @@ mixin RenderBoxDecorationMixin on RenderBoxModelBase {
     _painter = null;
   }
 
-  static void paintBackground(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaintStep('paintBackground');
-    }
-
-    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
-    CSSRenderStyle renderStyle = renderBoxModel.renderStyle;
-
-    EdgeInsets resolvedPadding = renderStyle.padding.resolve(TextDirection.ltr);
+  void paintBackground(PaintingContext context, Offset offset, EdgeInsets? padding) {
     CSSBoxDecoration? decoration = renderStyle.decoration;
     DecorationPosition decorationPosition = renderStyle.decorationPosition;
     ImageConfiguration imageConfiguration = renderStyle.imageConfiguration;
 
-    if (decoration == null) {
-      return;
-    }
+    if (decoration == null) return;
+    _painter ??= BoxDecorationPainter(padding, renderStyle, markNeedsPaint);
 
-    renderBoxModel._painter ??= BoxDecorationPainter(resolvedPadding, renderStyle, renderBoxModel.markNeedsPaint);
-    PaintingContext context = pipeline.context;
-
-    final ImageConfiguration filledConfiguration = imageConfiguration.copyWith(size: renderBoxModel.size);
+    final ImageConfiguration filledConfiguration = imageConfiguration.copyWith(size: size);
     if (decorationPosition == DecorationPosition.background) {
       int? debugSaveCount;
       assert(() {
-        debugSaveCount = pipeline.context.canvas.getSaveCount();
+        debugSaveCount = context.canvas.getSaveCount();
         return true;
       }());
-      renderBoxModel._painter!.paintBackground(context.canvas, offset, filledConfiguration);
+      _painter!.paintBackground(context.canvas, offset, filledConfiguration);
       assert(() {
         if (debugSaveCount != context.canvas.getSaveCount()) {
           throw FlutterError.fromParts(<DiagnosticsNode>[
@@ -65,7 +51,7 @@ mixin RenderBoxDecorationMixin on RenderBoxModelBase {
                 'Every call to save() or saveLayer() must be matched by a call to restore().'),
             DiagnosticsProperty<Decoration>('The decoration was', decoration,
                 style: DiagnosticsTreeStyle.errorProperty),
-            DiagnosticsProperty<BoxPainter>('The painter was', renderBoxModel._painter, style: DiagnosticsTreeStyle.errorProperty),
+            DiagnosticsProperty<BoxPainter>('The painter was', _painter, style: DiagnosticsTreeStyle.errorProperty),
           ]);
         }
         return true;
@@ -74,47 +60,30 @@ mixin RenderBoxDecorationMixin on RenderBoxModelBase {
     }
 
     if (decorationPosition == DecorationPosition.foreground) {
-      renderBoxModel._painter!.paint(context.canvas, offset, filledConfiguration);
+      _painter!.paint(context.canvas, offset, filledConfiguration);
       if (decoration.isComplex) context.setIsComplexHint();
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackPaintStep();
     }
   }
 
-  static void paintDecoration(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaintStep('paintDecoration');
-    }
-
-    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
-    CSSRenderStyle renderStyle = renderBoxModel.renderStyle;
-    PaintingContext context = pipeline.context;
+  void paintDecoration(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     CSSBoxDecoration? decoration = renderStyle.decoration;
     DecorationPosition decorationPosition = renderStyle.decorationPosition;
     ImageConfiguration imageConfiguration = renderStyle.imageConfiguration;
 
-    if (decoration == null) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaintStep();
-      }
-      return pipeline.paintOverflow(pipeline, offset);
-    }
+    if (decoration == null) return callback(context, offset);
 
     EdgeInsets? padding = renderStyle.padding.resolve(TextDirection.ltr);
-    renderBoxModel._painter ??= BoxDecorationPainter(padding, renderStyle, renderBoxModel.markNeedsPaint);
+    _painter ??= BoxDecorationPainter(padding, renderStyle, markNeedsPaint);
 
-    final ImageConfiguration filledConfiguration = imageConfiguration.copyWith(size: renderBoxModel.size);
-
+    final ImageConfiguration filledConfiguration = imageConfiguration.copyWith(size: size);
     if (decorationPosition == DecorationPosition.background) {
       int? debugSaveCount;
       assert(() {
-        debugSaveCount = pipeline.context.canvas.getSaveCount();
+        debugSaveCount = context.canvas.getSaveCount();
         return true;
       }());
 
-      renderBoxModel._painter!.paint(context.canvas, offset, filledConfiguration);
+      _painter!.paint(context.canvas, offset, filledConfiguration);
       assert(() {
         if (debugSaveCount != context.canvas.getSaveCount()) {
           throw FlutterError.fromParts(<DiagnosticsNode>[
@@ -124,23 +93,23 @@ mixin RenderBoxDecorationMixin on RenderBoxModelBase {
                 'Every call to save() or saveLayer() must be matched by a call to restore().'),
             DiagnosticsProperty<Decoration>('The decoration was', decoration,
                 style: DiagnosticsTreeStyle.errorProperty),
-            DiagnosticsProperty<BoxPainter>('The painter was', renderBoxModel._painter, style: DiagnosticsTreeStyle.errorProperty),
+            DiagnosticsProperty<BoxPainter>('The painter was', _painter, style: DiagnosticsTreeStyle.errorProperty),
           ]);
         }
         return true;
       }());
       if (decoration.isComplex) context.setIsComplexHint();
     }
+    Offset contentOffset;
+    EdgeInsets borderEdge = renderStyle.border;
+    contentOffset = offset.translate(borderEdge.left, borderEdge.top);
+    super.paint(context, contentOffset);
     if (decorationPosition == DecorationPosition.foreground) {
-      renderBoxModel._painter!.paint(context.canvas, offset, filledConfiguration);
+      _painter!.paint(context.canvas, offset, filledConfiguration);
       if (decoration.isComplex) context.setIsComplexHint();
     }
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackPaintStep();
-    }
-
-    pipeline.paintOverflow(pipeline, offset);
+    callback(context, offset);
   }
 
   void debugBoxDecorationProperties(DiagnosticPropertiesBuilder properties) {

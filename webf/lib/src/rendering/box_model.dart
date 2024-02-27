@@ -32,29 +32,6 @@ class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
   }
 }
 
-typedef WebFPaintingContextCallback = void Function(WebFPaintingPipeline pipeline, Offset offset);
-typedef WebFPaintingContextFunction = void Function(WebFPaintingPipeline pipeline, Offset offset,
-    [WebFPaintingContextCallback? callback]);
-
-class WebFPaintingPipeline {
-  PaintingContext context;
-  RenderBoxModel renderBoxModel;
-
-  WebFPaintingPipeline(this.context, this.renderBoxModel);
-
-  WebFPaintingContextFunction get paintColorFilter => RenderBoxModel.paintColorFilter;
-  WebFPaintingContextFunction get paintIntersectionObserver =>
-      RenderIntersectionObserverMixin.paintIntersectionObserver;
-  WebFPaintingContextFunction get paintTransform => RenderTransformMixin.paintTransform;
-  WebFPaintingContextFunction get paintOpacity => RenderOpacityMixin.paintOpacity;
-  WebFPaintingContextFunction get paintDecoration => RenderBoxDecorationMixin.paintDecoration;
-  WebFPaintingContextFunction get paintOverflow => RenderOverflowMixin.paintOverflow;
-  WebFPaintingContextFunction get paintBackground => RenderBoxDecorationMixin.paintBackground;
-  WebFPaintingContextFunction get paintImageFilter => RenderBoxModel.paintImageFilter;
-  WebFPaintingContextFunction get paintOverlay => RenderBoxModel.paintOverlay;
-  WebFPaintingContextFunction get paintContentVisibility => RenderContentVisibilityMixin.paintContentVisibility;
-}
-
 // Applies the layout transform up the tree to `ancestor`.
 //
 // ReturgetLayoutTransformTolocal layout coordinate system to the
@@ -261,12 +238,8 @@ class RenderLayoutBox extends RenderBoxModel
       CSSOverflowType effectiveOverflowY = parentRenderStyle.effectiveOverflowY;
       CSSOverflowType effectiveOverflowX = parentRenderStyle.effectiveOverflowX;
       // not processing effectiveOverflow=hidden/clip is to reduce the scope of influence
-      bool shouldInheritY =
-          (effectiveOverflowY == CSSOverflowType.auto || effectiveOverflowY == CSSOverflowType.scroll) &&
-              scrollShouldInheritConstraints(this, false);
-      bool shouldInheritX =
-          (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) &&
-              scrollShouldInheritConstraints(this, true);
+      bool shouldInheritY = (effectiveOverflowY == CSSOverflowType.auto || effectiveOverflowY == CSSOverflowType.scroll) && scrollShouldInheritConstraints(this, false);
+      bool shouldInheritX = (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) && scrollShouldInheritConstraints(this, true);
       if (shouldInheritY || shouldInheritX) {
         boxConstraints = BoxConstraints(
           minWidth: boxConstraints.minWidth,
@@ -336,7 +309,7 @@ class RenderLayoutBox extends RenderBoxModel
       final Matrix4 transform = Matrix4.identity();
       applyLayoutTransform(child, transform, false);
       Offset tlOffset =
-          MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
       overflowRect = Rect.fromLTRB(
           math.min(overflowRect.left, tlOffset.dx),
           math.min(overflowRect.top, tlOffset.dy),
@@ -395,27 +368,18 @@ class RenderLayoutBox extends RenderBoxModel
           }
         });
       }
-
       return _paintingOrder = children;
     }
   }
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
-    List<RenderBox> paintingOrder = this.paintingOrder;
-
     for (int i = 0; i < paintingOrder.length; i++) {
       RenderBox child = paintingOrder[i];
       if (!isPositionPlaceholder(child)) {
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
         if (child.hasSize) {
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.pauseCurrentPaintOp();
-          }
           context.paintChild(child, childParentData.offset + offset);
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.resumeCurrentPaintOp();
-          }
         }
       }
     }
@@ -447,7 +411,7 @@ class RenderLayoutBox extends RenderBoxModel
     // Layout positioned element
     while (child != null) {
       final ContainerParentDataMixin<RenderBox>? childParentData =
-          child.parentData as ContainerParentDataMixin<RenderBox>?;
+      child.parentData as ContainerParentDataMixin<RenderBox>?;
       if (child is! RenderBoxModel) {
         child = childParentData!.nextSibling;
         continue;
@@ -750,10 +714,6 @@ class RenderLayoutBox extends RenderBoxModel
 mixin RenderBoxModelBase on RenderBox {
   late CSSRenderStyle renderStyle;
   Size? boxSize;
-  Size? contentSize;
-
-  // The maximum possible paint-able size for a box
-  Size? visualAvailableSize;
 }
 
 class RenderBoxModel extends RenderBox
@@ -812,14 +772,12 @@ class RenderBoxModel extends RenderBox
   bool get isSizeTight {
     bool isDefinedSize = (renderStyle.width.value != null &&
         renderStyle.height.value != null &&
-        renderStyle.width.isPrecise &&
-        renderStyle.height.isPrecise);
+        renderStyle.width.isPrecise && renderStyle.height.isPrecise);
     bool isFixedMinAndMaxSize = (renderStyle.minWidth.value == renderStyle.maxWidth.value &&
-            renderStyle.minWidth.value != null &&
-            renderStyle.minWidth.isPrecise) &&
-        (renderStyle.minHeight.value == renderStyle.maxHeight.value &&
-            renderStyle.minHeight.value != null &&
-            renderStyle.minHeight.isPrecise);
+        renderStyle.minWidth.value != null && renderStyle.minWidth.isPrecise) && (
+        renderStyle.minHeight.value == renderStyle.maxHeight.value && renderStyle.minHeight.value != null &&
+            renderStyle.minHeight.isPrecise
+    );
 
     return isDefinedSize || isFixedMinAndMaxSize;
   }
@@ -893,25 +851,25 @@ class RenderBoxModel extends RenderBox
     RenderIntersectionObserverMixin.copyTo(this, copiedRenderBoxModel);
 
     return copiedRenderBoxModel
-      // Copy render style
+    // Copy render style
       ..renderStyle = renderStyle
 
-      // Copy box decoration
+    // Copy box decoration
       ..boxPainter = boxPainter
 
-      // Copy overflow
+    // Copy overflow
       ..scrollListener = scrollListener
       ..scrollablePointerListener = scrollablePointerListener
       ..scrollOffsetX = scrollOffsetX
       ..scrollOffsetY = scrollOffsetY
 
-      // Copy event hook
+    // Copy event hook
       ..getEventTarget = getEventTarget
 
-      // Copy renderPositionHolder
+    // Copy renderPositionHolder
       ..renderPositionPlaceholder = renderPositionPlaceholder
 
-      // Copy parentData
+    // Copy parentData
       ..parentData = parentData;
   }
 
@@ -971,7 +929,6 @@ class RenderBoxModel extends RenderBox
       SchedulerBinding.instance.scheduleFrame();
     } else {
       needsLayout = true;
-
       super.markNeedsLayout();
       if ((isScrollingContentBox || !isSizeTight) && parent != null) {
         markParentNeedsLayout();
@@ -1102,8 +1059,7 @@ class RenderBoxModel extends RenderBox
     double? parentBoxContentConstraintsWidth;
     if (parent is RenderBoxModel && this is RenderLayoutBox) {
       RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
-      parentBoxContentConstraintsWidth =
-          parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
+      parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
 
       // When inner minimal content size are larger that parent's constraints.
       if (parentBoxContentConstraintsWidth < minConstraintWidth) {
@@ -1116,8 +1072,7 @@ class RenderBoxModel extends RenderBox
       }
     }
 
-    double maxConstraintWidth =
-        renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
+    double maxConstraintWidth = renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight = renderStyle.effectiveBorderTopWidth.computedValue +
@@ -1213,7 +1168,6 @@ class RenderBoxModel extends RenderBox
   // The contentSize of layout box
   Size? _contentSize;
 
-  @override
   Size get contentSize {
     return _contentSize ?? Size.zero;
   }
@@ -1345,30 +1299,6 @@ class RenderBoxModel extends RenderBox
     if (isSelfSizeChanged) {
       renderStyle.markTransformMatrixNeedsUpdate();
     }
-
-    // Update visualAvailableSize properties for children.
-    // Prepare children of different type for layout.
-    bool isOverFlowXHidden = renderStyle.effectiveOverflowX == CSSOverflowType.hidden;
-    bool isOverFlowYHidden = renderStyle.effectiveOverflowY == CSSOverflowType.hidden;
-    bool containsOverFlowHidden = isOverFlowXHidden || isOverFlowYHidden;
-
-    if (this is RenderLayoutBox) {
-      RenderLayoutBox self = this as RenderLayoutBox;
-      RenderBox? child = self.firstChild;
-
-      while (child != null) {
-        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-        if (child is RenderBoxModel) {
-          if (containsOverFlowHidden) {
-            child.visualAvailableSize = Size(isOverFlowXHidden ? contentSize.width : constraints.maxWidth,
-                isOverFlowYHidden ? contentSize.height : constraints.maxHeight);
-          } else {
-            child.visualAvailableSize = Size(constraints.maxWidth, constraints.maxHeight);
-          }
-        }
-        child = childParentData.nextSibling;
-      }
-    }
   }
 
   /// [RenderLayoutBox] real paint things after basiclly paint box model.
@@ -1382,8 +1312,6 @@ class RenderBoxModel extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
-
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackPaint(this);
     }
@@ -1395,14 +1323,7 @@ class RenderBoxModel extends RenderBox
       return;
     }
 
-    if (visualAvailableSize?.isEmpty == true) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaint(this);
-      }
-      return;
-    }
-
-    paintBoxModel(pipeline, offset);
+    paintBoxModel(context, offset);
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackPaint(this);
@@ -1419,84 +1340,97 @@ class RenderBoxModel extends RenderBox
   // Repaint native EngineLayer sources with LayerHandle.
   final LayerHandle<ColorFilterLayer> _colorFilterLayer = LayerHandle<ColorFilterLayer>();
 
-  static void paintColorFilter(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    RenderStyle renderStyle = pipeline.renderBoxModel.renderStyle;
-
+  void paintColorFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     ColorFilter? colorFilter = renderStyle.colorFilter;
     if (colorFilter != null) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.startTrackPaintStep(
-            'paintColorFilter', {'offset': offset.toString(), 'colorFilter': colorFilter.toString()});
-      }
-
-      pipeline.renderBoxModel._colorFilterLayer.layer =
-          pipeline.context.pushColorFilter(offset, colorFilter, (context, offset) {
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackPaintStep();
-        }
-
-        pipeline.paintImageFilter(pipeline, offset);
-      }, oldLayer: pipeline.renderBoxModel._colorFilterLayer.layer);
+      _colorFilterLayer.layer =
+          context.pushColorFilter(offset, colorFilter, callback, oldLayer: _colorFilterLayer.layer);
     } else {
-      pipeline.paintImageFilter(pipeline, offset);
+      callback(context, offset);
     }
   }
 
-  static void paintNothing(WebFPaintingPipeline pipeline, Offset offset) {}
+  void paintNothing(PaintingContext context, Offset offset) {}
 
-  void paintBoxModel(WebFPaintingPipeline pipeline, Offset offset) {
+  void paintBoxModel(PaintingContext context, Offset offset) {
     // If opacity to zero, only paint intersection observer.
     if (alpha == 0) {
-      pipeline.paintIntersectionObserver(pipeline, offset, paintNothing);
+      paintIntersectionObserver(context, offset, paintNothing);
     } else if (isScrollingContentBox) {
       // Scrolling content box should only size painted.
-      performPaint(pipeline.context, offset);
+      performPaint(context, offset);
     } else {
       // Paint fixed element to fixed position by compensating scroll offset
       double offsetY = scrollingOffsetY != null ? offset.dy + scrollingOffsetY! : offset.dy;
       double offsetX = scrollingOffsetX != null ? offset.dx + scrollingOffsetX! : offset.dx;
       offset = Offset(offsetX, offsetY);
-      pipeline.paintColorFilter(pipeline, offset);
+      paintColorFilter(context, offset, _chainPaintImageFilter);
     }
   }
 
   final LayerHandle<ImageFilterLayer> _imageFilterLayer = LayerHandle<ImageFilterLayer>();
 
-  static void paintImageFilter(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaintStep('paintImageFilter');
-    }
-
-    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
-    RenderStyle renderStyle = renderBoxModel.renderStyle;
-    LayerHandle<ImageFilterLayer> imageFilterLayer = renderBoxModel._imageFilterLayer;
-
+  void paintImageFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     if (renderStyle.imageFilter != null) {
-      imageFilterLayer.layer ??= ImageFilterLayer();
-      imageFilterLayer.layer!.imageFilter = renderStyle.imageFilter;
-
-      pipeline.context.pushLayer(imageFilterLayer.layer!, (PaintingContext context, Offset offset) {
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackPaintStep();
-        }
-
-        pipeline.paintIntersectionObserver(pipeline, offset);
-      }, offset);
+      _imageFilterLayer.layer ??= ImageFilterLayer();
+      _imageFilterLayer.layer!.imageFilter = renderStyle.imageFilter;
+      context.pushLayer(_imageFilterLayer.layer!, callback, offset);
     } else {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaintStep();
-      }
-
-      pipeline.paintIntersectionObserver(pipeline, offset);
+      callback(context, offset);
     }
   }
 
-  static void paintOverlay(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
-    pipeline.renderBoxModel.performPaint(pipeline.context, offset);
+  void _chainPaintImageFilter(PaintingContext context, Offset offset) {
+    paintImageFilter(context, offset, _chainPaintIntersectionObserver);
+  }
 
-    if (renderBoxModel._debugShouldPaintOverlay) {
-      renderBoxModel.debugPaintOverlay(pipeline.context, offset);
+  void _chainPaintIntersectionObserver(PaintingContext context, Offset offset) {
+    paintIntersectionObserver(context, offset, _chainPaintTransform);
+  }
+
+  void _chainPaintTransform(PaintingContext context, Offset offset) {
+    paintTransform(context, offset, _chainPaintOpacity);
+  }
+
+  void _chainPaintOpacity(PaintingContext context, Offset offset) {
+    paintOpacity(context, offset, _chainPaintDecoration);
+  }
+
+  void _chainPaintDecoration(PaintingContext context, Offset offset) {
+    paintDecoration(context, offset, _chainPaintOverflow);
+  }
+
+  void _chainPaintOverflow(PaintingContext context, Offset offset) {
+    EdgeInsets borderEdge = EdgeInsets.fromLTRB(
+        renderStyle.effectiveBorderLeftWidth.computedValue,
+        renderStyle.effectiveBorderTopWidth.computedValue,
+        renderStyle.effectiveBorderRightWidth.computedValue,
+        renderStyle.effectiveBorderLeftWidth.computedValue);
+    CSSBoxDecoration? decoration = renderStyle.decoration;
+
+    bool hasLocalAttachment = _hasLocalBackgroundImage(renderStyle);
+    if (hasLocalAttachment) {
+      paintOverflow(context, offset, borderEdge, decoration, _chainPaintBackground);
+    } else {
+      paintOverflow(context, offset, borderEdge, decoration, _chainPaintContentVisibility);
+    }
+  }
+
+  void _chainPaintBackground(PaintingContext context, Offset offset) {
+    EdgeInsets resolvedPadding = renderStyle.padding.resolve(TextDirection.ltr);
+    paintBackground(context, offset, resolvedPadding);
+    _chainPaintContentVisibility(context, offset);
+  }
+
+  void _chainPaintContentVisibility(PaintingContext context, Offset offset) {
+    paintContentVisibility(context, offset, _chainPaintOverlay);
+  }
+
+  void _chainPaintOverlay(PaintingContext context, Offset offset) {
+    performPaint(context, offset);
+
+    if (_debugShouldPaintOverlay) {
+      debugPaintOverlay(context, offset);
     }
   }
 
@@ -1513,6 +1447,10 @@ class RenderBoxModel extends RenderBox
     Offset ancestorBorderWidth = Offset(ancestorBorderLeft, ancestorBorderTop);
 
     return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point - ancestorBorderWidth;
+  }
+
+  bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
+    return renderStyle.backgroundImage != null && renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.local;
   }
 
   // Detach renderBoxModel from its containing block.
@@ -1755,7 +1693,6 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
-    properties.add(DiagnosticsProperty('visualAvailableSize', visualAvailableSize));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('needsLayout', needsLayout, missingIfNull: true));

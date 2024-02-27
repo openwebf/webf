@@ -4,9 +4,7 @@
  */
 
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
@@ -190,49 +188,12 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   final LayerHandle<ClipRRectLayer> _clipRRectLayer = LayerHandle<ClipRRectLayer>();
   final LayerHandle<ClipRectLayer> _clipRectLayer = LayerHandle<ClipRectLayer>();
 
-  static bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
-    return renderStyle.backgroundImage != null && renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.local;
-  }
+  void paintOverflow(PaintingContext context, Offset offset, EdgeInsets borderEdge, CSSBoxDecoration? decoration,
+      PaintingContextCallback callback) {
+    if (clipX == false && clipY == false) return callback(context, offset);
 
-  static void paintOverflow(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaintStep('paintOverflow');
-    }
-
-    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
-    CSSRenderStyle renderStyle = renderBoxModel.renderStyle;
-    PaintingContext context = pipeline.context;
-
-    bool clipX = renderBoxModel.clipX;
-    bool clipY = renderBoxModel.clipY;
-
-    EdgeInsets borderEdge = EdgeInsets.fromLTRB(
-        renderStyle.effectiveBorderLeftWidth.computedValue,
-        renderStyle.effectiveBorderTopWidth.computedValue,
-        renderStyle.effectiveBorderRightWidth.computedValue,
-        renderStyle.effectiveBorderLeftWidth.computedValue);
-    CSSBoxDecoration? decoration = renderStyle.decoration;
-
-    bool hasLocalAttachment = _hasLocalBackgroundImage(renderStyle);
-    WebFPaintingContextCallback callback = hasLocalAttachment ? pipeline.paintBackground : pipeline.paintContentVisibility;
-
-    if (clipX == false && clipY == false) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaintStep();
-      }
-      return callback(pipeline, offset);
-    }
-    // Stop further paint if there are no visible contents in here.
-    if (renderBoxModel.contentSize.isEmpty) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaintStep();
-      }
-      return;
-    }
-
-    final double paintOffsetX = renderBoxModel._paintOffsetX;
-    final double paintOffsetY = renderBoxModel._paintOffsetY;
-    final Size size = renderBoxModel.size;
+    final double paintOffsetX = _paintOffsetX;
+    final double paintOffsetY = _paintOffsetY;
     final Offset paintOffset = Offset(paintOffsetX, paintOffsetY);
     // Overflow should not cover border.
     Rect clipRect = Offset(borderEdge.left, borderEdge.top) &
@@ -240,19 +201,16 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
           size.width - borderEdge.right - borderEdge.left,
           size.height - borderEdge.bottom - borderEdge.top,
         );
-    if (renderBoxModel._shouldClipAtPaintOffset(paintOffset, size)) {
+    if (_shouldClipAtPaintOffset(paintOffset, size)) {
       // ignore: prefer_function_declarations_over_variables
       PaintingContextCallback painter = (PaintingContext context, Offset offset) {
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackPaintStep();
-        }
-        callback(pipeline, offset + paintOffset);
+        callback(context, offset + paintOffset);
       };
 
       // If current or its descendants has a compositing layer caused by styles
       // (eg. transform, opacity, overflow...), then it needs to create a new layer
       // or else the clip in the older layer will not work.
-      bool _needsCompositing = renderBoxModel.needsCompositing;
+      bool _needsCompositing = needsCompositing;
 
       if (decoration != null && decoration.hasBorderRadius) {
         BorderRadius radius = decoration.borderRadius!;
@@ -266,27 +224,21 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         RRect clipRRect = borderTop != null ? borderRRect.deflate(borderTop) : borderRRect;
 
         // The content of replaced elements is trimmed to the content edge curve.
-        if (renderBoxModel is RenderReplaced) {
+        if (this is RenderReplaced) {
           // @TODO: Currently only support clip uniform padding for replaced element.
           double paddingTop = renderStyle.paddingTop.computedValue;
           clipRRect = clipRRect.deflate(paddingTop);
         }
-
-        renderBoxModel._clipRRectLayer.layer = context.pushClipRRect(_needsCompositing, offset, clipRect, clipRRect, painter,
-            oldLayer: renderBoxModel._clipRRectLayer.layer);
+        _clipRRectLayer.layer = context.pushClipRRect(_needsCompositing, offset, clipRect, clipRRect, painter,
+            oldLayer: _clipRRectLayer.layer);
       } else {
-        renderBoxModel._clipRectLayer.layer =
-            context.pushClipRect(_needsCompositing, offset, clipRect, painter, oldLayer: renderBoxModel._clipRectLayer.layer);
+        _clipRectLayer.layer =
+            context.pushClipRect(_needsCompositing, offset, clipRect, painter, oldLayer: _clipRectLayer.layer);
       }
     } else {
-      renderBoxModel._clipRectLayer.layer = null;
-      renderBoxModel._clipRRectLayer.layer = null;
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaintStep();
-      }
-
-      callback(pipeline, offset);
+      _clipRectLayer.layer = null;
+      _clipRRectLayer.layer = null;
+      callback(context, offset);
     }
   }
 

@@ -20,7 +20,7 @@ ProfileStep::ProfileStep(ProfileOpItem* owner, std::string label)
   stopwatch_.Begin();
 }
 
-ScriptValue ProfileStep::ToJSON(JSContext* ctx, const std::string& path) {
+ScriptValue ProfileStep::ToJSON(JSContext* ctx, const std::string& path, bool should_link) {
   JSValue json = JS_NewObject(ctx);
 
   JSValue duration_string = JS_NewString(ctx, (std::to_string(stopwatch_.elapsed()) + " us").c_str());
@@ -51,10 +51,14 @@ int64_t ProfileStep::id() {
   return id_;
 }
 
-ScriptValue LinkProfileStep::ToJSON(JSContext* ctx, const std::string& path) {
+ScriptValue LinkProfileStep::ToJSON(JSContext* ctx, const std::string& path, bool should_link) {
   ScriptValue json = ProfileStep::ToJSON(ctx, path);
-  owner_->owner()->link_paths_[id()] = path;
-  JS_SetPropertyStr(ctx, json.QJSValue(), "profileId", JS_NewInt64(ctx, id()));
+
+  if (should_link) {
+    owner_->owner()->link_paths_[id()] = path;
+    JS_SetPropertyStr(ctx, json.QJSValue(), "profileId", JS_NewInt64(ctx, id()));
+  }
+
   return json;
 }
 
@@ -87,7 +91,7 @@ void ProfileOpItem::FinishStep() {
   step_stack_.pop();
 }
 
-ScriptValue ProfileOpItem::ToJSON(JSContext* ctx, const std::string& path) {
+ScriptValue ProfileOpItem::ToJSON(JSContext* ctx, const std::string& path, bool should_link) {
   JSValue json = JS_NewObject(ctx);
 
   JSValue duration_string = JS_NewString(ctx, (std::to_string(stopwatch_.elapsed()) + " us").c_str());
@@ -215,7 +219,7 @@ std::string WebFProfiler::ToJSON() {
     {
       JSValue evaluate_object = JS_NewObject(ctx);
       for(auto&& item : evaluate_profile_items_) {
-        ScriptValue json_item = item.second->ToJSON(ctx, std::to_string(item.first));
+        ScriptValue json_item = item.second->ToJSON(ctx, std::to_string(item.first), true);
         JS_SetPropertyStr(ctx, evaluate_object, std::to_string(item.first).c_str(), JS_DupValue(ctx, json_item.QJSValue()));
       }
       JS_SetPropertyStr(ctx, object, "evaluate", evaluate_object);
@@ -224,7 +228,7 @@ std::string WebFProfiler::ToJSON() {
     {
       JSValue array_object = JS_NewArray(ctx);
       for (int i = 0; i < async_evaluate_profile_items.size(); i++) {
-        ScriptValue json_item = async_evaluate_profile_items[i]->ToJSON(ctx, "");
+        ScriptValue json_item = async_evaluate_profile_items[i]->ToJSON(ctx, "", false);
         JS_SetPropertyUint32(ctx, array_object, i, JS_DupValue(ctx, json_item.QJSValue()));
       }
 

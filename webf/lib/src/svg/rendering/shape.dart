@@ -61,8 +61,8 @@ abstract class RenderSVGShape extends RenderBoxModel {
   }
 
   @override
-  void paintBoxModel(WebFPaintingPipeline pipeline, Offset offset) {
-    performPaint(pipeline.context, offset);
+  void paintBoxModel(PaintingContext context, Offset offset) {
+    performPaint(context, offset);
   }
 
   Path asPath();

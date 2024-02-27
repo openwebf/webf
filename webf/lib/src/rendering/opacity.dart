@@ -4,9 +4,7 @@
  */
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 mixin RenderOpacityMixin on RenderBoxModelBase {
@@ -29,35 +27,15 @@ mixin RenderOpacityMixin on RenderBoxModelBase {
     _opacityLayer.layer = null;
   }
 
-  static void paintOpacity(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaintStep('paintOpacity', {
-        'alpha': renderBoxModel.alpha
-      });
-    }
-
-    int alpha = renderBoxModel.alpha;
-    LayerHandle<OpacityLayer> opacityLayer = renderBoxModel._opacityLayer;
-
+  void paintOpacity(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     if (alpha == 255) {
-      renderBoxModel._opacityLayer.layer = null;
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaintStep();
-      }
-
+      _opacityLayer.layer = null;
       // No need to keep the layer. We'll create a new one if necessary.
-      pipeline.paintDecoration(pipeline, offset);
+      callback(context, offset);
       return;
     }
 
-    opacityLayer.layer = pipeline.context.pushOpacity(offset, alpha, (PaintingContext context, Offset offset) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaintStep();
-      }
-      pipeline.paintDecoration(pipeline, offset);
-    }, oldLayer: opacityLayer.layer);
+    _opacityLayer.layer = context.pushOpacity(offset, alpha, callback, oldLayer: _opacityLayer.layer);
   }
 
   void debugOpacityProperties(DiagnosticPropertiesBuilder properties) {

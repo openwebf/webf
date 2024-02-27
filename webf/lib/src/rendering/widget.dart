@@ -108,15 +108,7 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
       WebFProfiler.instance.startTrackPaint(this);
     }
 
-    if (visualAvailableSize?.isEmpty == true) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaint(this);
-      }
-      return;
-    }
-
-    WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
-    paintBoxModel(pipeline, offset);
+    paintBoxModel(context, offset);
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackPaint(this);
