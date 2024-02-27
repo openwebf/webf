@@ -87,6 +87,7 @@ void evaluateQuickjsByteCode(void* page,
 
 WEBF_EXPORT_C
 void dumpQuickjsByteCode(void* page,
+                         int64_t profile_id,
                          const char* code,
                          int32_t code_len,
                          uint8_t** parsed_bytecodes,

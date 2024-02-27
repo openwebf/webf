@@ -148,6 +148,7 @@ void evaluateScripts(void* page_,
 }
 
 void dumpQuickjsByteCode(void* page_,
+                         int64_t profile_id,
                          const char* code,
                          int32_t code_len,
                          uint8_t** parsed_bytecodes,
@@ -162,7 +163,7 @@ void dumpQuickjsByteCode(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(
-      page->isDedicated(), page->contextId(), webf::dumpQuickJsByteCodeInternal, page, code, code_len, parsed_bytecodes,
+      page->isDedicated(), page->contextId(), webf::dumpQuickJsByteCodeInternal, page, profile_id, code, code_len, parsed_bytecodes,
       bytecode_len, url, persistent_handle, result_callback);
 }
 

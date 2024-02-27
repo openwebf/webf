@@ -158,7 +158,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
         WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Callback End";
 #endif
       },
-      GetExecutingContext()->contextId(), profiler->current_profile()->current_step()->id(), binding_object_,
+      GetExecutingContext()->contextId(), profiler->link_id(), binding_object_,
       &return_value, &native_method, argc, argv);
 
 #if ENABLE_LOG
@@ -217,7 +217,7 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
         WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Callback End";
 #endif
       },
-      context->contextId(), profiler->current_profile()->current_step()->id(), binding_object_, &return_value,
+      context->contextId(), profiler->link_id(), binding_object_, &return_value,
       &native_method, argc, argv);
 
 #if ENABLE_LOG

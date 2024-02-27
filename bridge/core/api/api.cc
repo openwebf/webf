@@ -112,8 +112,14 @@ void invokeModuleEventInternal(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
   assert(std::this_thread::get_id() == page->currentThread());
+
+  page->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+
   auto* result = page->invokeModuleEvent(reinterpret_cast<webf::SharedNativeString*>(module_name), eventType, event,
                                          reinterpret_cast<webf::NativeValue*>(extra));
+
+  page->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
+
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnInvokeEventResultToDart, persistent_handle,
                                                  result_callback, result);
 }
@@ -125,6 +131,7 @@ static void ReturnDumpByteCodeResultToDart(Dart_Handle persistent_handle, DumpQu
 }
 
 void dumpQuickJsByteCodeInternal(void* page_,
+                                 int64_t profile_id,
                                  const char* code,
                                  int32_t code_len,
                                  uint8_t** parsed_bytecodes,
@@ -134,9 +141,15 @@ void dumpQuickJsByteCodeInternal(void* page_,
                                  DumpQuickjsByteCodeCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
+
+  dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
+
   assert(std::this_thread::get_id() == page->currentThread());
   uint8_t* bytes = page->dumpByteCode(code, code_len, url, bytecode_len);
   *parsed_bytecodes = bytes;
+
+  dart_isolate_context->profiler()->FinishTrackEvaluation(profile_id);
+
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnDumpByteCodeResultToDart, persistent_handle,
                                                  result_callback);
 }

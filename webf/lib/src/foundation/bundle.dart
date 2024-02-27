@@ -117,7 +117,18 @@ abstract class WebFBundle {
   Future<void> preProcessing(double contextId) async {
     if (isJavascript && data != null) {
       assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
-      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString());
+
+      EvaluateOpItem? currentProfileOp;
+      if (enableWebFProfileTracking) {
+        currentProfileOp = WebFProfiler.instance.startTrackEvaluate('dumpQuickjsByteCode');
+      }
+
+      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString(), profileOp: currentProfileOp);
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackEvaluate(currentProfileOp!);
+      }
+
       _contentType = webfBc1ContentType;
     }
   }

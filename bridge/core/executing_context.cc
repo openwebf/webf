@@ -403,15 +403,27 @@ uint8_t* ExecutingContext::DumpByteCode(const char* code,
                                         uint32_t codeLength,
                                         const char* sourceURL,
                                         uint64_t* bytecodeLength) {
+
+  dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
+
   JSValue object =
       JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+
+  dart_isolate_context_->profiler()->FinishTrackSteps();
+
   bool success = HandleException(&object);
   if (!success)
     return nullptr;
+
+  dart_isolate_context_->profiler()->StartTrackSteps("JS_WriteObject");
+
   size_t len;
   uint8_t* bytes = JS_WriteObject(script_state_.ctx(), &len, object, JS_WRITE_OBJ_BYTECODE);
   *bytecodeLength = len;
   JS_FreeValue(script_state_.ctx(), object);
+
+  dart_isolate_context_->profiler()->FinishTrackSteps();
+
   return bytes;
 }
 

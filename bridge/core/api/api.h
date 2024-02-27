@@ -43,6 +43,7 @@ void invokeModuleEventInternal(void* page_,
                                InvokeModuleEventCallback result_callback);
 
 void dumpQuickJsByteCodeInternal(void* page_,
+                                 int64_t profile_id,
                                  const char* code,
                                  int32_t code_len,
                                  uint8_t** parsed_bytecodes,

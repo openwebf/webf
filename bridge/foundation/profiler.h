@@ -57,7 +57,7 @@ class ProfileOpItem {
   void FinishStep();
 
   ScriptValue ToJSON(JSContext* ctx, const std::string& path);
-  const std::shared_ptr<ProfileStep>& current_step() { return step_map_[step_stack_.top()]; }
+  const std::shared_ptr<ProfileStep>& current_step() { return step_stack_.top(); }
   WebFProfiler* owner() { return owner_; }
 
  protected:
@@ -67,7 +67,7 @@ class ProfileOpItem {
   Stopwatch stopwatch_;
 
   std::unordered_map<std::string, std::shared_ptr<ProfileStep>> step_map_;
-  std::stack<std::string> step_stack_;
+  std::stack<std::shared_ptr<ProfileStep>> step_stack_;
   std::vector<std::shared_ptr<ProfileStep>> steps_;
   friend WebFProfiler;
   friend ProfileStep;
@@ -83,13 +83,21 @@ class WebFProfiler {
   void StartTrackEvaluation(int64_t evaluate_id);
   void FinishTrackEvaluation(int64_t evaluate_id);
 
+  void StartTrackAsyncEvaluation();
+  void FinishTrackAsyncEvaluation();
+
   void StartTrackSteps(const std::string& label);
   void FinishTrackSteps();
 
   void StartTrackLinkSteps(const std::string& label);
   void FinishTrackLinkSteps();
 
-  const std::shared_ptr<ProfileOpItem>& current_profile() { return  profile_stacks_.top(); }
+  int64_t link_id() {
+    if (UNLIKELY(enabled_)) {
+      return profile_stacks_.top()->current_step()->id();
+    }
+    return 0;
+  }
 
   std::string ToJSON();
 
@@ -99,6 +107,7 @@ class WebFProfiler {
   std::vector<std::shared_ptr<ProfileOpItem>> initialize_profile_items_;
   std::unordered_map<int64_t, std::string> link_paths_;
 
+  std::vector<std::shared_ptr<ProfileOpItem>> async_evaluate_profile_items;
   std::unordered_map<int64_t, std::shared_ptr<ProfileOpItem>> evaluate_profile_items_;
 
   friend ProfileOpItem;
