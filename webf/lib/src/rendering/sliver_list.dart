@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/dom/sliver_manager.dart';
@@ -202,13 +201,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
     if (firstChild != null) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.pauseCurrentPaintOp();
-      }
       context.paintChild(firstChild!, offset);
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.resumeCurrentPaintOp();
-      }
     }
   }
 

@@ -7,7 +7,6 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a replaced element whose content is outside the scope of the CSS formatting model,
@@ -126,27 +125,11 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   /// override it to layout box model paint.
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaint(this);
-    }
-
-    if (visualAvailableSize?.isEmpty == true) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaint(this);
-      }
-      return;
-    }
-
-    WebFPaintingPipeline pipeline = WebFPaintingPipeline(context, this);
     // In lazy rendering, only paint intersection observer for triggering intersection change callback.
     if (_isInLazyRendering) {
-      pipeline.paintIntersectionObserver(pipeline, offset, RenderBoxModel.paintNothing);
+      paintIntersectionObserver(context, offset, paintNothing);
     } else if (shouldPaint) {
-      paintBoxModel(pipeline, offset);
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackPaint(this);
+      paintBoxModel(context, offset);
     }
   }
 
@@ -158,13 +141,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
     if (child != null) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.pauseCurrentPaintOp();
-      }
       context.paintChild(child!, offset);
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.resumeCurrentPaintOp();
-      }
     }
   }
 

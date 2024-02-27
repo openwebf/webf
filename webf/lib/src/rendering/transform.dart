@@ -2,11 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/css.dart';
 
 mixin RenderTransformMixin on RenderBoxModelBase {
   final LayerHandle<TransformLayer> _transformLayer = LayerHandle<TransformLayer>();
@@ -15,43 +12,24 @@ mixin RenderTransformMixin on RenderBoxModelBase {
     _transformLayer.layer = null;
   }
 
-  static void paintTransform(WebFPaintingPipeline pipeline, Offset offset, [WebFPaintingContextCallback? callback]) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaintStep('paintTransform');
-    }
-
-    RenderBoxModel renderBoxModel = pipeline.renderBoxModel;
-    CSSRenderStyle renderStyle = renderBoxModel.renderStyle;
-    LayerHandle<TransformLayer> transformLayer = renderBoxModel._transformLayer;
-
+  void paintTransform(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     if (renderStyle.transformMatrix != null) {
       final Matrix4 transform = renderStyle.effectiveTransformMatrix;
-
-      finishPaintTransform(PaintingContext context, Offset offset) {
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackPaintStep();
-        }
-        pipeline.paintOpacity(pipeline, offset);
-      }
-
       final Offset? childOffset = MatrixUtils.getAsTranslation(transform);
       if (childOffset == null) {
-        transformLayer.layer = pipeline.context.pushTransform(
-          renderBoxModel.needsCompositing,
+        _transformLayer.layer = context.pushTransform(
+          needsCompositing,
           offset,
           transform,
-          finishPaintTransform,
-          oldLayer: transformLayer.layer,
+          callback,
+          oldLayer: _transformLayer.layer,
         );
       } else {
-        finishPaintTransform(pipeline.context, offset + childOffset);
-        transformLayer.layer = null;
+        callback(context, offset + childOffset);
+        _transformLayer.layer = null;
       }
     } else {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaintStep();
-      }
-      pipeline.paintOpacity(pipeline, offset);
+      callback(context, offset);
     }
   }
 

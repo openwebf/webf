@@ -103,14 +103,12 @@ class RenderViewportBox extends RenderBox
           child.parentData as ContainerBoxParentData<RenderObject>;
 
       RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
-      rootRenderLayoutBox.visualAvailableSize = Size(double.infinity, double.infinity);
-      BoxConstraints childConstraints = rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height);
 
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.pauseCurrentLayoutOp();
       }
 
-      child.layout(childConstraints);
+      child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
 
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.resumeCurrentLayoutOp();

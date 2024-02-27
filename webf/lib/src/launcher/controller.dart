@@ -1417,6 +1417,11 @@ class WebFController {
   // Resume all timers and callbacks if kraken page now visible.
   void resume() {
     if (!_paused) return;
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
+
     _paused = false;
     flushPendingCallbacks();
     module.resumeTimer();
@@ -1424,6 +1429,10 @@ class WebFController {
     view.resumeAnimationTimeline();
     view.document.reactiveWidgetElements();
     SchedulerBinding.instance.scheduleFrame();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   bool _disposed = false;
