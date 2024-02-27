@@ -29,7 +29,7 @@ ScriptValue ProfileStep::ToJSON(JSContext* ctx, const std::string& path, bool sh
   JSValue child_steps_array = JS_NewArray(ctx);
 
   for(int i = 0; i < child_steps_.size(); i ++) {
-    ScriptValue child_step_json = child_steps_[i]->ToJSON(ctx, path + "/" + std::to_string(i));
+    ScriptValue child_step_json = child_steps_[i]->ToJSON(ctx, path + "/" + std::to_string(i), should_link);
     JS_SetPropertyUint32(ctx, child_steps_array, i, JS_DupValue(ctx, child_step_json.QJSValue()));
   }
 
@@ -52,7 +52,7 @@ int64_t ProfileStep::id() {
 }
 
 ScriptValue LinkProfileStep::ToJSON(JSContext* ctx, const std::string& path, bool should_link) {
-  ScriptValue json = ProfileStep::ToJSON(ctx, path);
+  ScriptValue json = ProfileStep::ToJSON(ctx, path, should_link);
 
   if (should_link) {
     owner_->owner()->link_paths_[id()] = path;
@@ -98,7 +98,7 @@ ScriptValue ProfileOpItem::ToJSON(JSContext* ctx, const std::string& path, bool 
   JSValue steps = JS_NewArray(ctx);
 
   for(int i = 0; i < steps_.size(); i ++) {
-    ScriptValue child_step_json = steps_[i]->ToJSON(ctx, path + "/" + std::to_string(i));
+    ScriptValue child_step_json = steps_[i]->ToJSON(ctx, path + "/" + std::to_string(i), should_link);
     JS_SetPropertyUint32(ctx, steps, i, JS_DupValue(ctx, child_step_json.QJSValue()));
   }
 
@@ -209,7 +209,7 @@ std::string WebFProfiler::ToJSON() {
     {
       JSValue array_object = JS_NewArray(ctx);
       for (int i = 0; i < initialize_profile_items_.size(); i++) {
-        ScriptValue json_item = initialize_profile_items_[i]->ToJSON(ctx, "");
+        ScriptValue json_item = initialize_profile_items_[i]->ToJSON(ctx, "", false);
         JS_SetPropertyUint32(ctx, array_object, i, JS_DupValue(ctx, json_item.QJSValue()));
       }
 
