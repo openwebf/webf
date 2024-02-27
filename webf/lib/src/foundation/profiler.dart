@@ -13,8 +13,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/bridge.dart';
 
 /// Collect performance details of core components in WebF.
-
-bool enableWebFProfileTracking = kDebugMode || kProfileMode;
+bool enableWebFProfileTracking = false;
 
 // Represent a layout step from a layout operation.
 class _OpSteps {
@@ -589,6 +588,7 @@ class WebFProfiler {
       'networks': _networkOp,
       'native_initialize': profileData['initialize'],
       'evaluate': _evaluateOp,
+      'async_evaluate': profileData['async_evaluate'],
       'frames': frameReport(),
     };
   }

@@ -33,6 +33,9 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   if (ctx == nullptr)
     return nullptr;
 
+  context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+  context->dartIsolateContext()->profiler()->StartTrackSteps("handleInvokeModuleTransientCallback");
+
   ExceptionState exception_state;
 
   NativeValue* return_value = nullptr;
@@ -56,6 +59,9 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
     memcpy(return_value, &native_result, sizeof(NativeValue));
   }
+
+  context->dartIsolateContext()->profiler()->FinishTrackSteps();
+  context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 
   if (exception_state.HasException()) {
     context->HandleException(exception_state);
@@ -140,18 +146,26 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   auto module_name_string = module_name.ToNativeString(context->ctx());
   auto method_name_string = method.ToNativeString(context->ctx());
 
+  context->dartIsolateContext()->profiler()->StartTrackLinkSteps("Call To Dart");
+
   if (callback != nullptr) {
     auto module_callback = ModuleCallback::Create(callback);
     auto module_context = std::make_shared<ModuleContext>(context, module_callback);
     context->ModuleContexts()->AddModuleContext(module_context);
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
+                                                    context->dartIsolateContext()->profiler()->link_id(),
                                                     module_name_string.get(), method_name_string.get(), &params,
                                                     handleInvokeModuleTransientCallbackWrapper);
   } else {
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), nullptr, context->contextId(),
+                                                    context->dartIsolateContext()->profiler()->link_id(),
                                                     module_name_string.get(), method_name_string.get(), &params,
                                                     handleInvokeModuleUnexpectedCallback);
   }
+
+
+  context->dartIsolateContext()->profiler()->FinishTrackLinkSteps();
+
 
   if (result == nullptr) {
     return ScriptValue::Empty(context->ctx());

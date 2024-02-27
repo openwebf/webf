@@ -437,6 +437,7 @@ typedef NativeDumpQuickjsByteCodeResultCallback = Void Function(Handle object);
 
 typedef NativeDumpQuickjsByteCode = Void Function(
     Pointer<Void>,
+    Int64 profileId,
     Pointer<Uint8> code,
     Int32 code_len,
     Pointer<Pointer<Uint8>> parsedBytecodes,
@@ -446,6 +447,7 @@ typedef NativeDumpQuickjsByteCode = Void Function(
     Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback);
 typedef DartDumpQuickjsByteCode = void Function(
     Pointer<Void>,
+    int profileId,
     Pointer<Uint8> code,
     int code_len,
     Pointer<Pointer<Uint8>> parsedBytecodes,
@@ -470,7 +472,7 @@ void _handleQuickjsByteCodeResults(_DumpQuickjsByteCodeContext context) {
   context.completer.complete(bytes);
 }
 
-Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String? url}) async {
+Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String? url, EvaluateOpItem? profileOp}) async {
   Completer<Uint8List> completer = Completer();
   // Assign `vm://$id` for no url (anonymous scripts).
   if (url == null) {
@@ -490,7 +492,7 @@ Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String?
       Pointer.fromFunction(_handleQuickjsByteCodeResults);
 
   _dumpQuickjsByteCode(
-      _allocatedPages[contextId]!, codePtr, code.length, bytecodes, bytecodeLen, _url, context, resultCallback);
+      _allocatedPages[contextId]!, profileOp?.hashCode ?? 0, codePtr, code.length, bytecodes, bytecodeLen, _url, context, resultCallback);
 
   // return bytes;
   return completer.future;

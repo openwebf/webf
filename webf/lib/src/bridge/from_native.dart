@@ -97,6 +97,7 @@ typedef NativeHandleInvokeModuleResult = Void Function(Handle context, Pointer<N
 typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<Void> callbackContext,
     Double contextId,
+    Int64 profileId,
     Pointer<NativeString> module,
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
@@ -136,7 +137,7 @@ void _handleInvokeModuleResult(_InvokeModuleResultContext context, Pointer<Nativ
 }
 
 dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, String moduleName, String method, params,
-    DartAsyncModuleCallback callback) {
+    DartAsyncModuleCallback callback, { BindingOpItem? profileOp }) {
   WebFViewController currentView = controller.view;
   dynamic result;
 
@@ -173,7 +174,16 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
       return completer.future;
     }
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'moduleManager.invokeModule');
+    }
+
     result = controller.module.moduleManager.invokeModule(moduleName, method, params, invokeModuleCallback);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
+    }
+
   } catch (e, stack) {
     if (enableWebFCommandLog) {
       print('Invoke module failed: $e\n$stack');
@@ -193,15 +203,48 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
 Pointer<NativeValue> _invokeModule(
     Pointer<Void> callbackContext,
     double contextId,
+    int profileLinkId,
     Pointer<NativeString> module,
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>> callback) {
+
+  BindingOpItem? currentProfileOp;
+  if (enableWebFProfileTracking) {
+    currentProfileOp = WebFProfiler.instance.startTrackBinding(profileLinkId);
+  }
+
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  dynamic result = invokeModule(callbackContext, controller, nativeStringToString(module), nativeStringToString(method),
-      fromNativeValue(controller.view, params), callback.asFunction());
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'fromNativeValue');
+  }
+
+  String moduleValue = nativeStringToString(module);
+  String methodValue = nativeStringToString(method);
+  dynamic paramsValue = fromNativeValue(controller.view, params);
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp, 'invokeModule');
+  }
+
+  dynamic result = invokeModule(callbackContext, controller, moduleValue, methodValue,
+      paramsValue, callback.asFunction(), profileOp: currentProfileOp);
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp, 'toNativeValue');
+  }
+
   Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
   toNativeValue(returnValue, result);
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+    WebFProfiler.instance.finishTrackBinding(profileLinkId);
+  }
+
   return returnValue;
 }
 

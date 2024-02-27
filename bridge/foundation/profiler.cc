@@ -76,15 +76,14 @@ void ProfileOpItem::RecordStep(const std::string& label, const std::shared_ptr<P
     steps_.emplace_back(step);
   }
 
-  step_stack_.emplace(label);
-  assert(step_map_.count(label) == 0);
-  step_map_[label] = step;
+  step_stack_.emplace(step);
+//  assert(step_map_.count(label) == 0);
+//  step_map_[label] = step;
 }
 
 void ProfileOpItem::FinishStep() {
-  auto current_step = step_map_[step_stack_.top()];
+  auto current_step = step_stack_.top();
   current_step->stopwatch_.End();
-  step_map_.erase(current_step->label_);
   step_stack_.pop();
 }
 
@@ -143,11 +142,27 @@ void WebFProfiler::FinishTrackEvaluation(int64_t evaluate_id) {
   }
 }
 
+void WebFProfiler::StartTrackAsyncEvaluation() {
+  if (UNLIKELY(enabled_)) {
+    std::shared_ptr<ProfileOpItem> profile_item = std::make_shared<ProfileOpItem>(this);
+    async_evaluate_profile_items.emplace_back(profile_item);
+    profile_stacks_.emplace(profile_item);
+  }
+}
+
+void WebFProfiler::FinishTrackAsyncEvaluation() {
+  if (UNLIKELY(enabled_)) {
+    auto&& profile_item = profile_stacks_.top();
+    profile_item->stopwatch_.End();
+    profile_stacks_.pop();
+  }
+}
+
 void WebFProfiler::StartTrackSteps(const std::string& label) {
   if (UNLIKELY(enabled_)) {
-    auto&& current_profile = profile_stacks_.top();
+    assert_m(!profile_stacks_.empty(), "Tracks not started");
 
-    assert_m(current_profile != nullptr, "Tracks not started");
+    auto&& current_profile = profile_stacks_.top();
 
     auto step = std::make_shared<ProfileStep>(current_profile.get(), label);
     current_profile->RecordStep(label, step);
@@ -204,6 +219,16 @@ std::string WebFProfiler::ToJSON() {
         JS_SetPropertyStr(ctx, evaluate_object, std::to_string(item.first).c_str(), JS_DupValue(ctx, json_item.QJSValue()));
       }
       JS_SetPropertyStr(ctx, object, "evaluate", evaluate_object);
+    }
+
+    {
+      JSValue array_object = JS_NewArray(ctx);
+      for (int i = 0; i < async_evaluate_profile_items.size(); i++) {
+        ScriptValue json_item = async_evaluate_profile_items[i]->ToJSON(ctx, "");
+        JS_SetPropertyUint32(ctx, array_object, i, JS_DupValue(ctx, json_item.QJSValue()));
+      }
+
+      JS_SetPropertyStr(ctx, object, "async_evaluate", array_object);
     }
 
     {
