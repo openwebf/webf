@@ -24,7 +24,7 @@ class ProfileStep {
  public:
   explicit ProfileStep(ProfileOpItem* owner, std::string label);
 
-  virtual ScriptValue ToJSON(JSContext* ctx, const std::string& path, bool should_link = false);
+  virtual ScriptValue ToJSON(JSContext* ctx, const std::string& path, bool should_link);
   void AddChildSteps(std::shared_ptr<ProfileStep> step);
   int64_t id();
 
@@ -43,7 +43,7 @@ class ProfileStep {
 class LinkProfileStep : public ProfileStep {
  public:
   explicit LinkProfileStep(ProfileOpItem* owner, std::string label);
-  ScriptValue ToJSON(JSContext* ctx, const std::string& path, bool should_link = false) override;
+  ScriptValue ToJSON(JSContext* ctx, const std::string& path, bool should_link) override;
 
  private:
   friend ProfileOpItem;
@@ -56,7 +56,7 @@ class ProfileOpItem {
   void RecordStep(const std::string& label, const std::shared_ptr<ProfileStep>& step);
   void FinishStep();
 
-  ScriptValue ToJSON(JSContext* ctx, const std::string& path, bool should_link = false);
+  ScriptValue ToJSON(JSContext* ctx, const std::string& path, bool should_link);
   const std::shared_ptr<ProfileStep>& current_step() { return step_stack_.top(); }
   WebFProfiler* owner() { return owner_; }
 

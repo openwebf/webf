@@ -47,6 +47,7 @@ enum OpItemType {
   uiCommand,
   layout,
   paint,
+  binding,
 }
 
 class OpItem {
@@ -181,14 +182,14 @@ class _NetworkOpSteps extends _OpSteps {
 // Represent a series of paints in a single frame.
 class _PaintPipeLine {
   final List<OpItem> paintOp = [];
-  final List<OpItem> _paintStack = [];
   final List<OpItem> layoutOp = [];
-  final List<OpItem> _layoutStack = [];
   final List<OpItem> uiCommandOp = [];
-  final List<OpItem> _uiCommandStack = [];
+  final List<OpItem> bindingOp = [];
+
+  final List<OpItem> _stack = [];
 
   bool containsActiveUICommand() {
-    return _uiCommandStack.isNotEmpty;
+    return _stack.isNotEmpty;
   }
 
   List<OpItem> _getOp(OpItemType type) {
@@ -199,23 +200,19 @@ class _PaintPipeLine {
         return uiCommandOp;
       case OpItemType.layout:
         return layoutOp;
+      case OpItemType.binding:
+        return bindingOp;
     }
   }
 
   List<OpItem> _getOpStack(OpItemType type) {
-    switch(type) {
-      case OpItemType.uiCommand:
-        return _uiCommandStack;
-      case OpItemType.layout:
-        return _layoutStack;
-      case OpItemType.paint:
-        return _paintStack;
-    }
+    return _stack;
   }
 
-  OpItem get currentPaintOp => _paintStack.last;
-  OpItem get currentLayoutOp => _layoutStack.last;
-  OpItem get currentUICommandOp => _uiCommandStack.last;
+  OpItem get currentPaintOp => _stack.last;
+  OpItem get currentLayoutOp => _stack.last;
+  OpItem get currentUICommandOp => _stack.last;
+  OpItem get currentBindingOp => _stack.last;
 
   _PaintPipeLine();
 
@@ -303,7 +300,6 @@ class WebFProfiler {
   final List<EvaluateOpItem> _evaluateOp = [];
 
   final Map<String, BindingOpItem> _bindingOpMap = {};
-  final List<BindingOpItem> _bindingOpSack = [];
 
   _PaintPipeLine get currentPipeline => _paintPipeLines.last;
 
@@ -499,10 +495,13 @@ class WebFProfiler {
   }
 
   BindingOpItem startTrackBinding(int profileId) {
+    if (_paintPipeLines.isEmpty) {
+      _paintBeginInFrame();
+    }
+
     BindingOpItem op = BindingOpItem(Stopwatch()..start(), profileId);
-    assert(!_bindingOpMap.containsKey(profileId));
     _bindingOpMap[profileId.toString()] = op;
-    _bindingOpSack.add(op);
+    currentPipeline.recordOp(OpItemType.binding, op);
     return op;
   }
 
@@ -516,10 +515,9 @@ class WebFProfiler {
   }
 
   void finishTrackBinding(int profileId) {
-    BindingOpItem op = _bindingOpMap[profileId.toString()]!;
-    op.selfClock.stop();
-    op.duration = op.selfClock.elapsed;
-    _bindingOpSack.removeLast();
+    assert(_paintPipeLines.isNotEmpty);
+    _PaintPipeLine currentActivePipeline = currentPipeline;
+    currentActivePipeline.finishOp(OpItemType.uiCommand);
   }
 
   void pauseCurrentLayoutOp() {
