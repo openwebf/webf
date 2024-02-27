@@ -463,6 +463,10 @@ struct Converter<IDLNullable<JSEventListener>> : public ConverterBase<JSEventLis
       return nullptr;
     }
 
+    if (!JS_IsFunction(ctx, value)) {
+      exception_state.ThrowException(ctx, ErrorType::TypeError, "EventListener not a function");
+    }
+
     assert(!JS_IsException(value));
     return Converter<JSEventListener>::FromValue(ctx, value, exception_state);
   }
