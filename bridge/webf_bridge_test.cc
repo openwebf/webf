@@ -37,15 +37,19 @@ void* initTestFramework(void* page_) {
       page);
 }
 
-void executeTest(void* testContext, Dart_Handle dart_handle, ExecuteResultCallback executeCallback) {
+void executeTest(void* testContext, int64_t profile_id, Dart_Handle dart_handle, ExecuteResultCallback executeCallback) {
   auto context = reinterpret_cast<webf::WebFTestContext*>(testContext);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
 
   context->page()->dartIsolateContext()->dispatcher()->PostToJs(
       context->page()->isDedicated(), context->page()->contextId(),
-      [](webf::WebFTestContext* context, Dart_PersistentHandle persistent_handle,
-         ExecuteResultCallback executeCallback) { context->invokeExecuteTest(persistent_handle, executeCallback); },
-      context, persistent_handle, executeCallback);
+      [](webf::WebFTestContext* context, int64_t profile_id, Dart_PersistentHandle persistent_handle,
+         ExecuteResultCallback executeCallback) {
+        context->page()->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+        context->invokeExecuteTest(persistent_handle, executeCallback);
+        context->page()->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+      },
+      context, profile_id, persistent_handle, executeCallback);
 }
 
 void registerTestEnvDartMethods(void* testContext, uint64_t* methodBytes, int32_t length) {

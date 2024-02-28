@@ -58,7 +58,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     <%= generateCoreTypeValue(object.indexedProp.type) %> result = self->item(index, exception_state);
     context->dartIsolateContext()->profiler()->FinishTrackSteps();
     if (UNLIKELY(exception_state.HasException())) {
-      return exception_state.ToQuickJS();
+      return exception_state.ToQuickJS(ctx);
     }
 
     return Converter<<%= generateIDLTypeConverter(object.indexedProp.type, object.indexedProp.optional) %>>::ToValue(ctx, result);
@@ -74,7 +74,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ${generateCoreTypeValue(object.indexedProp.type)} result = self->item(AtomicString(ctx, key), exception_state);
     context->dartIsolateContext()->profiler()->FinishTrackSteps();
     if (UNLIKELY(exception_state.HasException())) {
-      return exception_state.ToQuickJS();
+      return exception_state.ToQuickJS(ctx);
     }
     return Converter<<%= generateIDLTypeConverter(object.indexedProp.type, object.indexedProp.optional) %>>::ToValue(ctx, result);
   };
@@ -191,7 +191,7 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   <% } %>
   if (UNLIKELY(exception_state.HasException())) {
     context->dartIsolateContext()->profiler()->FinishTrackSteps();
-    return exception_state.ToQuickJS();
+    return exception_state.ToQuickJS(ctx);
   }
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, v);
   context->dartIsolateContext()->profiler()->FinishTrackSteps();
@@ -217,7 +217,7 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
   MemberMutationScope scope{context};
   auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
-    return exception_state.ToQuickJS();
+    return exception_state.ToQuickJS(ctx);
   }
   <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
   <%= blob.filename %>->SetBindingProperty(binding_call_methods::k<%= prop.name %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(<% if (isDOMStringType(prop.type)) { %>ctx, <% } %>v),exception_state);
@@ -225,7 +225,7 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
   <%= blob.filename %>->set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(v, exception_state);
   <% } %>
   if (exception_state.HasException()) {
-    return exception_state.ToQuickJS();
+    return exception_state.ToQuickJS(ctx);
   }
 
   return JS_DupValue(ctx, argv[0]);
@@ -255,12 +255,12 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
   MemberMutationScope scope{context};
   auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
-    return exception_state.ToQuickJS();
+    return exception_state.ToQuickJS(ctx);
   }
 
   <%= object.name %>::set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(*<%= blob.filename %>, v, exception_state);
   if (exception_state.HasException()) {
-    return exception_state.ToQuickJS();
+    return exception_state.ToQuickJS(ctx);
   }
 
   return JS_DupValue(ctx, argv[0]);

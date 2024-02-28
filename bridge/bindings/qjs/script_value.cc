@@ -171,7 +171,6 @@ ScriptValue ScriptValue::ToJSONStringify(JSContext* ctx, ExceptionState* excepti
   ScriptValue result = ScriptValue(ctx, stringifyed);
   // JS_JSONStringify may return JS_EXCEPTION if object is not valid. Return JS_EXCEPTION and let quickjs to handle it.
   if (result.IsException()) {
-    exception->ThrowException(ctx, result.value_);
     result = ScriptValue::Empty(ctx);
   }
   JS_FreeValue(ctx, stringifyed);

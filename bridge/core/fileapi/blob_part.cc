@@ -37,7 +37,6 @@ std::shared_ptr<BlobPart> BlobPart::Create(JSContext* ctx, JSValue value, Except
     uint8_t* buffer;
     JSValue arrayBufferObject = JS_GetTypedArrayBuffer(ctx, value, &byte_offset, &byte_length, &byte_per_element);
     if (JS_IsException(arrayBufferObject)) {
-      exception_state.ThrowException(ctx, arrayBufferObject);
       return nullptr;
     }
     buffer = JS_GetArrayBuffer(ctx, &length, arrayBufferObject);

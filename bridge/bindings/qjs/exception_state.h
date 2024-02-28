@@ -22,12 +22,11 @@ class ExceptionState {
 
  public:
   void ThrowException(JSContext* ctx, ErrorType type, const std::string& message);
-  void ThrowException(JSContext* ctx, JSValue exception);
   bool HasException();
 
   ExceptionState& ReturnThis();
 
-  JSValue ToQuickJS();
+  JSValue ToQuickJS(JSContext* ctx);
 
  private:
   JSValue exception_{JS_NULL};
