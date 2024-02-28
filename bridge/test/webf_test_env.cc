@@ -53,6 +53,7 @@ static void unlink_callback(JSThreadState* ts, JSFrameCallback* th) {
 
 NativeValue* TEST_invokeModule(void* callbackContext,
                                double contextId,
+                               int64_t profile_link_id,
                                SharedNativeString* moduleName,
                                SharedNativeString* method,
                                SharedNativeString* params,
@@ -192,9 +193,12 @@ std::once_flag testInitOnceFlag;
 double contextId = -1;
 
 WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPage* page)
-    : page_(page), isolate_context_(owner_isolate_context) {}
+    : page_(page), isolate_context_(owner_isolate_context) {
+  owner_isolate_context->profiler()->StartTrackInitialize();
+}
 
 WebFTestEnv::~WebFTestEnv() {
+  isolate_context_->profiler()->FinishTrackInitialize();
   delete isolate_context_;
 }
 
