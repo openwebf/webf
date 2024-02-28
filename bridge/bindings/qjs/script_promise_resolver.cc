@@ -36,6 +36,7 @@ ScriptPromise ScriptPromiseResolver::Promise() {
 }
 
 void ScriptPromiseResolver::ResolveOrRejectImmediately(JSValue value) {
+  context_->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
   {
     if (state_ == kResolving) {
       JSValue arguments[] = {value};
@@ -55,6 +56,7 @@ void ScriptPromiseResolver::ResolveOrRejectImmediately(JSValue value) {
     }
   }
   context_->DrainMicrotasks();
+  context_->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 }
 
 }  // namespace webf
