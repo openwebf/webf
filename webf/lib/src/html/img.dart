@@ -617,10 +617,6 @@ class ImageElement extends Element {
       // Image should be resized based on different ratio according to object-fit value.
       BoxFit objectFit = renderStyle.objectFit;
 
-      if (ownerDocument.controller.preloadStatus == PreloadingStatus.preloading) {
-        ownerDocument.controller.unfinishedPreloadResources++;
-      }
-
       provider = _currentImageProvider = BoxFitImage(
         boxFit: objectFit,
         url: _resolvedUri!,
@@ -672,11 +668,6 @@ class ImageElement extends Element {
 
     // Decrement count when response.
     ownerDocument.decrementRequestCount();
-
-    if (ownerDocument.controller.preloadStatus == PreloadingStatus.preloading) {
-      ownerDocument.controller.unfinishedPreloadResources--;
-      ownerDocument.controller.checkPreloadCompleted();
-    }
 
     return data;
   }
