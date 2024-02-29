@@ -1105,12 +1105,34 @@ class WebFController {
 
     _isComplete = false;
 
-    await unload();
-    await executeEntrypoint();
+    RenderViewportBox rootRenderObject = view.viewport!;
 
-    if (devToolsService != null) {
-      devToolsService!.didReload();
-    }
+    await unload();
+
+    view.viewport = rootRenderObject;
+
+    // Initialize document, window and the documentElement.
+    flushUICommand(view, nullptr);
+
+    Completer completer = Completer();
+
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
+
+      // Sync viewport size to the documentElement.
+      view.document.initializeRootElementSize();
+      // Starting to flush ui commands every frames.
+      view.flushPendingCommandsPerFrame();
+
+      await executeEntrypoint();
+
+      if (devToolsService != null) {
+        devToolsService!.didReload();
+      }
+
+      completer.complete();
+    });
+
+    return completer.future;
   }
 
   Future<void> load(WebFBundle bundle) async {
@@ -1122,17 +1144,38 @@ class WebFController {
 
     await controlledInitCompleter.future;
 
+    RenderViewportBox rootRenderObject = view.viewport!;
+
     await unload();
+
+    view.viewport = rootRenderObject;
+
+    // Initialize document, window and the documentElement.
+    flushUICommand(view, nullptr);
 
     // Update entrypoint.
     _entrypoint = bundle;
     _addHistory(bundle);
 
-    await executeEntrypoint();
+    Completer completer = Completer();
 
-    if (devToolsService != null) {
-      devToolsService!.didReload();
-    }
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
+
+      // Sync viewport size to the documentElement.
+      view.document.initializeRootElementSize();
+      // Starting to flush ui commands every frames.
+      view.flushPendingCommandsPerFrame();
+
+      await executeEntrypoint();
+
+      if (devToolsService != null) {
+        devToolsService!.didReload();
+      }
+
+      completer.complete();
+    });
+
+    return completer.future;
   }
 
   PreloadingStatus _preloadStatus = PreloadingStatus.none;
