@@ -494,7 +494,9 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
 
           await controller!.controllerPreloadingCompleter.future;
 
-          rootRenderObject.insert(controller!.view.getRootRenderObject()!);
+          if (controller!.view.getRootRenderObject()!.parent == null) {
+            rootRenderObject.insert(controller!.view.getRootRenderObject()!);
+          }
 
           controller!.flushPendingUnAttachedWidgetElements();
 
@@ -520,7 +522,9 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
           flushUICommand(controller!.view, nullptr);
 
           // Attach root renderObjects into Flutter tree
-          rootRenderObject.insert(controller!.view.getRootRenderObject()!);
+          if (controller!.view.getRootRenderObject()!.parent == null) {
+            rootRenderObject.insert(controller!.view.getRootRenderObject()!);
+          }
 
           // Attach WidgetElements
           controller!.flushPendingUnAttachedWidgetElements();
