@@ -136,6 +136,10 @@ class ScriptRunner {
       }
 
       _resolvingCount++;
+    } else {
+      if (isInPreLoading) {
+        _preloadScriptTasks.add(task);
+      }
     }
 
     // Script loading phrase.
