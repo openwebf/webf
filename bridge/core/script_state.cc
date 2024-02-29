@@ -25,6 +25,7 @@ JSRuntime* ScriptState::runtime() {
 ScriptState::~ScriptState() {
   ctx_invalid_ = true;
   JSRuntime* rt = JS_GetRuntime(ctx_);
+  JS_TurnOnGC(rt);
   JS_FreeContext(ctx_);
 
   // Run GC to clean up remaining objects about m_ctx;

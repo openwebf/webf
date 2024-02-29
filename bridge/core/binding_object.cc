@@ -53,6 +53,8 @@ void NativeBindingObject::HandleCallFromDartSide(DartIsolateContext* dart_isolat
                                                  NativeValue* argv,
                                                  Dart_PersistentHandle dart_object,
                                                  DartInvokeResultCallback result_callback) {
+  if (binding_object->disposed_)
+    return;
   AtomicString method = AtomicString(
       binding_object->binding_target_->ctx(),
       std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)));

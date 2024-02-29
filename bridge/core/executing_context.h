@@ -98,7 +98,7 @@ class ExecutingContext {
   void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
   ExecutionContextData* contextData();
-  uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, size_t* bytecodeLength);
+  uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, uint64_t* bytecodeLength);
 
   // Make global object inherit from WindowProperties.
   void InstallGlobal();

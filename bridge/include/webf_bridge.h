@@ -36,6 +36,8 @@ typedef void (*AllocateNewPageCallback)(Dart_Handle dart_handle, void*);
 typedef void (*DisposePageCallback)(Dart_Handle dart_handle);
 typedef void (*InvokeModuleEventCallback)(Dart_Handle dart_handle, void*);
 typedef void (*EvaluateQuickjsByteCodeCallback)(Dart_Handle dart_handle, int8_t);
+typedef void (*DumpQuickjsByteCodeCallback)(Dart_Handle);
+typedef void (*ParseHTMLCallback)(Dart_Handle);
 typedef void (*EvaluateScriptsCallback)(Dart_Handle dart_handle, int8_t);
 
 WEBF_EXPORT_C
@@ -80,8 +82,19 @@ void evaluateQuickjsByteCode(void* page,
                              int32_t byteLen,
                              Dart_Handle dart_handle,
                              EvaluateQuickjsByteCodeCallback result_callback);
+
 WEBF_EXPORT_C
-void parseHTML(void* page, const char* code, int32_t length);
+void dumpQuickjsByteCode(void* page,
+                         const char* code,
+                         int32_t code_len,
+                         uint8_t** parsed_bytecodes,
+                         uint64_t* bytecode_len,
+                         const char* url,
+                         Dart_Handle dart_handle,
+                         DumpQuickjsByteCodeCallback result_callback);
+
+WEBF_EXPORT_C
+void parseHTML(void* page, char* code, int32_t length, Dart_Handle dart_handle, ParseHTMLCallback result_callback);
 WEBF_EXPORT_C
 void* parseSVGResult(const char* code, int32_t length);
 WEBF_EXPORT_C

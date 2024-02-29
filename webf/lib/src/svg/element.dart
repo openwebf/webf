@@ -53,7 +53,7 @@ class SVGElement extends Element {
   }
 
   @override
-  void updateRenderBoxModel() {
+  void updateRenderBoxModel({ bool forceUpdate = false }) {
     // do not needs to update
   }
 

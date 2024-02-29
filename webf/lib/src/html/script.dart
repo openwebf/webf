@@ -34,6 +34,7 @@ class ScriptRunner {
   final double _contextId;
 
   final List<ScriptExecution> _syncScriptTasks = [];
+  final List<ScriptExecution> _preloadScriptTasks = [];
 
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
@@ -65,12 +66,27 @@ class ScriptRunner {
     }
   }
 
+  bool hasPreloadScripts() {
+    return _preloadScriptTasks.isNotEmpty;
+  }
+
+  bool hasPendingScripts() {
+    return _syncScriptTasks.isNotEmpty;
+  }
+
   void _queueScriptForExecution(ScriptElement element, {bool isInline = false}) async {
     // Increment load event delay count before eval.
     _document.incrementDOMContentLoadedEventDelayCount();
 
+    // Increase the pending count for preloading resources.
+    if (_document.controller.preloadStatus != PreloadingStatus.none) {
+      _document.controller.unfinishedPreloadResources++;
+    }
+
     // Obtain bundle.
     WebFBundle bundle;
+    bool isInPreLoading = _document.controller.mode == WebFLoadingMode.preloading &&
+        _document.controller.preloadStatus != PreloadingStatus.done;
 
     if (isInline) {
       String? scriptCode = element.collectElementChildText();
@@ -113,7 +129,12 @@ class ScriptRunner {
     // @TODO: Differ async and defer.
     final bool shouldAsync = element.async || element.defer;
     if (!shouldAsync) {
-      _syncScriptTasks.add(task);
+      if (isInPreLoading) {
+        _preloadScriptTasks.add(task);
+      } else {
+        _syncScriptTasks.add(task);
+      }
+
       _resolvingCount++;
     }
 
@@ -135,7 +156,9 @@ class ScriptRunner {
       });
       _document.decrementDOMContentLoadedEventDelayCount();
       // Cancel failed task.
-      _syncScriptTasks.remove(task);
+      if (!isInPreLoading) {
+        _syncScriptTasks.remove(task);
+      }
       return;
     } finally {
       // Decrease the resolving count.
@@ -147,19 +170,32 @@ class ScriptRunner {
       _document.decrementDOMContentLoadedEventDelayCount();
     }
 
-    // Script executing phrase.
-    if (shouldAsync) {
-      // @TODO: Use requestIdleCallback
-      SchedulerBinding.instance.scheduleFrameCallback((_) async {
-        await task(shouldAsync);
-      });
+    if (!isInPreLoading) {
+      // Script executing phrase.
+      if (shouldAsync) {
+        SchedulerBinding.instance.scheduleFrameCallback((_) async {
+          await task(shouldAsync);
+        });
+      } else {
+        scheduleMicrotask(() {
+          if (_resolvingCount == 0) {
+            _execute(_syncScriptTasks, async: false);
+          }
+        });
+      }
     } else {
-      scheduleMicrotask(() {
-        if (_resolvingCount == 0) {
-          _execute(_syncScriptTasks, async: false);
-        }
-      });
+      await bundle.preProcessing(_contextId);
+      _document.pendingPreloadingScriptCallbacks.add(() async => await task(shouldAsync));
+
+      if (_document.controller.preloadStatus != PreloadingStatus.none) {
+        _document.controller.unfinishedPreloadResources--;
+        _document.controller.checkPreloadCompleted();
+      }
     }
+  }
+
+  Future<void> executePreloadedBundles() async {
+    _execute(_preloadScriptTasks);
   }
 }
 
@@ -182,11 +218,15 @@ class ScriptElement extends Element {
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['async'] =
         BindingObjectProperty(getter: () => async, setter: (value) => async = castToType<bool>(value));
-    properties['defer'] = BindingObjectProperty(getter: () => defer, setter: (value) => defer = castToType<bool>(value));
-    properties['charset'] = BindingObjectProperty(getter: () => charset, setter: (value) => charset = castToType<String>(value));
+    properties['defer'] =
+        BindingObjectProperty(getter: () => defer, setter: (value) => defer = castToType<bool>(value));
+    properties['charset'] =
+        BindingObjectProperty(getter: () => charset, setter: (value) => charset = castToType<String>(value));
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
     properties['text'] = BindingObjectProperty(getter: () => text, setter: (value) => text = castToType<String>(value));
-    properties['readyState'] = BindingObjectProperty(getter: () => readyState.name,);
+    properties['readyState'] = BindingObjectProperty(
+      getter: () => readyState.name,
+    );
   }
 
   @override

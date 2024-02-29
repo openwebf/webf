@@ -328,13 +328,15 @@ ExecutionContextData* ExecutingContext::contextData() {
 uint8_t* ExecutingContext::DumpByteCode(const char* code,
                                         uint32_t codeLength,
                                         const char* sourceURL,
-                                        size_t* bytecodeLength) {
+                                        uint64_t* bytecodeLength) {
   JSValue object =
       JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
   bool success = HandleException(&object);
   if (!success)
     return nullptr;
-  uint8_t* bytes = JS_WriteObject(script_state_.ctx(), bytecodeLength, object, JS_WRITE_OBJ_BYTECODE);
+  size_t len;
+  uint8_t* bytes = JS_WriteObject(script_state_.ctx(), &len, object, JS_WRITE_OBJ_BYTECODE);
+  *bytecodeLength = len;
   JS_FreeValue(script_state_.ctx(), object);
   return bytes;
 }

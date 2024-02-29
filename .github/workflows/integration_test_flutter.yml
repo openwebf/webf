@@ -10,7 +10,7 @@ env:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   setup:
-    runs-on: macos-12
+    runs-on: 'macos-14'
     outputs:
       matrix: ${{ steps.matrix.outputs.value }}
     steps:
@@ -22,7 +22,7 @@ jobs:
           JSON=$(node -e "console.log(JSON.stringify(require('./integration_tests/spec_group.json').map(j=>j.name)))")
           echo "::set-output name=value::$(echo $JSON)"
   build_bridge:
-    runs-on: macos-12
+    runs-on: 'macos-14'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -73,7 +73,7 @@ jobs:
     - run: cd webf && flutter test
 
   integration_test:
-    runs-on: self-hosted
+    runs-on: 'macos-14'
     needs: [ setup, build_bridge ]
     strategy:
       fail-fast: false
@@ -109,7 +109,7 @@ jobs:
       if: steps.test.outcome != 'success'
       run: exit 1
   multiple_page_test:
-    runs-on: self-hosted
+    runs-on: 'macos-14'
     needs: [ build_bridge ]
     steps:
     - uses: actions/checkout@v3
@@ -135,8 +135,61 @@ jobs:
       if: steps.test.outcome != 'success'
       run: exit 1
 
+  preload_page_test:
+    runs-on: 'macos-14'
+    needs: [ build_bridge ]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.nodeVersion }}
+    - uses: actions/download-artifact@v2
+      with:
+        name: macos_bridge_binary
+        path: bridge/build/macos/
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.flutter310 }}
+    - run: flutter config --enable-macos-desktop
+    - run: flutter doctor -v
+    - name: Run MultiplePageTest Test
+      run: cd integration_tests && LOAD_MODE=preload node scripts/preload_prerendering_page_integration.js
+      id: test
+      continue-on-error: true
+    - name: Check on failures
+      if: steps.test.outcome != 'success'
+      run: exit 1
+  prerendering_page_test:
+    runs-on: 'macos-14'
+    needs: [ build_bridge ]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.nodeVersion }}
+    - uses: actions/download-artifact@v2
+      with:
+        name: macos_bridge_binary
+        path: bridge/build/macos/
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.flutter310 }}
+    - run: flutter config --enable-macos-desktop
+    - run: flutter doctor -v
+    - name: Run MultiplePageTest Test
+      run: cd integration_tests && LOAD_MODE=prerendering node scripts/preload_prerendering_page_integration.js
+      id: test
+      continue-on-error: true
+    - name: Check on failures
+      if: steps.test.outcome != 'success'
+      run: exit 1
+
   memory_leak_test:
-    runs-on: self-hosted
+    runs-on: 'macos-14'
     needs: [ build_bridge ]
     steps:
     - uses: actions/checkout@v3

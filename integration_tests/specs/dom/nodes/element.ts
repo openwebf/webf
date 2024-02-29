@@ -10,6 +10,7 @@
  * - Element.prototype.toBlob
  * - Element.prototype.firstElementChild
  * - Element.prototype.lastElementChild
+ * - Element.prototype.parentElement
  */
 describe('DOM Element API', () => {
   it('should work', () => {
@@ -165,6 +166,19 @@ describe('DOM Element API', () => {
     const div = document.createElement('div');
     expect(isObject(div)).toBe(false);
     expect(Object.prototype.toString.call(div)).toBe('[object HTMLDivElement]');
+  });
+
+  it('should work with parentElement', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    el.appendChild(document.createElement('span'));
+    var target = el.lastElementChild?.parentElement;
+    expect(target.tagName).toEqual('DIV');
+  
+    let childDiv = document.createDocumentFragment().appendChild(document.createElement('div'));
+    expect(childDiv.parentElement).toEqual(null);
+  
+    expect(document.documentElement.parentElement).toEqual(null);
   });
 });
 

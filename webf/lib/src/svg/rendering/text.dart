@@ -36,7 +36,7 @@ class RenderSVGText extends RenderBoxModel
   void performLayout() {
     visitChildren((child) {
       // Don't constraint child
-      child.layout(BoxConstraints());
+      child.layout(BoxConstraints(), parentUsesSize: true);
     });
     _baseline = child?.getDistanceToBaseline(TextBaseline.alphabetic) ?? 0.0;
     size = child?.size ?? Size(0, 0);

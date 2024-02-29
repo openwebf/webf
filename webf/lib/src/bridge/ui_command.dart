@@ -198,14 +198,17 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
   }
 
   // For pending style properties, we needs to flush to render style.
-  for (int address in pendingStylePropertiesTargets.keys) {
-    try {
-      view.flushPendingStyleProperties(address);
-    } catch (e, stack) {
-      print('$e\n$stack');
+  if (!view.rootController.shouldBlockingFlushingResolvedStyleProperties) {
+    // For pending style properties, we needs to flush to render style.
+    for (int address in pendingStylePropertiesTargets.keys) {
+      try {
+        view.flushPendingStyleProperties(address);
+      } catch (e, stack) {
+        print('$e\n$stack');
+      }
     }
+    pendingStylePropertiesTargets.clear();
   }
-  pendingStylePropertiesTargets.clear();
 
   for (var address in pendingRecalculateTargets) {
     try {

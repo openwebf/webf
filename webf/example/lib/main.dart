@@ -19,13 +19,58 @@ class MyApp extends StatelessWidget {
       title: 'Kraken Browser',
       // theme: ThemeData.dark(),
       debugShowCheckedModeBanner: false,
-      home: MyBrowser(),
+      home: FirstPage(title: 'Landing Bay'),
+    );
+  }
+}
+
+class FirstPage extends StatefulWidget {
+  const FirstPage({Key? key, required this.title}) : super(key: key);
+  final String title;
+
+  @override
+  State<StatefulWidget> createState() {
+    return FirstPageState();
+  }
+}
+
+class FirstPageState extends State<FirstPage> {
+  late WebFController controller;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    controller = WebFController(
+      context,
+      devToolsService: ChromeDevToolsService(),
+    );
+    controller.preload(WebFBundle.fromUrl('assets:assets/bundle.html'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) {
+              return MyBrowser(title: 'SecondPage', controller: controller);
+            }));
+          },
+          child: const Text('Open WebF Page'),
+        ),
+      ),
     );
   }
 }
 
 class MyBrowser extends StatefulWidget {
-  MyBrowser({Key? key, this.title}) : super(key: key);
+  MyBrowser({Key? key, this.title, required this.controller}) : super(key: key);
+
+  final  WebFController controller;
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -52,54 +97,14 @@ class _MyHomePageState extends State<MyBrowser> {
 
   @override
   Widget build(BuildContext context) {
-    final MediaQueryData queryData = MediaQuery.of(context);
-    final TextEditingController textEditingController = TextEditingController();
-
-    WebF? _kraken;
-    AppBar appBar = AppBar(
-      backgroundColor: Colors.black87,
-      titleSpacing: 10.0,
-      title: Container(
-        height: 40.0,
-        child: TextField(
-          controller: textEditingController,
-          onSubmitted: (value) {
-            textEditingController.text = value;
-            _kraken?.load(WebFBundle.fromUrl(value));
-          },
-          decoration: InputDecoration(
-            hintText: 'Enter URL',
-            hintStyle: TextStyle(color: Colors.black54, fontSize: 16.0),
-            contentPadding: const EdgeInsets.all(10.0),
-            filled: true,
-            fillColor: Colors.grey,
-            border: outlineBorder,
-            focusedBorder: outlineBorder,
-            enabledBorder: outlineBorder,
-          ),
-          style: TextStyle(color: Colors.black, fontSize: 16.0),
-        ),
-      ),
-      // Here we take the value from the MyHomePage object that was created by
-      // the App.build method, and use it to set our appbar title.
-    );
-
-    final Size viewportSize = queryData.size;
     return Scaffold(
-        appBar: appBar,
+        appBar: AppBar(
+          title: Text('WebF Demo'),
+        ),
         body: Center(
           // Center is a layout widget. It takes a single child and positions it
           // in the middle of the parent.
-          child: Column(
-            children: [
-              _kraken = WebF(
-                devToolsService: ChromeDevToolsService(),
-                viewportWidth: viewportSize.width - queryData.padding.horizontal,
-                viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
-                bundle: WebFBundle.fromUrl('assets:assets/bundle.html'),
-              ),
-            ],
-          ),
+          child: WebF(controller: widget.controller),
         ));
   }
 }

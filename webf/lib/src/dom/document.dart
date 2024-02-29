@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
+import 'package:webf/widget.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
@@ -81,11 +82,15 @@ enum VisibilityState { visible, hidden }
 class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
-  RenderViewportBox? _viewport;
   GestureListener? gestureListener;
 
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
+
+  // Cache all the fixed children of renderBoxModel of root element.
+  Set<RenderBoxModel> fixedChildren = {};
+
+  final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
   Set<Element> styleDirtyElements = {};
 
@@ -94,6 +99,8 @@ class Document extends ContainerNode {
 
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
+
+  Set<WidgetElement> aliveWidgetElements = {};
 
   late RuleSet ruleSet;
 
@@ -109,11 +116,9 @@ class Document extends ContainerNode {
   Document(
     BindingContext context, {
     required this.controller,
-    required RenderViewportBox viewport,
     this.gestureListener,
     List<Cookie>? initialCookies
-  })  : _viewport = viewport,
-        super(NodeType.DOCUMENT_NODE, context) {
+  })  : super(NodeType.DOCUMENT_NODE, context) {
     cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
@@ -129,7 +134,7 @@ class Document extends ContainerNode {
   @override
   EventTarget? get parentEventTarget => defaultView;
 
-  RenderViewportBox? get viewport => _viewport;
+  RenderViewportBox? get viewport => controller.view.viewport;
 
   @override
   Document get ownerDocument => this;
@@ -147,7 +152,7 @@ class Document extends ContainerNode {
   String get nodeName => '#document';
 
   @override
-  RenderBox? get renderer => _viewport;
+  RenderBox? get renderer => viewport;
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L770
   bool parsing = false;
@@ -370,25 +375,33 @@ class Document extends ContainerNode {
       return;
     }
 
-    RenderViewportBox? viewport = _viewport;
+    bool documentElementChanged = element != null && element != _documentElement;
+
     // When document is disposed, viewport is null.
     if (viewport != null) {
       if (element != null) {
         element.attachTo(this);
-        // Should scrollable.
-        element.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
-        element.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
-        // Init with viewport size.
-        element.renderStyle.width = CSSLengthValue(viewport.viewportSize.width, CSSLengthType.PX);
-        element.renderStyle.height = CSSLengthValue(viewport.viewportSize.height, CSSLengthType.PX);
         _visibilityState = VisibilityState.visible;
       } else {
         // Detach document element.
-        viewport.removeAll();
+        viewport!.removeAll();
       }
     }
 
     _documentElement = element;
+
+    if (viewport?.hasSize == true && documentElementChanged) {
+      initializeRootElementSize();
+    }
+  }
+
+  void initializeRootElementSize() {
+    assert(documentElement != null);
+    assert(viewport!.hasSize);
+    documentElement!.renderStyle.width = CSSLengthValue(viewport!.viewportSize.width, CSSLengthType.PX);
+    documentElement!.renderStyle.height = CSSLengthValue(viewport!.viewportSize.height, CSSLengthType.PX);
+    documentElement!.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
+    documentElement!.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
   }
 
   @override
@@ -399,6 +412,11 @@ class Document extends ContainerNode {
       throw UnsupportedError('Only Element can be appended to Document');
     }
     return super.appendChild(child);
+  }
+
+  @override
+  String toString() {
+    return 'Document($hashCode)';
   }
 
   @override
@@ -509,15 +527,22 @@ class Document extends ContainerNode {
     _recalculating = false;
   }
 
+  void reactiveWidgetElements() {
+    for(WidgetElement widgetElement in aliveWidgetElements) {
+      widgetElement.reactiveRenderer();
+    }
+  }
+
   @override
   Future<void> dispose() async {
-    _viewport = null;
     gestureListener = null;
     styleSheets.clear();
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
     styleDirtyElements.clear();
+    fixedChildren.clear();
+    pendingPreloadingScriptCallbacks.clear();
     super.dispose();
   }
 

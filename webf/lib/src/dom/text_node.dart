@@ -52,7 +52,7 @@ class TextNode extends CharacterData {
   RenderBox? get renderer => _renderTextBox;
 
   void _applyTextStyle() {
-    if (isRendererAttached) {
+    if (isRendererAttachedToSegmentTree) {
       Element _parentElement = parentElement!;
 
       // The parentNode must be an element.
@@ -103,10 +103,14 @@ class TextNode extends CharacterData {
 
   // Detach renderObject of current node from parent
   void _detachRenderTextBox() {
-    if (isRendererAttached) {
+    if (isRendererAttachedToSegmentTree) {
       RenderTextBox renderTextBox = _renderTextBox!;
-      ContainerRenderObjectMixin parent = renderTextBox.parent as ContainerRenderObjectMixin;
-      parent.remove(renderTextBox);
+      RenderBox parent = renderTextBox.parent as RenderBox;
+      if (parent is ContainerRenderObjectMixin) {
+        (parent as ContainerRenderObjectMixin).remove(renderTextBox);
+      } else if (parent is RenderObjectWithChildMixin<RenderBox>) {
+        (parent as RenderObjectWithChildMixin).child = null;
+      }
     }
   }
 

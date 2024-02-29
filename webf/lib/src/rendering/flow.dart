@@ -139,6 +139,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     doingThisLayout = false;
   }
 
+  void performDryLayout() {
+
+  }
+
   void _doPerformLayout() {
     beforeLayout();
 

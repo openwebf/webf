@@ -596,6 +596,8 @@ class ImageElement extends Element {
       _resizeImage();
       _updateRenderObject(svg: renderObject);
       _dispatchLoadEvent();
+      // Decrement load event delay count after decode.
+      ownerDocument.decrementLoadEventDelayCount();
     }, onError: (e) {
       print(e);
       _dispatchErrorEvent();
@@ -615,8 +617,9 @@ class ImageElement extends Element {
       // Image should be resized based on different ratio according to object-fit value.
       BoxFit objectFit = renderStyle.objectFit;
 
-      // Increment load event delay count before decode.
-      ownerDocument.incrementLoadEventDelayCount();
+      if (ownerDocument.controller.preloadStatus == PreloadingStatus.preloading) {
+        ownerDocument.controller.unfinishedPreloadResources++;
+      }
 
       provider = _currentImageProvider = BoxFitImage(
         boxFit: objectFit,
@@ -669,6 +672,12 @@ class ImageElement extends Element {
 
     // Decrement count when response.
     ownerDocument.decrementRequestCount();
+
+    if (ownerDocument.controller.preloadStatus == PreloadingStatus.preloading) {
+      ownerDocument.controller.unfinishedPreloadResources--;
+      ownerDocument.controller.checkPreloadCompleted();
+    }
+
     return data;
   }
 
@@ -680,6 +689,10 @@ class ImageElement extends Element {
       // TODO: should use empty image;
       return;
     }
+
+    // Increment load event delay count before decode.
+    ownerDocument.incrementLoadEventDelayCount();
+
     _debounce.run(() {
       _updateImageData();
     });
