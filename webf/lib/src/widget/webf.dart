@@ -460,11 +460,11 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     assert(controller != null);
     (parent as WebFContextInheritElement).controller = controller;
 
+    await controller!.controlledInitCompleter.future;
+
     if (controller!.entrypoint == null) {
       throw FlutterError('Consider providing a WebFBundle resource as the entry point for WebF');
     }
-
-    await controller!.controlledInitCompleter.future;
 
     // Sync element state.
     flushUICommand(controller!.view, nullptr);
