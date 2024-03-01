@@ -12,13 +12,7 @@ We assume that the HTML can be accessed via the `http://localhost:8080/index.htm
 
 For React or Vue projects, the build scripts will start the development server for you.
 
-If you don't have a Flutter developer environment, you can use the following command to preview the results in WebF:
-
-```bash
-webf http://localhost:8080/index.html
-```
-
-Alternatively, change the URL of `WebFBundle.fromUrl` function in Dart and hot-restart your Flutter apps.
+Change the URL of `WebFBundle.fromUrl` function in Dart and hot-restart your Flutter apps.
 
 ```dart
 WebF(bundle: WebFBundle.fromUrl('http://localhost:8080/index.html'), // The page entry point
