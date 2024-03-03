@@ -17,7 +17,7 @@ bool collectChildrenAndRemoveFromOldParent(Node node, List<Node> nodes) {
   }
   nodes.add(node);
   ContainerNode? oldParent = node.parentNode;
-  if (oldParent != null) {
+  if (oldParent != null && node.isConnected) {
     oldParent.removeChild(node);
   }
   return nodes.isNotEmpty;

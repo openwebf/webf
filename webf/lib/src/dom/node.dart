@@ -309,7 +309,9 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   /// Release any resources held by this node.
   @override
   void dispose() async {
-    parentNode?.removeChild(this);
+    if (isConnected) {
+      parentNode?.removeChild(this);
+    }
     if (this is! Document) {
       assert(!isRendererAttachedToSegmentTree, 'Should unmount $this before calling dispose.');
     }
