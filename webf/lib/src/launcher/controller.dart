@@ -693,6 +693,7 @@ class WebFViewController implements WidgetsBindingObserver {
     bindingObject?.dispose();
     view.removeBindingObject(pointer);
     view.disposeTargetIdToDevNodeIdMap(bindingObject);
+    view.document.styleDirtyElements.remove(bindingObject);
     malloc.free(pointer);
   }
 
