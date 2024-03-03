@@ -955,6 +955,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     flutterWidget = null;
     flutterWidgetElement = null;
     ownerDocument.inactiveRenderObjects.add(renderer);
+    ownerDocument.styleDirtyElements.remove(this);
     _beforeElement?.dispose();
     _beforeElement = null;
     _afterElement?.dispose();
