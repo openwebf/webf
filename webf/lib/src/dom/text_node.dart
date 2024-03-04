@@ -116,7 +116,7 @@ class TextNode extends CharacterData {
 
   @override
   String toString() {
-    return 'TextNode($hashCode)';
+    return 'TextNode($data)';
   }
 
   // Detach renderObject of current node from parent

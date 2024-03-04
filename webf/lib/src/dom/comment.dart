@@ -19,4 +19,9 @@ class Comment extends CharacterData {
 
   @override
   int get length => data.length;
+
+  @override
+  String toString() {
+    return 'Comment()';
+  }
 }
