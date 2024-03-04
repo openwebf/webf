@@ -163,7 +163,7 @@ class LinkElement extends Element {
         final String cssString = await resolveStringFromData(bundle.data!);
         _styleSheet = CSSParser(cssString, href: href).parse();
         _styleSheet?.href = href;
-        ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
+        ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
 
@@ -271,7 +271,7 @@ mixin StyleElementMixin on Element {
         _styleSheet = CSSParser(text).parse();
       }
       if (_styleSheet != null) {
-        ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
+        ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
       }

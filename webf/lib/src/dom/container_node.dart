@@ -92,7 +92,7 @@ abstract class ContainerNode extends Node {
 
     // 6. Mark this element to dirty elements.
     if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
+      ownerDocument.markElementStyleDirty(this as Element);
     }
 
     // 7. Trigger connected callback
@@ -180,7 +180,7 @@ abstract class ContainerNode extends Node {
     }
 
     if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
+      ownerDocument.markElementStyleDirty(this as Element);
     }
 
     bool isOldChildConnected = child.isConnected;
@@ -222,7 +222,7 @@ abstract class ContainerNode extends Node {
     _insertNode(targets, null, _adoptAndAppendChild);
 
     if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
+      ownerDocument.markElementStyleDirty(this as Element);
     }
 
     if (newChild.isConnected) {
