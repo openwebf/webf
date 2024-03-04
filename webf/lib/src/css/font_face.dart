@@ -87,10 +87,8 @@ class CSSFontFace {
           Uint8List content = targetFont.content;
           Future<ByteData> bytes = Future.value(ByteData.sublistView(content));
           FontLoader loader = FontLoader(fontFamily);
-          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            loader.addFont(bytes);
-            loader.load();
-          });
+          loader.addFont(bytes);
+          await loader.load();
         } else {
           Uri? uri = _resolveFontSource(contextId, targetFont.src, baseHref);
           if (uri == null) return;
@@ -101,10 +99,8 @@ class CSSFontFace {
           assert(bundle.isResolved, 'Failed to obtain $url');
           FontLoader loader = FontLoader(removeQuotationMark(fontFamily));
           Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
-          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            loader.addFont(bytes);
-            loader.load();
-          });
+          loader.addFont(bytes);
+          await loader.load();
         }
 
 
