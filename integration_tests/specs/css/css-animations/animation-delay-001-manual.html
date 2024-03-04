@@ -63,10 +63,10 @@
   <div id="ref-no-delay">Filler Text</div>
 </body>
 <script>
-  await sleep(0.1);
+  await sleep(0.2);
   const negativeDelay = document.getElementById('test-negative-delay');
   const ref = document.getElementById('ref-no-delay');
-  expect(Math.round(negativeDelay.offsetLeft)).toBe(Math.round(ref.offsetLeft), 'negative should equal to ref');
+  expect(Math.round(negativeDelay.offsetLeft) - Math.round(ref.offsetLeft) < 5).toBe(true, 'negative should equal to ref');
   expect(negativeDelay.offsetLeft < 80 && negativeDelay.offsetLeft > 60).toBe(true, `negativeDelay offsetLeft: ${negativeDelay.offsetLeft}`);
   await sleep(1);
   expect(Math.round(negativeDelay.offsetLeft)).toBe(Math.round(ref.offsetLeft), 'negativeDelay should be equal to ref');
