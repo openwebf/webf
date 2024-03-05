@@ -250,6 +250,11 @@ void collectNativeProfileData(void* ptr, const char** data, uint32_t* len) {
   *len = result.size();
 }
 
+void clearNativeProfileData(void* ptr) {
+  auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(ptr);
+  dart_isolate_context->profiler()->clear();
+}
+
 void dispatchUITask(void* page_, void* context, void* callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   reinterpret_cast<void (*)(void*)>(callback)(context);

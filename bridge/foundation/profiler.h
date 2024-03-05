@@ -100,6 +100,7 @@ class WebFProfiler {
   }
 
   std::string ToJSON();
+  void clear();
 
  private:
   bool enabled_{false};

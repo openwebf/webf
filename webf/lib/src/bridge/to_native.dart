@@ -659,6 +659,17 @@ String collectNativeProfileData() {
   return string.value.toDartString(length: len.value);
 }
 
+typedef NativeClearNativeProfileData = Void Function(Pointer<Void> pagePtr);
+typedef DartClearNativeProfileData = void Function(Pointer<Void> pagePtr);
+
+final DartClearNativeProfileData _clearNativeProfileData = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeClearNativeProfileData>>('collectNativeProfileData')
+    .asFunction();
+
+void clearNativeProfileData() {
+  _clearNativeProfileData(dartContext!.pointer);
+}
+
 enum UICommandType {
   startRecordingCommand,
   createElement,

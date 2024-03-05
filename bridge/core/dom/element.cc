@@ -439,7 +439,9 @@ void ElementSnapshotReader::HandleFailed(const char* error) {
   MemberMutationScope mutation_scope{context_};
   ExceptionState exception_state;
   exception_state.ThrowException(context_->ctx(), ErrorType::InternalError, error);
-  resolver_->Reject(exception_state.ToQuickJS(context_->ctx()));
+  JSValue exception_value = exception_state.ToQuickJS(context_->ctx());
+  resolver_->Reject(exception_value);
+  JS_FreeValue(context_->ctx(), exception_value);
 }
 
 ScriptPromise Element::toBlob(ExceptionState& exception_state) {

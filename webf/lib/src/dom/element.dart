@@ -356,9 +356,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void updateRenderBoxModel({ bool forceUpdate = false }) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.updateRenderBoxModel');
-    }
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget, forceUpdate: forceUpdate);
@@ -394,10 +391,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
       // Ensure that the event responder is bound.
       ensureEventResponderBound();
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
@@ -1873,14 +1866,27 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // TODO
   }
 
-  Future<Uint8List> toBlob({double? devicePixelRatio}) {
+  Future<Uint8List> toBlob({double? devicePixelRatio, BindingOpItem? currentProfileOp}) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'FlushLayout');
+    }
+
     flushLayout();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+    }
+
     forceToRepaintBoundary = true;
 
     Completer<Uint8List> completer = Completer();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       Uint8List captured;
       RenderBoxModel? _renderBoxModel = renderBoxModel;
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'toImage');
+      }
 
       if (_renderBoxModel == null || _renderBoxModel.hasSize && _renderBoxModel.size.isEmpty) {
         // Return a blob with zero length.
@@ -1890,6 +1896,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
             pixelRatio: devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
         ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
         captured = byteData!.buffer.asUint8List();
+      }
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
       }
 
       completer.complete(captured);
