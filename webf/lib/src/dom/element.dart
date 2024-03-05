@@ -1734,9 +1734,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     Completer<Uint8List> completer = Completer();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       Uint8List captured;
-      RenderBoxModel _renderBoxModel = renderBoxModel!;
+      RenderBoxModel? _renderBoxModel = renderBoxModel;
 
-      if (_renderBoxModel.hasSize && _renderBoxModel.size.isEmpty) {
+      if (_renderBoxModel == null || _renderBoxModel.hasSize && _renderBoxModel.size.isEmpty) {
         // Return a blob with zero length.
         captured = Uint8List(0);
       } else {
