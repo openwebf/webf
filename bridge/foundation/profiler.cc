@@ -258,4 +258,12 @@ std::string WebFProfiler::ToJSON() {
   return result;
 }
 
+void WebFProfiler::clear() {
+  profile_stacks_ = std::stack<std::shared_ptr<ProfileOpItem>>();
+  initialize_profile_items_.clear();
+  link_paths_.clear();
+  async_evaluate_profile_items.clear();
+  evaluate_profile_items_.clear();
+}
+
 }

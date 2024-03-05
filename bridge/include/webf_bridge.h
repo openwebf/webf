@@ -112,6 +112,8 @@ void invokeModuleEvent(void* page,
                        InvokeModuleEventCallback result_callback);
 WEBF_EXPORT_C
 void collectNativeProfileData(void* ptr, const char** data, uint32_t* len);
+WEBF_EXPORT_C
+void clearNativeProfileData(void* ptr);
 
 WEBF_EXPORT_C
 WebFInfo* getWebFInfo();

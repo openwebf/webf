@@ -318,7 +318,7 @@ class WebFProfiler {
   }
 
   void _paintEndInFrame() {
-    if (currentPipeline.paintCount == 0 && currentPipeline.uiCommandCount == 0) {
+    if (_paintPipeLines.isNotEmpty && currentPipeline.paintCount == 0 && currentPipeline.uiCommandCount == 0 && currentPipeline.layoutCount == 0) {
       _paintPipeLines.removeLast();
     }
   }
@@ -589,5 +589,15 @@ class WebFProfiler {
       'async_evaluate': profileData['async_evaluate'],
       'frames': frameReport(),
     };
+  }
+
+  void clear() {
+    clearNativeProfileData();
+    _networkOpMap.clear();
+    _networkOp.clear();
+    _evaluateOp.clear();
+    _evaluateOpMap.clear();
+    _bindingOpMap.clear();
+    _paintPipeLines.clear();
   }
 }
