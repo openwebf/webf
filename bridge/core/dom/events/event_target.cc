@@ -373,7 +373,7 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   assert(event->currentTarget() != nullptr);
 
   auto* window = DynamicTo<Window>(event->target());
-  if (window != nullptr && event->type() == event_type_names::kload) {
+  if (window != nullptr && (event->type() == event_type_names::kload || event->type() == event_type_names::kgcopen)) {
     window->OnLoadEventFired();
   }
 

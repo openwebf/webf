@@ -325,6 +325,11 @@ class WebFViewController implements WidgetsBindingObserver {
     window = Window(BindingContext(view, _contextId, pointer), document);
     _registerPlatformBrightnessChange();
 
+    // 3 seconds should be enough for page loading, make sure the JavaScript GC was opened.
+    Timer(Duration(seconds: 3), () {
+      window.dispatchEvent(Event('gcopen'));
+    });
+
     // Blur input element when new input focused.
     window.addEventListener(EVENT_CLICK, (event) async {
       if (event.target is Element) {
