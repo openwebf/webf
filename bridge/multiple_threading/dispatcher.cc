@@ -97,7 +97,7 @@ std::unique_ptr<Looper>& Dispatcher::looper(int32_t js_context_id) {
 }
 
 // run in the cpp thread
-void Dispatcher::NotifyDart(const DartWork* work_ptr, bool is_sync) {
+bool Dispatcher::NotifyDart(const DartWork* work_ptr, bool is_sync) {
   const intptr_t work_addr = reinterpret_cast<intptr_t>(work_ptr);
 
   Dart_CObject** array = new Dart_CObject*[3];
@@ -129,12 +129,14 @@ void Dispatcher::NotifyDart(const DartWork* work_ptr, bool is_sync) {
   const bool result = Dart_PostCObject_DL(dart_port_, &dart_object);
   if (!result) {
     delete work_ptr;
+    return false;
   }
 
   delete array[0];
   delete array[1];
   delete array[2];
   delete[] array;
+  return true;
 }
 
 void Dispatcher::FinalizeAllJSThreads(webf::multi_threading::Callback callback) {
