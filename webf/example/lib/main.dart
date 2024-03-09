@@ -40,8 +40,19 @@ class FirstPageState extends State<FirstPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    WebFJavaScriptChannel methodChannel = WebFJavaScriptChannel();
+    methodChannel.onMethodCall = (String method, dynamic argments) {
+      if (method == 'openPage') {
+        Navigator.push(context, MaterialPageRoute(builder: (context) {
+          return MyBrowser(title: 'SecondPage1', controller: controller);
+        }));
+      }
+      return Future.value('');
+    };
+
     controller = WebFController(
       context,
+      methodChannel: methodChannel,
       devToolsService: ChromeDevToolsService(),
     );
     controller.preload(WebFBundle.fromUrl('assets:assets/bundle.html'));
@@ -53,16 +64,28 @@ class FirstPageState extends State<FirstPage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return MyBrowser(title: 'SecondPage', controller: controller);
-            }));
-          },
-          child: const Text('Open WebF Page'),
+      body: Column(children: [
+        Center(
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return MyBrowser(title: 'SecondPage', controller: controller);
+              }));
+            },
+            child: const Text('Open WebF Page'),
+          ),
         ),
-      ),
+        Center(
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return MyBrowser(title: 'SecondPage', controller: controller);
+              }));
+            },
+            child: const Text('Open WebF Page2'),
+          ),
+        )
+      ]),
     );
   }
 }
@@ -70,7 +93,7 @@ class FirstPageState extends State<FirstPage> {
 class MyBrowser extends StatefulWidget {
   MyBrowser({Key? key, this.title, required this.controller}) : super(key: key);
 
-  final  WebFController controller;
+  final WebFController controller;
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -99,7 +122,7 @@ class _MyHomePageState extends State<MyBrowser> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('WebF Demo'),
+          title: Text(widget.title ?? 'webfDemo'),
         ),
         body: Center(
           // Center is a layout widget. It takes a single child and positions it

@@ -11,3 +11,11 @@ p.appendChild(br);
 p.appendChild(text2);
 
 document.body.appendChild(p);
+
+let count = 0;
+document.getElementById('logo').addEventListener('click',()=>{
+  text2.textContent = `你好，webf！${count++}`
+})
+document.getElementById('logo2').addEventListener('click',()=>{
+  webf.methodChannel.invokeMethod('openPage')
+})
