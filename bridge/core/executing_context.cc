@@ -144,7 +144,6 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
 
   JSValue result;
   if (parsed_bytecodes == nullptr) {
-
     dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
 
     result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
@@ -187,7 +186,6 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
 }
 
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine) {
-
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
   DrainMicrotasks();
@@ -403,7 +401,6 @@ uint8_t* ExecutingContext::DumpByteCode(const char* code,
                                         uint32_t codeLength,
                                         const char* sourceURL,
                                         uint64_t* bytecodeLength) {
-
   dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
 
   JSValue object =

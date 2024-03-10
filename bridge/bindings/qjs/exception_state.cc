@@ -26,7 +26,6 @@ void ExceptionState::ThrowException(JSContext* ctx, ErrorType type, const std::s
   }
 }
 
-
 bool ExceptionState::HasException() {
   return !JS_IsNull(exception_);
 }

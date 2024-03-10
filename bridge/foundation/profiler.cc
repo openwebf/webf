@@ -1,12 +1,12 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "profiler.h"
-#include "foundation/macros.h"
-#include "core/executing_context.h"
 #include "bindings/qjs/exception_state.h"
+#include "core/executing_context.h"
+#include "foundation/macros.h"
 
 #include <utility>
 #include "stop_watch.h"
@@ -28,7 +28,7 @@ ScriptValue ProfileStep::ToJSON(JSContext* ctx, const std::string& path, bool sh
 
   JSValue child_steps_array = JS_NewArray(ctx);
 
-  for(int i = 0; i < child_steps_.size(); i ++) {
+  for (int i = 0; i < child_steps_.size(); i++) {
     ScriptValue child_step_json = child_steps_[i]->ToJSON(ctx, path + "/" + std::to_string(i), should_link);
     JS_SetPropertyUint32(ctx, child_steps_array, i, JS_DupValue(ctx, child_step_json.QJSValue()));
   }
@@ -81,8 +81,8 @@ void ProfileOpItem::RecordStep(const std::string& label, const std::shared_ptr<P
   }
 
   step_stack_.emplace(step);
-//  assert(step_map_.count(label) == 0);
-//  step_map_[label] = step;
+  //  assert(step_map_.count(label) == 0);
+  //  step_map_[label] = step;
 }
 
 void ProfileOpItem::FinishStep() {
@@ -97,7 +97,7 @@ ScriptValue ProfileOpItem::ToJSON(JSContext* ctx, const std::string& path, bool 
   JSValue duration_string = JS_NewString(ctx, (std::to_string(stopwatch_.elapsed()) + " us").c_str());
   JSValue steps = JS_NewArray(ctx);
 
-  for(int i = 0; i < steps_.size(); i ++) {
+  for (int i = 0; i < steps_.size(); i++) {
     ScriptValue child_step_json = steps_[i]->ToJSON(ctx, path + "/" + std::to_string(i), should_link);
     JS_SetPropertyUint32(ctx, steps, i, JS_DupValue(ctx, child_step_json.QJSValue()));
   }
@@ -111,7 +111,7 @@ ScriptValue ProfileOpItem::ToJSON(JSContext* ctx, const std::string& path, bool 
   return result;
 }
 
-WebFProfiler::WebFProfiler(bool enable): enabled_(enable) {}
+WebFProfiler::WebFProfiler(bool enable) : enabled_(enable) {}
 
 void WebFProfiler::StartTrackInitialize() {
   if (UNLIKELY(enabled_)) {
@@ -218,9 +218,10 @@ std::string WebFProfiler::ToJSON() {
 
     {
       JSValue evaluate_object = JS_NewObject(ctx);
-      for(auto&& item : evaluate_profile_items_) {
+      for (auto&& item : evaluate_profile_items_) {
         ScriptValue json_item = item.second->ToJSON(ctx, std::to_string(item.first), true);
-        JS_SetPropertyStr(ctx, evaluate_object, std::to_string(item.first).c_str(), JS_DupValue(ctx, json_item.QJSValue()));
+        JS_SetPropertyStr(ctx, evaluate_object, std::to_string(item.first).c_str(),
+                          JS_DupValue(ctx, json_item.QJSValue()));
       }
       JS_SetPropertyStr(ctx, object, "evaluate", evaluate_object);
     }
@@ -266,4 +267,4 @@ void WebFProfiler::clear() {
   evaluate_profile_items_.clear();
 }
 
-}
+}  // namespace webf

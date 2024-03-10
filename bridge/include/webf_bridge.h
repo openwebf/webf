@@ -41,7 +41,10 @@ typedef void (*ParseHTMLCallback)(Dart_Handle);
 typedef void (*EvaluateScriptsCallback)(Dart_Handle dart_handle, int8_t);
 
 WEBF_EXPORT_C
-void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len, int8_t enable_profile);
+void* initDartIsolateContextSync(int64_t dart_port,
+                                 uint64_t* dart_methods,
+                                 int32_t dart_methods_len,
+                                 int8_t enable_profile);
 
 WEBF_EXPORT_C
 void allocateNewPage(double thread_identity,
@@ -97,7 +100,12 @@ void dumpQuickjsByteCode(void* page,
                          DumpQuickjsByteCodeCallback result_callback);
 
 WEBF_EXPORT_C
-void parseHTML(void* page, char* code, int32_t length, int64_t profile_id, Dart_Handle dart_handle, ParseHTMLCallback result_callback);
+void parseHTML(void* page,
+               char* code,
+               int32_t length,
+               int64_t profile_id,
+               Dart_Handle dart_handle,
+               ParseHTMLCallback result_callback);
 WEBF_EXPORT_C
 void* parseSVGResult(const char* code, int32_t length);
 WEBF_EXPORT_C
