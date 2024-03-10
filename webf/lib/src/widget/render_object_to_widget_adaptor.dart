@@ -5,6 +5,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:webf/foundation.dart';
 import 'widget_element.dart';
 import 'render_object_to_flutter_element_adapter.dart';
 
@@ -38,7 +39,13 @@ class WebFWidgetElementToWidgetAdapter<T extends RenderObject> extends SingleChi
     // WidgetElement can be remounted to the DOM tree and trigger widget adapter updates.
     // We need to check if the widgetElement is actually disconnected before unmounting the renderWidget.
     if (!widgetElement.isConnected) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.startTrackUICommand();
+      }
       widgetElement.unmountRenderObject();
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackUICommand();
+      }
     }
   }
 

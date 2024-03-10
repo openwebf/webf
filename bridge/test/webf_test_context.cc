@@ -73,6 +73,8 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         [](ImageSnapShotContext* callback_context, int8_t result, char* errmsg) {
           JSContext* ctx = callback_context->context->ctx();
 
+          callback_context->context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+
           if (errmsg == nullptr) {
             JSValue arguments[] = {JS_NewBool(ctx, result != 0), JS_NULL};
             JSValue returnValue =
@@ -90,6 +92,9 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
           callback_context->context->DrainMicrotasks();
           JS_FreeValue(callback_context->context->ctx(), callback_context->callback);
+
+          callback_context->context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
+
           delete callback_context;
         },
         callback_context, result, errmsg);
@@ -131,11 +136,14 @@ static void handleSimulatePointerCallback(void* p, double contextId, char* errms
   context->dartIsolateContext()->dispatcher()->PostToJs(
       context->isDedicated(), context->contextId(),
       [](SimulatePointerCallbackContext* simulate_context, double contextId, char* errmsg) {
+        simulate_context->context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+
         JSValue return_value =
             JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
         JS_FreeValue(simulate_context->context->ctx(), return_value);
         JS_FreeValue(simulate_context->context->ctx(), simulate_context->callbackValue);
         simulate_context->context->DrainMicrotasks();
+        simulate_context->context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
         delete simulate_context;
       },
       simulate_context, contextId, errmsg);

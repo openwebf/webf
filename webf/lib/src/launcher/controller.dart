@@ -496,8 +496,11 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void cloneNode(Pointer<NativeBindingObject> selfPtr, Pointer<NativeBindingObject> newPtr) {
-    EventTarget originalTarget = getBindingObject<EventTarget>(selfPtr)!;
-    EventTarget newTarget = getBindingObject<EventTarget>(newPtr)!;
+    EventTarget? originalTarget = getBindingObject<EventTarget>(selfPtr);
+    EventTarget? newTarget = getBindingObject<EventTarget>(newPtr);
+
+    if (originalTarget == null || newTarget == null) return;
+
 
     // Current only element clone will process in dart.
     if (originalTarget is Element) {
@@ -518,8 +521,8 @@ class WebFViewController implements WidgetsBindingObserver {
   void removeNode(Pointer pointer) {
     assert(hasBindingObject(pointer), 'pointer: $pointer');
 
-    Node target = getBindingObject<Node>(pointer)!;
-    target.parentNode?.removeChild(target);
+    Node? target = getBindingObject<Node>(pointer);
+    target?.parentNode?.removeChild(target);
 
     _debugDOMTreeChanged();
   }
@@ -536,8 +539,13 @@ class WebFViewController implements WidgetsBindingObserver {
     assert(hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
     assert(hasBindingObject(selfPointer), 'newTargetId: $newPointer position: $position');
 
-    Node target = getBindingObject<Node>(selfPointer)!;
-    Node newNode = getBindingObject<Node>(newPointer)!;
+    Node? target = getBindingObject<Node>(selfPointer);
+    Node? newNode = getBindingObject<Node>(newPointer);
+
+    if (target == null || newNode == null) {
+      return;
+    }
+
     Node? targetParentNode = target.parentNode;
 
     switch (position) {
@@ -564,7 +572,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
     assert(hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
-    Node target = getBindingObject<Node>(selfPtr)!;
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
 
     if (target is Element) {
       // Only element has properties.
@@ -578,7 +587,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
   String? getAttribute(Pointer selfPtr, String key) {
     assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node target = getBindingObject<Node>(selfPtr)!;
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return null;
 
     if (target is Element) {
       // Only element has attributes.
@@ -593,7 +603,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void removeAttribute(Pointer selfPtr, String key) {
     assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node target = getBindingObject<Node>(selfPtr)!;
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
 
     if (target is Element) {
       target.removeAttribute(key);

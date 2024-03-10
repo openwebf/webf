@@ -373,23 +373,23 @@ class WebFProfiler {
     };
   }
 
-  void startTrackLayout(RenderBox targetRenderBox) {
-    String ownerElement = targetRenderBox is RenderBoxModel ? targetRenderBox.renderStyle.target.toString() : '<Root>';
+  void startTrackLayout(RenderObject targetRenderObject) {
+    String ownerElement = targetRenderObject is RenderBoxModel ? targetRenderObject.renderStyle.target.toString() : '<Root>';
     Timeline.startSync(
-      'WebF Layout ${targetRenderBox.runtimeType}',
+      'WebF Layout ${targetRenderObject.runtimeType}',
       arguments: {
         'ownerElement': ownerElement,
-        'isRepaintBoundary': targetRenderBox.isRepaintBoundary,
-        'isScrollingContentBox': targetRenderBox is RenderBoxModel ? targetRenderBox.isScrollingContentBox : false
+        'isRepaintBoundary': targetRenderObject.isRepaintBoundary,
+        'isScrollingContentBox': targetRenderObject is RenderBoxModel ? targetRenderObject.isScrollingContentBox : false
       },
     );
 
-    OpItem op = OpItem(Stopwatch()..start(), ownerElement: ownerElement, renderBox: describeIdentity(targetRenderBox));
+    OpItem op = OpItem(Stopwatch()..start(), ownerElement: ownerElement, renderBox: describeIdentity(targetRenderObject));
 
     currentPipeline.recordOp(OpItemType.layout, op);
   }
 
-  void finishTrackLayout(RenderBox renderBox) {
+  void finishTrackLayout(RenderObject renderObject) {
     Timeline.finishSync();
 
     assert(_paintPipeLines.isNotEmpty);

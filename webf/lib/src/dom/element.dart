@@ -1867,15 +1867,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   Future<Uint8List> toBlob({double? devicePixelRatio, BindingOpItem? currentProfileOp}) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'FlushLayout');
-    }
-
     flushLayout();
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
-    }
 
     forceToRepaintBoundary = true;
 
@@ -1883,10 +1875,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       Uint8List captured;
       RenderBoxModel? _renderBoxModel = renderBoxModel;
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'toImage');
-      }
 
       if (_renderBoxModel == null || _renderBoxModel.hasSize && _renderBoxModel.size.isEmpty) {
         // Return a blob with zero length.
@@ -1896,10 +1884,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
             pixelRatio: devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
         ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
         captured = byteData!.buffer.asUint8List();
-      }
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
       }
 
       completer.complete(captured);

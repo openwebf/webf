@@ -33,12 +33,16 @@ class _WebFTesterState extends State<WebFTester> {
 
   _WebFTesterState() {
     javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
-      switch(method) {
+      switch (method) {
         case 'helloInt64':
           return Future.value(1111111111111111);
         case 'resizeViewport':
-          double newWidth = arguments[0] == -1 ? 360 : double.tryParse(arguments[0].toString())!;
-          double newHeight = arguments[1] == -1 ? 640 : double.tryParse(arguments[1].toString())!;
+          double newWidth = arguments[0] == -1
+              ? 360
+              : double.tryParse(arguments[0].toString())!;
+          double newHeight = arguments[1] == -1
+              ? 640
+              : double.tryParse(arguments[1].toString())!;
           if (newWidth != width || newHeight != height) {
             setState(() {
               width = newWidth;
@@ -47,7 +51,8 @@ class _WebFTesterState extends State<WebFTester> {
           }
           return Future.value(null);
         default:
-          dynamic returnedValue = await javaScriptChannel.invokeMethod(method, arguments);
+          dynamic returnedValue =
+              await javaScriptChannel.invokeMethod(method, arguments);
           return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
       }
     };
@@ -58,12 +63,14 @@ class _WebFTesterState extends State<WebFTester> {
     return WebF(
       viewportWidth: width,
       viewportHeight: height,
-      bundle: WebFBundle.fromUrl('http://localhost:$MOCK_SERVER_PORT/public/core.build.js?search=1234#hash=hashValue'),
+      bundle: WebFBundle.fromUrl(
+          'http://localhost:$MOCK_SERVER_PORT/public/core.build.js?search=1234#hash=hashValue'),
       disableViewportWidthAssertion: true,
       disableViewportHeightAssertion: true,
       javaScriptChannel: javaScriptChannel,
       onControllerCreated: onControllerCreated,
       onLoad: onLoad,
+      // runningThread: FlutterUIThread(),
       // runningThread: FlutterUIThread(),
       gestureListener: GestureListener(
         onDrag: (GestureEvent gestureEvent) {
@@ -93,7 +100,8 @@ class _WebFTesterState extends State<WebFTester> {
 
     try {
       // Preload load test cases
-      String result = await executeTest(testContext!, controller.view.contextId);
+      String result =
+          await executeTest(testContext!, controller.view.contextId);
       // Manual dispose context for memory leak check.
       await controller.dispose();
 

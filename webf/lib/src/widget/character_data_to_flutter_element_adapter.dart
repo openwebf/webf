@@ -3,6 +3,7 @@
  */
 
 import 'package:flutter/widgets.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/src/widget/character_data_to_widget_adapter.dart';
 
 class WebFCharacterDataToFlutterElementAdapter extends RenderObjectElement {
@@ -13,9 +14,15 @@ class WebFCharacterDataToFlutterElementAdapter extends RenderObjectElement {
 
   @override
   void mount(Element? parent, Object? newSlot) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     widget.webFCharacter.createRenderer();
     super.mount(parent, newSlot);
     widget.webFCharacter.ensureChildAttached();
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   @override
