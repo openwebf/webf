@@ -325,7 +325,7 @@ function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number
 
   return `auto&& args_${argument.name} = ${body};
 if (UNLIKELY(exception_state.HasException())) {
-  return exception_state.ToQuickJS(ctx);
+  return exception_state.ToQuickJS();
 }`;
 }
 
@@ -373,7 +373,7 @@ ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...pre
 
   return `auto&& args_${argument.name} = Converter<IDLOptional<${generateIDLTypeConverter(argument.type)}>>::FromValue(ctx, argv[${argsIndex}], exception_state);
 if (UNLIKELY(exception_state.HasException())) {
-  return exception_state.ToQuickJS(ctx);
+  return exception_state.ToQuickJS();
 }
 
 if (argc <= ${argsIndex + 1}) {
@@ -543,7 +543,7 @@ ${addIndent(callBody, 4)}
    context->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   if (UNLIKELY(exception_state.HasException())) {
-    return exception_state.ToQuickJS(ctx);
+    return exception_state.ToQuickJS();
   }
   ${constructorPrototypeInit}
   return ${returnValueResult};

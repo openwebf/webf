@@ -14,10 +14,19 @@ class WebFHTMLElement extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     _WebFElement webfElement = context as _WebFElement;
     WebFContextInheritElement? webfContext = context.getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
     context.htmlElement = dom.createElement(tagName, BindingContext(webfContext.controller!.view, webfContext.controller!.view.contextId, allocateNewBindingObject()));
-    return webfElement.htmlElement!.createRenderer();
+    RenderObject renderObject = webfElement.htmlElement!.createRenderer();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
+
+    return renderObject;
   }
 
   @override
@@ -42,6 +51,9 @@ class _WebFElement extends MultiChildRenderObjectElement {
 
   @override
   void mount(Element? parent, Object? newSlot) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     super.mount(parent, newSlot);
     htmlElement!.managedByFlutterWidget = true;
     htmlElement!.createdByFlutterWidget = true;
@@ -61,6 +73,9 @@ class _WebFElement extends MultiChildRenderObjectElement {
         // Flush pending style before child attached.
         htmlElement!.style.flushPendingProperties();
       }
+    }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
     }
   }
 

@@ -35,7 +35,11 @@ ExceptionState& ExceptionState::ReturnThis() {
   return *this;
 }
 
-JSValue ExceptionState::ToQuickJS(JSContext* ctx) {
+JSValue ExceptionState::ToQuickJS() {
+  return exception_;
+}
+
+JSValue ExceptionState::CurrentException(JSContext* ctx) {
   return JS_GetException(ctx);
 }
 
