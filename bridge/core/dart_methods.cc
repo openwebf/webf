@@ -51,8 +51,9 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
 #endif
   NativeValue* result = dart_isolate_context_->dispatcher()->PostToDartSync(
       is_dedicated, context_id,
-      [&](bool cancel, void* callback_context, double context_id, int64_t profile_link_id, SharedNativeString* moduleName,
-          SharedNativeString* method, NativeValue* params, AsyncModuleCallback callback) -> webf::NativeValue* {
+      [&](bool cancel, void* callback_context, double context_id, int64_t profile_link_id,
+          SharedNativeString* moduleName, SharedNativeString* method, NativeValue* params,
+          AsyncModuleCallback callback) -> webf::NativeValue* {
         if (cancel)
           return nullptr;
         return invoke_module_(callback_context, context_id, profile_link_id, moduleName, method, params, callback);

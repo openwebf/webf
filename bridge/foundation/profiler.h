@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_FOUNDATION_PROFILER_H_
 #define WEBF_FOUNDATION_PROFILER_H_
 
+#include <memory>
 #include <stack>
 #include <string>
 #include <unordered_map>
-#include <memory>
-#include "foundation/stop_watch.h"
 #include "bindings/qjs/script_value.h"
+#include "foundation/stop_watch.h"
 
 namespace webf {
 
@@ -30,6 +30,7 @@ class ProfileStep {
 
  protected:
   ProfileOpItem* owner_;
+
  private:
   std::vector<std::shared_ptr<ProfileStep>> child_steps_;
   Stopwatch stopwatch_;
@@ -115,6 +116,6 @@ class WebFProfiler {
   friend LinkProfileStep;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_FOUNDATION_PROFILER_H_

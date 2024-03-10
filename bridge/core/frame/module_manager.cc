@@ -157,15 +157,12 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                     module_name_string.get(), method_name_string.get(), &params,
                                                     handleInvokeModuleTransientCallbackWrapper);
   } else {
-    result = context->dartMethodPtr()->invokeModule(context->isDedicated(), nullptr, context->contextId(),
-                                                    context->dartIsolateContext()->profiler()->link_id(),
-                                                    module_name_string.get(), method_name_string.get(), &params,
-                                                    handleInvokeModuleUnexpectedCallback);
+    result = context->dartMethodPtr()->invokeModule(
+        context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
+        module_name_string.get(), method_name_string.get(), &params, handleInvokeModuleUnexpectedCallback);
   }
 
-
   context->dartIsolateContext()->profiler()->FinishTrackLinkSteps();
-
 
   if (result == nullptr) {
     return ScriptValue::Empty(context->ctx());

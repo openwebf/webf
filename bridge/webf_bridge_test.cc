@@ -37,7 +37,10 @@ void* initTestFramework(void* page_) {
       page);
 }
 
-void executeTest(void* testContext, int64_t profile_id, Dart_Handle dart_handle, ExecuteResultCallback executeCallback) {
+void executeTest(void* testContext,
+                 int64_t profile_id,
+                 Dart_Handle dart_handle,
+                 ExecuteResultCallback executeCallback) {
   auto context = reinterpret_cast<webf::WebFTestContext*>(testContext);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
 
