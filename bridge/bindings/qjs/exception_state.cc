@@ -26,6 +26,10 @@ void ExceptionState::ThrowException(JSContext* ctx, ErrorType type, const std::s
   }
 }
 
+void ExceptionState::ThrowException(JSContext* ctx, JSValue exception) {
+  exception_ = JS_DupValue(ctx, exception);
+}
+
 bool ExceptionState::HasException() {
   return !JS_IsNull(exception_);
 }

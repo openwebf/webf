@@ -22,6 +22,7 @@ class ExceptionState {
 
  public:
   void ThrowException(JSContext* ctx, ErrorType type, const std::string& message);
+  void ThrowException(JSContext* ctx, JSValue exception);
   bool HasException();
 
   ExceptionState& ReturnThis();

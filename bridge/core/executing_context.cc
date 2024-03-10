@@ -116,7 +116,7 @@ ExecutingContext::~ExecutingContext() {
   if (JS_IsObject(exception) || JS_IsException(exception)) {
     // There must be bugs in native functions from call stack frame. Someone needs to fix it if throws.
     ReportError(exception);
-    assert_m(false, "Unhandled exception found when Dispe JSContext.");
+    assert_m(false, "Unhandled exception found when Dispose JSContext.");
   }
 
   JS_FreeValue(script_state_.ctx(), global_object_);
