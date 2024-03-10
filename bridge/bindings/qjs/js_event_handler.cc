@@ -78,6 +78,7 @@ void JSEventHandler::InvokeInternal(EventTarget& event_target, Event& event, Exc
 
   ScriptValue result = event_handler_->Invoke(event.ctx(), event_target.ToValue(), arguments.size(), arguments.data());
   if (result.IsException()) {
+    exception_state.ThrowException(event.ctx(), result.QJSValue());
     return;
   }
 
