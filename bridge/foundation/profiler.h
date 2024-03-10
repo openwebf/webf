@@ -6,6 +6,7 @@
 #ifndef WEBF_FOUNDATION_PROFILER_H_
 #define WEBF_FOUNDATION_PROFILER_H_
 
+#include <vector>
 #include <memory>
 #include <stack>
 #include <string>
