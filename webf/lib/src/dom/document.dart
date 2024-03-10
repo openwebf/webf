@@ -58,7 +58,7 @@ class _InactiveRenderObjects {
   void add(RenderObject? renderObject) {
     if (renderObject == null) return;
 
-    if (renderObject is RenderBoxModel && renderObject.isDispose) {
+    if (renderObject is RenderBoxModel && renderObject.disposed) {
       return;
     }
     if (_renderObjects.contains(renderObject)) {
@@ -80,8 +80,7 @@ class _InactiveRenderObjects {
 
   void finalizeInactiveRenderObjects() {
     for(RenderObject object in _renderObjects) {
-      if (object.attached) {
-      } else {
+      if (!object.attached) {
         object.dispose();
       }
     }

@@ -1550,13 +1550,13 @@ class RenderBoxModel extends RenderBox
     }
   }
 
-  bool _isDispose = false;
-  get isDispose => _isDispose;
+  bool _disposed = false;
+  get disposed => _disposed;
   /// Called when its corresponding element disposed
   @override
   @mustCallSuper
   void dispose() {
-    _isDispose = true;
+    _disposed = true;
     super.dispose();
 
     // Dispose scroll behavior

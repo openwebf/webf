@@ -75,7 +75,7 @@ class SVGElement extends Element {
   }
 
   bool isRenderBoxDispose() {
-    if (_renderSVGBox?.isDispose == true) {
+    if (_renderSVGBox?.disposed == true) {
       return true;
     }
     return false;

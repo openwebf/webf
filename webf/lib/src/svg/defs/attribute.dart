@@ -66,7 +66,7 @@ class DefsAttributeElement extends WidgetElement {
   }
 
   @override
-  void updateRenderBoxModel() {
+  void updateRenderBoxModel({ bool forceUpdate = false }) {
     // do not needs to update
   }
 
