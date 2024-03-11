@@ -2,10 +2,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
+
 import 'package:collection/collection.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'dart:convert';
@@ -82,17 +84,20 @@ class CSSFontFace {
 
       if (targetFont == null) return;
 
+      final WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+
       try {
         if (targetFont.content.isNotEmpty) {
           Uint8List content = targetFont.content;
           Future<ByteData> bytes = Future.value(ByteData.sublistView(content));
           FontLoader loader = FontLoader(fontFamily);
           loader.addFont(bytes);
-          await loader.load();
+          controller.view.window.addEventListener(EVENT_LOAD, (event) async {
+            await loader.load();
+          });
         } else {
           Uri? uri = _resolveFontSource(contextId, targetFont.src, baseHref);
           if (uri == null) return;
-          final WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
           WebFBundle bundle = controller.getPreloadBundleFromUrl(uri.toString()) ?? WebFBundle.fromUrl(uri.toString());
           await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
           await bundle.obtainData();
@@ -100,10 +105,10 @@ class CSSFontFace {
           FontLoader loader = FontLoader(removeQuotationMark(fontFamily));
           Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
           loader.addFont(bytes);
-          await loader.load();
+          controller.view.window.addEventListener(EVENT_LOAD, (event) async {
+            await loader.load();
+          });
         }
-
-
       } catch(e) {
         print(e);
         return;

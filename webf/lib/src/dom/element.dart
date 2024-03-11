@@ -384,7 +384,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
           RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
         }
 
-        previousRenderBoxModel.dispose();
+        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          previousRenderBoxModel.dispose();
+        });
       }
       renderBoxModel = nextRenderBoxModel;
       assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
