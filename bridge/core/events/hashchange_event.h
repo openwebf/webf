@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_EVENTS_HASHCHANGE_EVENT_H_
 #define WEBF_CORE_EVENTS_HASHCHANGE_EVENT_H_
@@ -23,18 +23,20 @@ class HashchangeEvent : public Event {
   static HashchangeEvent* Create(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   static HashchangeEvent* Create(ExecutingContext* context,
-                              const AtomicString& type,
-                              const std::shared_ptr<HashchangeEventInit>& initializer,
-                              ExceptionState& exception_state);
+                                 const AtomicString& type,
+                                 const std::shared_ptr<HashchangeEventInit>& initializer,
+                                 ExceptionState& exception_state);
 
   explicit HashchangeEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   explicit HashchangeEvent(ExecutingContext* context,
-                        const AtomicString& type,
-                        const std::shared_ptr<HashchangeEventInit>& initializer,
-                        ExceptionState& exception_state);
+                           const AtomicString& type,
+                           const std::shared_ptr<HashchangeEventInit>& initializer,
+                           ExceptionState& exception_state);
 
-  explicit HashchangeEvent(ExecutingContext* context, const AtomicString& type, NativeHashchangeEvent* native_hash_change_event);
+  explicit HashchangeEvent(ExecutingContext* context,
+                           const AtomicString& type,
+                           NativeHashchangeEvent* native_hash_change_event);
 
   const AtomicString& newURL() const;
   const AtomicString& oldURL() const;
@@ -46,6 +48,6 @@ class HashchangeEvent : public Event {
   AtomicString old_url_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_EVENTS_HASHCHANGE_EVENT_H_
