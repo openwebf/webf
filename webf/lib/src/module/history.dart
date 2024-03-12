@@ -70,11 +70,19 @@ class HistoryModule extends BaseModule {
       _nextStack.removeFirst();
       _previousStack.addFirst(currentItem);
       _dispatchPopStateEvent(currentItem.state);
+
+      String previousUrl = currentItem.bundle.url;
+      if (_isFragmentItem(currentItem)) {
+        _dispatchHashChangeEvent(previousUrl, _previousStack.first.bundle.url);
+      }
     }
   }
 
   void go(num? num) {
     num ??= 0;
+
+    HistoryItem currentItem = _previousStack.first;
+
     if (num >= 0) {
       if (_nextStack.length < num) {
         return;
@@ -98,6 +106,9 @@ class HistoryModule extends BaseModule {
     }
 
     _dispatchPopStateEvent(_previousStack.first.state);
+    if (_isFragmentItem(currentItem)) {
+      _dispatchHashChangeEvent(currentItem.bundle.url, _previousStack.first.bundle.url);
+    }
   }
 
   void _dispatchPopStateEvent(state) {
