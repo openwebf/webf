@@ -487,7 +487,7 @@ class ImageElement extends Element {
     _resizeImage();
 
     // Multi frame image should wrap a repaint boundary for better composite performance.
-    if (frameCount > 1) {
+    if (frameCount > 1 && !isRepaintBoundary) {
       forceToRepaintBoundary = true;
       _watchAnimatedImageWhenVisible();
     }
