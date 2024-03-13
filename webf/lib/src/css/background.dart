@@ -274,7 +274,7 @@ class CSSBackgroundImage {
 
   static void _handleBitFitImageLoad(
       Element element, int naturalWidth, int naturalHeight, int frameCount) {
-    if (frameCount > 1) {
+    if (frameCount > 1 && !element.renderStyle.target.isRepaintBoundary) {
       element.forceToRepaintBoundary = true;
       element.renderBoxModel!.invalidateBoxPainter();
     }
