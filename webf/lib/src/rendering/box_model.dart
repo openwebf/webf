@@ -1446,7 +1446,7 @@ class RenderBoxModel extends RenderBox
   // The position and size of an element's box(es) are sometimes calculated relative to a certain rectangle,
   // called the containing block of the element.
   // Definition of "containing block": https://www.w3.org/TR/CSS21/visudet.html#containing-block-details
-  void attachToContainingBlock(RenderBox? containingBlockRenderBox, {RenderBox? parent, RenderBox? after}) {
+  void attachToContainingBlock(RenderLayoutBox? containingBlockRenderBox, {RenderBox? parent, RenderBox? after}) {
     if (parent == null || containingBlockRenderBox == null) return;
 
     RenderBoxModel renderBoxModel = this;
@@ -1471,8 +1471,14 @@ class RenderBoxModel extends RenderBox
       // Set custom positioned parentData.
       RenderLayoutParentData parentData = RenderLayoutParentData();
       renderBoxModel.parentData = CSSPositionedLayout.getPositionParentData(renderBoxModel, parentData);
-      // Add child to containing block parent.
-      attachRenderBox(containingBlockRenderBox, renderBoxModel, isLast: true);
+
+      // The this renderBox are going move to parent containing block, just put it in the last.
+      if (parent != containingBlockRenderBox) {
+        attachRenderBox(containingBlockRenderBox, renderBoxModel, isLast: true);
+      } else {
+        // Otherwise, should been inserted base on the DOM order.
+        attachRenderBox(containingBlockRenderBox, renderBoxModel, after: after);
+      }
 
       // If container block is same as origin parent, the placeholder must after the origin renderBox
       // because placeholder depends the constraints in layout stage.

@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -14,7 +15,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
 import 'package:webf/src/foundation/cookie_jar.dart';
 
@@ -84,25 +84,12 @@ class Document extends ContainerNode {
   final AnimationTimeline animationTimeline = AnimationTimeline();
   GestureListener? gestureListener;
 
-  Map<String, List<Element>> elementsByID = {};
-  Map<String, List<Element>> elementsByName = {};
-
   // Cache all the fixed children of renderBoxModel of root element.
   Set<RenderBoxModel> fixedChildren = {};
 
   final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
-  Set<Element> styleDirtyElements = {};
-
-  final NthIndexCache _nthIndexCache = NthIndexCache();
-  NthIndexCache get nthIndexCache => _nthIndexCache;
-
-  StyleNodeManager get styleNodeManager => _styleNodeManager;
-  late StyleNodeManager _styleNodeManager;
-
   Set<WidgetElement> aliveWidgetElements = {};
-
-  late RuleSet ruleSet;
 
   String? _domain;
   final String _compatMode = 'CSS1Compat';
@@ -120,9 +107,7 @@ class Document extends ContainerNode {
     List<Cookie>? initialCookies
   })  : super(NodeType.DOCUMENT_NODE, context) {
     cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
-    _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
-    ruleSet = RuleSet(this);
   }
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
@@ -219,12 +204,6 @@ class Document extends ContainerNode {
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
-    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
-    methods['getElementById'] = BindingObjectMethodSync(call: (args) => getElementById(args));
-    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
-    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
-    methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
     methods['elementFromPoint'] = BindingObjectMethodSync(call: (args) => elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1])));
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
@@ -294,10 +273,6 @@ class Document extends ContainerNode {
     cookie.clearAllCookies();
   }
 
-  dynamic querySelector(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
-    return QuerySelector.querySelector(this, args.first);
-  }
   dynamic elementFromPoint(double x, double y) {
     documentElement?.flushLayout();
     return HitTestPoint(x, y);
@@ -319,53 +294,6 @@ class Document extends ContainerNode {
     Offset offset = Offset(x, y);
     documentElement?.renderer?.hitTest(boxHitTestResult, position: offset);
     return boxHitTestResult;
-  }
-
-  dynamic querySelectorAll(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return QuerySelector.querySelectorAll(this, args.first);
-  }
-
-  dynamic getElementById(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
-    final elements = elementsByID[args.first];
-    if (elements == null || elements.isEmpty) {
-      return null;
-    }
-    if (elements.length == 1) {
-      return elements.last;
-    } else if (elements.length > 1) {
-      Queue<Node> queue = Queue();
-      queue.add(this);
-      while (queue.isNotEmpty) {
-        Node node = queue.removeFirst();
-        if (elements.contains(node)) {
-          return node;
-        }
-        if (node.childNodes.isNotEmpty) {
-          for (Node child in node.childNodes) {
-            queue.add(child);
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  dynamic getElementsByClassName(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    String selector = (args.first as String).split(classNameSplitRegExp).map((e) => '.' + e).join('');
-    return QuerySelector.querySelectorAll(this, selector);
-  }
-
-  dynamic getElementsByTagName(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return QuerySelector.querySelectorAll(this, args.first);
-  }
-
-  dynamic getElementsByName(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return elementsByName[args.first];
   }
 
   Element? _documentElement;
@@ -434,8 +362,6 @@ class Document extends ContainerNode {
     Node? result = super.removeChild(child);
     if (documentElement == child) {
       documentElement = null;
-      ruleSet.reset();
-      styleSheets.clear();
     }
     return result;
   }
@@ -473,60 +399,6 @@ class Document extends ContainerNode {
     return comment;
   }
 
-  // TODO: https://wicg.github.io/construct-stylesheets/#using-constructed-stylesheets
-  List<CSSStyleSheet> adoptedStyleSheets = [];
-  // The styleSheets attribute is readonly attribute.
-  final List<CSSStyleSheet> styleSheets = [];
-
-  void handleStyleSheets(List<CSSStyleSheet> sheets) {
-    styleSheets.clear();
-    styleSheets.addAll(sheets.map((e) => e.clone()));
-    ruleSet.reset();
-    for (var sheet in sheets) {
-      ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
-    }
-  }
-
-  bool _recalculating = false;
-  void updateStyleIfNeeded() {
-    if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
-      return;
-    }
-    if (_recalculating) {
-      return;
-    }
-    _recalculating = true;
-    if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
-      flushStyle(rebuild: true);
-      return;
-    }
-    flushStyle();
-  }
-
-  void flushStyle({bool rebuild = false}) {
-    if (styleDirtyElements.isEmpty) {
-      _recalculating = false;
-      return;
-    }
-    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
-      _recalculating = false;
-      styleDirtyElements.clear();
-      return;
-    }
-    if (styleDirtyElements.any((element) {
-          return element is HeadElement || element is HTMLElement;
-        }) ||
-        rebuild) {
-      documentElement?.recalculateStyle(rebuildNested: true);
-    } else {
-      for (Element element in styleDirtyElements) {
-        element.recalculateStyle();
-      }
-    }
-    styleDirtyElements.clear();
-    _recalculating = false;
-  }
-
   void reactiveWidgetElements() {
     for(WidgetElement widgetElement in aliveWidgetElements) {
       widgetElement.reactiveRenderer();
@@ -536,13 +408,7 @@ class Document extends ContainerNode {
   @override
   Future<void> dispose() async {
     gestureListener = null;
-    styleSheets.clear();
-    nthIndexCache.clearAll();
-    adoptedStyleSheets.clear();
     cookie.clearCookie();
-    styleDirtyElements.clear();
-    fixedChildren.clear();
-    pendingPreloadingScriptCallbacks.clear();
     super.dispose();
   }
 

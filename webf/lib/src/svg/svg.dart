@@ -51,33 +51,33 @@ class SVGSVGElement extends SVGGraphicsElement {
   SVGSVGElement(super.context) {
     _renderer = RenderSVGRoot(renderStyle: renderStyle, element: this);
   }
-
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-    attributes.addAll({
-      'viewBox': ElementAttributeProperty(
-          getter: () =>
-              '${_viewBox?.left ?? 0} ${_viewBox?.top ?? 0} ${_viewBox?.width ?? 0} ${_viewBox?.height ?? 0}',
-          setter: (val) {
-            final nextViewBox = parseViewBox(val);
-            if (nextViewBox != _renderer.viewBox) {
-              _viewBox = nextViewBox;
-              _renderer.viewBox = nextViewBox;
-            }
-          }),
-      'preserveAspectRatio': ElementAttributeProperty(setter: (val) {
-        final nextRatio = SVGPreserveAspectRatio.parse(val);
-        if (nextRatio == null) {
-          // TODO: should log error like chrome
-          return;
-        }
-        if (nextRatio != _ratio) {
-          _ratio = nextRatio;
-        }
-      })
-    });
-  }
+  //
+  // @override
+  // void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+  //   super.initializeAttributes(attributes);
+  //   attributes.addAll({
+  //     'viewBox': ElementAttributeProperty(
+  //         getter: () =>
+  //             '${_viewBox?.left ?? 0} ${_viewBox?.top ?? 0} ${_viewBox?.width ?? 0} ${_viewBox?.height ?? 0}',
+  //         setter: (val) {
+  //           final nextViewBox = parseViewBox(val);
+  //           if (nextViewBox != _renderer.viewBox) {
+  //             _viewBox = nextViewBox;
+  //             _renderer.viewBox = nextViewBox;
+  //           }
+  //         }),
+  //     'preserveAspectRatio': ElementAttributeProperty(setter: (val) {
+  //       final nextRatio = SVGPreserveAspectRatio.parse(val);
+  //       if (nextRatio == null) {
+  //         // TODO: should log error like chrome
+  //         return;
+  //       }
+  //       if (nextRatio != _ratio) {
+  //         _ratio = nextRatio;
+  //       }
+  //     })
+  //   });
+  // }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {

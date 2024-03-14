@@ -28,8 +28,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-part of 'parser.dart';
-
 // TODO(terry): Need to be consistent with tokens either they're ASCII tokens
 //              e.g., ASTERISK or they're CSS e.g., PSEUDO, COMBINATOR_*.
 class TokenKind {

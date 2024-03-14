@@ -255,10 +255,10 @@ class InspectorNode extends JSONEncodable {
     if (referencedNode.nodeType == NodeType.ELEMENT_NODE) {
       List<String> attrs = [];
       Element el = referencedNode as Element;
-      el.attributes.forEach((key, value) {
-        attrs.add(key);
-        attrs.add(value.toString());
-      });
+      // el.attributes.forEach((key, value) {
+      //   attrs.add(key);
+      //   attrs.add(value.toString());
+      // });
       return attrs;
     } else {
       return null;

@@ -6,28 +6,6 @@
 import 'package:quiver/core.dart';
 import 'package:webf/css.dart';
 
-/// https://drafts.csswg.org/cssom/#the-cssstylerule-interface
-class CSSStyleRule extends CSSRule {
-  @override
-  String get cssText => declaration.cssText;
-
-  @override
-  int get type => CSSRule.STYLE_RULE;
-
-  final SelectorGroup selectorGroup;
-  final CSSStyleDeclaration declaration;
-
-  CSSStyleRule(this.selectorGroup, this.declaration) : super();
-
-  @override
-  int get hashCode => hash2(selectorGroup, declaration);
-
-  @override
-  bool operator ==(Object other) {
-    return hashCode == other.hashCode;
-  }
-}
-
 class KeyFrameBlock {
   final List<String> blockSelectors;
   final CSSStyleDeclaration declarations;

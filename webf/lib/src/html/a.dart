@@ -14,8 +14,8 @@ class HTMLAnchorElement extends Element {
   }
 
   Future<void> _handleClick(Event event) async {
-    String? href = attributes['href'];
-    if (href != null && href.isNotEmpty) {
+    String href = this.href;
+    if (href.isNotEmpty) {
       String baseUrl = ownerDocument.controller.url;
       Uri baseUri = Uri.parse(baseUrl);
       Uri resolvedUri = ownerDocument.controller.uriParser!.resolve(baseUri, Uri.parse(href));
@@ -58,33 +58,6 @@ class HTMLAnchorElement extends Element {
     properties['hash'] = BindingObjectProperty(getter: () => hash, setter: (value) => hash = castToType<String>(value));
   }
 
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-    attributes['href'] =
-        ElementAttributeProperty(setter: (value) => href = attributeToProperty<String>(value), getter: () => href);
-    attributes['protocol'] = ElementAttributeProperty(
-        getter: () => protocol, setter: (value) => protocol = attributeToProperty<String>(value));
-    attributes['host'] =
-        ElementAttributeProperty(getter: () => host, setter: (value) => host = attributeToProperty<String>(value));
-    attributes['hostname'] = ElementAttributeProperty(
-        getter: () => hostname, setter: (value) => hostname = attributeToProperty<String>(value));
-    attributes['port'] =
-        ElementAttributeProperty(getter: () => port, setter: (value) => port = attributeToProperty<String>(value));
-    attributes['pathname'] = ElementAttributeProperty(
-        getter: () => pathname, setter: (value) => pathname = attributeToProperty<String>(value));
-    attributes['port'] =
-        ElementAttributeProperty(getter: () => port, setter: (value) => port = attributeToProperty<String>(value));
-    attributes['pathname'] = ElementAttributeProperty(
-        getter: () => pathname, setter: (value) => pathname = attributeToProperty<String>(value));
-    attributes['search'] =
-        ElementAttributeProperty(getter: () => search, setter: (value) => search = attributeToProperty<String>(value));
-    attributes['hash'] = ElementAttributeProperty(
-      getter: () => hash,
-      setter: (value) => hash = attributeToProperty<String>(value)
-    );
-  }
-
   // Reference: https://www.w3.org/TR/2011/WD-html5-author-20110809/the-a-element.html
   // Supported properties:
   // - href: the address of the hyperlink.
@@ -109,19 +82,22 @@ class HTMLAnchorElement extends Element {
     // Set href will not reflect to attribute href.
   }
 
-  String get target => _DOMString(getAttribute('target'));
+  String? _target;
+  String get target => _DOMString(_target);
   set target(String value) {
-    internalSetAttribute('target', value);
+    _target = value;
   }
 
-  String get rel => _DOMString(getAttribute('rel'));
+  String? _rel;
+  String get rel => _DOMString(_rel);
   set rel(String value) {
-    internalSetAttribute('rel', value);
+    _rel = value;
   }
 
-  String get type => _DOMString(getAttribute('type'));
+  String? _type;
+  String get type => _DOMString(_type);
   set type(String value) {
-    internalSetAttribute('type', value);
+    _type = value;
   }
 
   String get protocol => _DOMString(_resolvedHyperlink?.scheme) + ':';
@@ -130,7 +106,6 @@ class HTMLAnchorElement extends Element {
 
     if (!value.endsWith(':')) {
       value += ':';
-      internalSetAttribute('protocol', value);
     }
 
     // Remove the ending `:`
@@ -240,7 +215,7 @@ class HTMLAnchorElement extends Element {
   // If URL decomposition IDL attributes changed, we should sync href attribute to changed value.
   void _reflectToAttributeHref() {
     if (_resolvedHyperlink != null) {
-      internalSetAttribute('href', _resolvedHyperlink.toString());
+      href = _resolvedHyperlink.toString();
     }
   }
 }

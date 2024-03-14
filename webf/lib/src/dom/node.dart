@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' show Widget;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/widget.dart';
 import 'node_data.dart';
 
@@ -39,15 +40,9 @@ enum ChildrenChangeType {
   TEXT_CHANGE
 }
 
-enum ChildrenChangeSource {
-  API,
-  PARSER
-}
+enum ChildrenChangeSource { API, PARSER }
 
-enum ChildrenChangeAffectsElements {
-  NO,
-  YES
-}
+enum ChildrenChangeAffectsElements { NO, YES }
 
 class ChildrenChange {
   final ChildrenChangeType type;
@@ -167,6 +162,7 @@ abstract class LifecycleCallbacks {
 }
 
 abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCallbacks {
+  /// The corresponding flutter widget which owns the renderObject from this Node.
   Widget? get flutterWidget => null;
 
   /// WebF nodes could be wrapped by [WebFHTMLElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
@@ -215,7 +211,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     if (!isConnected) {
       return;
     }
-    ownerDocument.updateStyleIfNeeded();
   }
 
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
@@ -232,7 +227,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Element? get previousElementSibling {
     Node? previous = previousSibling;
-    while(previous != null) {
+    while (previous != null) {
       if (previous is Element) {
         return previous;
       }
@@ -243,7 +238,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Element? get nextElementSibling {
     Node? next = nextSibling;
-    while(next != null) {
+    while (next != null) {
       if (next is Element) {
         return next;
       }
@@ -281,6 +276,10 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   bool get isRendererAttached => renderer != null && renderer!.attached;
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
   bool get isRendererAttachedToSegmentTree => renderer != null && renderer!.parent != null;
+
+  bool isRendererAttachedToParent(RenderBox? parent) {
+    return renderer != null && renderer!.parent != null && renderer!.parent == parent;
+  }
 
   bool isDescendantOf(Node? other) {
     // Return true if other is an ancestor of this, otherwise false
@@ -331,13 +330,21 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   @override
   void didDetachRenderer() {}
 
-  Node? appendChild(Node child) { return null; }
+  Node? appendChild(Node child) {
+    return null;
+  }
 
-  Node? insertBefore(Node child, Node referenceNode) { return null; }
+  Node? insertBefore(Node child, Node referenceNode) {
+    return null;
+  }
 
-  Node? removeChild(Node child) { return null; }
+  Node? removeChild(Node child) {
+    return null;
+  }
 
-  Node? replaceChild(Node newNode, Node oldNode) { return null; }
+  Node? replaceChild(Node newNode, Node oldNode) {
+    return null;
+  }
 
   /// Ensure child and child's child render object is attached.
   void ensureChildAttached() {}
@@ -388,11 +395,33 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     }
   }
 
-  bool isTextNode() { return this is TextNode; }
-  bool isContainerNode() { return this is ContainerNode; }
-  bool isElementNode() { return this is Element; }
-  bool isDocumentFragment() { return this is DocumentFragment;}
-  bool hasChildren() { return firstChild != null; }
+  bool isTextNode() {
+    return this is TextNode;
+  }
+
+  bool isContainerNode() {
+    return this is ContainerNode;
+  }
+
+  bool isElementNode() {
+    return this is Element;
+  }
+
+  bool isDocumentFragment() {
+    return this is DocumentFragment;
+  }
+
+  bool isDocumentNode() {
+    return this is Document;
+  }
+
+  bool isPseudoElement() {
+    return this is PseudoElement;
+  }
+
+  bool hasChildren() {
+    return firstChild != null;
+  }
 
   DocumentPosition compareDocumentPosition(Node other) {
     if (this == other) {

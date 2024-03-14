@@ -90,11 +90,6 @@ abstract class ContainerNode extends Node {
     // 5. Insert node into parent before reference child.
     _insertNode(targets, referenceNode, _adoptAndInsertBefore);
 
-    // 6. Mark this element to dirty elements.
-    if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
-    }
-
     // 7. Trigger connected callback
     if (newChild.isConnected) {
       newChild.connectedCallback();
@@ -179,10 +174,6 @@ abstract class ContainerNode extends Node {
       child.unmountRenderObject();
     }
 
-    if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
-    }
-
     bool isOldChildConnected = child.isConnected;
     assert(child.parentNode == this);
 
@@ -202,8 +193,7 @@ abstract class ContainerNode extends Node {
     return child;
   }
 
-  void _insertNode(
-      List<Node> targets, Node? next, InsertNodeHandler mutator) {
+  void _insertNode(List<Node> targets, Node? next, InsertNodeHandler mutator) {
     for (final targetNode in targets) {
       assert(targetNode.parentNode == null);
       mutator(this, targetNode, next);
@@ -220,10 +210,6 @@ abstract class ContainerNode extends Node {
     }
 
     _insertNode(targets, null, _adoptAndAppendChild);
-
-    if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
-    }
 
     if (newChild.isConnected) {
       newChild.connectedCallback();
@@ -302,47 +288,6 @@ abstract class ContainerNode extends Node {
   @override
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
-    invalidateNodeListCachesInAncestors(change);
-  }
-
-  void invalidateNodeListCachesInAncestors(ChildrenChange? change) {
-    // This is a performance optimization, NodeList cache invalidation is
-    // not necessary for a text change.
-    if (change != null && change.type == ChildrenChangeType.TEXT_CHANGE) {
-      return;
-    }
-
-    if (nodeData != null) {
-      if (nodeData!.nodeList is ChildNodeList) {
-        if (change != null) {
-          (nodeData!.nodeList as ChildNodeList).childrenChanged(change);
-        } else {
-          (nodeData!.nodeList as ChildNodeList).invalidateCache();
-        }
-      }
-      if (parentNode != null) {
-        ownerDocument.nthIndexCache.invalidateWithParentNode(parentNode!);
-      }
-    }
-
-    // This is a performance optimization, NodeList cache invalidation is
-    // not necessary for non-element nodes.
-    if (change != null &&
-        change.affectsElements == ChildrenChangeAffectsElements.NO) {
-      return;
-    }
-
-    ContainerNode? node = this;
-    while (node != null) {
-      NodeList lists = node.childNodes;
-      if (lists is ChildNodeList) {
-        lists.invalidateCache();
-      }
-      node = node.parentNode;
-    }
-    if (parentNode != null) {
-      ownerDocument.nthIndexCache.invalidateWithParentNode(parentNode!);
-    }
   }
 
   Node? _firstChild;

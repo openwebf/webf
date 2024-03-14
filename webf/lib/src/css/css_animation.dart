@@ -101,8 +101,10 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   List<Keyframe>? _getKeyFrames(String animationName) {
-    CSSKeyframesRule? cssKeyframesRule = target.ownerDocument.ruleSet.keyframesRules[animationName];
-    return cssKeyframesRule?.keyframes;
+    // TODO: support keyframes when style 2.0 is done.
+    // CSSKeyframesRule? cssKeyframesRule = target.ownerDocument.ruleSet.keyframesRules[animationName];
+    // return cssKeyframesRule?.keyframes;
+    return [];
   }
 
   void beforeRunningAnimation() {

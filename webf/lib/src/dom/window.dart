@@ -63,14 +63,12 @@ class Window extends EventTarget {
   double get scrollY => document.documentElement!.scrollTop;
 
   void scrollTo(double x, double y, [bool withAnimation = false]) {
-    document.flushStyle();
     document.documentElement!
       ..flushLayout()
       ..scrollTo(x, y, withAnimation);
   }
 
   void scrollBy(double x, double y, [bool withAnimation = false]) {
-    document.flushStyle();
     document.documentElement!
       ..flushLayout()
       ..scrollBy(x, y, withAnimation);
