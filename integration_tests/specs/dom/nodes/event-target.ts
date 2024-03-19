@@ -214,4 +214,21 @@ describe('DOM EventTarget', () => {
     await sleep(0.1);
   });
 
+  it('support event listener object', async done => {
+    let div = createElementWithStyle('div', {});
+
+    function F() {
+
+    }
+    F.prototype.handleEvent = function(e) {
+      expect(this instanceof F).toBe(true);
+      expect(e.target).toBe(div);
+      done();
+    }
+
+    div.addEventListener('click', new F());
+    div.click();
+
+  });
+
 });
