@@ -28,11 +28,11 @@ void evaluateQuickjsByteCodeInternal(void* page_,
                                      Dart_PersistentHandle persistent_handle,
                                      EvaluateQuickjsByteCodeCallback result_callback);
 
- void evaluateWbcInternal(void* page_,
-                                     uint8_t* bytes,
-                                     int32_t byteLen,
-                                     Dart_PersistentHandle persistent_handle,
-                                     EvaluateQuickjsByteCodeCallback result_callback);                                    
+void evaluateWbcInternal(void* page_,
+                         uint8_t* bytes,
+                         int32_t byteLen,
+                         Dart_PersistentHandle persistent_handle,
+                         EvaluateQuickjsByteCodeCallback result_callback);
 void parseHTMLInternal(void* page_,
                        char* code,
                        int32_t length,
