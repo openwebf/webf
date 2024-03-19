@@ -903,7 +903,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       if (previousPseudoElement.firstChild != null) {
         (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
       } else {
-        final textNode = ownerDocument.createTextNode(pseudoValue.value);
+        final textNode = ownerDocument.createTextNode(pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
         previousPseudoElement.appendChild(textNode);
       }
     }

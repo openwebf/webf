@@ -140,9 +140,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! TextParentData) {
-      child.parentData = TextParentData();
-    }
+    child.parentData = TextParentData();
   }
 
   int? get _maxLines {
