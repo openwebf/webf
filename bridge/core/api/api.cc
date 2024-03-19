@@ -6,6 +6,8 @@
 #include "core/dart_isolate_context.h"
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
+#include "foundation/wbc.h"
+#include "lz4.h"
 #include "multiple_threading/dispatcher.h"
 
 namespace webf {
@@ -63,6 +65,43 @@ void evaluateQuickjsByteCodeInternal(void* page_,
   bool is_success = page->evaluateByteCode(bytes, byteLen);
 
   page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+
+  page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
+                                                       persistent_handle, result_callback, is_success);
+}
+
+void evaluateWbcInternal(void* page_,
+                         uint8_t* bytes,
+                         int32_t byteLen,
+                         Dart_PersistentHandle persistent_handle,
+                         EvaluateQuickjsByteCodeCallback result_callback) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+
+  size_t dataBlockSize;
+  bool is_success;
+  webf::Wbc wbc = webf::Wbc();
+  uint8_t* dataBlockBytes = wbc.prepareWbc(bytes, byteLen, &dataBlockSize);
+  if (dataBlockBytes == nullptr) {
+    WEBF_LOG(ERROR) << "prepareWbc error" << std::endl;
+    is_success = false;
+  } else {
+    std::vector<char> decompressedBytes;
+    decompressedBytes.reserve(webf::Wbc::NODE_LZ4_BLOCK_MAX_SIZE);
+    int decompressedSize = LZ4_decompress_safe(reinterpret_cast<const char*>(dataBlockBytes), &decompressedBytes[0],
+                                               dataBlockSize, webf::Wbc::NODE_LZ4_BLOCK_MAX_SIZE);
+
+    free(dataBlockBytes);
+    dataBlockBytes = NULL;
+
+    if (decompressedSize < 0) {
+      WEBF_LOG(ERROR) << "LZ4 decompression failed with error code: " << decompressedSize << std::endl;
+      is_success = false;
+    } else {
+      WEBF_LOG(VERBOSE) << "LZ4 decompression success! " << decompressedSize << std::endl;
+      is_success = page->evaluateByteCode(reinterpret_cast<uint8_t*>(decompressedBytes.data()), decompressedSize);
+    }
+  }
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
                                                        persistent_handle, result_callback, is_success);
