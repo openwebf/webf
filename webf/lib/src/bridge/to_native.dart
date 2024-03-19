@@ -356,6 +356,10 @@ final DartEvaluateQuickjsByteCode _evaluateQuickjsByteCode = WebFDynamicLibrary.
     .lookup<NativeFunction<NativeEvaluateQuickjsByteCode>>('evaluateQuickjsByteCode')
     .asFunction();
 
+final DartEvaluateQuickjsByteCode _evaluateWbc = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeEvaluateQuickjsByteCode>>('evaluateWbc')
+    .asFunction();
+
 class _EvaluateQuickjsByteCodeContext {
   Completer<bool> completer;
   Pointer<Uint8> bytes;
@@ -384,6 +388,25 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, { Evalua
       Pointer.fromFunction(handleEvaluateQuickjsByteCodeResult);
 
   _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length, profileOp?.hashCode ?? 0, context, nativeCallback);
+
+  return completer.future;
+}
+
+Future<bool> evaluateWbc(double contextId, Uint8List bytes) async {
+  if (WebFController.getControllerOfJSContextId(contextId) == null) {
+    return false;
+  }
+  Completer<bool> completer = Completer();
+  Pointer<Uint8> byteData = malloc.allocate(sizeOf<Uint8>() * bytes.length);
+  byteData.asTypedList(bytes.length).setAll(0, bytes);
+  assert(_allocatedPages.containsKey(contextId));
+
+  _EvaluateQuickjsByteCodeContext context = _EvaluateQuickjsByteCodeContext(completer, byteData);
+
+  Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> nativeCallback =
+  Pointer.fromFunction(handleEvaluateQuickjsByteCodeResult);
+
+  _evaluateWbc(_allocatedPages[contextId]!, byteData, bytes.length, context, nativeCallback);
 
   return completer.future;
 }

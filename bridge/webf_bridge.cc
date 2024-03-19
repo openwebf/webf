@@ -198,6 +198,22 @@ void parseHTML(void* page_,
       persistent_handle, result_callback);
 }
 
+
+void evaluateWbc(void* page_,
+                 uint8_t* bytes,
+                 int32_t byteLen,
+                 Dart_Handle dart_handle,
+                 EvaluateQuickjsByteCodeCallback result_callback) {
+#if ENABLE_LOG
+    WEBF_LOG(VERBOSE) << "[Dart] evaluateWbcWrapper call" << std::endl;
+#endif
+    auto page = reinterpret_cast<webf::WebFPage*>(page_);
+    Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+    page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
+                                                       webf::evaluateWbcInternal, page_, bytes, byteLen,
+                                                       persistent_handle, result_callback);
+}
+
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
   webf::ExecutingContext::plugin_byte_code[pluginName] = webf::NativeByteCode{bytes, length};
 }

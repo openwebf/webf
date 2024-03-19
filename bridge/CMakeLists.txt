@@ -97,6 +97,7 @@ if (DEFINED PLATFORM)
 endif()
 
 list(APPEND BRIDGE_SOURCE
+  lz4.c
   foundation/logging.cc
   foundation/native_string.cc
   foundation/ui_task_queue.cc
@@ -111,6 +112,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/dart_readable.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
+  foundation/wbc.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
