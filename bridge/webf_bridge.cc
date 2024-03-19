@@ -174,18 +174,17 @@ void evaluateQuickjsByteCode(void* page_,
 }
 
 void evaluateWbc(void* page_,
-                             uint8_t* bytes,
-                             int32_t byteLen,
-                             Dart_Handle dart_handle,
-                             EvaluateQuickjsByteCodeCallback result_callback) {
+                 uint8_t* bytes,
+                 int32_t byteLen,
+                 Dart_Handle dart_handle,
+                 EvaluateQuickjsByteCodeCallback result_callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] evaluateWbcWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
-  page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
-                                                     webf::evaluateWbcInternal, page_, bytes, byteLen,
-                                                     persistent_handle, result_callback);
+  page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(), webf::evaluateWbcInternal,
+                                                     page_, bytes, byteLen, persistent_handle, result_callback);
 }
 
 void parseHTML(void* page_, char* code, int32_t length, Dart_Handle dart_handle, ParseHTMLCallback result_callback) {
