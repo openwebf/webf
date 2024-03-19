@@ -869,7 +869,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       if (previousPseudoElement.firstChild != null) {
         (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
       } else {
-        final textNode = ownerDocument.createTextNode(pseudoValue.value);
+        final textNode = ownerDocument.createTextNode(pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
         previousPseudoElement.appendChild(textNode);
       }
     }
@@ -1772,7 +1772,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   String toString() {
-    return '$tagName Element($hashCode)';
+    return '$tagName Element($hashCode) $className';
   }
 
   // Create a new RenderLayoutBox for the scrolling content.

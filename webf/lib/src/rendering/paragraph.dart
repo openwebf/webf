@@ -61,7 +61,7 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! TextParentData) child.parentData = TextParentData();
+    child.parentData = TextParentData();
   }
 
   final TextPainter _textPainter;

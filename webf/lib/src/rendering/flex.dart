@@ -169,9 +169,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! RenderLayoutParentData) {
-      child.parentData = RenderLayoutParentData();
-    }
+    child.parentData = RenderLayoutParentData();
     if (child is RenderBoxModel) {
       child.parentData = CSSPositionedLayout.getPositionParentData(child, child.parentData as RenderLayoutParentData);
     }
@@ -2364,9 +2362,11 @@ class RenderFlexLayout extends RenderLayoutBox {
   static bool _isPlaceholderPositioned(RenderObject child) {
     if (child is RenderPositionPlaceholder) {
       RenderBoxModel realDisplayedBox = child.positioned!;
-      RenderLayoutParentData parentData = realDisplayedBox.parentData as RenderLayoutParentData;
-      if (parentData.isPositioned) {
-        return true;
+      if (realDisplayedBox.attached) {
+        RenderLayoutParentData? parentData = realDisplayedBox.parentData as RenderLayoutParentData?;
+        if (parentData?.isPositioned == true) {
+          return true;
+        }
       }
     }
     return false;

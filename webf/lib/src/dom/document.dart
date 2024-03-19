@@ -448,27 +448,27 @@ class Document extends ContainerNode {
     return super.replaceChild(newNode, oldNode);
   }
 
-  Element createElement(String type, [BindingContext? context]) {
+  Element createElement(String type, BindingContext context) {
     Element element = element_registry.createElement(type, context);
     return element;
   }
 
-  Element createElementNS(String uri, String type, [BindingContext? context]) {
+  Element createElementNS(String uri, String type, BindingContext context) {
     Element element = element_registry.createElementNS(uri, type, context);
     return element;
   }
 
-  TextNode createTextNode(String data, [BindingContext? context]) {
+  TextNode createTextNode(String data, BindingContext context) {
     TextNode textNode = TextNode(data, context);
     return textNode;
   }
 
-  DocumentFragment createDocumentFragment([BindingContext? context]) {
+  DocumentFragment createDocumentFragment(BindingContext context) {
     DocumentFragment documentFragment = DocumentFragment(context);
     return documentFragment;
   }
 
-  Comment createComment([BindingContext? context]) {
+  Comment createComment(BindingContext context) {
     Comment comment = Comment(context);
     return comment;
   }
