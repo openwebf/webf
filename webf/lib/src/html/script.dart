@@ -48,7 +48,13 @@ class ScriptRunner {
         throw FlutterError('Script code are not valid to evaluate.');
       }
     } else if (bundle.isBytecode) {
-      bool result = await evaluateQuickjsByteCode(contextId, bundle.data!);
+      bool result = false;
+      if (bundle.url.contains('.kbc1')) {
+        result = await evaluateQuickjsByteCode(contextId, bundle.data!);
+      } else if (bundle.url.contains('.wbc1')) {
+        result = await evaluateWbc(contextId, bundle.data!);
+      }
+
       if (!result) {
         throw FlutterError('Bytecode are not valid to execute.');
       }

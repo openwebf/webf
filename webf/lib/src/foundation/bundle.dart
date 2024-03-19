@@ -32,6 +32,7 @@ bool _isSupportedBytecode(String mimeType, Uri? uri) {
       // @NOTE: This is useful for most http server that did not recognize a .kbc1 file.
       // Simply treat some.kbc1 file as the bytecode.
       if (uri.path.endsWith('.kbc' + _supportedByteCodeVersions[i])) return true;
+      if (uri.path.endsWith('.wbc' + _supportedByteCodeVersions[i])) return true;
     }
   }
   return false;
