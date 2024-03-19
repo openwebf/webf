@@ -78,6 +78,7 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
                                    const std::shared_ptr<QJSUnionAddEventListenerOptionsBoolean>& options,
                                    ExceptionState& exception_state) {
+  if (event_listener == nullptr) return false;
   std::shared_ptr<AddEventListenerOptions> event_listener_options;
   if (options == nullptr) {
     event_listener_options = AddEventListenerOptions::Create();
