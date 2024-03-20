@@ -28,6 +28,13 @@ DOMMatrixReadonly::DOMMatrixReadonly(ExecutingContext* context,
                                                               CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
 }
 
+DOMMatrixReadonly::DOMMatrixReadonly(webf::ExecutingContext* context, webf::ExceptionState& exception_state)
+    : BindingObject(context->ctx()) {
+  GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),
+                                                              GetExecutingContext()->contextId(), bindingObject(),
+                                                              CreateBindingObjectType::kCreateDOMMatrix, nullptr, 0);
+}
+
 NativeValue DOMMatrixReadonly::HandleCallFromDartSide(const AtomicString& method,
                                                       int32_t argc,
                                                       const NativeValue* argv,
