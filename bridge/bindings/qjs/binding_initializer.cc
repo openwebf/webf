@@ -11,6 +11,7 @@
 #include "qjs_bounding_client_rect.h"
 #include "qjs_canvas_gradient.h"
 #include "qjs_canvas_pattern.h"
+#include "qjs_path_2d.h"
 #include "qjs_canvas_rendering_context.h"
 #include "qjs_canvas_rendering_context_2d.h"
 #include "qjs_character_data.h"
@@ -163,6 +164,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSCanvasRenderingContext2D::Install(context);
   QJSCanvasPattern::Install(context);
   QJSCanvasGradient::Install(context);
+  QJSPath2D::Install(context);
   QJSDOMMatrixReadonly::Install(context);
   QJSDOMMatrix::Install(context);
   QJSCSSStyleDeclaration::Install(context);

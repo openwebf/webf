@@ -3,18 +3,20 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:html';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:vector_math/vector_math_64.dart';
+import 'package:webf/foundation.dart';
 
 // ignore: non_constant_identifier_names
 final double _2pi = 2 * math.pi;
 final double _pi = math.pi;
 final double _piOver2 = math.pi / 2;
 
-class Path2D {
+class Path2D extends BindingObject {
   Path _path = Path();
 
   get path {
@@ -22,6 +24,73 @@ class Path2D {
   }
 
   final List<double> _points = [];
+
+  Path2D({BindingContext? context, List<dynamic>? path2DInit}): super(context) {
+    print('Path2D init: $context, $path2DInit');
+  }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+     methods['moveTo'] = BindingObjectMethodSync(
+        call: (args) => moveTo(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble()));
+    methods['closePath'] = BindingObjectMethodSync(call: (_) => closePath());
+    methods['lineTo'] = BindingObjectMethodSync(
+        call: (args) => lineTo(castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble()));
+    methods['bezierCurveTo'] = BindingObjectMethodSync(
+        call: (args) => bezierCurveTo(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble(),
+            castToType<num>(args[5]).toDouble()));
+    methods['arc'] = BindingObjectMethodSync(
+        call: (args) => arc(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble(),
+            anticlockwise: (args.length > 5 && args[5] == 1) ? true : false));
+    methods['arcTo'] = BindingObjectMethodSync(
+        call: (args) => arcTo(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble()));
+    methods['ellipse'] = BindingObjectMethodSync(
+      call: (args) => ellipse(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble(),
+          castToType<num>(args[5]).toDouble(),
+          castToType<num>(args[6]).toDouble(),
+          anticlockwise: (args.length > 7 && args[7] == 1) ? true : false));
+    methods['rect'] = BindingObjectMethodSync(
+        call: (args) => rect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble()));
+    methods['addPath'] = BindingObjectMethodSync(call: (args) {
+      if (args.length > 1 && args[1] is DomMatrix) {
+        addPath(args[0], matrix4: args[1]);
+      } else if (args.isNotEmpty && args[0] is Path2D) {
+        addPath(args[0]);
+      }
+    });
+  }
+  
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    // TODO: implement initializeProperties
+  }
 
   void _setPoint(x, y) {
     _points.add(x);
