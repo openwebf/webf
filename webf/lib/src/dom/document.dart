@@ -6,6 +6,7 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -92,7 +93,19 @@ class Document extends ContainerNode {
 
   final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
-  Set<Element> styleDirtyElements = {};
+  final Set<Element> _styleDirtyElements = {};
+
+  void markElementDirty(Element element, [bool isNeedRecalculate = false]) {
+    _styleDirtyElements.add(element);
+
+    if (isNeedRecalculate) {
+      element.children.forEach((Element child) {
+        markElementDirty(child, isNeedRecalculate);
+      });
+    }
+
+    _updateDirtyElementIfNeeded();
+  }
 
   final NthIndexCache _nthIndexCache = NthIndexCache();
   NthIndexCache get nthIndexCache => _nthIndexCache;
@@ -299,6 +312,7 @@ class Document extends ContainerNode {
     return QuerySelector.querySelector(this, args.first);
   }
   dynamic elementFromPoint(double x, double y) {
+    flushStyle();
     documentElement?.flushLayout();
     return HitTestPoint(x, y);
   }
@@ -503,27 +517,34 @@ class Document extends ContainerNode {
     flushStyle();
   }
 
+  bool _updateDirtyElementScheduled = false;
+
+  void _updateDirtyElementIfNeeded() {
+    if (_updateDirtyElementScheduled) return;
+    _updateDirtyElementScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      for (Element element in _styleDirtyElements) {
+        element.recalculateStyle();
+      }
+      _styleDirtyElements.clear();
+      _updateDirtyElementScheduled = false;
+    });
+  }
+
   void flushStyle({bool rebuild = false}) {
-    if (styleDirtyElements.isEmpty) {
+    if (_styleDirtyElements.isEmpty) {
       _recalculating = false;
       return;
     }
-    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
-      _recalculating = false;
-      styleDirtyElements.clear();
-      return;
-    }
-    if (styleDirtyElements.any((element) {
-          return element is HeadElement || element is HTMLElement;
-        }) ||
-        rebuild) {
+    styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
+    if (rebuild) {
       documentElement?.recalculateStyle(rebuildNested: true);
     } else {
-      for (Element element in styleDirtyElements) {
+      for (Element element in _styleDirtyElements) {
         element.recalculateStyle();
       }
     }
-    styleDirtyElements.clear();
+    _styleDirtyElements.clear();
     _recalculating = false;
   }
 
@@ -540,7 +561,7 @@ class Document extends ContainerNode {
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
-    styleDirtyElements.clear();
+    _styleDirtyElements.clear();
     fixedChildren.clear();
     pendingPreloadingScriptCallbacks.clear();
     super.dispose();

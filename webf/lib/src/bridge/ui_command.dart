@@ -83,7 +83,6 @@ List<UICommand> nativeUICommandToDart(List<int> rawMemory, int commandLength, do
 
 void execUICommands(WebFViewController view, List<UICommand> commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
-  Set<int> pendingRecalculateTargets = {};
 
   for(UICommand command in commands) {
     UICommandType commandType = command.type;
@@ -170,7 +169,6 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           String key = nativeStringToString(nativeKey);
           freeNativeString(nativeKey);
           view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
-          pendingRecalculateTargets.add(nativePtr.address);
           break;
         case UICommandType.removeAttribute:
           String key = command.args;
@@ -209,13 +207,4 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     }
     pendingStylePropertiesTargets.clear();
   }
-
-  for (var address in pendingRecalculateTargets) {
-    try {
-      view.recalculateStyle(address);
-    } catch (e, stack) {
-      print('$e\n$stack');
-    }
-  }
-  pendingRecalculateTargets.clear();
 }

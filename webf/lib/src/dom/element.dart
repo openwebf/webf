@@ -112,7 +112,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     final isNeedRecalculate = _checkRecalculateStyle([id, _id]);
     _updateIDMap(id, oldID: _id);
     _id = id;
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+    ownerDocument.markElementDirty(this, isNeedRecalculate);
   }
 
   // Is element an replaced element.
@@ -161,7 +161,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+    ownerDocument.markElementDirty(this, isNeedRecalculate);
   }
 
   String get className => _classList.join(_ONE_SPACE);
@@ -199,8 +199,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _forceToRepaintBoundary = value;
     updateRenderBoxModel();
   }
-
-  bool _needRecalculateStyle = false;
 
   final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
 
@@ -259,7 +257,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     attributes[_STYLE_PROPERTY] = ElementAttributeProperty(setter: (value) {
       final map = CSSParser(value).parseInlineStyle();
       inlineStyle.addAll(map);
-      recalculateStyle();
+      ownerDocument.markElementDirty(this);
     }, deleter: () {
       _removeInlineStyle();
     });
@@ -1278,13 +1276,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
-    internalSetAttribute(qualifiedName, value);
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-    _needRecalculateStyle = _needRecalculateStyle || isNeedRecalculate;
+    internalSetAttribute(qualifiedName, value);
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
@@ -1294,7 +1290,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       return;
     }
     final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+    ownerDocument.markElementDirty(this, isNeedRecalculate);
   }
 
   @mustCallSuper
@@ -1308,7 +1304,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (hasAttribute(qualifiedName)) {
       attributes.remove(qualifiedName);
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-      recalculateStyle(rebuildNested: isNeedRecalculate);
+      ownerDocument.markElementDirty(this, isNeedRecalculate);
     }
   }
 
@@ -1535,7 +1531,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // recalculate matching styles for element when inline styles are removed.
     if (value.isEmpty) {
       style.removeProperty(property, true);
-      recalculateStyle();
+      ownerDocument.markElementDirty(this);
     } else {
       style.setProperty(property, value, isImportant: true);
     }
@@ -1569,11 +1565,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Empty implement
     // Because attribute style is not recommend to use
     // But it's necessary for SVG.
-  }
-
-  void tryRecalculateStyle({bool rebuildNested = false}) {
-    recalculateStyle(forceRecalculate: _needRecalculateStyle);
-    _needRecalculateStyle = false;
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
@@ -1618,6 +1609,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   BoundingClientRect get boundingClientRect {
     BoundingClientRect boundingClientRect = BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
+      ownerDocument.flushStyle();
       flushLayout();
       RenderBoxModel sizedBox = renderBoxModel!;
       // Force flush layout.
@@ -1698,6 +1690,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   // Get the offset of current element relative to specified ancestor element.
   Offset _getOffset(RenderBoxModel renderBox, {Element? ancestor, bool excludeScrollOffset = false}) {
+    ownerDocument.flushStyle();
     // Need to flush layout to get correct size.
     flushLayout();
 
@@ -1710,6 +1703,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void click() {
+    ownerDocument.flushStyle();
     flushLayout();
     Event clickEvent = MouseEvent(EVENT_CLICK, detail: 1, view: ownerDocument.defaultView);
     // If element not in tree, click is fired and only response to itself.
@@ -1730,6 +1724,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   Future<Uint8List> toBlob({double? devicePixelRatio}) {
+    ownerDocument.flushStyle();
     flushLayout();
     forceToRepaintBoundary = true;
 
