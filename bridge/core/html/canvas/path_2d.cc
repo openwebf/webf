@@ -20,10 +20,17 @@ Path2D::Path2D(ExecutingContext* context, ExceptionState& exception_state)
                                                               CreateBindingObjectType::kCreatePath2D, arguments, 0);
 }
 
-void Path2D::addPath(Path2D* path, DOMMatrix* dom_matrix, ExceptionState& exception_state) {
+void Path2D::addPath(Path2D* path, DOMMatrixReadonly* dom_matrix, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(path),
-                            NativeValueConverter<NativeTypePointer<DOMMatrix>>::ToNativeValue(dom_matrix)};
-  InvokeBindingMethod(binding_call_methods::kaddPath, 2, arguments, exception_state, true);
+                            NativeValueConverter<NativeTypePointer<DOMMatrixReadonly>>::ToNativeValue(dom_matrix)};
+  InvokeBindingMethod(binding_call_methods::kaddPath, 2, arguments, FlushUICommandReason::kDependentsOnElement,
+                      exception_state);
+}
+
+void Path2D::addPath(webf::Path2D* path, webf::ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(path)};
+  InvokeBindingMethod(binding_call_methods::kaddPath, 1, arguments, FlushUICommandReason::kDependentsOnElement,
+                      exception_state);
 }
 
 NativeValue Path2D::HandleCallFromDartSide(const AtomicString& method,
