@@ -372,6 +372,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_rendering_context_2d.cc
     core/html/canvas/canvas_gradient.cc
     core/html/canvas/canvas_pattern.cc
+    core/html/canvas/path_2d.cc
     core/geometry/dom_matrix.cc
     core/geometry/dom_matrix_readonly.cc
     core/html/forms/html_button_element.cc
@@ -502,6 +503,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_canvas_rendering_context.cc
     out/qjs_canvas_gradient.cc
     out/qjs_canvas_pattern.cc
+    out/qjs_path_2d.cc
     out/qjs_dom_matrix.cc
     out/qjs_dom_matrix_readonly.cc
     out/qjs_union_dom_string_sequencedouble.cc
