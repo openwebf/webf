@@ -24,6 +24,8 @@ class DOMMatrixReadonly : public BindingObject {
   explicit DOMMatrixReadonly(ExecutingContext* context,
                              const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
                              ExceptionState& exception_state);
+  explicit DOMMatrixReadonly(ExecutingContext* context,
+                                 ExceptionState& exception_state);
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,

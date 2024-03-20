@@ -21,8 +21,9 @@ class Path2D : public BindingObject {
 
   explicit Path2D(ExecutingContext* context, ExceptionState& exception_state);
 
-  void addPath(Path2D* path, DOMMatrix* dom_matrix, ExceptionState& exception_state);
-  
+  void addPath(Path2D* path, DOMMatrixReadonly* dom_matrix, ExceptionState& exception_state);
+  void addPath(Path2D* path, ExceptionState& exception_state);
+
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                     int32_t argc,
                                     const NativeValue* argv,

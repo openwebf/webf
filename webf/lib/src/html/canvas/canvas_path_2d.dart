@@ -3,20 +3,20 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:html';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:vector_math/vector_math_64.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/geometry.dart';
 
 // ignore: non_constant_identifier_names
 final double _2pi = 2 * math.pi;
 final double _pi = math.pi;
 final double _piOver2 = math.pi / 2;
 
-class Path2D extends BindingObject {
+class Path2D extends DynamicBindingObject {
   Path _path = Path();
 
   get path {
@@ -79,14 +79,15 @@ class Path2D extends BindingObject {
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble()));
     methods['addPath'] = BindingObjectMethodSync(call: (args) {
-      if (args.length > 1 && args[1] is DomMatrix) {
-        addPath(args[0], matrix4: args[1]);
+      if (args.length > 1 && args[1] is DOMMatrix) {
+        print(args[1]);
+        addPath(args[0]);
       } else if (args.isNotEmpty && args[0] is Path2D) {
         addPath(args[0]);
       }
     });
   }
-  
+
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     // TODO: implement initializeProperties

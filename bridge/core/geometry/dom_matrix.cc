@@ -12,6 +12,13 @@ DOMMatrix* DOMMatrix::Create(ExecutingContext* context,
   return MakeGarbageCollected<DOMMatrix>(context, init, exception_state);
 }
 
+DOMMatrix* DOMMatrix::Create(webf::ExecutingContext* context, webf::ExceptionState& exception_state) {
+  return MakeGarbageCollected<DOMMatrix>(context, exception_state);
+}
+
+DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::ExceptionState& exception_state):
+      DOMMatrixReadonly(context, exception_state) {}
+
 DOMMatrix::DOMMatrix(ExecutingContext* context,
                      const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
                      ExceptionState& exception_state)
