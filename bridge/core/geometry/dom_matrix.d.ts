@@ -1,3 +1,3 @@
 interface DOMMatrix extends DOMMatrixReadonly {
-  new(init: string | double[]): DOMMatrix;
+  new(init?: string | double[]): DOMMatrix;
 }
