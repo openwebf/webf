@@ -154,7 +154,7 @@ class LinkElement extends Element {
         ownerDocument.incrementRequestCount();
 
         await bundle.resolve(baseUrl: ownerDocument.controller.url, uriParser: ownerDocument.controller.uriParser);
-        await bundle.obtainData();
+        await bundle.obtainData(ownerView.contextId);
         assert(bundle.isResolved, 'Failed to obtain $url');
         _loading = false;
         // Decrement count when response.

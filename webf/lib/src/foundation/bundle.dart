@@ -100,6 +100,14 @@ abstract class WebFBundle {
   bool get isResolved => _uri != null;
   bool get isDataObtained => data != null;
 
+  bool _hitCache = false;
+  set hitCache(bool value) => _hitCache = value;
+
+  String? get cacheKey {
+    if (!_hitCache) return null;
+    return HttpCacheController.getCacheKey(resolvedUri!).hashCode.toString();
+  }
+
   // Content type for data.
   // The default value is plain text.
   ContentType? _contentType;
@@ -127,7 +135,7 @@ abstract class WebFBundle {
     }
   }
 
-  Future<void> obtainData();
+  Future<void> obtainData(double contextId);
 
   // Dispose the memory obtained by bundle.
   @mustCallSuper
@@ -217,7 +225,7 @@ class DataBundle extends WebFBundle {
   }
 
   @override
-  Future<void> obtainData() async {}
+  Future<void> obtainData(double contextId) async {}
 }
 
 // The bundle that source from http or https.
@@ -231,7 +239,7 @@ class NetworkBundle extends WebFBundle {
   Map<String, String>? additionalHttpHeaders = {};
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData(double contextId) async {
     if (data != null) return;
 
     final HttpClientRequest request = await _sharedHttpClient.getUrl(_uri!);
@@ -239,6 +247,7 @@ class NetworkBundle extends WebFBundle {
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
+    WebFHttpOverrides.setContextHeader(request.headers, contextId);
 
     final HttpClientResponse response = await request.close();
     if (response.statusCode != HttpStatus.ok)
@@ -246,6 +255,8 @@ class NetworkBundle extends WebFBundle {
         ErrorSummary('Unable to load asset: $url'),
         IntProperty('HTTP status code', response.statusCode),
       ]);
+
+    hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
     Uint8List bytes = await consolidateHttpClientResponseBytes(response);
 
     // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
@@ -268,7 +279,7 @@ class AssetsBundle extends WebFBundle {
   AssetsBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData(double contextId) async {
     if (data != null) return;
 
     final Uri? _resolvedUri = resolvedUri;
@@ -300,7 +311,7 @@ class FileBundle extends WebFBundle {
   FileBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData(double contextId) async {
     if (data != null) return;
 
     Uri uri = _uri!;

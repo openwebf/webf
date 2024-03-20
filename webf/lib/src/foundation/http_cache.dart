@@ -44,7 +44,7 @@ class HttpCacheController {
     return _cacheDirectory = cacheDirectory;
   }
 
-  static String _getCacheKey(Uri uri) {
+  static String getCacheKey(Uri uri) {
     // Fragment not included in cache.
     Uri uriWithoutFragment = uri;
     if (uriWithoutFragment.hasFragment) {
@@ -81,7 +81,7 @@ class HttpCacheController {
     HttpCacheObject cacheObject;
 
     // L2 cache in memory.
-    final String key = _getCacheKey(uri);
+    final String key = getCacheKey(uri);
     if (_caches.containsKey(key)) {
       cacheObject = _caches[key]!;
     } else {
@@ -101,12 +101,12 @@ class HttpCacheController {
     if (_caches.length == _maxCachedObjects) {
       _caches.remove(_caches.lastKey());
     }
-    final String key = _getCacheKey(uri);
+    final String key = getCacheKey(uri);
     _caches.update(key, (value) => cacheObject, ifAbsent: () => cacheObject);
   }
 
   void removeObject(Uri uri) {
-    final String key = _getCacheKey(uri);
+    final String key = getCacheKey(uri);
     _caches.remove(key);
   }
 
@@ -125,7 +125,7 @@ class HttpCacheController {
     if (response.statusCode == HttpStatus.ok) {
       // Create cache object.
       HttpCacheObject cacheObject =
-          HttpCacheObject.fromResponse(_getCacheKey(request.uri), response, (await getCacheDirectory()).path);
+          HttpCacheObject.fromResponse(getCacheKey(request.uri), response, (await getCacheDirectory()).path);
 
       // Cache the object.
       if (cacheObject.valid) {
