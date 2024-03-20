@@ -114,6 +114,16 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
             castToType<num>(args[2]).toDouble());
       }
     });
+    methods['ellipse'] = BindingObjectMethodSync(
+      call: (args) => ellipse(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble(),
+          castToType<num>(args[5]).toDouble(),
+          castToType<num>(args[6]).toDouble(),
+          anticlockwise: (args.length > 7 && args[7] == 1) ? true : false));
     methods['strokeText'] = BindingObjectMethodSync(call: (args) {
       if (args.length > 3) {
         double maxWidth = castToType<num>(args[3]).toDouble();
@@ -147,11 +157,17 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
             castToType<num>(args[4]).toDouble(),
             castToType<num>(args[5]).toDouble()));
     methods['clip'] = BindingObjectMethodSync(call: (args) {
-      PathFillType fillType =
-          (args.isNotEmpty && castToType<String>(args[0]) == EVENODD)
-              ? PathFillType.evenOdd
-              : PathFillType.nonZero;
-      return clip(fillType);
+      if (args.isNotEmpty && args[0] is Path2D) {
+        PathFillType fillType = (args.length == 2 && args[1] == EVENODD)
+            ? PathFillType.evenOdd
+            : PathFillType.nonZero;
+        return clip(fillType, path: args[0]);
+      } else {
+        PathFillType fillType = (args.length == 1 && args[0] == EVENODD)
+            ? PathFillType.evenOdd
+            : PathFillType.nonZero;
+        return clip(fillType);
+      }
     });
     methods['closePath'] = BindingObjectMethodSync(call: (_) => closePath());
     methods['drawImage'] = BindingObjectMethodSync(call: (args) {
@@ -190,10 +206,17 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
       }
     });
     methods['fill'] = BindingObjectMethodSync(call: (args) {
-      PathFillType fillType = (args.isNotEmpty && args[0] == EVENODD)
-          ? PathFillType.evenOdd
-          : PathFillType.nonZero;
-      return fill(fillType);
+      if (args.isNotEmpty && args[0] is Path2D) {
+        PathFillType fillType = (args.length == 2 && args[1] == EVENODD)
+            ? PathFillType.evenOdd
+            : PathFillType.nonZero;
+        return fill(fillType, path: args[0]);
+      } else {
+        PathFillType fillType = (args.length == 1 && args[0] == EVENODD)
+            ? PathFillType.evenOdd
+            : PathFillType.nonZero;
+        return fill(fillType);
+      }
     });
     methods['lineTo'] = BindingObjectMethodSync(
         call: (args) => lineTo(castToType<num>(args[0]).toDouble(),
@@ -220,7 +243,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     methods['scale'] = BindingObjectMethodSync(
         call: (args) => scale(castToType<num>(args[0]).toDouble(),
             castToType<num>(args[1]).toDouble()));
-    methods['stroke'] = BindingObjectMethodSync(call: (args) => stroke());
+    methods['stroke'] = BindingObjectMethodSync(call: (args) {
+      Path2D? path;
+      if (args.length == 1 && args[0] is Path2D) {
+        path = args[0];
+      }
+      stroke(path: path);
+    });
     methods['setTransform'] = BindingObjectMethodSync(
         call: (args) => setTransform(
             castToType<num>(args[0]).toDouble(),
@@ -560,27 +589,34 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     });
   }
 
-  void clip(PathFillType fillType) {
+  void clip(PathFillType fillType, {Path2D? path}) {
     addAction((Canvas canvas, Size size) {
+      path?.path.fillType = fillType;
       path2d.path.fillType = fillType;
-      canvas.clipPath(path2d.path);
+      canvas.clipPath(path?.path ?? path2d.path);
     });
   }
 
-  void fill(PathFillType fillType) {
+  void fill(PathFillType fillType, {Path2D? path}) {
     addAction((Canvas canvas, Size size) {
       if (fillStyle is! Color) {
         return;
       }
-      path2d.path.fillType = fillType;
+      
       Paint paint = Paint()
         ..color = fillStyle as Color
         ..style = PaintingStyle.fill;
-      canvas.drawPath(path2d.path, paint);
+      if (path != null) {
+        path.path.fillType = fillType;
+        canvas.drawPath(path.path, paint);
+      } else {
+        path2d.path.fillType = fillType;
+        canvas.drawPath(path2d.path, paint);
+      }
     });
   }
 
-  void stroke() {
+  void stroke({Path2D? path}) {
     addAction((Canvas canvas, Size size) {
       if (strokeStyle is! Color) {
         return;
@@ -592,7 +628,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
         ..strokeWidth = lineWidth
         ..strokeMiterLimit = miterLimit
         ..style = PaintingStyle.stroke;
-      canvas.drawPath(path2d.path, paint);
+      canvas.drawPath(path?.path ?? path2d.path, paint);
     });
   }
 

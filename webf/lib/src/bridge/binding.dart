@@ -14,6 +14,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/html/canvas/canvas_path_2d.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
 enum BindingMethodCallOperations {
@@ -157,7 +158,8 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
 }
 
 enum CreateBindingObjectType {
-  createDOMMatrix
+  createDOMMatrix,
+  createPath2D,
 }
 
 abstract class BindingBridge {
@@ -176,6 +178,11 @@ abstract class BindingBridge {
       case CreateBindingObjectType.createDOMMatrix: {
         DOMMatrix domMatrix = DOMMatrix(BindingContext(controller.view, contextId, pointer), arguments);
         controller.view.setBindingObject(pointer, domMatrix);
+        return;
+      }
+      case CreateBindingObjectType.createPath2D: {
+        Path2D path2D = Path2D(context: BindingContext(controller.view, contextId, pointer), path2DInit: arguments);
+        controller.view.setBindingObject(pointer, path2D);
         return;
       }
     }
