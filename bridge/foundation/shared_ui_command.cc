@@ -88,6 +88,7 @@ void SharedUICommand::SyncToActive() {
     return;
 
   ui_command_sync_strategy_->Reset();
+  context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
 
   if (active_buffer->empty()) {
     swap(reserve_buffer_, active_buffer);

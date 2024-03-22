@@ -258,9 +258,7 @@ void clearUICommandItems(void* page_) {
 
 // Callbacks when dart context object was finalized by Dart GC.
 static void finalize_dart_context(void* isolate_callback_data, void* peer) {
-#if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN FINALIZE DART CONTEXT: ";
-#endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)peer;
   dart_isolate_context->Dispose([dart_isolate_context]() {
     free(dart_isolate_context);

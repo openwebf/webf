@@ -51,9 +51,6 @@ class ImageElement extends Element {
   // Current image data([ui.Image]).
   ui.Image? get image => _cachedImageInfo?.image;
 
-  /// Number of image frame, used to identify multi frame image after loaded.
-  int _frameCount = 0;
-
   bool _isListeningStream = false;
 
   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-complete-dev
@@ -475,7 +472,6 @@ class ImageElement extends Element {
       _cachedImageStream?.removeListener(_listener);
     }
 
-    _frameCount = 0;
     _cachedImageStream = newStream;
 
     if (_isListeningStream) {
@@ -485,10 +481,16 @@ class ImageElement extends Element {
 
   // Invoke when image descriptor has created.
   // We can know the naturalWidth and naturalHeight of current image.
-  void _onImageLoad(int width, int height) {
+  void _onImageLoad(int width, int height, int frameCount) {
     naturalWidth = width;
     naturalHeight = height;
     _resizeImage();
+
+    // Multi frame image should wrap a repaint boundary for better composite performance.
+    if (frameCount > 1) {
+      forceToRepaintBoundary = true;
+      _watchAnimatedImageWhenVisible();
+    }
 
     // Decrement load event delay count after decode.
     ownerDocument.decrementLoadEventDelayCount();
@@ -503,20 +505,12 @@ class ImageElement extends Element {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
     }
 
-    _frameCount++;
-
-    // Multi frame image should wrap a repaint boundary for better composite performance.
-    if (_frameCount > 2) {
-      forceToRepaintBoundary = true;
-      _watchAnimatedImageWhenVisible();
-    }
-
     _updateRenderObject(image: imageInfo.image);
     _renderImage!.width = naturalWidth.toDouble();
     _renderImage!.height = naturalHeight.toDouble();
 
     // Fire the load event at first frame come.
-    if (_frameCount == 1 && !_loaded) {
+    if (!_loaded) {
       _loaded = true;
       SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
         _dispatchLoadEvent();
@@ -598,8 +592,8 @@ class ImageElement extends Element {
       _dispatchLoadEvent();
       // Decrement load event delay count after decode.
       ownerDocument.decrementLoadEventDelayCount();
-    }, onError: (e) {
-      print(e);
+    }, onError: (e, stack) {
+      print('$e\n$stack');
       _dispatchErrorEvent();
     });
     return;
@@ -616,10 +610,6 @@ class ImageElement extends Element {
             provider.url != _resolvedUri)) {
       // Image should be resized based on different ratio according to object-fit value.
       BoxFit objectFit = renderStyle.objectFit;
-
-      if (ownerDocument.controller.preloadStatus == PreloadingStatus.preloading) {
-        ownerDocument.controller.unfinishedPreloadResources++;
-      }
 
       provider = _currentImageProvider = BoxFitImage(
         boxFit: objectFit,
@@ -672,11 +662,6 @@ class ImageElement extends Element {
 
     // Decrement count when response.
     ownerDocument.decrementRequestCount();
-
-    if (ownerDocument.controller.preloadStatus == PreloadingStatus.preloading) {
-      ownerDocument.controller.unfinishedPreloadResources--;
-      ownerDocument.controller.checkPreloadCompleted();
-    }
 
     return data;
   }
@@ -783,7 +768,7 @@ class ImageRequest {
     final WebFBundle bundle =
         controller.getPreloadBundleFromUrl(currentUri.toString()) ?? WebFBundle.fromUrl(currentUri.toString());
     await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
-    await bundle.obtainData();
+    await bundle.obtainData(controller.view.contextId);
 
     if (!bundle.isResolved) {
       throw FlutterError('Failed to load $currentUri');

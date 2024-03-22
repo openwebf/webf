@@ -21,6 +21,7 @@ class Window extends EventTarget {
       : screen = Screen(context!.contextId, document.controller.ownerFlutterView, document.controller.view),
         super(context) {
     BindingBridge.listenEvent(this, 'load');
+    BindingBridge.listenEvent(this, 'gcopen');
   }
 
   @override

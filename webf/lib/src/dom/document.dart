@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:collection';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -31,6 +32,7 @@ class _InactiveRenderObjects {
 
   void _scheduleFrameToFinalizeRenderObjects() {
     _isScheduled = true;
+
     /// We needs to wait at least 2 frames to dispose all webf managed renderObjects.
     /// All renderObjects managed by WebF should be disposed after Flutter managed renderObjects dispose.
     RendererBinding.instance.addPostFrameCallback((timeStamp) {
@@ -70,13 +72,15 @@ class _InactiveRenderObjects {
   }
 
   void finalizeInactiveRenderObjects() {
-    for(RenderObject object in _renderObjects) {
+    for (RenderObject object in _renderObjects) {
       object.dispose();
     }
     _renderObjects.clear();
   }
 }
+
 enum DocumentReadyState { loading, interactive, complete }
+
 enum VisibilityState { visible, hidden }
 
 class Document extends ContainerNode {
@@ -92,9 +96,17 @@ class Document extends ContainerNode {
 
   final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
-  Set<Element> styleDirtyElements = {};
+  final Set<int> _styleDirtyElements = {};
+
+  void markElementStyleDirty(Element element) {
+    _styleDirtyElements.add(element.pointer!.address);
+  }
+  void clearElementStyleDirty(Element element) {
+    _styleDirtyElements.remove(element.pointer!.address);
+  }
 
   final NthIndexCache _nthIndexCache = NthIndexCache();
+
   NthIndexCache get nthIndexCache => _nthIndexCache;
 
   StyleNodeManager get styleNodeManager => _styleNodeManager;
@@ -113,12 +125,8 @@ class Document extends ContainerNode {
   @override
   bool get isConnected => true;
 
-  Document(
-    BindingContext context, {
-    required this.controller,
-    this.gestureListener,
-    List<Cookie>? initialCookies
-  })  : super(NodeType.DOCUMENT_NODE, context) {
+  Document(BindingContext context, {required this.controller, this.gestureListener, List<Cookie>? initialCookies})
+      : super(NodeType.DOCUMENT_NODE, context) {
     cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
@@ -127,6 +135,7 @@ class Document extends ContainerNode {
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
   late ScriptRunner _scriptRunner;
+
   ScriptRunner get scriptRunner => _scriptRunner;
 
   _InactiveRenderObjects inactiveRenderObjects = _InactiveRenderObjects();
@@ -142,6 +151,7 @@ class Document extends ContainerNode {
   Element? focusedElement;
 
   late CookieJar cookie_;
+
   CookieJar get cookie => cookie_;
 
   // Returns the Window object of the active document.
@@ -158,7 +168,9 @@ class Document extends ContainerNode {
   bool parsing = false;
 
   int _requestCount = 0;
+
   bool get hasPendingRequest => _requestCount > 0;
+
   void incrementRequestCount() {
     _requestCount++;
   }
@@ -171,7 +183,9 @@ class Document extends ContainerNode {
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L2091
   // Counters that currently need to delay load event, such as parsing a script.
   int _loadEventDelayCount = 0;
+
   bool get isDelayingLoadEvent => _loadEventDelayCount > 0;
+
   void incrementLoadEventDelayCount() {
     _loadEventDelayCount++;
   }
@@ -186,7 +200,9 @@ class Document extends ContainerNode {
   }
 
   int _domContentLoadedEventDelayCount = 0;
+
   bool get isDelayingDOMContentLoadedEvent => _domContentLoadedEventDelayCount > 0;
+
   void incrementDOMContentLoadedEventDelayCount() {
     _domContentLoadedEventDelayCount++;
   }
@@ -202,7 +218,8 @@ class Document extends ContainerNode {
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['cookie'] = BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
+    properties['cookie'] =
+        BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
     properties['compatMode'] = BindingObjectProperty(getter: () => compatMode);
     properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
     properties['readyState'] = BindingObjectProperty(getter: () => readyState);
@@ -225,7 +242,8 @@ class Document extends ContainerNode {
     methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
     methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
-    methods['elementFromPoint'] = BindingObjectMethodSync(call: (args) => elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1])));
+    methods['elementFromPoint'] = BindingObjectMethodSync(
+        call: (args) => elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1])));
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
     }
@@ -298,6 +316,7 @@ class Document extends ContainerNode {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
     return QuerySelector.querySelector(this, args.first);
   }
+
   dynamic elementFromPoint(double x, double y) {
     documentElement?.flushLayout();
     return HitTestPoint(x, y);
@@ -369,7 +388,9 @@ class Document extends ContainerNode {
   }
 
   Element? _documentElement;
+
   Element? get documentElement => _documentElement;
+
   set documentElement(Element? element) {
     if (_documentElement == element) {
       return;
@@ -475,6 +496,7 @@ class Document extends ContainerNode {
 
   // TODO: https://wicg.github.io/construct-stylesheets/#using-constructed-stylesheets
   List<CSSStyleSheet> adoptedStyleSheets = [];
+
   // The styleSheets attribute is readonly attribute.
   final List<CSSStyleSheet> styleSheets = [];
 
@@ -488,6 +510,7 @@ class Document extends ContainerNode {
   }
 
   bool _recalculating = false;
+
   void updateStyleIfNeeded() {
     if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
       return;
@@ -504,31 +527,33 @@ class Document extends ContainerNode {
   }
 
   void flushStyle({bool rebuild = false}) {
-    if (styleDirtyElements.isEmpty) {
+    if (_styleDirtyElements.isEmpty) {
       _recalculating = false;
       return;
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
-      styleDirtyElements.clear();
+      _styleDirtyElements.clear();
       return;
     }
-    if (styleDirtyElements.any((element) {
-          return element is HeadElement || element is HTMLElement;
+    if (_styleDirtyElements.any((address) {
+          BindingObject bindingObject = ownerView.getBindingObject(Pointer.fromAddress(address));
+          return bindingObject is HeadElement || bindingObject is HTMLElement;
         }) ||
         rebuild) {
       documentElement?.recalculateStyle(rebuildNested: true);
     } else {
-      for (Element element in styleDirtyElements) {
-        element.recalculateStyle();
+      for (int address in _styleDirtyElements) {
+        Element? element = ownerView.getBindingObject(Pointer.fromAddress(address)) as Element?;
+        element?.recalculateStyle();
       }
     }
-    styleDirtyElements.clear();
+    _styleDirtyElements.clear();
     _recalculating = false;
   }
 
   void reactiveWidgetElements() {
-    for(WidgetElement widgetElement in aliveWidgetElements) {
+    for (WidgetElement widgetElement in aliveWidgetElements) {
       widgetElement.reactiveRenderer();
     }
   }
@@ -540,10 +565,9 @@ class Document extends ContainerNode {
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
     cookie.clearCookie();
-    styleDirtyElements.clear();
+    _styleDirtyElements.clear();
     fixedChildren.clear();
     pendingPreloadingScriptCallbacks.clear();
     super.dispose();
   }
-
 }

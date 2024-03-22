@@ -325,6 +325,11 @@ class WebFViewController implements WidgetsBindingObserver {
     window = Window(BindingContext(view, _contextId, pointer), document);
     _registerPlatformBrightnessChange();
 
+    // 3 seconds should be enough for page loading, make sure the JavaScript GC was opened.
+    Timer(Duration(seconds: 3), () {
+      window.dispatchEvent(Event('gcopen'));
+    });
+
     // Blur input element when new input focused.
     window.addEventListener(EVENT_CLICK, (event) async {
       if (event.target is Element) {
@@ -709,14 +714,17 @@ class WebFViewController implements WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.resumed:
         document.visibilityChange(VisibilityState.visible);
+        rootController.resume();
         break;
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
         document.visibilityChange(VisibilityState.hidden);
+        rootController.pause();
         break;
       case AppLifecycleState.inactive:
         break;
       case AppLifecycleState.detached:
+        rootController.pause();
         break;
     }
   }
@@ -1105,12 +1113,34 @@ class WebFController {
 
     _isComplete = false;
 
-    await unload();
-    await executeEntrypoint();
+    RenderViewportBox rootRenderObject = view.viewport!;
 
-    if (devToolsService != null) {
-      devToolsService!.didReload();
-    }
+    await unload();
+
+    view.viewport = rootRenderObject;
+
+    // Initialize document, window and the documentElement.
+    flushUICommand(view, nullptr);
+
+    Completer completer = Completer();
+
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
+
+      // Sync viewport size to the documentElement.
+      view.document.initializeRootElementSize();
+      // Starting to flush ui commands every frames.
+      view.flushPendingCommandsPerFrame();
+
+      await executeEntrypoint();
+
+      if (devToolsService != null) {
+        devToolsService!.didReload();
+      }
+
+      completer.complete();
+    });
+
+    return completer.future;
   }
 
   Future<void> load(WebFBundle bundle) async {
@@ -1122,17 +1152,38 @@ class WebFController {
 
     await controlledInitCompleter.future;
 
+    RenderViewportBox rootRenderObject = view.viewport!;
+
     await unload();
+
+    view.viewport = rootRenderObject;
+
+    // Initialize document, window and the documentElement.
+    flushUICommand(view, nullptr);
 
     // Update entrypoint.
     _entrypoint = bundle;
     _addHistory(bundle);
 
-    await executeEntrypoint();
+    Completer completer = Completer();
 
-    if (devToolsService != null) {
-      devToolsService!.didReload();
-    }
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
+
+      // Sync viewport size to the documentElement.
+      view.document.initializeRootElementSize();
+      // Starting to flush ui commands every frames.
+      view.flushPendingCommandsPerFrame();
+
+      await executeEntrypoint();
+
+      if (devToolsService != null) {
+        devToolsService!.didReload();
+      }
+
+      completer.complete();
+    });
+
+    return completer.future;
   }
 
   PreloadingStatus _preloadStatus = PreloadingStatus.none;
@@ -1330,6 +1381,7 @@ class WebFController {
 
   // Pause all timers and callbacks if kraken page are invisible.
   void pause() {
+    if (_paused) return;
     _paused = true;
     module.pauseTimer();
     module.pauseAnimationFrame();
@@ -1338,12 +1390,14 @@ class WebFController {
 
   // Resume all timers and callbacks if kraken page now visible.
   void resume() {
+    if (!_paused) return;
     _paused = false;
     flushPendingCallbacks();
     module.resumeTimer();
     module.resumeAnimationFrame();
     view.resumeAnimationTimeline();
     view.document.reactiveWidgetElements();
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   bool _disposed = false;
@@ -1399,7 +1453,7 @@ class WebFController {
     // Resolve the bundle, including network download or other fetching ways.
     try {
       await bundleToLoad.resolve(baseUrl: url, uriParser: uriParser);
-      await bundleToLoad.obtainData();
+      await bundleToLoad.obtainData(view.contextId);
     } catch (e, stack) {
       if (onLoadError != null) {
         onLoadError!(FlutterError(e.toString()), stack);

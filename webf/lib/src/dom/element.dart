@@ -383,6 +383,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         if (parentRenderObject != null) {
           RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
         }
+
+        previousRenderBoxModel.dispose();
       }
       renderBoxModel = nextRenderBoxModel;
       assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
@@ -953,6 +955,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     flutterWidget = null;
     flutterWidgetElement = null;
     ownerDocument.inactiveRenderObjects.add(renderer);
+    ownerDocument.clearElementStyleDirty(this);
     _beforeElement?.dispose();
     _beforeElement = null;
     _afterElement?.dispose();
@@ -1734,9 +1737,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     Completer<Uint8List> completer = Completer();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       Uint8List captured;
-      RenderBoxModel _renderBoxModel = renderBoxModel!;
+      RenderBoxModel? _renderBoxModel = renderBoxModel;
 
-      if (_renderBoxModel.hasSize && _renderBoxModel.size.isEmpty) {
+      if (_renderBoxModel == null || _renderBoxModel.hasSize && _renderBoxModel.size.isEmpty) {
         // Return a blob with zero length.
         captured = Uint8List(0);
       } else {

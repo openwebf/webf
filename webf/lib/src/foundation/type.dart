@@ -10,16 +10,17 @@ T castToType<T>(value) {
 }
 
 class Dimension {
-  const Dimension(this.width, this.height);
+  const Dimension(this.width, this.height, this.frameCount);
 
   final int width;
   final int height;
+  final int frameCount;
 
   @override
   bool operator ==(Object other) {
-    return other is Dimension && other.width == width && other.height == height;
+    return other is Dimension && other.width == width && other.height == height && other.frameCount == frameCount;
   }
 
   @override
-  int get hashCode => Object.hash(width, height);
+  int get hashCode => Object.hash(width, height, frameCount);
 }

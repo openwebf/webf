@@ -102,7 +102,11 @@ class Dispatcher {
     DartWork* work_ptr = new DartWork(work);
     pending_dart_tasks_.insert(work_ptr);
 
-    NotifyDart(work_ptr, true);
+    bool success = NotifyDart(work_ptr, true);
+    if (!success) {
+      pending_dart_tasks_.erase(work_ptr);
+      return std::invoke(std::forward<Func>(func), true, std::forward<Args>(args)...);
+    }
 
     looper->is_blocked_ = true;
     task->wait();
@@ -170,7 +174,7 @@ class Dispatcher {
   }
 
  private:
-  void NotifyDart(const DartWork* work_ptr, bool is_sync);
+  bool NotifyDart(const DartWork* work_ptr, bool is_sync);
 
   void FinalizeAllJSThreads(Callback callback);
   void StopAllJSThreads();

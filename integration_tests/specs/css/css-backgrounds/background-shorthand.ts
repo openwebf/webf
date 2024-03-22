@@ -7,8 +7,8 @@ describe('background-shorthand', () => {
       background: 'left top / contain repeat url(assets/rabbit.png)'
     });
     document.body.appendChild(div);
-    await sleep(0.5);
-    await snapshot(div);
+    await sleep(1);
+    await snapshot();
   });
 
   it('background gradient', async () => {

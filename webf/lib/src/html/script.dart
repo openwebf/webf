@@ -43,7 +43,7 @@ class ScriptRunner {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
-      bool result = await evaluateScripts(contextId, bundle.data!, url: bundle.url);
+      bool result = await evaluateScripts(contextId, bundle.data!, url: bundle.url, cacheKey: bundle.cacheKey);
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');
       }
@@ -136,6 +136,10 @@ class ScriptRunner {
       }
 
       _resolvingCount++;
+    } else {
+      if (isInPreLoading) {
+        _preloadScriptTasks.add(task);
+      }
     }
 
     // Script loading phrase.
@@ -143,7 +147,7 @@ class ScriptRunner {
     _document.incrementDOMContentLoadedEventDelayCount();
     try {
       await bundle.resolve(baseUrl: _document.controller.url, uriParser: _document.controller.uriParser);
-      await bundle.obtainData();
+      await bundle.obtainData(_contextId);
 
       if (!bundle.isResolved) {
         throw FlutterError('Network error.');
