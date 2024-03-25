@@ -40,10 +40,10 @@ HashchangeEvent::HashchangeEvent(webf::ExecutingContext* context,
 #if ANDROID_32_BIT
       new_url_(AtomicString(ctx(),
                             std::unique_ptr<AutoFreeNativeString>(
-                                reinterpret_cast<AutoFreeNativeString*>(native_gesture_event->newURL)))),
+                                reinterpret_cast<AutoFreeNativeString*>(native_hash_change_event->newURL)))),
       old_url_(AtomicString(
           ctx(),
-          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_gesture_event->oldURL))))
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_hash_change_event->oldURL))))
 #else
       new_url_(AtomicString(ctx(),
                             std::unique_ptr<AutoFreeNativeString>(
