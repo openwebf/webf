@@ -314,7 +314,7 @@ describe('Transition all', () => {
     });
   });
 
-  fit('toggle the transition class should the previous animation and run new animations', async (done) => {
+  it('toggle the transition class should the previous animation and run new animations', async (done) => {
     const container1 = document.createElement('div');
     document.body.appendChild(container1);
     setElementStyle(container1, {

@@ -70,8 +70,6 @@ class _WebFTesterState extends State<WebFTester> {
       javaScriptChannel: javaScriptChannel,
       onControllerCreated: onControllerCreated,
       onLoad: onLoad,
-      // runningThread: FlutterUIThread(),
-      // runningThread: FlutterUIThread(),
       gestureListener: GestureListener(
         onDrag: (GestureEvent gestureEvent) {
           if (gestureEvent.state == EVENT_STATE_START) {
