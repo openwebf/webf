@@ -50,6 +50,7 @@ class FlutterInputElement extends WidgetElement
 
   @override
   void initState() {
+    super.initState();
     switch (type) {
       case 'radio':
         initRadioState();
