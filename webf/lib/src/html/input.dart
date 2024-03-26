@@ -215,7 +215,7 @@ mixin BaseInputElement on WidgetElement {
   bool get disabled => _disabled;
   set disabled(value) {
     if (value is String) {
-      _disabled = value == 'true';
+      _disabled = value != 'false';
       return;
     }
     _disabled = value == true;
