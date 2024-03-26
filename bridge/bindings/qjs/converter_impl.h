@@ -413,6 +413,17 @@ template <>
 struct Converter<JSEventListener> : public ConverterBase<JSEventListener> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
     assert(!JS_IsException(value));
+    if (JS_IsObject(value) && !JS_IsFunction(ctx, value)) {
+      JSValue handleEventMethod = JS_GetPropertyStr(ctx, value, "handleEvent");
+
+      if (JS_IsFunction(ctx, handleEventMethod)) {
+        auto result = JSEventListener::CreateOrNull(QJSFunction::Create(ctx, handleEventMethod, value));
+        JS_FreeValue(ctx, handleEventMethod);
+        return result;
+      }
+
+      return JSEventListener::CreateOrNull(nullptr);
+    }
     return JSEventListener::CreateOrNull(QJSFunction::Create(ctx, value));
   }
 };
@@ -463,8 +474,8 @@ struct Converter<IDLNullable<JSEventListener>> : public ConverterBase<JSEventLis
       return nullptr;
     }
 
-    if (!JS_IsFunction(ctx, value)) {
-      exception_state.ThrowException(ctx, ErrorType::TypeError, "EventListener not a function");
+    if (!JS_IsFunction(ctx, value) && !JS_IsObject(value)) {
+      return nullptr;
     }
 
     assert(!JS_IsException(value));

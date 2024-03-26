@@ -28,10 +28,21 @@ class QJSFunction {
                                              void* private_data) {
     return std::make_shared<QJSFunction>(ctx, qjs_function_callback, length, private_data);
   }
+  static std::shared_ptr<QJSFunction> Create(JSContext* ctx, JSValue function, JSValue this_val) {
+    return std::make_shared<QJSFunction>(ctx, function, this_val);
+  };
   explicit QJSFunction(JSContext* ctx, JSValue function)
       : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), function_(JS_DupValue(ctx, function)){};
   explicit QJSFunction(JSContext* ctx, QJSFunctionCallback qjs_function_callback, int32_t length, void* private_data);
-  ~QJSFunction() { JS_FreeValueRT(runtime_, function_); }
+  explicit QJSFunction(JSContext* ctx, JSValue function, JSValue this_val)
+      : ctx_(ctx),
+        runtime_(JS_GetRuntime(ctx)),
+        function_(JS_DupValue(ctx, function)),
+        this_val_(JS_DupValue(ctx, this_val)) {}
+  ~QJSFunction() {
+    JS_FreeValueRT(runtime_, function_);
+    JS_FreeValueRT(runtime_, this_val_);
+  }
 
   bool IsFunction(JSContext* ctx);
 
@@ -52,6 +63,7 @@ class QJSFunction {
   JSContext* ctx_{nullptr};
   JSRuntime* runtime_{nullptr};
   JSValue function_{JS_NULL};
+  JSValue this_val_{JS_NULL};
 };
 
 }  // namespace webf
