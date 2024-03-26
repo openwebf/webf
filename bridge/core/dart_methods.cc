@@ -4,10 +4,10 @@
  */
 
 #include "dart_methods.h"
+#include <stdio.h>
 #include <cassert>
 #include "dart_isolate_context.h"
 #include "foundation/native_type.h"
-#include <stdio.h>
 
 using namespace webf;
 
@@ -247,8 +247,8 @@ void DartMethodPointer::onJSLog(bool is_dedicated, double context_id, int32_t le
     return;
   int log_length = strlen(log) + 1;
   char* log_str = (char*)dart_malloc(sizeof(char) * log_length);
-  snprintf(log_str, log_length, "%s",log);
-  
+  snprintf(log_str, log_length, "%s", log);
+
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, on_js_log_, context_id, level, log_str);
 }
 
