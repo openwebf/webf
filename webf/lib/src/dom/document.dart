@@ -58,13 +58,6 @@ class _InactiveRenderObjects {
   void add(RenderObject? renderObject) {
     if (renderObject == null) return;
 
-    if (renderObject is RenderBoxModel && renderObject.disposed) {
-      return;
-    }
-    if (_renderObjects.contains(renderObject)) {
-      return;
-    }
-
     if (_renderObjects.isEmpty && !_isScheduled) {
       _scheduleFrameToFinalizeRenderObjects();
     }
@@ -80,9 +73,8 @@ class _InactiveRenderObjects {
 
   void finalizeInactiveRenderObjects() {
     for(RenderObject object in _renderObjects) {
-      if (!object.attached) {
-        object.dispose();
-      }
+      assert(!object.attached);
+      object.dispose();
     }
     _renderObjects.clear();
   }
