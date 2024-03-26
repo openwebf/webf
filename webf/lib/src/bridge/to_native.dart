@@ -663,7 +663,7 @@ typedef NativeClearNativeProfileData = Void Function(Pointer<Void> pagePtr);
 typedef DartClearNativeProfileData = void Function(Pointer<Void> pagePtr);
 
 final DartClearNativeProfileData _clearNativeProfileData = WebFDynamicLibrary.ref
-    .lookup<NativeFunction<NativeClearNativeProfileData>>('collectNativeProfileData')
+    .lookup<NativeFunction<NativeClearNativeProfileData>>('clearNativeProfileData')
     .asFunction();
 
 void clearNativeProfileData() {

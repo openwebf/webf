@@ -971,7 +971,9 @@ class WebFController {
         runningThread = runningThread ?? DedicatedThread(),
         ownerFlutterView = View.of(context) {
     _initializePreloadBundle();
-    WebFProfiler.initialize();
+    if (enableWebFProfileTracking) {
+      WebFProfiler.initialize();
+    }
 
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
