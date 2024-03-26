@@ -36,11 +36,41 @@ const Map<String, dynamic> _checkboxDefaultStyle = {
 };
 
 class FlutterInputElement extends WidgetElement
-    with BaseCheckBoxElement, BaseButtonElement, BaseInputElement, BaseTimeElement {
+    with
+        BaseRadioElement,
+        BaseCheckBoxElement,
+        BaseButtonElement,
+        BaseInputElement,
+        BaseTimeElement {
   BindingContext? buildContext;
 
   FlutterInputElement(BindingContext? context) : super(context) {
     buildContext = context;
+  }
+
+  @override
+  void initState() {
+    switch (type) {
+      case 'radio':
+        initRadioState();
+        break;
+      default:
+        initBaseInputState();
+        break;
+    }
+  }
+
+  @override
+  Future<void> dispose() async {
+    super.dispose();
+    switch (type) {
+      case 'radio':
+        disposeRadio();
+        break;
+      default:
+        disposeBaseInput();
+        break;
+    }
   }
 
   @override
@@ -49,6 +79,7 @@ class FlutterInputElement extends WidgetElement
       case 'text':
       case 'time':
         return _inputDefaultStyle;
+      case 'radio':
       case 'checkbox':
         return _checkboxDefaultStyle;
     }
@@ -79,6 +110,8 @@ class FlutterInputElement extends WidgetElement
   @override
   Widget build(BuildContext context, List<Widget> children) {
     switch (type) {
+      case 'radio':
+        return createRadio(context);
       case 'checkbox':
         return createCheckBox(context);
       case 'button':
@@ -118,8 +151,7 @@ mixin BaseInputElement on WidgetElement {
     hasDirtyValue = true;
   }
 
-  @override
-  void initState() {
+  void initBaseInputState() {
     _focusNode ??= FocusNode();
     _focusNode!.addListener(handleFocusChange);
   }
@@ -174,6 +206,7 @@ mixin BaseInputElement on WidgetElement {
 
   void resetInputDefaultStyle() {
     switch (type) {
+      case 'radio':
       case 'checkbox':
         {
           _checkboxDefaultStyle.forEach((key, value) {
@@ -409,9 +442,7 @@ mixin BaseInputElement on WidgetElement {
     }
   }
 
-  @override
-  Future<void> dispose() async {
-    super.dispose();
+  Future<void> disposeBaseInput() async {
     _focusNode?.dispose();
   }
 
@@ -435,6 +466,106 @@ mixin BaseInputElement on WidgetElement {
         return SizedBox(width: 0, height: 0);
     }
     return _wrapInputHeight(_createInputWidget(context));
+  }
+}
+
+/// create a radio widget when input type='radio'
+
+mixin BaseRadioElement on WidgetElement {
+  static final Map<String, String> _groupValues = <String, String>{};
+
+  static final StreamController<Map<String, String>> _streamController =
+      StreamController<Map<String, String>>.broadcast();
+
+  //  static final   Stream<Map<String, String>> stream = _streamController.stream.asBroadcastStream(onLis);
+
+  late StreamSubscription<Map<String, String>> _subscription;
+
+  void initRadioState() {
+    _subscription = _streamController.stream.listen((message) {
+      setState(() {
+        for (var entry in message.entries) {
+          if (entry.key == name) {
+            groupValue = entry.value;
+          }
+        }
+      });
+    });
+  }
+
+  void disposeRadio() {
+    _subscription.cancel();
+    _groupValues.remove(name);
+    if (_groupValues.isEmpty) {
+      _streamController.close();
+    }
+  }
+
+  String get groupValue => _groupValues[name] ?? name;
+  set groupValue(String? gv) {
+    internalSetAttribute('groupValue', gv ?? name);
+    _groupValues[name] = gv ?? name;
+  }
+
+  bool get disabled => getAttribute('disabled') != null;
+
+  String get value => getAttribute('value') ?? '';
+
+  String _name = '';
+  String get name => _name;
+  set name(String? n) {
+    if (_groupValues[_name] != null) {
+      _groupValues.remove(_name);
+    }
+    _name = n?.toString() ?? '';
+    _groupValues[_name] = _name;
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['name'] = BindingObjectProperty(
+        getter: () => name, setter: (value) => name = value);
+  }
+
+  @override
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+
+    attributes['name'] = ElementAttributeProperty(
+        getter: () => name, setter: (value) => name = value);
+  }
+
+  double getRadioSize() {
+    //TODO support zoom
+    //width and height
+    if (renderStyle.width.value != null && renderStyle.height.value != null) {
+      return renderStyle.width.computedValue / 18.0;
+    }
+    return 1.0;
+  }
+
+  Widget createRadio(BuildContext context) {
+    String singleRadioValue = '$name-$value';
+    return Transform.scale(
+      child: Radio<String>(
+          value: singleRadioValue,
+          onChanged: disabled
+              ? null
+              : (String? newValue) {
+                  setState(() {
+                    if (newValue != null) {
+                      Map<String, String> map = <String, String>{};
+                      map[name] = newValue;
+                      _streamController.sink.add(map);
+                    }
+                    dispatchEvent(Event('change'));
+                  });
+                },
+          groupValue: groupValue),
+      scale: getRadioSize(),
+    );
   }
 }
 
