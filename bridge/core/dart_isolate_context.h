@@ -31,6 +31,9 @@ class PageGroup {
 
 struct DartWireContext {
   ScriptValue jsObject;
+  bool is_dedicated;
+  double context_id;
+  multi_threading::Dispatcher* dispatcher;
 };
 
 void InitializeBuiltInStrings(JSContext* ctx);

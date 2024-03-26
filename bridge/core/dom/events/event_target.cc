@@ -385,12 +385,21 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
 
   auto* wire = new DartWireContext();
   wire->jsObject = event->ToValue();
+  wire->is_dedicated = GetExecutingContext()->isDedicated();
+  wire->context_id = GetExecutingContext()->contextId();
+  wire->dispatcher = GetDispatcher();
 
   auto dart_object_finalize_callback = [](void* isolate_callback_data, void* peer) {
     auto* wire = (DartWireContext*)(peer);
-    if (IsDartWireAlive(wire)) {
-      DeleteDartWire(wire);
-    }
+
+    wire->dispatcher->PostToJs(
+        wire->is_dedicated, wire->context_id,
+        [](DartWireContext* wire) -> void {
+          if (IsDartWireAlive(wire)) {
+            DeleteDartWire(wire);
+          }
+        },
+        wire);
   };
 
   WatchDartWire(wire);
