@@ -26,13 +26,11 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! RenderLayoutParentData) {
-      if (child is RenderBoxModel) {
-        RenderLayoutParentData parentData = RenderLayoutParentData();
-        child.parentData = CSSPositionedLayout.getPositionParentData(child, parentData);
-      } else {
-        child.parentData = RenderLayoutParentData();
-      }
+    if (child is RenderBoxModel) {
+      RenderLayoutParentData parentData = RenderLayoutParentData();
+      child.parentData = CSSPositionedLayout.getPositionParentData(child, parentData);
+    } else {
+      child.parentData = RenderLayoutParentData();
     }
   }
 

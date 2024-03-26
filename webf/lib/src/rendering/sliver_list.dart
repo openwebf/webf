@@ -116,7 +116,7 @@ class RenderSliverListLayout extends RenderLayoutBox {
   void setupParentData(RenderBox child) {
     if (child == _renderViewport && child.parentData is! RenderLayoutParentData) {
       child.parentData = RenderLayoutParentData();
-    } else if (child.parentData is! SliverMultiBoxAdaptorParentData) {
+    } else {
       child.parentData = SliverMultiBoxAdaptorParentData();
     }
   }
