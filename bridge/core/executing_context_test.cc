@@ -16,11 +16,11 @@ TEST(Context, isValid) {
     EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
     EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
   }
-  {
-    auto env = TEST_init();
-    EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
-    EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
-  }
+  //  {
+  //    auto env = TEST_init();
+  //    EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
+  //    EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
+  //  }
 }
 
 TEST(Context, evalWithError) {

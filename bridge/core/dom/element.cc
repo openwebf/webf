@@ -343,6 +343,12 @@ void Element::Trace(GCVisitor* visitor) const {
   ContainerNode::Trace(visitor);
 }
 
+RustMethods* Element::rustMethodPointer() {
+  auto* super_rust_methods = ContainerNode::rustMethodPointer();
+  static auto* rust_methods = new ElementRustMethods(static_cast<ContainerNodeRustMethods*>(super_rust_methods));
+  return rust_methods;
+}
+
 // https://dom.spec.whatwg.org/#concept-element-qualified-name
 const AtomicString Element::getUppercasedQualifiedName() const {
   auto name = getQualifiedName();

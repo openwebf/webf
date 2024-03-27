@@ -100,6 +100,13 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
   return AddEventListenerInternal(event_type, event_listener, options);
 }
 
+bool EventTarget::addEventListener(const webf::AtomicString& event_type,
+                                   const std::shared_ptr<EventListener>& event_listener,
+                                   const std::shared_ptr<AddEventListenerOptions>& options,
+                                   ExceptionState& exception_state) {
+  return AddEventListenerInternal(event_type, event_listener, options);
+}
+
 bool EventTarget::removeEventListener(const AtomicString& event_type,
                                       const std::shared_ptr<EventListener>& event_listener,
                                       ExceptionState& exception_state) {
@@ -244,6 +251,11 @@ EventListenerVector* EventTarget::GetEventListeners(const AtomicString& event_ty
 
 bool EventTarget::IsEventTarget() const {
   return true;
+}
+
+RustMethods* EventTarget::rustMethodPointer() {
+  static auto* rust_methods = new EventTargetRustMethods();
+  return rust_methods;
 }
 
 void EventTarget::Trace(GCVisitor* visitor) const {

@@ -51,7 +51,7 @@ class EventListener {
 
   virtual void Trace(GCVisitor* visitor) const = 0;
 
- private:
+ protected:
   EventListener() = default;
 
   friend JSBasedEventListener;

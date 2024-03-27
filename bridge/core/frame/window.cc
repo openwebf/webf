@@ -260,6 +260,12 @@ void Window::Trace(GCVisitor* visitor) const {
   EventTargetWithInlineData::Trace(visitor);
 }
 
+RustMethods* Window::rustMethodPointer() {
+  auto* super_rust_method = EventTarget::rustMethodPointer();
+  static auto* rust_method = new WindowRustMethods(static_cast<EventTargetRustMethods*>(super_rust_method));
+  return rust_method;
+}
+
 JSValue Window::ToQuickJS() const {
   return JS_GetGlobalObject(ctx());
 }

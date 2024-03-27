@@ -35,8 +35,9 @@ AtomicString HTMLImageElement::src() const {
 void HTMLImageElement::setSrc(const AtomicString& value, ExceptionState& exception_state) {
   SetBindingProperty(binding_call_methods::ksrc, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
                      exception_state);
-  if (!value.IsEmpty()) {
+  if (!value.IsEmpty() && keep_alive) {
     KeepAlive();
+    keep_alive = false;
   }
 }
 

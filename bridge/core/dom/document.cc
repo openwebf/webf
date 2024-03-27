@@ -413,4 +413,10 @@ void Document::Trace(GCVisitor* visitor) const {
   ContainerNode::Trace(visitor);
 }
 
+RustMethods* Document::rustMethodPointer() {
+  auto* super_rust_method = ContainerNode::rustMethodPointer();
+  static auto* rust_method = new DocumentRustMethods(static_cast<ContainerNodeRustMethods*>(super_rust_method));
+  return rust_method;
+}
+
 }  // namespace webf
