@@ -545,7 +545,7 @@ class Document extends ContainerNode {
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
       _styleDirtyElements.clear();
-      if (!enableWebFProfileTracking) {
+      if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackUICommandStep();
       }
       return;

@@ -426,6 +426,8 @@ class WebFProfiler {
   }
 
   void startTrackUICommandStep(String label, [Map<String, dynamic>? arguments]) {
+    if (currentPipeline._stack.isEmpty) return;
+
     Timeline.startSync(label, arguments: arguments);
     OpItem activeOp = currentPipeline.currentUICommandOp;
     _OpSteps step;
