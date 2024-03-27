@@ -8,7 +8,6 @@
 
 #if WEBF_V8_JS_ENGINE
 
-
 #elif WEBF_QUICKJS_JS_ENGINE
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"

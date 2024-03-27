@@ -139,11 +139,11 @@ const uint16_t* AtomicString::Character16() const {
 }
 
 int AtomicString::Find(bool (*CharacterMatchFunction)(char)) const {
-//  return JS_FindCharacterInAtom(runtime_, atom_, CharacterMatchFunction);
+  //  return JS_FindCharacterInAtom(runtime_, atom_, CharacterMatchFunction);
 }
 
 int AtomicString::Find(bool (*CharacterMatchFunction)(uint16_t)) const {
-//  return JS_FindWCharacterInAtom(runtime_, atom_, CharacterMatchFunction);
+  //  return JS_FindWCharacterInAtom(runtime_, atom_, CharacterMatchFunction);
 }
 
 std::string AtomicString::ToStdString(v8::Isolate* isolate) const {
