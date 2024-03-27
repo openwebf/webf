@@ -42,4 +42,8 @@ JSValue ExceptionState::ToQuickJS() {
   return exception_;
 }
 
+JSValue ExceptionState::CurrentException(JSContext* ctx) {
+  return JS_GetException(ctx);
+}
+
 }  // namespace webf

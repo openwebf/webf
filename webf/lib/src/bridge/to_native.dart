@@ -211,6 +211,7 @@ typedef NativeEvaluateScripts = Void Function(
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
     Int32 startLine,
+    Int64 profileId,
     Handle object,
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
 typedef DartEvaluateScripts = void Function(
@@ -221,16 +222,18 @@ typedef DartEvaluateScripts = void Function(
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
     int startLine,
+    int profileId,
     Object object,
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
 
 typedef NativeEvaluateJavaScriptCallback = Void Function(Handle object, Int8 result);
 
-
 typedef NativeParseHTMLCallback = Void Function(Handle object);
 // Register parseHTML
-typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Uint8> code, Int32 length, Handle context, Pointer<NativeFunction<NativeParseHTMLCallback>> result_callback);
-typedef DartParseHTML = void Function(Pointer<Void>, Pointer<Uint8> code, int length, Object context, Pointer<NativeFunction<NativeParseHTMLCallback>> result_callback);
+typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Uint8> code, Int32 length, Int64 profileId, Handle context,
+    Pointer<NativeFunction<NativeParseHTMLCallback>> result_callback);
+typedef DartParseHTML = void Function(Pointer<Void>, Pointer<Uint8> code, int length, int profileId, Object context,
+    Pointer<NativeFunction<NativeParseHTMLCallback>> result_callback);
 
 final DartEvaluateScripts _evaluateScripts =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateScripts>>('evaluateScripts').asFunction();
@@ -285,7 +288,7 @@ void handleEvaluateScriptsResult(_EvaluateScriptsContext context, int result) {
   }
 }
 
-Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url, String? cacheKey, int line = 0}) async {
+Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url, String? cacheKey, int line = 0,  EvaluateOpItem? profileOp}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -299,7 +302,7 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url
   if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
       cacheObject.valid &&
       cacheObject.bytes != null) {
-    bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
+    bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!, profileOp: profileOp);
     // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
     if (!result) {
       await cacheObject.remove();
@@ -326,10 +329,10 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url
         context.bytecodeLen = bytecodeLen;
 
         _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, _url, line,
-            context, resultCallback);
+            profileOp?.hashCode ?? 0, context, resultCallback);
       } else {
-        _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, _url, line, context,
-            resultCallback);
+        _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, _url, line,
+            profileOp?.hashCode ?? 0, context, resultCallback);
       }
       return completer.future;
     } catch (e, stack) {
@@ -340,9 +343,9 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes, {String? url
   }
 }
 
-typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen, Handle object,
+typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen, Int64 profileId, Handle object,
     Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> callback);
-typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen, Object object,
+typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen, int profileId, Object object,
     Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> callback);
 
 typedef NativeEvaluateQuickjsByteCodeCallback = Void Function(Handle object, Int8 result);
@@ -363,7 +366,7 @@ void handleEvaluateQuickjsByteCodeResult(_EvaluateQuickjsByteCodeContext context
   context.completer.complete(result == 1);
 }
 
-Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes) async {
+Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, { EvaluateOpItem? profileOp }) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -377,7 +380,7 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes) async {
   Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> nativeCallback =
       Pointer.fromFunction(handleEvaluateQuickjsByteCodeResult);
 
-  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length, context, nativeCallback);
+  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length, profileOp?.hashCode ?? 0, context, nativeCallback);
 
   return completer.future;
 }
@@ -388,10 +391,11 @@ void _handleParseHTMLContextResult(_ParseHTMLContext context) {
 
 class _ParseHTMLContext {
   Completer<void> completer;
+
   _ParseHTMLContext(this.completer);
 }
 
-Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
+Future<void> parseHTML(double contextId, Uint8List codeBytes, { EvaluateOpItem? profileOp }) async {
   Completer completer = Completer();
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return;
@@ -400,8 +404,9 @@ Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
   try {
     assert(_allocatedPages.containsKey(contextId));
     _ParseHTMLContext context = _ParseHTMLContext(completer);
-    Pointer<NativeFunction<NativeParseHTMLCallback>> resultCallback = Pointer.fromFunction(_handleParseHTMLContextResult);
-    _parseHTML(_allocatedPages[contextId]!, codePtr, codeBytes.length, context, resultCallback);
+    Pointer<NativeFunction<NativeParseHTMLCallback>> resultCallback =
+        Pointer.fromFunction(_handleParseHTMLContextResult);
+    _parseHTML(_allocatedPages[contextId]!, codePtr, codeBytes.length, profileOp?.hashCode ?? 0, context, resultCallback);
   } catch (e, stack) {
     print('$e\n$stack');
   }
@@ -431,6 +436,7 @@ typedef NativeDumpQuickjsByteCodeResultCallback = Void Function(Handle object);
 
 typedef NativeDumpQuickjsByteCode = Void Function(
     Pointer<Void>,
+    Int64 profileId,
     Pointer<Uint8> code,
     Int32 code_len,
     Pointer<Pointer<Uint8>> parsedBytecodes,
@@ -439,14 +445,15 @@ typedef NativeDumpQuickjsByteCode = Void Function(
     Handle context,
     Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback);
 typedef DartDumpQuickjsByteCode = void Function(
-  Pointer<Void>,
-  Pointer<Uint8> code,
-  int code_len,
-  Pointer<Pointer<Uint8>> parsedBytecodes,
-  Pointer<Uint64> bytecodeLen,
-  Pointer<Utf8> url,
-  Object context,
-  Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback);
+    Pointer<Void>,
+    int profileId,
+    Pointer<Uint8> code,
+    int code_len,
+    Pointer<Pointer<Uint8>> parsedBytecodes,
+    Pointer<Uint64> bytecodeLen,
+    Pointer<Utf8> url,
+    Object context,
+    Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback);
 
 final DartDumpQuickjsByteCode _dumpQuickjsByteCode =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDumpQuickjsByteCode>>('dumpQuickjsByteCode').asFunction();
@@ -455,6 +462,7 @@ class _DumpQuickjsByteCodeContext {
   Completer<Uint8List> completer;
   Pointer<Pointer<Uint8>> bytecodes;
   Pointer<Uint64> bytecodeLen;
+
   _DumpQuickjsByteCodeContext(this.completer, this.bytecodes, this.bytecodeLen);
 }
 
@@ -463,7 +471,7 @@ void _handleQuickjsByteCodeResults(_DumpQuickjsByteCodeContext context) {
   context.completer.complete(bytes);
 }
 
-Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String? url}) async {
+Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String? url, EvaluateOpItem? profileOp}) async {
   Completer<Uint8List> completer = Completer();
   // Assign `vm://$id` for no url (anonymous scripts).
   if (url == null) {
@@ -479,9 +487,11 @@ Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String?
   Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
 
   _DumpQuickjsByteCodeContext context = _DumpQuickjsByteCodeContext(completer, bytecodes, bytecodeLen);
-  Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback = Pointer.fromFunction(_handleQuickjsByteCodeResults);
+  Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback =
+      Pointer.fromFunction(_handleQuickjsByteCodeResults);
 
-  _dumpQuickjsByteCode(_allocatedPages[contextId]!, codePtr, code.length, bytecodes, bytecodeLen, _url, context, resultCallback);
+  _dumpQuickjsByteCode(
+      _allocatedPages[contextId]!, profileOp?.hashCode ?? 0, codePtr, code.length, bytecodes, bytecodeLen, _url, context, resultCallback);
 
   // return bytes;
   return completer.future;
@@ -489,9 +499,9 @@ Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code, {String?
 
 // Register initJsEngine
 typedef NativeInitDartIsolateContext = Pointer<Void> Function(
-    Int64 sendPort, Pointer<Uint64> dartMethods, Int32 methodsLength);
+    Int64 sendPort, Pointer<Uint64> dartMethods, Int32 methodsLength, Int8 enableProfile);
 typedef DartInitDartIsolateContext = Pointer<Void> Function(
-    int sendPort, Pointer<Uint64> dartMethods, int methodsLength);
+    int sendPort, Pointer<Uint64> dartMethods, int methodsLength, int enableProfile);
 
 final DartInitDartIsolateContext _initDartIsolateContext = WebFDynamicLibrary.ref
     .lookup<NativeFunction<NativeInitDartIsolateContext>>('initDartIsolateContextSync')
@@ -501,7 +511,7 @@ Pointer<Void> initDartIsolateContext(List<int> dartMethods) {
   Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * dartMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(dartMethods.length);
   nativeMethodList.setAll(0, dartMethods);
-  return _initDartIsolateContext(nativePort, bytes, dartMethods.length);
+  return _initDartIsolateContext(nativePort, bytes, dartMethods.length, enableWebFProfileTracking ? 1 : 0);
 }
 
 typedef HandleDisposePageResult = Void Function(Handle context);
@@ -631,23 +641,33 @@ void registerPluginByteCode(Uint8List bytecode, String name) {
   _registerPluginByteCode(bytes, bytecode.length, name.toNativeUtf8());
 }
 
-typedef NativeProfileModeEnabled = Int32 Function();
-typedef DartProfileModeEnabled = int Function();
+typedef NativeCollectNativeProfileData = Void Function(
+    Pointer<Void> pagePtr, Pointer<Pointer<Utf8>> data, Pointer<Uint32> len);
+typedef DartCollectNativeProfileData = void Function(
+    Pointer<Void> pagePtr, Pointer<Pointer<Utf8>> data, Pointer<Uint32> len);
 
-final DartProfileModeEnabled _profileModeEnabled =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeProfileModeEnabled>>('profileModeEnabled').asFunction();
+final DartCollectNativeProfileData _collectNativeProfileData = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeCollectNativeProfileData>>('collectNativeProfileData')
+    .asFunction();
 
-const _CODE_ENABLED = 1;
+String collectNativeProfileData() {
+  Pointer<Pointer<Utf8>> string = malloc.allocate(sizeOf<Pointer>());
+  Pointer<Uint32> len = malloc.allocate(sizeOf<Pointer>());
 
-bool profileModeEnabled() {
-  return _profileModeEnabled() == _CODE_ENABLED;
+  _collectNativeProfileData(dartContext!.pointer, string, len);
+
+  return string.value.toDartString(length: len.value);
 }
 
-typedef NativeDispatchUITask = Void Function(Double contextId, Pointer<Void> context, Pointer<Void> callback);
-typedef DartDispatchUITask = void Function(double contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef NativeClearNativeProfileData = Void Function(Pointer<Void> pagePtr);
+typedef DartClearNativeProfileData = void Function(Pointer<Void> pagePtr);
 
-void dispatchUITask(double contextId, Pointer<Void> context, Pointer<Void> callback) {
-  // _dispatchUITask(contextId, context, callback);
+final DartClearNativeProfileData _clearNativeProfileData = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeClearNativeProfileData>>('clearNativeProfileData')
+    .asFunction();
+
+void clearNativeProfileData() {
+  _clearNativeProfileData(dartContext!.pointer);
 }
 
 enum UICommandType {
@@ -700,7 +720,6 @@ typedef DartGetUICommandKindFlags = int Function(Pointer<Void>);
 
 final DartGetUICommandKindFlags _getUICommandKindFlags =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandKindFlags>>('getUICommandKindFlag').asFunction();
-
 
 typedef NativeGetUICommandItemSize = Int64 Function(Pointer<Void>);
 typedef DartGetUICommandItemSize = int Function(Pointer<Void>);
@@ -758,10 +777,8 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
     return _NativeCommandData.empty();
   }
 
-  List<int> rawMemory = nativeCommandItemPointer
-      .cast<Int64>()
-      .asTypedList((commandLength) * nativeCommandSize)
-      .toList(growable: false);
+  List<int> rawMemory =
+      nativeCommandItemPointer.cast<Int64>().asTypedList((commandLength) * nativeCommandSize).toList(growable: false);
   _clearUICommandItems(_allocatedPages[contextId]!);
 
   return _NativeCommandData(flag, commandLength, rawMemory);
@@ -771,11 +788,40 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   assert(_allocatedPages.containsKey(view.contextId));
   if (view.disposed) return;
 
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.startTrackUICommand();
+    WebFProfiler.instance.startTrackUICommandStep('readNativeUICommandMemory');
+  }
+
   _NativeCommandData rawCommands = readNativeUICommandMemory(view.contextId);
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackUICommandStep();
+  }
+
   List<UICommand>? commands;
   if (rawCommands.rawMemory.isNotEmpty) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('nativeUICommandToDart');
+    }
+
     commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+      WebFProfiler.instance.startTrackUICommandStep('execUICommands');
+    }
+
     execUICommands(view, commands);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
+
     SchedulerBinding.instance.scheduleFrame();
+  }
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackUICommand();
   }
 }

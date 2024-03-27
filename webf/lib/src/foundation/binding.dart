@@ -8,6 +8,7 @@ import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
 
@@ -202,7 +203,7 @@ abstract class DynamicBindingObject extends BindingObject {
   }
 }
 
-dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
+dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
   assert(args.length == 1);
 
   BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._properties[args[0]];
@@ -212,20 +213,33 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
     stopwatch = Stopwatch()..start();
   }
 
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'getterBindingCall');
+  }
+
+  dynamic result = null;
   if (property != null) {
-    dynamic result = property.getter();
+    result = property.getter();
     if (enableWebFCommandLog) {
       print('$bindingObject getBindingProperty key: ${args[0]} result: ${property.getter()} time: ${stopwatch!.elapsedMicroseconds}us');
     }
-    return result;
   }
-  return null;
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
+  }
+
+  return result;
 }
 
-dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args) {
+dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
   assert(args.length == 2);
   if (enableWebFCommandLog) {
     print('$bindingObject setBindingProperty key: ${args[0]} value: ${args[1]}');
+  }
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'setterBindingCall');
   }
 
   String key = args[0];
@@ -243,11 +257,20 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args) {
     }
   }
 
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
+  }
+
   return true;
 }
 
-dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> args) {
+dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
   assert(bindingObject is DynamicBindingObject);
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'getPropertyNamesBindingCall');
+  }
+
   List<String> properties = (bindingObject as DynamicBindingObject)._properties.keys.toList();
   List<String> methods = bindingObject._methods.keys.toList();
   properties.addAll(methods);
@@ -256,23 +279,37 @@ dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> a
     print('$bindingObject getPropertyNamesBindingCall value: $properties');
   }
 
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
+  }
+
   return properties;
 }
 
-dynamic invokeBindingMethodSync(BindingObject bindingObject, List<dynamic> args) {
+dynamic invokeBindingMethodSync(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
   Stopwatch? stopwatch;
   if (enableWebFCommandLog) {
     stopwatch = Stopwatch()..start();
   }
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'invokeBindingMethodSync');
+  }
+
   assert(bindingObject is DynamicBindingObject);
   dynamic result = (bindingObject as DynamicBindingObject)._invokeBindingMethodSync(args[0], args.slice(1));
   if (enableWebFCommandLog) {
     print('$bindingObject invokeBindingMethodSync method: ${args[0]} args: ${args.slice(1)} time: ${stopwatch!.elapsedMilliseconds}ms');
   }
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
+  }
+
   return result;
 }
 
-dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args) {
+dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
   if (enableWebFCommandLog) {
     print('$bindingObject invokeBindingMethodSync method: ${args[0]} args: ${args.slice(1)}');
   }
@@ -280,23 +317,42 @@ dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args
 }
 
 // This function receive calling from binding side.
-void invokeBindingMethodFromNativeImpl(double contextId, Pointer<NativeBindingObject> nativeBindingObject,
+void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
+
+  BindingOpItem? currentProfileOp;
+  if (enableWebFProfileTracking) {
+    currentProfileOp = WebFProfiler.instance.startTrackBinding(profileId);
+  }
+
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'fromNativeValue');
+  }
+
   dynamic method = fromNativeValue(controller.view, nativeMethod);
   List<dynamic> values = List.generate(argc, (i) {
     Pointer<NativeValue> nativeValue = argv.elementAt(i);
     return fromNativeValue(controller.view, nativeValue);
   });
 
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+  }
+
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'invokeDartMethods');
+  }
 
   var result = null;
   try {
     // Method is binding call method operations from internal.
     if (method is int) {
       // Get and setter ops
-      result = bindingCallMethodDispatchTable[method](bindingObject, values);
+      result = bindingCallMethodDispatchTable[method](bindingObject, values, profileOp: currentProfileOp);
     } else {
       BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
       // invokeBindingMethod directly
@@ -313,5 +369,13 @@ void invokeBindingMethodFromNativeImpl(double contextId, Pointer<NativeBindingOb
     print('$e\n$stack');
   } finally {
     toNativeValue(returnValue, result, bindingObject);
+  }
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+  }
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackBinding(profileId);
   }
 }

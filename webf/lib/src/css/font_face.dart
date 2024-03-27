@@ -108,8 +108,8 @@ class CSSFontFace {
         }
 
 
-      } catch(e) {
-        print(e);
+      } catch(e, stack) {
+        print('$e\n$stack');
         return;
       }
     }

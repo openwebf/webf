@@ -4,8 +4,10 @@
  */
 import 'dart:math' as math;
 
+import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 // Position and size of each run (line box) in flow layout.
@@ -76,6 +78,10 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   double _getMainAxisExtent(RenderBox child) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._getMainAxisExtent');
+    }
+
     double marginHorizontal = 0;
 
     if (child is RenderBoxModel) {
@@ -84,10 +90,17 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     Size childSize = _getChildSize(child) ?? Size.zero;
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+
     return childSize.width + marginHorizontal;
   }
 
   double _getCrossAxisExtent(RenderBox child) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._getCrossAxisExtent');
+    }
     bool isLineHeightValid = _isLineHeightValid(child);
     double? lineHeight = isLineHeightValid ? _getLineHeight(child) : 0;
     double marginVertical = 0;
@@ -96,6 +109,10 @@ class RenderFlowLayout extends RenderLayoutBox {
       marginVertical = _getChildMarginTop(child) + _getChildMarginBottom(child);
     }
     Size childSize = _getChildSize(child) ?? Size.zero;
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
 
     return lineHeight != null
         ? math.max(lineHeight, childSize.height) + marginVertical
@@ -128,6 +145,10 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayout(this);
+    }
+
     doingThisLayout = true;
 
     _doPerformLayout();
@@ -137,14 +158,22 @@ class RenderFlowLayout extends RenderLayoutBox {
       needsRelayout = false;
     }
     doingThisLayout = false;
-  }
 
-  void performDryLayout() {
-
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayout(this);
+    }
   }
 
   void _doPerformLayout() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.beforeLayout');
+    }
+
     beforeLayout();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
 
     List<RenderBoxModel> _positionedChildren = [];
     List<RenderBox> _nonPositionedChildren = [];
@@ -172,15 +201,34 @@ class RenderFlowLayout extends RenderLayoutBox {
       CSSPositionedLayout.layoutPositionedChild(this, child);
     }
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._layoutChildren');
+    }
+
     // Layout non positioned element (include element in flow and
     // placeholder of positioned element).
     _layoutChildren(_nonPositionedChildren);
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.initOverflowLayout');
+    }
+
     // init overflowLayout size
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.addOverflowLayoutFromChildren');
+    }
+
     // calculate all flexItem child overflow size
     addOverflowLayoutFromChildren(_nonPositionedChildren);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.applyPositionedChildOffset');
+    }
 
     // Set offset of positioned element after flex box size is set.
     for (RenderBoxModel child in _positionedChildren) {
@@ -188,6 +236,11 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Position of positioned element affect the scroll size of container.
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.applyStickyChildOffset');
     }
 
     // Set offset of sticky element on each layout.
@@ -213,7 +266,16 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
     }
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.didLayout');
+    }
+
     didLayout();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
   }
 
   // There are 3 steps for layout children.
@@ -228,19 +290,47 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     // Layout children to compute metrics of lines.
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._computeRunMetrics');
+    }
+
     List<_RunMetrics> _runMetrics = _computeRunMetrics(children);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._setContainerSize');
+    }
 
     // Set container size.
     _setContainerSize(_runMetrics);
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._adjustChildrenSize');
+    }
+
     // Adjust children size which depends on the container size.
     _adjustChildrenSize(_runMetrics);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._setChildrenOffset');
+    }
 
     // Set children offset based on alignment properties.
     _setChildrenOffset(_runMetrics);
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._setMaxScrollableSize');
+    }
+
     // Set the size of scrollable overflow area for flow layout.
     _setMaxScrollableSize(_runMetrics);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
   }
 
   // Layout children in normal flow order to calculate metrics of lines according to its constraints
@@ -258,9 +348,15 @@ class RenderFlowLayout extends RenderLayoutBox {
     double maxSizeBelowBaseline = 0;
     Map<int?, RenderBox> runChildren = {};
 
+
     WhiteSpace? whiteSpace = renderStyle.whiteSpace;
 
-    for (RenderBox child in children) {
+
+    children.forEachIndexed((int index, RenderBox child) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._computeRunMetrics.child[$index]');
+      }
+
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
       int childNodeId = child.hashCode;
 
@@ -289,11 +385,24 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       if (isChildNeedsLayout) {
         bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
+
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.pauseCurrentLayoutOp();
+        }
+
         child.layout(childConstraints, parentUsesSize: parentUseSize);
+
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.resumeCurrentLayoutOp();
+        }
       }
 
       double childMainAxisExtent = _getMainAxisExtent(child);
       double childCrossAxisExtent = _getCrossAxisExtent(child);
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.computeChildMainAxisExtent');
+      }
 
       if (isPositionPlaceholder(child)) {
         RenderPositionPlaceholder positionHolder = child as RenderPositionPlaceholder;
@@ -330,6 +439,11 @@ class RenderFlowLayout extends RenderLayoutBox {
         maxSizeBelowBaseline = 0.0;
       }
       runMainAxisExtent += childMainAxisExtent;
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackLayoutStep();
+        WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.computeChildCrossAxisExtent');
+      }
 
       // Calculate baseline extent of layout box.
       RenderStyle? childRenderStyle = _getChildRenderStyle(child);
@@ -374,11 +488,19 @@ class RenderFlowLayout extends RenderLayoutBox {
         runCrossAxisExtent = runCrossAxisExtent + childCrossAxisExtent;
       }
 
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackLayoutStep();
+      }
+
       runChildren[childNodeId] = child;
 
       childParentData.runIndex = _runMetrics.length;
       preChild = child;
-    }
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackLayoutStep();
+      }
+    });
 
     if (runChildren.isNotEmpty) {
       _runMetrics.add(_RunMetrics(
@@ -495,7 +617,16 @@ class RenderFlowLayout extends RenderLayoutBox {
                 minHeight: child.constraints.minHeight,
                 maxHeight: child.constraints.maxHeight,
               );
+
+              if (enableWebFProfileTracking) {
+                WebFProfiler.instance.pauseCurrentLayoutOp();
+              }
+
               child.layout(childConstraints, parentUsesSize: true);
+
+              if (enableWebFProfileTracking) {
+                WebFProfiler.instance.resumeCurrentLayoutOp();
+              }
             }
           }
         }
@@ -969,6 +1100,9 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Get distance from top to baseline of child including margin.
   double _getChildAscent(RenderBox child) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._getChildAscent');
+    }
     // Distance from top to baseline of child.
     double? childAscent = child.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true);
     double? childMarginTop = 0;
@@ -985,6 +1119,10 @@ class RenderFlowLayout extends RenderLayoutBox {
         : childMarginTop + childSize!.height;
     // When baseline of children not found, use boundary of margin bottom as baseline.
     double extentAboveBaseline = childAscent ?? baseline;
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
 
     return extentAboveBaseline;
   }
@@ -1040,10 +1178,22 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   double _getChildMarginTop(RenderBoxModel child) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._getChildMarginTop');
+    }
     if (child.isScrollingContentBox) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackLayoutStep();
+      }
+
       return 0;
     }
-    return child.renderStyle.collapsedMarginTop;
+    double result = child.renderStyle.collapsedMarginTop;
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+    return result;
   }
 
   double _getChildMarginBottom(RenderBoxModel child) {

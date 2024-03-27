@@ -78,6 +78,9 @@ class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
 
   @override
   WebFHTMLElementToFlutterElementAdaptor createElement() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     WebFHTMLElementToFlutterElementAdaptor element = WebFHTMLElementToFlutterElementAdaptor(this);
     // If a WebF element was already connected to a flutter element, should unmount the previous linked renderObjectt
     if (_webFElement.flutterWidgetElement != null && _webFElement.flutterWidgetElement != element) {
@@ -85,6 +88,11 @@ class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
     }
 
     _webFElement.flutterWidgetElement = element;
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
+
     return element;
   }
 

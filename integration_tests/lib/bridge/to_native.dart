@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
 
 // Steps for using dart:ffi to call a C function from Dart:
@@ -42,9 +43,9 @@ void evaluateTestScripts(double contextId, String code, {String url = 'test://',
 
 typedef ExecuteCallbackResultCallback = Void Function(Handle context, Pointer<NativeString> result);
 typedef DartExecuteCallback = void Function(double);
-typedef NativeExecuteTest = Void Function(Pointer<Void>, Handle context,
+typedef NativeExecuteTest = Void Function(Pointer<Void>, Int64 profileId, Handle context,
     Pointer<NativeFunction<ExecuteCallbackResultCallback>> resultCallback);
-typedef DartExecuteTest = void Function(Pointer<Void>, Object context,
+typedef DartExecuteTest = void Function(Pointer<Void>, int profileId, Object context,
     Pointer<NativeFunction<ExecuteCallbackResultCallback>> resultCallback);
 
 final DartExecuteTest _executeTest =
@@ -52,18 +53,29 @@ final DartExecuteTest _executeTest =
 
 class _ExecuteTestContext {
   Completer<String> completer;
-  _ExecuteTestContext(this.completer);
+  EvaluateOpItem? profileOp;
+  _ExecuteTestContext(this.completer, this.profileOp);
 }
 
 void _handleExecuteTestResult(_ExecuteTestContext context, Pointer<NativeString> resultData) {
   String status = nativeStringToString(resultData);
   context.completer.complete(status);
+
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackEvaluate(context.profileOp!);
+  }
 }
 
 Future<String> executeTest(Pointer<Void> testContext, double contextId) async {
   Completer<String> completer = Completer();
-  _ExecuteTestContext context = _ExecuteTestContext(completer);
+
+  EvaluateOpItem? currentProfileOp;
+  if (enableWebFProfileTracking) {
+    currentProfileOp = WebFProfiler.instance.startTrackEvaluate('executeTest');
+  }
+
+  _ExecuteTestContext context = _ExecuteTestContext(completer, currentProfileOp);
   Pointer<NativeFunction<ExecuteCallbackResultCallback>> callback = Pointer.fromFunction(_handleExecuteTestResult);
-  _executeTest(testContext, context, callback);
+  _executeTest(testContext, currentProfileOp?.hashCode ?? 0, context, callback);
   return completer.future;
 }

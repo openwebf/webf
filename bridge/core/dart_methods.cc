@@ -4,6 +4,7 @@
  */
 
 #include "dart_methods.h"
+#include <stdio.h>
 #include <cassert>
 #include "dart_isolate_context.h"
 #include "foundation/native_type.h"
@@ -40,6 +41,7 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
 NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
                                              void* callback_context,
                                              double context_id,
+                                             int64_t profile_link_id,
                                              SharedNativeString* moduleName,
                                              SharedNativeString* method,
                                              NativeValue* params,
@@ -49,13 +51,14 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
 #endif
   NativeValue* result = dart_isolate_context_->dispatcher()->PostToDartSync(
       is_dedicated, context_id,
-      [&](bool cancel, void* callback_context, double context_id, SharedNativeString* moduleName,
-          SharedNativeString* method, NativeValue* params, AsyncModuleCallback callback) -> webf::NativeValue* {
+      [&](bool cancel, void* callback_context, double context_id, int64_t profile_link_id,
+          SharedNativeString* moduleName, SharedNativeString* method, NativeValue* params,
+          AsyncModuleCallback callback) -> webf::NativeValue* {
         if (cancel)
           return nullptr;
-        return invoke_module_(callback_context, context_id, moduleName, method, params, callback);
+        return invoke_module_(callback_context, context_id, profile_link_id, moduleName, method, params, callback);
       },
-      callback_context, context_id, moduleName, method, params, callback);
+      callback_context, context_id, profile_link_id, moduleName, method, params, callback);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::invokeModule callSync END";
@@ -244,8 +247,10 @@ void DartMethodPointer::onJSError(bool is_dedicated, double context_id, const ch
 void DartMethodPointer::onJSLog(bool is_dedicated, double context_id, int32_t level, const char* log) {
   if (on_js_log_ == nullptr)
     return;
+  int log_length = strlen(log) + 1;
+  char* log_str = (char*)dart_malloc(sizeof(char) * log_length);
+  snprintf(log_str, log_length, "%s", log);
 
-  char* log_str = (char*)dart_malloc(sizeof(char) * strlen(log));
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, on_js_log_, context_id, level, log_str);
 }
 

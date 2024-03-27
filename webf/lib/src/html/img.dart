@@ -3,10 +3,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
@@ -499,6 +499,9 @@ class ImageElement extends Element {
   // Callback when image are loaded, encoded and available to use.
   // This callback may fire multiple times when image have multiple frames (such as an animated GIF).
   void _handleImageFrame(ImageInfo imageInfo, bool synchronousCall) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     _cachedImageInfo = imageInfo;
 
     if (_currentRequest?.state != _ImageRequestState.completelyAvailable) {
@@ -516,6 +519,9 @@ class ImageElement extends Element {
         _dispatchLoadEvent();
       });
       SchedulerBinding.instance.scheduleFrame();
+    }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
     }
   }
 

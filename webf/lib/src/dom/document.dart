@@ -397,7 +397,6 @@ class Document extends ContainerNode {
     }
 
     bool documentElementChanged = element != null && element != _documentElement;
-
     // When document is disposed, viewport is null.
     if (viewport != null) {
       if (element != null) {
@@ -421,8 +420,14 @@ class Document extends ContainerNode {
     assert(viewport!.hasSize);
     documentElement!.renderStyle.width = CSSLengthValue(viewport!.viewportSize.width, CSSLengthType.PX);
     documentElement!.renderStyle.height = CSSLengthValue(viewport!.viewportSize.height, CSSLengthType.PX);
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     documentElement!.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
     documentElement!.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   @override
@@ -527,13 +532,22 @@ class Document extends ContainerNode {
   }
 
   void flushStyle({bool rebuild = false}) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('Document.flushStyle');
+    }
     if (_styleDirtyElements.isEmpty) {
       _recalculating = false;
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
       return;
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
       _styleDirtyElements.clear();
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
       return;
     }
     if (_styleDirtyElements.any((address) {
@@ -550,6 +564,9 @@ class Document extends ContainerNode {
     }
     _styleDirtyElements.clear();
     _recalculating = false;
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void reactiveWidgetElements() {

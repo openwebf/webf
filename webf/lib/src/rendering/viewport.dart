@@ -5,6 +5,7 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
@@ -67,6 +68,11 @@ class RenderViewportBox extends RenderBox
 
   @override
   void performLayout() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayout(this);
+      WebFProfiler.instance.startTrackLayoutStep('Root Get Constraints');
+    }
+
     if (_viewportSize != null) {
       double width = _viewportSize!.width;
       double height = _viewportSize!.height - _bottomInset;
@@ -87,16 +93,33 @@ class RenderViewportBox extends RenderBox
       }
     }
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+
     RenderObject? child = firstChild;
     while (child != null) {
       final ContainerBoxParentData<RenderObject> childParentData =
           child.parentData as ContainerBoxParentData<RenderObject>;
 
       RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.pauseCurrentLayoutOp();
+      }
+
       child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.resumeCurrentLayoutOp();
+      }
 
       assert(child.parentData == childParentData);
       child = childParentData.nextSibling;
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayout(this);
     }
   }
 

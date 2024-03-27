@@ -582,15 +582,24 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   void willAttachRenderer() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this.willAttachRenderer');
+    }
     super.willAttachRenderer();
     // Init render box model.
     if (renderStyle.display != CSSDisplay.none) {
       createRenderer();
     }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   @override
   void didAttachRenderer() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this.didAttachRenderer');
+    }
     super.didAttachRenderer();
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
     renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
@@ -610,10 +619,16 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (needUpdateOverflowRenderBox) {
       updateOverflowRenderBox();
     }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   @override
   void willDetachRenderer() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this.willDetachRenderer');
+    }
     super.willDetachRenderer();
 
     // Cancel running transition.
@@ -640,6 +655,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       // Remove scrollable
       renderBoxModel.disposeScrollable();
       disposeScrollable();
+    }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
@@ -774,6 +792,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateRenderBoxModelWithPosition(CSSPositionType oldPosition) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this._updateRenderBoxModelWithPosition');
+    }
     CSSPositionType currentPosition = renderStyle.position;
 
     // No need to detach and reattach renderBoxMode when its position
@@ -830,6 +851,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       directPositionAbsoluteChildren.forEach((Element child) {
         child.addToContainingBlock();
       });
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
@@ -888,6 +913,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateBeforePseudoElement() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     // Add pseudo elements
     String? beforeContent = style.pseudoBeforeStyle?.getPropertyValue('content');
     if (beforeContent != null && beforeContent.isNotEmpty) {
@@ -896,6 +924,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       removeChild(_beforeElement!);
     }
     _shouldBeforePseudoElementNeedsUpdate = false;
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   bool _shouldAfterPseudoElementNeedsUpdate = false;
@@ -907,6 +938,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateAfterPseudoElement() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
     if (afterContent != null && afterContent.isNotEmpty) {
       _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter, _afterElement);
@@ -914,6 +948,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       removeChild(_afterElement!);
     }
     _shouldAfterPseudoElementNeedsUpdate = false;
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   // Add element to its containing block which includes the steps of detach the renderBoxModel
@@ -975,6 +1012,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // Attach renderObject of current node to parent
   @override
   void attachTo(Node parent, {RenderBox? after}) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this.attachTo');
+    }
     applyStyle(style);
 
     if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
@@ -1002,6 +1042,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
 
       didAttachRenderer();
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
@@ -1073,6 +1117,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node appendChild(Node child) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('Element.appendChild');
+    }
     super.appendChild(child);
     // Update renderStyle tree.
     if (child is Element) {
@@ -1099,17 +1146,28 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         child.attachTo(this, after: after);
       }
     }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
     return child;
   }
 
   @override
   @mustCallSuper
   Node removeChild(Node child) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('Element.removeChild');
+    }
     super.removeChild(child);
 
     // Update renderStyle tree.
     if (child is Element) {
       child.renderStyle.detach();
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
 
     return child;
@@ -1118,6 +1176,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('Element.insertBefore');
+    }
     Node? originalPreviousSibling = referenceNode.previousSibling;
     Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
@@ -1174,18 +1235,28 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
+
     return node;
   }
 
   @override
   @mustCallSuper
   Node? replaceChild(Node newNode, Node oldNode) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('Element.replaceChild');
+    }
     // Update renderStyle tree.
     if (newNode is Element) {
       newNode.renderStyle.parent = renderStyle;
     }
     if (oldNode is Element) {
       oldNode.renderStyle.parent = null;
+    }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
     return super.replaceChild(newNode, oldNode);
   }
@@ -1324,6 +1395,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _updateRenderBoxModelWithDisplay() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this._updateRenderBoxModelWithDisplay');
+    }
     CSSDisplay presentDisplay = renderStyle.display;
 
     if (parentElement == null || !parentElement!.isConnected) return;
@@ -1331,6 +1405,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
       unmountRenderObject();
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
       return;
     }
 
@@ -1354,10 +1431,23 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
 
     didAttachRenderer();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void setRenderStyleProperty(String name, value) {
     if (renderStyle.target.disposed) return;
+
+    bool uiCommandTracked = false;
+    if (enableWebFProfileTracking) {
+      if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
+        WebFProfiler.instance.startTrackUICommand();
+        uiCommandTracked = true;
+      }
+      WebFProfiler.instance.startTrackUICommandStep('$this.setRenderStyleProperty[$name]');
+    }
 
     dynamic oldValue;
 
@@ -1419,6 +1509,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         updateRenderBoxModel();
         break;
     }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+      if (uiCommandTracked) {
+        WebFProfiler.instance.finishTrackUICommand();
+      }
+    }
   }
 
   void setRenderStyle(String property, String present, {String? baseHref}) {
@@ -1468,6 +1565,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _applyDefaultStyle(CSSStyleDeclaration style) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this._applyDefaultStyle');
+    }
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
         if (style.contains(propertyName) == false) {
@@ -1475,20 +1575,35 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
       });
     }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void _applyInlineStyle(CSSStyleDeclaration style) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this._applyInlineStyle');
+    }
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
         // Force inline style to be applied as important priority.
         style.setProperty(propertyName, value, isImportant: true);
       });
     }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void _applySheetStyle(CSSStyleDeclaration style) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this._applySheetStyle');
+    }
     CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   bool _scheduledRunTransitions = false;
@@ -1550,11 +1665,22 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void _applyPseudoStyle(CSSStyleDeclaration style) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this._applyPseudoStyle');
+    }
+
     List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
     style.handlePseudoRules(this, pseudoRules);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void applyStyle(CSSStyleDeclaration style) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this.applyStyle');
+    }
     // Apply default style.
     _applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
@@ -1564,6 +1690,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _applyInlineStyle(style);
     _applySheetStyle(style);
     _applyPseudoStyle(style);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
   }
 
   void applyAttributeStyle(CSSStyleDeclaration style) {
@@ -1579,6 +1709,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
     if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.startTrackUICommandStep('$this.recalculateStyle');
+      }
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -1595,6 +1728,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         children.forEach((Element child) {
           child.recalculateStyle(rebuildNested: rebuildNested);
         });
+      }
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackUICommandStep();
       }
     }
   }
@@ -1730,8 +1866,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // TODO
   }
 
-  Future<Uint8List> toBlob({double? devicePixelRatio}) {
+  Future<Uint8List> toBlob({double? devicePixelRatio, BindingOpItem? currentProfileOp}) {
     flushLayout();
+
     forceToRepaintBoundary = true;
 
     Completer<Uint8List> completer = Completer();
@@ -1773,7 +1910,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   String toString() {
-    return '$tagName Element($hashCode)';
+    String printText = '$tagName Element(${shortHash(this)})';
+    if (className.isNotEmpty) {
+      printText += ' className(.$className)';
+    }
+    if (id != null) {
+      printText += ' id($id)';
+    }
+    return printText;
   }
 
   // Create a new RenderLayoutBox for the scrolling content.

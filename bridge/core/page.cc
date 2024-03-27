@@ -51,7 +51,9 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
       return false;
     }
 
+    context_->dartIsolateContext()->profiler()->StartTrackSteps("HTMLParser::parseHTML");
     HTMLParser::parseHTML(code, length, context_->document()->documentElement());
+    context_->dartIsolateContext()->profiler()->FinishTrackSteps();
   }
 
   context_->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);

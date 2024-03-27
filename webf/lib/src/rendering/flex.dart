@@ -5,6 +5,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 
@@ -582,6 +583,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayout(this);
+    }
     doingThisLayout = true;
 
     _doPerformLayout();
@@ -591,10 +595,20 @@ class RenderFlexLayout extends RenderLayoutBox {
       needsRelayout = false;
     }
     doingThisLayout = false;
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayout(this);
+    }
   }
 
   void _doPerformLayout() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderFlexLayout.beforeLayout');
+    }
     beforeLayout();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
 
     List<RenderBoxModel> _positionedChildren = [];
     List<RenderPositionPlaceholder> _positionPlaceholderChildren = [];

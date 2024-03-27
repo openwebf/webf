@@ -117,7 +117,18 @@ abstract class WebFBundle {
   Future<void> preProcessing(double contextId) async {
     if (isJavascript && data != null) {
       assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
-      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString());
+
+      EvaluateOpItem? currentProfileOp;
+      if (enableWebFProfileTracking) {
+        currentProfileOp = WebFProfiler.instance.startTrackEvaluate('dumpQuickjsByteCode');
+      }
+
+      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString(), profileOp: currentProfileOp);
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackEvaluate(currentProfileOp!);
+      }
+
       _contentType = webfBc1ContentType;
     }
   }
@@ -242,36 +253,79 @@ class NetworkBundle extends WebFBundle {
   Future<void> obtainData(double contextId) async {
     if (data != null) return;
 
+    NetworkOpItem? currentProfileOp;
+    if (enableWebFProfileTracking) {
+      currentProfileOp = WebFProfiler.instance.startTrackNetwork(_uri!.toString());
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, '_sharedHttpClient.getUrl');
+    }
     final HttpClientRequest request = await _sharedHttpClient.getUrl(_uri!);
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
+    }
 
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
     WebFHttpOverrides.setContextHeader(request.headers, contextId);
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'request.close()');
+    }
+
     final HttpClientResponse response = await request.close();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
+    }
+
     if (response.statusCode != HttpStatus.ok)
       throw FlutterError.fromParts(<DiagnosticsNode>[
         ErrorSummary('Unable to load asset: $url'),
         IntProperty('HTTP status code', response.statusCode),
       ]);
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'consolidateHttpClientResponseBytes(response)');
+    }
+
     hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
     Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+
+    if (!enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
+    }
 
     // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
     // and decode them if they are in gzip format.
     if (isGzip(bytes)) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'Uint8List.fromList(gzip.decoder.convert(bytes))');
+      }
+
       bytes = Uint8List.fromList(gzip.decoder.convert(bytes));
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
+      }
     }
 
     if (bytes.isEmpty) {
       await invalidateCache();
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackNetwork(currentProfileOp!);
+      }
       return;
     }
 
     data = bytes.buffer.asUint8List();
     _contentType = response.headers.contentType ?? ContentType.binary;
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackNetwork(currentProfileOp!);
+    }
   }
 }
 

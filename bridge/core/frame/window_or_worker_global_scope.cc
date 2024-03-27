@@ -21,8 +21,14 @@ static void handleTimerCallback(DOMTimer* timer, char* errmsg) {
   if (context->Timers()->getTimerById(timer->timerId()) == nullptr)
     return;
 
+  context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+  context->dartIsolateContext()->profiler()->StartTrackSteps("handleTimerCallback");
+
   // Trigger timer callbacks.
   timer->Fire();
+
+  context->dartIsolateContext()->profiler()->FinishTrackSteps();
+  context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 }
 
 static void handleTransientCallback(void* ptr, double contextId, char* errmsg) {

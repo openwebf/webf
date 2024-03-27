@@ -102,6 +102,11 @@ class FetchModule extends BaseModule {
       _handleError('Failed to parse URL from $uri.', null);
     } else {
       HttpClientResponse? response;
+      NetworkOpItem? currentNetworkOp;
+      if (enableWebFProfileTracking) {
+        currentNetworkOp = WebFProfiler.instance.startTrackNetwork(uri.toString());
+      }
+
       getRequest(uri, options['method'], options['headers'], options['body']).then((HttpClientRequest request) {
         if (_disposed) return Future.value(null);
         return request.close();
@@ -118,7 +123,11 @@ class FetchModule extends BaseModule {
         } else {
           throw FlutterError('Failed to read response.');
         }
-      }).catchError(_handleError);
+      }).catchError(_handleError).then((value) {
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.finishTrackNetwork(currentNetworkOp!);
+        }
+      });
     }
 
     return EMPTY_STRING;

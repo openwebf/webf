@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
@@ -103,7 +104,15 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
   /// override it to layout box model paint.
   @override
   void paint(PaintingContext context, Offset offset) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackPaint(this);
+    }
+
     paintBoxModel(context, offset);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackPaint(this);
+    }
   }
 
   @override
@@ -114,7 +123,13 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
     if (child != null) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.pauseCurrentPaintOp();
+      }
       context.paintChild(child!, offset);
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.resumeCurrentPaintOp();
+      }
     }
   }
 

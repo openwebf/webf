@@ -99,9 +99,10 @@ void DartIsolateContext::FinalizeJSRuntime() {
   is_name_installed_ = false;
 }
 
-DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length)
+DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length, bool profile_enabled)
     : is_valid_(true),
       running_thread_(std::this_thread::get_id()),
+      profiler_(std::make_unique<WebFProfiler>(profile_enabled)),
       dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
   running_dart_isolates++;
@@ -131,8 +132,12 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      int32_t sync_buffer_size,
                                                      Dart_Handle dart_handle,
                                                      AllocateNewPageCallback result_callback) {
+  dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
   auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, nullptr);
+
+  dart_isolate_context->profiler()->FinishTrackInitialize();
+
   dart_isolate_context->dispatcher_->PostToDart(true, HandleNewPageResult, page_group, dart_handle, result_callback,
                                                 page);
 }
@@ -182,7 +187,10 @@ void* DartIsolateContext::AddNewPage(double thread_identity,
 }
 
 void* DartIsolateContext::AddNewPageSync(double thread_identity) {
+  profiler()->StartTrackSteps("WebFPage::Initialize");
   auto page = std::make_unique<WebFPage>(this, false, 0, thread_identity, nullptr);
+  profiler()->FinishTrackSteps();
+
   void* p = page.get();
   pages_in_ui_thread_.emplace(std::move(page));
   return p;

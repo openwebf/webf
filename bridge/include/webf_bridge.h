@@ -41,7 +41,10 @@ typedef void (*ParseHTMLCallback)(Dart_Handle);
 typedef void (*EvaluateScriptsCallback)(Dart_Handle dart_handle, int8_t);
 
 WEBF_EXPORT_C
-void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len);
+void* initDartIsolateContextSync(int64_t dart_port,
+                                 uint64_t* dart_methods,
+                                 int32_t dart_methods_len,
+                                 int8_t enable_profile);
 
 WEBF_EXPORT_C
 void allocateNewPage(double thread_identity,
@@ -73,18 +76,21 @@ void evaluateScripts(void* page,
                      uint8_t** parsed_bytecodes,
                      uint64_t* bytecode_len,
                      const char* bundleFilename,
-                     int32_t startLine,
+                     int32_t start_line,
+                     int64_t profile_id,
                      Dart_Handle dart_handle,
                      EvaluateQuickjsByteCodeCallback result_callback);
 WEBF_EXPORT_C
 void evaluateQuickjsByteCode(void* page,
                              uint8_t* bytes,
                              int32_t byteLen,
+                             int64_t profile_id,
                              Dart_Handle dart_handle,
                              EvaluateQuickjsByteCodeCallback result_callback);
 
 WEBF_EXPORT_C
 void dumpQuickjsByteCode(void* page,
+                         int64_t profile_id,
                          const char* code,
                          int32_t code_len,
                          uint8_t** parsed_bytecodes,
@@ -94,7 +100,12 @@ void dumpQuickjsByteCode(void* page,
                          DumpQuickjsByteCodeCallback result_callback);
 
 WEBF_EXPORT_C
-void parseHTML(void* page, char* code, int32_t length, Dart_Handle dart_handle, ParseHTMLCallback result_callback);
+void parseHTML(void* page,
+               char* code,
+               int32_t length,
+               int64_t profile_id,
+               Dart_Handle dart_handle,
+               ParseHTMLCallback result_callback);
 WEBF_EXPORT_C
 void* parseSVGResult(const char* code, int32_t length);
 WEBF_EXPORT_C
@@ -107,6 +118,11 @@ void invokeModuleEvent(void* page,
                        NativeValue* extra,
                        Dart_Handle dart_handle,
                        InvokeModuleEventCallback result_callback);
+WEBF_EXPORT_C
+void collectNativeProfileData(void* ptr, const char** data, uint32_t* len);
+WEBF_EXPORT_C
+void clearNativeProfileData(void* ptr);
+
 WEBF_EXPORT_C
 WebFInfo* getWebFInfo();
 WEBF_EXPORT_C
@@ -124,8 +140,6 @@ WEBF_EXPORT_C
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName);
 WEBF_EXPORT_C
 void registerPluginCode(const char* code, int32_t length, const char* pluginName);
-WEBF_EXPORT_C
-int32_t profileModeEnabled();
 
 WEBF_EXPORT_C int8_t isJSThreadBlocked(void* dart_isolate_context, double context_id);
 

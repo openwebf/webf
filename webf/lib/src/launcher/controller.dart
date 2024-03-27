@@ -496,8 +496,11 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void cloneNode(Pointer<NativeBindingObject> selfPtr, Pointer<NativeBindingObject> newPtr) {
-    EventTarget originalTarget = getBindingObject<EventTarget>(selfPtr)!;
-    EventTarget newTarget = getBindingObject<EventTarget>(newPtr)!;
+    EventTarget? originalTarget = getBindingObject<EventTarget>(selfPtr);
+    EventTarget? newTarget = getBindingObject<EventTarget>(newPtr);
+
+    if (originalTarget == null || newTarget == null) return;
+
 
     // Current only element clone will process in dart.
     if (originalTarget is Element) {
@@ -518,8 +521,8 @@ class WebFViewController implements WidgetsBindingObserver {
   void removeNode(Pointer pointer) {
     assert(hasBindingObject(pointer), 'pointer: $pointer');
 
-    Node target = getBindingObject<Node>(pointer)!;
-    target.parentNode?.removeChild(target);
+    Node? target = getBindingObject<Node>(pointer);
+    target?.parentNode?.removeChild(target);
 
     _debugDOMTreeChanged();
   }
@@ -536,8 +539,13 @@ class WebFViewController implements WidgetsBindingObserver {
     assert(hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
     assert(hasBindingObject(selfPointer), 'newTargetId: $newPointer position: $position');
 
-    Node target = getBindingObject<Node>(selfPointer)!;
-    Node newNode = getBindingObject<Node>(newPointer)!;
+    Node? target = getBindingObject<Node>(selfPointer);
+    Node? newNode = getBindingObject<Node>(newPointer);
+
+    if (target == null || newNode == null) {
+      return;
+    }
+
     Node? targetParentNode = target.parentNode;
 
     switch (position) {
@@ -564,7 +572,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
     assert(hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
-    Node target = getBindingObject<Node>(selfPtr)!;
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
 
     if (target is Element) {
       // Only element has properties.
@@ -578,7 +587,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
   String? getAttribute(Pointer selfPtr, String key) {
     assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node target = getBindingObject<Node>(selfPtr)!;
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return null;
 
     if (target is Element) {
       // Only element has attributes.
@@ -593,7 +603,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void removeAttribute(Pointer selfPtr, String key) {
     assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node target = getBindingObject<Node>(selfPtr)!;
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
 
     if (target is Element) {
       target.removeAttribute(key);
@@ -960,6 +971,9 @@ class WebFController {
         runningThread = runningThread ?? DedicatedThread(),
         ownerFlutterView = View.of(context) {
     _initializePreloadBundle();
+    if (enableWebFProfileTracking) {
+      WebFProfiler.initialize();
+    }
 
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
@@ -1218,10 +1232,18 @@ class WebFController {
     // Set the status value for preloading.
     _preloadStatus = PreloadingStatus.preloading;
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
+
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
     view.document.documentElement!.createRenderer();
     view.document.documentElement!.ensureChildAttached();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
 
     await Future.wait([
       _resolveEntrypoint(),
@@ -1236,8 +1258,17 @@ class WebFController {
       _preloadStatus = PreloadingStatus.done;
       controllerPreloadingCompleter.complete();
     } else if (_entrypoint!.isHTML) {
+      EvaluateOpItem? evaluateOpItem;
+      if (enableWebFProfileTracking) {
+        evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
+      }
+
       // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-      await parseHTML(view.contextId, _entrypoint!.data!);
+      await parseHTML(view.contextId, _entrypoint!.data!, profileOp: evaluateOpItem);
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
+      }
 
       // Initialize document, window and the documentElement.
       flushUICommand(view, view.window.pointer!);
@@ -1296,10 +1327,18 @@ class WebFController {
     // Set the status value for preloading.
     _preRenderingStatus = PreRenderingStatus.preloading;
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
+
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
     view.document.documentElement!.createRenderer();
     view.document.documentElement!.ensureChildAttached();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
 
     // Preparing the entrypoint
     await Future.wait([
@@ -1391,6 +1430,11 @@ class WebFController {
   // Resume all timers and callbacks if kraken page now visible.
   void resume() {
     if (!_paused) return;
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
+
     _paused = false;
     flushPendingCallbacks();
     module.resumeTimer();
@@ -1398,6 +1442,10 @@ class WebFController {
     view.resumeAnimationTimeline();
     view.document.reactiveWidgetElements();
     SchedulerBinding.instance.scheduleFrame();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
   }
 
   bool _disposed = false;
@@ -1478,6 +1526,11 @@ class WebFController {
 
     assert(!_view._disposed, 'WebF have already disposed');
     if (_entrypoint != null) {
+      EvaluateOpItem? evaluateOpItem;
+      if (enableWebFProfileTracking) {
+        evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('WebFController.evaluateEntrypoint');
+      }
+
       WebFBundle entrypoint = _entrypoint!;
       double contextId = _view.contextId;
       assert(entrypoint.isResolved, 'The webf bundle $entrypoint is not resolved to evaluate.');
@@ -1489,17 +1542,17 @@ class WebFController {
       if (entrypoint.isJavascript) {
         assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
         // Prefer sync decode in loading entrypoint.
-        await evaluateScripts(contextId, data, url: url);
+        await evaluateScripts(contextId, data, url: url, profileOp: evaluateOpItem);
       } else if (entrypoint.isBytecode) {
-        await evaluateQuickjsByteCode(contextId, data);
+        await evaluateQuickjsByteCode(contextId, data, profileOp: evaluateOpItem);
       } else if (entrypoint.isHTML) {
         assert(isValidUTF8String(data), 'The HTML codes should be in UTF-8 encoding format');
-        await parseHTML(contextId, data);
+        await parseHTML(contextId, data, profileOp: evaluateOpItem);
       } else if (entrypoint.contentType.primaryType == 'text') {
         // Fallback treating text content as JavaScript.
         try {
           assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
-          await evaluateScripts(contextId, data, url: url);
+          await evaluateScripts(contextId, data, url: url, profileOp: evaluateOpItem);
         } catch (error) {
           print('Fallback to execute JavaScript content of $url');
           rethrow;
@@ -1519,6 +1572,10 @@ class WebFController {
         checkCompleted();
       });
       SchedulerBinding.instance.scheduleFrame();
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
+      }
     }
   }
 

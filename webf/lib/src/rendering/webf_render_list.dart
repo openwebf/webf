@@ -5,6 +5,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 
@@ -24,6 +25,16 @@ class WebFRenderSliverList extends RenderSliverMultiBoxAdaptor {
 
   @override
   void performLayout() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayout(this);
+    }
+    _doPerformLayout();
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayout(this);
+    }
+  }
+
+  void _doPerformLayout() {
     final SliverConstraints constraints = this.constraints;
     childManager.didStartLayout();
     childManager.setDidUnderflow(false);

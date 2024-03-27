@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
 #include "dart_methods.h"
+#include "foundation/profiler.h"
 #include "multiple_threading/dispatcher.h"
 
 namespace webf {
@@ -42,7 +43,7 @@ void DeleteDartWire(DartWireContext* wire);
 // DartIsolateContext has a 1:1 correspondence with a dart isolates.
 class DartIsolateContext {
  public:
-  explicit DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length);
+  explicit DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length, bool profile_enabled);
 
   JSRuntime* runtime();
   FORCE_INLINE bool valid() { return is_valid_; }
@@ -51,6 +52,7 @@ class DartIsolateContext {
   FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
     dispatcher_ = std::move(dispatcher);
   }
+  FORCE_INLINE WebFProfiler* profiler() const { return profiler_.get(); };
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
@@ -93,6 +95,7 @@ class DartIsolateContext {
                                                Dart_Handle persistent_handle,
                                                DisposePageCallback result_callback);
 
+  std::unique_ptr<WebFProfiler> profiler_;
   int is_valid_{false};
   std::thread::id running_thread_;
   mutable std::unique_ptr<DartContextData> data_;
