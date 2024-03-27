@@ -9,10 +9,10 @@
 #include <memory>
 #include <vector>
 
-#include "third_party/v8/include/cppgc/common.h"
-#include "third_party/v8/include/cppgc/custom-space.h"
-#include "third_party/v8/include/cppgc/heap-statistics.h"
-#include "third_party/v8/include/cppgc/visitor.h"
+#include "cppgc/common.h"
+#include "cppgc/custom-space.h"
+#include "cppgc/heap-statistics.h"
+#include "cppgc/visitor.h"
 #include "v8-internal.h"       // NOLINT(build/include_directory)
 #include "v8-platform.h"       // NOLINT(build/include_directory)
 #include "v8-traced-handle.h"  // NOLINT(build/include_directory)

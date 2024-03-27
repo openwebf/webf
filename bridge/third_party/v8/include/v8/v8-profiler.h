@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "third_party/v8/include/cppgc/common.h"  // NOLINT(build/include_directory)
+#include "cppgc/common.h"          // NOLINT(build/include_directory)
 #include "v8-local-handle.h"       // NOLINT(build/include_directory)
 #include "v8-message.h"            // NOLINT(build/include_directory)
 #include "v8-persistent-handle.h"  // NOLINT(build/include_directory)

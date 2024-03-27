@@ -236,6 +236,31 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
 
+  list(APPEND BRIDGE_SOURCE
+    # Binding files
+    bindings/qjs/dictionary_base.cc
+    bindings/qjs/js_based_event_listener.cc
+    bindings/qjs/js_event_handler.cc
+    bindings/qjs/js_event_listener.cc
+    bindings/qjs/binding_initializer.cc
+    bindings/qjs/member_installer.cc
+    bindings/qjs/source_location.cc
+    bindings/qjs/cppgc/gc_visitor.cc
+    bindings/qjs/cppgc/mutation_scope.cc
+    bindings/qjs/script_wrappable.cc
+    bindings/qjs/native_string_utils.cc
+    bindings/qjs/qjs_engine_patch.cc
+    bindings/qjs/qjs_function.cc
+    bindings/qjs/script_value.cc
+    bindings/qjs/script_promise.cc
+    bindings/qjs/script_promise_resolver.cc
+    bindings/qjs/atomic_string.cc
+    bindings/qjs/exception_state.cc
+    bindings/qjs/exception_message.cc
+    bindings/qjs/rejected_promises.cc
+    bindings/qjs/union_base.cc
+  )
+
   # Gen sources.
   list(APPEND BRIDGE_SOURCE
     out/names_installer.cc
@@ -394,40 +419,30 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
 
 elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
+
+  add_compile_options(-DWEBF_V8_JS_ENGINE=1)
+
+  list(APPEND BRIDGE_SOURCE
+    # Binding files
+    bindings/v8/atomic_string.cc
+  )
+
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    find_library(v8
-            NAMES v8
-            HINTS "third_party/v8/lib/macos/libv8.dylib")
-    list(APPEND BRIDGE_LINK_LIBS v8)
+    add_library(v8 SHARED IMPORTED)
+    set_target_properties(v8 PROPERTIES IMPORTED_LOCATION "third_party/v8/lib/macos/arm64/libv8.dylib")
+    add_library(v8_platform SHARED IMPORTED)
+    set_target_properties(v8_platform PROPERTIES IMPORTED_LOCATION "third_party/v8/lib/macos/arm64/libv8_libplatform.dylib")
+    list(APPEND BRIDGE_LINK_LIBS v8 v8_platform)
   endif()
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include/v8)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include/v8/cppgc)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include/v8/libplatform)
 endif()
 
 list(APPEND BRIDGE_LINK_LIBS modb)
 
 list(APPEND BRIDGE_SOURCE
-  # Binding files
-  bindings/qjs/dictionary_base.cc
-  bindings/qjs/js_based_event_listener.cc
-  bindings/qjs/js_event_handler.cc
-  bindings/qjs/js_event_listener.cc
-  bindings/qjs/binding_initializer.cc
-  bindings/qjs/member_installer.cc
-  bindings/qjs/source_location.cc
-  bindings/qjs/cppgc/gc_visitor.cc
-  bindings/qjs/cppgc/mutation_scope.cc
-  bindings/qjs/script_wrappable.cc
-  bindings/qjs/native_string_utils.cc
-  bindings/qjs/qjs_engine_patch.cc
-  bindings/qjs/qjs_function.cc
-  bindings/qjs/script_value.cc
-  bindings/qjs/script_promise.cc
-  bindings/qjs/script_promise_resolver.cc
-  bindings/qjs/atomic_string.cc
-  bindings/qjs/exception_state.cc
-  bindings/qjs/exception_message.cc
-  bindings/qjs/rejected_promises.cc
-  bindings/qjs/union_base.cc
   # Core sources
   webf_bridge.cc
   core/api/api.cc

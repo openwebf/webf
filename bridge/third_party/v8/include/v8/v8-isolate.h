@@ -11,7 +11,7 @@
 #include <memory>
 #include <utility>
 
-#include "third_party/v8/include/cppgc/common.h"
+#include "cppgc/common.h"
 #include "v8-array-buffer.h"       // NOLINT(build/include_directory)
 #include "v8-callbacks.h"          // NOLINT(build/include_directory)
 #include "v8-data.h"               // NOLINT(build/include_directory)
