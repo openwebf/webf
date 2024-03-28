@@ -287,7 +287,7 @@ class CSSBackgroundImage {
             url: uri,
             loadImage: _obtainImage,
               onImageLoad: (int naturalWidth, int naturalHeight, int frameCount) {
-                if (frameCount > 1) {
+                if (frameCount > 1 && !renderStyle.target.isRepaintBoundary) {
                    renderStyle.target.forceToRepaintBoundary = true;
                    renderStyle.target.renderBoxModel!.invalidateBoxPainter();
                 }
