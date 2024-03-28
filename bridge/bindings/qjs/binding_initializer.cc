@@ -33,6 +33,7 @@
 #include "qjs_event_target.h"
 #include "qjs_focus_event.h"
 #include "qjs_gesture_event.h"
+#include "qjs_hashchange_event.h"
 #include "qjs_html_all_collection.h"
 #include "qjs_html_anchor_element.h"
 #include "qjs_html_body_element.h"
@@ -118,6 +119,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSCloseEvent::Install(context);
   QJSFocusEvent::Install(context);
   QJSGestureEvent::Install(context);
+  QJSHashchangeEvent::Install(context);
   QJSInputEvent::Install(context);
   QJSCustomEvent::Install(context);
   QJSMouseEvent::Install(context);

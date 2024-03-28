@@ -37,6 +37,7 @@
         "gestureend"
       ]
     },
+    "hashchange",
     "input",
     {
       "class": "FocusEvent",
