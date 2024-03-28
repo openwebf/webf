@@ -294,7 +294,7 @@ class NetworkBundle extends WebFBundle {
     hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
     Uint8List bytes = await consolidateHttpClientResponseBytes(response);
 
-    if (!enableWebFProfileTracking) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
     }
 
