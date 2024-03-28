@@ -2,13 +2,14 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#if WEBF_V8_JS_ENGINE
+#include <v8/v8-platform.h>
+#include "v8/libplatform/libplatform.h"
+#endif
 #include "dart_isolate_context.h"
 #include <unordered_set>
-#include "defined_properties_initializer.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
-#include "logging.h"
-#include "multiple_threading/looper.h"
 #include "names_installer.h"
 #include "page.h"
 #include "svg_element_factory.h"
@@ -59,18 +60,33 @@ const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
   return data_;
 }
 
+#if WEBF_V8_JS_ENGINE
+  std::unique_ptr<v8::Platform> platform = nullptr;
+  thread_local v8::Isolate* isolate_{nullptr};
+#elif WEBF_QUICKJS_JS_ENGINE
 thread_local JSRuntime* runtime_{nullptr};
+#endif
 thread_local uint32_t running_dart_isolates = 0;
 thread_local bool is_name_installed_ = false;
 
+#if WEBF_QUICKJS_JS_ENGINE
 void InitializeBuiltInStrings(JSContext* ctx) {
   if (!is_name_installed_) {
     names_installer::Init(ctx);
     is_name_installed_ = true;
   }
 }
+#elif WEBF_V8_JS_ENGINE
+void InitializeBuiltInStrings(v8::Isolate* isolate) {
+  if (!is_name_installed_) {
+    names_installer::Init(isolate);
+    is_name_installed_ = true;
+  }
+}
+#endif
 
 void DartIsolateContext::InitializeJSRuntime() {
+#if WEBF_QUICKJS_JS_ENGINE
   if (runtime_ != nullptr)
     return;
   runtime_ = JS_NewRuntime();
@@ -81,6 +97,18 @@ void DartIsolateContext::InitializeJSRuntime() {
     JSClassID id{0};
     JS_NewClassID(&id);
   }
+#elif WEBF_V8_JS_ENGINE
+  if (platform == nullptr) {
+    platform = v8::platform::NewDefaultPlatform();
+    v8::V8::InitializePlatform(platform.get());
+    v8::V8::Initialize();
+  }
+  // Create a new Isolate and make it the current one.
+  v8::Isolate::CreateParams create_params;
+  create_params.array_buffer_allocator =
+      v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+  isolate_ = v8::Isolate::New(create_params);
+#endif
 }
 
 void DartIsolateContext::FinalizeJSRuntime() {
@@ -93,24 +121,36 @@ void DartIsolateContext::FinalizeJSRuntime() {
   SVGElementFactory::Dispose();
   EventFactory::Dispose();
   ClearUpWires();
+
+#if WEBF_QUICKJS_JS_ENGINE
   JS_TurnOnGC(runtime_);
   JS_FreeRuntime(runtime_);
   runtime_ = nullptr;
+#elif WEBF_V8_JS_ENGINE
+  isolate_->Dispose();
+  isolate_ = nullptr;
+#endif
   is_name_installed_ = false;
 }
 
 DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length)
     : is_valid_(true),
       running_thread_(std::this_thread::get_id()),
-      dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
+      dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)){
   is_valid_ = true;
   running_dart_isolates++;
   InitializeJSRuntime();
 }
 
+#if WEBF_QUICKJS_JS_ENGINE
 JSRuntime* DartIsolateContext::runtime() {
   return runtime_;
 }
+#elif WEBF_V8_JS_ENGINE
+v8::Isolate* DartIsolateContext::isolate() {
+  return isolate_;
+}
+#endif
 
 DartIsolateContext::~DartIsolateContext() {}
 

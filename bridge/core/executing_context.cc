@@ -54,6 +54,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 
   time_origin_ = std::chrono::system_clock::now();
 
+#if WEBF_QUICKJS_JS_ENGINE
+
   JSContext* ctx = script_state_.ctx();
   global_object_ = JS_GetGlobalObject(script_state_.ctx());
 
@@ -62,6 +64,9 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   JS_TurnOffGC(script_state_.runtime());
   JS_SetContextOpaque(ctx, this);
   JS_SetHostPromiseRejectionTracker(script_state_.runtime(), promiseRejectTracker, nullptr);
+
+#elif WEBF_V8_JS_ENGINE
+#endif
 
   // Register all built-in native bindings.
   InstallBindings(this);

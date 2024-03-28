@@ -5,7 +5,12 @@
 #ifndef BRIDGE_CORE_SCRIPT_STATE_H_
 #define BRIDGE_CORE_SCRIPT_STATE_H_
 
+#if WEBF_V8_JS_ENGINE
+#include <v8/v8.h>
+#elif WEBF_QUICKJS_JS_ENGINE
 #include <quickjs/quickjs.h>
+#endif
+
 #include <cassert>
 
 namespace webf {
@@ -23,15 +28,27 @@ class ScriptState {
   ~ScriptState();
 
   inline bool Invalid() const { return !ctx_invalid_; }
+#if WEBF_QUICKJS_JS_ENGINE
   inline JSContext* ctx() {
     assert(!ctx_invalid_ && "executingContext has been released");
     return ctx_;
   }
-  JSRuntime* runtime();
+#elif WEBF_V8_JS_ENGINE
+  inline v8::Local<v8::Context> ctx() {
+    assert(!ctx_invalid_ && "executingContext has been released");
+    return ctx_;
+  }
+  v8::Isolate* isolate();
+#endif
 
  private:
-  bool ctx_invalid_{false};
+#if WEBF_QUICKJS_JS_ENGINE
   JSContext* ctx_{nullptr};
+#elif WEBF_V8_JS_ENGINE
+  v8::Local<v8::Context> ctx_;
+#endif
+
+  bool ctx_invalid_{false};
   DartIsolateContext* dart_isolate_context_{nullptr};
 };
 
