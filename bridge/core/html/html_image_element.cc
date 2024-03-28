@@ -48,7 +48,9 @@ DispatchEventResult HTMLImageElement::FireEventListeners(Event& event, Exception
   return HTMLElement::FireEventListeners(event, exception_state);
 }
 
-DispatchEventResult HTMLImageElement::FireEventListeners(webf::Event& event, bool isCapture, webf::ExceptionState& exception_state) {
+DispatchEventResult HTMLImageElement::FireEventListeners(webf::Event& event,
+                                                         bool isCapture,
+                                                         webf::ExceptionState& exception_state) {
   if (event.type() == event_type_names::kload || event.type() == event_type_names::kerror) {
     ReleaseAlive();
   }
