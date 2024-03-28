@@ -476,6 +476,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
           RenderViewportBox rootRenderObject = renderObject as RenderViewportBox;
           if (!controller!.view.firstLoad) {
             controller!.resume();
+            controller!.view.document.reactiveWidgetElements();
             rootRenderObject.insert(controller!.view.getRootRenderObject()!);
           }
           return;
