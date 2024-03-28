@@ -7,6 +7,7 @@
 
 #include "canvas_gradient.h"
 #include "canvas_pattern.h"
+#include "path_2d.h"
 #include "canvas_rendering_context.h"
 #include "qjs_union_dom_stringcanvas_gradient.h"
 #include "qjs_unionhtml_image_elementhtml_canvas_element.h"

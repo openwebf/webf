@@ -114,6 +114,7 @@
     "scale",
     "strokeText",
     "setTransform",
+    "addPath",
     "transform",
     "translate",
     "reset",

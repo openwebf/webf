@@ -21,12 +21,12 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): DartImpl<void>;
     clearRect(x: number, y: number, w: number, h: number): DartImpl<void>;
     closePath(): DartImpl<void>;
-    clip(path?: string): DartImpl<void>;
+    clip(path?: Path2D, fillRule?: string): DartImpl<void>;
     drawImage(image: HTMLImageElement, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): DartImpl<void>;
     drawImage(image: HTMLImageElement, dx: number, dy: number, dw: number, dh: number): DartImpl<void>;
     drawImage(image: HTMLImageElement, dx: number, dy: number): DartImpl<void>;
     ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean): DartImpl<void>;
-    fill(path?: string): DartImpl<void>;
+    fill(path?: Path2D, fillRule?: string): DartImpl<void>;
     fillRect(x: number, y: number, w: number, h: number): DartImpl<void>;
     fillText(text: string, x: number, y: number, maxWidth?: number): DartImpl<void>;
     lineTo(x: number, y: number): DartImpl<void>;
@@ -36,7 +36,7 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     resetTransform(): DartImpl<void>;
     rotate(angle: number): DartImpl<void>;
     quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): DartImpl<void>;
-    stroke(): DartImpl<void>;
+    stroke(path?: Path2D): DartImpl<void>;
     strokeRect(x: number, y: number, w: number, h: number): DartImpl<void>;
     save(): DartImpl<void>;
     scale(x: number, y: number): DartImpl<void>;
