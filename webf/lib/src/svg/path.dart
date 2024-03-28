@@ -7,16 +7,18 @@ import 'package:webf/svg.dart';
 import 'rendering/path.dart';
 
 class SVGPathElement extends SVGGeometryElement {
-  late final RenderSVGPath _renderer;
 
   @override
-  get renderBoxModel => _renderer;
+  get renderBoxModel => renderSVGBox;
 
   @override
   get presentationAttributeConfigs => super.presentationAttributeConfigs
     ..addAll([SVGPresentationAttributeConfig('d')]);
 
-  SVGPathElement(super.context) {
-    _renderer = RenderSVGPath(renderStyle: renderStyle, element: this);
+  SVGPathElement(super.context);
+
+  @override
+  dynamic createRenderBoxModel() {
+    return RenderSVGPath(renderStyle: renderStyle, element: this);
   }
 }

@@ -72,7 +72,8 @@ class _InactiveRenderObjects {
   }
 
   void finalizeInactiveRenderObjects() {
-    for (RenderObject object in _renderObjects) {
+    for(RenderObject object in _renderObjects) {
+      assert(!object.attached);
       object.dispose();
     }
     _renderObjects.clear();
