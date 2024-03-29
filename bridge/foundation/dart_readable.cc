@@ -3,8 +3,8 @@
  */
 
 #include "dart_readable.h"
-#include <memory>
 #include <cstdlib>
+#include <memory>
 
 #if WIN32
 #include <Windows.h>
