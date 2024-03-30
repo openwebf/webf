@@ -13,15 +13,27 @@ thread_local std::atomic<int32_t> runningContexts{0};
 
 ScriptState::ScriptState(DartIsolateContext* dart_context) : dart_isolate_context_(dart_context) {
   runningContexts++;
+#if WEBF_QUICKJS_JS_ENGINE
   // Avoid stack overflow when running in multiple threads.
   ctx_ = JS_NewContext(dart_isolate_context_->runtime());
   InitializeBuiltInStrings(ctx_);
+#elif WEBF_V8_JS_ENGINE
+  ctx_ = v8::Context::New(dart_context->isolate());
+  InitializeBuiltInStrings(dart_context->isolate());
+#endif
 }
 
+#if WEBF_QUICKJS_JS_ENGINE
 JSRuntime* ScriptState::runtime() {
   return dart_isolate_context_->runtime();
 }
+#elif WEBF_V8_JS_ENGINE
+v8::Isolate* ScriptState::isolate() {
+  return dart_isolate_context_->isolate();
+}
+#endif
 
+#if WEBF_QUICKJS_JS_ENGINE
 ScriptState::~ScriptState() {
   ctx_invalid_ = true;
   JSRuntime* rt = JS_GetRuntime(ctx_);
@@ -33,4 +45,11 @@ ScriptState::~ScriptState() {
 
   ctx_ = nullptr;
 }
+
+#elif WEBF_V8_JS_ENGINE
+ScriptState::~ScriptState() {
+  ctx_invalid_ = true;
+}
+#endif
+
 }  // namespace webf

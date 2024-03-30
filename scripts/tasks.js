@@ -827,6 +827,13 @@ task('run-benchmark', async (done) => {
   done();
 });
 
+task('migrate_to_v8', async (done) => {
+
+
+
+  done();
+});
+
 function getDevicesInfo() {
   let output = JSON.parse(execSync('flutter devices --machine', {stdio: 'pipe', encoding: 'utf-8'}));
   let androidDevices = output.filter(device => {

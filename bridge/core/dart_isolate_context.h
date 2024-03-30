@@ -5,6 +5,10 @@
 #ifndef WEBF_DART_CONTEXT_H_
 #define WEBF_DART_CONTEXT_H_
 
+#if WEBF_V8_JS_ENGINE
+#include <v8/v8.h>
+#endif
+
 #include <set>
 #include "bindings/qjs/script_value.h"
 #include "dart_context_data.h"
@@ -38,7 +42,11 @@ struct DartWireContext {
   multi_threading::Dispatcher* dispatcher;
 };
 
+#if WEBF_QUICKJS_JS_ENGINE
 void InitializeBuiltInStrings(JSContext* ctx);
+#elif WEBF_V8_JS_ENGINE
+void InitializeBuiltInStrings(v8::Isolate* isolate);
+#endif
 
 void WatchDartWire(DartWireContext* wire);
 bool IsDartWireAlive(DartWireContext* wire);
@@ -49,7 +57,11 @@ class DartIsolateContext {
  public:
   explicit DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length, bool profile_enabled);
 
+#if WEBF_QUICKJS_JS_ENGINE
   JSRuntime* runtime();
+#elif WEBF_V8_JS_ENGINE
+  v8::Isolate* isolate();
+#endif
   FORCE_INLINE bool valid() { return is_valid_; }
   FORCE_INLINE DartMethodPointer* dartMethodPtr() const { return dart_method_ptr_.get(); }
   FORCE_INLINE const std::unique_ptr<multi_threading::Dispatcher>& dispatcher() const { return dispatcher_; }
