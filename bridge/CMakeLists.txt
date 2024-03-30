@@ -59,18 +59,6 @@ list(APPEND WEBF_PUBLIC_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
 )
 
-set(QUICKJS_PUBLIC_HEADERS
-  third_party/quickjs/cutils.h
-  third_party/quickjs/libregexp.h
-  third_party/quickjs/libregexp-opcode.h
-  third_party/quickjs/libunicode.h
-  third_party/quickjs/libunicode-table.h
-  third_party/quickjs/list.h
-  third_party/quickjs/quickjs.h
-  third_party/quickjs/quickjs-atom.h
-  third_party/quickjs/quickjs-opcode.h
-)
-
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   add_compile_options(-fPIC)
 endif()
@@ -143,6 +131,18 @@ list(APPEND BRIDGE_INCLUDE
   )
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
+  set(QUICKJS_PUBLIC_HEADERS
+    third_party/quickjs/cutils.h
+    third_party/quickjs/libregexp.h
+    third_party/quickjs/libregexp-opcode.h
+    third_party/quickjs/libunicode.h
+    third_party/quickjs/libunicode-table.h
+    third_party/quickjs/list.h
+    third_party/quickjs/quickjs.h
+    third_party/quickjs/quickjs-atom.h
+    third_party/quickjs/quickjs-opcode.h
+  )
+
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
 
   execute_process(
@@ -238,7 +238,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
-  list(APPEND BRIDGE_LINK_LIBS modb)
 
   list(APPEND BRIDGE_SOURCE
     # Binding files
@@ -554,7 +553,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_ellipse_element.cc
     out/qjs_svg_style_element.cc
     out/qjs_svg_line_element.cc
-    )
+  )
 
 
   if (NOT MSVC)
@@ -564,7 +563,168 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
 
-endif ()
+elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
+
+  add_compile_options(-DWEBF_V8_JS_ENGINE=1)
+
+  list(APPEND BRIDGE_SOURCE
+    # Binding files
+    bindings/v8/atomic_string.cc
+  )
+
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    add_library(v8 SHARED IMPORTED)
+    set_target_properties(v8 PROPERTIES IMPORTED_LOCATION "third_party/v8/lib/macos/arm64/libv8.dylib")
+    add_library(v8_platform SHARED IMPORTED)
+    set_target_properties(v8_platform PROPERTIES IMPORTED_LOCATION "third_party/v8/lib/macos/arm64/libv8_libplatform.dylib")
+    list(APPEND BRIDGE_LINK_LIBS v8 v8_platform)
+  endif()
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include/v8)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include/v8/cppgc)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include/v8/libplatform)
+endif()
+
+list(APPEND BRIDGE_LINK_LIBS modb)
+
+list(APPEND BRIDGE_SOURCE
+  # Core sources
+  webf_bridge.cc
+  core/api/api.cc
+  core/executing_context.cc
+  core/script_forbidden_scope.cc
+  core/script_state.cc
+  core/page.cc
+  core/dart_methods.cc
+  core/dart_isolate_context.cc
+  core/dart_context_data.cc
+  core/executing_context_data.cc
+  core/fileapi/blob.cc
+  core/fileapi/blob_part.cc
+  core/fileapi/blob_property_bag.cc
+  core/frame/console.cc
+  core/frame/dom_timer.cc
+  core/frame/dom_timer_coordinator.cc
+  core/frame/window_or_worker_global_scope.cc
+  core/frame/module_listener.cc
+  core/frame/module_listener_container.cc
+  core/frame/module_manager.cc
+  core/frame/module_callback.cc
+  core/frame/module_context_coordinator.cc
+  core/frame/window.cc
+  core/frame/screen.cc
+  core/frame/legacy/location.cc
+  core/timing/performance.cc
+  core/timing/performance_mark.cc
+  core/timing/performance_entry.cc
+  core/timing/performance_measure.cc
+  core/css/css_style_declaration.cc
+  core/css/inline_css_style_declaration.cc
+  core/css/computed_css_style_declaration.cc
+  core/dom/frame_request_callback_collection.cc
+  core/dom/events/registered_eventListener.cc
+  core/dom/events/event_listener_map.cc
+  core/dom/events/event.cc
+  core/dom/events/custom_event.cc
+  core/dom/events/event_target.cc
+  core/dom/events/event_listener_map.cc
+  core/dom/events/event_target_impl.cc
+  core/binding_object.cc
+  core/dom/node.cc
+  core/dom/node_list.cc
+  core/dom/static_node_list.cc
+  core/dom/node_traversal.cc
+  core/dom/live_node_list_base.cc
+  core/dom/character_data.cc
+  core/dom/comment.cc
+  core/dom/text.cc
+  core/dom/tree_scope.cc
+  core/dom/element.cc
+  core/dom/parent_node.cc
+  core/dom/element_data.cc
+  core/dom/document.cc
+  core/dom/dom_token_list.cc
+  core/dom/dom_string_map.cc
+  core/dom/space_split_string.cc
+  core/dom/scripted_animation_controller.cc
+  core/dom/node_data.cc
+  core/dom/document_fragment.cc
+  core/dom/child_node_list.cc
+  core/dom/empty_node_list.cc
+  core/dom/mutation_observer.cc
+  core/dom/mutation_observer_registration.cc
+  core/dom/mutation_observer_interest_group.cc
+  core/dom/mutation_record.cc
+  core/dom/child_list_mutation_scope.cc
+  core/dom/container_node.cc
+  core/html/custom/widget_element.cc
+  core/events/error_event.cc
+  core/events/message_event.cc
+  core/events/animation_event.cc
+  core/events/close_event.cc
+  core/events/ui_event.cc
+  core/events/focus_event.cc
+  core/events/gesture_event.cc
+  core/events/input_event.cc
+  core/events/touch_event.cc
+  core/events/mouse_event.cc
+  core/events/pop_state_event.cc
+  core/events/pointer_event.cc
+  core/events/transition_event.cc
+  core/events/intersection_change_event.cc
+  core/events/keyboard_event.cc
+  core/events/promise_rejection_event.cc
+  core/html/parser/html_parser.cc
+  core/html/html_element.cc
+  core/html/html_div_element.cc
+  core/html/html_head_element.cc
+  core/html/html_body_element.cc
+  core/html/html_html_element.cc
+  core/html/html_template_element.cc
+  core/html/html_all_collection.cc
+  core/html/html_anchor_element.cc
+  core/html/html_image_element.cc
+  core/html/html_script_element.cc
+  core/html/html_iframe_element.cc
+  core/html/html_link_element.cc
+  core/html/html_unknown_element.cc
+  core/html/image.cc
+  core/html/html_collection.cc
+  core/html/canvas/html_canvas_element.cc
+  core/html/canvas/canvas_rendering_context.cc
+  core/html/canvas/canvas_rendering_context_2d.cc
+  core/html/canvas/canvas_gradient.cc
+  core/html/canvas/canvas_pattern.cc
+  core/geometry/dom_matrix.cc
+  core/geometry/dom_matrix_readonly.cc
+  core/html/forms/html_button_element.cc
+  core/html/forms/html_input_element.cc
+  core/html/forms/html_form_element.cc
+  core/html/forms/html_textarea_element.cc
+
+  # SVG files
+  core/svg/svg_element.cc
+  core/svg/svg_graphics_element.cc
+  core/svg/svg_geometry_element.cc
+  core/svg/svg_text_content_element.cc
+  core/svg/svg_text_positioning_element.cc
+
+  core/svg/svg_svg_element.cc
+  core/svg/svg_path_element.cc
+  core/svg/svg_rect_element.cc
+  core/svg/svg_text_element.cc
+  core/svg/svg_g_element.cc
+  core/svg/svg_circle_element.cc
+  core/svg/svg_ellipse_element.cc
+  core/svg/svg_style_element.cc
+  core/svg/svg_line_element.cc
+
+  # Legacy implements, should remove them in the future.
+  core/dom/legacy/element_attributes.cc
+  core/dom/legacy/bounding_client_rect.cc
+  core/input/touch.cc
+  core/input/touch_list.cc
+)
 
 list(APPEND PUBLIC_HEADER
   include/webf_bridge.h

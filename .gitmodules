@@ -2,3 +2,7 @@
 	path = bridge/third_party/quickjs/vendor/mimalloc
 	url = https://github.com/microsoft/mimalloc
 	tag = v1.7.9
+[submodule "bridge/third_party/v8"]
+	path = bridge/third_party/v8
+	url = git@github.com:openwebf/v8-release.git
+	branch = 11.9.169.6

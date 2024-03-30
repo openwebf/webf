@@ -7,10 +7,10 @@
 #include <utility>
 #include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
-#include "core/dom/document.h"
-#include "core/dom/mutation_observer.h"
-#include "core/events/error_event.h"
-#include "core/events/promise_rejection_event.h"
+//#include "core/dom/document.h"
+//#include "core/dom/mutation_observer.h"
+//#include "core/events/error_event.h"
+//#include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
@@ -54,6 +54,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 
   time_origin_ = std::chrono::system_clock::now();
 
+#if WEBF_QUICKJS_JS_ENGINE
+
   JSContext* ctx = script_state_.ctx();
   global_object_ = JS_GetGlobalObject(script_state_.ctx());
 
@@ -62,6 +64,9 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   JS_TurnOffGC(script_state_.runtime());
   JS_SetContextOpaque(ctx, this);
   JS_SetHostPromiseRejectionTracker(script_state_.runtime(), promiseRejectTracker, nullptr);
+
+#elif WEBF_V8_JS_ENGINE
+#endif
 
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallBindings");
 
