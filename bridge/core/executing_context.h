@@ -5,8 +5,13 @@
 #ifndef BRIDGE_JS_CONTEXT_H
 #define BRIDGE_JS_CONTEXT_H
 
+#if WEBF_V8_JS_ENGINE
+#include <v8/v8.h>
+#elif WEBF_QUICKJS_JS_ENGINE
 #include <quickjs/list.h>
 #include <quickjs/quickjs.h>
+#endif
+
 #include <atomic>
 #include <cassert>
 #include <cmath>
@@ -74,8 +79,6 @@ class ExecutingContext {
                    void* owner);
   ~ExecutingContext();
 
-  static ExecutingContext* From(JSContext* ctx);
-
   bool EvaluateJavaScript(const char* code,
                           size_t codeLength,
                           uint8_t** parsed_bytecodes,
@@ -88,12 +91,9 @@ class ExecutingContext {
   bool IsContextValid() const;
   void SetContextInValid();
   bool IsCtxValid() const;
-  JSValue Global();
-  JSContext* ctx();
   FORCE_INLINE double contextId() const { return context_id_; };
   FORCE_INLINE int32_t uniqueId() const { return unique_id_; }
   void* owner();
-  bool HandleException(JSValue* exc);
   bool HandleException(ScriptValue* exc);
   bool HandleException(ExceptionState& exception_state);
   bool HandleException(ExceptionState& exception_state, char** rust_error_msg, uint32_t* rust_errmsg_len);
@@ -101,9 +101,35 @@ class ExecutingContext {
   void ReportError(JSValueConst error, char** rust_errmsg, uint32_t* rust_errmsg_length);
   void DrainMicrotasks();
   void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
-  void DefineGlobalProperty(const char* prop, JSValueConst value);
   ExecutionContextData* contextData();
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, uint64_t* bytecodeLength);
+
+
+#if WEBF_QUICKJS_JS_ENGINE
+  static ExecutingContext* From(JSContext* ctx);
+  JSValue Global();
+  JSContext* ctx();
+  bool HandleException(JSValue* exc);
+  void ReportError(JSValueConst error);
+  void DefineGlobalProperty(const char* prop, JSValueConst value);
+  static void DispatchGlobalUnhandledRejectionEvent(ExecutingContext* context,
+                                                    JSValueConst promise,
+                                                    JSValueConst error);
+  static void DispatchGlobalRejectionHandledEvent(ExecutingContext* context, JSValueConst promise, JSValueConst error);
+  static void DispatchGlobalErrorEvent(ExecutingContext* context, JSValueConst error);
+  static void promiseRejectTracker(JSContext* ctx,
+                                   JSValueConst promise,
+                                   JSValueConst reason,
+                                   JS_BOOL is_handled,
+                                   void* opaque);
+#elif WEBF_V8_JS_ENGINE
+  static ExecutingContext* From(v8::Isolate* isolate);
+  v8::Local<v8::Value> Global();
+  v8::Isolate ctx();
+  bool HandleException(v8::Local<v8::Value> exc);
+  void ReportError(v8::Local<v8::Value> error);
+  void DefineGlobalProperty(const char* prop, v8::Local<v8::Value> value);
+#endif
 
   // Make global object inherit from WindowProperties.
   void InstallGlobal();
@@ -160,12 +186,6 @@ class ExecutingContext {
   void DispatchErrorEventInterval(ErrorEvent* error_event);
   void ReportErrorEvent(ErrorEvent* error_event);
 
-  static void DispatchGlobalUnhandledRejectionEvent(ExecutingContext* context,
-                                                    JSValueConst promise,
-                                                    JSValueConst error);
-  static void DispatchGlobalRejectionHandledEvent(ExecutingContext* context, JSValueConst promise, JSValueConst error);
-  static void DispatchGlobalErrorEvent(ExecutingContext* context, JSValueConst error);
-
   // Bytecodes which registered by webf plugins.
   static std::unordered_map<std::string, NativeByteCode> plugin_byte_code;
   // Raw string codes which registered by webf plugins.
@@ -180,7 +200,6 @@ class ExecutingContext {
   void InstallNativeLoader();
 
   void DrainPendingPromiseJobs();
-
   static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
                                    JSValueConst reason,
@@ -207,7 +226,11 @@ class ExecutingContext {
   double context_id_;
   JSExceptionHandler dart_error_report_handler_;
   void* owner_;
+#if WEBF_QUICKJS_JS_ENGINE
   JSValue global_object_{JS_NULL};
+#elif WEBF_V8_JS_ENGINE
+  v8::Local<v8::Value> global_object_;
+#endif
   Document* document_{nullptr};
   Window* window_{nullptr};
   NativeLoader* native_loader_{nullptr};
@@ -225,24 +248,6 @@ class ExecutingContext {
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;
-};
-
-class ObjectProperty {
-  WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(ObjectProperty);
-
- public:
-  ObjectProperty() = delete;
-
-  // Define an property on object with a JSValue.
-  explicit ObjectProperty(ExecutingContext* context, JSValueConst thisObject, const char* property, JSValue value)
-      : m_value(value) {
-    JS_DefinePropertyValueStr(context->ctx(), thisObject, property, value, JS_PROP_ENUMERABLE);
-  }
-
-  JSValue value() const { return m_value; }
-
- private:
-  JSValue m_value{JS_NULL};
 };
 
 }  // namespace webf
