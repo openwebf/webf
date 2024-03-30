@@ -42,9 +42,7 @@ class AtomicString {
   AtomicString(v8::Isolate* isolate, const uint16_t* str, size_t length);
 
   // Return the undefined string value from atom key.
-  v8::Local<v8::Value> ToV8(v8::Isolate* isolate) const {
-    return string_.As<v8::Value>();
-  }
+  v8::Local<v8::Value> ToV8(v8::Isolate* isolate) const { return string_.As<v8::Value>(); }
 
   bool IsEmpty() const;
   bool IsNull() const;
