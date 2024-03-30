@@ -6,8 +6,8 @@
 #include <v8/v8-platform.h>
 #include "v8/libplatform/libplatform.h"
 #endif
-#include "dart_isolate_context.h"
 #include <unordered_set>
+#include "dart_isolate_context.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
 #include "names_installer.h"
@@ -62,8 +62,8 @@ const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
 }
 
 #if WEBF_V8_JS_ENGINE
-  std::unique_ptr<v8::Platform> platform = nullptr;
-  thread_local v8::Isolate* isolate_{nullptr};
+std::unique_ptr<v8::Platform> platform = nullptr;
+thread_local v8::Isolate* isolate_{nullptr};
 #elif WEBF_QUICKJS_JS_ENGINE
 thread_local JSRuntime* runtime_{nullptr};
 #endif
@@ -106,8 +106,7 @@ void DartIsolateContext::InitializeJSRuntime() {
   }
   // Create a new Isolate and make it the current one.
   v8::Isolate::CreateParams create_params;
-  create_params.array_buffer_allocator =
-      v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+  create_params.array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
   isolate_ = v8::Isolate::New(create_params);
 #endif
 }

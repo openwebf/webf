@@ -98,7 +98,6 @@ class ExecutingContext {
   ExecutionContextData* contextData();
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, uint64_t* bytecodeLength);
 
-
 #if WEBF_QUICKJS_JS_ENGINE
   static ExecutingContext* From(JSContext* ctx);
   JSValue Global();
