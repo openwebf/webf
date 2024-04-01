@@ -8,7 +8,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/src/svg/rendering/rect.dart';
 import 'package:webf/svg.dart';
 
-import '../rendering/circle.dart';
+import 'rendering/circle.dart';
 
 class SVGClipPath {
   SVGClipPath(this.clipPath, this.boxShape);

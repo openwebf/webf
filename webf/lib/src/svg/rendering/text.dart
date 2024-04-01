@@ -6,13 +6,10 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
-class RenderSVGText extends RenderBoxModel
-    with RenderObjectWithChildMixin<RenderTextBox> {
-  SVGTextElement? element;
-
+class RenderSVGText extends RenderBoxModel with RenderObjectWithChildMixin<RenderTextBox> {
   var _baseline = 0.0;
 
-  RenderSVGText({required super.renderStyle, this.element});
+  RenderSVGText({required super.renderStyle});
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {

@@ -7,7 +7,7 @@ import 'dart:ui';
 import 'shape.dart';
 
 class RenderSVGCircle extends RenderSVGShape {
-  RenderSVGCircle({required super.renderStyle, super.element});
+  RenderSVGCircle({required super.renderStyle});
 
   @override
   Path asPath() {
@@ -18,12 +18,10 @@ class RenderSVGCircle extends RenderSVGShape {
   }
   Path asDefNodePath() {
     final path = Path();
-    if (element == null) {
-      return path;
-    }
-    final cx = double.parse(element!.attributes['cx'] ?? '0');
-    final cy = double.parse(element!.attributes['cy'] ?? '0');
-    final r = double.parse(element!.attributes['r'] ?? '0');
+    var element = renderStyle.target;
+    final cx = double.parse(element.attributes['cx'] ?? '0');
+    final cy = double.parse(element.attributes['cy'] ?? '0');
+    final r = double.parse(element.attributes['r'] ?? '0');
     return getPath(r, cx, cy);
   }
 

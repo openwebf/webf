@@ -11,9 +11,9 @@ class RenderSVGContainer extends RenderBoxModel
     with
         ContainerRenderObjectMixin<RenderBox,
             ContainerBoxParentData<RenderBox>> {
-  final SVGElement? element;
+  RenderSVGContainer({required super.renderStyle});
 
-  RenderSVGContainer({required super.renderStyle, this.element});
+  SVGElement get element => renderStyle.target as SVGElement;
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {

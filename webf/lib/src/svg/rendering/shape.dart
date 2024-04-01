@@ -11,11 +11,8 @@ import 'package:webf/svg.dart';
 abstract class RenderSVGShape extends RenderBoxModel {
   bool _needUpdateShape = true;
 
-  SVGGeometryElement? element;
-
   RenderSVGShape({
     required super.renderStyle,
-    this.element,
   });
 
   RenderSVGContainer? _rootRenderSVGContainer;
@@ -42,10 +39,11 @@ abstract class RenderSVGShape extends RenderBoxModel {
     final fill = renderStyle.isFillEmpty ? findRoot()?.renderStyle.fill ?? renderStyle.fill : renderStyle.fill;
     final stroke = renderStyle.isStrokeEmpty ? findRoot()?.renderStyle.stroke ?? renderStyle.stroke : renderStyle.stroke;
     final fillRule = renderStyle.isFillRuleEmpty ? findRoot()?.renderStyle.fillRule ?? renderStyle.fillRule : renderStyle.fillRule;
+    final element = renderStyle.target as SVGElement;
 
     path.fillType = fillRule.fillType;
 
-    Rect? rect = element?.findRoot()?.viewBox;
+    Rect? rect = element.findRoot()?.viewBox;
     if (rect != null) {
       parseDefs(rect);
     }
@@ -108,11 +106,12 @@ abstract class RenderSVGShape extends RenderBoxModel {
   Path asPath();
 
   void parseDefs(Rect rect) {
-    dynamic fillAttr = element?.attributeStyle['fill'] ?? findRoot()?.element?.attributeStyle['fill'];
-    dynamic clipPathAttr = element?.attributeStyle['clipPath'] ?? findRoot()?.element?.attributeStyle['clipPath'];
+    var element = renderStyle.target as SVGElement;
+    dynamic fillAttr = element.attributeStyle['fill'] ?? findRoot()?.element.attributeStyle['fill'];
+    dynamic clipPathAttr = element.attributeStyle['clipPath'] ?? findRoot()?.element.attributeStyle['clipPath'];
     if (fillAttr == null && clipPathAttr == null) return null;
 
-    NodeList? nodeList = element?.findRoot()?.childNodes;
+    NodeList? nodeList = element.findRoot()?.childNodes;
     if (nodeList != null) {
       Iterator iterator = nodeList.iterator;
       while (iterator.moveNext()) {

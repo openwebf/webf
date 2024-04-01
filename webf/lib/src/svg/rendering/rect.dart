@@ -8,7 +8,7 @@ import 'dart:ui';
 import 'shape.dart';
 
 class RenderSVGRect extends RenderSVGShape {
-  RenderSVGRect({required super.renderStyle, super.element});
+  RenderSVGRect({required super.renderStyle});
 
   @override
   Path asPath() {
@@ -26,16 +26,13 @@ class RenderSVGRect extends RenderSVGShape {
 
   Path asDefNodePath() {
     final path = Path();
-    if (element == null) {
-      return path;
-    }
-
-    var x = double.parse(element!.attributes['x'] ?? '0');
-    var y = double.parse(element!.attributes['y'] ?? '0');
-    var width = double.parse(element!.attributes['width'] ?? '0');
-    var height = double.parse(element!.attributes['height'] ?? '0');
-    var rx = double.parse(element!.attributes['rx'] ?? '0');
-    var ry = double.parse(element!.attributes['ry'] ?? '0');
+    var element = renderStyle.target;
+    var x = double.parse(element.attributes['x'] ?? '0');
+    var y = double.parse(element.attributes['y'] ?? '0');
+    var width = double.parse(element.attributes['width'] ?? '0');
+    var height = double.parse(element.attributes['height'] ?? '0');
+    var rx = double.parse(element.attributes['rx'] ?? '0');
+    var ry = double.parse(element.attributes['ry'] ?? '0');
 
     return getPath(width, height, path, rx, ry, x, y);
   }

@@ -2,16 +2,15 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:webf/rendering.dart';
 import 'package:webf/src/svg/rendering/empty.dart';
 import 'package:webf/svg.dart';
 
 class SVGUnknownElement extends SVGElement {
-  late final RenderSVGEmpty _renderer;
+  SVGUnknownElement(super.context) {}
 
   @override
-  get renderBoxModel => _renderer;
-
-  SVGUnknownElement(super.context) {
-    _renderer = RenderSVGEmpty(renderStyle: renderStyle, element: this);
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    return RenderSVGEmpty(renderStyle: renderStyle);
   }
 }

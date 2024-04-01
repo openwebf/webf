@@ -6,7 +6,6 @@ import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
 class SVGPresentationAttributeConfig {
@@ -26,6 +25,9 @@ class SVGPresentationAttributeConfig {
 class SVGElement extends Element {
   Map<String, dynamic> attributeStyle = {};
 
+  @override
+  bool get isSVGElement => true;
+
   // Presentation attribute config cache
   List<SVGPresentationAttributeConfig>? _presentationAttributesConfigsCache;
 
@@ -33,13 +35,7 @@ class SVGElement extends Element {
   @visibleForOverriding
   List<SVGPresentationAttributeConfig> get presentationAttributeConfigs => [];
 
-  RenderBoxModel? _renderSVGBox;
-
-  RenderBoxModel? get renderSVGBox => isRenderBoxDispose() ? null : _renderSVGBox;
-
-  SVGElement([BindingContext? context]) : super(context) {
-    _renderSVGBox = createRenderBoxModel();
-  }
+  SVGElement([BindingContext? context]) : super(context);
 
   SVGSVGElement? findRoot() {
     var parent = parentElement;
@@ -60,29 +56,6 @@ class SVGElement extends Element {
     internalSetAttribute(property, value);
     // TODO: This have some problems about cascading order. I will fixed it later. @XGHeaven
     attributeStyle[property] = value;
-  }
-
-  @override
-  void updateRenderBoxModel({ bool forceUpdate = false }) {
-    if (isRenderBoxDispose()) {
-      _renderSVGBox = createRenderBoxModel();
-    }
-    ensureEventResponderBound();
-  }
-
-  dynamic createRenderBoxModel() {
-    return null;
-  }
-
-  bool isRenderBoxDispose() {
-    if (_renderSVGBox?.disposed == true) {
-      return true;
-    }
-    return false;
-  }
-
-  String getLog() {
-    return '$renderer (root:${findRoot()?.className ?? renderStyle.parent?.target.className}, ---> $className)';
   }
 
   @override

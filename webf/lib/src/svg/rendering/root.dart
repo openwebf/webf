@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/svg.dart';
 
-import '../core/aspect_ratio.dart';
+import '../aspect_ratio.dart';
 import 'container.dart';
 
 class RenderSVGRoot extends RenderSVGContainer {
@@ -43,7 +43,6 @@ class RenderSVGRoot extends RenderSVGContainer {
 
   RenderSVGRoot({
     required super.renderStyle,
-    super.element,
     Rect? viewBox,
     SVGPreserveAspectRatio? ratio,
   })  : _viewBox = viewBox,
