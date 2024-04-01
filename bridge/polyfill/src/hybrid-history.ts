@@ -6,9 +6,6 @@
 import { webf } from './webf';
 
 class HybridHistory {
-  constructor() {
-  }
-
   get length() {
     return Number(webf.invokeModule('HybridHistory', 'length'));
   }
