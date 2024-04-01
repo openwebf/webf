@@ -34,6 +34,7 @@ struct DartWireContext {
   ScriptValue jsObject;
   bool is_dedicated;
   double context_id;
+  bool disposed;
   multi_threading::Dispatcher* dispatcher;
 };
 
