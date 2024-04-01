@@ -39,6 +39,7 @@ void _defineModuleCreator() {
   _defineModule((ModuleManager? moduleManager) => NavigationModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => NavigatorModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => HistoryModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => HybridHistoryModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => LocationModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => LocalStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => SessionStorageModule(moduleManager));

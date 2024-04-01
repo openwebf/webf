@@ -1022,9 +1022,13 @@ class WebFController {
   final Queue<HistoryItem> previousHistoryStack = Queue();
   final Queue<HistoryItem> nextHistoryStack = Queue();
 
+  final Queue<HybridHistoryItem> previousHybridHistoryStack = Queue();
+  final Queue<HybridHistoryItem> nextHybridHistoryStack = Queue();
+
   final Map<String, String> sessionStorage = {};
 
   HistoryModule get history => _module.moduleManager.getModule('History')!;
+  HistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
 
   static Uri fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`
@@ -1096,10 +1100,21 @@ class WebFController {
     historyModule.add(bundle);
   }
 
+  _addHybridHistory(WebFBundle bundle) {
+    HybridHistoryModule hybridHistoryModule = module.moduleManager.getModule<HybridHistoryModule>('HybridHistory')!;
+    hybridHistoryModule.add(bundle);
+  }
+
   void _replaceCurrentHistory(WebFBundle bundle) {
     HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
     previousHistoryStack.clear();
     historyModule.add(bundle);
+  }
+
+  void _replaceCurrentHybridHistory(WebFBundle bundle) {
+    HybridHistoryModule hybridHistoryModule = module.moduleManager.getModule<HybridHistoryModule>('HybridHistory')!;
+    previousHybridHistoryStack.clear();
+    hybridHistoryModule.add(bundle);
   }
 
   Future<void> reload() async {
@@ -1164,6 +1179,7 @@ class WebFController {
     // Update entrypoint.
     _entrypoint = bundle;
     _addHistory(bundle);
+    _addHybridHistory(bundle);
 
     Completer completer = Completer();
 
@@ -1209,6 +1225,7 @@ class WebFController {
     // Update entrypoint.
     _entrypoint = bundle;
     _replaceCurrentHistory(bundle);
+    _replaceCurrentHybridHistory(bundle);
 
     mode = WebFLoadingMode.preloading;
 
@@ -1287,6 +1304,7 @@ class WebFController {
     // Update entrypoint.
     _entrypoint = bundle;
     _replaceCurrentHistory(bundle);
+    _replaceCurrentHybridHistory(bundle);
 
     mode = WebFLoadingMode.preRendering;
 
