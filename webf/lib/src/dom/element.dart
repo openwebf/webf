@@ -16,6 +16,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/svg/rendering/container.dart';
+import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
@@ -54,21 +55,25 @@ enum BoxSizeType {
 mixin ElementBase on Node {
   RenderLayoutBox? _renderLayoutBox;
   RenderReplaced? _renderReplaced;
+  RenderBoxModel? _renderSVG;
   RenderWidget? _renderWidget;
 
-  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget;
+  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget ?? _renderSVG;
 
   set renderBoxModel(RenderBoxModel? value) {
     if (value == null) {
       _renderReplaced = null;
       _renderLayoutBox = null;
       _renderWidget = null;
+      _renderSVG = null;
     } else if (value is RenderReplaced) {
       _renderReplaced = value;
     } else if (value is RenderLayoutBox) {
       _renderLayoutBox = value;
     } else if (value is RenderWidget) {
       _renderWidget = value;
+    } else if (value is RenderSVGShape || value is RenderSVGContainer) {
+      _renderSVG = value;
     } else {
       if (!kReleaseMode) throw FlutterError('Unknown RenderBoxModel value.');
     }
@@ -120,6 +125,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   bool get isReplacedElement => false;
 
   bool get isWidgetElement => false;
+
+  bool get isSVGElement => false;
 
   // Holding reference if this element are managed by Flutter framework.
   WebFHTMLElementStatefulWidget? flutterWidget_;
@@ -362,6 +369,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     } else if (isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
+    } else if (isSVGElement) {
+      nextRenderBoxModel = createRenderSVG(isRepaintBoundary: isRepaintBoundary, previous: _renderSVG);
     } else {
       nextRenderBoxModel =
           _createRenderLayout(isRepaintBoundary: isRepaintBoundary, previousRenderLayoutBox: _renderLayoutBox);
@@ -427,6 +436,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
     return nextReplaced;
+  }
+
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    throw UnimplementedError();
   }
 
   RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool forceUpdate = false }) {

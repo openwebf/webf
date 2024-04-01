@@ -9,11 +9,8 @@ import 'package:webf/svg.dart';
 abstract class RenderSVGShape extends RenderBoxModel {
   bool _needUpdateShape = true;
 
-  SVGGeometryElement? element;
-
   RenderSVGShape({
     required super.renderStyle,
-    this.element,
   });
 
   Path? _path;

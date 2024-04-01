@@ -3,13 +3,12 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
 import 'rendering/ellipse.dart';
 
 class SVGEllipseElement extends SVGGeometryElement {
-  RenderSVGEllipse? _renderer;
-
   @override
   // TODO: implement defaultStyle
   Map<String, dynamic> get defaultStyle => super.defaultStyle
@@ -17,9 +16,6 @@ class SVGEllipseElement extends SVGGeometryElement {
       RX: 'auto',
       RY: 'auto',
     });
-
-  @override
-  get renderBoxModel => _renderer;
 
   @override
   get presentationAttributeConfigs => super.presentationAttributeConfigs
@@ -34,13 +30,8 @@ class SVGEllipseElement extends SVGGeometryElement {
   SVGEllipseElement(super.context) {}
 
   @override
-  createRenderer() {
-    return _renderer = RenderSVGEllipse(renderStyle: renderStyle, element: this);
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    return RenderSVGEllipse(renderStyle: renderStyle);
   }
 
-  @override
-  void didDetachRenderer() {
-    super.didDetachRenderer();
-    _renderer = null;
-  }
 }

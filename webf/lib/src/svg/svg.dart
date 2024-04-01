@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 import 'core/aspect_ratio.dart';
 
@@ -18,11 +19,6 @@ const DEFAULT_VIEW_BOX = Rect.fromLTWH(DEFAULT_VIEW_BOX_LEFT,
     DEFAULT_VIEW_BOX_TOP, DEFAULT_VIEW_BOX_WIDTH, DEFAULT_VIEW_BOX_HEIGHT);
 
 class SVGSVGElement extends SVGGraphicsElement {
-  RenderSVGRoot? _renderer;
-
-  @override
-  get renderBoxModel => _renderer;
-
   @override
   bool get isRepaintBoundary => true;
 
@@ -49,14 +45,9 @@ class SVGSVGElement extends SVGGraphicsElement {
   SVGSVGElement(super.context) {}
 
   @override
-  RenderBox createRenderer() {
-    return _renderer = RenderSVGRoot(renderStyle: renderStyle, element: this)..viewBox = viewBox..ratio = ratio;
-  }
-
-  @override
-  void didDetachRenderer() {
-    super.didDetachRenderer();
-    _renderer = null;
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    RenderSVGRoot root = RenderSVGRoot(renderStyle: renderStyle)..viewBox = viewBox..ratio = ratio;
+    return root;
   }
 
   @override
@@ -69,8 +60,8 @@ class SVGSVGElement extends SVGGraphicsElement {
           setter: (val) {
             final nextViewBox = parseViewBox(val);
             _viewBox = nextViewBox;
-            if (nextViewBox != _renderer?.viewBox) {
-              _renderer?.viewBox = nextViewBox;
+            if (nextViewBox != (renderBoxModel as RenderSVGRoot?)?.viewBox) {
+              (renderBoxModel as RenderSVGRoot?)?.viewBox = nextViewBox;
             }
           }),
       'preserveAspectRatio': ElementAttributeProperty(setter: (val) {

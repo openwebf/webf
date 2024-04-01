@@ -43,7 +43,6 @@ class RenderSVGRoot extends RenderSVGContainer {
 
   RenderSVGRoot({
     required super.renderStyle,
-    super.element,
     Rect? viewBox,
     SVGPreserveAspectRatio ratio = const SVGPreserveAspectRatio(),
   })  : _viewBox = viewBox,

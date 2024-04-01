@@ -7,7 +7,7 @@ import 'dart:ui';
 import 'shape.dart';
 
 class RenderSVGCircle extends RenderSVGShape {
-  RenderSVGCircle({required super.renderStyle, super.element});
+  RenderSVGCircle({required super.renderStyle});
 
   @override
   Path asPath() {

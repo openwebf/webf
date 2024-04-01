@@ -4,7 +4,7 @@ import 'package:webf/src/svg/rendering/shape.dart';
 
 // https://developer.mozilla.org/en-US/docs/Web/SVG/Element/line
 class RenderSVGLine extends RenderSVGShape{
-  RenderSVGLine({required super.renderStyle,super.element});
+  RenderSVGLine({required super.renderStyle});
 
   @override
   Path asPath() {

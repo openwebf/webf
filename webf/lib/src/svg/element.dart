@@ -25,6 +25,9 @@ class SVGPresentationAttributeConfig {
 class SVGElement extends Element {
   Map<String, dynamic> attributeStyle = {};
 
+  @override
+  bool get isSVGElement => true;
+
   // Presentation attribute config cache
   List<SVGPresentationAttributeConfig>? _presentationAttributesConfigsCache;
 
@@ -50,11 +53,6 @@ class SVGElement extends Element {
     internalSetAttribute(property, value);
     // TODO: This have some problems about cascading order. I will fixed it later. @XGHeaven
     attributeStyle[property] = value;
-  }
-
-  @override
-  void updateRenderBoxModel({ bool forceUpdate = false }) {
-    // do not needs to update
   }
 
   @override

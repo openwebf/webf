@@ -2,15 +2,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:webf/rendering.dart';
 import 'package:webf/src/svg/rendering/line.dart';
 import 'package:webf/svg.dart';
 
 class SVGLineElement extends SVGGeometryElement {
-  RenderSVGLine? _renderer;
-
-  @override
-  get renderBoxModel => _renderer;
-
   @override
   get presentationAttributeConfigs => super.presentationAttributeConfigs
     ..addAll([
@@ -23,13 +19,8 @@ class SVGLineElement extends SVGGeometryElement {
   SVGLineElement(super.context) {}
 
   @override
-  createRenderer() {
-    return _renderer = RenderSVGLine(renderStyle: renderStyle, element: this);
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    return RenderSVGLine(renderStyle: renderStyle);
   }
 
-  @override
-  void didDetachRenderer() {
-    super.didDetachRenderer();
-    _renderer = null;
-  }
 }

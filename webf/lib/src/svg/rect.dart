@@ -2,15 +2,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 import 'rendering/rect.dart';
 
 class SVGRectElement extends SVGGeometryElement {
-  RenderSVGRect? _renderer;
-
-  @override
-  get renderBoxModel => _renderer;
-
   @override
   get presentationAttributeConfigs => super.presentationAttributeConfigs
     ..addAll([
@@ -25,13 +21,7 @@ class SVGRectElement extends SVGGeometryElement {
   SVGRectElement(super.context) {}
 
   @override
-  createRenderer() {
-    return _renderer = RenderSVGRect(renderStyle: renderStyle, element: this);
-  }
-
-  @override
-  void didDetachRenderer() {
-    super.didDetachRenderer();
-    _renderer = null;
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    return RenderSVGRect(renderStyle: renderStyle);
   }
 }

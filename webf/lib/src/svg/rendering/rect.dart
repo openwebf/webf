@@ -7,7 +7,7 @@ import 'dart:ui';
 import 'shape.dart';
 
 class RenderSVGRect extends RenderSVGShape {
-  RenderSVGRect({required super.renderStyle, super.element});
+  RenderSVGRect({required super.renderStyle});
 
   @override
   Path asPath() {

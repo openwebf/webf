@@ -2,16 +2,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
 import 'rendering/circle.dart';
 
 class SVGCircleElement extends SVGGeometryElement {
-  RenderSVGCircle? _renderer;
-
-  @override
-  get renderBoxModel => _renderer;
-
   @override
   get presentationAttributeConfigs => super.presentationAttributeConfigs
     ..addAll([
@@ -23,13 +19,7 @@ class SVGCircleElement extends SVGGeometryElement {
   SVGCircleElement(super.context) {}
 
   @override
-  createRenderer() {
-    return _renderer = RenderSVGCircle(renderStyle: renderStyle, element: this);
-  }
-
-  @override
-  void didDetachRenderer() {
-    super.didDetachRenderer();
-    _renderer = null;
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    return RenderSVGCircle(renderStyle: renderStyle);
   }
 }

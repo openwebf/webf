@@ -3,16 +3,12 @@
  */
 
 import 'package:flutter/rendering.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
 import 'rendering/path.dart';
 
 class SVGPathElement extends SVGGeometryElement {
-  RenderSVGPath? _renderer;
-
-  @override
-  get renderBoxModel => _renderer;
-
   @override
   get presentationAttributeConfigs => super.presentationAttributeConfigs
     ..addAll([SVGPresentationAttributeConfig('d')]);
@@ -20,13 +16,8 @@ class SVGPathElement extends SVGGeometryElement {
   SVGPathElement(super.context) {}
 
   @override
-  RenderBox createRenderer() {
-    return _renderer = RenderSVGPath(renderStyle: renderStyle, element: this);
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    return RenderSVGPath(renderStyle: renderStyle);
   }
 
-  @override
-  void didDetachRenderer() {
-    super.didDetachRenderer();
-    _renderer = null;
-  }
 }
