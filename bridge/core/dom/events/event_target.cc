@@ -393,7 +393,8 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   auto dart_object_finalize_callback = [](void* isolate_callback_data, void* peer) {
     auto* wire = (DartWireContext*)(peer);
 
-    if (wire->disposed) return;
+    if (wire->disposed)
+      return;
 
     wire->dispatcher->PostToJs(
         wire->is_dedicated, wire->context_id,
