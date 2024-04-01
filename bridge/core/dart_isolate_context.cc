@@ -45,9 +45,10 @@ void DeleteDartWire(DartWireContext* wire) {
   delete wire;
 }
 
-static void ClearUpWires() {
+static void ClearUpWires(JSRuntime* runtime) {
   for (auto& wire : alive_wires) {
-    delete wire;
+    JS_FreeValueRT(runtime, wire->jsObject.QJSValue());
+    wire->disposed = true;
   }
   alive_wires.clear();
 }
@@ -92,7 +93,7 @@ void DartIsolateContext::FinalizeJSRuntime() {
   HTMLElementFactory::Dispose();
   SVGElementFactory::Dispose();
   EventFactory::Dispose();
-  ClearUpWires();
+  ClearUpWires(runtime_);
   JS_TurnOnGC(runtime_);
   JS_FreeRuntime(runtime_);
   runtime_ = nullptr;
