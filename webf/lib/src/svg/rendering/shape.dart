@@ -58,7 +58,7 @@ abstract class RenderSVGShape extends RenderBoxModel {
           clipPath = svgClipPath!.clipPath;
           break;
       }
-      context.canvas.clipPath(clipPath!);
+      context.canvas.clipPath(clipPath);
     }
     Path vpath = path.shift(offset);
     Paint? vpaint;

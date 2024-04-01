@@ -2,7 +2,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 

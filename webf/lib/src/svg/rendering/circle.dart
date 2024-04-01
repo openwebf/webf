@@ -17,7 +17,6 @@ class RenderSVGCircle extends RenderSVGShape {
     return getPath(r, cx, cy);
   }
   Path asDefNodePath() {
-    final path = Path();
     var element = renderStyle.target;
     final cx = double.parse(element.attributes['cx'] ?? '0');
     final cy = double.parse(element.attributes['cy'] ?? '0');
