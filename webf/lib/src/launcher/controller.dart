@@ -1440,7 +1440,6 @@ class WebFController {
     module.resumeTimer();
     module.resumeAnimationFrame();
     view.resumeAnimationTimeline();
-    view.document.reactiveWidgetElements();
     SchedulerBinding.instance.scheduleFrame();
 
     if (enableWebFProfileTracking) {

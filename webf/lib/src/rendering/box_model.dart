@@ -1551,7 +1551,7 @@ class RenderBoxModel extends RenderBox
   }
 
   bool _disposed = false;
-  get disposed => _disposed;
+  bool get disposed => _disposed;
   /// Called when its corresponding element disposed
   @override
   @mustCallSuper

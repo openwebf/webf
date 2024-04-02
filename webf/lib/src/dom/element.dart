@@ -376,7 +376,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
           _createRenderLayout(isRepaintBoundary: isRepaintBoundary, previousRenderLayoutBox: _renderLayoutBox);
     }
 
-    RenderBox? previousRenderBoxModel = renderBoxModel;
+    RenderBoxModel? previousRenderBoxModel = renderBoxModel;
     if (nextRenderBoxModel != previousRenderBoxModel) {
       RenderObject? parentRenderObject;
       RenderBox? after;
@@ -394,7 +394,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
 
         SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          previousRenderBoxModel.dispose();
+          if (!previousRenderBoxModel.disposed) {
+            previousRenderBoxModel.dispose();
+          }
         });
       }
       renderBoxModel = nextRenderBoxModel;
