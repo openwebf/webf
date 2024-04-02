@@ -72,7 +72,7 @@ mixin ElementBase on Node {
       _renderLayoutBox = value;
     } else if (value is RenderWidget) {
       _renderWidget = value;
-    } else if (value is RenderSVGShape || value is RenderSVGContainer) {
+    } else if (value is RenderSVGShape || value is RenderSVGContainer || value is RenderSVGText) {
       _renderSVG = value;
     } else {
       if (!kReleaseMode) throw FlutterError('Unknown RenderBoxModel value.');
@@ -393,7 +393,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
           RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
         }
 
-        previousRenderBoxModel.dispose();
+        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          previousRenderBoxModel.dispose();
+        });
       }
       renderBoxModel = nextRenderBoxModel;
       assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
@@ -639,9 +641,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   void willDetachRenderer() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.willDetachRenderer');
-    }
     super.willDetachRenderer();
 
     // Cancel running transition.
@@ -668,9 +667,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       // Remove scrollable
       renderBoxModel.disposeScrollable();
       disposeScrollable();
-    }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 

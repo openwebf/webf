@@ -50,7 +50,7 @@ class SVGElement extends Element {
   }
 
   setAttributeStyle(String property, String value) {
-    if (style.contains(property)) {
+    if (style.getPropertyValue(property) == value) {
       return;
     }
     internalSetAttribute(property, value);

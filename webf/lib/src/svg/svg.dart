@@ -47,6 +47,13 @@ class SVGSVGElement extends SVGGraphicsElement {
   @override
   RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
     RenderSVGRoot root = RenderSVGRoot(renderStyle: renderStyle)..viewBox = viewBox..ratio = ratio;
+
+    if (previous is RenderSVGRoot) {
+      List<RenderBox> children = previous.getChildren();
+      previous.removeAll();
+      root.addAll(children);
+    }
+
     return root;
   }
 
