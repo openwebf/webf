@@ -485,19 +485,21 @@ class ImageElement extends Element {
 
   // Invoke when image descriptor has created.
   // We can know the naturalWidth and naturalHeight of current image.
-  void _onImageLoad(int width, int height, int frameCount) {
-    naturalWidth = width;
-    naturalHeight = height;
-    _resizeImage();
+  static void _onImageLoad(Element element, int width, int height, int frameCount) {
+    ImageElement self = element as ImageElement;
+
+    self.naturalWidth = width;
+    self.naturalHeight = height;
+    self._resizeImage();
 
     // Multi frame image should wrap a repaint boundary for better composite performance.
     if (frameCount > 1) {
-      forceToRepaintBoundary = true;
-      _watchAnimatedImageWhenVisible();
+      self.forceToRepaintBoundary = true;
+      self._watchAnimatedImageWhenVisible();
     }
 
     // Decrement load event delay count after decode.
-    ownerDocument.decrementLoadEventDelayCount();
+    self.ownerDocument.decrementLoadEventDelayCount();
   }
 
   // Callback when image are loaded, encoded and available to use.
@@ -591,7 +593,7 @@ class ImageElement extends Element {
 
   void _loadSVGImage() {
     final builder =
-        SVGRenderBoxBuilder(obtainImage(_resolvedUri!), target: this);
+        SVGRenderBoxBuilder(obtainImage(this, _resolvedUri!), target: this);
 
     builder.decode().then((renderObject) {
       final size = builder.getIntrinsicSize();
@@ -624,9 +626,11 @@ class ImageElement extends Element {
       provider = _currentImageProvider = BoxFitImage(
         boxFit: objectFit,
         url: _resolvedUri!,
+        targetElementPtr: pointer!,
         loadImage: obtainImage,
         onImageLoad: _onImageLoad,
-        devicePixelRatio: ownerDocument.defaultView.devicePixelRatio
+        controller: ownerDocument.controller,
+        devicePixelRatio: ownerDocument.defaultView.devicePixelRatio,
       );
     }
 
@@ -663,15 +667,16 @@ class ImageElement extends Element {
 
   // To load the resource, and dispatch load event.
   // https://html.spec.whatwg.org/multipage/images.html#when-to-obtain-images
-  Future<ImageLoadResponse> obtainImage(Uri url) async {
-    ImageRequest request = _currentRequest = ImageRequest.fromUri(url);
+  static Future<ImageLoadResponse> obtainImage(Element element, Uri url) async {
+    var self = element as ImageElement;
+    ImageRequest request = self._currentRequest = ImageRequest.fromUri(url);
     // Increment count when request.
-    ownerDocument.incrementRequestCount();
+    self.ownerDocument.incrementRequestCount();
 
-    final data = await request.obtainImage(ownerDocument.controller);
+    final data = await request.obtainImage(self.ownerDocument.controller);
 
     // Decrement count when response.
-    ownerDocument.decrementRequestCount();
+    self.ownerDocument.decrementRequestCount();
 
     return data;
   }
