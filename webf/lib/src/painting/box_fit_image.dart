@@ -4,11 +4,15 @@
  */
 
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
 
 class BoxFitImageKey {
   const BoxFitImageKey({
@@ -35,11 +39,11 @@ class ImageLoadResponse {
   final Uint8List bytes;
   final String? mime;
 
-  ImageLoadResponse(this.bytes,{ this.mime });
+  ImageLoadResponse(this.bytes, {this.mime});
 }
 
-typedef LoadImage = Future<ImageLoadResponse> Function(Uri url);
-typedef OnImageLoad = void Function(int naturalWidth, int naturalHeight, int frameCount);
+typedef LoadImage = Future<ImageLoadResponse> Function(Element ownerElement, Uri url);
+typedef OnImageLoad = void Function(Element ownerElement, int naturalWidth, int naturalHeight, int frameCount);
 
 class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   BoxFitImage({
@@ -47,14 +51,18 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     required this.url,
     required this.boxFit,
     required this.devicePixelRatio,
+    required this.controller,
+    required this.targetElementPtr,
     this.onImageLoad,
-  }): _loadImage = loadImage;
+  }) : _loadImage = loadImage;
 
   final LoadImage _loadImage;
   final Uri url;
   final BoxFit boxFit;
   final OnImageLoad? onImageLoad;
   final double devicePixelRatio;
+  final WebFController controller;
+  final Pointer<NativeBindingObject> targetElementPtr;
 
   @override
   Future<BoxFitImageKey> obtainKey(ImageConfiguration configuration) {
@@ -67,7 +75,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
     ImageLoadResponse response;
     try {
-      response = await _loadImage(url);
+      response = await _loadImage(controller.view.getBindingObject<Element>(targetElementPtr)!, url);
     } on FlutterError {
       // Depending on where the exception was thrown, the image cache may not
       // have had a chance to track the key in the cache at all.
@@ -104,7 +112,8 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     // Fire image on load after codec created.
     scheduleMicrotask(() {
       if (onImageLoad != null) {
-        onImageLoad!(descriptor.width, descriptor.height, codec.frameCount);
+        onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, descriptor.width, descriptor.height,
+            codec.frameCount);
       }
       _imageStreamCompleter!.setDimension(Dimension(descriptor.width, descriptor.height, codec.frameCount));
     });
@@ -148,7 +157,8 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
         completer is DimensionedMultiFrameImageStreamCompleter &&
         onImageLoad != null) {
       completer.dimension.then((Dimension dimension) {
-        onImageLoad!(dimension.width, dimension.height, dimension.frameCount);
+        onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, dimension.width, dimension.height,
+            dimension.frameCount);
       });
     }
     if (completer != null) {
