@@ -1626,6 +1626,7 @@ class CSSRenderStyle extends RenderStyle
   void detach() {
     // Clear reference to it's parent.
     parent = null;
+    backgroundImage = null;
   }
 
   // Find ancestor render style with display of not inline.
