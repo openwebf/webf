@@ -4,5 +4,5 @@
 	tag = v1.7.9
 [submodule "bridge/third_party/v8"]
 	path = bridge/third_party/v8
-	url = git@github.com:openwebf/v8-release.git
+	url = https://github.com/openwebf/v8-release.git
 	branch = 11.9.169.6
