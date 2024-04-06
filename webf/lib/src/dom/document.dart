@@ -62,7 +62,7 @@ class _InactiveRenderObjects {
       _scheduleFrameToFinalizeRenderObjects();
     }
 
-    assert(!renderObject.debugDisposed!);
+    assert(!renderObject.debugDisposed!, '$renderObject already disposed');
 
     if (!_isScheduled) {
       _renderObjects.add(renderObject);
