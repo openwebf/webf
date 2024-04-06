@@ -73,11 +73,11 @@ void SharedUICommand::SyncToReserve() {
   size_t waiting_size = waiting_buffer_->size();
   size_t origin_reserve_size = reserve_buffer_->size();
 
-  if (reserve_buffer_->empty()) {
-    swap(reserve_buffer_, waiting_buffer_);
-  } else {
+//  if (reserve_buffer_->empty()) {
+//    swap(reserve_buffer_, waiting_buffer_);
+//  } else {
     appendCommand(reserve_buffer_, waiting_buffer_);
-  }
+//  }
 
   assert(waiting_buffer_->empty());
   assert(reserve_buffer_->size() == waiting_size + origin_reserve_size);
@@ -100,11 +100,11 @@ void SharedUICommand::SyncToActive() {
 
   size_t reserve_size = reserve_buffer_->size();
   size_t origin_active_size = active_buffer->size();
-  if (active_buffer->empty()) {
-    swap(active_buffer, reserve_buffer_);
-  } else {
+//  if (active_buffer->empty()) {
+//    swap(active_buffer, reserve_buffer_);
+//  } else {
     appendCommand(active_buffer, reserve_buffer_);
-  }
+//  }
   assert(reserve_buffer_->empty());
   assert(active_buffer->size() == reserve_size + origin_active_size);
 }
