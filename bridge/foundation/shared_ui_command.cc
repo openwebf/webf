@@ -73,11 +73,11 @@ void SharedUICommand::SyncToReserve() {
   size_t waiting_size = waiting_buffer_->size();
   size_t origin_reserve_size = reserve_buffer_->size();
 
-//  if (reserve_buffer_->empty()) {
-//    swap(reserve_buffer_, waiting_buffer_);
-//  } else {
+  if (reserve_buffer_->empty()) {
+    swap(reserve_buffer_, waiting_buffer_);
+  } else {
     appendCommand(reserve_buffer_, waiting_buffer_);
-//  }
+  }
 
   assert(waiting_buffer_->empty());
   assert(reserve_buffer_->size() == waiting_size + origin_reserve_size);
@@ -100,11 +100,7 @@ void SharedUICommand::SyncToActive() {
 
   size_t reserve_size = reserve_buffer_->size();
   size_t origin_active_size = active_buffer->size();
-//  if (active_buffer->empty()) {
-//    swap(active_buffer, reserve_buffer_);
-//  } else {
-    appendCommand(active_buffer, reserve_buffer_);
-//  }
+  appendCommand(active_buffer, reserve_buffer_);
   assert(reserve_buffer_->empty());
   assert(active_buffer->size() == reserve_size + origin_active_size);
 }
@@ -120,9 +116,7 @@ void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& target,
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
 
   UICommandItem* command_item = original->data();
-  for (int i = 0; i < original->size(); i++) {
-    target->addCommand(command_item[i]);
-  }
+  target->addCommands(command_item, original->size());
 
   original->clear();
 

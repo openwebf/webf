@@ -496,6 +496,9 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void cloneNode(Pointer<NativeBindingObject> selfPtr, Pointer<NativeBindingObject> newPtr) {
+    assert(hasBindingObject(selfPtr));
+    assert(hasBindingObject(newPtr));
+
     EventTarget? originalTarget = getBindingObject<EventTarget>(selfPtr);
     EventTarget? newTarget = getBindingObject<EventTarget>(newPtr);
 
