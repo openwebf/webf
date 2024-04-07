@@ -436,6 +436,7 @@ class WebFProfiler {
   }
 
   void finishTrackUICommandStep() {
+    if (currentPipeline._stack.isEmpty) return;
     Timeline.finishSync();
     OpItem activeOp = currentPipeline.currentUICommandOp;
     activeOp.finishStep();

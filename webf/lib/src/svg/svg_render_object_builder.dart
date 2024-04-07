@@ -110,6 +110,7 @@ class SVGRenderBoxBuilder {
       }
       element.tagName = tagName;
       element.namespaceURI = SVG_ELEMENT_URI;
+      element.createRenderer();
       return element.renderBoxModel!;
     }
     print('Unknown SVG element $tagName');

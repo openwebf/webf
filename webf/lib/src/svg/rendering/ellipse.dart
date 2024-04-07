@@ -7,7 +7,7 @@ import 'dart:ui';
 import 'shape.dart';
 
 class RenderSVGEllipse extends RenderSVGShape {
-  RenderSVGEllipse({required super.renderStyle, super.element});
+  RenderSVGEllipse({required super.renderStyle});
 
   @override
   Path asPath() {

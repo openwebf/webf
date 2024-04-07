@@ -13,6 +13,7 @@ class SVGGraphicsElement extends SVGElement {
       SVGPresentationAttributeConfig('font-family'),
       SVGPresentationAttributeConfig('fill'),
       SVGPresentationAttributeConfig('fill-rule'),
+      SVGPresentationAttributeConfig('clip-path'),
       SVGPresentationAttributeConfig('stroke'),
       SVGPresentationAttributeConfig('stroke-width'),
       SVGPresentationAttributeConfig('stroke-linecap'),
