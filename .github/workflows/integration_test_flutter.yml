@@ -128,7 +128,7 @@ jobs:
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
-      run: cd integration_tests && npm run multiple_page_test
+      run: cd integration_tests && LOAD_MODE=prerendering node scripts/preload_prerendering_page_integration.js
       id: test
       continue-on-error: true
     - name: Check on failures
