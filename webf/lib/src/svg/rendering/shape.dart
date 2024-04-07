@@ -109,7 +109,7 @@ abstract class RenderSVGShape extends RenderBoxModel {
     var element = renderStyle.target as SVGElement;
     dynamic fillAttr = element.attributeStyle['fill'] ?? findRoot()?.element.attributeStyle['fill'];
     dynamic clipPathAttr = element.attributeStyle['clipPath'] ?? findRoot()?.element.attributeStyle['clipPath'];
-    if (fillAttr == null && clipPathAttr == null) return null;
+    if (fillAttr == null && clipPathAttr == null) return;
 
     NodeList? nodeList = element.findRoot()?.childNodes;
     if (nodeList != null) {
@@ -126,7 +126,6 @@ abstract class RenderSVGShape extends RenderBoxModel {
         }
       }
     }
-    return null;
   }
 
   Shader? _shader;
