@@ -981,6 +981,8 @@ class WebFController {
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
 
+    PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
+
     _view = WebFViewController(
       background: background,
       enableDebug: enableDebug,
@@ -1050,6 +1052,14 @@ class WebFController {
 
   void setNavigationDelegate(WebFNavigationDelegate delegate) {
     _view.navigationDelegate = delegate;
+  }
+
+  bool isFontsLoading = false;
+  void _watchFontLoading() {
+    isFontsLoading = true;
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      isFontsLoading = false;
+    });
   }
 
   Future<void> unload() async {
@@ -1455,6 +1465,7 @@ class WebFController {
   bool get disposed => _disposed;
   Future<void> dispose() async {
     _module.dispose();
+    PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
     await _view.dispose();
     _controllerMap[_view.contextId] = null;
     _controllerMap.remove(_view.contextId);
