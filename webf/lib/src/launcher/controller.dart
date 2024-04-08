@@ -844,6 +844,8 @@ class WebFController {
   UriParser? uriParser;
   WebFLoadingMode mode = WebFLoadingMode.standard;
 
+  bool get isPreLoadingOrPreRenderingComplete => preloadStatus == PreloadingStatus.done || preRenderingStatus == PreRenderingStatus.done;
+
   static WebFController? getControllerOfJSContextId(double? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
       return null;
