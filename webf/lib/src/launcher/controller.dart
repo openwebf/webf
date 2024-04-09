@@ -213,6 +213,7 @@ class WebFViewController implements WidgetsBindingObserver {
       callback();
     });
     _pendingAnimationTimesLines.clear();
+    _isAnimationTimelineStopped = false;
   }
 
   bool _isFrameBindingAttached = false;
