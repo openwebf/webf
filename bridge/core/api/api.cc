@@ -72,18 +72,23 @@ void evaluateQuickjsByteCodeInternal(void* page_,
 
 void evaluateWbcInternal(void* page_,
                          uint8_t* bytes,
-                         int32_t byteLen,
+                         int32_t byte_len,
+                         int64_t profile_id,
                          Dart_PersistentHandle persistent_handle,
                          EvaluateQuickjsByteCodeCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
 
+  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+
   size_t dataBlockSize;
   bool is_success;
   webf::Wbc wbc = webf::Wbc();
-  uint8_t* dataBlockBytes = wbc.prepareWbc(bytes, byteLen, &dataBlockSize);
+  uint8_t* dataBlockBytes = wbc.prepareWbc(bytes, byte_len, &dataBlockSize);
   if (dataBlockBytes == nullptr) {
+#if ENABLE_LOG
     WEBF_LOG(ERROR) << "prepareWbc error" << std::endl;
+#endif
     is_success = false;
   } else {
     std::vector<char> decompressedBytes;
@@ -95,13 +100,20 @@ void evaluateWbcInternal(void* page_,
     dataBlockBytes = NULL;
 
     if (decompressedSize < 0) {
+#if ENABLE_LOG
       WEBF_LOG(ERROR) << "LZ4 decompression failed with error code: " << decompressedSize << std::endl;
+#endif
       is_success = false;
     } else {
+#if ENABLE_LOG
       WEBF_LOG(VERBOSE) << "LZ4 decompression success! " << decompressedSize << std::endl;
+#endif
       is_success = page->evaluateByteCode(reinterpret_cast<uint8_t*>(decompressedBytes.data()), decompressedSize);
+      WEBF_LOG(VERBOSE) << " SUCCESS: " << is_success;
     }
   }
+
+  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
                                                        persistent_handle, result_callback, is_success);

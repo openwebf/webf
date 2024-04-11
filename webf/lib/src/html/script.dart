@@ -49,11 +49,12 @@ class ScriptRunner {
       }
     } else if (bundle.isBytecode) {
       bool result = false;
-      if (bundle.url.contains('.kbc1')) {
-        result = await evaluateQuickjsByteCode(contextId, bundle.data!, profileOp: profileOp);
-      } else if (bundle.url.contains('.wbc1')) {
+      if (bundle.url.contains('.wbc1')) {
         result = await evaluateWbc(contextId, bundle.data!, profileOp: profileOp);
+      } else {
+        result = await evaluateQuickjsByteCode(contextId, bundle.data!, profileOp: profileOp);
       }
+      print('result: $result');
 
       if (!result) {
         throw FlutterError('Bytecode are not valid to execute.');

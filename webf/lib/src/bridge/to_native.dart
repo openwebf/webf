@@ -392,7 +392,7 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, { Evalua
   return completer.future;
 }
 
-Future<bool> evaluateWbc(double contextId, Uint8List bytes) async {
+Future<bool> evaluateWbc(double contextId, Uint8List bytes,  { EvaluateOpItem? profileOp }) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -406,7 +406,7 @@ Future<bool> evaluateWbc(double contextId, Uint8List bytes) async {
   Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> nativeCallback =
   Pointer.fromFunction(handleEvaluateQuickjsByteCodeResult);
 
-  _evaluateWbc(_allocatedPages[contextId]!, byteData, bytes.length, context, nativeCallback);
+  _evaluateWbc(_allocatedPages[contextId]!, byteData, bytes.length, profileOp?.hashCode ?? 0, context, nativeCallback);
 
   return completer.future;
 }

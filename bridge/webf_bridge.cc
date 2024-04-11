@@ -201,7 +201,8 @@ void parseHTML(void* page_,
 
 void evaluateWbc(void* page_,
                  uint8_t* bytes,
-                 int32_t byteLen,
+                 int32_t byte_len,
+                 int64_t profile_id,
                  Dart_Handle dart_handle,
                  EvaluateQuickjsByteCodeCallback result_callback) {
 #if ENABLE_LOG
@@ -210,7 +211,7 @@ void evaluateWbc(void* page_,
     auto page = reinterpret_cast<webf::WebFPage*>(page_);
     Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
     page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
-                                                       webf::evaluateWbcInternal, page_, bytes, byteLen,
+                                                       webf::evaluateWbcInternal, page_, bytes, byte_len, profile_id,
                                                        persistent_handle, result_callback);
 }
 
