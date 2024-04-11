@@ -7,8 +7,8 @@
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
 #include "foundation/wbc.h"
-#include "lz4.h"
 #include "multiple_threading/dispatcher.h"
+#include "third_party/lz4/lz4.h"
 
 namespace webf {
 
