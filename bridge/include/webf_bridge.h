@@ -100,6 +100,14 @@ void dumpQuickjsByteCode(void* page,
                          DumpQuickjsByteCodeCallback result_callback);
 
 WEBF_EXPORT_C
+void evaluateWbc(void* page_,
+                 uint8_t* bytes,
+                 int32_t byte_len,
+                 int64_t profile_id,
+                 Dart_Handle dart_handle,
+                 EvaluateQuickjsByteCodeCallback result_callback);
+
+    WEBF_EXPORT_C
 void parseHTML(void* page,
                char* code,
                int32_t length,
