@@ -71,11 +71,21 @@ uint8_t* Wbc::prepareWbc(const uint8_t* bytes, size_t length, size_t* targetSize
   }
 
   // Extracting header length
+  if (length < (signatureSize + Wbc::WBC_HEADER_LENGTH)) {
+    WEBF_LOG(ERROR) << "prepareWbc header length is wrong" << std::endl;
+    return nullptr;
+  }
+
   uint32_t headerLength = convertBigEndianToUint32(bytes, signatureSize);
   uint32_t bodyOffset = signatureSize + headerLength;
   uint32_t headerChecksumOffset = bodyOffset - Wbc::WBC_HEADER_CHECKSUM_LENGTH;
 
   // Calculating Adler32 checksum for header content
+  if (length < bodyOffset) {
+    WEBF_LOG(ERROR) << "prepareWbc header is wrong" << std::endl;
+    return nullptr;
+  }
+
   uint32_t headerContentAdler32 = calculateAdler32(bytes + signatureSize, headerChecksumOffset - signatureSize);
   uint32_t headerAdler32 = convertBigEndianToUint32(bytes, headerChecksumOffset);
   if (headerContentAdler32 != headerAdler32) {
@@ -84,10 +94,21 @@ uint8_t* Wbc::prepareWbc(const uint8_t* bytes, size_t length, size_t* targetSize
   }
 
   // Extracting body length
+  if (length < (bodyOffset + Wbc::WBC_BODY_LENGTH)) {
+    WEBF_LOG(ERROR) << "prepareWbc body length is wrong" << std::endl;
+    return nullptr;
+  }
+
   uint32_t bodyLength = convertBigEndianToUint32(bytes, bodyOffset);
-  uint32_t bodyChecksumOffset = bodyOffset + bodyLength - Wbc::WBC_BODY_CHECKSUM_LENGTH;
+  uint32_t endOffset = bodyOffset + bodyLength;
+  uint32_t bodyChecksumOffset = endOffset - Wbc::WBC_BODY_CHECKSUM_LENGTH;
 
   // Calculating Adler32 checksum for body content
+  if (length < endOffset) {
+    WEBF_LOG(ERROR) << "prepareWbc body is wrong" << std::endl;
+    return nullptr;
+  }
+
   uint32_t bodyContentAdler32 = calculateAdler32(bytes + bodyOffset, bodyChecksumOffset - bodyOffset);
   uint32_t bodyAdler32 = convertBigEndianToUint32(bytes, bodyChecksumOffset);
   if (bodyContentAdler32 != bodyAdler32) {

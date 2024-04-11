@@ -14,6 +14,9 @@ class Wbc {
   // node-lz4 default maximum block size
   static const int32_t NODE_LZ4_BLOCK_MAX_SIZE = 4 * 1024 * 1024;
 
+  //The length of the header field in the wbc file format.
+  static const int32_t WBC_HEADER_LENGTH = 4;
+
   // The length of the CHECKSUM field of HEADER in the wbc file format
   static const int32_t WBC_HEADER_CHECKSUM_LENGTH = 4;
 
