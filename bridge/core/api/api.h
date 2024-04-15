@@ -21,6 +21,12 @@ void evaluateScriptsInternal(void* page_,
                              Dart_Handle dart_handle,
                              EvaluateScriptsCallback result_callback);
 
+void evaluateScriptsByIdInternal(void* page_,
+                                 uint32_t script_id,
+                                 int64_t profile_id,
+                                 Dart_Handle dart_handle,
+                                 EvaluateScriptsByIdCallback result_callback);
+
 void evaluateQuickjsByteCodeInternal(void* page_,
                                      uint8_t* bytes,
                                      int32_t byteLen,
@@ -30,10 +36,17 @@ void evaluateQuickjsByteCodeInternal(void* page_,
 
 void evaluateWbcInternal(void* page_,
                          uint8_t* bytes,
-                         int32_t byte_len,
+                         uint32_t byte_len,
                          int64_t profile_id,
                          Dart_PersistentHandle persistent_handle,
                          EvaluateQuickjsByteCodeCallback result_callback);
+
+void evaluateWbcByIdInternal(void* page_,
+                             uint32_t script_id,
+                             int64_t profile_id,
+                             Dart_PersistentHandle persistent_handle,
+                             EvaluateQuickjsByteCodeCallback result_callback);
+
 void parseHTMLInternal(void* page_,
                        char* code,
                        int32_t length,

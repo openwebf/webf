@@ -8,6 +8,9 @@
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/text.h"
+#include "html_element_type_helper.h"
+#include "core/html/html_script_element.h"
+#include "element_attribute_names.h"
 #include "element_namespace_uris.h"
 #include "foundation/logging.h"
 #include "html_names.h"
@@ -99,7 +102,8 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
 
   auto* html_element = DynamicTo<Element>(root_node);
   if (html_element != nullptr && html_element->localName() == html_names::khtml) {
-    parseProperty(html_element, &node->v.element);
+    bool _ = false;
+    parseProperty(html_element, &node->v.element, &_);
   }
 
   const GumboVector* children = &node->v.element.children;
@@ -131,11 +135,52 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
           }
         }
 
-        traverseHTML(element, child);
-        root_container->AppendChild(element);
-        parseProperty(element, &child->v.element);
+        bool is_script_element = child->v.element.tag == GumboTag::GUMBO_TAG_SCRIPT;
+        bool is_wbc_script_element;
+        parseProperty(element, &child->v.element, &is_wbc_script_element);
+        if (is_script_element) {
+          auto& gumbo_script_element = child->v.element;
+          assert(gumbo_script_element.children.length == 1);
+          auto* script_text_node = (GumboNode*)gumbo_script_element.children.data[0];
+          auto* script_element = DynamicTo<HTMLScriptElement>(element);
+
+          if (is_wbc_script_element) {
+            auto* bytes = (uint8_t*)script_text_node->v.text.original_text.data;
+            size_t total_length = script_text_node->v.text.original_text.length;
+            if (script_text_node->v.text.original_text.length < 20) {
+              return;
+            }
+            uint32_t start = -1;
+            // Search first 10 bytes to find start
+            for (size_t index = 0; index < 11; index++) {
+              // Verify the WBC file signature.
+              // https://github.com/openwebf/rfc/pull/5/files#diff-b26b0f961278d1abed24f2f4874e802e99d5f92b13cbd5f0652b47597647ed26R34
+              if (bytes[index] == 0x89 && bytes[index + 1] == 0x57 && bytes[index + 2] == 0x42 &&
+                  bytes[index + 3] == 0x43 && bytes[index + 4] == 0x31 && bytes[index + 5] == 0x0D &&
+                  bytes[index + 6] == 0x0A && bytes[index + 7] == 0x1A && bytes[index + 8] == 0x0A) {
+                start = index;
+                break;
+              }
+            }
+            if (start == -1) continue;
+
+            uint32_t script_id = script_element->StoreWBCByteBuffer(bytes + start, total_length - start);
+            script_element->setAttribute(element_attribute_names::k__script_id__,
+                                         AtomicString(ctx, std::to_string(script_id)));
+          } else {
+            uint32_t script_id = script_element->StoreUTF8String(script_text_node->v.text.original_text.data,
+                                            script_text_node->v.text.original_text.length);
+            script_element->setAttribute(element_attribute_names::k__script_id__,
+                                         AtomicString(ctx, std::to_string(script_id)));
+          }
+          root_container->AppendChild(element);
+        } else {
+          traverseHTML(element, child);
+          root_container->AppendChild(element);
+        }
       } else if (child->type == GUMBO_NODE_TEXT) {
-        auto* text = context->document()->createTextNode(AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
+        auto* text =
+            context->document()->createTextNode(AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
         root_container->AppendChild(text);
       }
     }
@@ -201,7 +246,7 @@ void HTMLParser::freeSVGResult(GumboOutput* svgTree) {
   gumbo_destroy_output(&kGumboDefaultOptions, svgTree);
 }
 
-void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
+void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement, bool* is_wbc_scripts_element) {
   auto* context = element->GetExecutingContext();
   JSContext* ctx = context->ctx();
 
@@ -211,6 +256,11 @@ void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
 
     std::string strName = attribute->name;
     std::string strValue = attribute->value;
+
+    if (strName == "type" && strValue == "application/vnd.webf.bc1") {
+      *is_wbc_scripts_element = true;
+    }
+
     element->setAttribute(AtomicString(ctx, strName), AtomicString(ctx, strValue), ASSERT_NO_EXCEPTION());
   }
 }

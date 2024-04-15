@@ -29,7 +29,7 @@ class HTMLParser {
  private:
   ExecutingContext* context_;
   static void traverseHTML(Node* root, GumboNode* node);
-  static void parseProperty(Element* element, GumboElement* gumboElement);
+  static void parseProperty(Element* element, GumboElement* gumboElement, bool* is_wbc_scripts_element);
 
   static bool parseHTML(const std::string& html, Node* rootNode, bool isHTMLFragment);
 };

@@ -49,6 +49,7 @@ class WebFPage final {
                       uint64_t* bytecode_len,
                       const char* url,
                       int startLine);
+  bool evaluateScriptById(uint32_t script_id);
   bool parseHTML(const char* code, size_t length);
   void evaluateScript(const char* script, size_t length, const char* url, int startLine);
   uint8_t* dumpByteCode(const char* script, size_t length, const char* url, uint64_t* byteLength);
