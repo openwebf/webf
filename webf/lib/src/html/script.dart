@@ -46,12 +46,11 @@ class ScriptRunner {
   static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle, {bool async = false, EvaluateOpItem? profileOp}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
-      assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
-
       bool result;
       if (bundle.isRemoteId) {
         result = await evaluateScriptsById(contextId, bundle.scriptId!, profileOp: profileOp);
       } else {
+        assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
         result = await evaluateScripts(contextId, bundle.data!, url: bundle.url, cacheKey: bundle.cacheKey, profileOp: profileOp);
       }
       if (!result) {

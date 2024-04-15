@@ -103,7 +103,7 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
   auto* html_element = DynamicTo<Element>(root_node);
   if (html_element != nullptr && html_element->localName() == html_names::khtml) {
     bool _ = false;
-    parseProperty(html_element, &node->v.element, &_);
+    parseProperty(html_element, &node->v.element, &_, &_);
   }
 
   const GumboVector* children = &node->v.element.children;
@@ -136,9 +136,10 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
         }
 
         bool is_script_element = child->v.element.tag == GumboTag::GUMBO_TAG_SCRIPT;
+        bool is_standard_script_element = false;
         bool is_wbc_script_element;
-        parseProperty(element, &child->v.element, &is_wbc_script_element);
-        if (is_script_element) {
+        parseProperty(element, &child->v.element, &is_wbc_script_element, &is_standard_script_element);
+        if (is_script_element && child->v.element.children.length > 0) {
           auto& gumbo_script_element = child->v.element;
           assert(gumbo_script_element.children.length == 1);
           auto* script_text_node = (GumboNode*)gumbo_script_element.children.data[0];
@@ -246,9 +247,11 @@ void HTMLParser::freeSVGResult(GumboOutput* svgTree) {
   gumbo_destroy_output(&kGumboDefaultOptions, svgTree);
 }
 
-void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement, bool* is_wbc_scripts_element) {
+void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement, bool* is_wbc_scripts_element, bool* is_standard_script_element) {
   auto* context = element->GetExecutingContext();
   JSContext* ctx = context->ctx();
+
+  bool is_script_element = gumboElement->tag == GumboTag::GUMBO_TAG_SCRIPT;
 
   GumboVector* attributes = &gumboElement->attributes;
   for (int j = 0; j < attributes->length; ++j) {
@@ -257,8 +260,12 @@ void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement, boo
     std::string strName = attribute->name;
     std::string strValue = attribute->value;
 
-    if (strName == "type" && strValue == "application/vnd.webf.bc1") {
-      *is_wbc_scripts_element = true;
+    if (is_script_element) {
+      if (strName == "type" && strValue == "application/vnd.webf.bc1") {
+        *is_wbc_scripts_element = true;
+      } else {
+        *is_standard_script_element = true;
+      }
     }
 
     element->setAttribute(AtomicString(ctx, strName), AtomicString(ctx, strValue), ASSERT_NO_EXCEPTION());
