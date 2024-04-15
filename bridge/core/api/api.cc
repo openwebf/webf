@@ -128,7 +128,6 @@ void evaluateWbcInternal(void* page_,
       WEBF_LOG(VERBOSE) << "LZ4 decompression success! " << decompressedSize << std::endl;
 #endif
       is_success = page->evaluateByteCode(reinterpret_cast<uint8_t*>(decompressedBytes.data()), decompressedSize);
-      WEBF_LOG(VERBOSE) << " SUCCESS: " << is_success;
     }
   }
 
