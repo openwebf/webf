@@ -39,6 +39,7 @@ typedef void (*EvaluateQuickjsByteCodeCallback)(Dart_Handle dart_handle, int8_t)
 typedef void (*DumpQuickjsByteCodeCallback)(Dart_Handle);
 typedef void (*ParseHTMLCallback)(Dart_Handle);
 typedef void (*EvaluateScriptsCallback)(Dart_Handle dart_handle, int8_t);
+typedef void (*EvaluateScriptsByIdCallback)(Dart_Handle dart_handle, int8_t);
 
 WEBF_EXPORT_C
 void* initDartIsolateContextSync(int64_t dart_port,
@@ -80,6 +81,14 @@ void evaluateScripts(void* page,
                      int64_t profile_id,
                      Dart_Handle dart_handle,
                      EvaluateQuickjsByteCodeCallback result_callback);
+
+WEBF_EXPORT_C
+void evaluateScriptsById(void* page,
+                         uint32_t script_id,
+                         int64_t profile_id,
+                         Dart_Handle dart_handle,
+                         EvaluateScriptsByIdCallback result_callback);
+
 WEBF_EXPORT_C
 void evaluateQuickjsByteCode(void* page,
                              uint8_t* bytes,
@@ -107,7 +116,14 @@ void evaluateWbc(void* page_,
                  Dart_Handle dart_handle,
                  EvaluateQuickjsByteCodeCallback result_callback);
 
-    WEBF_EXPORT_C
+WEBF_EXPORT_C
+void evaluateWbcById(void* page_,
+                     uint32_t script_id,
+                     int64_t profile_id,
+                     Dart_Handle dart_handle,
+                     EvaluateQuickjsByteCodeCallback result_callback);
+
+WEBF_EXPORT_C
 void parseHTML(void* page,
                char* code,
                int32_t length,

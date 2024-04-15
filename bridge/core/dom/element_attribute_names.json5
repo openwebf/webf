@@ -9,6 +9,7 @@
   },
   "data": [
     "id",
-    "className"
+    "className",
+    "__script_id__"
   ]
 }

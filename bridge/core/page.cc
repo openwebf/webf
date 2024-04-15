@@ -118,6 +118,12 @@ bool WebFPage::evaluateScript(const char* script,
   return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
 }
 
+bool WebFPage::evaluateScriptById(uint32_t script_id) {
+  if (!context_->IsContextValid())
+    return false;
+  return context_->EvaluateJavaScriptById(script_id);
+}
+
 void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
   if (!context_->IsContextValid())
     return;

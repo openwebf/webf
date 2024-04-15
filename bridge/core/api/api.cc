@@ -5,6 +5,7 @@
 #include "api.h"
 #include "core/dart_isolate_context.h"
 #include "core/html/parser/html_parser.h"
+#include "core/html/html_script_element.h"
 #include "core/page.h"
 #include "foundation/wbc.h"
 #include "multiple_threading/dispatcher.h"
@@ -43,6 +44,24 @@ void evaluateScriptsInternal(void* page_,
                                                        persistent_handle, result_callback, is_success);
 }
 
+void evaluateScriptsByIdInternal(void* page_,
+                         uint32_t script_id,
+                         int64_t profile_id,
+                         Dart_Handle persistent_handle,
+                         EvaluateScriptsByIdCallback result_callback) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+
+  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+
+  bool is_success = page->evaluateScriptById(script_id);
+
+  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+
+  page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateScriptsInternal,
+                                                       persistent_handle, result_callback, is_success);
+}
+
 static void ReturnEvaluateQuickjsByteCodeResultToDart(Dart_PersistentHandle persistent_handle,
                                                       EvaluateQuickjsByteCodeCallback result_callback,
                                                       bool is_success) {
@@ -72,7 +91,7 @@ void evaluateQuickjsByteCodeInternal(void* page_,
 
 void evaluateWbcInternal(void* page_,
                          uint8_t* bytes,
-                         int32_t byte_len,
+                         uint32_t byte_len,
                          int64_t profile_id,
                          Dart_PersistentHandle persistent_handle,
                          EvaluateQuickjsByteCodeCallback result_callback) {
@@ -117,6 +136,20 @@ void evaluateWbcInternal(void* page_,
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
                                                        persistent_handle, result_callback, is_success);
+}
+
+void evaluateWbcByIdInternal(void* page_,
+                             uint32_t script_id,
+                             int64_t profile_id,
+                             Dart_PersistentHandle persistent_handle,
+                             EvaluateQuickjsByteCodeCallback result_callback) {
+  auto* script_element = HTMLScriptElement::ObtainScriptElementFromId(script_id);
+  if (script_element == nullptr) return;
+
+  auto* bytes = (uint8_t*) script_element->buffer();
+  uint32_t byte_len = script_element->buffer_len();
+
+  evaluateWbcInternal(page_, bytes, byte_len, profile_id, persistent_handle, result_callback);
 }
 
 static void ReturnParseHTMLToDart(Dart_PersistentHandle persistent_handle, ParseHTMLCallback result_callback) {

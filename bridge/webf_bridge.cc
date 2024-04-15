@@ -146,6 +146,21 @@ void evaluateScripts(void* page_,
       bytecode_len, bundleFilename, start_line, profile_id, persistent_handle, result_callback);
 }
 
+void evaluateScriptsById(void* page_,
+                         uint32_t script_id,
+                         int64_t profile_id,
+                         Dart_Handle dart_handle,
+                         EvaluateScriptsByIdCallback result_callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dart] evaluateScriptsWrapper call" << std::endl;
+#endif
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
+      page->isDedicated(), page->contextId(), webf::evaluateScriptsByIdInternal, page_, script_id, profile_id,
+      persistent_handle, result_callback);
+}
+
 void dumpQuickjsByteCode(void* page_,
                          int64_t profile_id,
                          const char* code,
@@ -198,7 +213,6 @@ void parseHTML(void* page_,
       persistent_handle, result_callback);
 }
 
-
 void evaluateWbc(void* page_,
                  uint8_t* bytes,
                  int32_t byte_len,
@@ -206,13 +220,28 @@ void evaluateWbc(void* page_,
                  Dart_Handle dart_handle,
                  EvaluateQuickjsByteCodeCallback result_callback) {
 #if ENABLE_LOG
-    WEBF_LOG(VERBOSE) << "[Dart] evaluateWbcWrapper call" << std::endl;
+  WEBF_LOG(VERBOSE) << "[Dart] evaluateWbcWrapper call" << std::endl;
 #endif
-    auto page = reinterpret_cast<webf::WebFPage*>(page_);
-    Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
-    page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
-                                                       webf::evaluateWbcInternal, page_, bytes, byte_len, profile_id,
-                                                       persistent_handle, result_callback);
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(), webf::evaluateWbcInternal,
+                                                     page_, bytes, byte_len, profile_id, persistent_handle,
+                                                     result_callback);
+}
+
+void evaluateWbcById(void* page_,
+                     uint32_t script_id,
+                     int64_t profile_id,
+                     Dart_Handle dart_handle,
+                     EvaluateQuickjsByteCodeCallback result_callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dart] evaluateWbcWrapper call" << std::endl;
+#endif
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(), webf::evaluateWbcByIdInternal,
+                                                     page_, script_id, profile_id, persistent_handle,
+                                                     result_callback);
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
