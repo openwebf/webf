@@ -207,8 +207,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     updateRenderBoxModel();
   }
 
-  bool _needRecalculateStyle = false;
-
   final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
 
   Element(BindingContext? context) : super(NodeType.ELEMENT_NODE, context) {
@@ -1361,13 +1359,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
-    internalSetAttribute(qualifiedName, value);
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-    _needRecalculateStyle = _needRecalculateStyle || isNeedRecalculate;
+    internalSetAttribute(qualifiedName, value);
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
@@ -1711,11 +1707,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Empty implement
     // Because attribute style is not recommend to use
     // But it's necessary for SVG.
-  }
-
-  void tryRecalculateStyle({bool rebuildNested = false}) {
-    recalculateStyle(forceRecalculate: _needRecalculateStyle);
-    _needRecalculateStyle = false;
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
