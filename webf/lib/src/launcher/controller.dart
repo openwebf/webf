@@ -687,9 +687,24 @@ class WebFViewController implements WidgetsBindingObserver {
       WebFNavigationActionPolicy policy = await _delegate.dispatchDecisionHandler(action);
       if (policy == WebFNavigationActionPolicy.cancel) return;
 
+      String targetPath = action.target;
+
+      if (!Uri.parse(targetPath).isAbsolute) {
+        String base = rootController.url;
+        targetPath = rootController.uriParser!.resolve(Uri.parse(base), Uri.parse(targetPath)).toString();
+      }
+
+      if (action.target.trim().startsWith('#')) {
+        String oldUrl = rootController.url;
+        HistoryModule historyModule = rootController.module.moduleManager.getModule('History')!;
+        historyModule.pushState(null, url: targetPath);
+        window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
+        return;
+      }
+
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController.load(rootController.getPreloadBundleFromUrl(action.target) ?? WebFBundle.fromUrl(action.target));
+          await rootController.load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
