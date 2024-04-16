@@ -31,8 +31,7 @@ abstract class WidgetElement extends dom.Element {
     return _state!.context;
   }
 
-  WidgetElement(
-    BindingContext? context) : super(context) {
+  WidgetElement(BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
     _widget = WebFWidgetElementStatefulWidget(this);
   }
@@ -207,7 +206,7 @@ abstract class WidgetElement extends dom.Element {
   static dom.Node? _getAncestorWidgetNode(WidgetElement element) {
     dom.Node? parent = element.parentNode;
 
-    while(parent != null) {
+    while (parent != null) {
       if (parent.flutterWidget != null) {
         return parent;
       }
@@ -224,7 +223,8 @@ abstract class WidgetElement extends dom.Element {
     dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
     if (ancestorWidgetNode != null) {
       (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);
-    } else if (ownerDocument.controller.mode == WebFLoadingMode.standard) {
+    } else if (ownerDocument.controller.mode == WebFLoadingMode.standard ||
+        ownerDocument.controller.isPreLoadingOrPreRenderingComplete) {
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
     } else {
       ownerDocument.controller.pendingWidgetElements.add(attachedAdapter!);
