@@ -332,7 +332,9 @@ class WebFState extends State<WebF> with RouteAware {
 }
 
 class WebFContext extends InheritedWidget {
-  WebFContext({required super.child});
+  WebFContext({required super.child, this.controller});
+
+  final WebFController? controller;
 
   @override
   bool updateShouldNotify(covariant InheritedWidget oldWidget) {
@@ -341,12 +343,12 @@ class WebFContext extends InheritedWidget {
 
   @override
   InheritedElement createElement() {
-    return WebFContextInheritElement(this);
+    return WebFContextInheritElement(this, controller);
   }
 }
 
 class WebFContextInheritElement extends InheritedElement {
-  WebFContextInheritElement(super.widget);
+  WebFContextInheritElement(super.widget, this.controller);
 
   WebFController? controller;
 
@@ -461,6 +463,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     (parent as WebFContextInheritElement).controller = controller;
 
     await controller!.controlledInitCompleter.future;
+    controller!.ownerBuildContext = this;
 
     if (controller!.entrypoint == null) {
       throw FlutterError('Consider providing a WebFBundle resource as the entry point for WebF');
@@ -476,7 +479,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
           RenderViewportBox rootRenderObject = renderObject as RenderViewportBox;
           if (!controller!.view.firstLoad) {
             controller!.resume();
-            controller!.view.document.reactiveWidgetElements();
+            // controller!.view.document.reactiveWidgetElements();
             rootRenderObject.insert(controller!.view.getRootRenderObject()!);
           }
           return;
@@ -492,7 +495,6 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
         if (controller!.mode == WebFLoadingMode.standard) {
           await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
         } else if (controller!.mode == WebFLoadingMode.preloading) {
-
           await controller!.controllerPreloadingCompleter.future;
 
           if (controller!.view.getRootRenderObject()!.parent == null) {
@@ -557,6 +559,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     } else {
       controller?.dispose();
     }
+    controller!.ownerBuildContext = null;
     controller = null;
   }
 

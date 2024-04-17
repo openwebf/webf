@@ -5,12 +5,14 @@
 
 import { addWebfModuleListener, webfInvokeModule, clearWebfModuleListener, removeWebfModuleListener } from './bridge';
 import { methodChannel, triggerMethodCallHandler } from './method-channel';
+import { hybridHistory } from './hybrid-history';
 
 addWebfModuleListener('MethodChannel', (event, data) => triggerMethodCallHandler(data[0], data[1]));
 
 export const webf = {
   methodChannel,
   invokeModule: webfInvokeModule,
+  hybridHistory: hybridHistory,
   addWebfModuleListener: addWebfModuleListener,
   clearWebfModuleListener: clearWebfModuleListener,
   removeWebfModuleListener: removeWebfModuleListener
