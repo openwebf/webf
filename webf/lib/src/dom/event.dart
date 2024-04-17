@@ -393,6 +393,31 @@ class MouseEvent extends UIEvent {
   }
 }
 
+class DeviceOrientationEvent extends Event {
+  DeviceOrientationEvent(this.alpha, this.beta, this.gamma) : super(EVENT_DEVICE_ORIENTATION);
+
+  final bool absolute = true;
+  final double alpha;
+  final double beta;
+  final double gamma;
+
+  @override
+  Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
+    List<int> methods = [
+      doubleToUint64(alpha),
+      doubleToUint64(beta),
+      doubleToUint64(gamma)
+    ];
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
+    bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
+
+    return rawEvent;
+  }
+}
+
 /// reference: https://developer.mozilla.org/en-US/docs/Web/API/GestureEvent
 class GestureEvent extends Event {
   final String state;
