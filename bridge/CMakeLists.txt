@@ -18,7 +18,7 @@ if(MSVC)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+  set(CMAKE_OSX_ARCHITECTURES "arm64")
 endif()
 
 set(WEBF_JS_ENGINE $ENV{WEBF_JS_ENGINE})
@@ -71,7 +71,7 @@ endif ()
 if (NOT MSVC) 
   if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # Avoid quickjs stackoverflow.
-    add_compile_options(-O1)
+#    add_compile_options(-O1)
   endif()
 endif()
 
@@ -82,24 +82,24 @@ if (DEFINED PLATFORM)
 endif()
 
 list(APPEND BRIDGE_SOURCE
-  foundation/logging.cc
+#  foundation/logging.cc
   foundation/native_string.cc
-  foundation/ui_task_queue.cc
+#  foundation/ui_task_queue.cc
 #  foundation/shared_ui_command.cc
-  foundation/inspector_task_queue.cc
-  foundation/task_queue.cc
+#  foundation/inspector_task_queue.cc
+#  foundation/task_queue.cc
   foundation/string_view.cc
-  foundation/native_value.cc
-  foundation/native_type.cc
-  foundation/stop_watch.cc
+#  foundation/native_value.cc
+#  foundation/native_type.cc
+#  foundation/stop_watch.cc
 #  foundation/profiler.cc
-  foundation/dart_readable.cc
+#  foundation/dart_readable.cc
   foundation/rust_readable.cc
 #  foundation/ui_command_buffer.cc
 #  foundation/ui_command_strategy.cc
-  polyfill/dist/polyfill.cc
-  multiple_threading/dispatcher.cc
-  multiple_threading/looper.cc
+#  polyfill/dist/polyfill.cc
+#  multiple_threading/dispatcher.cc
+#  multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
@@ -638,6 +638,9 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
   list(APPEND BRIDGE_SOURCE
     # Binding files
     bindings/v8/atomic_string.cc
+    bindings/v8/native_string_utils.cc
+
+    out/built_in_string.cc
   )
 
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -653,20 +656,20 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/include/v8/libplatform)
 endif()
 
-list(APPEND BRIDGE_LINK_LIBS modb)
+#list(APPEND BRIDGE_LINK_LIBS modb)
 
 list(APPEND BRIDGE_SOURCE
   # Core sources
-  webf_bridge.cc
-  core/api/api.cc
-  core/executing_context.cc
-  core/script_forbidden_scope.cc
-  core/script_state.cc
-  core/page.cc
-  core/dart_methods.cc
-  core/dart_isolate_context.cc
-  core/dart_context_data.cc
-  core/executing_context_data.cc
+#  webf_bridge.cc
+#  core/api/api.cc
+#  core/executing_context.cc
+#  core/script_forbidden_scope.cc
+#  core/script_state.cc
+#  core/page.cc
+#  core/dart_methods.cc
+#  core/dart_isolate_context.cc
+#  core/dart_context_data.cc
+#  core/executing_context_data.cc
 #  core/fileapi/blob.cc
 #  core/fileapi/blob_part.cc
 #  core/fileapi/blob_property_bag.cc
