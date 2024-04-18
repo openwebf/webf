@@ -6,8 +6,10 @@
 #ifndef BRIDGE_NATIVE_VALUE_H
 #define BRIDGE_NATIVE_VALUE_H
 
+#if WEBF_QUICKJS_JS_ENGINE
 #include <quickjs/list.h>
 #include <quickjs/quickjs.h>
+#endif
 #include <cinttypes>
 #include <string>
 #include "bindings/qjs/native_string_utils.h"
@@ -58,6 +60,7 @@ static void call_native_function(NativeFunctionContext* functionContext,
                                  NativeValue* argv,
                                  NativeValue* returnValue);
 
+#if WEBF_QUICKJS_JS_ENGINE
 struct NativeFunctionContext {
   CallNativeFunction call;
   NativeFunctionContext(ExecutingContext* context, JSValue callback);
@@ -67,6 +70,7 @@ struct NativeFunctionContext {
   JSContext* m_ctx{nullptr};
   list_head link;
 };
+#endif
 
 NativeValue Native_NewNull();
 NativeValue Native_NewString(SharedNativeString* string);
@@ -76,7 +80,9 @@ NativeValue Native_NewBool(bool value);
 NativeValue Native_NewInt64(int64_t value);
 NativeValue Native_NewList(uint32_t argc, NativeValue* argv);
 NativeValue Native_NewPtr(JSPointerType pointerType, void* ptr);
+#if WEBF_QUICKJS_JS_ENGINE
 NativeValue Native_NewJSON(JSContext* ctx, const ScriptValue& value, ExceptionState& exception_state);
+#endif
 
 JSPointerType GetPointerTypeOfNativePointer(NativeValue native_value);
 

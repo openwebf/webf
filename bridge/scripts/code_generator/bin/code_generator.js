@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { program } = require('commander');
+const {program} = require('commander');
 const packageJSON = require('../package.json');
 const path = require('path');
 const glob = require('glob');
@@ -10,7 +10,7 @@ const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
 const { analyzer } = require('../dist/idl/analyzer');
 const { generatorSource } = require('../dist/idl/generator')
-const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
+const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generator')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
 const { union } = require("lodash");
@@ -18,12 +18,13 @@ const { union } = require("lodash");
 program
   .version(packageJSON.version)
   .description('WebF code generator.')
+  .requiredOption('-p, --platform <platform>', 'the target JS engine platform', 'quickjs')
   .requiredOption('-s, --source <path>', 'source directory.')
   .requiredOption('-d, --dist <path>', 'destionation directory.')
 
 program.parse(process.argv);
 
-let {source, dist} = program.opts();
+let {source, dist, platform} = program.opts();
 
 if (!path.isAbsolute(source)) {
   source = path.join(process.cwd(), source);
@@ -43,6 +44,10 @@ function wirteFileIfChanged(filePath, content) {
   fs.writeFileSync(filePath, content, 'utf-8');
 }
 
+function generatePlatformPrefix() {
+  return platform === 'quickjs' ? 'qjs' : 'v8';
+}
+
 function genCodeFromTypeDefine() {
   // Generate code from type defines.
   let typeFiles = glob.sync("**/*.d.ts", {
@@ -50,18 +55,18 @@ function genCodeFromTypeDefine() {
   });
 
   let blobs = typeFiles.map(file => {
-    let filename = 'qjs_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
+    let filename = generatePlatformPrefix() + '_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
     return new IDLBlob(path.join(source, file), dist, filename, implement);
   });
 
   // Analyze all files first.
-  for (let i = 0; i < blobs.length; i ++) {
+  for (let i = 0; i < blobs.length; i++) {
     let b = blobs[i];
     analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
 
-  for (let i = 0; i < blobs.length; i ++) {
+  for (let i = 0; i < blobs.length; i++) {
     let b = blobs[i];
     let result = generatorSource(b);
 
@@ -82,9 +87,9 @@ function genCodeFromTypeDefine() {
       return -(n.value - p.value);
     })
   });
-  for(let i = 0; i < unionTypes.length; i ++) {
-    let result = generateUnionTypes(unionTypes[i]);
-    let filename = generateUnionTypeFileName(unionTypes[i]);
+  for (let i = 0; i < unionTypes.length; i++) {
+    let result = generateUnionTypes(platform, unionTypes[i]);
+    let filename = generateUnionTypeFileName(platform, unionTypes[i]);
     wirteFileIfChanged(path.join(dist, filename) + '.h', result.header);
     wirteFileIfChanged(path.join(dist, filename) + '.cc', result.source);
   }
@@ -96,7 +101,7 @@ function genCodeFromJSONData() {
     cwd: source
   });
   let templateFiles = glob.sync('**/*.tpl', {
-    cwd: path.join(__dirname, '../templates/json_templates')
+    cwd: path.join(__dirname, '../templates/json_templates/', platform)
   });
 
   let blobs = jsonFiles.map(file => {
@@ -106,10 +111,10 @@ function genCodeFromJSONData() {
 
   let templates = templateFiles.map(template => {
     let filename = template.split(path.sep).slice(-1)[0].replace('.tpl', '');
-    return new JSONTemplate(path.join(path.join(__dirname, '../templates/json_templates'), template), filename);
+    return new JSONTemplate(path.join(path.join(__dirname, '../templates/json_templates/', platform), template), filename);
   });
 
-  for (let i = 0; i < blobs.length; i ++) {
+  for (let i = 0; i < blobs.length; i++) {
     let blob = blobs[i];
     blob.json.metadata.templates.forEach((targetTemplate) => {
       if (targetTemplate.template === 'make_names') {

@@ -5,7 +5,7 @@
 #include "executing_context.h"
 
 #include <utility>
-#include "bindings/qjs/converter_impl.h"
+//#include "bindings/qjs/converter_impl.h"
 #include "built_in_string.h"
 //#include "core/dom/document.h"
 //#include "core/dom/mutation_observer.h"
@@ -14,7 +14,7 @@
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
-#include "qjs_window.h"
+//#include "qjs_window.h"
 #include "script_forbidden_scope.h"
 #include "timing/performance.h"
 
