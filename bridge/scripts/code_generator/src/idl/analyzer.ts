@@ -11,7 +11,7 @@ import {
   ParameterMode,
   PropsDeclaration,
 } from './declaration';
-import {isUnionType} from "./generateSource";
+import {isUnionType} from "./generate/quickjs/generateSource";
 
 interface DefinedPropertyCollector {
   properties: Set<string>;
