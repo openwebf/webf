@@ -1,4 +1,4 @@
-import {IDLBlob} from "./IDLBlob";
+import {IDLBlob} from "../../IDLBlob";
 import {
   ClassObject,
   FunctionArguments,
@@ -7,21 +7,20 @@ import {
   FunctionObject,
   ParameterMode,
   PropsDeclaration,
-} from "./declaration";
-import {addIndent, getClassName, getWrapperTypeInfoNameOfClassName} from "./utils";
-import {ParameterType} from "./analyzer";
+} from "../../declaration";
+import {addIndent, getClassName, getWrapperTypeInfoNameOfClassName} from "../../utils";
+import {ParameterType} from "../../analyzer";
 import _ from 'lodash';
 import fs from 'fs';
 import path from 'path';
 import {getTemplateKind, TemplateKind} from "./generateHeader";
-import {GenerateOptions} from "./generator";
+import {GenerateOptions, generateUnionTypeFileName} from "../../generator";
 import {
   generateTypeRawChecker,
   generateUnionConstructorImpl,
   generateUnionMemberName,
   generateUnionTypeClassName,
   generateUnionTypeClear,
-  generateUnionTypeFileName,
   generateUnionTypeSetter,
   getUnionTypeName
 } from "./generateUnionTypes";
@@ -551,11 +550,11 @@ ${addIndent(callBody, 4)}
 }
 
 function readTemplate(name: string) {
-  return fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/' + name + '.cc.tpl'), {encoding: 'utf-8'});
+  return fs.readFileSync(path.join(__dirname, '../../../../templates/idl_templates/quickjs/' + name + '.cc.tpl'), {encoding: 'utf-8'});
 }
 
-export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
-  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/base.cc.tpl'), {encoding: 'utf-8'});
+export function generateQuickJSCppSource(blob: IDLBlob, options: GenerateOptions) {
+  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../../../templates/idl_templates/quickjs/base.cc.tpl'), {encoding: 'utf-8'});
   const className = getClassName(blob)
 
   const contents = blob.objects.map(object => {

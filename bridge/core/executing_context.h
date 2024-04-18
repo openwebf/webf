@@ -22,9 +22,12 @@
 #include <set>
 #include <unordered_map>
 #include <vector>
+#if WEBF_QUICKJS_JS_ENGINE
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
+#elif WEBF_V8_JS_ENGINE
+#endif
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
 
@@ -32,8 +35,8 @@
 #include "dart_methods.h"
 #include "executing_context_data.h"
 #include "frame/dom_timer_coordinator.h"
-#include "frame/module_context_coordinator.h"
-#include "frame/module_listener_container.h"
+//#include "frame/module_context_coordinator.h"
+//#include "frame/module_listener_container.h"
 #include "script_state.h"
 
 #include "shared_ui_command.h"
@@ -138,10 +141,10 @@ class ExecutingContext {
   DOMTimerCoordinator* Timers();
 
   // Gets the ModuleListeners which registered by `webf.addModuleListener API`.
-  ModuleListenerContainer* ModuleListeners();
+//  ModuleListenerContainer* ModuleListeners();
 
   // Gets the ModuleCallbacks which from the 4th parameter of `webf.invokeModule` function.
-  ModuleContextCoordinator* ModuleContexts();
+//  ModuleContextCoordinator* ModuleContexts();
 
   // Get current script state.
   ScriptState* GetScriptState() { return &script_state_; }
@@ -218,11 +221,13 @@ class ExecutingContext {
   Window* window_{nullptr};
   Performance* performance_{nullptr};
   DOMTimerCoordinator timers_;
-  ModuleListenerContainer module_listener_container_;
-  ModuleContextCoordinator module_contexts_;
+//  ModuleListenerContainer module_listener_container_;
+//  ModuleContextCoordinator module_contexts_;
   ExecutionContextData context_data_{this};
   bool in_dispatch_error_event_{false};
+#if WEBF_QUICKJS_JS_ENGINE
   RejectedPromises rejected_promises_;
+#endif
   MemberMutationScope* active_mutation_scope{nullptr};
   std::unordered_set<ScriptWrappable*> active_wrappers_;
   bool is_dedicated_;
