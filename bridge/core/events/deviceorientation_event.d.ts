@@ -1,5 +1,5 @@
 import {Event} from "../dom/events/event";
-import {DeviceorientationEventInit} from "./device_orientation_event_init";
+import {DeviceorientationEventInit} from "./deviceorientation_event_init";
 
 interface DeviceorientationEvent extends Event {
   readonly absolute: boolean;

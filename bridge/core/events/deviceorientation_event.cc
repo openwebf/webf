@@ -3,7 +3,8 @@
  */
 
 #include "deviceorientation_event.h"
-#include "qjs_device_orientation_event.h"
+#include "qjs_deviceorientation_event.h"
+#include "qjs_deviceorientation_event_init.h"
 
 namespace webf {
 
@@ -28,7 +29,7 @@ DeviceorientationEvent::DeviceorientationEvent(ExecutingContext* context,
                            const std::shared_ptr<DeviceorientationEventInit>& initializer,
                            ExceptionState& exception_state)
     : Event(context, type),
-      absolute_(initializer->hasAbsolute ? initializer->absolute()),
+      absolute_(initializer->hasAbsolute() ? initializer->absolute() : 0.0),
       alpha_(initializer->hasAlpha() ? initializer->alpha() : 0.0),
       beta_(initializer->hasBeta() ? initializer->beta() : 0.0),
       gamma_(initializer->hasGamma() ? initializer->gamma() : 0.0) {}

@@ -2,17 +2,18 @@
  * Copyright (C) 2024-present The WebF authors. All rights reserved.
  */
 
-#ifndef BRIDGE_CORE_EVENTS_GESTURE_EVENT_H_
-#define BRIDGE_CORE_EVENTS_GESTURE_EVENT_H_
+#ifndef BRIDGE_CORE_EVENTS_DEVICE_ORIENTATION_EVENT_H_
+#define BRIDGE_CORE_EVENTS_DEVICE_ORIENTATION_EVENT_H_
 
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
-#include "qjs_device_orientation_event_init.h"
+#include "qjs_deviceorientation_event_init.h"
 
 namespace webf {
 
 struct NativeDeviceorientationEvent;
+class DeviceorientationEventInit;
 
 class DeviceorientationEvent : public Event {
   DEFINE_WRAPPERTYPEINFO();
@@ -52,4 +53,4 @@ class DeviceorientationEvent : public Event {
 
 }  // namespace webf
 
-#endif  // BRIDGE_CORE_EVENTS_GESTURE_EVENT_H_
+#endif  // BRIDGE_CORE_EVENTS_DEVICE_ORIENTATION_EVENT_H_
