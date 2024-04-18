@@ -657,18 +657,6 @@ class WebFViewController implements WidgetsBindingObserver {
     }
   }
 
-  void recalculateStyle(int address) {
-    if (!hasBindingObject(Pointer.fromAddress(address))) return;
-    Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
-    if (target == null) return;
-
-    if (target is Element) {
-      target.tryRecalculateStyle();
-    } else {
-      debugPrint('Only element has style, try recalculateStyle from Node(#${Pointer.fromAddress(address)}).');
-    }
-  }
-
   // Hooks for DevTools.
   VoidCallback? debugDOMTreeChanged;
 
