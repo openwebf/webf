@@ -40,6 +40,7 @@ class AtomicString {
   AtomicString(v8::Isolate* isolate, const char* str, size_t length);
   AtomicString(v8::Isolate* isolate, std::unique_ptr<AutoFreeNativeString>&& native_string);
   AtomicString(v8::Isolate* isolate, const uint16_t* str, size_t length);
+  AtomicString(v8::Local<v8::Context> context, v8::Local<v8::Value> v8_value);
 
   // Return the undefined string value from atom key.
   v8::Local<v8::Value> ToV8(v8::Isolate* isolate) const { return string_.As<v8::Value>(); }
@@ -72,7 +73,7 @@ class AtomicString {
 
   // Copy assignment
   AtomicString(AtomicString const& value);
-  AtomicString& operator=(const AtomicString& other);
+  AtomicString& operator=(const AtomicString& other) noexcept;
 
   // Move assignment
   AtomicString(AtomicString&& value) noexcept;
@@ -83,6 +84,7 @@ class AtomicString {
 
  protected:
   StringKind kind_;
+  v8::Isolate* isolate_;
   v8::Local<v8::String> string_;
   mutable v8::Local<v8::String> string_upper_;
   mutable v8::Local<v8::String> string_lower_;

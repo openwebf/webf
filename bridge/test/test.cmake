@@ -1,7 +1,6 @@
 list(APPEND WEBF_TEST_SOURCE
     include/webf_bridge_test.h
-    webf_bridge_test.cc
-    polyfill/dist/testframework.cc
+#    polyfill/dist/testframework.cc
 )
 
 set(gtest_disable_pthreads ON)
@@ -15,6 +14,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   list(APPEND WEBF_TEST_SOURCE
       test/webf_test_context_qjs.cc
       test/webf_test_context_qjs.h
+      webf_bridge_test.cc
   )
 
   list(APPEND WEBF_UNIT_TEST_SOURCEURCE
@@ -43,13 +43,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
 elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
   list(APPEND WEBF_TEST_SOURCE
-      test/webf_test_context_v8.cc
-      test/webf_test_context_v8.h
+#      test/webf_test_context_v8.cc
+#      test/webf_test_context_v8.h
   )
 
   list(APPEND WEBF_UNIT_TEST_SOURCEURCE
-      ./test/webf_test_env.cc
-      ./test/webf_test_env.h
+#      ./test/webf_test_env.cc
+#      ./test/webf_test_env.h
       ./bindings/v8/atomic_string_test.cc
   )
 endif ()
@@ -114,17 +114,17 @@ target_compile_definitions(webf_benchmark PUBLIC -DFLUTTER_BACKEND=0)
 target_compile_definitions(webf_benchmark PUBLIC -DUNIT_TEST=1)
 
 # Built libwebf_test.dylib library for integration test with flutter.
-add_library(webf_test SHARED ${WEBF_TEST_SOURCE})
-target_link_libraries(webf_test PRIVATE ${BRIDGE_LINK_LIBS} webf)
-target_include_directories(webf_test PRIVATE
-    ${BRIDGE_INCLUDE}
-    ./test
-    ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
+#add_library(webf_test SHARED ${WEBF_TEST_SOURCE})
+#target_link_libraries(webf_test PRIVATE ${BRIDGE_LINK_LIBS} webf)
+#target_include_directories(webf_test PRIVATE
+#    ${BRIDGE_INCLUDE}
+#    ./test
+#    ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 
-if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
-  set_target_properties(webf_test
-      PROPERTIES
-      LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-      RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-  )
-endif ()
+#if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
+#  set_target_properties(webf_test
+#      PROPERTIES
+#      LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+#      RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+#  )
+#endif ()
