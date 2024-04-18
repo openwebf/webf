@@ -6,9 +6,7 @@
 #ifndef BRIDGE_NATIVE_STRING_UTILS_H
 #define BRIDGE_NATIVE_STRING_UTILS_H
 
-#if WEBF_QUICKJS_JS_ENGINE
-#include <quickjs/quickjs.h>
-#endif
+#include <v8/v8.h>
 #include <codecvt>
 #include <locale>
 #include <memory>
@@ -19,7 +17,7 @@
 namespace webf {
 
 // Convert to string and return a full copy of NativeString from JSValue.
-std::unique_ptr<SharedNativeString> jsValueToNativeString(JSContext* ctx, JSValue value);
+std::unique_ptr<SharedNativeString> jsValueToNativeString(v8::Local<v8::Context> ctx, v8::Local<v8::Value> value);
 
 // Encode utf-8 to utf-16, and return a full copy of NativeString.
 std::unique_ptr<SharedNativeString> stringToNativeString(const std::string& string);
