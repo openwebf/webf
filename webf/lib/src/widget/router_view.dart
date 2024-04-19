@@ -28,13 +28,9 @@ class WebFRouterViewState extends State<WebFRouterView> {
     return WebFContext(
         controller: widget.controller,
         child: WebFRouterViewRenderObjectWidget(controller: widget.controller, children: [
-          WebFHTMLElement(tagName: 'DIV', inlineStyle: {
-            'width': '300px',
-            'height': '300px',
-            'border': '1px solid #000',
+          WebFHTMLElement(tagName: 'P', inlineStyle: {
             'overflow': 'auto'
           }, children: [child])
-          // SingleChildScrollView(child: child)
         ]));
   }
 }

@@ -392,7 +392,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
 
         SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          if (!previousRenderBoxModel.disposed) {
+          if (!previousRenderBoxModel.disposed && !managedByFlutterWidget) {
             previousRenderBoxModel.dispose();
           }
         });

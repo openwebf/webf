@@ -26,7 +26,7 @@ class HybridHistoryModule extends BaseModule {
 
 
   void back() async {
-
+    Navigator.pop(moduleManager!.controller.ownerBuildContext!);
   }
 
   void forward() {
