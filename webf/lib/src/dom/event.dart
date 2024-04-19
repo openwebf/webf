@@ -69,6 +69,7 @@ const String EVENT_STATE_START = 'start';
 const String EVENT_STATE_UPDATE = 'update';
 const String EVENT_STATE_END = 'end';
 const String EVENT_STATE_CANCEL = 'cancel';
+const String EVENT_DEVICE_ORIENTATION = 'deviceorientation';
 
 mixin ElementEventMixin on ElementBase {
   AppearEventType _prevAppearState = AppearEventType.none;
