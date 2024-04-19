@@ -405,6 +405,7 @@ class DeviceOrientationEvent extends Event {
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
     List<int> methods = [
+      absolute ? 1 : 0,
       doubleToUint64(alpha),
       doubleToUint64(beta),
       doubleToUint64(gamma)
