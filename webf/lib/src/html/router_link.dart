@@ -35,6 +35,15 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
+  void detachWidget() {
+    if (isRouterLinkElement && _path.isNotEmpty) {
+      ownerView.removeHybridRouterView(_path);
+    } else {
+      super.attachWidget(widget);
+    }
+  }
+
+  @override
   Widget build(BuildContext context, List<Widget> children) {
     return WebFHTMLElement(tagName: 'DIV', children: children);
   }

@@ -228,12 +228,15 @@ class WebFViewController implements WidgetsBindingObserver {
 
   final Map<String, Widget> _hybridRouterViews = {};
 
-  void setHybridRouterView(String name, Widget root) {
-    assert(!_hybridRouterViews.containsKey(name));
-    _hybridRouterViews[name] = root;
+  void setHybridRouterView(String path, Widget root) {
+    assert(!_hybridRouterViews.containsKey(path));
+    _hybridRouterViews[path] = root;
   }
-  Widget? getHybridRouterView(String name) {
-    return _hybridRouterViews[name];
+  Widget? getHybridRouterView(String path) {
+    return _hybridRouterViews[path];
+  }
+  void removeHybridRouterView(String path) {
+    _hybridRouterViews.remove(path);
   }
 
   final Map<int, BindingObject> _nativeObjects = {};

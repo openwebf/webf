@@ -68,7 +68,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void didDetachRenderer() {
     super.didDetachRenderer();
-    _detachWidget();
+    detachWidget();
   }
 
   @nonVirtual
@@ -233,7 +233,7 @@ abstract class WidgetElement extends dom.Element {
     }
   }
 
-  void _detachWidget() {
+  void detachWidget() {
     if (attachedAdapter != null) {
       dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
       if (ancestorWidgetNode != null) {

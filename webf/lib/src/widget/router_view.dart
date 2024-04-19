@@ -17,7 +17,7 @@ class WebFRouterViewRenderObjectWidget extends MultiChildRenderObjectWidget {
 class WebFRouterViewState extends State<WebFRouterView> {
   @override
   Widget build(BuildContext context) {
-    Widget? child = widget.controller.view.getHybridRouterView(widget.name);
+    Widget? child = widget.controller.view.getHybridRouterView(widget.path);
     if (child == null) {
       if (widget.defaultViewBuilder == null) {
         return SizedBox.shrink();
@@ -37,10 +37,10 @@ class WebFRouterViewState extends State<WebFRouterView> {
 
 class WebFRouterView extends StatefulWidget {
   final WebFController controller;
-  final String name;
+  final String path;
   final WidgetBuilder? defaultViewBuilder;
 
-  WebFRouterView({required this.controller, required this.name, this.defaultViewBuilder});
+  WebFRouterView({required this.controller, required this.path, this.defaultViewBuilder});
 
   @override
   State<StatefulWidget> createState() {

@@ -343,11 +343,13 @@ mixin BaseInputElement on WidgetElement {
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
+        cursorHeight: renderStyle.fontSize.computedValue,
         decoration: decoration,
       );
     } else {
       widget = TextField(
         controller: controller,
+        cursorHeight: renderStyle.fontSize.computedValue,
         enabled: !disabled && !readonly,
         style: _textStyle,
         strutStyle: _textStruct,
