@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
- */
+* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 
-#ifndef BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
-#define BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
+#ifndef BRIDGE_BINDINGS_V8_ATOMIC_STRING_H_
+#define BRIDGE_BINDINGS_V8_ATOMIC_STRING_H_
 
 #include <v8/v8.h>
 #include <cassert>
