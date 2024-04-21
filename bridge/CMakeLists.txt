@@ -7,7 +7,7 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
 if(MSVC)
   set(CMAKE_CXX_STANDARD 20)
 else()
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 20)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -639,7 +639,72 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     # Binding files
     bindings/v8/atomic_string.cc
     bindings/v8/native_string_utils.cc
-
+    bindings/v8/script_value.cc
+    bindings/v8/exception_state.cc
+    bindings/v8/script_wrappable.cc
+    bindings/v8/wrapper_type_info.cc
+    bindings/v8/v8_interface_bridge_base.cc
+    bindings/v8/platform/script_state.cc
+    bindings/v8/platform/scoped_persistent.h
+    bindings/v8/platform/per_context_data.cc
+    bindings/v8/platform/heap/garbage_collected.h
+    bindings/v8/platform/heap/member.h
+    bindings/v8/platform/heap/self_keep_alive.h
+    bindings/v8/platform/heap/persistent.h
+    bindings/v8/platform/heap/thread_state_storage.cc
+    bindings/v8/platform/heap/write_barrier.h
+    bindings/v8/platform/util/gc_plugin.h
+    bindings/v8/union_base.cc
+    bindings/v8/name_client.cc
+    bindings/v8/dictionary_base.cc
+    bindings/v8/trace_wrapper_v8_reference.cc
+    bindings/v8/for_build/build_config.h
+    bindings/v8/for_build/buildflag.h
+    bindings/v8/platform/platform_export.h
+    bindings/v8/platform/wtf/type_traits.cc
+    bindings/v8/platform/wtf/vector_traits.cc
+    bindings/v8/platform/wtf/hash_traits.h
+    bindings/v8/platform/wtf/hash_functions.h
+    bindings/v8/platform/wtf/hash_table_deleted_value_type.h
+    bindings/v8/base/allocator/allocator.h
+    bindings/v8/base/allocator/partitions.cc
+    bindings/v8/base/allocator/partitions.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/buildflag.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/build_config.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/flags.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/tagging.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_forward.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/component_export.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/thread_annotations.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/immediate_crash.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/logging.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/log_message.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/check.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/cxx20_is_constant_evaluated.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/strings/cstring_builder.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/strings/safe_sprintf.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/posix/eintr_wrapper.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_exclusion.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_noop_impl.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/instance_tracer.cc
+    bindings/v8/base/numerics/checked_math.h
+    bindings/v8/base/numerics/safe_conversions.h
+    bindings/v8/base/numerics/safe_conversions_impl.h
+    bindings/v8/base/numerics/safe_conversions_arm_impl.h
+    bindings/v8/base/numerics/safe_math_shared_impl.h
+    bindings/v8/base/numerics/safe_math_clang_gcc_impl.h
+    bindings/v8/base/memory/raw_ptr.h
+    bindings/v8/base/memory/raw_ptr_exclusion.h
+    bindings/v8/base/memory/scoped_refptr.h
+    bindings/v8/base/memory/stack_allocated.h
+    bindings/v8/base/compiler_specific.h
+    bindings/v8/base/bit_cast.h
+    bindings/v8/gin/public/context_holder.h
+    bindings/v8/gin/public/gin_embedders.h
+    bindings/v8/gin/public/wrapper_info.h
+    bindings/v8/gin/gin_export.h
     out/built_in_string.cc
   )
 
