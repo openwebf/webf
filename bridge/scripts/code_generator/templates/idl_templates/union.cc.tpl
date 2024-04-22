@@ -42,7 +42,7 @@ std::shared_ptr<<%= generateUnionTypeClassName(unionType) %>> <%= generateUnionT
 <% }) %>
 
 <%= generateUnionTypeClassName(unionType) %> ::~<%= generateUnionTypeClassName(unionType) %> () {
-  Clear();
+
 }
 
 JSValue <%= generateUnionTypeClassName(unionType) %>::ToQuickJSValue(JSContext* ctx, ExceptionState& exception_state) const {
