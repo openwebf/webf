@@ -61,12 +61,19 @@ class _WebFElement extends MultiChildRenderObjectElement {
 
     dom.Element? parentElement = findClosestAncestorHTMLElement(this);
 
-    if (widget.inlineStyle != null) {
-      fullFillInlineStyle(widget.inlineStyle!);
-    }
-
     if (parentElement != null) {
       parentElement.appendChild(htmlElement!);
+
+      if (parentElement is RouterLinkElement) {
+        // Migrate previous childNodes into RouterLinkElement.
+        parentElement.cachedChildNodes.forEach((node) {
+          htmlElement!.appendChild(node);
+        });
+      }
+
+      if (widget.inlineStyle != null) {
+        fullFillInlineStyle(widget.inlineStyle!);
+      }
 
       htmlElement!.ensureChildAttached();
       htmlElement!.applyStyle(htmlElement!.style);
@@ -76,6 +83,7 @@ class _WebFElement extends MultiChildRenderObjectElement {
         htmlElement!.style.flushPendingProperties();
       }
     }
+
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }

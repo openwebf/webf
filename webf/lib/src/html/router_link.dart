@@ -25,10 +25,19 @@ class RouterLinkElement extends WidgetElement {
     }
   }
 
+  List<dom.Node> cachedChildNodes = [];
+
   @override
   void attachWidget(Widget widget) {
     if (isRouterLinkElement && _path.isNotEmpty) {
       ownerView.setHybridRouterView(_path, widget);
+      for(var node in childNodes) {
+        cachedChildNodes.add(node);
+      }
+
+      cachedChildNodes.forEach((node) {
+        removeChild(node);
+      });
     } else {
       super.attachWidget(widget);
     }

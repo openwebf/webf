@@ -239,6 +239,12 @@ class WebFViewController implements WidgetsBindingObserver {
     _hybridRouterViews.remove(path);
   }
 
+  RenderViewportBox? _activeRouterRoot;
+  RenderViewportBox? get activeRouterRoot => _activeRouterRoot;
+  set activeRouterRoot(RenderViewportBox? root) {
+    _activeRouterRoot = root;
+  }
+
   final Map<int, BindingObject> _nativeObjects = {};
 
   T? getBindingObject<T>(Pointer pointer) {
