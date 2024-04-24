@@ -92,6 +92,7 @@
 #include "qjs_text.h"
 #include "qjs_touch.h"
 #include "qjs_touch_event.h"
+#include "qjs_hybrid_router_change_event.h"
 #include "qjs_touch_list.h"
 #include "qjs_transition_event.h"
 #include "qjs_ui_event.h"
@@ -117,6 +118,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSMessageEvent::Install(context);
   QJSAnimationEvent::Install(context);
   QJSCloseEvent::Install(context);
+  QJSHybridRouterChangeEvent::Install(context);
   QJSFocusEvent::Install(context);
   QJSGestureEvent::Install(context);
   QJSHashchangeEvent::Install(context);

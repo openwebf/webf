@@ -48,6 +48,7 @@ const String EVENT_CAN_PLAY_THROUGH = 'canplaythrough';
 const String EVENT_ENDED = 'ended';
 const String EVENT_PAUSE = 'pause';
 const String EVENT_POP_STATE = 'popstate';
+const String EVENT_HYBRID_ROUTER_CHANGE = 'hybridrouterchange';
 const String EVENT_HASH_CHANGE = 'hashchange';
 const String EVENT_PLAY = 'play';
 const String EVENT_SEEKED = 'seeked';
@@ -254,6 +255,31 @@ class PopStateEvent extends Event {
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
     List<int> methods = [jsonEncode(state).toNativeUtf8().address];
+
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
+    bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
+
+    return rawEvent;
+  }
+}
+
+class HybridRouterChangeEvent extends Event {
+  final dynamic state;
+  final String from;
+  final String to;
+
+  HybridRouterChangeEvent({this.state, required this.from, required this.to}): super(EVENT_HYBRID_ROUTER_CHANGE);
+
+  @override
+  Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
+    List<int> methods = [
+      jsonEncode(state).toNativeUtf8().address,
+      stringToNativeString(from).address,
+      stringToNativeString(to).address
+    ];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
     int currentStructSize = rawEvent.ref.length + methods.length;

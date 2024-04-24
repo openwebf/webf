@@ -344,6 +344,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/input_event.cc
     core/events/touch_event.cc
     core/events/mouse_event.cc
+    core/events/hybrid_router_change_event.cc
     core/events/pop_state_event.cc
     core/events/pointer_event.cc
     core/events/transition_event.cc
@@ -442,6 +443,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_mutation_observer_registration.cc
     out/qjs_touch_event.cc
     out/qjs_touch_event_init.cc
+    out/qjs_hybrid_router_change_event.cc
+    out/qjs_hybrid_router_change_event_init.cc
     out/qjs_pointer_event.cc
     out/qjs_pointer_event_init.cc
     out/qjs_mouse_event.cc

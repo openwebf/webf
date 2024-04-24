@@ -40,6 +40,12 @@
     "hashchange",
     "input",
     {
+      "class": "HybridRouterChangeEvent",
+      "types": [
+        "hybridrouterchange"
+      ]
+    },
+    {
       "class": "FocusEvent",
       "types": [
         "focus",
