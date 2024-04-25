@@ -19,8 +19,15 @@ class HTMLAnchorElement extends Element {
       String baseUrl = ownerDocument.controller.url;
       Uri baseUri = Uri.parse(baseUrl);
       Uri resolvedUri = ownerDocument.controller.uriParser!.resolve(baseUri, Uri.parse(href));
-      ownerDocument.controller.view
-          .handleNavigationAction(baseUrl, resolvedUri.toString(), _getNavigationType(resolvedUri.scheme));
+
+      if (href.trim().startsWith('#')) {
+        HistoryModule historyModule = ownerDocument.controller.module.moduleManager.getModule('History')!;
+        historyModule.pushState(null, url: href);
+        ownerView.window.dispatchEvent(HashChangeEvent(newUrl: resolvedUri.toString(), oldUrl: baseUrl));
+      } else {
+        ownerDocument.controller.view
+            .handleNavigationAction(baseUrl, resolvedUri.toString(), _getNavigationType(resolvedUri.scheme));
+      }
     }
   }
 

@@ -213,6 +213,7 @@ class WebFViewController implements WidgetsBindingObserver {
       callback();
     });
     _pendingAnimationTimesLines.clear();
+    _isAnimationTimelineStopped = false;
   }
 
   bool _isFrameBindingAttached = false;
@@ -656,18 +657,6 @@ class WebFViewController implements WidgetsBindingObserver {
     }
   }
 
-  void recalculateStyle(int address) {
-    if (!hasBindingObject(Pointer.fromAddress(address))) return;
-    Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
-    if (target == null) return;
-
-    if (target is Element) {
-      target.tryRecalculateStyle();
-    } else {
-      debugPrint('Only element has style, try recalculateStyle from Node(#${Pointer.fromAddress(address)}).');
-    }
-  }
-
   // Hooks for DevTools.
   VoidCallback? debugDOMTreeChanged;
 
@@ -687,9 +676,24 @@ class WebFViewController implements WidgetsBindingObserver {
       WebFNavigationActionPolicy policy = await _delegate.dispatchDecisionHandler(action);
       if (policy == WebFNavigationActionPolicy.cancel) return;
 
+      String targetPath = action.target;
+
+      if (!Uri.parse(targetPath).isAbsolute) {
+        String base = rootController.url;
+        targetPath = rootController.uriParser!.resolve(Uri.parse(base), Uri.parse(targetPath)).toString();
+      }
+
+      if (action.target.trim().startsWith('#')) {
+        String oldUrl = rootController.url;
+        HistoryModule historyModule = rootController.module.moduleManager.getModule('History')!;
+        historyModule.pushState(null, url: targetPath);
+        window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
+        return;
+      }
+
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController.load(rootController.getPreloadBundleFromUrl(action.target) ?? WebFBundle.fromUrl(action.target));
+          await rootController.load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
