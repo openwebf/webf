@@ -2,8 +2,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:webf/dom.dart' as dom;
 import 'package:webf/widget.dart';
 
 const ROUTER_LINK = 'WEBF-ROUTER-LINK';
@@ -44,16 +44,25 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    cachedChildNodes.clear();
+  }
+
+  @override
   void detachWidget() {
     if (isRouterLinkElement && _path.isNotEmpty) {
       ownerView.removeHybridRouterView(_path);
     } else {
-      super.attachWidget(widget);
+      super.detachWidget();
     }
   }
 
   @override
   Widget build(BuildContext context, List<Widget> children) {
-    return WebFHTMLElement(tagName: 'DIV', children: children);
+    return WebFHTMLElement(tagName: 'HTML', children: children, inlineStyle: {
+      'overflow': 'auto',
+      'position': 'relative'
+    });
   }
 }
