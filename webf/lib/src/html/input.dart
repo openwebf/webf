@@ -25,6 +25,7 @@ const Map<String, dynamic> _inputDefaultStyle = {
   BORDER: '2px solid rgb(118, 118, 118)',
   DISPLAY: INLINE_BLOCK,
   WIDTH: '140px',
+  HEIGHT: '25px'
 };
 
 const Map<String, dynamic> _checkboxDefaultStyle = {
