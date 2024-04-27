@@ -2,8 +2,6 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'dart:collection';
-import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 import 'package:webf/webf.dart';
@@ -21,26 +19,13 @@ class HybridHistoryModule extends BaseModule {
 
   HybridHistoryModule(ModuleManager? moduleManager) : super(moduleManager);
 
-  void add(WebFBundle bundle) {
-  }
-
-
   void back() async {
     Navigator.pop(moduleManager!.controller.ownerBuildContext!);
   }
 
-  void forward() {
+  void forward() {}
 
-  }
-
-  void go(num? num) {
-
-  }
-
-  void _dispatchPopStateEvent(state) {
-    PopStateEvent popStateEvent = PopStateEvent(state: state);
-    moduleManager!.controller.view.window.dispatchEvent(popStateEvent);
-  }
+  void go(num? num) {}
 
   void pushState(state, {String? url, String? title}) {
     print('state: $state url: $url, title: $title');

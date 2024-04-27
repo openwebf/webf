@@ -59,6 +59,11 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
+  void reactiveRenderer() {
+    // Override default behavior to avoid reattach.
+  }
+
+  @override
   Widget build(BuildContext context, List<Widget> children) {
     return WebFHTMLElement(tagName: 'HTML', children: children, inlineStyle: {
       'overflow': 'auto',
