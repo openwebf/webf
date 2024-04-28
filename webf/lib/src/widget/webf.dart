@@ -305,44 +305,6 @@ class WebFState extends State<WebF> with RouteAware {
     }
   }
 
-  // Resume call timer and callbacks when webf widget change to visible.
-  @override
-  void didPopNext() {
-    assert(widget.controller != null);
-    ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
-    var name = route.settings.name;
-    print('did pop next: state: $state name: $name');
-
-    // widget.controller?.view.window.dispatchEvent(HybridRouterChangeEvent());
-  }
-
-  @override
-  void didPush() {
-    super.didPush();
-    ModalRoute route = ModalRoute.of(context)!;
-    print(route);
-    var state = route.settings.arguments;
-    var name = route.settings.name;
-    print('did push: state: $state name: $name');
-  }
-
-  @override
-  void didPop() {
-    super.didPop();
-    print('did pop');
-  }
-
-  // Pause all timer and callbacks when webf widget has been invisible.
-  @override
-  void didPushNext() {
-    assert(widget.controller != null);
-    ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
-    var name = route.settings.name;
-    print('did push next: state: $state name: $name');
-  }
-
   @override
   void dispose() {
     if (widget.routeObserver != null) {
@@ -486,7 +448,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     (parent as WebFContextInheritElement).controller = controller;
 
     await controller!.controlledInitCompleter.future;
-    controller!.ownerBuildContext = this;
+    controller!.buildContextStack.add(this);
 
     if (controller!.entrypoint == null) {
       throw FlutterError('Consider providing a WebFBundle resource as the entry point for WebF');
@@ -582,7 +544,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     } else {
       controller?.dispose();
     }
-    controller!.ownerBuildContext = null;
+    controller!.buildContextStack.removeLast();
     controller = null;
   }
 

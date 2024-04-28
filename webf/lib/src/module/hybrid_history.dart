@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:convert';
+
 import 'package:flutter/widgets.dart';
 import 'package:webf/webf.dart';
 
@@ -20,43 +22,27 @@ class HybridHistoryModule extends BaseModule {
   HybridHistoryModule(ModuleManager? moduleManager) : super(moduleManager);
 
   void back() async {
-    Navigator.pop(moduleManager!.controller.ownerBuildContext!);
+    Navigator.pop(moduleManager!.controller.buildContextStack.last);
   }
 
-  void forward() {}
-
-  void go(num? num) {}
-
-  void pushState(state, {String? url, String? title}) {
-    if (url != null) {
-      Navigator.pushNamed(moduleManager!.controller.ownerBuildContext!, url, arguments: state);
-    }
-  }
-
-  void replaceState(state, {String? url, String? title}) {
-
+  void pushState(state, String name) {
+    Navigator.pushNamed(moduleManager!.controller.buildContextStack.last, name, arguments: state);
   }
 
   @override
   String invoke(String method, params, InvokeModuleCallback callback) {
     switch (method) {
-      case 'length':
-        return '0';
       case 'state':
+        var route = ModalRoute.of(moduleManager!.controller.buildContextStack.last);
+        if (route?.settings.arguments != null) {
+          return jsonEncode(route!.settings.arguments);
+        }
+        return '{}';
       case 'back':
         back();
         break;
-      case 'forward':
-        forward();
-        break;
       case 'pushState':
-        pushState(params[0], title: params[1], url: params[2]);
-        break;
-      case 'replaceState':
-        replaceState(params[0], title: params[1], url: params[2]);
-        break;
-      case 'go':
-        go(params);
+        pushState(params[0], params[1]);
         break;
     }
     return EMPTY_STRING;

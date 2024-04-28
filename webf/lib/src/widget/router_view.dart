@@ -32,10 +32,12 @@ class WebFRouterViewRenderObjectElement extends MultiChildRenderObjectElement {
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
+    widget.controller.buildContextStack.add(this);
   }
 
   @override
   void unmount() {
+    widget.controller.buildContextStack.removeLast();
     widget.controller.view.activeRouterRoot = null;
     super.unmount();
   }
@@ -65,21 +67,27 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (widget.controller.routeObserver != null) {
-      widget.controller.routeObserver!.subscribe(this, ModalRoute.of(widget.controller.ownerBuildContext!)!);
+      widget.controller.routeObserver!.subscribe(this, ModalRoute.of(context)!);
     }
   }
 
+  @override
+  void didPop() {
+    super.didPop();
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    var name = route.settings.name;
+    print('did pop: state: $state name: $name');
+  }
 
   @override
   void didPush() {
     super.didPush();
-    ModalRoute route = ModalRoute.of(widget.controller.ownerBuildContext!)!;
-    print(route);
+    ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
     var name = route.settings.name;
     print('did push: state: $state name: $name');
   }
-
 }
 
 class WebFRouterView extends StatefulWidget {
