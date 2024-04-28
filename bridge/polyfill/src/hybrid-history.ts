@@ -6,10 +6,6 @@
 import { webf } from './webf';
 
 class HybridHistory {
-  get length() {
-    return Number(webf.invokeModule('HybridHistory', 'length'));
-  }
-
   get state() {
     return JSON.parse(webf.invokeModule('HybridHistory', 'state'));
   }
@@ -18,28 +14,12 @@ class HybridHistory {
      webf.invokeModule('HybridHistory', 'back');
   }
 
-  forward() {
-    webf.invokeModule('HybridHistory', 'forward');
-  }
-
-  go(delta?: number) {
-    webf.invokeModule('HybridHistory', 'go', delta ? Number(delta) : null);
-  }
-
-  pushState(state: any, title: string, url?: string) {
+  pushState(state: any, name: string) {
     if (arguments.length < 2) {
       throw TypeError("Failed to execute 'pushState' on 'HybridHistory': 2 arguments required, but only " + arguments.length + " present");
     }
 
-    webf.invokeModule('HybridHistory', 'pushState', [state, title, url]);
-  }
-
-  replaceState(state: any, title: string, url?: string) {
-    if (arguments.length < 2) {
-      throw TypeError("Failed to execute 'pushState' on 'HybridHistory': 2 arguments required, but only " + arguments.length + " present");
-    }
-
-    webf.invokeModule('HybridHistory', 'replaceState', [state, title, url]);
+    webf.invokeModule('HybridHistory', 'pushState', [state, name]);
   }
 }
 

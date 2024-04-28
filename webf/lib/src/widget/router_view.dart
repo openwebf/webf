@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:webf/dom.dart' as dom;
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
@@ -77,7 +78,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
     var name = route.settings.name;
-    print('did pop: state: $state name: $name');
+    widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'pop', name: name!));
   }
 
   @override
@@ -86,7 +87,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
     var name = route.settings.name;
-    print('did push: state: $state name: $name');
+    widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'push', name: name!));
   }
 }
 

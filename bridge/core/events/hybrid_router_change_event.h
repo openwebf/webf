@@ -35,7 +35,8 @@ class HybridRouterChangeEvent : public Event {
   explicit HybridRouterChangeEvent(ExecutingContext* context, const AtomicString& type, NativeHybridRouterChangeEvent* native_ui_event);
 
   ScriptValue state() const;
-  AtomicString path() const;
+  AtomicString kind() const;
+  AtomicString name() const;
 
   bool IsHybridRouterChangeEvent() const override;
 
@@ -43,7 +44,8 @@ class HybridRouterChangeEvent : public Event {
 
  private:
   ScriptValue state_;
-  AtomicString path_;
+  AtomicString kind_;
+  AtomicString name_;
 };
 
 template <>
