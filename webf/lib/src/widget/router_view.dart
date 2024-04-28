@@ -41,7 +41,7 @@ class WebFRouterViewRenderObjectElement extends MultiChildRenderObjectElement {
   }
 }
 
-class WebFRouterViewState extends State<WebFRouterView> {
+class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   Widget build(BuildContext context) {
     Widget? child = widget.controller.view.getHybridRouterView(widget.path);
@@ -60,6 +60,26 @@ class WebFRouterViewState extends State<WebFRouterView> {
               child
             ]));
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.controller.routeObserver != null) {
+      widget.controller.routeObserver!.subscribe(this, ModalRoute.of(widget.controller.ownerBuildContext!)!);
+    }
+  }
+
+
+  @override
+  void didPush() {
+    super.didPush();
+    ModalRoute route = ModalRoute.of(widget.controller.ownerBuildContext!)!;
+    print(route);
+    var state = route.settings.arguments;
+    var name = route.settings.name;
+    print('did push: state: $state name: $name');
+  }
+
 }
 
 class WebFRouterView extends StatefulWidget {

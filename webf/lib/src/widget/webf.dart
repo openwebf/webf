@@ -42,6 +42,11 @@ class WebF extends StatefulWidget {
   /// A method channel for receiving messaged from JavaScript code and sending message to JavaScript.
   final WebFMethodChannel? javaScriptChannel;
 
+  /// Register the RouteObserver to observer page navigation.
+  /// This is useful if you wants to pause webf timers and callbacks when webf widget are hidden by page route.
+  /// https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
+  final RouteObserver<ModalRoute<void>>? routeObserver;
+
   /// Trigger when webf controller once created.
   final OnControllerCreated? onControllerCreated;
 
@@ -163,6 +168,7 @@ class WebF extends StatefulWidget {
       this.httpClientInterceptor,
       this.uriParser,
       WebFThread? runningThread,
+      this.routeObserver,
       this.initialCookies,
       this.preloadedBundles,
       WebFController? controller,
@@ -281,6 +287,17 @@ class WebFState extends State<WebF> with RouteAware {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.routeObserver != null) {
+      widget.routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    }
+    if (widget.controller?.routeObserver != null) {
+      widget.controller?.routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    }
+  }
+
+  @override
   void didUpdateWidget(WebF oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.resizeToAvoidBottomInsets != widget.resizeToAvoidBottomInsets) {
@@ -288,8 +305,49 @@ class WebFState extends State<WebF> with RouteAware {
     }
   }
 
+  // Resume call timer and callbacks when webf widget change to visible.
+  @override
+  void didPopNext() {
+    assert(widget.controller != null);
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    var name = route.settings.name;
+    print('did pop next: state: $state name: $name');
+
+    // widget.controller?.view.window.dispatchEvent(HybridRouterChangeEvent());
+  }
+
+  @override
+  void didPush() {
+    super.didPush();
+    ModalRoute route = ModalRoute.of(context)!;
+    print(route);
+    var state = route.settings.arguments;
+    var name = route.settings.name;
+    print('did push: state: $state name: $name');
+  }
+
+  @override
+  void didPop() {
+    super.didPop();
+    print('did pop');
+  }
+
+  // Pause all timer and callbacks when webf widget has been invisible.
+  @override
+  void didPushNext() {
+    assert(widget.controller != null);
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    var name = route.settings.name;
+    print('did push next: state: $state name: $name');
+  }
+
   @override
   void dispose() {
+    if (widget.routeObserver != null) {
+      widget.routeObserver!.unsubscribe(this);
+    }
     super.dispose();
     _disposed = true;
   }
@@ -354,6 +412,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
             autoExecuteEntrypoint: false,
             externalController: false,
             onLoad: _webfWidget.onLoad,
+            routeObserver: _webfWidget.routeObserver,
             onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
             onLoadError: _webfWidget.onLoadError,
             onJSError: _webfWidget.onJSError,

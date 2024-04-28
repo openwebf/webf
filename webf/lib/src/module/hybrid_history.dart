@@ -28,7 +28,6 @@ class HybridHistoryModule extends BaseModule {
   void go(num? num) {}
 
   void pushState(state, {String? url, String? title}) {
-    print('state: $state url: $url, title: $title');
     if (url != null) {
       Navigator.pushNamed(moduleManager!.controller.ownerBuildContext!, url, arguments: state);
     }

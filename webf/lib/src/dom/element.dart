@@ -1344,9 +1344,15 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         containingBlockRenderBox = _findContainingBlock(this, viewportElement)?._renderLayoutBox;
         break;
       case CSSPositionType.fixed:
+        Element viewportElement = ownerDocument.documentElement!;
+
+        if (ownerView.activeRouterRoot != null) {
+          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
+        }
+
         // If the element has 'position: fixed', the containing block is established by the viewport
         // in the case of continuous media or the page area in the case of paged media.
-        containingBlockRenderBox = ownerDocument.documentElement!._renderLayoutBox;
+        containingBlockRenderBox = viewportElement.renderer;
         break;
     }
     return containingBlockRenderBox;
