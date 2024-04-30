@@ -6,7 +6,8 @@ By the end of this tutorial, your app will be functioning on both desktop and mo
 
 :::caution
 
-Since Flutter for Web is not compatible with WebF, ensure that you set your running platform to either mobile or desktop systems, rather than Chrome.
+Since Flutter for Web is not compatible with WebF, ensure that you set your running platform to either mobile or desktop
+systems, rather than Chrome.
 
 :::
 
@@ -15,12 +16,12 @@ Since Flutter for Web is not compatible with WebF, ensure that you set your runn
 To use WebF, you need a Flutter environment. Each version of Flutter has its own range of compatible WebF versions,
 Ensure that you select the correct Flutter version that matches both WebF and Flutter.
 
-| WebF               | Flutter         |
-|--------------------|-----------------|
-| >= 0.12.0 < 0.14.0 | 3.0.x           |
-| >= 0.14.0 < 0.15.0 | 3.3.x and 3.7.x |
-| >= 0.15.0 < 0.16.0 | 3.10.x          |
-| >= 0.16.0 < 0.17.0 | 3.13.x  and 3.16.x  |
+| WebF               | Flutter                      |
+|--------------------|------------------------------|
+| >= 0.12.0 < 0.14.0 | 3.0.x                        |
+| >= 0.14.0 < 0.15.0 | 3.3.x and 3.7.x              |
+| >= 0.15.0 < 0.16.0 | 3.10.x                       |
+| >= 0.16.0 < 0.17.0 | 3.13.x and 3.16.x and 3.19.x |
 
 :::tip
 
@@ -28,7 +29,7 @@ For more info how to install the Flutter environment, please refer to https://do
 
 :::
 
-In this tutorial, we will use webf `0.15.1` and flutter `3.10.0` as an example.
+In this tutorial, we will use webf `0.16.0` and flutter `3.19.3` as an example.
 
 :::info
 
@@ -46,7 +47,7 @@ Add the following code to your package's pubspec.yaml file and run `flutter pub 
 
 ```yaml
 dependencies:
-  webf: ^0.15.1
+  webf: ^0.16.0
 ```
 
 Now in your Dart code:
@@ -82,7 +83,7 @@ npm install -g @vue/cli
 
 :::info
 If you are a Web developers, you might be curious why we use vue-cli instead of [Vite](https://vitejs.dev/) (Another
-buildtools
+build tools
 released by the Vue.js team) to create the App.
 The app created by Vite requires ESM module support, which is not currently supported by WebF. However, we plan to
 support
@@ -106,35 +107,105 @@ npm run serve
 
 Once the Vue development server has started, you can open your web apps in a browser at `http://<yourip>:8080/`.
 
-## Add WebF to your Flutter app
+## Initialize the WebF Controller
 
 :::tip
 If you're unsure how to create and run a Flutter app, you can find more information at
 Flutter's [Getting Started Guide](https://docs.flutter.dev/get-started/test-drive).
 :::
 
-The WebF widget is a stateful Flutter Widget that allows you to embed web content rendered by WebF into your Flutter
-apps. Add it to your flutter app to enable build your UI with HTML/CSS and JavaScript.
+The WebFController is the main controller class that manages the lifecycle of WebF pages. Before using WebF, it is
+necessary to initialize the WebFController and maintain its instance.
+
+In this demo, we create a `StatefulWidget` called FirstPage to initialize the WebF instance within the
+`didChangeDependencies()` callback.
+
+We can then call `controller.preload()` to fetch external resources before we actually navigate to our page.
+
+:::caution
+
+Do not initialize the WebFController class inside the `build()` function, as this function executes every time the
+widget
+tree updates, which would create multiple duplicate WebFController instances.
+
+:::
+
+```dart
+class FirstPageState extends State<FirstPage> {
+  late WebFController controller;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    controller = WebFController(
+      context,
+      devToolsService: ChromeDevToolsService(),
+    );
+    controller.preload(WebFBundle.fromUrl('http://<yourip>:8080/')); // The page entry point
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    controller.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) {
+              return WebFDemo(title: 'SecondPage', controller: controller);
+            }));
+          },
+          child: const Text('Open WebF Page'),
+        ),
+      ),
+    );
+  }
+}
+```
+
+:::tip
+
+Remember to dispose of the controller when this widget state is disposed of to prevent memory leaks.
+
+:::
 
 ```dart
 @override
-Widget build(BuildContext context) {
-  final MediaQueryData queryData = MediaQuery.of(context);
-  final Size viewportSize = queryData.size;
+void dispose() {
+  super.dispose();
+  controller.dispose();
+}
+```
 
-  return Scaffold(
-    body: Center(
-      child: Column(
-        children: [
-          WebF(
-            devToolsService: ChromeDevToolsService(), // Enable Chrome DevTools Services
-            viewportWidth: viewportSize.width - queryData.padding.horizontal, // Adjust the viewportWidth
-            viewportHeight: viewportSize.height - queryData.padding.vertical, // Adjust the viewportHeight
-            bundle: WebFBundle.fromUrl('http://<yourip>:8080/'), // The page entry point
-          ),
-        ],
-      ),
-    ));
+## Initialize the WebF Widget with a Controller
+
+Use the WebF widget as the entry point for your web apps, and pass the controller as the primary parameter.
+
+
+```dart
+class WebFDemo extends StatelessWidget {
+  final WebFController controller;
+
+  WebFDemo({ required this.controller });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('WebF Demo'),
+        ),
+        body: Center(
+          child: WebF(controller: controller),
+        ));
+  }
 }
 ```
 
@@ -146,6 +217,8 @@ to [loading-web-contents-from-disk](/docs/tutorials/guides-for-flutter-developer
 
 ## Build and run your Flutter app
 
+> Checkout the full demo: https://github.com/openwebf/webf/tree/main/webf/example
+
 Now it's time to build and try.
 
 :::tip
@@ -155,7 +228,7 @@ Flutter's [Getting Started Guide](https://docs.flutter.dev/get-started/test-driv
 
 After the app build completes, you’ll see your vue web app is running on your device.
 
-![img](/img/helloworld.png)
+<video src="/videos/quick_start.mov" controls style={{width: "300px", margin: '0 auto', display: 'block'}} />
 
 ## Use Hot-Restart instead Hot-Reload
 
@@ -213,5 +286,6 @@ you might be wondering about the next steps.
 + If you're a Web developer, you might be curious about the extent of Web features that can be used in WebF. Learn more
   by visiting the [Guides for Web Developer](/docs/tutorials/guides-for-web-developer/overview).
 
-+ If you're a Flutter developers, visit the [Guides for Flutter developer](/docs/tutorials/guides-for-flutter-developer/overview)
++ If you're a Flutter developers, visit
+  the [Guides for Flutter developer](/docs/tutorials/guides-for-flutter-developer/overview)
   to learn how to customize and extend WebF with Flutter.
