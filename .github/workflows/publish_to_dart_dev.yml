@@ -1,4 +1,4 @@
-.github/workflows/publish_to_dart_dev.ymlname: Publish WebF To pub.dev
+name: Publish WebF To pub.dev
 
 on:
   release:
