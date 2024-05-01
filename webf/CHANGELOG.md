@@ -1,3 +1,124 @@
+## 0.16.0
+
+This version supports Flutter 3.19.x, 3.16.x, and 3.13.x.
+
+A version compatible with Flutter 3.10.x landed in **0.15.2**.
+A version compatible with Flutter 3.7.x landed in **0.14.4**.
+
+**Architecture Upgrade**
+
+The JavaScript Runtime has now migrated to a dedicated thread and is enabled by default in this version.
+
+For users who want to keep the single-threading mode the same as in the previous version, use the following configuration:
+
+```dart
+WebFController(
+  context,
+  runningThread: FlutterUIThread(),
+);
+```
+
+**Big News**
+
+1. Added PreRendering and Preload loading modes, which can save up to 90% of loading time. 
+   Click [here](http://openwebf.com/docs/tutorials/performance_optimization/prerendering_and_preload_mode) for more details.
+
+**Features**
+
+1. Support preloadedBundles in WebF. https://github.com/openwebf/webf/pull/500
+2. Add pre-rendering and persistent rendering modes.  https://github.com/openwebf/webf/pull/501
+3. Optimize the evaluate times at the first time. https://github.com/openwebf/webf/pull/503
+4. Add MutationObserver API support. https://github.com/openwebf/webf/pull/508
+5. Add Dedicated Threading support.  https://github.com/openwebf/webf/pull/512
+6. Optimize raster performance on Animated images. https://github.com/openwebf/webf/pull/513
+7. Turn off quickjs GC at page loading phase.  https://github.com/openwebf/webf/pull/515
+8. Optimization matrix algorithm. https://github.com/openwebf/webf/pull/516
+9. Support override default contentType for WebFBundle. https://github.com/openwebf/webf/pull/534
+10. Support dns-prefetch. https://github.com/openwebf/webf/pull/535
+11. Add more SVG tags. https://github.com/openwebf/webf/pull/543
+12. Optimize MutationObserver performance. https://github.com/openwebf/webf/pull/545
+13. QuickJS add property inline cache. https://github.com/openwebf/webf/pull/546
+14. Optimize paint and add profile records. https://github.com/openwebf/webf/pull/547
+15. Pause the activity of webf when app visibility changed. https://github.com/openwebf/webf/pull/549
+16. Optimize bytecode cache load speed and fix http cache. https://github.com/openwebf/webf/pull/552
+17. Add Element.parentElement support. https://github.com/openwebf/webf/pull/555
+18. Add repaintBoundary for animated images when using css background-images https://github.com/openwebf/webf/pull/557
+19. Add support for hash router https://github.com/openwebf/webf/pull/572
+20. Add support for object event listener. https://github.com/openwebf/webf/pull/575
+21. Optimize performance for recalculate styles https://github.com/openwebf/webf/pull/579
+
+**Bug Fixed**
+
+1. Fix class selector not match on html element. https://github.com/openwebf/webf/pull/490
+2. Fix concurrent modification during iteration. https://github.com/openwebf/webf/pull/491
+3. Fix JavaScript stack overflow error when print Proxy object. https://github.com/openwebf/webf/pull/493
+4. Fix borderXxxRadius transition. https://github.com/openwebf/webf/pull/495
+5. Avoid Hive.init cause conflicts with box paths. https://github.com/openwebf/webf/pull/504
+6. Fix assertion error when change display in input element. https://github.com/openwebf/webf/pull/505
+7. Fix lenght variable issue. https://github.com/openwebf/webf/pull/510
+8. Fix transform value not updated in percentage when box size changed. https://github.com/openwebf/webf/pull/514
+9. Fix crashed due to trigger touch events to inaccessible dom elements. https://github.com/openwebf/webf/pull/517
+10. Fix crash due to init touchEvent from JS. https://github.com/openwebf/webf/pull/518
+11. Fix event.target still can be pointed by event after finalized by JavaScript GC. https://github.com/openwebf/webf/pull/519
+12. Fix flex-grow not work. https://github.com/openwebf/webf/pull/524
+13. Fix bg_image_update not update error. https://github.com/openwebf/webf/pull/526
+14. Fix text calculate constraints error. https://github.com/openwebf/webf/pull/527
+15. Fix min precision case some error and waste cpu. https://github.com/openwebf/webf/pull/528
+16. Fix sliver layout child boundingClientRect offset error. https://github.com/openwebf/webf/pull/530
+17. Fix build on ArchLinux. https://github.com/openwebf/webf/pull/536
+18. Fix devtool select img element. https://github.com/openwebf/webf/pull/538
+19. Fix ui command exec order in dedicated thread mode. https://github.com/openwebf/webf/pull/540
+20. Fix img gif work error. https://github.com/openwebf/webf/pull/541
+21. Fix request flutter to update frame when sync commands to dart. https://github.com/openwebf/webf/pull/548
+22. Fix textarea elements in ios/android can not auto unfocus. https://github.com/openwebf/webf/pull/551
+23. Fix crash when binding object had been released by GC. https://github.com/openwebf/webf/pull/553
+24. Fix windows platform crash with 0.16.0. https://github.com/openwebf/webf/pull/558
+25. Fix page load failed when using async attributes in `<script />` elements. https://github.com/openwebf/webf/pull/561
+26. Fix dart element memory leaks when js gc collected. https://github.com/openwebf/webf/pull/563
+27. Fix crash on flutter engine dispose. https://github.com/openwebf/webf/pull/566
+28. Fix background-image disappear with multiple image links. https://github.com/openwebf/webf/pull/574
+29. Fix js log does not show in terrminal and devtools. https://github.com/openwebf/webf/pull/584
+30. Fix mem leaks caused by event dispatch. https://github.com/openwebf/webf/pull/585
+31. Fix input when resume apps https://github.com/openwebf/webf/pull/589
+32. Fix memory leak caused by img element https://github.com/openwebf/webf/pull/590
+33. Fix input elements or widget elements when preload or prerendering complete. https://github.com/openwebf/webf/pull/595
+34. Fix animation time resume. https://github.com/openwebf/webf/pull/597
+35. Fix invalid xcframework for ios release. https://github.com/openwebf/webf/pull/600
+
+
+## 0.15.1
+
+This version will support Flutter 3.10.x
+
+**Features**
+
+1. Optimize location API for better performance results. https://github.com/openwebf/webf/pull/420
+2. Optimize the webf_bridge and quickjs binary size. https://github.com/openwebf/webf/pull/414
+3. Support CSS initial length value. https://github.com/openwebf/webf/pull/421
+4. Optimize Element.children() and Document.all()
+   performance. https://github.com/openwebf/webf/pull/424
+5. Support element <line> for svg. https://github.com/openwebf/webf/pull/475
+6. Add WebFController.onTitleChanged API. https://github.com/openwebf/webf/pull/479
+
+**Bug Fixed**
+
+1. Fix percentage width and height not working under inline block
+   box. https://github.com/openwebf/webf/pull/430
+2. Fix Node.insertBefore with SVGElement error. https://github.com/openwebf/webf/pull/431
+3. Fix cookie delete file error when it's not available. https://github.com/openwebf/webf/pull/429
+4. Fix use css vars with
+   initial. https://github.com/openwebf/webf/pull/421/commits/1da2e5899c53e82a31271c26de3333168e780134
+   0.15.0-beta.3
+5. Fix toggle position: fixed on bodyElement with other fixed
+   elements. https://github.com/openwebf/webf/pull/416
+6. Fix css nth-child not work. https://github.com/openwebf/webf/pull/417
+7. Fix Node.childNodes didn't update when nodes changed. https://github.com/openwebf/webf/pull/419
+8. Fix loading fonts cause assertion when remove or attach
+   RenderObjects. https://github.com/openwebf/webf/pull/425
+9. fix crash when reload pages. https://github.com/openwebf/webf/pull/476
+10. Fix memory leaks. https://github.com/openwebf/webf/pull/487
+
+
 ## 0.15.0
 
 This version will support Flutter 3.10.x
@@ -169,14 +290,14 @@ This version will support Flutter 3.10.x
 **Features**
 
 * Add Self Poly Inline Cache for quickjs. https://github.com/openwebf/webf/pull/227
-  |               | master    | feat/ic |      |
-  | ------------- | ---------- | ---------- | ------ |
-  | Richards      | 752        | 888      |  +18.0%  |
-  | Crypto      | 618        | 713      |  +15.3%  |
-  | RayTrace      | 807        | 833       | +3.2%   |
-  | NavierStokes      | 1497        | 1319      | -11.8%  |
-  | DeltaBlue      | 744        | 845       |  +13.5% |
-  | Score (version 7)     | 841        | 890       | +5.5%  |
+  |                   | master | feat/ic |        |
+  | ----------------- | ------ | ------- | ------ |
+  | Richards          | 752    | 888     | +18.0% |
+  | Crypto            | 618    | 713     | +15.3% |
+  | RayTrace          | 807    | 833     | +3.2%  |
+  | NavierStokes      | 1497   | 1319    | -11.8% |
+  | DeltaBlue         | 744    | 845     | +13.5% |
+  | Score (version 7) | 841    | 890     | +5.5%  |
 * Add window.getComputedStyle support. https://github.com/openwebf/webf/pull/183
 * Add namespace API. https://github.com/openwebf/webf/pull/126
 * The performance of `display: sliver` had been improved. https://github.com/openwebf/webf/pull/225
