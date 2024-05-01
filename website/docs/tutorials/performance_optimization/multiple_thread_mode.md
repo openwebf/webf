@@ -1,3 +1,8 @@
+---
+sidebar_position: 1
+title: Dedicated Thread Mode
+---
+
 # Dedicated Thread Mode
 
 In previous versions of WebF, the JavaScript runtime was housed within the Flutter UI thread. Extended JavaScript
