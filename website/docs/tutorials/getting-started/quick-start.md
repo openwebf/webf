@@ -31,16 +31,6 @@ For more info how to install the Flutter environment, please refer to https://do
 
 In this tutorial, we will use webf `0.16.0` and flutter `3.19.3` as an example.
 
-:::info
-
-If you are a Web developer, you may encounter problems trying to install the Flutter environment.
-WebF offers a prebuilt desktop app allow you to quickly examine the HTML/CSS and JavaScript abilities without needing
-to install any Flutter developer environments.
-
-Read more at https://www.npmjs.com/package/@openwebf/cli
-
-:::
-
 ## Install WebF
 
 Add the following code to your package's pubspec.yaml file and run `flutter pub get`.
