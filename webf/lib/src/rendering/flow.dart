@@ -336,7 +336,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Layout children in normal flow order to calculate metrics of lines according to its constraints
   // and alignment properties.
-  RenderLineBoxes _computeRunMetrics(List<RenderBox> children) {
+  void _computeRunMetrics(List<RenderBox> children) {
     double mainAxisLimit = renderStyle.contentMaxConstraintsWidth;
     RenderBox? preChild;
     lineBoxes.clear();
@@ -495,7 +495,6 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     appendLineBox(runLineBox);
     lineBoxes.maxLines = _maxLines;
-    return lineBoxes;
   }
 
   LogicLineBox processTextBoxBreak(RenderTextBox child, LogicLineBox runLine) {
@@ -988,6 +987,8 @@ class RenderFlowLayout extends RenderLayoutBox {
           lineDistance = math.max(lineDistance!, childBaseLineDistance);
         else
           lineDistance = childBaseLineDistance;
+      } else if (childBaseLineDistance == null && (child.parent as RenderBoxModel).hasSize) {
+          lineDistance = (child.parent as RenderBoxModel).boxSize?.height;
       }
     });
 
