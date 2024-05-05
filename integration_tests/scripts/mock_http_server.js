@@ -20,6 +20,10 @@ app.get('/set_cookie', (req, res) => {
     res.end();
 });
 
+app.get('/unresponse', (req, res) => {
+
+});
+
 app.get('/verify_cookie', (req, res) => {
     const query = req.query;
     const value = req.cookies[query.id];

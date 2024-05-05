@@ -21,6 +21,7 @@ import { URL } from './url';
 import { webf } from './webf';
 import { WebSocket } from './websocket'
 import { ResizeObserver } from './resize-observer';
+import { _AbortController, _AbortSignal } from './abort-signal';
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -42,6 +43,8 @@ defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
 defineGlobalProperty('WebSocket', WebSocket);
 defineGlobalProperty('ResizeObserver', ResizeObserver);
+defineGlobalProperty('AbortSignal', _AbortSignal);
+defineGlobalProperty('AbortController', _AbortController);
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {
