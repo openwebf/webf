@@ -20,7 +20,7 @@ describe('Transition transform', () => {
     });
 
     requestAnimationFrame(async () => {
-      await snapshot();
+      await snapshot(0.1);
       setElementStyle(container1, {
         transform: 'matrix(0,1,1,1,10,10)',
       });
