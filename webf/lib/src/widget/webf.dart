@@ -377,8 +377,6 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         isDarkMode: _webfWidget.isDarkMode,
         background: _webfWidget.background,
         bundle: _webfWidget.bundle,
-        // Execute entrypoint when mount manually.
-        autoExecuteEntrypoint: false,
         externalController: false,
         onLoad: _webfWidget.onLoad,
         routeObserver: _webfWidget.routeObserver,
