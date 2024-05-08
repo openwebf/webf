@@ -236,15 +236,15 @@ class LinkElement extends Element {
   }
 
   double get windowWidth {
-    return ownerDocument.preloadViewportSize?.width ?? ownerDocument.viewport?.viewportSize.width ?? -1;
+    return ownerDocument.viewport?.viewportSize.width ?? ownerDocument.preloadViewportSize?.width ?? -1;
   }
 
   double get windowHeight {
-    return ownerDocument.preloadViewportSize?.height ?? ownerDocument.viewport?.viewportSize.height ?? -1;
+    return ownerDocument.viewport?.viewportSize.height ?? ownerDocument.preloadViewportSize?.height ?? -1;
   }
 
   bool get isDarkMode {
-    return ownerDocument.preloadDarkMode ?? ownerDocument.viewport?.controller.isDarkMode ?? false;
+    return ownerDocument.viewport?.controller.isDarkMode ?? ownerDocument.preloadDarkMode ?? false;
   }
 
   @override
