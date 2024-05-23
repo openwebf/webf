@@ -5,7 +5,7 @@
 
 #include "bindings/v8/platform/script_state.h"
 #include "bindings/v8/platform/heap/garbage_collected.h"
-#include "bindings/v8/platform/per_context_data.h"
+#include "bindings/v8/platform/v8_per_context_data.h"
 
 namespace webf {
 
