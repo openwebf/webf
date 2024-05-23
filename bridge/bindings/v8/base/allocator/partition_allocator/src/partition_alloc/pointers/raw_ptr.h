@@ -524,10 +524,11 @@ class PA_TRIVIAL_ABI PA_GSL_POINTER raw_ptr {
 
   // Deliberately implicit, because raw_ptr is supposed to resemble raw ptr.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  PA_ALWAYS_INLINE constexpr raw_ptr(T* p) noexcept
-      : wrapped_ptr_(Impl::WrapRawPtr(p)) {
-    Impl::Trace(tracer_.owner_id(), wrapped_ptr_);
-  }
+  // TODO
+//  PA_ALWAYS_INLINE constexpr raw_ptr(T* p) noexcept
+//      : wrapped_ptr_(Impl::WrapRawPtr(p)) {
+//    Impl::Trace(tracer_.owner_id(), wrapped_ptr_);
+//  }
 
   // Deliberately implicit in order to support implicit upcast.
   template <typename U,
@@ -561,13 +562,15 @@ class PA_TRIVIAL_ABI PA_GSL_POINTER raw_ptr {
     wrapped_ptr_ = nullptr;
     return *this;
   }
-  PA_ALWAYS_INLINE constexpr raw_ptr& operator=(T* p) noexcept {
-    Impl::ReleaseWrappedPtr(wrapped_ptr_);
-    Impl::Untrace(tracer_.owner_id());
-    wrapped_ptr_ = Impl::WrapRawPtr(p);
-    Impl::Trace(tracer_.owner_id(), wrapped_ptr_);
-    return *this;
-  }
+
+  // TODO
+//  PA_ALWAYS_INLINE constexpr raw_ptr& operator=(T* p) noexcept {
+//    Impl::ReleaseWrappedPtr(wrapped_ptr_);
+//    Impl::Untrace(tracer_.owner_id());
+//    wrapped_ptr_ = Impl::WrapRawPtr(p);
+//    Impl::Trace(tracer_.owner_id(), wrapped_ptr_);
+//    return *this;
+//  }
 
   // Upcast assignment
   template <typename U,

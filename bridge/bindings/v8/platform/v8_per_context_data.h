@@ -9,28 +9,18 @@
 
 #include <memory>
 
-//#include "base/memory/raw_ptr.h"
-//#include "gin/public/context_holder.h"
-//#include "gin/public/gin_embedders.h"
-//#include "third_party/blink/renderer/platform/bindings/scoped_persistent.h"
-//#include "third_party/blink/renderer/platform/bindings/trace_wrapper_v8_reference.h"
-//#include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_map.h"
-//#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
-//#include "third_party/blink/renderer/platform/heap/persistent.h"
-//#include "third_party/blink/renderer/platform/platform_export.h"
-//#include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
-//#include "third_party/blink/renderer/platform/wtf/text/atomic_string_hash.h"
-//#include "third_party/blink/renderer/platform/wtf/vector.h"
-//#include "v8/include/v8.h"
 #include <v8/v8.h>
 #include "bindings/v8/platform/heap/garbage_collected.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h"
 #include "bindings/v8/trace_wrapper_v8_reference.h"
 #include "bindings/v8/platform/scoped_persistent.h"
+#include "bindings/v8/platform/heap/collection_support/heap_hash_map.h"
+#include "bindings/v8/gin/public/context_holder.h"
+#include "bindings/v8/platform/heap/member.h"
 
 namespace webf {
 
-class V8DOMActivityLogger;
+//class V8DOMActivityLogger;
 class V8PerContextData;
 struct WrapperTypeInfo;
 
@@ -81,10 +71,10 @@ class V8PerContextData final
       v8::Local<v8::Object>* prototype_object,
       v8::Local<v8::Function>* interface_object);
 
-  V8DOMActivityLogger* ActivityLogger() const { return activity_logger_; }
-  void SetActivityLogger(V8DOMActivityLogger* activity_logger) {
-    activity_logger_ = activity_logger;
-  }
+//  V8DOMActivityLogger* ActivityLogger() const { return activity_logger_; }
+//  void SetActivityLogger(V8DOMActivityLogger* activity_logger) {
+//    activity_logger_ = activity_logger;
+//  }
 
   // Garbage collected classes that use V8PerContextData to hold an instance
   // should subclass Data, and use addData / clearData / getData to manage the
@@ -114,7 +104,7 @@ class V8PerContextData final
   ScopedPersistent<v8::Context> context_;
 
   // This is owned by a static hash map in V8DOMActivityLogger.
-  raw_ptr<V8DOMActivityLogger, DanglingUntriaged> activity_logger_;
+//  raw_ptr<V8DOMActivityLogger, DanglingUntriaged> activity_logger_;
 
   using DataMap = HeapHashMap<const char*, Member<Data>>;
   DataMap data_map_;
