@@ -640,19 +640,25 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/atomic_string.cc
     bindings/v8/native_string_utils.cc
     bindings/v8/script_value.cc
-    bindings/v8/exception_state.cc
+#    bindings/v8/exception_state.cc
     bindings/v8/script_wrappable.cc
     bindings/v8/wrapper_type_info.cc
     bindings/v8/v8_interface_bridge_base.cc
     bindings/v8/platform/script_state.cc
     bindings/v8/platform/scoped_persistent.h
-    bindings/v8/platform/per_context_data.cc
+    bindings/v8/platform/v8_per_context_data.cc
     bindings/v8/platform/heap/garbage_collected.h
     bindings/v8/platform/heap/member.h
     bindings/v8/platform/heap/self_keep_alive.h
     bindings/v8/platform/heap/persistent.h
     bindings/v8/platform/heap/thread_state_storage.cc
     bindings/v8/platform/heap/write_barrier.h
+    bindings/v8/platform/heap/heap_allocator_impl.h
+    bindings/v8/platform/heap/trace_traits.h
+    bindings/v8/platform/heap/custom_spaces.cc
+    bindings/v8/platform/heap/collection_support/heap_hash_map.h
+    bindings/v8/platform/heap/collection_support/heap_vector_backing.h
+    bindings/v8/platform/heap/collection_support/heap_hash_table_backing.h
     bindings/v8/platform/util/gc_plugin.h
     bindings/v8/union_base.cc
     bindings/v8/name_client.cc
@@ -666,9 +672,21 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/platform/wtf/hash_traits.h
     bindings/v8/platform/wtf/hash_functions.h
     bindings/v8/platform/wtf/hash_table_deleted_value_type.h
+    bindings/v8/platform/wtf/key_value_pair.h
+    bindings/v8/platform/wtf/hash_table.cc
+    bindings/v8/platform/wtf/webf_size_t.h
+    bindings/v8/platform/wtf/hash_map.h
+    bindings/v8/platform/wtf/conditional_destructor.h
+    bindings/v8/platform/wtf/construct_traits.h
+    bindings/v8/platform/wtf/sanitizers.h
+    bindings/v8/platform/wtf/allocator/partition_allocator.h
     bindings/v8/base/allocator/allocator.h
     bindings/v8/base/allocator/partitions.cc
     bindings/v8/base/allocator/partitions.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_constants.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/address_pool_manager_types.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_constants.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_config.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/buildflag.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/build_config.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/flags.h
@@ -684,11 +702,22 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/cxx20_is_constant_evaluated.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/strings/cstring_builder.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/strings/safe_sprintf.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/strings/string_util.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/posix/eintr_wrapper.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/posix/safe_strerror.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_exclusion.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_noop_impl.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/instance_tracer.cc
+    bindings/v8/base/types/supports_ostream_operator.h
+    bindings/v8/base/notreached.h
+    bindings/v8/base/logging_buildflags.h
+    bindings/v8/base/is_empty.h
+    bindings/v8/base/check.h
+    bindings/v8/base/check_op.h
+    bindings/v8/base/dcheck_is_on.h
+    bindings/v8/base/location.cc
+    bindings/v8/base/not_fatal_until.h
     bindings/v8/base/numerics/checked_math.h
     bindings/v8/base/numerics/safe_conversions.h
     bindings/v8/base/numerics/safe_conversions_impl.h
@@ -701,6 +730,7 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/memory/stack_allocated.h
     bindings/v8/base/compiler_specific.h
     bindings/v8/base/bit_cast.h
+    bindings/v8/base/bits.h
     bindings/v8/gin/public/context_holder.h
     bindings/v8/gin/public/gin_embedders.h
     bindings/v8/gin/public/wrapper_info.h

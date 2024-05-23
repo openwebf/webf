@@ -11,7 +11,7 @@
 #include <memory>
 #include "atomic_string.h"
 #include "dictionary_base.h"
-#include "exception_state.h"
+//#include "exception_state.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
 #include "platform/script_state.h"
