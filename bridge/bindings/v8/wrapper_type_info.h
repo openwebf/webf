@@ -3,15 +3,8 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-#ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_BINDINGS_WRAPPER_TYPE_INFO_H_
-#define THIRD_PARTY_BLINK_RENDERER_PLATFORM_BINDINGS_WRAPPER_TYPE_INFO_H_
-
-//#include "base/check_op.h"
-//#include "third_party/blink/renderer/platform/bindings/v8_interface_bridge_base.h"
-//#include "third_party/blink/renderer/platform/heap/visitor.h"
-//#include "third_party/blink/renderer/platform/platform_export.h"
-//#include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
-//#include "v8/include/v8.h"
+#ifndef WEBF_BINDINGS_WRAPPER_TYPE_INFO_H_
+#define WEBF_BINDINGS_WRAPPER_TYPE_INFO_H_
 
 #include <v8/v8-object.h>
 #include <v8/v8.h>
@@ -205,4 +198,4 @@ PLATFORM_EXPORT const WrapperTypeInfo* ToWrapperTypeInfo(
 
 }  // namespace webf
 
-#endif  // THIRD_PARTY_BLINK_RENDERER_PLATFORM_BINDINGS_WRAPPER_TYPE_INFO_H_
+#endif  // WEBF_BINDINGS_WRAPPER_TYPE_INFO_H_

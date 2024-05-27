@@ -38,7 +38,7 @@
 #endif
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
-#include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/posix/safe_strerror.h"
+#include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/posix/safe_strerror.h"
 #endif
 
 namespace partition_alloc::internal::logging {

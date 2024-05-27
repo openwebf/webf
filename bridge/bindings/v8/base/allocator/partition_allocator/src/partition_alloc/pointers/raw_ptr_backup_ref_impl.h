@@ -10,6 +10,7 @@
 #include <type_traits>
 
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/build_config.h"
+#include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_address_space.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/cxx20_is_constant_evaluated.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/tagging.h"
@@ -51,8 +52,7 @@ struct RawPtrBackupRefImpl {
     if constexpr (DisableBRP) {
       return false;
     }
-//    return partition_alloc::IsManagedByPartitionAllocBRPPool(address);
-    return false;
+    return partition_alloc::IsManagedByPartitionAllocBRPPool(address);
   }
 
   PA_ALWAYS_INLINE static bool IsSupportedAndNotNull(uintptr_t address) {
