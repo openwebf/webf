@@ -37,7 +37,7 @@
 #include <cstring>
 #endif
 
-#include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/posix/eintr_wrapper.h"
+#include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/posix/eintr_wrapper.h"
 
 namespace partition_alloc::internal::logging {
 
