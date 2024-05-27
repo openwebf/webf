@@ -16,6 +16,7 @@
 #include "bindings/v8/platform/wtf/key_value_pair.h"
 #include "bindings/v8/platform/wtf/type_traits.h"
 #include "bindings/v8/platform/wtf/webf_size_t.h"
+#include "bindings/v8/platform/wtf/atomic_operations.h"
 
 namespace webf {
 

@@ -103,6 +103,18 @@ bool AtomicString::ContainsOnlyLatin1OrEmpty() const {
     ored |= characters[i];
   return !(ored & 0xFF00);
 }
+
+inline v8::Local<v8::String> V8AtomicString(v8::Isolate* isolate,
+                                            const char* string) {
+  assert(isolate);
+  if (!string || string[0] == '\0')
+    return v8::String::Empty(isolate);
+  return v8::String::NewFromOneByte(
+             isolate, reinterpret_cast<const uint8_t*>(string),
+             v8::NewStringType::kInternalized, static_cast<int>(strlen(string)))
+      .ToLocalChecked();
+}
+
 }  // namespace webf
 
 #endif  // BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_
