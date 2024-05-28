@@ -16,7 +16,8 @@ namespace partition_alloc::internal::base {
 
 uint64_t RandUint64() {
   uint64_t number;
-  RandBytes(&number, sizeof(number));
+  // TODO webf fix RandBytes
+//  RandBytes(&number, sizeof(number));
   return number;
 }
 

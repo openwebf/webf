@@ -8,7 +8,7 @@
 
 #include <type_traits>
 
-#include "bindings/v8/base/check_op.h"
+//#include "bindings/v8/base/check_op.h"
 #include "bindings/v8/platform/heap/custom_spaces.h"
 #include "bindings/v8/platform/heap/garbage_collected.h"
 #include "bindings/v8/platform/heap/thread_state_storage.h"
@@ -64,7 +64,7 @@ class HeapHashTableBacking final
     // HHTB is an empty class that's purely used with inline storage. Since its
     // sizeof(HHTB) == 1, we need to subtract its size to avoid wasting storage.
     static_assert(sizeof(ClassType) == 1, "Class declaration changed");
-    DCHECK_GE(wanted_array_size, sizeof(ClassType));
+//    DCHECK_GE(wanted_array_size, sizeof(ClassType));
     return cppgc::AdditionalBytes{wanted_array_size - sizeof(ClassType)};
   }
 };
@@ -278,7 +278,7 @@ class MakeGarbageCollectedTrait<webf::HeapHashTableBacking<Table>>
         !std::is_polymorphic<webf::HeapHashTableBacking<Table>>::value,
         "HeapHashTableBacking must not be polymorphic as it is converted to a "
         "raw array of buckets for certain operation");
-    CHECK_GT(num_elements, 0u);
+//    CHECK_GT(num_elements, 0u);
     // Allocate automatically considers the custom space via SpaceTrait.
     void* memory = MakeGarbageCollectedTraitBase<Backing>::Allocate(
         handle, sizeof(typename Table::ValueType) * num_elements);

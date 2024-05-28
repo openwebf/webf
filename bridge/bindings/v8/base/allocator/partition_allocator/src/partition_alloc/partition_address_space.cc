@@ -17,7 +17,7 @@
 //#include "partition_alloc/compressed_pointer.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h"
-#include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/debug/alias.cc"
+#include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/debug/alias.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/buildflag.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_check.h"
 #include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_config.h"
