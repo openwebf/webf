@@ -984,9 +984,9 @@ void HashTable<Key,
     new_capacity = KeyTraits::kMinimumTableSize;
 
   if (new_capacity > Capacity()) {
-    CHECK(!static_cast<int>(
-        new_capacity >>
-        31));  // HashTable capacity should not overflow 32bit int.
+//    CHECK(!static_cast<int>(
+//        new_capacity >>
+//        31));  // HashTable capacity should not overflow 32bit int.
     Rehash(new_capacity, nullptr);
   }
 }
@@ -1606,7 +1606,7 @@ HashTable<Key, Value, Extractor, Traits, KeyTraits, Allocator>::ExpandBuffer(
     bool& success) {
   success = false;
   DCHECK_LT(table_size_, new_table_size);
-  CHECK(Allocator::IsAllocationAllowed());
+//  CHECK(Allocator::IsAllocationAllowed());
   if (!table_ ||
       !Allocator::template ExpandHashTableBacking<ValueType, HashTable>(
           table_, new_table_size * sizeof(ValueType)))

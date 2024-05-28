@@ -49,20 +49,22 @@ thread_local bool g_is_main_thread = false;
 #endif
 
 void Initialize() {
-  // WTF, and Blink in general, cannot handle being re-initialized.
-  // Make that explicit here.
-  CHECK(!g_initialized);
-  g_initialized = true;
-#if !BUILDFLAG(IS_ANDROID)
-  g_is_main_thread = true;
-#endif
-  g_main_thread_identifier = CurrentThread();
+  // TODO webf
+//  // WTF, and Blink in general, cannot handle being re-initialized.
+//  // Make that explicit here.
+//  CHECK(!g_initialized);
+//  g_initialized = true;
+//#if !BUILDFLAG(IS_ANDROID)
+//  g_is_main_thread = true;
+//#endif
+//  g_main_thread_identifier = CurrentThread();
+//
+//  Threading::Initialize();
+//
+//  internal::InitializeDoubleConverter();
+//
+//  internal::InitializeMainThreadStackEstimate();
 
-  Threading::Initialize();
-
-  internal::InitializeDoubleConverter();
-
-  internal::InitializeMainThreadStackEstimate();
   // TODO not include WTF's AtomicString and StringStatics for now
   // AtomicString::Init();
 //  StringStatics::Init();
