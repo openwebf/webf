@@ -86,9 +86,11 @@ void PA_COMPONENT_EXPORT(PARTITION_ALLOC_BASE) Alias(const void* var);
 // PA_NO_CODE_FOLDING macro at the top of the function.
 // Use like:
 //   void FooBarFailure(size_t size) { PA_NO_CODE_FOLDING(); OOM_CRASH(size); }
-#define PA_NO_CODE_FOLDING()        \
-  const int line_number = __LINE__; \
-  ::partition_alloc::internal::base::debug::Alias(&line_number)
+// TODO webf
+//#define PA_NO_CODE_FOLDING()        \
+//  const int line_number = __LINE__; \
+//  ::partition_alloc::internal::base::debug::Alias(&line_number)
+#define PA_NO_CODE_FOLDING()
 
 #endif  // PARTITION_ALLOC_PARTITION_ALLOC_BASE_DEBUG_ALIAS_H_
 

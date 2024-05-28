@@ -592,7 +592,7 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/platform/heap/collection_support/heap_vector_backing.h
     bindings/v8/platform/heap/collection_support/heap_hash_table_backing.h
     bindings/v8/platform/util/gc_plugin.h
-          bindings/v8/platform/util/main_thread_util.cc
+    bindings/v8/platform/util/main_thread_util.cc
     bindings/v8/union_base.cc
     bindings/v8/name_client.cc
     bindings/v8/dictionary_base.cc
@@ -600,10 +600,10 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/for_build/build_config.h
     bindings/v8/for_build/buildflag.h
     bindings/v8/platform/platform_export.h
-          bindings/v8/platform/wtf/thread_specific.h
-          bindings/v8/platform/wtf/dtoa.cc
-          bindings/v8/platform/wtf/stack_util.cc
-          bindings/v8/platform/wtf/atomic_operations.cc
+    bindings/v8/platform/wtf/thread_specific.h
+    bindings/v8/platform/wtf/dtoa.cc
+    bindings/v8/platform/wtf/stack_util.cc
+    bindings/v8/platform/wtf/atomic_operations.cc
     bindings/v8/platform/wtf/threading.cc
     bindings/v8/platform/wtf/type_traits.cc
     bindings/v8/platform/wtf/vector_traits.cc
@@ -672,7 +672,10 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_hooks.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_bucket_lookup.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/oom.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/oom_callback.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_oom.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/yield_processor.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/address_space_stats.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/export_template.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/time/time.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/bits.h
@@ -691,8 +694,10 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/debug/alias.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread_ref.h
-          bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/posix/eintr_wrapper.h
-          bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/posix/safe_strerror.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread_posix.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread_internal_posix.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/posix/eintr_wrapper.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/posix/safe_strerror.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_exclusion.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_backup_ref_impl.cc
@@ -707,16 +712,16 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/safe_conversions_impl.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/safe_math_clang_gcc_impl.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/safe_math_shared_impl.h
-          bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/memory/scoped_policy.h
-          bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/apple/scoped_cftyperef.h
-          bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/apple/scoped_typeref.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/memory/scoped_policy.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/apple/scoped_cftyperef.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/apple/scoped_typeref.h
     bindings/v8/base/types/supports_ostream_operator.h
     bindings/v8/base/base_export.h
     bindings/v8/base/notreached.h
     bindings/v8/base/logging_buildflags.h
     bindings/v8/base/is_empty.h
     bindings/v8/base/check.h
-    bindings/v8/base/check_op.h
+    bindings/v8/base/check_op.cc
     bindings/v8/base/dcheck_is_on.h
     bindings/v8/base/location.cc
     bindings/v8/base/not_fatal_until.h
@@ -737,6 +742,8 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/gin/public/gin_embedders.h
     bindings/v8/gin/public/wrapper_info.h
     bindings/v8/gin/gin_export.h
+    bindings/v8/gin/per_context_data.cc
+    bindings/v8/gin/context_holder.cc
     out/built_in_string.cc
   )
 

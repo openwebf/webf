@@ -462,8 +462,8 @@ template <typename T, typename U, typename V, typename W, typename X>
 typename HashMap<T, U, V, W, X>::MappedPeekType HashMap<T, U, V, W, X>::at(
     KeyPeekInType key) const {
   const ValueType* entry = impl_.Lookup(key);
-  CHECK(entry) << "HashMap::at found no value for the given key. See "
-                  "https://crbug.com/1058527.";
+//  CHECK(entry) << "HashMap::at found no value for the given key. See "
+//                  "https://crbug.com/1058527.";
   return MappedTraits::Peek(entry->value);
 }
 

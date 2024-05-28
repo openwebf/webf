@@ -70,17 +70,18 @@ void V8PerContextData::Trace(Visitor* visitor) const {
 
 v8::Local<v8::Object> V8PerContextData::CreateWrapperFromCacheSlowCase(
     const WrapperTypeInfo* type) {
-  DCHECK(!wrapper_boilerplates_.Contains(type));
+  // TODO webf
+//  DCHECK(!wrapper_boilerplates_.Contains(type));
   v8::Context::Scope scope(GetContext());
   v8::Local<v8::Function> interface_object = ConstructorForType(type);
-  if (UNLIKELY(interface_object.IsEmpty())) {
+//  if (UNLIKELY(interface_object.IsEmpty())) {
     // For investigation of crbug.com/1199223
     // TODO webf not include crash_reporter for now
 //    static crash_reporter::CrashKeyString<64> crash_key(
 //        "blink__create_interface_object");
 //    crash_key.Set(type->interface_name);
-    CHECK(!interface_object.IsEmpty());
-  }
+//    CHECK(!interface_object.IsEmpty());
+//  }
   // TODO webf not include V8ObjectConstructor for now
 //  v8::Local<v8::Object> instance_template =
 //      V8ObjectConstructor::NewInstance(isolate_, interface_object)
@@ -96,7 +97,8 @@ v8::Local<v8::Object> V8PerContextData::CreateWrapperFromCacheSlowCase(
 
 v8::Local<v8::Function> V8PerContextData::ConstructorForTypeSlowCase(
     const WrapperTypeInfo* type) {
-  DCHECK(!constructor_map_.Contains(type));
+  // TODO webf
+//  DCHECK(!constructor_map_.Contains(type));
   v8::Local<v8::Context> context = GetContext();
   v8::Context::Scope scope(context);
 
@@ -113,9 +115,11 @@ v8::Local<v8::Function> V8PerContextData::ConstructorForTypeSlowCase(
       // our implementation (although WindowProperties is not JS observable).
       // Let WindowProperties be skipped and make
       // Window.__proto__ == EventTarget.
-      DCHECK(parent->parent_class);
-      DCHECK(!parent->parent_class
-                  ->is_skipped_in_interface_object_prototype_chain);
+
+      // TODO webf
+//      DCHECK(parent->parent_class);
+//      DCHECK(!parent->parent_class
+//                  ->is_skipped_in_interface_object_prototype_chain);
       parent = parent->parent_class;
     }
     parent_interface_object = ConstructorForType(parent);
@@ -161,7 +165,8 @@ bool V8PerContextData::GetExistingConstructorAndPrototypeForType(
   }
   *interface_object = it->value.Get(isolate_);
   *prototype_object = PrototypeForType(type);
-  DCHECK(!prototype_object->IsEmpty());
+  // TODO webf
+//  DCHECK(!prototype_object->IsEmpty());
   return true;
 }
 
