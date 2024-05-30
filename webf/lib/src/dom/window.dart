@@ -21,6 +21,7 @@ class Window extends EventTarget {
       : screen = Screen(context!.contextId, document.controller.ownerFlutterView, document.controller.view),
         super(context) {
     BindingBridge.listenEvent(this, 'load');
+    BindingBridge.listenEvent(this, 'gcopen');
   }
 
   @override
@@ -105,7 +106,7 @@ class Window extends EventTarget {
         event.type == EVENT_ERROR) {
       flushUICommandWithContextId(contextId!, pointer!);
     }
-    super.dispatchEvent(event);
+    return super.dispatchEvent(event);
   }
 
   @override

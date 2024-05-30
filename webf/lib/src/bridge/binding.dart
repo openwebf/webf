@@ -29,7 +29,7 @@ typedef NativeAsyncAnonymousFunctionCallback = Void Function(
 typedef DartAsyncAnonymousFunctionCallback = void Function(
     Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, double contextId, Pointer<Utf8> errmsg);
 
-typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dynamic> args);
+typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp });
 
 List<BindingCallFunc> bindingCallMethodDispatchTable = [
   getterBindingCall,
@@ -67,6 +67,10 @@ void _handleDispatchResult(_DispatchEventResultContext context, Pointer<NativeVa
   malloc.free(dispatchResult);
   malloc.free(returnValue);
 
+  if (enableWebFProfileTracking) {
+    WebFProfiler.instance.finishTrackEvaluate(context.profileOp!);
+  }
+
   context.completer.complete();
 }
 
@@ -79,6 +83,7 @@ class _DispatchEventResultContext {
   Pointer<RawEvent> rawEvent;
   List<dynamic> dispatchEventArguments;
   WebFController controller;
+  EvaluateOpItem? profileOp;
   _DispatchEventResultContext(
     this.completer,
     this.event,
@@ -87,7 +92,8 @@ class _DispatchEventResultContext {
     this.rawEvent,
     this.controller,
     this.dispatchEventArguments,
-    this.stopwatch
+    this.stopwatch,
+    this.profileOp,
   );
 }
 
@@ -105,6 +111,11 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
       event.currentTarget?.pointer?.ref.disposed != true
   ) {
     Completer completer = Completer();
+
+    EvaluateOpItem? currentProfileOp;
+    if (enableWebFProfileTracking) {
+      currentProfileOp = WebFProfiler.instance.startTrackEvaluate('_dispatchEventToNative');
+    }
 
     BindingObject bindingObject = controller.view.getBindingObject(pointer);
     // Call methods implements at C++ side.
@@ -130,13 +141,14 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
       rawEvent,
       controller,
       dispatchEventArguments,
-      stopwatch
+      stopwatch,
+      currentProfileOp
     );
 
     Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback = Pointer.fromFunction(_handleDispatchResult);
 
     Future.microtask(() {
-      f(pointer, method, dispatchEventArguments.length, allocatedNativeArguments, context, resultCallback);
+      f(pointer, currentProfileOp?.hashCode ?? 0, method, dispatchEventArguments.length, allocatedNativeArguments, context, resultCallback);
     });
 
     return completer.future;

@@ -8,6 +8,7 @@ import 'dart:math';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_span.dart';
 
@@ -272,8 +273,15 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     needsLayout = true;
   }
 
-  BoxConstraints getConstraints(int maxLinesFromParent) {
+  BoxConstraints getConstraints() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderTextBox.getConstraints()');
+    }
+
     if (renderStyle.whiteSpace == WhiteSpace.nowrap && renderStyle.effectiveTextOverflow != TextOverflow.ellipsis) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackLayoutStep();
+      }
       return InlineBoxConstraints(maxLines: maxLinesFromParent);
     }
 
@@ -308,6 +316,10 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
         maxConstraintWidth = parentConstraints.maxWidth - horizontalPaddingLength - horizontalBorderLength;
       }
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
     }
 
     // Text will not overflow from container, so it can inherit

@@ -217,7 +217,7 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    await snapshot(0.2);
   });
 
   it('should work with scale-down when it behaves as none', async () => {

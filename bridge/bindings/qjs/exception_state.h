@@ -28,6 +28,7 @@ class ExceptionState {
   ExceptionState& ReturnThis();
 
   JSValue ToQuickJS();
+  static JSValue CurrentException(JSContext* ctx);
 
  private:
   JSValue exception_{JS_NULL};

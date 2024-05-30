@@ -7,6 +7,7 @@
 #include "core/dart_isolate_context.h"
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
+#include "foundation/native_type.h"
 #include "include/dart_api.h"
 #include "multiple_threading/dispatcher.h"
 #include "multiple_threading/task.h"
@@ -40,13 +41,16 @@ int64_t newPageIdSync() {
   return unique_page_id++;
 }
 
-void* initDartIsolateContextSync(int64_t dart_port, uint64_t* dart_methods, int32_t dart_methods_len) {
+void* initDartIsolateContextSync(int64_t dart_port,
+                                 uint64_t* dart_methods,
+                                 int32_t dart_methods_len,
+                                 int8_t enable_profile) {
   auto dispatcher = std::make_unique<webf::multi_threading::Dispatcher>(dart_port);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: initDartIsolateContextSync Call BEGIN";
 #endif
-  auto* dart_isolate_context = new webf::DartIsolateContext(dart_methods, dart_methods_len);
+  auto* dart_isolate_context = new webf::DartIsolateContext(dart_methods, dart_methods_len, enable_profile == 1);
   dart_isolate_context->SetDispatcher(std::move(dispatcher));
 
 #if ENABLE_LOG
@@ -62,10 +66,16 @@ void* allocateNewPageSync(double thread_identity, void* ptr) {
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   assert(dart_isolate_context != nullptr);
+
+  dart_isolate_context->profiler()->StartTrackInitialize();
+
   void* result = static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPageSync(thread_identity);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPageSync Call END";
 #endif
+
+  dart_isolate_context->profiler()->FinishTrackInitialize();
+
   return result;
 }
 
@@ -97,7 +107,6 @@ void disposePage(double thread_identity,
   WEBF_LOG(INFO) << "[Dispatcher]: disposePage Call BEGIN";
 #endif
 
-  WEBF_LOG(VERBOSE) << " DISPOSE PAGE START";
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
 
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
@@ -127,7 +136,8 @@ void evaluateScripts(void* page_,
                      uint8_t** parsed_bytecodes,
                      uint64_t* bytecode_len,
                      const char* bundleFilename,
-                     int32_t startLine,
+                     int32_t start_line,
+                     int64_t profile_id,
                      Dart_Handle dart_handle,
                      EvaluateScriptsCallback result_callback) {
 #if ENABLE_LOG
@@ -137,12 +147,33 @@ void evaluateScripts(void* page_,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
       page->isDedicated(), page->contextId(), webf::evaluateScriptsInternal, page_, code, code_len, parsed_bytecodes,
-      bytecode_len, bundleFilename, startLine, persistent_handle, result_callback);
+      bytecode_len, bundleFilename, start_line, profile_id, persistent_handle, result_callback);
+}
+
+void dumpQuickjsByteCode(void* page_,
+                         int64_t profile_id,
+                         const char* code,
+                         int32_t code_len,
+                         uint8_t** parsed_bytecodes,
+                         uint64_t* bytecode_len,
+                         const char* url,
+                         Dart_Handle dart_handle,
+                         DumpQuickjsByteCodeCallback result_callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dart] dumpQuickjsByteCode call" << std::endl;
+#endif
+
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->dartIsolateContext()->dispatcher()->PostToJs(
+      page->isDedicated(), page->contextId(), webf::dumpQuickJsByteCodeInternal, page, profile_id, code, code_len,
+      parsed_bytecodes, bytecode_len, url, persistent_handle, result_callback);
 }
 
 void evaluateQuickjsByteCode(void* page_,
                              uint8_t* bytes,
                              int32_t byteLen,
+                             int64_t profile_id,
                              Dart_Handle dart_handle,
                              EvaluateQuickjsByteCodeCallback result_callback) {
 #if ENABLE_LOG
@@ -152,16 +183,23 @@ void evaluateQuickjsByteCode(void* page_,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
                                                      webf::evaluateQuickjsByteCodeInternal, page_, bytes, byteLen,
-                                                     persistent_handle, result_callback);
+                                                     profile_id, persistent_handle, result_callback);
 }
 
-void parseHTML(void* page_, const char* code, int32_t length) {
+void parseHTML(void* page_,
+               char* code,
+               int32_t length,
+               int64_t profile_id,
+               Dart_Handle dart_handle,
+               ParseHTMLCallback result_callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] parseHTMLWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
-                                                                         webf::parseHTMLInternal, page_, code, length);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
+      page->isDedicated(), page->contextId(), webf::parseHTMLInternal, page_, code, length, profile_id,
+      persistent_handle, result_callback);
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
@@ -211,6 +249,20 @@ void invokeModuleEvent(void* page_,
                                                eventType, event, extra, persistent_handle, result_callback);
 }
 
+void collectNativeProfileData(void* ptr, const char** data, uint32_t* len) {
+  auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(ptr);
+  std::string result = dart_isolate_context->profiler()->ToJSON();
+
+  *data = static_cast<const char*>(webf::dart_malloc(sizeof(char) * result.size() + 1));
+  memcpy((void*)*data, result.c_str(), sizeof(char) * result.size() + 1);
+  *len = result.size();
+}
+
+void clearNativeProfileData(void* ptr) {
+  auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(ptr);
+  dart_isolate_context->profiler()->clear();
+}
+
 void dispatchUITask(void* page_, void* context, void* callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   reinterpret_cast<void (*)(void*)>(callback)(context);
@@ -238,9 +290,7 @@ void clearUICommandItems(void* page_) {
 
 // Callbacks when dart context object was finalized by Dart GC.
 static void finalize_dart_context(void* isolate_callback_data, void* peer) {
-#if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN FINALIZE DART CONTEXT: ";
-#endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)peer;
   dart_isolate_context->Dispose([dart_isolate_context]() {
     free(dart_isolate_context);

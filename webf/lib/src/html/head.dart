@@ -139,6 +139,12 @@ class LinkElement extends Element {
         rel == _REL_STYLESHEET &&
         isConnected &&
         !_stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
+
+      // Increase the pending count for preloading resources.
+      if (ownerDocument.controller.preloadStatus != PreloadingStatus.none) {
+        ownerDocument.controller.unfinishedPreloadResources++;
+      }
+
       String url = _resolvedHyperlink.toString();
       WebFBundle bundle = ownerDocument.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
       _stylesheetLoaded[url] = true;
@@ -148,18 +154,33 @@ class LinkElement extends Element {
         ownerDocument.incrementRequestCount();
 
         await bundle.resolve(baseUrl: ownerDocument.controller.url, uriParser: ownerDocument.controller.uriParser);
-        await bundle.obtainData();
+        await bundle.obtainData(ownerView.contextId);
         assert(bundle.isResolved, 'Failed to obtain $url');
         _loading = false;
         // Decrement count when response.
         ownerDocument.decrementRequestCount();
 
         final String cssString = await resolveStringFromData(bundle.data!);
+
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.startTrackUICommand();
+          WebFProfiler.instance.startTrackUICommandStep('Style.parseCSS');
+        }
+
         _styleSheet = CSSParser(cssString, href: href).parse();
         _styleSheet?.href = href;
-        ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
+
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.finishTrackUICommandStep();
+        }
+
+        ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
+
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.finishTrackUICommand();
+        }
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -172,6 +193,12 @@ class LinkElement extends Element {
         });
       } finally {
         bundle.dispose();
+
+        if (ownerDocument.controller.preloadStatus != PreloadingStatus.none) {
+          ownerDocument.controller.unfinishedPreloadResources--;
+          ownerDocument.controller.checkPreloadCompleted();
+        }
+
       }
       SchedulerBinding.instance.scheduleFrame();
     }
@@ -251,6 +278,9 @@ mixin StyleElementMixin on Element {
   }
 
   void _recalculateStyle() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('$this.parseInlineStyle');
+    }
     String? text = collectElementChildText();
     if (text != null) {
       if (_styleSheet != null) {
@@ -259,10 +289,14 @@ mixin StyleElementMixin on Element {
         _styleSheet = CSSParser(text).parse();
       }
       if (_styleSheet != null) {
-        ownerDocument.styleDirtyElements.add(ownerDocument.documentElement!);
+        ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
       }
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 

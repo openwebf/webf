@@ -82,7 +82,7 @@ class StyleNodeManager {
     } else {
       final root = document.documentElement;
       if (root != null) {
-        document.styleDirtyElements.add(root);
+        document.markElementStyleDirty(root);
       }
     }
     document.handleStyleSheets(newSheets);
@@ -113,7 +113,7 @@ class StyleNodeManager {
       }
       final rules = collector.matchedRules(changedRuleSet, node);
       if (rules.isNotEmpty) {
-        document.styleDirtyElements.add(node);
+        document.markElementStyleDirty(node);
       }
       if (node.childNodes.isNotEmpty) {
         stack.addAll(node.childNodes);

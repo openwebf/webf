@@ -106,6 +106,9 @@ list(APPEND BRIDGE_SOURCE
   foundation/string_view.cc
   foundation/native_value.cc
   foundation/native_type.cc
+  foundation/stop_watch.cc
+  foundation/profiler.cc
+  foundation/dart_readable.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
   polyfill/dist/polyfill.cc
@@ -337,6 +340,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/ui_event.cc
     core/events/focus_event.cc
     core/events/gesture_event.cc
+    core/events/hashchange_event.cc
     core/events/input_event.cc
     core/events/touch_event.cc
     core/events/mouse_event.cc
@@ -424,6 +428,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_ui_event.cc
     out/qjs_ui_event_init.cc
     out/qjs_gesture_event.cc
+    out/qjs_hashchange_event.cc
+    out/qjs_hashchange_event_init.cc
     out/qjs_gesture_event_init.cc
     out/qjs_intersection_change_event.cc
     out/qjs_intersection_change_event_init.cc

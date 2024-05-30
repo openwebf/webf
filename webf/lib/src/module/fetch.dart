@@ -84,8 +84,20 @@ class FetchModule extends BaseModule {
     });
   }
 
+  HttpClientRequest? _currentRequest;
+
+  void _abortRequest() {
+    _currentRequest?.abort();
+    _currentRequest = null;
+  }
+
   @override
   String invoke(String method, params, InvokeModuleCallback callback) {
+    if (method == 'abortRequest') {
+      _abortRequest();
+      return '';
+    }
+
     Uri uri = _resolveUri(method);
     Map<String, dynamic> options = params;
 
@@ -102,8 +114,14 @@ class FetchModule extends BaseModule {
       _handleError('Failed to parse URL from $uri.', null);
     } else {
       HttpClientResponse? response;
+      NetworkOpItem? currentNetworkOp;
+      if (enableWebFProfileTracking) {
+        currentNetworkOp = WebFProfiler.instance.startTrackNetwork(uri.toString());
+      }
+
       getRequest(uri, options['method'], options['headers'], options['body']).then((HttpClientRequest request) {
         if (_disposed) return Future.value(null);
+        _currentRequest = request;
         return request.close();
       }).then((HttpClientResponse? res) {
         if (res == null) {
@@ -118,7 +136,11 @@ class FetchModule extends BaseModule {
         } else {
           throw FlutterError('Failed to read response.');
         }
-      }).catchError(_handleError);
+      }).catchError(_handleError).then((value) {
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.finishTrackNetwork(currentNetworkOp!);
+        }
+      });
     }
 
     return EMPTY_STRING;

@@ -15,6 +15,7 @@ TEST(Context, isValid) {
     auto env = TEST_init();
     EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
     EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
+    WEBF_LOG(VERBOSE) << env->page()->dartIsolateContext()->profiler()->ToJSON();
   }
   {
     auto env = TEST_init();
@@ -274,7 +275,7 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
 
 TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
-  void* dart_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size());
+  void* dart_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size(), true);
   double contextId = 0;
   auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPageSync(0.0, dart_context));
   static bool disposed = false;
@@ -334,7 +335,7 @@ TEST(Context, evaluateByteCode) {
   auto errorHandler = [](double contextId, const char* errmsg) { errorHandlerExecuted = true; };
   auto env = TEST_init(errorHandler);
   const char* code = "function f() { console.log(arguments)} f(1,2,3,4);";
-  size_t byteLen;
+  uint64_t byteLen;
   uint8_t* bytes = env->page()->dumpByteCode(code, strlen(code), "vm://", &byteLen);
   env->page()->evaluateByteCode(bytes, byteLen);
 

@@ -19,6 +19,7 @@ class HTMLImageElement : public HTMLElement {
   void setSrc(const AtomicString& value, ExceptionState& exception_state);
 
   DispatchEventResult FireEventListeners(Event&, ExceptionState&) override;
+  DispatchEventResult FireEventListeners(Event&, bool isCapture, ExceptionState&) override;
 
   ScriptPromise decode(ExceptionState& exception_state) const;
 

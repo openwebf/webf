@@ -21,8 +21,14 @@ static void handleTimerCallback(DOMTimer* timer, char* errmsg) {
   if (context->Timers()->getTimerById(timer->timerId()) == nullptr)
     return;
 
+  context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+  context->dartIsolateContext()->profiler()->StartTrackSteps("handleTimerCallback");
+
   // Trigger timer callbacks.
   timer->Fire();
+
+  context->dartIsolateContext()->profiler()->FinishTrackSteps();
+  context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 }
 
 static void handleTransientCallback(void* ptr, double contextId, char* errmsg) {
@@ -99,15 +105,20 @@ static void handlePersistentCallbackWrapper(void* ptr, double contextId, char* e
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
-                                          std::shared_ptr<QJSFunction> handler,
+                                          const std::shared_ptr<QJSFunction>& handler,
                                           ExceptionState& exception) {
   return setTimeout(context, handler, 0.0, exception);
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
-                                          std::shared_ptr<QJSFunction> handler,
+                                          const std::shared_ptr<QJSFunction>& handler,
                                           int32_t timeout,
                                           ExceptionState& exception) {
+  if (handler == nullptr) {
+    exception.ThrowException(context->ctx(), ErrorType::InternalError, "Timeout callback is null");
+    return -1;
+  }
+
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kOnce);
   auto timer_id = context->dartMethodPtr()->setTimeout(context->isDedicated(), timer.get(), context->contextId(),
@@ -128,9 +139,14 @@ int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
 }
 
 int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
-                                           std::shared_ptr<QJSFunction> handler,
+                                           const std::shared_ptr<QJSFunction>& handler,
                                            int32_t timeout,
                                            ExceptionState& exception) {
+  if (handler == nullptr) {
+    exception.ThrowException(context->ctx(), ErrorType::InternalError, "Timeout callback is null");
+    return -1;
+  }
+
   // Create a timer object to keep track timer callback.
   auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kMultiple);
 

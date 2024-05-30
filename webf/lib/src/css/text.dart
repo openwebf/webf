@@ -806,6 +806,12 @@ class CSSText {
           // Default fantasy font in MacOS: Papyrus
           resolvedFamily.addAll(['Papyrus', 'Impact']);
           break;
+        case '-apple-system':
+        case 'system-ui':
+          // Default system-ui font in iOS and iPadOS: .SF UI Display
+          // Default system-ui font in Android (4.0+): Roboto
+          resolvedFamily.addAll(['Roboto', '.SF UI Display', '.SF UI Text']);
+          break;
         default:
           resolvedFamily.add(familyName);
       }

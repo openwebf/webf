@@ -3,7 +3,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-import { webf } from './webf';
+import {webf} from './webf';
 
 function normalizeName(name: any) {
   if (typeof name !== 'string') {
@@ -205,6 +205,13 @@ export class Request extends Body {
     }
     this.method = normalizeMethod(init.method || this.method || 'GET');
     this.mode = init.mode || this.mode || null;
+    this.signal = init.signal || this.signal || (function () {
+      if ('AbortController' in window) {
+        let ctrl = new AbortController();
+        return ctrl.signal;
+      }
+      return undefined;
+    }());
 
     if ((this.method === 'GET' || this.method === 'HEAD') && body) {
       throw new TypeError('Body not allowed for GET or HEAD requests')
@@ -223,7 +230,7 @@ export class Request extends Body {
   // readonly redirect: RequestRedirect; // not supported
   // readonly referrer: string; // not supported
   // readonly referrerPolicy: ReferrerPolicy;
-  // readonly signal: AbortSignal; // not supported
+  readonly signal: AbortSignal; // not supported
 
   readonly url: string;
   readonly method: string;
@@ -294,18 +301,22 @@ export class Response extends Body {
 
 export function fetch(input: Request | string, init?: RequestInit) {
   return new Promise((resolve, reject) => {
-      let url = typeof input === 'string' ? input : input.url;
-      init = init || {method: 'GET'};
-      let headers = init.headers || new Headers();
+      let request = new Request(input, init);
 
-      if (!(headers instanceof Headers)) {
-        headers = new Headers(headers);
+      if (request.signal && request.signal.aborted) {
+        return reject(new DOMException('Aborted', 'AbortError'))
+      }
+      let headers = request.headers || new Headers();
+
+      function abortRequest() {
+        webf.invokeModule('Fetch', 'abortRequest');
       }
 
-      webf.invokeModule('Fetch', url, ({
+      webf.invokeModule('Fetch', request.url, ({
         ...init,
         headers: (headers as Headers).map
       }), (e, data) => {
+        request.signal.removeEventListener('abort', abortRequest);
         if (e) return reject(e);
         let [err, statusCode, body] = data;
         // network error didn't have statusCode
@@ -318,10 +329,14 @@ export function fetch(input: Request | string, init?: RequestInit) {
           status: statusCode
         });
 
-        res.url = url;
+        res.url = request.url;
 
         return resolve(res);
       });
+
+    if (request.signal) {
+      request.signal.addEventListener('abort', abortRequest)
+    }
     }
   );
 }

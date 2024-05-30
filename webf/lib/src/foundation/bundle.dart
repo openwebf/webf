@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
+import 'package:webf/bridge.dart';
 
 const String DEFAULT_URL = 'about:blank';
 const String UTF_8 = 'utf-8';
@@ -97,11 +98,40 @@ abstract class WebFBundle {
 
   // Indicate the bundle is resolved.
   bool get isResolved => _uri != null;
+  bool get isDataObtained => data != null;
+
+  bool _hitCache = false;
+  set hitCache(bool value) => _hitCache = value;
+
+  String? get cacheKey {
+    if (!_hitCache) return null;
+    return HttpCacheController.getCacheKey(resolvedUri!).hashCode.toString();
+  }
 
   // Content type for data.
   // The default value is plain text.
-  ContentType get contentType => _contentType ?? ContentType.text;
   ContentType? _contentType;
+  ContentType get contentType => _contentType ?? _resolveContentType(_uri);
+
+  // Pre process the data before the data actual used.
+  Future<void> preProcessing(double contextId) async {
+    if (isJavascript && data != null) {
+      assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
+
+      EvaluateOpItem? currentProfileOp;
+      if (enableWebFProfileTracking) {
+        currentProfileOp = WebFProfiler.instance.startTrackEvaluate('dumpQuickjsByteCode');
+      }
+
+      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString(), profileOp: currentProfileOp);
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackEvaluate(currentProfileOp!);
+      }
+
+      _contentType = webfBc1ContentType;
+    }
+  }
 
   @mustCallSuper
   Future<void> resolve({ String? baseUrl, UriParser? uriParser }) async {
@@ -116,7 +146,7 @@ abstract class WebFBundle {
     }
   }
 
-  Future<void> obtainData();
+  Future<void> obtainData([double contextId]);
 
   // Dispose the memory obtained by bundle.
   @mustCallSuper
@@ -149,6 +179,26 @@ abstract class WebFBundle {
     }
   }
 
+  static ContentType _resolveContentType(Uri? uri) {
+    if (_isUriExt(uri, '.js')) {
+      return _javascriptApplicationContentType;
+    } else if (_isUriExt(uri, '.html')) {
+      return ContentType.html;
+    } else if (_isSupportedBytecode('', uri)) {
+      return webfBc1ContentType;
+    } else if (_isUriExt(uri, '.css')) {
+      return _cssContentType;
+    }
+    return ContentType.text;
+  }
+
+  static bool _isUriExt(Uri? uri, String ext) {
+    if (uri == null) {
+      return false;
+    }
+    return uri.path.toLowerCase().endsWith(ext);
+  }
+
   static WebFBundle fromContent(String content, {String url = DEFAULT_URL, ContentType? contentType}) {
     return DataBundle.fromString(content, url, contentType: contentType ?? javascriptContentType);
   }
@@ -161,9 +211,9 @@ abstract class WebFBundle {
   bool get isCSS => contentType.mimeType == _cssContentType.mimeType;
   bool get isJavascript =>
       contentType.mimeType == javascriptContentType.mimeType ||
-      contentType.mimeType == _javascriptApplicationContentType.mimeType ||
-      contentType.mimeType == _xJavascriptContentType.mimeType;
-  bool get isBytecode => _isSupportedBytecode(contentType.mimeType, _uri);
+          contentType.mimeType == _javascriptApplicationContentType.mimeType ||
+          contentType.mimeType == _xJavascriptContentType.mimeType;
+  bool get isBytecode => contentType.mimeType == webfBc1ContentType || _isSupportedBytecode(contentType.mimeType, _uri);
 }
 
 // The bundle that output input data.
@@ -186,7 +236,7 @@ class DataBundle extends WebFBundle {
   }
 
   @override
-  Future<void> obtainData() async {}
+  Future<void> obtainData([double contextId = 0]) async {}
 }
 
 // The bundle that source from http or https.
@@ -200,44 +250,90 @@ class NetworkBundle extends WebFBundle {
   Map<String, String>? additionalHttpHeaders = {};
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
 
+    NetworkOpItem? currentProfileOp;
+    if (enableWebFProfileTracking) {
+      currentProfileOp = WebFProfiler.instance.startTrackNetwork(_uri!.toString());
+    }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, '_sharedHttpClient.getUrl');
+    }
     final HttpClientRequest request = await _sharedHttpClient.getUrl(_uri!);
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
+    }
 
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
+    WebFHttpOverrides.setContextHeader(request.headers, contextId);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'request.close()');
+    }
 
     final HttpClientResponse response = await request.close();
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
+    }
+
     if (response.statusCode != HttpStatus.ok)
       throw FlutterError.fromParts(<DiagnosticsNode>[
         ErrorSummary('Unable to load asset: $url'),
         IntProperty('HTTP status code', response.statusCode),
       ]);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'consolidateHttpClientResponseBytes(response)');
+    }
+
+    hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
     Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
+    }
 
     // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
     // and decode them if they are in gzip format.
     if (isGzip(bytes)) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'Uint8List.fromList(gzip.decoder.convert(bytes))');
+      }
+
       bytes = Uint8List.fromList(gzip.decoder.convert(bytes));
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
+      }
     }
 
     if (bytes.isEmpty) {
       await invalidateCache();
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackNetwork(currentProfileOp!);
+      }
       return;
     }
 
     data = bytes.buffer.asUint8List();
     _contentType = response.headers.contentType ?? ContentType.binary;
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackNetwork(currentProfileOp!);
+    }
   }
 }
 
-class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
+class AssetsBundle extends WebFBundle {
   AssetsBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
 
     final Uri? _resolvedUri = resolvedUri;
@@ -265,11 +361,11 @@ class AssetsBundle extends WebFBundle with _ExtensionContentTypeResolver {
 }
 
 /// The bundle that source from local io.
-class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
+class FileBundle extends WebFBundle {
   FileBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData() async {
+  Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
 
     Uri uri = _uri!;
@@ -281,32 +377,5 @@ class FileBundle extends WebFBundle with _ExtensionContentTypeResolver {
     } else {
       _failedToResolveBundle(url);
     }
-  }
-}
-
-/// [_ExtensionContentTypeResolver] is useful for [WebFBundle] to determine
-/// content-type by uri's extension.
-mixin _ExtensionContentTypeResolver on WebFBundle {
-  @override
-  ContentType get contentType => _contentType ??= _resolveContentType(_uri);
-
-  static ContentType _resolveContentType(Uri? uri) {
-    if (_isUriExt(uri, '.js')) {
-      return _javascriptApplicationContentType;
-    } else if (_isUriExt(uri, '.html')) {
-      return ContentType.html;
-    } else if (_isSupportedBytecode('', uri)) {
-      return webfBc1ContentType;
-    } else if (_isUriExt(uri, '.css')) {
-      return _cssContentType;
-    }
-    return ContentType.text;
-  }
-
-  static bool _isUriExt(Uri? uri, String ext) {
-    if (uri == null) {
-      return false;
-    }
-    return uri.path.toLowerCase().endsWith(ext);
   }
 }

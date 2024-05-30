@@ -38,6 +38,8 @@ const String EVENT_TRANSITION_END = 'transitionend';
 const String EVENT_FOCUS = 'focus';
 const String EVENT_BLUR = 'blur';
 const String EVENT_LOAD = 'load';
+const String EVENT_PRELOADED = 'preloaded';
+const String EVENT_PRERENDERED = 'prerendered';
 const String EVENT_DOM_CONTENT_LOADED = 'DOMContentLoaded';
 const String EVENT_READY_STATE_CHANGE = 'readystatechange';
 const String EVENT_UNLOAD = 'unload';
@@ -47,6 +49,7 @@ const String EVENT_CAN_PLAY_THROUGH = 'canplaythrough';
 const String EVENT_ENDED = 'ended';
 const String EVENT_PAUSE = 'pause';
 const String EVENT_POP_STATE = 'popstate';
+const String EVENT_HASH_CHANGE = 'hashchange';
 const String EVENT_PLAY = 'play';
 const String EVENT_SEEKED = 'seeked';
 const String EVENT_SEEKING = 'seeking';
@@ -91,7 +94,7 @@ mixin ElementEventMixin on ElementBase {
         // Remove listener when no intersection related event
         renderBox.removeIntersectionChangeListener(handleIntersectionChange);
       }
-      if(_hasResizeObserverEvent()) {
+      if (_hasResizeObserverEvent()) {
         renderBox.addResizeListener(handleResizeChange);
       } else {
         renderBox.removeResizeListener(handleResizeChange);
@@ -262,11 +265,28 @@ class PopStateEvent extends Event {
   }
 }
 
-class ResizeEvent extends Event {
-  ResizeObserverEntry entry;
-  ResizeEvent(this.entry):super(EVENT_RESIZE);
-}
+class HashChangeEvent extends Event {
+  final String newUrl;
+  final String oldUrl;
 
+  HashChangeEvent({required this.newUrl, required this.oldUrl}) : super(EVENT_HASH_CHANGE);
+
+  @override
+  Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
+    List<int> methods = [
+      stringToNativeString(newUrl).address,
+      stringToNativeString(oldUrl).address
+    ];
+
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
+    bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
+
+    return rawEvent;
+  }
+}
 
 class UIEvent extends Event {
   // Returns a long with details about the event, depending on the event type.
@@ -311,7 +331,8 @@ class UIEvent extends Event {
 class FocusEvent extends UIEvent {
   EventTarget? relatedTarget;
 
-  FocusEvent(String type, {
+  FocusEvent(
+    String type, {
     this.relatedTarget,
     super.detail,
     super.view,
@@ -319,13 +340,11 @@ class FocusEvent extends UIEvent {
     super.bubbles,
     super.cancelable,
     super.composed,
-  }): super(type);
+  }) : super(type);
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
-    List<int> methods = [
-      relatedTarget?.pointer?.address ?? nullptr.address
-    ];
+    List<int> methods = [relatedTarget?.pointer?.address ?? nullptr.address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length + extraLength).cast<RawEvent>();
     int currentStructSize = rawEvent.ref.length + methods.length;
@@ -488,6 +507,16 @@ class AppearEvent extends Event {
 
 class DisappearEvent extends Event {
   DisappearEvent() : super(EVENT_DISAPPEAR);
+}
+
+class ResizeEvent extends Event {
+  ResizeObserverEntry entry;
+
+  ResizeEvent(this.entry) : super(EVENT_RESIZE);
+
+  toCustomEvent() {
+    return CustomEvent(EVENT_RESIZE, detail: entry.toJson());
+  }
 }
 
 class ColorSchemeChangeEvent extends Event {

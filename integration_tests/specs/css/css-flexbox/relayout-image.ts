@@ -61,8 +61,10 @@ describe('relayout-image', () => {
 
     requestAnimationFrame(async () => {
       image.src = 'assets/100x100-green.png';
-      await snapshot();
-      done();
+      requestAnimationFrame(async () => {
+        await snapshot(0.5);
+        done();
+      });
     });
   });
 });

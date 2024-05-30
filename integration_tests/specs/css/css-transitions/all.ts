@@ -354,7 +354,7 @@ describe('Transition all', () => {
 
           await snapshot();
         }, 500);
-      }, 500);
+      }, 200);
     });
   });
 });

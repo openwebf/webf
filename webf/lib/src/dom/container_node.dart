@@ -17,7 +17,7 @@ bool collectChildrenAndRemoveFromOldParent(Node node, List<Node> nodes) {
   }
   nodes.add(node);
   ContainerNode? oldParent = node.parentNode;
-  if (oldParent != null) {
+  if (oldParent != null && node.isConnected) {
     oldParent.removeChild(node);
   }
   return nodes.isNotEmpty;
@@ -81,9 +81,17 @@ abstract class ContainerNode extends Node {
     // 3. If reference child is node, set it to node’s next sibling.
     // Already done at C++ side.
 
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('ContainerNode.insertBefore');
+    }
+
     // 4. Adopt node into parent’s node document.
     List<Node> targets = [];
     if (!collectChildrenAndRemoveFromOldParent(newChild, targets)) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
+
       return newChild;
     }
 
@@ -92,7 +100,7 @@ abstract class ContainerNode extends Node {
 
     // 6. Mark this element to dirty elements.
     if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
+      ownerDocument.markElementStyleDirty(this as Element);
     }
 
     // 7. Trigger connected callback
@@ -104,6 +112,10 @@ abstract class ContainerNode extends Node {
     // 8. Run the children changed steps for parent when inserting a node into a parent.
     // https://dom.spec.whatwg.org/#concept-node-insert
     didInsertNode(targets, referenceNode);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
 
     return newChild;
   }
@@ -175,12 +187,12 @@ abstract class ContainerNode extends Node {
     // Not remove node type which is not present in RenderObject tree such as Comment
     // Only append node types which is visible in RenderObject tree
     // Only remove childNode when it has parent
-    if (child.isRendererAttached) {
+    if (child.isRendererAttachedToSegmentTree) {
       child.unmountRenderObject();
     }
 
     if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
+      ownerDocument.markElementStyleDirty(this as Element);
     }
 
     bool isOldChildConnected = child.isConnected;
@@ -214,15 +226,22 @@ abstract class ContainerNode extends Node {
   @mustCallSuper
   @override
   Node appendChild(Node newChild) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommandStep('ContainerNode.appendChild');
+    }
+
     List<Node> targets = [];
     if (!collectChildrenAndRemoveFromOldParent(newChild, targets)) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackUICommandStep();
+      }
       return newChild;
     }
 
     _insertNode(targets, null, _adoptAndAppendChild);
 
     if (this is Element) {
-      ownerDocument.styleDirtyElements.add(this as Element);
+      ownerDocument.markElementStyleDirty(this as Element);
     }
 
     if (newChild.isConnected) {
@@ -230,6 +249,10 @@ abstract class ContainerNode extends Node {
     }
 
     didInsertNode(targets, null);
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommandStep();
+    }
 
     return newChild;
   }

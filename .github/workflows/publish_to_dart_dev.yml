@@ -94,7 +94,7 @@ jobs:
         name: ios_binary
         path: bridge/build/ios/
   build_android_binary:
-    runs-on: macos-latest
+    runs-on: macos-12
     steps:
     - uses: actions/checkout@v3
       with:
@@ -102,7 +102,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: "16"
-    - uses: nttld/setup-ndk@v1
+    - uses: nttld/setup-ndk@v1.2.0
       id: setup-ndk
       with:
         ndk-version: r22b

@@ -17,7 +17,6 @@ export 'src/rendering/resize_observer.dart';
 export 'src/rendering/preferred_size.dart';
 export 'src/rendering/render_position_holder.dart';
 export 'src/rendering/text.dart';
-export 'src/rendering/text_control.dart';
 export 'src/rendering/content_visibility.dart';
 export 'src/rendering/event.dart';
 export 'src/rendering/opacity.dart';

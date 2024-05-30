@@ -6,6 +6,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 // CSS Positioned Layout: https://drafts.csswg.org/css-position/
@@ -34,7 +35,7 @@ Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, Ren
   Offset positionHolderScrollOffset = _getRenderPositionHolderScrollOffset(placeholder, parent) ?? Offset.zero;
   // Offset of positioned element should exclude scroll offset to its containing block.
   Offset toParentOffset = placeholder.getOffsetToAncestor(Offset.zero, parent, excludeScrollOffset: true);
-  Offset placeholderOffset = -positionHolderScrollOffset + toParentOffset;
+  Offset placeholderOffset = positionHolderScrollOffset + toParentOffset;
 
   return placeholderOffset;
 }
@@ -272,8 +273,16 @@ class CSSPositionedLayout {
     }
 
     if (isChildNeedsLayout) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.pauseCurrentLayoutOp();
+      }
+
       // Should create relayoutBoundary for positioned child.
       child.layout(childConstraints, parentUsesSize: false);
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.resumeCurrentLayoutOp();
+      }
     }
   }
 

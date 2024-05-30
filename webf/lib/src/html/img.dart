@@ -3,10 +3,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
@@ -50,9 +50,6 @@ class ImageElement extends Element {
 
   // Current image data([ui.Image]).
   ui.Image? get image => _cachedImageInfo?.image;
-
-  /// Number of image frame, used to identify multi frame image after loaded.
-  int _frameCount = 0;
 
   bool _isListeningStream = false;
 
@@ -475,7 +472,6 @@ class ImageElement extends Element {
       _cachedImageStream?.removeListener(_listener);
     }
 
-    _frameCount = 0;
     _cachedImageStream = newStream;
 
     if (_isListeningStream) {
@@ -485,10 +481,16 @@ class ImageElement extends Element {
 
   // Invoke when image descriptor has created.
   // We can know the naturalWidth and naturalHeight of current image.
-  void _onImageLoad(int width, int height) {
+  void _onImageLoad(int width, int height, int frameCount) {
     naturalWidth = width;
     naturalHeight = height;
     _resizeImage();
+
+    // Multi frame image should wrap a repaint boundary for better composite performance.
+    if (frameCount > 1) {
+      forceToRepaintBoundary = true;
+      _watchAnimatedImageWhenVisible();
+    }
 
     // Decrement load event delay count after decode.
     ownerDocument.decrementLoadEventDelayCount();
@@ -497,18 +499,13 @@ class ImageElement extends Element {
   // Callback when image are loaded, encoded and available to use.
   // This callback may fire multiple times when image have multiple frames (such as an animated GIF).
   void _handleImageFrame(ImageInfo imageInfo, bool synchronousCall) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
     _cachedImageInfo = imageInfo;
 
     if (_currentRequest?.state != _ImageRequestState.completelyAvailable) {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
-    }
-
-    _frameCount++;
-
-    // Multi frame image should wrap a repaint boundary for better composite performance.
-    if (_frameCount > 2) {
-      forceToRepaintBoundary = true;
-      _watchAnimatedImageWhenVisible();
     }
 
     _updateRenderObject(image: imageInfo.image);
@@ -516,12 +513,15 @@ class ImageElement extends Element {
     _renderImage!.height = naturalHeight.toDouble();
 
     // Fire the load event at first frame come.
-    if (_frameCount == 1 && !_loaded) {
+    if (!_loaded) {
       _loaded = true;
       SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
         _dispatchLoadEvent();
       });
       SchedulerBinding.instance.scheduleFrame();
+    }
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
     }
   }
 
@@ -596,8 +596,10 @@ class ImageElement extends Element {
       _resizeImage();
       _updateRenderObject(svg: renderObject);
       _dispatchLoadEvent();
-    }, onError: (e) {
-      print(e);
+      // Decrement load event delay count after decode.
+      ownerDocument.decrementLoadEventDelayCount();
+    }, onError: (e, stack) {
+      print('$e\n$stack');
       _dispatchErrorEvent();
     });
     return;
@@ -614,9 +616,6 @@ class ImageElement extends Element {
             provider.url != _resolvedUri)) {
       // Image should be resized based on different ratio according to object-fit value.
       BoxFit objectFit = renderStyle.objectFit;
-
-      // Increment load event delay count before decode.
-      ownerDocument.incrementLoadEventDelayCount();
 
       provider = _currentImageProvider = BoxFitImage(
         boxFit: objectFit,
@@ -669,6 +668,7 @@ class ImageElement extends Element {
 
     // Decrement count when response.
     ownerDocument.decrementRequestCount();
+
     return data;
   }
 
@@ -680,6 +680,10 @@ class ImageElement extends Element {
       // TODO: should use empty image;
       return;
     }
+
+    // Increment load event delay count before decode.
+    ownerDocument.incrementLoadEventDelayCount();
+
     _debounce.run(() {
       _updateImageData();
     });
@@ -770,7 +774,7 @@ class ImageRequest {
     final WebFBundle bundle =
         controller.getPreloadBundleFromUrl(currentUri.toString()) ?? WebFBundle.fromUrl(currentUri.toString());
     await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
-    await bundle.obtainData();
+    await bundle.obtainData(controller.view.contextId);
 
     if (!bundle.isResolved) {
       throw FlutterError('Failed to load $currentUri');

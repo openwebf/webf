@@ -21,7 +21,8 @@ class _QueuedFuture<T> {
         completer.complete(null);
       }
       await Future.microtask(() {});
-    } catch (e) {
+    } catch (e, stack) {
+      print('$e\n$stack');
       completer.completeError(e);
     } finally {
       if (onComplete != null) onComplete!();

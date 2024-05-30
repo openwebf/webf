@@ -1,8 +1,0 @@
----
-Language: Cpp
-BasedOnStyle: LLVM
-ColumnLimit: 120
-AllowShortIfStatementsOnASingleLine: WithoutElse
-AllowShortFunctionsOnASingleLine: Empty
-ContinuationIndentWidth: 2
-ConstructorInitializerIndentWidth: 2

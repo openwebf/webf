@@ -51,15 +51,10 @@ const Map<String, dynamic> _defaultStyle = {FONT_STYLE: ITALIC};
 
 // https://html.spec.whatwg.org/multipage/text-level-semantics.html#htmlbrelement
 class BRElement extends Element {
-  RenderLineBreak? _renderLineBreak;
-
   BRElement([BindingContext? context]) : super(context);
 
   @override
   bool get isReplacedElement => true;
-
-  @override
-  RenderBoxModel? get renderBoxModel => _renderLineBreak;
 
   @override
   void setRenderStyle(String property, String present, { String? baseHref }) {
@@ -68,7 +63,7 @@ class BRElement extends Element {
 
   @override
   RenderBox createRenderer() {
-    return _renderLineBreak = RenderLineBreak(renderStyle);
+    return renderBoxModel = RenderLineBreak(renderStyle);
   }
 }
 

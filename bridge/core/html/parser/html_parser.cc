@@ -145,13 +145,24 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
 bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTMLFragment) {
   if (root_node != nullptr) {
     if (auto* root_container_node = DynamicTo<ContainerNode>(root_node)) {
-      root_container_node->RemoveChildren();
+      {
+        MemberMutationScope scope{root_node->GetExecutingContext()};
+        root_container_node->RemoveChildren();
+      }
 
       if (!trim(html).empty()) {
+        root_node->GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps("HTMLParser::parse");
+
         GumboOutput* htmlTree = parse(html, isHTMLFragment);
+
+        root_node->GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
+        root_node->GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps("HTMLParser::traverseHTML");
+
         traverseHTML(root_container_node, htmlTree->root);
         // Free gumbo parse nodes.
         gumbo_destroy_output(&kGumboDefaultOptions, htmlTree);
+
+        root_node->GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
       }
     }
   } else {

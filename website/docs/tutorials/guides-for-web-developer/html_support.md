@@ -113,10 +113,18 @@ SVG support in WebF is still in the early stage. From now, we only provide limit
    supported.
 2. Only these tags are supported:
     1. `<svg />`
-    4. `<rect />`
-    5. `<path />`
-    6. `<text />`
-    7. `<g />`
+    2. `<rect />`
+    3. `<path />`
+    4. `<text />`
+    5. `<g />`
+    6. `<circle />`
+    7. `<ellipse />`
+   8. `<style />`
+   9. `<line />`
+   10. `<defs />`
+   11. `<linearGradient />`
+   12. `<stop />`
+   13. `<clipPath />`
 
 **Example**
 

@@ -31,6 +31,10 @@ class HistoryModule extends BaseModule {
     }
   }
 
+  bool _isFragmentItem(HistoryItem item) {
+    return Uri.parse(item.bundle.url).hasFragment;
+  }
+
   void add(WebFBundle bundle) {
     HistoryItem history = HistoryItem(bundle, null, true);
     _addItem(history);
@@ -52,6 +56,11 @@ class HistoryModule extends BaseModule {
       _nextStack.addFirst(currentItem);
       dynamic state = _previousStack.first.state;
       _dispatchPopStateEvent(state);
+
+      String previousUrl = currentItem.bundle.url;
+      if (_isFragmentItem(currentItem)) {
+        _dispatchHashChangeEvent(previousUrl, _previousStack.first.bundle.url);
+      }
     }
   }
 
@@ -61,11 +70,19 @@ class HistoryModule extends BaseModule {
       _nextStack.removeFirst();
       _previousStack.addFirst(currentItem);
       _dispatchPopStateEvent(currentItem.state);
+
+      String previousUrl = currentItem.bundle.url;
+      if (_isFragmentItem(currentItem)) {
+        _dispatchHashChangeEvent(previousUrl, _previousStack.first.bundle.url);
+      }
     }
   }
 
   void go(num? num) {
     num ??= 0;
+
+    HistoryItem currentItem = _previousStack.first;
+
     if (num >= 0) {
       if (_nextStack.length < num) {
         return;
@@ -89,11 +106,19 @@ class HistoryModule extends BaseModule {
     }
 
     _dispatchPopStateEvent(_previousStack.first.state);
+    if (_isFragmentItem(currentItem)) {
+      _dispatchHashChangeEvent(currentItem.bundle.url, _previousStack.first.bundle.url);
+    }
   }
 
   void _dispatchPopStateEvent(state) {
     PopStateEvent popStateEvent = PopStateEvent(state: state);
     moduleManager!.controller.view.window.dispatchEvent(popStateEvent);
+  }
+
+  void _dispatchHashChangeEvent(String oldUrl, String newUrl) {
+    HashChangeEvent hashChangeEvent = HashChangeEvent(oldUrl: oldUrl, newUrl: newUrl);
+    moduleManager!.controller.view.window.dispatchEvent(hashChangeEvent);
   }
 
   void pushState(state, {String? url, String? title}) {

@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'dart:developer' show Timeline;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -229,6 +228,10 @@ class RenderLayoutBox extends RenderBoxModel
 
   @override
   BoxConstraints getConstraints() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderLayoutBox.getConstraints()');
+    }
+
     BoxConstraints boxConstraints = super.getConstraints();
     if (isScrollingContentBox) {
       // fix overflow:scroll/auto nested overflow:scroll/auto
@@ -248,6 +251,11 @@ class RenderLayoutBox extends RenderBoxModel
         );
       }
     }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+
     return boxConstraints;
   }
 
@@ -1023,6 +1031,10 @@ class RenderBoxModel extends RenderBox
   // Calculate constraints of renderBoxModel on layout stage and
   // only needed to be executed once on every layout.
   BoxConstraints getConstraints() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayoutStep('RenderBoxModel.getConstraints');
+    }
+
     // Inner scrolling content box of overflow element inherits constraints from parent
     // but has indefinite max constraints to allow children overflow
     if (isScrollingContentBox) {
@@ -1053,6 +1065,11 @@ class RenderBoxModel extends RenderBox
           maxHeight: double.infinity,
         );
       }
+
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackLayoutStep();
+      }
+
       return constraints;
     }
 
@@ -1141,6 +1158,11 @@ class RenderBoxModel extends RenderBox
       minHeight: minConstraintHeight,
       maxHeight: maxConstraintHeight,
     );
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayoutStep();
+    }
+
     return constraints;
   }
 
@@ -1336,24 +1358,21 @@ class RenderBoxModel extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (!kReleaseMode) {
-      Timeline.startSync(
-        'RenderBoxModel paint',
-        arguments: {'ownerElement': renderStyle.target.toString()},
-      );
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackPaint(this);
     }
 
     if (!shouldPaint) {
-      if (!kReleaseMode) {
-        Timeline.finishSync();
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackPaint(this);
       }
       return;
     }
 
     paintBoxModel(context, offset);
 
-    if (!kReleaseMode) {
-      Timeline.finishSync();
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackPaint(this);
     }
   }
 
@@ -1581,10 +1600,13 @@ class RenderBoxModel extends RenderBox
     }
   }
 
+  bool _disposed = false;
+  bool get disposed => _disposed;
   /// Called when its corresponding element disposed
   @override
   @mustCallSuper
   void dispose() {
+    _disposed = true;
     super.dispose();
 
     // Dispose scroll behavior
@@ -1770,7 +1792,7 @@ class RenderBoxModel extends RenderBox
 
   // Detach renderBox from tree.
   static void detachRenderBox(RenderObject renderBox) {
-    if (renderBox.parent == null || !renderBox.attached) return;
+    if (renderBox.parent == null) return;
 
     // Remove reference from parent.
     RenderObject? parentRenderObject = renderBox.parent as RenderObject;
