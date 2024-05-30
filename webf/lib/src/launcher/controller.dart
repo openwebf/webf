@@ -974,9 +974,9 @@ class WebFController {
     this.preloadedBundles,
     this.initialCookies,
     this.externalController = true,
-    this.resizeToAvoidBottomInsets = true,
-    required this.buildContext
-  })  : _name = name,
+    this.resizeToAvoidBottomInsets = true
+  })  : buildContext = context,
+        _name = name,
         _entrypoint = bundle,
         _gestureListener = gestureListener,
         runningThread = runningThread ?? DedicatedThread(),

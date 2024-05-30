@@ -487,7 +487,7 @@ class WebFTextPainter {
     return _text!.style?.getParagraphStyle(
       textAlign: textAlign,
       textDirection: textDirection ?? defaultTextDirection,
-      textScaleFactor: textScaleFactor,
+      textScaler: TextScaler.linear(textScaleFactor),
       maxLines: _maxLines,
       textHeightBehavior: _textHeightBehavior,
       ellipsis: _ellipsis,
@@ -632,7 +632,7 @@ class WebFTextPainter {
       throw StateError('TextPainter.text must be set to a non-null value before using the TextPainter.');
     }
     final ui.ParagraphBuilder builder = ui.ParagraphBuilder(_createParagraphStyle());
-    text.build(builder, textScaleFactor: textScaleFactor, dimensions: _placeholderDimensions);
+    text.build(builder, textScaler: TextScaler.linear(textScaleFactor), dimensions: _placeholderDimensions);
     _inlinePlaceholderScales = builder.placeholderScales;
     assert(() {
       _debugMarkNeedsLayoutCallStack = null;

@@ -75,17 +75,17 @@ class WebFTextSpan extends TextSpan {
   @override
   void build(
       ui.ParagraphBuilder builder, {
-        double textScaleFactor = 1.0,
+        TextScaler textScaler = TextScaler.noScaling,
         List<PlaceholderDimensions>? dimensions,
       }) {
     assert(debugAssertIsValid());
     final bool hasStyle = style != null;
-    if (hasStyle) builder.pushStyle(style!.getTextStyle(textScaleFactor: textScaleFactor));
+    if (hasStyle) builder.pushStyle(style!.getTextStyle(textScaler: textScaler));
 
     preInsertChildren()?.forEach((child) {
       child.build(
         builder,
-        textScaleFactor: textScaleFactor,
+        textScaler: textScaler,
         dimensions: dimensions,
       );
     });
@@ -133,12 +133,12 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
   ///
   /// The `textScaleFactor` will be applied to the laid-out size of the widget.
   @override
-  void build(ui.ParagraphBuilder builder, {double textScaleFactor = 1.0, List<PlaceholderDimensions>? dimensions}) {
+  void build(ui.ParagraphBuilder builder, {TextScaler textScaler = TextScaler.noScaling, List<PlaceholderDimensions>? dimensions}) {
     assert(debugAssertIsValid());
     assert(dimensions != null);
     final bool hasStyle = style != null;
     if (hasStyle) {
-      builder.pushStyle(style!.getTextStyle(textScaleFactor: textScaleFactor));
+      builder.pushStyle(style!.getTextStyle(textScaler: textScaler));
     }
     assert(builder.placeholderCount < dimensions!.length);
     final PlaceholderDimensions currentDimensions = lastDimensions = dimensions![builder.placeholderCount];
@@ -147,7 +147,7 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
       currentDimensions.size.width,
       currentDimensions.size.height,
       alignment,
-      scale: textScaleFactor,
+      scale: textScaler.scale(style!.fontSize ?? kDefaultFontSize),
       baseline: currentDimensions.baseline,
       baselineOffset: currentDimensions.baselineOffset,
     );

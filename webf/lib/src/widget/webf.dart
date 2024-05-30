@@ -381,10 +381,6 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    double viewportWidth = _webfWidget.viewportWidth ?? currentView.physicalSize.width / currentView.devicePixelRatio;
-    double viewportHeight =
-        _webfWidget.viewportHeight ?? currentView.physicalSize.height / currentView.devicePixelRatio;
-
     WebFController controller = _webfWidget.controller ??
         WebFController(context,
             name: shortHash(_webfWidget),
@@ -410,8 +406,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
             initialCookies: _webfWidget.initialCookies,
             uriParser: _webfWidget.uriParser,
             preloadedBundles: _webfWidget.preloadedBundles,
-            resizeToAvoidBottomInsets: resizeToAvoidBottomInsets,
-            buildContext: _buildContext);
+            resizeToAvoidBottomInsets: resizeToAvoidBottomInsets);
 
     (context as _WebFRenderObjectElement).controller = controller;
 

@@ -450,172 +450,173 @@ class RenderFlowLayout extends RenderLayoutBox {
     runLineBox.isFirst = true;
     int remainLines = _maxLines;
     bool happenJumpPaint = false;
-    for (final (index, child) in children.indexed) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._computeRunMetrics.child[$index]');
-      }
-      /// avoid happen remainLines <= 0 which is invalid
-      bool isLineOverflow = constraintsOverflow;
-      int lastLineSize = _maxLines - (lineBoxes.innerLineLength + runLineBox.innerLineLength);
 
-      /// if no more line last or last one line and the line has been used, next [RenderObject] can't use join line to
-      /// get more line num
-      if (lastLineSize <= 0 || lastLineSize == 1 && runLineBox.mainAxisExtent > 0 && runLineBox.isFirst != true) {
-        isLineOverflow = true;
-      }
-
-      remainLines = math.max(lastLineSize, 1);
-
-      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-
-      // If the first line first child is not block level and parent render give line join chance
-      // the first line add left place holder to create line join env
-      if (!isBlockLevel(child) &&
-          !isInlineBlockLevel(this) &&
-          constraints is InlineBoxConstraints &&
-          child == children.first) {
-        runLineBox.firstLineLeftExtent = (constraints as InlineBoxConstraints).leftWidth;
-      }
-
-      BoxConstraints childConstraints;
-      if (child is RenderBoxModel) {
-        childConstraints = MultiLineBoxConstraints.from(remainLines, 0, isLineOverflow, child.getConstraints());
-
-        if (!isBlockLevel(child)) {
-          // Inline element use InlineBoxConstraints, support line join logic
-          childConstraints = InlineBoxConstraints(
-              jumpPaint: happenJumpPaint,
-              overflow: isLineOverflow,
-              maxLines: remainLines,
-              minWidth: childConstraints.minWidth,
-              maxWidth: childConstraints.maxWidth,
-              minHeight: childConstraints.minHeight,
-              maxHeight: childConstraints.maxHeight);
-        }
-      } else if (child is RenderTextBox) {
-        childConstraints = child.getConstraints(remainLines);
-      } else if (child is RenderPositionPlaceholder) {
-        childConstraints = BoxConstraints();
-      } else {
-        // RenderObject of custom element need to inherit constraints from its parents
-        // which adhere to flutter's rule.
-        childConstraints = constraints;
-      }
-
-      // Whether child need to layout.
-      bool isChildNeedsLayout = true;
-
-      if (child.hasSize &&
-          !needsRelayout &&
-          (childConstraints == child.constraints) &&
-          ((child is RenderBoxModel && !child.needsLayout) || (child is RenderTextBox && !child.needsLayout))) {
-        isChildNeedsLayout = false;
-      }
-
-      if (isChildNeedsLayout) {
-        // If mainAxisExtent is not infinity and child's constraints.maxWidth == mainAxisExtent,
-        // first layout text child need use current line left extent to do first layout,
-        // if happen line break next step will use mainAxisExtent layout twice,
-        if (isCanUseInlineBoxConstraints(child, mainAxisLimit, childConstraints) &&
-            !isBreakForBlock(preChild) &&
-            runLineBox.mainAxisExtent != 0 &&
-            childConstraints is InlineBoxConstraints) {
-          double leftWidth = runLineBox.findLastLineRenderMainExtent();
-          double lineMainExtent = runLineBox.defaultLastLineMainExtent();
-          childConstraints = InlineBoxConstraints(
-              jumpPaint: happenJumpPaint,
-              overflow: isLineOverflow,
-              maxLines: childConstraints.maxLines,
-              joinLine: isLineOverflow ? 0 : 1,
-              leftWidth: leftWidth,
-              lineMainExtent: lineMainExtent,
-              minHeight: childConstraints.minHeight,
-              maxHeight: childConstraints.maxHeight,
-              minWidth: childConstraints.minWidth,
-              maxWidth: childConstraints.maxWidth);
-        }
-        bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
-
+    children.forEachIndexed((index, child) {
         if (enableWebFProfileTracking) {
-          WebFProfiler.instance.pauseCurrentLayoutOp();
+          WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._computeRunMetrics.child[$index]');
+        }
+        /// avoid happen remainLines <= 0 which is invalid
+        bool isLineOverflow = constraintsOverflow;
+        int lastLineSize = _maxLines - (lineBoxes.innerLineLength + runLineBox.innerLineLength);
+
+        /// if no more line last or last one line and the line has been used, next [RenderObject] can't use join line to
+        /// get more line num
+        if (lastLineSize <= 0 || lastLineSize == 1 && runLineBox.mainAxisExtent > 0 && runLineBox.isFirst != true) {
+          isLineOverflow = true;
         }
 
-        child.layout(childConstraints, parentUsesSize: parentUseSize);
+        remainLines = math.max(lastLineSize, 1);
 
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.resumeCurrentLayoutOp();
+        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+
+        // If the first line first child is not block level and parent render give line join chance
+        // the first line add left place holder to create line join env
+        if (!isBlockLevel(child) &&
+            !isInlineBlockLevel(this) &&
+            constraints is InlineBoxConstraints &&
+            child == children.first) {
+          runLineBox.firstLineLeftExtent = (constraints as InlineBoxConstraints).leftWidth;
         }
-      }
 
-      double childMainAxisExtent = RenderFlowLayout.getPureMainAxisExtent(child);
-      double childCrossAxisExtent = _getCrossAxisExtent(child);
+        BoxConstraints childConstraints;
+        if (child is RenderBoxModel) {
+          childConstraints = MultiLineBoxConstraints.from(remainLines, 0, isLineOverflow, child.getConstraints());
 
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.computeChildMainAxisExtent');
-      }
+          if (!isBlockLevel(child)) {
+            // Inline element use InlineBoxConstraints, support line join logic
+            childConstraints = InlineBoxConstraints(
+                jumpPaint: happenJumpPaint,
+                overflow: isLineOverflow,
+                maxLines: remainLines,
+                minWidth: childConstraints.minWidth,
+                maxWidth: childConstraints.maxWidth,
+                minHeight: childConstraints.minHeight,
+                maxHeight: childConstraints.maxHeight);
+          }
+        } else if (child is RenderTextBox) {
+          childConstraints = child.getConstraints(remainLines);
+        } else if (child is RenderPositionPlaceholder) {
+          childConstraints = BoxConstraints();
+        } else {
+          // RenderObject of custom element need to inherit constraints from its parents
+          // which adhere to flutter's rule.
+          childConstraints = constraints;
+        }
 
-      if (isPositionPlaceholder(child)) {
-        RenderPositionPlaceholder positionHolder = child as RenderPositionPlaceholder;
-        RenderBoxModel? childRenderBoxModel = positionHolder.positioned;
-        if (childRenderBoxModel != null) {
-          RenderLayoutParentData childParentData = childRenderBoxModel.parentData as RenderLayoutParentData;
-          if (childParentData.isPositioned) {
-            childMainAxisExtent = childCrossAxisExtent = 0;
+        // Whether child need to layout.
+        bool isChildNeedsLayout = true;
+
+        if (child.hasSize &&
+            !needsRelayout &&
+            (childConstraints == child.constraints) &&
+            ((child is RenderBoxModel && !child.needsLayout) || (child is RenderTextBox && !child.needsLayout))) {
+          isChildNeedsLayout = false;
+        }
+
+        if (isChildNeedsLayout) {
+          // If mainAxisExtent is not infinity and child's constraints.maxWidth == mainAxisExtent,
+          // first layout text child need use current line left extent to do first layout,
+          // if happen line break next step will use mainAxisExtent layout twice,
+          if (isCanUseInlineBoxConstraints(child, mainAxisLimit, childConstraints) &&
+              !isBreakForBlock(preChild) &&
+              runLineBox.mainAxisExtent != 0 &&
+              childConstraints is InlineBoxConstraints) {
+            double leftWidth = runLineBox.findLastLineRenderMainExtent();
+            double lineMainExtent = runLineBox.defaultLastLineMainExtent();
+            childConstraints = InlineBoxConstraints(
+                jumpPaint: happenJumpPaint,
+                overflow: isLineOverflow,
+                maxLines: childConstraints.maxLines,
+                joinLine: isLineOverflow ? 0 : 1,
+                leftWidth: leftWidth,
+                lineMainExtent: lineMainExtent,
+                minHeight: childConstraints.minHeight,
+                maxHeight: childConstraints.maxHeight,
+                minWidth: childConstraints.minWidth,
+                maxWidth: childConstraints.maxWidth);
+          }
+          bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
+
+          if (enableWebFProfileTracking) {
+            WebFProfiler.instance.pauseCurrentLayoutOp();
+          }
+
+          child.layout(childConstraints, parentUsesSize: parentUseSize);
+
+          if (enableWebFProfileTracking) {
+            WebFProfiler.instance.resumeCurrentLayoutOp();
           }
         }
-      }
 
-      if (!happenJumpPaint &&
-          ((child is RenderFlowLayout && isInlineLevel(child) && (child).lineBoxes.happenVisualOverflow()) ||
-              (child is RenderTextBox && child.happenVisualOverflow))) {
-        happenJumpPaint = true;
-      }
+        double childMainAxisExtent = RenderFlowLayout.getPureMainAxisExtent(child);
+        double childCrossAxisExtent = _getCrossAxisExtent(child);
 
-      // This value use to range every line render position
-      // and check render is need break.Because the line happen join need
-      // use pre render last line extent.Can't use the render MainAxisExtent,
-      // because the render MainAxisExtent container Multi-line max extent.
-      double childListLineMainAxisExtent = childMainAxisExtent;
-      if (child is RenderFlowLayout && !child.lineBoxes.isEmpty && isJoinBox(child) && isJoinBox(this)) {
-        childListLineMainAxisExtent = child.lastLineExtent;
-      }
-
-      // If runLineBox.mainAxisExtent > 0 and runLineBox no child, maybe happen line join,
-      // but first child mainAxisExtent too big on this time can happen line break
-      if ((runLineBox.isNotEmpty || runLineBox.mainAxisExtent > 0) &&
-              isLineBreak(child, preChild, runLineBox.mainAxisExtent, mainAxisLimit, childListLineMainAxisExtent) ||
-          // if textBox happen linebreak need to create more lineBox
-          child is RenderTextBox && child.lines > 1) {
-        if (child is RenderTextBox) {
-          runLineBox = processTextBoxBreak(child, runLineBox);
-          preChild = child;
-          continue;
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.computeChildMainAxisExtent');
         }
-        appendLineBox(runLineBox);
 
-        LogicLineBox newLineBox = buildNewLineBox();
-        if (isLineBreakForExtentShort(
-            runLineBox.mainAxisExtentWithoutLineJoin, mainAxisLimit, childListLineMainAxisExtent)) {
-          newLineBox.breakForExtentShort = true;
+        if (isPositionPlaceholder(child)) {
+          RenderPositionPlaceholder positionHolder = child as RenderPositionPlaceholder;
+          RenderBoxModel? childRenderBoxModel = positionHolder.positioned;
+          if (childRenderBoxModel != null) {
+            RenderLayoutParentData childParentData = childRenderBoxModel.parentData as RenderLayoutParentData;
+            if (childParentData.isPositioned) {
+              childMainAxisExtent = childCrossAxisExtent = 0;
+            }
+          }
         }
-        runLineBox = newLineBox;
-      }
 
-      LogicInlineBox? newLogicInlineBox = buildInlineBoxFromRender(child);
-      if (child is RenderTextBox && newLogicInlineBox == null) {
-        // null text need jump, because text lineRender is null.
-        continue;
-      }
-      assert(newLogicInlineBox != null, 'can not get useful logic box');
-      runLineBox.appendInlineBox(newLogicInlineBox!, childListLineMainAxisExtent, childCrossAxisExtent,
-          calculateChildCrossAxisExtent(child, newLogicInlineBox));
+        if (!happenJumpPaint &&
+            ((child is RenderFlowLayout && isInlineLevel(child) && (child).lineBoxes.happenVisualOverflow()) ||
+                (child is RenderTextBox && child.happenVisualOverflow))) {
+          happenJumpPaint = true;
+        }
 
-      childParentData.runIndex = lineBoxes.lineSize;
-      preChild = child;
+        // This value use to range every line render position
+        // and check render is need break.Because the line happen join need
+        // use pre render last line extent.Can't use the render MainAxisExtent,
+        // because the render MainAxisExtent container Multi-line max extent.
+        double childListLineMainAxisExtent = childMainAxisExtent;
+        if (child is RenderFlowLayout && !child.lineBoxes.isEmpty && isJoinBox(child) && isJoinBox(this)) {
+          childListLineMainAxisExtent = child.lastLineExtent;
+        }
 
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
-      }
+        // If runLineBox.mainAxisExtent > 0 and runLineBox no child, maybe happen line join,
+        // but first child mainAxisExtent too big on this time can happen line break
+        if ((runLineBox.isNotEmpty || runLineBox.mainAxisExtent > 0) &&
+            isLineBreak(child, preChild, runLineBox.mainAxisExtent, mainAxisLimit, childListLineMainAxisExtent) ||
+            // if textBox happen linebreak need to create more lineBox
+            child is RenderTextBox && child.lines > 1) {
+          if (child is RenderTextBox) {
+            runLineBox = processTextBoxBreak(child, runLineBox);
+            preChild = child;
+            return;
+          }
+          appendLineBox(runLineBox);
+
+          LogicLineBox newLineBox = buildNewLineBox();
+          if (isLineBreakForExtentShort(
+              runLineBox.mainAxisExtentWithoutLineJoin, mainAxisLimit, childListLineMainAxisExtent)) {
+            newLineBox.breakForExtentShort = true;
+          }
+          runLineBox = newLineBox;
+        }
+
+        LogicInlineBox? newLogicInlineBox = buildInlineBoxFromRender(child);
+        if (child is RenderTextBox && newLogicInlineBox == null) {
+          // null text need jump, because text lineRender is null.
+          return;
+        }
+        assert(newLogicInlineBox != null, 'can not get useful logic box');
+        runLineBox.appendInlineBox(newLogicInlineBox!, childListLineMainAxisExtent, childCrossAxisExtent,
+            calculateChildCrossAxisExtent(child, newLogicInlineBox));
+
+        childParentData.runIndex = lineBoxes.lineSize;
+        preChild = child;
+
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.finishTrackLayoutStep();
+        }
     });
 
     appendLineBox(runLineBox);
@@ -676,9 +677,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (child is RenderPreferredSize) {
       return child.createLogicInlineBox();
     }
-    if (child is RenderTextControlLeaderLayer) {
-      return child.createLogicInlineBox();
-    }
+    // if (child is RenderTextControlLeaderLayer) {
+    //   return child.createLogicInlineBox();
+    // }
     if (child is RenderTextBox) {
       if (child.lineBoxes.isEmpty) {
         return null;
@@ -694,7 +695,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.computeChildCrossAxisExtent');
     }
 
-    RenderStyle? childRenderStyle = _getChildRenderStyle(child);      
+    RenderStyle? childRenderStyle = _getChildRenderStyle(child);
     VerticalAlign verticalAlign = VerticalAlign.baseline;
     if (childRenderStyle != null) {
       verticalAlign = childRenderStyle.verticalAlign;

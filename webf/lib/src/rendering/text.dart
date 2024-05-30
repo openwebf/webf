@@ -273,7 +273,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     needsLayout = true;
   }
 
-  BoxConstraints getConstraints() {
+  BoxConstraints getConstraints(int maxLinesFromParent) {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayoutStep('RenderTextBox.getConstraints()');
     }
