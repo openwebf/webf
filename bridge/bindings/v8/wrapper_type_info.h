@@ -15,7 +15,7 @@
 
 namespace webf {
 
-class DOMWrapperWorld;
+//class DOMWrapperWorld;
 class ScriptWrappable;
 
 static const int kV8DOMWrapperTypeIndex =
@@ -96,27 +96,27 @@ struct PLATFORM_EXPORT WrapperTypeInfo final {
   // - kIdlAsyncOrSyncIterator: v8::FunctionTemplate of default (asynchronous
   //       or synchronous) iterator object
   // - kCustomWrappableKind: v8::FunctionTemplate
-  v8::Local<v8::Template> GetV8ClassTemplate(
-      v8::Isolate* isolate,
-      const DOMWrapperWorld& world) const;
+//  v8::Local<v8::Template> GetV8ClassTemplate(
+//      v8::Isolate* isolate,
+//      const DOMWrapperWorld& world) const;
 
-  void InstallConditionalFeatures(
-      v8::Local<v8::Context> context,
-      const DOMWrapperWorld& world,
-      v8::Local<v8::Object> instance_object,
-      v8::Local<v8::Object> prototype_object,
-      v8::Local<v8::Object> interface_object,
-      v8::Local<v8::Template> interface_template) const {
-    /*TODO fix FeatureSelector
-
-    if (!install_context_dependent_props_func)
-      return;
-
-    install_context_dependent_props_func(
-        context, world, instance_object, prototype_object, interface_object,
-        interface_template, bindings::V8InterfaceBridgeBase::FeatureSelector());
-        */
-  }
+//  void InstallConditionalFeatures(
+//      v8::Local<v8::Context> context,
+//      const DOMWrapperWorld& world,
+//      v8::Local<v8::Object> instance_object,
+//      v8::Local<v8::Object> prototype_object,
+//      v8::Local<v8::Object> interface_object,
+//      v8::Local<v8::Template> interface_template) const {
+//    /*TODO fix FeatureSelector
+//
+//    if (!install_context_dependent_props_func)
+//      return;
+//
+//    install_context_dependent_props_func(
+//        context, world, instance_object, prototype_object, interface_object,
+//        interface_template, bindings::V8InterfaceBridgeBase::FeatureSelector());
+//        */
+//  }
 
   bool IsActiveScriptWrappable() const {
     return active_script_wrappable_inheritance ==

@@ -77,7 +77,7 @@ class V8PerContextData;
 class ScriptState : public GarbageCollected<ScriptState> {
  public:
   class Scope final {
-    STACK_ALLOCATED();
+    WEBF_STACK_ALLOCATED();
 
    public:
     // You need to make sure that scriptState->context() is not empty before
@@ -85,7 +85,7 @@ class ScriptState : public GarbageCollected<ScriptState> {
     explicit Scope(ScriptState* script_state)
         : handle_scope_(script_state->GetIsolate()),
           context_(script_state->GetContext()) {
-//      DCHECK(script_state->ContextIsValid());
+      assert(script_state->ContextIsValid());
       context_->Enter();
     }
 
@@ -99,7 +99,7 @@ class ScriptState : public GarbageCollected<ScriptState> {
   // Use EscapableScope if you have to return a v8::Local to an outer scope.
   // See v8::EscapableHandleScope.
   class EscapableScope final {
-    STACK_ALLOCATED();
+    WEBF_STACK_ALLOCATED();
 
    public:
     // You need to make sure that scriptState->context() is not empty before
@@ -107,7 +107,7 @@ class ScriptState : public GarbageCollected<ScriptState> {
     explicit EscapableScope(ScriptState* script_state)
         : handle_scope_(script_state->GetIsolate()),
           context_(script_state->GetContext()) {
-//      DCHECK(script_state->ContextIsValid());
+      assert(script_state->ContextIsValid());
       context_->Enter();
     }
 
