@@ -11,7 +11,6 @@
 #include <memory>
 #include "atomic_string.h"
 #include "dictionary_base.h"
-//#include "exception_state.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
 #include "platform/script_state.h"
@@ -21,11 +20,6 @@
 #include "foundation/macros.h"
 
 namespace webf {
-
-// TODO The implementation of TraceWrapperV8Reference is only temporary
-template <typename T>
-using TraceWrapperV8Reference = v8::TracedReference<T>;
-
 namespace bindings {
 class DictionaryBase;
 class UnionBase;

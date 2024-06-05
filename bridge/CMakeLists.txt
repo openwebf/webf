@@ -576,9 +576,11 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/script_wrappable.cc
     bindings/v8/wrapper_type_info.cc
     bindings/v8/v8_interface_bridge_base.cc
+    bindings/v8/v8_initializer.cc
     bindings/v8/platform/script_state.cc
     bindings/v8/platform/scoped_persistent.h
     bindings/v8/platform/v8_per_context_data.cc
+    bindings/v8/platform/v8_per_isolate_data.cc
     bindings/v8/platform/heap/garbage_collected.h
     bindings/v8/platform/heap/member.h
     bindings/v8/platform/heap/self_keep_alive.h
@@ -739,7 +741,9 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/bit_cast.h
     bindings/v8/base/bits.h
     bindings/v8/gin/public/context_holder.h
+    bindings/v8/gin/public/isolate_holder.h
     bindings/v8/gin/public/gin_embedders.h
+    bindings/v8/gin/public/v8_idle_task_runner.h
     bindings/v8/gin/public/wrapper_info.h
     bindings/v8/gin/gin_export.h
     bindings/v8/gin/per_context_data.cc
