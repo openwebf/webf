@@ -39,6 +39,10 @@ AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_
   const size_t output_size = modp_b64_encode_data(reinterpret_cast<char*>(buffer.data()),
                                                   reinterpret_cast<const char*>(source.Character8()), source.length());
   assert(output_size == encode_len);
+  if (output_size != encode_len || buffer.empty()) {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError, "The string encode failed.");
+    return AtomicString::Empty();
+  }
 
   return {ctx(), buffer.data(), buffer.size()};
 }
