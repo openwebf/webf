@@ -14,7 +14,7 @@
 #include <v8/cppgc/trace-trait.h>
 #include <v8/cppgc/visitor.h>
 #include "bindings/v8/platform/heap/garbage_collected.h"
-#include "bindings/v8/platform/wtf/allocator/partition_allocator.h"
+#include "bindings/v8/platform/util/allocator/partition_allocator.h"
 #include "bindings/v8/base/bits.h"
 #include "bindings/v8/platform/heap/collection_support/heap_vector_backing.h"
 #include "bindings/v8/platform/heap/collection_support/heap_hash_table_backing.h"
@@ -53,7 +53,7 @@ class PLATFORM_EXPORT HeapAllocator {
     // arbitrary sized allocations. Delegate to PA to keep limits in sync which
     // may be enforced for security reasons. E.g. PA may cap the limit below
     // 32-bit sizes to avoid integer overflows in old code.
-    return webf::PartitionAllocator::MaxElementCountInBackingStore<T>();
+    return util::PartitionAllocator::MaxElementCountInBackingStore<T>();
   }
 
   template <typename T>

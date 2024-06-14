@@ -10,7 +10,7 @@
 
 #include "bindings/v8/base/numerics/safe_conversions.h"
 #include "bindings/v8/base/allocator/allocator.h"
-#include "bindings/v8/platform/wtf/allocator/partition_allocator.h"
+#include "bindings/v8/platform/util/allocator/partition_allocator.h"
 #include "bindings/v8/platform/wtf/construct_traits.h"
 #include "bindings/v8/platform/wtf/hash_table.h"
 #include "bindings/v8/platform/wtf/key_value_pair.h"
@@ -62,7 +62,7 @@ template <typename KeyArg,
           typename MappedArg,
           typename KeyTraitsArg = HashTraits<KeyArg>,
           typename MappedTraitsArg = HashTraits<MappedArg>,
-          typename Allocator = PartitionAllocator>
+          typename Allocator = util::PartitionAllocator>
 class HashMap {
   USE_ALLOCATOR(HashMap, Allocator);
   template <typename T, typename U, typename V>

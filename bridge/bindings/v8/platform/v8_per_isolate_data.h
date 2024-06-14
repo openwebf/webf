@@ -27,7 +27,7 @@
 #include <v8/v8-persistent-handle.h>
 #include <v8/v8-template.h>
 #include "bindings/v8/wrapper_type_info.h"
-#include "bindings/v8/platform/wtf/allocator/partition_allocator.h"
+#include "bindings/v8/platform/util/allocator/partition_allocator.h"
 
 namespace base {
 //class SingleThreadTaskRunner;

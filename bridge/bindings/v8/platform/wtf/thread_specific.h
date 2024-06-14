@@ -9,7 +9,8 @@
 #include "bindings/v8/base/threading/thread_local_storage.h"
 #include "bindings/v8/for_build/build_config.h"
 //#include "bindings/v8/platform/wtf/allocator/allocator.h"
-#include "bindings/v8/platform/wtf/allocator/partition_allocator.h"
+
+#include "bindings/v8/platform/util/allocator/partition_allocator.h"
 //#include "bindings/v8/platform/wtf/allocator/partitions.h"
 #include "bindings/v8/platform/wtf/stack_util.h"
 #include "bindings/v8/platform/util/main_thread_util.h"
