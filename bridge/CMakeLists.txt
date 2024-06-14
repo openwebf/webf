@@ -687,17 +687,21 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/platform/wtf/conditional_destructor.h
     bindings/v8/platform/wtf/construct_traits.h
     bindings/v8/platform/wtf/sanitizers.h
-    bindings/v8/platform/wtf/allocator/partition_allocator.h
-          bindings/v8/base/apple/scoped_cftyperef.h
-          bindings/v8/base/apple/scoped_typeref.h
-          bindings/v8/base/memory/scoped_policy.h
+    bindings/v8/platform/util/allocator/partition_allocator.h
+    bindings/v8/platform/util/allocator/allocator.h
+    bindings/v8/platform/util/allocator/partitions.cc
+    bindings/v8/base/apple/scoped_cftyperef.h
+    bindings/v8/base/apple/scoped_typeref.h
+    bindings/v8/base/memory/scoped_policy.h
     bindings/v8/base/threading/platform_thread.cc
-          bindings/v8/base/threading/thread_local_storage.cc
+    bindings/v8/base/threading/thread_local_storage.cc
     bindings/v8/base/allocator/allocator.h
     bindings/v8/base/allocator/partitions.cc
     bindings/v8/base/allocator/partitions.h
-          bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_internal.h
-          bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_internals_posix.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_internal.h
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_internals_posix.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc.cc
+    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/memory_reclaimer.cc
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_constants.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/address_pool_manager_types.h
     bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_constants.h

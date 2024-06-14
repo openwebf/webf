@@ -17,7 +17,7 @@
 #include "bindings/v8/base/allocator/allocator.h"
 #include "bindings/v8/platform/wtf/type_traits.h"
 
-namespace webf {
+namespace util {
 
 class PartitionAllocator {
  public:
@@ -122,7 +122,7 @@ class PartitionAllocator {
 template <>
 char* PartitionAllocator::AllocateVectorBacking<char>(size_t);
 
-}  // namespace webf
+}  // namespace util
 
 #define USE_ALLOCATOR(ClassName, Allocator)                     \
  public:                                                        \
@@ -139,7 +139,7 @@ char* PartitionAllocator::AllocateVectorBacking<char>(size_t);
   void operator delete[](void* p) {                             \
     Allocator::DeleteArray(p);                                  \
   }                                                             \
-  void* operator new(size_t, webf::NotNullTag, void* location) { \
+  void* operator new(size_t, NotNullTag, void* location) {      \
     DCHECK(location);                                           \
     return location;                                            \
   }                                                             \
