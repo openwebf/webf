@@ -140,6 +140,9 @@ struct PurgeFlags {
     // Aggressively reclaim memory. This is meant to be used in low-memory
     // situations, not for periodic memory reclaiming.
     kAggressiveReclaim = 1 << 2,
+    // Limit the total duration of reclaim to 2ms, then return even if reclaim
+    // is incomplete.
+    kLimitDuration = 1 << 3,
   };
 };
 
