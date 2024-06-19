@@ -34,17 +34,19 @@ AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_
     return AtomicString::Empty();
   size_t encode_len = modp_b64_encode_data_len(source.length());
   std::vector<char> buffer;
-  buffer.resize(encode_len);
+  buffer.resize(encode_len + 1);
 
-  const size_t output_size = modp_b64_encode_data(reinterpret_cast<char*>(buffer.data()),
-                                                  reinterpret_cast<const char*>(source.Character8()), source.length());
+  const size_t output_size = modp_b64_encode(reinterpret_cast<char*>(buffer.data()),
+                                             reinterpret_cast<const char*>(source.Character8()), source.length());
+  const char* encode_str = buffer.data();
+  const size_t encode_str_len = strlen(encode_str);
+
   assert(output_size == encode_len);
-  if (output_size != encode_len || buffer.empty()) {
+  if (output_size != encode_len || encode_str_len == 0) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "The string encode failed.");
     return AtomicString::Empty();
   }
-
-  return {ctx(), buffer.data(), buffer.size()};
+  return {ctx(), encode_str, encode_str_len};
 }
 
 // Invokes modp_b64 without stripping whitespace.
