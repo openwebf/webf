@@ -36,8 +36,10 @@ AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_
   std::vector<char> buffer;
   buffer.resize(encode_len + 1);
 
+  std::string source_string = source.ToStdString(ctx());
+
   const size_t output_size = modp_b64_encode(reinterpret_cast<char*>(buffer.data()),
-                                             reinterpret_cast<const char*>(source.Character8()), source.length());
+                                             source_string.c_str(), source.length());
   const char* encode_str = buffer.data();
   const size_t encode_str_len = strlen(encode_str);
 
@@ -50,12 +52,14 @@ AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_
 }
 
 // Invokes modp_b64 without stripping whitespace.
-bool Base64DecodeRaw(const AtomicString& in, std::vector<uint8_t>& out, ModpDecodePolicy policy) {
+bool Base64DecodeRaw(JSContext* ctx, const AtomicString& in, std::vector<uint8_t>& out, ModpDecodePolicy policy) {
   size_t decode_len = modp_b64_decode_len(in.length());
   out.resize(decode_len);
 
+  std::string in_string = in.ToStdString(ctx);
+
   const size_t output_size = modp_b64_decode(reinterpret_cast<char*>(out.data()),
-                                             reinterpret_cast<const char*>(in.Character8()), in.length(), policy);
+                                             in_string.c_str(), in.length(), policy);
   if (output_size == MODP_B64_ERROR)
     return false;
   out.resize(output_size);
@@ -74,11 +78,11 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
       // TODO(csharrison): Most callers use String inputs so ToString() should
       // be fast. Still, we should add a RemoveCharacters method to StringView
       // to avoid a double allocation for non-String-backed StringViews.
-      return Base64DecodeRaw(in, out, policy) ||
-             Base64DecodeRaw(in.RemoveCharacters(ctx, &IsAsciiWhitespace), out, policy);
+      return Base64DecodeRaw(ctx, in, out, policy) ||
+             Base64DecodeRaw(ctx, in.RemoveCharacters(ctx, &IsAsciiWhitespace), out, policy);
     }
     case ModpDecodePolicy::kNoPaddingValidation: {
-      return Base64DecodeRaw(in, out, policy);
+      return Base64DecodeRaw(ctx, in, out, policy);
     }
     case ModpDecodePolicy::kStrict:
       return false;
