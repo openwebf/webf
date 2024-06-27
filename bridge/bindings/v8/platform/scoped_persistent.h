@@ -8,7 +8,6 @@
 
 
 #include <v8/v8.h>
-#include "bindings/v8/base/allocator/allocator.h"
 
 namespace webf {
 
@@ -18,7 +17,7 @@ namespace webf {
 // review.
 template <typename T>
 class ScopedPersistent {
-  USING_FAST_MALLOC(ScopedPersistent);
+//  USING_FAST_MALLOC(ScopedPersistent);
 
  public:
   ScopedPersistent() = default;

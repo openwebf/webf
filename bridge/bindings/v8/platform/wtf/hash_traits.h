@@ -16,7 +16,6 @@
 #include <utility>
 
 #include "bindings/v8/platform/wtf/type_traits.h"
-#include "bindings/v8/base/allocator/allocator.h"
 #include "bindings/v8/platform/wtf/hash_functions.h"
 #include "bindings/v8/platform/wtf/hash_table_deleted_value_type.h"
 

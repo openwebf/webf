@@ -11,7 +11,6 @@
 
 #include <v8/v8.h>
 #include "bindings/v8/platform/heap/garbage_collected.h"
-#include "bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h"
 #include "bindings/v8/trace_wrapper_v8_reference.h"
 #include "bindings/v8/platform/scoped_persistent.h"
 #include "bindings/v8/platform/heap/collection_support/heap_hash_map.h"
