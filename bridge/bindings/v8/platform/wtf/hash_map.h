@@ -9,8 +9,6 @@
 #include <initializer_list>
 
 #include "bindings/v8/base/numerics/safe_conversions.h"
-#include "bindings/v8/base/allocator/allocator.h"
-#include "bindings/v8/platform/util/allocator/partition_allocator.h"
 #include "bindings/v8/platform/wtf/construct_traits.h"
 #include "bindings/v8/platform/wtf/hash_table.h"
 #include "bindings/v8/platform/wtf/key_value_pair.h"

@@ -6,7 +6,6 @@
 #ifndef WEBF_CONSTRUCT_TRAITS_H_
 #define WEBF_CONSTRUCT_TRAITS_H_
 
-#include "bindings/v8/base/allocator/allocator.h"
 #include "bindings/v8/platform/wtf/type_traits.h"
 #include "bindings/v8/platform/wtf/vector_traits.h"
 

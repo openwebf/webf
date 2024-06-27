@@ -8,7 +8,7 @@
 
 #include <cstdint>
 #include "bindings/v8/base/compiler_specific.h"
-#include "bindings/v8/base/allocator/allocator.h"
+#include "foundation/macros.h"
 
 namespace cppgc {
 class AllocationHandle;
@@ -34,7 +34,7 @@ enum ThreadAffinity {
 
 template <typename T, typename = void>
 struct ThreadingTrait {
-  STATIC_ONLY(ThreadingTrait);
+  WEBF_STATIC_ONLY(ThreadingTrait);
   static constexpr ThreadAffinity kAffinity = kAnyThread;
 };
 
@@ -95,7 +95,7 @@ class ThreadStateStorageFor;
 
 template <>
 class ThreadStateStorageFor<kMainThreadOnly> {
-  STATIC_ONLY(ThreadStateStorageFor);
+  WEBF_STATIC_ONLY(ThreadStateStorageFor);
 
  public:
   ALWAYS_INLINE static ThreadStateStorage* GetState() {
@@ -105,7 +105,7 @@ class ThreadStateStorageFor<kMainThreadOnly> {
 
 template <>
 class ThreadStateStorageFor<kAnyThread> {
-  STATIC_ONLY(ThreadStateStorageFor);
+  WEBF_STATIC_ONLY(ThreadStateStorageFor);
 
  public:
   ALWAYS_INLINE static ThreadStateStorage* GetState() {

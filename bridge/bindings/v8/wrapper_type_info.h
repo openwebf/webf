@@ -8,7 +8,6 @@
 
 #include <v8/v8-object.h>
 #include <v8/v8.h>
-#include "bindings/v8/base/allocator/allocator.h"
 #include "gin/public/wrapper_info.h"
 #include "platform/platform_export.h"
 #include "v8_interface_bridge_base.h"

@@ -12,7 +12,6 @@
 #include <v8/cppgc/member.h>
 #include <v8/cppgc/heap-consistency.h>
 #include "bindings/v8/platform/wtf/type_traits.h"
-#include "bindings/v8/base/allocator/allocator.h"
 
 namespace webf {
 

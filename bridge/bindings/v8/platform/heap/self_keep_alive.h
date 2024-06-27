@@ -8,7 +8,6 @@
 
 #include "bindings/v8/platform/heap/garbage_collected.h"
 #include "bindings/v8/platform/heap/persistent.h"
-#include "bindings/v8/base/allocator/allocator.h"
 #include "bindings/v8/platform/util/gc_plugin.h"
 
 namespace webf {

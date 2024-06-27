@@ -13,10 +13,10 @@
 #include "dictionary_base.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
-#include "platform/script_state.h"
+//#include "platform/script_state.h"
 #include "union_base.h"
-#include "bindings/v8/platform/wtf/vector_traits.h"
-#include "script_wrappable.h"
+//#include "bindings/v8/platform/wtf/vector_traits.h"
+//#include "script_wrappable.h"
 #include "foundation/macros.h"
 
 namespace webf {
@@ -24,7 +24,7 @@ namespace bindings {
 class DictionaryBase;
 class UnionBase;
 }  // namespace bindings
-class ScriptState;
+//class ScriptState;
 
 // ScriptValue is used when an idl specifies the type as 'any'. ScriptValue
 // stores the v8 value using WorldSafeV8Reference.
@@ -36,13 +36,13 @@ class ScriptValue final {
   // how they are exposed to V8. Objects that need to know what the expected IDL
   // type is in order to be correctly converted must explicitly use ToV8Traits<>
   // to get a v8::Value, then pass it directly to the constructor.
-  template <typename T>
-  requires std::derived_from<T, bindings::DictionaryBase> ||
-      std::derived_from<T, ScriptWrappable> ||
-      std::derived_from<T, bindings::UnionBase>
-      static ScriptValue From(ScriptState* script_state, T* value) {
-    return ScriptValue(script_state->GetIsolate(), value->ToV8(script_state));
-  }
+//  template <typename T>
+//  requires std::derived_from<T, bindings::DictionaryBase> ||
+//      std::derived_from<T, ScriptWrappable> ||
+//      std::derived_from<T, bindings::UnionBase>
+//      static ScriptValue From(ScriptState* script_state, T* value) {
+//    return ScriptValue(script_state->GetIsolate(), value->ToV8(script_state));
+//  }
 
   ScriptValue() = default;
 
@@ -139,7 +139,7 @@ class ScriptValue final {
   // Returns v8Value() if a given ScriptState is the same as the
   // ScriptState which is associated with this ScriptValue. Otherwise
   // this "clones" the v8 value and returns it.
-  v8::Local<v8::Value> V8ValueFor(ScriptState*) const;
+//  v8::Local<v8::Value> V8ValueFor(ScriptState*) const;
 
   bool ToString(AtomicString&) const;
 
