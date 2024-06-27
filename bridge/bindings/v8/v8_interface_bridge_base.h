@@ -12,7 +12,6 @@
 //#include "v8/include/v8-forward.h"
 
 #include <v8/v8.h>
-#include "bindings/v8/base/allocator/allocator.h"
 #include "platform/platform_export.h"
 
 namespace webf {

@@ -619,108 +619,27 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/platform/wtf/conditional_destructor.h
     bindings/v8/platform/wtf/construct_traits.h
     bindings/v8/platform/wtf/sanitizers.h
-    bindings/v8/platform/util/allocator/partition_allocator.h
-    bindings/v8/platform/util/allocator/allocator.h
-    bindings/v8/platform/util/allocator/partitions.cc
     bindings/v8/base/apple/scoped_cftyperef.h
     bindings/v8/base/apple/scoped_typeref.h
     bindings/v8/base/memory/scoped_policy.h
     bindings/v8/base/threading/platform_thread.cc
     bindings/v8/base/threading/thread_local_storage.cc
-    bindings/v8/base/allocator/allocator.h
-    bindings/v8/base/allocator/partitions.cc
-    bindings/v8/base/allocator/partitions.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_internal.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_internals_posix.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/memory_reclaimer.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_constants.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/address_pool_manager_types.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator_constants.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_config.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/buildflag.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/build_config.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/flags.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/tagging.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_forward.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/address_space_randomization.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/dangling_raw_ptr_checks.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_root.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_superpage_extent_entry.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/allocation_guard.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_address_space.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_check.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/page_allocator.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/spinning_mutex.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/address_pool_manager.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_lock.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_bucket.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_page_constants.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_freelist_entry.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_dcheck_helper.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/encoded_next_freelist.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/reverse_bytes.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc-inl.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/random.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/rand_util.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/reservation_offset_table.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_direct_map_extent.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_page.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/freeslot_bitmap_constants.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/lightweight_quarantine.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_stats.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/internal_allocator.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/internal_allocator_forward.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/no_destructor.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/thread_cache.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_tls.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_allocation_data.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_hooks.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_bucket_lookup.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/oom.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/oom_callback.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_oom.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/yield_processor.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/address_space_stats.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/export_template.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/time/time.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/bits.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/component_export.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/thread_annotations.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/immediate_crash.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/logging.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/log_message.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/check.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/cxx20_is_constant_evaluated.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/notreached.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/strings/cstring_builder.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/strings/safe_sprintf.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/strings/string_util.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/debug/alias.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread_ref.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread_posix.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/threading/platform_thread_internal_posix.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/posix/eintr_wrapper.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/posix/safe_strerror.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_exclusion.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr_backup_ref_impl.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/pointers/instance_tracer.cc
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/thread_isolation/alignment.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/clamped_math_impl.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/clamped_math.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/checked_math.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/checked_math_impl.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/safe_conversions.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/safe_conversions_arm_impl.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/safe_conversions_impl.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/safe_math_clang_gcc_impl.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/numerics/safe_math_shared_impl.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/memory/scoped_policy.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/apple/scoped_cftyperef.h
-    bindings/v8/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/apple/scoped_typeref.h
+    bindings/v8/base/containers/checked_iterators.h
+    bindings/v8/base/containers/dynamic_extent.h
+    bindings/v8/base/containers/flat_map.h
+    bindings/v8/base/containers/flat_set.h
+    bindings/v8/base/containers/flat_tree.h
+    bindings/v8/base/containers/util.h
+    bindings/v8/base/metrics/field_trial_params.cc
+    bindings/v8/base/numerics/clamped_math.h
+    bindings/v8/base/numerics/clamped_math_impl.h
+    bindings/v8/base/ranges/algorithm.h
+    bindings/v8/base/ranges/functional.h
+    bindings/v8/base/ranges/ranges.h
+    bindings/v8/base/synchronization/lock.cc
+    bindings/v8/base/synchronization/lock_impl.h
+    bindings/v8/base/time/time.cc
+    bindings/v8/base/types/to_address.h
     bindings/v8/base/types/supports_ostream_operator.h
     bindings/v8/base/base_export.h
     bindings/v8/base/notreached.h
@@ -729,6 +648,11 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/check.h
     bindings/v8/base/check_op.cc
     bindings/v8/base/dcheck_is_on.h
+    bindings/v8/base/feature_list.cc
+    bindings/v8/base/feature_list_buildflags.h
+    bindings/v8/base/features.cc
+    bindings/v8/base/template_util.h
+    bindings/v8/base/thread_annotations.h
     bindings/v8/base/location.cc
     bindings/v8/base/not_fatal_until.h
     bindings/v8/base/numerics/checked_math.h
