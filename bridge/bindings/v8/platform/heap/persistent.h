@@ -13,6 +13,7 @@
 #include "bindings/v8/platform/heap/heap_buildflags.h"
 #include "bindings/v8/platform/wtf/vector_traits.h"
 #include "bindings/v8/platform/wtf/hash_traits.h"
+#include "foundation/macros.h"
 
 // Required to optimize away locations for builds that do not need them to avoid
 // binary size blowup.
@@ -75,7 +76,7 @@ namespace webf {
 
 template <typename T>
 struct PersistentVectorTraitsBase : VectorTraitsBase<T> {
-  STATIC_ONLY(PersistentVectorTraitsBase);
+  WEBF_STATIC_ONLY(PersistentVectorTraitsBase);
   static const bool kCanInitializeWithMemset = true;
 };
 
