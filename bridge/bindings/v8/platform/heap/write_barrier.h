@@ -12,11 +12,12 @@
 #include <v8/cppgc/member.h>
 #include <v8/cppgc/heap-consistency.h>
 #include "bindings/v8/platform/wtf/type_traits.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
 class WriteBarrier final {
-  STATIC_ONLY(WriteBarrier);
+  WEBF_STATIC_ONLY(WriteBarrier);
 
   using HeapConsistency = cppgc::subtle::HeapConsistency;
 

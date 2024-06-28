@@ -18,6 +18,9 @@
 #include "bindings/v8/platform/wtf/type_traits.h"
 #include "bindings/v8/platform/wtf/hash_functions.h"
 #include "bindings/v8/platform/wtf/hash_table_deleted_value_type.h"
+#include "foundation/macros.h"
+#include "bindings/v8/base/memory/stack_allocated.h"
+#include "bindings/v8/base/memory/scoped_refptr.h"
 
 namespace webf {
 
@@ -62,7 +65,7 @@ namespace internal {
 
 template <typename T>
 struct GenericHashTraitsBase {
-  STATIC_ONLY(GenericHashTraitsBase);
+  WEBF_STATIC_ONLY(GenericHashTraitsBase);
 
   using TraitType = T;
 
@@ -275,7 +278,7 @@ struct GenericHashTraits<scoped_refptr<P>>
   static bool Equal(const scoped_refptr<P>& a, P* b) { return a == b; }
 
   class RefPtrValuePeeker {
-    DISALLOW_NEW();
+    WEBF_DISALLOW_NEW();
 
    public:
     ALWAYS_INLINE RefPtrValuePeeker(P* p) : ptr_(p) {}
@@ -346,7 +349,7 @@ struct GenericHashTraits<std::unique_ptr<T>>
   static void ConstructDeletedValue(std::unique_ptr<T>& slot) {
     // Dirty trick: implant an invalid pointer to unique_ptr. Destructor isn't
     // called for deleted buckets, so this is okay.
-    new (NotNullTag::kNotNull, &slot)
+    new (base::NotNullTag::kNotNull, &slot)
         std::unique_ptr<T>(reinterpret_cast<T*>(1u));
   }
   static bool IsDeletedValue(const std::unique_ptr<T>& value) {
@@ -385,7 +388,7 @@ struct SimpleClassHashTraits : GenericHashTraits<T> {
     static constexpr bool value = false;
   };
   static void ConstructDeletedValue(T& slot) {
-    new (NotNullTag::kNotNull, &slot) T(kHashTableDeletedValue);
+    new (base::NotNullTag::kNotNull, &slot) T(kHashTableDeletedValue);
   }
   static bool IsDeletedValue(const T& value) {
     return value.IsHashTableDeletedValue();
@@ -422,7 +425,7 @@ struct HashTraitsDeletedValueHelper {
     return value == Traits::DeletedValue();
   }
   static void ConstructDeletedValue(typename Traits::TraitType& slot) {
-    new (NotNullTag::kNotNull, &slot)
+    new (base::NotNullTag::kNotNull, &slot)
         typename Traits::TraitType(Traits::DeletedValue());
   }
 };

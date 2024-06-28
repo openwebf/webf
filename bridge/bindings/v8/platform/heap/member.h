@@ -11,6 +11,7 @@
 #include "bindings/v8/platform/heap/persistent.h"
 #include "bindings/v8/platform/wtf/hash_traits.h"
 #include "bindings/v8/platform/heap/write_barrier.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -37,19 +38,19 @@ constexpr auto kMemberDeletedValue = cppgc::kSentinelPointer;
 
 template <typename T>
 struct ThreadingTrait<Member<T>> {
-  STATIC_ONLY(ThreadingTrait);
+  WEBF_STATIC_ONLY(ThreadingTrait);
   static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
 };
 
 template <typename T>
 struct ThreadingTrait<WeakMember<T>> {
-  STATIC_ONLY(ThreadingTrait);
+  WEBF_STATIC_ONLY(ThreadingTrait);
   static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
 };
 
 template <typename T>
 struct ThreadingTrait<UntracedMember<T>> {
-  STATIC_ONLY(ThreadingTrait);
+  WEBF_STATIC_ONLY(ThreadingTrait);
   static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
 };
 
@@ -74,7 +75,7 @@ static_assert(kBlinkMemberGCHasDebugChecks ||
 
 template <typename T>
 struct IsTraceable<Member<T>> {
-  STATIC_ONLY(IsTraceable);
+  WEBF_STATIC_ONLY(IsTraceable);
   static const bool value = true;
 };
 
@@ -83,7 +84,7 @@ struct IsWeak<WeakMember<T>> : std::true_type {};
 
 template <typename T>
 struct IsTraceable<WeakMember<T>> {
-  STATIC_ONLY(IsTraceable);
+  WEBF_STATIC_ONLY(IsTraceable);
   static const bool value = true;
 };
 
@@ -92,7 +93,7 @@ struct IsTraceable<WeakMember<T>> {
 // directly with any of those types.
 template <typename T>
 class ValuePeeker final {
-  DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   // NOLINTNEXTLINE
@@ -131,7 +132,7 @@ class ValuePeeker final {
 // Default hash for hash tables with Member<>-derived elements.
 template <typename T, typename MemberType>
 struct BaseMemberHashTraits : SimpleClassHashTraits<MemberType> {
-  STATIC_ONLY(BaseMemberHashTraits);
+  WEBF_STATIC_ONLY(BaseMemberHashTraits);
 
   // Heap hash containers allow to operate with raw pointers, e.g.
   //   HeapHashSet<Member<GCed>> set;
@@ -198,14 +199,14 @@ struct HashTraits<webf::UntracedMember<T>> : UntracedMemberHashTraits<T> {};
 
 template <typename T>
 class MemberConstructTraits {
-  STATIC_ONLY(MemberConstructTraits);
+  WEBF_STATIC_ONLY(MemberConstructTraits);
 
  public:
   template <typename... Args>
   static T* Construct(void* location, Args&&... args) {
     // `Construct()` creates a new Member which must not be visible to the
     // concurrent marker yet, similar to regular ctors in Member.
-    return new (NotNullTag::kNotNull, location) T(std::forward<Args>(args)...);
+    return new (base::NotNullTag::kNotNull, location) T(std::forward<Args>(args)...);
   }
 
   template <typename... Args>
@@ -213,7 +214,7 @@ class MemberConstructTraits {
     // `ConstructAndNotifyElement()` updates an existing Member which might
     // also be concurrently traced while we update it. The regular ctors
     // for Member don't use an atomic write which can lead to data races.
-    T* object = new (NotNullTag::kNotNull, location)
+    T* object = new (base::NotNullTag::kNotNull, location)
         T(std::forward<Args>(args)..., typename T::AtomicInitializerTag());
     NotifyNewElement(object);
     return object;
