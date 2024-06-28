@@ -44,7 +44,7 @@ class GIN_EXPORT ContextHolder {
   void SetContext(v8::Local<v8::Context> context);
 
  private:
-  raw_ptr<v8::Isolate> isolate_;
+  v8::Isolate *isolate_;
   v8::UniquePersistent<v8::Context> context_;
   std::unique_ptr<PerContextData> data_;
 };

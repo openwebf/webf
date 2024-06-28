@@ -40,7 +40,7 @@ namespace webf {
 // implementation of the object.
 template <typename Self>
 class SelfKeepAlive final {
-  DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   explicit SelfKeepAlive(
