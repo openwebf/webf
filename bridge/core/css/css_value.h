@@ -1,0 +1,380 @@
+//
+// Created by 谢作兵 on 18/06/24.
+//
+
+#ifndef WEBF_CSS_VALUE_H
+#define WEBF_CSS_VALUE_H
+
+
+#include "core/base/memory/values_equivalent.h"
+#include "bindings/qjs/atomic_string.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
+
+namespace webf {
+
+class Document;
+class Length; // TODO(xiezuobing): geometry/length.h
+class TreeScope;
+
+class CSSValue {
+ public:
+  // TODO(sashab): Remove this method and move logic to the caller.
+  static CSSValue* Create(const Length& value, float zoom);
+
+  AtomicString CssText() const;
+
+  bool IsNumericLiteralValue() const {
+    return class_type_ == kNumericLiteralClass;
+  }
+  bool IsMathFunctionValue() const { return class_type_ == kMathFunctionClass; }
+  bool IsPrimitiveValue() const {
+    return IsNumericLiteralValue() || IsMathFunctionValue();
+  }
+  bool IsIdentifierValue() const { return class_type_ == kIdentifierClass; }
+  bool IsValuePair() const { return class_type_ == kValuePairClass; }
+  bool IsValueList() const { return class_type_ >= kValueListClass; }
+
+  bool IsBaseValueList() const { return class_type_ == kValueListClass; }
+
+  bool IsBasicShapeValue() const {
+    return class_type_ >= kBasicShapeCircleClass &&
+           class_type_ <= kBasicShapeXYWHClass;
+  }
+  bool IsBasicShapeCircleValue() const {
+    return class_type_ == kBasicShapeCircleClass;
+  }
+  bool IsBasicShapeEllipseValue() const {
+    return class_type_ == kBasicShapeEllipseClass;
+  }
+  bool IsBasicShapePolygonValue() const {
+    return class_type_ == kBasicShapePolygonClass;
+  }
+  bool IsBasicShapeInsetValue() const {
+    return class_type_ == kBasicShapeInsetClass;
+  }
+  bool IsBasicShapeRectValue() const {
+    return class_type_ == kBasicShapeRectClass;
+  }
+  bool IsBasicShapeXYWHValue() const {
+    return class_type_ == kBasicShapeXYWHClass;
+  }
+
+  bool IsBorderImageSliceValue() const {
+    return class_type_ == kBorderImageSliceClass;
+  }
+  bool IsColorValue() const { return class_type_ == kColorClass; }
+  bool IsColorMixValue() const { return class_type_ == kColorMixClass; }
+  bool IsCounterValue() const { return class_type_ == kCounterClass; }
+  bool IsCursorImageValue() const { return class_type_ == kCursorImageClass; }
+  bool IsCrossfadeValue() const { return class_type_ == kCrossfadeClass; }
+  bool IsDynamicRangeLimitMixValue() const {
+    return class_type_ == kDynamicRangeLimitMixClass;
+  }
+  bool IsPaintValue() const { return class_type_ == kPaintClass; }
+  bool IsFontFeatureValue() const { return class_type_ == kFontFeatureClass; }
+  bool IsFontFamilyValue() const { return class_type_ == kFontFamilyClass; }
+  bool IsFontFaceSrcValue() const { return class_type_ == kFontFaceSrcClass; }
+  bool IsFontStyleRangeValue() const {
+    return class_type_ == kFontStyleRangeClass;
+  }
+  bool IsFontVariationValue() const {
+    return class_type_ == kFontVariationClass;
+  }
+  bool IsFunctionValue() const { return class_type_ == kFunctionClass; }
+  bool IsCustomIdentValue() const { return class_type_ == kCustomIdentClass; }
+  bool IsImageGeneratorValue() const {
+    return class_type_ >= kCrossfadeClass &&
+           class_type_ <= kConstantGradientClass;
+  }
+  bool IsGradientValue() const {
+    return class_type_ >= kLinearGradientClass &&
+           class_type_ <= kConstantGradientClass;
+  }
+  bool IsImageSetOptionValue() const {
+    return class_type_ == kImageSetOptionClass;
+  }
+  bool IsImageSetTypeValue() const { return class_type_ == kImageSetTypeClass; }
+  bool IsImageSetValue() const { return class_type_ == kImageSetClass; }
+  bool IsImageValue() const { return class_type_ == kImageClass; }
+  bool IsInheritedValue() const { return class_type_ == kInheritedClass; }
+  bool IsInitialValue() const { return class_type_ == kInitialClass; }
+  bool IsUnsetValue() const { return class_type_ == kUnsetClass; }
+  bool IsRevertValue() const { return class_type_ == kRevertClass; }
+  bool IsRevertLayerValue() const { return class_type_ == kRevertLayerClass; }
+  bool IsCSSWideKeyword() const {
+    return class_type_ >= kInheritedClass && class_type_ <= kRevertLayerClass;
+  }
+  bool IsLayoutFunctionValue() const {
+    return class_type_ == kLayoutFunctionClass;
+  }
+  bool IsLinearGradientValue() const {
+    return class_type_ == kLinearGradientClass;
+  }
+  bool IsPaletteMixValue() const { return class_type_ == kPaletteMixClass; }
+  bool IsPathValue() const { return class_type_ == kPathClass; }
+  bool IsQuadValue() const { return class_type_ == kQuadClass; }
+  bool IsRayValue() const { return class_type_ == kRayClass; }
+  bool IsRadialGradientValue() const {
+    return class_type_ == kRadialGradientClass;
+  }
+  bool IsConicGradientValue() const {
+    return class_type_ == kConicGradientClass;
+  }
+  bool IsConstantGradientValue() const {
+    return class_type_ == kConstantGradientClass;
+  }
+  bool IsReflectValue() const { return class_type_ == kReflectClass; }
+  bool IsShadowValue() const { return class_type_ == kShadowClass; }
+  bool IsStringValue() const { return class_type_ == kStringClass; }
+  bool IsURIValue() const { return class_type_ == kURIClass; }
+  bool IsLinearTimingFunctionValue() const {
+    return class_type_ == kLinearTimingFunctionClass;
+  }
+  bool IsCubicBezierTimingFunctionValue() const {
+    return class_type_ == kCubicBezierTimingFunctionClass;
+  }
+  bool IsStepsTimingFunctionValue() const {
+    return class_type_ == kStepsTimingFunctionClass;
+  }
+  bool IsGridTemplateAreasValue() const {
+    return class_type_ == kGridTemplateAreasClass;
+  }
+  bool IsContentDistributionValue() const {
+    return class_type_ == kCSSContentDistributionClass;
+  }
+  bool IsUnicodeRangeValue() const { return class_type_ == kUnicodeRangeClass; }
+  bool IsGridLineNamesValue() const {
+    return class_type_ == kGridLineNamesClass;
+  }
+  bool IsUnparsedDeclaration() const {
+    return class_type_ == kUnparsedDeclarationClass;
+  }
+  bool IsGridAutoRepeatValue() const {
+    return class_type_ == kGridAutoRepeatClass;
+  }
+  bool IsGridIntegerRepeatValue() const {
+    return class_type_ == kGridIntegerRepeatClass;
+  }
+  bool IsPendingSubstitutionValue() const {
+    return class_type_ == kPendingSubstitutionValueClass;
+  }
+  bool IsPendingSystemFontValue() const {
+    return class_type_ == kPendingSystemFontValueClass;
+  }
+  bool IsInvalidVariableValue() const {
+    return class_type_ == kInvalidVariableValueClass ||
+           class_type_ == kCyclicVariableValueClass;
+  }
+  bool IsCyclicVariableValue() const {
+    return class_type_ == kCyclicVariableValueClass;
+  }
+  bool IsFlipRevertValue() const { return class_type_ == kFlipRevertClass; }
+  bool IsAlternateValue() const { return class_type_ == kAlternateClass; }
+  bool IsAxisValue() const { return class_type_ == kAxisClass; }
+  bool IsShorthandWrapperValue() const {
+    return class_type_ == kKeyframeShorthandClass;
+  }
+  bool IsInitialColorValue() const {
+    return class_type_ == kInitialColorValueClass;
+  }
+  bool IsLightDarkValuePair() const {
+    return class_type_ == kLightDarkValuePairClass;
+  }
+  bool IsAppearanceAutoBaseSelectValuePair() const {
+    return class_type_ == kAppearanceAutoBaseSelectValuePairClass;
+  }
+
+  bool IsScrollValue() const { return class_type_ == kScrollClass; }
+  bool IsViewValue() const { return class_type_ == kViewClass; }
+  bool IsRatioValue() const { return class_type_ == kRatioClass; }
+
+  bool IsRepeatStyleValue() const { return class_type_ == kRepeatStyleClass; }
+
+  bool HasFailedOrCanceledSubresources() const;
+  bool MayContainUrl() const;
+  void ReResolveUrl(const Document&) const;
+
+  bool operator==(const CSSValue&) const;
+  bool operator!=(const CSSValue& o) const { return !(*this == o); }
+
+  // Returns the same CSS value, but populated with the given tree scope for
+  // tree-scoped names and references.
+  const CSSValue& EnsureScopedValue(const TreeScope* tree_scope) const {
+    if (!needs_tree_scope_population_) {
+      return *this;
+    }
+    return PopulateWithTreeScope(tree_scope);
+  }
+  bool IsScopedValue() const { return !needs_tree_scope_population_; }
+
+
+  void TraceAfterDispatch(GCVisitor* visitor) const {}
+  void Trace(GCVisitor*) const;
+
+  static const size_t kValueListSeparatorBits = 2;
+  enum ValueListSeparator { kSpaceSeparator, kCommaSeparator, kSlashSeparator };
+
+ protected:
+  enum ClassType {
+    kNumericLiteralClass,
+    kMathFunctionClass,
+    kIdentifierClass,
+    kColorClass,
+    kColorMixClass,
+    kCounterClass,
+    kQuadClass,
+    kCustomIdentClass,
+    kStringClass,
+    kURIClass,
+    kValuePairClass,
+    kLightDarkValuePairClass,
+    kAppearanceAutoBaseSelectValuePairClass,
+    kScrollClass,
+    kViewClass,
+    kRatioClass,
+
+    // Basic shape classes.
+    // TODO(sashab): Represent these as a single subclass, BasicShapeClass.
+    kBasicShapeCircleClass,
+    kBasicShapeEllipseClass,
+    kBasicShapePolygonClass,
+    kBasicShapeInsetClass,
+    kBasicShapeRectClass,
+    kBasicShapeXYWHClass,
+
+    // Image classes.
+    kImageClass,
+    kCursorImageClass,
+
+    // Image generator classes.
+    kCrossfadeClass,
+    kPaintClass,
+    kLinearGradientClass,
+    kRadialGradientClass,
+    kConicGradientClass,
+    kConstantGradientClass,
+
+    // Timing function classes.
+    kLinearTimingFunctionClass,
+    kCubicBezierTimingFunctionClass,
+    kStepsTimingFunctionClass,
+
+    // Other class types.
+    kBorderImageSliceClass,
+    kDynamicRangeLimitMixClass,
+    kFontFeatureClass,
+    kFontFaceSrcClass,
+    kFontFamilyClass,
+    kFontStyleRangeClass,
+    kFontVariationClass,
+    kAlternateClass,
+
+    kInheritedClass,
+    kInitialClass,
+    kUnsetClass,
+    kRevertClass,
+    kRevertLayerClass,
+
+    kReflectClass,
+    kShadowClass,
+    kUnicodeRangeClass,
+    kGridTemplateAreasClass,
+    kPaletteMixClass,
+    kPathClass,
+    kRayClass,
+    kUnparsedDeclarationClass,
+    kPendingSubstitutionValueClass,
+    kPendingSystemFontValueClass,
+    kInvalidVariableValueClass,
+    kCyclicVariableValueClass,
+    kFlipRevertClass,
+    kLayoutFunctionClass,
+
+    kCSSContentDistributionClass,
+
+    kKeyframeShorthandClass,
+    kInitialColorValueClass,
+
+    kImageSetOptionClass,
+    kImageSetTypeClass,
+
+    kRepeatStyleClass,
+
+    // List class types must appear after ValueListClass.
+    kValueListClass,
+    kFunctionClass,
+    kImageSetClass,
+    kGridLineNamesClass,
+    kGridAutoRepeatClass,
+    kGridIntegerRepeatClass,
+    kAxisClass,
+    // Do not append non-list class types here.
+  };
+
+  ClassType GetClassType() const { return static_cast<ClassType>(class_type_); }
+
+  const CSSValue& PopulateWithTreeScope(const TreeScope*) const;
+
+  explicit CSSValue(ClassType class_type)
+      : allows_negative_percentage_reference_(false),
+        needs_tree_scope_population_(false),
+        class_type_(class_type) {}
+
+  // NOTE: This class is non-virtual for memory and performance reasons.
+  // Don't go making it virtual again unless you know exactly what you're doing!
+
+ protected:
+  // The value in this section are only used by specific subclasses but kept
+  // here to maximize struct packing. If we need space for more, we could use
+  // bitfields, but we don't currently (and Clang creates better code if we
+  // avoid it). (This class used to be 3 and not 4 bytes, but this doesn't
+  // actually save any memory, due to padding.)
+
+  // CSSNumericLiteralValue bits:
+  // This field holds CSSPrimitiveValue::UnitType.
+  uint8_t numeric_literal_unit_type_ = 0;
+
+  // CSSNumericLiteralValue bits:
+  uint8_t value_list_separator_ = kSpaceSeparator;
+
+  // CSSMathFunctionValue:
+  uint8_t allows_negative_percentage_reference_ : 1;  // NOLINT
+
+  // Any CSS value that defines/references a global name should be tree-scoped.
+  // However, to allow sharing StyleSheetContents, we don't directly populate
+  // CSS values with tree scope in parsed results, but wait until resolving an
+  // element's style.
+  // The flag is true if the value contains such references but hasn't been
+  // populated with a tree scope.
+  uint8_t needs_tree_scope_population_ : 1;  // NOLINT
+
+  // Whether this value originally came from a quirksmode-specific declaration.
+  // Used for use counting of such situations (to see if we can try to remove
+  // the functionality).
+  uint8_t was_quirky_ : 1 = false;
+
+ private:
+  const uint8_t class_type_;  // ClassType
+};
+
+template <typename CSSValueType>
+inline bool CompareCSSValueVector(
+    const std::vector<std::shared_ptr<CSSValueType>>& first_vector,
+    const std::vector<std::shared_ptr<CSSValueType>>& second_vector) {
+  uint32_t size = first_vector.size();
+  if (size != second_vector.size()) {
+    return false;
+  }
+
+  for (uint32_t i = 0; i < size; i++) {
+    if (!webf::ValuesEquivalent(first_vector[i], second_vector[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+}  // namespace webf
+
+#endif  // WEBF_CSS_VALUE_H
