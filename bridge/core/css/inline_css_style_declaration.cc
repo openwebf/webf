@@ -113,7 +113,7 @@ bool InlineCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::
   return true;
 }
 
-int64_t InlineCssStyleDeclaration::length() const {
+unsigned InlineCssStyleDeclaration::length() const {
   return properties_.size();
 }
 
