@@ -6,9 +6,42 @@
 #include "html_link_element.h"
 #include "html_names.h"
 #include "qjs_html_link_element.h"
+#include "binding_call_methods.h"
 
 namespace webf {
 
 HTMLLinkElement::HTMLLinkElement(Document& document) : HTMLElement(html_names::klink, &document) {}
+
+NativeValue HTMLLinkElement::HandleCallFromDartSide(const webf::AtomicString& method, int32_t argc, const webf::NativeValue* argv, Dart_Handle dart_object) {
+  if (!isContextValid(contextId()))
+    return Native_NewNull();
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+
+  if (method == binding_call_methods::kparseAthorStyleSheet) {
+    return HandleParseAuthorStyleSheet(argc, argv, dart_object);
+  }
+
+  return Native_NewNull();
+};
+
+NativeValue HTMLLinkElement::HandleParseAuthorStyleSheet(int32_t argc, const NativeValue* argv, Dart_Handle dart_object) {
+  GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps("HTMLLinkElement::HandleParseAuthorStyleSheet");
+
+  // TODO: 解析参数
+//  AtomicString& cssString();
+//  AtomicString& href();
+//  NativeValue result = parseAuthorStyleSheet(cssString(), href());
+
+  GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
+
+
+  return Native_NewNull();
+};
+
+NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, AtomicString& href){
+  // 走 styleEngine.parseAuthorStyleSheet;
+
+  return Native_NewNull();
+};
 
 }  // namespace webf
