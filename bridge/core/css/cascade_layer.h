@@ -1,6 +1,10 @@
-//
-// Created by 谢作兵 on 20/06/24.
-//
+// Copyright 2021 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CASCADE_LAYER_H
 #define WEBF_CASCADE_LAYER_H

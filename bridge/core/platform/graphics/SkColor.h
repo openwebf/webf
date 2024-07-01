@@ -1,6 +1,13 @@
-//
-// Created by 谢作兵 on 18/06/24.
-//
+/*
+ * Copyright 2006 The Android Open Source Project
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_SKCOLOR_H
 #define WEBF_SKCOLOR_H

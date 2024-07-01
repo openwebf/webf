@@ -1,6 +1,6 @@
-//
-// Created by 谢作兵 on 07/06/24.
-//
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "core/css/parser/css_parser_context.h"
 #include "core/dom/document.h"

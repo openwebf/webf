@@ -1,6 +1,6 @@
-//
-// Created by 谢作兵 on 14/06/24.
-//
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "style_engine.h"
 #include "gtest/gtest.h"

@@ -1,9 +1,10 @@
-//
-// Created by 谢作兵 on 14/06/24.
-//
-//
-// Created by 谢作兵 on 21/05/24.
-//
+// Copyright 2019 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_PASS_KEY_H
 #define WEBF_PASS_KEY_H

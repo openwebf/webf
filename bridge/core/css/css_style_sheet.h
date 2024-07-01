@@ -1,6 +1,6 @@
-//
-// Created by 谢作兵 on 07/06/24.
-//
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CSS_STYLE_SHEET_H
 #define WEBF_CSS_STYLE_SHEET_H

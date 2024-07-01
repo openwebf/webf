@@ -1,6 +1,9 @@
-//
-// Created by 谢作兵 on 17/06/24.
-//
+// Copyright 2013 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Copyright (C) 2022-present The WebF authors. All rights reserved.
+
 
 #ifndef WEBF_BITS_H
 #define WEBF_BITS_H

@@ -1,6 +1,6 @@
-//
-// Created by 谢作兵 on 18/06/24.
-//
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
       && ('%' == 37) && ('&' == 38) && ('\'' == 39) && ('(' == 40) \

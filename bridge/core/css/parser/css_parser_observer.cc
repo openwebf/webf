@@ -1,6 +1,8 @@
-//
-// Created by 谢作兵 on 13/06/24.
-//
+
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "css_parser_observer.h"
 

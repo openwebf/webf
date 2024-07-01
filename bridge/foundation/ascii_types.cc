@@ -1,4 +1,6 @@
-
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "ascii_types.h"
 
