@@ -133,6 +133,7 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
 
         traverseHTML(element, child);
         root_container->AppendChild(element);
+        element->FinishParsingChildren();
         parseProperty(element, &child->v.element);
       } else if (child->type == GUMBO_NODE_TEXT) {
         auto* text = context->document()->createTextNode(AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
