@@ -610,6 +610,10 @@ std::string Element::innerHTML() {
   return s;
 }
 
+AtomicString Element::TextFromChildren() {
+  return {ctx(), innerHTML()};
+}
+
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
   auto html = value.ToStdString(ctx());
   ChildListMutationScope scope{*this};
@@ -648,4 +652,22 @@ bool Element::ChildTypeAllowed(NodeType type) const {
   return false;
 }
 
+
+void Element::FinishParsingChildren() {
+  SetIsFinishedParsingChildren(true);
+//  CheckForEmptyStyleChange(this, this);
+//  CheckForSiblingStyleChanges(kFinishedParsingChildren, nullptr, lastChild(),
+//                              nullptr);
+//
+//  if (GetDocument().HasRenderBlockingExpectLinkElements()) {
+//    DCHECK(GetDocument().GetRenderBlockingResourceManager());
+//    GetDocument()
+//        .GetRenderBlockingResourceManager()
+//        ->RemovePendingParsingElement(GetIdAttribute(), this);
+//  }
+//  GetDocument()
+//      .GetStyleEngine()
+        // .ScheduleInvalidationsForHasPseudoAffectedByInsertion(
+        //   parentElement(), previousSibling(), *this);
+}
 }  // namespace webf

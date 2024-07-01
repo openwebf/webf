@@ -10,6 +10,8 @@
 #include "event_type_names.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
+#include "core/css/style_engine.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -126,12 +128,21 @@ class Document : public ContainerNode, public TreeScope {
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const override;
+  StyleEngine& GetStyleEngine() const {
+    assert(style_engine_.get());
+    return *style_engine_;
+  }
+  bool IsForMarkupSanitization() const { return is_for_markup_sanitization_; }
 
  private:
   int node_count_{0};
   ScriptAnimationController script_animation_controller_;
   MutationObserverOptions mutation_observer_types_;
+  std::shared_ptr<StyleEngine> style_engine_;
+  bool is_for_markup_sanitization_ = false;
 };
+
+WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Document)
 
 template <>
 struct DowncastTraits<Document> {

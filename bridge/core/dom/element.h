@@ -98,6 +98,7 @@ class Element : public ContainerNode {
 
   std::string outerHTML();
   std::string innerHTML();
+  AtomicString TextFromChildren();
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
 
   bool HasTagName(const AtomicString&) const;
@@ -141,6 +142,7 @@ class Element : public ContainerNode {
   // Step 5 of https://dom.spec.whatwg.org/#concept-node-clone
   virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) {}
   virtual bool IsWidgetElement() const;
+  virtual void FinishParsingChildren();
 
   void Trace(GCVisitor* visitor) const override;
 

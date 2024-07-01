@@ -37,6 +37,7 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
 
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
+  style_engine_ = std::make_shared<StyleEngine>(*this);
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocument, nullptr, bindingObject(), nullptr);
 }
 
@@ -51,6 +52,7 @@ Element* Document::createElement(const AtomicString& name, ExceptionState& excep
   }
 
   if (auto* element = HTMLElementFactory::Create(local_name, *this)) {
+    element->FinishParsingChildren();
     return element;
   }
 

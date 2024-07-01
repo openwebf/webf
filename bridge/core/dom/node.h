@@ -147,6 +147,7 @@ class Node : public EventTarget {
   bool IsCustomElement() const { return GetCustomElementState() != CustomElementState::kUncustomized; }
   void SetCustomElementState(CustomElementState);
 
+  [[nodiscard]] virtual bool IsPseudoElement() const { return false; }
   [[nodiscard]] virtual bool IsMediaElement() const { return false; }
   [[nodiscard]] virtual bool IsAttributeNode() const { return false; }
   [[nodiscard]] virtual bool IsCharacterDataNode() const { return false; }
@@ -257,6 +258,9 @@ class Node : public EventTarget {
 
   const MutationObserverRegistrationVector* MutationObserverRegistry();
   const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
+  void SetIsFinishedParsingChildren(bool value) {
+    SetFlag(value, kIsFinishedParsingChildrenFlag);
+  }
 
   void Trace(GCVisitor*) const override;
 
