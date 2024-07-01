@@ -37,6 +37,7 @@
 
 #include <cassert>
 #include <type_traits>
+#include <memory>
 
 namespace webf {
 
@@ -148,11 +149,30 @@ Derived* To(Base* from) {
   return from ? &To<Derived>(*from) : nullptr;
 }
 
+// Unconditionally downcasts from Base to Derived. Internally, this asserts
+// that |from| is a Derived to help catch bad casts in testing/fuzzing. For the
+// pointer overloads, returns nullptr if the input pointer is nullptr.
+template <typename Derived, typename Base>
+const Derived& UnsafeTo(const Base& from) {
+  assert(IsA<Derived>(from));
+  return static_cast<const Derived&>(from);
+}
+
+template <typename Derived, typename Base>
+const Derived* UnsafeTo(const Base* from) {
+  return from ? &UnsafeTo<Derived>(*from) : nullptr;
+}
 // Safely downcasts from Base to Derived. If |from| is not a Derived, returns
 // nullptr; otherwise, downcasts from Base to Derived. For the pointer
 // overloads, returns nullptr if the input pointer is nullptr.
 template <typename Derived, typename Base>
 const Derived* DynamicTo(const Base* from) {
+  return IsA<Derived>(from) ? To<Derived>(from) : nullptr;
+}
+
+// overloads, returns nullptr if the input pointer is nullptr.
+template <typename Derived, typename Base>
+std::shared_ptr<const Derived> DynamicTo(const std::shared_ptr<Base> from) {
   return IsA<Derived>(from) ? To<Derived>(from) : nullptr;
 }
 

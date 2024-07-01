@@ -52,8 +52,19 @@ inline bool IsASCIIDigit(CharType c) {
 }
 
 template <typename CharType>
+inline bool IsASCIIHexDigit(CharType c) {
+  return IsASCIIDigit(c) || ((c | 0x20) >= 'a' && (c | 0x20) <= 'f');
+}
+
+template <typename CharType>
 inline bool IsASCIIAlphanumeric(CharType c) {
   return IsASCIIDigit(c) || IsASCIIAlpha(c);
+}
+
+template <typename CharType>
+inline int ToASCIIHexValue(CharType c) {
+  assert(IsASCIIHexDigit(c));
+  return c < 'A' ? c - '0' : (c - 'A' + 10) & 0xF;
 }
 
 /*
@@ -96,6 +107,22 @@ inline bool IsASCIILower(CharacterType character) {
 template <typename CharacterType>
 inline CharacterType ToASCIIUpper(CharacterType character) {
   return character & ~(IsASCIILower(character) << 5);
+}
+
+extern const unsigned char kASCIICaseFoldTable[256];
+
+template <typename CharType>
+inline CharType ToASCIILower(CharType c) {
+  return c | ((c >= 'A' && c <= 'Z') << 5);
+}
+
+
+inline unsigned char ToASCIILower(unsigned char c) {
+  return kASCIICaseFoldTable[c];
+}
+
+inline char ToASCIILower(char c) {
+  return static_cast<char>(kASCIICaseFoldTable[static_cast<unsigned char>(c)]);
 }
 
 }  // namespace webf
