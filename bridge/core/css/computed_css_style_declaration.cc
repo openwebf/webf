@@ -44,7 +44,7 @@ bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf
   return true;
 }
 
-int64_t ComputedCssStyleDeclaration::length() const {
+unsigned ComputedCssStyleDeclaration::length() const {
   NativeValue result = GetBindingProperty(
       binding_call_methods::klength,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, ASSERT_NO_EXCEPTION());
