@@ -1,0 +1,44 @@
+//
+// Created by 谢作兵 on 18/06/24.
+//
+
+#ifndef WEBF_CSS_UNSET_VALUE_H
+#define WEBF_CSS_UNSET_VALUE_H
+
+
+#include "core/base/types/pass_key.h"
+#include "core/css/css_value.h"
+#include "foundation/casting.h"
+
+namespace webf {
+
+
+class CSSValuePool;
+
+namespace cssvalue {
+
+class CSSUnsetValue : public CSSValue {
+ public:
+  static CSSUnsetValue* Create();
+
+  explicit CSSUnsetValue(webf::PassKey<CSSValuePool>) : CSSValue(kUnsetClass) {}
+
+  AtomicString CustomCSSText() const;
+
+  bool Equals(const CSSUnsetValue&) const { return true; }
+
+  void TraceAfterDispatch(GCVisitor* visitor) const {
+    CSSValue::TraceAfterDispatch(visitor);
+  }
+};
+
+}  // namespace cssvalue
+
+template <>
+struct DowncastTraits<cssvalue::CSSUnsetValue> {
+  static bool AllowFrom(const CSSValue& value) { return value.IsUnsetValue(); }
+};
+
+}  // namespace webf
+
+#endif  // WEBF_CSS_UNSET_VALUE_H
