@@ -35,6 +35,8 @@
 
 namespace webf {
 
+enum class SecureContextMode { kInsecureContext, kSecureContext };
+
 struct NativeByteCode {
   uint8_t* bytes;
   int32_t length;
