@@ -236,5 +236,6 @@
     "Symbol_unscopables",
     "Symbol_asyncIterator",
 //    "Symbol_operatorSet",
+    "CssNameSpace_StarAtom"
   ]
 }
