@@ -13,6 +13,7 @@
 
 #include <v8/v8.h>
 #include "platform/platform_export.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -23,7 +24,7 @@ namespace bindings {
 // The common base class of code-generated V8-Blink bridge class of IDL
 // interfaces and namespaces.
 class PLATFORM_EXPORT V8InterfaceBridgeBase {
-  STATIC_ONLY(V8InterfaceBridgeBase);
+  WEBF_STATIC_ONLY(V8InterfaceBridgeBase);
 
  public:
   // Selects properties to be installed according to origin trial features.

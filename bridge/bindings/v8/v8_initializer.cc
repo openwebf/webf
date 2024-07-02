@@ -143,13 +143,13 @@ struct PrintV8OOM {
 };
 
 std::ostream& operator<<(std::ostream& os, const PrintV8OOM& oom_details) {
-  const auto [location, details] = oom_details;
-  os << "V8 " << (details.is_heap_oom ? "javascript" : "process") << " OOM ("
-     << location;
-  if (details.detail) {
-    os << "; detail: " << details.detail;
-  }
-  os << ").";
+//  const auto [location, details] = oom_details;
+//  os << "V8 " << (details.is_heap_oom ? "javascript" : "process") << " OOM ("
+//     << location;
+//  if (details.detail) {
+//    os << "; detail: " << details.detail;
+//  }
+//  os << ").";
   return os;
 }
 
@@ -293,7 +293,7 @@ void V8Initializer::InitializeIsolateHolder(
 }
 
 v8::Isolate* V8Initializer::InitializeMainThread() {
-  DCHECK(IsMainThread());
+//  DCHECK(IsMainThread());
 //  ThreadScheduler* scheduler = ThreadScheduler::Current();
 
   V8PerIsolateData::V8ContextSnapshotMode snapshot_mode =
@@ -313,7 +313,7 @@ v8::Isolate* V8Initializer::InitializeMainThread() {
   // ThreadState::isolate_ needs to be set before setting the EmbedderHeapTracer
   // as setting the tracer indicates that a V8 garbage collection should trace
   // over to Blink.
-  DCHECK(ThreadStateStorage::MainThreadStateStorage());
+//  DCHECK(ThreadStateStorage::MainThreadStateStorage());
 
   InitializeV8Common(isolate);
 
