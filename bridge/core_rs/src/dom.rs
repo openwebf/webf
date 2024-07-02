@@ -11,7 +11,7 @@ pub fn init_webf_dom(context: &ExecutingContext){
   let exception_state = context.create_exception_state();
 
   let html_tag_name = CString::new("html");
-  let html_element = document.create_element(&html_tag_name.unwrap(), &exception_state)?;
+  let html_element = document.create_element(&html_tag_name.unwrap(), &exception_state).unwrap();
 
   document.append_child(&html_element, &exception_state).unwrap();
 
@@ -23,4 +23,3 @@ pub fn init_webf_dom(context: &ExecutingContext){
   let body_element = document.create_element(&body_tag_name.unwrap(), &exception_state).unwrap();
   document.document_element().append_child(&body_element, &exception_state).unwrap();
 }
-
