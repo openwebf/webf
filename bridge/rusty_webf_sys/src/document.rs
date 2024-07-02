@@ -14,10 +14,27 @@ use crate::{OpaquePtr, RustValue};
 use crate::text::{Text, TextNodeRustMethods};
 
 #[repr(C)]
+pub struct ElementCreationOptions {
+  pub is: *const c_char,
+}
+
+#[repr(C)]
 pub struct DocumentRustMethods {
   pub version: c_double,
   pub container_node: *const ContainerNodeRustMethods,
   pub create_element: extern "C" fn(document: *const OpaquePtr, tag_name: *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub create_element_with_element_creation_options: extern "C" fn(
+    document: *const OpaquePtr,
+    tag_name: *const c_char,
+    options: &mut ElementCreationOptions,
+    exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub create_element_ns: extern "C" fn(document: *const OpaquePtr, uri: *const c_char, tag_name: *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub create_element_ns_with_element_creation_options: extern "C" fn(
+    document: *const OpaquePtr,
+    uri: *const c_char,
+    tag_name: *const c_char,
+    options: &mut ElementCreationOptions,
+    exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub create_text_node: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<TextNodeRustMethods>,
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
 }
@@ -37,6 +54,48 @@ impl Document {
     let event_target: &EventTarget = &self.container_node.node.event_target;
     let new_element_value = unsafe {
       ((*self.method_pointer).create_element)(event_target.ptr, name.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
+  }
+
+  pub fn create_element_with_element_creation_options(&self, name: &CString, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let new_element_value = unsafe {
+      ((*self.method_pointer).create_element_with_element_creation_options)(event_target.ptr, name.as_ptr(), options, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
+  }
+
+  /// Behavior as same as `document.createElementNS()` in JavaScript.
+  /// Creates a new element with the given namespace URI and qualified name.
+  /// The qualified name is a concatenation of the namespace prefix, a colon, and the local name.
+  pub fn create_element_ns(&self, uri: &CString, name: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let new_element_value = unsafe {
+      ((*self.method_pointer).create_element_ns)(event_target.ptr, uri.as_ptr(), name.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
+  }
+
+  pub fn create_element_ns_with_element_creation_options(&self, uri: &CString, name: &CString, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let new_element_value = unsafe {
+      ((*self.method_pointer).create_element_ns_with_element_creation_options)(event_target.ptr, uri.as_ptr(), name.as_ptr(), options, exception_state.ptr)
     };
 
     if exception_state.has_exception() {
