@@ -11,7 +11,7 @@
 #include <string>
 
 //#include "base/base_export.h"
-#include "bindings/v8/base/memory/raw_ptr_exclusion.h"
+//#include "bindings/v8/base/memory/raw_ptr_exclusion.h"
 //#include "base/trace_event/base_tracing_forward.h"
 #include "bindings/v8/for_build/build_config.h"
 
@@ -101,7 +101,7 @@ class Location {
 
   // `program_counter_` is not a raw_ptr<...> for performance reasons (based on
   // analysis of sampling profiler data and tab_search:top100:2020).
-  RAW_PTR_EXCLUSION const void* program_counter_ = nullptr;
+  const void* program_counter_ = nullptr;
 };
 
 const void* GetProgramCounter();

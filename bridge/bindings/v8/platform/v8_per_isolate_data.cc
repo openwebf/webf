@@ -9,7 +9,6 @@
 #include <utility>
 
 //#include "bindings/v8/base/debug/crash_logging.h"
-//#include "bindings/v8/base/feature_list.h"
 //#include "bindings/v8/base/metrics/histogram_macros.h"
 //#include "bindings/v8/base/ranges/algorithm.h"
 //#include "bindings/v8/base/task/single_thread_task_runner.h"
@@ -129,7 +128,7 @@ V8PerIsolateData::V8PerIsolateData(
   if (v8_context_snapshot_mode == V8ContextSnapshotMode::kTakeSnapshot) {
     // Snapshot should only execute on the main thread. SnapshotCreator enters
     // the isolate, so we don't call Isolate::Enter() here.
-    CHECK(IsMainThread());
+//    CHECK(IsMainThread());
   } else {
     // FIXME: Remove once all v8::Isolate::GetCurrent() calls are gone.
 //    GetIsolate()->Enter();
@@ -163,7 +162,7 @@ v8::Isolate* V8PerIsolateData::Initialize(
 //      std::move(task_runner), std::move(low_priority_task_runner),
                                 context_mode,
       create_histogram_callback, add_histogram_sample_callback);
-  DCHECK(data);
+//  DCHECK(data);
 
   v8::Isolate* isolate;
 //  v8::Isolate* isolate = data->GetIsolate();
@@ -197,7 +196,7 @@ void V8PerIsolateData::WillBeDestroyed(v8::Isolate* isolate) {
 //  data->active_script_wrappable_manager_.Clear();
   // Callbacks can be removed as they only cover single events (e.g. atomic
   // pause) and they cannot get out of sync.
-  DCHECK_EQ(0u, data->gc_callback_depth_);
+//  DCHECK_EQ(0u, data->gc_callback_depth_);
   isolate->RemoveGCPrologueCallback(data->prologue_callback_);
   isolate->RemoveGCEpilogueCallback(data->epilogue_callback_);
 }

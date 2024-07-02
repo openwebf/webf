@@ -11,6 +11,7 @@
 #include "gin/public/wrapper_info.h"
 #include "platform/platform_export.h"
 #include "v8_interface_bridge_base.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -32,7 +33,7 @@ static const int kV8PrototypeInternalFieldcount = 1;
 // WrapperTypeInfo member, so comparing pointers is a safe way to determine if
 // types match.
 struct PLATFORM_EXPORT WrapperTypeInfo final {
-  DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
   enum WrapperTypePrototype {
     kWrapperTypeObjectPrototype,
@@ -124,7 +125,7 @@ struct PLATFORM_EXPORT WrapperTypeInfo final {
 
   // This field must be the first member of the struct WrapperTypeInfo.
   // See also static_assert() in .cpp file.
-  const gin::GinEmbedder gin_embedder;
+//  const gin::GinEmbedder gin_embedder;
 
   bindings::V8InterfaceBridgeBase::InstallInterfaceTemplateFuncType
       install_interface_template_func;

@@ -73,7 +73,7 @@ v8::Local<v8::Object> V8PerContextData::CreateWrapperFromCacheSlowCase(
   // TODO webf
 //  DCHECK(!wrapper_boilerplates_.Contains(type));
   v8::Context::Scope scope(GetContext());
-  v8::Local<v8::Function> interface_object = ConstructorForType(type);
+//  v8::Local<v8::Function> interface_object = ConstructorForType(type);
 //  if (UNLIKELY(interface_object.IsEmpty())) {
     // For investigation of crbug.com/1199223
     // TODO webf not include crash_reporter for now
@@ -102,28 +102,28 @@ v8::Local<v8::Function> V8PerContextData::ConstructorForTypeSlowCase(
   v8::Local<v8::Context> context = GetContext();
   v8::Context::Scope scope(context);
 
-  v8::Local<v8::Function> parent_interface_object;
-  if (auto* parent = type->parent_class) {
-    if (parent->is_skipped_in_interface_object_prototype_chain) {
-      // This is a special case for WindowProperties.
-      // We need to set up the inheritance of Window as the following:
-      //   Window.__proto__ === EventTarget
-      // although the prototype chain is the following:
-      //   Window.prototype.__proto__           === the named properties object
-      //   Window.prototype.__proto__.__proto__ === EventTarget.prototype
-      // where the named properties object is WindowProperties.prototype in
-      // our implementation (although WindowProperties is not JS observable).
-      // Let WindowProperties be skipped and make
-      // Window.__proto__ == EventTarget.
-
-      // TODO webf
-//      DCHECK(parent->parent_class);
-//      DCHECK(!parent->parent_class
-//                  ->is_skipped_in_interface_object_prototype_chain);
-      parent = parent->parent_class;
-    }
-    parent_interface_object = ConstructorForType(parent);
-  }
+//  v8::Local<v8::Function> parent_interface_object;
+//  if (auto* parent = type->parent_class) {
+//    if (parent->is_skipped_in_interface_object_prototype_chain) {
+//      // This is a special case for WindowProperties.
+//      // We need to set up the inheritance of Window as the following:
+//      //   Window.__proto__ === EventTarget
+//      // although the prototype chain is the following:
+//      //   Window.prototype.__proto__           === the named properties object
+//      //   Window.prototype.__proto__.__proto__ === EventTarget.prototype
+//      // where the named properties object is WindowProperties.prototype in
+//      // our implementation (although WindowProperties is not JS observable).
+//      // Let WindowProperties be skipped and make
+//      // Window.__proto__ == EventTarget.
+//
+//      // TODO webf
+////      DCHECK(parent->parent_class);
+////      DCHECK(!parent->parent_class
+////                  ->is_skipped_in_interface_object_prototype_chain);
+//      parent = parent->parent_class;
+//    }
+//    parent_interface_object = ConstructorForType(parent);
+//  }
 
 //  const DOMWrapperWorld& world = DOMWrapperWorld::World(isolate_, context);
   // TODO webf not include V8ObjectConstructor for now
@@ -142,46 +142,46 @@ v8::Local<v8::Function> V8PerContextData::ConstructorForTypeSlowCase(
 
 v8::Local<v8::Object> V8PerContextData::PrototypeForType(
     const WrapperTypeInfo* type) {
-  v8::Local<v8::Object> constructor = ConstructorForType(type);
-  if (constructor.IsEmpty())
-    return v8::Local<v8::Object>();
+//  v8::Local<v8::Object> constructor = ConstructorForType(type);
+//  if (constructor.IsEmpty())
+//    return v8::Local<v8::Object>();
   v8::Local<v8::Value> prototype_value;
-  if (!constructor->Get(GetContext(), V8AtomicString(isolate_, "prototype"))
-           .ToLocal(&prototype_value) ||
-      !prototype_value->IsObject())
-    return v8::Local<v8::Object>();
+//  if (!constructor->Get(GetContext(), V8AtomicString(isolate_, "prototype"))
+//           .ToLocal(&prototype_value) ||
+//      !prototype_value->IsObject())
+//    return v8::Local<v8::Object>();
   return prototype_value.As<v8::Object>();
 }
 
-bool V8PerContextData::GetExistingConstructorAndPrototypeForType(
-    const WrapperTypeInfo* type,
-    v8::Local<v8::Object>* prototype_object,
-    v8::Local<v8::Function>* interface_object) {
-  auto it = constructor_map_.find(type);
-  if (it == constructor_map_.end()) {
-    interface_object->Clear();
-    prototype_object->Clear();
-    return false;
-  }
-  *interface_object = it->value.Get(isolate_);
-  *prototype_object = PrototypeForType(type);
-  // TODO webf
-//  DCHECK(!prototype_object->IsEmpty());
-  return true;
-}
+//bool V8PerContextData::GetExistingConstructorAndPrototypeForType(
+//    const WrapperTypeInfo* type,
+//    v8::Local<v8::Object>* prototype_object,
+//    v8::Local<v8::Function>* interface_object) {
+//  auto it = constructor_map_.find(type);
+//  if (it == constructor_map_.end()) {
+//    interface_object->Clear();
+//    prototype_object->Clear();
+//    return false;
+//  }
+//  *interface_object = it->value.Get(isolate_);
+//  *prototype_object = PrototypeForType(type);
+//  // TODO webf
+////  DCHECK(!prototype_object->IsEmpty());
+//  return true;
+//}
 
 void V8PerContextData::AddData(const char* key, Data* data) {
   // TODO webf fix "In template: use of undeclared identifier 'AtomicMemzero'"
 //  data_map_.Set(key, data);
 }
 
-void V8PerContextData::ClearData(const char* key) {
-  data_map_.erase(key);
-}
+//void V8PerContextData::ClearData(const char* key) {
+//  data_map_.erase(key);
+//}
 
-V8PerContextData::Data* V8PerContextData::GetData(const char* key) {
-  auto it = data_map_.find(key);
-  return it != data_map_.end() ? it->value : nullptr;
-}
+//V8PerContextData::Data* V8PerContextData::GetData(const char* key) {
+//  auto it = data_map_.find(key);
+//  return it != data_map_.end() ? it->value : nullptr;
+//}
 
 }  // namespace webf

@@ -16,7 +16,6 @@
 #include "platform/script_state.h"
 #include "union_base.h"
 //#include "bindings/v8/platform/wtf/vector_traits.h"
-//#include "script_wrappable.h"
 #include "foundation/macros.h"
 #include "bindings/v8/trace_wrapper_v8_reference.h"
 
@@ -96,14 +95,6 @@ class ScriptValue final {
   }
 
   bool operator!=(const ScriptValue& value) const { return !operator==(value); }
-
-  // This creates a new local Handle; Don't use this in performance-sensitive
-  // places.
-  bool IsFunction() const {
-    assert_m(!IsEmpty(), "ScriptValue is empty");
-    v8::Local<v8::Value> value = V8Value();
-    return !value.IsEmpty() && value->IsFunction();
-  }
 
   // This creates a new local Handle; Don't use this in performance-sensitive
   // places.

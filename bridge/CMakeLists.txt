@@ -572,8 +572,6 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/atomic_string.cc
     bindings/v8/native_string_utils.cc
     bindings/v8/script_value.cc
-#    bindings/v8/exception_state.cc
-    bindings/v8/script_wrappable.cc
     bindings/v8/wrapper_type_info.cc
     bindings/v8/v8_interface_bridge_base.cc
     bindings/v8/v8_initializer.cc
@@ -587,12 +585,7 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/platform/heap/persistent.h
     bindings/v8/platform/heap/thread_state_storage.cc
     bindings/v8/platform/heap/write_barrier.h
-    bindings/v8/platform/heap/heap_allocator_impl.h
-    bindings/v8/platform/heap/trace_traits.h
     bindings/v8/platform/heap/custom_spaces.cc
-    bindings/v8/platform/heap/collection_support/heap_hash_map.h
-    bindings/v8/platform/heap/collection_support/heap_vector_backing.h
-    bindings/v8/platform/heap/collection_support/heap_hash_table_backing.h
     bindings/v8/platform/util/gc_plugin.h
     bindings/v8/platform/util/main_thread_util.cc
     bindings/v8/union_base.cc
@@ -602,20 +595,15 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/for_build/build_config.h
     bindings/v8/for_build/buildflag.h
     bindings/v8/platform/platform_export.h
-    bindings/v8/platform/wtf/thread_specific.h
     bindings/v8/platform/wtf/dtoa.cc
     bindings/v8/platform/wtf/stack_util.cc
     bindings/v8/platform/wtf/atomic_operations.cc
-    bindings/v8/platform/wtf/threading.cc
     bindings/v8/platform/wtf/type_traits.cc
     bindings/v8/platform/wtf/vector_traits.cc
     bindings/v8/platform/wtf/hash_traits.h
     bindings/v8/platform/wtf/hash_functions.h
     bindings/v8/platform/wtf/hash_table_deleted_value_type.h
-    bindings/v8/platform/wtf/key_value_pair.h
-    bindings/v8/platform/wtf/hash_table.cc
     bindings/v8/platform/wtf/webf_size_t.h
-    bindings/v8/platform/wtf/hash_map.h
     bindings/v8/platform/wtf/conditional_destructor.h
     bindings/v8/platform/wtf/construct_traits.h
     bindings/v8/platform/wtf/sanitizers.h
@@ -630,14 +618,11 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/containers/flat_set.h
     bindings/v8/base/containers/flat_tree.h
     bindings/v8/base/containers/util.h
-    bindings/v8/base/metrics/field_trial_params.cc
     bindings/v8/base/numerics/clamped_math.h
     bindings/v8/base/numerics/clamped_math_impl.h
     bindings/v8/base/ranges/algorithm.h
     bindings/v8/base/ranges/functional.h
     bindings/v8/base/ranges/ranges.h
-    bindings/v8/base/synchronization/lock.cc
-    bindings/v8/base/synchronization/lock_impl.h
     bindings/v8/base/time/time.cc
     bindings/v8/base/types/to_address.h
     bindings/v8/base/types/supports_ostream_operator.h
@@ -648,9 +633,6 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/check.h
     bindings/v8/base/check_op.cc
     bindings/v8/base/dcheck_is_on.h
-    bindings/v8/base/feature_list.cc
-    bindings/v8/base/feature_list_buildflags.h
-    bindings/v8/base/features.cc
     bindings/v8/base/template_util.h
     bindings/v8/base/thread_annotations.h
     bindings/v8/base/location.cc
@@ -662,7 +644,6 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/base/numerics/safe_math_shared_impl.h
     bindings/v8/base/numerics/safe_math_clang_gcc_impl.h
     bindings/v8/base/memory/raw_ptr.h
-    bindings/v8/base/memory/raw_ptr_exclusion.h
     bindings/v8/base/memory/scoped_refptr.h
     bindings/v8/base/memory/stack_allocated.h
     bindings/v8/base/compiler_specific.h
@@ -696,14 +677,14 @@ endif()
 
 list(APPEND BRIDGE_SOURCE
   # Core sources
-#  webf_bridge.cc
+  webf_bridge.cc
 #  core/api/api.cc
 #  core/executing_context.cc
 #  core/script_forbidden_scope.cc
 #  core/script_state.cc
 #  core/page.cc
-#  core/dart_methods.cc
-#  core/dart_isolate_context.cc
+  core/dart_methods.cc
+  core/dart_isolate_context.cc
 #  core/dart_context_data.cc
 #  core/executing_context_data.cc
 #  core/fileapi/blob.cc

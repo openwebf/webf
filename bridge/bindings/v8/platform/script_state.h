@@ -8,6 +8,7 @@
 
 
 #include <v8/v8.h>
+#include <assert.h>
 #include "bindings/v8/base/memory/stack_allocated.h"
 #include "bindings/v8/platform/heap/garbage_collected.h"
 #include "foundation/macros.h"

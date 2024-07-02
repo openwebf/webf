@@ -18,8 +18,6 @@
 #include "bindings/v8/platform/heap/garbage_collected.h"
 #include "bindings/v8/platform/heap/persistent.h"
 #include "bindings/v8/platform/platform_export.h"
-//#include "bindings/v8/platform/wtf/forward.h"
-#include "bindings/v8/platform/wtf/hash_map.h"
 #include <v8/v8-callbacks.h>
 #include <v8/v8-forward.h>
 #include <v8/v8-isolate.h>
@@ -27,7 +25,7 @@
 #include <v8/v8-persistent-handle.h>
 #include <v8/v8-template.h>
 #include "bindings/v8/wrapper_type_info.h"
-#include "bindings/v8/platform/util/allocator/partition_allocator.h"
+//#include "bindings/v8/platform/util/allocator/partition_allocator.h"
 
 namespace base {
 //class SingleThreadTaskRunner;
@@ -50,7 +48,7 @@ struct WrapperTypeInfo;
 // Used to hold data that is associated with a single v8::Isolate object, and
 // has a 1:1 relationship with v8::Isolate.
 class PLATFORM_EXPORT V8PerIsolateData final {
-  USING_FAST_MALLOC(V8PerIsolateData);
+//  USING_FAST_MALLOC(V8PerIsolateData);
 
  public:
   enum class V8ContextSnapshotMode {
@@ -92,8 +90,8 @@ class PLATFORM_EXPORT V8PerIsolateData final {
                                  v8::AddHistogramSampleCallback);
 
   static V8PerIsolateData* From(v8::Isolate* isolate) {
-    DCHECK(isolate);
-    DCHECK(isolate->GetData(gin::kEmbedderWebf));
+//    DCHECK(isolate);
+//    DCHECK(isolate->GetData(gin::kEmbedderWebf));
     return static_cast<V8PerIsolateData*>(
         isolate->GetData(gin::kEmbedderWebf));
   }

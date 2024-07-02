@@ -12,7 +12,7 @@
 #include <type_traits>
 
 #include "bindings/v8/base/dcheck_is_on.h"
-#include "bindings/v8/base/memory/raw_ptr_exclusion.h"
+//#include "bindings/v8/base/memory/raw_ptr_exclusion.h"
 #include "bindings/v8/base/strings/to_string.h"
 #include "bindings/v8/base/types/supports_ostream_operator.h"
 #include "bindings/v8/base/check.h"
@@ -150,21 +150,21 @@ char* CreateCheckOpLogMessageString(const char* expr_str,
     else                                                                     \
       check_failure_function(message_on_fail __VA_OPT__(, ) __VA_ARGS__)
 
-#if !CHECK_WILL_STREAM()
-
-// Discard log strings to reduce code bloat.
-#define CHECK_OP(name, op, val1, val2, ...)                                \
-  BASE_IF(BASE_IS_EMPTY(__VA_ARGS__), CHECK((val1)op(val2)),               \
-          CHECK_OP_FUNCTION_IMPL(::logging::CheckError::CheckOp, name, op, \
-                                 val1, val2, __VA_ARGS__))
-
-#else
+//#if !CHECK_WILL_STREAM()
+//
+//// Discard log strings to reduce code bloat.
+//#define CHECK_OP(name, op, val1, val2, ...)                                \
+//  BASE_IF(BASE_IS_EMPTY(__VA_ARGS__), CHECK((val1)op(val2)),               \
+//          CHECK_OP_FUNCTION_IMPL(::logging::CheckError::CheckOp, name, op, \
+//                                 val1, val2, __VA_ARGS__))
+//
+//#else
 
 #define CHECK_OP(name, op, val1, val2, ...)                              \
   CHECK_OP_FUNCTION_IMPL(::logging::CheckError::CheckOp, name, op, val1, \
                          val2 __VA_OPT__(, ) __VA_ARGS__)
 
-#endif
+//#endif
 
 // The second overload avoids address-taking of static members for
 // fundamental types.
