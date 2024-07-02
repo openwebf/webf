@@ -16,8 +16,6 @@
 //#include "bindings/v8/platform/wtf/text/atomic_string.h"
 //#include "bindings/v8/platform/wtf/text/copy_lchars_from_uchar_source.h"
 //#include "bindings/v8/platform/wtf/text/string_statics.h"
-#include "bindings/v8/platform/wtf/thread_specific.h"
-#include "bindings/v8/platform/wtf/threading.h"
 
 namespace webf {
 

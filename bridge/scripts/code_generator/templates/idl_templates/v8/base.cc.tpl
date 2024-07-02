@@ -9,7 +9,6 @@
 #include "bindings/v8/member_installer.h"
 #include "bindings/v8/qjs_function.h"
 #include "bindings/v8/converter_impl.h"
-#include "bindings/v8/script_wrappable.h"
 #include "bindings/v8/script_promise.h"
 #include "bindings/v8/cppgc/mutation_scope.h"
 #include "core/executing_context.h"

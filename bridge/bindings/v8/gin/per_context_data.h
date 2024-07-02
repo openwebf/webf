@@ -41,8 +41,8 @@ class GIN_EXPORT PerContextData {
   ContextHolder* context_holder() { return context_holder_; }
 
  private:
-  raw_ptr<ContextHolder, DanglingUntriaged> context_holder_;
-  raw_ptr<Runner> runner_;
+  ContextHolder *context_holder_;
+  Runner *runner_;
 };
 
 }  // namespace gin

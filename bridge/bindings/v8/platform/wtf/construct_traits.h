@@ -8,6 +8,7 @@
 
 #include "bindings/v8/platform/wtf/type_traits.h"
 #include "bindings/v8/platform/wtf/vector_traits.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -16,14 +17,14 @@ namespace webf {
 // dispatched through ConstructAndNotifyElement.
 template <typename T, typename Traits, typename Allocator>
 class ConstructTraits {
-  STATIC_ONLY(ConstructTraits);
+  WEBF_STATIC_ONLY(ConstructTraits);
 
  public:
   // Construct a single element that would otherwise be constructed using
   // placement new.
   template <typename... Args>
   static T* Construct(void* location, Args&&... args) {
-    return ::new (NotNullTag::kNotNull, location)
+    return ::new (base::NotNullTag::kNotNull, location)
         T(std::forward<Args>(args)...);
   }
 
