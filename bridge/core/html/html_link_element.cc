@@ -17,7 +17,7 @@ NativeValue HTMLLinkElement::HandleCallFromDartSide(const webf::AtomicString& me
     return Native_NewNull();
   MemberMutationScope mutation_scope{GetExecutingContext()};
 
-  if (method == binding_call_methods::kparseAthorStyleSheet) {
+  if (method == binding_call_methods::kparseAuthorStyleSheet) {
     return HandleParseAuthorStyleSheet(argc, argv, dart_object);
   }
 

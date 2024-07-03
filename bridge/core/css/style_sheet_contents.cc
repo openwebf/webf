@@ -28,6 +28,7 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/style_rule_import.h"
 #include "core/css/css_style_sheet.h"
+#include "element_namespace_uris.h"
 //#include "core/css/parser/css_"
 
 namespace webf {
@@ -49,7 +50,7 @@ StyleSheetContents::StyleSheetContents(std::shared_ptr<const CSSParserContext> c
                                      std::shared_ptr<StyleRuleImport> owner_rule)
   : owner_rule_(owner_rule),
     original_url_(original_url),
-    default_namespace_(built_in_string::kCssNameSpace_StarAtom),
+    default_namespace_(element_namespace_uris::khtml),
     has_syntactically_valid_css_header_(true),
     is_mutable_(false),
     has_font_face_rule_(false),

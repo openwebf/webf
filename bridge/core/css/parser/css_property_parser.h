@@ -27,6 +27,9 @@
  */
 
 
+#ifndef WEBF_CSS_PROPERTY_PARSER_H
+#define WEBF_CSS_PROPERTY_PARSER_H
+
 //#include "css_tokenized_value.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_mode.h"
