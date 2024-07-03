@@ -221,12 +221,13 @@ WebFInfo* getWebFInfo() {
 }
 
 void* parseSVGResult(const char* code, int32_t length) {
-  auto* result = webf::HTMLParser::parseSVGResult(code, length);
-  return result;
+  return nullptr;
+//  auto* result = webf::HTMLParser::parseSVGResult(code, length);
+//  return result;
 }
 
 void freeSVGResult(void* svgTree) {
-  webf::HTMLParser::freeSVGResult(reinterpret_cast<GumboOutput*>(svgTree));
+//  webf::HTMLParser::freeSVGResult(reinterpret_cast<GumboOutput*>(svgTree));
 }
 
 void invokeModuleEvent(void* page_,

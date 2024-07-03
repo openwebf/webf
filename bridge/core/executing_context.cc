@@ -16,7 +16,7 @@
 #include "polyfill.h"
 //#include "qjs_window.h"
 #include "script_forbidden_scope.h"
-#include "timing/performance.h"
+//#include "timing/performance.h"
 
 namespace webf {
 
@@ -69,47 +69,47 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 #elif WEBF_V8_JS_ENGINE
 #endif
 
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallBindings");
+//  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallBindings");
 
   // Register all built-in native bindings.
-  InstallBindings(this);
+//  InstallBindings(this);
 
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallDocument");
+//  dart_isolate_context->profiler()->FinishTrackSteps();
+//  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallDocument");
 
   // Install document.
-  InstallDocument();
+//  InstallDocument();
 
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallGlobal");
+//  dart_isolate_context->profiler()->FinishTrackSteps();
+//  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallGlobal");
 
   // Binding global object and window.
-  InstallGlobal();
+//  InstallGlobal();
 
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallPerformance");
+//  dart_isolate_context->profiler()->FinishTrackSteps();
+//  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallPerformance");
 
   // Install performance
   InstallPerformance();
   InstallNativeLoader();
 
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
+//  dart_isolate_context->profiler()->FinishTrackSteps();
+//  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
 
-  initWebFPolyFill(this);
+//  initWebFPolyFill(this);
 
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializePlugin");
+//  dart_isolate_context->profiler()->FinishTrackSteps();
+//  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializePlugin");
 
-  for (auto& p : plugin_byte_code) {
-    EvaluateByteCode(p.second.bytes, p.second.length);
-  }
+//  for (auto& p : plugin_byte_code) {
+//    EvaluateByteCode(p.second.bytes, p.second.length);
+//  }
+//
+//  for (auto& p : plugin_string_code) {
+//    EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
+//  }
 
-  for (auto& p : plugin_string_code) {
-    EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
-  }
-
-  dart_isolate_context->profiler()->FinishTrackSteps();
+//  dart_isolate_context->profiler()->FinishTrackSteps();
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
@@ -119,6 +119,7 @@ ExecutingContext::~ExecutingContext() {
   valid_contexts[context_id_] = false;
   executing_context_status_->disposed = true;
 
+#if WEBF_QUICKJS_JS_ENGINE
   // Check if current context have unhandled exceptions.
   JSValue exception = JS_GetException(script_state_.ctx());
   if (JS_IsObject(exception) || JS_IsException(exception)) {
@@ -133,7 +134,12 @@ ExecutingContext::~ExecutingContext() {
   for (auto& active_wrapper : active_wrappers_) {
     JS_FreeValue(ctx(), active_wrapper->ToQuickJSUnsafe());
   }
+#elif WEBF_V8_JS_ENGINE
+
+#endif
 }
+
+#if WEBF_QUICKJS_JS_ENGINE
 
 ExecutingContext* ExecutingContext::From(JSContext* ctx) {
   return static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
@@ -148,47 +154,47 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
-  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateJavaScript");
+//  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateJavaScript");
 
   JSValue result;
   if (parsed_bytecodes == nullptr) {
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
+//    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
 
     result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
 
-    dart_isolate_context_->profiler()->FinishTrackSteps();
+//    dart_isolate_context_->profiler()->FinishTrackSteps();
   } else {
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
+//    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
 
     JSValue byte_object =
         JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
 
-    dart_isolate_context_->profiler()->FinishTrackSteps();
+//    dart_isolate_context_->profiler()->FinishTrackSteps();
 
     if (JS_IsException(byte_object)) {
       HandleException(&byte_object);
-      dart_isolate_context_->profiler()->FinishTrackSteps();
+//      dart_isolate_context_->profiler()->FinishTrackSteps();
       return false;
     }
 
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
+//    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
     size_t len;
     *parsed_bytecodes = JS_WriteObject(script_state_.ctx(), &len, byte_object, JS_WRITE_OBJ_BYTECODE);
     *bytecode_len = len;
 
-    dart_isolate_context_->profiler()->FinishTrackSteps();
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
+//    dart_isolate_context_->profiler()->FinishTrackSteps();
+//    dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
 
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
 
-    dart_isolate_context_->profiler()->FinishTrackSteps();
+//    dart_isolate_context_->profiler()->FinishTrackSteps();
   }
 
   DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
+//  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   return success;
 }
@@ -211,36 +217,40 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
 }
 
 bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
-  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateByteCode");
+//  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateByteCode");
 
   JSValue obj, val;
 
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
+//  dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
 
   obj = JS_ReadObject(script_state_.ctx(), bytes, byteLength, JS_READ_OBJ_BYTECODE);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
+//  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   if (!HandleException(&obj)) {
-    dart_isolate_context_->profiler()->FinishTrackSteps();
+//    dart_isolate_context_->profiler()->FinishTrackSteps();
     return false;
   }
 
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
+//  dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
 
   val = JS_EvalFunction(script_state_.ctx(), obj);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
+//  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   DrainMicrotasks();
   if (!HandleException(&val)) {
-    dart_isolate_context_->profiler()->FinishTrackSteps();
+//    dart_isolate_context_->profiler()->FinishTrackSteps();
     return false;
   }
   JS_FreeValue(script_state_.ctx(), val);
-  dart_isolate_context_->profiler()->FinishTrackSteps();
+//  dart_isolate_context_->profiler()->FinishTrackSteps();
   return true;
 }
+
+#elif WEBF_V8_JS_ENGINE
+
+#endif
 
 bool ExecutingContext::IsContextValid() const {
   return is_context_valid_;
@@ -356,11 +366,11 @@ void ExecutingContext::ReportError(JSValueConst error, char** rust_errmsg, uint3
 }
 
 void ExecutingContext::DrainMicrotasks() {
-  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::DrainMicrotasks");
+//  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::DrainMicrotasks");
 
-  DrainPendingPromiseJobs();
+//  DrainPendingPromiseJobs();
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
+//  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
@@ -373,6 +383,8 @@ struct MicroTaskDeliver {
 };
 
 }  // namespace
+
+#if WEBF_QUICKJS_JS_ENGINE
 
 void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) {
   JSValue proxy_data = JS_NewObject(ctx());
@@ -401,16 +413,16 @@ void ExecutingContext::DrainPendingPromiseJobs() {
   // should executing pending promise jobs.
   JSContext* pctx;
 
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_ExecutePendingJob");
+//  dart_isolate_context_->profiler()->StartTrackSteps("JS_ExecutePendingJob");
 
   int finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
+//  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   while (finished != 0) {
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_ExecutePendingJob");
+//    dart_isolate_context_->profiler()->StartTrackSteps("JS_ExecutePendingJob");
     finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
-    dart_isolate_context_->profiler()->FinishTrackSteps();
+//    dart_isolate_context_->profiler()->FinishTrackSteps();
     if (finished == -1) {
       break;
     }
@@ -434,25 +446,25 @@ uint8_t* ExecutingContext::DumpByteCode(const char* code,
                                         uint32_t codeLength,
                                         const char* sourceURL,
                                         uint64_t* bytecodeLength) {
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
+//  dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
 
   JSValue object =
       JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
+//  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   bool success = HandleException(&object);
   if (!success)
     return nullptr;
 
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_WriteObject");
+//  dart_isolate_context_->profiler()->StartTrackSteps("JS_WriteObject");
 
   size_t len;
   uint8_t* bytes = JS_WriteObject(script_state_.ctx(), &len, object, JS_WRITE_OBJ_BYTECODE);
   *bytecodeLength = len;
   JS_FreeValue(script_state_.ctx(), object);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
+//  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   return bytes;
 }
@@ -484,6 +496,11 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
   }
 }
 
+#elif WEBF_V8_JS_ENGINE
+
+#endif
+
+/*
 void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
   std::vector<NativeBindingObject*> deps;
   FlushUICommand(self, reason, deps);
@@ -655,6 +672,8 @@ void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrap
 void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.erase(script_wrappable);
 }
+
+*/
 
 // A lock free context validator.
 bool isContextValid(double contextId) {

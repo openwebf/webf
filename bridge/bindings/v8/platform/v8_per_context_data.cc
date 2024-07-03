@@ -12,7 +12,7 @@
 //#include "base/memory/ptr_util.h"
 //#include "components/crash/core/common/crash_key.h"
 //#include "third_party/blink/renderer/platform/bindings/origin_trial_features.h"
-#include "bindings/v8/platform/script_state.h"
+//#include "bindings/v8/platform/script_state.h"
 //#include "third_party/blink/renderer/platform/bindings/v8_binding.h"
 //#include "third_party/blink/renderer/platform/bindings/v8_object_constructor.h"
 #include "bindings/v8/wrapper_type_info.h"

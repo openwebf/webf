@@ -48,7 +48,7 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
     return false;
 
   {
-    MemberMutationScope scope{context_};
+//    MemberMutationScope scope{context_};
 
 //    auto document_element = context_->document()->documentElement();
 //    if (!document_element) {
@@ -69,6 +69,8 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
                                          const char* eventType,
                                          void* ptr,
                                          NativeValue* extra) {
+  return nullptr;
+
 //  if (!context_->IsContextValid())
 //    return nullptr;
 //
@@ -119,13 +121,17 @@ bool WebFPage::evaluateScript(const char* script,
                               int startLine) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
+
+  return false;
+//  return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
 }
 
 void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
   if (!context_->IsContextValid())
     return;
-  context_->EvaluateJavaScript(script, length, url, startLine);
+
+  return;
+//  context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
 uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, uint64_t* byteLength) {
@@ -137,7 +143,9 @@ uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* u
 bool WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateByteCode(bytes, byteLength);
+
+  return false;
+//  return context_->EvaluateByteCode(bytes, byteLength);
 }
 
 std::thread::id WebFPage::currentThread() const {

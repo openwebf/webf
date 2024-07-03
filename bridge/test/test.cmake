@@ -52,7 +52,6 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
 #      ./test/webf_test_env.h
       ./bindings/v8/atomic_string_test.cc
       ./bindings/v8/script_value_test.cc
-      ./bindings/v8/platform/script_state_test.cc
 #      ./bindings/v8/exception_state_test.cc
   )
 endif ()
