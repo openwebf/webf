@@ -2,12 +2,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "text.h"
+#include "plugin_api/text.h"
 #include "core/dom/character_data.h"
 
 namespace webf {
 
-TextNodeRustMethods::TextNodeRustMethods(CharacterDataRustMethods* super_rust_method)
-    : character_data(super_rust_method) {}
+TextNodeWebFMethods::TextNodeWebFMethods(CharacterDataWebFMethods* super_method)
+    : character_data(super_method) {}
 
 }  // namespace webf

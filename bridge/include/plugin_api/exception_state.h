@@ -7,7 +7,7 @@
 
 #include <cinttypes>
 #include "bindings/qjs/exception_state.h"
-#include "core/rust_api/rust_value.h"
+#include "webf_value.h"
 
 namespace webf {
 
@@ -17,13 +17,13 @@ struct SharedExceptionState {
   webf::ExceptionState exception_state;
 };
 
-using RustExceptionStateHasException = bool (*)(SharedExceptionState* shared_exception_state);
-using RustExceptionStateStringify = void (*)(ExecutingContext* context,
+using WebFExceptionStateHasException = bool (*)(SharedExceptionState* shared_exception_state);
+using WebFExceptionStateStringify = void (*)(ExecutingContext* context,
                                              SharedExceptionState* shared_exception_state,
                                              char** errmsg,
                                              uint32_t* strlen);
 
-struct ExceptionStateRustMethods : public RustMethods {
+struct ExceptionStateWebFMethods : public WebFPublicMethods {
   static bool HasException(SharedExceptionState* shared_exception_state);
   static void Stringify(ExecutingContext* context,
                         SharedExceptionState* shared_exception_state,
@@ -31,8 +31,8 @@ struct ExceptionStateRustMethods : public RustMethods {
                         uint32_t* strlen);
 
   double version{1.0};
-  RustExceptionStateHasException has_exception_{HasException};
-  RustExceptionStateStringify stringify_{Stringify};
+  WebFExceptionStateHasException has_exception_{HasException};
+  WebFExceptionStateStringify stringify_{Stringify};
 };
 
 }  // namespace webf

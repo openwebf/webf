@@ -7,7 +7,7 @@
 #define BRIDGE_CORE_DOM_TEXT_H_
 
 #include "character_data.h"
-#include "core/rust_api/text.h"
+#include "plugin_api/text.h"
 
 namespace webf {
 
@@ -27,7 +27,7 @@ class Text : public CharacterData {
   }
 
   NodeType nodeType() const override;
-  RustMethods* rustMethodPointer() override;
+  WebFPublicMethods* publicMethodPointer() override;
 
  private:
   std::string nodeName() const override;

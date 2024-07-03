@@ -573,10 +573,9 @@ void ContainerNode::Trace(GCVisitor* visitor) const {
   Node::Trace(visitor);
 }
 
-RustMethods* ContainerNode::rustMethodPointer() {
-  auto* super_rust_method = Node::rustMethodPointer();
-  static auto* rust_method = new ContainerNodeRustMethods(static_cast<NodeRustMethods*>(super_rust_method));
-  return rust_method;
+WebFPublicMethods* ContainerNode::publicMethodPointer() {
+  auto* super_method = Node::publicMethodPointer();
+  return new ContainerNodeWebFMethods(reinterpret_cast<NodeWebFMethods*>(super_method));
 }
 
 }  // namespace webf

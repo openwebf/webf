@@ -10,7 +10,7 @@
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/heap_vector.h"
 #include "core/html/collection_type.h"
-#include "core/rust_api/container_node.h"
+#include "plugin_api/container_node.h"
 #include "node.h"
 
 namespace webf {
@@ -152,7 +152,7 @@ class ContainerNode : public Node {
   Collection* EnsureCachedCollection(CollectionType);
 
   void Trace(GCVisitor* visitor) const override;
-  RustMethods* rustMethodPointer() override;
+  WebFPublicMethods* publicMethodPointer() override;
 
  protected:
   ContainerNode(TreeScope* tree_scope, ConstructionType = kCreateContainer);
