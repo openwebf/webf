@@ -2,10 +2,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef WEBF_CORE_RUST_API_CHARACTER_DATA_H_
-#define WEBF_CORE_RUST_API_CHARACTER_DATA_H_
+#ifndef WEBF_CORE_RUST_API_TEXT_H_
+#define WEBF_CORE_RUST_API_TEXT_H_
 
-#include "core/rust_api/node.h"
+#include "character_data.h"
 
 namespace webf {
 
@@ -14,13 +14,13 @@ typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
 
-struct CharacterDataRustMethods : RustMethods {
-  CharacterDataRustMethods(NodeRustMethods* super_rust_method);
+struct TextNodeWebFMethods : WebFPublicMethods {
+  TextNodeWebFMethods(CharacterDataWebFMethods* super_rust_method);
 
   double version{1.0};
-  NodeRustMethods* node;
+  CharacterDataWebFMethods* character_data;
 };
 
 }  // namespace webf
 
-#endif  // WEBF_CORE_RUST_API_CHARACTER_DATA_H_
+#endif  // WEBF_CORE_RUST_API_TEXT_H_

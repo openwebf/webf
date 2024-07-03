@@ -10,7 +10,7 @@
 #include "bindings/qjs/qjs_function.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "core/rust_api/event_target.h"
+#include "plugin_api/event_target.h"
 #include "event_listener_map.h"
 #include "foundation/logging.h"
 #include "foundation/native_string.h"
@@ -140,7 +140,7 @@ class EventTarget : public BindingObject {
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
 
-  virtual RustMethods* rustMethodPointer();
+  virtual WebFPublicMethods* publicMethodPointer();
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,

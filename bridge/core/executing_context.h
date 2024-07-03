@@ -21,7 +21,7 @@
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
-#include "core/rust_api/executing_context.h"
+#include "plugin_api/executing_context.h"
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
 
@@ -215,7 +215,7 @@ class ExecutingContext {
   bool is_dedicated_;
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
-  const std::unique_ptr<ExecutingContextRustMethods> rust_method_ptr_ = nullptr;
+  const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;
 };
 
 class ObjectProperty {

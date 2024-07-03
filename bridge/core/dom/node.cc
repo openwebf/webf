@@ -29,6 +29,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "plugin_api/node.h"
 #include "node.h"
 #include <unordered_map>
 #include "character_data.h"
@@ -713,10 +714,9 @@ void Node::Trace(GCVisitor* visitor) const {
   EventTarget::Trace(visitor);
 }
 
-RustMethods* Node::rustMethodPointer() {
-  auto* super_rust_methods = EventTarget::rustMethodPointer();
-  static auto* rust_methods = new NodeRustMethods(static_cast<EventTargetRustMethods*>(super_rust_methods));
-  return rust_methods;
+WebFPublicMethods* Node::publicMethodPointer() {
+  auto* super_methods = EventTarget::publicMethodPointer();
+  return new NodeWebFMethods(reinterpret_cast<EventTargetWebFMethods*>(super_methods));
 }
 
 }  // namespace webf

@@ -9,7 +9,7 @@
 #include <set>
 #include <utility>
 
-#include "core/rust_api/node.h"
+#include "plugin_api/node.h"
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "mutation_observer.h"
@@ -260,7 +260,7 @@ class Node : public EventTarget {
   const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
 
   void Trace(GCVisitor*) const override;
-  RustMethods* rustMethodPointer() override;
+  WebFPublicMethods* publicMethodPointer() override;
 
  private:
   enum NodeFlags : uint32_t {
