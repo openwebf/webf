@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_RUST_API_CONTAINER_NODE_H_
 #define WEBF_CORE_RUST_API_CONTAINER_NODE_H_
 
-#include "core/rust_api/node.h"
+#include "node.h"
 
 namespace webf {
 
@@ -13,11 +13,11 @@ typedef struct EventTarget EventTarget;
 typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 
-struct ContainerNodeRustMethods : RustMethods {
-  ContainerNodeRustMethods(NodeRustMethods* super_rust_method);
+struct ContainerNodeWebFMethods : WebFPublicMethods {
+  ContainerNodeWebFMethods(NodeWebFMethods* super_method);
 
   double version{1.0};
-  NodeRustMethods* node;
+  NodeWebFMethods* node;
 };
 
 }  // namespace webf

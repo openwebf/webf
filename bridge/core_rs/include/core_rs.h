@@ -11,7 +11,7 @@ namespace webf {
 
 extern "C" {
 
-void init_webf_polyfill(RustValue<void, void> handle);
+void init_webf_polyfill(WebFValue<void, void> handle);
 
 }  // extern "C"
 

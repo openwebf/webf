@@ -2,17 +2,18 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "document.h"
+#include "plugin_api/document.h"
+#include "plugin_api/exception_state.h"
 #include "core/dom/document.h"
 #include "core/dom/text.h"
 #include "core/html/html_html_element.h"
 
 namespace webf {
 
-DocumentRustMethods::DocumentRustMethods(ContainerNodeRustMethods* super_rust_method)
-    : container_node(super_rust_method) {}
+DocumentWebFMethods::DocumentWebFMethods(ContainerNodeWebFMethods* super_method)
+    : container_node(super_method) {}
 
-RustValue<Element, ElementRustMethods> DocumentRustMethods::CreateElement(
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElement(
     webf::Document* ptr,
     const char* tag_name,
     webf::SharedExceptionState* shared_exception_state) {
@@ -26,19 +27,19 @@ RustValue<Element, ElementRustMethods> DocumentRustMethods::CreateElement(
 
   // Hold the reference until rust side notify this element was released.
   new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = To<ElementRustMethods>(new_element->rustMethodPointer())};
+  return {.value = new_element, .method_pointer = To<ElementWebFMethods>(new_element->publicMethodPointer())};
 }
 
-RustValue<Element, ElementRustMethods> DocumentRustMethods::CreateElementWithElementCreationOptions(
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElementWithElementCreationOptions(
     webf::Document* ptr,
     const char* tag_name,
-    RustElementCreationOptions& options,
+    WebFElementCreationOptions& options,
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
   webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
 
-  std::string value = std::string("{\"is\":\"") + options.is + "\"}";
+  std::string value = std::string(R"({"is":")") + options.is + "\"}";
   const char* value_cstr = value.c_str();
   webf::ScriptValue options_value = webf::ScriptValue::CreateJsonObject(document->ctx(), value_cstr, value.length());
 
@@ -53,10 +54,10 @@ RustValue<Element, ElementRustMethods> DocumentRustMethods::CreateElementWithEle
 
   // Hold the reference until rust side notify this element was released.
   new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = To<ElementRustMethods>(new_element->rustMethodPointer())};
+  return {.value = new_element, .method_pointer = To<ElementWebFMethods>(new_element->publicMethodPointer())};
 }
 
-RustValue<Element, ElementRustMethods> DocumentRustMethods::CreateElementNS(
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElementNS(
     webf::Document* ptr,
     const char* uri,
     const char* tag_name,
@@ -72,21 +73,21 @@ RustValue<Element, ElementRustMethods> DocumentRustMethods::CreateElementNS(
 
   // Hold the reference until rust side notify this element was released.
   new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = To<ElementRustMethods>(new_element->rustMethodPointer())};
+  return {.value = new_element, .method_pointer = To<ElementWebFMethods>(new_element->publicMethodPointer())};
 }
 
-RustValue <Element, ElementRustMethods> DocumentRustMethods::CreateElementNSWithElementCreationOptions(
+WebFValue <Element, ElementWebFMethods> DocumentWebFMethods::CreateElementNSWithElementCreationOptions(
     webf::Document* ptr,
     const char* uri,
     const char* tag_name,
-    RustElementCreationOptions& options,
+    WebFElementCreationOptions& options,
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
   webf::AtomicString uri_atomic = webf::AtomicString(document->ctx(), uri);
   webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
 
-  std::string value = std::string("{\"is\":\"") + options.is + "\"}";
+  std::string value = std::string(R"({"is":")") + options.is + "\"}";
   const char* value_cstr = value.c_str();
   webf::ScriptValue options_value = webf::ScriptValue::CreateJsonObject(document->ctx(), value_cstr, value.length());
 
@@ -102,10 +103,10 @@ RustValue <Element, ElementRustMethods> DocumentRustMethods::CreateElementNSWith
 
   // Hold the reference until rust side notify this element was released.
   new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = To<ElementRustMethods>(new_element->rustMethodPointer())};
+  return {.value = new_element, .method_pointer = To<ElementWebFMethods>(new_element->publicMethodPointer())};
 }
 
-RustValue<Text, TextNodeRustMethods> DocumentRustMethods::CreateTextNode(
+WebFValue<Text, TextNodeWebFMethods> DocumentWebFMethods::CreateTextNode(
     webf::Document* ptr,
     const char* data,
     webf::SharedExceptionState* shared_exception_state) {
@@ -120,12 +121,12 @@ RustValue<Text, TextNodeRustMethods> DocumentRustMethods::CreateTextNode(
 
   text_node->KeepAlive();
 
-  return {.value = text_node, .method_pointer = To<TextNodeRustMethods>(text_node->rustMethodPointer())};
+  return {.value = text_node, .method_pointer = To<TextNodeWebFMethods>(text_node->publicMethodPointer())};
 }
 
-RustValue<Element, ElementRustMethods> DocumentRustMethods::DocumentElement(webf::Document* document) {
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::DocumentElement(webf::Document* document) {
   return {.value = document->documentElement(),
-          .method_pointer = To<ElementRustMethods>(document->documentElement()->rustMethodPointer())};
+          .method_pointer = To<ElementWebFMethods>(document->documentElement()->publicMethodPointer())};
 }
 
 }  // namespace webf

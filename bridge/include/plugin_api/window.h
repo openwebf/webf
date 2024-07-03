@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_RUST_API_WINDOW_H_
 #define WEBF_CORE_RUST_API_WINDOW_H_
 
-#include "core/rust_api/event_target.h"
+#include "event_target.h"
 
 namespace webf {
 
@@ -14,11 +14,11 @@ typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
 
-struct WindowRustMethods : RustMethods {
-  WindowRustMethods(EventTargetRustMethods* super_rust_method);
+struct WindowWebFMethods : WebFPublicMethods {
+  WindowWebFMethods(EventTargetWebFMethods* super_rust_method);
 
   double version{1.0};
-  EventTargetRustMethods* event_target;
+  EventTargetWebFMethods* event_target;
 };
 
 }  // namespace webf

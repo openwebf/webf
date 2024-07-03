@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+#include "plugin_api/event_target.h"
 #include "event_target.h"
 #include <cstdint>
 #include "binding_call_methods.h"
@@ -254,9 +255,9 @@ bool EventTarget::IsEventTarget() const {
   return true;
 }
 
-RustMethods* EventTarget::rustMethodPointer() {
-  static auto* rust_methods = new EventTargetRustMethods();
-  return rust_methods;
+WebFPublicMethods* EventTarget::publicMethodPointer() {
+  static auto* public_methods = new EventTargetWebFMethods();
+  return public_methods;
 }
 
 void EventTarget::Trace(GCVisitor* visitor) const {
