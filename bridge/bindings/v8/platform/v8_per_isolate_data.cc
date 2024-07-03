@@ -21,7 +21,7 @@
 //#include "bindings/v8/platform/dom_data_store.h"
 //#include "bindings/v8/platform/script_forbidden_scope.h"
 //#include "bindings/v8/platform/script_regexp.h"
-#include "bindings/v8/platform/script_state.h"
+//#include "bindings/v8/platform/script_state.h"
 //#include "bindings/v8/platform/thread_debugger.h"
 //#include "bindings/v8/platform/v8_binding.h"
 //#include "bindings/v8/platform/v8_histogram_accumulator.h"
