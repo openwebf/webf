@@ -788,6 +788,13 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   assert(_allocatedPages.containsKey(view.contextId));
   if (view.disposed) return;
 
+  if (view.rootController.isFontsLoading) {
+    SchedulerBinding.instance.scheduleFrameCallback((timeStamp) {
+      flushUICommand(view, selfPointer);
+    });
+    return;
+  }
+
   if (enableWebFProfileTracking) {
     WebFProfiler.instance.startTrackUICommand();
     WebFProfiler.instance.startTrackUICommandStep('readNativeUICommandMemory');

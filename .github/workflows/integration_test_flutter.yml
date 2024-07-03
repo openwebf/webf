@@ -5,7 +5,7 @@ on: [workflow_dispatch, pull_request]
 env:
   nodeVersion: "16"
   cmakeVersion: "3.22.x"
-  flutter310: "3.13.5"
+  flutter: "3.19.3"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -67,7 +67,7 @@ jobs:
         submodules: recursive
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - run: cd webf && flutter test
@@ -88,7 +88,7 @@ jobs:
         node-version: ${{ env.nodeVersion }}
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - uses: actions/download-artifact@v2
@@ -124,11 +124,11 @@ jobs:
         path: bridge/build/macos/
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
-      run: cd integration_tests && npm run multiple_page_test
+      run: cd integration_tests && LOAD_MODE=prerendering node scripts/preload_prerendering_page_integration.js
       id: test
       continue-on-error: true
     - name: Check on failures
@@ -151,7 +151,7 @@ jobs:
         path: bridge/build/macos/
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
@@ -177,7 +177,7 @@ jobs:
         path: bridge/build/macos/
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
@@ -204,7 +204,7 @@ jobs:
         path: bridge/build/macos/
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MemoryLeak Test

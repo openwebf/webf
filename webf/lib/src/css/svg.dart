@@ -76,6 +76,7 @@ mixin CSSSvgMixin on RenderStyle {
   }
 
   CSSPaint? _fill;
+  bool get isFillEmpty => _fill == null;
   @override
   CSSPaint get fill => _fill ?? parent?.fill ?? CSSPaint.blackPaint;
   set fill(CSSPaint? value) {
@@ -85,6 +86,7 @@ mixin CSSSvgMixin on RenderStyle {
   }
 
   CSSPaint? _stroke;
+  bool get isStrokeEmpty => _stroke == null;
   @override
   CSSPaint get stroke => _stroke ?? parent?.stroke ?? CSSPaint.none;
   set stroke(CSSPaint? value) {
@@ -171,6 +173,7 @@ mixin CSSSvgMixin on RenderStyle {
   }
 
   CSSFillRule? _fillRule;
+  bool get isFillRuleEmpty => _fillRule == null;
   @override get fillRule => _fillRule ?? CSSFillRule.nonzero;
   set fillRule(CSSFillRule value) {
     if (_fillRule == value) return;

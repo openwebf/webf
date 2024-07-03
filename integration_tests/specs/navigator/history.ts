@@ -64,4 +64,35 @@ describe('history API', () => {
       history.go(-1);
     });
   });
+
+  it('hashchange should fire when history back', (done) => {
+    expect(location.pathname).toBe('/public/core.build.js');
+    history.pushState({name: 2}, '', '#/page_1');
+    function onHashChange(e: HashChangeEvent) {
+      expect(new URL(e.oldURL).hash).toBe('#/page_1');
+      expect(new URL(e.newURL).hash).toBe('#hash=hashValue');
+      window.removeEventListener('hashchange', onHashChange);
+      done();
+    }
+    window.addEventListener('hashchange', onHashChange);
+    requestAnimationFrame(() => {
+      history.back();
+    });
+  });
+
+  it('hashchange when go back should work', (done) => {
+    expect(location.pathname).toBe('/public/core.build.js');
+    history.replaceState({name: 0}, '');
+    history.pushState({name: 2}, '', '#/page_1');
+    function onHashChange(e: HashChangeEvent) {
+      expect(new URL(e.oldURL).hash).toBe('#/page_1');
+      expect(new URL(e.newURL).hash).toBe('#hash=hashValue');
+      window.removeEventListener('popstate', onHashChange);
+      done();
+    }
+    window.addEventListener('hashchange', onHashChange);
+    requestAnimationFrame(() => {
+      history.go(-1);
+    });
+  });
 });

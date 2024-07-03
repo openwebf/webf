@@ -18,7 +18,6 @@ pub struct ElementCreationOptions {
   pub is: *const c_char,
 }
 
-#[repr(C)]
 pub struct DocumentRustMethods {
   pub version: c_double,
   pub container_node: *const ContainerNodeRustMethods,
@@ -104,7 +103,6 @@ impl Document {
 
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
   }
-
   /// Behavior as same as `document.createTextNode()` in JavaScript.
   /// Creates a new Text node. This method can be used to escape HTML characters.
   pub fn create_text_node(&self, data: &CString, exception_state: &ExceptionState) -> Result<Text, String> {
@@ -169,5 +167,6 @@ impl EventTargetMethods for Document {
 }
 
 impl ContainerNodeMethods for Document {}
+
 
 impl DocumentMethods for Document {}

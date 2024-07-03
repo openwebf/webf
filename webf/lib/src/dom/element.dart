@@ -16,6 +16,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/svg/rendering/container.dart';
+import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
@@ -54,21 +55,25 @@ enum BoxSizeType {
 mixin ElementBase on Node {
   RenderLayoutBox? _renderLayoutBox;
   RenderReplaced? _renderReplaced;
+  RenderBoxModel? _renderSVG;
   RenderWidget? _renderWidget;
 
-  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget;
+  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget ?? _renderSVG;
 
   set renderBoxModel(RenderBoxModel? value) {
     if (value == null) {
       _renderReplaced = null;
       _renderLayoutBox = null;
       _renderWidget = null;
+      _renderSVG = null;
     } else if (value is RenderReplaced) {
       _renderReplaced = value;
     } else if (value is RenderLayoutBox) {
       _renderLayoutBox = value;
     } else if (value is RenderWidget) {
       _renderWidget = value;
+    } else if (value is RenderSVGShape || value is RenderSVGContainer || value is RenderSVGText) {
+      _renderSVG = value;
     } else {
       if (!kReleaseMode) throw FlutterError('Unknown RenderBoxModel value.');
     }
@@ -120,6 +125,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   bool get isReplacedElement => false;
 
   bool get isWidgetElement => false;
+
+  bool get isSVGElement => false;
 
   // Holding reference if this element are managed by Flutter framework.
   WebFHTMLElementStatefulWidget? flutterWidget_;
@@ -199,8 +206,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _forceToRepaintBoundary = value;
     updateRenderBoxModel();
   }
-
-  bool _needRecalculateStyle = false;
 
   final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
 
@@ -362,6 +367,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     } else if (isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
+    } else if (isSVGElement) {
+      nextRenderBoxModel = createRenderSVG(isRepaintBoundary: isRepaintBoundary, previous: _renderSVG);
     } else {
       nextRenderBoxModel =
           _createRenderLayout(isRepaintBoundary: isRepaintBoundary, previousRenderLayoutBox: _renderLayoutBox);
@@ -384,9 +391,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
           RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
         }
 
-        if (!previousRenderBoxModel.disposed) {
-          previousRenderBoxModel.dispose();
-        }
+        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          if (!previousRenderBoxModel.disposed) {
+            previousRenderBoxModel.dispose();
+          }
+        });
       }
       renderBoxModel = nextRenderBoxModel;
       assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
@@ -429,6 +438,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
     return nextReplaced;
+  }
+
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    throw UnimplementedError();
   }
 
   RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool forceUpdate = false }) {
@@ -628,9 +641,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   void willDetachRenderer() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.willDetachRenderer');
-    }
     super.willDetachRenderer();
 
     // Cancel running transition.
@@ -657,9 +667,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       // Remove scrollable
       renderBoxModel.disposeScrollable();
       disposeScrollable();
-    }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
@@ -1352,13 +1359,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
-    internalSetAttribute(qualifiedName, value);
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-    _needRecalculateStyle = _needRecalculateStyle || isNeedRecalculate;
+    internalSetAttribute(qualifiedName, value);
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
@@ -1702,11 +1707,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Empty implement
     // Because attribute style is not recommend to use
     // But it's necessary for SVG.
-  }
-
-  void tryRecalculateStyle({bool rebuildNested = false}) {
-    recalculateStyle(forceRecalculate: _needRecalculateStyle);
-    _needRecalculateStyle = false;
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {

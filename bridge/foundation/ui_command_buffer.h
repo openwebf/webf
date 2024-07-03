@@ -83,6 +83,7 @@ class UICommandBuffer {
 
  private:
   void addCommand(const UICommandItem& item, bool request_ui_update = true);
+  void addCommands(const UICommandItem* items, int64_t item_size, bool request_ui_update = true);
   void updateFlags(UICommand command);
 
   ExecutingContext* context_{nullptr};

@@ -312,7 +312,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     if (isConnected) {
       parentNode?.removeChild(this);
     }
-    if (this is! Document) {
+    if (this is! Document && !managedByFlutterWidget) {
       assert(!isRendererAttachedToSegmentTree, 'Should unmount $this before calling dispose.');
     }
     super.dispose();

@@ -302,6 +302,10 @@ bool Event::IsPopstateEvent() const {
   return false;
 }
 
+bool Event::IsHashChangeEvent() const {
+  return false;
+}
+
 bool Event::IsIntersectionchangeEvent() const {
   return false;
 }

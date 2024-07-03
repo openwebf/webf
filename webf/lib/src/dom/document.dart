@@ -62,7 +62,7 @@ class _InactiveRenderObjects {
       _scheduleFrameToFinalizeRenderObjects();
     }
 
-    assert(!renderObject.debugDisposed!);
+    assert(!renderObject.debugDisposed!, '$renderObject already disposed');
 
     if (!_isScheduled) {
       _renderObjects.add(renderObject);
@@ -72,7 +72,8 @@ class _InactiveRenderObjects {
   }
 
   void finalizeInactiveRenderObjects() {
-    for (RenderObject object in _renderObjects) {
+    for(RenderObject object in _renderObjects) {
+      assert(!object.attached);
       object.dispose();
     }
     _renderObjects.clear();

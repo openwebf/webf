@@ -1556,8 +1556,8 @@ class RenderBoxModel extends RenderBox
   @override
   @mustCallSuper
   void dispose() {
-    super.dispose();
     _disposed = true;
+    super.dispose();
 
     // Dispose scroll behavior
     disposeScrollable();

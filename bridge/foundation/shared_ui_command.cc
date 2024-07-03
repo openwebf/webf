@@ -70,11 +70,17 @@ void SharedUICommand::SyncToReserve() {
   if (waiting_buffer_->empty())
     return;
 
+  size_t waiting_size = waiting_buffer_->size();
+  size_t origin_reserve_size = reserve_buffer_->size();
+
   if (reserve_buffer_->empty()) {
-    swap(waiting_buffer_, reserve_buffer_);
+    swap(reserve_buffer_, waiting_buffer_);
   } else {
     appendCommand(reserve_buffer_, waiting_buffer_);
   }
+
+  assert(waiting_buffer_->empty());
+  assert(reserve_buffer_->size() == waiting_size + origin_reserve_size);
 }
 
 void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
@@ -84,33 +90,33 @@ void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
 void SharedUICommand::SyncToActive() {
   SyncToReserve();
 
+  assert(waiting_buffer_->empty());
+
   if (reserve_buffer_->empty())
     return;
 
   ui_command_sync_strategy_->Reset();
   context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
 
-  if (active_buffer->empty()) {
-    swap(reserve_buffer_, active_buffer);
-  } else {
-    appendCommand(reserve_buffer_, active_buffer);
-  }
+  size_t reserve_size = reserve_buffer_->size();
+  size_t origin_active_size = active_buffer->size();
+  appendCommand(active_buffer, reserve_buffer_);
+  assert(reserve_buffer_->empty());
+  assert(active_buffer->size() == reserve_size + origin_active_size);
 }
 
-void SharedUICommand::swap(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target) {
+void SharedUICommand::swap(std::unique_ptr<UICommandBuffer>& target, std::unique_ptr<UICommandBuffer>& original) {
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
   std::swap(target, original);
   is_blocking_writing_.store(false, std::memory_order::memory_order_release);
 }
 
-void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& original,
-                                    std::unique_ptr<UICommandBuffer>& target) {
+void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& target,
+                                    std::unique_ptr<UICommandBuffer>& original) {
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
 
-  for (int i = 0; i < original->size(); i++) {
-    UICommandItem* command_item = original->data();
-    target->addCommand(command_item[i]);
-  }
+  UICommandItem* command_item = original->data();
+  target->addCommands(command_item, original->size());
 
   original->clear();
 

@@ -2,21 +2,19 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
 import 'rendering/text.dart';
 
 class SVGTextElement extends SVGTextPositioningElement {
-  late final RenderSVGText _renderer;
+  @override
+  get presentationAttributeConfigs => super.presentationAttributeConfigs..addAll([]);
+
+  SVGTextElement(super.context) {}
 
   @override
-  get renderBoxModel => _renderer;
-
-  @override
-  get presentationAttributeConfigs => super.presentationAttributeConfigs..addAll([
-  ]);
-
-  SVGTextElement(super.context) {
-    _renderer = RenderSVGText(renderStyle: renderStyle, element: this);
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    return RenderSVGText(renderStyle: renderStyle);
   }
 }
