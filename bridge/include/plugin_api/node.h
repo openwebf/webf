@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_RUST_API_NODE_H_
 #define WEBF_CORE_RUST_API_NODE_H_
 
-#include "core/rust_api/event_target.h"
+#include "event_target.h"
 
 namespace webf {
 
@@ -15,23 +15,21 @@ typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
 
-struct NodeRustMethods;
+struct NodeWebFMethods;
 
-using RustNodeAppendChild = RustValue<Node, NodeRustMethods> (*)(Node* self_node,
+using WebFNodeAppendChild = WebFValue<Node, NodeWebFMethods> (*)(Node* self_node,
                                                                  Node* new_node,
                                                                  SharedExceptionState* shared_exception_state);
+struct NodeWebFMethods : WebFPublicMethods {
+  explicit NodeWebFMethods(EventTargetWebFMethods* super_rust_methods);
 
-struct NodeRustMethods : RustMethods {
-  NodeRustMethods(EventTargetRustMethods* super_rust_methods);
-
-  static RustValue<Node, NodeRustMethods> AppendChild(Node* self_node,
+  static WebFValue<Node, NodeWebFMethods> AppendChild(Node* self_node,
                                                       Node* new_node,
                                                       SharedExceptionState* shared_exception_state);
-
   double version{1.0};
-  EventTargetRustMethods* event_target;
+  EventTargetWebFMethods* event_target;
 
-  RustNodeAppendChild rust_node_append_child{AppendChild};
+  WebFNodeAppendChild rust_node_append_child{AppendChild};
 };
 
 }  // namespace webf

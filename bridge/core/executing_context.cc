@@ -37,7 +37,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
       context_id_(context_id),
       dart_error_report_handler_(std::move(handler)),
       owner_(owner),
-      rust_method_ptr_(std::make_unique<ExecutingContextRustMethods>()),
+      public_method_ptr_(std::make_unique<ExecutingContextWebFMethods>()),
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
@@ -91,7 +91,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
 
-  init_webf_polyfill({.value = this, .method_pointer = rust_method_ptr_.get()});
+  init_webf_polyfill({.value = this, .method_pointer = public_method_ptr_.get()});
   initWebFPolyFill(this);
 
   dart_isolate_context->profiler()->FinishTrackSteps();

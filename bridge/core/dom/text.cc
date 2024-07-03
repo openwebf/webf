@@ -24,10 +24,9 @@ Node::NodeType Text::nodeType() const {
   return Node::kTextNode;
 }
 
-RustMethods* Text::rustMethodPointer() {
-  auto* super_rust_method = CharacterData::rustMethodPointer();
-  static auto* rust_method = new TextNodeRustMethods(static_cast<CharacterDataRustMethods*>(super_rust_method));
-  return rust_method;
+WebFPublicMethods* Text::publicMethodPointer() {
+  auto* super_method = CharacterData::publicMethodPointer();
+  return new TextNodeWebFMethods(static_cast<CharacterDataWebFMethods*>(super_method));
 }
 
 std::string Text::nodeName() const {

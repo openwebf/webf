@@ -7,7 +7,7 @@
 
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
-#include "core/rust_api/document.h"
+#include "plugin_api/document.h"
 #include "event_type_names.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
@@ -127,7 +127,7 @@ class Document : public ContainerNode, public TreeScope {
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const override;
-  RustMethods* rustMethodPointer() override;
+  WebFPublicMethods* publicMethodPointer() override;
 
  private:
   int node_count_{0};

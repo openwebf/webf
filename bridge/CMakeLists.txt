@@ -266,22 +266,21 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/union_base.cc
     # Core sources
     webf_bridge.cc
-    core/api/api.cc
     core/executing_context.cc
     core/script_forbidden_scope.cc
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
-    core/rust_api/exception_state.cc
-    core/rust_api/event_target.cc
-    core/rust_api/node.cc
-    core/rust_api/executing_context.cc
-    core/rust_api/container_node.cc
-    core/rust_api/document.cc
-    core/rust_api/element.cc
-    core/rust_api/window.cc
-    core/rust_api/text.cc
-    core/rust_api/character_data.cc
+    core/api/exception_state.cc
+    core/api/event_target.cc
+    core/api/node.cc
+    core/api/executing_context.cc
+    core/api/container_node.cc
+    core/api/document.cc
+    core/api/element.cc
+    core/api/window.cc
+    core/api/text.cc
+    core/api/character_data.cc
     core/dart_isolate_context.cc
     core/dart_context_data.cc
     core/executing_context_data.cc
