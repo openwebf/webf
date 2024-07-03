@@ -85,10 +85,10 @@ if (DEFINED PLATFORM)
 endif()
 
 list(APPEND BRIDGE_SOURCE
-#  foundation/logging.cc
+  foundation/logging.cc
   foundation/native_string.cc
 #  foundation/ui_task_queue.cc
-#  foundation/shared_ui_command.cc
+  foundation/shared_ui_command.cc
 #  foundation/inspector_task_queue.cc
 #  foundation/task_queue.cc
   foundation/string_view.cc
@@ -96,12 +96,12 @@ list(APPEND BRIDGE_SOURCE
 #  foundation/native_type.cc
 #  foundation/stop_watch.cc
 #  foundation/profiler.cc
-#  foundation/dart_readable.cc
-#  foundation/ui_command_buffer.cc
-#  foundation/ui_command_strategy.cc
+  foundation/dart_readable.cc
+  foundation/ui_command_buffer.cc
+  foundation/ui_command_strategy.cc
 #  polyfill/dist/polyfill.cc
-#  multiple_threading/dispatcher.cc
-#  multiple_threading/looper.cc
+  multiple_threading/dispatcher.cc
+  multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
@@ -575,7 +575,7 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/wrapper_type_info.cc
     bindings/v8/v8_interface_bridge_base.cc
     bindings/v8/v8_initializer.cc
-    bindings/v8/platform/script_state.cc
+#    bindings/v8/platform/script_state.cc
     bindings/v8/platform/scoped_persistent.h
     bindings/v8/platform/v8_per_context_data.cc
     bindings/v8/platform/v8_per_isolate_data.cc
@@ -679,10 +679,10 @@ list(APPEND BRIDGE_SOURCE
   # Core sources
   webf_bridge.cc
 #  core/api/api.cc
-#  core/executing_context.cc
+  core/executing_context.cc
 #  core/script_forbidden_scope.cc
-#  core/script_state.cc
-#  core/page.cc
+  core/script_state.cc
+  core/page.cc
   core/dart_methods.cc
   core/dart_isolate_context.cc
 #  core/dart_context_data.cc

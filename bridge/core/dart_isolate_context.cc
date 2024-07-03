@@ -9,10 +9,10 @@
 #include <unordered_set>
 #include "dart_isolate_context.h"
 //#include "event_factory.h"
-#include "html_element_factory.h"
-//#include "names_installer.h"
-//#include "page.h"
-#include "svg_element_factory.h"
+//#include "html_element_factory.h"
+#include "names_installer.h"
+#include "page.h"
+//#include "svg_element_factory.h"
 
 namespace webf {
 
@@ -82,7 +82,7 @@ void InitializeBuiltInStrings(JSContext* ctx) {
 #elif WEBF_V8_JS_ENGINE
 void InitializeBuiltInStrings(v8::Isolate* isolate) {
   if (!is_name_installed_) {
-    names_installer::Init(isolate);
+//    names_installer::Init(isolate);
     is_name_installed_ = true;
   }
 }
@@ -121,8 +121,8 @@ void DartIsolateContext::FinalizeJSRuntime() {
 
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
 //  names_installer::Dispose();
-  HTMLElementFactory::Dispose();
-  SVGElementFactory::Dispose();
+//  HTMLElementFactory::Dispose();
+//  SVGElementFactory::Dispose();
 //  EventFactory::Dispose();
 
 #if WEBF_QUICKJS_JS_ENGINE
@@ -176,11 +176,11 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      int32_t sync_buffer_size,
                                                      Dart_Handle dart_handle,
                                                      AllocateNewPageCallback result_callback) {
-  dart_isolate_context->profiler()->StartTrackInitialize();
+//  dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
   auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, nullptr);
 
-  dart_isolate_context->profiler()->FinishTrackInitialize();
+//  dart_isolate_context->profiler()->FinishTrackInitialize();
 
   dart_isolate_context->dispatcher_->PostToDart(true, HandleNewPageResult, page_group, dart_handle, result_callback,
                                                 page);
