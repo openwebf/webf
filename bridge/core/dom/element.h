@@ -9,7 +9,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
 #include "core/css/inline_css_style_declaration.h"
-#include "core/rust_api/element.h"
+#include "plugin_api/element.h"
 #include "element_data.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
@@ -144,7 +144,7 @@ class Element : public ContainerNode {
   virtual bool IsWidgetElement() const;
 
   void Trace(GCVisitor* visitor) const override;
-  RustMethods* rustMethodPointer() override;
+  WebFPublicMethods* publicMethodPointer() override;
 
  protected:
   void SetAttributeInternal(const AtomicString&,

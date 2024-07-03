@@ -4,6 +4,7 @@
  */
 #include "element.h"
 #include <utility>
+#include "plugin_api/element.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
@@ -343,10 +344,9 @@ void Element::Trace(GCVisitor* visitor) const {
   ContainerNode::Trace(visitor);
 }
 
-RustMethods* Element::rustMethodPointer() {
-  auto* super_rust_methods = ContainerNode::rustMethodPointer();
-  static auto* rust_methods = new ElementRustMethods(static_cast<ContainerNodeRustMethods*>(super_rust_methods));
-  return rust_methods;
+WebFPublicMethods* Element::publicMethodPointer() {
+  auto* super_methods = ContainerNode::publicMethodPointer();
+  return new ElementWebFMethods(reinterpret_cast<ContainerNodeWebFMethods*>(super_methods));
 }
 
 // https://dom.spec.whatwg.org/#concept-element-qualified-name

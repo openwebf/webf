@@ -2,15 +2,16 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "node.h"
+#include "plugin_api/node.h"
+#include "plugin_api/exception_state.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/node.h"
 
 namespace webf {
 
-NodeRustMethods::NodeRustMethods(EventTargetRustMethods* super_rust_methods) : event_target(super_rust_methods) {}
+NodeWebFMethods::NodeWebFMethods(EventTargetWebFMethods* super_webf_methods) : event_target(super_webf_methods) {}
 
-RustValue<Node, NodeRustMethods> NodeRustMethods::AppendChild(Node* self_node,
+WebFValue<Node, NodeWebFMethods> NodeWebFMethods::AppendChild(Node* self_node,
                                                               Node* new_node,
                                                               SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{self_node->GetExecutingContext()};
@@ -21,7 +22,7 @@ RustValue<Node, NodeRustMethods> NodeRustMethods::AppendChild(Node* self_node,
 
   returned_node->KeepAlive();
 
-  return {.value = returned_node, .method_pointer = To<NodeRustMethods>(returned_node->rustMethodPointer())};
+  return {.value = returned_node, .method_pointer = To<NodeWebFMethods>(returned_node->publicMethodPointer())};
 }
 
 }  // namespace webf
