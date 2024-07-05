@@ -15,6 +15,7 @@ pub mod event;
 pub mod container_node;
 pub mod exception_state;
 pub mod text;
+pub mod comment;
 pub mod character_data;
 mod html_element;
 
