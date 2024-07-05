@@ -13,7 +13,7 @@
 #include "dictionary_base.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
-#include "platform/script_state.h"
+//#include "platform/script_state.h"
 #include "union_base.h"
 //#include "bindings/v8/platform/wtf/vector_traits.h"
 #include "foundation/macros.h"

@@ -142,7 +142,9 @@ DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dar
       dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
   running_dart_isolates++;
+  /* TODO no js thread
   InitializeJSRuntime();
+   */
 }
 
 #if WEBF_QUICKJS_JS_ENGINE
@@ -176,6 +178,9 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      AllocateNewPageCallback result_callback) {
 //  dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
+
+  v8::HandleScope handle_scope(dart_isolate_context->isolate());
+
   auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, nullptr);
 
 //  dart_isolate_context->profiler()->FinishTrackInitialize();
