@@ -9,6 +9,7 @@
 #include "document_fragment.h"
 #include "container_node.h"
 #include "text.h"
+#include "comment.h"
 
 namespace webf {
 
@@ -19,6 +20,7 @@ typedef struct Element Element;
 typedef struct DocumentFragment DocumentFragment;
 typedef struct Document Document;
 typedef struct Text Text;
+typedef struct Comment Comment;
 
 struct WebFElementCreationOptions {
   const char* is;
@@ -38,6 +40,8 @@ using WebFDocumentCreateTextNode =
     WebFValue<Text, TextNodeWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
 using WebFDocumentCreateDocumentFragment =
     WebFValue<DocumentFragment, DocumentFragmentWebFMethods> (*)(Document*, SharedExceptionState* shared_exception_state);
+using WebFDocumentCreateComment =
+    WebFValue<Comment, CommentWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
 using WebFDocumentGetDocumentElement = WebFValue<Element, ElementWebFMethods> (*)(Document*);
 
 struct DocumentWebFMethods : public WebFPublicMethods {
@@ -64,6 +68,7 @@ struct DocumentWebFMethods : public WebFPublicMethods {
                                                              SharedExceptionState* shared_exception_state);
   static WebFValue<DocumentFragment, DocumentFragmentWebFMethods> CreateDocumentFragment(Document* document,
                                                                                          SharedExceptionState* shared_exception_state);
+  static WebFValue<Comment, CommentWebFMethods> CreateComment(Document* document, const char* data, SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementWebFMethods> DocumentElement(Document* document);
 
   double version{1.0};
@@ -74,6 +79,7 @@ struct DocumentWebFMethods : public WebFPublicMethods {
   WebFDocumentCreateElementNSWithElementCreationOptions document_create_element_ns_with_element_creation_options{CreateElementNSWithElementCreationOptions};
   WebFDocumentCreateTextNode document_create_text_node{CreateTextNode};
   WebFDocumentCreateDocumentFragment document_create_document_fragment{CreateDocumentFragment};
+  WebFDocumentCreateComment document_create_comment{CreateComment};
   WebFDocumentGetDocumentElement document_get_document_element{DocumentElement};
 };
 
