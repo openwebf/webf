@@ -15,7 +15,7 @@
 #include <string>
 #include "bindings/v8/platform/util/main_thread_util.h"
 #include <cassert>
-#include "bindings/v8/platform/script_state.h"
+//#include "bindings/v8/platform/script_state.h"
 #include "bindings/v8/platform/v8_per_isolate_data.h"
 
 #if defined(V8_USE_EXTERNAL_STARTUP_DATA)

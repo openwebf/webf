@@ -204,7 +204,11 @@ class ExecutingContext {
   // ----------------------------------------------------------------------
   // All members above ScriptState will be freed after ScriptState freed
   // ----------------------------------------------------------------------
+#if WEBF_QUICKJS_JS_ENGINE
   ScriptState script_state_{dart_isolate_context_};
+#elif WEBF_V8_JS_ENGINE
+  ScriptState script_state_{dart_isolate_context_, v8::Context::New(dart_isolate_context_->isolate())};
+#endif
   // ----------------------------------------------------------------------
   // All members below will be free before ScriptState freed.
   // ----------------------------------------------------------------------

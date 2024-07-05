@@ -9,23 +9,27 @@
 namespace webf {
 
 v8::Local<v8::Value> ScriptValue::V8Value() const {
-  if (IsEmpty())
-    return v8::Local<v8::Value>();
+  return v8::Local<v8::Value>();
 
-  assert_m(GetIsolate()->InContext(), "The v8::Isolate is not in a valid context.");
-  assert_m(!v8_reference_.IsEmpty(), "The v8::TracedReference is empty");
-  auto scriptState = ScriptState::From(isolate_->GetCurrentContext());
-  return v8_reference_.Get(scriptState->GetIsolate());
+//  if (IsEmpty())
+//    return v8::Local<v8::Value>();
+//
+//  assert_m(GetIsolate()->InContext(), "The v8::Isolate is not in a valid context.");
+//  assert_m(!v8_reference_.IsEmpty(), "The v8::TracedReference is empty");
+//  auto scriptState = ScriptState::From(isolate_->GetCurrentContext());
+//  return v8_reference_.Get(scriptState->GetIsolate());
 }
 
 v8::Local<v8::Value> ScriptValue::V8ValueFor(
     ScriptState* target_script_state) const {
-  if (IsEmpty())
-    return v8::Local<v8::Value>();
+  return v8::Local<v8::Value>();
 
-  assert_m(!v8_reference_.IsEmpty(), "The v8::TracedReference is empty");
-  v8::Isolate* isolate = target_script_state->GetIsolate();
-  return v8_reference_.Get(isolate);
+//  if (IsEmpty())
+//    return v8::Local<v8::Value>();
+//
+//  assert_m(!v8_reference_.IsEmpty(), "The v8::TracedReference is empty");
+//  v8::Isolate* isolate = target_script_state->GetIsolate();
+//  return v8_reference_.Get(isolate);
 }
 
 bool ScriptValue::ToString(AtomicString& result) const {
