@@ -6,6 +6,7 @@
 #include "plugin_api/exception_state.h"
 #include "core/dom/document.h"
 #include "core/dom/text.h"
+#include "core/dom/document_fragment.h"
 #include "core/html/html_html_element.h"
 
 namespace webf {
@@ -122,6 +123,23 @@ WebFValue<Text, TextNodeWebFMethods> DocumentWebFMethods::CreateTextNode(
   text_node->KeepAlive();
 
   return {.value = text_node, .method_pointer = To<TextNodeWebFMethods>(text_node->publicMethodPointer())};
+}
+
+WebFValue<DocumentFragment, DocumentFragmentWebFMethods> DocumentWebFMethods::CreateDocumentFragment(
+    webf::Document* ptr,
+    webf::SharedExceptionState* shared_exception_state) {
+  auto* document = static_cast<webf::Document*>(ptr);
+  MemberMutationScope scope{document->GetExecutingContext()};
+  DocumentFragment* document_fragment = document->createDocumentFragment(shared_exception_state->exception_state);
+
+  if (shared_exception_state->exception_state.HasException()) {
+    return {.value = nullptr, .method_pointer = nullptr};
+  }
+
+  document_fragment->KeepAlive();
+
+  return {.value = document_fragment,
+          .method_pointer = To<DocumentFragmentWebFMethods>(document_fragment->publicMethodPointer())};
 }
 
 WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::DocumentElement(webf::Document* document) {
