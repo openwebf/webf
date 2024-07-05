@@ -6,6 +6,7 @@ use std::ffi::{c_char, c_double, CString};
 use std::mem;
 use crate::container_node::{ContainerNode, ContainerNodeMethods, ContainerNodeRustMethods};
 use crate::element::{Element, ElementMethods, ElementRustMethods};
+use crate::document_fragment::{DocumentFragment, DocumentFragmentRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
@@ -36,6 +37,7 @@ pub struct DocumentRustMethods {
     options: &mut ElementCreationOptions,
     exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub create_text_node: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<TextNodeRustMethods>,
+  pub create_document_fragment: extern "C" fn(document: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<DocumentFragmentRustMethods>,
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
 }
 
@@ -132,6 +134,21 @@ impl Document {
     }
 
     return Ok(Text::initialize(new_text_node.value, event_target.context, new_text_node.method_pointer));
+  }
+
+  /// Behavior as same as `document.createDocumentFragment()` in JavaScript.
+  /// Creates a new DocumentFragment.
+  pub fn create_document_fragment(&self, exception_state: &ExceptionState) -> Result<DocumentFragment, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let new_document_fragment = unsafe {
+      ((*self.method_pointer).create_document_fragment)(event_target.ptr, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(DocumentFragment::initialize(new_document_fragment.value, event_target.context, new_document_fragment.method_pointer));
   }
 
   /// Document.documentElement returns the Element that is the root element of the document
