@@ -76,6 +76,13 @@ impl Document {
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
   }
 
+  pub fn create_element_with_str(&self, name: &CString, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+    let options = &mut ElementCreationOptions {
+      is: str_options.as_ptr(),
+    };
+    return self.create_element_with_element_creation_options(name, options, exception_state);
+  }
+
   /// Behavior as same as `document.createElementNS()` in JavaScript.
   /// Creates a new element with the given namespace URI and qualified name.
   /// The qualified name is a concatenation of the namespace prefix, a colon, and the local name.
@@ -103,6 +110,13 @@ impl Document {
     }
 
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
+  }
+
+  pub fn create_element_ns_with_str(&self, uri: &CString, name: &CString, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+    let options = &mut ElementCreationOptions {
+      is: str_options.as_ptr(),
+    };
+    return self.create_element_ns_with_element_creation_options(uri, name, options, exception_state);
   }
 
   /// Behavior as same as `document.createTextNode()` in JavaScript.
