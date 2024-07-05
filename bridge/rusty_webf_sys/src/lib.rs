@@ -8,6 +8,7 @@ pub mod executing_context;
 pub mod document;
 pub mod window;
 pub mod element;
+pub mod document_fragment;
 pub mod node;
 pub mod event_target;
 pub mod event;
