@@ -13,6 +13,7 @@ use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeMethods};
 use crate::{OpaquePtr, RustValue};
 use crate::text::{Text, TextNodeRustMethods};
+use crate::comment::{Comment, CommentRustMethods};
 
 #[repr(C)]
 pub struct ElementCreationOptions {
@@ -38,6 +39,7 @@ pub struct DocumentRustMethods {
     exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub create_text_node: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<TextNodeRustMethods>,
   pub create_document_fragment: extern "C" fn(document: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<DocumentFragmentRustMethods>,
+  pub create_comment: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<CommentRustMethods>,
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
 }
 
@@ -149,6 +151,21 @@ impl Document {
     }
 
     return Ok(DocumentFragment::initialize(new_document_fragment.value, event_target.context, new_document_fragment.method_pointer));
+  }
+
+  /// Behavior as same as `document.createComment()` in JavaScript.
+  /// Creates a new Comment node with the given data.
+  pub fn create_comment(&self, data: &CString, exception_state: &ExceptionState) -> Result<Comment, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let new_comment = unsafe {
+      ((*self.method_pointer).create_comment)(event_target.ptr, data.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Comment::initialize(new_comment.value, event_target.context, new_comment.method_pointer));
   }
 
   /// Document.documentElement returns the Element that is the root element of the document
