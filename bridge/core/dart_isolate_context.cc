@@ -177,6 +177,9 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      AllocateNewPageCallback result_callback) {
 //  dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
+
+  v8::HandleScope handle_scope(dart_isolate_context->isolate());
+
   auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, nullptr);
 
 //  dart_isolate_context->profiler()->FinishTrackInitialize();

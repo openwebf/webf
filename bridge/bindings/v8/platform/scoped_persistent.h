@@ -28,7 +28,7 @@ class ScopedPersistent {
 
   ~ScopedPersistent() { Clear(); }
 
-  ALWAYS_INLINE v8::Local<T> NewLocal(v8::Isolate* isolate) const {
+  inline v8::Local<T> NewLocal(v8::Isolate* isolate) const {
     return v8::Local<T>::New(isolate, handle_);
   }
 
@@ -66,7 +66,7 @@ class ScopedPersistent {
     return handle_ == other;
   }
 
-  ALWAYS_INLINE v8::Persistent<T>& Get() { return handle_; }
+  inline v8::Persistent<T>& Get() { return handle_; }
 
  private:
   v8::Persistent<T> handle_;
