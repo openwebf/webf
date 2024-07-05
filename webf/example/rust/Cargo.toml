@@ -1,0 +1,13 @@
+[package]
+name = "example_app"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+webf-sys = "0.1.0"
+
+[patch.crates-io]
+webf-sys = { path = "../../../bridge/rusty_webf_sys" }

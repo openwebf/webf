@@ -31,6 +31,9 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_macos_pods File.dirname(File.realpath(__FILE__))
+
+  # Add your dynamic library here
+  pod 'example_app', :path => '../rust/macos/example.podspec'
 end
 
 post_install do |installer|
