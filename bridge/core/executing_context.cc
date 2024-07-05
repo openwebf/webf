@@ -87,6 +87,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 
   // Install performance
   InstallPerformance();
+  InstallNativeLoader();
 
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
@@ -621,6 +622,12 @@ void ExecutingContext::InstallPerformance() {
   MemberMutationScope scope{this};
   performance_ = MakeGarbageCollected<Performance>(this);
   DefineGlobalProperty("performance", performance_->ToQuickJS());
+}
+
+void ExecutingContext::InstallNativeLoader() {
+  MemberMutationScope scope{this};
+  native_loader_ = MakeGarbageCollected<NativeLoader>(this);
+  DefineGlobalProperty("nativeLoader", native_loader_->ToQuickJS());
 }
 
 void ExecutingContext::InstallGlobal() {
