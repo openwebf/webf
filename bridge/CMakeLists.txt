@@ -389,6 +389,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
 
+    core/native/native_loader.cc
+
     # SVG files
     core/svg/svg_element.cc
     core/svg/svg_graphics_element.cc
@@ -485,6 +487,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_css_style_declaration.cc
     out/qjs_inline_css_style_declaration.cc
     out/qjs_computed_css_style_declaration.cc
+    out/qjs_native_loader.cc
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc
