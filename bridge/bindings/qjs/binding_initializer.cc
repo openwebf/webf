@@ -25,6 +25,7 @@
 #include "qjs_dom_matrix.h"
 #include "qjs_dom_matrix_readonly.h"
 #include "qjs_dom_string_map.h"
+#include "qjs_native_loader.h"
 #include "qjs_dom_token_list.h"
 #include "qjs_element.h"
 #include "qjs_element_attributes.h"
@@ -199,6 +200,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGEllipseElement::Install(context);
   QJSSVGStyleElement::Install(context);
   QJSSVGLineElement::Install(context);
+  QJSNativeLoader::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

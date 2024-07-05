@@ -24,6 +24,7 @@
 #include "plugin_api/executing_context.h"
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
+#include "native/native_loader.h"
 
 #include "dart_isolate_context.h"
 #include "dart_methods.h"
@@ -140,6 +141,9 @@ class ExecutingContext {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
   }
+  FORCE_INLINE ExecutingContextWebFMethods* publicMethodPtr() const {
+    return public_method_ptr_.get();
+  }
   FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
@@ -171,6 +175,7 @@ class ExecutingContext {
 
   void InstallDocument();
   void InstallPerformance();
+  void InstallNativeLoader();
 
   void DrainPendingPromiseJobs();
 
@@ -203,6 +208,7 @@ class ExecutingContext {
   JSValue global_object_{JS_NULL};
   Document* document_{nullptr};
   Window* window_{nullptr};
+  NativeLoader* native_loader_{nullptr};
   Performance* performance_{nullptr};
   DOMTimerCoordinator timers_;
   ModuleListenerContainer module_listener_container_;

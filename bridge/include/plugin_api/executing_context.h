@@ -7,7 +7,6 @@
 
 #include "document.h"
 #include "window.h"
-#include "executing_context.h"
 #include "exception_state.h"
 
 namespace webf {
