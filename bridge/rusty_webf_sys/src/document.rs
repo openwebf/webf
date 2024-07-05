@@ -6,12 +6,14 @@ use std::ffi::{c_char, c_double, CString};
 use std::mem;
 use crate::container_node::{ContainerNode, ContainerNodeMethods, ContainerNodeRustMethods};
 use crate::element::{Element, ElementMethods, ElementRustMethods};
+use crate::document_fragment::{DocumentFragment, DocumentFragmentRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeMethods};
 use crate::{OpaquePtr, RustValue};
 use crate::text::{Text, TextNodeRustMethods};
+use crate::comment::{Comment, CommentRustMethods};
 
 #[repr(C)]
 pub struct ElementCreationOptions {
@@ -36,6 +38,8 @@ pub struct DocumentRustMethods {
     options: &mut ElementCreationOptions,
     exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub create_text_node: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<TextNodeRustMethods>,
+  pub create_document_fragment: extern "C" fn(document: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<DocumentFragmentRustMethods>,
+  pub create_comment: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<CommentRustMethods>,
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
 }
 
@@ -76,6 +80,13 @@ impl Document {
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
   }
 
+  pub fn create_element_with_str(&self, name: &CString, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+    let options = &mut ElementCreationOptions {
+      is: str_options.as_ptr(),
+    };
+    return self.create_element_with_element_creation_options(name, options, exception_state);
+  }
+
   /// Behavior as same as `document.createElementNS()` in JavaScript.
   /// Creates a new element with the given namespace URI and qualified name.
   /// The qualified name is a concatenation of the namespace prefix, a colon, and the local name.
@@ -105,6 +116,13 @@ impl Document {
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
   }
 
+  pub fn create_element_ns_with_str(&self, uri: &CString, name: &CString, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+    let options = &mut ElementCreationOptions {
+      is: str_options.as_ptr(),
+    };
+    return self.create_element_ns_with_element_creation_options(uri, name, options, exception_state);
+  }
+
   /// Behavior as same as `document.createTextNode()` in JavaScript.
   /// Creates a new Text node. This method can be used to escape HTML characters.
   pub fn create_text_node(&self, data: &CString, exception_state: &ExceptionState) -> Result<Text, String> {
@@ -118,6 +136,36 @@ impl Document {
     }
 
     return Ok(Text::initialize(new_text_node.value, event_target.context, new_text_node.method_pointer));
+  }
+
+  /// Behavior as same as `document.createDocumentFragment()` in JavaScript.
+  /// Creates a new DocumentFragment.
+  pub fn create_document_fragment(&self, exception_state: &ExceptionState) -> Result<DocumentFragment, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let new_document_fragment = unsafe {
+      ((*self.method_pointer).create_document_fragment)(event_target.ptr, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(DocumentFragment::initialize(new_document_fragment.value, event_target.context, new_document_fragment.method_pointer));
+  }
+
+  /// Behavior as same as `document.createComment()` in JavaScript.
+  /// Creates a new Comment node with the given data.
+  pub fn create_comment(&self, data: &CString, exception_state: &ExceptionState) -> Result<Comment, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let new_comment = unsafe {
+      ((*self.method_pointer).create_comment)(event_target.ptr, data.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Comment::initialize(new_comment.value, event_target.context, new_comment.method_pointer));
   }
 
   /// Document.documentElement returns the Element that is the root element of the document

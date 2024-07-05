@@ -278,8 +278,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/api/container_node.cc
     core/api/document.cc
     core/api/element.cc
+    core/api/document_fragment.cc
     core/api/window.cc
     core/api/text.cc
+    core/api/comment.cc
     core/api/character_data.cc
     core/dart_isolate_context.cc
     core/dart_context_data.cc

@@ -8,12 +8,14 @@ pub mod executing_context;
 pub mod document;
 pub mod window;
 pub mod element;
+pub mod document_fragment;
 pub mod node;
 pub mod event_target;
 pub mod event;
 pub mod container_node;
 pub mod exception_state;
 pub mod text;
+pub mod comment;
 pub mod character_data;
 mod html_element;
 
