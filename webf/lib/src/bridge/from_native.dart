@@ -465,9 +465,7 @@ typedef StandardWebFPluginExternalSymbol = Void Function();
 typedef DartStandardWebFPluginExternalSymbol = void Function();
 
 String _getNativeLibraryName(String prefix) {
-  if (Platform.isMacOS) {
-    return 'lib$prefix.dylib';
-  } else if (Platform.isIOS) {
+  if (Platform.isMacOS || Platform.isIOS) {
     return '$prefix.framework/$prefix';
   } else if (Platform.isWindows) {
     return '$prefix.dll';
