@@ -117,7 +117,8 @@ class _InvokeModuleResultContext {
       {this.errmsgPtr, this.data, this.stopwatch});
 }
 
-void _handleInvokeModuleResult(_InvokeModuleResultContext context, Pointer<NativeValue> result) {
+void _handleInvokeModuleResult(Object handle, Pointer<NativeValue> result) {
+  _InvokeModuleResultContext context = handle as _InvokeModuleResultContext;
   var returnValue = fromNativeValue(context.currentView, result);
 
   if (enableWebFCommandLog && context.stopwatch != null) {

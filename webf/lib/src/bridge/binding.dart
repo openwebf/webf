@@ -47,7 +47,8 @@ Future<void> _dispatchCaptureEventToNative(Event event) async {
   await _dispatchEventToNative(event, true);
 }
 
-void _handleDispatchResult(_DispatchEventResultContext context, Pointer<NativeValue> returnValue) {
+void _handleDispatchResult(Object contextHandle, Pointer<NativeValue> returnValue) {
+  _DispatchEventResultContext context = contextHandle as _DispatchEventResultContext;
   Pointer<EventDispatchResult> dispatchResult = fromNativeValue(context.controller.view, returnValue).cast<EventDispatchResult>();
   Event event = context.event;
   event.cancelable = dispatchResult.ref.canceled;

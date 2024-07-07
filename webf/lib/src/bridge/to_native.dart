@@ -136,7 +136,8 @@ typedef NativeInvokeModuleCallback = Void Function(Handle object, Pointer<Native
 final DartInvokeEventListener _invokeModuleEvent =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
 
-void _invokeModuleCallback(_InvokeModuleCallbackContext context, Pointer<NativeValue> dispatchResult) {
+void _invokeModuleCallback(Object handle, Pointer<NativeValue> dispatchResult) {
+  _InvokeModuleCallbackContext context = handle as _InvokeModuleCallbackContext;
   dynamic result = fromNativeValue(context.controller.view, dispatchResult);
   malloc.free(dispatchResult);
   malloc.free(context.extraData);
@@ -272,7 +273,8 @@ class _EvaluateScriptsContext {
   _EvaluateScriptsContext(this.completer, this.originalCodeBytes, this.codePtr, this.url, this.cacheKey);
 }
 
-void handleEvaluateScriptsResult(_EvaluateScriptsContext context, int result) {
+void handleEvaluateScriptsResult(Object handle, int result) {
+  _EvaluateScriptsContext context = handle as _EvaluateScriptsContext;
   if (context.bytecodes != null) {
     Uint8List bytes = context.bytecodes!.value.asTypedList(context.bytecodeLen!.value);
     // Save to disk cache
@@ -361,7 +363,8 @@ class _EvaluateQuickjsByteCodeContext {
   _EvaluateQuickjsByteCodeContext(this.completer, this.bytes);
 }
 
-void handleEvaluateQuickjsByteCodeResult(_EvaluateQuickjsByteCodeContext context, int result) {
+void handleEvaluateQuickjsByteCodeResult(Object handle, int result) {
+  _EvaluateQuickjsByteCodeContext context = handle as _EvaluateQuickjsByteCodeContext;
   malloc.free(context.bytes);
   context.completer.complete(result == 1);
 }
@@ -385,7 +388,8 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, { Evalua
   return completer.future;
 }
 
-void _handleParseHTMLContextResult(_ParseHTMLContext context) {
+void _handleParseHTMLContextResult(Object handle) {
+  _ParseHTMLContext context = handle as _ParseHTMLContext;
   context.completer.complete();
 }
 
@@ -466,7 +470,8 @@ class _DumpQuickjsByteCodeContext {
   _DumpQuickjsByteCodeContext(this.completer, this.bytecodes, this.bytecodeLen);
 }
 
-void _handleQuickjsByteCodeResults(_DumpQuickjsByteCodeContext context) {
+void _handleQuickjsByteCodeResults(Object handle) {
+  _DumpQuickjsByteCodeContext context = handle as _DumpQuickjsByteCodeContext;
   Uint8List bytes = context.bytecodes.value.asTypedList(context.bytecodeLen.value);
   context.completer.complete(bytes);
 }
@@ -529,7 +534,8 @@ typedef DartDisposePageSync = void Function(double, Pointer<Void>, Pointer<Void>
 final DartDisposePageSync _disposePageSync =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDisposePageSync>>('disposePageSync').asFunction();
 
-void _handleDisposePageResult(_DisposePageContext context) {
+void _handleDisposePageResult(Object handle) {
+  _DisposePageContext context = handle as _DisposePageContext;
   context.completer.complete();
 }
 
@@ -578,7 +584,8 @@ final DartAllocateNewPageSync _allocateNewPageSync =
 final DartAllocateNewPage _allocateNewPage =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPage>>('allocateNewPage').asFunction();
 
-void _handleAllocateNewPageResult(_AllocateNewPageContext context, Pointer<Void> page) {
+void _handleAllocateNewPageResult(Object handle, Pointer<Void> page) {
+  _AllocateNewPageContext context = handle as _AllocateNewPageContext;
   assert(!_allocatedPages.containsKey(context.contextId));
   _allocatedPages[context.contextId] = page;
   context.completer.complete();
