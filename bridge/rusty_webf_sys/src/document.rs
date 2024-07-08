@@ -41,6 +41,8 @@ pub struct DocumentRustMethods {
   pub create_document_fragment: extern "C" fn(document: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<DocumentFragmentRustMethods>,
   pub create_comment: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<CommentRustMethods>,
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub head: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub body: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
 }
 
 impl RustMethods for DocumentRustMethods {}
@@ -177,6 +179,27 @@ impl Document {
     };
 
     return Element::initialize(html_element_value.value, event_target.context, html_element_value.method_pointer);
+  }
+
+  /// The Document.head property represents the <head> or of the current document,
+  /// or null if no such element exists.
+  pub fn head(&self) -> Element {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let head_element_value = unsafe {
+      ((*self.method_pointer).head)(event_target.ptr)
+    };
+    return Element::initialize(head_element_value.value, event_target.context, head_element_value.method_pointer);
+  }
+
+
+  /// The Document.body property represents the <body> or of the current document,
+  /// or null if no such element exists.
+  pub fn body(&self) -> Element {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let body_element_value = unsafe {
+      ((*self.method_pointer).body)(event_target.ptr)
+    };
+    return Element::initialize(body_element_value.value, event_target.context, body_element_value.method_pointer);
   }
 }
 

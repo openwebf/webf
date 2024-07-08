@@ -9,6 +9,8 @@
 #include "core/dom/document_fragment.h"
 #include "core/dom/comment.h"
 #include "core/html/html_html_element.h"
+#include "core/html/html_head_element.h"
+#include "core/html/html_body_element.h"
 
 namespace webf {
 
@@ -164,6 +166,18 @@ WebFValue<Comment, CommentWebFMethods> DocumentWebFMethods::CreateComment(
 WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::DocumentElement(webf::Document* document) {
   return {.value = document->documentElement(),
           .method_pointer = To<ElementWebFMethods>(document->documentElement()->publicMethodPointer())};
+}
+
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::Head(webf::Document *document) {
+  auto* head = document->head();
+  return {.value = head,
+          .method_pointer = To<ElementWebFMethods>(head->publicMethodPointer())};
+}
+
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::Body(webf::Document *document) {
+  auto* body = document->body();
+  return {.value = body,
+          .method_pointer = To<ElementWebFMethods>(body->publicMethodPointer())};
 }
 
 }  // namespace webf
