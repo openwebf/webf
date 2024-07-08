@@ -57,7 +57,8 @@ class _ExecuteTestContext {
   _ExecuteTestContext(this.completer, this.profileOp);
 }
 
-void _handleExecuteTestResult(_ExecuteTestContext context, Pointer<NativeString> resultData) {
+void _handleExecuteTestResult(Object handle, Pointer<NativeString> resultData) {
+  _ExecuteTestContext context = handle as _ExecuteTestContext;
   String status = nativeStringToString(resultData);
   context.completer.complete(status);
 

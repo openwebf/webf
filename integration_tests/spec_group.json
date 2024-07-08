@@ -76,10 +76,20 @@
     ]
   },
   {
-    "name": "TransformsAndAnimations",
+    "name": "Transforms",
     "specs": [
-      "specs/css/css-transforms/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-transitions/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-transforms/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "Transitions",
+    "specs": [
+      "specs/css/css-transitions/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "Animations",
+    "specs": [
       "specs/css/css-animations/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
