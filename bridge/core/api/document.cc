@@ -8,6 +8,7 @@
 #include "core/dom/text.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/comment.h"
+#include "core/dom/events/event.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_head_element.h"
 #include "core/html/html_body_element.h"
@@ -161,6 +162,24 @@ WebFValue<Comment, CommentWebFMethods> DocumentWebFMethods::CreateComment(
   comment->KeepAlive();
 
   return {.value = comment, .method_pointer = To<CommentWebFMethods>(comment->publicMethodPointer())};
+}
+
+WebFValue<Event, EventWebFMethods> DocumentWebFMethods::CreateEvent(
+    webf::Document* ptr,
+    const char* type,
+    webf::SharedExceptionState* shared_exception_state) {
+  auto* document = static_cast<webf::Document*>(ptr);
+  MemberMutationScope scope{document->GetExecutingContext()};
+  webf::AtomicString type_atomic = webf::AtomicString(document->ctx(), type);
+  Event* event = document->createEvent(type_atomic, shared_exception_state->exception_state);
+
+  if (shared_exception_state->exception_state.HasException()) {
+    return {.value = nullptr, .method_pointer = nullptr};
+  }
+
+  event->KeepAlive();
+
+  return {.value = event, .method_pointer = To<EventWebFMethods>(event->publicMethodPointer())};
 }
 
 WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::DocumentElement(webf::Document* document) {
