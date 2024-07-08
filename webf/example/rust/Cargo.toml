@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-webf-sys = "0.1.0"
+webf-sys = "0.16.0"
 
 [patch.crates-io]
 webf-sys = { path = "../../../bridge/rusty_webf_sys" }
