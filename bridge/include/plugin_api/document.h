@@ -43,6 +43,8 @@ using WebFDocumentCreateDocumentFragment =
 using WebFDocumentCreateComment =
     WebFValue<Comment, CommentWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
 using WebFDocumentGetDocumentElement = WebFValue<Element, ElementWebFMethods> (*)(Document*);
+using WebFDocumentGetDocumentHeader = WebFValue<Element, ElementWebFMethods> (*)(Document*);
+using WebFDocumentGetDocumentBody = WebFValue<Element, ElementWebFMethods> (*)(Document*);
 
 struct DocumentWebFMethods : public WebFPublicMethods {
   DocumentWebFMethods(ContainerNodeWebFMethods* super_rust_method);
@@ -70,6 +72,8 @@ struct DocumentWebFMethods : public WebFPublicMethods {
                                                                                          SharedExceptionState* shared_exception_state);
   static WebFValue<Comment, CommentWebFMethods> CreateComment(Document* document, const char* data, SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementWebFMethods> DocumentElement(Document* document);
+  static WebFValue<Element, ElementWebFMethods> Head(Document* document);
+  static WebFValue<Element, ElementWebFMethods> Body(Document* document);
 
   double version{1.0};
   ContainerNodeWebFMethods* container_node;
@@ -81,6 +85,8 @@ struct DocumentWebFMethods : public WebFPublicMethods {
   WebFDocumentCreateDocumentFragment document_create_document_fragment{CreateDocumentFragment};
   WebFDocumentCreateComment document_create_comment{CreateComment};
   WebFDocumentGetDocumentElement document_get_document_element{DocumentElement};
+  WebFDocumentGetDocumentHeader document_get_document_header{Head};
+  WebFDocumentGetDocumentBody document_get_document_body{Body};
 };
 
 }  // namespace webf
