@@ -14,6 +14,7 @@ use crate::node::{Node, NodeMethods};
 use crate::{OpaquePtr, RustValue};
 use crate::text::{Text, TextNodeRustMethods};
 use crate::comment::{Comment, CommentRustMethods};
+use crate::event::{Event, EventRustMethods};
 
 #[repr(C)]
 pub struct ElementCreationOptions {
@@ -40,6 +41,7 @@ pub struct DocumentRustMethods {
   pub create_text_node: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<TextNodeRustMethods>,
   pub create_document_fragment: extern "C" fn(document: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<DocumentFragmentRustMethods>,
   pub create_comment: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<CommentRustMethods>,
+  pub create_event: extern "C" fn(document: *const OpaquePtr, event_type: *const c_char, exception_state: *const OpaquePtr) -> RustValue<EventRustMethods>,
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub head: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub body: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
@@ -168,6 +170,21 @@ impl Document {
     }
 
     return Ok(Comment::initialize(new_comment.value, event_target.context, new_comment.method_pointer));
+  }
+
+  /// Behavior as same as `document.createEvent()` in JavaScript.
+  /// Creates a new event of the type specified.
+  pub fn create_event(&self, event_type: &CString, exception_state: &ExceptionState) -> Result<Event, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let new_event = unsafe {
+      ((*self.method_pointer).create_event)(event_target.ptr, event_type.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Event::initialize(new_event.value, new_event.method_pointer));
   }
 
   /// Document.documentElement returns the Element that is the root element of the document

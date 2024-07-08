@@ -10,6 +10,7 @@
 #include "container_node.h"
 #include "text.h"
 #include "comment.h"
+#include "event.h"
 
 namespace webf {
 
@@ -21,6 +22,7 @@ typedef struct DocumentFragment DocumentFragment;
 typedef struct Document Document;
 typedef struct Text Text;
 typedef struct Comment Comment;
+typedef struct Event Event;
 
 struct WebFElementCreationOptions {
   const char* is;
@@ -42,6 +44,7 @@ using WebFDocumentCreateDocumentFragment =
     WebFValue<DocumentFragment, DocumentFragmentWebFMethods> (*)(Document*, SharedExceptionState* shared_exception_state);
 using WebFDocumentCreateComment =
     WebFValue<Comment, CommentWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using WebFDocumentCreateEvent = WebFValue<Event, EventWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
 using WebFDocumentGetDocumentElement = WebFValue<Element, ElementWebFMethods> (*)(Document*);
 using WebFDocumentGetDocumentHeader = WebFValue<Element, ElementWebFMethods> (*)(Document*);
 using WebFDocumentGetDocumentBody = WebFValue<Element, ElementWebFMethods> (*)(Document*);
@@ -71,6 +74,7 @@ struct DocumentWebFMethods : public WebFPublicMethods {
   static WebFValue<DocumentFragment, DocumentFragmentWebFMethods> CreateDocumentFragment(Document* document,
                                                                                          SharedExceptionState* shared_exception_state);
   static WebFValue<Comment, CommentWebFMethods> CreateComment(Document* document, const char* data, SharedExceptionState* shared_exception_state);
+  static WebFValue<Event, EventWebFMethods> CreateEvent(Document* document, const char* type, SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementWebFMethods> DocumentElement(Document* document);
   static WebFValue<Element, ElementWebFMethods> Head(Document* document);
   static WebFValue<Element, ElementWebFMethods> Body(Document* document);
@@ -84,6 +88,7 @@ struct DocumentWebFMethods : public WebFPublicMethods {
   WebFDocumentCreateTextNode document_create_text_node{CreateTextNode};
   WebFDocumentCreateDocumentFragment document_create_document_fragment{CreateDocumentFragment};
   WebFDocumentCreateComment document_create_comment{CreateComment};
+  WebFDocumentCreateEvent document_create_event{CreateEvent};
   WebFDocumentGetDocumentElement document_get_document_element{DocumentElement};
   WebFDocumentGetDocumentHeader document_get_document_header{Head};
   WebFDocumentGetDocumentBody document_get_document_body{Body};
