@@ -236,6 +236,8 @@ class Event : public ScriptWrappable {
 
   void Trace(GCVisitor* visitor) const override;
 
+  virtual WebFPublicMethods* publicMethodPointer();
+
  protected:
   PassiveMode HandlingPassive() const { return handling_passive_; }
 
