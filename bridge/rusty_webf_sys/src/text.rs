@@ -5,8 +5,9 @@
 use std::ffi::c_double;
 use crate::character_data::{CharacterData, CharacterDataRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
+use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
-use crate::node::{Node, NodeRustMethods};
+use crate::node::{Node, NodeMethods, NodeRustMethods};
 use crate::OpaquePtr;
 
 #[repr(C)]
@@ -23,6 +24,16 @@ pub struct Text {
 }
 
 impl Text {
+}
+
+impl NodeMethods for Text {
+  fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+    self.character_data.node.append_child(new_node, exception_state)
+  }
+
+  fn as_node(&self) -> &Node {
+    &self.character_data.node
+  }
 }
 
 impl EventTargetMethods for Text {
