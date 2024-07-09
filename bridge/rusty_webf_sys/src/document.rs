@@ -42,6 +42,8 @@ pub struct DocumentRustMethods {
   pub create_document_fragment: extern "C" fn(document: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<DocumentFragmentRustMethods>,
   pub create_comment: extern "C" fn(document: *const OpaquePtr, data: *const c_char, exception_state: *const OpaquePtr) -> RustValue<CommentRustMethods>,
   pub create_event: extern "C" fn(document: *const OpaquePtr, event_type: *const c_char, exception_state: *const OpaquePtr) -> RustValue<EventRustMethods>,
+  pub query_selector: extern "C" fn(document: *const OpaquePtr, selectors: *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub get_element_by_id: extern "C" fn(document: *const OpaquePtr, element_id: *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub head: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub body: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
@@ -185,6 +187,36 @@ impl Document {
     }
 
     return Ok(Event::initialize(new_event.value, new_event.method_pointer));
+  }
+
+  /// Behavior as same as `document.querySelector()` in JavaScript.
+  /// Returns the first element that is a descendant of the element on which it is invoked that matches the specified group of selectors.
+  pub fn query_selector(&self, selectors: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let element_value = unsafe {
+      ((*self.method_pointer).query_selector)(event_target.ptr, selectors.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Element::initialize(element_value.value, event_target.context, element_value.method_pointer));
+  }
+
+  /// Behavior as same as `document.getElementById()` in JavaScript.
+  /// Returns a reference to the element by its ID.
+  pub fn get_element_by_id(&self, element_id: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let element_value = unsafe {
+      ((*self.method_pointer).get_element_by_id)(event_target.ptr, element_id.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Element::initialize(element_value.value, event_target.context, element_value.method_pointer));
   }
 
   /// Document.documentElement returns the Element that is the root element of the document
