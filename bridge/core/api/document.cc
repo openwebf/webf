@@ -218,6 +218,24 @@ WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::GetElementById(
   return {.value = element, .method_pointer = To<ElementWebFMethods>(element->publicMethodPointer())};
 }
 
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::ElementFromPoint(
+    webf::Document* ptr,
+    double x,
+    double y,
+    webf::SharedExceptionState* shared_exception_state) {
+  auto* document = static_cast<webf::Document*>(ptr);
+  MemberMutationScope scope{document->GetExecutingContext()};
+  Element* element = document->elementFromPoint(x, y, shared_exception_state->exception_state);
+
+  if (shared_exception_state->exception_state.HasException()) {
+    return {.value = nullptr, .method_pointer = nullptr};
+  }
+
+  element->KeepAlive();
+
+  return {.value = element, .method_pointer = To<ElementWebFMethods>(element->publicMethodPointer())};
+}
+
 WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::DocumentElement(webf::Document* document) {
   return {.value = document->documentElement(),
           .method_pointer = To<ElementWebFMethods>(document->documentElement()->publicMethodPointer())};
