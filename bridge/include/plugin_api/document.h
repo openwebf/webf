@@ -47,6 +47,7 @@ using WebFDocumentCreateComment =
 using WebFDocumentCreateEvent = WebFValue<Event, EventWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
 using WebFDocumentQuerySelector = WebFValue<Element, ElementWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
 using WebFDocumentGetElementById = WebFValue<Element, ElementWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using WebFDocumentElementFromPoint = WebFValue<Element, ElementWebFMethods> (*)(Document*, double, double, SharedExceptionState* shared_exception_state);
 using WebFDocumentGetDocumentElement = WebFValue<Element, ElementWebFMethods> (*)(Document*);
 using WebFDocumentGetDocumentHeader = WebFValue<Element, ElementWebFMethods> (*)(Document*);
 using WebFDocumentGetDocumentBody = WebFValue<Element, ElementWebFMethods> (*)(Document*);
@@ -79,6 +80,7 @@ struct DocumentWebFMethods : public WebFPublicMethods {
   static WebFValue<Event, EventWebFMethods> CreateEvent(Document* document, const char* type, SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementWebFMethods> QuerySelector(Document* document, const char* selectors, SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementWebFMethods> GetElementById(Document* document, const char* id, SharedExceptionState* shared_exception_state);
+  static WebFValue<Element, ElementWebFMethods> ElementFromPoint(Document* document, double x, double y, SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementWebFMethods> DocumentElement(Document* document);
   static WebFValue<Element, ElementWebFMethods> Head(Document* document);
   static WebFValue<Element, ElementWebFMethods> Body(Document* document);
@@ -95,6 +97,7 @@ struct DocumentWebFMethods : public WebFPublicMethods {
   WebFDocumentCreateEvent document_create_event{CreateEvent};
   WebFDocumentQuerySelector document_query_selector{QuerySelector};
   WebFDocumentGetElementById document_get_element_by_id{GetElementById};
+  WebFDocumentElementFromPoint document_element_from_point{ElementFromPoint};
   WebFDocumentGetDocumentElement document_get_document_element{DocumentElement};
   WebFDocumentGetDocumentHeader document_get_document_header{Head};
   WebFDocumentGetDocumentBody document_get_document_body{Body};
