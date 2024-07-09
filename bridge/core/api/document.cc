@@ -182,6 +182,42 @@ WebFValue<Event, EventWebFMethods> DocumentWebFMethods::CreateEvent(
   return {.value = event, .method_pointer = To<EventWebFMethods>(event->publicMethodPointer())};
 }
 
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::QuerySelector(
+    webf::Document* ptr,
+    const char* selectors,
+    webf::SharedExceptionState* shared_exception_state) {
+  auto* document = static_cast<webf::Document*>(ptr);
+  MemberMutationScope scope{document->GetExecutingContext()};
+  webf::AtomicString selectors_atomic = webf::AtomicString(document->ctx(), selectors);
+  Element* element = document->querySelector(selectors_atomic, shared_exception_state->exception_state);
+
+  if (shared_exception_state->exception_state.HasException()) {
+    return {.value = nullptr, .method_pointer = nullptr};
+  }
+
+  element->KeepAlive();
+
+  return {.value = element, .method_pointer = To<ElementWebFMethods>(element->publicMethodPointer())};
+}
+
+WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::GetElementById(
+    webf::Document* ptr,
+    const char* id,
+    webf::SharedExceptionState* shared_exception_state) {
+  auto* document = static_cast<webf::Document*>(ptr);
+  MemberMutationScope scope{document->GetExecutingContext()};
+  webf::AtomicString id_atomic = webf::AtomicString(document->ctx(), id);
+  Element* element = document->getElementById(id_atomic, shared_exception_state->exception_state);
+
+  if (shared_exception_state->exception_state.HasException()) {
+    return {.value = nullptr, .method_pointer = nullptr};
+  }
+
+  element->KeepAlive();
+
+  return {.value = element, .method_pointer = To<ElementWebFMethods>(element->publicMethodPointer())};
+}
+
 WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::DocumentElement(webf::Document* document) {
   return {.value = document->documentElement(),
           .method_pointer = To<ElementWebFMethods>(document->documentElement()->publicMethodPointer())};
