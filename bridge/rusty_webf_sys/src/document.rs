@@ -44,6 +44,7 @@ pub struct DocumentRustMethods {
   pub create_event: extern "C" fn(document: *const OpaquePtr, event_type: *const c_char, exception_state: *const OpaquePtr) -> RustValue<EventRustMethods>,
   pub query_selector: extern "C" fn(document: *const OpaquePtr, selectors: *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub get_element_by_id: extern "C" fn(document: *const OpaquePtr, element_id: *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub element_from_point: extern "C" fn(document: *const OpaquePtr, x: c_double, y: c_double, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub head: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub body: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
@@ -210,6 +211,21 @@ impl Document {
     let event_target: &EventTarget = &self.container_node.node.event_target;
     let element_value = unsafe {
       ((*self.method_pointer).get_element_by_id)(event_target.ptr, element_id.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(Element::initialize(element_value.value, event_target.context, element_value.method_pointer));
+  }
+
+  /// Behavior as same as `document.elementFromPoint()` in JavaScript.
+  /// Returns the element from the document whose elementFromPoint() method is being called which is the topmost element which lies under the given point.
+  pub fn element_from_point(&self, x: f32, y: f32, exception_state: &ExceptionState) -> Result<Element, String> {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let element_value = unsafe {
+      ((*self.method_pointer).element_from_point)(event_target.ptr, x, y, exception_state.ptr)
     };
 
     if exception_state.has_exception() {
