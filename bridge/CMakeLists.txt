@@ -327,6 +327,11 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_tokenizer.cc
     core/css/parser/css_tokenizer_input_stream.cc
     core/css/parser/css_variable_parser.cc
+    core/css/css_initial_value.cc
+    core/css/css_primitive_value.cc
+    core/css/css_keyframe_shorthand_value.cc
+    core/css/css_value_list.cc
+    core/css/style_property_serializer.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc

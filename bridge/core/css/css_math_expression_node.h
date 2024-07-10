@@ -48,6 +48,7 @@
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/css_value_keywords.h"
 #include "core/dom/tree_scope.h"
+#include "core/base/containers/enum_set.h"
 //#include "core/layout/geometry/axis.h"
 //#include "core/geometry/calculation_value.h"
 
@@ -100,7 +101,7 @@ class CSSMathExpressionNode {
     MaxValue = AllowAutoInCalcSize,
   };
 
-  using Flags = webf::EnumSet<Flag, Flag::MinValue, Flag::MaxValue>;
+  using Flags = EnumSet<Flag, Flag::MinValue, Flag::MaxValue>;
 
   static CSSMathExpressionNode* ParseMathFunction(
       CSSValueID function_id,
