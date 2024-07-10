@@ -5,9 +5,6 @@
 
 import 'dart:async';
 import 'dart:ui';
-import 'dart:developer';
-
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show Widget;
 import 'package:flutter/rendering.dart';
@@ -850,7 +847,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     flutterWidget = null;
     flutterWidgetElement = null;
     ownerDocument.inactiveRenderObjects.add(renderer);
-    ownerDocument.clearElementStyleDirty(this);
     _beforeElement?.dispose();
     _beforeElement = null;
     _afterElement?.dispose();
@@ -1521,12 +1517,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   String toString() {
     String printText = '$tagName Element(${shortHash(this)})';
-    if (className.isNotEmpty) {
-      printText += ' className(.$className)';
-    }
-    if (id != null) {
-      printText += ' id($id)';
-    }
     return printText;
   }
 

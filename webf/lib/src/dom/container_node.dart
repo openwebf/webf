@@ -98,11 +98,6 @@ abstract class ContainerNode extends Node {
     // 5. Insert node into parent before reference child.
     _insertNode(targets, referenceNode, _adoptAndInsertBefore);
 
-    // 6. Mark this element to dirty elements.
-    if (this is Element) {
-      ownerDocument.markElementStyleDirty(this as Element);
-    }
-
     // 7. Trigger connected callback
     if (newChild.isConnected) {
       newChild.connectedCallback();
