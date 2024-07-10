@@ -224,6 +224,7 @@
     "wheel",
     "zoom",
     "intersectionchange",
-    "gcopen"
+    "gcopen",
+    "hybridrouterchange"
   ]
 }

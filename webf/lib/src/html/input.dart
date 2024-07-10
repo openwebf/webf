@@ -25,6 +25,7 @@ const Map<String, dynamic> _inputDefaultStyle = {
   BORDER: '2px solid rgb(118, 118, 118)',
   DISPLAY: INLINE_BLOCK,
   WIDTH: '140px',
+  HEIGHT: '25px'
 };
 
 const Map<String, dynamic> _checkboxDefaultStyle = {
@@ -343,11 +344,13 @@ mixin BaseInputElement on WidgetElement {
         textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
+        cursorHeight: renderStyle.fontSize.computedValue,
         decoration: decoration,
       );
     } else {
       widget = TextField(
         controller: controller,
+        cursorHeight: renderStyle.fontSize.computedValue,
         enabled: !disabled && !readonly,
         style: _textStyle,
         strutStyle: _textStruct,

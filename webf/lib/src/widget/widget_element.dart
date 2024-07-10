@@ -27,6 +27,8 @@ abstract class WidgetElement extends dom.Element {
   }
   WebFWidgetElementToWidgetAdapter? attachedAdapter;
 
+  bool isRouterLinkElement = false;
+
   BuildContext get context {
     return _state!.context;
   }
@@ -66,7 +68,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void didDetachRenderer() {
     super.didDetachRenderer();
-    _detachWidget();
+    detachWidget();
   }
 
   @nonVirtual
@@ -93,7 +95,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void didAttachRenderer() {
     // Children of WidgetElement should insert render object by Flutter Framework.
-    _attachWidget(_widget);
+    attachWidget(_widget);
   }
 
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
@@ -217,7 +219,7 @@ abstract class WidgetElement extends dom.Element {
     return null;
   }
 
-  void _attachWidget(Widget widget) {
+  void attachWidget(Widget widget) {
     if (attachedAdapter == null) return;
 
     dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
@@ -231,7 +233,7 @@ abstract class WidgetElement extends dom.Element {
     }
   }
 
-  void _detachWidget() {
+  void detachWidget() {
     if (attachedAdapter != null) {
       dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
       if (ancestorWidgetNode != null) {

@@ -392,7 +392,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
 
         SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          if (!previousRenderBoxModel.disposed) {
+          if (!previousRenderBoxModel.disposed && !managedByFlutterWidget) {
             previousRenderBoxModel.dispose();
           }
         });
@@ -1329,18 +1329,30 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         containingBlockRenderBox = parentNode!.renderer;
         break;
       case CSSPositionType.absolute:
+        Element viewportElement = ownerDocument.documentElement!;
+
+        if (ownerView.activeRouterRoot != null) {
+          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
+        }
+
         // If the element has 'position: absolute', the containing block is established by the nearest ancestor with
         // a 'position' of 'absolute', 'relative' or 'fixed', in the following way:
         //  1. In the case that the ancestor is an inline element, the containing block is the bounding box around
         //    the padding boxes of the first and the last inline boxes generated for that element.
         //    In CSS 2.1, if the inline element is split across multiple lines, the containing block is undefined.
         //  2. Otherwise, the containing block is formed by the padding edge of the ancestor.
-        containingBlockRenderBox = _findContainingBlock(this, ownerDocument.documentElement!)?._renderLayoutBox;
+        containingBlockRenderBox = _findContainingBlock(this, viewportElement)?._renderLayoutBox;
         break;
       case CSSPositionType.fixed:
+        Element viewportElement = ownerDocument.documentElement!;
+
+        if (ownerView.activeRouterRoot != null) {
+          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
+        }
+
         // If the element has 'position: fixed', the containing block is established by the viewport
         // in the case of continuous media or the page area in the case of paged media.
-        containingBlockRenderBox = ownerDocument.documentElement!._renderLayoutBox;
+        containingBlockRenderBox = viewportElement.renderer;
         break;
     }
     return containingBlockRenderBox;

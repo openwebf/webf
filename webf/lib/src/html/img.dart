@@ -154,6 +154,10 @@ class ImageElement extends Element {
   void willAttachRenderer() {
     super.willAttachRenderer();
     style.addStyleChangeListener(_stylePropertyChanged);
+    RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+    if (_didWatchAnimationImage && renderReplaced?.hasIntersectionObserver() == false) {
+      renderReplaced!.addIntersectionChangeListener(_handleIntersectionChange);
+    }
   }
 
   @override

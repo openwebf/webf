@@ -19,7 +19,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
-    show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController, BuildContext, View;
+    show AnimationController, BuildContext, ModalRoute, RouteInformation, RouteObserver, View, Widget, WidgetsBinding, WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -224,6 +224,25 @@ class WebFViewController implements WidgetsBindingObserver {
     _isFrameBindingAttached = true;
     flushUICommand(this, window.pointer!);
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
+  }
+
+  final Map<String, Widget> _hybridRouterViews = {};
+
+  void setHybridRouterView(String path, Widget root) {
+    assert(!_hybridRouterViews.containsKey(path));
+    _hybridRouterViews[path] = root;
+  }
+  Widget? getHybridRouterView(String path) {
+    return _hybridRouterViews[path];
+  }
+  void removeHybridRouterView(String path) {
+    _hybridRouterViews.remove(path);
+  }
+
+  RenderViewportBox? _activeRouterRoot;
+  RenderViewportBox? get activeRouterRoot => _activeRouterRoot;
+  set activeRouterRoot(RenderViewportBox? root) {
+    _activeRouterRoot = root;
   }
 
   final Map<int, BindingObject> _nativeObjects = {};
@@ -920,6 +939,8 @@ class WebFController {
   final List<Cookie>? initialCookies;
 
   final ui.FlutterView ownerFlutterView;
+
+  List<BuildContext> buildContextStack = [];
   bool resizeToAvoidBottomInsets;
 
   String? _name;
@@ -953,6 +974,11 @@ class WebFController {
       _preloadBundleIndex![bundle.url] = bundle;
     });
   }
+
+  /// Register the RouteObserver to observer page navigation.
+  /// This is useful if you wants to pause webf timers and callbacks when webf widget are hidden by page route.
+  /// https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
+  final RouteObserver<ModalRoute<void>>? routeObserver;
 
   // The kraken view entrypoint bundle.
   WebFBundle? _entrypoint;
@@ -990,6 +1016,7 @@ class WebFController {
     this.uriParser,
     this.preloadedBundles,
     this.initialCookies,
+    this.routeObserver,
     this.externalController = true,
     this.resizeToAvoidBottomInsets = true,
   })  : _name = name,
@@ -1068,6 +1095,7 @@ class WebFController {
   final Map<String, String> sessionStorage = {};
 
   HistoryModule get history => _module.moduleManager.getModule('History')!;
+  HistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
 
   static Uri fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`

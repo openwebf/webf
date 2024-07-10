@@ -306,6 +306,10 @@ bool Event::IsHashChangeEvent() const {
   return false;
 }
 
+bool Event::IsHybridRouterChangeEvent() const {
+  return false;
+}
+
 bool Event::IsIntersectionchangeEvent() const {
   return false;
 }

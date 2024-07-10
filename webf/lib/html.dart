@@ -19,6 +19,7 @@ export 'src/html/listview.dart';
 export 'src/html/script.dart';
 export 'src/html/sections.dart';
 export 'src/html/semantics_text.dart';
+export 'src/html/router_link.dart';
 export 'src/html/template.dart';
 export 'src/html/textarea.dart';
 export 'src/html/pseudo.dart';
