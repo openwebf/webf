@@ -26,7 +26,7 @@ apply plugin: 'com.android.library'
 
 android {
     if (project.android.hasProperty("namespace")) {
-        namespace 'com.example.rust_builder'
+        namespace 'com.example.example_app'
     }
 
     // Bumping the plugin compileSdk version requires all clients of this plugin
