@@ -6,20 +6,38 @@
 #define BRIDGE_FOUNDATION_STRING_VIEW_H_
 
 #include <string>
+#include <cassert>
 #include "ascii_types.h"
 #include "native_string.h"
+#include "foundation/ascii_types.h"
 
 namespace webf {
+
+class AtomicString;
 
 class StringView final {
  public:
   StringView() = delete;
 
+  StringView(const char*);
+  StringView(const unsigned char*);
   explicit StringView(const std::string& string);
   explicit StringView(const SharedNativeString* string);
   explicit StringView(void* bytes, unsigned length, bool is_wide_char);
+  explicit StringView(const StringView& view, unsigned offset,
+                      unsigned length);
+  explicit StringView(const char* view, unsigned length);
+  explicit StringView(const unsigned char* view, unsigned length);
+  explicit StringView(const char16_t* view, unsigned length);
+
+  StringView(AtomicString& string);
+  StringView(const AtomicString& string);
 
   bool Is8Bit() const { return is_8bit_; }
+
+  FORCE_INLINE const void* Bytes() const {
+    return bytes_;
+  }
 
   bool IsLowerASCII() const {
     if (is_8bit_) {
@@ -32,14 +50,30 @@ class StringView final {
 
   const char16_t* Characters16() const { return static_cast<const char16_t*>(bytes_); }
 
+  size_t CharactersSizeInBytes() const {
+    return length() * (Is8Bit() ? sizeof(char) : sizeof(char16_t));
+  }
+
   unsigned length() const { return length_; }
   bool Empty() const { return length_ == 0; }
+
+  AtomicString ToAtomicString(JSContext* ctx) const;
+
+  char16_t operator[](unsigned i) const {
+    assert(i < length());
+    if (Is8Bit())
+      return Characters8()[i];
+    return Characters16()[i];
+  }
 
  private:
   const void* bytes_;
   unsigned length_;
   unsigned is_8bit_ : 1;
 };
+
+
+bool EqualIgnoringASCIICase(const StringView&, const StringView&);
 
 }  // namespace webf
 

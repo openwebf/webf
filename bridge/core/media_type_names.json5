@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "media_type_names"
+      }
+    ]
+  },
+  "data": [
+    "All",
+    "Braille",
+    "Embossed",
+    "Handheld",
+    "Print",
+    "Projection",
+    "Screen",
+    "Speech",
+    "Tty",
+    "Tv"
+  ]
+}

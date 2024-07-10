@@ -29,7 +29,7 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
   bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
   void Clear();
-  [[nodiscard]] int64_t length() const override;
+  [[nodiscard]] unsigned length() const override;
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
   void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;

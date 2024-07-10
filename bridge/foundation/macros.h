@@ -67,4 +67,17 @@
   TypeName() = delete;                                \
   WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName)
 
+// WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES
+// Allow equality comparisons of Objects by reference or pointer,
+// interchangeably.  This can be only used on types whose equality makes no
+// other sense than pointer equality.
+
+#define WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Type)                    \
+  inline bool operator==(const Type& a, const Type& b) { return &a == &b; }  \
+  inline bool operator==(const Type& a, const Type* b) { return &a == b; }   \
+  inline bool operator==(const Type* a, const Type& b) { return a == &b; }   \
+  inline bool operator!=(const Type& a, const Type& b) { return !(a == b); } \
+  inline bool operator!=(const Type& a, const Type* b) { return !(a == b); } \
+  inline bool operator!=(const Type* a, const Type& b) { return !(a == b); }
+
 #endif  // BRIDGE_MACROS_H
