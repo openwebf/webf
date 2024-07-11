@@ -588,12 +588,6 @@ list(APPEND PUBLIC_HEADER
 add_library(webf SHARED ${BRIDGE_SOURCE})
 add_library(webf_static STATIC ${BRIDGE_SOURCE})
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-  target_link_libraries(webf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/core_rs/target/release/libwebf_core_rs.a)
-else ()
-  target_link_libraries(webf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/core_rs/target/debug/libwebf_core_rs.a)
-endif ()
-
 if(MSVC)
   target_compile_options(webf PRIVATE /JMC)
 endif()
