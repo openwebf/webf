@@ -35,6 +35,10 @@ impl NodeMethods for ContainerNode {
     self.node.append_child(new_node, exception_state)
   }
 
+  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+    self.node.remove_child(target_node, exception_state)
+  }
+
   fn as_node(&self) -> &Node {
     &self.node
   }

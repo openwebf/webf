@@ -11,7 +11,6 @@
 #include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
 #include "core/events/promise_rejection_event.h"
-#include "core_rs/include/core_rs.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "polyfill.h"
@@ -92,7 +91,6 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
 
-  init_webf_polyfill({.value = this, .method_pointer = public_method_ptr_.get()});
   initWebFPolyFill(this);
 
   dart_isolate_context->profiler()->FinishTrackSteps();

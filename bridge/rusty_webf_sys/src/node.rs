@@ -39,6 +39,7 @@ pub struct NodeRustMethods {
   pub version: c_double,
   pub event_target: *const EventTargetRustMethods,
   pub append_child: extern "C" fn(self_node: *const OpaquePtr, new_node: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<NodeRustMethods>,
+  pub remove_node: extern "C" fn(self_node: *const OpaquePtr, target_node: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<NodeRustMethods>,
 }
 
 impl RustMethods for NodeRustMethods {}
@@ -61,10 +62,24 @@ impl Node {
 
     return Ok(T::initialize(returned_result.value, event_target.context, returned_result.method_pointer));
   }
+
+  /// The removeChild() method of the Node interface removes a child node from the DOM and returns the removed node.
+  pub fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+    let event_target: &EventTarget = &self.event_target;
+    let returned_result = unsafe {
+      ((*self.method_pointer).remove_node)(event_target.ptr, target_node.ptr(), exception_state.ptr)
+    };
+    if (exception_state.has_exception()) {
+      return Err(exception_state.stringify(event_target.context));
+    }
+
+    return Ok(T::initialize(returned_result.value, event_target.context, returned_result.method_pointer));
+  }
 }
 
 pub trait NodeMethods : EventTargetMethods {
   fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String>;
+  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String>;
 
   fn as_node(&self) -> &Node;
 }
@@ -96,6 +111,10 @@ impl EventTargetMethods for Node {
 impl NodeMethods for Node {
   fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
     self.append_child(new_node, exception_state)
+  }
+
+  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+    self.remove_child(target_node, exception_state)
   }
 
   fn as_node(&self) -> &Node {
