@@ -26,6 +26,9 @@ struct NodeWebFMethods : WebFPublicMethods {
   static WebFValue<Node, NodeWebFMethods> AppendChild(Node* self_node,
                                                       Node* new_node,
                                                       SharedExceptionState* shared_exception_state);
+  static WebFValue<Node, NodeWebFMethods> RemoveChild(Node* self_node,
+                                                      Node* target_node,
+                                                      SharedExceptionState* shared_exception_state);
   double version{1.0};
   EventTargetWebFMethods* event_target;
 
