@@ -31,6 +31,11 @@ impl NodeMethods for Text {
     self.character_data.node.append_child(new_node, exception_state)
   }
 
+  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+    self.character_data.node.remove_child(target_node, exception_state)
+  }
+
+
   fn as_node(&self) -> &Node {
     &self.character_data.node
   }

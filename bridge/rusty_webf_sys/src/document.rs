@@ -61,10 +61,11 @@ impl Document {
 
   /// Behavior as same as `document.createElement()` in JavaScript.
   /// the createElement() method creates the HTML element specified by tagName, or an HTMLUnknownElement if tagName isn't recognized.
-  pub fn create_element(&self, name: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+  pub fn create_element(&self, name: &str, exception_state: &ExceptionState) -> Result<Element, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
+    let name_c_string = CString::new(name).unwrap();
     let new_element_value = unsafe {
-      ((*self.method_pointer).create_element)(event_target.ptr, name.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer).create_element)(event_target.ptr, name_c_string.as_ptr(), exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -74,10 +75,11 @@ impl Document {
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
   }
 
-  pub fn create_element_with_element_creation_options(&self, name: &CString, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
+  pub fn create_element_with_element_creation_options(&self, name: &str, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
+    let name_c_string = CString::new(name).unwrap();
     let new_element_value = unsafe {
-      ((*self.method_pointer).create_element_with_element_creation_options)(event_target.ptr, name.as_ptr(), options, exception_state.ptr)
+      ((*self.method_pointer).create_element_with_element_creation_options)(event_target.ptr, name_c_string.as_ptr(), options, exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -87,7 +89,7 @@ impl Document {
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
   }
 
-  pub fn create_element_with_str(&self, name: &CString, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+  pub fn create_element_with_str(&self, name: &str, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
     let options = &mut ElementCreationOptions {
       is: str_options.as_ptr(),
     };
@@ -110,10 +112,12 @@ impl Document {
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
   }
 
-  pub fn create_element_ns_with_element_creation_options(&self, uri: &CString, name: &CString, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
+  pub fn create_element_ns_with_element_creation_options(&self, uri: &str, name: &str, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
+    let uri_c_string = CString::new(uri).unwrap();
+    let name_c_string = CString::new(name).unwrap();
     let new_element_value = unsafe {
-      ((*self.method_pointer).create_element_ns_with_element_creation_options)(event_target.ptr, uri.as_ptr(), name.as_ptr(), options, exception_state.ptr)
+      ((*self.method_pointer).create_element_ns_with_element_creation_options)(event_target.ptr, uri_c_string.as_ptr(), name_c_string.as_ptr(), options, exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -123,7 +127,7 @@ impl Document {
     return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
   }
 
-  pub fn create_element_ns_with_str(&self, uri: &CString, name: &CString, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+  pub fn create_element_ns_with_str(&self, uri: &str, name: &str, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
     let options = &mut ElementCreationOptions {
       is: str_options.as_ptr(),
     };
@@ -132,10 +136,11 @@ impl Document {
 
   /// Behavior as same as `document.createTextNode()` in JavaScript.
   /// Creates a new Text node. This method can be used to escape HTML characters.
-  pub fn create_text_node(&self, data: &CString, exception_state: &ExceptionState) -> Result<Text, String> {
+  pub fn create_text_node(&self, data: &str, exception_state: &ExceptionState) -> Result<Text, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
+    let data_c_string = CString::new(data).unwrap();
     let new_text_node = unsafe {
-      ((*self.method_pointer).create_text_node)(event_target.ptr, data.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer).create_text_node)(event_target.ptr, data_c_string.as_ptr(), exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -162,10 +167,11 @@ impl Document {
 
   /// Behavior as same as `document.createComment()` in JavaScript.
   /// Creates a new Comment node with the given data.
-  pub fn create_comment(&self, data: &CString, exception_state: &ExceptionState) -> Result<Comment, String> {
+  pub fn create_comment(&self, data: &str, exception_state: &ExceptionState) -> Result<Comment, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
+    let data_c_string = CString::new(data).unwrap();
     let new_comment = unsafe {
-      ((*self.method_pointer).create_comment)(event_target.ptr, data.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer).create_comment)(event_target.ptr, data_c_string.as_ptr(), exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -177,10 +183,11 @@ impl Document {
 
   /// Behavior as same as `document.createEvent()` in JavaScript.
   /// Creates a new event of the type specified.
-  pub fn create_event(&self, event_type: &CString, exception_state: &ExceptionState) -> Result<Event, String> {
+  pub fn create_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<Event, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
+    let event_type_c_string = CString::new(event_type).unwrap();
     let new_event = unsafe {
-      ((*self.method_pointer).create_event)(event_target.ptr, event_type.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer).create_event)(event_target.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -192,10 +199,11 @@ impl Document {
 
   /// Behavior as same as `document.querySelector()` in JavaScript.
   /// Returns the first element that is a descendant of the element on which it is invoked that matches the specified group of selectors.
-  pub fn query_selector(&self, selectors: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+  pub fn query_selector(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Element, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
+    let selectors_c_string = CString::new(selectors).unwrap();
     let element_value = unsafe {
-      ((*self.method_pointer).query_selector)(event_target.ptr, selectors.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer).query_selector)(event_target.ptr, selectors_c_string.as_ptr(), exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -207,10 +215,11 @@ impl Document {
 
   /// Behavior as same as `document.getElementById()` in JavaScript.
   /// Returns a reference to the element by its ID.
-  pub fn get_element_by_id(&self, element_id: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
+  pub fn get_element_by_id(&self, element_id: &str, exception_state: &ExceptionState) -> Result<Element, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
+    let id_c_string = CString::new(element_id).unwrap();
     let element_value = unsafe {
-      ((*self.method_pointer).get_element_by_id)(event_target.ptr, element_id.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer).get_element_by_id)(event_target.ptr, id_c_string.as_ptr(), exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -222,7 +231,7 @@ impl Document {
 
   /// Behavior as same as `document.elementFromPoint()` in JavaScript.
   /// Returns the element from the document whose elementFromPoint() method is being called which is the topmost element which lies under the given point.
-  pub fn element_from_point(&self, x: f32, y: f32, exception_state: &ExceptionState) -> Result<Element, String> {
+  pub fn element_from_point(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<Element, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
     let element_value = unsafe {
       ((*self.method_pointer).element_from_point)(event_target.ptr, x, y, exception_state.ptr)
@@ -273,6 +282,10 @@ trait DocumentMethods : ContainerNodeMethods {}
 impl NodeMethods for Document {
   fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
     self.container_node.node.append_child(new_node, exception_state)
+  }
+
+  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+    self.container_node.node.remove_child(target_node, exception_state)
   }
 
   fn as_node(&self) -> &Node {
