@@ -10,11 +10,9 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   let window = context.window();
   let document = context.document();
 
-  let div_tag_name = CString::new("div").unwrap();
-  let div_element = document.create_element(&div_tag_name, &exception_state).unwrap();
+  let div_element = document.create_element("div", &exception_state).unwrap();
 
-  let text_node_data = CString::new("From Rust").unwrap();
-  let text_node = document.create_text_node(&text_node_data, &exception_state).unwrap();
+  let text_node = document.create_text_node("From Rust", &exception_state).unwrap();
 
   div_element.append_child(&text_node, &exception_state).expect("append Node Failed");
 

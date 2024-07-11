@@ -484,7 +484,9 @@ void _loadNativeLibrary(double contextId, Pointer<NativeString> nativeLibName, P
   DartLoadNativeLibraryCallback callback = nativeCallback.asFunction(isLeaf: true);
   try {
     final library = DynamicLibrary.open(join(_defaultLibraryPath, _getNativeLibraryName(libName)));
-    Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> nativeFunction = library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>('init_webf_app');
+    String entrySymbol = Platform.environment['WEBF_ENABLE_TEST'] != null ? 'init_webf_test_app' : 'init_webf_app';
+    Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> nativeFunction =
+      library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>(entrySymbol);
 
     callback(nativeFunction, initializeData, contextId, importData);
   } catch (e, stack) {
