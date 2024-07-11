@@ -1,1 +1,0 @@
-This module contains the core features of WebF implemented by Rust.
