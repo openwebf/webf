@@ -32,19 +32,19 @@ class SVGLinearGradientElement extends DefsAttributeElement {
   List<Color> get colors => _colors;
 
   void parseCSSColorStop() {
-    NodeList nodeList = childNodes;
-    Iterator iterator = nodeList.iterator;
-    while (iterator.moveNext()) {
-      if (iterator.current is SVGGradientStopElement) {
-        SVGGradientStopElement element = iterator.current;
-        Color? color = CSSColor.parseColor(element.attributes['stop-color']!);
-        double stop = double.parse(element.attributes['offset'] ?? '0');
-        if (color != null) {
-          _stops.add(stop);
-          _colors.add(color);
-        }
-      }
-    }
+    // NodeList nodeList = childNodes;
+    // Iterator iterator = nodeList.iterator;
+    // while (iterator.moveNext()) {
+    //   if (iterator.current is SVGGradientStopElement) {
+    //     SVGGradientStopElement element = iterator.current;
+    //     Color? color = CSSColor.parseColor(element.attributes['stop-color']!);
+    //     double stop = double.parse(element.attributes['offset'] ?? '0');
+    //     if (color != null) {
+    //       _stops.add(stop);
+    //       _colors.add(color);
+    //     }
+    //   }
+    // }
   }
 
 }
