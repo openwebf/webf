@@ -1,3 +1,17 @@
+## 0.16.1
+
+This version supports Flutter 3.22.x, 3.19.x, 3.16.x, and 3.13.x.
+
+**Features**
+
+1. Add support for AbortController JS API. https://github.com/openwebf/webf/pull/606
+2. Add flutter 3.22.x support. https://github.com/openwebf/webf/pull/624
+
+**Bug Fixed**
+
+1. Fix iOS FontFamilyFallback on -apple-system style, display error on Vietnamese lang. https://github.com/openwebf/webf/pull/609
+2. Fix crash with unexpected format string on `window.btoa` API. https://github.com/openwebf/webf/pull/615; https://github.com/openwebf/webf/pull/616
+
 ## 0.16.0
 
 This version supports Flutter 3.19.x, 3.16.x, and 3.13.x.
