@@ -45,9 +45,12 @@ class StyleSheetContents;
 class CSSStyleSheet;
 class Document;
 
-class StyleEngine final  {
+class StyleEngine final {
  public:
   explicit StyleEngine(Document& document);
+  ~StyleEngine() {
+      WEBF_LOG(VERBOSE) << 1;
+  }
   CSSStyleSheet* CreateSheet(Element&,
                              const AtomicString& text,
                              TextPosition start_position);

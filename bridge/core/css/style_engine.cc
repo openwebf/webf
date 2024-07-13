@@ -42,6 +42,7 @@
 namespace webf {
 
 StyleEngine::StyleEngine(Document& document): document_(&document) {
+          WEBF_LOG(VERBOSE) << &document;
 }
 
 CSSStyleSheet* StyleEngine::CreateSheet(

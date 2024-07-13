@@ -37,7 +37,6 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
 
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
-  style_engine_ = std::make_shared<StyleEngine>(*this);
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocument, nullptr, bindingObject(), nullptr);
 }
 
@@ -413,6 +412,14 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
 void Document::Trace(GCVisitor* visitor) const {
   script_animation_controller_.Trace(visitor);
   ContainerNode::Trace(visitor);
+}
+
+StyleEngine& Document::EnsureStyleEngine() {
+  if (style_engine_ == nullptr) {
+    style_engine_ = std::make_shared<StyleEngine>(*this);
+  }
+  assert(style_engine_.get());
+  return *style_engine_;
 }
 
 }  // namespace webf

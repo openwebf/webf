@@ -128,17 +128,14 @@ class Document : public ContainerNode, public TreeScope {
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const override;
-  StyleEngine& GetStyleEngine() const {
-    assert(style_engine_.get());
-    return *style_engine_;
-  }
+  StyleEngine& EnsureStyleEngine();
   bool IsForMarkupSanitization() const { return is_for_markup_sanitization_; }
 
  private:
   int node_count_{0};
   ScriptAnimationController script_animation_controller_;
   MutationObserverOptions mutation_observer_types_;
-  std::shared_ptr<StyleEngine> style_engine_;
+  std::shared_ptr<StyleEngine> style_engine_{nullptr};
   bool is_for_markup_sanitization_ = false;
 };
 
