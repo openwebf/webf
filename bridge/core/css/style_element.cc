@@ -23,21 +23,17 @@
  */
 
 #include "style_element.h"
-#include "core/css/css_style_sheet.h"
-#include "core/dom/document.h"
-
-//#include "core/css/media_list.h"
-//#include "core/css/media_query_evaluator.h"
+//#include "core/css/css_style_sheet.h"
+//#include "core/dom/document.h"
 #include "core/css/style_engine.h"
-#include "core/css/style_sheet_contents.h"
+//#include "core/css/style_sheet_contents.h"
 #include "core/dom/document.h"
-#include "core/dom/element.h"
-//#include "core/html/blocking_attribute.h"
+//#include "core/dom/element.h"
 #include "core/html/html_style_element.h"
-#include "core/svg/svg_style_element.h"
-#include "foundation/string_builder.h"
-#include "bindings/qjs/atomic_string.h"
-#include "core/css/pending_sheet_type.h"
+//#include "core/svg/svg_style_element.h"
+//#include "foundation/string_builder.h"
+//#include "bindings/qjs/atomic_string.h"
+//#include "core/css/pending_sheet_type.h"
 
 
 namespace webf {
@@ -52,12 +48,13 @@ StyleElement::StyleElement(Document* document, bool created_by_parser)
     : has_finished_parsing_children_(!created_by_parser),
       loading_(false),
       registered_as_candidate_(false),
-      created_by_parser_(created_by_parser),
-      start_position_(TextPosition::BelowRangePosition()),
-      pending_sheet_type_(PendingSheetType::kNone),
-      render_blocking_behavior_(RenderBlockingBehavior::kUnset) {
+      created_by_parser_(created_by_parser)
+//      start_position_(TextPosition::BelowRangePosition()),
+//      pending_sheet_type_(PendingSheetType::kNone),
+//      render_blocking_behavior_(RenderBlockingBehavior::kUnset)
+{
   // NOTE(xiezuobing):是否
-  start_position_ = TextPosition::MinimumPosition();
+//  start_position_ = TextPosition::MinimumPosition();
 }
 
 StyleElement::~StyleElement() = default;
@@ -100,7 +97,6 @@ StyleElement::ProcessingResult StyleElement::ChildrenChanged(Element& element) {
   if (!has_finished_parsing_children_) {
     return kProcessingSuccessful;
   }
-//  probe::WillChangeStyleElement(&element);
   return Process(element);
 }
 
@@ -115,11 +111,12 @@ StyleElement::ProcessingResult StyleElement::Process(Element& element) {
   if (!element.isConnected()) {
     return kProcessingSuccessful;
   }
-  return CreateSheet(element, element.TextFromChildren());
+  return kProcessingFatalError;
+//  return CreateSheet(element, element.TextFromChildren());
 }
 
 void StyleElement::ClearSheet(Element& owner_element) {
-  assert(sheet_);
+//  assert(sheet_);
 
   //TODO(xiezuobing): 是否loading中
 //  if (sheet_->IsLoading()) {
@@ -173,31 +170,32 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element,
 //    }
     // TDOO(xiezuobing): 先默认TODO
     bool media_query_matches = false;
-    auto type_and_behavior = ComputePendingSheetTypeAndRenderBlockingBehavior(
-        element, media_query_matches, created_by_parser_);
-    pending_sheet_type_ = type_and_behavior.first;
-    render_blocking_behavior_ = type_and_behavior.second;
+//    auto type_and_behavior = ComputePendingSheetTypeAndRenderBlockingBehavior(
+//        element, media_query_matches, created_by_parser_);
+//    pending_sheet_type_ = type_and_behavior.first;
+//    render_blocking_behavior_ = type_and_behavior.second;
 
-    loading_ = true;
-    TextPosition start_position =
-        start_position_ == TextPosition::BelowRangePosition()
-            ? TextPosition::MinimumPosition()
-            : start_position_;
-    new_sheet = document.GetStyleEngine().CreateSheet(
-        element, text, start_position
-//        pending_sheet_type_, // TODO(xiezuobing):
-//        render_blocking_behavior_ // TODO(xiezuobing):
-        );
+//    loading_ = true;
+//    TextPosition start_position =
+//        start_position_ == TextPosition::BelowRangePosition()
+//            ? TextPosition::MinimumPosition()
+//            : start_position_;
+//    new_sheet = document.GetStyleEngine().CreateSheet(
+//        element, text, start_position
+////        pending_sheet_type_, // TODO(xiezuobing):
+////        render_blocking_behavior_ // TODO(xiezuobing):
+//        );
 //    new_sheet->SetMediaQueries(media_queries);
     loading_ = false;
   }
 
-  sheet_ = new_sheet;
-  if (sheet_) {
-    sheet_->Contents()->CheckLoaded();
-  }
+//  sheet_ = new_sheet;
+//  if (sheet_) {
+//    sheet_->Contents()->CheckLoaded();
+//  }
 
-  return sheet_ ? kProcessingSuccessful : kProcessingFatalError;
+  return kProcessingSuccessful;
+//  return sheet_ ? kProcessingSuccessful : kProcessingFatalError;
 }
 
 //bool StyleElement::IsLoading() const {
@@ -224,11 +222,11 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element,
 //}
 
 void StyleElement::SetToPendingState(Document& document, Element& element) {
-  assert(IsSameObject(element));
-  assert(pending_sheet_type_ < PendingSheetType::kBlocking);
-  pending_sheet_type_ = PendingSheetType::kBlocking;
-  document.GetStyleEngine().AddPendingBlockingSheet(element,
-                                                    pending_sheet_type_);
+//  assert(IsSameObject(element));
+//  assert(pending_sheet_type_ < PendingSheetType::kBlocking);
+//  pending_sheet_type_ = PendingSheetType::kBlocking;
+//  document.GetStyleEngine().AddPendingBlockingSheet(element,
+//                                                    pending_sheet_type_);
 }
 
 //void StyleElement::BlockingAttributeChanged(Element& element) {
@@ -250,7 +248,7 @@ void StyleElement::SetToPendingState(Document& document, Element& element) {
 //}
 
 void StyleElement::Trace(GCVisitor* visitor) const {
-  visitor->TraceMember(sheet_);
+//  visitor->TraceMember(sheet_);
 }
 
 }  // namespace webf

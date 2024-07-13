@@ -11,10 +11,10 @@
 #include "core/css/css_property_names.h"
 #include "core/css/css_style_declaration.h"
 #include "core/css/css_value.h"
-#include "core/css/parser/css_parser.h"
-#include "core/css/parser/css_property_parser.h"
-#include "core/css/properties/css_property.h"
-#include "core/css/property_bitsets.h"
+//#include "core/css/parser/css_parser.h"
+//#include "core/css/parser/css_property_parser.h"
+//#include "core/css/properties/css_property.h"
+//#include "core/css/property_bitsets.h"
 #include "core/executing_context.h"
 //#include "foundation/ascii_ctype.h"
 #include "foundation/string_builder.h"
@@ -53,52 +53,52 @@ bool HasCSSPropertyNamePrefix(const AtomicString& property_name,
   return false;
 }
 
-CSSPropertyID ParseCSSPropertyID(const ExecutingContext* execution_context,
-                                 const AtomicString& property_name) {
-  unsigned length = property_name.length();
-  if (!length) {
-    return CSSPropertyID::kInvalid;
-  }
-
-  StringBuilder builder;
-  builder.ReserveCapacity(length);
-
-  unsigned i = 0;
-  bool has_seen_dash = false;
-
-  if (HasCSSPropertyNamePrefix(property_name, "webkit")) {
-    builder.Append('-');
-  } else if (IsASCIIUpper(property_name[0])) {
-    return CSSPropertyID::kInvalid;
-  }
-
-  bool has_seen_upper = IsASCIIUpper(property_name[i]);
-
-  builder.Append(ToASCIILower(property_name[i++]));
-
-  for (; i < length; ++i) {
-    char16_t c = property_name[i];
-    if (!IsASCIIUpper(c)) {
-      if (c == '-') {
-        has_seen_dash = true;
-      }
-      builder.Append(c);
-    } else {
-      has_seen_upper = true;
-      builder.Append('-');
-      builder.Append(ToASCIILower(c));
-    }
-  }
-
-  // Reject names containing both dashes and upper-case characters, such as
-  // "border-rightColor".
-  if (has_seen_dash && has_seen_upper) {
-    return CSSPropertyID::kInvalid;
-  }
-
-  AtomicString prop_name = builder.ReleaseString();
-  return UnresolvedCSSPropertyID(execution_context, prop_name);
-}
+//CSSPropertyID ParseCSSPropertyID(const ExecutingContext* execution_context,
+//                                 const AtomicString& property_name) {
+//  unsigned length = property_name.length();
+//  if (!length) {
+//    return CSSPropertyID::kInvalid;
+//  }
+//
+//  StringBuilder builder;
+//  builder.ReserveCapacity(length);
+//
+//  unsigned i = 0;
+//  bool has_seen_dash = false;
+//
+//  if (HasCSSPropertyNamePrefix(property_name, "webkit")) {
+//    builder.Append('-');
+//  } else if (IsASCIIUpper(property_name[0])) {
+//    return CSSPropertyID::kInvalid;
+//  }
+//
+//  bool has_seen_upper = IsASCIIUpper(property_name[i]);
+//
+//  builder.Append(ToASCIILower(property_name[i++]));
+//
+//  for (; i < length; ++i) {
+//    char16_t c = property_name[i];
+//    if (!IsASCIIUpper(c)) {
+//      if (c == '-') {
+//        has_seen_dash = true;
+//      }
+//      builder.Append(c);
+//    } else {
+//      has_seen_upper = true;
+//      builder.Append('-');
+//      builder.Append(ToASCIILower(c));
+//    }
+//  }
+//
+//  // Reject names containing both dashes and upper-case characters, such as
+//  // "border-rightColor".
+//  if (has_seen_dash && has_seen_upper) {
+//    return CSSPropertyID::kInvalid;
+//  }
+//
+//  AtomicString prop_name = builder.ReleaseString();
+//  return UnresolvedCSSPropertyID(execution_context, prop_name);
+//}
 
 // When getting properties on CSSStyleDeclarations, the name used from
 // Javascript and the actual name of the property are not the same, so
@@ -109,33 +109,33 @@ CSSPropertyID ParseCSSPropertyID(const ExecutingContext* execution_context,
 // Example: 'backgroundPositionY' -> 'background-position-y'
 //
 // Also, certain prefixes such as 'css-' are stripped.
-CSSPropertyID CssPropertyInfo(const ExecutingContext* execution_context,
-                              const AtomicString& name) {
-  typedef std::unordered_map<AtomicString, CSSPropertyID, AtomicString::KeyHasher> CSSPropertyIDMap;
-  static CSSPropertyIDMap map = {};
-  CSSPropertyIDMap::iterator iter = map.find(name);
-  if (iter != map.end()) {
-    return iter->second;
-  }
-
-  CSSPropertyID unresolved_property =
-      ParseCSSPropertyID(execution_context, name);
-  if (unresolved_property == CSSPropertyID::kVariable) {
-    unresolved_property = CSSPropertyID::kInvalid;
-  }
-  // Only cache known-exposed properties (i.e. properties without any
-  // associated runtime flag). This is because the web-exposure of properties
-  // that are not known-exposed can change dynamically, for example when
-  // different ExecutingContexts are provided with different origin trial
-  // settings.
-  if (kKnownExposedProperties.Has(unresolved_property)) {
-    map.insert({name, unresolved_property});
-  }
-  assert(!IsValidCSSPropertyID(unresolved_property) ||
-         CSSProperty::Get(ResolveCSSPropertyID(unresolved_property))
-             .IsWebExposed(execution_context));
-  return unresolved_property;
-}
+//CSSPropertyID CssPropertyInfo(const ExecutingContext* execution_context,
+//                              const AtomicString& name) {
+//  typedef std::unordered_map<AtomicString, CSSPropertyID, AtomicString::KeyHasher> CSSPropertyIDMap;
+//  static CSSPropertyIDMap map = {};
+//  CSSPropertyIDMap::iterator iter = map.find(name);
+//  if (iter != map.end()) {
+//    return iter->second;
+//  }
+//
+//  CSSPropertyID unresolved_property =
+//      ParseCSSPropertyID(execution_context, name);
+//  if (unresolved_property == CSSPropertyID::kVariable) {
+//    unresolved_property = CSSPropertyID::kInvalid;
+//  }
+//  // Only cache known-exposed properties (i.e. properties without any
+//  // associated runtime flag). This is because the web-exposure of properties
+//  // that are not known-exposed can change dynamically, for example when
+//  // different ExecutingContexts are provided with different origin trial
+//  // settings.
+//  if (kKnownExposedProperties.Has(unresolved_property)) {
+//    map.insert({name, unresolved_property});
+//  }
+//  assert(!IsValidCSSPropertyID(unresolved_property) ||
+//         CSSProperty::Get(ResolveCSSPropertyID(unresolved_property))
+//             .IsWebExposed(execution_context));
+//  return unresolved_property;
+//}
 
 }  // namespace
 
@@ -198,10 +198,10 @@ void CSSStyleDeclaration::Trace(GCVisitor* visitor) const {
 //  names = property_names;
 //}
 
-bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& name,
-                                             ExceptionState&) {
-  return IsValidCSSPropertyID(CssPropertyInfo(GetExecutingContext(), name));
-}
+//bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& name,
+//                                             ExceptionState&) {
+//  return IsValidCSSPropertyID(CssPropertyInfo(GetExecutingContext(), name));
+//}
 
 
 }  // namespace webf

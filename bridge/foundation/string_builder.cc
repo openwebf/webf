@@ -152,13 +152,7 @@ AtomicString StringBuilder::ToAtomicString() {
 }
 
 inline bool IsSpaceOrNewline(char16_t c) {
-  if (c <= 0x7F) {
-    // 使用标准库函数处理ASCII字符
-    return std::isspace(c);
-  } else {
-    // 使用ICU库函数处理非ASCII字符
-    return u_isspace(c);
-  }
+  return IsASCIISpace(c);
 }
 
 template <typename IntegralType = unsigned, typename CharType>

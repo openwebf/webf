@@ -39,7 +39,6 @@
 #include "pending_sheet_type.h"
 #include "core/platform/text/text_position.h"
 
-
 namespace webf {
 
 class StyleSheetContents;

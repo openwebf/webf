@@ -40,7 +40,7 @@
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_selector_parser.h"
-#include "core/css/parser/css_tokenizer.h"
+//#include "core/css/parser/css_tokenizer.h"
 #include "core/dom/document.h"
 //#include "core/dom/pseudo_element.h"
 #include "core/executing_context.h"

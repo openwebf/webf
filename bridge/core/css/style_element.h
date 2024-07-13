@@ -26,9 +26,9 @@
 #define WEBF_STYLE_ELEMENT_H
 
 #include "core/dom/element.h"
-#include "core/css/pending_sheet_type.h"
-#include "core/platform/text/text_position.h"
-#include "core/base/render_blocking_behavior.h"
+//#include "core/css/pending_sheet_type.h"
+//#include "core/platform/text/text_position.h"
+//#include "core/base/render_blocking_behavior.h"
 
 namespace webf {
 
@@ -80,9 +80,9 @@ class StyleElement {
   bool loading_ : 1;
   bool registered_as_candidate_ : 1;
   bool created_by_parser_ : 1;
-  TextPosition start_position_;
-  PendingSheetType pending_sheet_type_;
-  RenderBlockingBehavior render_blocking_behavior_;
+//  TextPosition start_position_;
+//  PendingSheetType pending_sheet_type_;
+//  RenderBlockingBehavior render_blocking_behavior_;
 };
 }  // namespace webf
 

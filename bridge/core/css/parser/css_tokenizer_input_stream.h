@@ -25,7 +25,7 @@ class CSSTokenizerInputStream {
 //        string_ref_(input.Impl()),
         string_(input.ToStringView()) {};
 
-  double GetDouble(unsigned start, unsigned end) const;
+//  double GetDouble(unsigned start, unsigned end) const;
 
   // Like GetDouble(), but only for the case where the number matches
   // [0-9]+ (no decimal point, no exponent, no sign), and is faster.
@@ -107,26 +107,26 @@ class CSSTokenizerInputStream {
   StringView string_;
 };
 
-double CSSTokenizerInputStream::GetNaturalNumberAsDouble(unsigned start,
-                                                         unsigned end) const {
-  assert(start <= end && ((offset_ + end) <= string_length_));
-
-  // If this is an integer that is exactly representable in double
-  // (10^14 is at most 47 bits of mantissa), we don't need all the
-  // complicated rounding machinery of CharactersToDouble(),
-  // and can do with a much faster variant.
-  if (start < end && string_.Is8Bit() && end - start <= 14) {
-    const char* ptr = string_.Characters8() + offset_ + start;
-    double result = ptr[0] - '0';
-    for (unsigned i = 1; i < end - start; ++i) {
-      result = result * 10 + (ptr[i] - '0');
-    }
-    return result;
-  } else {
-    // Otherwise, just fall back to the slow path.
-    return GetDouble(start, end);
-  }
-}
+//double CSSTokenizerInputStream::GetNaturalNumberAsDouble(unsigned start,
+//                                                         unsigned end) const {
+//  assert(start <= end && ((offset_ + end) <= string_length_));
+//
+//  // If this is an integer that is exactly representable in double
+//  // (10^14 is at most 47 bits of mantissa), we don't need all the
+//  // complicated rounding machinery of CharactersToDouble(),
+//  // and can do with a much faster variant.
+//  if (start < end && string_.Is8Bit() && end - start <= 14) {
+//    const char* ptr = string_.Characters8() + offset_ + start;
+//    double result = ptr[0] - '0';
+//    for (unsigned i = 1; i < end - start; ++i) {
+//      result = result * 10 + (ptr[i] - '0');
+//    }
+//    return result;
+//  } else {
+//    // Otherwise, just fall back to the slow path.
+//    return GetDouble(start, end);
+//  }
+//}
 }  // namespace webf
 
 #endif  // WEBF_CSS_TOKENIZER_INPUT_STREAM_H

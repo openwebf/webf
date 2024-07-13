@@ -1,3 +1,7 @@
+// Copyright 2016 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 /*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
@@ -15,21 +19,35 @@ namespace webf {
 
 class AtomicString;
 
+// A string like object that wraps either a 8bit or 16bit byte sequence
+// and keeps track of the length and the type, it does NOT own the bytes.
+//
+// Since StringView does not own the bytes creating a StringView from a String,
+// then calling clear() on the String will result in a use-after-free. Asserts
+// in ~StringView attempt to enforce this for most common cases.
 class StringView final {
- public:
-  StringView() = delete;
+  WEBF_DISALLOW_NEW();
 
-  StringView(const char*);
-  StringView(const unsigned char*);
+ public:
+  // Null string.
+  StringView() { Clear(); }
+
+  // From a StringView:
+  explicit StringView(const StringView& view, unsigned offset, unsigned length);
+  explicit StringView(const StringView& view, unsigned offset)
+      : StringView(view, offset, view.length_ - offset) {}
+
+  // From a StringImpl:
+  explicit StringView(const char*);
+  explicit StringView(const unsigned char*);
   explicit StringView(const std::string& string);
   explicit StringView(const SharedNativeString* string);
   explicit StringView(void* bytes, unsigned length, bool is_wide_char);
-  explicit StringView(const StringView& view, unsigned offset,
-                      unsigned length);
   explicit StringView(const char* view, unsigned length);
   explicit StringView(const unsigned char* view, unsigned length);
   explicit StringView(const char16_t* view, unsigned length);
 
+  // From a AtomicString
   StringView(AtomicString& string);
   StringView(const AtomicString& string);
 
@@ -54,8 +72,11 @@ class StringView final {
     return length() * (Is8Bit() ? sizeof(char) : sizeof(char16_t));
   }
 
+  void Clear();
+
   unsigned length() const { return length_; }
   bool Empty() const { return length_ == 0; }
+  bool IsNull() const { return !bytes_; }
 
   AtomicString ToAtomicString(JSContext* ctx) const;
 
@@ -72,8 +93,32 @@ class StringView final {
   unsigned is_8bit_ : 1;
 };
 
+inline void StringView::Clear() {
+  length_ = 0;
+  bytes_ = nullptr;
+}
 
 bool EqualIgnoringASCIICase(const StringView&, const StringView&);
+
+template <typename CharacterTypeA, typename CharacterTypeB>
+inline bool EqualIgnoringASCIICase(const CharacterTypeA* a,
+                                   const CharacterTypeB* b,
+                                   size_t length) {
+  for (size_t i = 0; i < length; ++i) {
+    if (ToASCIILower(a[i]) != ToASCIILower(b[i]))
+      return false;
+  }
+  return true;
+}
+
+template <size_t N>
+inline bool EqualIgnoringASCIICase(const StringView& a,
+                                   const char (&literal)[N]) {
+  if (a.length() != N - 1 || (N == 1 && a.IsNull()))
+    return false;
+  return a.Is8Bit() ? EqualIgnoringASCIICase(a.Characters8(), literal, N - 1)
+                    : EqualIgnoringASCIICase(a.Characters16(), literal, N - 1);
+}
 
 }  // namespace webf
 

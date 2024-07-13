@@ -7,7 +7,7 @@
  */
 
 #include "css_parser_idioms.h"
-#include "css_tokenizer_input_stream.h"
+//#include "css_tokenizer_input_stream.h"
 #include "foundation/ascii_types.h"
 #include "foundation/string_builder.h"
 

@@ -78,16 +78,16 @@ CSSStyleSheet* StyleEngine::CreateSheet(
     key = AtomicString(text);
   }
 
-  std::shared_ptr<StyleSheetContents> contents = text_to_sheet_cache_[key];
-  if(!contents) {
-    style_sheet = ParseSheet(element, text, start_position);
-    text_to_sheet_cache_[key] = style_sheet->Contents();
-  } else {
-    style_sheet =
-        CSSStyleSheet::CreateInline(contents, element, start_position);
-  }
+//  std::shared_ptr<StyleSheetContents> contents = text_to_sheet_cache_[key];
+//  if(!contents) {
+//    style_sheet = ParseSheet(element, text, start_position);
+//    text_to_sheet_cache_[key] = style_sheet->Contents();
+//  } else {
+//    style_sheet =
+//        CSSStyleSheet::CreateInline(contents, element, start_position);
+//  }
 
-  assert(style_sheet);
+//  assert(style_sheet);
   return style_sheet;
 }
 
@@ -95,12 +95,13 @@ CSSStyleSheet* StyleEngine::ParseSheet(
     Element& element,
     const AtomicString& text,
     TextPosition start_position) {
-  CSSStyleSheet* style_sheet = nullptr;
+//  CSSStyleSheet* style_sheet = nullptr;
 //  AtomicString encoding = AtomicString(); //TODO: 先用这个替代
-  style_sheet = CSSStyleSheet::CreateInline(element, AtomicString(), start_position);
+//  style_sheet = CSSStyleSheet::CreateInline(element, AtomicString(), start_position);
 //  style_sheet->Contents()->SetRenderBlocking(render_blocking_behavior);
-  style_sheet->Contents()->ParseString(text);
-  return style_sheet;
+//  style_sheet->Contents()->ParseString(text);
+//  return style_sheet;
+  return nullptr;
 }
 
 // TODO: 阻断JS执行，需要具体与QJS交互，目前还不是多进程架构，切换至多进程后再说

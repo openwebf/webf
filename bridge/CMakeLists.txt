@@ -18,7 +18,7 @@ if(MSVC)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+#  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
 if(WIN32)
@@ -109,6 +109,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/stop_watch.cc
   foundation/profiler.cc
   foundation/dart_readable.cc
+  foundation/ascii_types.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
   foundation/string_builder.cc
@@ -297,41 +298,42 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_style_declaration.cc
     core/css/inline_css_style_declaration.cc
     core/css/computed_css_style_declaration.cc
-    core/css/css_at_rule_id.cc
+#    core/css/css_at_rule_id.cc
     core/css/css_property_value.cc
-    core/css/css_selector.cc
-    core/css/css_selector_list.cc
+#    core/css/css_property_names.cc
+#    core/css/css_selector.cc
+#    core/css/css_selector_list.cc
     core/css/properties/css_property_instances.cc
-    core/css/css_style_sheet.cc
-    core/css/pending_sheet_type.cc
+#    core/css/css_style_sheet.cc
+#    core/css/pending_sheet_type.cc
     core/css/style_element.cc
     core/css/style_engine.cc
-    core/css/style_rule.cc
-    core/css/style_rule_import.cc
-    core/css/style_rule_keyframe.cc
-    core/css/style_sheet.cc
-    core/css/style_sheet_contents.cc
-    core/platform/text/text_position.cc
-    core/css/parser/css_lazy_parsing_state.cc
-    core/css/parser/css_lazy_property_parser_impl.cc
-    core/css/parser/css_parser.cc
-    core/css/parser/css_parser_context.cc
-    core/css/parser/css_parser_idioms.cc
-    core/css/parser/css_parser_impl.cc
-    core/css/parser/css_parser_observer.cc
-    core/css/parser/css_parser_token.cc
-    core/css/parser/css_parser_token_range.cc
-    core/css/parser/css_parser_token_stream.cc
-    core/css/css_property_value_set.cc
-    core/css/parser/css_selector_parser.cc
-    core/css/parser/css_tokenizer.cc
-    core/css/parser/css_tokenizer_input_stream.cc
-    core/css/parser/css_variable_parser.cc
-    core/css/css_initial_value.cc
-    core/css/css_primitive_value.cc
-    core/css/css_keyframe_shorthand_value.cc
-    core/css/css_value_list.cc
-    core/css/style_property_serializer.cc
+#    core/css/style_rule.cc
+#    core/css/style_rule_import.cc
+#    core/css/style_rule_keyframe.cc
+#    core/css/style_sheet.cc
+#    core/css/style_sheet_contents.cc
+#    core/platform/text/text_position.cc
+#    core/css/parser/css_lazy_parsing_state.cc
+#    core/css/parser/css_lazy_property_parser_impl.cc
+#    core/css/parser/css_parser.cc
+#    core/css/parser/css_parser_context.cc
+#    core/css/parser/css_parser_idioms.cc
+#    core/css/parser/css_parser_impl.cc
+#    core/css/parser/css_parser_observer.cc
+#    core/css/parser/css_parser_token.cc
+#    core/css/parser/css_parser_token_range.cc
+#    core/css/parser/css_parser_token_stream.cc
+#    core/css/css_property_value_set.cc
+#    core/css/parser/css_selector_parser.cc
+#    core/css/parser/css_tokenizer.cc
+#    core/css/parser/css_tokenizer_input_stream.cc
+#    core/css/parser/css_variable_parser.cc
+#    core/css/css_initial_value.cc
+#    core/css/css_primitive_value.cc
+#    core/css/css_keyframe_shorthand_value.cc
+#    core/css/css_value_list.cc
+#    core/css/style_property_serializer.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
