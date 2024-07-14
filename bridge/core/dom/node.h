@@ -169,9 +169,35 @@ class Node : public EventTarget {
   // Notification of document structure changes (see container_node.h for more
   // notification methods)
   //
+  // At first, notifies the node that it has been inserted into the
+  // document. This is called during document parsing, and also when a node is
+  // added through the DOM methods insertBefore(), appendChild() or
+  // replaceChild(). The call happens _after_ the node has been added to the
+  // tree.  This is similar to the DOMNodeInsertedIntoDocument DOM event, but
+  // does not require the overhead of event dispatching.
+  //
+  // notifies this callback regardless if the subtree of the node is a
+  // document tree or a floating subtree.  Implementation can determine the type
+  // of subtree by seeing insertion_point->isConnected().  For performance
+  // reasons, notifications are delivered only to ContainerNode subclasses if
+  // the insertion_point is not in a document tree.
+  //
+  // There is another callback, DidNotifySubtreeInsertionsToDocument(),
+  // which is called after all the descendants are notified, if this node was
+  // inserted into the document tree. Only a few subclasses actually need
+  // this. To utilize this, the node should return
+  // kInsertionShouldCallDidNotifySubtreeInsertions from InsertedInto().
+  //
   // InsertedInto() implementations must not modify the DOM tree, and must not
+  // dispatch synchronous events. On the other hand,
+  // DidNotifySubtreeInsertionsToDocument() may modify the DOM tree, and may
   // dispatch synchronous events.
-  virtual void InsertedInto(ContainerNode& insertion_point);
+  enum InsertionNotificationRequest {
+    kInsertionDone,
+    kInsertionShouldCallDidNotifySubtreeInsertions
+  };
+
+  virtual InsertionNotificationRequest InsertedInto(ContainerNode& insertion_point);
 
   // Notifies the node that it is no longer part of the tree.
   //
@@ -354,8 +380,8 @@ class Node : public EventTarget {
   Member<Node> previous_;
   Member<Node> next_;
   TreeScope* tree_scope_;
-  std::unique_ptr<EventTargetDataObject> event_target_data_;
-  std::unique_ptr<NodeData> node_data_;
+  std::unique_ptr<EventTargetDataObject> event_target_data_{nullptr};
+  std::unique_ptr<NodeData> node_data_{nullptr};
 };
 
 template <>

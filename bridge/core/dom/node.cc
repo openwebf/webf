@@ -587,12 +587,15 @@ Element* Node::ParentOrShadowHostElement() const {
   return DynamicTo<Element>(parent);
 }
 
-void Node::InsertedInto(ContainerNode& insertion_point) {
+Node::InsertionNotificationRequest Node::InsertedInto(ContainerNode& insertion_point) {
   assert(insertion_point.isConnected() || IsContainerNode());
+//  DCHECK(!ChildNeedsStyleInvalidation());
+//  DCHECK(!NeedsStyleInvalidation());
   if (insertion_point.isConnected()) {
     SetFlag(kIsConnectedFlag);
     insertion_point.GetDocument().IncrementNodeCount();
   }
+  return Node::InsertionNotificationRequest::kInsertionDone;
 }
 
 void Node::RemovedFrom(ContainerNode& insertion_point) {

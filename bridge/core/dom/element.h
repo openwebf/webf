@@ -92,7 +92,21 @@ class Element : public ContainerNode {
   void SynchronizeAttribute(const AtomicString& name);
 
   void InvalidateStyleAttribute();
-  void AttributeChanged(const AttributeModificationParams& params);
+
+  virtual void AttributeChanged(const AttributeModificationParams& params);
+  // |ParseAttribute()| is called by |AttributeChanged()|. If an element
+  // implementation needs to check an attribute update, override this function.
+  // This function is called before Element handles the change. This means
+  // changes like `kSlotAttr` will not have been processed. Subclasses should
+  // take care to avoid any processing that needs Element to have handled the
+  // change. For example, flat-tree-travesal could be problematic. In such
+  // cases subclasses should override AttributeChanged() and do the processing
+  // after calling Element::AttributeChanged().
+  //
+  // While the owner document is parsed, this function is called after all
+  // attributes in a start tag were added to the element.
+  virtual void ParseAttribute(const AttributeModificationParams&);
+
   void StyleAttributeChanged(const AtomicString& new_style_string, AttributeModificationReason modification_reason);
   void SetInlineStyleFromString(const AtomicString&);
 
@@ -143,6 +157,7 @@ class Element : public ContainerNode {
   virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) {}
   virtual bool IsWidgetElement() const;
   virtual void FinishParsingChildren();
+  void BeginParsingChildren() { SetIsFinishedParsingChildren(false); }
 
   void Trace(GCVisitor* visitor) const override;
 

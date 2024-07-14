@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
+#include "event_dispatch_forbidden_scope.h"
 #include "event_factory.h"
 #include "include/dart_api.h"
 #include "native_value_converter.h"
@@ -379,6 +380,8 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   if (window != nullptr && (event->type() == event_type_names::kload || event->type() == event_type_names::kgcopen)) {
     window->OnLoadEventFired();
   }
+
+  assert(!EventDispatchForbiddenScope::IsEventDispatchForbidden());
 
   ExceptionState exception_state;
   event->SetTrusted(false);

@@ -17,6 +17,8 @@ class HTMLElement : public Element {
  public:
   using ImplType = HTMLElement*;
   HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType = kCreateHTMLElement);
+
+  void ParseAttribute(const webf::Element::AttributeModificationParams &) override;
 };
 
 template <typename T>

@@ -86,7 +86,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_C_FLAGS_RELEASE "/O1")
   else()
     # Avoid quickjs stackoverflow.
-    add_compile_options(-O1)
+#    add_compile_options(-O1)
   endif()
 endif()
 
@@ -340,6 +340,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/events/event.cc
     core/dom/events/custom_event.cc
     core/dom/events/event_target.cc
+    core/dom/events/event_dispatch_forbidden_scope.cc
     core/dom/events/event_listener_map.cc
     core/dom/events/event_target_impl.cc
     core/binding_object.cc
@@ -551,6 +552,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_form_element.cc
     out/qjs_html_textarea_element.cc
     out/qjs_html_script_element.cc
+    out/qjs_html_style_element.cc
     out/qjs_promise_rejection_event.cc
     out/qjs_promise_rejection_event_init.cc
     out/qjs_unionevent_listener_options_boolean.cc

@@ -12,18 +12,21 @@
 namespace webf {
 
 class HTMLStyleElement: public HTMLElement, private StyleElement {
-
+  DEFINE_WRAPPERTYPEINFO();
  public:
   explicit HTMLStyleElement(Document& document);
   ~HTMLStyleElement() override;
-  void FinishParsingChildren() override;
 
   NativeValue HandleCallFromDartSide(const webf::AtomicString &method, int32_t argc, const webf::NativeValue *argv, Dart_Handle dart_object) override;
 
-  NativeValue createStyleSheet(AtomicString& cssString, AtomicString& href);
+  void ParseAttribute(const webf::Element::AttributeModificationParams &) override;
+  InsertionNotificationRequest InsertedInto(ContainerNode& insertion_point) override;
+  void RemovedFrom(webf::ContainerNode &insertion_point) override;
+  void ChildrenChanged(const ChildrenChange&) override;
 
-  const AtomicString& media() const override;
-  const AtomicString& type() const override;
+  void FinishParsingChildren() override;
+
+  AtomicString type() const;
   bool IsSameObject(const Node& node) const override { return this == &node; }
 
  protected:

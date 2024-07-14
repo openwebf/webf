@@ -11,4 +11,8 @@ namespace webf {
 HTMLElement::HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType type)
     : Element(element_namespace_uris::khtml, tag_name, AtomicString::Null(), document, type) {}
 
+void HTMLElement::ParseAttribute(const webf::Element::AttributeModificationParams& params) {
+  Element::ParseAttribute(params);
+}
+
 }  // namespace webf

@@ -10,6 +10,7 @@
 #include "qjs_blob.h"
 #include "qjs_bounding_client_rect.h"
 #include "qjs_canvas_gradient.h"
+#include "qjs_html_style_element.h"
 #include "qjs_canvas_pattern.h"
 #include "qjs_canvas_rendering_context.h"
 #include "qjs_canvas_rendering_context_2d.h"
@@ -147,12 +148,14 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLAnchorElement::Install(context);
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
+  QJSHTMLStyleElement::Install(context);
   QJSHTMLTextareaElement::Install(context);
   QJSHTMLButtonElement::Install(context);
   QJSHTMLFormElement::Install(context);
   QJSImage::Install(context);
   QJSHTMLScriptElement::Install(context);
   QJSHTMLLinkElement::Install(context);
+
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
   QJSHTMLCanvasElement::Install(context);

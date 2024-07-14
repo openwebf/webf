@@ -537,6 +537,8 @@ void Element::InvalidateStyleAttribute() {
 }
 
 void Element::AttributeChanged(const AttributeModificationParams& params) {
+  ParseAttribute(params);
+
   const AtomicString& name = params.name;
 
   if (IsStyledElement()) {
@@ -545,6 +547,8 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
     }
   }
 }
+
+void Element::ParseAttribute(const webf::Element::AttributeModificationParams&) {}
 
 void Element::StyleAttributeChanged(const AtomicString& new_style_string,
                                     AttributeModificationReason modification_reason) {
@@ -617,10 +621,15 @@ AtomicString Element::TextFromChildren() {
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
   auto html = value.ToStdString(ctx());
   ChildListMutationScope scope{*this};
-  if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
-    HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
+
+  if (value.IsEmpty()) {
+    setTextContent(value, exception_state);
   } else {
-    HTMLParser::parseHTMLFragment(html.c_str(), html.size(), this);
+    if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
+      HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
+    } else {
+      HTMLParser::parseHTMLFragment(html.c_str(), html.size(), this);
+    }
   }
 }
 
@@ -652,22 +661,21 @@ bool Element::ChildTypeAllowed(NodeType type) const {
   return false;
 }
 
-
 void Element::FinishParsingChildren() {
   SetIsFinishedParsingChildren(true);
-//  CheckForEmptyStyleChange(this, this);
-//  CheckForSiblingStyleChanges(kFinishedParsingChildren, nullptr, lastChild(),
-//                              nullptr);
-//
-//  if (GetDocument().HasRenderBlockingExpectLinkElements()) {
-//    DCHECK(GetDocument().GetRenderBlockingResourceManager());
-//    GetDocument()
-//        .GetRenderBlockingResourceManager()
-//        ->RemovePendingParsingElement(GetIdAttribute(), this);
-//  }
-//  GetDocument()
-//      .GetStyleEngine()
-        // .ScheduleInvalidationsForHasPseudoAffectedByInsertion(
-        //   parentElement(), previousSibling(), *this);
+  //  CheckForEmptyStyleChange(this, this);
+  //  CheckForSiblingStyleChanges(kFinishedParsingChildren, nullptr, lastChild(),
+  //                              nullptr);
+  //
+  //  if (GetDocument().HasRenderBlockingExpectLinkElements()) {
+  //    DCHECK(GetDocument().GetRenderBlockingResourceManager());
+  //    GetDocument()
+  //        .GetRenderBlockingResourceManager()
+  //        ->RemovePendingParsingElement(GetIdAttribute(), this);
+  //  }
+  //  GetDocument()
+  //      .GetStyleEngine()
+  // .ScheduleInvalidationsForHasPseudoAffectedByInsertion(
+  //   parentElement(), previousSibling(), *this);
 }
 }  // namespace webf

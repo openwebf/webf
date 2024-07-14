@@ -51,7 +51,6 @@ Element* Document::createElement(const AtomicString& name, ExceptionState& excep
   }
 
   if (auto* element = HTMLElementFactory::Create(local_name, *this)) {
-    element->FinishParsingChildren();
     return element;
   }
 

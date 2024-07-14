@@ -34,6 +34,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/css/inline_css_style_declaration_test.cc
   ./core/html/html_element_test.cc
   ./core/html/custom/widget_element_test.cc
+  ./core/html/html_style_element_test.cc
   ./core/timing/performance_test.cc
   ./core/css/style_engine_test.cc
   ./core/css/css_initial_test.cc

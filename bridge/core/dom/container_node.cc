@@ -32,6 +32,8 @@
 #include "child_list_mutation_scope.h"
 #include "child_node_list.h"
 #include "core/html/html_all_collection.h"
+#include "core/script_forbidden_scope.h"
+#include "core/dom/events/event_dispatch_forbidden_scope.h"
 #include "document.h"
 #include "document_fragment.h"
 #include "node_traversal.h"
@@ -411,6 +413,127 @@ void ContainerNode::CloneChildNodesFrom(const ContainerNode& node, CloneChildren
   }
 }
 
+void ContainerNode::ParserAppendChild(Node* new_child) {
+  assert(new_child);
+  assert(!new_child->IsDocumentFragment());
+  assert(!IsA<HTMLTemplateElement>(this));
+
+  // FIXME: parserRemoveChild can run script which could then insert the
+  // newChild back into the page. Loop until the child is actually removed.
+  // See: fast/parser/execute-script-during-adoption-agency-removal.html
+  while (ContainerNode* parent = new_child->parentNode())
+    parent->ParserRemoveChild(*new_child);
+
+  {
+    EventDispatchForbiddenScope assert_no_event_dispatch;
+    ScriptForbiddenScope forbid_script;
+
+    AdoptAndAppendChild()(*this, *new_child, nullptr);
+    ChildListMutationScope(*this).ChildAdded(*new_child);
+  }
+
+  NotifyNodeInserted(*new_child, ChildrenChangeSource::kParser);
+}
+
+void ContainerNode::ParserAppendChildInDocumentFragment(Node* new_child) {
+  assert(new_child);
+  assert(!new_child->IsDocumentFragment());
+  assert(!IsA<HTMLTemplateElement>(this));
+  assert(new_child->GetDocument() == GetDocument());
+  assert(&new_child->GetTreeScope() == &GetTreeScope());
+  assert(new_child->parentNode() == nullptr);
+  EventDispatchForbiddenScope assert_no_event_dispatch;
+  ScriptForbiddenScope forbid_script;
+  AppendChildCommon(*new_child);
+  ChildListMutationScope(*this).ChildAdded(*new_child);
+}
+
+void ContainerNode::ParserFinishedBuildingDocumentFragment() {
+  EventDispatchForbiddenScope assert_no_event_dispatch;
+  ScriptForbiddenScope forbid_script;
+  const ChildrenChange change =
+      ChildrenChange::ForFinishingBuildingDocumentFragmentTree();
+
+  for (Node& node : NodeTraversal::DescendantsOf(*this)) {
+    NotifyNodeAtEndOfBuildingFragmentTree(node, change,
+                                          false);
+  }
+
+//  if (GetDocument().ShouldInvalidateNodeListCaches(nullptr)) {
+//    GetDocument().InvalidateNodeListCaches(nullptr);
+//  }
+}
+
+void ContainerNode::ParserRemoveChild(Node& old_child) {
+  assert(old_child.parentNode() == this);
+  assert(!old_child.IsDocumentFragment());
+
+  if (old_child.parentNode() != this)
+    return;
+
+  ChildListMutationScope(*this).WillRemoveChild(old_child);
+  old_child.NotifyMutationObserversNodeWillDetach();
+
+//  HTMLFrameOwnerElement::PluginDisposeSuspendScope suspend_plugin_dispose;
+//  TreeOrderedMap::RemoveScope tree_remove_scope;
+//  StyleEngine& engine = GetDocument().GetStyleEngine();
+//  StyleEngine::DetachLayoutTreeScope detach_scope(engine);
+
+  Node* prev = old_child.previousSibling();
+  Node* next = old_child.nextSibling();
+  {
+//    StyleEngine::DOMRemovalScope style_scope(engine);
+    RemoveBetween(prev, next, old_child);
+    NotifyNodeRemoved(old_child);
+  }
+  ChildrenChanged(ChildrenChange::ForRemoval(old_child, prev, next,
+                                             ChildrenChangeSource::kParser));
+}
+
+void ContainerNode::ParserInsertBefore(Node* new_child, Node& next_child) {
+  assert(new_child);
+  assert(next_child.parentNode() == this ||
+         (DynamicTo<DocumentFragment>(this) &&
+          DynamicTo<DocumentFragment>(this)->IsTemplateContent()));
+  assert(!new_child->IsDocumentFragment());
+  assert(!IsA<HTMLTemplateElement>(this));
+
+  if (next_child.previousSibling() == new_child ||
+      &next_child == new_child)  // nothing to do
+    return;
+
+  // FIXME: parserRemoveChild can run script which could then insert the
+  // newChild back into the page. Loop until the child is actually removed.
+  // See: fast/parser/execute-script-during-adoption-agency-removal.html
+  while (ContainerNode* parent = new_child->parentNode())
+    parent->ParserRemoveChild(*new_child);
+
+  // This can happen if foster parenting moves nodes into a template
+  // content document, but next_child is still a "direct" child of the
+  // template.
+  if (next_child.parentNode() != this)
+    return;
+
+  {
+    EventDispatchForbiddenScope assert_no_event_dispatch;
+    ScriptForbiddenScope forbid_script;
+
+    AdoptAndInsertBefore()(*this, *new_child, &next_child);
+    ChildListMutationScope(*this).ChildAdded(*new_child);
+  }
+
+  NotifyNodeInserted(*new_child, ChildrenChangeSource::kParser);
+}
+
+void ContainerNode::ParserTakeAllChildrenFrom(webf::ContainerNode& old_parent) {
+  while (Node* child = old_parent.firstChild()) {
+    // Explicitly remove since appending can fail, but this loop shouldn't be
+    // infinite.
+    old_parent.ParserRemoveChild(*child);
+    ParserAppendChild(child);
+  }
+}
+
 AtomicString ContainerNode::nodeValue() const {
   return AtomicString::Null();
 }
@@ -419,6 +542,28 @@ ContainerNode::ContainerNode(TreeScope* tree_scope, ConstructionType type)
     : ContainerNode(tree_scope->GetDocument().GetExecutingContext(), &tree_scope->GetDocument(), type) {}
 ContainerNode::ContainerNode(ExecutingContext* context, Document* document, ConstructionType type)
     : Node(context, document, type), first_child_(nullptr), last_child_(nullptr) {}
+
+void ContainerNode::NotifyNodeAtEndOfBuildingFragmentTree(webf::Node& node,
+                                                          const webf::ContainerNode::ChildrenChange& change,
+                                                          bool may_contain_shadow_roots) {
+  // Fast path parser only creates disconnected nodes.
+  assert(!node.isConnected());
+
+  // NotifyNodeInserted() keeps a list of nodes to call
+  // DidNotifySubtreeInsertionsToDocument() on if InsertedInto() returns
+  // kInsertionShouldCallDidNotifySubtreeInsertions, but only if the node
+  // is connected. None of the nodes are connected at this point, so it's
+  // not needed here.
+  node.InsertedInto(*this);
+
+  // No node-lists should have been created at this (otherwise
+  // InvalidateNodeListCaches() would need to be called).
+  assert(!Data() || !Data()->NodeLists());
+
+  if (node.IsContainerNode()) {
+    DynamicTo<ContainerNode>(node)->ChildrenChanged(change);
+  }
+}
 
 void ContainerNode::RemoveBetween(Node* previous_child, Node* next_child, Node& old_child) {
   assert(old_child.parentNode() == this);
@@ -453,7 +598,7 @@ void ContainerNode::InsertNodeVector(const NodeVector& targets,
       Node& child = *target_node;
       mutator(*this, child, next);
       ChildListMutationScope(*this).ChildAdded(child);
-      NotifyNodeInsertedInternal(child);
+      NotifyNodeInsertedInternal(child, *post_insertion_notification_targets);
     }
   }
 }
@@ -509,13 +654,35 @@ void ContainerNode::AppendChildCommon(Node& child) {
                                                        bindingObject(), child.bindingObject());
 }
 
-void ContainerNode::NotifyNodeInsertedInternal(Node& root) {
+void ContainerNode::NotifyNodeInserted(Node& root, webf::ContainerNode::ChildrenChangeSource source) {
+  assert(!EventDispatchForbiddenScope::IsEventDispatchForbidden());
+
+  NodeVector post_insertion_notification_targets;
+  NotifyNodeInsertedInternal(root, post_insertion_notification_targets);
+
+  ChildrenChanged(ChildrenChange::ForInsertion(root, root.previousSibling(),
+                                               root.nextSibling(), source));
+}
+
+void ContainerNode::NotifyNodeInsertedInternal(Node& root, NodeVector& post_insertion_notification_targets) {
+  EventDispatchForbiddenScope assert_no_event_dispatch;
+  ScriptForbiddenScope forbid_script;
+
   for (Node& node : NodeTraversal::InclusiveDescendantsOf(root)) {
-    // As an optimization we don't notify leaf nodes when when inserting
+    // As an optimization we don't notify leaf nodes when inserting
     // into detached subtrees that are not in a shadow tree.
     if (!isConnected() && !node.IsContainerNode())
       continue;
-    node.InsertedInto(*this);
+
+    // Only tag the target as one that we need to call post-insertion steps on
+    // if it is being *fully* inserted, and not re-inserted as part of a
+    // state-preserving atomic move. That's because the post-insertion steps can
+    // run script and modify the frame tree, neither of which are allowed in a
+    // state-preserving atomic move.
+    if (Node::kInsertionShouldCallDidNotifySubtreeInsertions ==
+            node.InsertedInto(*this)) {
+      post_insertion_notification_targets.push_back(&node);
+    }
   }
 }
 

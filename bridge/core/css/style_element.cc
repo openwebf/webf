@@ -45,8 +45,7 @@ static bool IsCSS(const Element& element, const AtomicString& type) {
 }
 
 StyleElement::StyleElement(Document* document, bool created_by_parser)
-    : has_finished_parsing_children_(!created_by_parser),
-      loading_(false),
+    : loading_(false),
       registered_as_candidate_(false),
       created_by_parser_(created_by_parser)
 //      start_position_(TextPosition::BelowRangePosition()),
@@ -67,9 +66,6 @@ StyleElement::ProcessingResult StyleElement::ProcessStyleSheet(
   registered_as_candidate_ = true;
   // TODO(xiezuobing): 添加候选样式节点
 //  document.GetStyleEngine().AddStyleSheetCandidateNode(element);
-  if (!has_finished_parsing_children_) {
-    return kProcessingSuccessful;
-  }
 
   return Process(element);
 }
@@ -94,25 +90,21 @@ void StyleElement::RemovedFrom(Element& element,
 }
 
 StyleElement::ProcessingResult StyleElement::ChildrenChanged(Element& element) {
-  if (!has_finished_parsing_children_) {
-    return kProcessingSuccessful;
-  }
   return Process(element);
 }
 
 StyleElement::ProcessingResult StyleElement::FinishParsingChildren(
     Element& element) {
   ProcessingResult result = Process(element);
-  has_finished_parsing_children_ = true;
   return result;
 }
 
 StyleElement::ProcessingResult StyleElement::Process(Element& element) {
+  WEBF_LOG(VERBOSE) << " IS CONNECTED: " << element.isConnected();
   if (!element.isConnected()) {
     return kProcessingSuccessful;
   }
-  return kProcessingFatalError;
-//  return CreateSheet(element, element.TextFromChildren());
+  return CreateSheet(element, element.TextFromChildren());
 }
 
 void StyleElement::ClearSheet(Element& owner_element) {
@@ -154,8 +146,8 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element,
   CSSStyleSheet* new_sheet = nullptr;
 
   // If type is empty or CSS, this is a CSS style sheet.
-  const AtomicString& type = this->type();
-  if (IsCSS(element, type)) {
+//  const AtomicString type = type();
+//  if (IsCSS(element, type)) {
     // TODO(xiezuobing): 媒体查询
 //    MediaQuerySet* media_queries = nullptr;
 //    const AtomicString& media_string = media();
@@ -187,7 +179,7 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element,
 //        );
 //    new_sheet->SetMediaQueries(media_queries);
     loading_ = false;
-  }
+//  }
 
 //  sheet_ = new_sheet;
 //  if (sheet_) {

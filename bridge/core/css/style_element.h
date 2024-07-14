@@ -46,9 +46,6 @@ class StyleElement {
 
  protected:
 
-  virtual const AtomicString& type() const = 0;
-  virtual const AtomicString& media() const = 0;
-//
 //  // Returns whether |this| and |node| are the same object. Helps us verify
 //  // parameter validity in certain member functions with an Element parameter
 //  // which should only be called by a subclass with |this|.
@@ -76,7 +73,6 @@ class StyleElement {
   ProcessingResult Process(Element&);
   void ClearSheet(Element& owner_element);
 
-  bool has_finished_parsing_children_ : 1;
   bool loading_ : 1;
   bool registered_as_candidate_ : 1;
   bool created_by_parser_ : 1;

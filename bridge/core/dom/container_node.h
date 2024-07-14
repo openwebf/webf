@@ -52,6 +52,21 @@ class ContainerNode : public Node {
 
   void CloneChildNodesFrom(const ContainerNode&, CloneChildrenFlag);
 
+  // These methods are only used during parsing.
+  // They don't send DOM mutation events or accept DocumentFragments.
+  void ParserAppendChild(Node*);
+
+  // Called when the parser adds a child to a DocumentFragment as the result
+  // of parsing inner/outer html.
+  void ParserAppendChildInDocumentFragment(Node* new_child);
+  // Called when the parser has finished building a DocumentFragment. This is
+  // not called if the parser fails parsing (if parsing fails, the
+  // DocumentFragment is orphaned and will eventually be gc'd).
+  void ParserFinishedBuildingDocumentFragment();
+  void ParserRemoveChild(Node&);
+  void ParserInsertBefore(Node* new_child, Node& ref_child);
+  void ParserTakeAllChildrenFrom(ContainerNode&);
+
   AtomicString nodeValue() const override;
 
   // -----------------------------------------------------------------------------
@@ -63,7 +78,10 @@ class ContainerNode : public Node {
     kElementRemoved,
     kNonElementRemoved,
     kAllChildrenRemoved,
-    kTextChanged
+    kTextChanged,
+    // When the parser builds nodes (because of inner/outer-html or
+    // parseFromString) a single ChildrenChange event is sent at the end.
+    kFinishedBuildingDocumentFragmentTree,
   };
   enum class ChildrenChangeSource : uint8_t { kAPI, kParser };
   enum class ChildrenChangeAffectsElements : uint8_t { kNo, kYes };
@@ -71,6 +89,13 @@ class ContainerNode : public Node {
     WEBF_STACK_ALLOCATED();
 
    public:
+    static ChildrenChange ForFinishingBuildingDocumentFragmentTree() {
+      return ChildrenChange{
+          .type = ChildrenChangeType::kFinishedBuildingDocumentFragmentTree,
+          .by_parser = ChildrenChangeSource::kParser,
+          .affects_elements = ChildrenChangeAffectsElements::kYes,
+      };
+    }
     static ChildrenChange ForInsertion(Node& node,
                                        Node* unchanged_previous,
                                        Node* unchanged_next,
@@ -156,6 +181,12 @@ class ContainerNode : public Node {
   ContainerNode(TreeScope* tree_scope, ConstructionType = kCreateContainer);
   ContainerNode(ExecutingContext* context, Document* document, ConstructionType = kCreateContainer);
 
+  // Called from ParserFinishedBuildingDocumentFragment() to notify `node` that
+  // it was inserted.
+  void NotifyNodeAtEndOfBuildingFragmentTree(Node& node,
+                                             const ChildrenChange& change,
+                                             bool may_contain_shadow_roots);
+
   // |attr_name| and |owner_element| are only used for element attribute
   // modifications. |ChildrenChange| is either nullptr or points to a
   // ChildNode::ChildrenChange structure that describes the changes in the tree.
@@ -183,7 +214,9 @@ class ContainerNode : public Node {
   void InsertBeforeCommon(Node& next_child, Node& new_child);
   void AppendChildCommon(Node& child);
 
-  void NotifyNodeInsertedInternal(Node&);
+  void NotifyNodeInserted(Node&,
+                          ChildrenChangeSource = ChildrenChangeSource::kAPI);
+  void NotifyNodeInsertedInternal(Node&, NodeVector& post_insertion_notification_targets);
   void NotifyNodeRemoved(Node&);
 
   inline bool IsChildTypeAllowed(const Node& child) const;
