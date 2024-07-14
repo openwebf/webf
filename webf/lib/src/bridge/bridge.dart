@@ -28,10 +28,10 @@ bool isJSRunningInDedicatedThread(double contextId) {
 
 /// Init bridge
 FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) async {
-  dartContext ??= DartContext();
-
   // Setup binding bridge.
   BindingBridge.setup();
+  
+  dartContext ??= DartContext();
 
   double newContextId = runningThread.identity();
   await allocateNewPage(runningThread is FlutterUIThread, newContextId, runningThread.syncBufferSize());

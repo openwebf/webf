@@ -67,14 +67,10 @@ void* allocateNewPageSync(double thread_identity, void* ptr) {
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   assert(dart_isolate_context != nullptr);
 
-  dart_isolate_context->profiler()->StartTrackInitialize();
-
   void* result = static_cast<webf::DartIsolateContext*>(dart_isolate_context)->AddNewPageSync(thread_identity);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPageSync Call END";
 #endif
-
-  dart_isolate_context->profiler()->FinishTrackInitialize();
 
   return result;
 }
