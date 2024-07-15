@@ -204,6 +204,7 @@ mixin CSSAnimationMixin on RenderStyle {
 
             target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_END, animationName: name));
             animation.dispose();
+            _runningAnimation.remove(name);
           };
 
           _runningAnimation[name] = animation;
