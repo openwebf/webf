@@ -18,6 +18,7 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
+#include "core/css/style_engine.h"
 #include "core/svg/svg_element.h"
 #include "element_namespace_uris.h"
 #include "element_traversal.h"
@@ -415,6 +416,7 @@ void Document::Trace(GCVisitor* visitor) const {
 
 StyleEngine& Document::EnsureStyleEngine() {
   if (style_engine_ == nullptr) {
+    new StyleEngine(*this);
     style_engine_ = std::make_shared<StyleEngine>(*this);
   }
   assert(style_engine_.get());
