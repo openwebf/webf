@@ -25,8 +25,10 @@ class CSSTokenizer {
   // The overload with const String& holds on to a reference to the string.
   // (Most places, we probably don't need to do that, but fixing that would
   // require manual inspection.)
-  explicit CSSTokenizer(const AtomicString&, uint32_t offset = 0);
-  CSSParserToken TokenizeSingle();
+  explicit CSSTokenizer(const std::string&, uint32_t offset = 0);
+  CSSTokenizer(const CSSTokenizer&) = delete;
+  CSSTokenizer& operator=(const CSSTokenizer&) = delete;
+
   // The CSSParserTokens in the result may hold references to the CSSTokenizer
   // object, or the string data referenced by the CSSTokenizer. Do not use the
   // tokens after the CSSTokenizer or its underlying String goes out of scope.
@@ -51,6 +53,7 @@ class CSSTokenizer {
     return TokenizeSingle();
   }
 
+  CSSParserToken TokenizeSingle();
 
  private:
   CSSTokenizerInputStream input_;

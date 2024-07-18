@@ -67,9 +67,8 @@ CSSParserImpl::CSSParserImpl(std::shared_ptr<const CSSParserContext> context,
       observer_(nullptr),
       lazy_state_(nullptr) {}
 
-//TODO: 当前进度[ConsumeRuleList]
 ParseSheetResult CSSParserImpl::ParseStyleSheet(
-    const AtomicString& string,
+    const std::string& string,
     std::shared_ptr<const CSSParserContext> context,
     std::shared_ptr<StyleSheetContents> style_sheet,
     CSSDeferPropertyParsing defer_property_parsing,

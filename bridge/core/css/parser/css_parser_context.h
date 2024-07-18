@@ -10,9 +10,9 @@
 #define WEBF_CSS_PARSER_CONTEXT_H
 
 #include "bindings/qjs/atomic_string.h"
-#include "css_parser_mode.h"
 #include "core/dom/document.h"
 #include "core/executing_context.h"
+#include "css_parser_mode.h"
 
 namespace webf {
 
@@ -20,50 +20,24 @@ class Document;
 class StyleSheetContents;
 
 class CSSParserContext final {
-
  public:
-  explicit CSSParserContext(const CSSParserContext* other,
-                            const Document* use_counter_document = nullptr);
-  CSSParserContext(const CSSParserContext*, const StyleSheetContents*);
-  CSSParserContext(const Document&,
-                   const AtomicString& base_url_override,
-//                   bool origin_clean,
-//                   const Referrer& referrer,
-                   const AtomicString& charset = AtomicString()); // TODO: WTF::TextEncoding;（encoding移除，默认都是utf8）
-
-  CSSParserContext(const AtomicString& base_url,
-//                   bool origin_clean,
-                   const AtomicString& charset,
-                   CSSParserMode,
-//                   const Referrer& referrer,
-//                   bool is_html_document,
-//                   SecureContextMode,
-//                   const DOMWrapperWorld* world,
-                   const Document* use_counter_document
-//                   ResourceFetchRestriction resource_fetch_restriction
-                   );
-
-  CSSParserContext(CSSParserMode,
-                   SecureContextMode,
-                   const Document* use_counter_document = nullptr);
+  explicit CSSParserContext(const CSSParserContext*, const StyleSheetContents*);
+  explicit CSSParserContext(const Document&, const std::string& base_url_override);
+  explicit CSSParserContext(const std::string& base_url, CSSParserMode mode, const Document* use_counter_document);
 
   bool IsForMarkupSanitization() const;
 
-  bool IsUseCounterRecordingEnabled() { return document_ != nullptr; }
+  bool IsUseCounterRecordingEnabled() const { return document_ != nullptr; }
   const Document* GetDocument() const;
   ExecutingContext* GetExecutingContext() const;
+  bool IsDocumentHandleEqual(const Document* other) const;
   CSSParserMode Mode() const { return mode_; }
 
-
  private:
-  AtomicString base_url_;
+  std::string base_url_;
   CSSParserMode mode_;
-  AtomicString charset_;
   Member<const Document> document_;
-
 };
-
-std::shared_ptr<const CSSParserContext> StrictCSSParserContext(SecureContextMode);
 
 }  // namespace webf
 

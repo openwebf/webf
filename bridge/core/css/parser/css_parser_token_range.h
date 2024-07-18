@@ -77,7 +77,7 @@ class CSSParserTokenRange {
     }
   }
 
-  AtomicString Serialize() const;
+  std::string Serialize() const;
 
   const CSSParserToken* begin() const { return first_; }
 

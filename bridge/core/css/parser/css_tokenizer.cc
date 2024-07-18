@@ -28,7 +28,7 @@ constexpr uint32_t kEstimatedCharactersPerToken = 3;
 
 }  // namespace
 
-CSSTokenizer::CSSTokenizer(const AtomicString& string, uint32_t offset)
+CSSTokenizer::CSSTokenizer(const std::string& string, uint32_t offset)
     : input_(string) {
   // According to the spec, we should perform preprocessing here.
   // See: https://drafts.csswg.org/css-syntax/#input-preprocessing

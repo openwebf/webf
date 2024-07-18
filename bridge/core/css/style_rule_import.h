@@ -57,7 +57,6 @@ class StyleRuleImport : public StyleRuleBase {
   // in the stylesheet text. The position is used to encode accurate initiator
   // info on the stylesheet request in order to report accurate failures.
   std::optional<TextPosition> position_hint_;
-
 };
 
 

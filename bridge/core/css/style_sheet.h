@@ -30,31 +30,29 @@
 namespace webf {
 
 class Node;
-class CSSRule; // TODO(xiezuobing)
+class CSSRule;
+class MediaList;
 
-class StyleSheet: public ScriptWrappable {
+class StyleSheet : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
-
  public:
   StyleSheet() = delete;
   explicit StyleSheet(JSContext* ctx);
   ~StyleSheet() override;
 
-//    virtual bool disabled() const = 0;
-//    virtual void setDisabled(bool) = 0;
-    virtual Node* ownerNode() const = 0;
-    virtual StyleSheet* parentStyleSheet() const { return nullptr; }
-//    virtual AtomicString href() const = 0;
-//    virtual AtomicString title() const = 0;
-//    virtual MediaList* media() { return nullptr; }
-//    virtual AtomicString type() const = 0;
+  virtual bool disabled() const = 0;
+  virtual void setDisabled(bool) = 0;
+  virtual Node* ownerNode() const = 0;
+  virtual StyleSheet* parentStyleSheet() const { return nullptr; }
+  virtual std::string href() const = 0;
+  virtual MediaList* media() { return nullptr; }
+  virtual std::string type() const = 0;
 
-//    virtual CSSRule* ownerRule() const { return nullptr; }
-//    virtual void ClearOwnerNode() = 0;
-//    virtual AtomicString BaseURL() const = 0;
-//    virtual bool IsLoading() const = 0;
-//    virtual bool IsCSSStyleSheet() const { return false; }
-
+  virtual CSSRule* ownerRule() const { return nullptr; }
+  virtual void ClearOwnerNode() = 0;
+  virtual std::string BaseURL() const = 0;
+  virtual bool IsLoading() const = 0;
+  virtual bool IsCSSStyleSheet() const { return false; }
 };
 
 }  // namespace webf

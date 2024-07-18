@@ -24,4 +24,15 @@
 
 #include "media_list.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+std::shared_ptr<MediaQuerySet> MediaQuerySet::Create(const AtomicString& media_string, const ExecutingContext*) {
+  if (media_string.IsEmpty()) {
+    return MediaQuerySet::Create();
+  }
+
+  return nullptr;
+//  return MediaQueryParser::ParseMediaQuerySet(media_string, execution_context);
+}
+
+}  // namespace webf

@@ -20,10 +20,10 @@ class CSSTokenizerInputStream {
   USING_FAST_MALLOC(CSSTokenizerInputStream);
 
  public:
-  explicit CSSTokenizerInputStream(const AtomicString& input)
+  explicit CSSTokenizerInputStream(const std::string& input)
       : string_length_(input.length()),
 //        string_ref_(input.Impl()),
-        string_(input.ToStringView()) {};
+        string_(input) {};
 
 //  double GetDouble(unsigned start, unsigned end) const;
 

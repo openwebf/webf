@@ -26,7 +26,7 @@ class CSSParser {
  public:
   static ParseSheetResult ParseSheet(std::shared_ptr<const CSSParserContext>,
                                      std::shared_ptr<StyleSheetContents>,
-                                     const AtomicString&,
+                                     const std::string&,
                                      CSSDeferPropertyParsing defer_property_parsing = CSSDeferPropertyParsing::kNo,
                                      bool allow_import_rules = true);
 };

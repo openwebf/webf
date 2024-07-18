@@ -9,8 +9,8 @@
 #ifndef WEBF_CSS_PARSER_TOKEN_H
 #define WEBF_CSS_PARSER_TOKEN_H
 
-#include "foundation/webf_malloc.h"
 #include "foundation/string_view.h"
+#include "foundation/webf_malloc.h"
 
 namespace webf {
 
@@ -76,8 +76,10 @@ class CSSParserToken {
     kBlockEnd,
   };
 
-  explicit CSSParserToken(CSSParserTokenType type,
-                          BlockType block_type = kNotBlock)
+  // NOTE: There are some fields that we don't actually use (marked here
+  // as “Don't care”), but we still set them explicitly, since otherwise,
+  // Clang works really hard to preserve their contents.
+  explicit CSSParserToken(CSSParserTokenType type, BlockType block_type = kNotBlock)
       : type_(type),
         block_type_(block_type),
         numeric_value_type_(0),  // Don't care.
@@ -88,15 +90,12 @@ class CSSParserToken {
         padding_(0)             // Don't care.
   {}
 
-  CSSParserToken(CSSParserTokenType type,
-                 StringView value,
-                 BlockType block_type = kNotBlock)
+  CSSParserToken(CSSParserTokenType type, StringView value, BlockType block_type = kNotBlock)
       : type_(type), block_type_(block_type) {
     InitValueFromStringView(value);
     id_ = -1;
   }
-  CSSParserToken(CSSParserTokenType,
-                 int32_t,
+  CSSParserToken(CSSParserTokenType, int32_t,
                  int32_t);  // for UnicodeRangeToken
 
   CSSParserToken(CSSParserTokenType, double, NumericValueType, NumericSign);  // for NumberToken
@@ -104,24 +103,21 @@ class CSSParserToken {
   CSSParserToken(CSSParserTokenType, unsigned char);  // for DelimiterToken
   CSSParserToken(HashTokenType, StringView);
 
-  CSSParserTokenType GetType() const {
-    return static_cast<CSSParserTokenType>(type_);
-  }
+  CSSParserTokenType GetType() const { return static_cast<CSSParserTokenType>(type_); }
 
   BlockType GetBlockType() const { return static_cast<BlockType>(block_type_); }
+
+  void Serialize(std::string&) const;
 
   StringView Value() const {
     if (value_is_inline_) {
       assert(value_is_8bit_);
-      return StringView(reinterpret_cast<const char*>(value_data_char_inline_),
-                        value_length_);
+      return StringView(reinterpret_cast<const char*>(value_data_char_inline_), value_length_);
     }
     if (value_is_8bit_) {
-      return StringView(reinterpret_cast<const char*>(value_data_char_raw_),
-                        value_length_);
+      return StringView(reinterpret_cast<const char*>(value_data_char_raw_), value_length_);
     }
-    return StringView(reinterpret_cast<const char16_t*>(value_data_char_raw_),
-                      value_length_);
+    return StringView(reinterpret_cast<const char16_t*>(value_data_char_raw_), value_length_);
   }
 
   bool IsEOF() const { return type_ == static_cast<unsigned>(kEOFToken); }
@@ -134,12 +130,31 @@ class CSSParserToken {
   void ConvertToPercentage();
 
  private:
+  void InitValueFromStringView(StringView string) {
+    value_length_ = string.length();
+    value_is_8bit_ = string.Is8Bit();
+    if (value_is_8bit_ && value_length_ <= sizeof(value_data_char_inline_)) {
+      memcpy(value_data_char_inline_, string.Bytes(), value_length_);
+      value_is_inline_ = true;
+    } else {
+      value_data_char_raw_ = string.Bytes();
+      value_is_inline_ = false;
+    }
+  }
+  bool ValueDataCharRawEqual(const CSSParserToken& other) const;
+  const void* ValueDataCharRaw() const {
+    if (value_is_inline_) {
+      return value_data_char_inline_;
+    } else {
+      return value_data_char_raw_;
+    }
+  }
+
   unsigned type_ : 6;                // CSSParserTokenType
   unsigned block_type_ : 2;          // BlockType
   unsigned numeric_value_type_ : 1;  // NumericValueType
   unsigned numeric_sign_ : 2;        // NumericSign
   unsigned unit_ : 7;                // CSSPrimitiveValue::UnitType
-
 
   // The variables below are only used if the token type is string-backed
   // (which depends on type_; see HasStringBacking() for the list).
@@ -159,7 +174,6 @@ class CSSParserToken {
   unsigned padding_ : 12;
 
   unsigned value_length_;
-
   union {
     char value_data_char_inline_[8];   // If value_is_inline_ is true.
     const void* value_data_char_raw_;  // Either LChar* or UChar*.
@@ -182,19 +196,6 @@ class CSSParserToken {
       int32_t end;
     } unicode_range_;
   };
-
-
-  void InitValueFromStringView(StringView string) {
-    value_length_ = string.length();
-    value_is_8bit_ = string.Is8Bit();
-    if (value_is_8bit_ && value_length_ <= sizeof(value_data_char_inline_)) {
-      memcpy(value_data_char_inline_, string.Bytes(), value_length_);
-      value_is_inline_ = true;
-    } else {
-      value_data_char_raw_ = string.Bytes();
-      value_is_inline_ = false;
-    }
-  }
 };
 
 }  // namespace webf

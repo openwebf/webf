@@ -39,7 +39,8 @@ enum class ParseSheetResult {
 class CSSParserImpl {
   WEBF_STACK_ALLOCATED();
  public:
-
+  explicit CSSParserImpl(std::shared_ptr<const CSSParserContext>,
+                         std::shared_ptr<StyleSheetContents> = nullptr);
 
   enum AllowedRulesType {
     // As per css-syntax, css-cascade and css-namespaces, @charset rules
@@ -75,12 +76,42 @@ class CSSParserImpl {
     static RangeOffset Ignore() { return {0, 0}; }
   };
 
-
-  explicit CSSParserImpl(std::shared_ptr<const CSSParserContext>,
-                         std::shared_ptr<StyleSheetContents> = nullptr);
+//  static MutableCSSPropertyValueSet::SetResult ParseValue(
+//      MutableCSSPropertyValueSet*,
+//      CSSPropertyID,
+//      StringView,
+//      bool important,
+//      const CSSParserContext*);
+//  static MutableCSSPropertyValueSet::SetResult ParseVariableValue(
+//      MutableCSSPropertyValueSet*,
+//      const AtomicString& property_name,
+//      StringView,
+//      bool important,
+//      const CSSParserContext*,
+//      bool is_animation_tainted);
+//  static ImmutableCSSPropertyValueSet* ParseInlineStyleDeclaration(
+//      const String&,
+//      Element*);
+//  static ImmutableCSSPropertyValueSet* ParseInlineStyleDeclaration(
+//      const String&,
+//      CSSParserMode,
+//      SecureContextMode,
+//      const Document*);
+//  // NOTE: This function can currently only be used to parse a
+//  // declaration list with no nested rules, not a full style rule
+//  // (it is only used for things like inline style).
+//  static bool ParseDeclarationList(MutableCSSPropertyValueSet*,
+//                                   const String&,
+//                                   const CSSParserContext*);
+//  static StyleRuleBase* ParseRule(const String&,
+//                                  const CSSParserContext*,
+//                                  CSSNestingType,
+//                                  StyleRule* parent_rule_for_nesting,
+//                                  StyleSheetContents*,
+//                                  AllowedRulesType);
 
   static ParseSheetResult ParseStyleSheet(
-      const AtomicString&,
+      const std::string&,
       std::shared_ptr<const CSSParserContext>,
       std::shared_ptr<StyleSheetContents>,
       CSSDeferPropertyParsing = CSSDeferPropertyParsing::kNo,

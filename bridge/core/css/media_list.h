@@ -26,10 +26,9 @@
 #ifndef WEBF_MEDIA_LIST_H
 #define WEBF_MEDIA_LIST_H
 
-#include "core/css/media_query.h"
-#include "core/layout/geometry/axis.h"
-#include "bindings/qjs/script_wrappable.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "bindings/qjs/script_wrappable.h"
+#include "core/css/media_query.h"
 
 namespace webf {
 
@@ -43,11 +42,8 @@ class MediaQuerySetOwner;
 
 class MediaQuerySet {
  public:
-  static std::shared_ptr<MediaQuerySet> Create() {
-    return std::make_shared<MediaQuerySet>();
-  }
-  static MediaQuerySet* Create(const AtomicString& media_string,
-                               const ExecutingContext*);
+  static std::shared_ptr<MediaQuerySet> Create() { return std::make_shared<MediaQuerySet>(); }
+  static std::shared_ptr<MediaQuerySet> Create(const AtomicString& media_string, const ExecutingContext*);
 
   MediaQuerySet();
   MediaQuerySet(const MediaQuerySet&);
@@ -55,12 +51,9 @@ class MediaQuerySet {
   void Trace(GCVisitor*) const;
 
   const MediaQuerySet* CopyAndAdd(const AtomicString&, const ExecutingContext*) const;
-  const MediaQuerySet* CopyAndRemove(const AtomicString&,
-                                     const ExecutingContext*) const;
+  const MediaQuerySet* CopyAndRemove(const AtomicString&, const ExecutingContext*) const;
 
-  const std::vector<std::shared_ptr<const MediaQuery>>& QueryVector() const {
-    return queries_;
-  }
+  const std::vector<std::shared_ptr<const MediaQuery>>& QueryVector() const { return queries_; }
 
   AtomicString MediaText() const;
 
@@ -77,9 +70,7 @@ class MediaList final : public ScriptWrappable {
 
   unsigned length() const { return Queries()->QueryVector().size(); }
   AtomicString item(unsigned index) const;
-  void deleteMedium(const ExecutingContext*,
-                    const AtomicString& old_medium,
-                    ExceptionState&);
+  void deleteMedium(const ExecutingContext*, const AtomicString& old_medium, ExceptionState&);
   void appendMedium(const ExecutingContext*, const AtomicString& new_medium);
 
   // Note that this getter doesn't require the ExecutingContext (except for
@@ -107,7 +98,6 @@ class MediaList final : public ScriptWrappable {
   Member<CSSStyleSheet> parent_style_sheet_;
   Member<CSSRule> parent_rule_;
 };
-
 
 }  // namespace webf
 

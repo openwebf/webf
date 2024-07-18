@@ -314,8 +314,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 #    core/css/style_rule.cc
 #    core/css/style_rule_import.cc
 #    core/css/style_rule_keyframe.cc
-#    core/css/style_sheet.cc
-#    core/css/style_sheet_contents.cc
+    core/css/style_sheet.cc
 #    core/platform/text/text_position.cc
     core/css/parser/css_lazy_parsing_state.cc
 #    core/css/parser/css_lazy_property_parser_impl.cc

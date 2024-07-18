@@ -26,8 +26,8 @@
 #define WEBF_STYLE_ELEMENT_H
 
 #include "core/dom/element.h"
+#include "core/platform/text/text_position.h"
 //#include "core/css/pending_sheet_type.h"
-//#include "core/platform/text/text_position.h"
 //#include "core/base/render_blocking_behavior.h"
 
 namespace webf {
@@ -46,9 +46,9 @@ class StyleElement {
 
  protected:
 
-//  // Returns whether |this| and |node| are the same object. Helps us verify
-//  // parameter validity in certain member functions with an Element parameter
-//  // which should only be called by a subclass with |this|.
+  // Returns whether |this| and |node| are the same object. Helps us verify
+  // parameter validity in certain member functions with an Element parameter
+  // which should only be called by a subclass with |this|.
   virtual bool IsSameObject(const Node& node) const = 0;
 
   CSSStyleSheet* sheet() const { return sheet_.Get(); }
@@ -58,7 +58,7 @@ class StyleElement {
   void SetToPendingState(Document&, Element& element);
 
   void RemovedFrom(Element&, ContainerNode& insertion_point);
-  void BlockingAttributeChanged(Element&);
+
   ProcessingResult ProcessStyleSheet(Document&, Element&);
   ProcessingResult ChildrenChanged(Element&);
   ProcessingResult FinishParsingChildren(Element&);
@@ -69,16 +69,13 @@ class StyleElement {
   bool CreatedByParser() const { return created_by_parser_; }
 
  private:
-  ProcessingResult CreateSheet(Element&, const AtomicString& text = AtomicString());
+  ProcessingResult CreateSheet(Element&, const std::string& text);
   ProcessingResult Process(Element&);
   void ClearSheet(Element& owner_element);
 
   bool loading_ : 1;
   bool registered_as_candidate_ : 1;
   bool created_by_parser_ : 1;
-//  TextPosition start_position_;
-//  PendingSheetType pending_sheet_type_;
-//  RenderBlockingBehavior render_blocking_behavior_;
 };
 }  // namespace webf
 

@@ -14,7 +14,7 @@ namespace webf {
 ParseSheetResult CSSParser::ParseSheet(
     std::shared_ptr<const CSSParserContext> context,
     std::shared_ptr<StyleSheetContents> style_sheet,
-    const AtomicString& text,
+    const std::string& text,
     CSSDeferPropertyParsing defer_property_parsing,
     bool allow_import_rules) {
   return CSSParserImpl::ParseStyleSheet(
