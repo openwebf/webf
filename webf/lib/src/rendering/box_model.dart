@@ -854,9 +854,6 @@ class RenderBoxModel extends RenderBox
     // Copy render style
       ..renderStyle = renderStyle
 
-    // Copy box decoration
-      ..boxPainter = boxPainter
-
     // Copy overflow
       ..scrollListener = scrollListener
       ..scrollablePointerListener = scrollablePointerListener
