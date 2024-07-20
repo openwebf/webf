@@ -202,6 +202,17 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
   return success;
 }
 
+bool ExecutingContext::EvaluateJavaScriptById(uint32_t script_id) {
+  auto* script_element = HTMLScriptElement::ObtainScriptElementFromId(script_id);
+  if (script_element == nullptr) return false;
+
+  JSValue result = JS_Eval(script_state_.ctx(), (const char*) script_element->buffer(), script_element->buffer_len(), "eval://", JS_EVAL_TYPE_GLOBAL);
+  DrainMicrotasks();
+  bool success = HandleException(&result);
+  JS_FreeValue(script_state_.ctx(), result);
+  return success;
+}
+
 bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateByteCode");
 

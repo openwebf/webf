@@ -4,6 +4,7 @@
  */
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
@@ -20,7 +21,10 @@ const Map<String, dynamic> _defaultStyle = {
 const String _MIME_TEXT_JAVASCRIPT = 'text/javascript';
 const String _MIME_APPLICATION_JAVASCRIPT = 'application/javascript';
 const String _MIME_X_APPLICATION_JAVASCRIPT = 'application/x-javascript';
-const String _MIME_X_APPLICATION_KBC = 'application/vnd.webf.bc1';
+const String _MIME_APPLICATION_WBC1 = 'application/vnd.webf.bc1';
+
+
+const String __INLINE_SCRIPT_ID__ = '__script_id__';
 const String _JAVASCRIPT_MODULE = 'module';
 enum ScriptReadyState { loading, interactive, complete }
 
@@ -42,13 +46,29 @@ class ScriptRunner {
   static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle, {bool async = false, EvaluateOpItem? profileOp}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
-      assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
-      bool result = await evaluateScripts(contextId, bundle.data!, url: bundle.url, cacheKey: bundle.cacheKey, profileOp: profileOp);
+      bool result;
+      if (bundle.isRemoteId) {
+        result = await evaluateScriptsById(contextId, bundle.scriptId!, profileOp: profileOp);
+      } else {
+        assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
+        result = await evaluateScripts(contextId, bundle.data!, url: bundle.url, cacheKey: bundle.cacheKey, profileOp: profileOp);
+      }
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');
       }
     } else if (bundle.isBytecode) {
-      bool result = await evaluateQuickjsByteCode(contextId, bundle.data!, profileOp: profileOp);
+      bool result = false;
+
+      if (bundle.isRemoteId) {
+        result = await evaluateWbcById(contextId, bundle.scriptId!, profileOp: profileOp);
+      } else {
+        if (bundle.url.contains('.wbc1')) {
+          result = await evaluateWbc(contextId, bundle.data!, profileOp: profileOp);
+        } else {
+          result = await evaluateQuickjsByteCode(contextId, bundle.data!, profileOp: profileOp);
+        }
+      }
+
       if (!result) {
         throw FlutterError('Bytecode are not valid to execute.');
       }
@@ -74,7 +94,7 @@ class ScriptRunner {
     return _syncScriptTasks.isNotEmpty;
   }
 
-  void _queueScriptForExecution(ScriptElement element, {bool isInline = false}) async {
+  void _queueScriptForExecution(ScriptElement element, {bool isInline = false, required String contentType}) async {
     // Increment load event delay count before eval.
     _document.incrementDOMContentLoadedEventDelayCount();
 
@@ -89,11 +109,17 @@ class ScriptRunner {
         _document.controller.preloadStatus != PreloadingStatus.done;
 
     if (isInline) {
-      String? scriptCode = element.collectElementChildText();
-      if (scriptCode == null) {
+      String? scriptId = element.getAttribute(__INLINE_SCRIPT_ID__);
+      if (scriptId == null) {
         return;
       }
-      bundle = WebFBundle.fromContent(scriptCode);
+
+      ContentType contentType = javascriptContentType;
+      if (element._type == _MIME_APPLICATION_WBC1) {
+        contentType = webfBc1ContentType;
+      }
+
+      bundle = DataBundle.fromScriptId(int.parse(scriptId), contentType: contentType);
     } else {
       String url = element.src.toString();
       bundle = _document.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
@@ -219,7 +245,7 @@ class ScriptElement extends Element {
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
-  final String _type = _MIME_TEXT_JAVASCRIPT;
+  String _type = _MIME_TEXT_JAVASCRIPT;
 
   Uri? _resolvedSource;
   ScriptReadyState _readyState = ScriptReadyState.loading;
@@ -235,7 +261,7 @@ class ScriptElement extends Element {
         BindingObjectProperty(getter: () => defer, setter: (value) => defer = castToType<bool>(value));
     properties['charset'] =
         BindingObjectProperty(getter: () => charset, setter: (value) => charset = castToType<String>(value));
-    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
+    properties['type'] = BindingObjectProperty(getter: () => _type, setter: (value) => _type = castToType<String>(value));
     properties['text'] = BindingObjectProperty(getter: () => text, setter: (value) => text = castToType<String>(value));
     properties['readyState'] = BindingObjectProperty(
       getter: () => readyState.name,
@@ -249,7 +275,7 @@ class ScriptElement extends Element {
     attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
     attributes['async'] = ElementAttributeProperty(setter: (value) => async = attributeToProperty<bool>(value));
     attributes['defer'] = ElementAttributeProperty(setter: (value) => defer = attributeToProperty<bool>(value));
-    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
+    attributes['type'] = ElementAttributeProperty(setter: (value) => _type = attributeToProperty<String>(value));
     attributes['charset'] = ElementAttributeProperty(setter: (value) => charset = attributeToProperty<String>(value));
     attributes['text'] = ElementAttributeProperty(setter: (value) => text = attributeToProperty<String>(value));
   }
@@ -280,11 +306,6 @@ class ScriptElement extends Element {
     } else {
       removeAttribute('defer');
     }
-  }
-
-  String get type => getAttribute('type') ?? '';
-  set type(String value) {
-    internalSetAttribute('type', value);
   }
 
   String get charset => getAttribute('charset') ?? '';
@@ -322,14 +343,14 @@ class ScriptElement extends Element {
         (_type == _MIME_TEXT_JAVASCRIPT ||
             _type == _MIME_APPLICATION_JAVASCRIPT ||
             _type == _MIME_X_APPLICATION_JAVASCRIPT ||
-            _type == _MIME_X_APPLICATION_KBC ||
+            _type == _MIME_APPLICATION_WBC1 ||
             _type == _JAVASCRIPT_MODULE)) {
       // Add bundle to scripts queue.
-      ownerDocument.scriptRunner._queueScriptForExecution(this);
+      ownerDocument.scriptRunner._queueScriptForExecution(this, contentType: _type);
 
       SchedulerBinding.instance.scheduleFrame();
-    } else if (childNodes.isNotEmpty) {
-      ownerDocument.scriptRunner._queueScriptForExecution(this, isInline: true);
+    } else if (hasAttribute(__INLINE_SCRIPT_ID__)) {
+      ownerDocument.scriptRunner._queueScriptForExecution(this, isInline: true, contentType: _type);
     }
   }
 
@@ -340,7 +361,7 @@ class ScriptElement extends Element {
     if (contextId == null) return;
     if (src.isNotEmpty) {
       _fetchAndExecuteSource();
-    } else if (_type == _MIME_TEXT_JAVASCRIPT || _type == _JAVASCRIPT_MODULE) {
+    } else if (_type == _MIME_TEXT_JAVASCRIPT || _type == _JAVASCRIPT_MODULE || _type == _MIME_APPLICATION_WBC1) {
       _fetchAndExecuteSource();
     }
   }

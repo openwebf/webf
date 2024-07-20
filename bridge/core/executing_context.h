@@ -81,6 +81,7 @@ class ExecutingContext {
                           int startLine);
   bool EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine);
   bool EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine);
+  bool EvaluateJavaScriptById(uint32_t script_id);
   bool EvaluateByteCode(uint8_t* bytes, size_t byteLength);
   bool IsContextValid() const;
   void SetContextInValid();

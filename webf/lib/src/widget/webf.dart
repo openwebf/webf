@@ -490,7 +490,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
 
           assert(controller!.entrypoint!.isResolved);
           assert(controller!.entrypoint!.isDataObtained);
-          if (controller!.unfinishedPreloadResources == 0 && controller!.entrypoint!.isHTML) {
+          if (controller!.unfinishedPreloadResources == 0 && (controller!.entrypoint!.isHTML || controller!.entrypoint!.isBHTML)) {
             await controller!.view.document.scriptRunner.executePreloadedBundles();
           } else if (controller!.entrypoint!.isJavascript || controller!.entrypoint!.isBytecode) {
             await controller!.evaluateEntrypoint();
