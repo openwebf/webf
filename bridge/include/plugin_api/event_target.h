@@ -13,6 +13,7 @@ typedef struct EventTarget EventTarget;
 typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
+typedef struct WebFEventListenerContext WebFEventListenerContext;
 
 struct WebFAddEventListenerOptions {
   bool passive;
@@ -20,16 +21,17 @@ struct WebFAddEventListenerOptions {
   bool capture;
 };
 
-using WebFImplEventCallback = void (*)(Event* event, SharedExceptionState* shared_exception_state);
+using WebFImplEventCallback = void (*)(WebFEventListenerContext* callback_context, Event* event, SharedExceptionState* shared_exception_state);
 
-struct WebFEventListener {
+struct WebFEventListenerContext {
   WebFImplEventCallback callback;
+  void* ptr;
 };
 
 using WebFEventTargetAddEventListener = void (*)(EventTarget* event_target,
                                                  const char*,
-                                                 WebFEventListener* callback,
-                                                 WebFAddEventListenerOptions& options,
+                                                 WebFEventListenerContext* callback_context,
+                                                 WebFAddEventListenerOptions* options,
                                                  SharedExceptionState* shared_exception_state);
 
 using WebFEventTargetRelease = void (*)(EventTarget*);
@@ -37,8 +39,8 @@ using WebFEventTargetRelease = void (*)(EventTarget*);
 struct EventTargetWebFMethods : public WebFPublicMethods {
   static void AddEventListener(EventTarget* event_target,
                                const char* event_name_str,
-                               WebFEventListener* event_listener,
-                               WebFAddEventListenerOptions& options,
+                               WebFEventListenerContext* callback_context,
+                               WebFAddEventListenerOptions* options,
                                SharedExceptionState* shared_exception_state);
   static void Release(EventTarget* event_target);
 

@@ -5,6 +5,7 @@
 use std::ffi::c_double;
 use crate::character_data::{CharacterData, CharacterDataRustMethods};
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
+use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeRustMethods};
 use crate::OpaquePtr;
@@ -40,7 +41,11 @@ impl EventTargetMethods for Comment {
     self.character_data.ptr()
   }
 
-  fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions) {
-    self.character_data.add_event_listener(event_name, callback, options)
+  fn add_event_listener(&self,
+                        event_name: &str,
+                        callback: EventListenerCallback,
+                        options: &AddEventListenerOptions,
+                        exception_state: &ExceptionState) -> Result<(), String> {
+    self.character_data.add_event_listener(event_name, callback, options, exception_state)
   }
 }

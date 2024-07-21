@@ -5,7 +5,7 @@
 use std::ffi::{c_double, c_void};
 use libc::c_char;
 use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
-use crate::event_target::{AddEventListenerOptions, EventTarget, EventTargetMethods, EventTargetRustMethods, RustMethods};
+use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, EventTargetRustMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::{OpaquePtr, RustValue};
@@ -77,7 +77,7 @@ impl Node {
   }
 }
 
-pub trait NodeMethods : EventTargetMethods {
+pub trait NodeMethods: EventTargetMethods {
   fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String>;
   fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String>;
 
@@ -92,9 +92,9 @@ impl EventTargetMethods for Node {
         event_target: EventTarget::initialize(
           ptr,
           context,
-         (method_pointer as *const NodeRustMethods).as_ref().unwrap().event_target,
+          (method_pointer as *const NodeRustMethods).as_ref().unwrap().event_target,
         ),
-        method_pointer: method_pointer as * const NodeRustMethods,
+        method_pointer: method_pointer as *const NodeRustMethods,
       }
     }
   }
@@ -103,8 +103,12 @@ impl EventTargetMethods for Node {
     self.event_target.ptr
   }
 
-  fn add_event_listener(&self, event_name: &str, callback: crate::event_target::EventListenerCallback, options: &mut AddEventListenerOptions) {
-    self.event_target.add_event_listener(event_name, callback, options);
+  fn add_event_listener(&self,
+                        event_name: &str,
+                        callback: EventListenerCallback,
+                        options: &AddEventListenerOptions,
+                        exception_state: &ExceptionState) -> Result<(), String> {
+    self.event_target.add_event_listener(event_name, callback, options, exception_state)
   }
 }
 

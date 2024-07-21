@@ -59,8 +59,12 @@ impl EventTargetMethods for ContainerNode {
     self.node.ptr()
   }
 
-  fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions) {
-    self.node.add_event_listener(event_name, callback, options)
+  fn add_event_listener(&self,
+                        event_name: &str,
+                        callback: EventListenerCallback,
+                        options: &AddEventListenerOptions,
+                        exception_state: &ExceptionState) -> Result<(), String> {
+    self.node.add_event_listener(event_name, callback, options, exception_state)
   }
 }
 
