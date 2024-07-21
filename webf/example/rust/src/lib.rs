@@ -1,7 +1,7 @@
 use std::ffi::{c_void, CString};
 use webf_sys::executing_context::ExecutingContextRustMethods;
 use webf_sys::{initialize_webf_api, RustValue};
-use webf_sys::event_target::{AddEventListenerOptions, EventTargetMethods};
+use webf_sys::event_target::{AddEventListenerOptions, EventTarget, EventTargetMethods};
 use webf_sys::node::NodeMethods;
 
 #[no_mangle]
@@ -19,9 +19,18 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
     capture: 0,
   };
 
-  let event_handler = Box::new(|event_target| {
-    println!("Clicked");
+  let event_handler = Box::new(|event_target: &EventTarget| {
+    println!("Clicked {:?}", event_target.ptr());
+    let context = event_target.context();
+    let exception_state = context.create_exception_state();
+    let document = context.document();
+    let div = document.create_element("div", &exception_state).unwrap();
+    let text_node = document.create_text_node("Created By Event Handler", &exception_state).unwrap();
+    div.append_child(&text_node, &exception_state).unwrap();
+    document.body().append_child(&div, &exception_state).unwrap();
   });
+
+  println!("div element: {:?}", div_element.ptr());
 
   div_element.add_event_listener("click", event_handler, &event_listener_options, &exception_state).unwrap();
   // return event_listener
