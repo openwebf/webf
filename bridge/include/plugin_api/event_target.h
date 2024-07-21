@@ -22,9 +22,11 @@ struct WebFAddEventListenerOptions {
 };
 
 using WebFImplEventCallback = void (*)(WebFEventListenerContext* callback_context, Event* event, SharedExceptionState* shared_exception_state);
+using FreePtrFn = void(*)(WebFEventListenerContext* callback_context);
 
 struct WebFEventListenerContext {
   WebFImplEventCallback callback;
+  FreePtrFn free_ptr;
   void* ptr;
 };
 

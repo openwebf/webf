@@ -43,12 +43,12 @@ impl ExceptionState {
     };
   }
 
-  pub fn stringify(&self, context: *const ExecutingContext) -> String {
+  pub fn stringify(&self, context: &ExecutingContext) -> String {
     let mut errmsg: *mut c_char = ptr::null_mut();
     let mut strlen: c_uint = 0;
 
     unsafe {
-      (((*self.method_pointer)).stringify)(context.as_ref().unwrap().ptr, self.ptr, &mut errmsg, &mut strlen);
+      (((*self.method_pointer)).stringify)(context.ptr, self.ptr, &mut errmsg, &mut strlen);
 
       if errmsg.is_null() {
         return String::new();

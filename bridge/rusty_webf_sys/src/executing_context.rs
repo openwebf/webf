@@ -49,6 +49,12 @@ impl ExecutingContext {
     }
   }
 
+  pub fn method_pointer<'a>(&self) -> &'a ExecutingContextRustMethods {
+    unsafe {
+      &*self.method_pointer
+    }
+  }
+
   /// Obtain the window instance from ExecutingContext.
   pub fn window(&self) -> Window {
     let result = unsafe {
