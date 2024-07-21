@@ -27,7 +27,7 @@ class WebFPublicPluginEventListener : public EventListener {
 
   [[nodiscard]] bool Matches(const EventListener& other) const override {
     const auto* other_listener = DynamicTo<WebFPublicPluginEventListener>(other);
-    return other_listener->callback_context_->ptr == callback_context_->ptr;
+    return other_listener && other_listener->callback_context_->ptr == callback_context_->ptr;
   }
 
   void Trace(GCVisitor* visitor) const override {}
