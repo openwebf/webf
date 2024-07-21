@@ -5,17 +5,21 @@
 use std::ffi::{c_double, c_void, CString};
 use libc::{boolean_t, c_char};
 use crate::exception_state::ExceptionState;
-use crate::executing_context::{ExecutingContext};
-use crate::OpaquePtr;
+use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
+use crate::{executing_context, OpaquePtr};
 
 #[repr(C)]
 struct EventCallbackContext {
   pub callback: extern "C" fn(event_callback_context: *const OpaquePtr, event: *const OpaquePtr, exception_state: *const OpaquePtr) -> *const c_void,
+  pub free_ptr: extern "C" fn(event_callback_context_ptr: *const OpaquePtr) -> *const c_void,
   pub ptr: *const EventCallbackContextData,
 }
 
 struct EventCallbackContextData {
-  event_target: *const EventTarget,
+  event_target_ptr: *const OpaquePtr,
+  event_target_method_pointer: *const EventTargetRustMethods,
+  executing_context_ptr: *const OpaquePtr,
+  executing_context_method_pointer: *const ExecutingContextRustMethods,
   func: EventListenerCallback,
 }
 
@@ -45,11 +49,11 @@ impl RustMethods for EventTargetRustMethods {}
 
 pub struct EventTarget {
   pub ptr: *const OpaquePtr,
-  pub context: *const ExecutingContext,
+  context: *const ExecutingContext,
   method_pointer: *const EventTargetRustMethods,
 }
 
-pub type EventListenerCallback = Box<dyn Fn(*const EventTarget)>;
+pub type EventListenerCallback = Box<dyn Fn(&EventTarget)>;
 
 // Define the callback function
 extern "C" fn handle_event_listener_callback(
@@ -59,18 +63,39 @@ extern "C" fn handle_event_listener_callback(
 ) -> *const c_void {
   // Reconstruct the Box and drop it to free the memory
   let event_callback_context = unsafe {
-    Box::from_raw(event_callback_context_ptr as *mut EventCallbackContextData)
+    &(*(event_callback_context_ptr as *mut EventCallbackContext))
+  };
+  let callback_context_data = unsafe {
+    &(*(event_callback_context.ptr as *mut EventCallbackContextData))
   };
 
-  let func = event_callback_context.func;
-  func(event_callback_context.event_target);
+  unsafe {
+    let func = &(*callback_context_data).func;
+    let callback_data = &(*callback_context_data);
+    let executing_context = ExecutingContext::initialize(callback_data.executing_context_ptr, callback_data.executing_context_method_pointer);
+    let event_target = EventTarget::initialize(callback_data.event_target_ptr, &executing_context, callback_data.event_target_method_pointer);
+    func(&event_target);
+  }
 
+  std::ptr::null()
+}
+
+extern "C" fn handle_callback_data_free(event_callback_context_ptr: *const OpaquePtr) -> *const c_void {
+  unsafe {
+    let event_callback_context = &(*(event_callback_context_ptr as *mut EventCallbackContext));
+    let _ = Box::from_raw(event_callback_context.ptr as *mut EventCallbackContextData);
+  }
   std::ptr::null()
 }
 
 impl EventTarget {
   fn ptr(&self) -> *const OpaquePtr {
     self.ptr
+  }
+
+  pub fn context<'a>(&self) -> &'a ExecutingContext {
+    assert!(!self.context.is_null(), "Context PTR must not be null");
+    unsafe { &*self.context }
   }
 
   pub fn add_event_listener(
@@ -81,21 +106,26 @@ impl EventTarget {
     exception_state: &ExceptionState,
   ) -> Result<(), String> {
     let callback_context_data = Box::new(EventCallbackContextData {
-      event_target: self as *const EventTarget,
+      event_target_ptr: self.ptr(),
+      event_target_method_pointer: self.method_pointer,
+      executing_context_ptr: self.context().ptr,
+      executing_context_method_pointer: self.context().method_pointer(),
       func: callback,
     });
     let callback_context_data_ptr = Box::into_raw(callback_context_data);
-    let c_listener = EventCallbackContext { callback: handle_event_listener_callback, ptr: callback_context_data_ptr };
+    let callback_context = Box::new(EventCallbackContext { callback: handle_event_listener_callback, free_ptr: handle_callback_data_free, ptr: callback_context_data_ptr});
+    let callback_context_ptr = Box::into_raw(callback_context);
     let c_event_name = CString::new(event_name).unwrap();
     unsafe {
-      ((*self.method_pointer).add_event_listener)(self.ptr, c_event_name.as_ptr(), &c_listener, options, exception_state.ptr)
+      ((*self.method_pointer).add_event_listener)(self.ptr, c_event_name.as_ptr(), callback_context_ptr, options, exception_state.ptr)
     };
     if exception_state.has_exception() {
       // Clean up the allocated memory on exception
       unsafe {
+        let _ = Box::from_raw(callback_context_ptr);
         let _ = Box::from_raw(callback_context_data_ptr);
       }
-      return Err(exception_state.stringify(self.context));
+      return Err(exception_state.stringify(self.context()));
     }
 
     Ok(())

@@ -14,6 +14,11 @@ class WebFPublicPluginEventListener : public EventListener {
   WebFPublicPluginEventListener(WebFEventListenerContext* callback_context, SharedExceptionState* shared_exception_state)
       : callback_context_(callback_context), shared_exception_state_(shared_exception_state) {}
 
+  ~WebFPublicPluginEventListener() {
+    callback_context_->free_ptr(callback_context_);
+    delete callback_context_;
+  }
+
   static const std::shared_ptr<WebFPublicPluginEventListener> Create(WebFEventListenerContext* WebF_event_listener,
                                                              SharedExceptionState* shared_exception_state) {
     return std::make_shared<WebFPublicPluginEventListener>(WebF_event_listener, shared_exception_state);

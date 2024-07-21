@@ -69,10 +69,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
+    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer));
   }
 
   pub fn create_element_with_element_creation_options(&self, name: &str, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -83,10 +83,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
+    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer));
   }
 
   pub fn create_element_with_str(&self, name: &str, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -106,10 +106,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
+    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer));
   }
 
   pub fn create_element_ns_with_element_creation_options(&self, uri: &str, name: &str, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -121,10 +121,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(new_element_value.value, event_target.context, new_element_value.method_pointer));
+    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer));
   }
 
   pub fn create_element_ns_with_str(&self, uri: &str, name: &str, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -144,10 +144,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Text::initialize(new_text_node.value, event_target.context, new_text_node.method_pointer));
+    return Ok(Text::initialize(new_text_node.value, event_target.context(), new_text_node.method_pointer));
   }
 
   /// Behavior as same as `document.createDocumentFragment()` in JavaScript.
@@ -159,10 +159,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(DocumentFragment::initialize(new_document_fragment.value, event_target.context, new_document_fragment.method_pointer));
+    return Ok(DocumentFragment::initialize(new_document_fragment.value, event_target.context(), new_document_fragment.method_pointer));
   }
 
   /// Behavior as same as `document.createComment()` in JavaScript.
@@ -175,10 +175,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Comment::initialize(new_comment.value, event_target.context, new_comment.method_pointer));
+    return Ok(Comment::initialize(new_comment.value, event_target.context(), new_comment.method_pointer));
   }
 
   /// Behavior as same as `document.createEvent()` in JavaScript.
@@ -191,7 +191,7 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
     return Ok(Event::initialize(new_event.value, new_event.method_pointer));
@@ -207,10 +207,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(element_value.value, event_target.context, element_value.method_pointer));
+    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer));
   }
 
   /// Behavior as same as `document.getElementById()` in JavaScript.
@@ -223,10 +223,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(element_value.value, event_target.context, element_value.method_pointer));
+    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer));
   }
 
   /// Behavior as same as `document.elementFromPoint()` in JavaScript.
@@ -238,10 +238,10 @@ impl Document {
     };
 
     if exception_state.has_exception() {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(element_value.value, event_target.context, element_value.method_pointer));
+    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer));
   }
 
   /// Document.documentElement returns the Element that is the root element of the document
@@ -252,7 +252,7 @@ impl Document {
       ((*self.method_pointer).document_element)(event_target.ptr)
     };
 
-    return Element::initialize(html_element_value.value, event_target.context, html_element_value.method_pointer);
+    return Element::initialize(html_element_value.value, event_target.context(), html_element_value.method_pointer);
   }
 
   /// The Document.head property represents the <head> or of the current document,
@@ -262,7 +262,7 @@ impl Document {
     let head_element_value = unsafe {
       ((*self.method_pointer).head)(event_target.ptr)
     };
-    return Element::initialize(head_element_value.value, event_target.context, head_element_value.method_pointer);
+    return Element::initialize(head_element_value.value, event_target.context(), head_element_value.method_pointer);
   }
 
 
@@ -273,7 +273,7 @@ impl Document {
     let body_element_value = unsafe {
       ((*self.method_pointer).body)(event_target.ptr)
     };
-    return Element::initialize(body_element_value.value, event_target.context, body_element_value.method_pointer);
+    return Element::initialize(body_element_value.value, event_target.context(), body_element_value.method_pointer);
   }
 }
 
