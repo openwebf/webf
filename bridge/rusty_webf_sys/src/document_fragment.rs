@@ -63,8 +63,12 @@ impl EventTargetMethods for DocumentFragment {
     self.container_node.ptr()
   }
 
-  fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions) {
-    self.container_node.add_event_listener(event_name, callback, options)
+  fn add_event_listener(&self,
+                        event_name: &str,
+                        callback: EventListenerCallback,
+                        options: &AddEventListenerOptions,
+                        exception_state: &ExceptionState) -> Result<(), String> {
+    self.container_node.add_event_listener(event_name, callback, options, exception_state)
   }
 }
 
