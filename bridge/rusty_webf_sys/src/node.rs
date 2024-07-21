@@ -57,10 +57,10 @@ impl Node {
       ((*self.method_pointer).append_child)(event_target.ptr, new_node.ptr(), exception_state.ptr)
     };
     if (exception_state.has_exception()) {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(T::initialize(returned_result.value, event_target.context, returned_result.method_pointer));
+    return Ok(T::initialize(returned_result.value, event_target.context(), returned_result.method_pointer));
   }
 
   /// The removeChild() method of the Node interface removes a child node from the DOM and returns the removed node.
@@ -70,10 +70,10 @@ impl Node {
       ((*self.method_pointer).remove_node)(event_target.ptr, target_node.ptr(), exception_state.ptr)
     };
     if (exception_state.has_exception()) {
-      return Err(exception_state.stringify(event_target.context));
+      return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(T::initialize(returned_result.value, event_target.context, returned_result.method_pointer));
+    return Ok(T::initialize(returned_result.value, event_target.context(), returned_result.method_pointer));
   }
 }
 
