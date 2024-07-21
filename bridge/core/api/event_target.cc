@@ -9,42 +9,54 @@
 
 namespace webf {
 
-class WebFEventListenerImpl : public EventListener {
+class WebFPublicPluginEventListener : public EventListener {
  public:
-  WebFEventListenerImpl(WebFEventListener* WebF_event_listener, SharedExceptionState* shared_exception_state)
-      : WebF_event_listener_(WebF_event_listener), shared_exception_state_(shared_exception_state) {}
+  WebFPublicPluginEventListener(WebFEventListenerContext* callback_context, SharedExceptionState* shared_exception_state)
+      : callback_context_(callback_context), shared_exception_state_(shared_exception_state) {}
 
-  static const std::shared_ptr<WebFEventListenerImpl> Create(WebFEventListener* WebF_event_listener,
+  static const std::shared_ptr<WebFPublicPluginEventListener> Create(WebFEventListenerContext* WebF_event_listener,
                                                              SharedExceptionState* shared_exception_state) {
-    return std::make_shared<WebFEventListenerImpl>(WebF_event_listener, shared_exception_state);
+    return std::make_shared<WebFPublicPluginEventListener>(WebF_event_listener, shared_exception_state);
   };
 
+  [[nodiscard]] bool IsPublicPluginEventHandler() const override { return true; }
+
   void Invoke(ExecutingContext* context, Event* event, ExceptionState& exception_state) override {
-    WebF_event_listener_->callback(event, shared_exception_state_);
+    callback_context_->callback(callback_context_, event, shared_exception_state_);
   }
 
-  bool Matches(const EventListener&) const override {}
+  [[nodiscard]] bool Matches(const EventListener& other) const override {
+    const auto* other_listener = DynamicTo<WebFPublicPluginEventListener>(other);
+    return other_listener->callback_context_->ptr == callback_context_->ptr;
+  }
 
   void Trace(GCVisitor* visitor) const override {}
 
-  WebFEventListener* WebF_event_listener_;
+  WebFEventListenerContext* callback_context_;
   SharedExceptionState* shared_exception_state_;
+};
+
+template <>
+struct DowncastTraits<WebFPublicPluginEventListener> {
+  static bool AllowFrom(const EventListener& event_listener) {
+    return event_listener.IsPublicPluginEventHandler();
+  }
 };
 
 void EventTargetWebFMethods::AddEventListener(EventTarget* event_target,
                                               const char* event_name_str,
-                                              WebFEventListener* event_listener,
-                                              WebFAddEventListenerOptions& options,
+                                              WebFEventListenerContext* callback_context,
+                                              WebFAddEventListenerOptions* options,
                                               SharedExceptionState* shared_exception_state) {
   AtomicString event_name = AtomicString(event_target->ctx(), event_name_str);
   std::shared_ptr<AddEventListenerOptions> event_listener_options = AddEventListenerOptions::Create();
 
   // Preparing for the event listener options.
-  event_listener_options->setOnce(options.once);
-  event_listener_options->setPassive(options.passive);
-  event_listener_options->setCapture(options.capture);
+  event_listener_options->setOnce(options->once);
+  event_listener_options->setPassive(options->passive);
+  event_listener_options->setCapture(options->capture);
 
-  auto listener_impl = WebFEventListenerImpl::Create(event_listener, shared_exception_state);
+  auto listener_impl = WebFPublicPluginEventListener::Create(callback_context, shared_exception_state);
 
   event_target->addEventListener(event_name, listener_impl, event_listener_options,
                                  shared_exception_state->exception_state);

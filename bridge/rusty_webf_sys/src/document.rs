@@ -312,8 +312,12 @@ impl EventTargetMethods for Document {
     self.container_node.ptr()
   }
 
-  fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions) {
-    self.container_node.node.event_target.add_event_listener(event_name, callback, options)
+  fn add_event_listener(&self,
+                        event_name: &str,
+                        callback: EventListenerCallback,
+                        options: &AddEventListenerOptions,
+                        exception_state: &ExceptionState) -> Result<(), String> {
+    self.container_node.node.event_target.add_event_listener(event_name, callback, options, exception_state)
   }
 }
 

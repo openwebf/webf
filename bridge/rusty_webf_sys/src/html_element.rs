@@ -49,7 +49,7 @@ impl EventTargetMethods for HTMLElement {
         element: Element::initialize(
           ptr,
           context,
-          (method_pointer as *const HTMLElementRustMethods).as_ref().unwrap().element
+          (method_pointer as *const HTMLElementRustMethods).as_ref().unwrap().element,
         ),
         method_pointer: method_pointer as *const HTMLElementRustMethods,
       }
@@ -60,11 +60,13 @@ impl EventTargetMethods for HTMLElement {
     self.element.ptr()
   }
 
-  fn add_event_listener(&self, event_name: &str, callback: EventListenerCallback, options: &mut AddEventListenerOptions) {
-    self.element.add_event_listener(event_name, callback, options)
+  fn add_event_listener(&self,
+                        event_name: &str,
+                        callback: EventListenerCallback,
+                        options: &AddEventListenerOptions,
+                        exception_state: &ExceptionState) -> Result<(), String> {
+    self.element.add_event_listener(event_name, callback, options, exception_state)
   }
 }
 
-impl HTMLElementMethods for HTMLElement {
-
-}
+impl HTMLElementMethods for HTMLElement {}
