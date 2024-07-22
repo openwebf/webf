@@ -34,7 +34,9 @@
 
 #ifndef WEBF_CSS_PARSER_IDIOMS_H
 #define WEBF_CSS_PARSER_IDIOMS_H
-#include "bindings/qjs/atomic_string.h"
+
+#include <string>
+#include "foundation/ascii_types.h"
 
 namespace webf {
 
@@ -106,7 +108,7 @@ void ConsumeSingleWhitespaceIfNext(CSSTokenizerInputStream&);
 int32_t ConsumeEscape(CSSTokenizerInputStream&);
 
 // http://www.w3.org/TR/css3-syntax/#consume-a-name
-AtomicString ConsumeName(CSSTokenizerInputStream&);
+std::string ConsumeName(CSSTokenizerInputStream&);
 
 // https://drafts.csswg.org/css-syntax/#would-start-an-identifier
 bool NextCharsAreIdentifier(char16_t, const CSSTokenizerInputStream&);

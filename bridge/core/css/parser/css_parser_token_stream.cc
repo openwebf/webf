@@ -10,16 +10,45 @@
 
 namespace webf {
 
-CSSParserToken CSSParserTokenStream::ConsumeIncludingWhitespace() {
-  CSSParserToken result = Consume();
-  ConsumeWhitespace();
-  return result;
+StringView CSSParserTokenStream::StringRangeAt(size_t start, size_t length) const {
+  return tokenizer_.StringRangeAt(start, length);
+}
+
+StringView CSSParserTokenStream::RemainingText() const {
+  size_t start = HasLookAhead() ? LookAheadOffset() : Offset();
+  return tokenizer_.StringRangeFrom(start);
 }
 
 void CSSParserTokenStream::ConsumeWhitespace() {
   while (Peek().GetType() == kWhitespaceToken) {
     UncheckedConsume();
   }
+}
+
+CSSParserToken CSSParserTokenStream::ConsumeIncludingWhitespace() {
+  CSSParserToken result = Consume();
+  ConsumeWhitespace();
+  return result;
+}
+
+CSSParserToken CSSParserTokenStream::ConsumeIncludingWhitespaceRaw() {
+  CSSParserToken result = ConsumeRaw();
+  ConsumeWhitespace();
+  return result;
+}
+
+bool CSSParserTokenStream::ConsumeCommentOrNothing() {
+  assert(!HasLookAhead());
+  const auto token = tokenizer_.TokenizeSingleWithComments();
+  if (token.GetType() != kCommentToken) {
+    next_ = token;
+    has_look_ahead_ = true;
+    return false;
+  }
+
+  has_look_ahead_ = false;
+  offset_ = tokenizer_.Offset();
+  return true;
 }
 
 void CSSParserTokenStream::UncheckedConsumeComponentValue() {
@@ -63,6 +92,28 @@ void CSSParserTokenStream::UncheckedSkipToEndOfBlock() {
     }
   }
   offset_ = tokenizer_.Offset();
+}
+
+CSSParserTokenRange CSSParserTokenStream::ConsumeComponentValue() {
+  EnsureLookAhead();
+
+  buffer_.reserve(0);
+
+  if (AtEnd()) {
+    return {std::vector<CSSParserToken>()};
+  }
+
+  unsigned nesting_level = 0;
+  do {
+    buffer_.push_back(UncheckedConsumeInternal());
+    if (buffer_.back().GetBlockType() == CSSParserToken::kBlockStart) {
+      nesting_level++;
+    } else if (buffer_.back().GetBlockType() == CSSParserToken::kBlockEnd) {
+      nesting_level--;
+    }
+  } while (!PeekInternal().IsEOF() && nesting_level);
+
+  return {buffer_};
 }
 
 }  // namespace webf

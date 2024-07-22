@@ -320,17 +320,17 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 #    core/css/parser/css_lazy_property_parser_impl.cc
     core/css/parser/css_parser.cc
     core/css/parser/css_parser_context.cc
-#    core/css/parser/css_parser_idioms.cc
+    core/css/parser/css_parser_idioms.cc
     core/css/parser/css_parser_impl.cc
 #    core/css/parser/css_parser_observer.cc
     core/css/css_markup.cc
     core/css/parser/css_parser_token.cc
     core/css/parser/css_parser_token_range.cc
-#    core/css/parser/css_parser_token_stream.cc
+    core/css/parser/css_parser_token_stream.cc
 #    core/css/css_property_value_set.cc
 #    core/css/parser/css_selector_parser.cc
-#    core/css/parser/css_tokenizer.cc
-#    core/css/parser/css_tokenizer_input_stream.cc
+    core/css/parser/css_tokenizer.cc
+    core/css/parser/css_tokenizer_input_stream.cc
 #    core/css/parser/css_variable_parser.cc
 #    core/css/css_initial_value.cc
 #    core/css/css_primitive_value.cc

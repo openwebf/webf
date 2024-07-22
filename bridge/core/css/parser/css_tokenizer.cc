@@ -7,8 +7,8 @@
  */
 
 #include "css_tokenizer.h"
-#include "css_parser_token.h"
 #include "css_parser_idioms.h"
+#include "css_parser_token.h"
 #include "foundation/ascii_types.h"
 #include "foundation/string_builder.h"
 
@@ -28,8 +28,7 @@ constexpr uint32_t kEstimatedCharactersPerToken = 3;
 
 }  // namespace
 
-CSSTokenizer::CSSTokenizer(const std::string& string, uint32_t offset)
-    : input_(string) {
+CSSTokenizer::CSSTokenizer(const std::string& string, uint32_t offset) : input_(string) {
   // According to the spec, we should perform preprocessing here.
   // See: https://drafts.csswg.org/css-syntax/#input-preprocessing
   //
@@ -41,19 +40,26 @@ CSSTokenizer::CSSTokenizer(const std::string& string, uint32_t offset)
   input_.Advance(offset);
 }
 
-
 CSSParserToken CSSTokenizer::TokenizeSingle() {
   return NextToken</*SkipComments=*/true, /*StoreOffset=*/true>();
 }
 
+CSSParserToken CSSTokenizer::TokenizeSingleWithComments() {
+  return NextToken</*SkipComments=*/false, /*StoreOffset=*/true>();
+}
+
+void CSSTokenizer::PersistStrings(webf::CSSTokenizer& destination) {
+  for (std::string& s : string_pool_) {
+    destination.string_pool_.push_back(std::move(s));
+  }
+}
+
 std::vector<CSSParserToken> CSSTokenizer::TokenizeToEOF() {
   std::vector<CSSParserToken> tokens;
-  tokens.reserve((input_.length() - Offset()) /
-                                kEstimatedCharactersPerToken);
+  tokens.reserve((input_.length() - Offset()) / kEstimatedCharactersPerToken);
 
   while (true) {
-    const CSSParserToken token =
-        NextToken</*SkipComments=*/true, /*StoreOffset=*/false>();
+    const CSSParserToken token = NextToken</*SkipComments=*/true, /*StoreOffset=*/false>();
     if (token.GetType() == kEOFToken) {
       return tokens;
     } else {
@@ -62,6 +68,37 @@ std::vector<CSSParserToken> CSSTokenizer::TokenizeToEOF() {
   }
 }
 
+size_t CSSTokenizer::TokenCount() {
+  return token_count_;
+}
+
+std::pair<std::vector<CSSParserToken>, std::vector<size_t>> CSSTokenizer::TokenizeToEOFWithOffsets() {
+  size_t estimated_tokens =
+      (input_.length() - Offset()) / kEstimatedCharactersPerToken;
+  std::vector<CSSParserToken> tokens;
+  tokens.reserve(estimated_tokens);
+  std::vector<size_t> offsets;
+  offsets.reserve(estimated_tokens + 1);
+
+  while (true) {
+    offsets.push_back(input_.Offset());
+    const CSSParserToken token =
+        NextToken</*SkipComments=*/true, /*StoreOffset=*/false>();
+    if (token.GetType() == kEOFToken) {
+      return {tokens, offsets};
+    } else {
+      tokens.push_back(token);
+    }
+  }
+}
+
+StringView CSSTokenizer::StringRangeFrom(size_t start) const {
+  return input_.RangeFrom(start);
+}
+
+StringView CSSTokenizer::StringRangeAt(size_t start, size_t length) const {
+  return input_.RangeAt(start, length);
+}
 
 CSSParserToken CSSTokenizer::WhiteSpace(char16_t cc) {
   input_.AdvanceUntilNonWhitespace();
@@ -73,15 +110,12 @@ CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType type) {
   return CSSParserToken(type, CSSParserToken::kBlockStart);
 }
 
-CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType block_type,
-                                        CSSParserTokenType type,
-                                        StringView name) {
+CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType block_type, CSSParserTokenType type, StringView name) {
   block_stack_.push_back(block_type);
   return CSSParserToken(type, name, CSSParserToken::kBlockStart);
 }
 
-CSSParserToken CSSTokenizer::BlockEnd(CSSParserTokenType type,
-                                      CSSParserTokenType start_type) {
+CSSParserToken CSSTokenizer::BlockEnd(CSSParserTokenType type, CSSParserTokenType start_type) {
   if (!block_stack_.empty() && block_stack_.back() == start_type) {
     block_stack_.pop_back();
     return CSSParserToken(type, CSSParserToken::kBlockEnd);
@@ -131,8 +165,7 @@ CSSParserToken CSSTokenizer::Asterisk(char16_t cc) {
 
 CSSParserToken CSSTokenizer::LessThan(char16_t cc) {
   assert(cc == '<');
-  if (input_.PeekWithoutReplacement(0) == '!' &&
-      input_.PeekWithoutReplacement(1) == '-' &&
+  if (input_.PeekWithoutReplacement(0) == '!' && input_.PeekWithoutReplacement(1) == '-' &&
       input_.PeekWithoutReplacement(2) == '-') {
     input_.Advance(3);
     return CSSParserToken(kCDOToken);
@@ -149,8 +182,7 @@ CSSParserToken CSSTokenizer::HyphenMinus(char16_t cc) {
     Reconsume(cc);
     return ConsumeNumericToken();
   }
-  if (input_.PeekWithoutReplacement(0) == '-' &&
-      input_.PeekWithoutReplacement(1) == '>') {
+  if (input_.PeekWithoutReplacement(0) == '-' && input_.PeekWithoutReplacement(1) == '>') {
     input_.Advance(2);
     return CSSParserToken(kCDCToken);
   }
@@ -171,10 +203,8 @@ CSSParserToken CSSTokenizer::SemiColon(char16_t cc) {
 
 CSSParserToken CSSTokenizer::Hash(char16_t cc) {
   char16_t next_char = input_.PeekWithoutReplacement(0);
-  if (IsNameCodePoint(next_char) ||
-      TwoCharsAreValidEscape(next_char, input_.PeekWithoutReplacement(1))) {
-    HashTokenType type =
-        NextCharsAreIdentifier() ? kHashTokenId : kHashTokenUnrestricted;
+  if (IsNameCodePoint(next_char) || TwoCharsAreValidEscape(next_char, input_.PeekWithoutReplacement(1))) {
+    HashTokenType type = NextCharsAreIdentifier() ? kHashTokenId : kHashTokenUnrestricted;
     return CSSParserToken(type, ConsumeName());
   }
 
@@ -239,8 +269,7 @@ CSSParserToken CSSTokenizer::AsciiDigit(char16_t cc) {
 
 CSSParserToken CSSTokenizer::LetterU(char16_t cc) {
   if (unicode_ranges_allowed_ && input_.PeekWithoutReplacement(0) == '+' &&
-      (IsASCIIHexDigit(input_.PeekWithoutReplacement(1)) ||
-       input_.PeekWithoutReplacement(1) == '?')) {
+      (IsASCIIHexDigit(input_.PeekWithoutReplacement(1)) || input_.PeekWithoutReplacement(1) == '?')) {
     input_.Advance();
     return ConsumeUnicodeRange();
   }
@@ -396,7 +425,6 @@ CSSParserToken CSSTokenizer::NextToken() {
   } while (SkipComments);
 }
 
-
 char16_t CSSTokenizer::Consume() {
   char16_t current = input_.NextInputChar();
   input_.Advance();
@@ -434,10 +462,8 @@ CSSParserToken CSSTokenizer::ConsumeIdentLikeToken() {
 
 // https://drafts.csswg.org/css-syntax/#non-printable-code-point
 static bool IsNonPrintableCodePoint(UChar cc) {
-  return (cc >= '\0' && cc <= '\x8') || cc == '\xb' ||
-         (cc >= '\xe' && cc <= '\x1f') || cc == '\x7f';
+  return (cc >= '\0' && cc <= '\x8') || cc == '\xb' || (cc >= '\xe' && cc <= '\x1f') || cc == '\x7f';
 }
-
 
 // https://drafts.csswg.org/css-syntax/#consume-url-token
 CSSParserToken CSSTokenizer::ConsumeUrlToken() {
@@ -451,24 +477,22 @@ CSSParserToken CSSTokenizer::ConsumeUrlToken() {
       input_.Advance(size + 1);
       return CSSParserToken(kUrlToken, input_.RangeAt(start_offset, size));
     }
-    if (cc <= ' ' || cc == '\\' || cc == '"' || cc == '\'' || cc == '(' ||
-        cc == '\x7f') {
+    if (cc <= ' ' || cc == '\\' || cc == '"' || cc == '\'' || cc == '(' || cc == '\x7f') {
       break;
     }
   }
 
-  StringBuilder result;
+  std::string result;
   while (true) {
     UChar cc = Consume();
     if (cc == ')' || cc == kEndOfFileMarker) {
-      return CSSParserToken(kUrlToken, RegisterString(result.ReleaseString()));
+      return CSSParserToken(kUrlToken, RegisterString(result));
     }
 
     if (IsHTMLSpace(cc)) {
       input_.AdvanceUntilNonWhitespace();
       if (ConsumeIfNext(')') || input_.NextInputChar() == kEndOfFileMarker) {
-        return CSSParserToken(kUrlToken,
-                              RegisterString(result.ReleaseString()));
+        return CSSParserToken(kUrlToken, RegisterString(result));
       }
       break;
     }
@@ -479,19 +503,18 @@ CSSParserToken CSSTokenizer::ConsumeUrlToken() {
 
     if (cc == '\\') {
       if (TwoCharsAreValidEscape(cc, input_.PeekWithoutReplacement(0))) {
-        result.Append(ConsumeEscape());
+        result.append(std::string(1, (char)ConsumeEscape()));
         continue;
       }
       break;
     }
 
-    result.Append(cc);
+    result.append(std::string(1, (char)cc));
   }
 
   ConsumeBadUrlRemnants();
   return CSSParserToken(kBadUrlToken);
 }
-
 
 // https://drafts.csswg.org/css-syntax/#consume-a-string-token
 CSSParserToken CSSTokenizer::ConsumeStringTokenUntil(char16_t ending_code_point) {
@@ -512,12 +535,11 @@ CSSParserToken CSSTokenizer::ConsumeStringTokenUntil(char16_t ending_code_point)
     }
   }
 
-  StringBuilder output;
+  std::string output;
   while (true) {
     char16_t cc = Consume();
     if (cc == ending_code_point || cc == kEndOfFileMarker) {
-      return CSSParserToken(kStringToken,
-                            RegisterString(output.ReleaseString()));
+      return CSSParserToken(kStringToken, RegisterString(output));
     }
     if (IsCSSNewLine(cc)) {
       Reconsume(cc);
@@ -530,22 +552,20 @@ CSSParserToken CSSTokenizer::ConsumeStringTokenUntil(char16_t ending_code_point)
       if (IsCSSNewLine(input_.PeekWithoutReplacement(0))) {
         ConsumeSingleWhitespaceIfNext();  // This handles \r\n for us
       } else {
-        output.Append(ConsumeEscape());
+        output.append(std::string(1, (char) ConsumeEscape()));
       }
     } else {
-      output.Append(cc);
+      output.append(std::string(1, (char) cc));
     }
   }
 }
 
 CSSParserToken CSSTokenizer::ConsumeUnicodeRange() {
-  assert(IsASCIIHexDigit(input_.PeekWithoutReplacement(0)) ||
-         input_.PeekWithoutReplacement(0) == '?');
+  assert(IsASCIIHexDigit(input_.PeekWithoutReplacement(0)) || input_.PeekWithoutReplacement(0) == '?');
   int length_remaining = 6;
   int32_t start = 0;
 
-  while (length_remaining &&
-         IsASCIIHexDigit(input_.PeekWithoutReplacement(0))) {
+  while (length_remaining && IsASCIIHexDigit(input_.PeekWithoutReplacement(0))) {
     start = start * 16 + ToASCIIHexValue(Consume());
     --length_remaining;
   }
@@ -557,16 +577,14 @@ CSSParserToken CSSTokenizer::ConsumeUnicodeRange() {
       end = end * 16 + 0xF;
       --length_remaining;
     } while (length_remaining && ConsumeIfNext('?'));
-  } else if (input_.PeekWithoutReplacement(0) == '-' &&
-             IsASCIIHexDigit(input_.PeekWithoutReplacement(1))) {
+  } else if (input_.PeekWithoutReplacement(0) == '-' && IsASCIIHexDigit(input_.PeekWithoutReplacement(1))) {
     input_.Advance();
     length_remaining = 6;
     end = 0;
     do {
       end = end * 16 + ToASCIIHexValue(Consume());
       --length_remaining;
-    } while (length_remaining &&
-             IsASCIIHexDigit(input_.PeekWithoutReplacement(0)));
+    } while (length_remaining && IsASCIIHexDigit(input_.PeekWithoutReplacement(0)));
   }
 
   return CSSParserToken(kUnicodeRangeToken, start, end);
@@ -642,7 +660,7 @@ StringView CSSTokenizer::ConsumeName() {
   unsigned size = 0;
 #if defined(__SSE2__) || defined(__ARM_NEON__)
   if (buffer.Is8Bit()) {
-    const char * ptr = buffer.Characters8();
+    const char* ptr = buffer.Characters8();
     while (size + 16 <= buffer.length()) {
       int8_t b __attribute__((vector_size(16)));
       memcpy(&b, ptr + size, sizeof(b));
@@ -650,15 +668,13 @@ StringView CSSTokenizer::ConsumeName() {
       // Exactly the same as IsNameCodePoint(), except the IsASCII() part,
       // which we deal with below. Note that we compute the inverted condition,
       // since __builtin_ctz wants to find the first 1-bit, not the first 0-bit.
-      auto non_name_mask = ((b | 0x20) < 'a' || (b | 0x20) > 'z') && b != '_' &&
-                           b != '-' && (b < '0' || b > '9');
+      auto non_name_mask = ((b | 0x20) < 'a' || (b | 0x20) > 'z') && b != '_' && b != '-' && (b < '0' || b > '9');
 #ifdef __SSE2__
       // pmovmskb extracts only the top bit and ignores the rest,
       // so to implement the IsASCII() test, which for LChar only
       // tests whether the top bit is set, we don't need a compare;
       // we can just rely on the top bit directly (using a PANDN).
-      uint16_t bits =
-          _mm_movemask_epi8(reinterpret_cast<__m128i>(non_name_mask & ~b));
+      uint16_t bits = _mm_movemask_epi8(reinterpret_cast<__m128i>(non_name_mask & ~b));
       if (bits == 0) {
         size += 16;
         continue;
@@ -722,8 +738,7 @@ int32_t CSSTokenizer::ConsumeEscape() {
 }
 
 bool CSSTokenizer::NextTwoCharsAreValidEscape() {
-  return TwoCharsAreValidEscape(input_.PeekWithoutReplacement(0),
-                                input_.PeekWithoutReplacement(1));
+  return TwoCharsAreValidEscape(input_.PeekWithoutReplacement(0), input_.PeekWithoutReplacement(1));
 }
 
 // http://www.w3.org/TR/css3-syntax/#starts-with-a-number
@@ -733,8 +748,7 @@ bool CSSTokenizer::NextCharsAreNumber(char16_t first) {
     return true;
   }
   if (first == '+' || first == '-') {
-    return ((IsASCIIDigit(second)) ||
-            (second == '.' && IsASCIIDigit(input_.PeekWithoutReplacement(1))));
+    return ((IsASCIIDigit(second)) || (second == '.' && IsASCIIDigit(input_.PeekWithoutReplacement(1))));
   }
   if (first == '.') {
     return (IsASCIIDigit(second));
@@ -761,9 +775,9 @@ bool CSSTokenizer::NextCharsAreIdentifier() {
   return are_identifier;
 }
 
-StringView CSSTokenizer::RegisterString(const AtomicString& string) {
+StringView CSSTokenizer::RegisterString(const std::string& string) {
   string_pool_.push_back(string);
-  return string.ToStringView();
+  return StringView(string);
 }
 
 void CSSTokenizer::Reconsume(char16_t c) {
@@ -794,8 +808,7 @@ CSSParserToken CSSTokenizer::ConsumeNumber() {
 
   number_length = input_.SkipWhilePredicate<IsASCIIDigit>(number_length);
   next = input_.PeekWithoutReplacement(number_length);
-  if (next == '.' &&
-      IsASCIIDigit(input_.PeekWithoutReplacement(number_length + 1))) {
+  if (next == '.' && IsASCIIDigit(input_.PeekWithoutReplacement(number_length + 1))) {
     type = kNumberValueType;
     number_length = input_.SkipWhilePredicate<IsASCIIDigit>(number_length + 2);
     next = input_.PeekWithoutReplacement(number_length);
@@ -805,13 +818,10 @@ CSSParserToken CSSTokenizer::ConsumeNumber() {
     next = input_.PeekWithoutReplacement(number_length + 1);
     if (IsASCIIDigit(next)) {
       type = kNumberValueType;
-      number_length =
-          input_.SkipWhilePredicate<IsASCIIDigit>(number_length + 1);
-    } else if ((next == '+' || next == '-') &&
-               IsASCIIDigit(input_.PeekWithoutReplacement(number_length + 2))) {
+      number_length = input_.SkipWhilePredicate<IsASCIIDigit>(number_length + 1);
+    } else if ((next == '+' || next == '-') && IsASCIIDigit(input_.PeekWithoutReplacement(number_length + 2))) {
       type = kNumberValueType;
-      number_length =
-          input_.SkipWhilePredicate<IsASCIIDigit>(number_length + 3);
+      number_length = input_.SkipWhilePredicate<IsASCIIDigit>(number_length + 3);
     }
   }
 
