@@ -80,4 +80,8 @@
   inline bool operator!=(const Type& a, const Type* b) { return !(a == b); } \
   inline bool operator!=(const Type* a, const Type& b) { return !(a == b); }
 
+#define DEFINE_GLOBAL(type, name)                                          \
+  std::aligned_storage_t<sizeof(type), alignof(type)> name##Storage; \
+  const type& name = *std::launder(reinterpret_cast<type*>(&name##Storage))
+
 #endif  // BRIDGE_MACROS_H

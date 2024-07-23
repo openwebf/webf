@@ -39,8 +39,10 @@ enum class ParseSheetResult {
 class CSSParserImpl {
   WEBF_STACK_ALLOCATED();
  public:
-  explicit CSSParserImpl(std::shared_ptr<const CSSParserContext>,
+  explicit CSSParserImpl(const std::shared_ptr<const CSSParserContext>&,
                          std::shared_ptr<StyleSheetContents> = nullptr);
+  CSSParserImpl(const CSSParserImpl&) = delete;
+  CSSParserImpl& operator=(const CSSParserImpl&) = delete;
 
   enum AllowedRulesType {
     // As per css-syntax, css-cascade and css-namespaces, @charset rules
@@ -112,35 +114,35 @@ class CSSParserImpl {
 
   static ParseSheetResult ParseStyleSheet(
       const std::string&,
-      std::shared_ptr<const CSSParserContext>,
-      std::shared_ptr<StyleSheetContents>,
+      const std::shared_ptr<const CSSParserContext>&,
+      const std::shared_ptr<StyleSheetContents>&,
       CSSDeferPropertyParsing = CSSDeferPropertyParsing::kNo,
       bool allow_import_rules = true);
 
-  std::shared_ptr<StyleRuleBase> ConsumeAtRule(CSSParserTokenStream&,
-                               AllowedRulesType,
-                               CSSNestingType,
-                               std::shared_ptr<StyleRule> parent_rule_for_nesting);
-  std::shared_ptr<StyleRuleBase> ConsumeAtRuleContents(CSSAtRuleID id,
-                                       CSSParserTokenStream& stream,
-                                       AllowedRulesType allowed_rules,
-                                       CSSNestingType,
-                                       std::shared_ptr<StyleRule> parent_rule_for_nesting);
-  std::shared_ptr<StyleRuleBase> ConsumeQualifiedRule(CSSParserTokenStream&,
-                                      AllowedRulesType,
-                                      CSSNestingType,
-                                      std::shared_ptr<StyleRule> parent_rule_for_nesting);
-  std::shared_ptr<StyleRuleKeyframe> ConsumeKeyframeStyleRule(CSSParserTokenRange prelude,
-                                              const RangeOffset& prelude_offset,
-                                              CSSParserTokenStream& block);
-  std::shared_ptr<StyleRule> ConsumeStyleRule(CSSParserTokenStream&,
-                              CSSNestingType,
-                              std::shared_ptr<StyleRule> parent_rule_for_nesting,
-                              bool semicolon_aborts_nested_selector);
-  std::shared_ptr<StyleRule> ConsumeStyleRuleContents(std::span<CSSSelector> selector_vector,
-                                      CSSParserTokenStream& stream);
-  void ConsumeErroneousAtRule(CSSParserTokenStream& stream, CSSAtRuleID id);
-  std::shared_ptr<const CSSParserContext> GetContext() const { return context_; }
+//  std::shared_ptr<StyleRuleBase> ConsumeAtRule(CSSParserTokenStream&,
+//                               AllowedRulesType,
+//                               CSSNestingType,
+//                               std::shared_ptr<StyleRule> parent_rule_for_nesting);
+//  std::shared_ptr<StyleRuleBase> ConsumeAtRuleContents(CSSAtRuleID id,
+//                                       CSSParserTokenStream& stream,
+//                                       AllowedRulesType allowed_rules,
+//                                       CSSNestingType,
+//                                       std::shared_ptr<StyleRule> parent_rule_for_nesting);
+//  std::shared_ptr<StyleRuleBase> ConsumeQualifiedRule(CSSParserTokenStream&,
+//                                      AllowedRulesType,
+//                                      CSSNestingType,
+//                                      std::shared_ptr<StyleRule> parent_rule_for_nesting);
+//  std::shared_ptr<StyleRuleKeyframe> ConsumeKeyframeStyleRule(CSSParserTokenRange prelude,
+//                                              const RangeOffset& prelude_offset,
+//                                              CSSParserTokenStream& block);
+//  std::shared_ptr<StyleRule> ConsumeStyleRule(CSSParserTokenStream&,
+//                              CSSNestingType,
+//                              std::shared_ptr<StyleRule> parent_rule_for_nesting,
+//                              bool semicolon_aborts_nested_selector);
+//  std::shared_ptr<StyleRule> ConsumeStyleRuleContents(std::span<CSSSelector> selector_vector,
+//                                      CSSParserTokenStream& stream);
+//  void ConsumeErroneousAtRule(CSSParserTokenStream& stream, CSSAtRuleID id);
+  [[nodiscard]] std::shared_ptr<const CSSParserContext> GetContext() const { return context_; }
 
 
  private:
@@ -155,7 +157,7 @@ class CSSParserImpl {
   bool ConsumeRuleList(CSSParserTokenStream&,
                        RuleListType,
                        CSSNestingType,
-                       std::shared_ptr<StyleRule> parent_rule_for_nesting,
+                       const std::shared_ptr<StyleRule>& parent_rule_for_nesting,
                        T callback);
 
   std::shared_ptr<CSSLazyParsingState> lazy_state_;
@@ -167,7 +169,7 @@ class CSSParserImpl {
 
   // Used for temporary allocations of CSSParserSelector (we send it down
   // to CSSSelectorParser, which temporarily holds on to a reference to it).
-  std::vector<CSSSelector> arena_;
+//  std::vector<CSSSelector> arena_;
 
   // True when parsing a StyleRule via ConsumeNestedRule.
   bool in_nested_style_rule_ = false;

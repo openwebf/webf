@@ -295,6 +295,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_mark.cc
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
+    core/geometry/length.cc
     core/css/css_style_declaration.cc
     core/css/inline_css_style_declaration.cc
     core/css/computed_css_style_declaration.cc
@@ -312,7 +313,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_element.cc
     core/css/style_engine.cc
 #    core/css/style_rule.cc
-#    core/css/style_rule_import.cc
+    core/css/style_rule_import.cc
 #    core/css/style_rule_keyframe.cc
     core/css/style_sheet.cc
 #    core/platform/text/text_position.cc
@@ -333,7 +334,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_tokenizer_input_stream.cc
 #    core/css/parser/css_variable_parser.cc
 #    core/css/css_initial_value.cc
-#    core/css/css_primitive_value.cc
+    core/css/css_primitive_value.cc
+    core/css/css_value.cc
 #    core/css/css_keyframe_shorthand_value.cc
 #    core/css/css_value_list.cc
 #    core/css/style_property_serializer.cc

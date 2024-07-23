@@ -27,29 +27,23 @@
 #ifndef WEBF_LENGTH_H
 #define WEBF_LENGTH_H
 
+#include <cassert>
 #include <cmath>
 #include <cstring>
-#include <optional>
-#include <cassert>
-#include "bindings/qjs/atomic_string.h"
 #include <functional>
+#include <optional>
+#include "bindings/qjs/atomic_string.h"
 #include "core/platform/math_extras.h"
 
 namespace webf {
 
-
 struct PixelsAndPercent {
   WEBF_DISALLOW_NEW();
+
  public:
   explicit PixelsAndPercent(float pixels)
-      : pixels(pixels),
-        percent(0.0f),
-        has_explicit_pixels(true),
-        has_explicit_percent(false) {}
-  PixelsAndPercent(float pixels,
-                   float percent,
-                   bool has_explicit_pixels,
-                   bool has_explicit_percent)
+      : pixels(pixels), percent(0.0f), has_explicit_pixels(true), has_explicit_percent(false) {}
+  PixelsAndPercent(float pixels, float percent, bool has_explicit_pixels, bool has_explicit_percent)
       : pixels(pixels),
         percent(percent),
         has_explicit_pixels(has_explicit_pixels),
@@ -62,8 +56,7 @@ struct PixelsAndPercent {
     has_explicit_percent |= rhs.has_explicit_percent;
     return *this;
   }
-  friend PixelsAndPercent operator+(PixelsAndPercent lhs,
-                                    const PixelsAndPercent& rhs) {
+  friend PixelsAndPercent operator+(PixelsAndPercent lhs, const PixelsAndPercent& rhs) {
     lhs += rhs;
     return lhs;
   }
@@ -86,7 +79,6 @@ struct PixelsAndPercent {
   bool has_explicit_percent;
 };
 
-class CalculationValue;
 class Length;
 
 extern const Length& g_auto_length;
@@ -127,18 +119,14 @@ class Length {
 
   Length() : value_(0), type_(kAuto) {}
 
-  explicit Length(Length::Type t) : value_(0), type_(t) {
-    assert(t != kCalculated);
-  }
+  explicit Length(Length::Type t) : value_(0), type_(t) { assert(t != kCalculated); }
 
-  Length(int v, Length::Type t) : value_(v), type_(t) {
-    assert(t != kCalculated);
-  }
+  Length(int v, Length::Type t) : value_(v), type_(t) { assert(t != kCalculated); }
 
-//  Length(LayoutUnit v, Length::Type t) : value_(v.ToFloat()), type_(t) {
-//    assert(std::isfinite(v.ToFloat()));
-//    assert(t != kCalculated);
-//  }
+  //  Length(LayoutUnit v, Length::Type t) : value_(v.ToFloat()), type_(t) {
+  //    assert(std::isfinite(v.ToFloat()));
+  //    assert(t != kCalculated);
+  //  }
 
   Length(float v, Length::Type t) : value_(v), type_(t) {
     assert(std::isfinite(v));
@@ -150,26 +138,24 @@ class Length {
     value_ = ClampTo<float>(v);
   }
 
-  explicit Length(std::shared_ptr<const CalculationValue>);
-
   Length(const Length& length) {
     memcpy(this, &length, sizeof(Length));
-    if (IsCalculated())
-      IncrementCalculatedRef();
+    //    if (IsCalculated())
+    //      IncrementCalculatedRef();
   }
 
   Length& operator=(const Length& length) {
-    if (length.IsCalculated())
-      length.IncrementCalculatedRef();
-    if (IsCalculated())
-      DecrementCalculatedRef();
+    //    if (length.IsCalculated())
+    //      length.IncrementCalculatedRef();
+    //    if (IsCalculated())
+    //      DecrementCalculatedRef();
     memcpy(this, &length, sizeof(Length));
     return *this;
   }
 
   ~Length() {
-    if (IsCalculated())
-      DecrementCalculatedRef();
+    //    if (IsCalculated())
+    //      DecrementCalculatedRef();
   }
 
   bool operator==(const Length& o) const {
@@ -213,12 +199,12 @@ class Length {
 
   // FIXME: Make this private (if possible) or at least rename it
   // (http://crbug.com/432707).
-  inline float Value() const {
+  [[nodiscard]] inline float Value() const {
     assert(!IsCalculated());
     return GetFloatValue();
   }
 
-  int IntValue() const {
+  [[nodiscard]] int IntValue() const {
     if (IsCalculated()) {
       assert_m(false, "NOTREACHED_IN_MIGRATION");
       return 0;
@@ -227,37 +213,37 @@ class Length {
     return static_cast<int>(value_);
   }
 
-  float Pixels() const {
+  [[nodiscard]] float Pixels() const {
     assert(GetType() == kFixed);
     return GetFloatValue();
   }
 
-  float Percent() const {
+  [[nodiscard]] float Percent() const {
     assert(GetType() == kPercent);
     return GetFloatValue();
   }
 
   PixelsAndPercent GetPixelsAndPercent() const;
 
-  const CalculationValue& GetCalculationValue() const;
+  // const CalculationValue& GetCalculationValue() const;
 
   // If |this| is calculated, returns the underlying |CalculationValue|. If not,
   // returns a |CalculationValue| constructed from |GetPixelsAndPercent()|. Hits
   // a DCHECK if |this| is not a specified value (e.g., 'auto').
-  std::shared_ptr<const CalculationValue> AsCalculationValue() const;
+  // std::shared_ptr<const CalculationValue> AsCalculationValue() const;
 
-  Length::Type GetType() const { return static_cast<Length::Type>(type_); }
-  bool Quirk() const { return quirk_; }
+  [[nodiscard]] Length::Type GetType() const { return static_cast<Length::Type>(type_); }
+  [[nodiscard]] bool Quirk() const { return quirk_; }
 
   void SetQuirk(bool quirk) { quirk_ = quirk; }
 
-  bool IsNone() const { return GetType() == kNone; }
+  [[nodiscard]] bool IsNone() const { return GetType() == kNone; }
 
   // FIXME calc: https://bugs.webkit.org/show_bug.cgi?id=80357. A calculated
   // Length always contains a percentage, and without a maxValue passed to these
   // functions it's impossible to determine the sign or zero-ness. We assume all
   // calc values are positive and non-zero for now.
-  bool IsZero() const {
+  [[nodiscard]] bool IsZero() const {
     assert(!IsNone());
     if (IsCalculated())
       return false;
@@ -268,32 +254,29 @@ class Length {
   // If this is a length in a property that accepts calc-size(), use
   // |HasAuto()|.  If this |Length| is a block-axis size
   // |HasAutoOrContentOrIntrinsic()| is usually a better choice.
-  bool IsAuto() const { return GetType() == kAuto; }
-  bool IsFixed() const { return GetType() == kFixed; }
+  [[nodiscard]] bool IsAuto() const { return GetType() == kAuto; }
+  [[nodiscard]] bool IsFixed() const { return GetType() == kFixed; }
 
   // For the block axis, intrinsic sizes such as `min-content` behave the same
   // as `auto`. https://www.w3.org/TR/css-sizing-3/#valdef-width-min-content
   // This includes content-based sizes in calc-size().
-  bool HasAuto() const;
-  bool HasContentOrIntrinsic() const;
-  bool HasAutoOrContentOrIntrinsic() const;
+  [[nodiscard]] bool HasAuto() const;
+  [[nodiscard]] bool HasContentOrIntrinsic() const;
+  [[nodiscard]] bool HasAutoOrContentOrIntrinsic() const;
   // HasPercent and HasPercentOrStretch refer to whether the toplevel value
   // should be treated as a percentage type for web-exposed behavior
   // decisions.  However, a value can still depend on a percentage when
   // HasPercent() is false:  for example, calc-size(any, 20%).
-  bool HasPercent() const;
-  bool HasPercentOrStretch() const;
-  bool HasStretch() const;
+  [[nodiscard]] bool HasPercent() const;
+  [[nodiscard]] bool HasPercentOrStretch() const;
+  [[nodiscard]] bool HasStretch() const;
 
   bool HasMinContent() const;
   bool HasMaxContent() const;
   bool HasMinIntrinsic() const { return IsMinIntrinsic(); }
   bool HasFitContent() const;
 
-  bool IsSpecified() const {
-    return GetType() == kFixed || GetType() == kPercent ||
-           GetType() == kCalculated;
-  }
+  bool IsSpecified() const { return GetType() == kFixed || GetType() == kPercent || GetType() == kCalculated; }
 
   bool IsCalculated() const { return GetType() == kCalculated; }
   bool IsCalculatedEqual(const Length&) const;
@@ -325,35 +308,33 @@ class Length {
   // HasPercent() rather than MayHavePercentDependence() since it's a
   // shorter/simpler function name, and the two functions are equivalent in
   // that case.
-  bool MayHavePercentDependence() const {
-    return GetType() == kPercent || GetType() == kCalculated;
-  }
+  bool MayHavePercentDependence() const { return GetType() == kPercent || GetType() == kCalculated; }
   bool IsFlex() const { return GetType() == kFlex; }
   bool IsExtendToZoom() const { return GetType() == kExtendToZoom; }
   bool IsDeviceWidth() const { return GetType() == kDeviceWidth; }
   bool IsDeviceHeight() const { return GetType() == kDeviceHeight; }
 
-  Length Blend(const Length& from, double progress, ValueRange range) const {
-    assert(IsSpecified());
-    assert(from.IsSpecified());
-
-    if (progress == 0.0)
-      return from;
-
-    if (progress == 1.0)
-      return *this;
-
-    if (from.GetType() == kCalculated || GetType() == kCalculated)
-      return BlendMixedTypes(from, progress, range);
-
-    if (!from.IsZero() && !IsZero() && from.GetType() != GetType())
-      return BlendMixedTypes(from, progress, range);
-
-    if (from.IsZero() && IsZero())
-      return *this;
-
-    return BlendSameTypes(from, progress, range);
-  }
+//  Length Blend(const Length& from, double progress, ValueRange range) const {
+//    assert(IsSpecified());
+//    assert(from.IsSpecified());
+//
+//    if (progress == 0.0)
+//      return from;
+//
+//    if (progress == 1.0)
+//      return *this;
+//
+//    if (from.GetType() == kCalculated || GetType() == kCalculated)
+//      return BlendMixedTypes(from, progress, range);
+//
+//    if (!from.IsZero() && !IsZero() && from.GetType() != GetType())
+//      return BlendMixedTypes(from, progress, range);
+//
+//    if (from.IsZero() && IsZero())
+//      return *this;
+//
+//    return BlendSameTypes(from, progress, range);
+//  }
 
   float GetFloatValue() const {
     assert(!IsNone());
@@ -361,37 +342,35 @@ class Length {
     return value_;
   }
 
-//  using IntrinsicLengthEvaluator = std::function<LayoutUnit(const Length&)>;
+  //  using IntrinsicLengthEvaluator = std::function<LayoutUnit(const Length&)>;
 
   struct EvaluationInput {
     WEBF_STACK_ALLOCATED();
 
    public:
     std::optional<float> size_keyword_basis = std::nullopt;
-//    std::optional<IntrinsicLengthEvaluator> intrinsic_evaluator = std::nullopt;
+    //    std::optional<IntrinsicLengthEvaluator> intrinsic_evaluator = std::nullopt;
   };
 
-  float NonNanCalculatedValue(float max_value, const EvaluationInput&) const;
+//  float NonNanCalculatedValue(float max_value, const EvaluationInput&) const;
 
-  Length SubtractFromOneHundredPercent() const;
+//  Length SubtractFromOneHundredPercent() const;
 
   Length Add(const Length& other) const;
 
   Length Zoom(double factor) const;
 
-  AtomicString ToString() const;
+  std::string ToString() const;
 
  private:
-  Length BlendMixedTypes(const Length& from, double progress, ValueRange) const;
-
-  Length BlendSameTypes(const Length& from, double progress, ValueRange) const;
+//  Length BlendMixedTypes(const Length& from, double progress, ValueRange) const;
+//
+//  Length BlendSameTypes(const Length& from, double progress, ValueRange) const;
 
   int CalculationHandle() const {
     assert(IsCalculated());
     return calculation_handle_;
   }
-  void IncrementCalculatedRef() const;
-  void DecrementCalculatedRef() const;
 
   union {
     // If kType == kCalculated.

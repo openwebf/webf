@@ -26,7 +26,6 @@
 #ifndef WEBF_CSS_VALUE_H
 #define WEBF_CSS_VALUE_H
 
-
 #include "core/base/memory/values_equivalent.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
@@ -34,7 +33,7 @@
 namespace webf {
 
 class Document;
-class Length; // TODO(xiezuobing): geometry/length.h
+class Length;
 class TreeScope;
 
 class CSSValue {
@@ -42,9 +41,9 @@ class CSSValue {
   // TODO(sashab): Remove this method and move logic to the caller.
   static CSSValue* Create(const Length& value, float zoom);
 
-  AtomicString CssText() const;
+  std::string CssText() const;
 
-  bool IsNumericLiteralValue() const {
+  [[nodiscard]] bool IsNumericLiteralValue() const {
     return class_type_ == kNumericLiteralClass;
   }
   bool IsMathFunctionValue() const { return class_type_ == kMathFunctionClass; }

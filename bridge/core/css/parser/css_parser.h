@@ -24,8 +24,8 @@ class CSSParser {
   WEBF_STATIC_ONLY(CSSParser);
 
  public:
-  static ParseSheetResult ParseSheet(std::shared_ptr<const CSSParserContext>,
-                                     std::shared_ptr<StyleSheetContents>,
+  static ParseSheetResult ParseSheet(const std::shared_ptr<const CSSParserContext>&,
+                                     const std::shared_ptr<StyleSheetContents>&,
                                      const std::string&,
                                      CSSDeferPropertyParsing defer_property_parsing = CSSDeferPropertyParsing::kNo,
                                      bool allow_import_rules = true);
